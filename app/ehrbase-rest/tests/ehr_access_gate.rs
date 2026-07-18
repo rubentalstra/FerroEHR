@@ -140,8 +140,8 @@ async fn seed_scheme(svc: &EhrbaseService, ehr_id: ehrbase::ids::EhrId, scheme: 
 /// (when `Some`) — otherwise it keeps the default-open `EHR_ACCESS`. `authz` is
 /// `None` throughout, so the `EHR_ACCESS` gate is the only thing that can produce
 /// a 403 (isolating what we assert).
-async fn app(name: &str, auth_enabled: bool, scheme: Option<Value>) -> (common::Pg, Router) {
-    let (pg, pool) = common::migrated_pool(name).await;
+async fn app(auth_enabled: bool, scheme: Option<Value>) -> (testkit::TestDb, Router) {
+    let (pg, pool) = common::migrated_pool().await;
     let svc = EhrbaseService::new(pool);
     let ehr_id: ehrbase::ids::EhrId = EHR_ID.parse().expect("valid ehr uuid");
     svc.create_ehr_with_id(ehr_id, None)
@@ -198,7 +198,7 @@ async fn status(app: &Router, request: Request<Body>) -> StatusCode {
 /// defaults"). The backend then answers; the point is it is NOT a `403`.
 #[tokio::test]
 async fn default_open_admits_anonymous() {
-    let (_pg, app) = app("ehracc_default_open", false, None).await;
+    let (_pg, app) = app(false, None).await;
     let code = status(&app, req("GET", &format!("/ehr/{EHR_ID}"), None, "")).await;
     assert_ne!(
         code,
@@ -216,7 +216,7 @@ async fn restricted_gates_by_user_principal() {
         "default_access": "restricted",
         "access_list": [ { "principal": "user:bob", "access": "full" } ]
     });
-    let (_pg, app) = app("ehracc_restricted_user", true, Some(scheme)).await;
+    let (_pg, app) = app(true, Some(scheme)).await;
 
     let denied = status(
         &app,
@@ -249,7 +249,7 @@ async fn restricted_gates_by_role_principal() {
         "default_access": "restricted",
         "access_list": [ { "principal": "role:nurse", "access": "full" } ]
     });
-    let (_pg, app) = app("ehracc_restricted_role", true, Some(scheme)).await;
+    let (_pg, app) = app(true, Some(scheme)).await;
 
     let allowed = status(
         &app,
@@ -287,7 +287,7 @@ async fn privacy_ceiling_gates_composition_reads() {
             "composition_overrides": [ { "uid": high, "level": 3 } ]
         }
     });
-    let (_pg, app) = app("ehracc_privacy", true, Some(scheme)).await;
+    let (_pg, app) = app(true, Some(scheme)).await;
 
     // nadia (NURSE, ceiling 2): the level-3 composition is blocked.
     let blocked = status(
@@ -329,7 +329,7 @@ async fn gate_keeper_guards_ehr_access_commits() {
         "gate_keeper": "user:alice",
         "default_access": "open"
     });
-    let (_pg, app) = app("ehracc_gatekeeper", true, Some(scheme)).await;
+    let (_pg, app) = app(true, Some(scheme)).await;
 
     let contribution = json!({
         "_type": "CONTRIBUTION",
@@ -379,7 +379,7 @@ async fn gate_keeper_ignores_non_ehr_access_contributions() {
         "gate_keeper": "user:alice",
         "default_access": "open"
     });
-    let (_pg, app) = app("ehracc_gatekeeper_ignore", true, Some(scheme)).await;
+    let (_pg, app) = app(true, Some(scheme)).await;
 
     let contribution = json!({
         "_type": "CONTRIBUTION",

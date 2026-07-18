@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! End-to-end AQL engine tests against a real PostgreSQL 18 (testcontainers):
+//! End-to-end AQL engine tests against a real PostgreSQL 18 (shared testkit harness):
 //! seed EHRs + COMPOSITIONs through the service, then execute AQL through the
 //! `QueryService` seam and assert on the assembled ITS-REST 1.0.3 `RESULT_SET`.
 //!
@@ -34,16 +34,11 @@
 use std::collections::BTreeMap;
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::query::request::AqlQueryRequest;
 use ehrbase::service::status::{CallStatusType, SmError};
@@ -53,48 +48,6 @@ use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 const OBS_ARCHETYPE: &str = "openEHR-EHR-OBSERVATION.minimal.v1";
 /// The magnitude leaf path used throughout (bp.v1-style descent to the ELEMENT).
 const MAG_PATH: &str = "data[at0001]/events[at0002]/data[at0003]/items[at0004]/value/magnitude";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// An `openehr` terminology code (audit change type / lifecycle state).
 fn term(code: &str) -> TerminologyCode {
@@ -267,8 +220,8 @@ fn ehr_scope_multi(ehr_ids: &[&str]) -> AqlQueryRequest {
 
 #[tokio::test]
 async fn aql_acceptance_set() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_accept").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -493,8 +446,8 @@ async fn aql_acceptance_set() {
 /// batched loader documented on that function.
 #[tokio::test]
 async fn whole_object_projection_batches_over_a_multi_row_page() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_batch_wholeobj").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
     let ehr_id = create_ehr(&svc).await;
 
@@ -574,8 +527,8 @@ async fn whole_object_projection_batches_over_a_multi_row_page() {
 /// different logical archetype).
 #[tokio::test]
 async fn archetype_specialisation_subsumption() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_arch_subsume").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -643,8 +596,8 @@ async fn archetype_specialisation_subsumption() {
 
 #[tokio::test]
 async fn latest_versus_all_versions() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_versions").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -760,8 +713,8 @@ async fn latest_versus_all_versions() {
 /// has `is_queryable = False`.
 #[tokio::test]
 async fn population_query_excludes_not_queryable_ehrs() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_queryable_gate").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     // Two EHRs; both start queryable (the default EHR_STATUS). Flip one off
@@ -801,8 +754,8 @@ async fn population_query_excludes_not_queryable_ehrs() {
 /// only the full-population result, never a scoped read.
 #[tokio::test]
 async fn scoped_query_bypasses_the_population_gate() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_scoped_bypasses_gate").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let hidden = create_ehr(&svc).await;
@@ -842,8 +795,8 @@ async fn scoped_query_bypasses_the_population_gate() {
 /// Three EHRs each hold one composition; scoping to two of them counts two.
 #[tokio::test]
 async fn multi_ehr_ids_scopes_to_the_set() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_multi_ehr").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let a = create_ehr(&svc).await;
@@ -872,8 +825,8 @@ async fn multi_ehr_ids_scopes_to_the_set() {
 /// malformed id is a `precondition_violation` (`400`).
 #[tokio::test]
 async fn absent_ehr_id_raises_ehr_id_does_not_exist() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_absent_ehr").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let real = create_ehr(&svc).await;
@@ -924,8 +877,8 @@ async fn absent_ehr_id_raises_ehr_id_does_not_exist() {
 /// a `$name` bound to a string renders as a quoted AQL string literal.
 #[tokio::test]
 async fn executed_aql_substitutes_bound_parameters() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_executed_subst").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -964,8 +917,8 @@ async fn executed_aql_substitutes_bound_parameters() {
 ///   RESULT_SET row, one cell for each column."
 #[tokio::test]
 async fn result_set_carries_the_its_rest_shape() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_result_set_shape").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -1020,8 +973,8 @@ async fn result_set_carries_the_its_rest_shape() {
 /// `query/expected_results/{empty_db,loaded_db}/A/106_get_ehrs.json`.
 #[tokio::test]
 async fn ehr_status_on_ehr_variable() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_ehr_status").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -1096,8 +1049,8 @@ async fn ehr_status_on_ehr_variable() {
 /// Matches `expected_results/empty_db/A/106_get_ehrs.json` (columns + `rows: []`).
 #[tokio::test]
 async fn ehr_status_query_empty_db() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_ehr_status_empty").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let r = run_aql(
@@ -1121,8 +1074,8 @@ async fn ehr_status_query_empty_db() {
 /// were previously represented in the IR but rejected at SQL generation.
 #[tokio::test]
 async fn scalar_functions_execute() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_scalar").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
 
     let ehr_id = create_ehr(&svc).await;
@@ -1232,8 +1185,8 @@ async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name:
 /// OBJECT_VERSION_ID (F6) — never null.
 #[tokio::test]
 async fn dashboard_context_start_ordering_and_uid() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("aql_dashboard").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool);
     let ehr_id = create_ehr(&svc).await;
 
@@ -1348,8 +1301,8 @@ async fn dashboard_context_start_ordering_and_uid() {
 /// design — so this asserts behaviour equivalence, not a spec clause.
 #[tokio::test]
 async fn plan_cache_reuses_plan_and_binds_per_request() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("aql_plan_cache").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = create_ehr(&svc).await;
     create_comp(&svc, &ehr_id, "BP", 80.0).await;

@@ -122,7 +122,7 @@ Three physical directories (consolidated 2026-07-16):
 `EhrbaseService` directly), and `ehrbase-server` (the wiring-only binary; the
 bin is still named `ehrbase`); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`conformance` — the
-ECC runner, `benchmark`); **`crates/*`** holds the generated openEHR spec
+ECC runner, `benchmark`, `testkit` — the shared test-database harness); **`crates/*`** holds the generated openEHR spec
 layer + its tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
 `ehrbase-server → {ehrbase-rest, ehrbase}`, `ehrbase-rest → ehrbase`,
@@ -170,6 +170,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |
 | `conformance` | ECC conformance runner (`tools/*`) | tooling |
 | `benchmark` | Benchmark harness (`tools/*`) | tooling |
+| `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
 ## Build sequence & stages
 

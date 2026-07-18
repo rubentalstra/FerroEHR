@@ -41,9 +41,6 @@ use std::time::Instant;
 use serde_json::Value;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{AssertSqlSafe, PgPool, Row};
-use testcontainers::ImageExt;
-use testcontainers::runners::AsyncRunner;
-use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
 // ─── candidate schema (draft — final DDL becomes migrations after the spike) ─
@@ -360,18 +357,13 @@ async fn storage_spike() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(100);
 
-    let container = Postgres::default()
-        .with_tag("18")
-        .start()
-        .await
-        .expect("postgres 18");
-    let host = container.get_host().await.expect("host");
-    let port = container.get_host_port_ipv4(5432).await.expect("port");
+    // A pristine (non-migrated) database on the shared testkit server — the
+    // spike lays down its own DDL and must not collide with the migrated
+    // schema.
+    let db = testkit::empty_db().await.expect("testkit empty database");
     let pool = PgPoolOptions::new()
         .max_connections(4)
-        .connect(&format!(
-            "postgres://postgres:postgres@{host}:{port}/postgres"
-        ))
+        .connect(db.url())
         .await
         .expect("pool");
 

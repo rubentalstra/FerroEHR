@@ -6,7 +6,7 @@
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the EHR Extract **export** path (SM
 //! `I_EHR_EXTRACT_SERVICE.export_ehrs` / `export_ehr_extracts`) against a real
-//! `PostgreSQL` 18 (testcontainers).
+//! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_ehr_extract_service.adoc`;
 //! RM EHR Extract IM master05 (`X_VERSIONED_*`) + master09 (creation
@@ -24,60 +24,13 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn term(code: &str) -> TerminologyCode {
     TerminologyCode {
@@ -156,8 +109,8 @@ fn find_by_xtype<'a>(extract: &'a Value, xtype: &str) -> Option<&'a Value> {
 
 #[tokio::test]
 async fn export_ehrs_carries_every_versioned_object_latest_only() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("extract_whole").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     let extracts = svc.extract_ehrs(ehr).await.expect("export_ehrs");
@@ -222,8 +175,8 @@ async fn export_ehrs_carries_every_versioned_object_latest_only() {
 
 #[tokio::test]
 async fn export_ehr_extracts_honours_item_list_and_all_versions() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("extract_spec").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let (ehr, status_vo) = seed_ehr(&svc).await;
 
     // Request only the EHR_STATUS version container, all versions, with revision
@@ -307,8 +260,8 @@ async fn export_ehr_extracts_honours_item_list_and_all_versions() {
 
 #[tokio::test]
 async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("extract_missing").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let err = svc
         .extract_ehrs(ehrbase::ids::EhrId::new())
         .await
@@ -326,8 +279,8 @@ async fn export_ehrs_unknown_ehr_is_ehr_id_does_not_exist() {
 /// `Item_validity` on import (`extract_content_item.adoc`).
 #[tokio::test]
 async fn extract_spec_flags_are_honoured() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("extract_flags").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let (ehr, _status_vo) = seed_ehr(&svc).await;
 
     // Bad extract_type → precondition.

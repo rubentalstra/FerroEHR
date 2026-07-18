@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end DEMOGRAPHIC service tests against a real PostgreSQL 18
-//! (testcontainers): the party CRUD + versioning + VERSIONED_PARTY +
+//! (shared testkit harness): the party CRUD + versioning + VERSIONED_PARTY +
 //! contribution + tags lifecycle, driven through the `DemographicService`
 //! envelope seam exactly as the REST layer calls it. Verifies the 0003 party
 //! migration applies cleanly (the harness runs migrations) and that parties
@@ -18,60 +18,12 @@
 )]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::demographic::types::PartyKind;
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::version_update::UpdateVersion;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        // Runs every migration including 0003 (the party storage migration) —
-        // a bad constraint name would fail here.
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn ovid(v: &Value) -> &str {
@@ -86,7 +38,7 @@ fn vo_uuid(v: &Value) -> String {
 /// The DB's current instant (`SELECT now()`) as a `jiff::Timestamp`. Time-travel
 /// probes MUST anchor their reference instant on this server clock — the same
 /// clock that stamps `vo_version.sys_period` — never on the test-process wall
-/// clock: a client/DB clock skew under parallel-load testcontainers would race
+/// clock: a client/DB clock skew under parallel test load would race
 /// the at-time read against the version validity intervals.
 async fn db_now(pool: &PgPool) -> jiff::Timestamp {
     sqlx::query_scalar::<_, jiff_sqlx::Timestamp>("SELECT now()")
@@ -196,8 +148,8 @@ fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
 /// post-condition (`i_party.adoc`).
 #[tokio::test]
 async fn party_sm_calls_round_trip() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_sm_calls").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // create_party(UV_PARTY) → the new VERSIONED_OBJECT's id.
     let vo_id = svc
@@ -276,8 +228,8 @@ async fn party_sm_calls_round_trip() {
 
 #[tokio::test]
 async fn person_lifecycle_end_to_end() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("demographic_person").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     // create → v1
@@ -415,8 +367,8 @@ async fn person_lifecycle_end_to_end() {
 /// `PartyKind`).
 #[tokio::test]
 async fn party_write_responses_match_a_fresh_read() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("party_writeresp").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // create → the built-from-commit body equals a fresh read.
     let created = svc
@@ -485,8 +437,8 @@ async fn party_write_responses_match_a_fresh_read() {
 /// the current read afterwards is a deleted/`204` (Null body).
 #[tokio::test]
 async fn person_delete_by_versioned_uid_with_if_match() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_delete_ifmatch").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let created = svc
         .party_create(PartyKind::Person, person("Jane"), None)
@@ -512,8 +464,8 @@ async fn person_delete_by_versioned_uid_with_if_match() {
 
 #[tokio::test]
 async fn role_create_and_get() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_role").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let created = svc
         .party_create(PartyKind::Role, role("Clinician"), None)
@@ -531,8 +483,8 @@ async fn role_create_and_get() {
 
 #[tokio::test]
 async fn demographic_contribution_multi_version() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_contribution").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let body = json!({
         "_type": "CONTRIBUTION",
@@ -596,8 +548,8 @@ async fn demographic_contribution_multi_version() {
 
 #[tokio::test]
 async fn party_tags_crud() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("demographic_tags").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let created = svc
         .party_create(PartyKind::Person, person("Tagged"), None)

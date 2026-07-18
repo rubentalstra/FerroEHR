@@ -62,8 +62,8 @@ fn config(admin_enabled: bool) -> AppConfig {
     }
 }
 
-async fn app(admin_enabled: bool, db: &str) -> (common::Pg, Router) {
-    let (pg, service) = common::test_service(db).await;
+async fn app(admin_enabled: bool) -> (testkit::TestDb, Router) {
+    let (pg, service) = common::test_service().await;
     (pg, common::router_with(config(admin_enabled), service))
 }
 
@@ -124,7 +124,7 @@ async fn ehr_exists(app: &Router, id: &str) -> bool {
 
 #[tokio::test]
 async fn disabled_admin_is_404_and_never_deletes() {
-    let (_pg, app) = app(false, "admin_disabled_404").await;
+    let (_pg, app) = app(false).await;
     // Create a real EHR, then attempt the (disabled) admin delete.
     let id = create_ehr(&app).await;
     let (status, _) = send(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
@@ -137,7 +137,7 @@ async fn disabled_admin_is_404_and_never_deletes() {
 
 #[tokio::test]
 async fn enabled_delete_is_204() {
-    let (_pg, app) = app(true, "admin_delete_204").await;
+    let (_pg, app) = app(true).await;
     let id = create_ehr(&app).await;
     let (status, body) = send(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
     assert_eq!(status, StatusCode::NO_CONTENT);
@@ -148,7 +148,7 @@ async fn enabled_delete_is_204() {
 
 #[tokio::test]
 async fn enabled_delete_unknown_maps_to_404() {
-    let (_pg, app) = app(true, "admin_delete_unknown_404").await;
+    let (_pg, app) = app(true).await;
     // The backend's NotFound (ehr_id_does_not_exist) surfaces as HTTP 404.
     let (status, _) = send(&app, delete(format!("{BASE}/admin/ehr/{OTHER}"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
@@ -158,7 +158,7 @@ async fn enabled_delete_unknown_maps_to_404() {
 async fn enabled_delete_all_is_204_bodyless() {
     // `admin_ehr_delete_all.yaml:18-26`: the only declared success responses are
     // `202` (async) and `204 No Content` (sync) — both bodyless.
-    let (_pg, app) = app(true, "admin_delete_all_204").await;
+    let (_pg, app) = app(true).await;
     let a = create_ehr(&app).await;
     let b = create_ehr(&app).await;
     let (status, body) = send(&app, delete(format!("{BASE}/admin/ehr/all?ehr_id={a},{b}"))).await;
@@ -175,7 +175,7 @@ async fn enabled_delete_all_repeated_param_reaches_backend_with_both_ids() {
     // Option<String> param would otherwise keep only the first). RE-TARGET (was
     // a recorder of the ids handed to the mock): both EHRs being deleted proves
     // the RFC 6570 `{?ehr_id*}` list handling passed both ids to the backend.
-    let (_pg, app) = app(true, "admin_delete_all_repeated").await;
+    let (_pg, app) = app(true).await;
     let a = create_ehr(&app).await;
     let b = create_ehr(&app).await;
     let (status, body) = send(
@@ -196,7 +196,7 @@ async fn enabled_delete_all_repeated_param_reaches_backend_with_both_ids() {
 async fn disabled_admin_config_is_404() {
     // The config view shares the group gate: with the admin API disabled it
     // answers 404 as if unmounted (never a 403), like the deletes.
-    let (_pg, app) = app(false, "admin_config_disabled_404").await;
+    let (_pg, app) = app(false).await;
     let (status, _) = send(&app, get(format!("{BASE}/admin/config"))).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
@@ -207,7 +207,7 @@ async fn enabled_admin_config_is_200_json() {
     // returns 200 with a JSON body. The redaction of every secret field is
     // proven by the unit test on `EhrbaseConfig::to_redacted_json`; here the
     // point is the route is mounted and served under the enabled gate.
-    let (_pg, app) = app(true, "admin_config_enabled_200").await;
+    let (_pg, app) = app(true).await;
     let (status, _body) = send(&app, get(format!("{BASE}/admin/config"))).await;
     assert_eq!(status, StatusCode::OK);
 }
@@ -218,7 +218,7 @@ async fn enabled_delete_all_missing_list_deletes_all() {
     // to perform the operation on a subset of EHRs" — an absent list means
     // "delete ALL EHRs" (`admin_ehr_delete_all.yaml:5`), expressed to the
     // backend as the empty list.
-    let (_pg, app) = app(true, "admin_delete_all_missing").await;
+    let (_pg, app) = app(true).await;
     let a = create_ehr(&app).await;
     let b = create_ehr(&app).await;
     let (status, body) = send(&app, delete(format!("{BASE}/admin/ehr/all"))).await;

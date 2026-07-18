@@ -6,7 +6,7 @@
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the SM `I_TDD_SERVICE.import_tdd` /
 //! `import_tdds` TDD (Template Data Document) import path against a real
-//! `PostgreSQL` 18 (testcontainers).
+//! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_tdd_service.adoc`
 //! (included by `SM/docs/openehr_platform/master09-message_service.adoc`);
@@ -23,56 +23,8 @@
 //! via the composition surface.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
-
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::CallStatusType;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 const CORPUS: &str = "../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets";
 const TEMPLATE_ID: &str = "persistent_minimal.en.v1";
@@ -95,8 +47,8 @@ fn persistent_minimal_opt() -> String {
 /// A malformed (non-XML) payload is rejected `content_invalid`, not a 500.
 #[tokio::test]
 async fn tdd_import_rejects_malformed_payload() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tdd_malformed").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     let err = svc
@@ -114,8 +66,8 @@ async fn tdd_import_rejects_malformed_payload() {
 /// `precondition_violation`.
 #[tokio::test]
 async fn tdd_import_rejects_non_tdd_xml() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tdd_wrong_ns").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     // Well-formed XML, but a canonical-openEHR (not templates) namespace.
@@ -135,8 +87,8 @@ async fn tdd_import_rejects_non_tdd_xml() {
 /// (the design-filled `has_ehr` precondition).
 #[tokio::test]
 async fn tdd_import_rejects_unknown_ehr() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tdd_no_ehr").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let err = svc
         .import_tdd(
@@ -157,8 +109,8 @@ async fn tdd_import_rejects_unknown_ehr() {
 /// (its root carries `template_id="not_exist"`).
 #[tokio::test]
 async fn tdd_import_rejects_unknown_template() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tdd_no_tpl").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     let err = svc
@@ -182,8 +134,8 @@ async fn tdd_import_rejects_unknown_template() {
 /// rejected with a `precondition_violation`.
 #[tokio::test]
 async fn tdd_import_commits_composition() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("tdd_commit").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
@@ -242,8 +194,8 @@ async fn tdd_import_commits_composition() {
 /// A batch import commits every TDD (all-or-nothing prepare-then-commit).
 #[tokio::test]
 async fn tdd_import_tdds_batch_commits_all() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("tdd_batch_ok").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     svc.template_adl14_upload(persistent_minimal_opt())
@@ -273,8 +225,8 @@ async fn tdd_import_tdds_batch_commits_all() {
 /// typed error and commits nothing.
 #[tokio::test]
 async fn tdd_import_tdds_batch_fail_fast() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tdd_batch").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
 
     let err = svc

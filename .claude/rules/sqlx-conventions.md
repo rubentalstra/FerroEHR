@@ -57,9 +57,10 @@ use it). **Not sea-orm.** Target PostgreSQL 18.4+.
 
 ## Testing
 
-- `testcontainers` + `testcontainers-modules` run a real PostgreSQL 18 for
-  integration tests; verify the vendored migrations apply cleanly as part of
-  that setup. See `testing.md` for the full test discipline.
+- Integration tests get a real PostgreSQL 18 database from the shared
+  harness (`testkit::db()`, `tools/testkit` — one server, template-clone per
+  test); the template build verifies the vendored migrations apply cleanly.
+  See `testing.md` for the full test discipline.
 
 This file adds persistence-specific rules on top of `rust-style.md` (idiomatic
 app code).
