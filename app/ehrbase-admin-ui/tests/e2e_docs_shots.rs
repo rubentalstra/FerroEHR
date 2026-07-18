@@ -69,6 +69,7 @@ async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
 
 /// Capture the canonical documentation screenshots for every console screen.
 #[tokio::test]
+#[allow(clippy::too_many_lines)] // one linear capture script over every console view — sectioning it would obscure the walkthrough order
 async fn capture_documentation_screenshots() {
     let Some(h) = Harness::start("docs-shots").await else {
         return;
@@ -145,7 +146,9 @@ async fn capture_documentation_screenshots() {
             "org.example::quantity-series",
         ] {
             let status = http
-                .delete(format!("{cdr}/ehrbase/rest/openehr/v1/admin/query/{name}/1.0.0"))
+                .delete(format!(
+                    "{cdr}/ehrbase/rest/openehr/v1/admin/query/{name}/1.0.0"
+                ))
                 .basic_auth("ehrbase-admin", Some("ehrbase"))
                 .send()
                 .await
@@ -214,7 +217,14 @@ async fn capture_documentation_screenshots() {
         Some("#qb-template"),
     )
     .await;
-    capture(&h, &dir, "/queries/aql", "queries/query-aql", Some("#aql-editor")).await;
+    capture(
+        &h,
+        &dir,
+        "/queries/aql",
+        "queries/query-aql",
+        Some("#aql-editor"),
+    )
+    .await;
     capture(&h, &dir, "/ehrs", "ehrs/ehrs", Some("#ehr-lookup")).await;
     capture(&h, &dir, "/system", "system/system", None).await;
 
@@ -268,6 +278,16 @@ async fn capture_documentation_screenshots() {
             &format!("/ehrs/{ehr_id}?tab=contributions"),
             "ehrs/ehr-detail-contributions",
             Some("table tbody"),
+        )
+        .await;
+        // EHR detail: the directory tab (the create-from-template state —
+        // the seeded EHR has no directory).
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=directory"),
+            "ehrs/directory-create",
+            Some("#folder-template"),
         )
         .await;
         // EHR detail: the commit-composition form (scrolled into view).
@@ -325,11 +345,10 @@ async fn capture_documentation_screenshots() {
         .click()
         .await
         .expect("chart toggle");
-    let chart = h.wait_css("svg.chartistry_chart, div.overflow-x-auto svg").await;
-    chart
-        .scroll_into_view()
-        .await
-        .expect("scroll to the chart");
+    let chart = h
+        .wait_css("svg.chartistry_chart, div.overflow-x-auto svg")
+        .await;
+    chart.scroll_into_view().await.expect("scroll to the chart");
     shot_to(&h, &dir, "queries/query-results-chart").await;
 
     // The user menu + scopes drawer.

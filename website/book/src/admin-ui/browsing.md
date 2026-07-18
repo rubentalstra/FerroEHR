@@ -42,6 +42,16 @@ FLAT document (FLAT requires the template id, sent as the
 `openehr-template-id` header) and the CDR's validation diagnostics are
 shown verbatim on rejection.
 
+### Directory editing & folder templates
+
+The Directory tab creates the EHR's FOLDER directory when none exists —
+from an empty root or a console-local **folder template** (two built-ins
+ship: episodes-by-year and clinical-areas) — and edits an existing one as
+canonical JSON (committed with `If-Match`, so concurrent changes are
+reported, never overwritten).
+
+![Directory create](img/ehrs/directory-create.png)
+
 ## Composition viewer
 
 Any composition renders in canonical JSON, canonical XML, FLAT, or

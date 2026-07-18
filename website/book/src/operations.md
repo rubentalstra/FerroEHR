@@ -173,11 +173,21 @@ and is classed under admin authorization (the `ADMIN` role).
 - `DELETE {base}/admin/query/{qualified_query_name}/{version}` — physically
   delete one stored-query version (a single `name`/`version` row). **204** on
   success, **404** for an unknown name or version.
+- `GET {base}/admin/config` — the **effective configuration** as a JSON tree
+  (the merged result of the config file, `EHRBASE_*` environment, and
+  `--set` overrides). Every secret-bearing value is **redacted**: passwords
+  and password hashes, HMAC and signing-key secrets, and S3 secret keys
+  render as `***`, and connection URLs (database, AMQP) keep their host and
+  path but mask the embedded credentials (`postgres://***@host:5432/db`).
+  Non-secret identifiers — usernames, roles, an OIDC issuer — stay visible.
+  **200** with the redacted tree. Redaction is a structural property of the
+  configuration's secret types, not a key-name filter, so no secret value can
+  reach this response.
 
 > [!NOTE]
-> The template and stored-query deletes are an ehrbase-rs extension — the
-> openEHR admin API defines only EHR deletes. They share the same admin gate
-> and authorization as the EHR deletes.
+> The template and stored-query deletes and the config view are ehrbase-rs
+> extensions — the openEHR admin API defines only EHR deletes. They share the
+> same admin gate and authorization as the EHR deletes.
 
 > [!WARNING]
 > `DELETE /admin/ehr/all` without a parameter empties the repository — there
