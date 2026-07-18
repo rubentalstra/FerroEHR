@@ -9,80 +9,24 @@
 //! the spec formulas, the temporal versioning model behaves, and the node
 //! codec round-trips through the database.
 //!
-//! Requires Docker. Each test owns its container, so `Drop` removes it when
-//! the test finishes — nothing is left running afterwards.
+//! Each test takes a fresh, fully-migrated database from the shared `testkit`
+//! harness (`tools/testkit`); the returned guard releases the clone on drop.
 
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use std::path::Path;
 
-use ehrbase::db::{self, DbConfig};
+use ehrbase::db;
 use ehrbase::storage::codec::{decompose, reassemble};
 use ehrbase::storage::row::NodeRow;
 use serde_json::Value;
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
-
-/// Debian-based image: ICU-enabled and ships the contrib extensions.
-const PG_TAG: &str = "18";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag(PG_TAG)
-            .start()
-            .await
-            .expect("start postgres:18 container (is Docker running?)");
-        let host = container
-            .get_host()
-            .await
-            .expect("container host")
-            .to_string();
-        let port = container
-            .get_host_port_ipv4(5432)
-            .await
-            .expect("mapped 5432");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn create_database(&self, name: &str) -> DbConfig {
-        let Self { host, port, .. } = self;
-        let admin_url = format!("postgres://postgres:postgres@{host}:{port}/postgres");
-        let mut conn = PgConnection::connect(&admin_url)
-            .await
-            .expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create database");
-        DbConfig::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"))
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let settings = self.create_database(name).await;
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrations apply");
-        pool
-    }
-}
 
 #[tokio::test]
 async fn migrations_apply_cleanly_and_idempotently() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("mig_apply").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     // running again must be a no-op, not an error
     db::run_migrations(&pool)
         .await
@@ -149,8 +93,8 @@ async fn migrations_apply_cleanly_and_idempotently() {
 
 #[tokio::test]
 async fn ext_magnitude_function_follows_the_spec_formulas() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("ext_magnitude").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     let cases: &[(&str, f64)] = &[
         (
@@ -206,8 +150,8 @@ async fn ext_magnitude_function_follows_the_spec_formulas() {
 
 #[tokio::test]
 async fn temporal_versioning_model_behaves() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("temporal").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
 
     // an overlapping period is impossible at the database
@@ -261,8 +205,8 @@ async fn temporal_versioning_model_behaves() {
 
 #[tokio::test]
 async fn node_codec_round_trips_through_the_database() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("codec_db").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     // m5: round-trip EVERY corpus COMPOSITION through the real jsonb `node`
     // store (decompose → INSERT → SELECT → reassemble), not just one sample.
@@ -353,8 +297,8 @@ async fn node_codec_round_trips_through_the_database() {
 async fn template_id_is_read_back_from_vo_version() {
     use ehrbase::service::EhrbaseService;
 
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("authz_template_db").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let (vo, ehr_id) = seed_version(&pool).await;
     // Production sets this on commit (service/vobject.rs); set it directly here.
     // vo_version.template_id has an FK into template_store — seed the template.
@@ -407,8 +351,8 @@ async fn query_subject_scope_filters_and_collects_projection_independently() {
     use ehrbase::service::EhrbaseService;
     use ehrbase::service::query::request::AqlQueryRequest;
 
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("authz_query_scope_db").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     // Two EHRs with distinct subjects, each holding one composition (same corpus
     // body) under a distinct template id.

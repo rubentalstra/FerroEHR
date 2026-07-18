@@ -90,6 +90,7 @@ openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
 
 [dev-dependencies]
+testkit = { path = "../../tools/testkit" }
 serde_norway.workspace = true
 # Temp config files for the pure-loader (`config` module) tests.
 assert_fs.workspace = true

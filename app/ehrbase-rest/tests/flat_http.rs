@@ -134,8 +134,8 @@ fn without_uids(map: BTreeMap<String, Value>) -> BTreeMap<String, Value> {
 
 /// A router over a fresh real service with the IPS OPT uploaded; returns the
 /// router and a created EHR id.
-async fn app_with_ehr(db: &str) -> (common::Pg, Router, String) {
-    let (pg, service) = common::test_service(db).await;
+async fn app_with_ehr() -> (testkit::TestDb, Router, String) {
+    let (pg, service) = common::test_service().await;
     let app = common::router_with(config(), service);
     let (status, _h, body) = send(
         &app,
@@ -180,7 +180,7 @@ async fn commit_canonical(app: &Router, ehr_id: &str, comp: &Value) -> String {
 
 #[tokio::test]
 async fn get_composition_as_flat() {
-    let (_pg, app, ehr) = app_with_ehr("flat_get").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
     let vo = commit_canonical(&app, &ehr, &canonical_composition()).await;
 
     let req = Request::builder()
@@ -208,7 +208,7 @@ async fn get_composition_as_flat() {
 
 #[tokio::test]
 async fn post_flat_composition_is_rebuilt_to_canonical() {
-    let (_pg, app, ehr) = app_with_ehr("flat_post_rebuild").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
 
     // Derive a real flat body from the canonical composition + its template.
     let wt = web_template();
@@ -263,7 +263,7 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
 /// read now.
 #[tokio::test]
 async fn post_flat_without_template_id_is_422() {
-    let (_pg, app, ehr) = app_with_ehr("flat_post_no_tid").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr/{ehr}/composition"))
@@ -279,7 +279,7 @@ async fn post_flat_without_template_id_is_422() {
 /// not recognized (Resources.md §Simplified Formats NOTE).
 #[tokio::test]
 async fn post_composition_deprecated_schema_content_type_is_415() {
-    let (_pg, app, ehr) = app_with_ehr("flat_post_schema_ct").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
     let req = Request::builder()
         .method("POST")
         .uri(format!("{BASE}/ehr/{ehr}/composition"))
@@ -299,7 +299,7 @@ async fn post_composition_deprecated_schema_content_type_is_415() {
 /// (Resources.md §Simplified Formats NOTE), so no representation is acceptable.
 #[tokio::test]
 async fn get_composition_deprecated_schema_accept_is_406() {
-    let (_pg, app, ehr) = app_with_ehr("flat_get_schema_accept").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
     let vo = commit_canonical(&app, &ehr, &canonical_composition()).await;
     let req = Request::builder()
         .method("GET")
@@ -317,7 +317,7 @@ async fn get_composition_deprecated_schema_accept_is_406() {
 /// non-templated resources).
 #[tokio::test]
 async fn ehr_status_simplified_is_rejected() {
-    let (_pg, app, ehr) = app_with_ehr("flat_ehr_status_reject").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
 
     // Simplified Accept on the EHR_STATUS retrieval → 406.
     let (status, _h, _b) = send(
@@ -349,7 +349,7 @@ async fn ehr_status_simplified_is_rejected() {
 
 #[tokio::test]
 async fn flat_round_trips_through_http() {
-    let (_pg, app, ehr) = app_with_ehr("flat_roundtrip").await;
+    let (_pg, app, ehr) = app_with_ehr().await;
     let wt = web_template();
     let flat_in =
         openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();

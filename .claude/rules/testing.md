@@ -31,9 +31,15 @@ applies to every crate — generated and hand-written alike.
   not read.
 - **Properties:** `proptest` for RM round-trips (serialize → parse → equal),
   parser stability, and AQL parse/print round-trips.
-- **Database:** `testcontainers` + `testcontainers-modules` run a real
-  PostgreSQL 18 in Docker; `sqlx::test` fixtures; verify migrations apply
-  cleanly as part of the fixture setup.
+- **Database:** every DB-backed test takes its database from the shared
+  harness — `testkit::db()` (`tools/testkit`): one PostgreSQL 18 server
+  (`EHRBASE_TEST_PG_URL` in CI, a reusable `ehrbase-testkit-pg18`
+  testcontainer locally), one migrated template database per migration
+  fingerprint, one `CREATE DATABASE … TEMPLATE` clone per call. **Never
+  start a per-test PostgreSQL container or run migrations in a test** —
+  that pattern is retired (it cost ~5–10 s + Docker contention per test).
+  Broker/blob tests (RabbitMQ, SeaweedFS) still run real testcontainers,
+  serialized via the nextest `containers` group.
 - **HTTP mocking:** `wiremock` for the terminology/FHIR client and any
   external integration test.
 - **Benches:** `criterion` + `divan`, kept separate from correctness tests.

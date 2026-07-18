@@ -26,13 +26,11 @@ use lapin::options::{
 use lapin::types::FieldTable;
 use lapin::{Connection, ConnectionProperties, ExchangeKind};
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection as _, PgConnection, PgPool};
+use sqlx::PgPool;
+use testcontainers::ContainerAsync;
 use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::events::config::EventsConfig;
 use ehrbase::extensions::events::publisher::{start, subscription_queue_name};
 use ehrbase::service::EhrbaseService;
@@ -43,21 +41,6 @@ use openehr_rm::prelude::PartyProxy;
 const EXCHANGE: &str = "ehrbase.events";
 
 // ── containers ───────────────────────────────────────────────────────────────
-
-async fn migrated_pool(pg: &ContainerAsync<Postgres>, name: &str) -> PgPool {
-    let host = pg.get_host().await.expect("pg host").to_string();
-    let port = pg.get_host_port_ipv4(5432).await.expect("pg port");
-    let admin = format!("postgres://postgres:postgres@{host}:{port}/postgres");
-    let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-    sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-        .execute(&mut conn)
-        .await
-        .expect("create db");
-    let settings = DbConfig::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"));
-    let pool = db::connect(&settings).await.expect("pool");
-    db::run_migrations(&pool).await.expect("migrate");
-    pool
-}
 
 async fn amqp_url(rmq: &ContainerAsync<RabbitMq>) -> String {
     let host = rmq.get_host().await.expect("rmq host").to_string();
@@ -282,16 +265,12 @@ fn assert_phi_free(env: &Value) {
 
 #[tokio::test]
 async fn end_to_end_publish_and_consume() {
-    let pg = Postgres::default()
-        .with_tag("18")
-        .start()
-        .await
-        .expect("start postgres:18 (is Docker running?)");
+    let db = testkit::db().await.expect("testkit database");
     let rmq = RabbitMq::default()
         .start()
         .await
         .expect("start rabbitmq (is Docker running?)");
-    let pool = migrated_pool(&pg, "amqp_e2e").await;
+    let pool = db.pool();
     let url = amqp_url(&rmq).await;
 
     // Bind a consumer for COMPOSITION events BEFORE publishing (a topic exchange
@@ -327,16 +306,12 @@ async fn end_to_end_publish_and_consume() {
 
 #[tokio::test]
 async fn broker_down_then_up_delivers_without_loss() {
-    let pg = Postgres::default()
-        .with_tag("18")
-        .start()
-        .await
-        .expect("start postgres:18 (is Docker running?)");
+    let db = testkit::db().await.expect("testkit database");
     let rmq = RabbitMq::default()
         .start()
         .await
         .expect("start rabbitmq (is Docker running?)");
-    let pool = migrated_pool(&pg, "amqp_resilience").await;
+    let pool = db.pool();
     let url = amqp_url(&rmq).await;
 
     // Bind a catch-all consumer before any publish.
@@ -396,16 +371,12 @@ async fn broker_down_then_up_delivers_without_loss() {
 
 #[tokio::test]
 async fn subscriptions_route_by_predicate_and_wildcard_receives_all() {
-    let pg = Postgres::default()
-        .with_tag("18")
-        .start()
-        .await
-        .expect("start postgres:18 (is Docker running?)");
+    let db = testkit::db().await.expect("testkit database");
     let rmq = RabbitMq::default()
         .start()
         .await
         .expect("start rabbitmq (is Docker running?)");
-    let pool = migrated_pool(&pg, "amqp_subscriptions").await;
+    let pool = db.pool();
     let url = amqp_url(&rmq).await;
     let svc = EhrbaseService::new(pool.clone());
 

@@ -25,13 +25,10 @@ use lapin::options::{
 use lapin::types::FieldTable;
 use lapin::{Connection, ConnectionProperties, ExchangeKind};
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection as _, PgConnection, PgPool};
+use testcontainers::ContainerAsync;
 use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::rabbitmq::RabbitMq;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::fhir::config::FhirOutboundConfig;
 use ehrbase::extensions::fhir::outbound::start;
 use ehrbase::service::EhrbaseService;
@@ -41,21 +38,6 @@ const EXCHANGE: &str = "ehrbase.fhir";
 const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.opt";
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 const PROFILE: &str = "http://example.org/StructureDefinition/bp";
-
-async fn migrated_pool(pg: &ContainerAsync<Postgres>, name: &str) -> PgPool {
-    let host = pg.get_host().await.expect("pg host").to_string();
-    let port = pg.get_host_port_ipv4(5432).await.expect("pg port");
-    let admin = format!("postgres://postgres:postgres@{host}:{port}/postgres");
-    let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-    sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-        .execute(&mut conn)
-        .await
-        .expect("create db");
-    let settings = DbConfig::new(format!("postgres://postgres:postgres@{host}:{port}/{name}"));
-    let pool = db::connect(&settings).await.expect("pool");
-    db::run_migrations(&pool).await.expect("migrate");
-    pool
-}
 
 async fn amqp_url(rmq: &ContainerAsync<RabbitMq>) -> String {
     let host = rmq.get_host().await.expect("rmq host").to_string();
@@ -174,16 +156,12 @@ async fn next_delivery(consumer: &mut lapin::Consumer) -> (String, Value) {
 
 #[tokio::test]
 async fn commit_emits_reverse_mapped_fhir_resource() {
-    let pg = Postgres::default()
-        .with_tag("18")
-        .start()
-        .await
-        .expect("start postgres:18 (is Docker running?)");
+    let db = testkit::db().await.expect("testkit database");
     let rmq = RabbitMq::default()
         .start()
         .await
         .expect("start rabbitmq (is Docker running?)");
-    let pool = migrated_pool(&pg, "fhir_out_e2e").await;
+    let pool = db.pool();
     let url = amqp_url(&rmq).await;
 
     // Ingest the OPT + create the mapping.

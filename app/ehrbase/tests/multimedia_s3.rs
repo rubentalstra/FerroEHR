@@ -16,8 +16,8 @@
 //! mandatory unencoded `size`. Server-side blob storage is spec-silent — this
 //! is our design, and these tests are its acceptance instrument.
 //!
-//! Each test owns its containers (Drop removes them; nothing is left running).
-//! Requires Docker. SeaweedFS with no credentials runs in unauthenticated
+//! Each test owns its S3 container (Drop removes it); the PostgreSQL database
+//! comes from the shared testkit harness. Requires Docker. SeaweedFS with no credentials runs in unauthenticated
 //! "allow-all" mode (dev/test only).
 #![allow(
     clippy::expect_used,
@@ -32,14 +32,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
 use testcontainers::core::IntoContainerPort;
 use testcontainers::runners::AsyncRunner;
 use testcontainers::{ContainerAsync, GenericImage, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::multimedia::MultimediaEngine;
 use ehrbase::extensions::multimedia::config::MultimediaConfig;
 use ehrbase::extensions::multimedia::store::BlobStore;
@@ -51,48 +48,6 @@ const BUCKET: &str = "openehr-multimedia";
 const S3_PORT: u16 = 8333;
 
 // ── containers ───────────────────────────────────────────────────────────────
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 struct Seaweed {
     _container: ContainerAsync<GenericImage>,
@@ -242,10 +197,9 @@ async fn blob_store_round_trips_against_seaweedfs() {
 
 #[tokio::test]
 async fn commit_offloads_large_multimedia_and_expands() {
-    let pg = Pg::start().await;
+    let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc =
-        EhrbaseService::new(pg.migrated_pool("mm_offload").await).with_multimedia(sw.engine());
+    let svc = EhrbaseService::new(db.pool()).with_multimedia(sw.engine());
 
     // Commit an EHR whose EHR_STATUS carries a >threshold inline multimedia.
     let ehr = svc
@@ -309,9 +263,9 @@ async fn commit_offloads_large_multimedia_and_expands() {
 
 #[tokio::test]
 async fn small_multimedia_stays_inline() {
-    let pg = Pg::start().await;
+    let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("mm_small").await).with_multimedia(sw.engine());
+    let svc = EhrbaseService::new(db.pool()).with_multimedia(sw.engine());
 
     let media = multimedia(100); // below the 256-byte threshold
     let inline_data = media.get("data").cloned();
@@ -339,10 +293,9 @@ async fn small_multimedia_stays_inline() {
 async fn corrupted_blob_fails_integrity_on_expand() {
     use object_store::{ObjectStoreExt, aws::AmazonS3Builder, path::Path};
 
-    let pg = Pg::start().await;
+    let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let svc =
-        EhrbaseService::new(pg.migrated_pool("mm_corrupt").await).with_multimedia(sw.engine());
+    let svc = EhrbaseService::new(db.pool()).with_multimedia(sw.engine());
 
     let ehr = svc
         .create_ehr(Some(status_with_media(multimedia(1000))))
@@ -376,9 +329,9 @@ async fn corrupted_blob_fails_integrity_on_expand() {
 
 #[tokio::test]
 async fn gc_removes_unreferenced_but_keeps_shared_blobs() {
-    let pg = Pg::start().await;
+    let db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let pool = pg.migrated_pool("mm_gc").await;
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone()).with_multimedia(sw.engine());
 
     // Two EHRs carrying the *same* bytes → the same content-addressed blob.
@@ -417,12 +370,11 @@ async fn gc_removes_unreferenced_but_keeps_shared_blobs() {
 
 #[tokio::test]
 async fn dump_load_carries_blobs() {
-    let pg = Pg::start().await;
+    let source_db = testkit::db().await.expect("testkit database");
     let sw = Seaweed::start().await;
-    let source =
-        EhrbaseService::new(pg.migrated_pool("mm_dump_src").await).with_multimedia(sw.engine());
-    let target =
-        EhrbaseService::new(pg.migrated_pool("mm_dump_dst").await).with_multimedia(sw.engine());
+    let source = EhrbaseService::new(source_db.pool()).with_multimedia(sw.engine());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = EhrbaseService::new(target_db.pool()).with_multimedia(sw.engine());
 
     let ehr = source
         .create_ehr(Some(status_with_media(multimedia(1000))))
@@ -474,8 +426,8 @@ async fn dump_load_carries_blobs() {
 /// store is contacted, so this needs only Postgres.
 #[tokio::test]
 async fn disabled_by_default_stores_inline_verbatim() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("mm_disabled").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let media = multimedia(4096); // well above any threshold
     let inline_data = media.get("data").cloned();

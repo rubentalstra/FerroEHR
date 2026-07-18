@@ -5,8 +5,8 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the DEFINITION stored-query store surface against a
-//! real `PostgreSQL` 18 (testcontainers), driven through the assembled
-//! `ehrbase-rest` router (auth disabled) with `tower`'s `oneshot`.
+//! real `PostgreSQL` 18 (the shared `testkit` harness), driven through the
+//! assembled `ehrbase-rest` router (auth disabled) with `tower`'s `oneshot`.
 //!
 //! Covers the spec-mandated write semantics fixed in the W1-C audit wave:
 //! - a versioned store returns `200 OK` + a `Location` header
@@ -22,60 +22,14 @@ use axum::Router;
 use axum::body::Body;
 use http::{Request, StatusCode, header};
 use http_body_util::BodyExt;
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 use tower::ServiceExt;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_rest::config::AppConfig;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const AQL: &str = "SELECT c FROM EHR e CONTAINS COMPOSITION c";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// The router backed by the DB service, with authentication disabled.
 fn app(pool: PgPool) -> Router {
@@ -133,8 +87,8 @@ async fn post_json(app: Router, uri: &str, body: &str) -> (StatusCode, String) {
 /// (`schemas/query/ResultSet`: `columns` + `rows`, `_schema_version` 1.0.3).
 #[tokio::test]
 async fn adhoc_aql_over_http_returns_result_set() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("adhoc_query").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
 
     // Empty store → COUNT(*) over compositions is 0, but the endpoint, dispatch,
     // engine, and RESULT_SET assembly are all exercised.
@@ -174,8 +128,8 @@ async fn adhoc_aql_over_http_returns_result_set() {
 /// a `500` — the parse failure is surfaced as a client error.
 #[tokio::test]
 async fn malformed_adhoc_aql_is_400() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("adhoc_bad").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let (status, _body) = post_json(
         app(pool),
         &format!("{BASE}/query/aql"),
@@ -187,8 +141,8 @@ async fn malformed_adhoc_aql_is_400() {
 
 #[tokio::test]
 async fn versioned_store_returns_200_with_location_and_409_on_duplicate() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sq_versioned").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let name = "org.example::test_query";
     let uri = format!("{BASE}/definition/query/{name}/1.0.0");
 
@@ -221,8 +175,8 @@ async fn versioned_store_returns_200_with_location_and_409_on_duplicate() {
 
 #[tokio::test]
 async fn no_version_store_upserts_and_returns_200() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("sq_noversion").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let name = "org.example::auto_query";
     let uri = format!("{BASE}/definition/query/{name}");
 

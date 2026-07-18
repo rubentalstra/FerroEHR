@@ -5,8 +5,8 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end inbound FHIR connector tests against a real `PostgreSQL` 18
-//! (testcontainers), driven through the assembled `ehrbase-rest` router over the
-//! real DB-backed `EhrbaseService` (our own extension — no openEHR spec governs this; E3).
+//! (the shared `testkit` harness), driven through the assembled `ehrbase-rest`
+//! router over the real DB-backed `EhrbaseService` (our own extension — no openEHR spec governs this; E3).
 //!
 //! Covers: a valid FHIR Observation → `201`, committed through the NORMAL
 //! validated path and **readable via the openEHR surface with `FEEDER_AUDIT`
@@ -15,7 +15,8 @@
 //! (`404`); an out-of-scope resource type (`501`); a resource type with no
 //! mapping (`404`); and the mapping-store CRUD over HTTP.
 //!
-//! Requires Docker. Each test owns its container (`Drop` removes it).
+//! Each test takes a fresh, fully-migrated database from the shared `testkit`
+//! harness (`tools/testkit`); the returned guard releases the clone on drop.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use std::sync::Arc;
@@ -25,15 +26,11 @@ use axum::body::Body;
 use http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 use tower::ServiceExt;
 
 use ehrbase::config::auth::AuthConfig;
 use ehrbase::config::server::ServerConfig;
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase_rest::config::AppConfig;
 
@@ -48,48 +45,6 @@ const OPT_REL: &str = "tests/resources/service/knowledge/opt/minimal_evaluation.
 const TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 const PROFILE_OK: &str = "http://example.org/StructureDefinition/bp";
 const PROFILE_BAD: &str = "http://example.org/StructureDefinition/bp-bad";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn fixture(rel: &str) -> String {
     let path = format!("{}/../ehrbase/{rel}", env!("CARGO_MANIFEST_DIR"));
@@ -113,12 +68,8 @@ fn config(fhir_enabled: bool) -> AppConfig {
 }
 
 /// Build the router over the real service with an OPT already ingested.
-async fn app_with_template(
-    pg: &Pg,
-    db_name: &str,
-    fhir_enabled: bool,
-) -> (Arc<EhrbaseService>, Router) {
-    let svc = Arc::new(EhrbaseService::new(pg.migrated_pool(db_name).await));
+async fn app_with_template(pool: PgPool, fhir_enabled: bool) -> (Arc<EhrbaseService>, Router) {
+    let svc = Arc::new(EhrbaseService::new(pool));
     svc.template_adl14_upload(fixture(OPT_REL))
         .await
         .expect("ingest OPT");
@@ -194,8 +145,8 @@ async fn send(router: &Router, req: Request<Body>) -> (StatusCode, Option<String
 
 #[tokio::test]
 async fn valid_resource_commits_and_is_readable_with_feeder_audit() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_ok", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
 
     // Create the mapping (over HTTP → exercises the CRUD wire).
     let (status, _, _) = send(
@@ -252,8 +203,8 @@ async fn valid_resource_commits_and_is_readable_with_feeder_audit() {
 
 #[tokio::test]
 async fn facade_returns_committed_resource_as_searchset_bundle() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_facade", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
 
     // Map + commit a FHIR Observation (subject Patient/p-42 → EHR subject p-42).
     let (status, _, _) = send(
@@ -313,8 +264,8 @@ async fn facade_returns_committed_resource_as_searchset_bundle() {
 
 #[tokio::test]
 async fn facade_empty_when_no_data_for_patient() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_facade_empty", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
     // A mapping exists but nothing committed for this patient → empty searchset.
     let (status, _, _) = send(
         &router,
@@ -338,8 +289,8 @@ async fn facade_empty_when_no_data_for_patient() {
 
 #[tokio::test]
 async fn facade_missing_patient_is_400() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_facade_400", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
     let (status, _, oo) = send(
         &router,
         req("GET", &format!("{BASE}/fhir/r4/Observation"), None),
@@ -351,8 +302,8 @@ async fn facade_missing_patient_is_400() {
 
 #[tokio::test]
 async fn invalid_mapped_content_is_422_with_validator_message() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_invalid", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
 
     // A mapping whose context sets an invalid ISO-3166 territory ("ZZ") → the
     // built COMPOSITION fails the openEHR terminology validation on commit.
@@ -396,8 +347,8 @@ async fn invalid_mapped_content_is_422_with_validator_message() {
 
 #[tokio::test]
 async fn disabled_connector_is_404() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_off", false).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), false).await;
     let (status, _, oo) = send(
         &router,
         req(
@@ -413,8 +364,8 @@ async fn disabled_connector_is_404() {
 
 #[tokio::test]
 async fn unknown_resource_type_is_501() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_501", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
     let (status, _, oo) = send(
         &router,
         req(
@@ -430,8 +381,8 @@ async fn unknown_resource_type_is_501() {
 
 #[tokio::test]
 async fn no_mapping_for_type_is_404() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_nomap", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
     // Patient is in the starter set (passes the 501 gate) but no Patient mapping
     // exists → the resolver misses → 404.
     let (status, _, oo) = send(
@@ -449,8 +400,8 @@ async fn no_mapping_for_type_is_404() {
 
 #[tokio::test]
 async fn mapping_crud_over_http() {
-    let pg = Pg::start().await;
-    let (_svc, router) = app_with_template(&pg, "fhir_crud", true).await;
+    let db = testkit::db().await.expect("testkit database");
+    let (_svc, router) = app_with_template(db.pool(), true).await;
 
     // Empty list.
     let (status, _, list) = send(&router, req("GET", MAPPINGS, None)).await;

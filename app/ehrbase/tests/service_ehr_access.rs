@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! `EHR_ACCESS` scheme-settings round trip end-to-end against a real
-//! `PostgreSQL` 18 (testcontainers).
+//! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! `EHR_ACCESS` is a mandatory, versioned RM object and the access-decision
 //! authority (RM `org.openehr.rm.ehr.ehr_access.adoc` §`EHR_ACCESS` Class); its
@@ -20,56 +20,9 @@
 //! (`docs/design/ehr-access-scheme.md`).
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::ehr::access_types::DefaultAccess;
 use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn committer(name: &str) -> Value {
     json!({ "_type": "PARTY_IDENTIFIED", "name": name })
@@ -112,8 +65,8 @@ fn ehr_access_with_settings() -> Value {
 
 #[tokio::test]
 async fn ehr_access_settings_round_trip_through_contribution() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("ehr_access_settings").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // A fresh EHR gets the default (settings-less) EHR_ACCESS → default-open.
     let ehr_id = svc.create_ehr(None).await.expect("create_ehr");

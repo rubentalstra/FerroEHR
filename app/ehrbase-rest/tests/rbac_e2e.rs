@@ -108,8 +108,8 @@ fn authz(enabled: bool) -> Option<Arc<AuthzHandle>> {
 }
 
 /// A real service over a fresh DB, optionally wired with an ATNA audit sender.
-async fn service(name: &str, audit: Option<AuditSender>) -> (common::Pg, Arc<EhrbaseService>) {
-    let (pg, pool) = common::migrated_pool(name).await;
+async fn service(audit: Option<AuditSender>) -> (testkit::TestDb, Arc<EhrbaseService>) {
+    let (pg, pool) = common::migrated_pool().await;
     let mut svc = EhrbaseService::new(pool);
     if let Some(sender) = audit {
         svc = svc.with_audit(sender);
@@ -117,8 +117,8 @@ async fn service(name: &str, audit: Option<AuditSender>) -> (common::Pg, Arc<Ehr
     (pg, Arc::new(svc))
 }
 
-async fn app(name: &str, rbac_enabled: bool, audit: Option<AuditSender>) -> (common::Pg, Router) {
-    let (pg, svc) = service(name, audit).await;
+async fn app(rbac_enabled: bool, audit: Option<AuditSender>) -> (testkit::TestDb, Router) {
+    let (pg, svc) = service(audit).await;
     let app = ehrbase_rest::build_full(
         rest_config(),
         svc,
@@ -213,7 +213,7 @@ async fn status(app: &Router, request: Request<Body>) -> StatusCode {
 
 #[tokio::test]
 async fn admin_op_forbidden_for_user_role() {
-    let (_pg, app) = app("rbac_admin_user", true, None).await;
+    let (_pg, app) = app(true, None).await;
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("user")),
@@ -224,7 +224,7 @@ async fn admin_op_forbidden_for_user_role() {
 
 #[tokio::test]
 async fn admin_op_passes_gate_for_admin_role() {
-    let (_pg, app) = app("rbac_admin_admin", true, None).await;
+    let (_pg, app) = app(true, None).await;
     // ADMIN clears the RBAC gate; the concrete post-gate status is real-backend
     // behaviour — the point is the gate did NOT reject it with 403.
     let s = status(
@@ -237,14 +237,14 @@ async fn admin_op_passes_gate_for_admin_role() {
 
 #[tokio::test]
 async fn clinical_op_allowed_for_user_role() {
-    let (_pg, app) = app("rbac_clinical_user", true, None).await;
+    let (_pg, app) = app(true, None).await;
     let s = status(&app, req("GET", &format!("/ehr/{EHR_ID}"), &basic("user"))).await;
     assert_ne!(s, StatusCode::FORBIDDEN, "USER may reach a clinical op");
 }
 
 #[tokio::test]
 async fn zero_role_principal_denied_clinical() {
-    let (_pg, app) = app("rbac_zero_role", true, None).await;
+    let (_pg, app) = app(true, None).await;
     let s = status(
         &app,
         req("GET", &format!("/ehr/{EHR_ID}"), &basic("noroles")),
@@ -261,7 +261,7 @@ async fn zero_role_principal_denied_clinical() {
 async fn rbac_disabled_restores_admin_access() {
     // With RBAC disabled the handle is None → the gate is skipped; a USER reaches
     // the admin op exactly as before this feature (auth-only behaviour).
-    let (_pg, app) = app("rbac_disabled", false, None).await;
+    let (_pg, app) = app(false, None).await;
     let s = status(
         &app,
         req("DELETE", &format!("/admin/ehr/{EHR_ID}"), &basic("user")),
@@ -275,7 +275,7 @@ async fn admin_scope_alias_migrates_via_scope_role() {
     // The deprecated `admin_scope` gate is subsumed: a token whose `scope`
     // carries `ADMIN` surfaces role `ADMIN` and clears the admin gate, while a
     // non-admin scope is rejected — the automatic migration path (§5.2).
-    let (_pg, app) = app("rbac_scope_alias", true, None).await;
+    let (_pg, app) = app(true, None).await;
     let denied = status(
         &app,
         req(
@@ -307,7 +307,7 @@ async fn rbac_deny_is_audited() {
     // a rejected access attempt), a minor-failure outcome
     // (`EventOutcomeIndicator="4"`), attributed to `user`.
     let (socket, sender) = audit_capture().await;
-    let (_pg, app) = app("rbac_deny_audit", true, Some(sender)).await;
+    let (_pg, app) = app(true, Some(sender)).await;
 
     let s = status(
         &app,
@@ -347,8 +347,8 @@ fn get_unauth(path: &str) -> Request<Body> {
 /// Build the app with a populated redacted config snapshot in the observability
 /// bundle, so `GET /admin/config` returns a real body. The snapshot is produced
 /// by the production redaction method (`EhrbaseConfig::to_redacted_json`).
-async fn app_with_config_snapshot(name: &str, snapshot: serde_json::Value) -> (common::Pg, Router) {
-    let (pg, svc) = service(name, None).await;
+async fn app_with_config_snapshot(snapshot: serde_json::Value) -> (testkit::TestDb, Router) {
+    let (pg, svc) = service(None).await;
     let obs = ehrbase_rest::extensions::management::Observability {
         env_snapshot: Arc::new(snapshot),
         ..Default::default()
@@ -359,7 +359,7 @@ async fn app_with_config_snapshot(name: &str, snapshot: serde_json::Value) -> (c
 
 #[tokio::test]
 async fn admin_config_unauthenticated_is_401() {
-    let (_pg, app) = app("admin_config_unauth", true, None).await;
+    let (_pg, app) = app(true, None).await;
     let s = status(&app, get_unauth("/admin/config")).await;
     assert_eq!(
         s,
@@ -370,7 +370,7 @@ async fn admin_config_unauthenticated_is_401() {
 
 #[tokio::test]
 async fn admin_config_forbidden_for_user_role() {
-    let (_pg, app) = app("admin_config_user", true, None).await;
+    let (_pg, app) = app(true, None).await;
     let s = status(&app, req("GET", "/admin/config", &basic("user"))).await;
     assert_eq!(
         s,
@@ -390,7 +390,7 @@ async fn admin_config_admin_gets_redacted_snapshot() {
     );
     let snapshot = cfg.to_redacted_json().expect("redacted json");
 
-    let (_pg, app) = app_with_config_snapshot("admin_config_admin", snapshot).await;
+    let (_pg, app) = app_with_config_snapshot(snapshot).await;
     let resp = app
         .clone()
         .oneshot(req("GET", "/admin/config", &basic("root")))
