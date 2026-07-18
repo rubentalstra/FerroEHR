@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end composition-validation tests against a real PostgreSQL 18
-//! (testcontainers): a COMPOSITION committed via the ITS-REST create/update
+//! (shared testkit harness): a COMPOSITION committed via the ITS-REST create/update
 //! path is validated against its operational template *before* persistence.
 //!
 //! Oracle + fixtures: the vendored Apache-2.0 openEHR SDK corpus — the IPS
@@ -26,62 +26,16 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::doc_markdown)]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// An `openehr` terminology code (audit change type / lifecycle state).
 fn term(code: &str) -> TerminologyCode {
@@ -138,8 +92,8 @@ async fn composition_versions(pool: &PgPool) -> i64 {
 
 #[tokio::test]
 async fn composition_validation_gates_persistence() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("validation").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     // Ingest the IPS operational template (the validation target).
@@ -222,8 +176,8 @@ async fn composition_validation_gates_persistence() {
 
 #[tokio::test]
 async fn composition_update_is_validated() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("validation_update").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     svc.template_adl14_upload(fixture(IPS_OPT))
@@ -301,8 +255,8 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
     // RM common master06 §"Incomplete Content": a `553|incomplete|` commit
     // treats existence/cardinality lower limits as zero ("data may be missing"),
     // while every wrongness check still applies ("but it may not be wrong").
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("incomplete_lifecycle").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     svc.template_adl14_upload(fixture(IPS_OPT))
@@ -390,8 +344,8 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
 /// than deleting — `UPDATE` is not a supported template mutation, only a probe.)
 #[tokio::test]
 async fn warm_template_is_served_from_cache_without_a_store_read() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("tpl_cache_hit").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     let desc = svc
@@ -445,8 +399,8 @@ async fn warm_template_is_served_from_cache_without_a_store_read() {
 /// error — a different, wrong outcome. Asserting the 422 proves eviction.
 #[tokio::test]
 async fn deleting_a_template_invalidates_its_web_template_cache() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("tpl_cache_invalidate").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     let desc = svc

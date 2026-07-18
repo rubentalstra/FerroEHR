@@ -1,20 +1,35 @@
 # Workspace nextest configuration.
 #
-# The container-backed integration tests (RabbitMQ, SeaweedFS + PostgreSQL
-# testcontainers per test) are serialized into one group: under a
-# full-workspace run dozens of containers otherwise start concurrently and
+# PostgreSQL is NOT a per-test container anymore: every DB-backed test takes
+# a template-database clone from the shared server via `tools/testkit`, so
+# the bulk of the suite parallelizes freely. Only the broker/blob suites
+# (RabbitMQ, SeaweedFS testcontainers per test) stay serialized: under a
+# full-workspace run several brokers otherwise start concurrently and
 # broker-delivery / gateway-readiness deadlines flake on host contention
-# (observed 2026-07-13: fhir_outbound_amqp failed at 42s under load, passes
-# in 8s in isolation; 2026-07-14: events_amqp broker_down_then_up and
-# multimedia_s3 blob_store_round_trips each flaked once on shared CI runners
-# and passed on rerun). Assertions are unchanged — only scheduling is
-# constrained, plus ONE retry so a single container-startup hiccup on a
-# loaded runner doesn't fail the suite. A genuine regression still fails:
-# it fails both attempts, deterministically.
+# (observed 2026-07-13/14 before the harness rewrite). Assertions are
+# unchanged — only scheduling is constrained, plus ONE retry so a single
+# container-startup hiccup on a loaded runner doesn't fail the suite. A
+# genuine regression still fails: it fails both attempts, deterministically.
 [test-groups.containers]
 max-threads = 1
 
 [[profile.default.overrides]]
+filter = 'binary(events_amqp) | binary(fhir_outbound_amqp) | binary(multimedia_s3)'
+test-group = 'containers'
+retries = 1
+
+# Surface the next slow-test regression immediately instead of letting the
+# suite silently grow: nextest flags any test past 60 s as SLOW (no
+# termination — flagging only).
+[profile.default]
+slow-timeout = { period = "60s" }
+
+# CI: never stop at the first failure — the full failure surface in one run.
+[profile.ci]
+fail-fast = false
+slow-timeout = { period = "60s" }
+
+[[profile.ci.overrides]]
 filter = 'binary(events_amqp) | binary(fhir_outbound_amqp) | binary(multimedia_s3)'
 test-group = 'containers'
 retries = 1

@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the ADMIN API (physical EHR delete) against a
-//! real `PostgreSQL` 18 (testcontainers).
+//! real `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: SM `I_ADMIN_SERVICE.physical_ehr_delete`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`) — precondition
@@ -19,64 +19,18 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::{AssertSqlSafe, PgPool};
 use uuid::Uuid;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 
 use ehrbase::service::demographic::types::PartyKind;
 use ehrbase::service::platform_service::PlatformService;
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
@@ -237,10 +191,10 @@ async fn seed_full_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
 
 #[tokio::test]
 async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
-    let pg = Pg::start().await;
+    let db = testkit::db().await.expect("testkit database");
     // One database, two handles: the service owns one clone, the test queries
     // the other directly to assert the cascade.
-    let pool = pg.migrated_pool("admin_cascade").await;
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let pool = &pool;
 
@@ -275,8 +229,8 @@ async fn admin_delete_cascades_and_leaves_other_ehr_untouched() {
 
 #[tokio::test]
 async fn admin_delete_unknown_ehr_is_not_found() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("admin_missing").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // `has_ehr` is false → `ehr_id_does_not_exist` → NotFound (→ HTTP 404).
     let missing = Uuid::now_v7().to_string();
@@ -308,8 +262,8 @@ async fn admin_delete_unknown_ehr_is_not_found() {
 
 #[tokio::test]
 async fn admin_delete_all_deletes_present_and_skips_missing() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("admin_delete_all").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let a = seed_full_ehr(&svc).await;
     let b = seed_full_ehr(&svc).await;
@@ -358,8 +312,8 @@ async fn admin_delete_all_deletes_present_and_skips_missing() {
 /// former delete-nothing safety posture.
 #[tokio::test]
 async fn admin_delete_all_with_empty_list_deletes_every_ehr() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("admin_delete_all_empty").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     seed_full_ehr(&svc).await;
     seed_full_ehr(&svc).await;
@@ -421,8 +375,8 @@ fn is_not_found(res: &Result<(), SmError>) -> bool {
 
 #[tokio::test]
 async fn admin_template_delete_happy_unknown_and_referenced() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("admin_tpl_delete").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let pool = &pool;
 
@@ -490,8 +444,8 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
 
 #[tokio::test]
 async fn admin_query_delete_exact_version_and_unknown() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("admin_query_delete").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let name = "org.example::my_query";
     // Store the query at an explicit version (the PUT-with-version path).
@@ -592,8 +546,8 @@ async fn vo_version_rows(pool: &PgPool, vo: &str) -> i64 {
 
 #[tokio::test]
 async fn admin_statistics_per_service_and_time_range() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("admin_stats").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let pool = &pool;
 
@@ -729,8 +683,8 @@ async fn admin_statistics_per_service_and_time_range() {
 
 #[tokio::test]
 async fn physical_party_delete_cascades_relationships_and_spares_partner() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("admin_party_delete").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let pool = &pool;
 
@@ -855,8 +809,8 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
 
 #[tokio::test]
 async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("admin_archive").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
     let pool = &pool;
 

@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! SM-2 end-to-end tests for the Definitions native API against a real
-//! `PostgreSQL` 18 (testcontainers): ADL 1.4 source archetypes
+//! `PostgreSQL` 18 (shared testkit harness): ADL 1.4 source archetypes
 //! (`I_DEFINITION_ADL14`), OPTs (delegated to `template_store`), and registered
 //! queries (`I_DEFINITION_QUERY`). Driven through the SM service traits exactly
 //! as a protocol adapter would call them; the SM pre/post-conditions are the
@@ -14,59 +14,11 @@
 //! Requires Docker. Each test owns its container (`Drop` removes it).
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
-
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::definition::types::TemplateListFilter;
 use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::list::Page;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn fixture(rel: &str) -> String {
     let path = format!("{}/{rel}", env!("CARGO_MANIFEST_DIR"));
@@ -84,8 +36,8 @@ const OPT_TEMPLATE_ID: &str = "IDCR Allergies List.v0";
 
 #[tokio::test]
 async fn archetype_upload_get_list_match_replace_delete() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_arch").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let adl = fixture(ARCHETYPE_REL);
 
     // Precondition: not present yet.
@@ -148,8 +100,8 @@ async fn archetype_upload_get_list_match_replace_delete() {
 
 #[tokio::test]
 async fn archetype_errors() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_arch_err").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Invalid ADL → 422 invalid_archetype.
     // NOTE: the SM-specific Definition statuses (invalid_archetype,
@@ -223,8 +175,8 @@ async fn archetype_errors() {
 
 #[tokio::test]
 async fn opt_upload_has_get_list_match_delete() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_opt").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let xml = fixture(OPT_REL);
 
     // valid_opt on good vs bad XML.
@@ -287,8 +239,8 @@ async fn opt_upload_has_get_list_match_delete() {
 /// dropped and the full set returned).
 #[tokio::test]
 async fn template_adl14_list_filters_and_paginates() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_tpl_list").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Two templates: "IDCR Allergies List.v0" and "IDCR Problem List.v1".
     svc.template_adl14_upload(fixture(OPT_REL))
@@ -384,8 +336,8 @@ async fn template_adl14_list_filters_and_paginates() {
 /// formalism stores.
 #[tokio::test]
 async fn query_store_rejects_non_aql_formalism() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_qtype").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
 
@@ -423,8 +375,8 @@ async fn query_store_rejects_non_aql_formalism() {
 
 #[tokio::test]
 async fn opt_errors() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_opt_err").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Invalid OPT → 422 invalid_template.
     let bad = svc
@@ -517,8 +469,8 @@ const ADL2_TMPL_HRID: &str = "openEHR-EHR-COMPOSITION.t_vitals.v2.0.0";
 #[tokio::test]
 #[allow(clippy::too_many_lines)] // one full I_DEFINITION_ADL2 lifecycle on one container
 async fn adl2_upload_get_list_by_kind_match_replace_delete() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_adl2").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Preconditions: empty, and valid_artefact on good vs bad source.
     assert_eq!(svc.artefacts_count().await.unwrap(), 0);
@@ -611,8 +563,8 @@ async fn adl2_upload_get_list_by_kind_match_replace_delete() {
 
 #[tokio::test]
 async fn adl2_errors() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_adl2_err").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Invalid ADL2 (unrecognised header) → 422 invalid_artefact.
     let bad = svc
@@ -698,8 +650,8 @@ async fn adl2_errors() {
 #[tokio::test]
 #[allow(clippy::too_many_lines)] // one full I_DEFINITION_QUERY lifecycle on one container
 async fn query_valid_store_list_match_delete() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_query").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let good = "SELECT c FROM COMPOSITION c";
 
     // valid_query: formalism equivalence + parse.
@@ -835,8 +787,8 @@ async fn query_valid_store_list_match_delete() {
 
 #[tokio::test]
 async fn query_store_set_not_implemented() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_query_set").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     // store_query_set is a spec TODO → 501 (trait default, NOTE).
     let err = svc.store_query_set(None).expect_err("not implemented");
     assert!(
@@ -858,8 +810,8 @@ async fn query_store_set_not_implemented() {
 /// `i_definition_adl2.adoc`: "replace it").
 #[tokio::test]
 async fn adl2_template_upload_wire_conflicts_on_duplicate() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("def_adl2_wire").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let tmpl = adl2_source("template", "openEHR-EHR-COMPOSITION.t_wire.v1.0.0", None);
     let hrid = svc

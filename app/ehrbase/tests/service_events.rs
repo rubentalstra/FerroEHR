@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! Contribution-outbox eventing tests against a real `PostgreSQL` 18
-//! (testcontainers) — the transactional-outbox half of the eventing extension (tasks 2/3).
+//! (shared testkit harness) — the transactional-outbox half of the eventing extension (tasks 2/3).
 //!
 //! Proves: (1) every CONTRIBUTION commit path (a direct composition commit, a
 //! CONTRIBUTION commit, and an EHR-Extract import) writes exactly one pending
@@ -25,12 +25,8 @@ use std::time::Duration;
 
 use async_trait::async_trait;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::{PgPool, Row};
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::extensions::events::config::EventsConfig;
 use ehrbase::extensions::events::publisher::start_with_publisher;
 use ehrbase::extensions::events::{EventError, EventPublisher};
@@ -38,48 +34,6 @@ use ehrbase::service::EhrbaseService;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 // ── fixtures ─────────────────────────────────────────────────────────────────
 
@@ -251,8 +205,8 @@ async fn create_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
 
 #[tokio::test]
 async fn composition_and_contribution_commits_each_write_one_phi_free_outbox_row() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("events_atomic").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     // EHR creation is itself a CONTRIBUTION → its own outbox row (baseline).
@@ -318,8 +272,8 @@ async fn outbox_disabled_writes_no_rows() {
     // With no eventing consumer configured (`with_outbox_enabled(false)`), the
     // per-commit `event_outbox` INSERT is skipped entirely — no consumer will
     // ever read it. No openEHR spec governs eventing (our own extension).
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("events_disabled").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone()).with_outbox_enabled(false);
 
     // EHR creation, a direct composition commit, and a CONTRIBUTION commit —
@@ -367,8 +321,8 @@ async fn outbox_disabled_writes_no_rows() {
 
 #[tokio::test]
 async fn rolled_back_commit_writes_no_outbox_row() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("events_rollback").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     // First EHR with a subject: one outbox row for its creation.
@@ -459,8 +413,8 @@ where
 
 #[tokio::test]
 async fn drainer_holds_pending_while_broker_down_then_drains_without_loss() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("events_drain").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let svc = EhrbaseService::new(pool.clone());
 
     // Commit some work: an EHR + two compositions ⇒ three outbox rows.
@@ -554,9 +508,10 @@ async fn delivered_version_count(pool: &PgPool) -> usize {
 
 #[tokio::test]
 async fn import_writes_one_phi_free_outbox_row() {
-    let pg = Pg::start().await;
-    let source = EhrbaseService::new(pg.migrated_pool("events_import_src").await);
-    let target_pool = pg.migrated_pool("events_import_tgt").await;
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target_pool = target_db.pool();
     let target = EhrbaseService::new(target_pool.clone());
 
     // Seed a source EHR with an EHR_STATUS (EHR creation + the auto EHR_ACCESS).

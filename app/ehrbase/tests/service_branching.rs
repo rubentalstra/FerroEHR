@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! Version-tree branching + merge provenance, end-to-end against a real
-//! `PostgreSQL` 18 (testcontainers).
+//! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Version tree /
 //! §Distributed versioning — "To support branching, a further pair of numbers
@@ -28,16 +28,11 @@
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
 /// The service's own system id (`DEFAULT_SYSTEM_ID`) — the local
@@ -45,48 +40,6 @@ use uuid::Uuid;
 const LOCAL: &str = "ehrbase-rs.local";
 /// The pretend foreign system a copied version tree originates from.
 const FOREIGN: &str = "sysA.example.org";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn term(code: &str) -> TerminologyCode {
     TerminologyCode {
@@ -283,12 +236,13 @@ async fn import_foreign(
 
 #[tokio::test]
 async fn modifying_an_imported_foreign_version_forks_a_branch() {
-    let pg = Pg::start().await;
     // The source and the importing target are separate repositories (a copied
     // versioned object keeps its vo_id, so importing into the SAME repository
     // that already owns it is — correctly — a conflict).
-    let source_svc = EhrbaseService::new(pg.migrated_pool("branch_fork_src").await);
-    let svc = EhrbaseService::new(pg.migrated_pool("branch_fork").await);
+    let source_db = testkit::db().await.expect("testkit database");
+    let source_svc = EhrbaseService::new(source_db.pool());
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let (extract, vo) = foreign_extract(&source_svc).await;
     let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
 
@@ -375,8 +329,8 @@ async fn modifying_an_imported_foreign_version_forks_a_branch() {
 
 #[tokio::test]
 async fn merge_provenance_round_trips_the_wire() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("merge_prov").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
         .create_composition(ehr, uv(composition("v1"), "249", None))
@@ -416,9 +370,10 @@ async fn merge_provenance_round_trips_the_wire() {
 
 #[tokio::test]
 async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
-    let pg = Pg::start().await;
-    let source_svc = EhrbaseService::new(pg.migrated_pool("branch_reimport_src").await);
-    let svc = EhrbaseService::new(pg.migrated_pool("branch_reimport").await);
+    let source_db = testkit::db().await.expect("testkit database");
+    let source_svc = EhrbaseService::new(source_db.pool());
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let (extract, vo) = foreign_extract(&source_svc).await;
     let (target, vo_id) = import_foreign(&svc, extract, &vo).await;
 
@@ -446,7 +401,8 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
         wire.contains(&format!("::{LOCAL}::2.1.1")),
         "the exported version tree must include the branch version"
     );
-    let third_svc = EhrbaseService::new(pg.migrated_pool("branch_reimport_third").await);
+    let third_db = testkit::db().await.expect("testkit database");
+    let third_svc = EhrbaseService::new(third_db.pool());
     let third = ehrbase::ids::EhrId::new();
     third_svc
         .import_ehr(

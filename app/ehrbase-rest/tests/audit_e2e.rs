@@ -239,8 +239,8 @@ async fn drain(socket: &UdpSocket) -> Vec<String> {
 // ── service assembly ───────────────────────────────────────────────────────────
 
 /// An audited app (auth on) over a fresh DB.
-async fn audit_app(name: &str, sender: AuditSender) -> (common::Pg, Router) {
-    let (pg, pool) = common::migrated_pool(name).await;
+async fn audit_app(sender: AuditSender) -> (testkit::TestDb, Router) {
+    let (pg, pool) = common::migrated_pool().await;
     let svc = Arc::new(EhrbaseService::new(pool).with_audit(sender));
     (
         pg,
@@ -251,11 +251,8 @@ async fn audit_app(name: &str, sender: AuditSender) -> (common::Pg, Router) {
 /// An audited app over a DB pre-seeded with an EHR (`EHR`) and one committed
 /// composition (returns the composition version uid). Seeding goes through a
 /// **separate, unaudited** service on the same pool, so it emits no datagrams.
-async fn audit_app_with_composition(
-    name: &str,
-    sender: AuditSender,
-) -> (common::Pg, Router, String) {
-    let (pg, pool) = common::migrated_pool(name).await;
+async fn audit_app_with_composition(sender: AuditSender) -> (testkit::TestDb, Router, String) {
+    let (pg, pool) = common::migrated_pool().await;
 
     // Seed via an unaudited service (no audit datagrams).
     let seed_svc = Arc::new(EhrbaseService::new(pool.clone()));
@@ -309,7 +306,7 @@ fn req(method: &str, path: &str, auth: bool) -> Request<Body> {
 #[tokio::test]
 async fn ehr_create_emits_create_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_ehr_create", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     let resp = app.oneshot(req("POST", "/ehr", true)).await.expect("resp");
     assert_eq!(resp.status(), StatusCode::CREATED);
     let xml = recv_one(&socket).await.expect("audit record");
@@ -332,7 +329,7 @@ async fn ehr_create_emits_create_record() {
 #[tokio::test]
 async fn composition_get_emits_read_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app, uid) = audit_app_with_composition("audit_comp_get", sender).await;
+    let (_pg, app, uid) = audit_app_with_composition(sender).await;
     let vo = uid.split("::").next().unwrap().to_owned();
     let resp = app
         .oneshot(req("GET", &format!("/ehr/{EHR}/composition/{vo}"), true))
@@ -355,7 +352,7 @@ async fn composition_get_emits_read_record() {
 #[tokio::test]
 async fn composition_update_emits_update_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app, uid) = audit_app_with_composition("audit_comp_update", sender).await;
+    let (_pg, app, uid) = audit_app_with_composition(sender).await;
     let vo = uid.split("::").next().unwrap().to_owned();
     let request = Request::builder()
         .method("PUT")
@@ -379,7 +376,7 @@ async fn composition_update_emits_update_record() {
 #[tokio::test]
 async fn composition_delete_emits_delete_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app, uid) = audit_app_with_composition("audit_comp_delete", sender).await;
+    let (_pg, app, uid) = audit_app_with_composition(sender).await;
     let resp = app
         .oneshot(req(
             "DELETE",
@@ -400,7 +397,7 @@ async fn composition_delete_emits_delete_record() {
 #[tokio::test]
 async fn aql_execute_emits_execute_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_aql", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     // A well-formed ad-hoc query reaches the (implemented) QueryService and
     // succeeds on an empty DB → outcome success (was a stub 501/serious-failure).
     let resp = app
@@ -429,7 +426,7 @@ async fn aql_execute_emits_execute_record() {
 #[tokio::test]
 async fn unauthenticated_request_emits_401_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_401", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     let resp = app.oneshot(req("POST", "/ehr", false)).await.expect("resp");
     assert_eq!(resp.status(), StatusCode::UNAUTHORIZED);
     // An authentication event: minor failure, no principal — the DICOM renderer
@@ -453,7 +450,7 @@ async fn unauthenticated_request_emits_401_record() {
 #[tokio::test]
 async fn template_get_emits_template_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_template", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     // The template is not uploaded → 404, but the op is still audited as the
     // Template class (R); the template id is derived from the path.
     let resp = app
@@ -480,7 +477,7 @@ async fn template_get_emits_template_record() {
 #[tokio::test]
 async fn demographic_get_emits_demographic_record() {
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_demographic", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     // Demographic is implemented; the person does not exist on an empty DB → 404
     // → minor-failure (was a stub 501/serious-failure); R, party uid from path.
     let resp = app
@@ -505,7 +502,7 @@ async fn login_event_is_suppressed_by_default() {
     // suppress_login=true: an audited operation emits the operation record and no
     // login/application-activity record.
     let (socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_login_suppressed", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     let _ = app
         .oneshot(req("GET", "/definition/template/adl1.4", true))
         .await
@@ -530,7 +527,7 @@ async fn login_event_emitted_when_not_suppressed() {
     // Not suppressed: both the operation record and a login (User
     // Authentication) record are emitted for the fresh Basic authentication.
     let (socket, sender) = audit_capture(false).await;
-    let (_pg, app) = audit_app("audit_login_emitted", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     let _ = app
         .oneshot(req("GET", "/definition/template/adl1.4", true))
         .await
@@ -556,7 +553,7 @@ async fn login_event_emitted_when_not_suppressed() {
 async fn fail_open_serves_request_when_channel_full() {
     // Fail-open: even if the audit emit is dropped, the request still succeeds.
     let (_socket, sender) = audit_capture(true).await;
-    let (_pg, app) = audit_app("audit_fail_open", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     let resp = app.oneshot(req("POST", "/ehr", true)).await.expect("resp");
     assert_eq!(resp.status(), StatusCode::CREATED);
 }
@@ -566,7 +563,7 @@ async fn fail_closed_returns_503_when_channel_full() {
     // Fail-closed: once the (stalled, 1-slot) audit queue saturates, an auditable
     // operation whose record is rejected makes the middleware return 503.
     let sender = audit_capture_fail_closed().await;
-    let (_pg, app) = audit_app("audit_fail_closed", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     let status = drive_until_503(&app).await;
     assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE);
 }
@@ -576,7 +573,7 @@ async fn fail_closed_503_carries_openehr_error_body_and_retry_after() {
     // the fail-closed 503 must emit the standard openEHR `{ error, message }`
     // JSON body + a `Retry-After` header, not a plain-text body.
     let sender = audit_capture_fail_closed().await;
-    let (_pg, app) = audit_app("audit_fail_closed_body", sender).await;
+    let (_pg, app) = audit_app(sender).await;
     // Saturate, then capture the shed 503 response.
     let resp = loop {
         let r = app

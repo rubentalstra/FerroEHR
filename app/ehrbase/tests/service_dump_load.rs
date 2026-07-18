@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the ADMIN dump/load API against a real
-//! `PostgreSQL` 18 (testcontainers).
+//! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: SM `I_ADMIN_DUMP_LOAD.export_ehrs`/`load_ehrs`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_dump_load.adoc`), with
@@ -23,62 +23,16 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 
 use ehrbase::service::admin::types::ExportSpec;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// A unique temporary directory path for one archive (best-effort cleaned up by
 /// the OS temp dir; the round-trip does not depend on removal).
@@ -202,9 +156,10 @@ async fn canonical_snapshot(svc: &EhrbaseService, ehr_id: ehrbase::ids::EhrId) -
 
 #[tokio::test]
 async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
-    let pg = Pg::start().await;
-    let src_pool = pg.migrated_pool("dumpload_src").await;
-    let dst_pool = pg.migrated_pool("dumpload_dst").await;
+    let src_db = testkit::db().await.expect("testkit database");
+    let src_pool = src_db.pool();
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
     let source = EhrbaseService::new(src_pool.clone());
     let target = EhrbaseService::new(dst_pool.clone());
 
@@ -263,9 +218,10 @@ async fn export_then_load_into_fresh_db_round_trips_byte_equal() {
 
 #[tokio::test]
 async fn load_duplicate_ehr_ids_is_reported_not_fatal() {
-    let pg = Pg::start().await;
-    let source = EhrbaseService::new(pg.migrated_pool("dumpload_dup_src").await);
-    let dst_pool = pg.migrated_pool("dumpload_dup_dst").await;
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(src_db.pool());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let dst_pool = dst_db.pool();
     let target = EhrbaseService::new(dst_pool.clone());
 
     let ehr1 = seed_full_ehr(&source).await;

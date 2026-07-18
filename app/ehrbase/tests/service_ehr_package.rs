@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! RM EHR-package cross-version + tag-scoping duties, end-to-end against a
-//! real `PostgreSQL` 18 (testcontainers) — A1 rm-ehr chapter.
+//! real `PostgreSQL` 18 (shared testkit harness) — A1 rm-ehr chapter.
 //!
 //! Spec: RM ehr `org.openehr.rm.ehr.versioned_composition.adoc`
 //! (`Archetype_node_id_valid`, `Persistent_validity` — a versioned composition
@@ -15,60 +15,13 @@
 
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::prelude::PartyProxy;
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn term(code: &str) -> TerminologyCode {
     TerminologyCode {
@@ -140,8 +93,8 @@ const REPORT: &str = "openEHR-EHR-COMPOSITION.report.v1";
 /// archetype updates fine.
 #[tokio::test]
 async fn versioned_composition_cannot_switch_archetype() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("vc_archetype").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
         .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
@@ -180,8 +133,8 @@ async fn versioned_composition_cannot_switch_archetype() {
 /// persistent (431) and event (433) across versions is a 422.
 #[tokio::test]
 async fn versioned_composition_cannot_flip_persistence() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("vc_persistence").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = svc.create_ehr(None).await.expect("ehr");
     let v1 = svc
         .create_composition(ehr, uv(composition(ENCOUNTER, "433", "event"), "249", None))
@@ -216,8 +169,8 @@ async fn versioned_composition_cannot_flip_persistence() {
 /// tagging one's own composition succeeds.
 #[tokio::test]
 async fn tag_targets_must_be_within_the_same_ehr() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tag_scope").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_a = svc.create_ehr(None).await.expect("ehr A");
     let ehr_b = svc.create_ehr(None).await.expect("ehr B");
     let v1 = svc

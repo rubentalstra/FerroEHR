@@ -5,18 +5,13 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for OPT 1.4 operational-template ingestion against a
-//! real `PostgreSQL` 18 (testcontainers): upload a corpus `.opt` template, list it,
+//! real `PostgreSQL` 18 (shared testkit harness): upload a corpus `.opt` template, list it,
 //! retrieve its XML, and re-upload (idempotent replace) — driven through the
 //! generated `DefinitionApi` trait exactly as the REST layer calls it.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use serde_json::Value;
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::definition::types::TemplateListFilter;
 use ehrbase::service::list::Page;
@@ -25,48 +20,6 @@ use ehrbase::service::status::{CallStatusType, SmError};
 /// Fixed `ctx/time` default for the FLAT rebuild directions (ITS-REST
 /// `simplified_formats` master04 §Context) so round-trips stay deterministic.
 const NOW: &str = "2024-01-01T00:00:00Z";
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// A representative corpus template (Ocean Template Designer OPT 1.4 XML).
 const TEMPLATE_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
@@ -79,8 +32,8 @@ fn corpus_opt(rel: &str) -> String {
 
 #[tokio::test]
 async fn template_upload_list_get_roundtrip() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tpl").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let xml = corpus_opt(TEMPLATE_REL);
 
     // Upload the OPT XML (arrives as a JSON string, as the lenient body reader hands it over).
@@ -175,8 +128,8 @@ async fn template_upload_list_get_roundtrip() {
 
 #[tokio::test]
 async fn get_unknown_template_is_not_found() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tpl_missing").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     // NOTE: `get_opt` is UUID-keyed at the SM seam, so an unknown
     // OPT is expressed as an absent (well-formed) uuid → 404
     // (`versioned_object_does_not_exist`); the template_id → uuid resolution the
@@ -199,8 +152,8 @@ async fn get_unknown_template_is_not_found() {
 
 #[tokio::test]
 async fn invalid_opt_xml_is_rejected() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tpl_bad").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let err = svc
         .template_adl14_upload("<not-a-template/>".to_owned())
         .await
@@ -240,8 +193,8 @@ fn web_template_of(rel: &str) -> openehr_flat::webtemplate::WebTemplate {
 /// `WebTemplate` the service caches.
 #[tokio::test]
 async fn required_example_validates_and_converts() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tpl_example").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     for (i, rel) in EXAMPLE_TEMPLATES.iter().enumerate() {
         let xml = corpus_opt(rel);
@@ -317,8 +270,8 @@ async fn required_example_validates_and_converts() {
 
 #[tokio::test]
 async fn example_for_unknown_template_is_not_found() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tpl_example_missing").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let err = svc
         .template_adl14_example("does.not.exist.v0".to_owned(), None, None)
         .await
@@ -337,8 +290,8 @@ async fn example_for_unknown_template_is_not_found() {
 
 #[tokio::test]
 async fn example_with_invalid_detail_level_is_bad_request() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tpl_example_bad_level").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     // Upload a template so the failure is the detail_level, not a missing id.
     let xml = corpus_opt(TEMPLATE_REL);
     svc.template_adl14_upload(xml).await.expect("upload");

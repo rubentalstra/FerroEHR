@@ -8,7 +8,7 @@
 )] // test assertions/diagnostics/fixtures
 //! Integration tests for the local IHE ATNA Audit Record Repository
 //! (`ehrbase::system_log::store`) against a real `PostgreSQL` 18
-//! (testcontainers): the `audit` schema migrates cleanly alongside
+//! (shared testkit harness): the `audit` schema migrates cleanly alongside
 //! `ext`/`ehr`, inserted records land with the promoted search columns and
 //! the FHIR R4 `AuditEvent` payload (IHE BALP shape), and the retention
 //! reaper deletes only rows older than the horizon (0 = keep forever).
@@ -17,61 +17,15 @@
 //! `architecture_overview/master07-security.adoc` §Access logging).
 
 use jiff::Timestamp;
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
+use sqlx::Row;
 use uuid::Uuid;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::system_log::event::{
     AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,
 };
 use ehrbase::system_log::fhir;
 use ehrbase::system_log::message::AuditContext;
 use ehrbase::system_log::store::AuditStore;
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn ctx() -> AuditContext {
     AuditContext {
@@ -100,8 +54,8 @@ fn read_event(at: Timestamp) -> AuditEvent {
 
 #[tokio::test]
 async fn insert_persists_promoted_columns_and_fhir_payload() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("audit_store_insert").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let store = AuditStore::new(pool.clone());
 
     let event = read_event("2026-07-10T08:30:00Z".parse().unwrap());
@@ -169,8 +123,8 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
 
 #[tokio::test]
 async fn reap_deletes_only_rows_past_the_horizon() {
-    let pg = Pg::start().await;
-    let pool = pg.migrated_pool("audit_store_reap").await;
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
     let store = AuditStore::new(pool.clone());
 
     // One fresh record and one 40 days old.

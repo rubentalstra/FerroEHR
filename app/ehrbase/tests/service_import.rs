@@ -6,7 +6,7 @@
 )] // test assertions/diagnostics/fixtures
 //! End-to-end service tests for the EHR Extract **import** path (SM
 //! `I_EHR_EXTRACT_SERVICE.import_ehr` / `import_ehr_extract`) against a real
-//! `PostgreSQL` 18 (testcontainers).
+//! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_ehr_extract_service.adoc`;
 //! RM EHR Extract IM master05 (`X_VERSIONED_*`) + RM common
@@ -31,66 +31,16 @@
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 
 use openehr_base::prelude::TerminologyCode;
 use openehr_rm::ehr_extract::common::extract::Extract;
 use openehr_rm::ehr_extract::common::extract_spec::ExtractSpec;
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::status::CallStatusType;
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    /// A fresh, migrated database in this container — used to give the import
-    /// side its own empty target repository (`import_ehr` imports into an empty
-    /// target, and a `VERSIONED_OBJECT` uid is globally unique in a repository).
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 fn term(code: &str) -> TerminologyCode {
     TerminologyCode {
@@ -177,9 +127,10 @@ fn find_by_xtype<'a>(extract: &'a Value, xtype: &str) -> Option<&'a Value> {
 
 #[tokio::test]
 async fn import_ehr_clone_into_fresh_target_reuses_source_id() {
-    let pg = Pg::start().await;
-    let source = EhrbaseService::new(pg.migrated_pool("import_clone_src").await);
-    let target = EhrbaseService::new(pg.migrated_pool("import_clone_tgt").await);
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = EhrbaseService::new(target_db.pool());
 
     let ehr = seed_ehr(&source).await;
     let source_status = source
@@ -226,9 +177,10 @@ async fn import_ehr_clone_into_fresh_target_reuses_source_id() {
 
 #[tokio::test]
 async fn import_ehr_into_fixed_fresh_id() {
-    let pg = Pg::start().await;
-    let source = EhrbaseService::new(pg.migrated_pool("import_fixed_src").await);
-    let target = EhrbaseService::new(pg.migrated_pool("import_fixed_tgt").await);
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = EhrbaseService::new(target_db.pool());
 
     let ehr = seed_ehr(&source).await;
     let source_status = source
@@ -269,8 +221,8 @@ async fn import_ehr_into_fixed_fresh_id() {
 
 #[tokio::test]
 async fn import_ehr_duplicate_target_is_rejected() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("import_dup").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr = seed_ehr(&svc).await;
 
     // import_ehr imports into an *empty* target; a fixed id that already exists
@@ -285,9 +237,10 @@ async fn import_ehr_duplicate_target_is_rejected() {
 
 #[tokio::test]
 async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
-    let pg = Pg::start().await;
-    let source = EhrbaseService::new(pg.migrated_pool("import_extract_src").await);
-    let target = EhrbaseService::new(pg.migrated_pool("import_extract_tgt").await);
+    let source_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(source_db.pool());
+    let target_db = testkit::db().await.expect("testkit database");
+    let target = EhrbaseService::new(target_db.pool());
 
     let src_ehr = seed_ehr(&source).await;
 

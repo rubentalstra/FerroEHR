@@ -30,6 +30,7 @@ uuid.workspace = true
 workspace = true
 
 [dev-dependencies]
+testkit = { path = "../../tools/testkit" }
 insta.workspace = true
 opentelemetry.workspace = true
 opentelemetry_sdk = { workspace = true, features = ["trace", "testing"] }

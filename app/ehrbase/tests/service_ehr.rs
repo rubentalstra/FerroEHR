@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! End-to-end service tests against a real PostgreSQL 18 (testcontainers):
+//! End-to-end service tests against a real PostgreSQL 18 (shared testkit harness):
 //! the EHR / EHR_STATUS / COMPOSITION / DIRECTORY / CONTRIBUTION lifecycle,
 //! including versioning, optimistic concurrency, time-travel, and logical
 //! delete — driven through the `EhrService` envelope seam exactly as the
@@ -18,63 +18,16 @@
 )]
 
 use serde_json::{Value, json};
-use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool};
-use testcontainers::runners::AsyncRunner;
-use testcontainers::{ContainerAsync, ImageExt};
-use testcontainers_modules::postgres::Postgres;
 
 use openehr_base::prelude::{ObjectVersionId, TerminologyCode};
 use openehr_rm::prelude::PartyProxy;
 
-use ehrbase::db::{self, DbConfig};
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::versioning::change::Committed;
 
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
-
-struct Pg {
-    _container: ContainerAsync<Postgres>,
-    host: String,
-    port: u16,
-}
-
-impl Pg {
-    async fn start() -> Self {
-        let container = Postgres::default()
-            .with_tag("18")
-            .start()
-            .await
-            .expect("start postgres:18 (is Docker running?)");
-        let host = container.get_host().await.expect("host").to_string();
-        let port = container.get_host_port_ipv4(5432).await.expect("port");
-        Self {
-            _container: container,
-            host,
-            port,
-        }
-    }
-
-    async fn migrated_pool(&self, name: &str) -> PgPool {
-        let admin = format!(
-            "postgres://postgres:postgres@{}:{}/postgres",
-            self.host, self.port
-        );
-        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
-        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
-            .execute(&mut conn)
-            .await
-            .expect("create db");
-        let settings = DbConfig::new(format!(
-            "postgres://postgres:postgres@{}:{}/{name}",
-            self.host, self.port
-        ));
-        let pool = db::connect(&settings).await.expect("pool");
-        db::run_migrations(&pool).await.expect("migrate");
-        pool
-    }
-}
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
@@ -179,8 +132,8 @@ fn folder(name: &str) -> Value {
 
 #[tokio::test]
 async fn ehr_composition_lifecycle_end_to_end() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("lifecycle").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // ── EHR create + retrieve ────────────────────────────────────────────────
     // NOTE: the SM `create_ehr` returns the new UUID; the RM `EHR`
@@ -447,8 +400,8 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     // modifiable" (§"EHR Creation"), which is how the EHR is reactivated.
     // Wire code for a blocked content write is underdetermined by ITS-REST →
     // we return 409 Conflict (SM `CompositionAlreadyExists`).
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("modifiable").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
@@ -582,8 +535,8 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
 
 #[tokio::test]
 async fn creating_an_ehr_with_an_existing_id_conflicts() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("conflict").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let id = ehrbase::ids::EhrId::new();
     svc.create_ehr_with_id(id, None)
@@ -595,8 +548,8 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
 
 #[tokio::test]
 async fn unknown_ehr_is_not_found() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("missing").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let missing = ehrbase::ids::EhrId::new();
     assert!(svc.ehr_object(missing).await.is_err());
 }
@@ -610,8 +563,8 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
     // EHR_STATUS PUT — while an anonymous empty PARTY_SELF is accepted.
     // Regression for the upstream diff findings B1/B2 (the X1 upstream
     // triage ledger; in git history at docs/conformance/upstream-ehrbase/TRIAGE.md).
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("subjecttype").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let wrong_subject = json!({
         "_type": "EHR_STATUS",
@@ -695,8 +648,8 @@ fn change_type(code: &str, value: &str) -> Value {
 
 #[tokio::test]
 async fn contribution_commits_a_composition_atomically() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribution").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -742,8 +695,8 @@ async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combo
     // spec-invalid combinations are rejected: creation on an existing object
     // as 400 (ITS-REST 400_CONTRIBUTION — modification-type mismatch), an
     // out-of-group code as 422 (content validation).
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribamend").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -861,8 +814,8 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
     // a COMPOSITION without a declared template_id must still fail on
     // RM-invariant / RM-terminology violations (here: an invalid category code),
     // and a valid templateless composition must still commit.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("templateless").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -884,8 +837,8 @@ async fn templateless_composition_still_gets_rm_and_terminology_validation() {
 async fn contribution_rejects_an_invalid_composition() {
     // the CONTRIBUTION commit path must run composition validation and
     // reject the whole contribution atomically.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("contribinvalid").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -915,8 +868,8 @@ async fn contribution_rejects_an_invalid_composition() {
 
 #[tokio::test]
 async fn revision_history_lists_every_version() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("revhistory").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -944,8 +897,8 @@ async fn revision_history_lists_every_version() {
 
 #[tokio::test]
 async fn ehr_get_by_subject_finds_the_ehr() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("bysubject").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let status = json!({
         "_type": "EHR_STATUS",
@@ -982,8 +935,8 @@ async fn ehr_get_by_subject_finds_the_ehr() {
 
 #[tokio::test]
 async fn stored_query_crud() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("storedq").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
     svc.query_store(
@@ -1015,8 +968,8 @@ async fn stored_query_semver_prefix_resolves_to_latest_match() {
     // `parameters/path/version.yaml` — a partial `{major}` or
     // `{major}.{minor}` version resolves to the HIGHEST stored version
     // matching the prefix.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("semverq").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Store-time AQL validation is now enforced, so the per-version bodies must
     // be well-formed AQL (the letters `a`/`b`/`c` keep them distinguishable).
@@ -1068,8 +1021,8 @@ async fn stored_query_list_matches_name_prefix() {
     // `definition_query_list.yaml` — the qualified name is a PATTERN:
     // `org.openehr` "will list all versions of all queries with names starting
     // with `org.openehr`"; empty ⇒ wildcard.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("listq").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     for (name, version) in [
         ("org.example::all_comps", "1.0.0"),
@@ -1111,8 +1064,8 @@ async fn stored_query_list_matches_name_prefix() {
 
 #[tokio::test]
 async fn item_tag_crud() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("itemtags").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1161,8 +1114,8 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     // the ITEM_TAG wire shape is the OAS `ItemTag` schema
     // (`additionalProperties: false`): key/value/target_path plus
     // OBJECT_REF-shaped `target` and `owner_id`; no `id`, no `target_type`.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tagshape").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1212,8 +1165,8 @@ async fn item_tag_put_replaces_the_whole_collection() {
     // PUT "updates the list of ALL ITEM_TAG resources … providing an
     // empty list will effectively remove all ITEM_TAG" — a full replace, not an
     // additive upsert.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("tagreplace").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1287,8 +1240,8 @@ async fn ehr_creation_produces_an_ehr_access() {
     // RM ehr § "EHR Creation" — creating an EHR yields a root EHR
     // object, an EHR_STATUS AND an EHR_ACCESS; `EHR.ehr_access` (1..1) is an
     // OBJECT_REF whose type is VERSIONED_EHR_ACCESS (invariant Ehr_access_valid).
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("ehraccess").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
     let ehr = svc.ehr_object(ehr_uuid).await.expect("ehr object");
@@ -1312,8 +1265,8 @@ async fn duplicate_subject_ehr_creation_conflicts() {
     // ITS-REST `409_EHR.yaml` + CNF master06
     // `I_EHR_SERVICE.create_ehr-two_ehrs_same_patient` — a second EHR for the
     // same subject (external_ref id + namespace) must be rejected.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("dupsubject").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let status = |subject: &str| {
         json!({
@@ -1369,8 +1322,8 @@ async fn version_get_at_time_returns_the_original_version() {
     // `versioned_composition_version_get_at_time` return the VERSION extant at
     // the given time (or the latest), as an ORIGINAL_VERSION with the
     // `200_VERSION_at_time` ETag/Location metadata.
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("attime").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
     let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
@@ -1457,8 +1410,8 @@ async fn version_get_at_time_returns_the_original_version() {
 /// endpoint binds only that slot; extra hierarchies come via CONTRIBUTION only.
 #[tokio::test]
 async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("multifolder").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
@@ -1590,8 +1543,8 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
 /// while leaving the directory (rank 1) intact.
 #[tokio::test]
 async fn logical_delete_of_a_secondary_hierarchy_drops_it_from_folders() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("folderdelete").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     // Two hierarchies, both via CONTRIBUTION.
@@ -1669,8 +1622,8 @@ async fn logical_delete_of_a_secondary_hierarchy_drops_it_from_folders() {
 /// only (ITS-REST/SM bind only the directory).
 #[tokio::test]
 async fn directory_endpoint_rejects_a_second_directory_create() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("dirconflict").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
 
     svc.create_directory(ehr_uuid, uv(folder("root"), "249", None))
@@ -1699,8 +1652,8 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
     // §"EHR URIs"): a top-level structure resolves by versioned-object uid
     // (latest trunk assumed) or exact OBJECT_VERSION_ID, and an item path
     // selects interior nodes (master11 §"Item URIs").
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("ehruri").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr");
     let comp_ovid = svc
@@ -1764,8 +1717,8 @@ async fn ehr_uri_resolves_local_structures_and_item_paths() {
 /// ehr/master04 §"EHR Active Status").
 #[tokio::test]
 async fn ehr_status_discrete_mutators() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("statusmut").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
 
@@ -1870,8 +1823,8 @@ async fn ehr_status_discrete_mutators() {
 /// `time_created` (VERSIONED_OBJECT.time_created, RM common change_control).
 #[tokio::test]
 async fn directory_versioned_and_has_version() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("dirversioned").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");
 
@@ -1953,8 +1906,8 @@ async fn directory_versioned_and_has_version() {
 ///   subject/is_queryable sync rides the write's UPDATE).
 #[tokio::test]
 async fn write_responses_match_a_fresh_read() {
-    let pg = Pg::start().await;
-    let svc = EhrbaseService::new(pg.migrated_pool("writeresp").await);
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
 
     // Fix E — built-from-commit EHR body == fresh ehr_summary read.
     let ehr_uuid = svc.create_ehr(None).await.expect("ehr_create");

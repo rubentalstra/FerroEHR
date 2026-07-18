@@ -71,8 +71,8 @@ fn config(max_in_flight: usize) -> AppConfig {
     }
 }
 
-async fn app(name: &str, max_in_flight: usize) -> (common::Pg, Router) {
-    let (pg, service) = common::test_service(name).await;
+async fn app(max_in_flight: usize) -> (testkit::TestDb, Router) {
+    let (pg, service) = common::test_service().await;
     (
         pg,
         ehrbase_rest::build_with(config(max_in_flight), service).expect("router builds"),
@@ -132,7 +132,7 @@ async fn probe_until_shed(app: &Router) -> Response<Body> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn requests_beyond_limit_are_shed_with_503() {
-    let (_pg, app) = app("overload_shed", 2).await;
+    let (_pg, app) = app(2).await;
 
     // Two parked handlers occupy both permits of the composition route. Let them
     // acquire the permits *before* probing: `LoadShed` sheds a request that can't
@@ -170,7 +170,7 @@ async fn requests_beyond_limit_are_shed_with_503() {
 async fn limit_zero_disables_shedding() {
     // With `max_in_flight = 0` no shed layer is installed, so concurrency is
     // unbounded: many concurrent real requests all complete, none is shed.
-    let (_pg, app) = app("overload_nolimit", 0).await;
+    let (_pg, app) = app(0).await;
 
     let mut handles = Vec::new();
     for _ in 0..8 {
@@ -188,7 +188,7 @@ async fn limit_zero_disables_shedding() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn status_endpoint_is_never_shed() {
-    let (_pg, app) = app("overload_status", 1).await;
+    let (_pg, app) = app(1).await;
 
     // Saturate the single permit of the composition route with one parked
     // handler; let it acquire the permit before probing (see the note in

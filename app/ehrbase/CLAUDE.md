@@ -29,7 +29,11 @@ its defining module.**
   `sqlx migrate add --sequential`. Rules: `.claude/rules/sqlx-conventions.md`.
 - **Consume `openehr-*` types directly** — never re-model the RM or
   re-serialize; canonical JSON/XML goes through `openehr-its`.
-- DB tests use testcontainers PG 18 (18.4+); don't leak containers.
+- DB tests take their database from the shared harness — `testkit::db()`
+  (`tools/testkit`; template-clone per test). Never start a per-test PG
+  container or run migrations in a test. Cluster-global objects a test must
+  create (login roles) are named `<clone-db-name>_<suffix>` so the testkit
+  sweep reaps them.
 - Gates: `cargo clippy -p ehrbase --all-targets` +
   `cargo nextest run -p ehrbase` green before commit; full ECC
   (`scripts/conformance.sh`) must show zero drift at phase close.
