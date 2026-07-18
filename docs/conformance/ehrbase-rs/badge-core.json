@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "ECC CORE",
-  "message": "PASS (9/9 capabilities)",
-  "color": "brightgreen"
+  "message": "0/9 capabilities",
+  "color": "red"
 }

@@ -97,6 +97,62 @@ pub async fn contribution_version_refs(
         .collect()
 }
 
+/// One row of the EHR CONTRIBUTION-list extension: the contribution's own audit,
+/// flattened to the fields the list surface reports.
+#[derive(Debug, Clone)]
+pub struct ContributionSummary {
+    pub uid: Uuid,
+    pub time_committed: jiff::Timestamp,
+    /// The committer `PARTY_PROXY`'s `name` (`PARTY_IDENTIFIED` /
+    /// `PARTY_RELATED`); `None` for a `PARTY_SELF` committer, which has no name.
+    pub committer: Option<String>,
+    pub change_type: String,
+}
+
+/// An EHR's CONTRIBUTIONs, newest-first (audit `time_committed`, then id),
+/// flattened to the list-surface fields, paged by `offset`/`limit`. This is the
+/// storage half of the EHR contribution-list extension.
+///
+/// No openEHR spec governs the SQL — our own design; the ITS-REST contract
+/// defines only the by-uid CONTRIBUTION GET, so the paged list is an extension.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn list_contribution_summaries(
+    pool: &PgPool,
+    ehr_id: EhrId,
+    offset: i64,
+    limit: i64,
+) -> Result<Vec<ContributionSummary>, StorageError> {
+    let rows = sqlx::query(
+        "SELECT c.id, a.time_committed, a.change_type, a.committer #>> '{name}' AS committer_name \
+         FROM contribution c JOIN audit a ON a.id = c.audit_id \
+         WHERE c.ehr_id = $1 \
+         -- newest-first: this extension is an activity feed (the sibling SM
+         -- list_contributions stays oldest-first; a deliberate divergence for
+         -- a UI-facing summary — our own extension, no openEHR spec governs it)
+         ORDER BY a.time_committed DESC, c.id DESC \
+         OFFSET $2 LIMIT $3",
+    )
+    .bind(ehr_id)
+    .bind(offset)
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    rows.iter()
+        .map(|row| {
+            Ok(ContributionSummary {
+                uid: row.try_get("id")?,
+                time_committed: row
+                    .try_get::<jiff_sqlx::Timestamp, _>("time_committed")?
+                    .to_jiff(),
+                committer: row.try_get("committer_name")?,
+                change_type: row.try_get("change_type")?,
+            })
+        })
+        .collect()
+}
+
 /// The ids of an EHR's CONTRIBUTIONs, oldest-first (audit `time_committed`,
 /// then id), within the optional inclusive commit-time window, paged. A NULL
 /// bound disables that side; a NULL LIMIT returns all rows.

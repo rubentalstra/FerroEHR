@@ -4,20 +4,24 @@
 //! server action, so it submits and redirects even before WASM loads
 //! (progressive enhancement — the inputs are named exactly `username`,
 //! `password`, `next`, matching the server-fn arguments). The OIDC path is a
-//! plain `<a>` to the BFF's `/auth/oidc/login` axum route, styled as a `thaw`
-//! button. Which paths appear is decided by [`crate::auth::login_modes`]. The
-//! post-login destination is carried through the `next` query parameter.
+//! plain `<a>` to the BFF's `/auth/oidc/login` axum route, styled as the
+//! secondary design-system button. Which paths appear is decided by
+//! [`crate::auth::login_modes`]. The post-login destination is carried through
+//! the `next` query parameter.
 
 use leptos::prelude::*;
 
 use crate::auth::{LoginBasic, login_modes};
+use crate::components::brand::Wordmark;
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
+use crate::components::surface::CARD_PAD;
 
 /// The login screen.
 ///
-/// Renders a `thaw` Card with the Basic credential form and/or the OIDC
-/// button, gated on the CDR's enabled auth modes (read once via a `Resource`
-/// under `<Suspense>`). The action's error value renders in a MessageBar; the
-/// submit button shows the action's pending state.
+/// Renders a centered auth card — the wordmark over the Basic credential form
+/// and/or the OIDC button, gated on the CDR's enabled auth modes (read once via
+/// a `Resource` under `<Suspense>`). The action's error value renders in a
+/// MessageBar; the submit button reflects the action's pending state.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[allow(clippy::too_many_lines)] // action/resource setup plus the Basic + OIDC view — one cohesive component
 #[component]
@@ -62,20 +66,48 @@ pub fn LoginPage() -> impl IntoView {
         }>
             {move || {
                 Suspend::new(async move {
-                    let (basic, oidc) = modes.await.unwrap_or((true, false));
+                    let (basic, oidc, mode_error) = match modes.await {
+                        Ok((basic, oidc)) => (basic, oidc, None),
+                        Err(e) => (true, true, Some(e.to_string())),
+                    };
+                    let mode_warning = match mode_error {
+                        Some(e) => {
+                            // The Err arm renders both paths plus a warning — an
+                            // Err fallback that silently DIFFERS from what the
+                            // server may have rendered is a hydration hazard, so
+                            // the failure is explicit and visible.
+                            view! {
+                                <div
+                                    role="alert"
+                                    class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-xs text-ink"
+                                >
+                                    {format!("Could not read the CDR's login modes: {e}")}
+                                </div>
+                            }
+                                .into_any()
+                        }
+                        None => ().into_any(),
+                    };
                     let basic_form = if basic {
                         basic_login_form(action, pending, next).into_any()
                     } else {
                         ().into_any()
                     };
                     let separator = if basic && oidc {
-                        view! { <thaw::Divider>"or"</thaw::Divider> }.into_any()
+                        view! {
+                            <div class="flex items-center gap-3 text-xs text-ink-faint">
+                                <span class="h-px flex-1 bg-edge"></span>
+                                "or"
+                                <span class="h-px flex-1 bg-edge"></span>
+                            </div>
+                        }
+                            .into_any()
                     } else {
                         ().into_any()
                     };
                     let oidc_button = if oidc {
-                        // A plain anchor to the BFF's axum route, styled as a
-                        // secondary block `thaw` button (an <a> — nesting a
+                        // A plain anchor to the BFF's axum route, styled as the
+                        // secondary design-system button (an <a> — nesting a
                         // <button> inside would be invalid HTML, rules §8).
                         view! {
                             <a
@@ -84,7 +116,7 @@ pub fn LoginPage() -> impl IntoView {
                                 // intercept this same-origin anchor — it is a
                                 // BFF axum route, not a client route.
                                 rel="external"
-                                class="thaw-button thaw-button--secondary thaw-button--medium thaw-button--block"
+                                class=format!("{BTN_SECONDARY} w-full justify-center")
                             >
                                 "Sign in with OIDC"
                             </a>
@@ -93,9 +125,28 @@ pub fn LoginPage() -> impl IntoView {
                     } else {
                         ().into_any()
                     };
+                    let none_available = if basic || oidc {
+                        ().into_any()
+                    } else {
+                        // The intersection of the console's configured modes and
+                        // the CDR's advertised schemes can be empty — say so
+                        // instead of rendering a blank card.
+                        view! {
+                            <div
+                                role="alert"
+                                class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-ink"
+                            >
+                                "No sign-in method is available: the console's configured "
+                                "login modes and the CDR's advertised authentication "
+                                "schemes do not overlap. Align the console auth "
+                                "configuration with the CDR's."
+                            </div>
+                        }
+                            .into_any()
+                    };
                     view! {
                         <div class="flex flex-col gap-4">
-                            {basic_form} {separator} {oidc_button}
+                            {mode_warning} {basic_form} {separator} {oidc_button} {none_available}
                         </div>
                     }
                         .into_any()
@@ -103,19 +154,19 @@ pub fn LoginPage() -> impl IntoView {
             }}
         </Suspense>
     }
-        .into_any();
+    .into_any();
 
     view! {
         <leptos_meta::Title text="Sign in · ehrbase-admin" />
-        <main class="min-h-screen flex items-center justify-center p-4">
-            <div class="w-full max-w-sm">
-                <thaw::Card>
-                    <div class="flex flex-col gap-4 p-2">
-                        <h1 class="text-center text-lg font-semibold">"ehrbase-admin"</h1>
-                        {error_bar}
-                        {forms}
+        <main class="min-h-screen bg-surface flex items-center justify-center p-4">
+            <div class=format!("w-full max-w-sm {CARD_PAD}")>
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-center">
+                        <Wordmark />
                     </div>
-                </thaw::Card>
+                    {error_bar}
+                    {forms}
+                </div>
             </div>
         </main>
     }
@@ -137,10 +188,8 @@ fn basic_login_form(
                 // Plain labels + explicit stable input ids: thaw::Field
                 // hardwires its <label for> to a per-render random UUID,
                 // which breaks SSR↔hydration determinism (leptos-ui.md §8);
-                // an explicit id on thaw::Input wins over the Field context
-                // (thaw field.rs use_id_and_name), so the association stays
-                // correct and deterministic without Field.
-                <label class="text-sm font-medium" r#for="login-username">
+                // an explicit id keeps the association deterministic.
+                <label class=LABEL r#for="login-username">
                     "Username"
                 </label>
                 // Plain UNCONTROLLED inputs: a controlled (signal-driven)
@@ -153,9 +202,9 @@ fn basic_login_form(
                     name="username"
                     placeholder="Username"
                     autocomplete="username"
-                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+                    class=INPUT
                 />
-                <label class="text-sm font-medium" r#for="login-password">
+                <label class=LABEL r#for="login-password">
                     "Password"
                 </label>
                 <input
@@ -164,17 +213,16 @@ fn basic_login_form(
                     type="password"
                     placeholder="Password"
                     autocomplete="current-password"
-                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+                    class=INPUT
                 />
                 <input type="hidden" name="next" value=move || next.get() />
-                <thaw::Button
-                    button_type=thaw::ButtonType::Submit
-                    appearance=thaw::ButtonAppearance::Primary
-                    block=true
-                    loading=pending
+                <button
+                    type="submit"
+                    class=format!("{BTN_PRIMARY} w-full justify-center")
+                    prop:disabled=move || pending.get()
                 >
-                    "Sign in"
-                </thaw::Button>
+                    {move || if pending.get() { "Signing in…" } else { "Sign in" }}
+                </button>
             </div>
         </ActionForm>
     }

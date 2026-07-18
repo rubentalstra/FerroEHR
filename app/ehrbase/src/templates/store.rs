@@ -179,9 +179,17 @@ impl EhrbaseService {
     ///
     /// `template_id`/`created_at` are `NOT NULL` (`0001_baseline.sql`
     /// §`template_store`), so a decode failure there is a genuine server fault:
-    /// surface it (`?` → `500`) rather than silently blanking the field
-    /// (W-14 F-29). `concept`/`root_archetype` are genuinely nullable, so a SQL
+    /// surface it (`?` → `500`) rather than silently blanking the field.
+    /// `concept`/`root_archetype` are genuinely nullable, so a SQL
     /// `NULL` stays `None` while a *decode* error still propagates.
+    ///
+    /// The `version` field is the ITS-REST `TemplateMetadata.version` (optional +
+    /// `deprecated`; `definition-codegen.openapi.yaml`
+    /// §components.schemas.TemplateMetadata). It is **not** stored — it is a pure
+    /// function of `template_id` (its `.vN` axis; `filter_version`: "taken from
+    /// `template_id`"), so it is derived here rather than denormalised into a
+    /// column (see [`crate::templates::identity::template_version`]) and emitted
+    /// only when the id carries a version, matching the schema's optional field.
     ///
     /// # Errors
     ///
@@ -192,12 +200,22 @@ impl EhrbaseService {
             .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
             .to_jiff()
             .to_string();
-        Ok(json!({
-            "template_id": row.try_get::<String, _>("template_id")?,
+        let template_id = row.try_get::<String, _>("template_id")?;
+        let version = crate::templates::identity::template_version(&template_id);
+        let mut descriptor = json!({
+            "template_id": template_id,
             "concept": row.try_get::<Option<String>, _>("concept")?,
             "archetype_id": row.try_get::<Option<String>, _>("root_archetype")?,
             "created_timestamp": created,
-        }))
+        });
+        // `version` is optional (deprecated) — include it only when derivable
+        // from the id, never as an explicit `null`.
+        if let Some(version) = version
+            && let Some(obj) = descriptor.as_object_mut()
+        {
+            obj.insert("version".to_owned(), Value::String(version));
+        }
+        Ok(descriptor)
     }
 }
 

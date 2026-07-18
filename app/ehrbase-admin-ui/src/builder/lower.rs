@@ -78,7 +78,9 @@ pub fn lower(query: &BuilderQuery) -> Result<SelectQuery, BuilderError> {
 
     Ok(SelectQuery {
         select: SelectClause {
-            distinct: false,
+            // A cohort query de-duplicates: several matching compositions in
+            // one EHR must yield that EHR once.
+            distinct: query.shape == QueryShape::Ehrs,
             top: None,
             columns,
         },
@@ -133,6 +135,10 @@ fn select_columns(query: &BuilderQuery) -> Result<Vec<SelectExpr>, BuilderError>
                 path: None,
             }),
             alias: None,
+        }]),
+        QueryShape::Ehrs => Ok(vec![SelectExpr {
+            column: ColumnExpr::Path(parse_path(EHR_VAR, "ehr_id/value")?),
+            alias: Some("ehr_id".to_owned()),
         }]),
         QueryShape::DataValues => {
             if query.columns.is_empty() {
@@ -456,6 +462,20 @@ mod tests {
                  ORDER BY c/context/start_time/value DESC"
             )
         );
+        openehr_query::parser::parse_str(&aql).unwrap();
+    }
+
+    #[test]
+    fn ehrs_shape_selects_distinct_ehr_ids() {
+        let mut q = BuilderQuery::new("vitals.v1".to_owned());
+        q.shape = QueryShape::Ehrs;
+        q.limit = None;
+        let aql = to_aql(&q).unwrap();
+        assert_eq!(
+            aql,
+            "SELECT DISTINCT e/ehr_id/value AS ehr_id FROM EHR e CONTAINS COMPOSITION c WHERE c/archetype_details/template_id/value='vitals.v1'"
+        );
+        // The printed cohort query must survive the real grammar.
         openehr_query::parser::parse_str(&aql).unwrap();
     }
 

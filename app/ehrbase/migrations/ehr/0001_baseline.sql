@@ -188,7 +188,11 @@ CREATE TABLE template_store (
 
 COMMENT ON TABLE template_store IS 'Operational templates (OPT 1.4 XML). Dual identity: uuid id = the SM UUID handle (SM I_DEFINITION_ADL14); template_id = the ITS-REST wire address. Template versioning is not spec-required — replace-in-place.';
 COMMENT ON COLUMN template_store.id IS 'The SM OPT-by-UUID handle (req 5.1.1).';
-COMMENT ON COLUMN template_store.template_id IS 'The wire address (ITS-REST DEFINITION API + vo_version.template_id FK target).';
+-- The ITS-REST TemplateMetadata.version (optional + deprecated) is NOT stored:
+-- it is the `.vN` version axis of template_id (filter_version: "taken from
+-- template_id"), a pure function of the id, so it is derived on read rather than
+-- denormalised into a column (see crate::templates::identity::template_version).
+COMMENT ON COLUMN template_store.template_id IS 'The wire address (ITS-REST DEFINITION API + vo_version.template_id FK target); also the source of the reported TemplateMetadata.version (its `.vN` axis).';
 -- Case-insensitive uniqueness of TEMPLATE_ID (BASE base_types master05
 -- §Composite Identifiers and Case: identifier equality — and thus uniqueness —
 -- is case-insensitive, so a case variant is the SAME template id and the

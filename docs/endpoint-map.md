@@ -215,6 +215,11 @@ chain: handler `…::contribution_get` → `contribution.rs::run` → service `E
 sql: 2 round trips — SELECT contribution⋈audit (EHR-scoped, 404 otherwise); SELECT the version identities the contribution committed (∪ versions its 666 attestations reference). With `Prefer: resolve_refs`: **N+1** — one full version read (2 statements) per referenced version to inline the ORIGINAL_VERSIONs.
 notes: default `versions` are OBJECT_REFs; `resolve_refs` per ITS-REST `Requests_and_responses` §Representation details.
 
+### GET /ehr/{ehr_id}/contribution  (no uid — OUR OWN EXTENSION)
+chain: handler `…::contribution_list` → `contribution.rs::run` → service `EhrbaseService::ehr_contribution_list_page` → storage `version_repo::contribution::{count_contributions (via versioning), list_contribution_summaries}`
+sql: 3 round trips — SELECT the EHR existence probe (`ensure_ehr_exists` → 404); SELECT count(*) FROM contribution c JOIN audit a ON a.id=c.audit_id WHERE c.ehr_id=$1 as `total` (via `versioning::count_contributions`); SELECT c.id, a.time_committed, a.change_type, a.committer#>>'{name}' FROM contribution c JOIN audit a ON a.id=c.audit_id WHERE c.ehr_id=$1 ORDER BY a.time_committed DESC, c.id DESC OFFSET $2 LIMIT $3
+notes: OUR OWN EXTENSION — no openEHR spec governs it (the ITS-REST contract defines only the by-uid CONTRIBUTION GET). Session-authenticated (Clinical RBAC class; ABAC Pre-checked on the target EHR, subject-gated like the sibling EHR reads). Response `{ "rows": [ { uid, time_committed, committer, change_type } ], "total" }` newest-first; `offset` default 0, `fetch` default 20 capped at 100. `committer` = the audit committer PARTY_PROXY's `name` (a summary string; the by-uid GET returns the full party); `change_type` = the stored `audit.change_type` code. JSON only (a DTO with no canonical-XML shape → 406 on an XML-only Accept). Unknown EHR → 404.
+
 ## Item tags (ITS-REST experimental extension; `item_tag` table, spec-silent storage)
 
 ### GET /ehr/{ehr_id}/tags
@@ -800,6 +805,33 @@ notes: 204 always (bodyless per the OAS). The mounted path is the plain `/admin/
 (the generated route's RFC 6570 `{?ehr_id*}` suffix is normalisation-stripped). The bulk
 call exists in the ITS-REST OAS but not the abstract SM interface — a recorded
 spec-internal inconsistency; skip-missing semantics are our own design (spec-silent).
+
+### DELETE /admin/template/{template_id}
+chain: `admin_template_delete` (openapi_routes.rs) → spine: standard api/** dispatch →
+`admin::dispatch::run` → `EhrbaseService::admin_template_delete` → `delete_template_by_id`
+(service/admin/delete.rs)
+sql: 3 round trips in one transaction (+cache eviction outside) —
+  - tx: SELECT template_id FROM template_store WHERE lower(template_id)=lower($1) (case-insensitive resolve; absent → 404, rollback)
+  - tx: SELECT count(*) FROM vo_version WHERE template_id = $1 (FK-reference count; > 0 → 409, rollback)
+  - tx: DELETE FROM template_store WHERE template_id = $1
+  - post-commit: evict the WebTemplate moka cache entry for the canonical key
+notes: OUR OWN EXTENSION — no openEHR spec governs it (the ITS-REST Admin API defines only
+EHR deletes). Admin-gated (`AppConfig::admin.enabled` → 404 when off; RBAC Admin class by the
+`/admin/` path). 204 on success; unknown id → 404; a template still referenced by a committed
+version → 409 naming the count (physical deletes never orphan clinical data — the
+`vo_version.template_id` FK is the hard guard, the count is the friendly message).
+
+### DELETE /admin/query/{qualified_query_name}/{version}
+chain: `admin_query_delete` (openapi_routes.rs) → spine: standard api/** dispatch →
+`admin::dispatch::run` → `EhrbaseService::admin_query_delete` →
+`delete_stored_query_version` (service/definition/query.rs)
+sql: 1 round trip — DELETE FROM stored_query WHERE lower(reverse_domain_name)=lower($1)
+AND lower(semantic_id)=lower($2) AND semver=$3 (case-insensitive name as on the PUT store
+path, exact version; 0 rows → 404)
+notes: OUR OWN EXTENSION — no openEHR spec governs it (the ITS-REST Admin API defines only
+EHR deletes). Admin-gated as above. Deletes exactly one `(name, version)` row (the SM
+`I_DEFINITION_QUERY.delete_query` deletes every version by name; this admin surface is
+single-version). 204 on success; unknown name/version → 404.
 
 ---
 

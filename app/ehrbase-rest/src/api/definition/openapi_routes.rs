@@ -36,6 +36,7 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(definition_template_adl2_get))
         .routes(routes!(definition_template_adl2_example_get))
         .routes(routes!(definition_template_adl2_version_get))
+        .routes(routes!(definition_query_list_all))
         .routes(routes!(definition_query_list, definition_query_store_yaml))
         .routes(routes!(
             definition_query_version_get,
@@ -242,6 +243,26 @@ pub(crate) async fn definition_template_adl2_version_get(
     guarded_dispatch(
         state,
         "definition_template_adl2_version_get",
+        parts,
+        super::dispatch::dispatch,
+    )
+    .await
+}
+
+/// List every stored query (the empty-prefix form of the named list — our
+/// own convenience extension of the OAS route's prefix semantics).
+#[utoipa::path(
+    get, path = "/definition/query", tag = "Query",
+    responses((status = 200, description = "Every stored query.", body = serde_json::Value))
+)]
+pub(crate) async fn definition_query_list_all(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
+        "definition_query_list_all",
         parts,
         super::dispatch::dispatch,
     )

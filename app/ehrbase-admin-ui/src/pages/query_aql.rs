@@ -20,10 +20,15 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
 
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, TEXTAREA};
+use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::surface::CARD_PAD;
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
+use crate::pages::dashboard::split_query_ref;
 use crate::pages::ehrs::{ResultPage, table_skeleton};
-use crate::pages::query_builder::{paging_buttons, results_view};
-use crate::queries_api::{run_aql, store_query, validate_aql};
+use crate::pages::query_builder::{export_forms, paging_buttons, results_view};
+use crate::queries_api::{fetch_stored_query, run_aql, store_query, validate_aql};
 
 /// The raw AQL editor screen.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
@@ -39,6 +44,43 @@ pub fn QueryAqlPage() -> impl IntoView {
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<(String, String)>);
 
+    // The "open in editor" hand-off from /queries: `?load=name@version` fetches
+    // the stored query and seeds the editor. `load` is URL-derived, identical on
+    // the server pass and the client hydration (hydration-safe), so the status
+    // section only renders when the param is actually present.
+    let has_load = query_map.with_untracked(|m| m.get("load").is_some_and(|s| !s.is_empty()));
+    let load_resource: Resource<Result<Option<(String, String)>, AdminUiError>> = Resource::new(
+        move || query_map.with(|m| m.get("load").unwrap_or_default()),
+        |load| async move {
+            match split_query_ref(&load) {
+                Some((name, version)) => {
+                    let text = fetch_stored_query(name.clone(), version).await?;
+                    Ok(Some((name, text)))
+                }
+                None => Ok(None),
+            }
+        },
+    );
+    // Seed the editor from the loaded query exactly once, client-side (Effects
+    // never run on the server, so there is no SSR/hydration divergence), and
+    // only while the editor is still untouched so back-navigation never
+    // clobbers edits. This is the async-load-into-editable-local-state case
+    // (rules §2); the one-shot `StoredValue` guard keeps it from re-firing.
+    // Loading the qualified name into the save field versions it on re-save.
+    let seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if seeded.get_value() {
+            return;
+        }
+        if let Some(Ok(Some((qualified, text)))) = load_resource.get() {
+            if aql.with_untracked(std::string::String::is_empty) {
+                aql.set(text);
+            }
+            save_name.set(qualified);
+            seeded.set_value(true);
+        }
+    });
+
     let validate_action: Action<String, Result<(), AdminUiError>> = Action::new(|aql: &String| {
         let aql = aql.clone();
         async move { validate_aql(aql).await }
@@ -48,6 +90,14 @@ pub fn QueryAqlPage() -> impl IntoView {
             let (name, aql) = input.clone();
             async move { store_query(name, aql).await }
         });
+    // A successful store fires a toast (rules: Effect = sync with the outside
+    // world; no signal is written). The CDR error stays inline (save_feedback).
+    let toaster = thaw::ToasterInjection::expect_context();
+    Effect::new(move |_| {
+        if let Some(Ok(())) = save_action.value().get() {
+            toast_success(toaster, "Query saved", "");
+        }
+    });
     let results: Resource<Result<Option<ResultPage>, AdminUiError>> = Resource::new(
         move || (ran.get(), offset.get()),
         |(ran, off)| async move {
@@ -58,21 +108,64 @@ pub fn QueryAqlPage() -> impl IntoView {
         },
     );
 
+    let load_status = if has_load {
+        load_status_section(load_resource)
+    } else {
+        ().into_any()
+    };
     let editor = editor_section(aql, validate_action);
     let parameters = parameters_section(params);
     let run_save = run_save_section(aql, params, save_name, save_action, ran, offset);
-    let results_pane = results_section(results, offset);
+    // Export tracks the editor + parameter panes — the same signals Run uses.
+    let export_aql = Signal::derive(move || aql.get());
+    let export_params = Signal::derive(move || params.get());
+    let results_pane = results_section(results, offset, export_aql, export_params);
 
     view! {
         <Title text="AQL editor" />
-        <div class="p-4 space-y-4">
-            <h1 class="text-xl font-semibold">"AQL editor"</h1>
+        <div class="p-6 space-y-4">
+            <PageHeader
+                title="Raw AQL"
+                subtitle="Write and run AQL directly, bind parameters, and save it as a stored query."
+                crumbs=vec![Crumb::new("Queries", "/queries")]
+            />
+            {load_status}
             {editor}
             {parameters}
             {run_save}
             {results_pane}
         </div>
     }
+}
+
+/// The `?load=` hand-off status: a house-pattern `<Transition>` reporting the
+/// loaded query (or the CDR error inline). The editor itself is seeded by the
+/// one-shot effect in the page component; this only surfaces load progress.
+fn load_status_section(
+    load_resource: Resource<Result<Option<(String, String)>, AdminUiError>>,
+) -> AnyView {
+    view! {
+        <Transition fallback=move || {
+            view! { <p class="text-sm text-ink-muted">"Loading stored query…"</p> }
+        }>
+            {move || Suspend::new(async move {
+                match load_resource.await {
+                    Ok(Some((qualified, _))) => {
+                        view! {
+                            <p class="text-sm text-ink-muted">
+                                "Loaded stored query "
+                                <span class="font-mono text-ink">{qualified}</span> "."
+                            </p>
+                        }
+                            .into_any()
+                    }
+                    Ok(None) => ().into_any(),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
+        </Transition>
+    }
+    .into_any()
 }
 
 /// The AQL editor: a controlled `<textarea>` plus a BFF-local Validate button
@@ -85,14 +178,14 @@ fn editor_section(
         validate_action.dispatch(aql.get_untracked());
     };
     view! {
-        <thaw::Card>
-            <div class="p-3 space-y-2">
-                <label class="text-sm font-medium" r#for="aql-editor">
+        <section class=CARD_PAD>
+            <div class="space-y-2">
+                <label class=LABEL r#for="aql-editor">
                     "AQL"
                 </label>
                 <textarea
                     id="aql-editor"
-                    class="w-full h-40 rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm font-mono"
+                    class=format!("{TEXTAREA} h-40")
                     placeholder="SELECT c FROM EHR e CONTAINS COMPOSITION c"
                     prop:value=move || aql.get()
                     on:input:target=move |ev| aql.set(ev.target().value())
@@ -100,16 +193,18 @@ fn editor_section(
                     {aql.get_untracked()}
                 </textarea>
                 <div class="flex items-center gap-3">
-                    <thaw::Button
+                    <button
+                        type="button"
+                        class=BTN_SECONDARY
                         disabled=Signal::derive(move || aql.with(std::string::String::is_empty))
-                        on_click=validate_click
+                        on:click=validate_click
                     >
                         "Validate"
-                    </thaw::Button>
+                    </button>
                     {validate_feedback(validate_action)}
                 </div>
             </div>
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
@@ -119,25 +214,18 @@ fn validate_feedback(validate_action: Action<String, Result<(), AdminUiError>>) 
     view! {
         <div class="text-sm">
             <Show when=move || validate_action.pending().get()>
-                <span class="text-neutral-500">"Validating…"</span>
+                <span class="text-ink-muted">"Validating…"</span>
             </Show>
             {move || match validate_action.value().get() {
                 Some(Ok(())) => {
                     view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Success>
-                            <thaw::MessageBarBody>"AQL is valid."</thaw::MessageBarBody>
-                        </thaw::MessageBar>
+                        <span class="rounded-control bg-ok-subtle px-2 py-0.5 text-ok">
+                            "AQL is valid."
+                        </span>
                     }
                         .into_any()
                 }
-                Some(Err(error)) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
+                Some(Err(error)) => crate::components::format_view::inline_error(&error),
                 None => ().into_any(),
             }}
         </div>
@@ -148,14 +236,14 @@ fn validate_feedback(validate_action: Action<String, Result<(), AdminUiError>>) 
 /// The parameter-bindings pane: a JSON object bound as AQL `query_parameters`.
 fn parameters_section(params: RwSignal<String>) -> AnyView {
     view! {
-        <thaw::Card>
-            <div class="p-3 space-y-2">
-                <label class="text-sm font-medium" r#for="aql-params">
+        <section class=CARD_PAD>
+            <div class="space-y-2">
+                <label class=LABEL r#for="aql-params">
                     "Parameters (JSON object)"
                 </label>
                 <textarea
                     id="aql-params"
-                    class="w-full h-24 rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm font-mono"
+                    class=format!("{TEXTAREA} h-24")
                     placeholder="{\"ehr_id\": \"...\"}"
                     prop:value=move || params.get()
                     on:input:target=move |ev| params.set(ev.target().value())
@@ -163,7 +251,7 @@ fn parameters_section(params: RwSignal<String>) -> AnyView {
                     {params.get_untracked()}
                 </textarea>
             </div>
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
@@ -190,65 +278,53 @@ fn run_save_section(
         save_action.dispatch((save_name.get_untracked(), aql.get_untracked()));
     };
     view! {
-        <thaw::Card>
-            <div class="p-3 space-y-3">
+        <section class=CARD_PAD>
+            <div class="space-y-3">
                 <div class="flex flex-wrap items-end gap-3">
-                    <thaw::Button
-                        appearance=thaw::ButtonAppearance::Primary
-                        disabled=empty_aql
-                        on_click=run_click
-                    >
+                    <button type="button" class=BTN_PRIMARY disabled=empty_aql on:click=run_click>
                         "Run"
-                    </thaw::Button>
+                    </button>
                     <div class="flex items-end gap-2">
                         <label class="flex flex-col gap-0.5 text-xs">
-                            <span class="text-neutral-500">"Save as (namespace::name)"</span>
+                            <span class="text-ink-muted">"Save as (namespace::name)"</span>
                             <input
                                 id="aql-save-name"
                                 type="text"
                                 placeholder="org::my_query"
-                                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-56"
+                                class="rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm w-56 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent"
                                 prop:value=move || save_name.get()
                                 on:input:target=move |ev| save_name.set(ev.target().value())
                             />
                         </label>
-                        <thaw::Button disabled=save_disabled on_click=save_click>
+                        <button
+                            type="button"
+                            class=BTN_PRIMARY
+                            disabled=save_disabled
+                            on:click=save_click
+                        >
                             "Save"
-                        </thaw::Button>
+                        </button>
                     </div>
                 </div>
                 {save_feedback(save_action)}
             </div>
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
 
-/// The Save action's inline feedback.
+/// The Save action's inline feedback: a pending hint and the CDR error verbatim.
+/// Success is reported as a toast (dispatched from the page component), so it
+/// renders nothing here.
 fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>) -> AnyView {
     view! {
         <div class="text-sm">
             <Show when=move || save_action.pending().get()>
-                <span class="text-neutral-500">"Saving…"</span>
+                <span class="text-ink-muted">"Saving…"</span>
             </Show>
             {move || match save_action.value().get() {
-                Some(Ok(())) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Success>
-                            <thaw::MessageBarBody>"Query saved."</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                Some(Err(error)) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                None => ().into_any(),
+                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Ok(())) | None => ().into_any(),
             }}
         </div>
     }
@@ -259,6 +335,8 @@ fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>
 fn results_section(
     results: Resource<Result<Option<ResultPage>, AdminUiError>>,
     offset: RwSignal<u32>,
+    current_aql: Signal<String>,
+    params: Signal<String>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
@@ -268,15 +346,18 @@ fn results_section(
                     Ok(Some(page)) => {
                         let controls = paging_buttons(offset, page.rows.len());
                         let body = results_view(&page, false);
+                        let export = export_forms(current_aql, params);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
-                            <thaw::Card>
-                                <thaw::CardHeader>
-                                    <div class="text-sm font-semibold">"Results"</div>
-                                </thaw::CardHeader>
-                                <div class="p-3">{body}{controls}</div>
-                            </thaw::Card>
+                            <section class=CARD_PAD>
+                                <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+                                    <h2 class="text-sm font-semibold text-ink">"Results"</h2>
+                                    {export}
+                                </div>
+                                {body}
+                                {controls}
+                            </section>
                         }
                             .into_any()
                     }

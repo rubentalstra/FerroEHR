@@ -29,6 +29,17 @@ enabled = true
 [auth]
 enabled = true
 
+# Dev-only trust for the shipped dev Keycloak realm (docker/keycloak/import):
+# standard OIDC discovery — the issuer is the canonical KC_HOSTNAME from
+# docker-compose.yml; the CDR resolves the JWKS lazily from the issuer's
+# discovery document (cached, refreshed — key rotation just works, exactly
+# like any real OAuth2 resource server; no static key material). With this
+# the CDR advertises `Basic, Bearer` and an OIDC-logged-in admin console can
+# query it. Do NOT copy into production; configure your real issuer instead.
+[auth.oidc]
+issuer = "http://keycloak:8081/auth/realms/ehrbase"
+algorithms = ["RS256"]
+
 [[auth.basic.users]]
 username = "ehrbase"
 # Argon2id hash of the password "ehrbase".
