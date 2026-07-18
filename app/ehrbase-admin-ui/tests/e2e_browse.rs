@@ -161,7 +161,7 @@ async fn template_upload_lists_and_inspects_path_catalog() {
         .await;
     // The tab bar plus a catalog tree node (a selectable label / RM-type span
     // or a disclosure toggle) — present only once the WebTemplate is built.
-    h.wait_css(".thaw-tab-list").await;
+    h.wait_css("nav[aria-label='Template views']").await;
     h.wait_css("ul.text-sm li button, ul.text-sm li span").await;
     h.shot(3, "template-detail-catalog").await;
 
@@ -185,11 +185,29 @@ async fn query_builder_generates_and_runs_aql() {
     h.goto("/queries/builder").await;
     // The template <select> loads under Suspense; pick our template by clicking
     // its <option> (a native option click both selects it and fires change).
-    h.wait_css(&format!("#qb-template option[value='{TEMPLATE_ID}']"))
-        .await
-        .click()
-        .await
-        .expect("select the uploaded template");
+    // Bounded retry (the login-submit precedent): a click that lands before
+    // hydration mutates the DOM select but no listener fires, so the catalog
+    // never loads — re-click until the selection takes.
+    let mut selected = false;
+    for _ in 0..5 {
+        h.wait_css(&format!("#qb-template option[value='{TEMPLATE_ID}']"))
+            .await
+            .click()
+            .await
+            .expect("select the uploaded template");
+        if h
+            .driver
+            .query(By::Css("ul.text-sm li"))
+            .wait(Duration::from_secs(3), Duration::from_millis(200))
+            .first()
+            .await
+            .is_ok()
+        {
+            selected = true;
+            break;
+        }
+    }
+    assert!(selected, "the template selection never took (pre-hydration clicks exhausted)");
     // The catalog tree loads once a template is chosen.
     h.wait_css("ul.text-sm li").await;
     h.shot(1, "builder-template-picked").await;
@@ -270,9 +288,10 @@ async fn ehr_finder_navigates_and_unknown_ehr_shows_error() {
         .await
         .expect("navigate to the EHR detail");
 
-    // The detail screen renders; the status tab surfaces the CDR 404 inline.
+    // The detail screen renders; the status tab surfaces the CDR 404 inline
+    // (the shared inline_error renders as a [role='alert'] danger box).
     h.wait_url_contains(unknown).await;
-    h.wait_css(".thaw-message-bar").await;
+    h.wait_css("[role='alert']").await;
     h.shot(2, "ehr-unknown-error").await;
 
     // Deliberate negative step: the CDR 404 (and its network log line) is the

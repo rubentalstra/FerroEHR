@@ -45,6 +45,11 @@ impl Harness {
         let mut caps = DesiredCapabilities::chrome();
         caps.add_arg("--headless=new").expect("caps");
         caps.add_arg("--window-size=1440,900").expect("caps");
+        // Image-mode OIDC: the composed console advertises the in-network
+        // issuer host (`keycloak`); the browser resolves it to the host-
+        // mapped port. A no-op in host mode (nothing references the name).
+        caps.add_arg("--host-resolver-rules=MAP keycloak 127.0.0.1")
+            .expect("caps");
         caps.set_logging_prefs("browser", thirtyfour::LoggingPrefsLogLevel::All)
             .expect("logging prefs");
         let driver = WebDriver::new(&webdriver_url, caps)
@@ -63,6 +68,32 @@ impl Harness {
     /// # Panics
     /// On navigation failure (journeys are assertive end-to-end).
     pub async fn goto(&self, path: &str) {
+        // Sweep the console BEFORE leaving the current page: a SEVERE entry
+        // is attributed to the page that produced it, not discovered by the
+        // end-of-journey sweep with no locality (`get_log` drains, so the
+        // final sweep still covers everything after the last navigation).
+        let leaving = self
+            .driver
+            .current_url()
+            .await
+            .map(|u| u.to_string())
+            .unwrap_or_default();
+        let entries = self
+            .driver
+            .get_log("browser")
+            .await
+            .expect("browser log (chromedriver legacy endpoint)");
+        let severe: Vec<String> = entries
+            .into_iter()
+            .filter(|e| e.level == "SEVERE")
+            .map(|e| e.message)
+            .filter(|m| !m.contains("Failed to load resource"))
+            .collect();
+        assert!(
+            severe.is_empty(),
+            "browser console has SEVERE entries on {leaving} (before navigating to {path}):\n{}",
+            severe.join("\n")
+        );
         self.driver
             .goto(format!("{}{path}", self.base))
             .await
@@ -118,6 +149,11 @@ impl Harness {
         let mut caps = DesiredCapabilities::chrome();
         caps.add_arg("--headless=new").expect("caps");
         caps.add_arg("--window-size=1440,900").expect("caps");
+        // Image-mode OIDC: the composed console advertises the in-network
+        // issuer host (`keycloak`); the browser resolves it to the host-
+        // mapped port. A no-op in host mode (nothing references the name).
+        caps.add_arg("--host-resolver-rules=MAP keycloak 127.0.0.1")
+            .expect("caps");
         // Chrome content-settings: 2 = block JavaScript.
         caps.add_experimental_option(
             "prefs",
@@ -223,12 +259,18 @@ impl Harness {
         let severe: Vec<String> = entries
             .into_iter()
             .filter(|e| e.level == "SEVERE")
-            .map(|e| e.message)
+            .map(|e| format!("[ts={}] {}", e.timestamp, e.message))
             .filter(|m| !allowed.iter().any(|a| m.contains(a)))
             .collect();
+        let at = self
+            .driver
+            .current_url()
+            .await
+            .map(|u| u.to_string())
+            .unwrap_or_default();
         assert!(
             severe.is_empty(),
-            "browser console has SEVERE entries:\n{}",
+            "browser console has SEVERE entries (last page: {at}):\n{}",
             severe.join("\n")
         );
     }

@@ -6,3 +6,4 @@
 - [VERSION.signature location](version-signature-location.md) — signature 0..1/optional, canonical_form, server-vs-client signing; RM common master06 + UML version.adoc; SM/ITS-REST/CNF silent
 - [Persistent COMPOSITION uniqueness](persistent-composition-uniqueness.md) — one-persistent-per-template is NOT spec-mandated (SILENT/under-debate); RM ehr master04 + CNF master07 same_opt_twice (tagged future)
 - [FLAT/STRUCTURED format location](flat-structured-format-location.md) — ITS-REST simplified_formats (STABLE) = authoritative wire; SM SIM-B/SDF (DEVELOPMENT) = abstract model+rules; SDT retired; CNF only legacy Robot suite
+- [TemplateMetadata.version location](template-metadata-version-location.md) — ITS-REST definition/template list version field (deprecated, not required); source = template_id suffix OR OPT other_details (CNF master04 L161); ADL1.4 has no formal versioning

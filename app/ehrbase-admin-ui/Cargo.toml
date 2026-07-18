@@ -41,6 +41,13 @@ serde_json.workspace = true
 # the theme to `localStorage`.
 leptos-use = { workspace = true }
 
+# Pure-Rust SVG icons (no JS, both targets): the Lucide pack alone plus the
+# leptos Icon component — the icondata umbrella crate pulls every pack and
+# bloats the WASM binary.
+leptos_icons.workspace = true
+icondata_lu.workspace = true
+icondata_core.workspace = true
+
 # Pure-Rust SVG charts (no JS) for the dashboard commit-activity trend.
 # Isomorphic: it renders a "Loading…" placeholder server-side and draws the
 # chart after the client measures the container. Its own `ssr` feature MUST
@@ -65,6 +72,7 @@ anyhow = { workspace = true, optional = true }
 reqwest = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true, features = ["memory-store"] }
+csv = { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true }
 urlencoding = { workspace = true, optional = true }
 http = { workspace = true, optional = true }
@@ -103,6 +111,7 @@ ssr = [
     "dep:reqwest",
     "dep:config",
     "dep:tower-sessions",
+    "dep:csv",
     "dep:openidconnect",
     "dep:urlencoding",
     "dep:http",

@@ -86,6 +86,37 @@ impl CdrClient {
         Self::finish(self.http.get(url).header(http::header::ACCEPT, accept)).await
     }
 
+    /// The auth schemes the CDR advertises, as `(basic, bearer)`.
+    ///
+    /// An unauthenticated request to a protected endpoint is answered `401`
+    /// with a `WWW-Authenticate` challenge listing exactly the enabled
+    /// mechanisms (RFC 9110 §11.6.1; the ITS-REST overview requires the
+    /// challenge). A non-401 answer means the CDR runs with auth disabled —
+    /// every mechanism the console offers can then "succeed", so both count
+    /// as advertised.
+    ///
+    /// # Errors
+    /// [`AdminUiError::CdrUnreachable`] on transport failure.
+    pub async fn advertised_schemes(&self) -> Result<(bool, bool), AdminUiError> {
+        let url = self.rest_v1("definition/template/adl1.4");
+        let response = self
+            .http
+            .get(&url)
+            .header(http::header::ACCEPT, "application/json")
+            .send()
+            .await
+            .map_err(|e| AdminUiError::CdrUnreachable(e.to_string()))?;
+        if response.status().as_u16() != 401 {
+            return Ok((true, true));
+        }
+        let challenge = response
+            .headers()
+            .get(http::header::WWW_AUTHENTICATE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default();
+        Ok((challenge.contains("Basic"), challenge.contains("Bearer")))
+    }
+
     /// POST `body` to `url` as `credential` with the given `Content-Type` +
     /// `Accept` and extra headers (e.g. `openehr-template-id` on simplified
     /// commits, `Prefer: return=representation`).
@@ -104,6 +135,35 @@ impl CdrClient {
         let mut request = self
             .http
             .post(url)
+            .header(http::header::CONTENT_TYPE, content_type)
+            .header(http::header::ACCEPT, accept)
+            .body(body);
+        for (name, value) in headers {
+            request = request.header(*name, *value);
+        }
+        Self::finish(Self::authorize(request, credential)).await
+    }
+
+    /// PUT `body` to `url` as `credential` with the given `Content-Type` +
+    /// `Accept` and extra headers (e.g. `If-Match` = the preceding
+    /// `version_uid` on a versioned COMPOSITION update, `openehr-template-id`
+    /// on a simplified commit). Mirrors [`Self::post`] for the write paths
+    /// that need conditional/representation headers on a PUT.
+    ///
+    /// # Errors
+    /// [`AdminUiError::CdrUnreachable`] on transport failure.
+    pub async fn put(
+        &self,
+        credential: &Credential,
+        url: &str,
+        content_type: &str,
+        accept: &str,
+        headers: &[(&str, &str)],
+        body: String,
+    ) -> Result<CdrResponse, AdminUiError> {
+        let mut request = self
+            .http
+            .put(url)
             .header(http::header::CONTENT_TYPE, content_type)
             .header(http::header::ACCEPT, accept)
             .body(body);
