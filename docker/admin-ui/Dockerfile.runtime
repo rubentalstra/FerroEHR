@@ -1,0 +1,44 @@
+# syntax=docker/dockerfile:1
+#
+# CI packaging Dockerfile for the admin console — COPY-only, no compilation
+# (containers.yml). The server binary is built natively per architecture on
+# the CI runners (inside rust:*-slim-bookworm → Debian 12 glibc 2.36,
+# matching this distroless base) and lands in the build context as
+# bin/amd64/ehrbase-admin-ui and bin/arm64/ehrbase-admin-ui; the site bundle
+# (WASM + JS glue + CSS) is architecture-independent, built once by
+# cargo-leptos, and lands as site/. No RUN executes, so a multi-arch buildx
+# needs no QEMU and finishes in seconds.
+#
+# For local from-source builds use docker/admin-ui/Dockerfile (the compose
+# default).
+
+FROM gcr.io/distroless/cc-debian12:nonroot
+
+# amd64 | arm64 — supplied by buildx per platform.
+ARG TARGETARCH
+COPY --chmod=0755 bin/${TARGETARCH}/ehrbase-admin-ui /usr/local/bin/ehrbase-admin-ui
+COPY site /site
+
+ENV LEPTOS_SITE_ROOT=/site \
+    LEPTOS_SITE_ADDR=0.0.0.0:3000 \
+    LEPTOS_OUTPUT_NAME=ehrbase-admin-ui
+
+EXPOSE 3000
+
+# Shell-less image: the healthcheck is the binary's own subcommand, which
+# probes its own /login and exits 0 (2xx/3xx) / 1 otherwise.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["/usr/local/bin/ehrbase-admin-ui", "healthcheck"]
+
+ENTRYPOINT ["/usr/local/bin/ehrbase-admin-ui"]
+
+# OCI image labels. CI (docker/metadata-action) overrides source/revision/
+# version/created at build time; these are sensible static defaults.
+ARG VERSION="0.1.0"
+ARG REVISION=""
+LABEL org.opencontainers.image.title="ehrbase-rs-admin-ui" \
+      org.opencontainers.image.description="Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)" \
+      org.opencontainers.image.source="https://github.com/rubentalstra/ehrbase-rs" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}"
