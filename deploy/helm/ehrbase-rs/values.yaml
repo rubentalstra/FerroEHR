@@ -204,9 +204,15 @@ config:
     # off | warn | strict
     verify_on_read: "off"
 
-  # [atna] — IHE ATNA system log. Off by default. transport=tls for PHI.
-  atna:
-    enabled: false
+  # [audit] — the IHE ATNA audit trail. ON by default with only the local
+  # store active (records stay in PostgreSQL, queryable via the ITI-81 FHIR
+  # AuditEvent search); forwarding to an external ARR is opt-in per sink
+  # ([audit.syslog] classic DICOM/syslog, [audit.fhir_feed] RESTful ATNA).
+  audit:
+    enabled: true
+    store:
+      enabled: true
+      retention_days: 0
 
   # [events] — contribution-outbox eventing → AMQP (ADR-014). Off by default.
   # Envelopes are PHI-FREE by design. The broker URL is the secrets.eventsUrl secret.

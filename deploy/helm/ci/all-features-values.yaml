@@ -90,14 +90,22 @@ config:
     mode: pgp
     key_path: /etc/ehrbase/signing.asc
     verify_on_read: strict
-  atna:
+  audit:
     enabled: true
-    repository_host: arr.example.com
-    repository_port: 6514
-    transport: tls
     source_id: ehrbase-prod
     fail_mode: closed
     enterprise_site_id: site-1
+    store:
+      enabled: true
+      retention_days: 90
+    syslog:
+      enabled: true
+      host: arr.example.com
+      port: 6514
+      transport: tls
+    fhir_feed:
+      enabled: true
+      url: https://arr.example.com/fhir
   events:
     enabled: true
     exchange: ehrbase.events
