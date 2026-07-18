@@ -582,7 +582,7 @@ fn contribution_body(body: &str) -> AnyView {
     view! { <DocumentPane body=doc_sig /> }.into_any()
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{LIST_COMPOSITIONS_AQL, versioned_object_id};
 

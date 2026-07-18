@@ -438,7 +438,7 @@ fn trend_chart(pairs: &[(String, u32)]) -> AnyView {
     .into_any()
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::split_query_ref;
     #[cfg(feature = "ssr")]

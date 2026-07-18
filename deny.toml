@@ -21,6 +21,10 @@ ignore = [
   # path uses quick-xml 0.41 (fixed). Re-check on the next object_store release.
   { id = "RUSTSEC-2026-0194", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
   { id = "RUSTSEC-2026-0195", reason = "via object_store 0.14.0 (latest) pinning quick-xml ^0.40; parses operator-configured S3 responses only" },
+  # 2026-07-18: unmaintained-crate advisory only (no vulnerability); a
+  # build-time proc-macro dependency of leptos_macro 0.8 — goes away when
+  # leptos drops it upstream. Re-check at the next leptos bump.
+  { id = "RUSTSEC-2026-0173", reason = "unmaintained advisory; compile-time proc-macro via leptos_macro (admin console), no runtime exposure" },
   # 2026-07-15: `paste` (proc-macro) is archived/unmaintained — pulled in by
   # utoipa-axum 0.2.0 (the LATEST release of the official utoipa axum
   # bindings; no paste-free release exists). Compile-time-only token pasting,

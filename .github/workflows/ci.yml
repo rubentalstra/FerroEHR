@@ -294,7 +294,17 @@ jobs:
           target: wasm32-unknown-unknown
       - uses: taiki-e/install-action@v2
         with:
-          tool: cargo-nextest,cargo-leptos@0.3.7
+          # wasm-bindgen pinned to the workspace's wasm-bindgen version;
+          # cargo-leptos resolves its external tools from PATH before its
+          # own downloader (which failed opaque on a runner), so both it
+          # and Tailwind are preinstalled deterministically.
+          tool: cargo-nextest,cargo-leptos@0.3.7,wasm-bindgen@0.2.126
+      - name: Install the Tailwind v4 standalone binary
+        run: |
+          curl -sSfL -o /usr/local/bin/tailwindcss \
+            https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
+          chmod +x /usr/local/bin/tailwindcss
+          tailwindcss --help | head -1
       - name: Run the E2E journey battery
         run: bash scripts/ui-e2e.sh
       - name: Upload journey screenshots
