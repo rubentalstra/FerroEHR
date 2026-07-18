@@ -191,6 +191,8 @@ if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
   UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
   UI_E2E_BASIC_USER="ehrbase" \
   UI_E2E_BASIC_PASS="ehrbase" \
+  UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
+  UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
   UI_E2E_DOCS_SHOTS=1 \
     cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 -E 'binary(e2e_docs_shots)'
 fi

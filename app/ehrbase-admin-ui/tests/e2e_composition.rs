@@ -86,9 +86,12 @@ async fn composition_viewer_switches_formats_and_versions() {
     wait_pre_contains(&h, "schemas.openehr.org").await;
     h.shot(2, "canonical-xml").await;
 
-    // FLAT: flat path keys (the template id prefixes every key).
+    // FLAT: the ctx/ key vocabulary is unique to the simplified format —
+    // the canonical JSON/XML panes can never match it, so the wait proves
+    // the swap actually happened (the template-id string would match the
+    // canonical JSON still on screen).
     click_format(&h, "FLAT").await;
-    wait_pre_contains(&h, "minimal_evaluation").await;
+    wait_pre_contains(&h, "ctx/language").await;
     h.shot(3, "flat").await;
 
     // Version history: two versions; selecting v1 re-renders the pane.
@@ -110,7 +113,9 @@ async fn composition_viewer_switches_formats_and_versions() {
         .await
         .expect("select version 1");
     click_format(&h, "JSON").await;
-    wait_pre_contains(&h, "\"_type\"").await;
+    // `::1` is version 1's OBJECT_VERSION_ID suffix — absent from both the
+    // FLAT pane still on screen and the version-2 document.
+    wait_pre_contains(&h, "::1\"").await;
     h.shot(4, "version-1-json").await;
 
     h.assert_console_clean(&["401", "Failed to load resource"])
@@ -145,10 +150,22 @@ async fn login_works_with_javascript_disabled() {
         .await
         .expect("submit (plain form POST)");
     h.wait_url_not_contains("/login").await;
-    // The SSR'd authenticated chrome, no WASM involved.
-    h.wait_css("footer").await;
-    h.shot(1, "dashboard-no-js").await;
-    h.finish().await;
+    // The dashboard streams out-of-order, so without JS the authenticated
+    // chrome arrives as inert <template> fragments rather than live DOM
+    // (Leptos book, ssr/23: out-of-order "requires JavaScript to be
+    // enabled"). The auth proof is the redirect plus the server having
+    // rendered the authenticated shell into the response at all — an
+    // unauthenticated request is bounced back to /login instead.
+    for _ in 0..75 {
+        let source = h.driver.source().await.expect("page source");
+        if source.contains("<footer") {
+            h.shot(1, "dashboard-no-js").await;
+            h.finish().await;
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    }
+    panic!("the authenticated shell never appeared in the no-JS response");
 }
 
 /// Poll the first `<pre>` until it contains `needle`.
