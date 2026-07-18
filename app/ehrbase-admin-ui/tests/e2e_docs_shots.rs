@@ -242,12 +242,12 @@ async fn capture_documentation_screenshots() {
             .await
             .expect("open the compositions tab");
         h.wait_css(&format!("a[href*='{vo_id}']")).await;
-        shot_to(&h, &dir, "ehrs/ehr-detail").await;
+        shot_to(&h, &dir, "ehrs/compositions/list").await;
         capture(
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}/compositions/{vo_id}"),
-            "ehrs/composition-viewer",
+            "ehrs/compositions/viewer",
             Some("pre"),
         )
         .await;
@@ -267,7 +267,7 @@ async fn capture_documentation_screenshots() {
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}?tab=status"),
-            "ehrs/ehr-detail-status",
+            "ehrs/status/status",
             Some("pre"),
         )
         .await;
@@ -276,7 +276,7 @@ async fn capture_documentation_screenshots() {
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}?tab=contributions"),
-            "ehrs/ehr-detail-contributions",
+            "ehrs/contributions/contributions",
             Some("table tbody"),
         )
         .await;
@@ -286,10 +286,27 @@ async fn capture_documentation_screenshots() {
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}?tab=directory"),
-            "ehrs/directory-create",
+            "ehrs/directory/create",
             Some("#folder-template"),
         )
         .await;
+        // EHR detail: the POPULATED directory view — create the directory
+        // from a NAMED built-in folder template (the last select option; the
+        // richest tree — an empty root would make a bare screenshot) and
+        // wait for the edit view (owner directive: every possible view,
+        // including directory both before and after it exists).
+        h.wait_css("#folder-template option:last-child")
+            .await
+            .click()
+            .await
+            .expect("pick a folder template");
+        h.wait_css("#directory-create")
+            .await
+            .click()
+            .await
+            .expect("create the directory");
+        h.wait_css("#directory-edit").await;
+        shot_to(&h, &dir, "ehrs/directory/directory").await;
         // EHR detail: the commit-composition form (scrolled into view).
         h.goto(&format!("/ehrs/{ehr_id}?tab=compositions")).await;
         let commit_body = h.wait_css("#commit-body").await;
@@ -297,7 +314,7 @@ async fn capture_documentation_screenshots() {
             .scroll_into_view()
             .await
             .expect("scroll to the commit form");
-        shot_to(&h, &dir, "ehrs/composition-commit").await;
+        shot_to(&h, &dir, "ehrs/compositions/commit").await;
         // Composition viewer: the edit-as-new-version editor open.
         h.goto(&format!("/ehrs/{ehr_id}/compositions/{vo_id}"))
             .await;
@@ -311,7 +328,7 @@ async fn capture_documentation_screenshots() {
             .scroll_into_view()
             .await
             .expect("scroll to the editor");
-        shot_to(&h, &dir, "ehrs/composition-editor").await;
+        shot_to(&h, &dir, "ehrs/compositions/editor").await;
     } else {
         println!("SKIP docs-shots: feature views need the seeded ids");
     }
@@ -403,6 +420,17 @@ async fn capture_documentation_screenshots() {
     let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ehrbase".to_owned());
     login_basic_as(&h, &admin_user, &admin_pass).await;
     capture(&h, &dir, "/audit", "audit/audit", Some("table tbody tr")).await;
+
+    // The raw-record view: open the first row's disclosure and capture the
+    // full stored FHIR AuditEvent as the reader will see it.
+    h.wait_css("tbody tr details summary")
+        .await
+        .click()
+        .await
+        .expect("open the raw record");
+    h.wait_css("tbody tr details pre").await;
+    shot_to(&h, &dir, "audit/audit-record").await;
+
     h.goto("/audit?patient=docs-shots-no-such-patient").await;
     h.wait_css("footer").await;
     h.wait_xpath("//*[contains(text(), 'No audit records match')]")

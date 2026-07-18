@@ -477,7 +477,27 @@ fn CatalogTreeNode(
                 class="w-4 shrink-0 text-ink-muted"
                 on:click=move |_| expanded.update(|open| *open = !*open)
             >
-                {move || if expanded.get() { "▾" } else { "▸" }}
+                {move || {
+                    if expanded.get() {
+                        view! {
+                            <leptos_icons::Icon
+                                icon=icondata_lu::LuChevronDown
+                                width="12"
+                                height="12"
+                            />
+                        }
+                            .into_any()
+                    } else {
+                        view! {
+                            <leptos_icons::Icon
+                                icon=icondata_lu::LuChevronRight
+                                width="12"
+                                height="12"
+                            />
+                        }
+                            .into_any()
+                    }
+                }}
             </button>
         }
         .into_any()
