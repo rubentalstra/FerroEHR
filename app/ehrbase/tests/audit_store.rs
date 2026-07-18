@@ -1,0 +1,200 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    clippy::expect_used,
+    clippy::unwrap_used,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+//! Integration tests for the local IHE ATNA Audit Record Repository
+//! (`ehrbase::system_log::store`) against a real `PostgreSQL` 18
+//! (testcontainers): the `audit` schema migrates cleanly alongside
+//! `ext`/`ehr`, inserted records land with the promoted search columns and
+//! the FHIR R4 `AuditEvent` payload (IHE BALP shape), and the retention
+//! reaper deletes only rows older than the horizon (0 = keep forever).
+//! No openEHR spec governs audit storage — our own design/extension (the
+//! schema-separation rationale is BASE
+//! `architecture_overview/master07-security.adoc` §Access logging).
+
+use jiff::Timestamp;
+use sqlx::{AssertSqlSafe, Connection, PgConnection, PgPool, Row};
+use testcontainers::runners::AsyncRunner;
+use testcontainers::{ContainerAsync, ImageExt};
+use testcontainers_modules::postgres::Postgres;
+use uuid::Uuid;
+
+use ehrbase::db::{self, DbConfig};
+use ehrbase::system_log::event::{
+    AuditEvent, EventActionCode, EventOutcome, EventType, ObjectClass,
+};
+use ehrbase::system_log::fhir;
+use ehrbase::system_log::message::AuditContext;
+use ehrbase::system_log::store::AuditStore;
+
+struct Pg {
+    _container: ContainerAsync<Postgres>,
+    host: String,
+    port: u16,
+}
+
+impl Pg {
+    async fn start() -> Self {
+        let container = Postgres::default()
+            .with_tag("18")
+            .start()
+            .await
+            .expect("start postgres:18 (is Docker running?)");
+        let host = container.get_host().await.expect("host").to_string();
+        let port = container.get_host_port_ipv4(5432).await.expect("port");
+        Self {
+            _container: container,
+            host,
+            port,
+        }
+    }
+
+    async fn migrated_pool(&self, name: &str) -> PgPool {
+        let admin = format!(
+            "postgres://postgres:postgres@{}:{}/postgres",
+            self.host, self.port
+        );
+        let mut conn = PgConnection::connect(&admin).await.expect("admin connect");
+        sqlx::raw_sql(AssertSqlSafe(format!("CREATE DATABASE {name}")))
+            .execute(&mut conn)
+            .await
+            .expect("create db");
+        let settings = DbConfig::new(format!(
+            "postgres://postgres:postgres@{}:{}/{name}",
+            self.host, self.port
+        ));
+        let pool = db::connect(&settings).await.expect("pool");
+        db::run_migrations(&pool).await.expect("migrate");
+        pool
+    }
+}
+
+fn ctx() -> AuditContext {
+    AuditContext {
+        source_id: "ehrbase".to_owned(),
+        enterprise_site_id: "site-1".to_owned(),
+        server_ip: "10.42.23.77".to_owned(),
+        value_if_missing: "UNKNOWN".to_owned(),
+    }
+}
+
+fn read_event(at: Timestamp) -> AuditEvent {
+    let mut e = AuditEvent::new(
+        EventActionCode::Read,
+        ObjectClass::Composition,
+        EventOutcome::Success,
+    );
+    "alice".clone_into(&mut e.user_id);
+    e.client_ip = Some("10.0.0.9".to_owned());
+    e.object_id = Some("8fa1::ehrbase::1".to_owned());
+    e.event_type = Some(EventType::RestOperation("composition_get"));
+    e.token_id = Some("jti-1".to_owned());
+    e.tenant_id = Some(Uuid::nil());
+    e.timestamp = at;
+    e
+}
+
+#[tokio::test]
+async fn insert_persists_promoted_columns_and_fhir_payload() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("audit_store_insert").await;
+    let store = AuditStore::new(pool.clone());
+
+    let event = read_event("2026-07-10T08:30:00Z".parse().unwrap());
+    let rendered = fhir::to_fhir(&event, &ctx(), Some("patient-42"));
+    store
+        .insert(&event, Some("patient-42"), &rendered)
+        .await
+        .expect("insert");
+
+    let row = sqlx::query(
+        "SELECT action, outcome, event_code, operation, principal, patient_id, \
+         resource_class, resource_id, client_ip, token_id, tenant_id, fhir, \
+         delivered_syslog_at, delivered_fhir_feed_at \
+         FROM audit.audit_event",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("one row");
+
+    assert_eq!(row.get::<String, _>("action"), "R");
+    assert_eq!(row.get::<i16, _>("outcome"), 0);
+    assert_eq!(row.get::<String, _>("event_code"), "110110");
+    assert_eq!(
+        row.get::<Option<String>, _>("operation").as_deref(),
+        Some("composition_get")
+    );
+    assert_eq!(
+        row.get::<Option<String>, _>("principal").as_deref(),
+        Some("alice")
+    );
+    assert_eq!(
+        row.get::<Option<String>, _>("patient_id").as_deref(),
+        Some("patient-42")
+    );
+    assert_eq!(row.get::<String, _>("resource_class"), "composition");
+    assert_eq!(
+        row.get::<Option<String>, _>("resource_id").as_deref(),
+        Some("8fa1::ehrbase::1")
+    );
+    assert_eq!(
+        row.get::<Option<String>, _>("client_ip").as_deref(),
+        Some("10.0.0.9")
+    );
+    assert_eq!(
+        row.get::<Option<String>, _>("token_id").as_deref(),
+        Some("jti-1")
+    );
+    assert_eq!(row.get::<Option<Uuid>, _>("tenant_id"), Some(Uuid::nil()));
+    // Both forwarding outbox stamps start pending.
+    assert_eq!(
+        row.get::<Option<jiff_sqlx::Timestamp>, _>("delivered_syslog_at")
+            .map(jiff_sqlx::Timestamp::to_jiff),
+        None
+    );
+
+    // The stored payload is the exact rendered BALP AuditEvent.
+    let stored: serde_json::Value = row.get("fhir");
+    assert_eq!(stored, serde_json::to_value(&rendered).expect("value"));
+    assert_eq!(stored["resourceType"], "AuditEvent");
+    assert_eq!(
+        stored["meta"]["profile"][0],
+        "https://profiles.ihe.net/ITI/BALP/StructureDefinition/IHE.BasicAudit.PatientRead"
+    );
+}
+
+#[tokio::test]
+async fn reap_deletes_only_rows_past_the_horizon() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("audit_store_reap").await;
+    let store = AuditStore::new(pool.clone());
+
+    // One fresh record and one 40 days old.
+    let now = Timestamp::now();
+    let old = now - jiff::SignedDuration::from_hours(40 * 24);
+    for at in [now, old] {
+        let event = read_event(at);
+        let rendered = fhir::to_fhir(&event, &ctx(), None);
+        store.insert(&event, None, &rendered).await.expect("insert");
+    }
+
+    // retention 0 = keep forever.
+    assert_eq!(store.reap(0).await.expect("reap 0"), 0);
+    let count: i64 = sqlx::query_scalar("SELECT count(*) FROM audit.audit_event")
+        .fetch_one(&pool)
+        .await
+        .expect("count");
+    assert_eq!(count, 2);
+
+    // 30-day horizon reaps exactly the old row.
+    assert_eq!(store.reap(30).await.expect("reap 30"), 1);
+    let remaining: i64 = sqlx::query_scalar("SELECT count(*) FROM audit.audit_event")
+        .fetch_one(&pool)
+        .await
+        .expect("count");
+    assert_eq!(remaining, 1);
+}

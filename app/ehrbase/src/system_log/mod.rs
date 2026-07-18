@@ -50,6 +50,7 @@ pub mod event;
 pub mod fhir;
 pub mod message;
 pub mod sender;
+pub mod store;
 
 use crate::system_log::sender::AuditSender;
 pub mod syslog;
@@ -70,6 +71,9 @@ pub enum AuditError {
     /// The syslog transport (UDP/TLS) could not be established.
     #[error("audit transport error: {0}")]
     Transport(String),
+    /// The local Audit Record Repository write/reap failed.
+    #[error("audit store error: {0}")]
+    Store(String),
 }
 
 // quick-xml's `Writer` over an in-memory buffer surfaces write failures as
