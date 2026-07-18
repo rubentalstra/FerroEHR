@@ -24,6 +24,10 @@ hand-duplicated ~6×, and the feature absences listed in part B.
   Layout-critical chrome (shell, nav, topbar, footer, cards) moves to
   static Tailwind classes; thaw stays for interactive widgets only.
 - **Bare "Loading..." text** where a skeleton belongs (dashboard chart).
+- **Raw AQL column indexes (`#0`–`#3`) as table headers** on the EHR
+  detail compositions tab — name the columns (Composition, Name,
+  Template, Time); the audit card on the composition viewer renders
+  narrow/centered instead of full-width.
 
 ## A. The design system (before any screen work)
 
