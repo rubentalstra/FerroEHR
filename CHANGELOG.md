@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-07-18
+
 ### Added
 
 - **`GET {base}/admin/config` — the redacted effective configuration** (an
@@ -871,7 +873,8 @@ but has not yet run in production.
 - Helm chart with security-hardened defaults (non-root, read-only rootfs,
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.1.1...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.1.1...v3.2.0
 [3.1.1]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.3...v3.1.0
 [3.0.3]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.0.2...v3.0.3
