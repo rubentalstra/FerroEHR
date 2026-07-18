@@ -92,6 +92,11 @@ pub struct OidcConfig {
     /// Externally visible base URL of the console (for the redirect URI),
     /// e.g. `http://localhost:3000`.
     pub public_base_url: String,
+    /// Split-horizon DNS override for the issuer host, `host=ip:port`
+    /// (e.g. `keycloak=127.0.0.1:8081`). Lets the console reach an issuer
+    /// whose canonical hostname only resolves inside a container network
+    /// while browsers and tokens keep the canonical URL. Empty = none.
+    pub resolve: String,
     /// Additional scopes requested beyond `openid`.
     pub scopes: Vec<String>,
 }

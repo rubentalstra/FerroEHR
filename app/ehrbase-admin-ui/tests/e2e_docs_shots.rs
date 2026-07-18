@@ -135,7 +135,7 @@ async fn capture_documentation_screenshots() {
         // wait for the seeded composition's link.
         h.goto(&format!("/ehrs/{ehr_id}")).await;
         h.wait_css("footer").await;
-        h.wait_xpath("//button[contains(., 'Compositions')]")
+        h.wait_xpath("//a[contains(., 'Compositions')]")
             .await
             .click()
             .await

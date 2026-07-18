@@ -24,6 +24,11 @@ use leptos_chartistry::{
 use leptos_meta::Title;
 use leptos_router::components::A;
 
+use crate::components::empty_state::EmptyState;
+use crate::components::field::BTN_SECONDARY;
+use crate::components::page_header::PageHeader;
+use crate::components::stat_card::StatCard;
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 use crate::queries_api::QueryGroup;
 
@@ -196,41 +201,48 @@ pub fn DashboardPage() -> impl IntoView {
 
     view! {
         <Title text="Dashboard · ehrbase-admin" />
-        <div class="p-4">
-            <h1 class="text-xl font-semibold mb-6">"Dashboard"</h1>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">{counts} {stored}</div>
-            <h2 class="text-sm font-semibold text-neutral-500 mb-2">"Query groups"</h2>
-            <div class="mb-8">{groups}</div>
-            <h2 class="text-sm font-semibold text-neutral-500 mb-2">"Commit activity"</h2>
-            {trend}
+        <div class="p-6">
+            <PageHeader
+                title="Dashboard"
+                subtitle="Repository overview, query cohorts, and recent commit activity."
+            />
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">{counts} {stored}</div>
+            <section class=format!("{CARD_PAD} mb-6")>
+                <h2 class=CARD_TITLE>"Query groups"</h2>
+                {groups}
+            </section>
+            <section class=CARD_PAD>
+                <h2 class=CARD_TITLE>"Commit activity"</h2>
+                {trend}
+            </section>
         </div>
     }
 }
 
-/// One headline stat tile: a big number over a label.
-fn stat_tile(label: &'static str, value: String) -> AnyView {
-    view! {
-        <thaw::Card>
-            <div class="p-4">
-                <div class="text-3xl font-semibold tabular-nums">{value}</div>
-                <div class="text-sm text-neutral-500 mt-1">{label}</div>
-            </div>
-        </thaw::Card>
+/// One headline stat tile as a design-system [`StatCard`] — an icon, the
+/// tabular-nums value, and a muted label; the whole tile navigates when a
+/// `href` is given.
+fn stat_tile(
+    label: &'static str,
+    value: String,
+    icon: icondata_core::Icon,
+    href: Option<String>,
+) -> AnyView {
+    match href {
+        Some(href) => view! { <StatCard label=label value=value icon=icon href=href /> }.into_any(),
+        None => view! { <StatCard label=label value=value icon=icon /> }.into_any(),
     }
-    .into_any()
 }
 
 /// A single stat-tile skeleton (a card-shaped placeholder).
 fn tile_skeleton() -> AnyView {
     view! {
-        <thaw::Card>
-            <div class="p-4">
-                <thaw::Skeleton>
-                    <thaw::SkeletonItem class="h-8 mb-2" />
-                    <thaw::SkeletonItem class="h-4 w-2/3" />
-                </thaw::Skeleton>
-            </div>
-        </thaw::Card>
+        <div class=CARD_PAD>
+            <thaw::Skeleton>
+                <thaw::SkeletonItem class="h-8 mb-2" />
+                <thaw::SkeletonItem class="h-4 w-2/3" />
+            </thaw::Skeleton>
+        </div>
     }
     .into_any()
 }
@@ -257,9 +269,24 @@ fn counts_section() -> AnyView {
                         // structure identical while errors stay visible.
                         view! {
                             <>
-                                {stat_tile("EHRs", ehrs.to_string())}
-                                {stat_tile("Compositions", compositions.to_string())}
-                                {stat_tile("Templates", templates.to_string())}
+                                {stat_tile(
+                                    "EHRs",
+                                    ehrs.to_string(),
+                                    icondata_lu::LuDatabase,
+                                    Some("/ehrs".to_owned()),
+                                )}
+                                {stat_tile(
+                                    "Compositions",
+                                    compositions.to_string(),
+                                    icondata_lu::LuFileText,
+                                    None,
+                                )}
+                                {stat_tile(
+                                    "Templates",
+                                    templates.to_string(),
+                                    icondata_lu::LuFileCode2,
+                                    Some("/templates".to_owned()),
+                                )}
                             </>
                         }
                             .into_any()
@@ -285,7 +312,12 @@ fn stored_queries_tile() -> AnyView {
                 match resource.await {
                     Ok(rows) => {
                         let count = u32::try_from(rows.len()).unwrap_or(u32::MAX);
-                        stat_tile("Stored queries", count.to_string())
+                        stat_tile(
+                            "Stored queries",
+                            count.to_string(),
+                            icondata_lu::LuSearchCode,
+                            Some("/queries".to_owned()),
+                        )
                     }
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
@@ -318,9 +350,15 @@ fn groups_section() -> AnyView {
 fn groups_tiles(groups: Vec<QueryGroup>) -> AnyView {
     if groups.is_empty() {
         return view! {
-            <p class="text-sm text-neutral-500">
-                "No groups yet — create one from the stored queries screen."
-            </p>
+            <EmptyState
+                icon=icondata_lu::LuSearchCode
+                message="No query groups yet"
+                hint="Group related stored queries to track cohorts at a glance."
+            >
+                <A href="/queries" attr:class=BTN_SECONDARY>
+                    "Go to stored queries"
+                </A>
+            </EmptyState>
         }
         .into_any();
     }
@@ -330,8 +368,8 @@ fn groups_tiles(groups: Vec<QueryGroup>) -> AnyView {
 
 /// One group tile: the group name, its summed member match count (its own
 /// [`group_count`] round trip), and a link to the stored-queries screen. The
-/// `<A>`-wrapped `<thaw::Card>` is a block (non-interactive) descendant, so the
-/// anchor stays valid HTML (rules §8).
+/// whole tile is an `<A>` styled as a design-system card (block content only,
+/// so the anchor stays valid HTML — rules §8).
 fn group_tile(group: QueryGroup) -> AnyView {
     let members = group.members.clone();
     let count = Resource::new(
@@ -343,32 +381,29 @@ fn group_tile(group: QueryGroup) -> AnyView {
     );
     let member_count = group.members.len();
     view! {
-        <A href="/queries" attr:class="block">
-            <thaw::Card>
-                <div class="p-4">
-                    <div class="font-medium truncate">{group.name}</div>
-                    <div class="text-2xl font-semibold tabular-nums mt-1">
-                        <Suspense fallback=|| {
-                            view! { <span class="text-neutral-400">"…"</span> }
-                        }>
-                            {move || Suspend::new(async move {
-                                match count.await {
-                                    Ok(total) => total.to_string().into_any(),
-                                    Err(_) => {
-                                        // Resolve inside the Suspense: an SSR'd ErrorBoundary
-                                        // fallback mismatches at hydration in leptos 0.8.
-                                        view! { <span class="text-sm text-red-600">"error"</span> }
-                                            .into_any()
-                                    }
-                                }
-                            })}
-                        </Suspense>
-                    </div>
-                    <div class="text-xs text-neutral-500 mt-1">
-                        {format!("{member_count} members")}
-                    </div>
-                </div>
-            </thaw::Card>
+        <A
+            href="/queries"
+            attr:class=format!("block {CARD_PAD} transition-colors hover:border-accent")
+        >
+            <div class="font-medium truncate text-ink">{group.name}</div>
+            <div class="text-2xl font-semibold tabular-nums mt-1 text-ink">
+                <Suspense fallback=|| {
+                    view! { <span class="text-ink-faint">"…"</span> }
+                }>
+                    {move || Suspend::new(async move {
+                        match count.await {
+                            Ok(total) => total.to_string().into_any(),
+                            Err(_) => {
+                                // Resolve inside the Suspense: an SSR'd ErrorBoundary
+                                // fallback mismatches at hydration in leptos 0.8.
+                                view! { <span class="text-sm text-danger">"error"</span> }
+                                    .into_any()
+                            }
+                        }
+                    })}
+                </Suspense>
+            </div>
+            <div class="text-xs text-ink-muted mt-1">{format!("{member_count} members")}</div>
         </A>
     }
     .into_any()
@@ -378,24 +413,20 @@ fn group_tile(group: QueryGroup) -> AnyView {
 fn trend_section() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { commit_trend().await });
     view! {
-        <thaw::Card>
-            <div class="p-4">
-                <Suspense fallback=|| {
-                    view! {
-                        <thaw::Skeleton>
-                            <thaw::SkeletonItem class="h-40" />
-                        </thaw::Skeleton>
-                    }
-                }>
-                    {move || Suspend::new(async move {
-                        match resource.await {
-                            Ok(pairs) => trend_chart(&pairs),
-                            Err(e) => crate::components::format_view::inline_error(&e),
-                        }
-                    })}
-                </Suspense>
-            </div>
-        </thaw::Card>
+        <Suspense fallback=|| {
+            view! {
+                <thaw::Skeleton>
+                    <thaw::SkeletonItem class="h-40" />
+                </thaw::Skeleton>
+            }
+        }>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(pairs) => trend_chart(&pairs),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
+        </Suspense>
     }
     .into_any()
 }
@@ -406,7 +437,7 @@ fn trend_section() -> AnyView {
 /// placeholder), so the structure is hydration-stable (rules §8).
 fn trend_chart(pairs: &[(String, u32)]) -> AnyView {
     if pairs.is_empty() {
-        return view! { <p class="text-sm text-neutral-500">"No commit activity to chart yet."</p> }
+        return view! { <p class="text-sm text-ink-muted">"No commit activity to chart yet."</p> }
             .into_any();
     }
     let data: Vec<(f64, f64)> = pairs

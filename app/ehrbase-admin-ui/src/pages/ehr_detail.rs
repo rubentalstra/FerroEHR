@@ -1,12 +1,12 @@
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / directory / compositions /
 //! contributions tabs.
 //!
-//! Four `thaw::TabList` tabs over one EHR. Each tab's data is a `#[server]`
-//! fn co-located here; the resources are created once and their sources are
-//! gated on the active tab, so only the visible tab fetches (rules §6 — never
-//! fetch-in-effect). The tab bodies are always mounted and toggled with
-//! `class:hidden`, keeping the server and client view structure identical
-//! (rules §8 — no `cfg!`-branched structure).
+//! Four URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
+//! `#[server]` fn co-located here; the resources are created once and their
+//! sources are gated on the active tab (a `Memo` over the query map), so only
+//! the visible tab fetches (rules §6 — never fetch-in-effect). The tab bodies
+//! are always mounted and toggled with `class:hidden`, keeping the server and
+//! client view structure identical (rules §8 — no `cfg!`-branched structure).
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound (ITS-REST EHR + Query APIs). User input
@@ -24,8 +24,14 @@ use leptos_meta::Title;
 use leptos_router::components::A;
 use serde_json::Value;
 
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA};
 use crate::components::format_view::DocumentPane;
+use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
+use crate::format::ReprFormat;
 use crate::pages::ehrs::{ResultPage, cell_text, paging_controls, table_skeleton};
 // Server-side helpers, compiled only where the #[server] bodies exist.
 #[cfg(feature = "ssr")]
@@ -118,6 +124,80 @@ pub async fn list_compositions(ehr_id: String, offset: u32) -> Result<ResultPage
     parse_result_set(&response.body, offset)
 }
 
+#[cfg(feature = "ssr")]
+/// The new version uid of a just-committed COMPOSITION: `uid.value` from the
+/// `Prefer: return=representation` body (an `OBJECT_VERSION_ID`). Empty when
+/// the CDR returned no representation body — the UI then shows a generic
+/// success message rather than a uid.
+pub(crate) fn commit_version_uid(body: &str) -> String {
+    serde_json::from_str::<Value>(body)
+        .ok()
+        .and_then(|doc| {
+            doc.get("uid")
+                .and_then(|u| u.get("value"))
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+        })
+        .unwrap_or_default()
+}
+
+/// Commit a new COMPOSITION to the EHR (`POST /ehr/{ehr_id}/composition`). The
+/// `format` picks the `Content-Type` (canonical JSON `application/json`,
+/// canonical XML `application/xml`, FLAT `application/openehr.wt.flat+json`);
+/// a FLAT commit additionally requires the `openehr-template-id` header.
+/// `Accept: application/json` + `Prefer: return=representation` yields a
+/// canonical composition body whose `uid.value` is returned as the new
+/// version uid.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] on an empty body or a FLAT commit without a
+/// template id; CDR transport errors pass through; a non-2xx CDR answer (its
+/// validation diagnostics, which the UI renders verbatim, included)
+/// normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn commit_composition(
+    ehr_id: String,
+    format: ReprFormat,
+    template_id: String,
+    body: String,
+) -> Result<String, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    if body.trim().is_empty() {
+        return Err(AdminUiError::Invalid(
+            "the composition body is empty".to_owned(),
+        ));
+    }
+    let template_id = template_id.trim();
+    let mut headers: Vec<(&str, &str)> = vec![("Prefer", "return=representation")];
+    if matches!(format, ReprFormat::Flat) {
+        if template_id.is_empty() {
+            return Err(AdminUiError::Invalid(
+                "a template id is required to commit a FLAT composition".to_owned(),
+            ));
+        }
+        headers.push(("openehr-template-id", template_id));
+    }
+    let url = state
+        .cdr
+        .rest_v1(&format!("ehr/{}/composition", urlencoding::encode(&ehr_id)));
+    let response = state
+        .cdr
+        .post(
+            &session.credential,
+            &url,
+            format.media_type(),
+            "application/json",
+            &headers,
+            body,
+        )
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    Ok(commit_version_uid(&response.body))
+}
+
 /// Look up a single CONTRIBUTION by uid (ITS-REST exposes only GET-by-id — no
 /// list surface — so the Contributions tab is a lookup box; see
 /// [`contributions_section`]). Returns the raw canonical JSON.
@@ -160,7 +240,14 @@ pub fn EhrDetailPage() -> impl IntoView {
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(0)
     });
-    let selected = RwSignal::new("status".to_owned());
+    // Tab state lives in the URL (`?tab=`, rules §9): shareable and refresh-safe.
+    // A Memo (not an Effect) derives the active tab, defaulting to "status".
+    let selected: Memo<String> = Memo::new(move |_| {
+        query
+            .with(|q| q.get("tab"))
+            .filter(|t| !t.is_empty())
+            .unwrap_or_else(|| "status".to_owned())
+    });
 
     let status = status_section(ehr_id, selected);
     let directory = directory_section(ehr_id, selected);
@@ -173,21 +260,17 @@ pub fn EhrDetailPage() -> impl IntoView {
         format!("EHR {short}…")
     });
 
+    let tabs = tab_bar(ehr_id, selected);
+
     view! {
         <Title text="EHR detail · ehrbase-admin" />
-        <div class="p-4">
-            <div class="flex items-center gap-3 mb-4">
-                <A href="/ehrs" attr:class="text-sm text-blue-600 hover:underline">
-                    "← EHRs"
-                </A>
-                <h1 class="text-xl font-semibold font-mono">{move || heading.get()}</h1>
-            </div>
-            <thaw::TabList selected_value=selected>
-                <thaw::Tab value="status">"Status"</thaw::Tab>
-                <thaw::Tab value="directory">"Directory"</thaw::Tab>
-                <thaw::Tab value="compositions">"Compositions"</thaw::Tab>
-                <thaw::Tab value="contributions">"Contributions"</thaw::Tab>
-            </thaw::TabList>
+        <div class="p-6">
+            <PageHeader
+                title=Signal::derive(move || heading.get())
+                crumbs=vec![Crumb::new("EHRs", "/ehrs")]
+                mono=true
+            />
+            {tabs}
             <div class="mt-4">
                 <div class:hidden=move || selected.get() != "status">{status}</div>
                 <div class:hidden=move || selected.get() != "directory">{directory}</div>
@@ -200,10 +283,39 @@ pub fn EhrDetailPage() -> impl IntoView {
     }
 }
 
+/// The URL-driven tab bar: four pill anchors (`?tab=…`) replacing the thaw
+/// `TabList`. Selected = `bg-accent-subtle text-accent-ink`; idle =
+/// `text-ink-muted hover:bg-sunken`. Plain anchors keep the tabs working
+/// before hydration (the router intercepts them once WASM loads).
+fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
+    let link = move |value: &'static str, label: &'static str| {
+        let href = move || format!("/ehrs/{}?tab={value}", ehr_id.get());
+        let class = move || {
+            if selected.get() == value {
+                "rounded-control px-3 py-1.5 text-sm font-medium bg-accent-subtle text-accent-ink"
+            } else {
+                "rounded-control px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-sunken"
+            }
+        };
+        view! {
+            <a href=href class=class>
+                {label}
+            </a>
+        }
+    };
+    view! {
+        <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
+            {link("status", "Status")} {link("directory", "Directory")}
+            {link("compositions", "Compositions")} {link("contributions", "Contributions")}
+        </div>
+    }
+    .into_any()
+}
+
 /// Status tab: `fetch_ehr_status` → queryable/modifiable badges, the subject,
 /// and the raw JSON in a [`DocumentPane`]. The source is gated on the tab
 /// being active so it fetches only when shown.
-fn status_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView {
+fn status_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let resource = Resource::new(
         move || (selected.get() == "status").then(|| ehr_id.get()),
         |active| async move {
@@ -259,23 +371,24 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
         crate::components::format_view::pretty_body(body, crate::format::ReprFormat::CanonicalJson);
     let doc_sig = RwSignal::new(pretty);
     Ok(view! {
-        <div class="flex flex-col gap-3">
+        <div class=format!("{CARD_PAD} flex flex-col gap-3")>
             <div class="flex flex-wrap gap-2 items-center">
                 {capability_badge("queryable", queryable)}
                 {capability_badge("modifiable", modifiable)}
             </div>
             <div class="text-sm">
-                <span class="font-medium text-neutral-500">"subject: "</span>
-                <span class="font-mono break-all">{subject}</span>
+                <span class="font-medium text-ink-muted">"subject: "</span>
+                <span class="font-mono break-all text-ink">{subject}</span>
             </div>
             {(!queryable)
                 .then(|| {
                     view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Warning>
-                            <thaw::MessageBarBody>
-                                "This EHR is not queryable — AQL over it returns nothing."
-                            </thaw::MessageBarBody>
-                        </thaw::MessageBar>
+                        <div
+                            role="status"
+                            class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
+                        >
+                            "This EHR is not queryable — AQL over it returns nothing."
+                        </div>
                     }
                 })}
             <DocumentPane body=doc_sig />
@@ -284,16 +397,16 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
     .into_any())
 }
 
-/// A green/red capability chip for an `EHR_STATUS` boolean flag.
+/// An ok/danger capability chip for an `EHR_STATUS` boolean flag.
 fn capability_badge(label: &'static str, on: bool) -> AnyView {
     let (mark, class) = if on {
-        ("✓", "text-emerald-600 border-emerald-500")
+        ("✓", "bg-ok-subtle text-ok")
     } else {
-        ("✗", "text-red-600 border-red-500")
+        ("✗", "bg-danger-subtle text-danger")
     };
     view! {
         <span class=format!(
-            "inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium {class}",
+            "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-xs font-medium {class}",
         )>{mark} " " {label}</span>
     }
     .into_any()
@@ -301,7 +414,7 @@ fn capability_badge(label: &'static str, on: bool) -> AnyView {
 
 /// Directory tab: `fetch_directory` → a recursive `FOLDER` tree, or the
 /// "no directory" empty state when the CDR 404s.
-fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView {
+fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let resource = Resource::new(
         move || (selected.get() == "directory").then(|| ehr_id.get()),
         |active| async move {
@@ -323,7 +436,7 @@ fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyV
                                 // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
                                 // mismatches at hydration in leptos 0.8 (E2E console gate).
                                 view! {
-                                    <p class="text-sm text-neutral-500">
+                                    <p class="text-sm text-ink-muted">
                                         "No directory for this EHR."
                                     </p>
                                 }
@@ -348,7 +461,12 @@ fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyV
 fn directory_body(body: &str) -> Result<AnyView, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("directory JSON: {e}")))?;
-    Ok(view! { <ul class="text-sm">{folder_node(&doc)}</ul> }.into_any())
+    Ok(view! {
+        <section class=CARD_PAD>
+            <ul class="text-sm text-ink">{folder_node(&doc)}</ul>
+        </section>
+    }
+    .into_any())
 }
 
 /// One `FOLDER` node: its name, its child folders (recursively), and its
@@ -372,10 +490,8 @@ fn folder_node(folder: &Value) -> AnyView {
         .unwrap_or_default();
     view! {
         <li class="py-0.5">
-            <span class="font-medium">"📁 " {name}</span>
-            <ul class="pl-4 ml-2 border-l border-neutral-200 dark:border-neutral-700">
-                {subfolders} {items}
-            </ul>
+            <span class="font-medium text-ink">"📁 " {name}</span>
+            <ul class="pl-4 ml-2 border-l border-edge">{subfolders} {items}</ul>
         </li>
     }
     .into_any()
@@ -395,7 +511,7 @@ fn item_ref_node(item: &Value) -> AnyView {
         .unwrap_or("OBJECT")
         .to_owned();
     view! {
-        <li class="py-0.5 text-neutral-600 dark:text-neutral-400">
+        <li class="py-0.5 text-ink-muted">
             "• " <span class="uppercase text-xs mr-1">{ref_type}</span>
             <span class="font-mono break-all">{id}</span>
         </li>
@@ -404,23 +520,50 @@ fn item_ref_node(item: &Value) -> AnyView {
 }
 
 /// Compositions tab: `list_compositions` (AQL) → a paged table whose uid
-/// cells link to the composition viewer. Under `<Transition>` so paging keeps
-/// old rows visible.
+/// cells link to the composition viewer (under `<Transition>` so paging keeps
+/// old rows visible), plus a "Commit composition" form below it. A successful
+/// commit bumps the commit action's version — a source of the list resource —
+/// refetching the table (rules §6 — never fetch-in-effect).
 fn compositions_section(
     ehr_id: Signal<String>,
     offset: Signal<u32>,
-    selected: RwSignal<String>,
+    selected: Memo<String>,
 ) -> AnyView {
+    let toaster = thaw::ToasterInjection::expect_context();
+    let commit = Action::new(
+        |(ehr_id, format, template_id, body): &(String, ReprFormat, String, String)| {
+            let ehr_id = ehr_id.clone();
+            let format = *format;
+            let template_id = template_id.clone();
+            let body = body.clone();
+            async move { commit_composition(ehr_id, format, template_id, body).await }
+        },
+    );
+    // Toast the outcome on success (an outside-world side-effect — rules §2);
+    // the failure diagnostic stays inline in the form.
+    Effect::new(move |_| {
+        if let Some(Ok(uid)) = commit.value().get() {
+            let detail = if uid.is_empty() {
+                "The composition was committed.".to_owned()
+            } else {
+                format!("New version {uid}")
+            };
+            toast_success(toaster, "Composition committed", &detail);
+        }
+    });
     let resource = Resource::new(
-        move || (selected.get() == "compositions").then(|| (ehr_id.get(), offset.get())),
+        move || {
+            let version = commit.version().get();
+            (selected.get() == "compositions").then(|| (ehr_id.get(), offset.get(), version))
+        },
         |active| async move {
             match active {
-                Some((id, offset)) => list_compositions(id, offset).await.map(Some),
+                Some((id, offset, _)) => list_compositions(id, offset).await.map(Some),
                 None => Ok(None),
             }
         },
     );
-    view! {
+    let table = view! {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
                 match resource.await {
@@ -431,7 +574,139 @@ fn compositions_section(
             })}
         </Transition>
     }
+    .into_any();
+    let form = commit_form(ehr_id, commit);
+    view! { <div>{table} {form}</div> }.into_any()
+}
+
+/// The "Commit composition" form: a format select, a template-id input shown
+/// only for FLAT (its `openehr-template-id` header is required there — kept in
+/// the DOM and toggled with `class:hidden` so the server and client view
+/// structure stay identical, rules §8), a large body textarea, and a Commit
+/// button dispatching the shared `commit` action.
+fn commit_form(
+    ehr_id: Signal<String>,
+    commit: Action<(String, ReprFormat, String, String), Result<String, AdminUiError>>,
+) -> AnyView {
+    let format = RwSignal::new(ReprFormat::CanonicalJson);
+    let template_id = RwSignal::new(String::new());
+    let body = RwSignal::new(String::new());
+    let is_flat = move || format.get() == ReprFormat::Flat;
+    let on_commit = move |_| {
+        commit.dispatch((ehr_id.get(), format.get(), template_id.get(), body.get()));
+    };
+    view! {
+        <section class=format!("{CARD_PAD} mt-4")>
+            <h2 class=CARD_TITLE>"Commit composition"</h2>
+            <div class="flex flex-col gap-3">
+                <div class="flex flex-wrap items-end gap-3">
+                    <div class="flex flex-col gap-1">
+                        <label class=LABEL r#for="commit-format">
+                            "Format"
+                        </label>
+                        <select
+                            id="commit-format"
+                            class=SELECT
+                            prop:value=move || format_value(format.get())
+                            on:change=move |ev| {
+                                format.set(format_from_value(&event_target_value(&ev)));
+                            }
+                        >
+                            <option value="json">"Canonical JSON"</option>
+                            <option value="xml">"Canonical XML"</option>
+                            <option value="flat">"FLAT"</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1" class:hidden=move || !is_flat()>
+                        <label class=LABEL r#for="commit-template-id">
+                            "Template id"
+                        </label>
+                        <input
+                            id="commit-template-id"
+                            type="text"
+                            class=INPUT
+                            placeholder="template id (required for FLAT)"
+                            prop:value=move || template_id.get()
+                            on:input:target=move |ev| template_id.set(ev.target().value())
+                        />
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="commit-body">
+                        "Composition"
+                    </label>
+                    <textarea
+                        id="commit-body"
+                        class=format!("{TEXTAREA} min-h-[16rem]")
+                        placeholder="paste the composition document (JSON, XML, or FLAT)…"
+                        prop:value=move || body.get()
+                        on:input:target=move |ev| body.set(ev.target().value())
+                    >
+                        {body.get_untracked()}
+                    </textarea>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button
+                        id="commit-submit"
+                        type="button"
+                        class=BTN_PRIMARY
+                        disabled=Signal::derive(move || commit.pending().get())
+                        on:click=on_commit
+                    >
+                        "Commit"
+                    </button>
+                    <Show when=move || commit.pending().get()>
+                        <span class="text-sm text-ink-muted">"Committing…"</span>
+                    </Show>
+                </div>
+                {commit_feedback(commit)}
+            </div>
+        </section>
+    }
     .into_any()
+}
+
+/// The commit action's failure pane: the CDR's validation diagnostics
+/// verbatim in a scrollable WELL (they are long and precious — a `<pre>`, not
+/// a one-line error). Success is a toast (see [`compositions_section`]).
+fn commit_feedback(
+    commit: Action<(String, ReprFormat, String, String), Result<String, AdminUiError>>,
+) -> AnyView {
+    view! {
+        {move || match commit.value().get() {
+            Some(Err(error)) => {
+                view! {
+                    <div class=WELL>
+                        <pre class="overflow-auto max-h-[40vh] whitespace-pre-wrap font-mono text-xs text-danger">
+                            {error.to_string()}
+                        </pre>
+                    </div>
+                }
+                    .into_any()
+            }
+            _ => ().into_any(),
+        }}
+    }
+    .into_any()
+}
+
+/// The `<select>` option value for a committable format.
+fn format_value(format: ReprFormat) -> &'static str {
+    match format {
+        ReprFormat::CanonicalXml => "xml",
+        ReprFormat::Flat => "flat",
+        _ => "json",
+    }
+}
+
+/// The committable format for a `<select>` option value (unknown → canonical
+/// JSON).
+fn format_from_value(value: &str) -> ReprFormat {
+    match value {
+        "xml" => ReprFormat::CanonicalXml,
+        "flat" => ReprFormat::Flat,
+        _ => ReprFormat::CanonicalJson,
+    }
 }
 
 /// Render one page of compositions: a table whose uid cell links to the
@@ -439,16 +714,9 @@ fn compositions_section(
 /// suffix stripped for the link, the full uid kept visible), plus paging.
 fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
     if page.rows.is_empty() {
-        return view! { <p class="text-sm text-neutral-500">"No compositions in this EHR."</p> }
+        return view! { <p class="text-sm text-ink-muted">"No compositions in this EHR."</p> }
             .into_any();
     }
-    let headers = page
-        .columns
-        .iter()
-        .map(|name| {
-            view! { <th class="text-left font-medium text-neutral-500 py-1 pr-4">{name.clone()}</th> }
-        })
-        .collect::<Vec<_>>();
     let rows = page.rows.clone();
     let ehr_id_owned = ehr_id.to_owned();
     let body = view! {
@@ -459,17 +727,11 @@ fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
         >
             {composition_row(&row, &ehr_id_owned)}
         </For>
-    };
+    }
+    .into_any();
     let paging = paging_controls(page.offset, page.rows.len(), &format!("/ehrs/{ehr_id}"));
     view! {
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-                <thead>
-                    <tr class="border-b border-neutral-200 dark:border-neutral-700">{headers}</tr>
-                </thead>
-                <tbody>{body}</tbody>
-            </table>
-        </div>
+        {table_shell(&["Composition", "Name", "Template", "Started"], body)}
         {paging}
     }
     .into_any()
@@ -488,20 +750,19 @@ fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
             if i == 0 {
                 let href = format!("/ehrs/{ehr_id}/compositions/{vo_id}");
                 view! {
-                    <td class="py-1 pr-4 font-mono">
-                        <A href=href attr:class="text-blue-600 hover:underline">
+                    <td class=CELL_MONO>
+                        <A href=href attr:class="text-accent hover:underline">
                             {text}
                         </A>
                     </td>
                 }
                 .into_any()
             } else {
-                view! { <td class="py-1 pr-4">{text}</td> }.into_any()
+                view! { <td class=CELL>{text}</td> }.into_any()
             }
         })
         .collect::<Vec<_>>();
-    view! { <tr class="border-b border-neutral-100 dark:border-neutral-800">{cells}</tr> }
-        .into_any()
+    view! { <tr class=ROW>{cells}</tr> }.into_any()
 }
 
 /// The versioned-object id from an `OBJECT_VERSION_ID` value: everything
@@ -516,7 +777,7 @@ fn versioned_object_id(uid: &str) -> &str {
 /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}` exists), so this is a
 /// lookup box. Submitting a uid drives [`fetch_contribution`] under a
 /// `<Transition>`.
-fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView {
+fn contributions_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let uid_input = RwSignal::new(String::new());
     let submitted = RwSignal::new(String::new());
     let on_click = move |_| submitted.set(uid_input.get().trim().to_owned());
@@ -533,21 +794,26 @@ fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> 
         },
     );
     let lookup = view! {
-        <div class="mb-4 flex items-end gap-2">
-            <div class="flex flex-col gap-1">
-                <label class="text-sm font-medium" r#for="contribution-uid">
-                    "Contribution uid"
-                </label>
-                <thaw::Input
-                    id="contribution-uid"
-                    value=uid_input
-                    placeholder="contribution uid (UUID)"
-                />
+        <section class=format!("{CARD_PAD} mb-4")>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="contribution-uid">
+                        "Contribution uid"
+                    </label>
+                    <input
+                        id="contribution-uid"
+                        type="text"
+                        class=INPUT
+                        placeholder="contribution uid (UUID)"
+                        prop:value=move || uid_input.get()
+                        on:input:target=move |ev| uid_input.set(ev.target().value())
+                    />
+                </div>
+                <button type="button" class=BTN_SECONDARY on:click=on_click>
+                    "Look up"
+                </button>
             </div>
-            <thaw::Button appearance=thaw::ButtonAppearance::Primary on_click=on_click>
-                "Look up"
-            </thaw::Button>
-        </div>
+        </section>
     }
     .into_any();
     let result = view! {
@@ -559,7 +825,7 @@ fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> 
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
-                            <p class="text-sm text-neutral-500">
+                            <p class="text-sm text-ink-muted">
                                 "Enter a contribution uid to look it up."
                             </p>
                         }
@@ -584,7 +850,11 @@ fn contribution_body(body: &str) -> AnyView {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{LIST_COMPOSITIONS_AQL, versioned_object_id};
+    use super::{
+        LIST_COMPOSITIONS_AQL, commit_version_uid, format_from_value, format_value,
+        versioned_object_id,
+    };
+    use crate::format::ReprFormat;
 
     #[test]
     fn fixed_aql_parses() {
@@ -600,5 +870,28 @@ mod tests {
         );
         // A bare versioned-object id (no suffix) is returned unchanged.
         assert_eq!(versioned_object_id("7d44aa01"), "7d44aa01");
+    }
+
+    #[test]
+    fn commit_version_uid_reads_uid_value_or_empty() {
+        let body =
+            r#"{"_type":"COMPOSITION","uid":{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::1"}}"#;
+        assert_eq!(commit_version_uid(body), "7d44::sys::1");
+        // A return=minimal (empty) or non-JSON body yields no uid.
+        assert_eq!(commit_version_uid(""), "");
+        assert_eq!(commit_version_uid("{}"), "");
+    }
+
+    #[test]
+    fn format_value_round_trips() {
+        for format in [
+            ReprFormat::CanonicalJson,
+            ReprFormat::CanonicalXml,
+            ReprFormat::Flat,
+        ] {
+            assert_eq!(format_from_value(format_value(format)), format);
+        }
+        // An unknown value falls back to canonical JSON.
+        assert_eq!(format_from_value("bogus"), ReprFormat::CanonicalJson);
     }
 }
