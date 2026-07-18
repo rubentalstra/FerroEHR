@@ -158,7 +158,7 @@ fn stored_rows_view(
         </For>
     }
     .into_any();
-    table_shell(&["Name", "Version", "Saved"], body)
+    table_shell(&["Name", "Version", "Saved", ""], body)
 }
 
 /// One stored-query row. Clicking it toggles the single-select detail below the
@@ -177,6 +177,16 @@ fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>)
             }
         });
     };
+    // "Open in editor": a link to the raw-editor route, which reads `?load=` to
+    // fetch and seed the query. The click is stopped from bubbling to the row's
+    // toggle handler (so a click here never expands the detail); with no router
+    // delegation reached, the browser does a plain navigation to the fresh page.
+    // `name@version` is percent-encoded as one value.
+    let qualified_ref = format!("{}@{}", row.name, row.version);
+    let load_href = format!(
+        "/queries/aql?load={}",
+        crate::urlq::encode_query_value(&qualified_ref)
+    );
     view! {
         <tr
             class=format!("{ROW} cursor-pointer")
@@ -186,6 +196,11 @@ fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>)
             <td class=CELL_MONO>{row.name}</td>
             <td class=CELL_MONO>{row.version}</td>
             <td class=format!("{CELL} text-xs text-ink-muted")>{row.saved}</td>
+            <td class=format!("{CELL} text-right")>
+                <a href=load_href class=BTN_SECONDARY on:click=|ev| ev.stop_propagation()>
+                    "Open in editor"
+                </a>
+            </td>
         </tr>
     }
 }
@@ -370,7 +385,7 @@ fn member_checkbox(row: &StoredQueryRow, selected: RwSignal<Vec<String>>) -> Any
     };
     view! {
         <label class="flex items-center gap-2 text-sm text-ink">
-            <input type="checkbox" prop:checked=checked on:change=on_change />
+            <input type="checkbox" class="accent-accent" prop:checked=checked on:change=on_change />
             <span class="font-mono">{member}</span>
         </label>
     }

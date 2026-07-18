@@ -127,7 +127,11 @@ pub fn QueryBuilderPage() -> impl IntoView {
     let criteria = criteria_section(ctx);
     let output = output_section(ctx);
     let preview_run = preview_run_section(preview, ran, offset, save_name, save_action);
-    let results_pane = results_section(ctx, results, offset);
+    // Export tracks the live AQL preview (empty while it is a `BuilderError`);
+    // the builder binds no parameters, so its parameter payload is `{}`.
+    let export_aql = Signal::derive(move || preview.with(|r| r.clone().unwrap_or_default()));
+    let export_params = Signal::derive(|| "{}".to_owned());
+    let results_pane = results_section(ctx, results, offset, export_aql, export_params);
 
     view! {
         <Title text="Query builder" />
@@ -834,6 +838,7 @@ fn coded_editor(
                     <label class="flex items-center gap-1 text-sm">
                         <input
                             type="checkbox"
+                            class="accent-accent"
                             prop:checked=move || selected.with(|s| s.contains(&checked_code))
                             on:change:target=move |ev| {
                                 let on = ev.target().checked();
@@ -919,6 +924,7 @@ fn ordinal_editor(
                 <label class="flex items-center gap-1 text-sm">
                     <input
                         type="checkbox"
+                        class="accent-accent"
                         prop:checked=move || selected.with(|s| s.contains(&ord))
                         on:change:target=move |ev| {
                             let on = ev.target().checked();
@@ -968,6 +974,7 @@ fn text_editor(is_contains: bool, text: String, path: Vec<usize>, ctx: BuilderCt
             <label class="flex items-center gap-1 text-sm">
                 <input
                     type="radio"
+                    class="accent-accent"
                     name=name.clone()
                     prop:checked=move || !contains.get()
                     on:change:target=move |_| {
@@ -980,6 +987,7 @@ fn text_editor(is_contains: bool, text: String, path: Vec<usize>, ctx: BuilderCt
             <label class="flex items-center gap-1 text-sm">
                 <input
                     type="radio"
+                    class="accent-accent"
                     name=name
                     prop:checked=move || contains.get()
                     on:change:target=move |_| {
@@ -1061,6 +1069,7 @@ fn boolean_editor(value: bool, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
             <label class="flex items-center gap-1">
                 <input
                     type="radio"
+                    class="accent-accent"
                     name=name.clone()
                     prop:checked=move || val.get()
                     on:change:target=move |_| {
@@ -1080,6 +1089,7 @@ fn boolean_editor(value: bool, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
             <label class="flex items-center gap-1">
                 <input
                     type="radio"
+                    class="accent-accent"
                     name=name
                     prop:checked=move || !val.get()
                     on:change:target=move |_| {
@@ -1137,6 +1147,7 @@ fn shape_radio(ctx: BuilderCtx, current: QueryShape) -> AnyView {
             <label class="flex items-center gap-1 text-sm">
                 <input
                     type="radio"
+                    class="accent-accent"
                     name="qb-shape"
                     prop:checked=checked
                     on:change:target=move |_| {
@@ -1471,6 +1482,8 @@ fn results_section(
     ctx: BuilderCtx,
     results: Resource<Result<Option<ResultPage>, AdminUiError>>,
     offset: RwSignal<u32>,
+    current_aql: Signal<String>,
+    params: Signal<String>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
@@ -1481,11 +1494,15 @@ fn results_section(
                         let is_count = ctx.query.with_untracked(|q| q.shape == QueryShape::Count);
                         let controls = paging_buttons(offset, page.rows.len());
                         let body = results_view(&page, is_count);
+                        let export = export_forms(current_aql, params);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
                             <section class=CARD_PAD>
-                                <h2 class=CARD_TITLE>"Results"</h2>
+                                <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+                                    <h2 class="text-sm font-semibold text-ink">"Results"</h2>
+                                    {export}
+                                </div>
                                 {body}
                                 {controls}
                             </section>
@@ -1496,6 +1513,39 @@ fn results_section(
                 }
             })}
         </Transition>
+    }
+    .into_any()
+}
+
+/// Result-export forms: two plain form-POSTs to the BFF `/export/aql` route so
+/// the download runs without WASM (progressive enhancement — the router does
+/// not intercept native forms). The hidden inputs track the screen's current
+/// query/parameters signals via `prop:value`; the route exports the query's own
+/// `LIMIT` window, or the CDR's default fetch limit. Shared with the raw editor.
+#[allow(clippy::must_use_candidate)] // consumed by the caller's view!
+pub(crate) fn export_forms(current_aql: Signal<String>, params: Signal<String>) -> AnyView {
+    view! {
+        <div class="flex flex-wrap items-center gap-2">
+            <form method="post" action="/export/aql" class="inline">
+                <input type="hidden" name="q" prop:value=move || current_aql.get() />
+                <input type="hidden" name="parameters_json" prop:value=move || params.get() />
+                <input type="hidden" name="format" value="csv" />
+                <button type="submit" class=BTN_SECONDARY>
+                    "Export CSV"
+                </button>
+            </form>
+            <form method="post" action="/export/aql" class="inline">
+                <input type="hidden" name="q" prop:value=move || current_aql.get() />
+                <input type="hidden" name="parameters_json" prop:value=move || params.get() />
+                <input type="hidden" name="format" value="json" />
+                <button type="submit" class=BTN_SECONDARY>
+                    "Export JSON"
+                </button>
+            </form>
+            <span class="text-xs text-ink-muted">
+                "Exports the query's own LIMIT window, or the server default."
+            </span>
+        </div>
     }
     .into_any()
 }

@@ -34,6 +34,8 @@ pub struct TemplateRow {
     pub template_id: String,
     /// The template concept / display name.
     pub concept: String,
+    /// The root archetype id the template constrains.
+    pub archetype_id: String,
     /// The creation timestamp as the CDR reported it (raw string).
     pub created: String,
 }
@@ -82,6 +84,7 @@ fn template_row(item: &serde_json::Value) -> TemplateRow {
     TemplateRow {
         template_id: text("template_id"),
         concept: text("concept"),
+        archetype_id: text("archetype_id"),
         created: text("created_timestamp"),
     }
 }
@@ -297,6 +300,7 @@ fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
     let matches = |row: &TemplateRow, needle: &str| {
         row.template_id.to_lowercase().contains(needle)
             || row.concept.to_lowercase().contains(needle)
+            || row.archetype_id.to_lowercase().contains(needle)
     };
 
     let none_match = move || {
@@ -317,7 +321,7 @@ fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
     .into_any();
 
     view! {
-        {table_shell(&["Template ID", "Concept", "Created"], body)}
+        {table_shell(&["Template ID", "Concept", "Archetype ID", "Created"], body)}
         <Show when=none_match>
             <p class="mt-3 text-sm text-ink-muted">"No templates match the filter."</p>
         </Show>
@@ -340,6 +344,7 @@ fn row_view(row: TemplateRow) -> impl IntoView {
                 </leptos_router::components::A>
             </td>
             <td class=CELL>{row.concept}</td>
+            <td class=CELL_MONO>{row.archetype_id}</td>
             <td class=CELL_MONO>{row.created}</td>
         </tr>
     }

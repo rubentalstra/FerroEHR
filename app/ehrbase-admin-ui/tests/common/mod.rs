@@ -68,6 +68,32 @@ impl Harness {
     /// # Panics
     /// On navigation failure (journeys are assertive end-to-end).
     pub async fn goto(&self, path: &str) {
+        // Sweep the console BEFORE leaving the current page: a SEVERE entry
+        // is attributed to the page that produced it, not discovered by the
+        // end-of-journey sweep with no locality (`get_log` drains, so the
+        // final sweep still covers everything after the last navigation).
+        let leaving = self
+            .driver
+            .current_url()
+            .await
+            .map(|u| u.to_string())
+            .unwrap_or_default();
+        let entries = self
+            .driver
+            .get_log("browser")
+            .await
+            .expect("browser log (chromedriver legacy endpoint)");
+        let severe: Vec<String> = entries
+            .into_iter()
+            .filter(|e| e.level == "SEVERE")
+            .map(|e| e.message)
+            .filter(|m| !m.contains("Failed to load resource"))
+            .collect();
+        assert!(
+            severe.is_empty(),
+            "browser console has SEVERE entries on {leaving} (before navigating to {path}):\n{}",
+            severe.join("\n")
+        );
         self.driver
             .goto(format!("{}{path}", self.base))
             .await
@@ -233,12 +259,18 @@ impl Harness {
         let severe: Vec<String> = entries
             .into_iter()
             .filter(|e| e.level == "SEVERE")
-            .map(|e| e.message)
+            .map(|e| format!("[ts={}] {}", e.timestamp, e.message))
             .filter(|m| !allowed.iter().any(|a| m.contains(a)))
             .collect();
+        let at = self
+            .driver
+            .current_url()
+            .await
+            .map(|u| u.to_string())
+            .unwrap_or_default();
         assert!(
             severe.is_empty(),
-            "browser console has SEVERE entries:\n{}",
+            "browser console has SEVERE entries (last page: {at}):\n{}",
             severe.join("\n")
         );
     }

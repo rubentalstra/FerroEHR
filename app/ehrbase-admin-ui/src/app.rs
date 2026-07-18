@@ -60,7 +60,23 @@ pub fn App() -> impl IntoView {
                         view=crate::pages::login::LoginPage
                         ssr=leptos_router::SsrMode::Async
                     />
-                    <ParentRoute path=path!("") view=crate::pages::shell::AppShell>
+                    // NOTE: every authenticated screen deviates from the
+                    // out-of-order streaming default. Streamed resource
+                    // fragments race WASM init: the E2E console gate caught
+                    // "expected a text node" hydration crashes whenever the
+                    // WASM finished loading after the fragments had swapped
+                    // in (the serialized-resource arrays showed a dozen
+                    // resources still "pending" at hydration). Async waits
+                    // server-side and sends one complete, stable document
+                    // (Leptos book, ssr/23 "Async Rendering"); the mode must
+                    // sit on the PARENT route — a child-route override does
+                    // not take effect under a streaming parent (verified
+                    // live 2026-07-18).
+                    <ParentRoute
+                        path=path!("")
+                        view=crate::pages::shell::AppShell
+                        ssr=leptos_router::SsrMode::Async
+                    >
                         <Route path=path!("") view=crate::pages::dashboard::DashboardPage />
                         <Route
                             path=path!("templates")

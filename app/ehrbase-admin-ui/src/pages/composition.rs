@@ -25,10 +25,11 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
-use crate::components::field::{LABEL, SELECT};
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, SELECT, TEXTAREA};
 use crate::components::format_view::{DocumentPane, FormatSelector};
 use crate::components::page_header::{Crumb, PageHeader};
-use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
+use crate::components::toast::toast_success;
 // Server-side pretty-printing happens in the #[server] body only.
 #[cfg(feature = "ssr")]
 use crate::components::format_view::pretty_body;
@@ -113,6 +114,90 @@ pub async fn fetch_composition(
 }
 
 #[cfg(feature = "ssr")]
+/// The new version uid of a just-updated COMPOSITION: `uid.value` from the
+/// `Prefer: return=representation` body (the new `OBJECT_VERSION_ID`). Empty
+/// when the CDR returned no representation body.
+pub(crate) fn new_version_uid(body: &str) -> String {
+    serde_json::from_str::<Value>(body)
+        .ok()
+        .and_then(|doc| {
+            doc.get("uid")
+                .and_then(|u| u.get("value"))
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+        })
+        .unwrap_or_default()
+}
+
+/// Commit a new version of a COMPOSITION
+/// (`PUT /ehr/{ehr_id}/composition/{versioned_object_uid}`). `If-Match` carries
+/// the CURRENT (latest) `version_uid` — the `preceding_version_uid` — so the
+/// update is conditional (ITS-REST COMPOSITION API `composition_update`; the
+/// header value is the `version_uid` enclosed in double quotes). Canonical
+/// JSON body; `Prefer: return=representation` yields the new `uid.value`.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] on an empty body, a missing current version, or a
+/// `412` mid-air collision (prefixed with a reload hint, the CDR diagnostic
+/// appended); CDR transport errors pass through; any other non-2xx CDR answer
+/// (its validation diagnostics included) normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn update_composition(
+    ehr_id: String,
+    versioned_object_uid: String,
+    current_version_uid: String,
+    body: String,
+) -> Result<String, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    if body.trim().is_empty() {
+        return Err(AdminUiError::Invalid(
+            "the composition body is empty".to_owned(),
+        ));
+    }
+    let current_version_uid = current_version_uid.trim();
+    if current_version_uid.is_empty() {
+        return Err(AdminUiError::Invalid(
+            "no current version is known — reload the page and retry".to_owned(),
+        ));
+    }
+    // If-Match value is the version_uid in double quotes (composition_update).
+    let if_match = format!("\"{current_version_uid}\"");
+    let url = state.cdr.rest_v1(&format!(
+        "ehr/{}/composition/{}",
+        urlencoding::encode(&ehr_id),
+        urlencoding::encode(&versioned_object_uid)
+    ));
+    let response = state
+        .cdr
+        .put(
+            &session.credential,
+            &url,
+            "application/json",
+            "application/json",
+            &[("Prefer", "return=representation"), ("If-Match", &if_match)],
+            body,
+        )
+        .await?;
+    // 412 Precondition Failed = a mid-air collision (the latest version moved
+    // since this page loaded); give it a friendly prefix, the CDR diagnostic
+    // appended verbatim.
+    if response.status == 412 {
+        let detail = crate::cdr::CdrClient::expect_success(response)
+            .err()
+            .map(|e| e.to_string())
+            .unwrap_or_default();
+        return Err(AdminUiError::Invalid(format!(
+            "the composition changed since this page loaded — reload and retry. {detail}"
+        )));
+    }
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    Ok(new_version_uid(&response.body))
+}
+
+#[cfg(feature = "ssr")]
 /// Parse a `REVISION_HISTORY` body (either the canonical `{ "items": [...] }`
 /// wrapper or a bare array) into version entries. Defensive throughout — a
 /// missing field reads as empty rather than failing.
@@ -181,23 +266,75 @@ pub fn CompositionPage() -> impl IntoView {
     // value is a specific OBJECT_VERSION_ID.
     let selected_version = RwSignal::new(String::new());
 
+    // The "Edit as new version" affordance state and its commit action.
+    // Created before the resources so its `version()` can trigger their
+    // refetch after a successful commit (rules §6 — never fetch-in-effect).
+    let edit_open = RwSignal::new(false);
+    let editor_body = RwSignal::new(String::new());
+    let update = Action::new(
+        |(ehr_id, versioned_object_uid, current_version_uid, body): &(
+            String,
+            String,
+            String,
+            String,
+        )| {
+            let ehr_id = ehr_id.clone();
+            let versioned_object_uid = versioned_object_uid.clone();
+            let current_version_uid = current_version_uid.clone();
+            let body = body.clone();
+            async move {
+                update_composition(ehr_id, versioned_object_uid, current_version_uid, body).await
+            }
+        },
+    );
+
     let versions = Resource::new(
-        move || (ehr_id.get(), uid.get()),
-        |(ehr_id, uid)| async move { fetch_versions(ehr_id, uid).await },
+        move || (ehr_id.get(), uid.get(), update.version().get()),
+        |(ehr_id, uid, _)| async move { fetch_versions(ehr_id, uid).await },
     );
     let document = Resource::new(
         move || {
             let chosen = selected_version.get();
             let version_uid = if chosen.is_empty() { uid.get() } else { chosen };
-            (ehr_id.get(), version_uid, format.get())
+            (
+                ehr_id.get(),
+                version_uid,
+                format.get(),
+                update.version().get(),
+            )
         },
-        |(ehr_id, version_uid, format)| async move {
+        |(ehr_id, version_uid, format, _)| async move {
             fetch_composition(ehr_id, version_uid, format).await
         },
     );
 
+    // Toast the new version uid on success (an outside-world side-effect —
+    // rules §2); the resources refetch via `update.version()` in their
+    // sources above, and the failure diagnostic stays inline in the editor.
+    let toaster = thaw::ToasterInjection::expect_context();
+    Effect::new(move |_| {
+        if let Some(Ok(uid)) = update.value().get() {
+            let detail = if uid.is_empty() {
+                "A new version was committed.".to_owned()
+            } else {
+                format!("New version {uid}")
+            };
+            toast_success(toaster, "New version committed", &detail);
+        }
+    });
+
     let toolbar = toolbar_section(format, versions, selected_version);
     let body = document_section(document);
+    let edit = edit_section(
+        ehr_id,
+        uid,
+        format,
+        versions,
+        document,
+        edit_open,
+        editor_body,
+        update,
+    );
     let audit = audit_section(versions, selected_version);
 
     let title = Signal::derive(move || {
@@ -220,9 +357,112 @@ pub fn CompositionPage() -> impl IntoView {
             <PageHeader title=Signal::derive(move || title.get()) crumbs=crumbs mono=true />
             {toolbar}
             {body}
+            {edit}
             {audit}
         </div>
     }
+}
+
+/// The "Edit as new version" affordance: a toggle button opening a
+/// prefilled-from-the-current-document editor that PUTs a new version. Editing
+/// is offered only when the current format is canonical JSON (the other
+/// formats show a switch hint). The `If-Match` always targets the NEWEST
+/// version (a muted hint says so), never the version selected in the dropdown —
+/// the update `commits on top of the latest version`. Structure is constant
+/// (visibility toggled with `class:hidden`) so server and client views match
+/// (rules §8).
+#[allow(clippy::too_many_arguments)] // the section wires several page-level signals + two resources
+fn edit_section(
+    ehr_id: Signal<String>,
+    uid: Signal<String>,
+    format: RwSignal<ReprFormat>,
+    versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
+    document: Resource<Result<String, AdminUiError>>,
+    edit_open: RwSignal<bool>,
+    editor_body: RwSignal<String>,
+    update: Action<(String, String, String, String), Result<String, AdminUiError>>,
+) -> AnyView {
+    let is_json = move || format.get() == ReprFormat::CanonicalJson;
+    // Opening the editor prefills the textarea from the currently displayed
+    // document (canonical JSON only). Reading a resource in an event handler
+    // is untracked — it takes the value already loaded for the pane.
+    let toggle = move |_| {
+        let opening = !edit_open.get();
+        if opening
+            && format.get() == ReprFormat::CanonicalJson
+            && let Some(Ok(current)) = document.get()
+        {
+            editor_body.set(current);
+        }
+        edit_open.set(opening);
+    };
+    let on_commit = move |_| {
+        // If-Match the NEWEST version (entries are newest-first), regardless of
+        // which version the dropdown shows.
+        let current = versions
+            .get()
+            .and_then(Result::ok)
+            .and_then(|entries| entries.first().map(|entry| entry.version_id.clone()))
+            .unwrap_or_default();
+        update.dispatch((ehr_id.get(), uid.get(), current, editor_body.get()));
+    };
+    view! {
+        <div class="mt-3">
+            <button id="edit-new-version" type="button" class=BTN_SECONDARY on:click=toggle>
+                {move || if edit_open.get() { "Close editor" } else { "Edit as new version" }}
+            </button>
+            <div class:hidden=move || !edit_open.get()>
+                <section class=format!("{CARD_PAD} mt-3")>
+                    <h2 class=CARD_TITLE>"Commit new version"</h2>
+                    <p class="mb-2 text-xs text-ink-muted">
+                        "Commits on top of the latest version."
+                    </p>
+                    <div class:hidden=move || is_json()>
+                        <p class="text-sm text-ink-muted">"Switch to canonical JSON to edit."</p>
+                    </div>
+                    <div class:hidden=move || !is_json() class="flex flex-col gap-3">
+                        <textarea
+                            id="edit-body"
+                            class=format!("{TEXTAREA} min-h-[16rem]")
+                            placeholder="edit the composition document…"
+                            prop:value=move || editor_body.get()
+                            on:input:target=move |ev| editor_body.set(ev.target().value())
+                        >
+                            {editor_body.get_untracked()}
+                        </textarea>
+                        <div class="flex items-center gap-3">
+                            <button
+                                id="edit-commit"
+                                type="button"
+                                class=BTN_PRIMARY
+                                disabled=Signal::derive(move || update.pending().get())
+                                on:click=on_commit
+                            >
+                                "Commit new version"
+                            </button>
+                            <Show when=move || update.pending().get()>
+                                <span class="text-sm text-ink-muted">"Committing…"</span>
+                            </Show>
+                        </div>
+                        {move || match update.value().get() {
+                            Some(Err(error)) => {
+                                view! {
+                                    <div class=WELL>
+                                        <pre class="overflow-auto max-h-[40vh] whitespace-pre-wrap font-mono text-xs text-danger">
+                                            {error.to_string()}
+                                        </pre>
+                                    </div>
+                                }
+                                    .into_any()
+                            }
+                            _ => ().into_any(),
+                        }}
+                    </div>
+                </section>
+            </div>
+        </div>
+    }
+    .into_any()
 }
 
 /// The toolbar: the shared [`FormatSelector`] plus the version `<select>`
@@ -417,7 +657,7 @@ fn short_version(version_id: &str) -> String {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{parse_versions, short_version};
+    use super::{new_version_uid, parse_versions, short_version};
 
     #[test]
     fn parses_revision_history_wrapper_and_bare_array() {
@@ -450,5 +690,15 @@ mod tests {
     fn short_version_takes_the_trailing_segment() {
         assert_eq!(short_version("7d44::example.org::3"), "v3");
         assert_eq!(short_version("no-version"), "no-version");
+    }
+
+    #[test]
+    fn new_version_uid_reads_uid_value_or_empty() {
+        let body =
+            r#"{"_type":"COMPOSITION","uid":{"_type":"OBJECT_VERSION_ID","value":"7d44::sys::2"}}"#;
+        assert_eq!(new_version_uid(body), "7d44::sys::2");
+        // A return=minimal (empty) or non-JSON body yields no uid.
+        assert_eq!(new_version_uid(""), "");
+        assert_eq!(new_version_uid("{}"), "");
     }
 }

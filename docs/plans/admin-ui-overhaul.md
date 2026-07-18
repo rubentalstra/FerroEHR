@@ -98,15 +98,40 @@ this stream) — designed, promised, and never built.
 | 17 | **Syntax-highlighted document viewer + copy** (design §7A.9) | Pure-Rust token-class highlighting for JSON/XML in the shared viewer; copy button (`leptos-use` clipboard). No JS highlighter. |
 | 18 | **Session scopes / launch-context panel** (design §7.4/§7A.0) | The user-menu drawer shows the session's scope claims + any ehrId/patient launch context — "what can I do right now". |
 | 19 | **Scope previewer** (design §7.4/§7A.10, feature-gated) | master08 scope-grammar preview; requires lifting the grammar out of `ehrbase-rest` into a shared spec crate or a CDR debug endpoint — resolve the design point first; ships behind a gate. |
-| 20 | **Activity log view** (design §7.1/§7A.10) | The CDR's ATNA system log is emit-only today — needs a small CDR-side read surface (admin API, our own extension; no openEHR spec governs it) before the tile can render events; "endpoint absent" stays a first-class rendered state. |
+| 20 | **Activity log view** (design §7.1/§7A.10) | Blocked on the ATNA full rewrite (see B3 #22 / `docs/plans/atna-audit-redesign.md`): the redesigned CDR gains a local Audit Record Repository + the IHE ITI-81 FHIR `AuditEvent` search (`GET /fhir/r4/AuditEvent`), which this view will consume; "endpoint absent" stays a first-class rendered state until it lands. |
 | 21 | **i18n layer** (design §7A conventions) | Keys-not-literals with a single `en` catalog at v1 — groundwork, not translations. |
+
+### B2b. Template metadata completeness (owner directive 2026-07-18)
+
+- **List screen**: show every field the wire carries — Template ID,
+  Concept, **Archetype ID** (returned today, not rendered), **Version**
+  (the vendored ITS-REST `TemplateMetadata` schema defines it; our CDR
+  list response omits it — a CDR-side conformance gap to fix), Created.
+- **Detail screen**: a metadata card with Template ID, Concept, **UID**
+  (from the OPT), **default language + languages** and version (from the
+  WebTemplate — its spec schema carries `defaultLanguage`/`languages`/
+  `version`), Archetype ID.
+
+### B2c. Full-stack OIDC in the E2E stack (found by the login-mode
+intersection, 2026-07-18)
+
+The compose CDR was Basic-only, so the OIDC journey proved only the
+console's code flow — a Bearer session could never actually query the
+CDR. Fix (owner correction 2026-07-18: standard OIDC discovery, never
+static key material): pin the canonical issuer (`KC_HOSTNAME`), enable
+`[auth.oidc]` trust in `docker/ehrbase.dev.toml` (dev-only, beside the
+dev Basic users) — the CDR resolves the JWKS lazily from the issuer's
+discovery document (cached; key rotation just works) — and give the
+console an optional split-horizon `resolve` override so the host-mode
+harness reaches the canonical issuer host. The CDR then advertises `Basic, Bearer`, the
+console shows both modes, and the OIDC journey exercises the full chain.
 
 ### B3. Cabolabs-parity sweep (owner directive 2026-07-18 — every §Appendix-A
 "Adopt" feature lands or carries a written adjudication)
 
 | # | Feature (Appendix A source) | Status |
 |---|---|--------|
-| 22 | **Audit/activity log over REST** (A.4 "Full audit / activity log") | The CDR gains an **admin-only read endpoint** for the ATNA system log (task UI-2e: an optional DB sink for audit events + `GET /admin/system_log` with paging/filtering, admin-authenticated; our own extension — no openEHR spec governs the read surface). **Design constraints (owner 2026-07-18):** it realizes the read side of the SM System Log component (`I_SYSTEM_LOG` is an empty stub; SM master02 names it "IHE ATNA-compliant") under the `system_log` name; the payload is the **standard DICOM PS3.15 audit-message model we already emit** — never bespoke JSON — so a future openEHR-specified surface migrates at the route/DTO skin only; house REST style identical to the existing `/admin` group (utoipa path, typed errors → openEHR error body, standard paging, admin auth, endpoint-map row, book page, same-PR changelog). |
+| 22 | **Audit/activity log over REST** (A.4 "Full audit / activity log") | **Parked for this stream — a FULL ATNA REWRITE is in progress in a separate session (owner 2026-07-18): `docs/plans/atna-audit-redesign.md`, worklist row ATNA.** The rewrite (researched against IHE ITI TF-1 §9 / ITI-20 / the RESTful ATNA supplement / BALP) keeps the spec-mandated DICOM PS3.15 syslog feed, adds FHIR R4 `AuditEvent` per BALP, an optional local PG Audit Record Repository, and the **official IHE read surface — ITI-81 FHIR search (`GET /fhir/r4/AuditEvent`)** — which supersedes the provisional `GET /admin/system_log` sketch previously recorded here (a standards-defined surface beats an admin-bespoke one; same "standard model, never bespoke JSON" intent, now with the IHE-specified route and query grammar). The UI-2 stream must not touch `system_log`; the console's audit-log browser screen is phase E of that plan and rides the kit once ITI-81 lands. |
 | 23 | **Directory editing + folder templates** (A.1 "Directory / folders + folder templates") | Console gains directory create/edit (PUT /ehr/{id}/directory — spec-standard) and console-local folder templates (named FOLDER-tree shapes applied on create; our own extension). |
 | 24 | **Usage statistics** (A.4 "Dashboard + usage stats") | Per-template composition counts + repo totals on the dashboard/system panel; CDR-side stats endpoint if the AQL route is too slow (measure first). |
 | 25 | **Runtime configuration view** (A.4 "Runtime configuration") | Read-only, redacted effective-config panel; needs a CDR admin config endpoint (our own extension, secrets never serialized). |
