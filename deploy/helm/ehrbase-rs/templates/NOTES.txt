@@ -71,5 +71,5 @@ Optional integrations currently ON:
   FHIR inbound:     {{ .Values.config.fhir.api_enabled }}
   FHIR outbound:    {{ .Values.config.fhir.outbound.enabled }} (PHI)
   S3 multimedia:    {{ .Values.config.multimedia.enabled }}
-  ATNA audit:       {{ .Values.config.atna.enabled }}
+  ATNA audit:       {{ .Values.config.audit.enabled }}
   ext terminology:  {{ .Values.config.terminology.external.enabled }}

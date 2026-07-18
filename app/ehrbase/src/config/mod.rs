@@ -72,8 +72,9 @@ pub struct EhrbaseConfig {
     pub terminology: crate::service::terminology::config::TerminologyConfig,
     /// `[multimedia]` — `DV_MULTIMEDIA` externalization.
     pub multimedia: crate::extensions::multimedia::config::MultimediaConfig,
-    /// `[atna]` — IHE ATNA audit / System Log.
-    pub atna: crate::system_log::config::AuditConfig,
+    /// `[audit]` — the IHE ATNA audit trail / System Log (local Audit Record
+    /// Repository + the syslog and FHIR-feed forwarding sinks).
+    pub audit: crate::system_log::config::AuditConfig,
     /// `[subject_proxy]` — Subject Proxy FHIR systems.
     pub subject_proxy: crate::service::subject_proxy::config::SubjectProxyConfig,
 }

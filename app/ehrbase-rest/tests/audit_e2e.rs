@@ -25,8 +25,9 @@
 //!
 //! DICOM codes asserted (`system_log::codes`): action `C`/`R`/`U`/`D`/`E`;
 //! `EventOutcomeIndicator` `0` success / `4` minor / `8` serious;
-//! `csd-code="110100"` (Application Activity / template) and `"110110"`
-//! (Patient Record / demographic).
+//! `csd-code="110100"` (Application Activity / template), `"110110"`
+//! (Patient Record / demographic), `"110112"` (Query), and `"110114"`
+//! (User Authentication, with EventTypeCode `"110122"` Login).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::doc_markdown)]
 
 use std::sync::Arc;
@@ -39,7 +40,7 @@ use axum::body::Body;
 use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser};
 use ehrbase::config::server::ServerConfig;
 use ehrbase::service::EhrbaseService;
-use ehrbase::system_log::config::{AuditConfig, FailMode, Transport};
+use ehrbase::system_log::config::{AuditConfig, FailMode, StoreConfig, SyslogConfig, Transport};
 use ehrbase::system_log::sender::{AuditSender, SubjectResolver, start};
 use ehrbase_rest::config::AppConfig;
 use http::{Request, StatusCode};
@@ -152,15 +153,23 @@ async fn audit_capture(suppress_login: bool) -> (UdpSocket, AuditSender) {
     let port = socket.local_addr().expect("addr").port();
     let cfg = AuditConfig {
         enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
+        store: StoreConfig {
+            enabled: false,
+            retention_days: 0,
+        },
+        syslog: SyslogConfig {
+            enabled: true,
+            transport: Transport::Udp,
+            host: "127.0.0.1".to_owned(),
+            port,
+            ..SyslogConfig::default()
+        },
         suppress_login_events: suppress_login,
         fail_mode: FailMode::Open,
         queue_capacity: 64,
         ..AuditConfig::default()
     };
-    let (sender, _handle) = start(cfg, None).await.expect("audit start");
+    let (sender, _handle) = start(cfg, None, None).await.expect("audit start");
     (socket, sender)
 }
 
@@ -176,9 +185,17 @@ async fn audit_capture_fail_closed() -> AuditSender {
     };
     let cfg = AuditConfig {
         enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
+        store: StoreConfig {
+            enabled: false,
+            retention_days: 0,
+        },
+        syslog: SyslogConfig {
+            enabled: true,
+            transport: Transport::Udp,
+            host: "127.0.0.1".to_owned(),
+            port,
+            ..SyslogConfig::default()
+        },
         suppress_login_events: true,
         fail_mode: FailMode::Closed,
         resolve_subject: true,
@@ -195,7 +212,7 @@ async fn audit_capture_fail_closed() -> AuditSender {
             None
         })
     });
-    let (sender, _handle) = start(cfg, Some(resolver)).await.expect("audit start");
+    let (sender, _handle) = start(cfg, Some(resolver), None).await.expect("audit start");
     sender
 }
 
@@ -397,9 +414,11 @@ async fn aql_execute_emits_execute_record() {
     assert_eq!(resp.status(), StatusCode::OK);
     let xml = recv_one(&socket).await.expect("audit record");
     assert!(xml.contains(r#"EventActionCode="E""#), "execute: {xml}");
+    // Query execution uses the dedicated DICOM EventID 110112 "Query"
+    // (DICOM PS3.15 §A.5.1).
     assert!(
-        xml.contains(r#"originalText="query""#),
-        "query object: {xml}"
+        xml.contains(r#"csd-code="110112""#) && xml.contains(r#"originalText="Query""#),
+        "query event id: {xml}"
     );
     assert!(
         xml.contains(r#"EventOutcomeIndicator="0""#),
@@ -416,10 +435,14 @@ async fn unauthenticated_request_emits_401_record() {
     // An authentication event: minor failure, no principal — the DICOM renderer
     // substitutes the configured value_if_missing ("UNKNOWN") for the empty user.
     let xml = recv_one(&socket).await.expect("audit record");
+    // A rejected access attempt is a failed user-authentication event: the
+    // dedicated DICOM EventID 110114 "User Authentication" with EventTypeCode
+    // 110122 "Login" (DICOM PS3.15 §A.5.1).
     assert!(
-        xml.contains(r#"csd-code="110100""#),
-        "application activity: {xml}"
+        xml.contains(r#"csd-code="110114""#),
+        "user authentication: {xml}"
     );
+    assert!(xml.contains(r#"csd-code="110122""#), "login type: {xml}");
     assert!(
         xml.contains(r#"EventOutcomeIndicator="4""#),
         "minor failure: {xml}"
@@ -497,15 +520,15 @@ async fn login_event_is_suppressed_by_default() {
     assert!(
         !records
             .iter()
-            .any(|x| x.contains(r#"originalText="Application Activity""#)),
-        "suppressed login must emit no application-activity record: {records:?}"
+            .any(|x| x.contains(r#"originalText="User Authentication""#)),
+        "suppressed login must emit no user-authentication record: {records:?}"
     );
 }
 
 #[tokio::test]
 async fn login_event_emitted_when_not_suppressed() {
-    // Not suppressed: both the operation record and a login (Application Activity)
-    // record are emitted for the fresh Basic authentication.
+    // Not suppressed: both the operation record and a login (User
+    // Authentication) record are emitted for the fresh Basic authentication.
     let (socket, sender) = audit_capture(false).await;
     let (_pg, app) = audit_app("audit_login_emitted", sender).await;
     let _ = app
@@ -522,7 +545,7 @@ async fn login_event_emitted_when_not_suppressed() {
     assert!(
         records
             .iter()
-            .any(|x| x.contains(r#"originalText="Application Activity""#)
+            .any(|x| x.contains(r#"originalText="User Authentication""#)
                 && x.contains(r#"UserID="alice""#)
                 && x.contains(r#"EventOutcomeIndicator="0""#)),
         "a success login record for alice is present: {records:?}"

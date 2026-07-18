@@ -23,17 +23,44 @@ pub const RFC_3881: &str = "RFC-3881";
 // ── EventID (DICOM PS3.15 §A.5.1, `DCM`) ─────────────────────────────────────
 // EHR / clinical-data ops use "Patient Record" (110110, DICOM PS3.15 §A.5.1);
 // the CDR varies the `originalText` per resource
-// (composition/contribution/directory/query) while keeping the DICOM `csd-code`
-// 110110 — the varied-display pattern the DICOM EventID coding permits.
-// NOTE: query execution could use the distinct DICOM EventID 110112
-// ("Query", DICOM PS3.15 §A.5.1); we group it under the data-op "Patient
-// Record" family with originalText="query" so all clinical-data access shares
-// one EventID and is distinguished by display text.
+// (composition/contribution/directory/demographic) while keeping the DICOM
+// `csd-code` 110110 — the varied-display pattern the DICOM EventID coding
+// permits. Operations with a dedicated DICOM EventID use it: query execution
+// → 110112 "Query", EHR-Extract communication → 110106 "Export" /
+// 110107 "Import", user authentication → 110114 "User Authentication".
 
 /// DICOM `EventID` `csd-code` for "Patient Record".
 pub const EVENT_PATIENT_RECORD_CODE: &str = "110110";
 /// DICOM `EventID` `csd-code` for "Application Activity".
 pub const EVENT_APPLICATION_ACTIVITY_CODE: &str = "110100";
+/// DICOM `EventID` `csd-code` for "Query" (110112).
+pub const EVENT_QUERY_CODE: &str = "110112";
+/// DICOM `EventID` `csd-code` for "Export" (110106) — data leaving the system.
+pub const EVENT_EXPORT_CODE: &str = "110106";
+/// DICOM `EventID` `csd-code` for "Import" (110107) — data entering the system.
+pub const EVENT_IMPORT_CODE: &str = "110107";
+/// DICOM `EventID` `csd-code` for "User Authentication" (110114).
+pub const EVENT_USER_AUTHENTICATION_CODE: &str = "110114";
+
+// ── EventTypeCode (DICOM PS3.15 §A.5.1, `DCM` / our own) ─────────────────────
+
+/// DCM 110122 "Login" — the `EventTypeCode` of a user-authentication attempt.
+pub const TYPE_LOGIN: Code = Code {
+    csd_code: "110122",
+    code_system: DCM,
+    original_text: "Login",
+};
+/// DCM 110123 "Logout" — the `EventTypeCode` of a session end.
+pub const TYPE_LOGOUT: Code = Code {
+    csd_code: "110123",
+    code_system: DCM,
+    original_text: "Logout",
+};
+/// The `codeSystemName` for ITS-REST operation-id `EventTypeCode`s.
+/// NOTE: no external code system governs openEHR REST operations — our own
+/// design/extension; the generated operation id is emitted as the `csd-code`
+/// under this system name.
+pub const OPENEHR_ITS_REST: &str = "openEHR-ITS-REST";
 
 // ── RoleIDCode (DICOM PS3.15 §A.5.2, `DCM`) ──────────────────────────────────
 
@@ -101,11 +128,12 @@ pub const OBJECT_ROLE_QUERY: &str = "24";
 // is a pure, transport-agnostic model with no methods. The DICOM
 // / RFC-3881 renderings live here, in the ATNA layer, as three focused extension
 // traits — one per enum — so the `message` serializer's call sites
-// (`event.action.as_char()`, `event.outcome.as_i32()`, `event.object.event_id()`)
+// (`event.action.as_char()`, `event.outcome.as_i32()`,
+// `event.object.event_id(action)`, `event_type.code()`)
 // resolve through them. One trait per type (rather than a single umbrella trait)
 // keeps every method meaningful for its receiver: no empty/`unreachable!` stubs.
 
-use super::event::{EventActionCode, EventOutcome, ObjectClass};
+use super::event::{EventActionCode, EventOutcome, EventType, ObjectClass};
 
 /// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventActionCode`].
 pub(crate) trait AtnaAction {
@@ -123,12 +151,36 @@ pub(crate) trait AtnaOutcome {
     fn description(&self) -> &'static str;
 }
 
+/// ATNA (DICOM PS3.15 §A.5.1) rendering of an [`EventType`].
+pub(crate) trait AtnaEventType {
+    /// The `EventTypeCode` coded value.
+    fn code(&self) -> Code;
+}
+
+impl AtnaEventType for EventType {
+    /// DCM login/logout codes; ITS-REST operation ids under our own
+    /// `openEHR-ITS-REST` system name (see [`OPENEHR_ITS_REST`]).
+    fn code(&self) -> Code {
+        match self {
+            EventType::Login => TYPE_LOGIN,
+            EventType::Logout => TYPE_LOGOUT,
+            EventType::RestOperation(op) => Code {
+                csd_code: op,
+                code_system: OPENEHR_ITS_REST,
+                original_text: op,
+            },
+        }
+    }
+}
+
 /// ATNA (DICOM / RFC-3881) rendering of an [`ObjectClass`] — the `EventID`
 /// (DICOM PS3.15 §A.5.1) and the participant-object shape
 /// (`ParticipantObjectIdentification`, DICOM PS3.15 §A.5 / RFC 3881 §5.5).
 pub(crate) trait AtnaObject {
-    /// The DICOM `EventID` `(csd-code, originalText)` for this object class.
-    fn event_id(&self) -> (&'static str, &'static str);
+    /// The DICOM `EventID` `(csd-code, originalText)` for this object class
+    /// under the given action (the action disambiguates direction-coded
+    /// `EventID`s: Export vs Import for extracts).
+    fn event_id(&self, action: EventActionCode) -> (&'static str, &'static str);
     /// Whether this class carries a patient (Patient-Number) participant object.
     fn is_patient_centric(&self) -> bool;
     /// Whether this class carries an object-URI participant.
@@ -184,14 +236,20 @@ impl AtnaOutcome for EventOutcome {
 
 impl AtnaObject for ObjectClass {
     /// The DICOM `EventID` `(csd-code, originalText)` for this class
-    /// (DICOM PS3.15 §A.5.1).
-    fn event_id(&self) -> (&'static str, &'static str) {
+    /// (DICOM PS3.15 §A.5.1). Classes with a dedicated DICOM `EventID` use it
+    /// (Query 110112, Export 110106 / Import 110107, User Authentication
+    /// 110114); the clinical-record classes share Patient Record (110110)
+    /// with a per-resource `originalText` — the varied-display pattern the
+    /// DICOM `EventID` coding permits.
+    fn event_id(&self, action: EventActionCode) -> (&'static str, &'static str) {
         match self {
             ObjectClass::Ehr => (EVENT_PATIENT_RECORD_CODE, "Patient Record"),
             ObjectClass::Composition => (EVENT_PATIENT_RECORD_CODE, "composition"),
             ObjectClass::Contribution => (EVENT_PATIENT_RECORD_CODE, "contribution"),
             ObjectClass::Directory => (EVENT_PATIENT_RECORD_CODE, "directory"),
-            ObjectClass::Query => (EVENT_PATIENT_RECORD_CODE, "query"),
+            // Query execution has the dedicated DICOM EventID 110112 "Query"
+            // (DICOM PS3.15 §A.5.1).
+            ObjectClass::Query => (EVENT_QUERY_CODE, "Query"),
             // NOTE: DICOM PS3.15 §A.5.1 lists no EventID for template
             // provisioning; templates are definitional metadata, not patient
             // data, so they use the Application-Activity code (110100) with
@@ -203,21 +261,27 @@ impl AtnaObject for ObjectClass {
             // `originalText="demographic"` (same varied-display pattern).
             ObjectClass::Demographic => (EVENT_PATIENT_RECORD_CODE, "demographic"),
             // EHR-Extract communication carries patient-identifiable clinical
-            // data, audited for non-repudiation (BASE
-            // `master07-security.adoc` §Non-repudiation): Patient-Record family
-            // (110110) with `originalText="extract"`. The SM-5 message service
-            // emits this class on a completed export/import
-            // (`EhrbaseService::emit_extract_audit`), carrying the direction in
-            // the event's `EventActionCode` (`Read` out / `Create` in).
-            // NOTE: DICOM PS3.15 §A.5.1 also defines dedicated Export
-            // (110106) / Import (110107) EventIDs; a direction-aware `EventID`
-            // rendering could adopt them, but `ObjectClass` carries no direction
-            // and the action code already records it, so we keep the single
-            // Patient-Record `EventID` for the class.
-            ObjectClass::Extract => (EVENT_PATIENT_RECORD_CODE, "extract"),
+            // data across systems, audited for non-repudiation (BASE
+            // `master07-security.adoc` §Non-repudiation). DICOM PS3.15 §A.5.1
+            // defines the direction-coded EventIDs: Export (110106) for data
+            // leaving the system, Import (110107) for data entering it. The
+            // SM-5 message service emits `Create` on an inbound import and a
+            // read-side action on an outbound export
+            // (`EhrbaseService::emit_extract_audit`), so the action carries
+            // the direction.
+            ObjectClass::Extract => match action {
+                EventActionCode::Create | EventActionCode::Update => (EVENT_IMPORT_CODE, "Import"),
+                EventActionCode::Read | EventActionCode::Execute | EventActionCode::Delete => {
+                    (EVENT_EXPORT_CODE, "Export")
+                }
+            },
             ObjectClass::ApplicationActivity => {
                 (EVENT_APPLICATION_ACTIVITY_CODE, "Application Activity")
             }
+            // User authentication has the dedicated DICOM EventID 110114
+            // "User Authentication" (DICOM PS3.15 §A.5.1); the login/logout
+            // kind is the `EventTypeCode` (110122/110123).
+            ObjectClass::Authentication => (EVENT_USER_AUTHENTICATION_CODE, "User Authentication"),
         }
     }
 

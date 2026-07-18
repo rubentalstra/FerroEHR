@@ -1,11 +1,12 @@
 ---
 source: app/ehrbase/src/system_log/message.rs
-assertion_line: 415
+assertion_line: 515
 expression: xml
 ---
 <AuditMessage>
   <EventIdentification EventActionCode="E" EventDateTime="[REDACTED]" EventOutcomeIndicator="0">
-    <EventID csd-code="110112" codeSystemName="DCM" originalText="Query"/>
+    <EventID csd-code="110114" codeSystemName="DCM" originalText="User Authentication"/>
+    <EventTypeCode csd-code="110122" codeSystemName="DCM" originalText="Login"/>
     <EventOutcomeDescription>Operation performed successfully</EventOutcomeDescription>
   </EventIdentification>
   <ActiveParticipant UserID="john doe" UserIsRequestor="true" NetworkAccessPointID="10.216.24.150" NetworkAccessPointTypeCode="2">
@@ -17,7 +18,4 @@ expression: xml
   <AuditSourceIdentification AuditEnterpriseSiteID="1f332a66-0000-0000-0000-000000000001" AuditSourceID="ehrbase">
     <AuditSourceTypeCode csd-code="4" codeSystemName="DCM" originalText="Application Server Process or Thread"/>
   </AuditSourceIdentification>
-  <ParticipantObjectIdentification ParticipantObjectID="UNKNOWN" ParticipantObjectTypeCode="2" ParticipantObjectTypeCodeRole="24">
-    <ParticipantObjectIDTypeCode csd-code="10" codeSystemName="RFC-3881" originalText="Search Criteria"/>
-  </ParticipantObjectIdentification>
 </AuditMessage>

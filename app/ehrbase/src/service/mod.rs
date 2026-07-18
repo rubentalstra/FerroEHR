@@ -101,6 +101,10 @@ pub struct EhrbaseService {
     /// component (`crate::system_log`). `None` = auditing off; the binary
     /// wires the configured [`AuditSender`] via [`Self::with_audit`].
     pub(crate) audit: Option<AuditSender>,
+    /// The optional local Audit Record Repository (read side — the ITI-81
+    /// retrieval; `crate::system_log::store`). `None` = the local store is
+    /// off; the binary wires it via [`Self::with_audit_store`].
+    pub(crate) audit_store: Option<crate::system_log::store::AuditStore>,
     /// The optional external terminology provider (FHIR R4), selected when a
     /// deployment opts in ([`ExternalTerminologyConfig`]). Used by AQL
     /// `TERMINOLOGY(…)` resolution; `None` keeps terminology on the
@@ -164,6 +168,7 @@ impl EhrbaseService {
             web_templates: WebTemplateCache::default(),
             signer: Arc::new(Signer::digest_default()),
             audit: None,
+            audit_store: None,
             external_terminology: None,
             multimedia: None,
             subject_proxy_fhir: None,
@@ -201,6 +206,15 @@ impl EhrbaseService {
     #[must_use]
     pub fn with_audit(mut self, sender: AuditSender) -> Self {
         self.audit = Some(sender);
+        self
+    }
+
+    /// Install the local Audit Record Repository (the read side serving the
+    /// RESTful-ATNA ITI-81 retrieval); the binary wires it when
+    /// `[audit.store]` is enabled.
+    #[must_use]
+    pub fn with_audit_store(mut self, store: crate::system_log::store::AuditStore) -> Self {
+        self.audit_store = Some(store);
         self
     }
 

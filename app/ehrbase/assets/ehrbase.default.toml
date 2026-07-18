@@ -19,6 +19,18 @@ max_in_flight = 256          # concurrent-request admission cap; 0 disables shed
 swagger_ui = true            # PROD: consider false
 cors_permissive = false      # PROD: keep false; configure explicit origins
 
+# [server.tls] — native TLS + client-certificate (mutual-TLS) authentication
+# on the main listener (the IHE ATNA ITI-19 node-authentication posture;
+# protocol floor = rustls safe defaults, TLS 1.2+ per IETF BCP 195). Off by
+# default: deployments commonly terminate TLS at an ingress. The separate-port
+# management listener stays plain HTTP (internal surface).
+[server.tls]
+enabled = false
+#? cert_file = "/etc/ehrbase/server.pem"
+#? key_file = "/etc/ehrbase/server.key"
+client_auth = "off"          # off | optional | required (required = IHE mTLS)
+#? client_ca_file = "/etc/ehrbase/client-ca.pem"
+
 # [server.identity] — the OPTIONS / System-Options manifest. Defaults are the
 # measured build/provenance identity; override only to rebrand.
 #? [server.identity]
@@ -216,23 +228,44 @@ region = "us-east-1"
 #? secret_access_key = "..."   # or secret_access_key_file = "/run/secrets/s3"
 allow_http = false           # PROD: false (HTTPS S3)
 
-# ── [atna] — IHE ATNA audit / System Log ──────────────────────────────────────
-[atna]
-enabled = false
+# ── [audit] — IHE ATNA audit trail / System Log ──────────────────────────────
+# ON by default with only the local store active: every deployment gets a
+# queryable audit trail (the audit schema; served via the ITI-81 FHIR
+# AuditEvent search) with nothing leaving the node. Forwarding to an external
+# Audit Record Repository is opt-in per sink.
+[audit]
+enabled = true
 #? enterprise_site_id = "site-42"
-repository_host = "localhost"
-repository_port = 514
-transport = "udp"            # udp | tls ; PROD: tls
 source_id = "ehrbase"
 value_if_missing = "UNKNOWN"
 suppress_login_events = true
-fail_mode = "open"           # open | closed
-resolve_subject = false
+fail_mode = "open"           # open | closed (closed: un-auditable ops answer 503)
+resolve_subject = true
 queue_capacity = 1024
 #? server_host = "cdr-01.example"
-#? tls_ca_path = "/etc/ehrbase/arr-ca.pem"
-#? tls_identity_cert_path = "/etc/ehrbase/client.pem"
-#? tls_identity_key_path = "/etc/ehrbase/client.key"
+
+# The local Audit Record Repository (the durability anchor).
+[audit.store]
+enabled = true
+retention_days = 0           # 0 = keep forever; reaped hourly otherwise
+
+# Classic ATNA feed: DICOM PS3.15 audit XML over syslog (IHE ITI-20).
+[audit.syslog]
+enabled = false
+host = "localhost"
+port = 514
+transport = "udp"            # udp | tls ; PROD: tls
+#? tls_ca_file = "/etc/ehrbase/arr-ca.pem"
+#? tls_identity_cert_file = "/etc/ehrbase/client.pem"
+#? tls_identity_key_file = "/etc/ehrbase/client.key"
+
+# RESTful ATNA feed: FHIR R4 AuditEvent POSTs (IHE ITI-20 ATX:FHIR Feed).
+[audit.fhir_feed]
+enabled = false
+url = "http://localhost:8080/fhir"   # POSTs {url}/AuditEvent; URL creds redacted
+batch_size = 64
+poll_interval_ms = 2000
+max_retries = 3
 
 # ── [subject_proxy] — Subject Proxy FHIR systems (fail-closed) ────────────────
 [subject_proxy]

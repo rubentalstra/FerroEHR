@@ -46,7 +46,7 @@ pub(super) const SECTIONS: &[&str] = &[
     "fhir",
     "terminology",
     "multimedia",
-    "atna",
+    "audit",
     "subject_proxy",
 ];
 

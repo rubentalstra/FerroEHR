@@ -26,6 +26,7 @@
   - [S3 multimedia](beyond-core/s3-multimedia.md)
 - [Security & multi-tenancy](security.md)
   - [SMART App Launch](smart-app-launch.md)
+  - [Audit trail (IHE ATNA)](audit.md)
 - [Admin console](admin-ui/index.md)
   - [Dashboard & queries](admin-ui/queries.md)
   - [Templates & EHR browsing](admin-ui/browsing.md)

@@ -43,6 +43,48 @@ pub struct ServerConfig {
     /// are not string literals in the handler; the live endpoint list is
     /// supplied separately by [`crate::router`].
     pub identity: SystemOptionsConfig,
+    /// `[server.tls]` — native TLS termination + client-certificate
+    /// authentication (the IHE ATNA ITI-19 node-authentication posture).
+    pub tls: TlsConfig,
+}
+
+/// Client-certificate (mutual-TLS) policy for the main listener.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum ClientAuth {
+    /// No client certificate requested.
+    #[default]
+    Off,
+    /// A client certificate is requested and verified when presented;
+    /// connections without one are still accepted.
+    Optional,
+    /// A verified client certificate is mandatory (IHE ATNA ITI-19: mutually
+    /// authenticated nodes).
+    Required,
+}
+
+/// `[server.tls]` — native TLS on the main listener. Off by default
+/// (deployments commonly terminate TLS at an ingress); with it on, the
+/// protocol floor is the rustls safe default (TLS 1.2+, strong suites —
+/// the IETF BCP 195 posture), and `client_auth` adds the IHE ATNA ITI-19
+/// mutual-TLS node authentication against an explicit trust anchor. The
+/// separate-port management listener stays plain HTTP (an internal surface).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct TlsConfig {
+    /// Terminate TLS natively (`EHRBASE__SERVER__TLS__ENABLED`).
+    pub enabled: bool,
+    /// The server certificate chain, PEM (`EHRBASE__SERVER__TLS__CERT_FILE`).
+    pub cert_file: Option<String>,
+    /// The server private key, PEM (`EHRBASE__SERVER__TLS__KEY_FILE`).
+    pub key_file: Option<String>,
+    /// Client-certificate policy (`EHRBASE__SERVER__TLS__CLIENT_AUTH`):
+    /// `off` | `optional` | `required`.
+    pub client_auth: ClientAuth,
+    /// The CA bundle client certificates must chain to, PEM
+    /// (`EHRBASE__SERVER__TLS__CLIENT_CA_FILE`). Required when `client_auth`
+    /// is not `off` — an explicit trust anchor, never the web PKI.
+    pub client_ca_file: Option<String>,
 }
 
 impl Default for ServerConfig {
@@ -54,6 +96,7 @@ impl Default for ServerConfig {
             swagger_ui: true,
             cors_permissive: false,
             identity: SystemOptionsConfig::default(),
+            tls: TlsConfig::default(),
         }
     }
 }

@@ -146,7 +146,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | Demographic | `I_DEMOGRAPHIC_SERVICE`, `I_PARTY`, `I_PARTY_RELATIONSHIP` | `service::demographic` | implemented |
 | Query | `I_QUERY_SERVICE` | `service::query` | implemented |
 | Validity checking | `I_VALIDITY_CHECKER` | `service::validity` | implemented |
-| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `ehrbase::system_log` (event model + emit) | implemented |
+| System Log | `I_SYSTEM_LOG` (stub; "IHE ATNA-compliant") | `ehrbase::system_log` (dual DICOM PS3.15 + FHIR `AuditEvent`/BALP rendering; local Audit Record Repository in the `audit` schema, on by default; syslog + ITI-20 ATX:FHIR Feed forwarding sinks; the ITI-81 retrieval as the read side; ITI-19 mTLS via `[server.tls]`) | implemented |
 | Admin | `I_ADMIN_SERVICE` (+archive/dump-load) | `service::admin` | implemented |
 | EHR Index | `I_EHR_INDEX` | `service::ehr_index` | implemented |
 | Terminology | `I_TERMINOLOGY_SERVICE` | `service::terminology` | implemented |

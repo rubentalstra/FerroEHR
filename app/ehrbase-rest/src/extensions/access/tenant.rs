@@ -58,7 +58,16 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     };
 
     match ctx {
-        Some(ctx) => ehrbase::extensions::tenant_context::scope(ctx, next.run(req)).await,
+        Some(ctx) => {
+            let mut resp =
+                ehrbase::extensions::tenant_context::scope(ctx.clone(), next.run(req)).await;
+            // Republish the resolved tenant onto the response (the task-local
+            // scope has already exited) so the outermost ATNA audit layer can
+            // stamp the record's tenant — the same pattern the auth layer uses
+            // for `Principal`.
+            resp.extensions_mut().insert(ctx);
+            resp
+        }
         None => next.run(req).await,
     }
 }

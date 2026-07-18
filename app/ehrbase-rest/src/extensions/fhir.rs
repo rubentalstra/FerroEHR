@@ -55,6 +55,7 @@ use ehrbase::service::status::SmError;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::{BoxResponse, RequestParts, guarded_dispatch};
+use crate::extensions::access::authz::roles::RbacDecision;
 use crate::negotiate;
 use crate::overview::error::RestError;
 use crate::state::AppState;
@@ -77,6 +78,9 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
     // mixing paths panics at router build with "Overlapping method route").
     OpenApiRouter::new()
         .routes(routes!(fhir_ingest, fhir_search))
+        // The static /fhir/r4/AuditEvent route wins over the dynamic
+        // /fhir/r4/{resource_type} façade route (axum static-first matching).
+        .routes(routes!(audit_event_search))
         .routes(routes!(fhir_mapping_list, fhir_mapping_create))
         .routes(routes!(
             fhir_mapping_get,
@@ -127,6 +131,41 @@ pub(crate) async fn fhir_search(
 ) -> Response {
     let parts = crate::api::into_parts(request).await;
     guarded_dispatch(state, "fhir_search", parts, dispatch).await
+}
+
+/// The RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** transaction: a FHIR
+/// search over the local Audit Record Repository, returning a `searchset`
+/// Bundle of stored FHIR R4 `AuditEvent` documents (IHE BALP shape). Gated by
+/// the local store (`[audit.store]`; 404 when off — independent of the FHIR
+/// connector gate) and admin-only under RBAC (the node's security log is an
+/// operator surface). Supported parameter subset: `date` (`ge`/`le`
+/// prefixes), `patient`, `agent`, `entity`, `outcome`, `action`, `_count`,
+/// `_offset`; other FHIR search parameters are ignored (lenient search).
+#[utoipa::path(
+    get, path = "/fhir/r4/AuditEvent", tag = "audit",
+    params(
+        ("date" = Option<Vec<String>>, Query, description = "Event-time bound(s), `ge`/`le`-prefixed RFC 3339 instants (e.g. `date=ge2026-07-01T00:00:00Z&date=le2026-07-18T00:00:00Z`)."),
+        ("patient" = Option<String>, Query, description = "The recorded patient (EHR subject) id."),
+        ("agent" = Option<String>, Query, description = "The authenticated principal."),
+        ("entity" = Option<String>, Query, description = "The touched resource id."),
+        ("outcome" = Option<String>, Query, description = "The outcome indicator: 0, 4, 8 or 12."),
+        ("action" = Option<String>, Query, description = "The action code: C, R, U, D or E."),
+        ("_count" = Option<i64>, Query, description = "Page size (default 50, max 1000)."),
+        ("_offset" = Option<i64>, Query, description = "Page offset.")
+    ),
+    responses(
+        (status = 200, description = "A FHIR searchset Bundle of AuditEvent resources.", content_type = "application/fhir+json"),
+        (status = 400, description = "Malformed search parameter (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 403, description = "Caller lacks the admin role (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "The local audit record repository is disabled (OperationOutcome).", content_type = "application/fhir+json")
+    )
+)]
+pub(crate) async fn audit_event_search(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(state, "audit_event_search", parts, dispatch).await
 }
 
 /// List the FHIR mapping artefacts (mapping-as-data).
@@ -207,6 +246,13 @@ pub(crate) fn dispatch(state: AppState, op: &'static str, parts: RequestParts) -
 }
 
 async fn run(state: AppState, op: &'static str, parts: RequestParts) -> Response {
+    // The ITI-81 retrieval is the AUDIT surface, not the FHIR connector: its
+    // gate is the local Audit Record Repository, independent of
+    // `fhir_api_enabled`.
+    if op == "audit_event_search" {
+        return audit_search(&state, &parts).await;
+    }
+
     // Config gate: opt-in. When disabled every route answers 404 (as an
     // `OperationOutcome`) without consulting the backend.
     if !state.config().fhir_api_enabled {
@@ -346,6 +392,146 @@ async fn search(state: &AppState, parts: &RequestParts) -> Response {
         Ok(bundle) => fhir_json(StatusCode::OK, &bundle),
         Err(e) => sm_error_outcome(e),
     }
+}
+
+/// `GET /fhir/r4/AuditEvent` — the ITI-81 retrieval over the local Audit
+/// Record Repository.
+async fn audit_search(state: &AppState, parts: &RequestParts) -> Response {
+    // Gate 1: the local store must be on.
+    if !state.backend().audit_search_enabled() {
+        return operation_outcome(
+            StatusCode::NOT_FOUND,
+            "not-supported",
+            "the local audit record repository is disabled ([audit.store])",
+        );
+    }
+    // Gate 2: admin-only under RBAC. The audit trail is the node's
+    // security-surveillance record (IHE ITI TF-1 §9) — an operator surface.
+    // The coarse RBAC gate classes routes by template and would class this
+    // FHIR-base path Clinical, so the Admin requirement is enforced here;
+    // with RBAC off the surface is authenticated-only, like the rest of the
+    // extension routes (no openEHR spec governs this — our own design).
+    if let Some(authz) = state.authz()
+        && let Some(rbac) = authz.rbac()
+    {
+        let roles = crate::extensions::access::authn::current_principal()
+            .map(|p| p.roles)
+            .unwrap_or_default();
+        if let RbacDecision::Deny(reason) = rbac.decide(
+            crate::extensions::access::authz::classify::OperationClass::Admin,
+            &roles,
+        ) {
+            return operation_outcome(StatusCode::FORBIDDEN, "forbidden", &reason);
+        }
+    }
+
+    let filter = match audit_filter(parts.query.as_deref()) {
+        Ok(filter) => filter,
+        Err(message) => {
+            return operation_outcome(StatusCode::BAD_REQUEST, "invalid", &message);
+        }
+    };
+    match state.backend().audit_event_search(&filter).await {
+        Ok((total, documents)) => {
+            let entries: Vec<Value> = documents
+                .into_iter()
+                .map(|resource| json!({ "resource": resource, "search": { "mode": "match" } }))
+                .collect();
+            let bundle = json!({
+                "resourceType": "Bundle",
+                "type": "searchset",
+                "total": total,
+                "entry": entries,
+            });
+            fhir_json(StatusCode::OK, &bundle)
+        }
+        Err(e) => sm_error_outcome(e),
+    }
+}
+
+/// Parse the supported ITI-81 parameter subset from the query string. Unknown
+/// parameters are ignored (FHIR lenient search); malformed values of the
+/// supported ones are an error (`400`).
+fn audit_filter(
+    query: Option<&str>,
+) -> Result<ehrbase::system_log::store::AuditSearchFilter, String> {
+    let mut filter = ehrbase::system_log::store::AuditSearchFilter {
+        count: 50,
+        ..Default::default()
+    };
+    for (key, value) in query_pairs(query) {
+        match key.as_str() {
+            "date" => {
+                // FHIR date-prefix grammar; the supported subset is ge/le.
+                let (prefix, instant) = value.split_at_checked(2).unwrap_or(("", ""));
+                let parsed = instant
+                    .parse::<jiff::Timestamp>()
+                    .map_err(|e| format!("invalid `date` value `{value}`: {e}"))?;
+                match prefix {
+                    "ge" => filter.from = Some(parsed),
+                    "le" => filter.to = Some(parsed),
+                    _ => {
+                        return Err(format!(
+                            "unsupported `date` prefix in `{value}` (supported: ge, le)"
+                        ));
+                    }
+                }
+            }
+            "patient" => filter.patient = Some(value),
+            "agent" => filter.agent = Some(value),
+            "entity" => filter.entity = Some(value),
+            "outcome" => {
+                let outcome = value
+                    .parse::<i16>()
+                    .ok()
+                    .filter(|o| [0, 4, 8, 12].contains(o))
+                    .ok_or_else(|| {
+                        format!("invalid `outcome` `{value}` (expected 0, 4, 8 or 12)")
+                    })?;
+                filter.outcome = Some(outcome);
+            }
+            "action" => {
+                if !["C", "R", "U", "D", "E"].contains(&value.as_str()) {
+                    return Err(format!("invalid `action` `{value}` (expected C/R/U/D/E)"));
+                }
+                filter.action = Some(value);
+            }
+            "_count" => {
+                filter.count = value
+                    .parse::<i64>()
+                    .ok()
+                    .filter(|c| *c > 0)
+                    .ok_or_else(|| format!("invalid `_count` `{value}`"))?;
+            }
+            "_offset" => {
+                filter.offset = value
+                    .parse::<i64>()
+                    .ok()
+                    .filter(|o| *o >= 0)
+                    .ok_or_else(|| format!("invalid `_offset` `{value}`"))?;
+            }
+            _ => {} // lenient search: unknown parameters are ignored
+        }
+    }
+    Ok(filter)
+}
+
+/// Decode the query string into `(key, value)` pairs (percent-decoding via
+/// the `urlencoding` crate — the house rule for all percent codecs).
+fn query_pairs(query: Option<&str>) -> Vec<(String, String)> {
+    query
+        .unwrap_or_default()
+        .split('&')
+        .filter(|pair| !pair.is_empty())
+        .filter_map(|pair| {
+            let (key, value) = pair.split_once('=')?;
+            let key = urlencoding::decode(key).ok()?.into_owned();
+            let value = urlencoding::decode(&value.replace('+', " "))
+                .ok()?
+                .into_owned();
+            Some((key, value))
+        })
+        .collect()
 }
 
 /// The first `meta.profile` canonical URL on the resource, if any.
