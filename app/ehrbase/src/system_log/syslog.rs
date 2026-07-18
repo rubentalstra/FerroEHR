@@ -34,10 +34,12 @@ pub const SYSLOG_SEVERITY: u8 = 5;
 pub const SYSLOG_PRI: u16 = (SYSLOG_FACILITY as u16) * 8 + SYSLOG_SEVERITY as u16;
 /// RFC 5424 SYSLOG version.
 pub const SYSLOG_VERSION: u8 = 1;
-/// The IHE ATNA `MSGID` for a DICOM audit record.
-// NOTE: RFC 5424 §6.2.7 leaves MSGID application-defined; IHE ATNA uses
-// "IHE+DICOM" for the DICOM Audit-Trail-Message-Format profile.
-pub const SYSLOG_MSGID: &str = "IHE+DICOM";
+/// The IHE ATNA `MSGID` for an audit record.
+// NOTE: IHE ITI TF-2 ITI-20 §3.20.4.1.2: "The MSGID field in the HEADER of
+// the SYSLOG-MSG shall be set to 'IHE+RFC-3881'" — the value is uniform for
+// every ITI-20 message (the RFC3881 token "is retained for backward
+// compatibility") even though the MSG payload is DICOM PS3.15 §A.5 XML.
+pub const SYSLOG_MSGID: &str = "IHE+RFC-3881";
 /// UTF-8 byte-order mark that RFC 5424 §6.4 recommends prefixing a UTF-8 `MSG`.
 pub const UTF8_BOM: &[u8] = &[0xEF, 0xBB, 0xBF];
 
@@ -341,7 +343,7 @@ mod tests {
         let ts: Timestamp = "2026-07-06T12:00:00Z".parse().unwrap();
         let msg = assemble_syslog("cdr-01", "ehrbase", &ts, "<AuditMessage/>");
         let text = String::from_utf8_lossy(&msg);
-        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z cdr-01 ehrbase - IHE+DICOM - "));
+        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z cdr-01 ehrbase - IHE+RFC-3881 -"));
         // BOM precedes the XML.
         assert!(msg.windows(3).any(|w| w == UTF8_BOM));
         assert!(text.contains("<AuditMessage/>"));
@@ -352,7 +354,7 @@ mod tests {
         let ts: Timestamp = "2026-07-06T12:00:00Z".parse().unwrap();
         let msg = assemble_syslog("", "ehrbase", &ts, "<x/>");
         let text = String::from_utf8_lossy(&msg);
-        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z - ehrbase - IHE+DICOM - "));
+        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z - ehrbase - IHE+RFC-3881 -"));
     }
 
     #[test]

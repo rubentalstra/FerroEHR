@@ -44,6 +44,24 @@ workflow refuses a tag that has no matching section here.
   screenshots published as artifacts), including journeys over seeded
   clinical data (EHR detail, the composition viewer's format and version
   switching) and a JavaScript-disabled login journey.
+- **ATNA audit — richer DICOM records**: every audit record now carries the
+  concrete operation as a DICOM `EventTypeCode` (login/logout as DCM
+  110122/110123; REST operations as their ITS-REST operation id under the
+  `openEHR-ITS-REST` code system), and Bearer-authenticated requests record
+  the token's `jti` as the minimal token identity (token contents are never
+  logged).
+
+### Fixed
+
+- **ATNA audit — IHE/DICOM conformance corrections** (IHE ITI TF-2 ITI-20 /
+  DICOM PS3.15 §A.5.1): the syslog `MSGID` is now the mandated
+  `IHE+RFC-3881` (was `IHE+DICOM`); AQL query execution uses the dedicated
+  DICOM EventID 110112 "Query" (was 110110); EHR-Extract communication uses
+  the direction-coded EventIDs 110106 "Export" / 110107 "Import";
+  authentication events (genuine logins and rejected 401/403 attempts) use
+  EventID 110114 "User Authentication" with `EventTypeCode` 110122 "Login"
+  (were generic Application Activity); and 1xx/3xx responses (e.g. `304 Not
+  Modified`) are now recorded as success instead of minor failure.
 
 ## [3.1.1] - 2026-07-17
 

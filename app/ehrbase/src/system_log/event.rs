@@ -77,8 +77,29 @@ pub enum ObjectClass {
     // `AuditEvent { object: Extract, .. }` on completion
     // (`EhrbaseService::emit_extract_audit`); this variant is its resource class.
     Extract,
-    /// Login / application activity → "Application Activity"; no clinical object.
+    /// Generic application activity (unclassified extension operations) →
+    /// "Application Activity"; no clinical object.
     ApplicationActivity,
+    /// A user-authentication event (a genuine login, or a rejected 401/403
+    /// access attempt) → DICOM "User Authentication" (110114); no clinical
+    /// object.
+    Authentication,
+}
+
+/// The concrete kind of event within its `EventID` family — rendered as the
+/// DICOM `EventTypeCode` (DICOM PS3.15 §A.5 `EventIdentification`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EventType {
+    /// DCM 110122 "Login" — a user-authentication attempt (success or failure).
+    Login,
+    /// DCM 110123 "Logout" — a session end (reserved; no session teardown
+    /// surface emits it yet).
+    Logout,
+    /// The concrete ITS-REST operation, carried as the generated operation id.
+    /// NOTE: no external code system governs openEHR REST operations — our own
+    /// design/extension: the id is emitted under the `openEHR-ITS-REST` code
+    /// system name.
+    RestOperation(&'static str),
 }
 
 /// A fully-resolved audit event, ready to be rendered into a DICOM
@@ -89,6 +110,11 @@ pub struct AuditEvent {
     pub action: EventActionCode,
     /// The resource class (drives `EventID` + participant objects).
     pub object: ObjectClass,
+    /// The concrete event kind within the `EventID` family (the DICOM
+    /// `EventTypeCode`): the login marker for authentication records, the
+    /// ITS-REST operation id for operation records. `None` for emitters with
+    /// no finer classification (e.g. the service-layer extract audit).
+    pub event_type: Option<EventType>,
     /// The response outcome.
     pub outcome: EventOutcome,
     /// The requesting user (Basic username / OAuth `sub`; `UNKNOWN` when absent).
@@ -101,6 +127,10 @@ pub struct AuditEvent {
     pub ehr_id: Option<String>,
     /// The resolved object identifier (resource URI / version uid / query name).
     pub object_id: Option<String>,
+    /// The bearer token's `jti` claim when the request was Bearer-authenticated
+    /// — the minimal token identity the FHIR `AuditEvent` rendering records
+    /// (never the token itself; token contents are never logged).
+    pub token_id: Option<String>,
     /// The event time.
     pub timestamp: Timestamp,
 }
@@ -113,12 +143,14 @@ impl AuditEvent {
         Self {
             action,
             object,
+            event_type: None,
             outcome,
             user_id: String::new(),
             user_is_requestor: true,
             client_ip: None,
             ehr_id: None,
             object_id: None,
+            token_id: None,
             timestamp: Timestamp::now(),
         }
     }
