@@ -78,6 +78,81 @@ pub async fn fetch_openapi() -> Result<String, AdminUiError> {
 }
 
 /// The `/system` screen: four independent, individually-failing cards.
+/// The redacted effective CDR configuration (`GET /admin/config` — the
+/// CDR's own extension endpoint; secrets are redacted structurally
+/// server-side, this fn only relays). A `404` means the admin API is
+/// disabled and `401`/`403` that the session lacks the ADMIN role — both
+/// first-class rendered states for the panel, not failures.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR
+/// transport errors pass through; non-2xx answers normalize via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn fetch_admin_config() -> Result<String, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let url = state.cdr.rest_v1("admin/config");
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    let body = crate::cdr::CdrClient::expect_success(response)?.body;
+    Ok(serde_json::from_str::<serde_json::Value>(&body)
+        .and_then(|v| serde_json::to_string_pretty(&v))
+        .unwrap_or(body))
+}
+
+/// Per-template composition counts ("repo usage"; measured ~0.3 s per
+/// count AQL — plain AQL suffices, no CDR stats endpoint). Bounded to the
+/// first 25 templates, sorted by count descending.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors
+/// normalized by the underlying calls.
+#[server]
+pub async fn template_usage() -> Result<Vec<(String, i64)>, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let templates = crate::pages::templates::list_templates().await?;
+    let mut usage = Vec::new();
+    for row in templates.into_iter().take(25) {
+        let aql = format!(
+            "SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c \
+             WHERE c/archetype_details/template_id/value = '{}'",
+            row.template_id.replace('\'', "''")
+        );
+        let body = crate::pages::ehrs::aql_request_body(&aql, &serde_json::json!({}), 0);
+        let url = state.cdr.rest_v1("query/aql");
+        let response = state
+            .cdr
+            .post(
+                &session.credential,
+                &url,
+                "application/json",
+                "application/json",
+                &[],
+                body,
+            )
+            .await?;
+        let response = crate::cdr::CdrClient::expect_success(response)?;
+        let count = serde_json::from_str::<serde_json::Value>(&response.body)
+            .ok()
+            .and_then(|v| {
+                v.get("rows")?
+                    .as_array()?
+                    .first()?
+                    .as_array()?
+                    .first()?
+                    .as_i64()
+            })
+            .unwrap_or(0);
+        usage.push((row.template_id, count));
+    }
+    usage.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
+    Ok(usage)
+}
+
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn SystemPage() -> impl IntoView {
@@ -85,6 +160,8 @@ pub fn SystemPage() -> impl IntoView {
     let smart = smart_card();
     let openapi = openapi_card();
     let activity = activity_log_card();
+    let usage = usage_card();
+    let config = config_card();
 
     view! {
         <Title text="System" />
@@ -94,10 +171,113 @@ pub fn SystemPage() -> impl IntoView {
                 subtitle="CDR status, SMART discovery, and the served OpenAPI surface."
             />
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                {status} {smart} {openapi} {activity}
+                {status} {smart} {usage} {openapi} {config} {activity}
             </div>
         </div>
     }
+}
+
+/// The repo-usage card: per-template composition counts.
+fn usage_card() -> AnyView {
+    let resource = Resource::new(|| (), |()| async move { template_usage().await });
+    let body = view! {
+        <Suspense fallback=|| {
+            view! {
+                <thaw::Skeleton>
+                    <thaw::SkeletonItem class="h-24" />
+                </thaw::Skeleton>
+            }
+        }>
+            {move || {
+                Suspend::new(async move {
+                    match resource.await {
+                        Ok(rows) if rows.is_empty() => {
+                            view! {
+                                <p class="text-sm text-ink-muted">
+                                    "No templates yet — usage appears once compositions are committed."
+                                </p>
+                            }
+                                .into_any()
+                        }
+                        Ok(rows) => {
+                            let body = rows
+                                .into_iter()
+                                .map(|(template_id, count)| {
+                                    view! {
+                                        <tr class=crate::components::data_table::ROW>
+                                            <td class=crate::components::data_table::CELL_MONO>
+                                                {template_id}
+                                            </td>
+                                            <td class="px-3 py-2 text-right tabular-nums">{count}</td>
+                                        </tr>
+                                    }
+                                        .into_any()
+                                })
+                                .collect_view()
+                                .into_any();
+                            crate::components::data_table::table_shell(
+                                &["Template", "Compositions"],
+                                body,
+                            )
+                        }
+                        Err(e) => crate::components::format_view::inline_error(&e),
+                    }
+                })
+            }}
+        </Suspense>
+    }
+    .into_any();
+    card_shell("Repository usage", false, body)
+}
+
+/// The runtime-configuration card: the CDR's redacted effective config
+/// (read-only). Admin-API-off (404) and insufficient-role (401/403) render
+/// as first-class states.
+fn config_card() -> AnyView {
+    let resource = Resource::new(|| (), |()| async move { fetch_admin_config().await });
+    let body = view! {
+        <Suspense fallback=|| {
+            view! {
+                <thaw::Skeleton>
+                    <thaw::SkeletonItem class="h-24" />
+                </thaw::Skeleton>
+            }
+        }>
+            {move || {
+                Suspend::new(async move {
+                    match resource.await {
+                        Ok(config) => {
+                            view! {
+                                <pre class="max-h-96 overflow-auto rounded-card border border-edge bg-sunken p-3 font-mono text-xs leading-relaxed text-ink">
+                                    {config}
+                                </pre>
+                            }
+                                .into_any()
+                        }
+                        Err(AdminUiError::Cdr { status: 404, .. }) => {
+                            view! {
+                                <p class="text-sm text-ink-muted">
+                                    "The CDR's admin API is disabled — enable [admin] to expose the configuration view."
+                                </p>
+                            }
+                                .into_any()
+                        }
+                        Err(AdminUiError::Forbidden(_)) => {
+                            view! {
+                                <p class="text-sm text-ink-muted">
+                                    "This session lacks the ADMIN role — the configuration view needs an admin sign-in."
+                                </p>
+                            }
+                                .into_any()
+                        }
+                        Err(e) => crate::components::format_view::inline_error(&e),
+                    }
+                })
+            }}
+        </Suspense>
+    }
+    .into_any();
+    card_shell("Runtime configuration (redacted)", true, body)
 }
 
 /// A uniform card shell: a titled design-system card wrapping an already-erased

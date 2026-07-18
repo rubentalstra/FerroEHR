@@ -69,6 +69,7 @@ async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
 
 /// Capture the canonical documentation screenshots for every console screen.
 #[tokio::test]
+#[allow(clippy::too_many_lines)] // one linear capture script over every console view — sectioning it would obscure the walkthrough order
 async fn capture_documentation_screenshots() {
     let Some(h) = Harness::start("docs-shots").await else {
         return;
@@ -277,6 +278,16 @@ async fn capture_documentation_screenshots() {
             &format!("/ehrs/{ehr_id}?tab=contributions"),
             "ehrs/ehr-detail-contributions",
             Some("table tbody"),
+        )
+        .await;
+        // EHR detail: the directory tab (the create-from-template state —
+        // the seeded EHR has no directory).
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=directory"),
+            "ehrs/directory-create",
+            Some("#folder-template"),
         )
         .await;
         // EHR detail: the commit-composition form (scrolled into view).
