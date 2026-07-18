@@ -162,5 +162,125 @@ async fn capture_documentation_screenshots() {
         );
     }
 
+    // ── The feature VIEWS (owner directive 2026-07-18: every view has a
+    //    published screenshot so the console can be reviewed without
+    //    running it). ─────────────────────────────────────────────────────
+    if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
+        // EHR detail: the status tab (URL-driven tab state).
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=status"),
+            "ehr-detail-status",
+            Some("pre"),
+        )
+        .await;
+        // EHR detail: the contributions table (needs the extension endpoint).
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=contributions"),
+            "ehr-detail-contributions",
+            Some("table tbody"),
+        )
+        .await;
+        // EHR detail: the commit-composition form (scrolled into view).
+        h.goto(&format!("/ehrs/{ehr_id}?tab=compositions")).await;
+        let commit_body = h.wait_css("#commit-body").await;
+        commit_body
+            .scroll_into_view()
+            .await
+            .expect("scroll to the commit form");
+        let out = dir.join("composition-commit.png");
+        h.driver.screenshot(&out).await.expect("shot");
+        println!("captured composition-commit -> {}", out.display());
+        // Composition viewer: the edit-as-new-version editor open.
+        h.goto(&format!("/ehrs/{ehr_id}/compositions/{vo_id}"))
+            .await;
+        h.wait_css("#edit-new-version")
+            .await
+            .click()
+            .await
+            .expect("open the version editor");
+        let edit_body = h.wait_css("#edit-body").await;
+        edit_body
+            .scroll_into_view()
+            .await
+            .expect("scroll to the editor");
+        let out = dir.join("composition-editor.png");
+        h.driver.screenshot(&out).await.expect("shot");
+        println!("captured composition-editor -> {}", out.display());
+    } else {
+        println!("SKIP docs-shots: feature views need the seeded ids");
+    }
+
+    // Raw AQL: run a data query — results table + export buttons, then the
+    // chart view (the seeded quantity magnitudes over the row order).
+    h.goto("/queries/aql").await;
+    h.wait_css("#aql-editor")
+        .await
+        .send_keys(
+            "SELECT c/context/start_time/value AS time,              c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude              FROM EHR e CONTAINS COMPOSITION c              WHERE c/archetype_details/template_id/value = 'minimal_evaluation.en.v1'",
+        )
+        .await
+        .expect("type the AQL");
+    h.wait_xpath("//button[normalize-space(.)='Run']")
+        .await
+        .click()
+        .await
+        .expect("run");
+    h.wait_xpath("//button[contains(., 'Export CSV')]").await;
+    let out = dir.join("query-aql-results.png");
+    h.driver.screenshot(&out).await.expect("shot");
+    println!("captured query-aql-results -> {}", out.display());
+    h.wait_xpath("//button[normalize-space(.)='Chart']")
+        .await
+        .click()
+        .await
+        .expect("chart toggle");
+    h.wait_css("svg.chartistry_chart, div.overflow-x-auto svg").await;
+    let out = dir.join("query-results-chart.png");
+    h.driver.screenshot(&out).await.expect("shot");
+    println!("captured query-results-chart -> {}", out.display());
+
+    // The user menu + scopes drawer.
+    h.goto("/").await;
+    h.wait_css("#user-menu-trigger button")
+        .await
+        .click()
+        .await
+        .expect("open the user menu");
+    h.wait_css(".thaw-popover-surface").await;
+    let out = dir.join("user-menu.png");
+    h.driver.screenshot(&out).await.expect("shot");
+    println!("captured user-menu -> {}", out.display());
+    h.wait_xpath("//button[contains(., 'View scopes')]")
+        .await
+        .click()
+        .await
+        .expect("open the scopes drawer");
+    h.wait_xpath("//*[contains(., 'Access scopes')]").await;
+    let out = dir.join("scopes-drawer.png");
+    h.driver.screenshot(&out).await.expect("shot");
+    println!("captured scopes-drawer -> {}", out.display());
+
+    // Dark mode (one representative capture; the toggle persists, so flip
+    // back afterwards to leave the session light for any later steps).
+    h.goto("/").await;
+    h.wait_css("button[aria-label='Toggle dark mode']")
+        .await
+        .click()
+        .await
+        .expect("dark on");
+    h.wait_css("html.dark").await;
+    let out = dir.join("dashboard-dark.png");
+    h.driver.screenshot(&out).await.expect("shot");
+    println!("captured dashboard-dark -> {}", out.display());
+    h.wait_css("button[aria-label='Toggle dark mode']")
+        .await
+        .click()
+        .await
+        .expect("dark off");
+
     h.finish().await;
 }
