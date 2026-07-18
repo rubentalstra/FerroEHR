@@ -49,6 +49,7 @@ async fn run(
         "definition_template_adl2_example_get" => template_adl2::example_get(&parts),
         "definition_template_adl2_version_get" => template_adl2::version_get(&parts),
         "definition_query_list" => stored_query::list(&state, &parts).await,
+        "definition_query_list_all" => stored_query::list_all(&state, &parts).await,
         "definition_query_store.yaml" => stored_query::store(&state, &parts).await,
         "definition_query_version_get" => stored_query::version_get(&state, &parts).await,
         "definition_query_version_store.yaml" => stored_query::version_store(&state, &parts).await,

@@ -16,6 +16,7 @@
 #                       very artifact containers.yml pushed.
 #   UI_E2E_NO_COMPOSE   if set, assume CDR+Keycloak are already up.
 #   UI_E2E_KEEP_UP      if set, skip teardown (local debugging).
+#   UI_E2E_SHOTS_ONLY   if set, skip the journeys entirely (capture pass only).
 #   UI_E2E_DOCS_SHOTS   if set, also run the --docs-shots capture pass
 #                       (canonical per-screen screenshots for website/book).
 #   CHROMEDRIVER        chromedriver binary (default: chromedriver on PATH).
@@ -149,6 +150,28 @@ curl -sf -o /dev/null -u ehrbase:ehrbase -X PUT \
   -H "Content-Type: application/json" -H "Accept: application/json" \
   -H "If-Match: \"$SEED_VUID\"" --data-binary @/tmp/ui-e2e-example.json
 echo "   seeded EHR $SEEDED_EHR_ID / composition $SEEDED_VO_ID (2 versions)"
+# Three more single-composition EHRs committed as FLAT with real quantity
+# magnitudes (the example generator emits only the skeleton — issue #94 —
+# so charts/tables need explicitly valued data points).
+day=14
+for magnitude in 36.5 37.8 39.1; do
+  extra_ehr=$(curl -sf -u ehrbase:ehrbase -X POST "$CDR_V1/ehr" \
+    -H "Prefer: return=representation" -H "Accept: application/json" \
+    | python3 -c "import json,sys; print(json.load(sys.stdin)['ehr_id']['value'])")
+  curl -sf -o /dev/null -u ehrbase:ehrbase -X POST \
+    "$CDR_V1/ehr/$extra_ehr/composition" \
+    -H "Content-Type: application/openehr.wt.flat+json" -H "Accept: application/json" \
+    -H "openehr-template-id: $SEED_TEMPLATE" -H "Prefer: return=minimal" \
+    -d "{
+      \"ctx/language\": \"en\", \"ctx/territory\": \"US\",
+      \"ctx/composer_name\": \"Seed composer\",
+      \"ctx/time\": \"2026-07-${day}T08:00:00Z\",
+      \"minimal/minimal/quantity|magnitude\": $magnitude,
+      \"minimal/minimal/quantity|unit\": \"kg\"
+    }"
+  day=$((day + 1))
+done
+echo "   seeded 3 extra FLAT compositions with quantity magnitudes"
 
 # ── 3. The console under test ────────────────────────────────────────────────
 if [ -n "${UI_E2E_IMAGE:-}" ]; then
@@ -196,6 +219,9 @@ DRIVER_PID=$!
 wait_http "http://127.0.0.1:$DRIVER_PORT/status"
 
 # ── 5. The journeys ──────────────────────────────────────────────────────────
+if [ -n "${UI_E2E_SHOTS_ONLY:-}" ]; then
+  echo "── journeys skipped (UI_E2E_SHOTS_ONLY)"
+else
 echo "── running e2e journeys"
 # The docs-screenshot binary (e2e_docs_shots) matches `binary(/^e2e_/)` too, so
 # exclude it here (nextest set-difference `-`); it runs only in the gated pass
@@ -212,6 +238,7 @@ UI_E2E_OIDC_PASS="E2ePass-admin1!" \
 UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
 UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
   cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 "${NEXTEST_FILTER[@]}"
+fi
 
 # ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────
 # When UI_E2E_DOCS_SHOTS is set, capture the canonical per-screen screenshots
@@ -224,6 +251,7 @@ if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
   UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
   UI_E2E_BASIC_USER="ehrbase" \
   UI_E2E_BASIC_PASS="ehrbase" \
+  UI_E2E_CDR_URL="$CDR_URL" \
   UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
   UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
   UI_E2E_DOCS_SHOTS=1 \

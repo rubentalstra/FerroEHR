@@ -179,8 +179,8 @@ impl EhrbaseService {
     ///
     /// `template_id`/`created_at` are `NOT NULL` (`0001_baseline.sql`
     /// §`template_store`), so a decode failure there is a genuine server fault:
-    /// surface it (`?` → `500`) rather than silently blanking the field
-    /// (W-14 F-29). `concept`/`root_archetype` are genuinely nullable, so a SQL
+    /// surface it (`?` → `500`) rather than silently blanking the field.
+    /// `concept`/`root_archetype` are genuinely nullable, so a SQL
     /// `NULL` stays `None` while a *decode* error still propagates.
     ///
     /// The `version` field is the ITS-REST `TemplateMetadata.version` (optional +

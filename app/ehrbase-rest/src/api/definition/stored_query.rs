@@ -43,6 +43,22 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
     ))
 }
 
+/// `GET …/definition/query` — every registered stored query (the empty
+/// prefix of the same list). NOTE: the vendored ITS-REST OAS defines only
+/// the `{qualified_query_name}` route; the bare listing is our own
+/// convenience extension of that route's documented prefix semantics
+/// ("List stored queries") — no openEHR spec governs the bare form.
+pub(super) async fn list_all(
+    state: &AppState,
+    parts: &RequestParts,
+) -> Result<Response, RestError> {
+    Ok(negotiate::respond(
+        &parts.headers,
+        StatusCode::OK,
+        &state.backend().query_list(String::new()).await?,
+    ))
+}
+
 /// `PUT …/definition/query/{qualified_query_name}` — store/upsert a query
 /// (server-assigned SEMVER).
 ///
