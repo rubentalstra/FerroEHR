@@ -77,6 +77,28 @@ async fn run(
             state.backend().admin_ehr_delete(p.ehr_id).await?;
             Ok(negotiate::empty(StatusCode::NO_CONTENT))
         }
+        // Admin extensions (our own design — the ITS-REST Admin API defines only
+        // EHR deletes; see the module NOTE). Both mirror `admin_ehr_delete`:
+        // 204 on success, 404 for an unknown id, same admin gate.
+        "admin_template_delete" => {
+            let template_id = path_segment(&parts, "template_id")?;
+            // Physical template delete: 204; unknown id → 404; a template still
+            // referenced by a committed version → 409 (never orphan clinical
+            // data). The service maps those outcomes.
+            state.backend().admin_template_delete(template_id).await?;
+            Ok(negotiate::empty(StatusCode::NO_CONTENT))
+        }
+        "admin_query_delete" => {
+            let qualified_name = path_segment(&parts, "qualified_query_name")?;
+            let version = path_segment(&parts, "version")?;
+            // Single stored-query-version delete: 204; unknown (name, version) →
+            // 404.
+            state
+                .backend()
+                .admin_query_delete(qualified_name, version)
+                .await?;
+            Ok(negotiate::empty(StatusCode::NO_CONTENT))
+        }
         "admin_ehr_delete_all" => {
             // The generated `AdminEhrDeleteAllParams.ehr_id: Option<String>`
             // under-models the RFC 6570 `{?ehr_id*}` list: the type-directed
@@ -110,6 +132,17 @@ async fn run(
             "unrouted admin operation: {other}"
         )))),
     }
+}
+
+/// Read a required path segment for the admin extension routes (not modelled by
+/// a generated params type). A missing segment is impossible for a matched route
+/// but is mapped to a `400` rather than panicking.
+fn path_segment(parts: &RequestParts, key: &str) -> Result<String, RestError> {
+    parts.path.get(key).cloned().ok_or_else(|| {
+        RestError(ApiError::BadRequest(format!(
+            "missing path parameter '{key}'"
+        )))
+    })
 }
 
 /// Collect every `ehr_id` value from the raw query string, splitting each on

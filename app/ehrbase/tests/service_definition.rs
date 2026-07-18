@@ -359,6 +359,22 @@ async fn template_adl14_list_filters_and_paginates() {
         vec!["IDCR Problem List.v1".to_owned()],
         "offset=1 fetch=1 yields the second sorted template"
     );
+
+    // The optional ITS-REST TemplateMetadata.version is derived from the
+    // template_id's `.vN` axis (spec: "taken from template_id") — never stored.
+    // "IDCR Allergies List.v0" → "0", "IDCR Problem List.v1" → "1".
+    for descriptor in &all {
+        let tid = descriptor["template_id"].as_str().expect("template_id");
+        let expected = tid
+            .rsplit_once(".v")
+            .map(|(_, v)| v)
+            .expect("id carries .vN");
+        assert_eq!(
+            descriptor["version"].as_str(),
+            Some(expected),
+            "version derived from {tid}"
+        );
+    }
 }
 
 /// The wire `query_type` formalism: a non-AQL formalism is an honest

@@ -54,3 +54,9 @@ type) is shown alongside.
 **Edit as new version** opens the currently displayed canonical JSON in
 an editor and commits it as the next version (`If-Match` on the latest
 version — a concurrent change is reported instead of overwritten).
+
+A version **timeline strip** walks the revision history at a glance, and
+the **At time** picker resolves whichever version was current at a chosen
+moment (`version_at_time`). The EHR detail's contributions tab lists the
+EHR's contributions — id, commit time, committer, change type — with the
+by-uid lookup kept underneath.

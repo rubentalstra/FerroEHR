@@ -88,6 +88,11 @@ fn mode_of(op: &str) -> Mode {
         "ehr_create" | "ehr_create_with_id" | "ehr_get_by_id" | "ehr_get_by_subject" => Mode::Pre,
         "composition_create" | "composition_update" | "composition_delete" => Mode::Pre,
         "contribution_create" => Mode::Pre,
+        // The contribution-list extension is an EHR-scoped read: pre-check it on
+        // the target EHR (subject gate) exactly like the other EHR reads, before
+        // any backend work. `kind_of` already maps `contribution_*` to the
+        // Contribution resource; the ehr_id is a path param, so Pre suffices.
+        "contribution_list" => Mode::Pre,
         "composition_get" => Mode::Post,
         "contribution_get" => Mode::Post,
         _ if op.starts_with("versioned_composition_") => Mode::Post,
@@ -775,6 +780,12 @@ mod tests {
         assert_eq!(mode_of("versioned_composition_get"), Mode::Post);
         assert_eq!(mode_of("contribution_create"), Mode::Pre);
         assert_eq!(mode_of("contribution_get"), Mode::Post);
+        // The contribution-list extension is pre-checked (EHR-scoped read).
+        assert_eq!(mode_of("contribution_list"), Mode::Pre);
+        assert_eq!(
+            kind_of("contribution_list"),
+            Some(crate::extensions::access::authz::request::ResourceKind::Contribution)
+        );
         assert_eq!(mode_of("ehr_status_update"), Mode::Pre);
         assert_eq!(mode_of("versioned_ehr_status_get"), Mode::Pre);
         assert_eq!(mode_of("directory_create"), Mode::Pre);
