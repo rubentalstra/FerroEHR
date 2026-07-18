@@ -192,7 +192,7 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         .context("applying migrations")?;
 
     // ATNA audit (fail-open at boot).
-    let audit_config: AuditConfig = config.atna.clone();
+    let audit_config: AuditConfig = config.audit.clone();
     let (audit_sender, audit_handle) = start_audit(&audit_config, &pool).await;
 
     // Contribution-outbox eventing + FHIR outbound emitter (both off by default).
@@ -358,7 +358,7 @@ async fn start_audit(
     let resolver = config
         .resolve_subject
         .then(|| subject_resolver(pool.clone()));
-    match ehrbase::system_log::sender::start(config.clone(), resolver).await {
+    match ehrbase::system_log::sender::start(config.clone(), resolver, Some(pool.clone())).await {
         Ok((sender, handle)) => (Some(sender), Some(handle)),
         Err(e) => {
             tracing::error!("ATNA audit failed to start ({e}); continuing without auditing");

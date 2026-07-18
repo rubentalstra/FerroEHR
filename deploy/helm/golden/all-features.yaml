@@ -151,14 +151,22 @@ data:
     [admin]
       enabled = true
     
-    [atna]
+    [audit]
       enabled = true
       enterprise_site_id = "site-1"
       fail_mode = "closed"
-      repository_host = "arr.example.com"
-      repository_port = 6514.0
       source_id = "ehrbase-prod"
-      transport = "tls"
+      [audit.fhir_feed]
+        enabled = true
+        url = "https://arr.example.com/fhir"
+      [audit.store]
+        enabled = true
+        retention_days = 90.0
+      [audit.syslog]
+        enabled = true
+        host = "arr.example.com"
+        port = 6514.0
+        transport = "tls"
     
     [auth]
       enabled = true
@@ -327,7 +335,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ehrbase.toml changes.
-        checksum/config: a52056bbbcb46a93c46a85c640aca50232fbd84e2e4ebb10f635a11f8d26a664
+        checksum/config: eb34d1118e09440a9e9145c6eac6ac12eecf43fc56e5fe3e7507df1d5466f82f
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"

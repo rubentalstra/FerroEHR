@@ -40,7 +40,7 @@ use axum::body::Body;
 use ehrbase::config::auth::{AuthConfig, BasicConfig, BasicUser};
 use ehrbase::config::server::ServerConfig;
 use ehrbase::service::EhrbaseService;
-use ehrbase::system_log::config::{AuditConfig, FailMode, Transport};
+use ehrbase::system_log::config::{AuditConfig, FailMode, StoreConfig, SyslogConfig, Transport};
 use ehrbase::system_log::sender::{AuditSender, SubjectResolver, start};
 use ehrbase_rest::config::AppConfig;
 use http::{Request, StatusCode};
@@ -153,15 +153,23 @@ async fn audit_capture(suppress_login: bool) -> (UdpSocket, AuditSender) {
     let port = socket.local_addr().expect("addr").port();
     let cfg = AuditConfig {
         enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
+        store: StoreConfig {
+            enabled: false,
+            retention_days: 0,
+        },
+        syslog: SyslogConfig {
+            enabled: true,
+            transport: Transport::Udp,
+            host: "127.0.0.1".to_owned(),
+            port,
+            ..SyslogConfig::default()
+        },
         suppress_login_events: suppress_login,
         fail_mode: FailMode::Open,
         queue_capacity: 64,
         ..AuditConfig::default()
     };
-    let (sender, _handle) = start(cfg, None).await.expect("audit start");
+    let (sender, _handle) = start(cfg, None, None).await.expect("audit start");
     (socket, sender)
 }
 
@@ -177,9 +185,17 @@ async fn audit_capture_fail_closed() -> AuditSender {
     };
     let cfg = AuditConfig {
         enabled: true,
-        transport: Transport::Udp,
-        repository_host: "127.0.0.1".to_owned(),
-        repository_port: port,
+        store: StoreConfig {
+            enabled: false,
+            retention_days: 0,
+        },
+        syslog: SyslogConfig {
+            enabled: true,
+            transport: Transport::Udp,
+            host: "127.0.0.1".to_owned(),
+            port,
+            ..SyslogConfig::default()
+        },
         suppress_login_events: true,
         fail_mode: FailMode::Closed,
         resolve_subject: true,
@@ -196,7 +212,7 @@ async fn audit_capture_fail_closed() -> AuditSender {
             None
         })
     });
-    let (sender, _handle) = start(cfg, Some(resolver)).await.expect("audit start");
+    let (sender, _handle) = start(cfg, Some(resolver), None).await.expect("audit start");
     sender
 }
 

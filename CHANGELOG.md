@@ -50,6 +50,39 @@ workflow refuses a tag that has no matching section here.
   `openEHR-ITS-REST` code system), and Bearer-authenticated requests record
   the token's `jti` as the minimal token identity (token contents are never
   logged).
+- **ATNA audit — FHIR R4 `AuditEvent` rendering (IHE BALP)**: every audit
+  record also renders as a FHIR R4 `AuditEvent` conforming to the IHE Basic
+  Audit Log Patterns (Patient\*/plain Create/Read/Update/Delete/Query
+  profiles, `OAUTHaccessTokenUse.Minimal` token agent, profile claims only
+  when genuinely satisfied) — the modern half of the dual ATNA format.
+- **ATNA audit — local Audit Record Repository, on by default**: audit
+  records are persisted in a new PostgreSQL `audit` schema (append-only;
+  strictly outside the EHR content; per-sink delivery stamps; configurable
+  `retention_days` with an hourly reaper). Every deployment now gets a
+  queryable audit trail out of the box with nothing leaving the node.
+- **ATNA audit — RESTful ATNA forwarding (ITI-20 ATX:FHIR Feed)**: opt-in
+  `[audit.fhir_feed]` sink POSTs each FHIR `AuditEvent` to an external Audit
+  Record Repository; with the local store on, delivery is outbox-driven — an
+  ARR outage loses nothing and pending records ship on recovery.
+- **ATNA audit — per-sink metrics** (`atna_audit_sent_total{sink=…}`,
+  `…send_failed_total{sink=…}`, `atna_audit_rejected_total`,
+  `atna_audit_reaped_total`).
+
+### Changed
+
+- **Audit configuration redesigned: `[atna]` is now `[audit]`**, on by
+  default with only the local store active, and sink-structured:
+  `[audit.store]` (local repository), `[audit.syslog]` (classic
+  DICOM-over-syslog feed; keys `host`/`port`/`transport`/`tls_ca_file`/
+  `tls_identity_cert_file`/`tls_identity_key_file` replace the old
+  `repository_host`/`repository_port`/`tls_*_path`), `[audit.fhir_feed]`
+  (RESTful ATNA). `resolve_subject` now defaults to `true`. A configuration
+  still using `[atna]` fails at boot with did-you-mean guidance (strict
+  loader; no silent aliasing).
+- **Fail-closed auditing got stronger**: with `fail_mode = "closed"` and the
+  local store enabled, a store that stops accepting writes makes every
+  subsequent auditable operation answer `503 Service Unavailable` until a
+  write succeeds again — no un-audited PHI access.
 
 ### Fixed
 

@@ -19,7 +19,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpStream, UdpSocket};
 use tokio_rustls::TlsConnector;
 
-use crate::system_log::config::AuditConfig;
+use crate::system_log::config::SyslogConfig;
 
 // PRI = facility*8 + severity (RFC 5424 §6.2.1). IHE ATNA logs security/audit
 // events: facility 10 ("security/authorization messages") and severity 5
@@ -93,15 +93,15 @@ pub enum Transport {
 }
 
 impl Transport {
-    /// Build the transport the [`AuditConfig`] selects.
+    /// Build the transport the [`SyslogConfig`] selects.
     ///
     /// # Errors
     /// [`io::Error`] on a UDP bind/connect failure or an invalid TLS config
     /// (missing CA, unreadable identity, bad server name).
-    pub async fn connect(config: &AuditConfig) -> io::Result<Self> {
+    pub async fn connect(config: &SyslogConfig) -> io::Result<Self> {
         match config.transport {
             crate::system_log::config::Transport::Udp => Ok(Transport::Udp(
-                UdpTransport::connect(&config.repository_host, config.repository_port).await?,
+                UdpTransport::connect(&config.host, config.port).await?,
             )),
             crate::system_log::config::Transport::Tls => {
                 Ok(Transport::Tls(Box::new(TlsTransport::from_config(config)?)))
@@ -173,15 +173,11 @@ impl TlsTransport {
     /// Build from configuration (loads the CA + optional client identity PEM).
     ///
     /// # Errors
-    /// [`io::Error`] if the TLS client config is invalid or `tls_ca_path` is
+    /// [`io::Error`] if the TLS client config is invalid or `tls_ca_file` is
     /// unset/unreadable.
-    pub fn from_config(config: &AuditConfig) -> io::Result<Self> {
+    pub fn from_config(config: &SyslogConfig) -> io::Result<Self> {
         let client_config = tls_client_config(config)?;
-        Self::new(
-            Arc::new(client_config),
-            &config.repository_host,
-            config.repository_port,
-        )
+        Self::new(Arc::new(client_config), &config.host, config.port)
     }
 
     /// Build from a prebuilt rustls [`rustls::ClientConfig`] (used by tests).
@@ -249,18 +245,18 @@ async fn write_all_flush(
 
 /// Build a rustls [`rustls::ClientConfig`] from the audit TLS settings.
 ///
-/// Requires `tls_ca_path` (IHE nodes are mutually authenticated against an
+/// Requires `tls_ca_file` (IHE nodes are mutually authenticated against an
 /// explicit trust anchor, not the public web PKI). Adds a client certificate
 /// when `tls_identity_*` are set.
 ///
 /// # Errors
 /// [`io::Error`] if the CA path is unset/unreadable, contains no certificates,
 /// or the client identity is invalid.
-pub fn tls_client_config(config: &AuditConfig) -> io::Result<rustls::ClientConfig> {
-    let ca_path = config.tls_ca_path.as_ref().ok_or_else(|| {
+pub fn tls_client_config(config: &SyslogConfig) -> io::Result<rustls::ClientConfig> {
+    let ca_path = config.tls_ca_file.as_ref().ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            "audit.tls_ca_path is required for TLS transport",
+            "audit.syslog.tls_ca_file is required for TLS transport",
         )
     })?;
     let ca_pem = std::fs::read(ca_path)?;
@@ -274,8 +270,8 @@ pub fn tls_client_config(config: &AuditConfig) -> io::Result<rustls::ClientConfi
         .with_root_certificates(roots);
 
     let config = match (
-        &config.tls_identity_cert_path,
-        &config.tls_identity_key_path,
+        &config.tls_identity_cert_file,
+        &config.tls_identity_key_file,
     ) {
         (Some(cert_path), Some(key_path)) => {
             let certs = load_certs(&std::fs::read(cert_path)?)?;

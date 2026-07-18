@@ -81,8 +81,11 @@ data:
     [admin]
       enabled = false
     
-    [atna]
-      enabled = false
+    [audit]
+      enabled = true
+      [audit.store]
+        enabled = true
+        retention_days = 0.0
     
     [auth]
       enabled = true
@@ -201,7 +204,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ehrbase.toml changes.
-        checksum/config: fa2adeb7c0d14b8bea38c2d4da55971096b8664ee36323a09d9a8ad7522450e8
+        checksum/config: 5ddaccfa0e18540ad709583f10645a3d0df1a7c565e6866ed3d47174f7badee4
       labels:
         app.kubernetes.io/name: ehrbase-rs
         app.kubernetes.io/instance: ehrbase-rs

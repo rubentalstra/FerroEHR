@@ -16,7 +16,8 @@
 //! delivery stamps (the forwarding outbox) and retention reaping.
 
 use jiff_sqlx::Timestamp;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
 
 use crate::system_log::AuditError;
 use crate::system_log::codes::AtnaAction;
@@ -40,7 +41,8 @@ impl AuditStore {
 
     /// Persist one audit record: the rendered FHIR `AuditEvent` as the
     /// canonical payload plus the promoted search columns derived from the
-    /// resolved event.
+    /// resolved event. Returns the stored row id (for the per-sink delivery
+    /// stamps).
     ///
     /// # Errors
     /// [`AuditError::Store`] when serialization of the FHIR document or the
@@ -50,14 +52,15 @@ impl AuditStore {
         event: &AuditEvent,
         subject: Option<&str>,
         fhir: &FhirAuditEvent,
-    ) -> Result<(), AuditError> {
+    ) -> Result<Uuid, AuditError> {
         let fhir_json = serde_json::to_value(fhir).map_err(|e| AuditError::Store(e.to_string()))?;
         let outcome = outcome_smallint(event);
         sqlx::query(
             "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
              operation, principal, patient_id, resource_class, resource_id, client_ip, \
              token_id, tenant_id, fhir) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) \
+             RETURNING id",
         )
         .bind(Timestamp::from(event.timestamp))
         .bind(action_str(event))
@@ -72,10 +75,69 @@ impl AuditStore {
         .bind(event.token_id.as_deref())
         .bind(event.tenant_id)
         .bind(fhir_json)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| AuditError::Store(e.to_string()))?
+        .try_get::<Uuid, _>("id")
+        .map_err(|e| AuditError::Store(e.to_string()))
+    }
+
+    /// Stamp a row as delivered by the syslog sink. Delivery stamps are
+    /// best-effort bookkeeping: a failure is logged, never propagated (the
+    /// record itself is already durable).
+    pub async fn mark_syslog_delivered(&self, id: Uuid) {
+        let outcome =
+            sqlx::query("UPDATE audit.audit_event SET delivered_syslog_at = now() WHERE id = $1")
+                .bind(id)
+                .execute(&self.pool)
+                .await;
+        if let Err(e) = outcome {
+            tracing::warn!("audit store: stamping delivered_syslog_at failed: {e}");
+        }
+    }
+
+    /// Stamp a row as delivered by the FHIR feed sink (see
+    /// [`Self::mark_syslog_delivered`] for the best-effort semantics).
+    pub async fn mark_fhir_feed_delivered(&self, id: Uuid) {
+        let outcome = sqlx::query(
+            "UPDATE audit.audit_event SET delivered_fhir_feed_at = now() WHERE id = $1",
+        )
+        .bind(id)
         .execute(&self.pool)
+        .await;
+        if let Err(e) = outcome {
+            tracing::warn!("audit store: stamping delivered_fhir_feed_at failed: {e}");
+        }
+    }
+
+    /// The oldest rows not yet delivered by the FHIR feed sink (the ITI-20
+    /// ATX:FHIR Feed outbox): `(id, fhir document)`, oldest first.
+    ///
+    /// # Errors
+    /// [`AuditError::Store`] when the SELECT fails.
+    pub async fn pending_fhir_feed(
+        &self,
+        limit: i64,
+    ) -> Result<Vec<(Uuid, serde_json::Value)>, AuditError> {
+        let rows = sqlx::query(
+            "SELECT id, fhir FROM audit.audit_event \
+             WHERE delivered_fhir_feed_at IS NULL \
+             ORDER BY stored_at ASC LIMIT $1",
+        )
+        .bind(limit.max(1))
+        .fetch_all(&self.pool)
         .await
         .map_err(|e| AuditError::Store(e.to_string()))?;
-        Ok(())
+        rows.into_iter()
+            .map(|row| {
+                Ok((
+                    row.try_get::<Uuid, _>("id")
+                        .map_err(|e| AuditError::Store(e.to_string()))?,
+                    row.try_get::<serde_json::Value, _>("fhir")
+                        .map_err(|e| AuditError::Store(e.to_string()))?,
+                ))
+            })
+            .collect()
     }
 
     /// Delete records older than `retention_days` (0 = keep forever).
