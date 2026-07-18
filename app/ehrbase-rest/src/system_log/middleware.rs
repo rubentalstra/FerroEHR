@@ -110,6 +110,13 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     let op = resp.extensions().get::<AuditOpId>().copied();
     let principal = resp.extensions().get::<Principal>().cloned();
     let object = resp.extensions().get::<AuditObject>().cloned();
+    // Republished by the tenant-resolution middleware (the task-local scope
+    // has exited by the time this outermost layer runs); absent when tenancy
+    // is off or the request ran unscoped.
+    let tenant = resp
+        .extensions()
+        .get::<ehrbase::extensions::tenant_context::TenantContext>()
+        .map(|t| t.tenant_id);
     // Set by the auth layer only when THIS request performed a genuine
     // authentication (a Basic verified-cache miss) — the hook for the login
     // record, which marks authentication events, not individual requests.
@@ -137,6 +144,7 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             .as_ref()
             .and_then(|o| o.uid.clone())
             .or_else(|| object_id_from_path(op, &path));
+        event.tenant_id = tenant;
         op_rejected = state.backend().emit(event) == EmitOutcome::Rejected;
     }
 
@@ -160,6 +168,7 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         event.event_type = Some(EventType::Login);
         // 401 → no principal (caller UNKNOWN); 403 → the authenticated caller.
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
+        event.tenant_id = tenant;
         let _ = state.backend().emit(event);
     } else if fresh_auth && !state.backend().suppress_login_events() {
         let mut event = AuditEvent::new(
@@ -169,6 +178,7 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         );
         event.event_type = Some(EventType::Login);
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
+        event.tenant_id = tenant;
         let _ = state.backend().emit(event);
     }
 

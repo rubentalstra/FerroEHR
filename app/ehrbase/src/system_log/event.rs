@@ -131,6 +131,10 @@ pub struct AuditEvent {
     /// — the minimal token identity the FHIR `AuditEvent` rendering records
     /// (never the token itself; token contents are never logged).
     pub token_id: Option<String>,
+    /// The audited request's resolved tenant, when tenancy is on and the
+    /// request carried one. Informational on the stored record (the node's
+    /// audit trail is an operator surface, not tenant-scoped).
+    pub tenant_id: Option<uuid::Uuid>,
     /// The event time.
     pub timestamp: Timestamp,
 }
@@ -151,6 +155,7 @@ impl AuditEvent {
             ehr_id: None,
             object_id: None,
             token_id: None,
+            tenant_id: None,
             timestamp: Timestamp::now(),
         }
     }
