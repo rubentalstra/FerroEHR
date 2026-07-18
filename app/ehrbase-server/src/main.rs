@@ -251,6 +251,12 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
     if let Some(sender) = audit_sender {
         service = service.with_audit(sender);
     }
+    // The local Audit Record Repository read side (the ITI-81 retrieval):
+    // wired whenever auditing + the store are on.
+    if audit_enabled && config.audit.store.enabled {
+        service =
+            service.with_audit_store(ehrbase::system_log::store::AuditStore::new(pool.clone()));
+    }
 
     // Opt-in external FHIR terminology provider.
     match config.terminology.external.default_provider() {
