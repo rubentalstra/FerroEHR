@@ -19,10 +19,15 @@ use leptos::component;
 use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::NavigateOptions;
-use leptos_router::components::A;
 use leptos_router::hooks::use_navigate;
 
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::empty_state::EmptyState;
+use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT};
 use crate::components::format_view::DocumentPane;
+use crate::components::page_header::PageHeader;
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 use crate::pages::dashboard::split_query_ref;
 use crate::pages::ehrs::table_skeleton;
@@ -35,6 +40,7 @@ use crate::queries_api::{
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn QueriesPage() -> impl IntoView {
+    let toaster = thaw::ToasterInjection::expect_context();
     // Stored queries load once and feed both the table (left) and the group
     // form's member checkboxes (right); a Resource is Copy so both read it.
     let stored = Resource::new(|| (), |()| async move { list_stored_queries().await });
@@ -43,23 +49,42 @@ pub fn QueriesPage() -> impl IntoView {
         let (name, members) = input.clone();
         async move { save_group(name, members).await }
     });
+    // Records the last mutation's intent so the completion toast reads
+    // correctly ("Group saved" vs "Group deleted"); set at each dispatch site.
+    let save_intent = RwSignal::new("save");
+    // Report each mutation's outcome as a toast (rules: Effect = sync with the
+    // outside world; no signal is written here). Runs client-side only.
+    Effect::new(move |_| match save.value().get() {
+        Some(Ok(())) => {
+            let title = if save_intent.get_untracked() == "delete" {
+                "Group deleted"
+            } else {
+                "Group saved"
+            };
+            toast_success(toaster, title, "");
+        }
+        Some(Err(error)) => toast_error(toaster, "Save failed", &error.to_string()),
+        None => {}
+    });
 
     let table = stored_queries_panel(stored);
-    let groups = groups_panel(stored, save);
+    let groups = groups_panel(stored, save, save_intent);
 
     view! {
         <Title text="Stored queries · ehrbase-admin" />
-        <div class="p-4">
-            <div class="flex items-center justify-between mb-4">
-                <h1 class="text-xl font-semibold">"Stored queries"</h1>
-                <A
-                    href="/queries/builder"
-                    attr:class="inline-flex items-center rounded bg-blue-600 text-white px-3 py-1.5 text-sm hover:bg-blue-700"
-                >
-                    "New query (builder)"
-                </A>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">{table} {groups}</div>
+        <div class="p-6">
+            <PageHeader
+                title="Queries"
+                subtitle="The CDR's stored queries and the console's local query groups."
+            >
+                <a href="/queries/builder" class=BTN_PRIMARY>
+                    "New query"
+                </a>
+                <a href="/queries/aql" class=BTN_SECONDARY>
+                    "Raw AQL"
+                </a>
+            </PageHeader>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">{table} {groups}</div>
         </div>
     }
 }
@@ -84,8 +109,8 @@ fn stored_queries_panel(stored: Resource<Result<Vec<StoredQueryRow>, AdminUiErro
     let table = stored_table(stored, selected);
     let detail_view = stored_detail(detail);
     view! {
-        <section>
-            <h2 class="text-sm font-semibold text-neutral-500 mb-2">"Queries"</h2>
+        <section class="space-y-3">
+            <h2 class=CARD_TITLE>"Stored queries"</h2>
             {table}
             {detail_view}
         </section>
@@ -119,11 +144,11 @@ fn stored_rows_view(
 ) -> AnyView {
     if rows.is_empty() {
         return view! {
-            <thaw::MessageBar intent=thaw::MessageBarIntent::Info>
-                <thaw::MessageBarBody>
-                    "No stored queries — create one from the query builder."
-                </thaw::MessageBarBody>
-            </thaw::MessageBar>
+            <EmptyState
+                icon=icondata_lu::LuSearchCode
+                message="No stored queries"
+                hint="Build one in the query builder, or write raw AQL, then save it."
+            />
         }
         .into_any();
     }
@@ -131,22 +156,9 @@ fn stored_rows_view(
         <For each=move || rows.clone() key=|row| format!("{}@{}", row.name, row.version) let:row>
             {stored_row(row, selected)}
         </For>
-    };
-    view! {
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-                <thead>
-                    <tr class="border-b border-neutral-200 dark:border-neutral-700">
-                        <th class="text-left font-medium text-neutral-500 py-1 pr-4">"name"</th>
-                        <th class="text-left font-medium text-neutral-500 py-1 pr-4">"version"</th>
-                        <th class="text-left font-medium text-neutral-500 py-1 pr-4">"saved"</th>
-                    </tr>
-                </thead>
-                <tbody>{body}</tbody>
-            </table>
-        </div>
     }
-    .into_any()
+    .into_any();
+    table_shell(&["Name", "Version", "Saved", ""], body)
 }
 
 /// One stored-query row. Clicking it toggles the single-select detail below the
@@ -165,15 +177,30 @@ fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>)
             }
         });
     };
+    // "Open in editor": a link to the raw-editor route, which reads `?load=` to
+    // fetch and seed the query. The click is stopped from bubbling to the row's
+    // toggle handler (so a click here never expands the detail); with no router
+    // delegation reached, the browser does a plain navigation to the fresh page.
+    // `name@version` is percent-encoded as one value.
+    let qualified_ref = format!("{}@{}", row.name, row.version);
+    let load_href = format!(
+        "/queries/aql?load={}",
+        crate::urlq::encode_query_value(&qualified_ref)
+    );
     view! {
         <tr
-            class="border-b border-neutral-100 dark:border-neutral-800 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/40"
-            class=("bg-neutral-100", is_selected)
+            class=format!("{ROW} cursor-pointer")
+            class=("bg-accent-subtle", is_selected)
             on:click=on_click
         >
-            <td class="py-1 pr-4 font-mono">{row.name}</td>
-            <td class="py-1 pr-4 font-mono">{row.version}</td>
-            <td class="py-1 pr-4 text-xs text-neutral-500">{row.saved}</td>
+            <td class=CELL_MONO>{row.name}</td>
+            <td class=CELL_MONO>{row.version}</td>
+            <td class=format!("{CELL} text-xs text-ink-muted")>{row.saved}</td>
+            <td class=format!("{CELL} text-right")>
+                <a href=load_href class=BTN_SECONDARY on:click=|ev| ev.stop_propagation()>
+                    "Open in editor"
+                </a>
+            </td>
         </tr>
     }
 }
@@ -185,7 +212,7 @@ fn stored_detail(detail: Resource<Result<Option<String>, AdminUiError>>) -> AnyV
     view! {
         <div class="mt-3">
             <Transition fallback=|| {
-                view! { <p class="text-sm text-neutral-500">"Loading query…"</p> }
+                view! { <p class="text-sm text-ink-muted">"Loading query…"</p> }
             }>
                 {move || Suspend::new(async move {
                     match detail.await {
@@ -214,18 +241,14 @@ fn detail_panel(aql: String) -> AnyView {
     };
     let body = Signal::derive(move || aql.clone());
     view! {
-        <div class="rounded border border-neutral-200 dark:border-neutral-700 p-3">
+        <div class=CARD_PAD>
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                <span class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
                     "AQL"
                 </span>
-                <thaw::Button
-                    appearance=thaw::ButtonAppearance::Primary
-                    size=thaw::ButtonSize::Small
-                    on_click=on_run
-                >
+                <button type="button" class=BTN_PRIMARY on:click=on_run>
                     "Run"
-                </thaw::Button>
+                </button>
             </div>
             <DocumentPane body=body />
         </div>
@@ -240,6 +263,7 @@ fn detail_panel(aql: String) -> AnyView {
 fn groups_panel(
     stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>,
     save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
+    save_intent: RwSignal<&'static str>,
 ) -> AnyView {
     // Groups refetch whenever the save action's version bumps (rules §6).
     let groups = Resource::new(
@@ -252,11 +276,11 @@ fn groups_panel(
     // Which existing group is awaiting a delete confirmation (second click).
     let pending_delete = RwSignal::new(Option::<String>::None);
 
-    let form = group_form(stored, save, name, selected);
-    let list = groups_list(groups, save, name, selected, pending_delete);
+    let form = group_form(stored, save, save_intent, name, selected);
+    let list = groups_list(groups, save, save_intent, name, selected, pending_delete);
     view! {
-        <section>
-            <h2 class="text-sm font-semibold text-neutral-500 mb-2">"Groups"</h2>
+        <section class="space-y-3">
+            <h2 class=CARD_TITLE>"Groups"</h2>
             {form}
             {list}
         </section>
@@ -269,63 +293,40 @@ fn groups_panel(
 fn group_form(
     stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>,
     save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
+    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
 ) -> AnyView {
     let on_save = move |_| {
         let group_name = name.get().trim().to_owned();
+        save_intent.set("save");
         save.dispatch((group_name, selected.get()));
     };
     let on_clear = move |_| {
         name.set(String::new());
         selected.set(Vec::new());
     };
+    let saving = Signal::derive(move || save.pending().get());
     let checkboxes = member_checkboxes(stored, selected);
     view! {
-        <div class="rounded border border-neutral-200 dark:border-neutral-700 p-3 mb-4">
+        <div class=CARD_PAD>
             <input
                 type="text"
-                class="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm mb-3"
+                class=format!("{INPUT} w-full mb-3")
                 placeholder="group name"
                 prop:value=move || name.get()
                 on:input:target=move |ev| name.set(ev.target().value())
             />
-            <div class="text-xs font-medium text-neutral-500 mb-1">"Members"</div>
+            <div class="text-xs font-medium text-ink-muted mb-1">"Members"</div>
             <div class="max-h-48 overflow-y-auto mb-3">{checkboxes}</div>
             <div class="flex items-center gap-2">
-                <thaw::Button appearance=thaw::ButtonAppearance::Primary on_click=on_save>
+                <button type="button" class=BTN_PRIMARY disabled=saving on:click=on_save>
                     "Save group"
-                </thaw::Button>
-                <thaw::Button appearance=thaw::ButtonAppearance::Subtle on_click=on_clear>
+                </button>
+                <button type="button" class=BTN_SECONDARY on:click=on_clear>
                     "Clear"
-                </thaw::Button>
-                {group_form_feedback(save)}
+                </button>
             </div>
-        </div>
-    }
-    .into_any()
-}
-
-/// The save action's inline state: a pending hint, the error verbatim, or a
-/// success confirmation.
-fn group_form_feedback(save: Action<(String, Vec<String>), Result<(), AdminUiError>>) -> AnyView {
-    view! {
-        <div class="text-sm">
-            <Show when=move || save.pending().get()>
-                <span class="text-neutral-500">"Saving…"</span>
-            </Show>
-            {move || match save.value().get() {
-                Some(Err(error)) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                Some(Ok(())) => view! { <span class="text-emerald-600">"Saved."</span> }.into_any(),
-                None => ().into_any(),
-            }}
         </div>
     }
     .into_any()
@@ -339,7 +340,7 @@ fn member_checkboxes(
 ) -> AnyView {
     view! {
         <Suspense fallback=|| {
-            view! { <p class="text-xs text-neutral-500">"Loading queries…"</p> }
+            view! { <p class="text-xs text-ink-muted">"Loading queries…"</p> }
         }>
             {move || Suspend::new(async move {
                 match stored.await {
@@ -355,7 +356,7 @@ fn member_checkboxes(
 /// Render one checkbox per stored query (or an empty hint).
 fn checkbox_list(rows: &[StoredQueryRow], selected: RwSignal<Vec<String>>) -> AnyView {
     if rows.is_empty() {
-        return view! { <p class="text-xs text-neutral-500">"No stored queries to add."</p> }
+        return view! { <p class="text-xs text-ink-muted">"No stored queries to add."</p> }
             .into_any();
     }
     let items = rows
@@ -383,8 +384,8 @@ fn member_checkbox(row: &StoredQueryRow, selected: RwSignal<Vec<String>>) -> Any
         });
     };
     view! {
-        <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" prop:checked=checked on:change=on_change />
+        <label class="flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" class="accent-accent" prop:checked=checked on:change=on_change />
             <span class="font-mono">{member}</span>
         </label>
     }
@@ -395,17 +396,20 @@ fn member_checkbox(row: &StoredQueryRow, selected: RwSignal<Vec<String>>) -> Any
 fn groups_list(
     groups: Resource<Result<Vec<QueryGroup>, AdminUiError>>,
     save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
+    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
     pending_delete: RwSignal<Option<String>>,
 ) -> AnyView {
     view! {
         <Transition fallback=|| {
-            view! { <p class="text-sm text-neutral-500">"Loading groups…"</p> }
+            view! { <p class="text-sm text-ink-muted">"Loading groups…"</p> }
         }>
             {move || Suspend::new(async move {
                 match groups.await {
-                    Ok(loaded) => groups_list_view(loaded, save, name, selected, pending_delete),
+                    Ok(loaded) => {
+                        groups_list_view(loaded, save, save_intent, name, selected, pending_delete)
+                    }
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -418,16 +422,24 @@ fn groups_list(
 fn groups_list_view(
     groups: Vec<QueryGroup>,
     save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
+    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
     pending_delete: RwSignal<Option<String>>,
 ) -> AnyView {
     if groups.is_empty() {
-        return view! { <p class="text-sm text-neutral-500">"No groups yet."</p> }.into_any();
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuInbox
+                message="No groups yet"
+                hint="Name a group and tick the stored queries to include, then save."
+            />
+        }
+        .into_any();
     }
     let cards = groups
         .into_iter()
-        .map(|group| group_card(&group, save, name, selected, pending_delete))
+        .map(|group| group_card(&group, save, save_intent, name, selected, pending_delete))
         .collect::<Vec<_>>();
     view! { <div class="flex flex-col gap-2">{cards}</div> }.into_any()
 }
@@ -438,6 +450,7 @@ fn groups_list_view(
 fn group_card(
     group: &QueryGroup,
     save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
+    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
     pending_delete: RwSignal<Option<String>>,
@@ -449,11 +462,11 @@ fn group_card(
             let (label, version) =
                 split_query_ref(member).unwrap_or_else(|| (member.clone(), String::new()));
             view! {
-                <thaw::Tag>
+                <span class="inline-flex items-center rounded-control bg-accent-subtle px-2 py-0.5 text-xs text-accent-ink">
                     <span class="font-mono">{label}</span>
                     {(!version.is_empty())
                         .then(|| view! { <span class="opacity-60">" @"{version}</span> })}
-                </thaw::Tag>
+                </span>
             }
         })
         .collect::<Vec<_>>();
@@ -473,6 +486,7 @@ fn group_card(
     };
     let on_delete = move |_| {
         if pending_delete.with(|p| p.as_deref() == Some(name_for_delete.as_str())) {
+            save_intent.set("delete");
             save.dispatch((name_for_delete.clone(), Vec::new()));
             pending_delete.set(None);
         } else {
@@ -481,20 +495,16 @@ fn group_card(
     };
 
     view! {
-        <div class="rounded border border-neutral-200 dark:border-neutral-700 p-3">
+        <div class=CARD_PAD>
             <div class="flex items-center justify-between mb-2">
-                <span class="font-medium">{group_name}</span>
+                <span class="font-medium text-ink">{group_name}</span>
                 <div class="flex gap-2">
-                    <thaw::Button size=thaw::ButtonSize::Small on_click=on_edit>
+                    <button type="button" class=BTN_SECONDARY on:click=on_edit>
                         "Edit"
-                    </thaw::Button>
-                    <thaw::Button
-                        size=thaw::ButtonSize::Small
-                        appearance=thaw::ButtonAppearance::Subtle
-                        on_click=on_delete
-                    >
+                    </button>
+                    <button type="button" class=BTN_DANGER on:click=on_delete>
                         {move || if is_pending() { "Confirm delete" } else { "Delete" }}
-                    </thaw::Button>
+                    </button>
                 </div>
             </div>
             <div class="flex flex-wrap gap-1">{chips}</div>

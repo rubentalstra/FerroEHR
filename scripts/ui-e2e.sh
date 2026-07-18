@@ -7,6 +7,13 @@
 #   scripts/ui-e2e.sh [FILTER]      # FILTER = nextest -E test(...) substring
 #
 # Env:
+#   UI_E2E_IMAGE        if set, run the journeys against the COMPOSED console
+#                       image (docker compose build of docker/admin-ui/
+#                       Dockerfile + the e2e-env override) instead of a host
+#                       cargo-leptos build — the shipped-artifact battery.
+#   UI_E2E_IMAGE_REF    with UI_E2E_IMAGE: use this exact (already published)
+#                       image reference instead of building — CI verifies the
+#                       very artifact containers.yml pushed.
 #   UI_E2E_NO_COMPOSE   if set, assume CDR+Keycloak are already up.
 #   UI_E2E_KEEP_UP      if set, skip teardown (local debugging).
 #   UI_E2E_DOCS_SHOTS   if set, also run the --docs-shots capture pass
@@ -25,7 +32,12 @@ FILTER="${1:-}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-CONSOLE_ADDR="127.0.0.1:3300"
+if [ -n "${UI_E2E_IMAGE:-}" ]; then
+  # Image mode: the composed console publishes the quickstart port.
+  CONSOLE_ADDR="127.0.0.1:3000"
+else
+  CONSOLE_ADDR="127.0.0.1:3300"
+fi
 CONSOLE_URL="http://${CONSOLE_ADDR}"
 CDR_URL="http://localhost:8080"
 KEYCLOAK_URL="http://localhost:8081"
@@ -37,6 +49,9 @@ CONSOLE_PID=""
 DRIVER_PID=""
 cleanup() {
   [ -n "$CONSOLE_PID" ] && kill "$CONSOLE_PID" 2>/dev/null || true
+  if [ -n "${UI_E2E_IMAGE:-}" ] && [ -z "${UI_E2E_KEEP_UP:-}" ]; then
+    docker compose stop ehrbase-admin-ui >/dev/null 2>&1 || true
+  fi
   [ -n "$DRIVER_PID" ] && kill "$DRIVER_PID" 2>/dev/null || true
   if [ -z "${UI_E2E_NO_COMPOSE:-}" ] && [ -z "${UI_E2E_KEEP_UP:-}" ]; then
     docker compose down -v >/dev/null 2>&1 || true
@@ -135,21 +150,39 @@ curl -sf -o /dev/null -u ehrbase:ehrbase -X PUT \
   -H "If-Match: \"$SEED_VUID\"" --data-binary @/tmp/ui-e2e-example.json
 echo "   seeded EHR $SEEDED_EHR_ID / composition $SEEDED_VO_ID (2 versions)"
 
-# ── 3. Build + run the console on the host (the same code the OCI image ships) ─
-echo "── building the console (cargo-leptos)"
-(cd app/ehrbase-admin-ui && LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build)
-echo "── starting the console on $CONSOLE_ADDR"
-LEPTOS_SITE_ROOT="$ROOT/target/site" \
-LEPTOS_SITE_ADDR="$CONSOLE_ADDR" \
-LEPTOS_OUTPUT_NAME="ehrbase-admin-ui" \
-EHRBASE_ADMIN__CDR__BASE_URL="$CDR_URL" \
-EHRBASE_ADMIN__AUTH__OIDC__ENABLED="true" \
-EHRBASE_ADMIN__AUTH__OIDC__ISSUER="$KEYCLOAK_URL/auth/realms/ehrbase" \
-EHRBASE_ADMIN__AUTH__OIDC__CLIENT_ID="ehrbase" \
-EHRBASE_ADMIN__AUTH__OIDC__CLIENT_SECRET="bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va" \
-EHRBASE_ADMIN__AUTH__OIDC__PUBLIC_BASE_URL="$CONSOLE_URL" \
-  "$ROOT/target/debug/ehrbase-admin-ui" &
-CONSOLE_PID=$!
+# ── 3. The console under test ────────────────────────────────────────────────
+if [ -n "${UI_E2E_IMAGE:-}" ]; then
+  # Image mode — the TRUE shipped artifact: compose-build the console image
+  # (docker/admin-ui/Dockerfile) with the e2e-env override supplying the OIDC
+  # test wiring; the issuer (http://keycloak:8081) resolves in-network via
+  # docker DNS and in the E2E browser via the harness host-resolver mapping.
+  if [ -n "${UI_E2E_IMAGE_REF:-}" ]; then
+    echo "── compose up the PUBLISHED console image ($UI_E2E_IMAGE_REF)"
+    EHRBASE_ADMIN_UI_IMAGE="$UI_E2E_IMAGE_REF" \
+      docker compose -f docker-compose.yml -f docker/admin-ui/e2e-env.yml \
+      up -d --no-build --pull always ehrbase-admin-ui
+  else
+    echo "── compose up the console image (build from source)"
+    docker compose -f docker-compose.yml -f docker/admin-ui/e2e-env.yml \
+      up -d --build ehrbase-admin-ui
+  fi
+else
+  echo "── building the console (cargo-leptos)"
+  (cd app/ehrbase-admin-ui && LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build)
+  echo "── starting the console on $CONSOLE_ADDR"
+  LEPTOS_SITE_ROOT="$ROOT/target/site" \
+  LEPTOS_SITE_ADDR="$CONSOLE_ADDR" \
+  LEPTOS_OUTPUT_NAME="ehrbase-admin-ui" \
+  EHRBASE_ADMIN__CDR__BASE_URL="$CDR_URL" \
+  EHRBASE_ADMIN__AUTH__OIDC__ENABLED="true" \
+  EHRBASE_ADMIN__AUTH__OIDC__ISSUER="http://keycloak:8081/auth/realms/ehrbase" \
+  EHRBASE_ADMIN__AUTH__OIDC__RESOLVE="keycloak=127.0.0.1:8081" \
+  EHRBASE_ADMIN__AUTH__OIDC__CLIENT_ID="ehrbase" \
+  EHRBASE_ADMIN__AUTH__OIDC__CLIENT_SECRET="bT5T4oWn3xNdBytQsl2cfpBDi1pp15Va" \
+  EHRBASE_ADMIN__AUTH__OIDC__PUBLIC_BASE_URL="$CONSOLE_URL" \
+    "$ROOT/target/debug/ehrbase-admin-ui" &
+  CONSOLE_PID=$!
+fi
 wait_http "$CONSOLE_URL/login"
 
 # ── 4. chromedriver ──────────────────────────────────────────────────────────

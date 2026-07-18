@@ -18,9 +18,11 @@
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
-use leptos_router::hooks::use_params_map;
+use leptos_router::hooks::{use_params_map, use_query_map};
 
 use crate::builder::catalog::CatalogNode;
+use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
 
@@ -83,6 +85,63 @@ pub async fn fetch_template_catalog(template_id: String) -> Result<CatalogNode, 
     Ok(crate::builder::catalog::from_web_template(&web_template))
 }
 
+/// Template identity + language metadata for the detail header card,
+/// combined from the typed OPT (uid, concept, original language) and its
+/// Web Template (version, default + available languages).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TemplateMeta {
+    /// The operational-template id.
+    pub template_id: String,
+    /// The template concept / display name.
+    pub concept: String,
+    /// The OPT `uid` (empty when the template carries none).
+    pub uid: String,
+    /// The OPT's original language code.
+    pub language: String,
+    /// The Web Template `version`.
+    pub version: String,
+    /// Every language the template carries terms for.
+    pub languages: Vec<String>,
+}
+
+/// Fetch the OPT and distil the identity/metadata card fields (typed parse —
+/// the same `openehr_its::opt14` + WebTemplate pipeline as the catalog).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors as
+/// above; [`AdminUiError::Internal`] when the OPT fails to parse or the Web
+/// Template fails to build.
+#[server]
+pub async fn fetch_template_meta(template_id: String) -> Result<TemplateMeta, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let url = state.cdr.rest_v1(&format!(
+        "definition/template/adl1.4/{}",
+        urlencoding::encode(&template_id)
+    ));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/xml")
+        .await?;
+    let xml = crate::cdr::CdrClient::expect_success(response)?.body;
+    let opt = openehr_its::opt14::from_xml(&xml)
+        .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
+    let web_template = openehr_flat::webtemplate::build_web_template(&opt)
+        .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
+    Ok(TemplateMeta {
+        template_id: opt.template_id.value.clone(),
+        concept: opt.concept.clone(),
+        uid: opt
+            .uid
+            .as_ref()
+            .map(|u| u.value.clone())
+            .unwrap_or_default(),
+        language: opt.language.code_string.clone(),
+        version: web_template.version.clone(),
+        languages: web_template.languages.clone(),
+    })
+}
+
 /// Fetch the CDR-generated example composition for the template, in `format`.
 ///
 /// GET `definition/template/adl1.4/{template_id}/example` with `Accept` set to
@@ -120,7 +179,14 @@ pub fn TemplateDetailPage() -> impl IntoView {
     let template_id =
         Signal::derive(move || params.with(|map| map.get("template_id").unwrap_or_default()));
 
-    let selected_tab = RwSignal::new(String::from("wt"));
+    // Tab state lives in the URL (`?tab=`), so it is shareable and
+    // refresh-safe (rules §9); it defaults to the WT catalog when absent.
+    let query = use_query_map();
+    let selected_tab = Memo::new(move |_| {
+        query
+            .with(|q| q.get("tab"))
+            .unwrap_or_else(|| "wt".to_owned())
+    });
     let selected_node = RwSignal::new(None::<CatalogNode>);
     let example_format = RwSignal::new(ReprFormat::CanonicalJson);
 
@@ -158,34 +224,127 @@ pub fn TemplateDetailPage() -> impl IntoView {
         },
     );
 
+    // The identity/metadata card is tab-independent (owner directive
+    // 2026-07-18: template id, concept, version, UID, languages always
+    // visible on the detail screen).
+    let meta = Resource::new(
+        move || template_id.get(),
+        |id| async move { fetch_template_meta(id).await },
+    );
+
     let wt_pane = wt_tab(catalog, selected_node);
     let opt_pane = opt_tab(opt);
     let example_pane = example_tab(example, example_format);
+    let meta_card = meta_section(meta);
+
+    // The tabs are URL-driven pill links (rules §9): a static-Tailwind anchor
+    // per view, the active one styled from the `selected_tab` Memo. No thaw
+    // TabList — the selected view is a shareable query param, not private
+    // widget state. All three bodies stay mounted (toggled by `class:hidden`)
+    // so each pane keeps its loaded state across tab switches.
+    let tab_link = move |value: &'static str, label: &'static str| {
+        let class = move || {
+            let base = "rounded-control px-3 py-1.5 text-sm font-medium transition-colors";
+            if selected_tab.get() == value {
+                format!("{base} bg-accent-subtle text-accent-ink")
+            } else {
+                format!("{base} text-ink-muted hover:bg-sunken")
+            }
+        };
+        let href = move || format!("/templates/{}?tab={value}", template_id.get());
+        view! {
+            <leptos_router::components::A href=href attr:class=class>
+                {label}
+            </leptos_router::components::A>
+        }
+        .into_any()
+    };
 
     view! {
         <Title text=move || format!("Template · {}", template_id.get()) />
-        <div class="p-4">
-            <div class="flex items-center gap-3 mb-3">
-                <leptos_router::components::A
-                    href="/templates"
-                    attr:class="text-sm text-blue-600 hover:underline"
-                >
-                    "← Templates"
-                </leptos_router::components::A>
-                <h1 class="text-xl font-semibold font-mono">{move || template_id.get()}</h1>
-            </div>
-            <thaw::TabList selected_value=selected_tab>
-                <thaw::Tab value="wt">"WT"</thaw::Tab>
-                <thaw::Tab value="opt">"OPT"</thaw::Tab>
-                <thaw::Tab value="example">"Example"</thaw::Tab>
-            </thaw::TabList>
-            <div class="mt-4">
+        <div class="p-6">
+            <PageHeader
+                title=template_id
+                crumbs=vec![Crumb::new("Templates", "/templates")]
+                mono=true
+            />
+            {meta_card}
+            <nav aria-label="Template views" class="flex gap-1 mb-4">
+                {tab_link("wt", "WT")}
+                {tab_link("opt", "OPT")}
+                {tab_link("example", "Example")}
+            </nav>
+            <div>
                 <div class:hidden=move || selected_tab.get() != "wt">{wt_pane}</div>
                 <div class:hidden=move || selected_tab.get() != "opt">{opt_pane}</div>
                 <div class:hidden=move || selected_tab.get() != "example">{example_pane}</div>
             </div>
         </div>
     }
+}
+
+/// The identity/metadata card: template id, concept, version, UID, and
+/// languages — always visible above the tabs. Resolved inside `Suspense`
+/// per the house error pattern.
+fn meta_section(meta: Resource<Result<TemplateMeta, AdminUiError>>) -> AnyView {
+    let entry = |label: &'static str, value: String, mono: bool| {
+        let value_class = if mono {
+            "font-mono text-xs text-ink break-all"
+        } else {
+            "text-sm text-ink"
+        };
+        let shown = if value.is_empty() {
+            "—".to_owned()
+        } else {
+            value
+        };
+        view! {
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                    {label}
+                </dt>
+                <dd class=value_class>{shown}</dd>
+            </div>
+        }
+        .into_any()
+    };
+    view! {
+        <section class=format!("{CARD_PAD} mb-4")>
+            <Suspense fallback=|| {
+                view! {
+                    <thaw::Skeleton class="h-10">
+                        <thaw::SkeletonItem />
+                    </thaw::Skeleton>
+                }
+            }>
+                {move || {
+                    Suspend::new(async move {
+                        match meta.await {
+                            Ok(m) => {
+                                let language_list = if m.languages.is_empty() {
+                                    m.language.clone()
+                                } else {
+                                    m.languages.join(", ")
+                                };
+                                view! {
+                                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
+                                        {entry("Concept", m.concept, false)}
+                                        {entry("Version", m.version, false)}
+                                        {entry("Default language", m.language, false)}
+                                        {entry("Languages", language_list, false)}
+                                        {entry("UID", m.uid, true)}
+                                    </dl>
+                                }
+                                    .into_any()
+                            }
+                            Err(e) => crate::components::format_view::inline_error(&e),
+                        }
+                    })
+                }}
+            </Suspense>
+        </section>
+    }
+    .into_any()
 }
 
 /// The WT tab: a two-pane layout — the recursive path-catalog tree (left) and
@@ -196,12 +355,10 @@ fn wt_tab(
     selected: RwSignal<Option<CatalogNode>>,
 ) -> AnyView {
     view! {
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <thaw::Card>
-                <thaw::CardHeader>
-                    <div class="text-sm font-semibold">"Path catalog (WT tree)"</div>
-                </thaw::CardHeader>
-                <div class="p-3 overflow-auto max-h-[70vh]">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+            <section class=CARD_PAD>
+                <h2 class=CARD_TITLE>"Path catalog (WT tree)"</h2>
+                <div class="overflow-auto max-h-[70vh]">
                     <Transition fallback=tree_skeleton>
                         {move || Suspend::new(async move {
                             match catalog.await {
@@ -221,13 +378,11 @@ fn wt_tab(
                         })}
                     </Transition>
                 </div>
-            </thaw::Card>
-            <thaw::Card>
-                <thaw::CardHeader>
-                    <div class="text-sm font-semibold">"Node inspector"</div>
-                </thaw::CardHeader>
-                <div class="p-3">{node_inspector(selected)}</div>
-            </thaw::Card>
+            </section>
+            <section class=CARD_PAD>
+                <h2 class=CARD_TITLE>"Node inspector"</h2>
+                <div>{node_inspector(selected)}</div>
+            </section>
         </div>
     }
     .into_any()
@@ -257,7 +412,7 @@ fn catalog_error_view(error: &AdminUiError) -> AnyView {
                 {message} " — "
                 <leptos_router::components::A
                     href="/templates"
-                    attr:class="text-blue-600 hover:underline"
+                    attr:class="text-accent hover:underline"
                 >
                     "back to templates"
                 </leptos_router::components::A>
@@ -298,11 +453,10 @@ fn CatalogTreeNode(
     let label_class = move || {
         let selected_here =
             selected.with(|current| current.as_ref().is_some_and(|n| n.aql_path == this_path));
-        let mut class = String::from(
-            "flex items-center gap-2 rounded px-1 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800",
-        );
+        let mut class =
+            String::from("flex items-center gap-2 rounded-control px-1 text-left hover:bg-sunken");
         if selected_here {
-            class.push_str(" bg-blue-100 dark:bg-blue-900");
+            class.push_str(" bg-accent-subtle text-accent-ink");
         }
         class
     };
@@ -320,7 +474,7 @@ fn CatalogTreeNode(
         view! {
             <button
                 type="button"
-                class="w-4 shrink-0 text-neutral-500"
+                class="w-4 shrink-0 text-ink-muted"
                 on:click=move |_| expanded.update(|open| *open = !*open)
             >
                 {move || if expanded.get() { "▾" } else { "▸" }}
@@ -352,7 +506,7 @@ fn CatalogTreeNode(
                     on:click=move |_| selected.set(Some(select_node.clone()))
                 >
                     <span>{label}</span>
-                    <span class="font-mono text-xs text-neutral-500">{rm_type}</span>
+                    <span class="font-mono text-xs text-ink-muted">{rm_type}</span>
                 </button>
             </div>
             {children_list}
@@ -368,7 +522,7 @@ fn node_inspector(selected: RwSignal<Option<CatalogNode>>) -> AnyView {
         {move || match selected.get() {
             None => {
                 view! {
-                    <p class="text-sm text-neutral-500">
+                    <p class="text-sm text-ink-muted">
                         "Select a node to inspect its path and metadata."
                     </p>
                 }
@@ -395,16 +549,16 @@ fn inspector_body(node: &CatalogNode) -> AnyView {
     let codes_section = code_chip_section(node);
 
     view! {
-        <dl class="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1 text-sm">
-            <dt class="font-medium text-neutral-500">"label"</dt>
+        <dl class="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1 text-sm text-ink">
+            <dt class="font-medium text-ink-muted">"label"</dt>
             <dd>{node.label.clone()}</dd>
-            <dt class="font-medium text-neutral-500">"rmType"</dt>
+            <dt class="font-medium text-ink-muted">"rmType"</dt>
             <dd class="font-mono">{node.rm_type.clone()}</dd>
-            <dt class="font-medium text-neutral-500">"node id"</dt>
+            <dt class="font-medium text-ink-muted">"node id"</dt>
             <dd class="font-mono">{node_id}</dd>
-            <dt class="font-medium text-neutral-500">"selectable"</dt>
+            <dt class="font-medium text-ink-muted">"selectable"</dt>
             <dd>{selectable}</dd>
-            <dt class="font-medium text-neutral-500">"aqlPath"</dt>
+            <dt class="font-medium text-ink-muted">"aqlPath"</dt>
             <dd class="font-mono break-all">{node.aql_path.clone()}</dd>
         </dl>
         {units_section}
@@ -422,12 +576,16 @@ fn chip_section(title: &'static str, values: &[String]) -> AnyView {
         .iter()
         .map(|value| {
             let value = value.clone();
-            view! { <thaw::Tag>{value}</thaw::Tag> }
+            view! {
+                <span class="rounded-full bg-accent-subtle px-2 py-0.5 text-xs text-accent-ink">
+                    {value}
+                </span>
+            }
         })
         .collect::<Vec<_>>();
     view! {
         <div class="mt-3">
-            <div class="text-xs font-medium text-neutral-500 mb-1">{title}</div>
+            <div class="text-xs font-medium text-ink-muted mb-1">{title}</div>
             <div class="flex flex-wrap gap-1">{chips}</div>
         </div>
     }
@@ -449,12 +607,16 @@ fn code_chip_section(node: &CatalogNode) -> AnyView {
             } else {
                 format!("{} ({})", option.label, option.code)
             };
-            view! { <thaw::Tag>{text}</thaw::Tag> }
+            view! {
+                <span class="rounded-full bg-accent-subtle px-2 py-0.5 text-xs text-accent-ink">
+                    {text}
+                </span>
+            }
         })
         .collect::<Vec<_>>();
     view! {
         <div class="mt-3">
-            <div class="text-xs font-medium text-neutral-500 mb-1">"codes"</div>
+            <div class="text-xs font-medium text-ink-muted mb-1">"codes"</div>
             <div class="flex flex-wrap gap-1">{chips}</div>
         </div>
     }
@@ -472,7 +634,11 @@ fn opt_tab(opt: Resource<Result<Option<String>, AdminUiError>>) -> AnyView {
                     Ok(Some(xml)) => {
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
-                        view! { <crate::components::format_view::DocumentPane body=xml /> }
+                        view! {
+                            <div class=WELL>
+                                <crate::components::format_view::DocumentPane body=xml />
+                            </div>
+                        }
                             .into_any()
                     }
                     Err(e) => catalog_error_view(&e),
@@ -510,7 +676,11 @@ fn example_tab(
                             );
                             // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                             // mismatches at hydration in leptos 0.8 (E2E console gate).
-                            view! { <crate::components::format_view::DocumentPane body=pretty /> }
+                            view! {
+                                <div class=WELL>
+                                    <crate::components::format_view::DocumentPane body=pretty />
+                                </div>
+                            }
                                 .into_any()
                         }
                         Err(e) => catalog_error_view(&e),

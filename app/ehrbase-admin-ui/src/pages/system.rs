@@ -20,6 +20,9 @@ use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
 
+use crate::components::empty_state::EmptyState;
+use crate::components::page_header::PageHeader;
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 
 /// The CDR's SMART service-discovery document, or `None` when the CDR
@@ -85,26 +88,31 @@ pub fn SystemPage() -> impl IntoView {
 
     view! {
         <Title text="System" />
-        <div class="p-4">
-            <h1 class="text-xl font-semibold mb-4">"System"</h1>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="p-6">
+            <PageHeader
+                title="System"
+                subtitle="CDR status, SMART discovery, and the served OpenAPI surface."
+            />
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 {status} {smart} {openapi} {activity}
             </div>
         </div>
     }
 }
 
-/// A uniform card shell: a titled [`thaw::Card`] wrapping an already-erased
+/// A uniform card shell: a titled design-system card wrapping an already-erased
 /// body. `full_width` spans both grid columns.
 fn card_shell(title: &'static str, full_width: bool, body: AnyView) -> AnyView {
-    let class = if full_width { "lg:col-span-2" } else { "" };
+    let class = if full_width {
+        format!("{CARD_PAD} lg:col-span-2")
+    } else {
+        CARD_PAD.to_owned()
+    };
     view! {
-        <thaw::Card class=class>
-            <thaw::CardHeader>
-                <div class="text-sm font-semibold">{title}</div>
-            </thaw::CardHeader>
+        <section class=class>
+            <h2 class=CARD_TITLE>{title}</h2>
             {body}
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
@@ -112,13 +120,11 @@ fn card_shell(title: &'static str, full_width: bool, body: AnyView) -> AnyView {
 /// The `<Suspense>` fallback shared by every data-backed card.
 fn card_skeleton() -> impl IntoView {
     view! {
-        <div class="p-4">
-            <thaw::Skeleton>
-                <thaw::SkeletonItem class="h-4 mb-2" />
-                <thaw::SkeletonItem class="h-4 mb-2" />
-                <thaw::SkeletonItem class="h-4" />
-            </thaw::Skeleton>
-        </div>
+        <thaw::Skeleton>
+            <thaw::SkeletonItem class="h-4 mb-2" />
+            <thaw::SkeletonItem class="h-4 mb-2" />
+            <thaw::SkeletonItem class="h-4" />
+        </thaw::Skeleton>
     }
 }
 
@@ -134,15 +140,14 @@ fn status_card() -> AnyView {
                     Ok(view) => view,
                     Err(e) => {
                         // Resolve inside the Suspense (E2E console gate): render the parsed
-                        // status, or the explicit DOWN bar on transport/parse failure.
+                        // status, or the explicit DOWN chip on transport/parse failure.
                         view! {
-                            <div class="p-4">
-                                <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                                    <thaw::MessageBarBody>
-                                        <span class="font-semibold">"● DOWN — "</span>
-                                        {e.to_string()}
-                                    </thaw::MessageBarBody>
-                                </thaw::MessageBar>
+                            <div>
+                                <span class="inline-flex items-center gap-1.5 rounded-full border border-edge bg-raised px-2.5 py-1 text-xs font-medium text-danger">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-danger"></span>
+                                    "DOWN"
+                                </span>
+                                <p class="mt-2 text-sm text-danger">{e.to_string()}</p>
                             </div>
                         }
                             .into_any()
@@ -155,17 +160,15 @@ fn status_card() -> AnyView {
     card_shell("Status", false, body)
 }
 
-/// The uniform card error state: the domain-error message in a padded error
+/// The uniform card error state: the domain-error message in an error
 /// `MessageBar` (the same shape the removed per-card `ErrorBoundary` fallbacks
 /// rendered).
 fn card_error(error: &AdminUiError) -> AnyView {
     let message = error.to_string();
     view! {
-        <div class="p-4">
-            <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                <thaw::MessageBarBody>{message}</thaw::MessageBarBody>
-            </thaw::MessageBar>
-        </div>
+        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
+            <thaw::MessageBarBody>{message}</thaw::MessageBarBody>
+        </thaw::MessageBar>
     }
     .into_any()
 }
@@ -186,20 +189,25 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
         .into_iter()
         .map(|(k, v)| {
             view! {
-                <dt class="font-medium text-neutral-500">{k}</dt>
-                <dd class="font-mono break-all">{v}</dd>
+                <dt class="font-medium text-ink-muted">{k}</dt>
+                <dd class="font-mono break-all text-ink">{v}</dd>
             }
         })
         .collect::<Vec<_>>();
-    let (pill, pill_class) = if up {
-        ("● UP", "mb-3 font-semibold text-emerald-600")
+    let (dot, text_cls, label) = if up {
+        ("bg-ok", "text-ink", "UP")
     } else {
-        ("● DOWN", "mb-3 font-semibold text-red-600")
+        ("bg-danger", "text-danger", "DOWN")
     };
     Ok(view! {
-        <div class="p-4">
-            <div class=pill_class>{pill}</div>
-            <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">{rows}</dl>
+        <div>
+            <span class=format!(
+                "inline-flex items-center gap-1.5 rounded-full border border-edge bg-raised px-2.5 py-1 text-xs font-medium {text_cls}",
+            )>
+                <span class=format!("h-1.5 w-1.5 rounded-full {dot}")></span>
+                {label}
+            </span>
+            <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">{rows}</dl>
         </div>
     }
     .into_any())
@@ -230,25 +238,21 @@ fn smart_card() -> AnyView {
 fn smart_body(config: Option<String>) -> AnyView {
     let Some(raw) = config else {
         return view! {
-            <div class="p-4">
-                <thaw::MessageBar intent=thaw::MessageBarIntent::Info>
-                    <thaw::MessageBarBody>
-                        "SMART: disabled — the CDR advertises no service-discovery document."
-                    </thaw::MessageBarBody>
-                </thaw::MessageBar>
-            </div>
+            <thaw::MessageBar intent=thaw::MessageBarIntent::Info>
+                <thaw::MessageBarBody>
+                    "SMART: disabled — the CDR advertises no service-discovery document."
+                </thaw::MessageBarBody>
+            </thaw::MessageBar>
         }
         .into_any();
     };
     let Ok(doc) = serde_json::from_str::<serde_json::Value>(&raw) else {
         return view! {
-            <div class="p-4">
-                <thaw::MessageBar intent=thaw::MessageBarIntent::Warning>
-                    <thaw::MessageBarBody>
-                        "SMART configuration returned, but it is not valid JSON."
-                    </thaw::MessageBarBody>
-                </thaw::MessageBar>
-            </div>
+            <thaw::MessageBar intent=thaw::MessageBarIntent::Warning>
+                <thaw::MessageBarBody>
+                    "SMART configuration returned, but it is not valid JSON."
+                </thaw::MessageBarBody>
+            </thaw::MessageBar>
         }
         .into_any();
     };
@@ -273,7 +277,7 @@ fn smart_body(config: Option<String>) -> AnyView {
                             href=href
                             target="_blank"
                             rel="noreferrer"
-                            class="text-sm text-blue-600 hover:underline"
+                            class="text-sm text-accent hover:underline"
                         >
                             {label}
                             " ↗"
@@ -300,13 +304,13 @@ fn smart_body(config: Option<String>) -> AnyView {
                         .filter_map(serde_json::Value::as_str)
                         .map(|s| {
                             let s = s.to_owned();
-                            view! { <thaw::Tag>{s}</thaw::Tag> }
+                            view! { <span class="rounded-full bg-accent-subtle px-2 py-0.5 text-xs text-accent-ink">{s}</span> }
                         })
                         .collect::<Vec<_>>();
                     let label = *label;
                     view! {
                         <div class="mt-2">
-                            <div class="text-xs font-medium text-neutral-500 mb-1">{label}</div>
+                            <div class="text-xs font-medium text-ink-muted mb-1">{label}</div>
                             <div class="flex flex-wrap gap-1">{tags}</div>
                         </div>
                     }
@@ -315,7 +319,7 @@ fn smart_body(config: Option<String>) -> AnyView {
         .collect::<Vec<_>>();
 
     view! {
-        <div class="p-4">
+        <div>
             <div class="flex flex-wrap gap-3">{links}</div>
             {chips}
         </div>
@@ -351,7 +355,7 @@ fn openapi_card() -> AnyView {
 fn openapi_body(doc: &serde_json::Value) -> AnyView {
     let groups = group_openapi_paths(doc);
     if groups.is_empty() {
-        return view! { <div class="p-4 text-sm text-neutral-500">"No paths advertised."</div> }
+        return view! { <div class="text-sm text-ink-muted">"No paths advertised."</div> }
             .into_any();
     }
     let sections = groups
@@ -363,15 +367,17 @@ fn openapi_body(doc: &serde_json::Value) -> AnyView {
                 .map(|(method, path)| {
                     view! {
                         <li class="flex gap-2 py-0.5 text-sm">
-                            <code class="font-mono font-semibold shrink-0">{method}</code>
-                            <span class="font-mono break-all">{path}</span>
+                            <code class="font-mono font-semibold shrink-0 text-accent">
+                                {method}
+                            </code>
+                            <span class="font-mono break-all text-ink">{path}</span>
                         </li>
                     }
                 })
                 .collect::<Vec<_>>();
             view! {
                 <section class="mb-3">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-1">
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-ink-muted mb-1">
                         {header}
                     </h3>
                     <ul>{items}</ul>
@@ -379,7 +385,7 @@ fn openapi_body(doc: &serde_json::Value) -> AnyView {
             }
         })
         .collect::<Vec<_>>();
-    view! { <div class="p-4 overflow-x-auto max-h-96 overflow-y-auto">{sections}</div> }.into_any()
+    view! { <div class="overflow-x-auto max-h-96 overflow-y-auto">{sections}</div> }.into_any()
 }
 
 /// Activity log card. The CDR exposes no system-log read surface today, so
@@ -392,13 +398,11 @@ fn activity_log_card() -> AnyView {
     // `fetch_activity_log` #[server] fn and render events in a `thaw::Table`
     // here (with an explicit `<tbody>`).
     let body = view! {
-        <div class="p-4">
-            <thaw::MessageBar intent=thaw::MessageBarIntent::Info>
-                <thaw::MessageBarBody>
-                    "No activity-log read surface is exposed by the CDR. ATNA audit is captured on the write path; there is currently no endpoint to list recent events."
-                </thaw::MessageBarBody>
-            </thaw::MessageBar>
-        </div>
+        <EmptyState
+            icon=icondata_lu::LuActivity
+            message="The CDR does not expose a system-log read endpoint yet"
+            hint="ATNA audit is captured on the write path; there is currently no endpoint to list recent events."
+        />
     }
     .into_any();
     card_shell("Activity log", true, body)

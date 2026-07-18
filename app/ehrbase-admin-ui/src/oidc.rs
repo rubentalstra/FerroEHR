@@ -34,9 +34,20 @@ const FLOW_KEY: &str = "oidc_flow";
 /// `anyhow::Error` on an unreachable/invalid issuer (boot-time failure —
 /// the binary refuses to start with a broken OIDC config).
 pub async fn discover(config: &OidcConfig) -> anyhow::Result<OidcState> {
-    let http = openidconnect::reqwest::ClientBuilder::new()
-        .redirect(openidconnect::reqwest::redirect::Policy::none()) // SSRF hardening
-        .build()?;
+    let mut builder = openidconnect::reqwest::ClientBuilder::new()
+        .redirect(openidconnect::reqwest::redirect::Policy::none()); // SSRF hardening
+    // Split-horizon issuer resolution (`host=ip:port`): the canonical
+    // issuer hostname may only resolve inside a container network; the
+    // override points this client at the mapped address while every URL
+    // (and the token `iss`) keeps the canonical form.
+    if !config.resolve.trim().is_empty() {
+        let (host, addr) = config
+            .resolve
+            .split_once('=')
+            .ok_or_else(|| anyhow::anyhow!("auth.oidc.resolve must be `host=ip:port`"))?;
+        builder = builder.resolve(host.trim(), addr.trim().parse()?);
+    }
+    let http = builder.build()?;
     let issuer = openidconnect::IssuerUrl::new(config.issuer.clone())?;
     let metadata = openidconnect::core::CoreProviderMetadata::discover_async(issuer, &http).await?;
     Ok(OidcState {
