@@ -95,6 +95,11 @@ is disabled the screen says so instead of erroring.
 
 ![Audit log](img/audit/audit.png)
 
+Each row's **view** disclosure opens the full stored FHIR `AuditEvent`
+record — exactly what the ITI-81 API serves:
+
+![Audit log — the raw record](img/audit/audit-record.png)
+
 A filter that matches nothing renders a distinct empty state, so "no
 records" is always visibly different from "records you haven't found":
 

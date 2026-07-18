@@ -30,7 +30,7 @@ lookup.
 The EHR detail screen resolves the EHR status (queryable / modifiable) and
 lists the EHR's compositions with their template, time, and version count.
 
-![EHR detail](img/ehrs/ehr-detail.png)
+![EHR detail](img/ehrs/compositions/list.png)
 
 ### Creating EHRs and committing compositions
 
@@ -50,7 +50,12 @@ ship: episodes-by-year and clinical-areas) — and edits an existing one as
 canonical JSON (committed with `If-Match`, so concurrent changes are
 reported, never overwritten).
 
-![Directory create](img/ehrs/directory-create.png)
+![Directory create](img/ehrs/directory/create.png)
+
+Once the directory exists, the same tab shows the folder tree and the
+edit-as-new-version editor (`If-Match` concurrency):
+
+![Directory](img/ehrs/directory/directory.png)
 
 ## Composition viewer
 
@@ -59,7 +64,7 @@ STRUCTURED — switch freely; the CDR converts. The version dropdown walks
 the revision history, and each version's audit (committer, time, change
 type) is shown alongside.
 
-![Composition viewer](img/ehrs/composition-viewer.png)
+![Composition viewer](img/ehrs/compositions/viewer.png)
 
 **Edit as new version** opens the currently displayed canonical JSON in
 an editor and commits it as the next version (`If-Match` on the latest
@@ -69,18 +74,18 @@ A version **timeline strip** walks the revision history at a glance, and
 the **At time** picker resolves whichever version was current at a chosen
 moment (`version_at_time`).
 
-![Composition editor](img/ehrs/composition-editor.png)
+![Composition editor](img/ehrs/compositions/editor.png)
 
 The EHR detail's contributions tab lists the EHR's contributions — id,
 commit time, committer, change type — with the by-uid lookup kept
 underneath.
 
-![Contributions](img/ehrs/ehr-detail-contributions.png)
+![Contributions](img/ehrs/contributions/contributions.png)
 
 The commit form accepts canonical JSON, canonical XML, or FLAT:
 
-![Commit composition](img/ehrs/composition-commit.png)
+![Commit composition](img/ehrs/compositions/commit.png)
 
 The EHR status tab renders the full `EHR_STATUS` document:
 
-![EHR status](img/ehrs/ehr-detail-status.png)
+![EHR status](img/ehrs/status/status.png)
