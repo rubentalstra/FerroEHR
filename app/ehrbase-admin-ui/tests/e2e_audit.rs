@@ -23,7 +23,6 @@
 mod common;
 
 use common::{Harness, env, login_basic, login_basic_as};
-use thirtyfour::prelude::*;
 
 /// The admin dev user (quickstart `docker/ehrbase.dev.toml`).
 fn admin_credentials() -> (String, String) {

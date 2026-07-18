@@ -5,7 +5,7 @@
 //! window, patient, principal, outcome, action), a paged table of the stored
 //! FHIR R4 `AuditEvent` documents (IHE BALP shape), and a per-row raw-record
 //! view. No openEHR spec governs an admin UI — our own design / product
-//! extension; the wire it reads is IHE's (the RESTful ATNA supplement's
+//! extension; the wire it reads is IHE's (the `RESTful` ATNA supplement's
 //! ITI-81 FHIR search), served by the CDR.
 //!
 //! Discipline (rules §0/§1/§6/§8/§9): the `#[server]` fn guards the session
@@ -569,7 +569,7 @@ fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::Params
 mod tests {
     use super::{audit_row, parse_bundle};
 
-    fn bundle(entries: serde_json::Value) -> String {
+    fn bundle(entries: &serde_json::Value) -> String {
         serde_json::json!({
             "resourceType": "Bundle",
             "type": "searchset",
@@ -581,7 +581,7 @@ mod tests {
 
     #[test]
     fn parses_a_searchset_bundle() {
-        let body = bundle(serde_json::json!([
+        let body = bundle(&serde_json::json!([
             { "resource": { "resourceType": "AuditEvent", "recorded": "2026-07-10T08:00:00Z",
                 "type": { "code": "rest" }, "action": "R", "outcome": "0" } },
             { "resource": { "resourceType": "AuditEvent", "recorded": "2026-07-09T08:00:00Z",
