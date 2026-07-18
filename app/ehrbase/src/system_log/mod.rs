@@ -10,10 +10,15 @@
 //! against the external standards it pulls in, cited as external standards
 //! (never as openEHR spec text).
 //!
-//! Emits one **DICOM Audit Message** (DICOM PS3.15 §A.5 — *not* openEHR
-//! ITS-XML) per audited API operation, shipped to an Audit Record Repository
-//! over **syslog** (RFC 5424 framing; RFC 5426 UDP or RFC 5425 TLS). This is
-//! authorized defensive security-audit logging for a healthcare system.
+//! One audit record per audited API operation, rendered in **both** official
+//! ATNA formats and fanned out to the configured sinks: the local **Audit
+//! Record Repository** (the `audit` schema — the durability anchor, on by
+//! default, served back via the RESTful-ATNA ITI-81 retrieval), the classic
+//! **DICOM Audit Message** feed (DICOM PS3.15 §A.5 XML — *not* openEHR
+//! ITS-XML — over RFC 5424 syslog; RFC 5426 UDP or RFC 5425 TLS; IHE ITI
+//! TF-2 ITI-20), and the **FHIR R4 `AuditEvent`** feed (IHE BALP shape;
+//! ITI-20 ATX:FHIR Feed). This is authorized defensive security-audit
+//! logging for a healthcare system.
 //!
 //! ## Scope boundary (read/operation audit vs write/change-control audit)
 //! This ATNA system log is the *security surveillance* record of API access
@@ -38,15 +43,22 @@
 //! - [`codes`] — DCM / RFC-3881 code constants + the ATNA rendering of the
 //!   event enums.
 //! - [`message`] — the DICOM `AuditMessage` model + `quick-xml` serializer.
+//! - [`fhir`] — the FHIR R4 `AuditEvent` rendering per the IHE BALP content
+//!   profiles (the modern half of the dual format).
 //! - [`syslog`] — RFC 5424 assembly + RFC 5426 UDP / RFC 5425 TLS transports.
-//! - [`sender`] — the bounded-mpsc sender + background drain + fail modes.
-//! - [`config`] — the `[atna]` section struct ([`config::AuditConfig`]).
+//! - [`store`] — the local Audit Record Repository (the `audit` schema) +
+//!   the ITI-81 search filter.
+//! - [`sender`] — the bounded-mpsc sender + background drain + sink fan-out
+//!   + fail modes.
+//! - [`config`] — the `[audit]` section struct ([`config::AuditConfig`]).
 
 pub mod codes;
 pub mod config;
 pub mod event;
+pub mod fhir;
 pub mod message;
 pub mod sender;
+pub mod store;
 
 use crate::system_log::sender::AuditSender;
 pub mod syslog;
@@ -67,6 +79,9 @@ pub enum AuditError {
     /// The syslog transport (UDP/TLS) could not be established.
     #[error("audit transport error: {0}")]
     Transport(String),
+    /// The local Audit Record Repository write/reap failed.
+    #[error("audit store error: {0}")]
+    Store(String),
 }
 
 // quick-xml's `Writer` over an in-memory buffer surfaces write failures as
@@ -106,5 +121,37 @@ impl EhrbaseService {
         self.audit
             .as_ref()
             .is_some_and(AuditSender::suppress_login_events)
+    }
+
+    /// Whether the local Audit Record Repository is available (the store is
+    /// wired), i.e. the ITI-81 retrieval surface can be served.
+    #[must_use]
+    pub fn audit_search_enabled(&self) -> bool {
+        self.audit_store.is_some()
+    }
+
+    /// The RESTful-ATNA **ITI-81** retrieval: the stored FHIR `AuditEvent`
+    /// documents matching the filter, newest first, plus the total match
+    /// count. The read side of the SM System Log component (the only
+    /// normative openEHR statement is the "IHE ATNA-compliant system log"
+    /// line above; the retrieval semantics are IHE's — the `RESTful` ATNA
+    /// supplement's ITI-81 FHIR search on `AuditEvent`).
+    ///
+    /// # Errors
+    /// [`SmError`] `precondition_violation` when no local store is wired, or
+    /// `exception` when the store query fails.
+    pub async fn audit_event_search(
+        &self,
+        filter: &store::AuditSearchFilter,
+    ) -> Result<(i64, Vec<serde_json::Value>), crate::service::status::SmError> {
+        let Some(audit_store) = &self.audit_store else {
+            return Err(crate::service::status::SmError::precondition(
+                "the local audit record repository is not enabled ([audit.store])",
+            ));
+        };
+        audit_store
+            .search(filter)
+            .await
+            .map_err(|e| crate::service::status::SmError::exception(e.to_string()))
     }
 }

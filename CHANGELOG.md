@@ -81,12 +81,75 @@ workflow refuses a tag that has no matching section here.
   version still references the template, so a physical delete never orphans
   clinical data.
 
+- **ATNA audit — richer DICOM records**: every audit record now carries the
+  concrete operation as a DICOM `EventTypeCode` (login/logout as DCM
+  110122/110123; REST operations as their ITS-REST operation id under the
+  `openEHR-ITS-REST` code system), and Bearer-authenticated requests record
+  the token's `jti` as the minimal token identity (token contents are never
+  logged).
+- **ATNA audit — FHIR R4 `AuditEvent` rendering (IHE BALP)**: every audit
+  record also renders as a FHIR R4 `AuditEvent` conforming to the IHE Basic
+  Audit Log Patterns (Patient\*/plain Create/Read/Update/Delete/Query
+  profiles, `OAUTHaccessTokenUse.Minimal` token agent, profile claims only
+  when genuinely satisfied) — the modern half of the dual ATNA format.
+- **ATNA audit — local Audit Record Repository, on by default**: audit
+  records are persisted in a new PostgreSQL `audit` schema (append-only;
+  strictly outside the EHR content; per-sink delivery stamps; configurable
+  `retention_days` with an hourly reaper). Every deployment now gets a
+  queryable audit trail out of the box with nothing leaving the node.
+- **ATNA audit — RESTful ATNA forwarding (ITI-20 ATX:FHIR Feed)**: opt-in
+  `[audit.fhir_feed]` sink POSTs each FHIR `AuditEvent` to an external Audit
+  Record Repository; with the local store on, delivery is outbox-driven — an
+  ARR outage loses nothing and pending records ship on recovery.
+- **ATNA audit — per-sink metrics** (`atna_audit_sent_total{sink=…}`,
+  `…send_failed_total{sink=…}`, `atna_audit_rejected_total`,
+  `atna_audit_reaped_total`).
+- **ITI-81 Retrieve ATNA Audit Event** (`GET /fhir/r4/AuditEvent`): the
+  official RESTful-ATNA retrieval — a FHIR search over the local Audit
+  Record Repository returning a `searchset` Bundle of the stored `AuditEvent`
+  documents. Filters: `date` (`ge`/`le`), `patient`, `agent`, `entity`,
+  `outcome`, `action`, plus `_count`/`_offset` paging. Admin-only under
+  RBAC; `404` when the local store is disabled.
+- **Native TLS + mutual-TLS client authentication** (`[server.tls]`): the
+  main listener can terminate TLS itself (TLS 1.2+ floor per IETF BCP 195)
+  and demand a verified client certificate
+  (`client_auth = "off" | "optional" | "required"`) against an explicit CA —
+  the IHE ATNA ITI-19 node-authentication posture. The management listener
+  stays plain HTTP.
+- A dedicated **Audit trail (IHE ATNA)** book chapter covering the dual
+  formats, the sinks, the ITI-81 retrieval, fail-mode semantics, and mTLS.
+
 ### Changed
 
 - The ITS-REST template list (`GET /definition/template/adl1.4`) now reports
   the optional `version` field of each `TemplateMetadata`, derived from the
   template id's version axis (the spec documents the value as "taken from
   `template_id`"); it is omitted when the id carries no version.
+- **Audit configuration redesigned: `[atna]` is now `[audit]`**, on by
+  default with only the local store active, and sink-structured:
+  `[audit.store]` (local repository), `[audit.syslog]` (classic
+  DICOM-over-syslog feed; keys `host`/`port`/`transport`/`tls_ca_file`/
+  `tls_identity_cert_file`/`tls_identity_key_file` replace the old
+  `repository_host`/`repository_port`/`tls_*_path`), `[audit.fhir_feed]`
+  (RESTful ATNA). `resolve_subject` now defaults to `true`. A configuration
+  still using `[atna]` fails at boot with did-you-mean guidance (strict
+  loader; no silent aliasing).
+- **Fail-closed auditing got stronger**: with `fail_mode = "closed"` and the
+  local store enabled, a store that stops accepting writes makes every
+  subsequent auditable operation answer `503 Service Unavailable` until a
+  write succeeds again — no un-audited PHI access.
+
+### Fixed
+
+- **ATNA audit — IHE/DICOM conformance corrections** (IHE ITI TF-2 ITI-20 /
+  DICOM PS3.15 §A.5.1): the syslog `MSGID` is now the mandated
+  `IHE+RFC-3881` (was `IHE+DICOM`); AQL query execution uses the dedicated
+  DICOM EventID 110112 "Query" (was 110110); EHR-Extract communication uses
+  the direction-coded EventIDs 110106 "Export" / 110107 "Import";
+  authentication events (genuine logins and rejected 401/403 attempts) use
+  EventID 110114 "User Authentication" with `EventTypeCode` 110122 "Login"
+  (were generic Application Activity); and 1xx/3xx responses (e.g. `304 Not
+  Modified`) are now recorded as success instead of minor failure.
 
 ## [3.1.1] - 2026-07-17
 

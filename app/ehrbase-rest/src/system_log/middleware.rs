@@ -32,8 +32,9 @@
 //!
 //! # Authentication records
 //!
-//! A genuine authentication additionally emits a login ("Application Activity",
-//! DICOM `EventID` 110100) record unless the deployment suppresses them
+//! A genuine authentication additionally emits a login ("User Authentication",
+//! DICOM `EventID` 110114, `EventTypeCode` 110122 "Login") record unless the
+//! deployment suppresses them
 //! (`suppress_login_events`, default on). "Genuine" is a real authentication
 //! *event*, not every authenticated request: the auth layer marks it
 //! ([`FreshAuthentication`]) only on a Basic verified-credential cache miss —
@@ -58,7 +59,7 @@ use http::{HeaderValue, header};
 use openehr_its::rest::runtime::ApiError;
 
 use ehrbase::system_log::event::{
-    AuditEvent, EmitOutcome, EventActionCode, EventOutcome, ObjectClass,
+    AuditEvent, EmitOutcome, EventActionCode, EventOutcome, EventType, ObjectClass,
 };
 
 use crate::extensions::access::authn::{FreshAuthentication, Principal};
@@ -109,6 +110,13 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     let op = resp.extensions().get::<AuditOpId>().copied();
     let principal = resp.extensions().get::<Principal>().cloned();
     let object = resp.extensions().get::<AuditObject>().cloned();
+    // Republished by the tenant-resolution middleware (the task-local scope
+    // has exited by the time this outermost layer runs); absent when tenancy
+    // is off or the request ran unscoped.
+    let tenant = resp
+        .extensions()
+        .get::<ehrbase::extensions::tenant_context::TenantContext>()
+        .map(|t| t.tenant_id);
     // Set by the auth layer only when THIS request performed a genuine
     // authentication (a Basic verified-cache miss) — the hook for the login
     // record, which marks authentication events, not individual requests.
@@ -124,6 +132,9 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
         && let Some((action, object_class)) = audit_for(op)
     {
         let mut event = AuditEvent::new(action, object_class, outcome_from_status(status));
+        // The concrete operation is the EventTypeCode (DICOM PS3.15 §A.5
+        // EventIdentification); the id is ours (openEHR-ITS-REST system name).
+        event.event_type = Some(EventType::RestOperation(op));
         fill_common(&mut event, principal.as_ref(), client_ip.clone(), timestamp);
         event.ehr_id = object
             .as_ref()
@@ -133,6 +144,7 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
             .as_ref()
             .and_then(|o| o.uid.clone())
             .or_else(|| object_id_from_path(op, &path));
+        event.tenant_id = tenant;
         op_rejected = state.backend().emit(event) == EmitOutcome::Rejected;
     }
 
@@ -145,21 +157,28 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
     //    continues an event that already occurred. It is additionally gated by
     //    `suppress_login_events` (default on).
     if status == 401 || status == 403 {
+        // A rejected access attempt is a failed user-authentication event —
+        // DICOM EventID 110114 "User Authentication" with EventTypeCode
+        // 110122 "Login" (DICOM PS3.15 §A.5.1).
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
-            ObjectClass::ApplicationActivity,
+            ObjectClass::Authentication,
             outcome_from_status(status),
         );
+        event.event_type = Some(EventType::Login);
         // 401 → no principal (caller UNKNOWN); 403 → the authenticated caller.
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
+        event.tenant_id = tenant;
         let _ = state.backend().emit(event);
     } else if fresh_auth && !state.backend().suppress_login_events() {
         let mut event = AuditEvent::new(
             EventActionCode::Execute,
-            ObjectClass::ApplicationActivity,
+            ObjectClass::Authentication,
             EventOutcome::Success,
         );
+        event.event_type = Some(EventType::Login);
         fill_common(&mut event, principal.as_ref(), client_ip, timestamp);
+        event.tenant_id = tenant;
         let _ = state.backend().emit(event);
     }
 
@@ -183,13 +202,14 @@ pub async fn middleware(State(state): State<AppState>, req: Request, next: Next)
 }
 
 /// Map an HTTP status to the DICOM `EventOutcomeIndicator` (PS3.15 §A.5.1):
-/// 2xx → `0` success, 5xx → `8` serious failure (the action was not performed),
-/// everything else (incl. 4xx/401/403) → `4` minor failure (the action failed).
-/// `12` major failure denotes a compromised node and is not inferable from an
-/// HTTP status, so it is never emitted here.
+/// 1xx–3xx → `0` success (3xx is redirection, and `304 Not Modified` is a
+/// *successful* conditional read — RFC 9110 §15.3/§15.4), 4xx → `4` minor
+/// failure (the action failed), 5xx → `8` serious failure (the action was not
+/// performed). `12` major failure denotes a system-level abnormal termination
+/// and is not inferable from an HTTP status, so it is never emitted here.
 const fn outcome_from_status(status: u16) -> EventOutcome {
     match status {
-        200..=299 => EventOutcome::Success,
+        100..=399 => EventOutcome::Success,
         500..=599 => EventOutcome::SeriousFailure,
         _ => EventOutcome::MinorFailure,
     }
@@ -207,8 +227,24 @@ fn fill_common(
 ) {
     event.user_id = principal.map(|p| p.subject.clone()).unwrap_or_default();
     event.user_is_requestor = true;
+    // The bearer token's `jti` (RFC 7519 §4.1.7) — the minimal token identity
+    // the FHIR AuditEvent (IHE BALP OAUTHaccessTokenUse.Minimal) records. Only
+    // the id is taken; token contents are never logged (PHI/secret rule,
+    // `.claude/rules/reliability.md`). Basic principals carry no claims.
+    event.token_id = principal.and_then(token_id);
     event.client_ip = client_ip;
     event.timestamp = timestamp;
+}
+
+/// The `jti` claim of a Bearer principal's validated token, if present and a
+/// non-empty string.
+fn token_id(principal: &Principal) -> Option<String> {
+    principal
+        .claims
+        .get("jti")
+        .and_then(serde_json::Value::as_str)
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
 }
 
 /// The client network address for the DICOM `NetworkAccessPointID`: the
@@ -288,6 +324,9 @@ mod tests {
     fn outcome_codes_track_http_status() {
         assert_eq!(outcome_from_status(200), EventOutcome::Success);
         assert_eq!(outcome_from_status(204), EventOutcome::Success);
+        // 304 Not Modified is a successful conditional read (RFC 9110 §15.4.5);
+        // redirection is not a failed action.
+        assert_eq!(outcome_from_status(304), EventOutcome::Success);
         assert_eq!(outcome_from_status(400), EventOutcome::MinorFailure);
         assert_eq!(outcome_from_status(401), EventOutcome::MinorFailure);
         assert_eq!(outcome_from_status(403), EventOutcome::MinorFailure);

@@ -118,6 +118,23 @@ cors_permissive = false
 | `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON at the REST root. Consider `false` in production. |
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Production configures explicit origins. |
 
+### `[server.tls]` — native TLS + mutual-TLS client authentication
+
+Native TLS termination on the main listener (off by default — deployments
+commonly terminate TLS at an ingress). Protocol floor: TLS 1.2+, per IETF
+BCP 195. `client_auth = "required"` is the IHE ATNA ITI-19
+mutually-authenticated-node posture (see the
+[Audit trail chapter](../audit.md#node-authentication-iti-19-mutual-tls)).
+The separate-port management listener always stays plain HTTP.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Terminate TLS natively on the main listener. |
+| `cert_file` | path | unset | Server certificate chain (PEM). Required when enabled. |
+| `key_file` | path | unset | Server private key (PEM). Required when enabled. |
+| `client_auth` | enum{off,optional,required} | `off` | Client-certificate policy: `required` rejects any client without a verified certificate at the handshake. |
+| `client_ca_file` | path | unset | The explicit CA bundle client certificates must chain to (never the web PKI). Required unless `client_auth = "off"`. |
+
 ### `[server.identity]`
 
 The `OPTIONS /` System-Options manifest identity. Defaults are measured, not
@@ -410,25 +427,51 @@ DV_MULTIMEDIA externalization → S3-compatible object store. Off by default
 | `secret_access_key` / `secret_access_key_file` | secret / path | unset | S3 secret access key. |
 | `allow_http` | bool | `false` | Allow plain-HTTP endpoints — dev only; prod S3 is HTTPS. |
 
-## `[atna]`
+## `[audit]`
 
-IHE ATNA system log. Off by default.
+The IHE ATNA audit trail (see the [Audit trail chapter](../audit.md)). **On
+by default** with only the local store active; forwarding is opt-in per
+sink. (Replaces the former `[atna]` section — old keys fail at boot with
+did-you-mean guidance.)
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `enabled` | bool | `false` | Master ATNA audit switch. |
+| `enabled` | bool | `true` | Master audit switch. |
 | `enterprise_site_id` | string | unset | `AuditEnterpriseSiteID`. |
-| `repository_host` | string | `localhost` | Audit Record Repository (ARR) host. |
-| `repository_port` | int | `514` | ARR port (514 UDP / 6514 TLS typical). |
-| `transport` | enum{udp,tls} | `udp` | Syslog transport. Use `tls` for PHI-adjacent audit. |
 | `source_id` | string | `ehrbase` | Audit source id. |
 | `value_if_missing` | string | `UNKNOWN` | Fill value for empty mandatory fields. |
-| `suppress_login_events` | bool | `true` | Skip auth/login activity events. |
-| `fail_mode` | enum{open,closed} | `open` | On undeliverable audit: succeed and meter (`open`) or reject with 503 (`closed`). |
-| `resolve_subject` | bool | `false` | Enrich the patient participant via a subject lookup. |
+| `suppress_login_events` | bool | `true` | Skip successful-login records (rejections are always recorded). |
+| `fail_mode` | enum{open,closed} | `open` | On undeliverable audit: succeed and meter (`open`) or reject auditable operations with 503 (`closed` — includes an unhealthy local store). |
+| `resolve_subject` | bool | `true` | Enrich the patient participant via a background subject lookup. |
 | `queue_capacity` | int | `1024` | Bounded audit queue capacity. |
 | `server_host` | string | unset | This node's advertised address (`NetworkAccessPointID`). |
-| `tls_ca_path` / `tls_identity_cert_path` / `tls_identity_key_path` | path | unset | PEM CA / client cert / client key for TLS transport. |
+
+### `[audit.store]` — the local Audit Record Repository
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `true` | Persist every record in the `audit` schema (served via the ITI-81 `GET /fhir/r4/AuditEvent` search). |
+| `retention_days` | int | `0` | Days to keep records; `0` = keep forever. Applied hourly. |
+
+### `[audit.syslog]` — the classic DICOM/syslog feed (ITI-20)
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | Ship DICOM PS3.15 records to an external ARR over syslog. |
+| `host` | string | `localhost` | ARR host. |
+| `port` | int | `514` | ARR port (514 UDP / 6514 TLS typical). |
+| `transport` | enum{udp,tls} | `udp` | Syslog transport. Use `tls` for PHI-adjacent audit. |
+| `tls_ca_file` / `tls_identity_cert_file` / `tls_identity_key_file` | path | unset | PEM CA / client cert / client key for the TLS transport. |
+
+### `[audit.fhir_feed]` — the RESTful-ATNA feed (ITI-20 ATX:FHIR Feed)
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `enabled` | bool | `false` | `POST` each FHIR `AuditEvent` to an external FHIR ARR. Outbox-driven (loss-free) when the local store is on. |
+| `url` | url | `http://localhost:8080/fhir` | The ARR's FHIR base; records go to `{url}/AuditEvent`. URL credentials are redacted from every rendering. |
+| `batch_size` | int | `64` | Outbox rows shipped per poll. |
+| `poll_interval_ms` | int | `2000` | Outbox poll interval when idle. |
+| `max_retries` | int | `3` | Per-record POST retries before the record is left pending (store on) or dropped + metered (store off). |
 
 ## `[subject_proxy]`
 

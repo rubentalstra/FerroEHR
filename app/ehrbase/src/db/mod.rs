@@ -242,15 +242,22 @@ static EXT_MIGRATOR: Migrator = sqlx::migrate!("migrations/ext");
 /// supporting tables.
 static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");
 
-/// Bootstrap done outside the migrations: the two schemas and `btree_gist`
+/// The `audit` schema — the local IHE ATNA Audit Record Repository (the
+/// `audit_event` table). Strictly outside the EHR content (BASE
+/// `architecture_overview/master07-security.adoc` §Access logging: in-system
+/// access logs, never part of the EHR proper); runs after `ehr`.
+static AUDIT_MIGRATOR: Migrator = sqlx::migrate!("migrations/audit");
+
+/// Bootstrap done outside the migrations: the three schemas and `btree_gist`
 /// (required by the temporal `WITHOUT OVERLAPS` primary key).
 const BOOTSTRAP: &[&str] = &[
     "CREATE SCHEMA IF NOT EXISTS ext",
     "CREATE SCHEMA IF NOT EXISTS ehr",
+    "CREATE SCHEMA IF NOT EXISTS audit",
     "CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA ext",
 ];
 
-/// Bootstrap schemas/extensions and apply both migration sets, `ext` before
+/// Bootstrap schemas/extensions and apply the migration sets, `ext` before
 /// `ehr`.
 ///
 /// Each migrator runs on a connection whose `search_path` starts with its
@@ -297,6 +304,11 @@ async fn apply_migrations(conn: &mut PgConnection) -> Result<(), DbError> {
         .execute(&mut *conn)
         .await?;
     EHR_MIGRATOR.run(&mut *conn).await?;
+
+    sqlx::query("SET search_path TO audit, ext")
+        .execute(&mut *conn)
+        .await?;
+    AUDIT_MIGRATOR.run(&mut *conn).await?;
     Ok(())
 }
 

@@ -19,7 +19,7 @@ use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpStream, UdpSocket};
 use tokio_rustls::TlsConnector;
 
-use crate::system_log::config::AuditConfig;
+use crate::system_log::config::SyslogConfig;
 
 // PRI = facility*8 + severity (RFC 5424 §6.2.1). IHE ATNA logs security/audit
 // events: facility 10 ("security/authorization messages") and severity 5
@@ -34,10 +34,12 @@ pub const SYSLOG_SEVERITY: u8 = 5;
 pub const SYSLOG_PRI: u16 = (SYSLOG_FACILITY as u16) * 8 + SYSLOG_SEVERITY as u16;
 /// RFC 5424 SYSLOG version.
 pub const SYSLOG_VERSION: u8 = 1;
-/// The IHE ATNA `MSGID` for a DICOM audit record.
-// NOTE: RFC 5424 §6.2.7 leaves MSGID application-defined; IHE ATNA uses
-// "IHE+DICOM" for the DICOM Audit-Trail-Message-Format profile.
-pub const SYSLOG_MSGID: &str = "IHE+DICOM";
+/// The IHE ATNA `MSGID` for an audit record.
+// NOTE: IHE ITI TF-2 ITI-20 §3.20.4.1.2: "The MSGID field in the HEADER of
+// the SYSLOG-MSG shall be set to 'IHE+RFC-3881'" — the value is uniform for
+// every ITI-20 message (the RFC3881 token "is retained for backward
+// compatibility") even though the MSG payload is DICOM PS3.15 §A.5 XML.
+pub const SYSLOG_MSGID: &str = "IHE+RFC-3881";
 /// UTF-8 byte-order mark that RFC 5424 §6.4 recommends prefixing a UTF-8 `MSG`.
 pub const UTF8_BOM: &[u8] = &[0xEF, 0xBB, 0xBF];
 
@@ -91,15 +93,15 @@ pub enum Transport {
 }
 
 impl Transport {
-    /// Build the transport the [`AuditConfig`] selects.
+    /// Build the transport the [`SyslogConfig`] selects.
     ///
     /// # Errors
     /// [`io::Error`] on a UDP bind/connect failure or an invalid TLS config
     /// (missing CA, unreadable identity, bad server name).
-    pub async fn connect(config: &AuditConfig) -> io::Result<Self> {
+    pub async fn connect(config: &SyslogConfig) -> io::Result<Self> {
         match config.transport {
             crate::system_log::config::Transport::Udp => Ok(Transport::Udp(
-                UdpTransport::connect(&config.repository_host, config.repository_port).await?,
+                UdpTransport::connect(&config.host, config.port).await?,
             )),
             crate::system_log::config::Transport::Tls => {
                 Ok(Transport::Tls(Box::new(TlsTransport::from_config(config)?)))
@@ -171,15 +173,11 @@ impl TlsTransport {
     /// Build from configuration (loads the CA + optional client identity PEM).
     ///
     /// # Errors
-    /// [`io::Error`] if the TLS client config is invalid or `tls_ca_path` is
+    /// [`io::Error`] if the TLS client config is invalid or `tls_ca_file` is
     /// unset/unreadable.
-    pub fn from_config(config: &AuditConfig) -> io::Result<Self> {
+    pub fn from_config(config: &SyslogConfig) -> io::Result<Self> {
         let client_config = tls_client_config(config)?;
-        Self::new(
-            Arc::new(client_config),
-            &config.repository_host,
-            config.repository_port,
-        )
+        Self::new(Arc::new(client_config), &config.host, config.port)
     }
 
     /// Build from a prebuilt rustls [`rustls::ClientConfig`] (used by tests).
@@ -247,18 +245,18 @@ async fn write_all_flush(
 
 /// Build a rustls [`rustls::ClientConfig`] from the audit TLS settings.
 ///
-/// Requires `tls_ca_path` (IHE nodes are mutually authenticated against an
+/// Requires `tls_ca_file` (IHE nodes are mutually authenticated against an
 /// explicit trust anchor, not the public web PKI). Adds a client certificate
 /// when `tls_identity_*` are set.
 ///
 /// # Errors
 /// [`io::Error`] if the CA path is unset/unreadable, contains no certificates,
 /// or the client identity is invalid.
-pub fn tls_client_config(config: &AuditConfig) -> io::Result<rustls::ClientConfig> {
-    let ca_path = config.tls_ca_path.as_ref().ok_or_else(|| {
+pub fn tls_client_config(config: &SyslogConfig) -> io::Result<rustls::ClientConfig> {
+    let ca_path = config.tls_ca_file.as_ref().ok_or_else(|| {
         io::Error::new(
             io::ErrorKind::InvalidInput,
-            "audit.tls_ca_path is required for TLS transport",
+            "audit.syslog.tls_ca_file is required for TLS transport",
         )
     })?;
     let ca_pem = std::fs::read(ca_path)?;
@@ -272,8 +270,8 @@ pub fn tls_client_config(config: &AuditConfig) -> io::Result<rustls::ClientConfi
         .with_root_certificates(roots);
 
     let config = match (
-        &config.tls_identity_cert_path,
-        &config.tls_identity_key_path,
+        &config.tls_identity_cert_file,
+        &config.tls_identity_key_file,
     ) {
         (Some(cert_path), Some(key_path)) => {
             let certs = load_certs(&std::fs::read(cert_path)?)?;
@@ -341,7 +339,7 @@ mod tests {
         let ts: Timestamp = "2026-07-06T12:00:00Z".parse().unwrap();
         let msg = assemble_syslog("cdr-01", "ehrbase", &ts, "<AuditMessage/>");
         let text = String::from_utf8_lossy(&msg);
-        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z cdr-01 ehrbase - IHE+DICOM - "));
+        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z cdr-01 ehrbase - IHE+RFC-3881 -"));
         // BOM precedes the XML.
         assert!(msg.windows(3).any(|w| w == UTF8_BOM));
         assert!(text.contains("<AuditMessage/>"));
@@ -352,7 +350,7 @@ mod tests {
         let ts: Timestamp = "2026-07-06T12:00:00Z".parse().unwrap();
         let msg = assemble_syslog("", "ehrbase", &ts, "<x/>");
         let text = String::from_utf8_lossy(&msg);
-        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z - ehrbase - IHE+DICOM - "));
+        assert!(text.starts_with("<85>1 2026-07-06T12:00:00Z - ehrbase - IHE+RFC-3881 -"));
     }
 
     #[test]
