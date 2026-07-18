@@ -17,7 +17,7 @@ mod common;
 
 use std::path::{Path, PathBuf};
 
-use common::{Harness, env, login_basic};
+use common::{Harness, env, login_basic, login_basic_as};
 use thirtyfour::prelude::*;
 
 /// The detail-route id of the fixture template the browse journeys upload; its
@@ -145,7 +145,9 @@ async fn capture_documentation_screenshots() {
             "org.example::quantity-series",
         ] {
             let status = http
-                .delete(format!("{cdr}/ehrbase/rest/openehr/v1/admin/query/{name}/1.0.0"))
+                .delete(format!(
+                    "{cdr}/ehrbase/rest/openehr/v1/admin/query/{name}/1.0.0"
+                ))
                 .basic_auth("ehrbase-admin", Some("ehrbase"))
                 .send()
                 .await
@@ -214,7 +216,14 @@ async fn capture_documentation_screenshots() {
         Some("#qb-template"),
     )
     .await;
-    capture(&h, &dir, "/queries/aql", "queries/query-aql", Some("#aql-editor")).await;
+    capture(
+        &h,
+        &dir,
+        "/queries/aql",
+        "queries/query-aql",
+        Some("#aql-editor"),
+    )
+    .await;
     capture(&h, &dir, "/ehrs", "ehrs/ehrs", Some("#ehr-lookup")).await;
     capture(&h, &dir, "/system", "system/system", None).await;
 
@@ -325,11 +334,10 @@ async fn capture_documentation_screenshots() {
         .click()
         .await
         .expect("chart toggle");
-    let chart = h.wait_css("svg.chartistry_chart, div.overflow-x-auto svg").await;
-    chart
-        .scroll_into_view()
-        .await
-        .expect("scroll to the chart");
+    let chart = h
+        .wait_css("svg.chartistry_chart, div.overflow-x-auto svg")
+        .await;
+    chart.scroll_into_view().await.expect("scroll to the chart");
     shot_to(&h, &dir, "queries/query-results-chart").await;
 
     // The user menu + scopes drawer.
@@ -368,6 +376,27 @@ async fn capture_documentation_screenshots() {
         .click()
         .await
         .expect("dark off");
+
+    h.finish().await;
+
+    // The audit-log screen is admin-only (the ATNA trail is an operator
+    // surface), so its captures run in a fresh session as the quickstart
+    // admin user: first the POPULATED table (the stack's own audited
+    // activity — every journey request lands in the trail), then the
+    // first-class EMPTY state via a filter that cannot match, so the book
+    // shows both faces of the screen.
+    let Some(h) = Harness::start("docs-shots-audit").await else {
+        return;
+    };
+    let admin_user = env("UI_E2E_ADMIN_USER").unwrap_or_else(|| "ehrbase-admin".to_owned());
+    let admin_pass = env("UI_E2E_ADMIN_PASS").unwrap_or_else(|| "ehrbase".to_owned());
+    login_basic_as(&h, &admin_user, &admin_pass).await;
+    capture(&h, &dir, "/audit", "audit/audit", Some("table tbody tr")).await;
+    h.goto("/audit?patient=docs-shots-no-such-patient").await;
+    h.wait_css("footer").await;
+    h.wait_xpath("//*[contains(text(), 'No audit records match')]")
+        .await;
+    shot_to(&h, &dir, "audit/audit-empty").await;
 
     h.finish().await;
 }

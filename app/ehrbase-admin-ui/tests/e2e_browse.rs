@@ -195,8 +195,7 @@ async fn query_builder_generates_and_runs_aql() {
             .click()
             .await
             .expect("select the uploaded template");
-        if h
-            .driver
+        if h.driver
             .query(By::Css("ul.text-sm li"))
             .wait(Duration::from_secs(3), Duration::from_millis(200))
             .first()
@@ -207,7 +206,10 @@ async fn query_builder_generates_and_runs_aql() {
             break;
         }
     }
-    assert!(selected, "the template selection never took (pre-hydration clicks exhausted)");
+    assert!(
+        selected,
+        "the template selection never took (pre-hydration clicks exhausted)"
+    );
     // The catalog tree loads once a template is chosen.
     h.wait_css("ul.text-sm li").await;
     h.shot(1, "builder-template-picked").await;
