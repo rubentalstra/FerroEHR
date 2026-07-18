@@ -31,6 +31,7 @@ env:
   REGISTRY: ghcr.io
   APP_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs
   POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs-postgres
+  ADMIN_UI_IMAGE: ghcr.io/${{ github.repository_owner }}/ehrbase-rs-admin-ui
 
 permissions:
   contents: read
@@ -156,6 +157,134 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile.runtime
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            REVISION=${{ github.sha }}
+          provenance: true
+          sbom: true
+
+  # ── Admin console: server binary per arch + the arch-independent site ───────
+  # The WASM/JS/CSS site bundle is architecture-independent, so cargo-leptos
+  # runs ONCE (amd64: bin + site); the arm64 job builds only the ssr binary
+  # with plain cargo. Same glibc rationale as the app binary job.
+  admin-ui-binary:
+    name: admin-ui binary (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: amd64
+            runner: ubuntu-26.04
+          - platform: arm64
+            runner: ubuntu-26.04-arm
+    container: rust:1.96.1-slim-bookworm
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Verify toolchain pin (container == rust-toolchain.toml)
+        shell: bash
+        run: |
+          set -euo pipefail
+          channel=$(grep -E '^channel' rust-toolchain.toml | sed -E 's/.*"(.*)".*/\1/')
+          have=$(rustc --version | awk '{print $2}')
+          if [ "$channel" != "$have" ]; then
+            echo "::error::Job container rustc ($have) != rust-toolchain.toml ($channel)."
+            exit 1
+          fi
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: containers-admin-ui-${{ matrix.platform }}
+
+      - name: Build the ssr server binary (release, native)
+        run: cargo build --release --locked --no-default-features --features ssr -p ehrbase-admin-ui
+
+      - name: Strip
+        run: strip target/release/ehrbase-admin-ui
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ehrbase-admin-ui-${{ matrix.platform }}
+          path: target/release/ehrbase-admin-ui
+          if-no-files-found: error
+          retention-days: 1
+
+      # The site bundle (wasm32 + Tailwind CSS + JS glue) — built once, on
+      # amd64 only; it is byte-identical regardless of the server arch.
+      - name: Build the site bundle (amd64 only)
+        if: matrix.platform == 'amd64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+          rustup target add wasm32-unknown-unknown
+          curl -sSfL -o /usr/local/bin/tailwindcss \
+            https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
+          chmod +x /usr/local/bin/tailwindcss
+          cargo install cargo-leptos --version 0.3.7 --locked
+          cargo install wasm-bindgen-cli --version 0.2.126 --locked
+          cd app/ehrbase-admin-ui
+          LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build --release
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.platform == 'amd64'
+        with:
+          name: ehrbase-admin-ui-site
+          path: target/site
+          if-no-files-found: error
+          retention-days: 1
+
+  # ── Package + push the multi-arch admin-console image (COPY-only) ───────────
+  admin-ui-image:
+    name: admin-ui image
+    runs-on: ubuntu-26.04
+    needs: admin-ui-binary
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: ehrbase-admin-ui-amd64
+          path: bin/amd64
+      - uses: actions/download-artifact@v8
+        with:
+          name: ehrbase-admin-ui-arm64
+          path: bin/arm64
+      - uses: actions/download-artifact@v8
+        with:
+          name: ehrbase-admin-ui-site
+          path: site
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.ADMIN_UI_IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Package and push
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/admin-ui/Dockerfile.runtime
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
