@@ -131,6 +131,20 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   content-or-`format_view::inline_error(&e)` as one `.into_any()`-erased
   view (see any `*_section` fn in the console pages). `<ErrorBoundary>`
   remains fine for non-suspense render-time `Result`s (`view/07_errors`).
+- **Never create Resources (or render `<Outlet/>`/any resource-owning
+  subtree) inside a `Suspend` closure** (found live 2026-07-18 by the E2E
+  console gate). A `Suspend` closure re-runs on every notification of the
+  resources it awaits, and each re-run RE-CREATES everything inside it.
+  Resource ids are allocated in creation order and serialized by id — when
+  the server and client re-run a different number of times, their id
+  spaces diverge and hydration reads the wrong serialized slots
+  ("expected a text node" crashes, timing-dependent). Layout guards (the
+  shell) render the chrome + `<Outlet/>` exactly ONCE outside the
+  Suspense; the Suspend renders only the decision (redirect / small
+  resource-free fragments like identity text). Corollary: an `Err` arm
+  inside a Suspend must render an explicit view — never `unwrap_or` a
+  value that produces a structurally different branch set than the server
+  may have rendered.
 - **Anchors to BFF axum routes need `rel="external"`** (e.g. the OIDC
   login link): after hydration the client router intercepts same-origin
   anchors and 404s routes it doesn't own — flakily, depending on click

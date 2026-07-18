@@ -32,6 +32,15 @@ builder's "open in raw editor" hands its generated query across.
 
 ![Raw AQL editor](img/query-aql.png)
 
+## Exporting results
+
+Both results panes (the builder and the raw editor) offer **Export CSV**
+and **Export JSON** — a plain form download that works even before the
+page's WebAssembly loads. The export runs the query's own `LIMIT` window,
+or the server's default fetch limit when the query has none. CSV cells
+hold scalar values verbatim; structured values are embedded as compact
+JSON.
+
 ## Stored queries & groups
 
 List the CDR's stored queries, inspect a query's AQL, and jump into the
@@ -40,3 +49,7 @@ queries whose combined match counts appear as dashboard tiles — useful as
 lightweight cohort counters.
 
 ![Stored queries](img/queries.png)
+
+Each stored query row also offers **Open in editor**, which loads the
+query text into the raw AQL editor (pre-filling the save name, so saving
+again publishes the next version).

@@ -112,36 +112,65 @@ pub fn AppShell() -> impl IntoView {
         HEALTH_POLL_MS,
     );
 
+    // The chrome (and the routed <Outlet/>) is created exactly ONCE, outside
+    // any Suspend closure. The session gate below renders ONLY the redirect
+    // decision. Rationale (found live 2026-07-18, the E2E console gate): a
+    // Suspend closure re-runs on every notification of the resources it
+    // awaits, and re-creating the Outlet re-creates every resource the
+    // routed page owns — the server and client can re-run a DIFFERENT number
+    // of times, so their resource ids diverge and hydration reads the wrong
+    // serialized slots ("expected a text node" crashes). Identity-dependent
+    // fragments resolve the session in their own small, resource-free
+    // sections instead. The chrome is a COMPONENT (not a pre-built view
+    // value): component bodies run lazily at render, inside the
+    // ToasterProvider's context scope — an eagerly-built view would be
+    // created before the provider exists and pages would panic on
+    // `ToasterInjection::expect_context` (also found live 2026-07-18).
     view! {
         <thaw::ToasterProvider>
-            <Suspense fallback=|| {
-                view! {
-                    <div class="min-h-screen flex items-center justify-center bg-surface">
-                        <thaw::Spinner />
-                    </div>
-                }
-            }>
+            <Suspense fallback=|| ()>
                 {move || {
                     Suspend::new(async move {
                         match session.await {
-                            Ok(Some(info)) => {
-                                authed_shell(
-                                    info,
-                                    status,
-                                    theme,
-                                    is_dark,
-                                    nav_open,
-                                    scopes_open,
-                                    logout_action,
-                                )
-                            }
+                            Ok(Some(_)) => ().into_any(),
                             _ => view! { <Redirect path="/login" /> }.into_any(),
                         }
                     })
                 }}
             </Suspense>
+            <AuthedChrome session status theme is_dark nav_open scopes_open logout_action />
         </thaw::ToasterProvider>
     }
+}
+
+/// The authenticated chrome as a component so its body (and the `<Outlet/>`
+/// subtree) is constructed lazily under the `ToasterProvider` context.
+#[component]
+fn AuthedChrome(
+    /// The shell's session resource (identity/scopes fragments resolve it).
+    session: Resource<Result<Option<SessionInfo>, crate::error::AdminUiError>>,
+    /// The CDR health resource (the topbar chip).
+    status: Resource<Result<String, crate::error::AdminUiError>>,
+    /// The thaw widget theme signal.
+    theme: RwSignal<thaw::Theme>,
+    /// Dark-mode state.
+    is_dark: RwSignal<bool>,
+    /// Mobile nav visibility.
+    nav_open: RwSignal<bool>,
+    /// Scopes drawer visibility.
+    scopes_open: RwSignal<bool>,
+    /// The logout server action.
+    logout_action: ServerAction<Logout>,
+) -> impl IntoView {
+    authed_shell(
+        session,
+        status,
+        theme,
+        is_dark,
+        nav_open,
+        scopes_open,
+        logout_action,
+    )
 }
 
 /// One sidebar entry: route, label, Lucide icon.
@@ -160,7 +189,7 @@ const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 5] = [
 #[allow(clippy::too_many_arguments)] // one flat call carrying the shell's shared reactive state; a wrapper struct would not aid clarity
 #[allow(clippy::too_many_lines)] // one screen assembled from `.into_any()`-erased section locals (rules §1) — deliberately one function
 fn authed_shell(
-    info: SessionInfo,
+    session: Resource<Result<Option<SessionInfo>, crate::error::AdminUiError>>,
     status: Resource<Result<String, crate::error::AdminUiError>>,
     theme: RwSignal<thaw::Theme>,
     is_dark: RwSignal<bool>,
@@ -168,13 +197,6 @@ fn authed_shell(
     scopes_open: RwSignal<bool>,
     logout_action: ServerAction<Logout>,
 ) -> AnyView {
-    let SessionInfo {
-        identity,
-        method,
-        scopes,
-    } = info;
-    let scope_count = scopes.len();
-
     // Reactive active section: follows client-side navigation too (the URL
     // is identical on the server pass and at hydration — deterministic).
     let pathname = leptos_router::hooks::use_location().pathname;
@@ -255,7 +277,42 @@ fn authed_shell(
     }
     .into_any();
 
-    let trigger_label = identity.clone();
+    // Identity text resolves the session in a resource-free section (safe to
+    // re-run — it allocates no resources, so ids cannot diverge).
+    let identity_text = move || {
+        view! {
+            <Suspense fallback=|| ()>
+                {move || {
+                    Suspend::new(async move {
+                        let identity = session
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|info| info.identity)
+                            .unwrap_or_default();
+                        view! { <span>{identity}</span> }.into_any()
+                    })
+                }}
+            </Suspense>
+        }
+    };
+    let method_text = move || {
+        view! {
+            <Suspense fallback=|| ()>
+                {move || {
+                    Suspend::new(async move {
+                        let method = session
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|info| info.method)
+                            .unwrap_or_default();
+                        view! { <span>{method}</span> }.into_any()
+                    })
+                }}
+            </Suspense>
+        }
+    };
     let user_menu = view! {
         <thaw::Popover trigger_type=thaw::PopoverTriggerType::Click>
             <PopoverTrigger slot>
@@ -267,13 +324,13 @@ fn authed_shell(
                         class="inline-flex items-center gap-2 rounded-control px-2 py-1.5 text-sm font-medium text-ink hover:bg-sunken focus:outline-none focus:ring-2 focus:ring-accent"
                     >
                         <Icon icon=icondata_lu::LuCircleUser width="18" height="18" />
-                        {trigger_label}
+                        {identity_text()}
                     </button>
                 </div>
             </PopoverTrigger>
             <div class="flex flex-col gap-2 min-w-44">
-                <span class="text-sm font-medium">{identity}</span>
-                <span class="text-xs opacity-60">{method}</span>
+                <span class="text-sm font-medium">{identity_text()}</span>
+                <span class="text-xs opacity-60">{method_text()}</span>
                 <thaw::Button
                     appearance=thaw::ButtonAppearance::Subtle
                     on_click=move |_| scopes_open.set(true)
@@ -294,20 +351,36 @@ fn authed_shell(
     }
     .into_any();
 
-    let scopes_body = if scopes.is_empty() {
-        view! {
-            <p class="text-sm opacity-70">
-                "No scopes — Basic authentication grants full console access."
-            </p>
-        }
-        .into_any()
-    } else {
-        let items = scopes
-            .iter()
-            .map(|s| view! { <li class="text-sm">{s.clone()}</li> })
-            .collect_view();
-        view! { <ul class="list-disc pl-5 flex flex-col gap-1">{items}</ul> }.into_any()
-    };
+    let scopes_body = view! {
+        <Suspense fallback=|| ()>
+            {move || {
+                Suspend::new(async move {
+                    let scopes = session
+                        .await
+                        .ok()
+                        .flatten()
+                        .map(|info| info.scopes)
+                        .unwrap_or_default();
+                    if scopes.is_empty() {
+                        view! {
+                            <p class="text-sm opacity-70">
+                                "No scopes — Basic authentication grants full console access."
+                            </p>
+                        }
+                            .into_any()
+                    } else {
+                        let items = scopes
+                            .into_iter()
+                            .map(|s| view! { <li class="text-sm">{s}</li> })
+                            .collect_view();
+                        view! { <ul class="list-disc pl-5 flex flex-col gap-1">{items}</ul> }
+                            .into_any()
+                    }
+                })
+            }}
+        </Suspense>
+    }
+    .into_any();
 
     let scopes_drawer = view! {
         <thaw::OverlayDrawer open=scopes_open position=thaw::DrawerPosition::Right>
@@ -360,7 +433,19 @@ fn authed_shell(
         <footer class="flex h-10 shrink-0 items-center gap-2 border-t border-edge bg-raised px-4 text-xs text-ink-muted">
             <span>{format!("console v{}", env!("CARGO_PKG_VERSION"))}</span>
             <span>"·"</span>
-            <span>{format!("{scope_count} scope(s)")}</span>
+            <Suspense fallback=|| ()>
+                {move || {
+                    Suspend::new(async move {
+                        let n = session
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|info| info.scopes.len())
+                            .unwrap_or_default();
+                        view! { <span>{format!("{n} scope(s)")}</span> }.into_any()
+                    })
+                }}
+            </Suspense>
         </footer>
     }
     .into_any();

@@ -85,6 +85,63 @@ pub async fn fetch_template_catalog(template_id: String) -> Result<CatalogNode, 
     Ok(crate::builder::catalog::from_web_template(&web_template))
 }
 
+/// Template identity + language metadata for the detail header card,
+/// combined from the typed OPT (uid, concept, original language) and its
+/// Web Template (version, default + available languages).
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TemplateMeta {
+    /// The operational-template id.
+    pub template_id: String,
+    /// The template concept / display name.
+    pub concept: String,
+    /// The OPT `uid` (empty when the template carries none).
+    pub uid: String,
+    /// The OPT's original language code.
+    pub language: String,
+    /// The Web Template `version`.
+    pub version: String,
+    /// Every language the template carries terms for.
+    pub languages: Vec<String>,
+}
+
+/// Fetch the OPT and distil the identity/metadata card fields (typed parse —
+/// the same `openehr_its::opt14` + WebTemplate pipeline as the catalog).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors as
+/// above; [`AdminUiError::Internal`] when the OPT fails to parse or the Web
+/// Template fails to build.
+#[server]
+pub async fn fetch_template_meta(template_id: String) -> Result<TemplateMeta, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let url = state.cdr.rest_v1(&format!(
+        "definition/template/adl1.4/{}",
+        urlencoding::encode(&template_id)
+    ));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/xml")
+        .await?;
+    let xml = crate::cdr::CdrClient::expect_success(response)?.body;
+    let opt = openehr_its::opt14::from_xml(&xml)
+        .map_err(|e| AdminUiError::Internal(format!("OPT 1.4 parse: {e}")))?;
+    let web_template = openehr_flat::webtemplate::build_web_template(&opt)
+        .map_err(|e| AdminUiError::Internal(format!("WebTemplate build: {e}")))?;
+    Ok(TemplateMeta {
+        template_id: opt.template_id.value.clone(),
+        concept: opt.concept.clone(),
+        uid: opt
+            .uid
+            .as_ref()
+            .map(|u| u.value.clone())
+            .unwrap_or_default(),
+        language: opt.language.code_string.clone(),
+        version: web_template.version.clone(),
+        languages: web_template.languages.clone(),
+    })
+}
+
 /// Fetch the CDR-generated example composition for the template, in `format`.
 ///
 /// GET `definition/template/adl1.4/{template_id}/example` with `Accept` set to
@@ -167,9 +224,18 @@ pub fn TemplateDetailPage() -> impl IntoView {
         },
     );
 
+    // The identity/metadata card is tab-independent (owner directive
+    // 2026-07-18: template id, concept, version, UID, languages always
+    // visible on the detail screen).
+    let meta = Resource::new(
+        move || template_id.get(),
+        |id| async move { fetch_template_meta(id).await },
+    );
+
     let wt_pane = wt_tab(catalog, selected_node);
     let opt_pane = opt_tab(opt);
     let example_pane = example_tab(example, example_format);
+    let meta_card = meta_section(meta);
 
     // The tabs are URL-driven pill links (rules §9): a static-Tailwind anchor
     // per view, the active one styled from the `selected_tab` Memo. No thaw
@@ -202,6 +268,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
                 crumbs=vec![Crumb::new("Templates", "/templates")]
                 mono=true
             />
+            {meta_card}
             <nav aria-label="Template views" class="flex gap-1 mb-4">
                 {tab_link("wt", "WT")}
                 {tab_link("opt", "OPT")}
@@ -214,6 +281,70 @@ pub fn TemplateDetailPage() -> impl IntoView {
             </div>
         </div>
     }
+}
+
+/// The identity/metadata card: template id, concept, version, UID, and
+/// languages — always visible above the tabs. Resolved inside `Suspense`
+/// per the house error pattern.
+fn meta_section(meta: Resource<Result<TemplateMeta, AdminUiError>>) -> AnyView {
+    let entry = |label: &'static str, value: String, mono: bool| {
+        let value_class = if mono {
+            "font-mono text-xs text-ink break-all"
+        } else {
+            "text-sm text-ink"
+        };
+        let shown = if value.is_empty() {
+            "—".to_owned()
+        } else {
+            value
+        };
+        view! {
+            <div>
+                <dt class="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                    {label}
+                </dt>
+                <dd class=value_class>{shown}</dd>
+            </div>
+        }
+        .into_any()
+    };
+    view! {
+        <section class=format!("{CARD_PAD} mb-4")>
+            <Suspense fallback=|| {
+                view! {
+                    <thaw::Skeleton class="h-10">
+                        <thaw::SkeletonItem />
+                    </thaw::Skeleton>
+                }
+            }>
+                {move || {
+                    Suspend::new(async move {
+                        match meta.await {
+                            Ok(m) => {
+                                let language_list = if m.languages.is_empty() {
+                                    m.language.clone()
+                                } else {
+                                    m.languages.join(", ")
+                                };
+                                view! {
+                                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3 lg:grid-cols-5">
+                                        {entry("Concept", m.concept, false)}
+                                        {entry("Version", m.version, false)}
+                                        {entry("Default language", m.language, false)}
+                                        {entry("Languages", language_list, false)}
+                                        {entry("UID", m.uid, true)}
+                                    </dl>
+                                }
+                                    .into_any()
+                            }
+                            Err(e) => crate::components::format_view::inline_error(&e),
+                        }
+                    })
+                }}
+            </Suspense>
+        </section>
+    }
+    .into_any()
 }
 
 /// The WT tab: a two-pane layout — the recursive path-catalog tree (left) and

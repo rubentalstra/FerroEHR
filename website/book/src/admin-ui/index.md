@@ -25,6 +25,14 @@ docker run -p 3000:3000 \
   ghcr.io/rubentalstra/ehrbase-rs-admin-ui
 ```
 
+## Signing in
+
+The sign-in page offers exactly the methods that can actually work: the
+console's configured login modes intersected with the authentication
+schemes the CDR advertises (its `WWW-Authenticate` challenge). A Basic
+form is never shown against a bearer-only CDR, and vice versa. The page
+is served fully rendered and works with JavaScript disabled.
+
 ## Configuration
 
 One TOML file (`ehrbase-admin-ui.toml`, searched in the working directory

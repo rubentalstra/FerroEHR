@@ -39,11 +39,29 @@ workflow refuses a tag that has no matching section here.
   Configured by one `ehrbase-admin-ui.toml` (+ `EHRBASE_ADMIN__*` env);
   ships in the quickstart compose as the `ehrbase-admin-ui` service on
   port 3000. The sign-in page is served fully rendered and works with
-  JavaScript disabled (the login form posts and redirects natively).
-  Verified by a Rust-native browser E2E journey suite (merge-gating in CI,
-  screenshots published as artifacts), including journeys over seeded
-  clinical data (EHR detail, the composition viewer's format and version
-  switching) and a JavaScript-disabled login journey.
+  JavaScript disabled (the login form posts and redirects natively), and
+  offers exactly the methods that can work: the console's configured login
+  modes intersected with the authentication schemes the CDR advertises in
+  its `WWW-Authenticate` challenge. The console received a full design
+  system (semantic design tokens with lockstep light/dark theming, a teal
+  brand shared by the widget kit, iconified navigation, breadcrumbed page
+  headers, named table headers, empty states, and toast feedback on every
+  mutation) and the complete working feature set: query result **export**
+  (CSV/JSON, a plain form download that works without WebAssembly),
+  **EHR creation** (empty or subject-bound) and **find-by-subject-id**,
+  **composition commit** (canonical JSON/XML/FLAT with verbatim CDR
+  validation diagnostics) and **edit-as-new-version** (`If-Match`
+  concurrency), stored-query **open-in-editor**, shareable URL-driven tab
+  state on the detail screens, and a template identity card (version,
+  languages, UID, archetype id). The E2E harness gained an image mode
+  (`UI_E2E_IMAGE=1`) that runs the identical journey battery against the
+  composed OCI image — including a genuinely end-to-end OIDC journey: the
+  quickstart Keycloak now pins one canonical issuer and the dev CDR config
+  trusts it via standard OIDC discovery, so a bearer-authenticated console
+  session queries the CDR for real. Verified by a Rust-native browser E2E
+  journey suite (merge-gating in CI, screenshots published as artifacts),
+  including journeys over seeded clinical data and a JavaScript-disabled
+  login journey.
 
 ## [3.1.1] - 2026-07-17
 

@@ -66,7 +66,28 @@ pub fn LoginPage() -> impl IntoView {
         }>
             {move || {
                 Suspend::new(async move {
-                    let (basic, oidc) = modes.await.unwrap_or((true, false));
+                    let (basic, oidc, mode_error) = match modes.await {
+                        Ok((basic, oidc)) => (basic, oidc, None),
+                        Err(e) => (true, true, Some(e.to_string())),
+                    };
+                    let mode_warning = match mode_error {
+                        Some(e) => {
+                            // The Err arm renders both paths plus a warning — an
+                            // Err fallback that silently DIFFERS from what the
+                            // server may have rendered is a hydration hazard, so
+                            // the failure is explicit and visible.
+                            view! {
+                                <div
+                                    role="alert"
+                                    class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-xs text-ink"
+                                >
+                                    {format!("Could not read the CDR's login modes: {e}")}
+                                </div>
+                            }
+                                .into_any()
+                        }
+                        None => ().into_any(),
+                    };
                     let basic_form = if basic {
                         basic_login_form(action, pending, next).into_any()
                     } else {
@@ -104,9 +125,28 @@ pub fn LoginPage() -> impl IntoView {
                     } else {
                         ().into_any()
                     };
+                    let none_available = if basic || oidc {
+                        ().into_any()
+                    } else {
+                        // The intersection of the console's configured modes and
+                        // the CDR's advertised schemes can be empty — say so
+                        // instead of rendering a blank card.
+                        view! {
+                            <div
+                                role="alert"
+                                class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-ink"
+                            >
+                                "No sign-in method is available: the console's configured "
+                                "login modes and the CDR's advertised authentication "
+                                "schemes do not overlap. Align the console auth "
+                                "configuration with the CDR's."
+                            </div>
+                        }
+                            .into_any()
+                    };
                     view! {
                         <div class="flex flex-col gap-4">
-                            {basic_form} {separator} {oidc_button}
+                            {mode_warning} {basic_form} {separator} {oidc_button} {none_available}
                         </div>
                     }
                         .into_any()

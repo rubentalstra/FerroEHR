@@ -27,8 +27,10 @@ use serde_json::Value;
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
+use crate::components::format_view::inline_error;
 use crate::components::page_header::PageHeader;
-use crate::components::surface::CARD_PAD;
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 
 #[cfg(feature = "ssr")]
@@ -139,10 +141,147 @@ pub async fn list_ehrs(offset: u32) -> Result<ResultPage, AdminUiError> {
     parse_result_set(&response.body, offset)
 }
 
+#[cfg(feature = "ssr")]
+/// Build a subject-bound `EHR_STATUS` for `POST /ehr`: a `PARTY_SELF` whose
+/// `external_ref` (a `PARTY_REF`) carries the subject `id.value` +
+/// `namespace`, which is exactly what `GET /ehr?subject_id&subject_namespace`
+/// matches against (ITS-REST EHR API `ehr_get_by_subject`; RM ehr master04
+/// §EHR Status — `subject` is a `PARTY_SELF`, the subject is identified via
+/// its `external_ref`, never a `PARTY_IDENTIFIED`). `is_queryable` /
+/// `is_modifiable` default true.
+pub(crate) fn subject_ehr_status(subject_id: &str, subject_namespace: &str) -> Value {
+    serde_json::json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": {
+            "_type": "PARTY_SELF",
+            "external_ref": {
+                "_type": "PARTY_REF",
+                "namespace": subject_namespace,
+                "type": "PERSON",
+                "id": { "_type": "HIER_OBJECT_ID", "value": subject_id }
+            }
+        },
+        "is_queryable": true,
+        "is_modifiable": true
+    })
+}
+
+#[cfg(feature = "ssr")]
+/// Pull the `ehr_id.value` out of an `EHR` resource body (the
+/// `Prefer: return=representation` response of `POST /ehr` and the body of
+/// `GET /ehr?subject_id…`).
+///
+/// # Errors
+/// [`AdminUiError::Internal`] when the body is not valid JSON or carries no
+/// `ehr_id`.
+pub(crate) fn parse_ehr_id(body: &str) -> Result<String, AdminUiError> {
+    let doc: Value =
+        serde_json::from_str(body).map_err(|e| AdminUiError::Internal(format!("EHR JSON: {e}")))?;
+    doc.get("ehr_id")
+        .and_then(|v| v.get("value"))
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .ok_or_else(|| AdminUiError::Internal("EHR response carried no ehr_id".to_owned()))
+}
+
+/// Create a new EHR. Both subject fields empty → a plain `POST /ehr` (the CDR
+/// mints the default `EHR_STATUS`, `PARTY_SELF` subject); both filled → a
+/// subject-bound `EHR_STATUS` body (see [`subject_ehr_status`]). Exactly one
+/// filled is a validation error (both or neither). Sends
+/// `Prefer: return=representation` and returns the new `ehr_id`.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] when exactly one subject field is filled; CDR
+/// transport errors pass through; a non-2xx CDR answer (its validation
+/// diagnostic included) normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn create_ehr(
+    subject_id: String,
+    subject_namespace: String,
+) -> Result<String, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let subject_id = subject_id.trim();
+    let subject_namespace = subject_namespace.trim();
+    let body = match (subject_id.is_empty(), subject_namespace.is_empty()) {
+        // Neither: let the CDR mint the default EHR_STATUS (empty body — the
+        // EHR API's request body is optional).
+        (true, true) => String::new(),
+        // Both: a subject-bound EHR_STATUS.
+        (false, false) => subject_ehr_status(subject_id, subject_namespace).to_string(),
+        // Exactly one: a bad request; the subject needs both parts.
+        _ => {
+            return Err(AdminUiError::Invalid(
+                "provide both a subject id and a subject namespace, or leave both empty".to_owned(),
+            ));
+        }
+    };
+    let url = state.cdr.rest_v1("ehr");
+    let response = state
+        .cdr
+        .post(
+            &session.credential,
+            &url,
+            "application/json",
+            "application/json",
+            &[("Prefer", "return=representation")],
+            body,
+        )
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    parse_ehr_id(&response.body)
+}
+
+/// Look up an EHR by `subject_id` + `subject_namespace`
+/// (`GET /ehr?subject_id&subject_namespace`). `Ok(Some(ehr_id))` when found,
+/// `Ok(None)` on a `404` (no EHR for that subject — a first-class empty
+/// state, not an error).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] when either subject field is empty; CDR transport
+/// errors pass through; a non-2xx, non-404 CDR answer normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn find_ehr_by_subject(
+    subject_id: String,
+    subject_namespace: String,
+) -> Result<Option<String>, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let subject_id = subject_id.trim();
+    let subject_namespace = subject_namespace.trim();
+    if subject_id.is_empty() || subject_namespace.is_empty() {
+        return Err(AdminUiError::Invalid(
+            "both a subject id and a subject namespace are required".to_owned(),
+        ));
+    }
+    let url = state.cdr.rest_v1(&format!(
+        "ehr?subject_id={}&subject_namespace={}",
+        urlencoding::encode(subject_id),
+        urlencoding::encode(subject_namespace)
+    ));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    if response.status == 404 {
+        return Ok(None);
+    }
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    parse_ehr_id(&response.body).map(Some)
+}
+
 /// The `/ehrs` screen: a lookup form over a URL-paged recent-EHRs table.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn EhrsPage() -> impl IntoView {
+    let toaster = thaw::ToasterInjection::expect_context();
+    let create = create_ehr_section(toaster);
     let finder = finder_section();
     let offset = offset_from_url();
     let table = recent_ehrs_section(offset);
@@ -150,11 +289,131 @@ pub fn EhrsPage() -> impl IntoView {
     view! {
         <Title text="EHRs · ehrbase-admin" />
         <div class="p-6">
-            <PageHeader title="EHRs" subtitle="Find an EHR by id, or browse the most recent." />
+            <PageHeader
+                title="EHRs"
+                subtitle="Create an EHR, find one by id or subject, or browse the most recent."
+            />
+            {create}
             {finder}
             {table}
         </div>
     }
+}
+
+/// The Create-EHR card: an optional subject id + namespace (both or neither),
+/// a Create button dispatching the [`create_ehr`] action, and — on success —
+/// a toast plus client-side navigation to the new EHR's detail route. The
+/// both-or-neither rule is validated client-side (inline) before dispatch and
+/// re-checked server-side; a CDR validation diagnostic surfaces inline
+/// verbatim.
+fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
+    let subject_id = RwSignal::new(String::new());
+    let subject_namespace = RwSignal::new(String::new());
+    let validation = RwSignal::new(Option::<String>::None);
+    let create = Action::new(|(id, ns): &(String, String)| {
+        let id = id.clone();
+        let ns = ns.clone();
+        async move { create_ehr(id, ns).await }
+    });
+
+    // Navigate to the new EHR + toast on success. Both are outside-world
+    // side-effects (the router, the thaw toaster), so an Effect is their
+    // correct home (rules §2); it never runs on the server pass. The route
+    // instance unmounts on navigation, cleaning the Effect up.
+    let navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| {
+        if let Some(Ok(new_id)) = create.value().get() {
+            toast_success(toaster, "EHR created", &format!("New EHR {new_id}"));
+            navigate(
+                &format!("/ehrs/{new_id}"),
+                leptos_router::NavigateOptions::default(),
+            );
+        }
+    });
+
+    let on_click = move |_| {
+        let id = subject_id.get().trim().to_owned();
+        let ns = subject_namespace.get().trim().to_owned();
+        if id.is_empty() != ns.is_empty() {
+            validation.set(Some(
+                "Provide both a subject id and a namespace, or leave both empty for an anonymous EHR."
+                    .to_owned(),
+            ));
+            return;
+        }
+        validation.set(None);
+        create.dispatch((id, ns));
+    };
+
+    view! {
+        <section class=format!("{CARD_PAD} mb-6")>
+            <h2 class=CARD_TITLE>"Create EHR"</h2>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="ehr-create-subject-id">
+                        "Subject id (optional)"
+                    </label>
+                    <input
+                        id="ehr-create-subject-id"
+                        type="text"
+                        class=INPUT
+                        placeholder="external subject id"
+                        prop:value=move || subject_id.get()
+                        on:input:target=move |ev| subject_id.set(ev.target().value())
+                    />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="ehr-create-subject-namespace">
+                        "Subject namespace (optional)"
+                    </label>
+                    <input
+                        id="ehr-create-subject-namespace"
+                        type="text"
+                        class=INPUT
+                        placeholder="namespace"
+                        prop:value=move || subject_namespace.get()
+                        on:input:target=move |ev| subject_namespace.set(ev.target().value())
+                    />
+                </div>
+                <button
+                    id="ehr-create-submit"
+                    type="button"
+                    class=BTN_PRIMARY
+                    disabled=Signal::derive(move || create.pending().get())
+                    on:click=on_click
+                >
+                    "Create EHR"
+                </button>
+            </div>
+            <p class="mt-2 text-xs text-ink-muted">
+                "Leave both blank for an anonymous EHR (the CDR mints the default EHR_STATUS), or set both to bind a subject."
+            </p>
+            <div class="mt-2 text-sm">
+                <Show when=move || create.pending().get()>
+                    <span class="text-ink-muted">"Creating…"</span>
+                </Show>
+                {move || {
+                    validation
+                        .get()
+                        .map(|msg| {
+                            view! {
+                                <p
+                                    role="alert"
+                                    class="rounded-control border border-danger/40 bg-danger-subtle px-3 py-2 text-danger"
+                                >
+                                    {msg}
+                                </p>
+                            }
+                        })
+                }}
+                {move || match create.value().get() {
+                    Some(Err(error)) => inline_error(&error),
+                    _ => ().into_any(),
+                }}
+            </div>
+        </section>
+    }
+    .into_any()
 }
 
 /// The offset the recent-EHRs table is paged at, read from `?offset=` and
@@ -170,32 +429,66 @@ fn offset_from_url() -> Signal<u32> {
     })
 }
 
-/// The lookup form: an EHR-id input plus a Find button that navigates to the
-/// detail route. Client-side navigation (`use_navigate`) — no page reload.
+/// The finder: two modes in one card. Mode 1 is the by-id jump (`#ehr-lookup`
+/// unchanged), a pure client-side navigate. Mode 2 is the subject lookup —
+/// `subject_id` + `subject_namespace` dispatched to [`find_ehr_by_subject`],
+/// navigating to the detail route when found and surfacing an inline
+/// not-found note on a `404`. Both navigations are client-side
+/// (`use_navigate`) — no page reload.
+#[allow(clippy::too_many_lines)] // two finder modes assembled as one erased section (rules §1) — splitting would separate a mode from its state
 fn finder_section() -> AnyView {
+    // ── Mode 1: jump by EHR id ──────────────────────────────────────────────
     let lookup = RwSignal::new(String::new());
-    let navigate = leptos_router::hooks::use_navigate();
-    let on_click = move |_| {
+    let by_id_navigate = leptos_router::hooks::use_navigate();
+    let on_lookup = move |_| {
         let id = lookup.get().trim().to_owned();
         if !id.is_empty() {
-            navigate(
+            by_id_navigate(
                 &format!("/ehrs/{id}"),
                 leptos_router::NavigateOptions::default(),
             );
         }
     };
+
+    // ── Mode 2: find by subject id + namespace ──────────────────────────────
+    let subject_id = RwSignal::new(String::new());
+    let subject_namespace = RwSignal::new(String::new());
+    let find = Action::new(|(id, ns): &(String, String)| {
+        let id = id.clone();
+        let ns = ns.clone();
+        async move { find_ehr_by_subject(id, ns).await }
+    });
+    // Navigate to the found EHR is an outside-world side-effect (rules §2).
+    let by_subject_navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| {
+        if let Some(Ok(Some(id))) = find.value().get() {
+            by_subject_navigate(
+                &format!("/ehrs/{id}"),
+                leptos_router::NavigateOptions::default(),
+            );
+        }
+    });
+    let on_find_subject = move |_| {
+        let id = subject_id.get().trim().to_owned();
+        let ns = subject_namespace.get().trim().to_owned();
+        if !id.is_empty() && !ns.is_empty() {
+            find.dispatch((id, ns));
+        }
+    };
+
     // TODO: offer a no-JS fallback (a <Form method="GET"> that posts the id to
     // a route which redirects to /ehrs/{id}) so the finder works before WASM
     // loads; the button+navigate path covers the hydrated case for now.
     view! {
         <section class=format!("{CARD_PAD} mb-6")>
+            <h2 class=CARD_TITLE>"Find an EHR"</h2>
             <div class="flex flex-wrap items-end gap-3">
                 <div class="flex flex-col gap-1">
                     // Plain label + explicit stable input id keep the SSR↔hydration
                     // association deterministic (rules §8) and preserve the E2E
                     // contract (`#ehr-lookup`).
                     <label class=LABEL r#for="ehr-lookup">
-                        "EHR id or subject id"
+                        "EHR id"
                     </label>
                     <input
                         id="ehr-lookup"
@@ -206,9 +499,59 @@ fn finder_section() -> AnyView {
                         on:input:target=move |ev| lookup.set(ev.target().value())
                     />
                 </div>
-                <button type="button" class=BTN_PRIMARY on:click=on_click>
+                <button id="ehr-find" type="button" class=BTN_PRIMARY on:click=on_lookup>
                     "Find"
                 </button>
+            </div>
+            <div class="mt-3 flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="ehr-subject-id">
+                        "Subject id"
+                    </label>
+                    <input
+                        id="ehr-subject-id"
+                        type="text"
+                        class=INPUT
+                        placeholder="external subject id"
+                        prop:value=move || subject_id.get()
+                        on:input:target=move |ev| subject_id.set(ev.target().value())
+                    />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="ehr-subject-namespace">
+                        "Subject namespace"
+                    </label>
+                    <input
+                        id="ehr-subject-namespace"
+                        type="text"
+                        class=INPUT
+                        placeholder="namespace"
+                        prop:value=move || subject_namespace.get()
+                        on:input:target=move |ev| subject_namespace.set(ev.target().value())
+                    />
+                </div>
+                <button
+                    id="ehr-subject-find"
+                    type="button"
+                    class=BTN_SECONDARY
+                    disabled=Signal::derive(move || find.pending().get())
+                    on:click=on_find_subject
+                >
+                    "Find by subject"
+                </button>
+            </div>
+            <div class="mt-2 text-sm">
+                <Show when=move || find.pending().get()>
+                    <span class="text-ink-muted">"Searching…"</span>
+                </Show>
+                {move || match find.value().get() {
+                    Some(Ok(None)) => {
+                        view! { <p class="text-ink-muted">"No EHR found for that subject."</p> }
+                            .into_any()
+                    }
+                    Some(Err(error)) => inline_error(&error),
+                    _ => ().into_any(),
+                }}
             </div>
         </section>
     }
@@ -345,7 +688,10 @@ pub(crate) fn cell_text(value: &Value) -> String {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{LIST_EHRS_AQL, PAGE_SIZE, aql_request_body, cell_text, parse_result_set};
+    use super::{
+        LIST_EHRS_AQL, PAGE_SIZE, aql_request_body, cell_text, parse_ehr_id, parse_result_set,
+        subject_ehr_status,
+    };
 
     #[test]
     fn fixed_aql_parses() {
@@ -384,5 +730,30 @@ mod tests {
         assert_eq!(cell_text(&serde_json::json!("hello")), "hello");
         assert_eq!(cell_text(&serde_json::json!(null)), "");
         assert_eq!(cell_text(&serde_json::json!(42)), "42");
+    }
+
+    #[test]
+    fn subject_ehr_status_binds_the_external_ref() {
+        let status = subject_ehr_status("patient-123", "patients");
+        assert_eq!(status["_type"], "EHR_STATUS");
+        assert_eq!(status["subject"]["_type"], "PARTY_SELF");
+        // The subject id + namespace are what GET /ehr?subject_id&subject_namespace
+        // matches against (external_ref.id.value + external_ref.namespace).
+        assert_eq!(
+            status["subject"]["external_ref"]["id"]["value"],
+            "patient-123"
+        );
+        assert_eq!(status["subject"]["external_ref"]["namespace"], "patients");
+        assert_eq!(status["subject"]["external_ref"]["type"], "PERSON");
+        assert_eq!(status["is_queryable"].as_bool(), Some(true));
+        assert_eq!(status["is_modifiable"].as_bool(), Some(true));
+    }
+
+    #[test]
+    fn parse_ehr_id_reads_the_value_or_errors() {
+        let body = r#"{"_type":"EHR","ehr_id":{"_type":"HIER_OBJECT_ID","value":"7d44aa01"}}"#;
+        assert_eq!(parse_ehr_id(body).expect("ehr_id"), "7d44aa01");
+        assert!(parse_ehr_id(r#"{"ehr_id":{}}"#).is_err());
+        assert!(parse_ehr_id("not json").is_err());
     }
 }

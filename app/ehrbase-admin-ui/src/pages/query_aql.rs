@@ -22,12 +22,13 @@ use leptos_router::hooks::use_query_map;
 
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, TEXTAREA};
 use crate::components::page_header::{Crumb, PageHeader};
-use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::surface::CARD_PAD;
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
+use crate::pages::dashboard::split_query_ref;
 use crate::pages::ehrs::{ResultPage, table_skeleton};
-use crate::pages::query_builder::{paging_buttons, results_view};
-use crate::queries_api::{run_aql, store_query, validate_aql};
+use crate::pages::query_builder::{export_forms, paging_buttons, results_view};
+use crate::queries_api::{fetch_stored_query, run_aql, store_query, validate_aql};
 
 /// The raw AQL editor screen.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
@@ -42,6 +43,43 @@ pub fn QueryAqlPage() -> impl IntoView {
     let save_name = RwSignal::new(String::new());
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<(String, String)>);
+
+    // The "open in editor" hand-off from /queries: `?load=name@version` fetches
+    // the stored query and seeds the editor. `load` is URL-derived, identical on
+    // the server pass and the client hydration (hydration-safe), so the status
+    // section only renders when the param is actually present.
+    let has_load = query_map.with_untracked(|m| m.get("load").is_some_and(|s| !s.is_empty()));
+    let load_resource: Resource<Result<Option<(String, String)>, AdminUiError>> = Resource::new(
+        move || query_map.with(|m| m.get("load").unwrap_or_default()),
+        |load| async move {
+            match split_query_ref(&load) {
+                Some((name, version)) => {
+                    let text = fetch_stored_query(name.clone(), version).await?;
+                    Ok(Some((name, text)))
+                }
+                None => Ok(None),
+            }
+        },
+    );
+    // Seed the editor from the loaded query exactly once, client-side (Effects
+    // never run on the server, so there is no SSR/hydration divergence), and
+    // only while the editor is still untouched so back-navigation never
+    // clobbers edits. This is the async-load-into-editable-local-state case
+    // (rules §2); the one-shot `StoredValue` guard keeps it from re-firing.
+    // Loading the qualified name into the save field versions it on re-save.
+    let seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if seeded.get_value() {
+            return;
+        }
+        if let Some(Ok(Some((qualified, text)))) = load_resource.get() {
+            if aql.with_untracked(std::string::String::is_empty) {
+                aql.set(text);
+            }
+            save_name.set(qualified);
+            seeded.set_value(true);
+        }
+    });
 
     let validate_action: Action<String, Result<(), AdminUiError>> = Action::new(|aql: &String| {
         let aql = aql.clone();
@@ -70,10 +108,18 @@ pub fn QueryAqlPage() -> impl IntoView {
         },
     );
 
+    let load_status = if has_load {
+        load_status_section(load_resource)
+    } else {
+        ().into_any()
+    };
     let editor = editor_section(aql, validate_action);
     let parameters = parameters_section(params);
     let run_save = run_save_section(aql, params, save_name, save_action, ran, offset);
-    let results_pane = results_section(results, offset);
+    // Export tracks the editor + parameter panes — the same signals Run uses.
+    let export_aql = Signal::derive(move || aql.get());
+    let export_params = Signal::derive(move || params.get());
+    let results_pane = results_section(results, offset, export_aql, export_params);
 
     view! {
         <Title text="AQL editor" />
@@ -83,12 +129,43 @@ pub fn QueryAqlPage() -> impl IntoView {
                 subtitle="Write and run AQL directly, bind parameters, and save it as a stored query."
                 crumbs=vec![Crumb::new("Queries", "/queries")]
             />
+            {load_status}
             {editor}
             {parameters}
             {run_save}
             {results_pane}
         </div>
     }
+}
+
+/// The `?load=` hand-off status: a house-pattern `<Transition>` reporting the
+/// loaded query (or the CDR error inline). The editor itself is seeded by the
+/// one-shot effect in the page component; this only surfaces load progress.
+fn load_status_section(
+    load_resource: Resource<Result<Option<(String, String)>, AdminUiError>>,
+) -> AnyView {
+    view! {
+        <Transition fallback=move || {
+            view! { <p class="text-sm text-ink-muted">"Loading stored query…"</p> }
+        }>
+            {move || Suspend::new(async move {
+                match load_resource.await {
+                    Ok(Some((qualified, _))) => {
+                        view! {
+                            <p class="text-sm text-ink-muted">
+                                "Loaded stored query "
+                                <span class="font-mono text-ink">{qualified}</span> "."
+                            </p>
+                        }
+                            .into_any()
+                    }
+                    Ok(None) => ().into_any(),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
+        </Transition>
+    }
+    .into_any()
 }
 
 /// The AQL editor: a controlled `<textarea>` plus a BFF-local Validate button
@@ -258,6 +335,8 @@ fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>
 fn results_section(
     results: Resource<Result<Option<ResultPage>, AdminUiError>>,
     offset: RwSignal<u32>,
+    current_aql: Signal<String>,
+    params: Signal<String>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
@@ -267,11 +346,15 @@ fn results_section(
                     Ok(Some(page)) => {
                         let controls = paging_buttons(offset, page.rows.len());
                         let body = results_view(&page, false);
+                        let export = export_forms(current_aql, params);
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
                             <section class=CARD_PAD>
-                                <h2 class=CARD_TITLE>"Results"</h2>
+                                <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+                                    <h2 class="text-sm font-semibold text-ink">"Results"</h2>
+                                    {export}
+                                </div>
                                 {body}
                                 {controls}
                             </section>

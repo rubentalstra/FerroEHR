@@ -117,13 +117,19 @@ pub async fn current_session() -> Result<Option<SessionInfo>, AdminUiError> {
 ///
 /// # Errors
 /// None in practice; the signature is fallible per the server-fn contract.
-#[allow(clippy::unused_async)] // #[server] fns are async by contract
 #[server]
 pub async fn login_modes() -> Result<(bool, bool), AdminUiError> {
     let state: crate::state::AppState = leptos::prelude::expect_context();
+    // The console offers only what BOTH sides support: its own configured
+    // modes intersected with the schemes the CDR advertises in its
+    // `WWW-Authenticate` challenge (a Basic form against a bearer-only CDR
+    // can never succeed). An unreachable CDR falls back to the console's
+    // config alone so the login page still renders — the login attempt
+    // itself then surfaces the outage.
+    let (cdr_basic, cdr_bearer) = state.cdr.advertised_schemes().await.unwrap_or((true, true));
     Ok((
-        state.config.auth.basic_enabled,
-        state.config.auth.oidc.enabled,
+        state.config.auth.basic_enabled && cdr_basic,
+        state.config.auth.oidc.enabled && cdr_bearer,
     ))
 }
 
