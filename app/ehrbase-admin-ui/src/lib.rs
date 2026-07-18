@@ -23,6 +23,9 @@ pub mod urlq;
 pub mod groups;
 
 #[cfg(feature = "ssr")]
+pub mod folder_templates;
+
+#[cfg(feature = "ssr")]
 pub mod cdr;
 #[cfg(feature = "ssr")]
 pub mod config;
