@@ -9,9 +9,9 @@ description: >-
 type: application
 
 # Chart versioning is independent of the application version.
-version: 3.1.1
+version: 3.2.0
 # The default container image tag (informational; overridable via image.tag).
-appVersion: "3.1.1"
+appVersion: "3.2.0"
 
 # PDB (policy/v1, GA 1.21), HPA (autoscaling/v2, GA 1.23), and the
 # seccompProfile pod field (GA 1.27) all resolve cleanly at 1.25+.
