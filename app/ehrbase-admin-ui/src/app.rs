@@ -42,7 +42,10 @@ pub fn App() -> impl IntoView {
     view! {
         <Stylesheet id="leptos" href="/pkg/ehrbase-admin-ui.css" />
         <Title text="ehrbase-admin" />
-        <thaw::ConfigProvider theme_id="ehrbase-admin".to_owned()>
+        <thaw::ConfigProvider
+            theme_id="ehrbase-admin".to_owned()
+            theme=RwSignal::new(crate::theme::console_light())
+        >
             <Router>
                 <Routes fallback=|| view! { <NotFound /> }>
                     // NOTE: /login deviates from the out-of-order streaming

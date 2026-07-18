@@ -16,6 +16,7 @@ pub mod error;
 pub mod format;
 pub mod pages;
 pub mod queries_api;
+pub mod theme;
 pub mod urlq;
 
 #[cfg(feature = "ssr")]
@@ -25,6 +26,8 @@ pub mod groups;
 pub mod cdr;
 #[cfg(feature = "ssr")]
 pub mod config;
+#[cfg(feature = "ssr")]
+pub mod export;
 #[cfg(feature = "ssr")]
 pub mod oidc;
 #[cfg(feature = "ssr")]

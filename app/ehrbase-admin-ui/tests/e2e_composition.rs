@@ -46,7 +46,7 @@ async fn ehr_detail_lists_seeded_composition() {
     h.shot(1, "status-tab").await;
 
     // Compositions tab: the seeded row links to the viewer.
-    h.wait_xpath("//button[contains(., 'Compositions')]")
+    h.wait_xpath("//a[contains(., 'Compositions')]")
         .await
         .click()
         .await

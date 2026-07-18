@@ -21,12 +21,14 @@
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
-use leptos_router::components::A;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
+use crate::components::field::{LABEL, SELECT};
 use crate::components::format_view::{DocumentPane, FormatSelector};
+use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
 // Server-side pretty-printing happens in the #[server] body only.
 #[cfg(feature = "ssr")]
 use crate::components::format_view::pretty_body;
@@ -203,18 +205,19 @@ pub fn CompositionPage() -> impl IntoView {
         format!("Composition {short}…")
     });
 
+    // The parent-EHR crumb href/label reads the route param once at setup (a
+    // composition route instance keeps its `ehr_id` for its lifetime).
+    let ehr_id_value = ehr_id.get_untracked();
+    let ehr_short: String = ehr_id_value.chars().take(8).collect();
+    let crumbs = vec![
+        Crumb::new("EHRs", "/ehrs"),
+        Crumb::new(format!("EHR {ehr_short}…"), format!("/ehrs/{ehr_id_value}")),
+    ];
+
     view! {
         <Title text="Composition · ehrbase-admin" />
-        <div class="p-4">
-            <div class="flex items-center gap-3 mb-4">
-                <A
-                    href=move || format!("/ehrs/{}", ehr_id.get())
-                    attr:class="text-sm text-blue-600 hover:underline"
-                >
-                    "← EHR"
-                </A>
-                <h1 class="text-xl font-semibold font-mono">{move || title.get()}</h1>
-            </div>
+        <div class="p-6">
+            <PageHeader title=Signal::derive(move || title.get()) crumbs=crumbs mono=true />
             {toolbar}
             {body}
             {audit}
@@ -245,7 +248,7 @@ fn toolbar_section(
                     Err(_) => {
                         // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
-                        view! { <span class="text-xs text-red-600">"versions unavailable"</span> }
+                        view! { <span class="text-xs text-danger">"versions unavailable"</span> }
                             .into_any()
                     }
                 }
@@ -254,15 +257,17 @@ fn toolbar_section(
     }
     .into_any();
     view! {
-        <div class="mb-3 flex flex-wrap items-center gap-4">
-            <FormatSelector offered=offered selected=format />
-            <div class="flex items-center gap-2">
-                <label class="text-sm font-medium" r#for="version-select">
-                    "Version"
-                </label>
-                {select}
+        <section class=format!("{CARD_PAD} mb-3")>
+            <div class="flex flex-wrap items-center gap-4">
+                <FormatSelector offered=offered selected=format />
+                <div class="flex items-center gap-2">
+                    <label class=LABEL r#for="version-select">
+                        "Version"
+                    </label>
+                    {select}
+                </div>
             </div>
-        </div>
+        </section>
     }
     .into_any()
 }
@@ -279,7 +284,7 @@ fn version_select(entries: Vec<VersionEntry>, selected: RwSignal<String>) -> Any
     view! {
         <select
             id="version-select"
-            class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent text-sm px-2 py-1"
+            class=SELECT
             prop:value=move || selected.get()
             on:change=move |ev| selected.set(event_target_value(&ev))
         >
@@ -367,7 +372,7 @@ fn audit_section(
 /// no matching version is found.
 fn audit_card(entry: Option<&VersionEntry>) -> AnyView {
     let Some(entry) = entry else {
-        return view! { <p class="text-sm text-neutral-500">"No audit for the selected version."</p> }
+        return view! { <p class="text-sm text-ink-muted">"No audit for the selected version."</p> }
         .into_any();
     };
     let version_id = entry.version_id.clone();
@@ -375,12 +380,13 @@ fn audit_card(entry: Option<&VersionEntry>) -> AnyView {
     let change_type = entry.change_type.clone();
     let committer = entry.committer.clone();
     view! {
-        <thaw::Card>
-            <div class="p-3 text-sm grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
+        <section class=CARD_PAD>
+            <h2 class=CARD_TITLE>"Audit"</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 items-start gap-x-4 gap-y-2 text-sm">
                 {audit_row("version", version_id)} {audit_row("committed", committed_at)}
                 {audit_row("change type", change_type)} {audit_row("committer", committer)}
             </div>
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
@@ -394,8 +400,8 @@ fn audit_row(label: &'static str, value: String) -> AnyView {
     };
     view! {
         <div>
-            <span class="font-medium text-neutral-500 mr-1">{label}":"</span>
-            <span class="font-mono break-all">{shown}</span>
+            <span class="font-medium text-ink-muted mr-1">{label}":"</span>
+            <span class="font-mono break-all text-ink">{shown}</span>
         </div>
     }
     .into_any()
