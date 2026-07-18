@@ -1,5 +1,5 @@
 {
-  "latest": "v3.1.1",
+  "latest": "v3.2.0",
   "versions": [
     {
       "id": "dev",
@@ -10,10 +10,16 @@
     },
     {
       "id": "latest",
-      "label": "latest (v3.1.1)",
+      "label": "latest (v3.2.0)",
       "path": "/ehrbase-rs/docs/latest/",
-      "released": "2026-07-17",
-      "aliasOf": "v3.1.1"
+      "released": "2026-07-18",
+      "aliasOf": "v3.2.0"
+    },
+    {
+      "id": "v3.2.0",
+      "label": "v3.2.0",
+      "path": "/ehrbase-rs/docs/v3.2.0/",
+      "released": "2026-07-18"
     },
     {
       "id": "v3.1.1",
