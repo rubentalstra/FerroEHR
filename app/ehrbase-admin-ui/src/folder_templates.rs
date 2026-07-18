@@ -15,7 +15,9 @@
 use serde_json::Value;
 
 use crate::error::AdminUiError;
-use crate::pages::ehr_detail::{DIRECTORY_ARCHETYPE, FOLDER_NODE_ID, FolderTemplate, folder_json};
+use crate::pages::ehr_detail::directory::{
+    DIRECTORY_ARCHETYPE, FOLDER_NODE_ID, FolderTemplate, folder_json,
+};
 
 /// The folder-templates store path: `admin-ui-folder-templates.json` in the
 /// same directory as the query-groups store, so both console-local stores
