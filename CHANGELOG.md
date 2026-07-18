@@ -17,6 +17,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`GET {base}/admin/config` — the redacted effective configuration** (an
+  ehrbase-rs extension; the openEHR admin API defines only EHR deletes).
+  Returns the merged effective configuration (file + `EHRBASE_*` env +
+  `--set` overrides) as a JSON tree with every secret-bearing value redacted
+  structurally by its secret type — passwords, password hashes, HMAC/signing
+  secrets, and S3 secret keys render as `***`, and connection URLs (database,
+  AMQP) mask their embedded credentials while keeping host and path; non-secret
+  identifiers (usernames, roles, OIDC issuer) stay visible. Shares the admin
+  gate and authorization of the admin deletes (`EHRBASE__ADMIN__ENABLED=true`,
+  `ADMIN` role); disabled admin API answers `404`.
 - **`ehrbase-admin-ui` — the admin console**, a new standalone web
   application (its own binary and OCI image,
   `ghcr.io/rubentalstra/ehrbase-rs-admin-ui`) that manages any
@@ -57,7 +67,14 @@ workflow refuses a tag that has no matching section here.
   (`SELECT DISTINCT` over the criteria tree), a **Table | Chart** toggle
   on numeric result columns, a version **timeline strip** with a
   `version_at_time` picker on the composition viewer, and a
-  **contributions table** on the EHR detail screen. The E2E harness gained an image mode
+  **contributions table** on the EHR detail screen. The Directory tab can
+  now **create and edit the EHR folder directory** (spec-standard
+  POST/PUT with `If-Match`), starting from console-local **folder
+  templates** (two built-ins included); the System panel gained
+  **repository usage** (per-template composition counts) and a read-only
+  **runtime configuration** view backed by the CDR's new redacted
+  `GET /admin/config` endpoint (secrets redacted structurally by their
+  types — never by key matching). The E2E harness gained an image mode
   (`UI_E2E_IMAGE=1`) that runs the identical journey battery against the
   composed OCI image — including a genuinely end-to-end OIDC journey: the
   quickstart Keycloak now pins one canonical issuer and the dev CDR config
