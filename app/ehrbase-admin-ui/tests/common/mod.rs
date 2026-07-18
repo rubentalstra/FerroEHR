@@ -97,6 +97,60 @@ impl Harness {
         }
     }
 
+    /// Start a journey with JavaScript DISABLED (the progressive-enhancement
+    /// contract: SSR + plain HTML forms must work before WASM ever loads).
+    ///
+    /// # Panics
+    /// When the stack env is set but the browser session cannot start.
+    pub async fn start_without_javascript(journey: &'static str) -> Option<Self> {
+        let (Some(base), Some(webdriver_url)) =
+            (env("UI_E2E_BASE_URL"), env("UI_E2E_WEBDRIVER_URL"))
+        else {
+            println!(
+                "SKIP {journey}: UI_E2E_BASE_URL/UI_E2E_WEBDRIVER_URL unset (run scripts/ui-e2e.sh)"
+            );
+            return None;
+        };
+        let shots_dir =
+            env("UI_E2E_SHOTS_DIR").unwrap_or_else(|| "target/ui-e2e/screenshots".to_owned());
+        std::fs::create_dir_all(&shots_dir).expect("screenshot dir");
+
+        let mut caps = DesiredCapabilities::chrome();
+        caps.add_arg("--headless=new").expect("caps");
+        caps.add_arg("--window-size=1440,900").expect("caps");
+        // Chrome content-settings: 2 = block JavaScript.
+        caps.add_experimental_option(
+            "prefs",
+            serde_json::json!({"profile.managed_default_content_settings.javascript": 2}),
+        )
+        .expect("prefs");
+        let driver = WebDriver::new(&webdriver_url, caps)
+            .await
+            .expect("webdriver session (is chromedriver up?)");
+        Some(Self {
+            driver,
+            base,
+            shots_dir,
+            journey,
+        })
+    }
+
+    /// Wait until the current URL no longer contains `fragment`.
+    ///
+    /// # Panics
+    /// When the URL still matches after 15 s.
+    pub async fn wait_url_not_contains(&self, fragment: &str) {
+        for _ in 0..75 {
+            let url = self.driver.current_url().await.expect("current url");
+            if !url.as_str().contains(fragment) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+        let url = self.driver.current_url().await.expect("current url");
+        panic!("URL still contains `{fragment}` (last: {url})");
+    }
+
     /// Explicit wait on an `XPath` (same budget + failure evidence as
     /// [`Self::wait_css`]).
     ///

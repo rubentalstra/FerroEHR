@@ -104,6 +104,37 @@ curl -sf -X PUT -H "Authorization: Bearer $KC_TOKEN" -H "Content-Type: applicati
   -d @/tmp/kc-client.json \
   "$KEYCLOAK_URL/auth/admin/realms/ehrbase/clients/$CLIENT_ID"
 
+# ── 2b. Seed clinical data over REST (never the database): one template, one
+#        EHR, one composition committed then updated (two versions) — powers
+#        the composition-viewer journey and the data-bearing doc screenshots.
+#        The composition body is the CDR's OWN generated example (spec-valid
+#        by construction; no hand-built fixture).
+echo "── seeding an EHR + a two-version composition"
+CDR_V1="$CDR_URL/ehrbase/rest/openehr/v1"
+SEED_OPT="crates/openehr-flat/tests/fixtures/sdk/minimal_evaluation.opt"
+SEED_TEMPLATE="minimal_evaluation.en.v1"
+# Template upload is idempotent for the harness: 201 (created) or 409 (there).
+opt_status=$(curl -s -o /dev/null -w "%{http_code}" -u ehrbase:ehrbase -X POST \
+  "$CDR_V1/definition/template/adl1.4" -H "Content-Type: application/xml" \
+  --data-binary @"$SEED_OPT")
+case "$opt_status" in 201|409) ;; *) echo "FATAL: template upload -> $opt_status" >&2; exit 1;; esac
+SEEDED_EHR_ID=$(curl -sf -u ehrbase:ehrbase -X POST "$CDR_V1/ehr" \
+  -H "Prefer: return=representation" -H "Accept: application/json" \
+  | python3 -c "import json,sys; print(json.load(sys.stdin)['ehr_id']['value'])")
+curl -sf -u ehrbase:ehrbase "$CDR_V1/definition/template/adl1.4/$SEED_TEMPLATE/example" \
+  -H "Accept: application/json" > /tmp/ui-e2e-example.json
+SEED_VUID=$(curl -sf -D - -o /dev/null -u ehrbase:ehrbase -X POST \
+  "$CDR_V1/ehr/$SEEDED_EHR_ID/composition" \
+  -H "Content-Type: application/json" -H "Accept: application/json" -H "Prefer: return=minimal" \
+  --data-binary @/tmp/ui-e2e-example.json \
+  | tr -d '\r' | sed -n 's/^[Ee][Tt]ag: W\/"\(.*\)"$/\1/p')
+SEEDED_VO_ID="${SEED_VUID%%::*}"
+curl -sf -o /dev/null -u ehrbase:ehrbase -X PUT \
+  "$CDR_V1/ehr/$SEEDED_EHR_ID/composition/$SEEDED_VO_ID" \
+  -H "Content-Type: application/json" -H "Accept: application/json" \
+  -H "If-Match: \"$SEED_VUID\"" --data-binary @/tmp/ui-e2e-example.json
+echo "   seeded EHR $SEEDED_EHR_ID / composition $SEEDED_VO_ID (2 versions)"
+
 # ── 3. Build + run the console on the host (the same code the OCI image ships) ─
 echo "── building the console (cargo-leptos)"
 (cd app/ehrbase-admin-ui && LEPTOS_TAILWIND_VERSION=v4.3.3 cargo leptos build)
@@ -145,6 +176,8 @@ UI_E2E_BASIC_USER="ehrbase" \
 UI_E2E_BASIC_PASS="ehrbase" \
 UI_E2E_OIDC_USER="ehrbase-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
+UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \
+UI_E2E_SEEDED_VO_ID="$SEEDED_VO_ID" \
   cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 "${NEXTEST_FILTER[@]}"
 
 # ── 6. The documentation-screenshot pass (opt-in) ────────────────────────────
