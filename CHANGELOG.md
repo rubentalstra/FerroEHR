@@ -52,8 +52,12 @@ workflow refuses a tag that has no matching section here.
   **composition commit** (canonical JSON/XML/FLAT with verbatim CDR
   validation diagnostics) and **edit-as-new-version** (`If-Match`
   concurrency), stored-query **open-in-editor**, shareable URL-driven tab
-  state on the detail screens, and a template identity card (version,
-  languages, UID, archetype id). The E2E harness gained an image mode
+  state on the detail screens, a template identity card (version,
+  languages, UID, archetype id), an **EHRs (cohort)** query shape
+  (`SELECT DISTINCT` over the criteria tree), a **Table | Chart** toggle
+  on numeric result columns, a version **timeline strip** with a
+  `version_at_time` picker on the composition viewer, and a
+  **contributions table** on the EHR detail screen. The E2E harness gained an image mode
   (`UI_E2E_IMAGE=1`) that runs the identical journey battery against the
   composed OCI image — including a genuinely end-to-end OIDC journey: the
   quickstart Keycloak now pins one canonical issuer and the dev CDR config
@@ -62,6 +66,27 @@ workflow refuses a tag that has no matching section here.
   journey suite (merge-gating in CI, screenshots published as artifacts),
   including journeys over seeded clinical data and a JavaScript-disabled
   login journey.
+- **`GET /ehr/{ehr_id}/contribution` — a paged contribution list** (an
+  ehrbase-rs extension; the openEHR REST API defines only the by-uid read).
+  Returns the EHR's contributions newest-first as
+  `{ "rows": [ { uid, time_committed, committer, change_type } ], "total" }`,
+  paginated with `offset` (default 0) and `fetch` (default 20, capped at
+  100); **404** for an unknown EHR. Authenticated like the other EHR reads.
+- **`DELETE /admin/template/{template_id}` and
+  `DELETE /admin/query/{qualified_query_name}/{version}`** — admin deletes for
+  operational templates and stored-query versions (ehrbase-rs extensions; the
+  openEHR admin API defines only EHR deletes). Same admin gate and
+  authorization as the EHR deletes: **204** on success, **404** for an unknown
+  id. The template delete additionally returns **409** when a committed
+  version still references the template, so a physical delete never orphans
+  clinical data.
+
+### Changed
+
+- The ITS-REST template list (`GET /definition/template/adl1.4`) now reports
+  the optional `version` field of each `TemplateMetadata`, derived from the
+  template id's version axis (the spec documents the value as "taken from
+  `template_id`"); it is omitted when the id carries no version.
 
 ## [3.1.1] - 2026-07-17
 

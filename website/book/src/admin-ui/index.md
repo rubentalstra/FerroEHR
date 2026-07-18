@@ -33,6 +33,15 @@ schemes the CDR advertises (its `WWW-Authenticate` challenge). A Basic
 form is never shown against a bearer-only CDR, and vice versa. The page
 is served fully rendered and works with JavaScript disabled.
 
+The console ships a full dark theme (the toggle persists per browser),
+and the user menu shows the session identity and its access scopes:
+
+![Dark mode](img/dashboard/dashboard-dark.png)
+
+![User menu](img/dashboard/user-menu.png)
+
+![Access scopes](img/dashboard/scopes-drawer.png)
+
 ## Configuration
 
 One TOML file (`ehrbase-admin-ui.toml`, searched in the working directory
@@ -54,7 +63,7 @@ overrides:
 Login and sessions live in the console's backend; CDR credentials and
 bearer tokens never reach the browser.
 
-![Login](img/login.png)
+![Login](img/login/login.png)
 
 ## The screens
 
@@ -67,4 +76,4 @@ bearer tokens never reach the browser.
 - **EHRs** — browse EHRs, folders, compositions, and version history. See
   [Templates & EHR browsing](browsing.md).
 - **System** — CDR status, SMART discovery, and the server's own OpenAPI
-  document. ![System](img/system.png)
+  document. ![System](img/system/system.png)

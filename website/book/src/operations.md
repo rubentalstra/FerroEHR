@@ -165,6 +165,19 @@ and is classed under admin authorization (the `ADMIN` role).
   this deletes every EHR on the server.** To delete a subset, pass
   `?ehr_id=<uuid>` — repeatable (`?ehr_id=a&ehr_id=b`) or comma-separated
   (`?ehr_id=a,b`). Returns **204** with no body.
+- `DELETE {base}/admin/template/{template_id}` — physically delete one
+  operational template. **204** on success, **404** for an unknown id, and
+  **409** if any stored composition was committed against the template
+  (delete those compositions first — a physical delete never orphans clinical
+  data).
+- `DELETE {base}/admin/query/{qualified_query_name}/{version}` — physically
+  delete one stored-query version (a single `name`/`version` row). **204** on
+  success, **404** for an unknown name or version.
+
+> [!NOTE]
+> The template and stored-query deletes are an ehrbase-rs extension — the
+> openEHR admin API defines only EHR deletes. They share the same admin gate
+> and authorization as the EHR deletes.
 
 > [!WARNING]
 > `DELETE /admin/ehr/all` without a parameter empties the repository — there

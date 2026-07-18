@@ -50,6 +50,95 @@ impl EhrbaseService {
         Ok(self.delete_ehr_set(&ids).await?)
     }
 
+    /// Admin extension `DELETE /admin/template/{template_id}`: physically delete
+    /// one operational template by its wire `template_id` (case-insensitive,
+    /// §Composite Identifiers and Case), evicting its `WebTemplate` cache entry.
+    ///
+    /// NOTE: no openEHR spec governs this operation — the ITS-REST Admin API
+    /// defines only EHR deletes (`admin.openapi.yaml`). Our own design/extension,
+    /// mirroring the SM `I_DEFINITION_ADL14` UUID-keyed delete
+    /// ([`Self::delete_opt`]) but addressed by the wire id and guarded against
+    /// orphaning committed clinical data.
+    ///
+    /// # Errors
+    /// - `versioned_object_does_not_exist` (`404`) — no template with that id.
+    /// - `409` (`ServiceError::Conflict`) — a `vo_version` row still references
+    ///   the template (`vo_version.template_id` FK, `0001_baseline.sql`); a
+    ///   physical delete must never orphan the compositions built on it.
+    /// - `exception` — a database fault.
+    pub async fn admin_template_delete(&self, template_id: String) -> Result<(), SmError> {
+        Ok(self.delete_template_by_id(&template_id).await?)
+    }
+
+    /// Admin extension `DELETE /admin/query/{qualified_name}/{version}`:
+    /// physically delete exactly one stored query (a single version row),
+    /// case-insensitive on the qualified name (matching the PUT store path),
+    /// exact on the version.
+    ///
+    /// NOTE: no openEHR spec governs this operation — the ITS-REST Admin API
+    /// defines only EHR deletes. Our own design/extension; the SM
+    /// `I_DEFINITION_QUERY.delete_query` deletes *every* version by name, whereas
+    /// this admin surface targets a single `(name, version)` row.
+    ///
+    /// # Errors
+    /// - `versioned_object_does_not_exist` (`404`) — no stored query at that
+    ///   name + version.
+    /// - `exception` — a database fault.
+    pub async fn admin_query_delete(
+        &self,
+        qualified_name: String,
+        version: String,
+    ) -> Result<(), SmError> {
+        Ok(self
+            .delete_stored_query_version(&qualified_name, &version)
+            .await?)
+    }
+
+    /// Delete one template by its wire id, refusing (409) while any committed
+    /// version still references it. The reference count and the delete run in
+    /// one transaction so the friendly 409 is consistent with the delete; the
+    /// `vo_version.template_id` foreign key (`0001_baseline.sql`, NO ACTION) is
+    /// the underlying integrity guard that makes orphaning impossible even under
+    /// a concurrent commit.
+    async fn delete_template_by_id(&self, template_id: &str) -> Result<(), ServiceError> {
+        let mut tx = self.pool.begin().await?;
+        // Resolve the stored (case-preserved) id; absent → 404 (§Composite
+        // Identifiers and Case: compare case-insensitively).
+        let stored: Option<String> = sqlx::query_scalar(
+            "SELECT template_id FROM template_store WHERE lower(template_id) = lower($1)",
+        )
+        .bind(template_id)
+        .fetch_optional(&mut *tx)
+        .await?;
+        let Some(stored) = stored else {
+            return Err(ServiceError::NotFound(format!("template {template_id}")));
+        };
+        // Physical deletes never orphan clinical data (docs/architecture.md
+        // §Storage — no openEHR spec governs the FK graph, our own design).
+        let refs: i64 =
+            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+                .bind(&stored)
+                .fetch_one(&mut *tx)
+                .await?;
+        if refs > 0 {
+            return Err(ServiceError::Conflict(format!(
+                "template '{stored}' is still referenced by {refs} committed version(s); \
+                 delete those compositions before deleting the template"
+            )));
+        }
+        sqlx::query("DELETE FROM template_store WHERE template_id = $1")
+            .bind(&stored)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        // Evict the derived-runtime cache for the deleted id (case-canonical key,
+        // matching the SM delete path). No openEHR spec governs the cache.
+        self.web_templates
+            .invalidate(&crate::templates::identity::canonical_key(&stored))
+            .await;
+        Ok(())
+    }
+
     /// SM `physical_party_delete`: physically delete a demographic PARTY "along
     /// with related Party relationships".
     ///

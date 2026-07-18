@@ -69,8 +69,8 @@ async fn run(
         | "directory_create"
         | "directory_delete"
         | "directory_get_by_version_id" => super::directory::run(state, op, parts).await,
-        // ── CONTRIBUTION ─────────────────────────────────────────────────────
-        "contribution_create" | "contribution_get" => {
+        // ── CONTRIBUTION (+ the paged-list extension) ────────────────────────
+        "contribution_create" | "contribution_get" | "contribution_list" => {
             super::contribution::run(state, op, parts).await
         }
         other => Err(RestError(openehr_its::rest::runtime::ApiError::Internal(
