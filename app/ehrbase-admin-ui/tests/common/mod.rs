@@ -45,6 +45,11 @@ impl Harness {
         let mut caps = DesiredCapabilities::chrome();
         caps.add_arg("--headless=new").expect("caps");
         caps.add_arg("--window-size=1440,900").expect("caps");
+        // Image-mode OIDC: the composed console advertises the in-network
+        // issuer host (`keycloak`); the browser resolves it to the host-
+        // mapped port. A no-op in host mode (nothing references the name).
+        caps.add_arg("--host-resolver-rules=MAP keycloak 127.0.0.1")
+            .expect("caps");
         caps.set_logging_prefs("browser", thirtyfour::LoggingPrefsLogLevel::All)
             .expect("logging prefs");
         let driver = WebDriver::new(&webdriver_url, caps)
@@ -118,6 +123,11 @@ impl Harness {
         let mut caps = DesiredCapabilities::chrome();
         caps.add_arg("--headless=new").expect("caps");
         caps.add_arg("--window-size=1440,900").expect("caps");
+        // Image-mode OIDC: the composed console advertises the in-network
+        // issuer host (`keycloak`); the browser resolves it to the host-
+        // mapped port. A no-op in host mode (nothing references the name).
+        caps.add_arg("--host-resolver-rules=MAP keycloak 127.0.0.1")
+            .expect("caps");
         // Chrome content-settings: 2 = block JavaScript.
         caps.add_experimental_option(
             "prefs",
