@@ -57,6 +57,20 @@ version — a concurrent change is reported instead of overwritten).
 
 A version **timeline strip** walks the revision history at a glance, and
 the **At time** picker resolves whichever version was current at a chosen
-moment (`version_at_time`). The EHR detail's contributions tab lists the
-EHR's contributions — id, commit time, committer, change type — with the
-by-uid lookup kept underneath.
+moment (`version_at_time`).
+
+![Composition editor](img/composition-editor.png)
+
+The EHR detail's contributions tab lists the EHR's contributions — id,
+commit time, committer, change type — with the by-uid lookup kept
+underneath.
+
+![Contributions](img/ehr-detail-contributions.png)
+
+The commit form accepts canonical JSON, canonical XML, or FLAT:
+
+![Commit composition](img/composition-commit.png)
+
+The EHR status tab renders the full `EHR_STATUS` document:
+
+![EHR status](img/ehr-detail-status.png)

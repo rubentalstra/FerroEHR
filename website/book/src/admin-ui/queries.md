@@ -38,6 +38,10 @@ so an `ORDER BY` on a time path reads as a time series. The builder's
 output shapes include **EHRs (cohort)**: the distinct EHR ids matching
 the criteria tree.
 
+![Query results](img/query-aql-results.png)
+
+![Chart view](img/query-results-chart.png)
+
 ## Exporting results
 
 Both results panes (the builder and the raw editor) offer **Export CSV**

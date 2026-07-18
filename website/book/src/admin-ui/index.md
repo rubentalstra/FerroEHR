@@ -33,6 +33,15 @@ schemes the CDR advertises (its `WWW-Authenticate` challenge). A Basic
 form is never shown against a bearer-only CDR, and vice versa. The page
 is served fully rendered and works with JavaScript disabled.
 
+The console ships a full dark theme (the toggle persists per browser),
+and the user menu shows the session identity and its access scopes:
+
+![Dark mode](img/dashboard-dark.png)
+
+![User menu](img/user-menu.png)
+
+![Access scopes](img/scopes-drawer.png)
+
 ## Configuration
 
 One TOML file (`ehrbase-admin-ui.toml`, searched in the working directory
