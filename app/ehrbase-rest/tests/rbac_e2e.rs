@@ -294,8 +294,9 @@ async fn admin_scope_alias_migrates_via_scope_role() {
 async fn rbac_deny_is_audited() {
     // A 403 from the RBAC gate carries the Principal, so the ATNA audit layer
     // records a failure audit for the denied caller (§7). The emitter ships a
-    // DICOM record over syslog/UDP; we assert on the datagram: an
-    // Application-Activity event (`csd-code="110100"`), a minor-failure outcome
+    // DICOM record over syslog/UDP; we assert on the datagram: a
+    // User-Authentication event (`csd-code="110114"`, DICOM PS3.15 §A.5.1 —
+    // a rejected access attempt), a minor-failure outcome
     // (`EventOutcomeIndicator="4"`), attributed to `user`.
     let (socket, sender) = audit_capture().await;
     let (_pg, app) = app("rbac_deny_audit", true, Some(sender)).await;
@@ -311,8 +312,8 @@ async fn rbac_deny_is_audited() {
         .await
         .expect("an audit datagram is emitted for the denied caller");
     assert!(
-        xml.contains(r#"csd-code="110100""#),
-        "Application-Activity event: {xml}"
+        xml.contains(r#"csd-code="110114""#),
+        "User-Authentication event: {xml}"
     );
     assert!(
         xml.contains(r#"EventOutcomeIndicator="4""#),

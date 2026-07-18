@@ -15,8 +15,8 @@ use crate::system_log::event::AuditEvent;
 
 use crate::system_log::AuditError;
 use crate::system_log::codes::{
-    self, AtnaAction, AtnaObject, AtnaOutcome, Code, NETWORK_ACCESS_POINT_IP, OBJECT_ROLE_PATIENT,
-    OBJECT_ROLE_QUERY, OBJECT_TYPE_PERSON, OBJECT_TYPE_SYSTEM,
+    self, AtnaAction, AtnaEventType, AtnaObject, AtnaOutcome, Code, NETWORK_ACCESS_POINT_IP,
+    OBJECT_ROLE_PATIENT, OBJECT_ROLE_QUERY, OBJECT_TYPE_PERSON, OBJECT_TYPE_SYSTEM,
 };
 
 /// The server-side identity shared by every emitted record (the destination
@@ -60,6 +60,7 @@ pub struct AuditMessage {
     event_datetime: String,
     outcome: i32,
     event_id: Code,
+    event_type: Option<Code>,
     outcome_description: &'static str,
     participants: Vec<ActiveParticipant>,
     enterprise_site_id: String,
@@ -75,12 +76,13 @@ impl AuditMessage {
     #[must_use]
     pub fn build(event: &AuditEvent, ctx: &AuditContext, subject: Option<&str>) -> Self {
         let missing = ctx.value_if_missing.as_str();
-        let (event_code, event_text) = event.object.event_id();
+        let (event_code, event_text) = event.object.event_id(event.action);
         let event_id = Code {
             csd_code: event_code,
             code_system: codes::DCM,
             original_text: event_text,
         };
+        let event_type = event.event_type.as_ref().map(AtnaEventType::code);
 
         let client_ip = event
             .client_ip
@@ -116,6 +118,7 @@ impl AuditMessage {
             event_datetime: event.timestamp.to_string(),
             outcome: event.outcome.as_i32(),
             event_id,
+            event_type,
             outcome_description: event.outcome.description(),
             participants,
             enterprise_site_id: nonempty(&ctx.enterprise_site_id, missing),
@@ -141,6 +144,11 @@ impl AuditMessage {
         ev.push_attribute(("EventOutcomeIndicator", self.outcome.to_string().as_str()));
         w.write_event(Event::Start(ev))?;
         write_code(&mut w, "EventID", &self.event_id)?;
+        // EventTypeCode follows EventID inside EventIdentification
+        // (DICOM PS3.15 §A.5 message schema element order).
+        if let Some(event_type) = &self.event_type {
+            write_code(&mut w, "EventTypeCode", event_type)?;
+        }
         w.write_event(Event::Start(BytesStart::new("EventOutcomeDescription")))?;
         w.write_event(Event::Text(BytesText::new(self.outcome_description)))?;
         w.write_event(Event::End(BytesEnd::new("EventOutcomeDescription")))?;
@@ -285,7 +293,7 @@ fn nonempty(value: &str, fallback: &str) -> String {
 )] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
-    use crate::system_log::event::{EventActionCode, EventOutcome, ObjectClass};
+    use crate::system_log::event::{EventActionCode, EventOutcome, EventType, ObjectClass};
     use jiff::Timestamp;
 
     fn ctx() -> AuditContext {
@@ -399,7 +407,9 @@ mod tests {
         );
         let xml = AuditMessage::build(&e, &ctx(), None).to_xml().expect("xml");
         assert!(xml.contains(r#"EventActionCode="E""#));
-        assert!(xml.contains(r#"originalText="query""#));
+        // Query has the dedicated DICOM EventID 110112 "Query".
+        assert!(xml.contains(r#"csd-code="110112""#));
+        assert!(xml.contains(r#"originalText="Query""#));
         assert!(xml.contains(r#"originalText="Search Criteria""#));
         assert!(xml.contains(r#"ParticipantObjectID="UNKNOWN""#));
         assert_audit_snapshot!("query_execute_E", xml);
@@ -453,8 +463,9 @@ mod tests {
     fn ehr_extract_export_is_patient_and_uri_scoped() {
         // EHR-Extract communication is patient-identifiable clinical data
         // audited for non-repudiation — it carries both a Patient-Number and an
-        // object-URI participant (DICOM PS3.15 §A.5 / RFC 3881 §5.5), like a
-        // composition, under the Patient-Record EventID family.
+        // object-URI participant (DICOM PS3.15 §A.5 / RFC 3881 §5.5). An
+        // outbound (Read) extract uses the dedicated DICOM Export EventID
+        // (110106); an inbound (Create) one uses Import (110107).
         let mut e = event(
             EventActionCode::Read,
             ObjectClass::Extract,
@@ -464,12 +475,62 @@ mod tests {
         let xml = AuditMessage::build(&e, &ctx(), Some("patient-42"))
             .to_xml()
             .expect("xml");
-        assert!(xml.contains(r#"csd-code="110110""#));
-        assert!(xml.contains(r#"originalText="extract""#));
+        assert!(xml.contains(r#"csd-code="110106""#));
+        assert!(xml.contains(r#"originalText="Export""#));
         assert!(xml.contains(r#"originalText="Patient Number""#));
         assert!(xml.contains(r#"originalText="URI""#));
         assert!(xml.contains(r#"ParticipantObjectID="patient-42""#));
         assert!(xml.contains(r#"ParticipantObjectID="extract::ehrbase::1""#));
+
+        // The inbound direction resolves to Import (110107).
+        let mut imp = event(
+            EventActionCode::Create,
+            ObjectClass::Extract,
+            EventOutcome::Success,
+        );
+        imp.object_id = Some("extract::ehrbase::2".to_owned());
+        let xml = AuditMessage::build(&imp, &ctx(), Some("patient-42"))
+            .to_xml()
+            .expect("xml");
+        assert!(xml.contains(r#"csd-code="110107""#));
+        assert!(xml.contains(r#"originalText="Import""#));
+    }
+
+    #[test]
+    fn authentication_login_record() {
+        // A genuine login: DICOM EventID 110114 "User Authentication" with
+        // EventTypeCode 110122 "Login"; no clinical participant object.
+        let mut e = event(
+            EventActionCode::Execute,
+            ObjectClass::Authentication,
+            EventOutcome::Success,
+        );
+        e.event_type = Some(EventType::Login);
+        let xml = AuditMessage::build(&e, &ctx(), None).to_xml().expect("xml");
+        assert!(xml.contains(r#"csd-code="110114""#));
+        assert!(xml.contains(r#"originalText="User Authentication""#));
+        assert!(xml.contains(r#"csd-code="110122""#));
+        assert!(xml.contains("<EventTypeCode"));
+        assert!(!xml.contains("ParticipantObjectIdentification"));
+        assert_audit_snapshot!("authentication_login", xml);
+    }
+
+    #[test]
+    fn rest_operation_event_type_uses_own_code_system() {
+        // The concrete ITS-REST operation is the EventTypeCode under our own
+        // `openEHR-ITS-REST` code system name (no external system governs it).
+        let mut e = event(
+            EventActionCode::Read,
+            ObjectClass::Composition,
+            EventOutcome::Success,
+        );
+        e.object_id = Some("8fa1::ehrbase::1".to_owned());
+        e.event_type = Some(EventType::RestOperation("composition_get"));
+        let xml = AuditMessage::build(&e, &ctx(), Some("patient-42"))
+            .to_xml()
+            .expect("xml");
+        assert!(xml.contains(r#"csd-code="composition_get""#));
+        assert!(xml.contains(r#"codeSystemName="openEHR-ITS-REST""#));
     }
 
     #[test]
