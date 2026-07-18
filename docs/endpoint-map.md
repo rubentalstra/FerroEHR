@@ -960,6 +960,21 @@ notes: `patient` is mandatory (400 — explicit scope only, never generic FHIR S
 returns a `searchset` Bundle; `total` = returned page size, no paging links (PORT-NOTEd);
 type with no enabled mapping → empty Bundle, not an error.
 
+### GET /fhir/r4/AuditEvent (ITI-81, the audit surface — not the connector)
+chain: `audit_event_search` → spine → `fhir::run` → `audit_search` →
+`EhrbaseService::audit_event_search` → `AuditStore::search`
+sql: 2 round trips — SELECT count(*) FROM audit.audit_event (filtered) +
+SELECT fhir … ORDER BY recorded_at DESC, stored_at DESC LIMIT/OFFSET
+(sea-query-built; filters: recorded_at ge/le, patient_id, principal,
+resource_id, outcome, action)
+notes: the RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** over the local
+Audit Record Repository (`[audit.store]`; 404 when off — independent of
+`fhir_api_enabled`); admin-only under RBAC (enforced in-handler: the FHIR-base
+template would class Clinical); returns a `searchset` Bundle of the stored
+FHIR R4 `AuditEvent` documents (IHE BALP shape) with the full match `total`;
+supported params `date` (ge/le) / `patient` / `agent` / `entity` / `outcome`
+/ `action` / `_count` / `_offset`, unknown params ignored (lenient search).
+
 ### GET /admin/fhir_mapping
 chain: `fhir_mapping_list` → spine → `run` → `fhir_mapping_list`
 sql: 1 round trip — SELECT fhir_mapping ORDER BY created_at DESC

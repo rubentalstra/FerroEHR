@@ -159,6 +159,111 @@ impl AuditStore {
         .map_err(|e| AuditError::Store(e.to_string()))?;
         Ok(result.rows_affected())
     }
+
+    /// The RESTful-ATNA ITI-81 retrieval: filtered, newest-first stored FHIR
+    /// `AuditEvent` documents plus the total match count. The filter is the
+    /// supported ITI-81 search-parameter subset ([`AuditSearchFilter`]).
+    ///
+    /// # Errors
+    /// [`AuditError::Store`] when either query fails.
+    pub async fn search(
+        &self,
+        filter: &AuditSearchFilter,
+    ) -> Result<(i64, Vec<serde_json::Value>), AuditError> {
+        use sea_query::{Alias, Expr, ExprTrait, Order, PostgresQueryBuilder, Query};
+        use sea_query_sqlx::SqlxBinder as _;
+
+        let table = (Alias::new("audit"), Alias::new("audit_event"));
+        let condition = {
+            let mut cond = sea_query::Cond::all();
+            // Timestamps bind as RFC 3339 text cast to timestamptz: the
+            // sea-query binder's with-jiff is unimplemented upstream (see the
+            // workspace manifest note), so the value crosses as text.
+            if let Some(from) = filter.from {
+                cond = cond.add(
+                    Expr::col(Alias::new("recorded_at"))
+                        .gte(Expr::val(from.to_string()).cast_as("timestamptz")),
+                );
+            }
+            if let Some(to) = filter.to {
+                cond = cond.add(
+                    Expr::col(Alias::new("recorded_at"))
+                        .lte(Expr::val(to.to_string()).cast_as("timestamptz")),
+                );
+            }
+            if let Some(patient) = &filter.patient {
+                cond = cond.add(Expr::col(Alias::new("patient_id")).eq(patient.clone()));
+            }
+            if let Some(agent) = &filter.agent {
+                cond = cond.add(Expr::col(Alias::new("principal")).eq(agent.clone()));
+            }
+            if let Some(entity) = &filter.entity {
+                cond = cond.add(Expr::col(Alias::new("resource_id")).eq(entity.clone()));
+            }
+            if let Some(outcome) = filter.outcome {
+                cond = cond.add(Expr::col(Alias::new("outcome")).eq(outcome));
+            }
+            if let Some(action) = &filter.action {
+                cond = cond.add(Expr::col(Alias::new("action")).eq(action.clone()));
+            }
+            cond
+        };
+
+        let (count_sql, count_values) = Query::select()
+            .expr(Expr::col(sea_query::Asterisk).count())
+            .from(table.clone())
+            .cond_where(condition.clone())
+            .build_sqlx(PostgresQueryBuilder);
+        let total: i64 = sqlx::query_scalar_with(sqlx::AssertSqlSafe(count_sql), count_values)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| AuditError::Store(e.to_string()))?;
+
+        let (sql, values) = Query::select()
+            .column(Alias::new("fhir"))
+            .from(table)
+            .cond_where(condition)
+            .order_by(Alias::new("recorded_at"), Order::Desc)
+            .order_by(Alias::new("stored_at"), Order::Desc)
+            .limit(u64::try_from(filter.count.clamp(1, 1000)).unwrap_or(50))
+            .offset(u64::try_from(Ord::max(filter.offset, 0)).unwrap_or(0))
+            .build_sqlx(PostgresQueryBuilder);
+        let rows = sqlx::query_with(sqlx::AssertSqlSafe(sql), values)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| AuditError::Store(e.to_string()))?;
+        let documents = rows
+            .into_iter()
+            .map(|row| {
+                row.try_get::<serde_json::Value, _>("fhir")
+                    .map_err(|e| AuditError::Store(e.to_string()))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok((total, documents))
+    }
+}
+
+/// The supported ITI-81 search-parameter subset, resolved by the REST layer.
+#[derive(Debug, Clone, Default)]
+pub struct AuditSearchFilter {
+    /// `date=ge…` — events at/after this instant.
+    pub from: Option<jiff::Timestamp>,
+    /// `date=le…` — events at/before this instant.
+    pub to: Option<jiff::Timestamp>,
+    /// `patient` — the recorded patient (EHR subject) id.
+    pub patient: Option<String>,
+    /// `agent` — the authenticated principal.
+    pub agent: Option<String>,
+    /// `entity` — the touched resource id.
+    pub entity: Option<String>,
+    /// `outcome` — the DICOM outcome indicator (0/4/8/12).
+    pub outcome: Option<i16>,
+    /// `action` — the DICOM action code (C/R/U/D/E).
+    pub action: Option<String>,
+    /// `_count` — page size (default 50, capped at 1000).
+    pub count: i64,
+    /// `_offset` — page offset.
+    pub offset: i64,
 }
 
 fn action_str(event: &AuditEvent) -> String {

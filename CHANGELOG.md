@@ -67,6 +67,12 @@ workflow refuses a tag that has no matching section here.
 - **ATNA audit — per-sink metrics** (`atna_audit_sent_total{sink=…}`,
   `…send_failed_total{sink=…}`, `atna_audit_rejected_total`,
   `atna_audit_reaped_total`).
+- **ITI-81 Retrieve ATNA Audit Event** (`GET /fhir/r4/AuditEvent`): the
+  official RESTful-ATNA retrieval — a FHIR search over the local Audit
+  Record Repository returning a `searchset` Bundle of the stored `AuditEvent`
+  documents. Filters: `date` (`ge`/`le`), `patient`, `agent`, `entity`,
+  `outcome`, `action`, plus `_count`/`_offset` paging. Admin-only under
+  RBAC; `404` when the local store is disabled.
 
 ### Changed
 
