@@ -563,6 +563,52 @@ async fn delete_then_get_is_204_deleted() {
     assert!(body.is_empty(), "204 carries no body: {body:?}");
 }
 
+// ── 10b. create after logical delete opens a NEW hierarchy ────────────────────
+
+/// After a logical delete the deleted container remains (RM common master06
+/// §Logical Deletion) but the directory slot is vacant: a new `POST` succeeds
+/// and opens a NEW hierarchy (RM ehr master04 §Folders — "an entirely new
+/// Folder hierarchy may be added"; CNF master09 E.2's conflict governs a
+/// LIVE directory only). The deleted hierarchy's history stays readable by
+/// `version_uid`.
+#[tokio::test]
+async fn create_after_delete_opens_a_new_hierarchy() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let (_s, h, _b) = create_directory(&app, &ehr, &folder_json("first", vec![]), None).await;
+    let v1 = etag_uid(&h);
+    let (status, _h, _b) = delete_directory(&app, &ehr, Some(&quoted(&v1))).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "delete the first hierarchy");
+
+    let (status, h, _b) = create_directory(&app, &ehr, &folder_json("second", vec![]), None).await;
+    assert_eq!(
+        status,
+        StatusCode::CREATED,
+        "create after logical delete must succeed (vacant slot)"
+    );
+    let v2 = etag_uid(&h);
+    assert_ne!(
+        v1.split("::").next(),
+        v2.split("::").next(),
+        "the new directory is a NEW VERSIONED_FOLDER, not a version of the deleted one"
+    );
+
+    // The current directory is the new hierarchy…
+    let (status, _h, body) = send(&app, get(format!("{BASE}/ehr/{ehr}/directory"), None)).await;
+    assert_eq!(status, StatusCode::OK);
+    let v: Value = serde_json::from_str(&body).expect("folder json");
+    assert_eq!(v["name"]["value"], "second");
+
+    // …and the deleted hierarchy's history stays readable by version_uid.
+    let (status, _h, body) =
+        send(&app, get(format!("{BASE}/ehr/{ehr}/directory/{v1}"), None)).await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "the pre-delete version remains readable: {body}"
+    );
+}
+
 // ── 11. delete with stale If-Match → 412 + latest ETag ───────────────────────
 
 /// `directory_delete.yaml` → `412_directory.yaml`: a stale `If-Match` fails the

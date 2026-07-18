@@ -12,47 +12,99 @@
 //! child indices into successive `folders` arrays from the root
 //! (`[]` = the root FOLDER, `[0]` = its first child, `[0,1]` = that child's
 //! second child).
+//!
+//! ## Ephemeral node identity (`_key`)
+//!
+//! `<For>` rows and the collapse / rename / picker UI state MUST be keyed by a
+//! stable, unique, data-derived identity — never a positional path — or a
+//! sibling that shifts into a deleted slot inherits the vacated row's state and
+//! `<For>` view (rules §4, `view/04_iteration`). To give each FOLDER such an
+//! identity, the working copy stamps every folder object with a `_key` string
+//! ([`stamp_keys`]). This is a **client-only artifact of the in-memory editing
+//! tree**: it is assigned after load, preserved across edits, and STRIPPED
+//! ([`strip_keys`]) from every body serialized for the CDR and from the
+//! advanced-JSON view — it never appears on the wire and no openEHR spec
+//! governs it (our own design/extension). A folder's positional path is then
+//! re-derived from its `_key` on demand ([`find_path_by_key`]) so mutations
+//! keep targeting `&[usize]` paths that stay correct after indices shift.
 
 use serde_json::{Value, json};
 
 use crate::pages::ehr_detail::directory::{FOLDER_NODE_ID, folder_json};
 
-/// The stable rendering key for a folder path: the child indices joined with
-/// `/` (`[]` → `""`, `[0,1]` → `"0/1"`). Data-derived, so `<For>` keys stay
-/// meaningful across edits (rules §4).
-#[must_use]
-pub(crate) fn key_of(path: &[usize]) -> String {
-    path.iter()
-        .map(usize::to_string)
-        .collect::<Vec<_>>()
-        .join("/")
-}
-
-/// Parse a folder path key back into its child-index chain
-/// (`"0/1"` → `[0, 1]`, `""` → `[]`). Non-numeric segments are dropped.
-#[must_use]
-pub(crate) fn parse_key(key: &str) -> Vec<usize> {
-    if key.is_empty() {
-        return Vec::new();
+/// Stamp every FOLDER in `tree` (the root included) with an ephemeral,
+/// client-only `_key` identity string (`"n0"`, `"n1"`, …) drawn from
+/// `counter`, inserting one only where absent — so it is idempotent and
+/// preserves the keys already carried by surviving folders. The key is the
+/// stable, data-derived node identity that `<For>` rows and per-folder UI
+/// state key on (rules §4). It is a console-local artifact of the working
+/// copy: never persisted to the CDR (see [`strip_keys`]), never rendered, and
+/// no openEHR spec governs it (our own design/extension). Determinism: a plain
+/// monotonic counter, no randomness or clock — hydration never observes these
+/// values (they are not emitted into the DOM), but keeping them deterministic
+/// costs nothing.
+pub(super) fn stamp_keys(tree: &mut Value, counter: &mut u64) {
+    if let Some(obj) = tree.as_object_mut() {
+        if !obj.contains_key("_key") {
+            obj.insert("_key".to_owned(), Value::String(format!("n{counter}")));
+            *counter = counter.saturating_add(1);
+        }
+        if let Some(list) = obj.get_mut("folders").and_then(Value::as_array_mut) {
+            for child in list {
+                stamp_keys(child, counter);
+            }
+        }
     }
-    key.split('/').filter_map(|s| s.parse().ok()).collect()
 }
 
-/// The rendering key for the `idx`-th item of the folder at `path`
-/// (`(path "0", idx 1)` → `"0#1"`).
-#[must_use]
-pub(crate) fn item_key(path: &[usize], idx: usize) -> String {
-    format!("{}#{idx}", key_of(path))
-}
-
-/// Split an item key into its owning folder path and item index
-/// (`"0#1"` → `([0], 1)`).
-#[must_use]
-pub(crate) fn parse_item_key(key: &str) -> (Vec<usize>, usize) {
-    match key.split_once('#') {
-        Some((folder, idx)) => (parse_key(folder), idx.parse().unwrap_or(0)),
-        None => (Vec::new(), 0),
+/// Remove the ephemeral `_key` identity from every FOLDER in `tree` (the root
+/// included), recursively — the inverse of [`stamp_keys`]. Applied to the body
+/// serialized for every save path and to the advanced-JSON view so the
+/// console-local identity never reaches the CDR or the user.
+pub(super) fn strip_keys(tree: &mut Value) {
+    if let Some(obj) = tree.as_object_mut() {
+        obj.remove("_key");
+        if let Some(list) = obj.get_mut("folders").and_then(Value::as_array_mut) {
+            for child in list {
+                strip_keys(child);
+            }
+        }
     }
+}
+
+/// The live positional path of the folder carrying the ephemeral identity
+/// `key`, searched from `root` (`Some([])` for the root, `None` if no folder
+/// carries it). The `_key` is the durable identity; the path is re-derived
+/// from it on every reactive read and mutation so a folder's row stays
+/// correct after a sibling delete shifts indices (rules §4).
+#[must_use]
+pub(crate) fn find_path_by_key(root: &Value, key: &str) -> Option<Vec<usize>> {
+    fn walk(node: &Value, key: &str, path: &mut Vec<usize>) -> bool {
+        if node.get("_key").and_then(Value::as_str) == Some(key) {
+            return true;
+        }
+        if let Some(list) = node.get("folders").and_then(Value::as_array) {
+            for (i, child) in list.iter().enumerate() {
+                path.push(i);
+                if walk(child, key, path) {
+                    return true;
+                }
+                path.pop();
+            }
+        }
+        false
+    }
+    let mut path = Vec::new();
+    walk(root, key, &mut path).then_some(path)
+}
+
+/// The ephemeral identity key of the folder at `path`, if stamped.
+#[must_use]
+pub(crate) fn node_key_at(root: &Value, path: &[usize]) -> Option<String> {
+    folder_at(root, path)
+        .and_then(|f| f.get("_key"))
+        .and_then(Value::as_str)
+        .map(str::to_owned)
 }
 
 /// Borrow the folder node at `path`, following `folders` arrays from `root`.
@@ -85,30 +137,36 @@ pub(crate) fn node_name(root: &Value, path: &[usize]) -> String {
         .to_owned()
 }
 
-/// The child-folder rendering keys for the folder at `path`, in order.
+/// The ephemeral identity keys of the child folders of `path`, in order — the
+/// stable, data-derived `<For>` keys for the folder rows (rules §4). Every
+/// folder in the working copy is stamped ([`stamp_keys`]), so each entry is a
+/// real identity.
 #[must_use]
-pub(crate) fn child_keys(root: &Value, path: &[usize]) -> Vec<String> {
-    let count = folder_at(root, path)
+pub(crate) fn child_node_keys(root: &Value, path: &[usize]) -> Vec<String> {
+    folder_at(root, path)
         .and_then(|f| f.get("folders"))
         .and_then(Value::as_array)
-        .map_or(0, Vec::len);
-    (0..count)
-        .map(|i| {
-            let mut child = path.to_vec();
-            child.push(i);
-            key_of(&child)
+        .map(|list| {
+            list.iter()
+                .map(|child| {
+                    child
+                        .get("_key")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_owned()
+                })
+                .collect()
         })
-        .collect()
+        .unwrap_or_default()
 }
 
-/// The item rendering keys for the folder at `path`, in order.
+/// The number of item references in the folder at `path`.
 #[must_use]
-pub(crate) fn item_keys(root: &Value, path: &[usize]) -> Vec<String> {
-    let count = folder_at(root, path)
+pub(crate) fn item_count(root: &Value, path: &[usize]) -> usize {
+    folder_at(root, path)
         .and_then(|f| f.get("items"))
         .and_then(Value::as_array)
-        .map_or(0, Vec::len);
-    (0..count).map(|i| item_key(path, i)).collect()
+        .map_or(0, Vec::len)
 }
 
 /// The `(type, id-value)` summary of the `idx`-th item of the folder at
@@ -260,20 +318,26 @@ pub(crate) fn normalize_datetime(input: &str) -> String {
     match s.len() {
         16 => format!("{s}:00Z"),
         19 => format!("{s}Z"),
+        // Deliberately lenient: a `datetime-local` widget only emits the two
+        // lengths above; anything else is hand-typed and passed through
+        // verbatim so the CDR's own `version_at_time` validation (400) is the
+        // arbiter rather than a second client-side parser.
         _ => s.to_owned(),
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use serde_json::Value;
+
     use super::{
-        add_item, add_subfolder, child_keys, count_tree, delete_folder, item_keys, item_summary,
-        key_of, node_name, normalize_datetime, object_ref, parse_item_key, parse_key, remove_item,
-        rename_folder, versioned_object_id,
+        add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_path_by_key,
+        item_count, item_summary, node_key_at, node_name, normalize_datetime, object_ref,
+        remove_item, rename_folder, stamp_keys, strip_keys, versioned_object_id,
     };
     use crate::pages::ehr_detail::directory::{DIRECTORY_ARCHETYPE, folder_json};
 
-    fn root() -> serde_json::Value {
+    fn root() -> Value {
         folder_json(
             DIRECTORY_ARCHETYPE,
             "root",
@@ -284,30 +348,104 @@ mod tests {
         )
     }
 
-    #[test]
-    fn key_round_trips_through_parse() {
-        assert_eq!(key_of(&[]), "");
-        assert_eq!(key_of(&[0, 1]), "0/1");
-        assert_eq!(parse_key(""), Vec::<usize>::new());
-        assert_eq!(parse_key("0/1"), vec![0, 1]);
+    /// Collect every folder's `_key` (root first, depth-first) for assertions.
+    fn collect_keys(node: &Value, out: &mut Vec<String>) {
+        if let Some(k) = node.get("_key").and_then(Value::as_str) {
+            out.push(k.to_owned());
+        }
+        if let Some(list) = node.get("folders").and_then(Value::as_array) {
+            for child in list {
+                collect_keys(child, out);
+            }
+        }
     }
 
     #[test]
-    fn item_key_round_trips() {
-        assert_eq!(super::item_key(&[0], 2), "0#2");
-        assert_eq!(parse_item_key("0#2"), (vec![0], 2));
-        assert_eq!(parse_item_key("#0"), (Vec::<usize>::new(), 0));
+    fn stamp_assigns_a_unique_key_to_every_folder() {
+        let mut tree = root();
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        // root + a + a1 + b = 4 folders, each stamped once.
+        assert_eq!(counter, 4);
+        let mut keys = Vec::new();
+        collect_keys(&tree, &mut keys);
+        assert_eq!(keys.len(), 4);
+        let unique: std::collections::HashSet<_> = keys.iter().collect();
+        assert_eq!(unique.len(), 4, "every folder _key is unique");
+        for path in [&[][..], &[0], &[0, 0], &[1]] {
+            assert!(node_key_at(&tree, path).is_some());
+        }
     }
 
     #[test]
-    fn navigation_reads_names_and_children() {
+    fn strip_is_the_inverse_of_stamp() {
+        let before = root();
+        let mut after = before.clone();
+        let mut counter = 0u64;
+        stamp_keys(&mut after, &mut counter);
+        strip_keys(&mut after);
+        assert_eq!(after, before, "stripped tree equals the pre-stamp tree");
+    }
+
+    #[test]
+    fn stamp_is_idempotent_and_keeps_existing_keys() {
+        let mut tree = root();
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        let stamped = tree.clone();
+        let advanced = counter;
+        // A second pass adds nothing and advances the counter for no folder.
+        stamp_keys(&mut tree, &mut counter);
+        assert_eq!(tree, stamped);
+        assert_eq!(counter, advanced);
+        // Only a newly added (unstamped) folder is stamped on the next pass.
+        add_subfolder(&mut tree, &[1], "b1");
+        stamp_keys(&mut tree, &mut counter);
+        assert_eq!(counter, advanced + 1);
+        assert!(node_key_at(&tree, &[1, 0]).is_some());
+    }
+
+    #[test]
+    fn identity_key_survives_a_sibling_delete() {
+        let mut tree = root();
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        let root_key = node_key_at(&tree, &[]).unwrap();
+        let b_key = node_key_at(&tree, &[1]).unwrap();
+        assert_eq!(find_path_by_key(&tree, &root_key), Some(Vec::new()));
+        assert_eq!(find_path_by_key(&tree, &b_key), Some(vec![1]));
+        assert_eq!(find_path_by_key(&tree, "nope"), None);
+        // Deleting the first child shifts `b` from index 1 to index 0 — its
+        // identity key now resolves to the new path (the reviewed defect fix).
+        delete_folder(&mut tree, &[0]);
+        assert_eq!(find_path_by_key(&tree, &b_key), Some(vec![0]));
+        assert_eq!(
+            node_name(&tree, &find_path_by_key(&tree, &b_key).unwrap()),
+            "b"
+        );
+    }
+
+    #[test]
+    fn navigation_reads_names() {
         let tree = root();
         assert_eq!(node_name(&tree, &[]), "root");
         assert_eq!(node_name(&tree, &[0]), "a");
         assert_eq!(node_name(&tree, &[0, 0]), "a1");
-        assert_eq!(child_keys(&tree, &[]), vec!["0", "1"]);
-        assert_eq!(child_keys(&tree, &[0]), vec!["0/0"]);
-        assert!(child_keys(&tree, &[1]).is_empty());
+    }
+
+    #[test]
+    fn child_node_keys_and_item_count_read_structure() {
+        let mut tree = root();
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        assert_eq!(child_node_keys(&tree, &[]).len(), 2);
+        assert_eq!(child_node_keys(&tree, &[0]).len(), 1);
+        assert!(child_node_keys(&tree, &[1]).is_empty());
+        // The child keys are the children's stamped identities, in order.
+        let keys = child_node_keys(&tree, &[]);
+        assert_eq!(keys[0], node_key_at(&tree, &[0]).unwrap());
+        assert_eq!(keys[1], node_key_at(&tree, &[1]).unwrap());
+        assert_eq!(item_count(&tree, &[0]), 0);
     }
 
     #[test]
@@ -319,7 +457,7 @@ mod tests {
         assert_eq!(node_name(&tree, &[1, 0]), "renamed");
         // Deleting the first child shifts the second into index 0.
         delete_folder(&mut tree, &[0]);
-        assert_eq!(child_keys(&tree, &[]), vec!["0"]);
+        assert_eq!(child_node_keys(&tree, &[]).len(), 1);
         assert_eq!(node_name(&tree, &[0]), "b");
         // Deleting the root is a no-op.
         delete_folder(&mut tree, &[]);
@@ -334,13 +472,13 @@ mod tests {
             &[0],
             object_ref("local", "COMPOSITION", "HIER_OBJECT_ID", "abc"),
         );
-        assert_eq!(item_keys(&tree, &[0]), vec!["0#0"]);
+        assert_eq!(item_count(&tree, &[0]), 1);
         assert_eq!(
             item_summary(&tree, &[0], 0),
             ("COMPOSITION".to_owned(), "abc".to_owned())
         );
         remove_item(&mut tree, &[0], 0);
-        assert!(item_keys(&tree, &[0]).is_empty());
+        assert_eq!(item_count(&tree, &[0]), 0);
     }
 
     #[test]

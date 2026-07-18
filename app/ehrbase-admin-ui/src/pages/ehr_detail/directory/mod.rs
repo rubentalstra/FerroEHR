@@ -567,6 +567,25 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         let (ehr_id, uid, body) = (ehr_id.clone(), uid.clone(), body.clone());
         async move { update_directory(ehr_id, uid, body).await }
     });
+    // Informed overwrite after a `412`: fetch the CURRENT latest version uid
+    // and save the user's tree against it. Dispatched only from the conflict
+    // banner's explicit "Save anyway" — the user is choosing to supersede the
+    // concurrent change (blindly rebasing on every save would defeat the
+    // lost-update protection If-Match exists for).
+    let force_save = Action::new(|(ehr_id, body): &(String, String)| {
+        let (ehr_id, body) = (ehr_id.clone(), body.clone());
+        async move {
+            match fetch_directory(ehr_id.clone()).await? {
+                Some(current) => update_directory(ehr_id, current.version_uid, body).await,
+                None => Err(AdminUiError::Internal(
+                    "the directory disappeared while resolving the conflict".to_owned(),
+                )),
+            }
+        }
+    });
+    // An explicit user-driven reload ("discard my edits, load the server
+    // version") — part of the directory resource's source.
+    let reload = RwSignal::new(0u32);
 
     // Toast each write's success (outside-world side-effect — rules §2); a
     // `412` conflict gets a distinct "reload" toast, other failures stay
@@ -579,6 +598,12 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         "Directory restored",
         directory_toast_detail,
     );
+    write_toast(
+        toaster,
+        force_save,
+        "Directory updated",
+        directory_toast_detail,
+    );
     Effect::new(move |_| match delete.value().get() {
         Some(Ok(())) => crate::components::toast::toast_success(
             toaster,
@@ -589,24 +614,72 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         _ => {}
     });
 
-    // A version bump on any write is the shared refetch trigger.
+    // A version bump on any SUCCESSFUL write is the shared refetch trigger.
+    // `Action::version` increments on failures too; refetching on a failed
+    // save (a `412` conflict, a validation reject) would re-seed the working
+    // tree from the server and silently discard the user's unsaved edits.
+    // Each stamp Memo therefore sticks to its previous value on a failed
+    // completion (the Memo's `prev` parameter), so only completed writes
+    // reload (rules §6).
+    let create_ok = Memo::new(move |prev: Option<&usize>| {
+        let version = create.version().get();
+        if create.value().with(|v| matches!(v, Some(Ok(_)))) {
+            version
+        } else {
+            prev.copied().unwrap_or(0)
+        }
+    });
+    let update_ok = Memo::new(move |prev: Option<&usize>| {
+        let version = update.version().get();
+        if update.value().with(|v| matches!(v, Some(Ok(_)))) {
+            version
+        } else {
+            prev.copied().unwrap_or(0)
+        }
+    });
+    let delete_ok = Memo::new(move |prev: Option<&usize>| {
+        let version = delete.version().get();
+        if delete.value().with(|v| matches!(v, Some(Ok(())))) {
+            version
+        } else {
+            prev.copied().unwrap_or(0)
+        }
+    });
+    let restore_ok = Memo::new(move |prev: Option<&usize>| {
+        let version = restore.version().get();
+        if restore.value().with(|v| matches!(v, Some(Ok(_)))) {
+            version
+        } else {
+            prev.copied().unwrap_or(0)
+        }
+    });
+    let force_ok = Memo::new(move |prev: Option<&usize>| {
+        let version = force_save.version().get();
+        if force_save.value().with(|v| matches!(v, Some(Ok(_)))) {
+            version
+        } else {
+            prev.copied().unwrap_or(0)
+        }
+    });
     let write_version = Memo::new(move |_| {
         (
-            create.version().get(),
-            update.version().get(),
-            delete.version().get(),
-            restore.version().get(),
+            create_ok.get(),
+            update_ok.get(),
+            delete_ok.get(),
+            restore_ok.get(),
+            force_ok.get(),
         )
     });
 
     let directory = Resource::new(
         move || {
             let versions = write_version.get();
-            (selected.get() == "directory").then(|| (ehr_id.get(), versions))
+            let requested = reload.get();
+            (selected.get() == "directory").then(|| (ehr_id.get(), versions, requested))
         },
         |active| async move {
             match active {
-                Some((id, _)) => fetch_directory(id).await,
+                Some((id, _, _)) => fetch_directory(id).await,
                 None => Ok(None),
             }
         },
@@ -692,11 +765,24 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     let time = panels::time_travel_panel(at_time, time_input, time_open);
     let path = panels::path_panel(at_path, path_input, path_open);
 
+    // `<Transition>` (not `<Suspense>`): the directory resource reloads after
+    // every write, and the old tree must stay visible instead of flashing the
+    // skeleton (rules §6, book async/12).
     let main = view! {
-        <Suspense fallback=table_skeleton>
+        <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
                 match directory.await {
-                    Ok(Some(state)) => tree_editor(&state, ehr_id, update, picker, picker_target),
+                    Ok(Some(state)) => {
+                        tree_editor(
+                            &state,
+                            ehr_id,
+                            update,
+                            force_save,
+                            reload,
+                            picker,
+                            picker_target,
+                        )
+                    }
                     Ok(None) => {
                         match templates.await {
                             Ok(list) => create_section(list.unwrap_or_default(), ehr_id, create),
@@ -706,7 +792,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
-        </Suspense>
+        </Transition>
     }
     .into_any();
 
@@ -729,12 +815,14 @@ fn write_toast<I: Send + Sync + 'static>(
     });
 }
 
-/// The shared optimistic-concurrency conflict toast.
+/// The shared optimistic-concurrency conflict toast. The user's unsaved
+/// edits are deliberately kept (the refetch trigger ignores failed writes);
+/// the conflict banner in the editor offers the explicit choices.
 fn conflict_toast(toaster: thaw::ToasterInjection) {
     crate::components::toast::toast_error(
         toaster,
         "Directory changed on the server",
-        "Someone else updated this directory. Reload and try again.",
+        "Your unsaved changes are kept. Load the server version or save anyway from the banner.",
     );
 }
 

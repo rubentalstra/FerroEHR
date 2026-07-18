@@ -46,16 +46,28 @@ shown verbatim on rejection.
 
 The Directory tab creates the EHR's FOLDER directory when none exists —
 from an empty root or a console-local **folder template** (two built-ins
-ship: episodes-by-year and clinical-areas) — and edits an existing one as
-canonical JSON (committed with `If-Match`, so concurrent changes are
-reported, never overwritten).
+ship: episodes-by-year and clinical-areas).
 
 ![Directory create](img/ehrs/directory/create.png)
 
-Once the directory exists, the same tab shows the folder tree and the
-edit-as-new-version editor (`If-Match` concurrency):
+Once the directory exists, the tab is a full **structured tree editor**:
+add, rename, and remove sub-folders at any node, and attach or remove
+`OBJECT_REF` items — a picker lists the EHR's compositions, and a manual
+form covers arbitrary references. Edits accumulate locally until the sticky
+save bar commits them as one new version (`If-Match` concurrency: a
+concurrent change never silently overwrites — a conflict banner keeps your
+unsaved edits and offers an explicit reload-or-overwrite choice). An
+advanced mode still edits the canonical JSON directly.
 
 ![Directory](img/ehrs/directory/directory.png)
+
+The toolbar adds the read-side tools: **version history** (every directory
+version, read-only preview, one-click restore of an older tree), a
+**`version_at_time`** time-travel lookup, a **`path=` sub-folder query**,
+and the two-step **directory delete** (a logical delete — the history stays
+readable, and a new directory can be created afterwards).
+
+![Directory history](img/ehrs/directory/history.png)
 
 ## Composition viewer
 

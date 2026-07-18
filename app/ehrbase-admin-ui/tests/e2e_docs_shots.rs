@@ -307,6 +307,15 @@ async fn capture_documentation_screenshots() {
             .expect("create the directory");
         h.wait_css("#directory-edit").await;
         shot_to(&h, &dir, "ehrs/directory/directory").await;
+        // The version-history panel open (the new read-side toolbar).
+        h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
+            .await
+            .click()
+            .await
+            .expect("open the version history panel");
+        h.wait_xpath("//button[contains(normalize-space(.), 'v1')]")
+            .await;
+        shot_to(&h, &dir, "ehrs/directory/history").await;
         // EHR detail: the commit-composition form (scrolled into view).
         h.goto(&format!("/ehrs/{ehr_id}?tab=compositions")).await;
         let commit_body = h.wait_css("#commit-body").await;

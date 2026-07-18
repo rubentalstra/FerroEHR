@@ -47,7 +47,10 @@ pub(in crate::pages::ehr_detail::directory) fn directory_toolbar(
     time_open: RwSignal<bool>,
     path_open: RwSignal<bool>,
 ) -> AnyView {
-    let has_directory = move || matches!(directory.get(), Some(Ok(Some(_))));
+    // A Memo over `.with()` — the resource value embeds the whole FOLDER
+    // body; `.get()` in a per-tick closure would clone it every evaluation
+    // (rules §2).
+    let has_directory = Memo::new(move |_| directory.with(|d| matches!(d, Some(Ok(Some(_))))));
     let confirm_delete = RwSignal::new(false);
 
     let on_delete = move |_| {
@@ -58,7 +61,7 @@ pub(in crate::pages::ehr_detail::directory) fn directory_toolbar(
     };
 
     view! {
-        <section class=CARD_PAD class:hidden=move || !has_directory()>
+        <section class=CARD_PAD class:hidden=move || !has_directory.get()>
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <button
