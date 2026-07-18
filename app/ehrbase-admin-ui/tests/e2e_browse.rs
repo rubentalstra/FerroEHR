@@ -185,11 +185,29 @@ async fn query_builder_generates_and_runs_aql() {
     h.goto("/queries/builder").await;
     // The template <select> loads under Suspense; pick our template by clicking
     // its <option> (a native option click both selects it and fires change).
-    h.wait_css(&format!("#qb-template option[value='{TEMPLATE_ID}']"))
-        .await
-        .click()
-        .await
-        .expect("select the uploaded template");
+    // Bounded retry (the login-submit precedent): a click that lands before
+    // hydration mutates the DOM select but no listener fires, so the catalog
+    // never loads — re-click until the selection takes.
+    let mut selected = false;
+    for _ in 0..5 {
+        h.wait_css(&format!("#qb-template option[value='{TEMPLATE_ID}']"))
+            .await
+            .click()
+            .await
+            .expect("select the uploaded template");
+        if h
+            .driver
+            .query(By::Css("ul.text-sm li"))
+            .wait(Duration::from_secs(3), Duration::from_millis(200))
+            .first()
+            .await
+            .is_ok()
+        {
+            selected = true;
+            break;
+        }
+    }
+    assert!(selected, "the template selection never took (pre-hydration clicks exhausted)");
     // The catalog tree loads once a template is chosen.
     h.wait_css("ul.text-sm li").await;
     h.shot(1, "builder-template-picked").await;

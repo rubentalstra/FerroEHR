@@ -1,0 +1,17 @@
+---
+name: cdr-extension-surfaces
+description: Recurring verification checklist for "our own extension" ehrbase-rest REST surfaces (non-spec endpoints)
+metadata:
+  type: project
+---
+
+For `ehrbase-rest` surfaces flagged "OUR OWN EXTENSION" (admin deletes, contribution list, etc.), the house bar is: follow the vendored spec where it speaks, else mirror the sibling surface's established design. Confirmed checks that pay off:
+
+- **Flag discipline**: module/fn doc must carry the exact "no openEHR spec governs this — our own design/extension" flag. Verified present + correct on the admin template/query deletes and the contribution-list surface (2026-07-18, branch claude/admin-ui-features-2).
+- **Error mapping round-trip**: extension service methods return `SmError`; the `?` from `ServiceError` must map to the intended HTTP. `ServiceError::Conflict`→`SmError(CompositionAlreadyExists)`→409; `NotFound`→`VersionedObjectDoesNotExist`→404. NotFound collapses the concrete resource kind generically, so an extension's 404 body carries a generic SM code — acceptable for extensions.
+- **ABAC registration** (`extensions/access/pep.rs`): `mode_of` + `kind_of`. EHR-scoped list reads use `Mode::Pre` (ehr_id path param, subject gate) like `ehr_get_by_id`/`contribution_create`; single-resource GETs use `Mode::Post`. A list surface pre-checked coarser than the by-uid post-check is acceptable when it returns only non-clinical metadata.
+- **endpoint-map.md SQL trace accuracy is a recurring nit source**: the row often under-counts round trips and simplifies the SQL. Contribution-list row claimed "2 round trips / SELECT count(*) FROM contribution" but the real path is 3 (ehr_exists probe + count-with-audit-JOIN + list). Always re-derive the trip count from the actual `count_*`/`list_*` bodies, not the doc.
+- **utoipa::path presence**: every extension handler needs `#[utoipa::path]` (we serve only our own generated OpenAPI). All three surfaces had them.
+- **Case-insensitive id resolve** must match the schema's CI unique index: `lower(x)=lower($1)` matches `ux_template_store_template_id_ci` / the stored-query `lower(...)` PK columns; grounded in BASE master05 §Composite Identifiers and Case.
+
+Template `version` field (ITS-REST `TemplateMetadata.version`): optional + `deprecated: true`, NOT nullable in the OAS — so emit-only-when-present is *correct* and emitting explicit `null` would be a schema violation. Value is "taken from `template_id`" (filter_version param), so id-`.vN`-axis derivation is spec-faithful.

@@ -47,10 +47,23 @@ async fn capture(h: &Harness, dir: &Path, path: &str, slug: &str, content: Optio
         h.wait_css(selector).await;
     }
     let out = dir.join(format!("{slug}.png"));
+    if let Some(parent) = out.parent() {
+        std::fs::create_dir_all(parent).expect("create the section dir");
+    }
     h.driver
         .screenshot(&out)
         .await
         .expect("write the documentation screenshot");
+    println!("captured {slug} -> {}", out.display());
+}
+
+/// Write a full-window PNG for an already-prepared page state.
+async fn shot_to(h: &Harness, dir: &Path, slug: &str) {
+    let out = dir.join(format!("{slug}.png"));
+    if let Some(parent) = out.parent() {
+        std::fs::create_dir_all(parent).expect("create the section dir");
+    }
+    h.driver.screenshot(&out).await.expect("shot");
     println!("captured {slug} -> {}", out.display());
 }
 
@@ -71,7 +84,8 @@ async fn capture_documentation_screenshots() {
     // yet — wait on the username field instead).
     h.goto("/login").await;
     h.wait_css("#login-username").await;
-    let login_out = dir.join("login.png");
+    let login_out = dir.join("login").join("login.png");
+    std::fs::create_dir_all(login_out.parent().expect("parent")).expect("dir");
     h.driver
         .screenshot(&login_out)
         .await
@@ -82,12 +96,12 @@ async fn capture_documentation_screenshots() {
 
     // The authenticated screens, each with a stable content marker so the shot
     // is taken after the screen's primary content has rendered.
-    capture(&h, &dir, "/", "dashboard", None).await;
+    capture(&h, &dir, "/", "dashboard/dashboard", None).await;
     capture(
         &h,
         &dir,
         "/templates",
-        "templates",
+        "templates/templates",
         Some("input[type=file]"),
     )
     .await;
@@ -103,7 +117,7 @@ async fn capture_documentation_screenshots() {
             &h,
             &dir,
             &format!("/templates/{TEMPLATE_ID}"),
-            "template-detail",
+            "templates/template-detail",
             Some("ul.text-sm li"),
         )
         .await;
@@ -114,18 +128,95 @@ async fn capture_documentation_screenshots() {
         );
     }
 
-    capture(&h, &dir, "/queries", "queries", None).await;
+    // Stored queries: FIRST the true empty state (fresh database), then the
+    // populated screen — two stored queries seeded over the Definition API
+    // plus a query group built through the real UI.
+    if let (Some(cdr), Some(user), Some(pass)) = (
+        env("UI_E2E_CDR_URL"),
+        env("UI_E2E_BASIC_USER"),
+        env("UI_E2E_BASIC_PASS"),
+    ) {
+        let http = reqwest::Client::new();
+        // Self-cleaning: earlier runs may have seeded these — delete first
+        // (the admin extension endpoint; 404 = already absent) so the
+        // empty-state capture is honest.
+        for name in [
+            "org.example::recent-compositions",
+            "org.example::quantity-series",
+        ] {
+            let status = http
+                .delete(format!("{cdr}/ehrbase/rest/openehr/v1/admin/query/{name}/1.0.0"))
+                .basic_auth("ehrbase-admin", Some("ehrbase"))
+                .send()
+                .await
+                .expect("clean stored query")
+                .status();
+            assert!(
+                status.as_u16() == 204 || status.as_u16() == 404,
+                "stored-query cleanup -> {status}"
+            );
+        }
+        capture(&h, &dir, "/queries", "queries/queries-empty", None).await;
+        for (name, aql) in [
+            (
+                "org.example::recent-compositions",
+                "SELECT c/uid/value AS uid, c/context/start_time/value AS time                  FROM EHR e CONTAINS COMPOSITION c                  ORDER BY c/context/start_time/value DESC LIMIT 20",
+            ),
+            (
+                "org.example::quantity-series",
+                "SELECT c/context/start_time/value AS time,                  c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude                  FROM EHR e CONTAINS COMPOSITION c",
+            ),
+        ] {
+            let status = http
+                .put(format!(
+                    "{cdr}/ehrbase/rest/openehr/v1/definition/query/{name}/1.0.0"
+                ))
+                .basic_auth(&user, Some(&pass))
+                .header("Content-Type", "text/plain")
+                .body(aql)
+                .send()
+                .await
+                .expect("seed stored query")
+                .status();
+            assert!(status.is_success(), "stored-query seed -> {status}");
+        }
+        // Build one query group through the real UI, then capture the
+        // populated screen (rows + open-in-editor links + the group card).
+        h.goto("/queries").await;
+        h.wait_css("a[href^='/queries/aql?load=']").await;
+        h.wait_css("input[placeholder='group name']")
+            .await
+            .send_keys("Cohort watch")
+            .await
+            .expect("group name");
+        h.wait_css("input[type=checkbox]")
+            .await
+            .click()
+            .await
+            .expect("pick a member");
+        h.wait_xpath("//button[contains(., 'Save group')]")
+            .await
+            .click()
+            .await
+            .expect("save the group");
+        // The saved group card renders with the group's name.
+        h.wait_xpath("//*[contains(., 'Cohort watch')]").await;
+        shot_to(&h, &dir, "queries/queries").await;
+    } else {
+        capture(&h, &dir, "/queries", "queries/queries-empty", None).await;
+        println!("SKIP docs-shots: stored-query seeding needs UI_E2E_CDR_URL/UI_E2E_BASIC_*");
+    }
     capture(
         &h,
         &dir,
         "/queries/builder",
-        "query-builder",
+        "queries/query-builder",
         Some("#qb-template"),
     )
     .await;
-    capture(&h, &dir, "/queries/aql", "query-aql", Some("#aql-editor")).await;
-    capture(&h, &dir, "/ehrs", "ehrs", Some("#ehr-lookup")).await;
-    capture(&h, &dir, "/system", "system", None).await;
+    capture(&h, &dir, "/queries/aql", "queries/query-aql", Some("#aql-editor")).await;
+    capture(&h, &dir, "/ehrs", "ehrs/ehrs", Some("#ehr-lookup")).await;
+    capture(&h, &dir, "/system", "system/system", None).await;
 
     // The ehr-detail and composition-viewer screens render the EHR + the
     // two-version composition scripts/ui-e2e.sh seeds over REST.
@@ -141,17 +232,12 @@ async fn capture_documentation_screenshots() {
             .await
             .expect("open the compositions tab");
         h.wait_css(&format!("a[href*='{vo_id}']")).await;
-        let out = dir.join("ehr-detail.png");
-        h.driver
-            .screenshot(&out)
-            .await
-            .expect("write the documentation screenshot");
-        println!("captured ehr-detail -> {}", out.display());
+        shot_to(&h, &dir, "ehrs/ehr-detail").await;
         capture(
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}/compositions/{vo_id}"),
-            "composition-viewer",
+            "ehrs/composition-viewer",
             Some("pre"),
         )
         .await;
@@ -161,6 +247,127 @@ async fn capture_documentation_screenshots() {
              (UI_E2E_SEEDED_EHR_ID/UI_E2E_SEEDED_VO_ID unset — run scripts/ui-e2e.sh)"
         );
     }
+
+    // ── The feature VIEWS (owner directive 2026-07-18: every view has a
+    //    published screenshot so the console can be reviewed without
+    //    running it). ─────────────────────────────────────────────────────
+    if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
+        // EHR detail: the status tab (URL-driven tab state).
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=status"),
+            "ehrs/ehr-detail-status",
+            Some("pre"),
+        )
+        .await;
+        // EHR detail: the contributions table (needs the extension endpoint).
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=contributions"),
+            "ehrs/ehr-detail-contributions",
+            Some("table tbody"),
+        )
+        .await;
+        // EHR detail: the commit-composition form (scrolled into view).
+        h.goto(&format!("/ehrs/{ehr_id}?tab=compositions")).await;
+        let commit_body = h.wait_css("#commit-body").await;
+        commit_body
+            .scroll_into_view()
+            .await
+            .expect("scroll to the commit form");
+        shot_to(&h, &dir, "ehrs/composition-commit").await;
+        // Composition viewer: the edit-as-new-version editor open.
+        h.goto(&format!("/ehrs/{ehr_id}/compositions/{vo_id}"))
+            .await;
+        h.wait_css("#edit-new-version")
+            .await
+            .click()
+            .await
+            .expect("open the version editor");
+        let edit_body = h.wait_css("#edit-body").await;
+        edit_body
+            .scroll_into_view()
+            .await
+            .expect("scroll to the editor");
+        shot_to(&h, &dir, "ehrs/composition-editor").await;
+    } else {
+        println!("SKIP docs-shots: feature views need the seeded ids");
+    }
+
+    // Raw AQL: run a data query — results table + export buttons, then the
+    // chart view (the seeded quantity magnitudes over the row order).
+    h.goto("/queries/aql").await;
+    h.wait_css("#aql-editor")
+        .await
+        .send_keys(
+            "SELECT c/context/start_time/value AS time,              c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude              FROM EHR e CONTAINS COMPOSITION c              WHERE c/archetype_details/template_id/value = 'minimal_evaluation.en.v1'",
+        )
+        .await
+        .expect("type the AQL");
+    h.wait_xpath("//button[normalize-space(.)='Run']")
+        .await
+        .click()
+        .await
+        .expect("run");
+    let export_button = h.wait_xpath("//button[contains(., 'Export CSV')]").await;
+    // The results section renders below the editor/params cards — scroll it
+    // into view so the capture actually shows rows, not just the header.
+    export_button
+        .scroll_into_view()
+        .await
+        .expect("scroll to the results");
+    h.wait_css("table tbody tr").await;
+    shot_to(&h, &dir, "queries/query-aql-results").await;
+    h.wait_xpath("//button[normalize-space(.)='Chart']")
+        .await
+        .click()
+        .await
+        .expect("chart toggle");
+    let chart = h.wait_css("svg.chartistry_chart, div.overflow-x-auto svg").await;
+    chart
+        .scroll_into_view()
+        .await
+        .expect("scroll to the chart");
+    shot_to(&h, &dir, "queries/query-results-chart").await;
+
+    // The user menu + scopes drawer.
+    h.goto("/").await;
+    h.wait_css("#user-menu-trigger button")
+        .await
+        .click()
+        .await
+        .expect("open the user menu");
+    h.wait_css(".thaw-popover-surface").await;
+    shot_to(&h, &dir, "dashboard/user-menu").await;
+    h.wait_xpath("//button[contains(., 'View scopes')]")
+        .await
+        .click()
+        .await
+        .expect("open the scopes drawer");
+    h.wait_xpath("//*[contains(., 'Access scopes')]").await;
+    shot_to(&h, &dir, "dashboard/scopes-drawer").await;
+
+    // Dark mode (one representative capture; the toggle persists, so flip
+    // back afterwards to leave the session light for any later steps).
+    h.goto("/").await;
+    h.wait_css("button[aria-label='Toggle dark mode']")
+        .await
+        .click()
+        .await
+        .expect("dark on");
+    h.wait_css("html.dark").await;
+    // The tiles animate `transition-colors`; a capture racing the token
+    // switch freezes a half-themed frame. Fixed settle for the CSS
+    // transition duration — an animation wait, not a condition wait.
+    tokio::time::sleep(std::time::Duration::from_millis(700)).await;
+    shot_to(&h, &dir, "dashboard/dashboard-dark").await;
+    h.wait_css("button[aria-label='Toggle dark mode']")
+        .await
+        .click()
+        .await
+        .expect("dark off");
 
     h.finish().await;
 }

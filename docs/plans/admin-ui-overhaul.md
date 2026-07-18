@@ -161,6 +161,17 @@ as the CDR's conformance suite tests the composed CDR image:
 docs-shots), and CI gains an image-mode battery job so every merge
 verifies the shipped artifact, not just the host build.
 
+## B4. Spec-audit follow-ups (2026-07-18 review of the extension surfaces
+— zero conformance violations; these are recorded consistency items)
+
+- Harden the SM-UUID `delete_opt` path to the same friendly 409-with-count
+  refusal the admin template delete carries (today it relies on the FK and
+  leaks the raw constraint string into the 409 message — pre-existing).
+- Decide deliberately whether the contribution list's `change_type` should
+  surface the rubric (`creation`) beside the code (`249`).
+- Check whether the ADL1.4 list honors the OAS `filter_version` query
+  parameter (pre-existing gap, outside the audited surfaces).
+
 ## C. Delivery
 
 - Branch `claude/admin-ui-design-overhaul`; **A lands first** (tokens +

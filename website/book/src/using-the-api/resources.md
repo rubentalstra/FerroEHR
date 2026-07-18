@@ -226,6 +226,21 @@ invalid input, unknown EHR, or a uid conflict.
 `GET /ehr/{ehr_id}/contribution/{contribution_uid}` returns **200** with the
 contribution, or **404**.
 
+`GET /ehr/{ehr_id}/contribution` (no uid) lists the EHR's contributions,
+newest first — an ehrbase-rs extension (the openEHR REST API defines only the
+by-uid read). Paginate with `?offset=` (default 0) and `?fetch=` (default 20,
+capped at 100). It returns **200** with a JSON summary, or **404** for an
+unknown EHR:
+
+```json
+{
+  "rows": [
+    { "uid": "…", "time_committed": "…", "committer": "…", "change_type": "…" }
+  ],
+  "total": 123
+}
+```
+
 > [!NOTE]
 > The contribution envelope is always canonical JSON (or XML). The FLAT and
 > STRUCTURED formats, when used, apply only to the inner composition `data` of

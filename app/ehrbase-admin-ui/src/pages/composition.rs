@@ -25,7 +25,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
-use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, SELECT, TEXTAREA};
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA};
 use crate::components::format_view::{DocumentPane, FormatSelector};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
@@ -111,6 +111,77 @@ pub async fn fetch_composition(
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
     Ok(pretty_body(&response.body, format))
+}
+
+/// Resolve the `OBJECT_VERSION_ID` of the VERSION of a VERSIONED_COMPOSITION
+/// that was extant at `at_time` (a browser `datetime-local` value):
+/// `GET /ehr/{ehr}/versioned_composition/{uid}/version?version_at_time=…`
+/// (ITS-REST VERSIONED_COMPOSITION API `versioned_composition_version_get_at_time`
+/// — "if `version_at_time` is supplied, retrieves the VERSION extant at
+/// specified time"). The 200 body is a VERSION envelope whose `uid.value` is
+/// the `OBJECT_VERSION_ID` (RM common — a VERSION's `uid` is an
+/// `OBJECT_VERSION_ID`); that string is returned so the caller can select it.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] when `at_time` is empty; CDR transport errors pass
+/// through; a non-2xx CDR answer (a `404` for no version at that time included,
+/// which the UI renders as an inline note) normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn fetch_version_at_time(
+    ehr_id: String,
+    versioned_object_uid: String,
+    at_time: String,
+) -> Result<String, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let at_time = datetime_local_to_rfc3339(&at_time);
+    if at_time.is_empty() {
+        return Err(AdminUiError::Invalid(
+            "pick a date and time to travel to".to_owned(),
+        ));
+    }
+    let url = state.cdr.rest_v1(&format!(
+        "ehr/{}/versioned_composition/{}/version?version_at_time={}",
+        urlencoding::encode(&ehr_id),
+        urlencoding::encode(&versioned_object_uid),
+        urlencoding::encode(&at_time),
+    ));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    // The VERSION envelope's `uid.value` is the `OBJECT_VERSION_ID`; the update
+    // response reader follows the identical path, so reuse it.
+    Ok(new_version_uid(&response.body))
+}
+
+#[cfg(feature = "ssr")]
+/// Complete a browser `datetime-local` value (`YYYY-MM-DDTHH:MM`, optionally
+/// with seconds) into an RFC 3339 / extended-ISO-8601 UTC instant for the
+/// ITS-REST `version_at_time` query parameter ("a given time in the extended
+/// ISO 8601 format"). A `datetime-local` control emits no seconds and no zone,
+/// so absent seconds default to `:00` and the zone to `Z`; an already-zoned
+/// value is returned unchanged. Empty input yields an empty string (the caller
+/// rejects it). Interpreting the wall-clock value as UTC is a console
+/// convenience — no openEHR spec governs the admin UI.
+pub(crate) fn datetime_local_to_rfc3339(local: &str) -> String {
+    let trimmed = local.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    if trimmed.ends_with('Z') || trimmed.ends_with('z') {
+        return trimmed.to_owned();
+    }
+    // `HH:MM` carries one colon, `HH:MM:SS` two — add seconds when absent.
+    let with_seconds = if trimmed.matches(':').count() < 2 {
+        format!("{trimmed}:00")
+    } else {
+        trimmed.to_owned()
+    };
+    format!("{with_seconds}Z")
 }
 
 #[cfg(feature = "ssr")]
@@ -256,6 +327,7 @@ fn json_str(value: &Value, path: &[&str]) -> String {
 /// The composition viewer screen.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
+#[allow(clippy::too_many_lines)] // resource/action setup plus the erased section locals — one screen, one function (rules §1)
 pub fn CompositionPage() -> impl IntoView {
     let params = leptos_router::hooks::use_params_map();
     let ehr_id = Signal::derive(move || params.with(|p| p.get("ehr_id").unwrap_or_default()));
@@ -265,6 +337,22 @@ pub fn CompositionPage() -> impl IntoView {
     // Empty = "latest" (fetch by the bare versioned-object id); a non-empty
     // value is a specific OBJECT_VERSION_ID.
     let selected_version = RwSignal::new(String::new());
+
+    // The version_at_time picker: a `datetime-local` value resolves (server-side)
+    // to the VERSION extant at that instant; on success its OBJECT_VERSION_ID
+    // becomes the shared `selected_version` and the document pane refetches
+    // through the existing resource keys. A `404` (no version at that time)
+    // stays an inline note in the toolbar (resolved from the action value in the
+    // view — rules §4), never an error bar.
+    let at_time_input = RwSignal::new(String::new());
+    let version_at_time = Action::new(
+        |(ehr_id, versioned_object_uid, at_time): &(String, String, String)| {
+            let ehr_id = ehr_id.clone();
+            let versioned_object_uid = versioned_object_uid.clone();
+            let at_time = at_time.clone();
+            async move { fetch_version_at_time(ehr_id, versioned_object_uid, at_time).await }
+        },
+    );
 
     // The "Edit as new version" affordance state and its commit action.
     // Created before the resources so its `version()` can trigger their
@@ -323,7 +411,28 @@ pub fn CompositionPage() -> impl IntoView {
         }
     });
 
-    let toolbar = toolbar_section(format, versions, selected_version);
+    // Sync a successful at-time resolution into the shared selection. This is
+    // the async-load-into-local-state case (rules §2 — the one-directional
+    // pattern the AQL editor uses to seed from a loaded query): the Effect
+    // reads only the action value and writes only `selected_version`, so there
+    // is no reactive loop, and Effects never run on the server (no hydration
+    // divergence). A failure leaves the selection untouched (the toolbar note
+    // renders it).
+    Effect::new(move |_| {
+        if let Some(Ok(resolved)) = version_at_time.value().get() {
+            selected_version.set(resolved);
+        }
+    });
+
+    let toolbar = toolbar_section(
+        format,
+        versions,
+        selected_version,
+        ehr_id,
+        uid,
+        version_at_time,
+        at_time_input,
+    );
     let body = document_section(document);
     let edit = edit_section(
         ehr_id,
@@ -335,6 +444,7 @@ pub fn CompositionPage() -> impl IntoView {
         editor_body,
         update,
     );
+    let timeline = timeline_section(versions, selected_version);
     let audit = audit_section(versions, selected_version);
 
     let title = Signal::derive(move || {
@@ -358,6 +468,7 @@ pub fn CompositionPage() -> impl IntoView {
             {toolbar}
             {body}
             {edit}
+            {timeline}
             {audit}
         </div>
     }
@@ -465,12 +576,18 @@ fn edit_section(
     .into_any()
 }
 
-/// The toolbar: the shared [`FormatSelector`] plus the version `<select>`
-/// (populated from the revision history under `<Suspense>`).
+/// The toolbar: the shared [`FormatSelector`], the version `<select>`
+/// (populated from the revision history under `<Suspense>`), and the
+/// `version_at_time` picker (a `datetime-local` input + an "At time" button that
+/// resolves the version extant at that instant into the shared selection).
 fn toolbar_section(
     format: RwSignal<ReprFormat>,
     versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
     selected_version: RwSignal<String>,
+    ehr_id: Signal<String>,
+    uid: Signal<String>,
+    version_at_time: Action<(String, String, String), Result<String, AdminUiError>>,
+    at_time_input: RwSignal<String>,
 ) -> AnyView {
     let offered = vec![
         ReprFormat::CanonicalJson,
@@ -496,9 +613,29 @@ fn toolbar_section(
         </Suspense>
     }
     .into_any();
+    // Dispatch the at-time resolution (server-fn does the RFC 3339 completion);
+    // skip an empty input so no needless round-trip is made.
+    let on_at_time = move |_| {
+        let at_time = at_time_input.get();
+        if !at_time.trim().is_empty() {
+            version_at_time.dispatch((ehr_id.get(), uid.get(), at_time));
+        }
+    };
+    // A 404 (no version at that time) is a neutral note; any other failure
+    // renders through the normal inline-error path.
+    let note = move || match version_at_time.value().get() {
+        Some(Err(AdminUiError::Cdr { status: 404, .. })) => view! {
+            <p class="mt-2 text-sm text-ink-muted">
+                "No version of this composition existed at that time."
+            </p>
+        }
+        .into_any(),
+        Some(Err(error)) => crate::components::format_view::inline_error(&error),
+        _ => ().into_any(),
+    };
     view! {
         <section class=format!("{CARD_PAD} mb-3")>
-            <div class="flex flex-wrap items-center gap-4">
+            <div class="flex flex-wrap items-end gap-4">
                 <FormatSelector offered=offered selected=format />
                 <div class="flex items-center gap-2">
                     <label class=LABEL r#for="version-select">
@@ -506,7 +643,31 @@ fn toolbar_section(
                     </label>
                     {select}
                 </div>
+                <div class="flex items-end gap-2">
+                    <div class="flex flex-col gap-1">
+                        <label class=LABEL r#for="version-at-time">
+                            "Time travel"
+                        </label>
+                        <input
+                            id="version-at-time"
+                            type="datetime-local"
+                            class=INPUT
+                            prop:value=move || at_time_input.get()
+                            on:input:target=move |ev| at_time_input.set(ev.target().value())
+                        />
+                    </div>
+                    <button
+                        id="version-at-time-go"
+                        type="button"
+                        class=BTN_SECONDARY
+                        disabled=Signal::derive(move || version_at_time.pending().get())
+                        on:click=on_at_time
+                    >
+                        "At time"
+                    </button>
+                </div>
             </div>
+            {note}
         </section>
     }
     .into_any()
@@ -560,6 +721,107 @@ fn document_section(document: Resource<Result<String, AdminUiError>>) -> AnyView
                 }
             })}
         </Transition>
+    }
+    .into_any()
+}
+
+/// The version timeline strip above the audit card: one chip per version,
+/// oldest→newest left-to-right, the selected chip accented and the newest
+/// tagged "current". Clicking a chip sets the shared selection (the newest →
+/// empty string = Latest, matching the dropdown). Resolved inside the existing
+/// suspense pattern (rules §4 — no resource is created here).
+fn timeline_section(
+    versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
+    selected: RwSignal<String>,
+) -> AnyView {
+    view! {
+        <div class="mt-3">
+            <Suspense fallback=|| {
+                ().into_any()
+            }>
+                {move || Suspend::new(async move {
+                    match versions.await {
+                        Ok(entries) => {
+                            let stored = StoredValue::new(entries);
+                            // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
+                            // mismatches at hydration in leptos 0.8 (E2E console gate). A
+                            // failed history renders nothing here (the document/toolbar
+                            // sections surface the error).
+                            view! {
+                                {move || {
+                                    stored.with_value(|entries| timeline_strip(entries, selected))
+                                }}
+                            }
+                                .into_any()
+                        }
+                        Err(_) => ().into_any(),
+                    }
+                })}
+            </Suspense>
+        </div>
+    }
+    .into_any()
+}
+
+/// Render the timeline chips. `entries` is newest-first (the revision-history
+/// order the selector uses), so the strip displays it reversed (oldest→newest).
+fn timeline_strip(entries: &[VersionEntry], selected: RwSignal<String>) -> AnyView {
+    if entries.is_empty() {
+        return ().into_any();
+    }
+    let newest = entries
+        .first()
+        .map(|entry| entry.version_id.clone())
+        .unwrap_or_default();
+    let mut ordered: Vec<VersionEntry> = entries.to_vec();
+    ordered.reverse();
+    let chips = view! {
+        <For each=move || ordered.clone() key=|entry| entry.version_id.clone() let:entry>
+            {timeline_chip(&entry, &newest, selected)}
+        </For>
+    };
+    view! {
+        <section class=CARD_PAD>
+            <h2 class=CARD_TITLE>"Version timeline"</h2>
+            <div class="flex flex-wrap items-center gap-2">{chips}</div>
+        </section>
+    }
+    .into_any()
+}
+
+/// One timeline chip: a `rounded-full border` button labelled with the short
+/// `vN`, accented while it is the current selection, and suffixed "· current"
+/// for the newest version. Clicking selects it — the newest selects Latest
+/// (empty string), the others their `OBJECT_VERSION_ID`.
+fn timeline_chip(entry: &VersionEntry, newest: &str, selected: RwSignal<String>) -> AnyView {
+    let version_id = entry.version_id.clone();
+    let is_newest = version_id == newest;
+    let target = if is_newest {
+        String::new()
+    } else {
+        version_id.clone()
+    };
+    let label = short_version(&version_id);
+    let newest_owned = newest.to_owned();
+    let version_for_class = version_id.clone();
+    let class = move || {
+        let current = selected.get();
+        let is_selected = if is_newest {
+            current.is_empty() || current == newest_owned
+        } else {
+            current == version_for_class
+        };
+        if is_selected {
+            "rounded-full border border-accent bg-accent-subtle px-3 py-1 text-xs font-medium text-accent-ink"
+        } else {
+            "rounded-full border border-edge px-3 py-1 text-xs font-medium text-ink-muted hover:bg-sunken"
+        }
+    };
+    view! {
+        <button type="button" class=class on:click=move |_| selected.set(target.clone())>
+            {label}
+            {is_newest.then_some(" · current")}
+        </button>
     }
     .into_any()
 }
@@ -657,7 +919,33 @@ fn short_version(version_id: &str) -> String {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{new_version_uid, parse_versions, short_version};
+    use super::{datetime_local_to_rfc3339, new_version_uid, parse_versions, short_version};
+
+    #[test]
+    fn datetime_local_completes_to_rfc3339_utc() {
+        // A `datetime-local` value with no seconds gains `:00` and a `Z` zone.
+        assert_eq!(
+            datetime_local_to_rfc3339("2026-07-12T10:30"),
+            "2026-07-12T10:30:00Z"
+        );
+        // With seconds, only the zone is appended.
+        assert_eq!(
+            datetime_local_to_rfc3339("2026-07-12T10:30:45"),
+            "2026-07-12T10:30:45Z"
+        );
+        // Surrounding whitespace is trimmed.
+        assert_eq!(
+            datetime_local_to_rfc3339("  2026-07-12T08:00  "),
+            "2026-07-12T08:00:00Z"
+        );
+        // Empty stays empty (the server fn rejects it before the round-trip).
+        assert_eq!(datetime_local_to_rfc3339(""), "");
+        // An already-zoned value is returned unchanged (never double-stamped).
+        assert_eq!(
+            datetime_local_to_rfc3339("2026-07-12T10:30:00Z"),
+            "2026-07-12T10:30:00Z"
+        );
+    }
 
     #[test]
     fn parses_revision_history_wrapper_and_bare_array() {

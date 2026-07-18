@@ -388,6 +388,145 @@ async fn admin_delete_all_with_empty_list_deletes_every_ehr() {
     assert_eq!(after, 1, "empty selector deletes the one remaining EHR");
 }
 
+// ─── Admin extensions: template + stored-query deletes (our own design) ───────
+// No openEHR spec governs these (the ITS-REST Admin API defines only EHR
+// deletes); they mirror the EHR-delete surface. See
+// `app/ehrbase/src/service/admin/delete.rs`.
+
+const OPT_FIXTURE_REL: &str = "tests/resources/service/knowledge/IDCR Allergies List.v0.opt";
+const OPT_TEMPLATE_ID: &str = "IDCR Allergies List.v0";
+
+fn read_fixture(rel: &str) -> String {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(rel);
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()))
+}
+
+async fn template_rows(pool: &PgPool, template_id: &str) -> i64 {
+    sqlx::query_scalar("SELECT count(*) FROM template_store WHERE template_id = $1")
+        .bind(template_id)
+        .fetch_one(pool)
+        .await
+        .expect("template count")
+}
+
+fn is_not_found(res: &Result<(), SmError>) -> bool {
+    matches!(
+        res,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
+    )
+}
+
+#[tokio::test]
+async fn admin_template_delete_happy_unknown_and_referenced() {
+    let pg = Pg::start().await;
+    let pool = pg.migrated_pool("admin_tpl_delete").await;
+    let svc = EhrbaseService::new(pool.clone());
+    let pool = &pool;
+
+    // Unknown id → NotFound (→ 404).
+    let res = svc
+        .admin_template_delete("no-such-template.v9".to_owned())
+        .await;
+    assert!(
+        is_not_found(&res),
+        "unknown template → NotFound, got {res:?}"
+    );
+
+    // Upload a template; it is deletable while unreferenced, case-insensitively.
+    svc.template_adl14_upload(read_fixture(OPT_FIXTURE_REL))
+        .await
+        .expect("upload opt");
+    assert_eq!(template_rows(pool, OPT_TEMPLATE_ID).await, 1);
+    svc.admin_template_delete(OPT_TEMPLATE_ID.to_ascii_uppercase())
+        .await
+        .expect("delete template (case-insensitive)");
+    assert_eq!(
+        template_rows(pool, OPT_TEMPLATE_ID).await,
+        0,
+        "template physically deleted"
+    );
+
+    // Re-upload, then reference it from a committed version: the delete must be
+    // refused (409 = CompositionAlreadyExists) so a physical delete never
+    // orphans clinical data. Pointing an existing vo_version at the template
+    // exercises the `vo_version.template_id` FK-reference guard directly (lighter
+    // than a full validated composition commit, which the guard does not need).
+    svc.template_adl14_upload(read_fixture(OPT_FIXTURE_REL))
+        .await
+        .expect("re-upload opt");
+    let ehr: Uuid = svc.create_ehr(None).await.expect("ehr").into();
+    let referenced = sqlx::query("UPDATE vo_version SET template_id = $1 WHERE ehr_id = $2")
+        .bind(OPT_TEMPLATE_ID)
+        .bind(ehr)
+        .execute(pool)
+        .await
+        .expect("reference template")
+        .rows_affected();
+    assert!(
+        referenced >= 1,
+        "a vo_version must now reference the template"
+    );
+
+    let res = svc.admin_template_delete(OPT_TEMPLATE_ID.to_owned()).await;
+    assert!(
+        matches!(
+            res,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        ),
+        "referenced template must be refused (409), got {res:?}"
+    );
+    assert_eq!(
+        template_rows(pool, OPT_TEMPLATE_ID).await,
+        1,
+        "a refused delete leaves the template in place"
+    );
+}
+
+#[tokio::test]
+async fn admin_query_delete_exact_version_and_unknown() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("admin_query_delete").await);
+
+    let name = "org.example::my_query";
+    // Store the query at an explicit version (the PUT-with-version path).
+    svc.query_store(
+        name.to_owned(),
+        Some("1.0.0".to_owned()),
+        "AQL".to_owned(),
+        "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned(),
+    )
+    .await
+    .expect("store query 1.0.0");
+
+    // Unknown (name, version) → NotFound.
+    let res = svc
+        .admin_query_delete(name.to_owned(), "9.9.9".to_owned())
+        .await;
+    assert!(
+        is_not_found(&res),
+        "unknown version → NotFound, got {res:?}"
+    );
+
+    // Exact-version delete succeeds (case-insensitive on the name); the row is
+    // gone, so a second delete is NotFound.
+    svc.admin_query_delete("ORG.EXAMPLE::MY_QUERY".to_owned(), "1.0.0".to_owned())
+        .await
+        .expect("delete version 1.0.0 (case-insensitive name)");
+    let again = svc
+        .admin_query_delete(name.to_owned(), "1.0.0".to_owned())
+        .await;
+    assert!(
+        is_not_found(&again),
+        "already-deleted version → NotFound, got {again:?}"
+    );
+}
+
 // ─── SM-4: statistics / physical_party_delete / archive ───────────────────────
 
 /// A minimal valid demographic PERSON (PARTY invariant `Identities_valid`).

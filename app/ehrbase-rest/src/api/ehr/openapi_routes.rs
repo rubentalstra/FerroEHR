@@ -44,7 +44,8 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
             directory_delete
         ))
         .routes(routes!(directory_get_by_version_id))
-        .routes(routes!(contribution_create))
+        // POST + GET share `/ehr/{ehr_id}/contribution`, so they are one route.
+        .routes(routes!(contribution_create, contribution_list))
         .routes(routes!(contribution_get))
         .routes(routes!(ehr_tags_get))
         .routes(routes!(composition_tags_get, composition_tags_update))
@@ -697,6 +698,39 @@ pub(crate) async fn contribution_create(
     guarded_dispatch(
         state,
         "contribution_create",
+        parts,
+        crate::api::ehr::dispatch::dispatch,
+    )
+    .await
+}
+
+/// List an EHR's CONTRIBUTIONs, newest-first, paged
+/// (`GET /ehr/{ehr_id}/contribution`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs it (the ITS-REST contract defines
+/// only the by-uid CONTRIBUTION GET). Returns
+/// `{ "rows": [ { uid, time_committed, committer, change_type } ], "total" }`;
+/// `offset` defaults to 0, `fetch` to 20 (capped at 100).
+#[utoipa::path(
+    get, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
+    params(
+        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("offset" = Option<i64>, Query, description = "Row offset (default 0)."),
+        ("fetch" = Option<i64>, Query, description = "Max rows (default 20, capped at 100).")
+    ),
+    responses(
+        (status = 200, description = "The EHR's CONTRIBUTIONs (newest first).", body = serde_json::Value),
+        (status = 404, description = "Unknown EHR.", body = serde_json::Value)
+    )
+)]
+pub(crate) async fn contribution_list(
+    State(state): State<AppState>,
+    request: axum::extract::Request,
+) -> Response {
+    let parts = crate::api::into_parts(request).await;
+    guarded_dispatch(
+        state,
+        "contribution_list",
         parts,
         crate::api::ehr::dispatch::dispatch,
     )

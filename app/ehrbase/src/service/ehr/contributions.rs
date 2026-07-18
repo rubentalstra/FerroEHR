@@ -190,6 +190,47 @@ impl EhrbaseService {
         Ok(ids.iter().map(Uuid::to_string).collect())
     }
 
+    /// The EHR contribution-list extension (`GET /ehr/{ehr_id}/contribution`,
+    /// no uid): the EHR's CONTRIBUTIONs newest-first, paged, as
+    /// `{ "rows": [ { uid, time_committed, committer, change_type } ], "total" }`.
+    ///
+    /// NOTE: OUR OWN EXTENSION — no openEHR spec governs it. The ITS-REST
+    /// contract defines only the by-uid CONTRIBUTION GET
+    /// (`operations/contribution_get.yaml`); a paged contribution list is not
+    /// part of the openEHR REST API. `committer` is the audit committer
+    /// `PARTY_PROXY`'s `name` — the name OF the party the by-uid GET returns in
+    /// full (a summary string, not the same rendering); `change_type` is the
+    /// stored `audit.change_type` code. `offset`/`fetch` are already clamped
+    /// by the protocol adapter (defaults 0/20, `fetch` capped at 100).
+    ///
+    /// # Errors
+    /// [`SmError`] — `Pre_has_ehr` fails (unknown EHR → 404), or a read fails.
+    pub async fn ehr_contribution_list_page(
+        &self,
+        an_ehr_id: EhrId,
+        offset: i64,
+        fetch: i64,
+    ) -> Result<Value, SmError> {
+        // Existence (`Pre_has_ehr` → 404) + the unwindowed total in one call.
+        let total = count_contributions(&self.pool, an_ehr_id, None).await?;
+        let rows = crate::storage::version_repo::contribution::list_contribution_summaries(
+            &self.pool, an_ehr_id, offset, fetch,
+        )
+        .await?;
+        let rows: Vec<Value> = rows
+            .into_iter()
+            .map(|r| {
+                json!({
+                    "uid": r.uid.to_string(),
+                    "time_committed": r.time_committed.to_string(),
+                    "committer": r.committer,
+                    "change_type": r.change_type,
+                })
+            })
+            .collect();
+        Ok(json!({ "rows": rows, "total": total }))
+    }
+
     /// SM `I_EHR_CONTRIBUTION.contribution_count` — the number of
     /// CONTRIBUTIONs in the EHR, optionally bounded by `time_range`.
     ///
