@@ -147,7 +147,8 @@ async fn canonical_snapshot(svc: &EhrbaseService, ehr_id: ehrbase::ids::EhrId) -
     let directory = svc
         .get_directory_at_time(ehr_id, None, None)
         .await
-        .expect("directory read");
+        .expect("directory read")
+        .body;
     (
         serde_json::to_string(&status).expect("status json"),
         serde_json::to_string(&directory).expect("directory json"),

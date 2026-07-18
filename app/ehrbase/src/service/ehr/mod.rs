@@ -63,12 +63,14 @@ use serde_json::{Value, json};
 
 use crate::versioning::contribution::TimeRange;
 
-/// Extract the version-uid `String` a write produced from the internal
-/// [`ServiceResponse`](crate::service::response::ServiceResponse)'s resource
-/// metadata — the value the SM `create_*`/`update_*`/`delete_*` calls return.
-fn version_uid(resp: crate::service::response::ServiceResponse) -> Result<String, SmError> {
+/// The committed version's full [`ResourceMeta`] (version uid + commit
+/// time), for write paths whose wire response carries `ETag` **and**
+/// `Last-Modified` (ITS-REST overview §"`ETag` and Last-Modified": both
+/// SHOULD accompany versioned resources).
+fn committed_meta(
+    resp: crate::service::response::ServiceResponse,
+) -> Result<ResourceMeta, SmError> {
     resp.meta
-        .map(|m| m.uid)
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
 }
 

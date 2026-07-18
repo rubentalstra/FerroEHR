@@ -563,10 +563,25 @@ pub(crate) async fn versioned_composition_version_get_by_id(
 /// (`GET /ehr/{ehr_id}/directory`).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(
+        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; absent means the latest \
+                        version."),
+        ("path" = Option<String>, Query,
+         description = "Slash-separated FOLDER names addressing a sub-folder; \
+                        only that subtree is returned.")
+    ),
     responses(
-        (status = 200, description = "The DIRECTORY.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The directory FOLDER (or the addressed \
+                                      sub-folder).", body = serde_json::Value),
+        (status = 204, description = "The directory was deleted at the \
+                                      specified time."),
+        (status = 400, description = "Malformed `version_at_time`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown EHR, no version at that time, \
+                                      or the path does not resolve.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn directory_get_at_time(
@@ -586,8 +601,32 @@ pub(crate) async fn directory_get_at_time(
 /// Update the directory (FOLDER) (`PUT /ehr/{ehr_id}/directory`).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("If-Match" = String, Header,
+         description = "The latest directory version uid, double-quoted \
+                        (weak `W/` form also accepted). Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new directory FOLDER."),
+    responses(
+        (status = 200, description = "Updated; body per `Prefer` \
+                                      (representation or identifier).",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag` carries the new version uid."),
+        (status = 400, description = "Invalid FOLDER or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown EHR or no directory.",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current \
+                                      latest version uid.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn directory_update(
     State(state): State<AppState>,
@@ -606,8 +645,25 @@ pub(crate) async fn directory_update(
 /// Create the directory (FOLDER) (`POST /ehr/{ehr_id}/directory`).
 #[utoipa::path(
     post, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The directory FOLDER."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new \
+                                      version uid (weak form), `Location` \
+                                      the version URL. Body per `Prefer`.",
+         body = serde_json::Value),
+        (status = 400, description = "Invalid FOLDER.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown EHR.", body = serde_json::Value),
+        (status = 409, description = "A directory already exists for this \
+                                      EHR.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn directory_create(
     State(state): State<AppState>,
@@ -626,8 +682,24 @@ pub(crate) async fn directory_create(
 /// Delete the directory (FOLDER) (`DELETE /ehr/{ehr_id}/directory`).
 #[utoipa::path(
     delete, path = "/ehr/{ehr_id}/directory", tag = "DIRECTORY",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("ehr_id" = String, Path, description = "The EHR id."),
+        ("If-Match" = String, Header,
+         description = "The latest directory version uid, double-quoted \
+                        (weak `W/` form also accepted). Required.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted (a new deleted \
+                                      version is committed)."),
+        (status = 400, description = "Missing or malformed `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown EHR or no directory.",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current \
+                                      latest version uid.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn directory_delete(
     State(state): State<AppState>,
@@ -649,7 +721,10 @@ pub(crate) async fn directory_delete(
     get, path = "/ehr/{ehr_id}/directory/{version_uid}", tag = "DIRECTORY",
     params(
         ("ehr_id" = String, Path, description = "The EHR id."),
-        ("version_uid" = String, Path, description = "The version uid.")
+        ("version_uid" = String, Path, description = "The version uid."),
+        ("path" = Option<String>, Query,
+         description = "Slash-separated FOLDER names addressing a sub-folder; \
+                        only that subtree is returned.")
     ),
     responses(
         (status = 200, description = "The DIRECTORY.", body = serde_json::Value),
