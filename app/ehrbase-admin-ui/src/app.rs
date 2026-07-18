@@ -45,7 +45,18 @@ pub fn App() -> impl IntoView {
         <thaw::ConfigProvider theme_id="ehrbase-admin".to_owned()>
             <Router>
                 <Routes fallback=|| view! { <NotFound /> }>
-                    <Route path=path!("/login") view=crate::pages::login::LoginPage />
+                    // NOTE: /login deviates from the out-of-order streaming
+                    // default: the sign-in form must work with JavaScript
+                    // disabled (the ActionForm progressive-enhancement
+                    // contract), and out-of-order streaming needs JS to move
+                    // suspended fragments into place — SsrMode::Async sends
+                    // the resolved HTML instead (Leptos book, ssr/23 "Async
+                    // Rendering": "Works if JavaScript is disabled").
+                    <Route
+                        path=path!("/login")
+                        view=crate::pages::login::LoginPage
+                        ssr=leptos_router::SsrMode::Async
+                    />
                     <ParentRoute path=path!("") view=crate::pages::shell::AppShell>
                         <Route path=path!("") view=crate::pages::dashboard::DashboardPage />
                         <Route

@@ -38,8 +38,12 @@ workflow refuses a tag that has no matching section here.
   status, SMART discovery, the served OpenAPI rendered natively).
   Configured by one `ehrbase-admin-ui.toml` (+ `EHRBASE_ADMIN__*` env);
   ships in the quickstart compose as the `ehrbase-admin-ui` service on
-  port 3000. Verified by a Rust-native browser E2E journey suite
-  (merge-gating in CI, screenshots published as artifacts).
+  port 3000. The sign-in page is served fully rendered and works with
+  JavaScript disabled (the login form posts and redirects natively).
+  Verified by a Rust-native browser E2E journey suite (merge-gating in CI,
+  screenshots published as artifacts), including journeys over seeded
+  clinical data (EHR detail, the composition viewer's format and version
+  switching) and a JavaScript-disabled login journey.
 
 ## [3.1.1] - 2026-07-17
 
