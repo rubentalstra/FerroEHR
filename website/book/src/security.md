@@ -213,41 +213,19 @@ rows.
 
 ## ATNA audit trail
 
-Separately from openEHR's own provenance, EHRbase-rs can emit an IHE ATNA
-security audit trail: one DICOM Audit Message (DICOM PS3.15 §A.5) per audited
-operation, describing _who_ did _what_ to _which_ resource, with _what
-outcome_, from _where_, and _when_. Records are shipped to an Audit Record
-Repository over syslog (RFC 5424 framing), transported over UDP (RFC 5426) or
-TLS (RFC 5425). Every server operation is audited, and authentication failures
-(`401`/`403`) are always recorded. The audited operations include the
-native-API EHR-Extract export and import (recorded with the ATNA `Extract`
-object class), so moving a patient's record between systems leaves an audit
-trail alongside the REST activity.
+Separately from openEHR's own provenance, EHRbase-rs keeps an IHE ATNA
+security audit trail of API access — **on by default**, persisted in the
+local Audit Record Repository (the dedicated `audit` PostgreSQL schema),
+rendered in both official formats (FHIR R4 `AuditEvent` per IHE BALP, and
+the DICOM PS3.15 audit message for the classic syslog feed), retrievable via
+the RESTful-ATNA **ITI-81** FHIR search, and optionally forwarded to an
+external ARR over syslog and/or the ITI-20 FHIR feed. Node authentication
+(ITI-19) is available as native mutual TLS on the listener.
 
-| Environment variable | Default | Meaning |
-|---|---|---|
-| `EHRBASE__ATNA__ENABLED` | `false` | master switch |
-| `EHRBASE__ATNA__REPOSITORY_HOST` | `localhost` | audit repository host |
-| `EHRBASE__ATNA__REPOSITORY_PORT` | `514` | audit repository port |
-| `EHRBASE__ATNA__TRANSPORT` | `udp` | `udp` or `tls` |
-| `EHRBASE__ATNA__ENTERPRISE_SITE_ID` | unset | enterprise/site identifier |
-| `EHRBASE__ATNA__SOURCE_ID` | `ehrbase` | audit source identifier |
-| `EHRBASE__ATNA__VALUE_IF_MISSING` | `UNKNOWN` | fill for an empty mandatory field |
-| `EHRBASE__ATNA__SUPPRESS_LOGIN_EVENTS` | `true` | skip the successful-login records |
-| `EHRBASE__ATNA__FAIL_MODE` | `open` | `open` (drop and continue) or `closed` (reject auditable ops if undeliverable) |
-| `EHRBASE__ATNA__RESOLVE_SUBJECT` | `false` | enrich the patient identifier from stored data |
-| `EHRBASE__ATNA__QUEUE_CAPACITY` | `1024` | bounded in-memory audit queue |
-| `EHRBASE__ATNA__SERVER_HOST` | unset | this node's advertised network address |
-| `EHRBASE__ATNA__TLS_CA_PATH` | unset | PEM of the repository CA (TLS) |
-| `EHRBASE__ATNA__TLS_IDENTITY_CERT_PATH` | unset | client certificate PEM (mutual TLS) |
-| `EHRBASE__ATNA__TLS_IDENTITY_KEY_PATH` | unset | client key PEM (mutual TLS) |
-
-For PHI-adjacent audit, use `EHRBASE__ATNA__TRANSPORT=tls` with a CA (and, where
-the repository requires it, a client certificate and key for mutual TLS). The
-`fail_mode` choice is a policy decision: `open` never blocks a clinical
-request when the repository is down (records are dropped and metered), while
-`closed` refuses auditable operations with `503` rather than proceed
-unaudited.
+The full chapter — record content, sinks, the ITI-81 search, fail-mode
+semantics, and mTLS — is **[Audit trail (IHE ATNA)](audit.md)**; every
+`[audit]` key is in the
+[configuration reference](installation/configuration.md#audit).
 
 > [!NOTE]
 > The ATNA trail is orthogonal to openEHR's own `CONTRIBUTION` and

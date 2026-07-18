@@ -73,6 +73,14 @@ workflow refuses a tag that has no matching section here.
   documents. Filters: `date` (`ge`/`le`), `patient`, `agent`, `entity`,
   `outcome`, `action`, plus `_count`/`_offset` paging. Admin-only under
   RBAC; `404` when the local store is disabled.
+- **Native TLS + mutual-TLS client authentication** (`[server.tls]`): the
+  main listener can terminate TLS itself (TLS 1.2+ floor per IETF BCP 195)
+  and demand a verified client certificate
+  (`client_auth = "off" | "optional" | "required"`) against an explicit CA —
+  the IHE ATNA ITI-19 node-authentication posture. The management listener
+  stays plain HTTP.
+- A dedicated **Audit trail (IHE ATNA)** book chapter covering the dual
+  formats, the sinks, the ITI-81 retrieval, fail-mode semantics, and mTLS.
 
 ### Changed
 

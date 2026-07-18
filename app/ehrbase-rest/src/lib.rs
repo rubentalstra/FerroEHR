@@ -102,8 +102,9 @@ pub async fn serve_with(
     backend: std::sync::Arc<EhrbaseService>,
 ) -> Result<(), ServeError> {
     let bind = config.server.bind.clone();
+    let tls = config.server.tls.clone();
     let app = build_with(config, backend)?;
-    run_server(app, &bind).await
+    run_server(app, &bind, &tls).await
 }
 
 /// Build the application router with a concrete backend and a full
@@ -152,18 +153,22 @@ pub async fn serve_full(
 ) -> Result<(), ServeError> {
     let authenticator = build_authenticator(&config, authz.as_deref())?;
     let bind = config.server.bind.clone();
+    let tls = config.server.tls.clone();
     let management_enabled = observability.management.enabled;
     let management_port = observability.management.port;
     let state = AppState::with_parts(config, backend, authz, observability);
     let main_app = router(state.clone(), authenticator.clone());
 
-    // Separate-port management listener (§2): its own axum server task.
+    // Separate-port management listener (§2): its own axum server task. It
+    // stays plain HTTP even with `[server.tls]` on — an internal surface
+    // (health/metrics probes), never exposed beyond the pod/host boundary.
     let management_task = if management_enabled && let Some(port) = management_port {
         let management_app = management_router(&state, authenticator);
         let management_bind = format!("0.0.0.0:{port}");
         tracing::info!(bind = %management_bind, "ehrbase-rest management listening (separate port)");
         Some(tokio::spawn(async move {
-            if let Err(e) = run_server(management_app, &management_bind).await {
+            let plain = ehrbase::config::server::TlsConfig::default();
+            if let Err(e) = run_server(management_app, &management_bind, &plain).await {
                 tracing::error!("management listener stopped: {e}");
             }
         }))
@@ -171,7 +176,7 @@ pub async fn serve_full(
         None
     };
 
-    let result = run_server(main_app, &bind).await;
+    let result = run_server(main_app, &bind, &tls).await;
     if let Some(task) = management_task {
         task.abort();
     }
@@ -179,20 +184,52 @@ pub async fn serve_full(
 }
 
 /// Serve one router: wrap it in the path-normalization layer, bind, and serve
-/// with graceful shutdown and per-connection peer info.
-async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
+/// with graceful shutdown and per-connection peer info — plain HTTP, or
+/// native TLS with optional client-certificate (mutual-TLS) verification when
+/// `[server.tls]` is enabled (the IHE ATNA ITI-19 node-authentication
+/// posture; the protocol floor is the rustls safe default, TLS 1.2+ per
+/// IETF BCP 195).
+async fn run_server(
+    app: axum::Router,
+    bind: &str,
+    tls: &ehrbase::config::server::TlsConfig,
+) -> Result<(), ServeError> {
     use std::net::SocketAddr;
 
-    use axum::serve::ListenerExt as _;
     use tower::Layer;
     use tower_http::normalize_path::NormalizePathLayer;
 
     let app = NormalizePathLayer::trim_trailing_slash().layer(app);
-    let listener = tokio::net::TcpListener::bind(bind).await?;
-    tracing::info!(%bind, "ehrbase-rest listening");
     let make = axum::ServiceExt::<axum::extract::Request>::into_make_service_with_connect_info::<
         SocketAddr,
     >(app);
+
+    if tls.enabled {
+        let rustls_config = tls_server_config(tls).map_err(ServeError::Io)?;
+        let addr: SocketAddr = bind.parse().map_err(|e| {
+            ServeError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, e))
+        })?;
+        let handle = axum_server::Handle::new();
+        // Translate the process signals into axum-server's graceful shutdown.
+        let signal_handle = handle.clone();
+        tokio::spawn(async move {
+            shutdown_signal().await;
+            signal_handle.graceful_shutdown(Some(std::time::Duration::from_secs(10)));
+        });
+        tracing::info!(%bind, client_auth = ?tls.client_auth, "ehrbase-rest listening (TLS)");
+        axum_server::bind_rustls(
+            addr,
+            axum_server::tls_rustls::RustlsConfig::from_config(rustls_config),
+        )
+        .handle(handle)
+        .serve(make)
+        .await?;
+        return Ok(());
+    }
+
+    use axum::serve::ListenerExt as _;
+    let listener = tokio::net::TcpListener::bind(bind).await?;
+    tracing::info!(%bind, "ehrbase-rest listening");
     // `TCP_NODELAY` on every accepted socket: small responses (the
     // `204`/minimal write acknowledgements the API is full of) must not sit
     // in Nagle's buffer waiting for an ACK — worth tens of milliseconds of
@@ -205,6 +242,77 @@ async fn run_server(app: axum::Router, bind: &str) -> Result<(), ServeError> {
         .with_graceful_shutdown(shutdown_signal())
         .await?;
     Ok(())
+}
+
+/// Build the rustls server config for `[server.tls]`: the certificate chain +
+/// key, and — when `client_auth` is not `off` — a client-certificate verifier
+/// against the explicit `client_ca_file` trust anchor (never the web PKI).
+/// Public: the TLS tests (and any embedding binary) drive the same builder
+/// the server boots with.
+///
+/// # Errors
+/// [`std::io::Error`] when required key material is missing/unreadable or a
+/// PEM/verifier component is invalid.
+pub fn tls_server_config(
+    tls: &ehrbase::config::server::TlsConfig,
+) -> Result<std::sync::Arc<rustls::ServerConfig>, std::io::Error> {
+    use rustls::pki_types::pem::PemObject;
+
+    use ehrbase::config::server::ClientAuth;
+
+    fn required<'a>(value: &'a Option<String>, key: &str) -> Result<&'a str, std::io::Error> {
+        value.as_deref().ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("server.tls.{key} is required when TLS is enabled"),
+            )
+        })
+    }
+    fn invalid(e: impl std::fmt::Display) -> std::io::Error {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, e.to_string())
+    }
+
+    let cert_pem = std::fs::read(required(&tls.cert_file, "cert_file")?)?;
+    let key_pem = std::fs::read(required(&tls.key_file, "key_file")?)?;
+    let certs = rustls::pki_types::CertificateDer::pem_slice_iter(&cert_pem)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(invalid)?;
+    if certs.is_empty() {
+        return Err(invalid("server.tls.cert_file contains no certificate"));
+    }
+    let key = rustls::pki_types::PrivateKeyDer::from_pem_slice(&key_pem).map_err(invalid)?;
+
+    let provider = std::sync::Arc::new(rustls::crypto::aws_lc_rs::default_provider());
+    let builder = rustls::ServerConfig::builder_with_provider(provider.clone())
+        .with_safe_default_protocol_versions()
+        .map_err(invalid)?;
+
+    let builder = match tls.client_auth {
+        ClientAuth::Off => builder.with_no_client_auth(),
+        ClientAuth::Optional | ClientAuth::Required => {
+            let ca_pem = std::fs::read(required(&tls.client_ca_file, "client_ca_file")?)?;
+            let mut roots = rustls::RootCertStore::empty();
+            for cert in rustls::pki_types::CertificateDer::pem_slice_iter(&ca_pem) {
+                roots.add(cert.map_err(invalid)?).map_err(invalid)?;
+            }
+            if roots.is_empty() {
+                return Err(invalid("server.tls.client_ca_file contains no certificate"));
+            }
+            let verifier = rustls::server::WebPkiClientVerifier::builder_with_provider(
+                roots.into(),
+                provider.clone(),
+            );
+            let verifier = if tls.client_auth == ClientAuth::Optional {
+                verifier.allow_unauthenticated()
+            } else {
+                verifier
+            };
+            builder.with_client_cert_verifier(verifier.build().map_err(invalid)?)
+        }
+    };
+
+    let config = builder.with_single_cert(certs, key).map_err(invalid)?;
+    Ok(std::sync::Arc::new(config))
 }
 
 /// Resolve when the process receives `SIGINT` (Ctrl-C) or, on Unix, `SIGTERM`.

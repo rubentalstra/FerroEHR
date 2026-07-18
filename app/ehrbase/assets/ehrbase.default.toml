@@ -19,6 +19,18 @@ max_in_flight = 256          # concurrent-request admission cap; 0 disables shed
 swagger_ui = true            # PROD: consider false
 cors_permissive = false      # PROD: keep false; configure explicit origins
 
+# [server.tls] — native TLS + client-certificate (mutual-TLS) authentication
+# on the main listener (the IHE ATNA ITI-19 node-authentication posture;
+# protocol floor = rustls safe defaults, TLS 1.2+ per IETF BCP 195). Off by
+# default: deployments commonly terminate TLS at an ingress. The separate-port
+# management listener stays plain HTTP (internal surface).
+[server.tls]
+enabled = false
+#? cert_file = "/etc/ehrbase/server.pem"
+#? key_file = "/etc/ehrbase/server.key"
+client_auth = "off"          # off | optional | required (required = IHE mTLS)
+#? client_ca_file = "/etc/ehrbase/client-ca.pem"
+
 # [server.identity] — the OPTIONS / System-Options manifest. Defaults are the
 # measured build/provenance identity; override only to rebrand.
 #? [server.identity]
