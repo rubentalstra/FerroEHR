@@ -15,19 +15,40 @@
 
 ARG RUST_VERSION=1.96.1
 ARG CARGO_LEPTOS_VERSION=0.3.7
+ARG WASM_BINDGEN_VERSION=0.2.126
 ARG TAILWIND_VERSION=v4.3.3
 
 # ── builder ──────────────────────────────────────────────────────────────────
 FROM rust:${RUST_VERSION}-slim-bookworm AS builder
 ARG CARGO_LEPTOS_VERSION
+ARG WASM_BINDGEN_VERSION
 ARG TAILWIND_VERSION
+# amd64 | arm64 — provided by buildx/compose.
+ARG TARGETARCH
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
       pkg-config curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 RUN rustup target add wasm32-unknown-unknown
-RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    cargo install cargo-leptos --version ${CARGO_LEPTOS_VERSION} --locked
+# The build TOOLS install as PREBUILT release binaries — never `cargo
+# install`: cargo-leptos-from-source compiles a vendored OpenSSL C tree and
+# alone costs ~10 minutes of every cold image build (found live 2026-07-18;
+# the CI workflows use the same prebuilt path). cargo-leptos resolves
+# wasm-bindgen + Tailwind from PATH before its own downloader.
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+      amd64) triple=x86_64-unknown-linux-gnu; tw=x64 ;; \
+      arm64) triple=aarch64-unknown-linux-gnu; tw=arm64 ;; \
+      *) echo "unsupported TARGETARCH ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    curl -sSfL "https://github.com/leptos-rs/cargo-leptos/releases/download/v${CARGO_LEPTOS_VERSION}/cargo-leptos-${triple}.tar.gz" \
+      | tar -xz -C /usr/local/bin --strip-components=1 "cargo-leptos-${triple}/cargo-leptos"; \
+    curl -sSfL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-${triple}.tar.gz" \
+      | tar -xz -C /usr/local/bin --strip-components=1 \
+        "wasm-bindgen-${WASM_BINDGEN_VERSION}-${triple}/wasm-bindgen"; \
+    curl -sSfL -o /usr/local/bin/tailwindcss \
+      "https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-linux-${tw}"; \
+    chmod +x /usr/local/bin/cargo-leptos /usr/local/bin/wasm-bindgen /usr/local/bin/tailwindcss
 COPY . .
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
