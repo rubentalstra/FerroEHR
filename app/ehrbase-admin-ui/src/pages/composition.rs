@@ -71,7 +71,13 @@ pub async fn fetch_versions(
         .get(&session.credential, &url, "application/json")
         .await?;
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    parse_versions(&response.body)
+    // NOTE: REVISION_HISTORY.items arrives most-recent-LAST on the wire (RM
+    // common, generic package — the `items` attribute documentation); the
+    // selector presents newest-first, so reverse here.
+    parse_versions(&response.body).map(|mut entries| {
+        entries.reverse();
+        entries
+    })
 }
 
 /// One representation of a composition version, pretty-printed for display.
