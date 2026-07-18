@@ -32,6 +32,12 @@ builder's "open in raw editor" hands its generated query across.
 
 ![Raw AQL editor](img/query-aql.png)
 
+When a result column is numeric, the results pane offers a **Table |
+Chart** toggle — the values drawn as a line over the (ordered) row index,
+so an `ORDER BY` on a time path reads as a time series. The builder's
+output shapes include **EHRs (cohort)**: the distinct EHR ids matching
+the criteria tree.
+
 ## Exporting results
 
 Both results panes (the builder and the raw editor) offer **Export CSV**

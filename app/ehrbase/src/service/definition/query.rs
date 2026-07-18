@@ -293,6 +293,41 @@ impl EhrbaseService {
         Ok(paginate(matched, page))
     }
 
+    /// Delete exactly one stored-query version — the `(name, version)` row —
+    /// case-insensitive on the qualified name (matching the PUT store path at
+    /// [`Self::store_query_version`]), exact on `version`. Absent → 404.
+    ///
+    /// NOTE: no openEHR spec governs this admin surface (the ITS-REST Admin API
+    /// defines only EHR deletes) — our own design/extension. It complements the
+    /// SM [`Self::delete_query`] (which deletes every version by name) with a
+    /// single-version delete, addressed exactly as
+    /// `DELETE /admin/query/{qualified_name}/{version}`.
+    pub(crate) async fn delete_stored_query_version(
+        &self,
+        qualified_name: &str,
+        version: &str,
+    ) -> Result<(), ServiceError> {
+        let qualified = parse_qualified_name(qualified_name).qualified();
+        let (rdn, semantic) = split_qualified(&qualified);
+        let deleted = sqlx::query(
+            "DELETE FROM stored_query \
+             WHERE lower(reverse_domain_name) = lower($1) \
+               AND lower(semantic_id) = lower($2) AND semver = $3",
+        )
+        .bind(rdn)
+        .bind(semantic)
+        .bind(version)
+        .execute(&self.pool)
+        .await?
+        .rows_affected();
+        if deleted == 0 {
+            return Err(ServiceError::NotFound(format!(
+                "stored query {qualified_name} at version {version}"
+            )));
+        }
+        Ok(())
+    }
+
     /// Delete every version of the query with qualified name `a_query_name`
     /// (case-insensitive); absent → `artefact_does_not_exist` (`404`).
     async fn query_delete(&self, a_query_name: &str) -> Result<(), ServiceError> {

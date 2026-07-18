@@ -600,6 +600,94 @@ async fn contribution_listing_count_and_ehr_summary() {
     );
 }
 
+/// The EHR contribution-list extension (`GET /ehr/{ehr_id}/contribution`, no
+/// uid) — OUR OWN EXTENSION (no openEHR spec governs it). Asserts the
+/// newest-first order, the `{rows, total}` shape (uid / `time_committed` /
+/// committer / `change_type`), pagination, and the unknown-EHR 404.
+#[tokio::test]
+async fn ehr_contribution_list_page_extension() {
+    let pg = Pg::start().await;
+    let svc = EhrbaseService::new(pg.migrated_pool("contribution_list_page").await);
+
+    // Unknown EHR → NotFound (404), like the sibling EHR reads.
+    let ghost = "00000000-0000-7000-8000-0000000000ee";
+    assert!(matches!(
+        svc.ehr_contribution_list_page(ghost.parse().expect("uuid"), 0, 20)
+            .await,
+        Err(SmError {
+            status: CallStatusType::VersionedObjectDoesNotExist,
+            ..
+        })
+    ));
+
+    // Seed three contributions: EHR create, an EHR_STATUS update, a composition.
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+    let status_uid = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("get current EHR_STATUS")["uid"]["value"]
+        .as_str()
+        .expect("status uid")
+        .to_owned();
+    svc.replace_ehr_status(ehr_uuid, uv(ehr_status(false), "251", Some(&status_uid)))
+        .await
+        .expect("EHR_STATUS update");
+    svc.create_composition(ehr_uuid, uv(composition("obs"), "249", None))
+        .await
+        .expect("composition_create");
+
+    // Full page: total = 3, three rows, newest first (the composition last).
+    let page = svc
+        .ehr_contribution_list_page(ehr_uuid, 0, 20)
+        .await
+        .expect("list page");
+    assert_eq!(page["total"], 3);
+    let rows = page["rows"].as_array().expect("rows array").clone();
+    assert_eq!(rows.len(), 3, "three contribution rows");
+    // The latest commit (the composition) is first: change_type 249, its
+    // committer name, a UUID uid, and an ISO-8601 time_committed.
+    assert_eq!(rows[0]["change_type"], "249");
+    assert_eq!(rows[0]["committer"], "conformance tester");
+    assert!(
+        rows[0]["uid"]
+            .as_str()
+            .expect("uid")
+            .parse::<uuid::Uuid>()
+            .is_ok(),
+        "uid is a UUID"
+    );
+    assert!(
+        rows[0]["time_committed"]
+            .as_str()
+            .expect("time")
+            .parse::<jiff::Timestamp>()
+            .is_ok(),
+        "time_committed is ISO 8601"
+    );
+    // Rows are strictly newest-first by time_committed.
+    let times: Vec<&str> = rows
+        .iter()
+        .map(|r| r["time_committed"].as_str().expect("time"))
+        .collect();
+    let mut desc = times.clone();
+    desc.sort_unstable();
+    desc.reverse();
+    assert_eq!(times, desc, "rows are newest-first");
+
+    // Pagination: offset 1 / fetch 1 → exactly the second row; total unchanged.
+    let paged = svc
+        .ehr_contribution_list_page(ehr_uuid, 1, 1)
+        .await
+        .expect("paged list");
+    assert_eq!(paged["total"], 3);
+    assert_eq!(paged["rows"].as_array().expect("rows").len(), 1);
+    assert_eq!(
+        paged["rows"][0]["uid"], rows[1]["uid"],
+        "offset 1 yields the second row"
+    );
+}
+
 /// A `TerminologyCode`-shaped `UPDATE_VERSION.lifecycle_state` (the wire shape
 /// per ITS-REST `UpdateVersion.yaml`): `{terminology_id, code_string}`.
 fn lifecycle(code: &str) -> Value {

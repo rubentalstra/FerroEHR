@@ -141,6 +141,34 @@ pub(super) async fn run(
                 _ => Ok(negotiate::respond(h, ok, &body)),
             }
         }
+        "contribution_list" => {
+            // OUR OWN EXTENSION — the ITS-REST contract defines only the by-uid
+            // CONTRIBUTION GET; this paged, newest-first list of the EHR's
+            // CONTRIBUTIONs is not part of the openEHR REST API.
+            let ehr_id_raw = parts.path.get("ehr_id").ok_or_else(|| {
+                RestError(ApiError::BadRequest(
+                    "missing path parameter 'ehr_id'".to_owned(),
+                ))
+            })?;
+            let ehr_id = parse_ehr_id(ehr_id_raw)?;
+            // `offset` defaults to 0 (negative → 0); `fetch` defaults to 20 and is
+            // capped at 100 (a non-positive value falls back to the default).
+            let offset = params::query_param(q, "offset")
+                .and_then(|v| v.parse::<i64>().ok())
+                .filter(|o| *o >= 0)
+                .unwrap_or(0);
+            let fetch = params::query_param(q, "fetch")
+                .and_then(|v| v.parse::<i64>().ok())
+                .filter(|f| *f > 0)
+                .unwrap_or(20)
+                .min(100);
+            let body = state
+                .backend()
+                .ehr_contribution_list_page(ehr_id, offset, fetch)
+                .await?;
+            // A JSON-only DTO (no spec-typed canonical-XML shape) → `respond`.
+            Ok(negotiate::respond(h, ok, &body))
+        }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted ehr operation: {other}"
         )))),
