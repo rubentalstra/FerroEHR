@@ -221,7 +221,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          apt-get update && apt-get install -y --no-install-recommends curl ca-certificates
+          # perl (full, for FindBin) + make: `cargo install cargo-leptos`
+          # compiles openssl-sys from vendored source inside the slim image,
+          # and OpenSSL's Configure needs them (FindBin is absent from
+          # perl-base — the v3.1.1 admin-ui asset run failed exactly there).
+          apt-get update && apt-get install -y --no-install-recommends \
+            curl ca-certificates perl make
           rustup target add wasm32-unknown-unknown
           curl -sSfL -o /usr/local/bin/tailwindcss \
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
