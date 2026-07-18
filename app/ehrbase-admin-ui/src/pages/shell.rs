@@ -41,6 +41,8 @@ fn nav_key(path: &str) -> &'static str {
         "/queries"
     } else if path.starts_with("/ehrs") {
         "/ehrs"
+    } else if path.starts_with("/audit") {
+        "/audit"
     } else if path.starts_with("/system") {
         "/system"
     } else {
@@ -496,6 +498,8 @@ mod tests {
         assert_eq!(nav_key("/templates/vitals.v1"), "/templates");
         assert_eq!(nav_key("/queries/builder"), "/queries");
         assert_eq!(nav_key("/ehrs/abc/compositions/xyz"), "/ehrs");
+        assert_eq!(nav_key("/audit"), "/audit");
+        assert_eq!(nav_key("/audit?patient=p-1"), "/audit");
         assert_eq!(nav_key("/system"), "/system");
         assert_eq!(nav_key("/unknown"), "/");
     }

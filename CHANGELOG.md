@@ -118,6 +118,12 @@ workflow refuses a tag that has no matching section here.
   stays plain HTTP.
 - A dedicated **Audit trail (IHE ATNA)** book chapter covering the dual
   formats, the sinks, the ITI-81 retrieval, fail-mode semantics, and mTLS.
+- **Admin console — the Audit log screen** (`/audit`): browse the CDR's
+  ATNA security audit trail through the standard ITI-81 retrieval, with
+  URL-driven filters (event-time window, patient, principal, outcome,
+  action), pagination, and a per-row view of the full stored FHIR
+  `AuditEvent`. Admin-only under RBAC; a disabled local audit store and a
+  no-matches filter each render their own first-class state.
 
 ### Changed
 
