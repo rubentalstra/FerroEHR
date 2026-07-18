@@ -1,12 +1,12 @@
 //! The `/ehrs/{ehr_id}` screen — EHR detail: status / directory / compositions /
 //! contributions tabs.
 //!
-//! Four `thaw::TabList` tabs over one EHR. Each tab's data is a `#[server]`
-//! fn co-located here; the resources are created once and their sources are
-//! gated on the active tab, so only the visible tab fetches (rules §6 — never
-//! fetch-in-effect). The tab bodies are always mounted and toggled with
-//! `class:hidden`, keeping the server and client view structure identical
-//! (rules §8 — no `cfg!`-branched structure).
+//! Four URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
+//! `#[server]` fn co-located here; the resources are created once and their
+//! sources are gated on the active tab (a `Memo` over the query map), so only
+//! the visible tab fetches (rules §6 — never fetch-in-effect). The tab bodies
+//! are always mounted and toggled with `class:hidden`, keeping the server and
+//! client view structure identical (rules §8 — no `cfg!`-branched structure).
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound (ITS-REST EHR + Query APIs). User input
@@ -24,7 +24,11 @@ use leptos_meta::Title;
 use leptos_router::components::A;
 use serde_json::Value;
 
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::field::{BTN_SECONDARY, INPUT, LABEL};
 use crate::components::format_view::DocumentPane;
+use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::surface::CARD_PAD;
 use crate::error::AdminUiError;
 use crate::pages::ehrs::{ResultPage, cell_text, paging_controls, table_skeleton};
 // Server-side helpers, compiled only where the #[server] bodies exist.
@@ -160,7 +164,14 @@ pub fn EhrDetailPage() -> impl IntoView {
             .and_then(|s| s.parse::<u32>().ok())
             .unwrap_or(0)
     });
-    let selected = RwSignal::new("status".to_owned());
+    // Tab state lives in the URL (`?tab=`, rules §9): shareable and refresh-safe.
+    // A Memo (not an Effect) derives the active tab, defaulting to "status".
+    let selected: Memo<String> = Memo::new(move |_| {
+        query
+            .with(|q| q.get("tab"))
+            .filter(|t| !t.is_empty())
+            .unwrap_or_else(|| "status".to_owned())
+    });
 
     let status = status_section(ehr_id, selected);
     let directory = directory_section(ehr_id, selected);
@@ -173,21 +184,17 @@ pub fn EhrDetailPage() -> impl IntoView {
         format!("EHR {short}…")
     });
 
+    let tabs = tab_bar(ehr_id, selected);
+
     view! {
         <Title text="EHR detail · ehrbase-admin" />
-        <div class="p-4">
-            <div class="flex items-center gap-3 mb-4">
-                <A href="/ehrs" attr:class="text-sm text-blue-600 hover:underline">
-                    "← EHRs"
-                </A>
-                <h1 class="text-xl font-semibold font-mono">{move || heading.get()}</h1>
-            </div>
-            <thaw::TabList selected_value=selected>
-                <thaw::Tab value="status">"Status"</thaw::Tab>
-                <thaw::Tab value="directory">"Directory"</thaw::Tab>
-                <thaw::Tab value="compositions">"Compositions"</thaw::Tab>
-                <thaw::Tab value="contributions">"Contributions"</thaw::Tab>
-            </thaw::TabList>
+        <div class="p-6">
+            <PageHeader
+                title=Signal::derive(move || heading.get())
+                crumbs=vec![Crumb::new("EHRs", "/ehrs")]
+                mono=true
+            />
+            {tabs}
             <div class="mt-4">
                 <div class:hidden=move || selected.get() != "status">{status}</div>
                 <div class:hidden=move || selected.get() != "directory">{directory}</div>
@@ -200,10 +207,39 @@ pub fn EhrDetailPage() -> impl IntoView {
     }
 }
 
+/// The URL-driven tab bar: four pill anchors (`?tab=…`) replacing the thaw
+/// `TabList`. Selected = `bg-accent-subtle text-accent-ink`; idle =
+/// `text-ink-muted hover:bg-sunken`. Plain anchors keep the tabs working
+/// before hydration (the router intercepts them once WASM loads).
+fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
+    let link = move |value: &'static str, label: &'static str| {
+        let href = move || format!("/ehrs/{}?tab={value}", ehr_id.get());
+        let class = move || {
+            if selected.get() == value {
+                "rounded-control px-3 py-1.5 text-sm font-medium bg-accent-subtle text-accent-ink"
+            } else {
+                "rounded-control px-3 py-1.5 text-sm font-medium text-ink-muted hover:bg-sunken"
+            }
+        };
+        view! {
+            <a href=href class=class>
+                {label}
+            </a>
+        }
+    };
+    view! {
+        <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
+            {link("status", "Status")} {link("directory", "Directory")}
+            {link("compositions", "Compositions")} {link("contributions", "Contributions")}
+        </div>
+    }
+    .into_any()
+}
+
 /// Status tab: `fetch_ehr_status` → queryable/modifiable badges, the subject,
 /// and the raw JSON in a [`DocumentPane`]. The source is gated on the tab
 /// being active so it fetches only when shown.
-fn status_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView {
+fn status_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let resource = Resource::new(
         move || (selected.get() == "status").then(|| ehr_id.get()),
         |active| async move {
@@ -259,23 +295,24 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
         crate::components::format_view::pretty_body(body, crate::format::ReprFormat::CanonicalJson);
     let doc_sig = RwSignal::new(pretty);
     Ok(view! {
-        <div class="flex flex-col gap-3">
+        <div class=format!("{CARD_PAD} flex flex-col gap-3")>
             <div class="flex flex-wrap gap-2 items-center">
                 {capability_badge("queryable", queryable)}
                 {capability_badge("modifiable", modifiable)}
             </div>
             <div class="text-sm">
-                <span class="font-medium text-neutral-500">"subject: "</span>
-                <span class="font-mono break-all">{subject}</span>
+                <span class="font-medium text-ink-muted">"subject: "</span>
+                <span class="font-mono break-all text-ink">{subject}</span>
             </div>
             {(!queryable)
                 .then(|| {
                     view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Warning>
-                            <thaw::MessageBarBody>
-                                "This EHR is not queryable — AQL over it returns nothing."
-                            </thaw::MessageBarBody>
-                        </thaw::MessageBar>
+                        <div
+                            role="status"
+                            class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
+                        >
+                            "This EHR is not queryable — AQL over it returns nothing."
+                        </div>
                     }
                 })}
             <DocumentPane body=doc_sig />
@@ -284,16 +321,16 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
     .into_any())
 }
 
-/// A green/red capability chip for an `EHR_STATUS` boolean flag.
+/// An ok/danger capability chip for an `EHR_STATUS` boolean flag.
 fn capability_badge(label: &'static str, on: bool) -> AnyView {
     let (mark, class) = if on {
-        ("✓", "text-emerald-600 border-emerald-500")
+        ("✓", "bg-ok-subtle text-ok")
     } else {
-        ("✗", "text-red-600 border-red-500")
+        ("✗", "bg-danger-subtle text-danger")
     };
     view! {
         <span class=format!(
-            "inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs font-medium {class}",
+            "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-xs font-medium {class}",
         )>{mark} " " {label}</span>
     }
     .into_any()
@@ -301,7 +338,7 @@ fn capability_badge(label: &'static str, on: bool) -> AnyView {
 
 /// Directory tab: `fetch_directory` → a recursive `FOLDER` tree, or the
 /// "no directory" empty state when the CDR 404s.
-fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView {
+fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let resource = Resource::new(
         move || (selected.get() == "directory").then(|| ehr_id.get()),
         |active| async move {
@@ -323,7 +360,7 @@ fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyV
                                 // Resolve inside the Suspense: an SSR'd ErrorBoundary fallback
                                 // mismatches at hydration in leptos 0.8 (E2E console gate).
                                 view! {
-                                    <p class="text-sm text-neutral-500">
+                                    <p class="text-sm text-ink-muted">
                                         "No directory for this EHR."
                                     </p>
                                 }
@@ -348,7 +385,12 @@ fn directory_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyV
 fn directory_body(body: &str) -> Result<AnyView, AdminUiError> {
     let doc: Value = serde_json::from_str(body)
         .map_err(|e| AdminUiError::Internal(format!("directory JSON: {e}")))?;
-    Ok(view! { <ul class="text-sm">{folder_node(&doc)}</ul> }.into_any())
+    Ok(view! {
+        <section class=CARD_PAD>
+            <ul class="text-sm text-ink">{folder_node(&doc)}</ul>
+        </section>
+    }
+    .into_any())
 }
 
 /// One `FOLDER` node: its name, its child folders (recursively), and its
@@ -372,10 +414,8 @@ fn folder_node(folder: &Value) -> AnyView {
         .unwrap_or_default();
     view! {
         <li class="py-0.5">
-            <span class="font-medium">"📁 " {name}</span>
-            <ul class="pl-4 ml-2 border-l border-neutral-200 dark:border-neutral-700">
-                {subfolders} {items}
-            </ul>
+            <span class="font-medium text-ink">"📁 " {name}</span>
+            <ul class="pl-4 ml-2 border-l border-edge">{subfolders} {items}</ul>
         </li>
     }
     .into_any()
@@ -395,7 +435,7 @@ fn item_ref_node(item: &Value) -> AnyView {
         .unwrap_or("OBJECT")
         .to_owned();
     view! {
-        <li class="py-0.5 text-neutral-600 dark:text-neutral-400">
+        <li class="py-0.5 text-ink-muted">
             "• " <span class="uppercase text-xs mr-1">{ref_type}</span>
             <span class="font-mono break-all">{id}</span>
         </li>
@@ -409,7 +449,7 @@ fn item_ref_node(item: &Value) -> AnyView {
 fn compositions_section(
     ehr_id: Signal<String>,
     offset: Signal<u32>,
-    selected: RwSignal<String>,
+    selected: Memo<String>,
 ) -> AnyView {
     let resource = Resource::new(
         move || (selected.get() == "compositions").then(|| (ehr_id.get(), offset.get())),
@@ -439,16 +479,9 @@ fn compositions_section(
 /// suffix stripped for the link, the full uid kept visible), plus paging.
 fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
     if page.rows.is_empty() {
-        return view! { <p class="text-sm text-neutral-500">"No compositions in this EHR."</p> }
+        return view! { <p class="text-sm text-ink-muted">"No compositions in this EHR."</p> }
             .into_any();
     }
-    let headers = page
-        .columns
-        .iter()
-        .map(|name| {
-            view! { <th class="text-left font-medium text-neutral-500 py-1 pr-4">{name.clone()}</th> }
-        })
-        .collect::<Vec<_>>();
     let rows = page.rows.clone();
     let ehr_id_owned = ehr_id.to_owned();
     let body = view! {
@@ -459,17 +492,11 @@ fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
         >
             {composition_row(&row, &ehr_id_owned)}
         </For>
-    };
+    }
+    .into_any();
     let paging = paging_controls(page.offset, page.rows.len(), &format!("/ehrs/{ehr_id}"));
     view! {
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-                <thead>
-                    <tr class="border-b border-neutral-200 dark:border-neutral-700">{headers}</tr>
-                </thead>
-                <tbody>{body}</tbody>
-            </table>
-        </div>
+        {table_shell(&["Composition", "Name", "Template", "Started"], body)}
         {paging}
     }
     .into_any()
@@ -488,20 +515,19 @@ fn composition_row(row: &[Value], ehr_id: &str) -> AnyView {
             if i == 0 {
                 let href = format!("/ehrs/{ehr_id}/compositions/{vo_id}");
                 view! {
-                    <td class="py-1 pr-4 font-mono">
-                        <A href=href attr:class="text-blue-600 hover:underline">
+                    <td class=CELL_MONO>
+                        <A href=href attr:class="text-accent hover:underline">
                             {text}
                         </A>
                     </td>
                 }
                 .into_any()
             } else {
-                view! { <td class="py-1 pr-4">{text}</td> }.into_any()
+                view! { <td class=CELL>{text}</td> }.into_any()
             }
         })
         .collect::<Vec<_>>();
-    view! { <tr class="border-b border-neutral-100 dark:border-neutral-800">{cells}</tr> }
-        .into_any()
+    view! { <tr class=ROW>{cells}</tr> }.into_any()
 }
 
 /// The versioned-object id from an `OBJECT_VERSION_ID` value: everything
@@ -516,7 +542,7 @@ fn versioned_object_id(uid: &str) -> &str {
 /// `GET /ehr/{ehr_id}/contribution/{contribution_uid}` exists), so this is a
 /// lookup box. Submitting a uid drives [`fetch_contribution`] under a
 /// `<Transition>`.
-fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> AnyView {
+fn contributions_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     let uid_input = RwSignal::new(String::new());
     let submitted = RwSignal::new(String::new());
     let on_click = move |_| submitted.set(uid_input.get().trim().to_owned());
@@ -533,21 +559,26 @@ fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> 
         },
     );
     let lookup = view! {
-        <div class="mb-4 flex items-end gap-2">
-            <div class="flex flex-col gap-1">
-                <label class="text-sm font-medium" r#for="contribution-uid">
-                    "Contribution uid"
-                </label>
-                <thaw::Input
-                    id="contribution-uid"
-                    value=uid_input
-                    placeholder="contribution uid (UUID)"
-                />
+        <section class=format!("{CARD_PAD} mb-4")>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="contribution-uid">
+                        "Contribution uid"
+                    </label>
+                    <input
+                        id="contribution-uid"
+                        type="text"
+                        class=INPUT
+                        placeholder="contribution uid (UUID)"
+                        prop:value=move || uid_input.get()
+                        on:input:target=move |ev| uid_input.set(ev.target().value())
+                    />
+                </div>
+                <button type="button" class=BTN_SECONDARY on:click=on_click>
+                    "Look up"
+                </button>
             </div>
-            <thaw::Button appearance=thaw::ButtonAppearance::Primary on_click=on_click>
-                "Look up"
-            </thaw::Button>
-        </div>
+        </section>
     }
     .into_any();
     let result = view! {
@@ -559,7 +590,7 @@ fn contributions_section(ehr_id: Signal<String>, selected: RwSignal<String>) -> 
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
-                            <p class="text-sm text-neutral-500">
+                            <p class="text-sm text-ink-muted">
                                 "Enter a contribution uid to look it up."
                             </p>
                         }

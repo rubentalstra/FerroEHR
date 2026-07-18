@@ -10,12 +10,18 @@
 //! reach client-visible state; the view is composed from `.into_any()`-erased
 //! section locals; async is a [`Resource`] read under `<Transition>` and an
 //! [`Action`] for the mutating upload (refetch the list on the action's
-//! version); the table emits an explicit `<tbody>` (via [`thaw::TableBody`]).
+//! version); the table is the shared [`table_shell`], which emits an explicit
+//! `<tbody>` (hydration correctness — rules §8).
 
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
 
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::empty_state::EmptyState;
+use crate::components::field::INPUT;
+use crate::components::page_header::PageHeader;
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 
 /// One row of the template list, distilled from the ITS-REST Definition list
@@ -128,6 +134,7 @@ pub async fn upload_template(opt_xml: String) -> Result<String, AdminUiError> {
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn TemplatesPage() -> impl IntoView {
+    let toaster = thaw::ToasterInjection::expect_context();
     let filter = RwSignal::new(String::new());
     let upload = Action::new(|opt_xml: &String| {
         let opt_xml = opt_xml.clone();
@@ -138,35 +145,55 @@ pub fn TemplatesPage() -> impl IntoView {
         |_| async move { list_templates().await },
     );
 
-    let upload_section = upload_bar(upload);
+    // Success feedback is a transient toast (the CDR-diagnostic failure path
+    // keeps its inline MessageBar). Dispatching a toast is a side-effect on the
+    // outside world (the thaw toaster), so an Effect is its correct home
+    // (rules §2); it never runs on the server pass.
+    Effect::new(move |_| {
+        if let Some(Ok(_)) = upload.value().get() {
+            toast_success(
+                toaster,
+                "Template uploaded",
+                "The operational template was accepted by the CDR.",
+            );
+        }
+    });
+
+    let action_slot = upload_trigger(upload);
+    let feedback = upload_feedback(upload);
     let table_section = templates_table(filter, list);
 
     view! {
         <Title text="Templates" />
-        <div class="p-4">
-            <div class="flex items-center justify-between mb-4">
-                <h1 class="text-xl font-semibold">"Templates"</h1>
-                {upload_section}
-            </div>
+        <div class="p-6">
+            <PageHeader
+                title="Templates"
+                subtitle="Operational templates registered in the CDR (ADL 1.4)."
+            >
+                {action_slot}
+            </PageHeader>
             <div class="mb-3">
                 <input
                     type="text"
-                    class="w-full max-w-sm rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+                    class=format!("w-full max-w-sm {INPUT}")
                     placeholder="filter by id or concept…"
                     prop:value=move || filter.get()
                     on:input:target=move |ev| filter.set(ev.target().value())
                 />
             </div>
+            {feedback}
             {table_section}
         </div>
     }
 }
 
-/// The upload bar: a [`thaw::Upload`] trigger whose selected file is read to
-/// text browser-side (the `File` Web API via the component, then
+/// The upload trigger for the page-header action slot: a [`thaw::Upload`] whose
+/// selected file is read to text browser-side (the `File` Web API via the
+/// component, then
 /// [`Blob::text`](https://developer.mozilla.org/en-US/docs/Web/API/Blob/text)),
-/// dispatched to the [`upload_template`] action, plus the action's feedback.
-fn upload_bar(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
+/// dispatched to the [`upload_template`] action. Kept as `thaw::Upload` so it
+/// renders a real `<input type="file">`.
+fn upload_trigger(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
     // `custom_request` runs only in the browser (a file-selection event), so
     // reading the file with the Web `File`/`Blob` API here is hydration-safe
     // (rules §8 — browser-only APIs never run on the server pass).
@@ -185,25 +212,21 @@ fn upload_bar(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
     };
 
     view! {
-        <div class="flex items-center gap-3">
-            <thaw::Upload accept=Signal::derive(|| ".opt,.xml".to_owned()) custom_request>
-                <thaw::Button appearance=thaw::ButtonAppearance::Primary>
-                    "Upload OPT ▲"
-                </thaw::Button>
-            </thaw::Upload>
-            {upload_feedback(upload)}
-        </div>
+        <thaw::Upload accept=Signal::derive(|| ".opt,.xml".to_owned()) custom_request>
+            <thaw::Button appearance=thaw::ButtonAppearance::Primary>"Upload OPT ▲"</thaw::Button>
+        </thaw::Upload>
     }
     .into_any()
 }
 
-/// The upload action's inline state: a pending hint, the CDR diagnostic on
-/// failure (verbatim), or a success confirmation.
+/// The upload action's inline state: a pending hint plus the CDR diagnostic on
+/// failure (verbatim — an error payload worth reading stays inline). Success is
+/// reported by a toast (see [`TemplatesPage`]).
 fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
     view! {
-        <div class="text-sm">
+        <div class="text-sm mb-3">
             <Show when=move || upload.pending().get()>
-                <span class="text-neutral-500">"Uploading…"</span>
+                <span class="text-ink-muted">"Uploading…"</span>
             </Show>
             {move || match upload.value().get() {
                 Some(Err(error)) => {
@@ -214,15 +237,7 @@ fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyV
                     }
                         .into_any()
                 }
-                Some(Ok(_)) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Success>
-                            <thaw::MessageBarBody>"Template uploaded."</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                None => ().into_any(),
+                _ => ().into_any(),
             }}
         </div>
     }
@@ -265,11 +280,11 @@ fn table_skeleton() -> impl IntoView {
 fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
     if rows.is_empty() {
         return view! {
-            <thaw::MessageBar intent=thaw::MessageBarIntent::Info>
-                <thaw::MessageBarBody>
-                    "No templates — upload your first OPT."
-                </thaw::MessageBarBody>
-            </thaw::MessageBar>
+            <EmptyState
+                icon=icondata_lu::LuFileCode2
+                message="No templates yet"
+                hint="Upload your first operational template (OPT/XML) with the Upload OPT button above."
+            />
         }
         .into_any();
     }
@@ -289,32 +304,22 @@ fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
         !needle.is_empty() && !empty_rows.iter().any(|row| matches(row, &needle))
     };
 
+    let body = view! {
+        <For
+            each=move || {
+                let needle = filter.get().to_lowercase();
+                each_rows.iter().filter(|&row| matches(row, &needle)).cloned().collect::<Vec<_>>()
+            }
+            key=|row| row.template_id.clone()
+            children=row_view
+        />
+    }
+    .into_any();
+
     view! {
-        <thaw::Table>
-            <thaw::TableHeader>
-                <thaw::TableRow>
-                    <thaw::TableHeaderCell>"template_id"</thaw::TableHeaderCell>
-                    <thaw::TableHeaderCell>"concept"</thaw::TableHeaderCell>
-                    <thaw::TableHeaderCell>"created"</thaw::TableHeaderCell>
-                </thaw::TableRow>
-            </thaw::TableHeader>
-            <thaw::TableBody>
-                <For
-                    each=move || {
-                        let needle = filter.get().to_lowercase();
-                        each_rows
-                            .iter()
-                            .filter(|&row| matches(row, &needle))
-                            .cloned()
-                            .collect::<Vec<_>>()
-                    }
-                    key=|row| row.template_id.clone()
-                    children=row_view
-                />
-            </thaw::TableBody>
-        </thaw::Table>
+        {table_shell(&["Template ID", "Concept", "Created"], body)}
         <Show when=none_match>
-            <p class="mt-3 text-sm text-neutral-500">"No templates match the filter."</p>
+            <p class="mt-3 text-sm text-ink-muted">"No templates match the filter."</p>
         </Show>
     }
     .into_any()
@@ -328,19 +333,14 @@ fn row_view(row: TemplateRow) -> impl IntoView {
     // segment on the client. Add it when the CDR corpus proves such an id.
     let href = format!("/templates/{}", row.template_id);
     view! {
-        <thaw::TableRow>
-            <thaw::TableCell>
-                <leptos_router::components::A
-                    href=href
-                    attr:class="text-blue-600 hover:underline font-mono"
-                >
+        <tr class=ROW>
+            <td class=CELL_MONO>
+                <leptos_router::components::A href=href attr:class="text-accent hover:underline">
                     {row.template_id}
                 </leptos_router::components::A>
-            </thaw::TableCell>
-            <thaw::TableCell>{row.concept}</thaw::TableCell>
-            <thaw::TableCell>
-                <span class="font-mono text-xs">{row.created}</span>
-            </thaw::TableCell>
-        </thaw::TableRow>
+            </td>
+            <td class=CELL>{row.concept}</td>
+            <td class=CELL_MONO>{row.created}</td>
+        </tr>
     }
 }

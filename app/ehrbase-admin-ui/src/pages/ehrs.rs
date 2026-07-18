@@ -24,6 +24,11 @@ use leptos_router::components::A;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::empty_state::EmptyState;
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
+use crate::components::page_header::PageHeader;
+use crate::components::surface::CARD_PAD;
 use crate::error::AdminUiError;
 
 #[cfg(feature = "ssr")]
@@ -144,8 +149,8 @@ pub fn EhrsPage() -> impl IntoView {
 
     view! {
         <Title text="EHRs · ehrbase-admin" />
-        <div class="p-4">
-            <h1 class="text-xl font-semibold mb-4">"EHRs"</h1>
+        <div class="p-6">
+            <PageHeader title="EHRs" subtitle="Find an EHR by id, or browse the most recent." />
             {finder}
             {table}
         </div>
@@ -183,21 +188,29 @@ fn finder_section() -> AnyView {
     // a route which redirects to /ehrs/{id}) so the finder works before WASM
     // loads; the button+navigate path covers the hydrated case for now.
     view! {
-        <div class="mb-6 flex items-end gap-2">
-            <div class="flex flex-col gap-1">
-                // Plain label + explicit stable input id: thaw::Field hardwires
-                // its <label for> to a per-render random UUID, breaking
-                // SSR↔hydration determinism (rules §8); an explicit id on
-                // thaw::Input keeps the association deterministic without Field.
-                <label class="text-sm font-medium" r#for="ehr-lookup">
-                    "EHR id or subject id"
-                </label>
-                <thaw::Input id="ehr-lookup" value=lookup placeholder="ehr_id (UUID)" />
+        <section class=format!("{CARD_PAD} mb-6")>
+            <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    // Plain label + explicit stable input id keep the SSR↔hydration
+                    // association deterministic (rules §8) and preserve the E2E
+                    // contract (`#ehr-lookup`).
+                    <label class=LABEL r#for="ehr-lookup">
+                        "EHR id or subject id"
+                    </label>
+                    <input
+                        id="ehr-lookup"
+                        type="text"
+                        class=INPUT
+                        placeholder="ehr_id (UUID)"
+                        prop:value=move || lookup.get()
+                        on:input:target=move |ev| lookup.set(ev.target().value())
+                    />
+                </div>
+                <button type="button" class=BTN_PRIMARY on:click=on_click>
+                    "Find"
+                </button>
             </div>
-            <thaw::Button appearance=thaw::ButtonAppearance::Primary on_click=on_click>
-                "Find"
-            </thaw::Button>
-        </div>
+        </section>
     }
     .into_any()
 }
@@ -228,15 +241,15 @@ fn recent_ehrs_section(offset: Signal<u32>) -> AnyView {
 /// plus prev/next paging links. The empty page is a first-class state.
 fn ehrs_table(page: &ResultPage) -> AnyView {
     if page.rows.is_empty() {
-        return view! { <p class="text-sm text-neutral-500">"No EHRs found."</p> }.into_any();
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuDatabase
+                message="No EHRs found"
+                hint="Create an EHR through the CDR, then browse it here."
+            />
+        }
+        .into_any();
     }
-    let headers = page
-        .columns
-        .iter()
-        .map(|name| {
-            view! { <th class="text-left font-medium text-neutral-500 py-1 pr-4">{name.clone()}</th> }
-        })
-        .collect::<Vec<_>>();
     let rows = page.rows.clone();
     let body = view! {
         <For
@@ -246,17 +259,11 @@ fn ehrs_table(page: &ResultPage) -> AnyView {
         >
             {ehrs_row(&row)}
         </For>
-    };
+    }
+    .into_any();
     let paging = paging_controls(page.offset, page.rows.len(), "/ehrs");
     view! {
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-                <thead>
-                    <tr class="border-b border-neutral-200 dark:border-neutral-700">{headers}</tr>
-                </thead>
-                <tbody>{body}</tbody>
-            </table>
-        </div>
+        {table_shell(&["EHR ID", "Created"], body)}
         {paging}
     }
     .into_any()
@@ -274,20 +281,19 @@ fn ehrs_row(row: &[Value]) -> AnyView {
             if i == 0 {
                 let href = format!("/ehrs/{id}");
                 view! {
-                    <td class="py-1 pr-4 font-mono">
-                        <A href=href attr:class="text-blue-600 hover:underline">
+                    <td class=CELL_MONO>
+                        <A href=href attr:class="text-accent hover:underline">
                             {text}
                         </A>
                     </td>
                 }
                 .into_any()
             } else {
-                view! { <td class="py-1 pr-4">{text}</td> }.into_any()
+                view! { <td class=CELL>{text}</td> }.into_any()
             }
         })
         .collect::<Vec<_>>();
-    view! { <tr class="border-b border-neutral-100 dark:border-neutral-800">{cells}</tr> }
-        .into_any()
+    view! { <tr class=ROW>{cells}</tr> }.into_any()
 }
 
 /// Prev/next paging links for an AQL-paged table at `base` (e.g. `/ehrs`).
@@ -298,7 +304,7 @@ pub(crate) fn paging_controls(offset: u32, row_count: usize, base: &str) -> AnyV
     let prev = (offset > 0).then(|| {
         let href = format!("{base}?offset={}", offset.saturating_sub(PAGE_SIZE));
         view! {
-            <A href=href attr:class="text-sm text-blue-600 hover:underline">
+            <A href=href attr:class=BTN_SECONDARY>
                 "← Previous"
             </A>
         }
@@ -307,13 +313,13 @@ pub(crate) fn paging_controls(offset: u32, row_count: usize, base: &str) -> AnyV
     let next = full.then(|| {
         let href = format!("{base}?offset={}", offset.saturating_add(PAGE_SIZE));
         view! {
-            <A href=href attr:class="text-sm text-blue-600 hover:underline">
+            <A href=href attr:class=BTN_SECONDARY>
                 "Next →"
             </A>
         }
         .into_any()
     });
-    view! { <div class="mt-3 flex gap-4">{prev}{next}</div> }.into_any()
+    view! { <div class="mt-3 flex gap-2">{prev}{next}</div> }.into_any()
 }
 
 /// The `<Transition>` fallback shared by the AQL tables: three skeleton bars.

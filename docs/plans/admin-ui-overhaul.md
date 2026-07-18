@@ -106,6 +106,15 @@ template activate/deactivate (not in ITS-REST), SNOMED-expression criteria
 (needs CDR-side AQL terminology support), GROUP BY/aggregates beyond
 COUNT, proportion denominator, islands mode, multitenancy/accounts UI.
 
+## B2. Image-based E2E (owner directive 2026-07-18 — "the true experience")
+
+The battery must also run against the **composed console image**, exactly
+as the CDR's conformance suite tests the composed CDR image:
+`scripts/ui-e2e.sh` gains `UI_E2E_IMAGE=1` (compose up the existing
+`ehrbase-admin-ui` service instead of host-building; same journeys, same
+docs-shots), and CI gains an image-mode battery job so every merge
+verifies the shipped artifact, not just the host build.
+
 ## C. Delivery
 
 - Branch `claude/admin-ui-design-overhaul`; **A lands first** (tokens +

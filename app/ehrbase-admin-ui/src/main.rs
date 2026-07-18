@@ -85,6 +85,12 @@ async fn main() -> anyhow::Result<()> {
             "/auth/oidc/callback",
             axum::routing::get(ehrbase_admin_ui::oidc::callback),
         )
+        // Result export: a plain form-POST download (no WASM required); the
+        // handler enforces the console session itself like every server fn.
+        .route(
+            "/export/aql",
+            axum::routing::post(ehrbase_admin_ui::export::export_aql),
+        )
         .leptos_routes_with_context(
             &leptos_options,
             routes,

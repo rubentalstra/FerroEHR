@@ -53,9 +53,9 @@ fn nav_key(path: &str) -> &'static str {
 /// Browser-only callers (Effect / click handlers).
 fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
     theme.set(if dark {
-        thaw::Theme::dark()
+        crate::theme::console_dark()
     } else {
-        thaw::Theme::light()
+        crate::theme::console_light()
     });
     if let Some(root) = document().document_element() {
         let list = root.class_list();

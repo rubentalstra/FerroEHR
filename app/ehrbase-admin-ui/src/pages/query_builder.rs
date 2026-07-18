@@ -32,6 +32,11 @@ use crate::builder::model::{
     BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, OrderRule, QueryShape,
     SelectedColumn,
 };
+use crate::components::data_table::{CELL, ROW, table_shell};
+use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, SELECT};
+use crate::components::page_header::PageHeader;
+use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
+use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 use crate::pages::ehrs::{PAGE_SIZE, ResultPage, cell_text, table_skeleton};
 use crate::pages::template_detail::fetch_template_catalog;
@@ -105,6 +110,14 @@ pub fn QueryBuilderPage() -> impl IntoView {
             let (name, aql) = input.clone();
             async move { store_query(name, aql).await }
         });
+    // A successful store fires a toast (rules: Effect = sync with the outside
+    // world; no signal is written). The CDR error stays inline (save_feedback).
+    let toaster = thaw::ToasterInjection::expect_context();
+    Effect::new(move |_| {
+        if let Some(Ok(())) = save_action.value().get() {
+            toast_success(toaster, "Query saved", "");
+        }
+    });
 
     // The live AQL / validation, recomputed from the whole state on any change.
     let preview = Memo::new(move |_| ctx.query.with(to_aql));
@@ -118,26 +131,23 @@ pub fn QueryBuilderPage() -> impl IntoView {
 
     view! {
         <Title text="Query builder" />
-        <div class="p-4 space-y-4">
-            <h1 class="text-xl font-semibold">"Query builder"</h1>
+        <div class="p-6 space-y-4">
+            <PageHeader
+                title="Query builder"
+                subtitle="Pick a template, walk its paths, and turn data-value leaves into criteria and columns."
+            />
             {template_step}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <thaw::Card>
-                    <thaw::CardHeader>
-                        <div class="text-sm font-semibold">"Path catalog"</div>
-                    </thaw::CardHeader>
-                    <div class="p-3 overflow-auto max-h-[70vh]">{picker}</div>
-                </thaw::Card>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                <section class="rounded-card border border-edge bg-raised shadow-card p-4 overflow-auto max-h-[70vh]">
+                    <h2 class=CARD_TITLE>"Path catalog"</h2>
+                    {picker}
+                </section>
                 <div class="lg:col-span-2 space-y-4">
-                    <thaw::Card>
-                        <thaw::CardHeader>
-                            <div class="text-sm font-semibold">"Criteria"</div>
-                        </thaw::CardHeader>
-                        <div class="p-3">{criteria}</div>
-                    </thaw::Card>
-                    <thaw::Card>
-                        <div class="p-3">{output}</div>
-                    </thaw::Card>
+                    <section class=CARD_PAD>
+                        <h2 class=CARD_TITLE>"Criteria"</h2>
+                        {criteria}
+                    </section>
+                    <section class=CARD_PAD>{output}</section>
                 </div>
             </div>
             {preview_run}
@@ -160,13 +170,13 @@ fn template_step_section(
     templates: Resource<Result<Vec<crate::pages::templates::TemplateRow>, AdminUiError>>,
 ) -> AnyView {
     view! {
-        <thaw::Card>
-            <div class="p-3 flex flex-col gap-1 max-w-md">
-                <label class="text-sm font-medium" r#for="qb-template">
+        <section class=CARD_PAD>
+            <div class="flex flex-col gap-1 max-w-md">
+                <label class=LABEL r#for="qb-template">
                     "Template"
                 </label>
                 <Suspense fallback=move || {
-                    view! { <span class="text-sm text-neutral-500">"Loading templates…"</span> }
+                    view! { <span class="text-sm text-ink-muted">"Loading templates…"</span> }
                 }>
                     {move || Suspend::new(async move {
                         match templates.await {
@@ -176,7 +186,7 @@ fn template_step_section(
                     })}
                 </Suspense>
             </div>
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
@@ -197,7 +207,7 @@ fn template_select(
     view! {
         <select
             id="qb-template"
-            class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-3 py-1.5 text-sm"
+            class=SELECT
             prop:value=move || ctx.query.with(|q| q.template_id.clone())
             on:change:target=move |ev| {
                 let id = ev.target().value();
@@ -235,7 +245,7 @@ fn picker_section(
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
-                            <p class="text-sm text-neutral-500">
+                            <p class="text-sm text-ink-muted">
                                 "Pick a template to browse its paths."
                             </p>
                         }
@@ -275,7 +285,7 @@ fn picker_node(
         view! {
             <button
                 type="button"
-                class="w-4 shrink-0 text-neutral-500"
+                class="w-4 shrink-0 text-ink-muted"
                 on:click=move |_| expanded.update(|open| *open = !*open)
             >
                 {move || if expanded.get() { "▾" } else { "▸" }}
@@ -294,17 +304,17 @@ fn picker_node(
         view! {
             <div class="flex items-center gap-2 flex-wrap">
                 <span>{label}</span>
-                <span class="font-mono text-xs text-neutral-500">{rm_type}</span>
+                <span class="font-mono text-xs text-ink-muted">{rm_type}</span>
                 <button
                     type="button"
-                    class="text-xs rounded border border-blue-500 text-blue-600 px-1.5 hover:bg-blue-50 dark:hover:bg-blue-950"
+                    class="text-xs rounded border border-accent text-accent px-1.5 hover:bg-accent-subtle"
                     on:click=move |_| add_criterion(ctx, &add_node)
                 >
                     "+ condition"
                 </button>
                 <button
                     type="button"
-                    class="text-xs rounded border border-emerald-500 text-emerald-600 px-1.5 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                    class="text-xs rounded border border-ok text-ok px-1.5 hover:bg-ok-subtle"
                     class:hidden=move || !shape_is_dv.get()
                     on:click=move |_| add_column(ctx, &col_node)
                 >
@@ -317,11 +327,11 @@ fn picker_node(
         view! {
             <button
                 type="button"
-                class="flex items-center gap-2 text-left rounded px-1 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                class="flex items-center gap-2 text-left rounded px-1 hover:bg-sunken"
                 on:click=move |_| expanded.update(|open| *open = !*open)
             >
                 <span>{label}</span>
-                <span class="font-mono text-xs text-neutral-500">{rm_type}</span>
+                <span class="font-mono text-xs text-ink-muted">{rm_type}</span>
             </button>
         }
         .into_any()
@@ -396,7 +406,7 @@ fn criteria_section(ctx: BuilderCtx) -> AnyView {
                 match snapshot.criteria {
                     None => {
                         view! {
-                            <p class="text-sm text-neutral-500">
+                            <p class="text-sm text-ink-muted">
                                 "No conditions yet — add one from the path catalog on the left."
                             </p>
                         }
@@ -441,9 +451,9 @@ fn leaf_card(criterion: &Criterion, path: Vec<usize>, ctx: BuilderCtx) -> AnyVie
     let not_path = path.clone();
     let remove_path = path;
     view! {
-        <div class="rounded border border-neutral-300 dark:border-neutral-700 p-2 bg-white dark:bg-neutral-900">
+        <div class="rounded-card border border-edge p-2 bg-raised">
             <div class="flex items-start justify-between gap-2">
-                <div class="text-sm">{sentence}</div>
+                <div class="text-sm text-ink">{sentence}</div>
                 <div class="flex gap-1 shrink-0">
                     <button
                         type="button"
@@ -457,7 +467,7 @@ fn leaf_card(criterion: &Criterion, path: Vec<usize>, ctx: BuilderCtx) -> AnyVie
                     </button>
                     <button
                         type="button"
-                        class="text-xs rounded border border-red-400 text-red-600 px-1.5 hover:bg-red-50 dark:hover:bg-red-950"
+                        class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
                         on:click=move |_| {
                             ctx.query.update(|q| remove_at(&mut q.criteria, &remove_path));
                             ctx.active_path.set(Vec::new());
@@ -496,11 +506,8 @@ fn group_card(
     let toolbar = group_toolbar(op_word, negated, is_root, path, ctx);
 
     view! {
-        <div class="rounded border border-neutral-300 dark:border-neutral-700 p-2 bg-neutral-50 dark:bg-neutral-800/40">
-            {toolbar}
-            <div class="pl-3 border-l border-neutral-300 dark:border-neutral-700 space-y-2">
-                {child_views}
-            </div>
+        <div class="rounded-card border border-edge p-2 bg-sunken/50">
+            {toolbar} <div class="pl-3 border-l border-edge space-y-2">{child_views}</div>
         </div>
     }
     .into_any()
@@ -526,7 +533,7 @@ fn group_toolbar(
         <div class="flex items-center gap-1 flex-wrap mb-2">
             <button
                 type="button"
-                class="text-xs font-semibold rounded border border-neutral-400 px-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                class="text-xs font-semibold rounded-control bg-accent-subtle text-accent-ink px-1.5"
                 on:click=move |_| {
                     ctx.query.update(|q| toggle_op(q, &op_path));
                     ctx.bump();
@@ -546,7 +553,7 @@ fn group_toolbar(
             </button>
             <button
                 type="button"
-                class="text-xs rounded border border-neutral-400 px-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                class="text-xs rounded border border-edge-strong px-1.5 hover:bg-sunken"
                 on:click=move |_| {
                     ctx.query.update(|q| add_group_at(q, &add_path));
                     ctx.bump();
@@ -558,10 +565,9 @@ fn group_toolbar(
                 type="button"
                 class=move || {
                     if active_here() {
-                        "text-xs rounded border border-blue-500 bg-blue-100 dark:bg-blue-900 px-1.5"
-                            .to_owned()
+                        "text-xs rounded border border-accent bg-accent-subtle px-1.5".to_owned()
                     } else {
-                        "text-xs rounded border border-neutral-400 px-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                        "text-xs rounded border border-edge-strong px-1.5 hover:bg-sunken"
                             .to_owned()
                     }
                 }
@@ -571,7 +577,7 @@ fn group_toolbar(
             </button>
             <button
                 type="button"
-                class="text-xs rounded border border-red-400 text-red-600 px-1.5 hover:bg-red-50 dark:hover:bg-red-950"
+                class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
                 on:click=move |_| {
                     ctx.query.update(|q| remove_at(&mut q.criteria, &remove_path));
                     ctx.active_path.set(Vec::new());
@@ -588,9 +594,9 @@ fn group_toolbar(
 /// The active/negated pill style shared by the NOT toggles.
 fn toggle_class(active: bool) -> &'static str {
     if active {
-        "text-xs font-semibold rounded border border-amber-500 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-1.5"
+        "text-xs font-semibold rounded border border-warn bg-warn-subtle text-warn px-1.5"
     } else {
-        "text-xs rounded border border-neutral-400 px-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+        "text-xs rounded border border-edge-strong px-1.5 hover:bg-sunken"
     }
 }
 
@@ -627,7 +633,7 @@ fn leaf_editor(
         CriterionKind::DateTimeRange { from, to } => datetime_editor(from, to, path, ctx),
         CriterionKind::BooleanIs { value } => boolean_editor(value, path, ctx),
         CriterionKind::Exists => view! {
-            <p class="text-xs text-neutral-500 italic">
+            <p class="text-xs text-ink-muted italic">
                 "Presence check only for this type — matches when the node exists."
             </p>
         }
@@ -646,12 +652,12 @@ fn number_input(
 ) -> AnyView {
     view! {
         <label class="flex flex-col gap-0.5 text-xs">
-            <span class="text-neutral-500">{label}</span>
+            <span class="text-ink-muted">{label}</span>
             <input
                 id=id
                 type="number"
                 step="any"
-                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-28"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-28"
                 prop:value=move || signal.get()
                 on:input:target=move |ev| {
                     signal.set(ev.target().value());
@@ -705,10 +711,10 @@ fn units_input(
         let apply = apply.clone();
         return view! {
             <label class="flex flex-col gap-0.5 text-xs">
-                <span class="text-neutral-500">"units"</span>
+                <span class="text-ink-muted">"units"</span>
                 <input
                     type="text"
-                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-28"
+                    class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-28"
                     prop:value=move || units_s.get()
                     on:input:target=move |ev| {
                         units_s.set(ev.target().value());
@@ -728,9 +734,9 @@ fn units_input(
         .collect::<Vec<_>>();
     view! {
         <label class="flex flex-col gap-0.5 text-xs">
-            <span class="text-neutral-500">"units"</span>
+            <span class="text-ink-muted">"units"</span>
             <select
-                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm"
                 prop:value=move || units_s.get()
                 on:change:target=move |ev| {
                     units_s.set(ev.target().value());
@@ -805,7 +811,7 @@ fn coded_editor(
     let options = meta.map(|m| m.code_options).unwrap_or_default();
     let boxes = if options.is_empty() {
         view! {
-            <p class="text-xs text-neutral-500 italic">
+            <p class="text-xs text-ink-muted italic">
                 "No coded options in the template for this node."
             </p>
         }
@@ -845,7 +851,7 @@ fn coded_editor(
                             }
                         />
                         <span>{text}</span>
-                        <span class="font-mono text-xs text-neutral-500">{code}</span>
+                        <span class="font-mono text-xs text-ink-muted">{code}</span>
                     </label>
                 }
             })
@@ -855,10 +861,10 @@ fn coded_editor(
     view! {
         <div class="space-y-2">
             {boxes} <label class="flex flex-col gap-0.5 text-xs">
-                <span class="text-neutral-500">"terminology"</span>
+                <span class="text-ink-muted">"terminology"</span>
                 <input
                     type="text"
-                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-40"
+                    class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-40"
                     prop:value=move || term_s.get()
                     on:input:target=move |ev| {
                         term_s.set(ev.target().value());
@@ -894,7 +900,7 @@ fn ordinal_editor(
         .collect::<Vec<_>>();
     if options.is_empty() {
         return view! {
-            <p class="text-xs text-neutral-500 italic">
+            <p class="text-xs text-ink-muted italic">
                 "No ordinal steps in the template for this node."
             </p>
         }
@@ -985,7 +991,7 @@ fn text_editor(is_contains: bool, text: String, path: Vec<usize>, ctx: BuilderCt
             </label>
             <input
                 type="text"
-                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm flex-1 min-w-40"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm flex-1 min-w-40"
                 prop:value=move || text_s.get()
                 on:input:target=move |ev| {
                     text_s.set(ev.target().value());
@@ -1013,11 +1019,11 @@ fn datetime_editor(from: String, to: String, path: Vec<usize>, ctx: BuilderCtx) 
     view! {
         <div class="flex flex-wrap items-end gap-2">
             <label class="flex flex-col gap-0.5 text-xs">
-                <span class="text-neutral-500">"from"</span>
+                <span class="text-ink-muted">"from"</span>
                 <input
                     type="text"
                     placeholder="2026-01-01T00:00:00Z"
-                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-56"
+                    class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-56"
                     prop:value=move || from_s.get()
                     on:input:target=move |ev| {
                         from_s.set(ev.target().value());
@@ -1026,11 +1032,11 @@ fn datetime_editor(from: String, to: String, path: Vec<usize>, ctx: BuilderCtx) 
                 />
             </label>
             <label class="flex flex-col gap-0.5 text-xs">
-                <span class="text-neutral-500">"to"</span>
+                <span class="text-ink-muted">"to"</span>
                 <input
                     type="text"
                     placeholder="2026-12-31T23:59:59Z"
-                    class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-56"
+                    class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-56"
                     prop:value=move || to_s.get()
                     on:input:target=move |ev| {
                         to_s.set(ev.target().value());
@@ -1104,7 +1110,7 @@ fn boolean_editor(value: bool, path: Vec<usize>, ctx: BuilderCtx) -> AnyView {
 fn output_section(ctx: BuilderCtx) -> AnyView {
     view! {
         <div>
-            <div class="text-sm font-semibold mb-2">"Output"</div>
+            <h2 class=CARD_TITLE>"Output"</h2>
             {move || {
                 ctx.struct_ver.get();
                 let snapshot = ctx.query.get_untracked();
@@ -1156,7 +1162,7 @@ fn shape_radio(ctx: BuilderCtx, current: QueryShape) -> AnyView {
 fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
     if columns.is_empty() {
         return view! {
-            <p class="text-xs text-neutral-500">
+            <p class="text-xs text-ink-muted">
                 "Add projection columns with \"+ column\" in the path catalog."
             </p>
         }
@@ -1171,7 +1177,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
             view! {
                 <div class="flex items-center gap-2">
                     <span
-                        class="font-mono text-xs text-neutral-500 truncate max-w-xs"
+                        class="font-mono text-xs text-ink-muted truncate max-w-xs"
                         title=col.aql_path.clone()
                     >
                         {path_text}
@@ -1180,7 +1186,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
                         id=format!("qb-col-alias-{i}")
                         type="text"
                         placeholder="alias"
-                        class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-40"
+                        class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-40"
                         prop:value=move || alias.get()
                         on:input:target=move |ev| {
                             let value = ev.target().value();
@@ -1195,7 +1201,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
                     />
                     <button
                         type="button"
-                        class="text-xs rounded border border-red-400 text-red-600 px-1.5 hover:bg-red-50 dark:hover:bg-red-950"
+                        class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
                         on:click=move |_| {
                             ctx.query
                                 .update(|q| {
@@ -1214,7 +1220,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
         .collect::<Vec<_>>();
     view! {
         <div class="space-y-1">
-            <div class="text-xs font-medium text-neutral-500">"Columns"</div>
+            <div class="text-xs font-medium text-ink-muted">"Columns"</div>
             {rows}
         </div>
     }
@@ -1232,7 +1238,7 @@ fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
                 id=format!("qb-order-path-{i}")
                 type="text"
                 placeholder="context/start_time/value"
-                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm flex-1 min-w-48 font-mono"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm flex-1 min-w-48 font-mono"
                 prop:value=move || path_s.get()
                 on:input:target=move |ev| {
                     let value = ev.target().value();
@@ -1246,7 +1252,7 @@ fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
                 }
             />
             <select
-                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm"
                 prop:value=move || if desc { "desc" } else { "asc" }
                 on:change:target=move |ev| {
                     let descending = ev.target().value() == "desc";
@@ -1264,7 +1270,7 @@ fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
             </select>
             <button
                 type="button"
-                class="text-xs rounded border border-red-400 text-red-600 px-1.5 hover:bg-red-50 dark:hover:bg-red-950"
+                class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
                 on:click=move |_| {
                     ctx.query
                         .update(|q| {
@@ -1293,10 +1299,10 @@ fn order_editor(ctx: BuilderCtx, rules: &[OrderRule]) -> AnyView {
     view! {
         <div class="space-y-1">
             <div class="flex items-center gap-2">
-                <span class="text-xs font-medium text-neutral-500">"Order by"</span>
+                <span class="text-xs font-medium text-ink-muted">"Order by"</span>
                 <button
                     type="button"
-                    class="text-xs rounded border border-neutral-400 px-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                    class="text-xs rounded border border-edge-strong px-1.5 hover:bg-sunken"
                     on:click=move |_| {
                         ctx.query
                             .update(|q| {
@@ -1323,12 +1329,12 @@ fn limit_editor(ctx: BuilderCtx, limit: Option<u32>) -> AnyView {
     let limit_s = RwSignal::new(limit.map(|n| n.to_string()).unwrap_or_default());
     view! {
         <label class="flex items-center gap-2 text-xs">
-            <span class="text-neutral-500">"Limit"</span>
+            <span class="text-ink-muted">"Limit"</span>
             <input
                 id="qb-limit"
                 type="number"
                 min="1"
-                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-28"
+                class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-28"
                 prop:value=move || limit_s.get()
                 on:input:target=move |ev| {
                     let raw = ev.target().value();
@@ -1373,11 +1379,9 @@ fn preview_run_section(
     };
 
     view! {
-        <thaw::Card>
-            <thaw::CardHeader>
-                <div class="text-sm font-semibold">"AQL preview"</div>
-            </thaw::CardHeader>
-            <div class="p-3 space-y-3">
+        <section class=CARD_PAD>
+            <h2 class=CARD_TITLE>"AQL preview"</h2>
+            <div class="space-y-3">
                 {move || match preview.get() {
                     Ok(aql) => {
                         let href = format!(
@@ -1386,10 +1390,10 @@ fn preview_run_section(
                         );
                         view! {
                             <div class="space-y-2">
-                                <pre class="overflow-auto rounded border border-neutral-300 dark:border-neutral-700 p-3 text-xs whitespace-pre-wrap">
-                                    {aql}
-                                </pre>
-                                <A href=href attr:class="text-sm text-blue-600 hover:underline">
+                                <pre class=format!(
+                                    "{WELL} overflow-auto font-mono text-xs whitespace-pre-wrap text-ink",
+                                )>{aql}</pre>
+                                <A href=href attr:class="text-sm text-accent hover:underline">
                                     "Open in raw editor →"
                                 </A>
                             </div>
@@ -1398,68 +1402,59 @@ fn preview_run_section(
                     }
                     Err(error) => {
                         view! {
-                            <thaw::MessageBar intent=thaw::MessageBarIntent::Warning>
-                                <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                            </thaw::MessageBar>
+                            <div
+                                role="status"
+                                class="rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
+                            >
+                                {error.to_string()}
+                            </div>
                         }
                             .into_any()
                     }
                 }} <div class="flex flex-wrap items-end gap-3">
-                    <thaw::Button
-                        appearance=thaw::ButtonAppearance::Primary
-                        disabled=disabled
-                        on_click=run_click
-                    >
+                    <button type="button" class=BTN_PRIMARY disabled=disabled on:click=run_click>
                         "Run"
-                    </thaw::Button>
+                    </button>
                     <div class="flex items-end gap-2">
                         <label class="flex flex-col gap-0.5 text-xs">
-                            <span class="text-neutral-500">"Save as (namespace::name)"</span>
+                            <span class="text-ink-muted">"Save as (namespace::name)"</span>
                             <input
                                 id="qb-save-name"
                                 type="text"
                                 placeholder="org::my_query"
-                                class="rounded border border-neutral-300 dark:border-neutral-700 bg-transparent px-2 py-1 text-sm w-56"
+                                class="rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm w-56 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent"
                                 prop:value=move || save_name.get()
                                 on:input:target=move |ev| save_name.set(ev.target().value())
                             />
                         </label>
-                        <thaw::Button disabled=save_disabled on_click=save_click>
+                        <button
+                            type="button"
+                            class=BTN_PRIMARY
+                            disabled=save_disabled
+                            on:click=save_click
+                        >
                             "Save"
-                        </thaw::Button>
+                        </button>
                     </div>
                 </div> {save_feedback(save_action)}
             </div>
-        </thaw::Card>
+        </section>
     }
     .into_any()
 }
 
-/// The save action's inline feedback.
+/// The save action's inline feedback: a pending hint and the CDR error verbatim.
+/// Success is reported as a toast (dispatched from the page component), so it
+/// renders nothing here.
 fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>) -> AnyView {
     view! {
         <div class="text-sm">
             <Show when=move || save_action.pending().get()>
-                <span class="text-neutral-500">"Saving…"</span>
+                <span class="text-ink-muted">"Saving…"</span>
             </Show>
             {move || match save_action.value().get() {
-                Some(Ok(())) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Success>
-                            <thaw::MessageBarBody>"Query saved."</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                Some(Err(error)) => {
-                    view! {
-                        <thaw::MessageBar intent=thaw::MessageBarIntent::Error>
-                            <thaw::MessageBarBody>{error.to_string()}</thaw::MessageBarBody>
-                        </thaw::MessageBar>
-                    }
-                        .into_any()
-                }
-                None => ().into_any(),
+                Some(Err(error)) => crate::components::format_view::inline_error(&error),
+                Some(Ok(())) | None => ().into_any(),
             }}
         </div>
     }
@@ -1489,12 +1484,11 @@ fn results_section(
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
                         view! {
-                            <thaw::Card>
-                                <thaw::CardHeader>
-                                    <div class="text-sm font-semibold">"Results"</div>
-                                </thaw::CardHeader>
-                                <div class="p-3">{body}{controls}</div>
-                            </thaw::Card>
+                            <section class=CARD_PAD>
+                                <h2 class=CARD_TITLE>"Results"</h2>
+                                {body}
+                                {controls}
+                            </section>
                         }
                             .into_any()
                     }
@@ -1519,22 +1513,17 @@ pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
             .unwrap_or_default();
         return view! {
             <div class="py-6 text-center">
-                <div class="text-4xl font-semibold tabular-nums">{n}</div>
-                <div class="text-xs text-neutral-500 mt-1">"matching rows"</div>
+                <div class="text-4xl font-semibold tabular-nums text-ink">{n}</div>
+                <div class="text-xs text-ink-muted mt-1">"matching rows"</div>
             </div>
         }
         .into_any();
     }
     if page.rows.is_empty() {
-        return view! { <p class="text-sm text-neutral-500">"No rows."</p> }.into_any();
+        return view! { <p class="text-sm text-ink-muted">"No rows."</p> }.into_any();
     }
-    let headers = page
-        .columns
-        .iter()
-        .map(|name| {
-            view! { <th class="text-left font-medium text-neutral-500 py-1 pr-4">{name.clone()}</th> }
-        })
-        .collect::<Vec<_>>();
+    // The result-set column aliases/paths are the table headers (never `#n`).
+    let header_refs: Vec<&str> = page.columns.iter().map(String::as_str).collect();
     let rows = page
         .rows
         .iter()
@@ -1551,18 +1540,9 @@ pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
         <For each=move || rows.clone() key=|(k, _)| k.clone() let:entry>
             {result_row(&entry.1)}
         </For>
-    };
-    view! {
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm border-collapse">
-                <thead>
-                    <tr class="border-b border-neutral-200 dark:border-neutral-700">{headers}</tr>
-                </thead>
-                <tbody>{body}</tbody>
-            </table>
-        </div>
     }
-    .into_any()
+    .into_any();
+    table_shell(&header_refs, body)
 }
 
 /// One generic result row (all cells rendered as plain text).
@@ -1571,11 +1551,10 @@ fn result_row(row: &[serde_json::Value]) -> AnyView {
         .iter()
         .map(|value| {
             let text = cell_text(value);
-            view! { <td class="py-1 pr-4 align-top">{text}</td> }
+            view! { <td class=CELL>{text}</td> }
         })
         .collect::<Vec<_>>();
-    view! { <tr class="border-b border-neutral-100 dark:border-neutral-800">{cells}</tr> }
-        .into_any()
+    view! { <tr class=ROW>{cells}</tr> }.into_any()
 }
 
 /// Prev/next paging buttons wired to a local `offset` signal (page window is
@@ -1588,20 +1567,22 @@ pub(crate) fn paging_buttons(offset: RwSignal<u32>, row_count: usize) -> AnyView
     let next_disabled = Signal::derive(move || !full);
     view! {
         <div class="mt-3 flex gap-2">
-            <thaw::Button
-                size=thaw::ButtonSize::Small
+            <button
+                type="button"
+                class=BTN_SECONDARY
                 disabled=prev_disabled
-                on_click=move |_| offset.update(|o| *o = o.saturating_sub(PAGE_SIZE))
+                on:click=move |_| offset.update(|o| *o = o.saturating_sub(PAGE_SIZE))
             >
                 "← Previous"
-            </thaw::Button>
-            <thaw::Button
-                size=thaw::ButtonSize::Small
+            </button>
+            <button
+                type="button"
+                class=BTN_SECONDARY
                 disabled=next_disabled
-                on_click=move |_| offset.update(|o| *o = o.saturating_add(PAGE_SIZE))
+                on:click=move |_| offset.update(|o| *o = o.saturating_add(PAGE_SIZE))
             >
                 "Next →"
-            </thaw::Button>
+            </button>
         </div>
     }
     .into_any()
