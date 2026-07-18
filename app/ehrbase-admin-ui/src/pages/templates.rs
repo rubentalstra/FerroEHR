@@ -216,7 +216,10 @@ fn upload_trigger(upload: Action<String, Result<String, AdminUiError>>) -> AnyVi
 
     view! {
         <thaw::Upload accept=Signal::derive(|| ".opt,.xml".to_owned()) custom_request>
-            <thaw::Button appearance=thaw::ButtonAppearance::Primary>"Upload OPT ▲"</thaw::Button>
+            <thaw::Button appearance=thaw::ButtonAppearance::Primary>
+                <leptos_icons::Icon icon=icondata_lu::LuUpload width="14" height="14" />
+                " Upload OPT"
+            </thaw::Button>
         </thaw::Upload>
     }
     .into_any()

@@ -116,15 +116,18 @@ fn status_body(body: &str) -> Result<AnyView, AdminUiError> {
 
 /// An ok/danger capability chip for an `EHR_STATUS` boolean flag.
 fn capability_badge(label: &'static str, on: bool) -> AnyView {
-    let (mark, class) = if on {
-        ("✓", "bg-ok-subtle text-ok")
+    let (icon, class) = if on {
+        (icondata_lu::LuCheck, "bg-ok-subtle text-ok")
     } else {
-        ("✗", "bg-danger-subtle text-danger")
+        (icondata_lu::LuX, "bg-danger-subtle text-danger")
     };
     view! {
         <span class=format!(
             "inline-flex items-center gap-1 rounded-control px-2 py-0.5 text-xs font-medium {class}",
-        )>{mark} " " {label}</span>
+        )>
+            <leptos_icons::Icon icon width="12" height="12" />
+            {label}
+        </span>
     }
     .into_any()
 }
