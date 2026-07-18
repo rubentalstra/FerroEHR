@@ -5,7 +5,7 @@
 //! window, patient, principal, outcome, action), a paged table of the stored
 //! FHIR R4 `AuditEvent` documents (IHE BALP shape), and a per-row raw-record
 //! view. No openEHR spec governs an admin UI — our own design / product
-//! extension; the wire it reads is IHE's (the RESTful ATNA supplement's
+//! extension; the wire it reads is IHE's (the `RESTful` ATNA supplement's
 //! ITI-81 FHIR search), served by the CDR.
 //!
 //! Discipline (rules §0/§1/§6/§8/§9): the `#[server]` fn guards the session
@@ -348,9 +348,9 @@ fn filter_form(query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
                     />
                 </label>
                 <label class="flex flex-col gap-1 text-xs text-ink-muted">
-                    "Outcome" // Initial selection via the option `selected` attribute:
+                    // Initial selection via the option `selected` attribute:
                     // it server-renders (a `prop:` would not) and the select
-                    // stays uncontrolled — the GET form owns the state.
+                    "Outcome" // stays uncontrolled — the GET form owns the state.
                     <select name="outcome" class=select_class>
                         <option value="" selected=initial("outcome").is_empty()>
                             "any"
@@ -541,7 +541,8 @@ fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::Params
                 href=href_for(page_index - 1)
                 attr:class="text-accent hover:underline"
             >
-                "← Newer"
+                <leptos_icons::Icon icon=icondata_lu::LuArrowLeft width="12" height="12" />
+                " Newer"
             </leptos_router::components::A>
         }
     });
@@ -551,7 +552,8 @@ fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::Params
                 href=href_for(page_index + 1)
                 attr:class="text-accent hover:underline"
             >
-                "Older →"
+                "Older "
+                <leptos_icons::Icon icon=icondata_lu::LuArrowRight width="12" height="12" />
             </leptos_router::components::A>
         }
     });
@@ -569,7 +571,7 @@ fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::Params
 mod tests {
     use super::{audit_row, parse_bundle};
 
-    fn bundle(entries: serde_json::Value) -> String {
+    fn bundle(entries: &serde_json::Value) -> String {
         serde_json::json!({
             "resourceType": "Bundle",
             "type": "searchset",
@@ -581,7 +583,7 @@ mod tests {
 
     #[test]
     fn parses_a_searchset_bundle() {
-        let body = bundle(serde_json::json!([
+        let body = bundle(&serde_json::json!([
             { "resource": { "resourceType": "AuditEvent", "recorded": "2026-07-10T08:00:00Z",
                 "type": { "code": "rest" }, "action": "R", "outcome": "0" } },
             { "resource": { "resourceType": "AuditEvent", "recorded": "2026-07-09T08:00:00Z",

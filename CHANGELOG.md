@@ -173,6 +173,13 @@ workflow refuses a tag that has no matching section here.
   EventID 110114 "User Authentication" with `EventTypeCode` 110122 "Login"
   (were generic Application Activity); and 1xx/3xx responses (e.g. `304 Not
   Modified`) are now recorded as success instead of minor failure.
+- **Admin console — icon-only chrome and small polish**: every emoji and
+  typographic glyph in the UI is replaced by a proper SVG icon (folder tree,
+  status capability badges, remove buttons, disclosure carets, upload
+  trigger, pagination arrows); the Audit log screen highlights its own
+  navigation entry; and the documentation screenshots now cover every EHR
+  detail tab — including the directory tab both before (create from a folder
+  template) and after the directory exists — plus the audit raw-record view.
 
 ## [3.1.1] - 2026-07-17
 

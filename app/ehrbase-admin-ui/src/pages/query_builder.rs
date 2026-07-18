@@ -294,7 +294,27 @@ fn picker_node(
                 class="w-4 shrink-0 text-ink-muted"
                 on:click=move |_| expanded.update(|open| *open = !*open)
             >
-                {move || if expanded.get() { "▾" } else { "▸" }}
+                {move || {
+                    if expanded.get() {
+                        view! {
+                            <leptos_icons::Icon
+                                icon=icondata_lu::LuChevronDown
+                                width="12"
+                                height="12"
+                            />
+                        }
+                            .into_any()
+                    } else {
+                        view! {
+                            <leptos_icons::Icon
+                                icon=icondata_lu::LuChevronRight
+                                width="12"
+                                height="12"
+                            />
+                        }
+                            .into_any()
+                    }
+                }}
             </button>
         }
         .into_any()
@@ -480,7 +500,7 @@ fn leaf_card(criterion: &Criterion, path: Vec<usize>, ctx: BuilderCtx) -> AnyVie
                             ctx.bump();
                         }
                     >
-                        "✕"
+                        <leptos_icons::Icon icon=icondata_lu::LuX width="12" height="12" />
                     </button>
                 </div>
             </div>
@@ -590,7 +610,12 @@ fn group_toolbar(
                     ctx.bump();
                 }
             >
-                {if is_root { "clear" } else { "✕" }}
+                {if is_root {
+                    view! { "clear" }.into_any()
+                } else {
+                    view! { <leptos_icons::Icon icon=icondata_lu::LuX width="12" height="12" /> }
+                        .into_any()
+                }}
             </button>
         </div>
     }
@@ -1226,7 +1251,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
                             ctx.bump();
                         }
                     >
-                        "✕"
+                        <leptos_icons::Icon icon=icondata_lu::LuX width="12" height="12" />
                     </button>
                 </div>
             }
@@ -1295,7 +1320,7 @@ fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
                     ctx.bump();
                 }
             >
-                "✕"
+                <leptos_icons::Icon icon=icondata_lu::LuX width="12" height="12" />
             </button>
         </div>
     }
@@ -1408,7 +1433,12 @@ fn preview_run_section(
                                     "{WELL} overflow-auto font-mono text-xs whitespace-pre-wrap text-ink",
                                 )>{aql}</pre>
                                 <A href=href attr:class="text-sm text-accent hover:underline">
-                                    "Open in raw editor →"
+                                    "Open in raw editor "
+                                    <leptos_icons::Icon
+                                        icon=icondata_lu::LuArrowRight
+                                        width="12"
+                                        height="12"
+                                    />
                                 </A>
                             </div>
                         }
@@ -1735,7 +1765,8 @@ pub(crate) fn paging_buttons(offset: RwSignal<u32>, row_count: usize) -> AnyView
                 disabled=prev_disabled
                 on:click=move |_| offset.update(|o| *o = o.saturating_sub(PAGE_SIZE))
             >
-                "← Previous"
+                <leptos_icons::Icon icon=icondata_lu::LuArrowLeft width="12" height="12" />
+                " Previous"
             </button>
             <button
                 type="button"
@@ -1743,7 +1774,8 @@ pub(crate) fn paging_buttons(offset: RwSignal<u32>, row_count: usize) -> AnyView
                 disabled=next_disabled
                 on:click=move |_| offset.update(|o| *o = o.saturating_add(PAGE_SIZE))
             >
-                "Next →"
+                "Next "
+                <leptos_icons::Icon icon=icondata_lu::LuArrowRight width="12" height="12" />
             </button>
         </div>
     }
