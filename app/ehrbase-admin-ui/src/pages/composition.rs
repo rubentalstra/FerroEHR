@@ -403,7 +403,7 @@ fn short_version(version_id: &str) -> String {
         .map_or_else(|| version_id.to_owned(), |(_, v)| format!("v{v}"))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{parse_versions, short_version};
 

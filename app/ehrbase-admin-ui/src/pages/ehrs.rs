@@ -337,7 +337,7 @@ pub(crate) fn cell_text(value: &Value) -> String {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{LIST_EHRS_AQL, PAGE_SIZE, aql_request_body, cell_text, parse_result_set};
 
