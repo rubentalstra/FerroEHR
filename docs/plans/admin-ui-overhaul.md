@@ -27,13 +27,24 @@ hand-duplicated ~6×, and the feature absences listed in part B.
 
 ## A. The design system (before any screen work)
 
+**The look (binding direction):** a calm, clinical, information-dense
+operator console — closer to a modern observability tool than a marketing
+site. Deep **teal** as the single brand accent (`#0d9488` light /
+`#2dd4bf` dark) used sparingly: primary buttons, active nav, focus rings,
+links, chart strokes. Everything else lives on a **slate** neutral ramp.
+Surfaces are layered (page < card < raised) with hairline borders and a
+single soft shadow level — no heavy drop shadows, no gradients. Type:
+system UI stack; a clear scale (12/14/16/20/28) with `tabular-nums` for
+every metric and `font-mono` for ids/paths/AQL. Radius 8px cards / 6px
+controls. Data first: tables and trees get the space; chrome stays quiet.
+
 1. **Design tokens** — Tailwind v4 `@theme` block in `style/tailwind.css`:
-   brand palette (calm clinical teal/cyan accent on a slate neutral ramp),
-   semantic tokens (`--color-surface`, `--color-surface-raised`, border,
-   muted/strong text, success/warn/danger), radius + spacing + shadow
-   scale, `font-family` stack (system UI — zero external requests). Dark
-   mode = the same semantic tokens redefined under `.dark`/media, so pages
-   stop hand-writing `dark:` per element.
+   the palette above as semantic tokens (`--color-surface`,
+   `--color-surface-raised`, `--color-edge`, `--color-ink` /
+   `--color-ink-muted`, `--color-accent` + hover/subtle variants,
+   success/warn/danger), radius + spacing + shadow scale. Dark mode = the
+   same semantic tokens redefined under `.dark`, so pages stop
+   hand-writing `dark:` per element and both themes stay in lockstep.
 2. **thaw theme** — customize `thaw::Theme` (brand color into the
    light/dark themes) so thaw widgets and Tailwind utilities share one
    palette; keep the fixed `theme_id`.

@@ -130,14 +130,23 @@ async fn capture_documentation_screenshots() {
     // The ehr-detail and composition-viewer screens render the EHR + the
     // two-version composition scripts/ui-e2e.sh seeds over REST.
     if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
-        capture(
-            &h,
-            &dir,
-            &format!("/ehrs/{ehr_id}"),
-            "ehr-detail",
-            Some("table tbody"),
-        )
-        .await;
+        // The EHR detail shot shows the compositions tab (the seeded row),
+        // reached the way the journey proves works: navigate, open the tab,
+        // wait for the seeded composition's link.
+        h.goto(&format!("/ehrs/{ehr_id}")).await;
+        h.wait_css("footer").await;
+        h.wait_xpath("//button[contains(., 'Compositions')]")
+            .await
+            .click()
+            .await
+            .expect("open the compositions tab");
+        h.wait_css(&format!("a[href*='{vo_id}']")).await;
+        let out = dir.join("ehr-detail.png");
+        h.driver
+            .screenshot(&out)
+            .await
+            .expect("write the documentation screenshot");
+        println!("captured ehr-detail -> {}", out.display());
         capture(
             &h,
             &dir,
