@@ -372,11 +372,13 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let dir_ovid = svc
         .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
         .await
-        .expect("directory_create");
+        .expect("directory_create")
+        .uid;
     let dir_got = svc
         .get_directory_at_time(ehr_uuid, None, None)
         .await
-        .expect("directory_get");
+        .expect("directory_get")
+        .body;
     assert_eq!(dir_got["name"]["value"], "root");
 
     let mut folder_v2 = folder;
@@ -384,7 +386,8 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let dir_ovid_v2 = svc
         .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_ovid)))
         .await
-        .expect("directory_update");
+        .expect("directory_update")
+        .uid;
     assert!(dir_ovid_v2.ends_with("::2"));
 
     svc.delete_directory(ehr_uuid, Some(dir_ovid_v2.parse().expect("ovid")))
@@ -422,7 +425,8 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     let dir_ovid = svc
         .create_directory(ehr_uuid, uv(folder.clone(), "249", None))
         .await
-        .expect("directory while active");
+        .expect("directory while active")
+        .uid;
 
     // Deactivate: set is_modifiable = false. This EHR_STATUS write MUST succeed
     // (the EHR_STATUS object is always modifiable).
@@ -444,7 +448,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     // write path still surfaces the raw `SmError`).
     let comp_blocked =
         |r: &Result<Committed, ServiceError>| matches!(r, Err(ServiceError::Conflict(_)));
-    let dir_blocked = |r: &Result<String, SmError>| {
+    let dir_blocked = |r: &Result<ehrbase::service::response::ResourceMeta, SmError>| {
         matches!(
             r,
             Err(SmError {
@@ -1430,7 +1434,8 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
     let dir1_ovid = svc
         .create_directory(ehr_uuid, uv(folder("primary"), "249", None))
         .await
-        .expect("directory_create (hierarchy 1)");
+        .expect("directory_create (hierarchy 1)")
+        .uid;
     let vo1 = dir1_ovid.split("::").next().unwrap().to_owned();
 
     // Hierarchy 2 (rank 2) via a CONTRIBUTION — a *second* FOLDER creation is now
@@ -1505,7 +1510,8 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
     let dir = svc
         .get_directory_at_time(ehr_uuid, None, None)
         .await
-        .expect("directory");
+        .expect("directory")
+        .body;
     assert_eq!(dir["name"]["value"], "primary");
     assert!(
         uid(&dir).ends_with("::1"),
@@ -1521,7 +1527,8 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
     let dir_after = svc
         .get_directory_at_time(ehr_uuid, None, None)
         .await
-        .expect("directory after delete");
+        .expect("directory after delete")
+        .body;
     assert_eq!(
         dir_after["name"]["value"], "secondary v2",
         "the directory falls through to hierarchy 2"
@@ -1831,7 +1838,8 @@ async fn directory_versioned_and_has_version() {
     let dir_v1 = svc
         .create_directory(ehr_uuid, uv(folder("root"), "249", None))
         .await
-        .expect("directory_create");
+        .expect("directory_create")
+        .uid;
     assert!(dir_v1.ends_with("::1"));
 
     // has_directory_version: true for the real v1 OBJECT_VERSION_ID.
@@ -1867,7 +1875,8 @@ async fn directory_versioned_and_has_version() {
     let dir_v2 = svc
         .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
         .await
-        .expect("directory_update");
+        .expect("directory_update")
+        .uid;
     assert!(dir_v2.ends_with("::2"));
     assert!(
         svc.has_directory_version(ehr_uuid, dir_v2.parse().expect("ovid"))
@@ -1928,11 +1937,13 @@ async fn write_responses_match_a_fresh_read() {
     let dir_v1 = svc
         .create_directory(ehr_uuid, uv(folder("root"), "249", None))
         .await
-        .expect("directory_create");
+        .expect("directory_create")
+        .uid;
     let got_v1 = svc
         .get_directory_at_time(ehr_uuid, None, None)
         .await
-        .expect("dir get v1");
+        .expect("dir get v1")
+        .body;
     assert_eq!(
         got_v1["uid"]["value"], dir_v1,
         "the create ETag (committed_response) must equal the stored version uid"
@@ -1944,11 +1955,13 @@ async fn write_responses_match_a_fresh_read() {
     let dir_v2 = svc
         .update_directory(ehr_uuid, uv(folder_v2, "251", Some(&dir_v1)))
         .await
-        .expect("directory_update");
+        .expect("directory_update")
+        .uid;
     let got_v2 = svc
         .get_directory_at_time(ehr_uuid, None, None)
         .await
-        .expect("dir get v2");
+        .expect("dir get v2")
+        .body;
     assert_eq!(
         got_v2["uid"]["value"], dir_v2,
         "the update ETag (committed_response) must equal the stored version uid"
