@@ -529,7 +529,10 @@ fn folder_node(folder: &Value) -> AnyView {
         .unwrap_or_default();
     view! {
         <li class="py-0.5">
-            <span class="font-medium text-ink">"📁 " {name}</span>
+            <span class="inline-flex items-center gap-1.5 font-medium text-ink">
+                <leptos_icons::Icon icon=icondata_lu::LuFolder width="14" height="14" />
+                {name}
+            </span>
             <ul class="pl-4 ml-2 border-l border-edge">{subfolders} {items}</ul>
         </li>
     }

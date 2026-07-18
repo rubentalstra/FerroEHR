@@ -291,9 +291,15 @@ async fn capture_documentation_screenshots() {
         )
         .await;
         // EHR detail: the POPULATED directory view — create the directory
-        // from the selected folder template and wait for the edit view
-        // (owner directive: every possible view, including directory both
-        // before and after it exists).
+        // from a NAMED built-in folder template (the last select option; the
+        // richest tree — an empty root would make a bare screenshot) and
+        // wait for the edit view (owner directive: every possible view,
+        // including directory both before and after it exists).
+        h.wait_css("#folder-template option:last-child")
+            .await
+            .click()
+            .await
+            .expect("pick a folder template");
         h.wait_css("#directory-create")
             .await
             .click()

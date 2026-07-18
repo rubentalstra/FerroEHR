@@ -348,9 +348,9 @@ fn filter_form(query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
                     />
                 </label>
                 <label class="flex flex-col gap-1 text-xs text-ink-muted">
-                    "Outcome" // Initial selection via the option `selected` attribute:
+                    // Initial selection via the option `selected` attribute:
                     // it server-renders (a `prop:` would not) and the select
-                    // stays uncontrolled — the GET form owns the state.
+                    "Outcome" // stays uncontrolled — the GET form owns the state.
                     <select name="outcome" class=select_class>
                         <option value="" selected=initial("outcome").is_empty()>
                             "any"
@@ -541,7 +541,8 @@ fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::Params
                 href=href_for(page_index - 1)
                 attr:class="text-accent hover:underline"
             >
-                "← Newer"
+                <leptos_icons::Icon icon=icondata_lu::LuArrowLeft width="12" height="12" />
+                " Newer"
             </leptos_router::components::A>
         }
     });
@@ -551,7 +552,8 @@ fn pagination(total: u32, offset: u32, query: Memo<leptos_router::params::Params
                 href=href_for(page_index + 1)
                 attr:class="text-accent hover:underline"
             >
-                "Older →"
+                "Older "
+                <leptos_icons::Icon icon=icondata_lu::LuArrowRight width="12" height="12" />
             </leptos_router::components::A>
         }
     });
