@@ -1163,6 +1163,7 @@ fn shape_radio(ctx: BuilderCtx, current: QueryShape) -> AnyView {
         <div class="flex flex-wrap items-center gap-4">
             {option(QueryShape::Compositions, "Compositions")}
             {option(QueryShape::DataValues, "Data values")} {option(QueryShape::Count, "Count")}
+            {option(QueryShape::Ehrs, "EHRs (cohort)")}
         </div>
     }
     .into_any()

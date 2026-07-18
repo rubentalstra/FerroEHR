@@ -13,6 +13,9 @@ pub enum QueryShape {
     DataValues,
     /// A match count (`SELECT COUNT(*) …`) — dashboard / query-group tiles.
     Count,
+    /// The matching EHR ids (`SELECT DISTINCT e/ehr_id/value …`) — cohort
+    /// queries: "which EHRs match these conditions".
+    Ehrs,
 }
 
 /// One selected projection column (only meaningful for
