@@ -124,6 +124,14 @@ new hand-written spec crate:
   design/extension", with archie's converter as prior art.
 - `operational_template` vs `operational_archetype` keyword inconsistency
   in master07.04 — `operational_template` canonical, accept both.
+- OPEN ADJUDICATION (A3a, 2026-07-19): corpus
+  `features/aom_structures/tuples/openehr-ehr-ACTION.medication_precise…`
+  (PASS-expected) uses attribute-tuple members that are COMPLEX objects;
+  the pinned `cadl2.g4` (`c_primitive_tuple_item`) and AOM2
+  `C_PRIMITIVE_TUPLE` (master04.3/04.5) admit only primitives. Resolve
+  before the coverage gate closes: newer grammar form vs defective
+  fixture — check upstream adl-antlr HEAD + AOM2 text, then either extend
+  with citation or adjudicate the fixture.
 
 ### Prior-art takeaways adopted from archie (design only, no porting)
 

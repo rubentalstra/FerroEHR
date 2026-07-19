@@ -8,12 +8,14 @@
 //! grammars are vendored under `vendor/grammar/` as reference input for the
 //! hand-written `logos`/`chumsky` implementation — no ANTLR runtime.
 //!
-//! This is the phase A2 surface: the [`lexer`], the outer artefact parser
-//! ([`source`]), and the shared typed [`error`] catalogue. ODIN sections are
-//! parsed by the `openehr_lang::odin` reader (ODIN is a LANG-component spec);
-//! the cADL definition and rules bodies are captured by [`source`] as raw
-//! spans for a later phase.
+//! Phases so far: the [`lexer`], the outer artefact parser ([`source`]), the
+//! shared typed [`error`] catalogue, and the cADL definition-section parser
+//! ([`cadl`], phase A3a) that builds the generated `openehr_am::am24::aom2`
+//! constraint model. ODIN sections are parsed by the `openehr_lang::odin`
+//! reader (ODIN is a LANG-component spec); the `rules` body and slot
+//! assertion expressions are captured as raw text for a later phase.
 
+pub mod cadl;
 pub mod error;
 pub mod lexer;
 pub mod source;

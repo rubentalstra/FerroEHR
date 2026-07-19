@@ -259,9 +259,12 @@ pub enum Token {
     #[regex(r"<[ \t\r\n]*[a-zA-Z][a-zA-Z0-9+.\-]*:[^>]*>", |lex| lex.slice().to_owned())]
     EmbeddedUri(String),
     /// An ADL path (`base_lexer.g4 ADL_PATH`): absolute `(/seg)+` or relative
-    /// `seg(/seg)+`, each segment optionally carrying a `[predicate]`.
+    /// `seg(/seg)+`. Each `ADL_PATH_SEGMENT` is `ALPHA_LC_ID ('[' predicate
+    /// ']')?` — the segment head is **lower-case-initial** per the grammar, so
+    /// an upper-initial run (e.g. the duration `PWD/PT0S` pattern/value form)
+    /// is never mis-lexed as a path.
     #[regex(
-        r"(/[a-zA-Z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+|[a-zA-Z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?(/[a-zA-Z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+",
+        r"(/[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+|[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?(/[a-z][a-zA-Z0-9_]*(\[[^\]\r\n]*\])?)+",
         |lex| lex.slice().to_owned()
     )]
     AdlPath(String),
