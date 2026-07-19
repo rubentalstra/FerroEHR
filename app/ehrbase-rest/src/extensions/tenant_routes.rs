@@ -1,14 +1,13 @@
 //! HTTP dispatch for the tenant admin extension API group over the
 //! [`TenantAdapter`](ehrbase::service::TenantAdapter) seam.
 //!
-//! **No openEHR spec governs this — our own enterprise feature (E2, multi-
+//! **No openEHR spec governs this — our own enterprise feature (multi-
 //! tenancy).** The tenancy model has zero SM/ITS-REST governance, so this
 //! surface is ours: exposed under the server's extension namespace and excluded
-//! from the ITS-REST drift check (design record: `docs/enterprise/product-roadmap.md`
-//! §2.3 and the classification register `docs/design/its-rest/extensions.md`).
-//! It is mounted under `/admin/` (the tenant registry is an administrative
-//! resource), so the coarse RBAC gate fail-safe classes it as `Admin` (requires
-//! the admin role when RBAC is on), matching the physical-delete ADMIN group.
+//! from the ITS-REST drift check. It is mounted under `/admin/` (the tenant
+//! registry is an administrative resource), so the coarse RBAC gate fail-safe
+//! classes it as `Admin` (requires the admin role when RBAC is on), matching
+//! the physical-delete ADMIN group.
 //!
 //! NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
 //! [`TenantAdapter`] extension, not an SM interface. Like the terminology
@@ -46,10 +45,16 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         .routes(routes!(tenant_get, tenant_update, tenant_delete))
 }
 
-/// List every tenant.
+/// List every tenant (`GET /admin/tenant`).
+///
+/// Config-gated: `404` when `tenancy.enabled` is off (the route stays mounted
+/// but the backend is never consulted).
 #[utoipa::path(
     get, path = "/admin/tenant", tag = "tenancy",
-    responses((status = 200, description = "The tenant records.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "The tenant records.", body = serde_json::Value),
+        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off).", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn tenant_list(
     State(state): State<AppState>,
@@ -59,11 +64,17 @@ pub(crate) async fn tenant_list(
     guarded_dispatch(state, "tenant_list", parts, dispatch).await
 }
 
-/// Create a tenant. Body: `{name, system_id}`.
+/// Create a tenant (`POST /admin/tenant`). Body: `{name, system_id}`.
 #[utoipa::path(
     post, path = "/admin/tenant", tag = "tenancy",
-    request_body(content = serde_json::Value, description = "The tenant definition."),
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    request_body(content = serde_json::Value, description = "The tenant definition `{name, system_id}` (canonical JSON)."),
+    responses(
+        (status = 201, description = "Created; the stored tenant record is returned.", body = serde_json::Value),
+        (status = 400, description = "`name`/`system_id` is missing or empty, or the body is not valid JSON.", body = serde_json::Value),
+        (status = 409, description = "A tenant with that name already exists.", body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
+        (status = 404, description = "The tenancy extension is disabled (`tenancy.enabled` off).", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn tenant_create(
     State(state): State<AppState>,
@@ -73,13 +84,14 @@ pub(crate) async fn tenant_create(
     guarded_dispatch(state, "tenant_create", parts, dispatch).await
 }
 
-/// Read one tenant by id. 404 when absent.
+/// Read one tenant by id (`GET /admin/tenant/{tenant_id}`).
 #[utoipa::path(
     get, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
     params(("tenant_id" = String, Path, description = "The tenant UUID.")),
     responses(
         (status = 200, description = "The tenant record.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 400, description = "`tenant_id` is not a valid UUID.", body = serde_json::Value),
+        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn tenant_get(
@@ -90,12 +102,18 @@ pub(crate) async fn tenant_get(
     guarded_dispatch(state, "tenant_get", parts, dispatch).await
 }
 
-/// Update one tenant's name/`system_id`.
+/// Update one tenant's name/`system_id` (`PUT /admin/tenant/{tenant_id}`).
 #[utoipa::path(
     put, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
     params(("tenant_id" = String, Path, description = "The tenant UUID.")),
-    request_body(content = serde_json::Value, description = "The updated tenant definition."),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    request_body(content = serde_json::Value, description = "The updated tenant definition `{name, system_id}` (canonical JSON)."),
+    responses(
+        (status = 200, description = "Updated; the stored tenant record is returned.", body = serde_json::Value),
+        (status = 400, description = "`tenant_id` is not a valid UUID, a field is missing/empty, or the body is not valid JSON.", body = serde_json::Value),
+        (status = 409, description = "A tenant with that name already exists.", body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
+        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn tenant_update(
     State(state): State<AppState>,
@@ -105,11 +123,17 @@ pub(crate) async fn tenant_update(
     guarded_dispatch(state, "tenant_update", parts, dispatch).await
 }
 
-/// Delete one tenant (only when empty and not the reserved default).
+/// Delete one tenant — only when empty and not the reserved default
+/// (`DELETE /admin/tenant/{tenant_id}`).
 #[utoipa::path(
     delete, path = "/admin/tenant/{tenant_id}", tag = "tenancy",
     params(("tenant_id" = String, Path, description = "The tenant UUID.")),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "Deleted."),
+        (status = 400, description = "`tenant_id` is not a valid UUID.", body = serde_json::Value),
+        (status = 409, description = "The tenant is the reserved default, or still owns data (purge it first).", body = serde_json::Value),
+        (status = 404, description = "No tenant with that id, or the tenancy extension is disabled.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn tenant_delete(
     State(state): State<AppState>,

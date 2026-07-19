@@ -17,9 +17,7 @@
 //! `crates/openehr-its/src/rest/generated/`), so this surface is ours: exposed
 //! under the server's extension namespace (`/terminology`), shaped spec-first
 //! from the master12 call semantics, and excluded from the ITS-REST drift
-//! check. Design record: the classification register
-//! `docs/design/its-rest/extensions.md` and `docs/design/sm-platform/12-terminology.md`.
-//! If/when openEHR publishes a contract, `emit-rest` takes over and these
+//! check. If/when openEHR publishes a contract, `emit-rest` takes over and these
 //! routes migrate.
 //!
 //! NOTE (mount path): the extension groups (like the ADMIN group) are
@@ -78,11 +76,18 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 // generated-group adapter) and runs it through the shared guarded dispatch, so
 // the EHR_ACCESS gate, ABAC PEP, and ATNA audit tagging apply uniformly.
 
-/// Every terminology id the server knows (`get_terminology_ids`). Body:
-/// `{"terminology_ids": [..]}`.
+/// Every terminology id the server knows — SM `get_terminology_ids`
+/// (`GET /terminology`).
+///
+/// Body: `{"terminology_ids": [..]}`. Config-gated: `404` when
+/// `terminology_api_enabled` is off (the route stays mounted but the backend is
+/// never consulted).
 #[utoipa::path(
     get, path = "/terminology", tag = "terminology",
-    responses((status = 200, description = "The known terminology ids.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "The known terminology ids.", body = serde_json::Value),
+        (status = 404, description = "The terminology extension is disabled (`terminology_api_enabled` off).", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn terminology_ids(
     State(state): State<AppState>,
@@ -92,14 +97,16 @@ pub(crate) async fn terminology_ids(
     guarded_dispatch(state, "terminology_ids", parts, dispatch).await
 }
 
-/// One terminology's descriptor (`get_terminology_description`; also the
-/// `has_terminology` existence check). 404 when unknown.
+/// One terminology's descriptor — SM `get_terminology_description` (also the
+/// `has_terminology` existence check) (`GET /terminology/{terminology_id}`).
+///
+/// A failed `Pre_has_terminology` maps to `404`.
 #[utoipa::path(
     get, path = "/terminology/{terminology_id}", tag = "terminology",
     params(("terminology_id" = String, Path, description = "The terminology id.")),
     responses(
         (status = 200, description = "The terminology descriptor.", body = serde_json::Value),
-        (status = 404, description = "Unknown terminology.", body = serde_json::Value)
+        (status = 404, description = "Unknown terminology (failed `Pre_has_terminology`), or the terminology extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn terminology_description(
@@ -110,17 +117,21 @@ pub(crate) async fn terminology_description(
     guarded_dispatch(state, "terminology_description", parts, dispatch).await
 }
 
-/// A term definition (`get_term`). Optional `at_date`. 404 when unknown.
+/// A term definition — SM `get_term`
+/// (`GET /terminology/{terminology_id}/term/{code}`).
+///
+/// The optional `at_date` selects an effective-dated definition. A failed
+/// `Pre_has_term` (unknown terminology or code) maps to `404`.
 #[utoipa::path(
     get, path = "/terminology/{terminology_id}/term/{code}", tag = "terminology",
     params(
         ("terminology_id" = String, Path, description = "The terminology id."),
         ("code" = String, Path, description = "The term code."),
-        ("at_date" = Option<String>, Query, description = "Optional ISO-8601 effective date.")
+        ("at_date" = Option<String>, Query, description = "Optional ISO-8601 effective date; absent means the current definition.")
     ),
     responses(
         (status = 200, description = "The term extract.", body = serde_json::Value),
-        (status = 404, description = "Unknown terminology or code.", body = serde_json::Value)
+        (status = 404, description = "Unknown terminology or code (failed `Pre_has_term`), or the terminology extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn terminology_get_term(
@@ -131,18 +142,21 @@ pub(crate) async fn terminology_get_term(
     guarded_dispatch(state, "terminology_get_term", parts, dispatch).await
 }
 
-/// Strict subsumption test (`subsumes`). Body: `{"subsumes": bool}`. 400 when a
-/// required query parameter is missing.
+/// Strict subsumption test — SM `subsumes`
+/// (`GET /terminology/{terminology_id}/subsumes`).
+///
+/// Body: `{"subsumes": bool}`. Both codes are required query parameters.
 #[utoipa::path(
     get, path = "/terminology/{terminology_id}/subsumes", tag = "terminology",
     params(
         ("terminology_id" = String, Path, description = "The terminology id."),
-        ("ref_code" = String, Query, description = "The reference (ancestor-candidate) code."),
-        ("candidate" = String, Query, description = "The candidate (descendant) code.")
+        ("ref_code" = String, Query, description = "The reference (ancestor-candidate) code. Required."),
+        ("candidate" = String, Query, description = "The candidate (descendant) code. Required.")
     ),
     responses(
         (status = 200, description = "The subsumption result.", body = serde_json::Value),
-        (status = 400, description = "Missing required query parameter.", body = serde_json::Value)
+        (status = 400, description = "A required query parameter (`ref_code`/`candidate`) is missing or blank.", body = serde_json::Value),
+        (status = 404, description = "The terminology extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn terminology_subsumes(
@@ -153,8 +167,11 @@ pub(crate) async fn terminology_subsumes(
     guarded_dispatch(state, "terminology_subsumes", parts, dispatch).await
 }
 
-/// A value set's extract (`get_value_set`; also the `has_value_set` existence
-/// check). 404 when unknown.
+/// A value set's extract — SM `get_value_set` (also the `has_value_set`
+/// existence check)
+/// (`GET /terminology/{terminology_id}/value_set/{value_set_id}`).
+///
+/// A failed `Pre_has_value_set` maps to `404`.
 #[utoipa::path(
     get, path = "/terminology/{terminology_id}/value_set/{value_set_id}", tag = "terminology",
     params(
@@ -163,7 +180,7 @@ pub(crate) async fn terminology_subsumes(
     ),
     responses(
         (status = 200, description = "The value set extract.", body = serde_json::Value),
-        (status = 404, description = "Unknown terminology or value set.", body = serde_json::Value)
+        (status = 404, description = "Unknown terminology or value set (failed `Pre_has_value_set`), or the terminology extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn terminology_value_set(
@@ -174,19 +191,22 @@ pub(crate) async fn terminology_value_set(
     guarded_dispatch(state, "terminology_value_set", parts, dispatch).await
 }
 
-/// Value-set membership test (`value_set_validate`). Body: `{"valid": bool}`.
-/// 400 when `candidate_code` is missing.
+/// Value-set membership test — SM `value_set_validate`
+/// (`GET /terminology/{terminology_id}/value_set/{value_set_id}/validate`).
+///
+/// Body: `{"valid": bool}`. `candidate_code` is a required query parameter.
 #[utoipa::path(
     get, path = "/terminology/{terminology_id}/value_set/{value_set_id}/validate", tag = "terminology",
     params(
         ("terminology_id" = String, Path, description = "The terminology id."),
         ("value_set_id" = String, Path, description = "The value set id."),
-        ("candidate_code" = String, Query, description = "The candidate code to test for membership."),
-        ("at_date" = Option<String>, Query, description = "Optional ISO-8601 effective date.")
+        ("candidate_code" = String, Query, description = "The candidate code to test for membership. Required."),
+        ("at_date" = Option<String>, Query, description = "Optional ISO-8601 effective date; absent means the current value set.")
     ),
     responses(
         (status = 200, description = "The membership result.", body = serde_json::Value),
-        (status = 400, description = "Missing required query parameter.", body = serde_json::Value)
+        (status = 400, description = "The required `candidate_code` query parameter is missing or blank.", body = serde_json::Value),
+        (status = 404, description = "The terminology extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn terminology_value_set_validate(

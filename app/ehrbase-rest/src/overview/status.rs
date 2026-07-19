@@ -26,12 +26,19 @@ struct ServerStatus {
     timestamp: String,
 }
 
-/// Server status: reports the server version and the tested ITS-REST contract
-/// identity. Unauthenticated. Body: `{status, server_version,
-/// openehr_rest_api_version, timestamp}`.
+/// Server status (`GET /ehrbase/rest/status`).
+///
+/// OUR OWN SURFACE — no openEHR spec governs an operational status endpoint.
+/// Reports the server version and the tested ITS-REST contract identity.
+/// Unauthenticated (mounted outside the auth layer).
 #[utoipa::path(
     get, path = "/ehrbase/rest/status", tag = "status",
-    responses((status = 200, description = "Server up.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "Server up; a JSON `{status, server_version, \
+                                      openehr_rest_api_version, timestamp}` \
+                                      object.",
+         body = serde_json::Value)
+    )
 )]
 async fn status() -> Json<ServerStatus> {
     Json(ServerStatus {
@@ -42,19 +49,32 @@ async fn status() -> Json<ServerStatus> {
     })
 }
 
-/// Liveness text probe (`OK`) at the process root. Unauthenticated.
+/// Liveness probe at the process root (`GET /health`).
+///
+/// OUR OWN SURFACE — no openEHR spec governs a health endpoint. Returns the
+/// plain-text body `OK`. Unauthenticated (mounted outside the auth layer).
 #[utoipa::path(
     get, path = "/health", tag = "status",
-    responses((status = 200, description = "Server process alive.", body = String))
+    responses(
+        (status = 200, description = "Server process alive; plain-text `OK`.",
+         body = String)
+    )
 )]
 async fn root_health() -> impl IntoResponse {
     (StatusCode::OK, "OK")
 }
 
-/// Health text probe (`OK`) under the REST root. Unauthenticated.
+/// Liveness probe under the REST root
+/// (`GET /ehrbase/rest/status/health`).
+///
+/// OUR OWN SURFACE — no openEHR spec governs a health endpoint. Returns the
+/// plain-text body `OK`. Unauthenticated (mounted outside the auth layer).
 #[utoipa::path(
     get, path = "/ehrbase/rest/status/health", tag = "status",
-    responses((status = 200, description = "Server process alive.", body = String))
+    responses(
+        (status = 200, description = "Server process alive; plain-text `OK`.",
+         body = String)
+    )
 )]
 async fn status_health() -> impl IntoResponse {
     (StatusCode::OK, "OK")

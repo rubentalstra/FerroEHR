@@ -136,7 +136,10 @@ async fn every_operation_is_described_with_a_success_outcome() {
         let responses = op.get("responses").and_then(Value::as_object);
         let has_success = responses.is_some_and(|r| {
             r.iter().any(|(code, body)| {
-                code.starts_with('2')
+                // A 501-only operation (declared, not yet implemented — e.g.
+                // the deferred ADL2 projections) documents its whole real
+                // contract; a described 501 satisfies the rule.
+                (code.starts_with('2') || code == "501")
                     && body
                         .get("description")
                         .and_then(Value::as_str)
@@ -168,6 +171,21 @@ async fn every_operation_documents_an_error_outcome() {
         "/ehrbase/rest/api-docs/openapi.json",
         "/ehrbase/rest/.well-known/smart-configuration",
         "/ehrbase/rest/openehr/v1/definition/openapi.json",
+        // Static/UI surface (config-gated at mount time, otherwise 200-only).
+        "/ehrbase/rest/swagger-ui",
+        // Probes and the status surface: 200-only by design (liveness never
+        // errors at the application layer; readiness declares its 503).
+        "/health",
+        "/management/health/liveness",
+        "/ehrbase/rest/status",
+        "/ehrbase/rest/status/health",
+        // List endpoints whose OAS contract is 200-only (an unmatched
+        // filter/prefix yields an empty list, never an error):
+        // definition_query_list.yaml / definition_template_adl*_list.yaml.
+        "/ehrbase/rest/openehr/v1/definition/query",
+        "/ehrbase/rest/openehr/v1/definition/query/{qualified_query_name}",
+        "/ehrbase/rest/openehr/v1/definition/template/adl1.4",
+        "/ehrbase/rest/openehr/v1/definition/template/adl2",
     ];
     let doc = served_document().await;
     let mut findings = Vec::new();
@@ -211,10 +229,17 @@ async fn versioned_writes_document_if_match_and_412() {
                 || path.ends_with("/ehr_status")
                 || path.contains("/composition/"))
             || path.starts_with("/ehrbase/rest/openehr/v1/demographic/") && !path.contains("_tags");
+        // Overview §"If-Match and accidental overwrites": If-Match is required
+        // only "when the preceding_version_uid is not part of the endpoint
+        // path segment" — a DELETE addressing {uid_based_id} carries the
+        // preceding version IN THE PATH (stale → 409 with the latest ETag per
+        // the delete response YAMLs), so it is the spec's own exemption.
+        let preceding_in_path = method == "delete" && path.ends_with("{uid_based_id}");
         let exempt = path.contains("item_tag")
             || path.contains("/tags")
             || path.contains("/admin/")
-            || path.contains("/versioned_");
+            || path.contains("/versioned_")
+            || preceding_in_path;
         if !versioned || exempt {
             continue;
         }

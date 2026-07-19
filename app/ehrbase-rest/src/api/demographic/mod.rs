@@ -100,6 +100,13 @@ fn set_headers(resp: &mut Response, base: &str, segment: &str, meta: Option<&Res
     if let Ok(etag) = HeaderValue::from_str(&format!("W/\"{}\"", meta.uid)) {
         resp.headers_mut().insert(header::ETAG, etag);
     }
+    // `Last-Modified` from the version's commit time — overview §"ETag and
+    // Last-Modified": both SHOULD accompany versioned resources.
+    if let Some(at) = meta.last_modified
+        && let Ok(lm) = HeaderValue::from_str(&crate::overview::negotiate::http_date(at))
+    {
+        resp.headers_mut().insert(header::LAST_MODIFIED, lm);
+    }
     let location = format!("{base}/demographic/{segment}/{}", meta.uid);
     if let Ok(loc) = HeaderValue::from_str(&location) {
         resp.headers_mut().insert(header::LOCATION, loc);

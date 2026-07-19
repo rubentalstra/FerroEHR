@@ -20,7 +20,10 @@
 //! (`docs/overview/Requests_and_responses.md`): the weak `W/` `ETag` MUST, the
 //! `Prefer` `return=minimal|representation|identifier` triad, the
 //! committal-header (`openehr-version`/`openehr-audit-details`) MUST-accept
-//! rule, and the `If-Match` 400/412 rules. Demographic `PARTY`/`PARTY_RELATIONSHIP`
+//! rule, and the `If-Match` 400/412 rules.
+//! Every versioned response also carries `Last-Modified` from the version's
+//! commit time (overview §"`ETag` and Last-Modified": both SHOULD accompany
+//! versioned resources). Demographic `PARTY`/`PARTY_RELATIONSHIP`
 //! resources are not templated, so a Simplified-Format `Content-Type`/`Accept`
 //! is rejected (`415`/`406` — our own design, since no template governs a
 //! party); this is not in the YAMLs' `Accept_LOCATABLE` enum but is the real

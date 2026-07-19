@@ -65,10 +65,9 @@ pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
     post, path = "/demographic/party_relationship", tag = "demographic-relationship",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default; empty body) or \
-                        `return=representation` (the created relationship). \
-                        `return=identifier` is treated as `minimal` here (our \
-                        extension)."),
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created relationship), or \
+                        `return=identifier` (`{uid}` only)."),
         ("openehr-version" = Option<String>, Header,
          description = "Optional committal metadata for the new VERSION; \
                         accepted per the committal-header MUST-accept rule."),
@@ -549,8 +548,13 @@ fn write_relationship(
     repr_status: StatusCode,
     resp: &ServiceResponse,
 ) -> Response {
+    // The full `Prefer` triad (overview §Prefer): representation → the RM
+    // body; identifier → `{uid}` only; minimal (default) → empty.
+    let uid = resp.meta.as_ref().map(|m| m.uid.clone());
     let mut out = if negotiate::prefers_representation(h) {
         negotiate::respond_rm::<PartyRelationship>(h, repr_status, &resp.body, "party_relationship")
+    } else if let (true, Some(uid)) = (negotiate::prefers_identifier(h), uid.as_deref()) {
+        negotiate::identifier_response(h, repr_status, uid)
     } else {
         negotiate::empty(minimal_status)
     };

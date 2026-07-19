@@ -1304,9 +1304,11 @@ pub(crate) async fn composition_tags_get(
     params(
         ("ehr_id" = String, Path,
          description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
-        // NOTE: the spec lists a `Prefer` header (200 representation / 204
-        // minimal), but this endpoint always returns the stored list with 200
-        // — `Prefer` has no effect here, so it is not documented as a param.
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; `204 No Content`) or \
+                        `return=representation` (`200` with the stored \
+                        ITEM_TAG list). `return=identifier` behaves as \
+                        `minimal` (a tag list has no single identifier)."),
         ("uid_based_id" = String, Path,
          description = "An OBJECT_VERSION_ID (tags of a specific COMPOSITION \
                         version) or a HIER_OBJECT_ID (tags of the \
@@ -1317,8 +1319,12 @@ pub(crate) async fn composition_tags_get(
                                 target; an empty list removes all tags."),
     responses(
         (status = 200, description = "Updated; the stored ITEM_TAG list is \
-                                      returned.",
+                                      returned (`Prefer: \
+                                      return=representation`).",
          body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer` missing or \
+                                      `return=minimal` — the default; \
+                                      `204_updated.yaml`)."),
         (status = 400, description = "The ITEM_TAG list is malformed.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
@@ -1414,9 +1420,11 @@ pub(crate) async fn ehr_status_tags_get(
     params(
         ("ehr_id" = String, Path,
          description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
-        // NOTE: the spec lists a `Prefer` header (200 representation / 204
-        // minimal), but this endpoint always returns the stored list with 200
-        // — `Prefer` has no effect here, so it is not documented as a param.
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; `204 No Content`) or \
+                        `return=representation` (`200` with the stored \
+                        ITEM_TAG list). `return=identifier` behaves as \
+                        `minimal` (a tag list has no single identifier)."),
         ("uid_based_id" = String, Path,
          description = "An OBJECT_VERSION_ID (tags of a specific EHR_STATUS \
                         version) or a HIER_OBJECT_ID (tags of the \
@@ -1427,8 +1435,12 @@ pub(crate) async fn ehr_status_tags_get(
                                 target; an empty list removes all tags."),
     responses(
         (status = 200, description = "Updated; the stored ITEM_TAG list is \
-                                      returned.",
+                                      returned (`Prefer: \
+                                      return=representation`).",
          body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer` missing or \
+                                      `return=minimal` — the default; \
+                                      `204_updated.yaml`)."),
         (status = 400, description = "The ITEM_TAG list is malformed.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
