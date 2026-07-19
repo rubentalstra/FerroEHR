@@ -70,6 +70,35 @@ pub(crate) struct BmmClass {
     pub generic_params: Vec<BmmGenericParam>,
     /// Properties in declaration order.
     pub properties: Vec<BmmProperty>,
+    /// Enumeration definition when the class is a `P_BMM_ENUMERATION_*`
+    /// (`BMM_ENUMERATION`: an underlying basic type + a set of named constants).
+    pub enumeration: Option<BmmEnumeration>,
+}
+
+/// A BMM enumeration definition (`BMM_ENUMERATION` / persisted
+/// `P_BMM_ENUMERATION_INTEGER` | `P_BMM_ENUMERATION_STRING`): an underlying
+/// basic type plus a 1:1 `item_names` / `item_values` pair of named constants.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct BmmEnumeration {
+    /// `underlying_type_name` — `"INTEGER"` for `P_BMM_ENUMERATION_INTEGER`,
+    /// `"STRING"` for `P_BMM_ENUMERATION_STRING` (`BMM_ENUMERATION_*` redefine it).
+    pub underlying_type: String,
+    /// The constant names, in declaration order (`BMM_ENUMERATION.item_names`).
+    pub item_names: Vec<String>,
+    /// The explicit constant values, 1:1 with `item_names`, when the BMM supplies
+    /// them (`BMM_ENUMERATION.item_values`, optional). Absence is preserved as
+    /// `None`; the default-value rule is applied by the consumer, not here.
+    pub item_values: Option<Vec<BmmEnumValue>>,
+}
+
+/// One enumeration constant value (`BMM_ENUMERATION.item_values` is `List<Any>`;
+/// the concrete subtype fixes it to `Integer` or `String`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum BmmEnumValue {
+    /// An integer constant (`P_BMM_ENUMERATION_INTEGER`).
+    Int(i64),
+    /// A string constant (`P_BMM_ENUMERATION_STRING`).
+    Str(String),
 }
 
 /// A generic parameter of a class, e.g. `T conforms_to DV_ORDERED`.
@@ -316,6 +345,8 @@ fn parse_class(node: &Value) -> BmmClass {
         .map(|m| m.values().map(parse_property).collect())
         .unwrap_or_default();
 
+    let enumeration = parse_enumeration(node);
+
     BmmClass {
         name,
         documentation,
@@ -323,7 +354,43 @@ fn parse_class(node: &Value) -> BmmClass {
         is_abstract,
         generic_params,
         properties,
+        enumeration,
     }
+}
+
+/// Parse the enumeration facet of a class node, if its `_type` marks it a
+/// `P_BMM_ENUMERATION_INTEGER` / `P_BMM_ENUMERATION_STRING` (both carry
+/// `item_names` + optional `item_values`; the underlying type distinguishes them).
+fn parse_enumeration(node: &Value) -> Option<BmmEnumeration> {
+    let ptype = node.get("_type").and_then(Value::as_str).unwrap_or("");
+    let underlying_type = match ptype {
+        "P_BMM_ENUMERATION_INTEGER" => "INTEGER",
+        "P_BMM_ENUMERATION_STRING" => "STRING",
+        _ => return None,
+    }
+    .to_string();
+    let item_names = str_vec(node.get("item_names"));
+    // `item_values` is `List<Any>`; each element is a JSON integer (INTEGER
+    // enum) or JSON string (STRING enum). Missing → `None` (default applied
+    // downstream per `BMM_ENUMERATION`).
+    let item_values = node
+        .get("item_values")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().map(parse_enum_value).collect());
+    Some(BmmEnumeration {
+        underlying_type,
+        item_names,
+        item_values,
+    })
+}
+
+/// One `item_values` element: a JSON integer → [`BmmEnumValue::Int`], anything
+/// else (a JSON string) → [`BmmEnumValue::Str`] of its string form.
+fn parse_enum_value(v: &Value) -> BmmEnumValue {
+    v.as_i64().map_or_else(
+        || BmmEnumValue::Str(v.as_str().unwrap_or_default().to_string()),
+        BmmEnumValue::Int,
+    )
 }
 
 fn parse_property(node: &Value) -> BmmProperty {
@@ -570,6 +637,46 @@ mod tests {
             }
             other @ BmmPropKind::Single(_) => panic!("expected container, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn parses_enumeration_classes() {
+        const ENUM_SNIPPET: &str = r#"{
+            "schema_name": "base",
+            "class_definitions": {
+                "PROPORTION_KIND": {
+                    "_type": "P_BMM_ENUMERATION_INTEGER",
+                    "name": "PROPORTION_KIND",
+                    "ancestors": ["Integer"],
+                    "item_names": ["pk_ratio", "pk_unitary"],
+                    "item_values": [0, 1]
+                },
+                "VALIDITY_KIND": {
+                    "_type": "P_BMM_ENUMERATION_STRING",
+                    "name": "VALIDITY_KIND",
+                    "ancestors": ["String"],
+                    "item_names": ["mandatory", "optional"]
+                },
+                "DV_QUANTITY": { "name": "DV_QUANTITY" }
+            }
+        }"#;
+        let s = BmmSchema::parse_json(ENUM_SNIPPET).unwrap();
+
+        let pk = s.classes["PROPORTION_KIND"].enumeration.as_ref().unwrap();
+        assert_eq!(pk.underlying_type, "INTEGER");
+        assert_eq!(pk.item_names, vec!["pk_ratio", "pk_unitary"]);
+        assert_eq!(
+            pk.item_values,
+            Some(vec![BmmEnumValue::Int(0), BmmEnumValue::Int(1)])
+        );
+
+        let vk = s.classes["VALIDITY_KIND"].enumeration.as_ref().unwrap();
+        assert_eq!(vk.underlying_type, "STRING");
+        assert_eq!(vk.item_names, vec!["mandatory", "optional"]);
+        assert_eq!(vk.item_values, None);
+
+        // A non-enumeration class carries no enumeration facet.
+        assert!(s.classes["DV_QUANTITY"].enumeration.is_none());
     }
 
     #[test]
