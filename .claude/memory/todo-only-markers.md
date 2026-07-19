@@ -19,10 +19,16 @@ markers rot silently. Same logic as the reliability rules ("a rule without
 a failing check is a wish").
 
 **How to apply:** pending/deferred work → `// TODO(scope):` with the
-reason. A deliberate spec-silent design decision is NOT pending work → a
+reason. **Reinforced 2026-07-19 (owner caught agents writing prose
+deferrals):** work postponed to a later phase/session ("deferred to the
+flattener", "lands in a later phase", "resolved in A7") IS pending work →
+`// TODO: <what is missing>`; prose deferral notes are forbidden, and
+phase/plan markers (A5/P16/W-nn) in code are the banned tracker-ID
+pattern. A deliberate spec-silent design decision is NOT pending work → a
 plain `// NOTE:` comment with the spec citation or the "no openEHR spec
-governs this — our own design/extension" flag. Never reintroduce a bespoke
-marker. Enforcement: the `comment-markers` CI guard in
+governs this — our own design/extension" flag. If a comment describes
+something not yet done, it is a TODO, never a NOTE. Never reintroduce a
+bespoke marker. Enforcement: the `comment-markers` CI guard in
 `.github/workflows/ci.yml` greps the banned forms and fails; the rule is
 registered in `.claude/rules/reliability.md` and root CLAUDE.md.
 Related: [[owner-work-style]], [[no-task-ids-in-code]].
