@@ -37,8 +37,11 @@ fn row_class(selected: bool) -> &'static str {
 }
 
 /// The directory toolbar: history / time / path toggles and a two-step
-/// delete. Shown only when a directory exists (read reactively from the shared
-/// directory resource — rules §6).
+/// delete. Shown only when a directory exists. The existence flag comes from
+/// the shared directory resource, which MUST be resolved under a
+/// `<Transition>` boundary — a bare render-time read of a resource is a
+/// hydration mismatch in hydrate mode (rules §6/§8; caught live by the
+/// composed e2e battery: the mismatch killed page interactivity).
 pub(in crate::pages::ehr_detail::directory) fn directory_toolbar(
     ehr_id: Signal<String>,
     directory: Resource<Result<Option<DirectoryState>, AdminUiError>>,
@@ -47,21 +50,50 @@ pub(in crate::pages::ehr_detail::directory) fn directory_toolbar(
     time_open: RwSignal<bool>,
     path_open: RwSignal<bool>,
 ) -> AnyView {
-    // A Memo over `.with()` — the resource value embeds the whole FOLDER
-    // body; `.get()` in a per-tick closure would clone it every evaluation
-    // (rules §2).
-    let has_directory = Memo::new(move |_| directory.with(|d| matches!(d, Some(Ok(Some(_))))));
+    // Created OUTSIDE the Suspend so the confirm state survives re-runs.
     let confirm_delete = RwSignal::new(false);
+    view! {
+        <Transition fallback=|| ()>
+            {move || Suspend::new(async move {
+                let has_directory = matches!(directory.await, Ok(Some(_)));
+                toolbar_body(
+                    ehr_id,
+                    directory,
+                    delete,
+                    history_open,
+                    time_open,
+                    path_open,
+                    confirm_delete,
+                    has_directory,
+                )
+            })}
+        </Transition>
+    }
+    .into_any()
+}
 
+/// The toolbar's rendered body (built fresh per directory resolution — no
+/// resource reads at render time; the click handlers read untracked).
+#[allow(clippy::too_many_arguments)] // one view fn wiring the toolbar's full state set
+fn toolbar_body(
+    ehr_id: Signal<String>,
+    directory: Resource<Result<Option<DirectoryState>, AdminUiError>>,
+    delete: Action<(String, String), Result<(), AdminUiError>>,
+    history_open: RwSignal<bool>,
+    time_open: RwSignal<bool>,
+    path_open: RwSignal<bool>,
+    confirm_delete: RwSignal<bool>,
+    has_directory: bool,
+) -> AnyView {
     let on_delete = move |_| {
-        if let Some(Ok(Some(state))) = directory.get() {
+        if let Some(Ok(Some(state))) = directory.get_untracked() {
             delete.dispatch((ehr_id.get(), state.version_uid.clone()));
         }
         confirm_delete.set(false);
     };
 
     view! {
-        <section class=CARD_PAD class:hidden=move || !has_directory.get()>
+        <section class=CARD_PAD class:hidden=!has_directory>
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <div class="flex flex-wrap items-center gap-2">
                     <button
@@ -267,7 +299,7 @@ fn version_preview(
                                 class=BTN_SECONDARY
                                 disabled=Signal::derive(move || restore.pending().get())
                                 on:click=move |_| {
-                                    if let Some(Ok(Some(current))) = directory.get() {
+                                    if let Some(Ok(Some(current))) = directory.get_untracked() {
                                         restore
                                             .dispatch((
                                                 ehr_id.get(),

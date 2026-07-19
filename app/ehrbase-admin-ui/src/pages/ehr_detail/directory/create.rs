@@ -11,16 +11,47 @@ use crate::error::AdminUiError;
 use crate::pages::ehr_detail::directory::tree::read_only_tree;
 use crate::pages::ehr_detail::directory::{FolderTemplate, empty_root_folder};
 
+/// The create flow's long-lived state, created ONCE in
+/// [`directory_section`](super::directory_section) — ABOVE the
+/// `<Transition>`/`Suspend` (rules §4 disposal contract, see
+/// [`super::tree::EditorState`]): the selected folder-template key. Held above
+/// the Suspend so a re-run cannot dispose the signal out from under the mounted
+/// `<select>`/preview closures ("access a reactive value … already disposed").
+#[derive(Clone, Copy)]
+pub(in crate::pages::ehr_detail::directory) struct CreateState {
+    /// The empty string selects the empty root; any other value names a
+    /// template.
+    choice: RwSignal<String>,
+}
+
+impl CreateState {
+    /// Create the create-flow's long-lived state.
+    pub(in crate::pages::ehr_detail::directory) fn new() -> Self {
+        Self {
+            choice: RwSignal::new(String::new()),
+        }
+    }
+}
+
+impl Default for CreateState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// The no-directory view: choose a folder template (or an empty root), preview
 /// the FOLDER tree to be committed, and commit a `POST` create via the shared
-/// `create` action.
+/// `create` action. Its reactive state lives in the long-lived [`CreateState`]
+/// (created above the Suspend — rules §4), so re-running this on a refetch
+/// creates no signals of its own.
 pub(in crate::pages::ehr_detail::directory) fn create_section(
+    state: CreateState,
     templates: Vec<FolderTemplate>,
     ehr_id: Signal<String>,
     create: Action<(String, String), Result<String, AdminUiError>>,
 ) -> AnyView {
     // The empty string selects the empty root; any other value names a template.
-    let choice = RwSignal::new(String::new());
+    let choice = state.choice;
     let templates_for_pick = templates.clone();
     let chosen = Signal::derive(move || {
         let key = choice.get();

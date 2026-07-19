@@ -48,8 +48,164 @@ fn strip_keys_to_string(tree: &Value) -> String {
     serde_json::to_string(&stripped).unwrap_or_default()
 }
 
+/// The directory editor's long-lived reactive state, created ONCE in
+/// [`directory_section`](super::directory_section) — ABOVE the
+/// `<Transition>`/`Suspend` — and re-seeded (idempotent per loaded version) by
+/// [`seed`] on each Suspend re-run.
+///
+/// This is the rules §4 disposal contract in signal form. A `Suspend` closure
+/// re-runs on every notification of the resources it awaits (the directory
+/// resource re-notifies right after every write refetch), and each re-run
+/// DISPOSES the previous run's reactive owner. Signals created *inside* the
+/// Suspend therefore die while the already-mounted DOM event handlers and icon
+/// `Signal::derive` views still reference them, so the next interaction panics
+/// ("you tried to access a reactive value … but it has already been disposed",
+/// then "unreachable" — the whole wasm runtime wedges). Held here, above the
+/// Suspend at the tab's owner, every signal outlives every re-run and each
+/// re-render simply re-reads it.
+#[derive(Clone, Copy)]
+pub(in crate::pages::ehr_detail::directory) struct EditorState {
+    /// The working FOLDER tree (mutated in place; the single source of truth).
+    /// Every folder carries an ephemeral `_key` identity (see the module doc).
+    tree: RwSignal<Value>,
+    /// The pristine baseline the working tree is compared against for `dirty`
+    /// (the same stamped copy `tree` is seeded from).
+    original: RwSignal<Value>,
+    /// Ephemeral `_key`s of collapsed folders (expanded unless listed).
+    collapsed: RwSignal<std::collections::HashSet<String>>,
+    /// The ephemeral `_key` of the folder currently being renamed, if any.
+    renaming: RwSignal<Option<String>>,
+    /// The in-progress rename text.
+    rename_draft: RwSignal<String>,
+    /// Whether the advanced raw-JSON editor is open (kept across re-seeds).
+    advanced: RwSignal<bool>,
+    /// The advanced-mode JSON draft (the stripped tree the user edits).
+    json_draft: RwSignal<String>,
+    /// The advanced-mode parse error, if the draft is not valid JSON.
+    json_error: RwSignal<Option<String>>,
+    /// The next free `_key` ordinal, advanced as folders are added (see
+    /// [`super::edit::stamp_keys`]); reset to the fresh stamp count on seed.
+    counter: StoredValue<u64>,
+    /// The loaded version's `uid.value` (`OBJECT_VERSION_ID`) — the `If-Match`
+    /// value the save sends.
+    version_uid: RwSignal<String>,
+    /// The version this state was last seeded from; [`seed`] is a no-op while
+    /// it already equals the loaded version, so a Suspend re-run for the SAME
+    /// version never re-parses over the user's in-progress edits.
+    seeded_uid: RwSignal<Option<String>>,
+    /// The `update` action version captured at seed time; the conflict banner
+    /// compares against it so only a failed write AFTER this load counts.
+    conflict_baseline: StoredValue<usize>,
+    /// The picker modal's manual-entry `OBJECT_REF` namespace. The picker
+    /// overlay is an always-mounted hidden `<div>`, so its `prop:value`
+    /// closures reference these across Suspend re-runs too — they are hoisted
+    /// here for the same disposal reason (rules §4).
+    manual_namespace: RwSignal<String>,
+    /// The manual-entry reference `type`.
+    manual_type: RwSignal<String>,
+    /// The manual-entry `OBJECT_ID` subtype.
+    manual_id_type: RwSignal<String>,
+    /// The manual-entry id value.
+    manual_id: RwSignal<String>,
+    /// Whether the working tree differs from `original` (drives the save bar).
+    /// Created ONCE at construction — never per Suspend run (rules §4).
+    dirty: Memo<bool>,
+    /// Whether a `412` conflict landed on THIS loaded version (drives the
+    /// conflict banner). Created ONCE at construction (rules §4).
+    conflicted: Memo<bool>,
+}
+
+impl EditorState {
+    /// Create the editor's long-lived state. The `dirty` and `conflicted`
+    /// memos are created here so they, too, outlive every Suspend re-run
+    /// (rules §4); `update` is the directory-update action they observe.
+    pub(in crate::pages::ehr_detail::directory) fn new(
+        update: Action<(String, String, String), Result<String, AdminUiError>>,
+    ) -> Self {
+        let tree = RwSignal::new(Value::Null);
+        let original = RwSignal::new(Value::Null);
+        let counter = StoredValue::new(0u64);
+        let conflict_baseline = StoredValue::new(0usize);
+        let dirty = Memo::new(move |_| tree.with(|t| original.with(|o| t != o)));
+        let conflicted = Memo::new(move |_| {
+            update.version().get() > conflict_baseline.get_value()
+                && update
+                    .value()
+                    .with(|v| matches!(v, Some(Err(e)) if super::is_conflict(e)))
+        });
+        Self {
+            tree,
+            original,
+            collapsed: RwSignal::new(std::collections::HashSet::new()),
+            renaming: RwSignal::new(None),
+            rename_draft: RwSignal::new(String::new()),
+            advanced: RwSignal::new(false),
+            json_draft: RwSignal::new(String::new()),
+            json_error: RwSignal::new(None),
+            counter,
+            version_uid: RwSignal::new(String::new()),
+            seeded_uid: RwSignal::new(None),
+            conflict_baseline,
+            manual_namespace: RwSignal::new("local".to_owned()),
+            manual_type: RwSignal::new("COMPOSITION".to_owned()),
+            manual_id_type: RwSignal::new("HIER_OBJECT_ID".to_owned()),
+            manual_id: RwSignal::new(String::new()),
+            dirty,
+            conflicted,
+        }
+    }
+}
+
+/// Seed [`EditorState`] from the freshly-loaded directory `state`, ONCE per
+/// loaded version (rules §4 — the state lives above the Suspend, so a Suspend
+/// re-run for the same version must NOT re-parse over the user's edits). On a
+/// new version it parses the body, stamps a fresh ephemeral `_key` on every
+/// folder (see [`super::edit::stamp_keys`]), and resets the working tree +
+/// pristine baseline (the SAME stamped copy, so `dirty` stays a plain equality
+/// compare), the counter, `version_uid`, collapse/rename state, the parse
+/// error, the advanced-JSON draft (from the stripped new body), and the
+/// conflict baseline; `advanced` is left as the user set it. Every write runs
+/// during a render pass, so plain `.set()`/`.set_value()` is correct.
+///
+/// # Errors
+/// [`AdminUiError::Internal`] if the CDR body is not valid JSON (it always is;
+/// this is the defensive path — `seeded_uid` is left unset so a later render
+/// re-attempts the seed).
+pub(in crate::pages::ehr_detail::directory) fn seed(
+    editor: &EditorState,
+    state: &DirectoryState,
+    update: Action<(String, String, String), Result<String, AdminUiError>>,
+) -> Result<(), AdminUiError> {
+    if editor.seeded_uid.get_untracked().as_deref() == Some(state.version_uid.as_str()) {
+        return Ok(());
+    }
+    let mut doc: Value = serde_json::from_str(&state.body)
+        .map_err(|e| AdminUiError::Internal(format!("directory JSON: {e}")))?;
+    let mut fresh_counter = 0u64;
+    stamp_keys(&mut doc, &mut fresh_counter);
+    editor.tree.set(doc.clone());
+    editor.original.set(doc);
+    editor.counter.set_value(fresh_counter);
+    editor.version_uid.set(state.version_uid.clone());
+    editor.collapsed.set(std::collections::HashSet::new());
+    editor.renaming.set(None);
+    editor.json_error.set(None);
+    // The advanced-JSON draft shows the STRIPPED tree; the server body already
+    // carries no `_key`, so seeding it directly is correct (rules §4 contract).
+    editor
+        .json_draft
+        .set(pretty_body(&state.body, ReprFormat::CanonicalJson));
+    editor
+        .conflict_baseline
+        .set_value(update.version().get_untracked());
+    editor.seeded_uid.set(Some(state.version_uid.clone()));
+    Ok(())
+}
+
 /// The editor's shared, `Copy` handle threaded through the recursive render:
-/// the working tree plus its UI state and the composition picker.
+/// the working tree plus its UI state and the composition picker. Built from
+/// the long-lived [`EditorState`] fields (rules §4) — the recursive renderers
+/// therefore capture only signals that outlive every Suspend re-run.
 #[derive(Clone, Copy)]
 struct TreeEditor {
     /// The working FOLDER tree (mutated in place; the single source of truth).
@@ -64,6 +220,15 @@ struct TreeEditor {
     /// The next free `_key` ordinal, advanced as folders are added (see
     /// [`super::edit::stamp_keys`]); persisted across clicks for uniqueness.
     counter: StoredValue<u64>,
+    /// The picker modal's manual-entry `OBJECT_REF` namespace (long-lived —
+    /// see [`EditorState`]).
+    manual_namespace: RwSignal<String>,
+    /// The manual-entry reference `type`.
+    manual_type: RwSignal<String>,
+    /// The manual-entry `OBJECT_ID` subtype.
+    manual_id_type: RwSignal<String>,
+    /// The manual-entry id value.
+    manual_id: RwSignal<String>,
     /// The composition list for the "add item" picker (created outside the
     /// Suspend, read here — rules §4).
     picker: PickerResource,
@@ -74,12 +239,13 @@ struct TreeEditor {
 
 /// The existing-directory experience: the structured tree editor with a
 /// dirty-state save bar (`PUT` with `If-Match`), an advanced raw-JSON mode,
-/// and the composition picker. The working tree is seeded from `state`; a
-/// successful save refetches the directory (via the shared `update` action's
-/// version — rules §6), re-running this section with the fresh version.
-#[allow(clippy::too_many_lines)] // the editor view + its working-tree state + save bar + advanced mode assembled as one unit
+/// and the composition picker. ALL reactive state lives in the long-lived
+/// [`EditorState`] (seeded by [`seed`] above the Suspend) — this function
+/// creates NO signals of its own (rules §4), so it is safe to re-run on every
+/// directory refetch.
+#[allow(clippy::too_many_lines)] // the editor view + save bar + advanced mode + picker assembled as one unit
 pub(in crate::pages::ehr_detail::directory) fn tree_editor(
-    state: &DirectoryState,
+    editor: &EditorState,
     ehr_id: Signal<String>,
     update: Action<(String, String, String), Result<String, AdminUiError>>,
     force_save: Action<(String, String), Result<String, AdminUiError>>,
@@ -87,53 +253,24 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     picker: PickerResource,
     picker_target: RwSignal<Option<String>>,
 ) -> AnyView {
-    let mut doc: Value = match serde_json::from_str(&state.body) {
-        Ok(value) => value,
-        Err(e) => {
-            return inline_error(&AdminUiError::Internal(format!("directory JSON: {e}")));
-        }
-    };
-    let version_uid = state.version_uid.clone();
-    // The advanced-JSON draft shows the STRIPPED tree; the server body already
-    // carries no `_key`, so seeding it directly is correct (rules §4 contract).
-    let pretty = pretty_body(&state.body, ReprFormat::CanonicalJson);
-
-    // Stamp every folder with its ephemeral `_key` identity ONCE, then seed
-    // both the working tree and the pristine baseline from the SAME stamped
-    // copy so `dirty` stays a plain equality compare (rules §4; see
-    // [`super::edit::stamp_keys`]).
-    let mut seed_counter = 0u64;
-    stamp_keys(&mut doc, &mut seed_counter);
-    let tree = RwSignal::new(doc.clone());
-    let original = StoredValue::new(doc);
-    let counter = StoredValue::new(seed_counter);
-    let collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
-    let renaming = RwSignal::new(Option::<String>::None);
-    let rename_draft = RwSignal::new(String::new());
-    let advanced = RwSignal::new(false);
-    let json_draft = RwSignal::new(pretty);
-    let json_error = RwSignal::new(Option::<String>::None);
-
-    let dirty = Memo::new(move |_| tree.with(|t| original.with_value(|o| t != o)));
-
-    // A `412` on THIS loaded version (completions after this editor's
-    // creation baseline): the refetch trigger deliberately ignores failed
-    // writes so the working tree survives — this banner offers the two
-    // explicit ways out (discard-and-reload, or informed overwrite).
-    let editor_baseline = update.version().get_untracked();
-    let conflicted = Memo::new(move |_| {
-        update.version().get() > editor_baseline
-            && update
-                .value()
-                .with(|v| matches!(v, Some(Err(e)) if super::is_conflict(e)))
-    });
+    // `EditorState` is a `Copy` bundle of arena-indexed reactive handles; take
+    // an owned copy so the `'static` event-handler closures below capture the
+    // long-lived signals directly (the handle is passed by reference only to
+    // satisfy `clippy::large_types_passed_by_value`).
+    let editor = *editor;
+    let dirty = editor.dirty;
+    let conflicted = editor.conflicted;
 
     let ed = TreeEditor {
-        tree,
-        collapsed,
-        renaming,
-        rename_draft,
-        counter,
+        tree: editor.tree,
+        collapsed: editor.collapsed,
+        renaming: editor.renaming,
+        rename_draft: editor.rename_draft,
+        counter: editor.counter,
+        manual_namespace: editor.manual_namespace,
+        manual_type: editor.manual_type,
+        manual_id_type: editor.manual_id_type,
+        manual_id: editor.manual_id,
         picker,
         picker_target,
     };
@@ -141,39 +278,39 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
     // Save the working tree as a new version (PUT + If-Match). The ephemeral
     // `_key` identity is stripped from the wire body (rules §4 contract).
     let on_save = move |_| {
-        let body = tree.with(strip_keys_to_string);
-        update.dispatch((ehr_id.get(), version_uid.clone(), body));
+        let body = editor.tree.with(strip_keys_to_string);
+        update.dispatch((ehr_id.get(), editor.version_uid.get_untracked(), body));
     };
     let on_discard = move |_| {
-        tree.set(original.get_value());
-        renaming.set(None);
-        json_error.set(None);
+        editor.tree.set(editor.original.get_untracked());
+        editor.renaming.set(None);
+        editor.json_error.set(None);
     };
 
     // Advanced mode: toggling on seeds the JSON draft from the current tree
     // (with `_key` stripped — the user never sees console-local identity);
     // "Apply" parses it back into the working tree and re-stamps.
     let on_toggle_advanced = move |_| {
-        advanced.update(|open| {
+        editor.advanced.update(|open| {
             *open = !*open;
             if *open {
-                let text = tree.with(|t| {
+                let text = editor.tree.with(|t| {
                     let mut stripped = t.clone();
                     strip_keys(&mut stripped);
                     serde_json::to_string_pretty(&stripped).unwrap_or_else(|_| "{}".to_owned())
                 });
-                json_draft.set(text);
-                json_error.set(None);
+                editor.json_draft.set(text);
+                editor.json_error.set(None);
             }
         });
     };
-    let on_apply_json = move |_| match serde_json::from_str::<Value>(&json_draft.get()) {
+    let on_apply_json = move |_| match serde_json::from_str::<Value>(&editor.json_draft.get()) {
         Ok(mut value) => {
-            counter.update_value(|c| stamp_keys(&mut value, c));
-            tree.set(value);
-            json_error.set(None);
+            editor.counter.update_value(|c| stamp_keys(&mut value, c));
+            editor.tree.set(value);
+            editor.json_error.set(None);
         }
-        Err(e) => json_error.set(Some(format!("Invalid JSON: {e}"))),
+        Err(e) => editor.json_error.set(Some(format!("Invalid JSON: {e}"))),
     };
 
     let tree_body = tree_view(ed);
@@ -186,7 +323,7 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
                     <h2 class=CARD_TITLE>"Directory"</h2>
                     <span class="text-xs text-ink-muted">
                         {move || {
-                            let (folders, items) = tree.with(count_tree);
+                            let (folders, items) = editor.tree.with(count_tree);
                             format!("{folders} folders · {items} items")
                         }}
                     </span>
@@ -199,23 +336,25 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
                 >
                     <leptos_icons::Icon icon=icondata_lu::LuCode width="14" height="14" />
                     {move || {
-                        if advanced.get() { "Hide JSON" } else { "Advanced: edit as JSON" }
+                        if editor.advanced.get() { "Hide JSON" } else { "Advanced: edit as JSON" }
                     }}
                 </button>
             </div>
 
-            <div class:hidden=move || advanced.get()>
-                <ul class="mt-2 text-sm text-ink">{tree_body}</ul>
+            <div class:hidden=move || editor.advanced.get()>
+                <ul id="directory-tree" class="mt-2 text-sm text-ink">
+                    {tree_body}
+                </ul>
             </div>
 
-            <div class="mt-2 flex flex-col gap-2" class:hidden=move || !advanced.get()>
+            <div class="mt-2 flex flex-col gap-2" class:hidden=move || !editor.advanced.get()>
                 <textarea
                     id="directory-body"
                     class=format!("{TEXTAREA} min-h-[16rem]")
-                    prop:value=move || json_draft.get()
-                    on:input:target=move |ev| json_draft.set(ev.target().value())
+                    prop:value=move || editor.json_draft.get()
+                    on:input:target=move |ev| editor.json_draft.set(ev.target().value())
                 >
-                    {json_draft.get_untracked()}
+                    {editor.json_draft.get_untracked()}
                 </textarea>
                 <div class="flex items-center gap-3">
                     <button type="button" class=BTN_SECONDARY on:click=on_apply_json>
@@ -223,7 +362,8 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
                         "Apply to tree"
                     </button>
                     {move || {
-                        json_error
+                        editor
+                            .json_error
                             .get()
                             .map(|msg| {
                                 view! { <span class="text-sm text-danger">{msg}</span> }
@@ -247,7 +387,7 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
                     class=BTN_PRIMARY
                     disabled=Signal::derive(move || force_save.pending().get())
                     on:click=move |_| {
-                        let body = tree.with(strip_keys_to_string);
+                        let body = editor.tree.with(strip_keys_to_string);
                         force_save.dispatch((ehr_id.get(), body));
                     }
                 >
@@ -293,10 +433,25 @@ pub(in crate::pages::ehr_detail::directory) fn tree_editor(
 }
 
 /// The root of the editable tree (the root folder, addressed by its ephemeral
-/// `_key`). The root is always present and stamped at seed.
+/// `_key`). The root key is derived REACTIVELY through a `Memo`: the working
+/// tree is empty (`Null`) until [`seed`] runs, and this whole editor view is
+/// built ONCE — above the directory `Suspend` — so it survives every refetch
+/// (rules §4; the disposal defect otherwise re-creates the per-folder icon
+/// derives on each Suspend re-run). The root's `_key` is stable across seeds
+/// (`stamp_keys` always numbers the root `n0`), so the folder tree is built
+/// exactly once after the first seed and then updated fine-grained (the inner
+/// `<For>`s + reactive reads) — never rebuilt on a plain edit or a re-seed.
 fn tree_view(ed: TreeEditor) -> AnyView {
-    let root_key = ed.tree.with(|t| node_key_at(t, &[])).unwrap_or_default();
-    render_folder(ed, root_key, true)
+    let root_key = Memo::new(move |_| ed.tree.with(|t| node_key_at(t, &[]).unwrap_or_default()));
+    (move || {
+        let key = root_key.get();
+        if key.is_empty() {
+            ().into_any()
+        } else {
+            render_folder(ed, key, true)
+        }
+    })
+    .into_any()
 }
 
 /// Render one FOLDER node, identified by its ephemeral `_key` (`node_key`).
@@ -308,27 +463,37 @@ fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
     let key_collapsed = node_key.clone();
     let is_collapsed = move || ed.collapsed.with(|c| c.contains(&key_collapsed));
 
+    // Dynamic icons are VIEW branches over static icondata values, never a
+    // derived `Signal<Icon>` fed into the `Icon` prop: the icon component's
+    // internal reactivity can fire against a row-owned derived signal after
+    // the row is disposed and panic-wedge the wasm runtime (proven live by
+    // the composed battery; the template-detail caret uses this same
+    // branch-the-view pattern).
     let key_icon = node_key.clone();
-    let folder_icon = Signal::derive(move || {
+    let folder_icon = move || {
         let expanded = ed.collapsed.with(|c| !c.contains(&key_icon));
         let has_content = ed.tree.with(|t| {
             find_path_by_key(t, &key_icon)
                 .is_some_and(|p| !child_node_keys(t, &p).is_empty() || item_count(t, &p) > 0)
         });
         if expanded && has_content {
-            icondata_lu::LuFolderOpen
+            view! { <leptos_icons::Icon icon=icondata_lu::LuFolderOpen width="15" height="15" /> }
+                .into_any()
         } else {
-            icondata_lu::LuFolder
+            view! { <leptos_icons::Icon icon=icondata_lu::LuFolder width="15" height="15" /> }
+                .into_any()
         }
-    });
+    };
     let key_chevron = node_key.clone();
-    let chevron = Signal::derive(move || {
+    let chevron = move || {
         if ed.collapsed.with(|c| c.contains(&key_chevron)) {
-            icondata_lu::LuChevronRight
+            view! { <leptos_icons::Icon icon=icondata_lu::LuChevronRight width="14" height="14" /> }
+                .into_any()
         } else {
-            icondata_lu::LuChevronDown
+            view! { <leptos_icons::Icon icon=icondata_lu::LuChevronDown width="14" height="14" /> }
+                .into_any()
         }
-    });
+    };
 
     let key_toggle = node_key.clone();
     let on_toggle = move |_| {
@@ -349,9 +514,9 @@ fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
         <li class="py-0.5">
             <div class="flex items-center gap-1">
                 <button type="button" class=ICON_BTN aria-label="Toggle folder" on:click=on_toggle>
-                    <leptos_icons::Icon icon=chevron width="14" height="14" />
+                    {chevron}
                 </button>
-                <leptos_icons::Icon icon=folder_icon width="15" height="15" />
+                {folder_icon}
                 {name_area}
                 {actions}
             </div>
@@ -585,10 +750,13 @@ fn render_item(ed: TreeEditor, parent_key: String, idx: usize) -> AnyView {
 /// from the shared picker resource) and a manual `OBJECT_REF` entry form.
 #[allow(clippy::too_many_lines)] // the modal composes the composition list + the manual-entry form as one overlay
 fn picker_modal(ed: TreeEditor) -> AnyView {
-    let manual_namespace = RwSignal::new("local".to_owned());
-    let manual_type = RwSignal::new("COMPOSITION".to_owned());
-    let manual_id_type = RwSignal::new("HIER_OBJECT_ID".to_owned());
-    let manual_id = RwSignal::new(String::new());
+    // The manual-entry form signals are long-lived (on [`EditorState`]) — this
+    // overlay is an always-mounted hidden `<div>`, so its `prop:value` closures
+    // must reference signals that outlive every Suspend re-run (rules §4).
+    let manual_namespace = ed.manual_namespace;
+    let manual_type = ed.manual_type;
+    let manual_id_type = ed.manual_id_type;
+    let manual_id = ed.manual_id;
 
     let close = move |_| ed.picker_target.set(None);
 

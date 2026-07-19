@@ -77,12 +77,12 @@ async fn directory_tree_edit_journey() {
     create_directory_from_template(&h, &ehr_id).await;
 
     // Add a subfolder at the root ("New folder"), which marks the tree dirty.
-    h.wait_css("#directory-edit [aria-label='Add subfolder']")
+    h.wait_css("[aria-label='Add subfolder']")
         .await
         .click()
         .await
         .expect("add a subfolder at the root");
-    h.wait_xpath("//*[@id='directory-body']//*[contains(normalize-space(.), 'New folder')]")
+    h.wait_xpath("//*[@id='directory-tree']//*[contains(normalize-space(.), 'New folder')]")
         .await;
 
     // Save → PUT with If-Match; the resource refetches and re-seeds.
@@ -93,7 +93,7 @@ async fn directory_tree_edit_journey() {
         .expect("save the edited tree");
     // The save bar disappears once the refetched tree is clean again, and the
     // committed subfolder is still rendered.
-    h.wait_xpath("//*[@id='directory-body']//*[contains(normalize-space(.), 'New folder')]")
+    h.wait_xpath("//*[@id='directory-tree']//*[contains(normalize-space(.), 'New folder')]")
         .await;
     h.assert_console_clean(&[]).await;
     h.finish().await;
@@ -112,7 +112,7 @@ async fn directory_history_and_restore_journey() {
     create_directory_from_template(&h, &ehr_id).await;
 
     // v2: add a subfolder and save.
-    h.wait_css("#directory-edit [aria-label='Add subfolder']")
+    h.wait_css("[aria-label='Add subfolder']")
         .await
         .click()
         .await
@@ -122,6 +122,10 @@ async fn directory_history_and_restore_journey() {
         .click()
         .await
         .expect("save v2");
+
+    // The save toast overlays the bottom-right corner and intercepts clicks
+    // on anything underneath — wait for it to clear (explicit condition).
+    h.wait_toasts_cleared().await;
 
     // Open the history panel: two versions listed, newest first.
     h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
@@ -137,7 +141,8 @@ async fn directory_history_and_restore_journey() {
     v1_row.click().await.expect("select v1");
 
     // v1 preview offers a restore (v1 is not the latest); restoring commits
-    // v3 = v1's tree.
+    // v3 = v1's tree. Any lingering toast would intercept the click.
+    h.wait_toasts_cleared().await;
     h.wait_xpath("//button[contains(normalize-space(.), 'Restore this version')]")
         .await
         .click()
@@ -177,7 +182,9 @@ async fn directory_delete_and_recreate_journey() {
     h.wait_css("#folder-template").await;
 
     // …and a NEW directory can be created (the deleted container remains,
-    // the slot is vacant — proven at the wire by directory_http).
+    // the slot is vacant — proven at the wire by directory_http). The delete
+    // toast must clear first (it intercepts clicks underneath).
+    h.wait_toasts_cleared().await;
     h.wait_css("#directory-create")
         .await
         .click()
