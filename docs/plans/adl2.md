@@ -495,6 +495,10 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   Extend the `emit-rm-model` emitter to expose all three from the BMM +
   regenerate — model-surface change only, zero consumer changes, all
   existing suites stay green.
+- [ ] **ODIN escape-set alignment** (found by the vendor-fixture battery,
+  no fixture drives it): the ODIN lexer rejects `\a \b \f \v \?` (allowed
+  by base_lexer.g4 ESCAPE_SEQ) and accepts 8-hex `\uHHHHHHHH` (grammar
+  allows 4-hex only) — align to the grammar + add the fixture cases.
 - [ ] **A6b — consume the A5b model data**: un-defer VCORMT
   generic-parameter substitution, VCACA's tight lower-bound half on the
   production model, VCORMENV/VCORMENU/VCORMEN; re-claim the adjudicated
