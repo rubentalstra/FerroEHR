@@ -7,11 +7,9 @@ use crate::common::archetyped::link::Link;
 use crate::data_structures::representation::item::Item;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// This class is used to create intermediate representations of data from sources not otherwise conforming to openEHR classes, such as HL7 messages, relational databases and so on.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "GENERIC_ENTRY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GenericEntry {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

@@ -1,7 +1,7 @@
 //! Hand-written RM class invariants for `OBSERVATION`.
 //!
 //! Mirrors archie's `Entry` (non-terminology) + inherited LOCATABLE:
-//! - `Is_archetypeRoot`: an ENTRY is an archetype root, so `archetype_details`
+//! - `Is_archetype_root`: an ENTRY is an archetype root, so `archetype_details`
 //!   must be present.
 //! - `Archetype_node_id_valid`: `archetype_node_id` non-empty.
 //!
@@ -11,15 +11,15 @@
 //! invariant.
 
 use crate::composition::content::entry::observation::Observation;
-use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Observation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_entry_root_invariants(
-            out,
+        crate::validate::generated::entry_root_core(
             "OBSERVATION",
             self.archetype_details.is_some(),
             &self.archetype_node_id,
+            out,
         );
     }
 }
@@ -126,7 +126,7 @@ mod tests {
         let v = o.invariants();
         assert!(
             v.iter()
-                .any(|m| m.message == "Invariant Is_archetypeRoot failed on type OBSERVATION"),
+                .any(|m| m.message == "Invariant Is_archetype_root failed on type OBSERVATION"),
             "got {v:?}"
         );
     }

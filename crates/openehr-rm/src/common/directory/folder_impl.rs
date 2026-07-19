@@ -4,11 +4,11 @@
 //! `Folder.Folders_valid` is `ignored`.
 
 use crate::common::directory::folder::Folder;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Folder {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetype_node_id_valid(out, "FOLDER", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core("FOLDER", &self.archetype_node_id, out);
     }
 }
 

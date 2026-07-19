@@ -1,0 +1,498 @@
+-- 
+-- 	component:   openEHR Reference Model (RM)
+-- 	description: openEHR Reference Model schema. This file format is based on the BMM specification
+--  				http://www.openehr.org/releases/BASE/latest/docs/bmm/bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale
+-- 	support:     https://openehr.atlassian.net/projects/SPECPR
+-- 	copyright:   Copyright (c) 2016 openEHR Foundation
+-- 	license:     Apache 2.0 License <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"base">
+rm_release = <"1.0.4">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.0.4.1">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.0.4 BASE model foundation and base types packages"> 
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.openehr.base.foundation_types"] = <
+		name = <"org.openehr.base.foundation_types">
+		packages = <
+			["base_types"] = <
+				name = <"base_types">
+				classes = <"Any", "Ordered", "Numeric", "Ordered_Numeric", "Octet", "Byte", "Boolean", "Integer", 
+					"Integer64", "Real", "Double", "Character", "String", "Uri", "Terminology_code", "Terminology_term"
+				>
+			>
+			["structures"] = <
+				name = <"structures">
+				classes = <"List", "Array", "Set", "Hash", "Aggregate">
+			>
+			["interval"] = <
+				name = <"interval">
+				classes = <"Interval">
+			>
+			["time"] = <
+				name = <"iso8601_time">
+				classes = <
+					"Date", "Time", "Date_time", "Duration",
+					"Iso8601_type", "Iso8601_date", "Iso8601_time", "Iso8601_date_time", "Iso8601_duration"
+				>
+			>
+		>
+	>
+	["org.openehr.base.base_types"] = <
+		name = <"org.openehr.base.base_types">
+		packages = <
+			["definitions"] = <
+				name = <"definitions">
+				classes = <"VALIDITY_KIND">
+			>
+			["identification"] = <
+				name = <"identification">
+				classes = <"OBJECT_REF", "OBJECT_ID", "UID", "LOCATABLE_REF", "PARTY_REF", "TERMINOLOGY_ID", 
+					"UID_BASED_ID", "GENERIC_ID", "ARCHETYPE_ID", "TEMPLATE_ID", "OBJECT_VERSION_ID", 
+					"HIER_OBJECT_ID", "VERSION_TREE_ID", "INTERNET_ID", "UUID", "ISO_OID"
+				>
+			>
+		>
+	>
+>
+
+------------------------------------------------------
+-- primitive types
+------------------------------------------------------
+
+primitive_types = <
+	["Any"] = <
+		name = <"Any">
+		is_abstract = <True>
+	>
+	["Ordered"] = <
+		name = <"Ordered">
+		is_abstract = <True>
+		documentation = <"Ancestor of types with total order relation defined, i.e. '<' and '='.">
+		ancestors = <"Any">
+	>
+	["Numeric"] = <
+		name = <"Numeric">
+		is_abstract = <True>
+		documentation = <"Ancestor of numeric types.">
+		ancestors = <"Any">
+	>
+	["Ordered_Numeric"] = <
+		name = <"Ordered_Numeric">
+		is_abstract = <True>
+		documentation = <"Ancestor of ordered numeric types.">
+		ancestors = <"Numeric", "Ordered">
+	>
+	["Byte"] = <
+		name = <"Byte">
+		ancestors = <"Ordered">
+	>
+	["Octet"] = <
+		name = <"Octet">
+		ancestors = <"Ordered">
+	>
+	["Boolean"] = <
+		name = <"Boolean">
+		ancestors = <"Any">
+	>
+	["Integer"] = <
+		name = <"Integer">
+		ancestors = <"Ordered_Numeric">
+	>
+	["Integer64"] = <
+		name = <"Integer64">
+		ancestors = <"Ordered_Numeric">
+	>
+	["Real"] = <
+		name = <"Real">
+		ancestors = <"Ordered_Numeric">
+	>
+	["Double"] = <
+		name = <"Double">
+		ancestors = <"Ordered_Numeric">
+	>
+	["Character"] = <
+		name = <"Character">
+		ancestors = <"Ordered">
+	>
+	["String"] = <
+		name = <"String">
+		ancestors = <"Ordered">
+	>
+	["Uri"] = <
+		name = <"Uri">
+		ancestors = <"String">
+	>
+
+	["Iso8601_type"] = <
+		name = <"Iso8601_type">
+		documentation = <"Parent of ISO8601 types.">
+		is_abstract = <True>
+		ancestors = <"Ordered">
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["Date"] = <
+		name = <"Date">
+		documentation = <"Date type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Time"] = <
+		name = <"Time">
+		documentation = <"Time type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Date_time"] = <
+		name = <"Date_time">
+		documentation = <"Date Time type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Duration"] = <
+		name = <"Duration">
+		documentation = <"Duration type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Iso8601_date"] = <
+		name = <"Iso8601_date">
+		documentation = <"Date type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Iso8601_time"] = <
+		name = <"Iso8601_time">
+		documentation = <"Time type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Iso8601_date_time"] = <
+		name = <"Iso8601_date_time">
+		documentation = <"Date Time type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Iso8601_duration"] = <
+		name = <"Iso8601_duration">
+		documentation = <"Duration type based on IS8601 representation.">
+		ancestors = <"Iso8601_type">
+	>
+
+	["Terminology_term"] = <
+		name = <"Terminology_term">
+		ancestors = <"Any">
+		properties = <
+			["text"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"text">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["concept"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"concept">
+				type = <"Terminology_code">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["Terminology_code"] = <
+		name = <"Terminology_code">
+		ancestors = <"Any">
+		properties = <
+			["terminology_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"terminology_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["terminology_version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"terminology_version">
+				type = <"String">
+			>
+			["code_string"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code_string">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["uri"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uri">
+				type = <"Uri">
+			>
+		>
+	>
+
+	["List"] = <
+		name = <"List">
+		ancestors = <"Aggregate">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+
+	["Array"] = <
+		name = <"Array">
+		ancestors = <"Aggregate">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+
+	["Set"] = <
+		name = <"Set">
+		ancestors = <"Aggregate">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+
+	["Interval"] = <
+		name = <"Interval">
+		documentation = <"Type defining an interval of any ordered type.">
+		ancestors = <"Any">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"Ordered">
+			>
+		>
+		properties = <
+			["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"lower">
+				type = <"T">
+			>
+			["upper"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"upper">
+				type = <"T">
+			>
+			["lower_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lower_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"upper_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["lower_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lower_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"upper_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["Hash"] = <
+		name = <"Hash">
+		documentation = <"Type defining Hash table / hash map structure, whose type parameters V and K represent a value type and an Ordered key type respectively.">
+		ancestors = <"Any">
+		generic_parameter_defs = <
+			["K"] = <
+				name = <"K">
+				conforms_to_type = <"Ordered">
+			>
+			["V"] = <
+				name = <"V">
+			>
+		>
+	>
+
+	["Aggregate"] = <
+		name = <"Aggregate">
+		ancestors = <"Any">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		is_abstract = <True>
+	>
+
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	------------------------------------------------------------
+	------------------ base.base_types.identification ---------------
+	------------------------------------------------------------
+
+	["OBJECT_REF"] = <
+		name = <"OBJECT_REF">
+		ancestors = <"Any">
+		properties = <
+			["id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"id">
+				type = <"OBJECT_ID">
+				is_mandatory = <True>
+			>
+			["namespace"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"namespace">
+				type = <"String">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["LOCATABLE_REF"] = <
+		name = <"LOCATABLE_REF">
+		ancestors = <"OBJECT_REF">
+		properties = <
+			["id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"id">
+				type = <"UID_BASED_ID">
+				is_mandatory = <True>
+			>
+			["path"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"path">
+				type = <"String">
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["PARTY_REF"] = <
+		name = <"PARTY_REF">
+		ancestors = <"OBJECT_REF">
+	>
+
+	["OBJECT_ID"] = <
+		name = <"OBJECT_ID">
+		is_abstract = <True>
+		ancestors = <"Any">
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TERMINOLOGY_ID"] = <
+		name = <"TERMINOLOGY_ID">
+		ancestors = <"OBJECT_ID">
+	>
+	
+	["UID_BASED_ID"] = <
+		name = <"UID_BASED_ID">
+		ancestors = <"OBJECT_ID">
+		is_abstract = <True>
+	>
+	
+	["GENERIC_ID"] = <
+		name = <"GENERIC_ID">
+		ancestors = <"OBJECT_ID">
+		properties = <
+			["scheme"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scheme">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	
+	["ARCHETYPE_ID"] = <
+		name = <"ARCHETYPE_ID">
+		ancestors = <"OBJECT_ID">
+	>
+	
+	["TEMPLATE_ID"] = <
+		name = <"TEMPLATE_ID">
+		ancestors = <"OBJECT_ID">
+	>
+	
+	["OBJECT_VERSION_ID"] = <
+		name = <"OBJECT_VERSION_ID">
+		ancestors = <"UID_BASED_ID">
+	>
+	
+	["HIER_OBJECT_ID"] = <
+		name = <"HIER_OBJECT_ID">
+		ancestors = <"UID_BASED_ID">
+	>
+	
+	["VERSION_TREE_ID"] = <
+		name = <"VERSION_TREE_ID">
+		ancestors = <"Any">
+	>
+	
+	["UID"] = <
+		name = <"UID">
+		is_abstract = <True>
+		ancestors = <"Any">
+	>
+	
+	["INTERNET_ID"] = <
+		name = <"INTERNET_ID">
+		ancestors = <"UID">
+	>
+	
+	["UUID"] = <
+		name = <"UUID">
+		ancestors = <"UID">
+	>
+	
+	["ISO_OID"] = <
+		name = <"ISO_OID">
+		ancestors = <"UID">
+	>
+	
+	--
+	--------------------- base.base_types.definitions ------------------
+	--
+
+	["VALIDITY_KIND"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"VALIDITY_KIND">
+		ancestors = <"Integer">
+		item_names = <"mandatory", "optional", "prohibited">
+	>
+
+>

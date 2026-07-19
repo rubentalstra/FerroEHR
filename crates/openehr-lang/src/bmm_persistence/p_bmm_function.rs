@@ -3,11 +3,9 @@
 
 use crate::bmm_persistence::p_bmm_function_parameter::PBmmFunctionParameter;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of a BMM function (routine) definition within a class definition.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_FUNCTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmFunction {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

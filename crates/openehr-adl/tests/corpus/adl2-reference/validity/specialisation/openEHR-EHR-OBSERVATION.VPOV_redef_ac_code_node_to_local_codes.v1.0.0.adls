@@ -1,0 +1,58 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VPOV_redef_ac_code_node_to_local_codes.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs2.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/6/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Trigger VPOV error with illegal redefinition value-set redefinition">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VPOV">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Observation
+		/data/events[id3]/data/items[id5]/value matches {
+			DV_CODED_TEXT[id15] matches {
+				defining_code matches {[ac3.1]}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Observation">
+				description = <"Observation">
+			>
+			["ac3.1"] = <
+				text = <"value set 1">
+				description = <"value set 1">
+			>
+			["at0.1"] = <
+				text = <"new code">
+				description = <"new code">
+			>
+		>
+	>
+	value_sets = <
+		["ac3.1"] = <
+			id = <"ac3.1">
+			members = <"at6", "at7", "at8", "at9", "at10", "at0.1">
+		>
+	>

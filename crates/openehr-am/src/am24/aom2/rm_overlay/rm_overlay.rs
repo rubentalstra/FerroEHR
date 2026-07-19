@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::rm_overlay::rm_attribute_visibility::RmAttributeVisibility;
-use openehr_derive::OpenEhrType;
 
 /// Container object for archetype statements relating to RM attributes, which may be directly on objects constrained within the archetype, or at deeper non-constrained RM paths from an object or the root.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "RM_OVERLAY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RmOverlay {
     /// Optional structure in which visibility and aliasing of reference model elements can be specified. Key is path to an RM attribute, which is typically formed from a path to an archetyped node concatenated with a further pure RM attribute path; may also refer to a non-archetyped attribute.
     pub rm_visibility: Option<std::collections::BTreeMap<String, RmAttributeVisibility>>,

@@ -44,6 +44,12 @@ Use ONLY the official comment forms (owner ruling 2026-07-17 — the bespoke
 deliberate spec-silent design decision (carry the spec citation, or the
 explicit flag "no openEHR spec governs this — our own design/extension") ·
 `// SAFETY:` for any `unsafe` (expect almost none — this is a web service).
+**Deferred work is TODO, never prose (owner reinforcement 2026-07-19):**
+anything postponed to a later phase/session ("lands later", "deferred to
+the flattener", "resolved in A7") is pending work and must be
+`// TODO: <what is missing>` — no prose deferrals, and NO phase/plan/tracker
+markers in code (A5/P16/W-nn are the banned tracker-ID pattern). If a
+comment describes something not yet done, it is a TODO, not a NOTE.
 There is no PORT STATUS trailer and no `// PORT NOTE:` / `TODO(port)` /
 `PERF(port)` — those retired conventions must not reappear.
 

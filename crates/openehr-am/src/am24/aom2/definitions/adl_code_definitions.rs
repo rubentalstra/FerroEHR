@@ -14,17 +14,50 @@ use crate::am24::aom2::constraint_model::primitive::c_real::CReal;
 use crate::am24::aom2::constraint_model::primitive::c_string::CString;
 use crate::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use crate::am24::aom2::constraint_model::primitive::c_time::CTime;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// Definitions relating to the internal code system of archetypes.
 ///
 /// NOTE: ADL2 was initially released with code system using id-codes (for nodes), at-codes (for values only) and ac-codes (for value sets). As this proved to hinder its widespread use in the openEHR community (due to its impact on existing openEHR RM data), a code system matching the one used in ADL1.4 was introduced as the openEHR primary code system.
 ///
 /// openEHR systems must support at least the at-coded ADL2 archetypes.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ADL_CODE_DEFINITIONS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AdlCodeDefinitionsData {}
+
+impl AdlCodeDefinitionsData {
+    /// String leader of ‘identifier’ codes, i.e. codes used to identify at-coded archetype nodes.
+    /// BMM constant `At_code_leader`.
+    pub const AT_CODE_LEADER: &'static str = "at";
+
+    /// String leader of ‘identifier’ codes, i.e. codes used to identify id-coded archetype nodes.
+    /// BMM constant `Id_code_leader`.
+    pub const ID_CODE_LEADER: &'static str = "id";
+
+    /// String leader of ‘value’ codes, i.e. codes used to identify codes values, including value set members.
+    /// BMM constant `Value_code_leader`.
+    pub const VALUE_CODE_LEADER: &'static str = "at";
+
+    /// String leader of ‘value set’ codes, i.e. codes used to identify value sets.
+    /// BMM constant `Value_set_code_leader`.
+    pub const VALUE_SET_CODE_LEADER: &'static str = "ac";
+
+    /// Character used to separate numeric parts of codes belonging to different specialisation levels.
+    /// BMM constant `Specialisation_separator`.
+    pub const SPECIALISATION_SEPARATOR: char = '.';
+
+    /// Regex used to define the legal numeric part of any archetype code. Corresponds to the simple pattern of dotted numbers, as used in typical multi-level numbering schemes.
+    /// BMM constant `Code_regex_pattern`.
+    pub const CODE_REGEX_PATTERN: &'static str = "(0|[1-9][0-9]*)(\\.(0|[1-9][0-9]*))*";
+
+    /// Regex pattern of the root code of any archetype. Corresponds to at-codes of the form `at0000`, `at0000.1`, `at0000.1.1` etc, and id-codes of the form `id1`, `id1.1`, `id1.1.1` etc. For at-coded ADL2 numbering starts with zero (i.e. `at0000`) while the id-coded ADL2 numbering starts with one (i.e. `id1`).
+    /// BMM constant `Root_code_regex_pattern`.
+    pub const ROOT_CODE_REGEX_PATTERN: &'static str = "^(id1|at0000)(\\.1)*$";
+
+    /// Code id used for `C_PRIMITIVE_OBJECT` nodes on creation.
+    ///
+    /// NOTE: For id-coded archetypes this is `"id9999"`.
+    /// BMM constant `Primitive_node_id`.
+    pub const PRIMITIVE_NODE_ID: &'static str = "at9999";
+}
 
 /// Definitions relating to the internal code system of archetypes.
 ///
@@ -32,8 +65,7 @@ pub struct AdlCodeDefinitionsData {}
 ///
 /// openEHR systems must support at least the at-coded ADL2 archetypes.
 /// Polymorphic slot of `ADL_CODE_DEFINITIONS`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AdlCodeDefinitions {
     ArchetypeSlot(ArchetypeSlot),
     CAttribute(CAttribute),
@@ -49,91 +81,4 @@ pub enum AdlCodeDefinitions {
     CTerminologyCode(CTerminologyCode),
     CTime(CTime),
     AdlCodeDefinitions(AdlCodeDefinitionsData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for AdlCodeDefinitions {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("ADL_CODE_DEFINITIONS") => {
-                ::core::result::Result::Ok(Self::AdlCodeDefinitions(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("ARCHETYPE_SLOT") => {
-                ::core::result::Result::Ok(Self::ArchetypeSlot(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_ARCHETYPE_ROOT") => {
-                ::core::result::Result::Ok(Self::CComplexObject(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_ATTRIBUTE") => {
-                ::core::result::Result::Ok(Self::CAttribute(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_BOOLEAN") => {
-                ::core::result::Result::Ok(Self::CBoolean(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_COMPLEX_OBJECT") => {
-                ::core::result::Result::Ok(Self::CComplexObject(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_COMPLEX_OBJECT_PROXY") => {
-                ::core::result::Result::Ok(Self::CComplexObjectProxy(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_DATE") => ::core::result::Result::Ok(Self::CDate(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("C_DATE_TIME") => {
-                ::core::result::Result::Ok(Self::CDateTime(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_DURATION") => {
-                ::core::result::Result::Ok(Self::CDuration(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_INTEGER") => {
-                ::core::result::Result::Ok(Self::CInteger(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_REAL") => ::core::result::Result::Ok(Self::CReal(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("C_STRING") => ::core::result::Result::Ok(Self::CString(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("C_TERMINOLOGY_CODE") => {
-                ::core::result::Result::Ok(Self::CTerminologyCode(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("C_TIME") => ::core::result::Result::Ok(Self::CTime(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::AdlCodeDefinitions(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "ADL_CODE_DEFINITIONS: unexpected `_type` {__other:?} (expected one of: ADL_CODE_DEFINITIONS, ARCHETYPE_SLOT, C_ARCHETYPE_ROOT, C_ATTRIBUTE, C_BOOLEAN, C_COMPLEX_OBJECT, C_COMPLEX_OBJECT_PROXY, C_DATE, C_DATE_TIME, C_DURATION, C_INTEGER, C_REAL, C_STRING, C_TERMINOLOGY_CODE, C_TIME)"
-                )))
-            }
-        }
-    }
 }

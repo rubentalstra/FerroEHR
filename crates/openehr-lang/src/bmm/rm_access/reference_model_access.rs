@@ -3,11 +3,9 @@
 
 use crate::bmm::rm_access::schema_descriptor::SchemaDescriptor;
 use crate::bmm3::core::model::bmm_model::BmmModel;
-use openehr_derive::OpenEhrType;
 
 /// Access to service interface to BMM object model.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "REFERENCE_MODEL_ACCESS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReferenceModelAccess {
     /// List of directories where all the schemas loaded here are found.
     pub schema_directories: Vec<String>,

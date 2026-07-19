@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::VersionStatus;
-use openehr_derive::OpenEhrType;
 
 /// Human_readable identifier (HRID) for an archetype or template.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_ARCHETYPE_HRID")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PArchetypeHrid {
     /// Reverse domain name namespace identifier.
     pub namespace: Option<String>,

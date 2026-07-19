@@ -1,0 +1,8 @@
+attribute1 = <
+                attribute1_1 = <"attribute1_1">
+                attribute1_2 = <"attribute1_2">
+                attribute1_3 = <
+                                    attribute1_3_1 = <"attribute1_3_1">
+                                    attribute1_3_2 = <"attribute1_3_2">
+                >
+>

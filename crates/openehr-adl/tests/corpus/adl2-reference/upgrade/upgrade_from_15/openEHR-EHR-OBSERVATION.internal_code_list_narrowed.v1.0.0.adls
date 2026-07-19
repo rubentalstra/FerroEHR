@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.internal_code_list_narrowed.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.internal_code_lists.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"22/01/2014">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test redefinition of an internal code list">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"© openEHR Foundation">
+
+definition
+	OBSERVATION[id1.1] matches {	-- Blood Pressure specialised
+		/data[id2]/events[id7]/state[id8]/items[id9]/value/defining_code matches {[ac1.1; at1002]}		-- (added by post-parse processor)
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Blood Pressure specialised">
+				description = <"BP specialised">
+			>
+			["ac1.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1.1"] = <
+			id = <"ac1.1">
+			members = <"at1001", "at1002", "at1004">
+		>
+	>

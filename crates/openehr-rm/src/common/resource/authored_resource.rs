@@ -5,11 +5,9 @@ use crate::common::generic::revision_history::RevisionHistory;
 use crate::common::resource::resource_description::ResourceDescription;
 use crate::common::resource::translation_details::TranslationDetails;
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_derive::OpenEhrType;
 
 /// Abstract idea of an online resource created by a human author.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "AUTHORED_RESOURCE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AuthoredResource {
     /// Language in which this resource was initially authored. Although there is no language primacy of resources overall, the language of original authoring is required to ensure natural language translations can preserve quality. Language is relevant in both the description and ontology sections.
     pub original_language: CodePhrase,

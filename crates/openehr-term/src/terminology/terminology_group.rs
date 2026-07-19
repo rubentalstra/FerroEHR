@@ -3,11 +3,9 @@
 
 use crate::terminology::terminology_concept::TerminologyConcept;
 use crate::terminology::terminology_status::TerminologyStatus;
-use openehr_derive::OpenEhrType;
 
 /// A single vocabulary, in a particular language, within a Terminology.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TERMINOLOGY_GROUP")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TerminologyGroup {
     /// Name of this vocabulary.
     pub name: String,

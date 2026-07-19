@@ -6,16 +6,13 @@ use crate::am24::aom2::persistence::archetype::p_operational_template::POperatio
 use crate::am24::aom2::persistence::archetype::p_template::PTemplate;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComplexObject;
 use crate::am24::aom2::persistence::terminology::p_archetype_terminology::PArchetypeTerminology;
-use openehr_base::prelude::ResourceDescription;
+use crate::am24::bmm3::expression::el_boolean_expression::ElBooleanExpression;
+use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uid;
-use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::ElBooleanExpression;
-use serde::Serialize;
 
 /// Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_AUTHORED_ARCHETYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PAuthoredArchetypeData {
     // inherited: P_ARCHETYPE
     /// Identifier of the specialisation parent of this archetype.
@@ -58,45 +55,9 @@ pub struct PAuthoredArchetypeData {
 
 /// Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.
 /// Polymorphic slot of `P_AUTHORED_ARCHETYPE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PAuthoredArchetype {
     POperationalTemplate(Box<POperationalTemplate>),
     PTemplate(Box<PTemplate>),
     PAuthoredArchetype(PAuthoredArchetypeData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for PAuthoredArchetype {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("P_AUTHORED_ARCHETYPE") => {
-                ::core::result::Result::Ok(Self::PAuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_OPERATIONAL_TEMPLATE") => {
-                ::core::result::Result::Ok(Self::POperationalTemplate(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_TEMPLATE") => {
-                ::core::result::Result::Ok(Self::PTemplate(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::PAuthoredArchetype(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "P_AUTHORED_ARCHETYPE: unexpected `_type` {__other:?} (expected one of: P_AUTHORED_ARCHETYPE, P_OPERATIONAL_TEMPLATE, P_TEMPLATE)"
-                )))
-            }
-        }
-    }
 }

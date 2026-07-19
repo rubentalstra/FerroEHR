@@ -11,7 +11,7 @@
 //! composition validator + `openehr-term`.
 
 use crate::data_structures::representation::element::Element;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 /// The ELEMENT invariant core over the projected presence flags — one source
 /// for the typed impl and the value-level fast path (`validate::fast`).
@@ -34,7 +34,7 @@ pub(crate) fn push_element_invariants(
             "Invariant Inv_null_reason_valid failed on type ELEMENT",
         ));
     }
-    push_archetype_node_id_valid(out, "ELEMENT", archetype_node_id);
+    crate::validate::generated::archetype_node_id_core("ELEMENT", archetype_node_id, out);
 }
 
 impl Validate for Element {

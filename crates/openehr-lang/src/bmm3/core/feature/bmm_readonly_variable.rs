@@ -2,43 +2,11 @@
 
 use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
 use crate::bmm3::core::feature::bmm_self::BmmSelf;
-use serde::Serialize;
 
 /// Meta-type for writable variables, including routine parameters and the special variable `Self`.
 /// Closed subtype set of `BMM_READONLY_VARIABLE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmReadonlyVariable {
     BmmParameter(BmmParameter),
     BmmSelf(BmmSelf),
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmReadonlyVariable {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_PARAMETER") => {
-                ::core::result::Result::Ok(Self::BmmParameter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_SELF") => ::core::result::Result::Ok(Self::BmmSelf(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "BMM_READONLY_VARIABLE: missing required `_type` on polymorphic slot (expected one of: BMM_PARAMETER, BMM_SELF)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_READONLY_VARIABLE: unexpected `_type` {__other:?} (expected one of: BMM_PARAMETER, BMM_SELF)"
-                )))
-            }
-        }
-    }
 }

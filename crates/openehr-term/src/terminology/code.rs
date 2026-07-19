@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::terminology::terminology_status::TerminologyStatus;
-use openehr_derive::OpenEhrType;
 
 /// A single code entity in a code set.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "CODE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Code {
     /// The code string for this code entity, e.g. `"AF"`.
     pub value: String,

@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+    openEHR-EHR-CLUSTER.test_anchoring.v1.0.0
+
+specialize
+    openEHR-EHR-CLUSTER.order-parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1.1] ∈ {
+        items ∈ {
+            --resulting order: id2, id3, id0.1, id0.2, id4, id0.3, id0.4, id5
+            after[id3]
+            ELEMENT[id0.1]
+            ELEMENT[id0.2]
+            before[id5]
+            ELEMENT[id0.3]
+            ELEMENT[id0.4]
+
+        }
+}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id0.1"] = <
+                text = <"item 5">
+                description = <"item 5">
+            >
+            ["id0.2"] = <
+                text = <"item 6">
+                description = <"item 6">
+            >
+            ["id0.3"] = <
+                text = <"item 7">
+                description = <"item 7">
+            >
+            ["id0.4"] = <
+                text = <"item 8">
+                description = <"item 8">
+            >
+        >
+	>

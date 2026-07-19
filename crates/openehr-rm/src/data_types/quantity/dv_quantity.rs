@@ -4,13 +4,11 @@
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_derive::OpenEhrType;
 
 /// Quantitified type representing  scientific  quantities, i.e. quantities expressed as a magnitude and units. Units are expressed in the UCUM syntax (http://unitsofmeasure.org/ucum.html[Unified Code for Units of Measure (UCUM)], by Gunther Schadow and Clement J. McDonald of The Regenstrief Institute)  (case-sensitive form) by default, or another system if `_units_system_` is set.
 ///
 /// Can also be used for time durations, where it is more convenient to treat these as simply a number of seconds rather than days, months, years (in the latter case, `DV_DURATION` may be used).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_QUANTITY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvQuantity {
     // inherited: DV_ORDERED
     /// Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.

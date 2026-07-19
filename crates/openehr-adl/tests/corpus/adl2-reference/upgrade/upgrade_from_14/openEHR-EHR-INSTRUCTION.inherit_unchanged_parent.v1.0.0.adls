@@ -1,0 +1,85 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-INSTRUCTION.inherit_unchanged_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-12-08">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent archetype to test detection of identical DV_CODED_TEXT that AOM_151_CONVERTER should detect, and ARCHETYPE_COMPARATOR should remove">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	INSTRUCTION[id1] matches {	-- Healthcare service request
+		activities matches {
+			ACTIVITY[id2] occurrences matches {1..*} matches {	-- Request
+				description matches {
+					ITEM_TREE[id10] matches {
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[id69] occurrences matches {0..1} matches {	-- Urgency
+								value matches {
+									DV_CODED_TEXT[id70] matches {
+										defining_code matches {[ac1]}		-- Urgency (synthesised)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Healthcare service request">
+				description = <"Generic request for a range of different healthcare services e.g referral, lab request, equipment request.">
+			>
+			["id2"] = <
+				text = <"Request">
+				description = <"Current Activity.">
+			>
+			["id69"] = <
+				text = <"Urgency">
+				description = <"Urgency of the request.">
+			>
+			["at137"] = <
+				text = <"Emergency">
+				description = <"The request is an emergency.">
+			>
+			["at138"] = <
+				text = <"Urgent">
+				description = <"The request is urgent.">
+			>
+			["at139"] = <
+				text = <"Routine">
+				description = <"The request is routine.">
+			>
+			["ac1"] = <
+				text = <"Urgency (synthesised)">
+				description = <"Urgency of the request. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at137", "at138", "at139">
+		>
+	>

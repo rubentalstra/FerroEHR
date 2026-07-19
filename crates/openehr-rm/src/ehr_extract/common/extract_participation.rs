@@ -5,13 +5,11 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
-use openehr_derive::OpenEhrType;
 
 /// Model of a participation of a Party (any Actor or Role) in an activity.  Used to represent any participation of a Party in some activity, which is not  explicitly in the model, e.g. assisting nurse. Can be used to record past or  future participations.
 ///
 /// Should not be used in place of more permanent relationships between demographic entities.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_PARTICIPATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractParticipation {
     /// The time interval during which the participation took place, if it is used in an observational context (i.e. recording facts about the past); or the intended time interval of the participation when used in future contexts, such as EHR Instructions.
     pub time: Option<DvInterval<DvDateTime>>,

@@ -9,11 +9,9 @@ use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::Iso8601DateTime;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Single item in generic extract, designed for 13606 and CDA data.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "GENERIC_CONTENT_ITEM")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GenericContentItem {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

@@ -6,11 +6,9 @@ use crate::foundation_types::terminology::terminology_code::TerminologyCode;
 use crate::resource::resource_annotations::ResourceAnnotations;
 use crate::resource::resource_description::ResourceDescription;
 use crate::resource::translation_details::TranslationDetails;
-use openehr_derive::OpenEhrType;
 
 /// Abstract idea of an online resource created by a human author.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "AUTHORED_RESOURCE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AuthoredResource {
     /// Unique identifier of the family of archetypes having the same interface identifier (same major version).
     pub uid: Option<Uuid>,

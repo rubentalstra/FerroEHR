@@ -1,0 +1,36 @@
+archetype (adl_version=2.0.6; rm_release=1.0.0)
+	openehr-TASK_PLANNING-DECISION_GROUP.de_lang_arch.v0.0.1
+
+language
+	original_language = <[ISO_639-1::de]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openehr.org>">
+		["organisation"] = <"OpenEHR Foundation <http://www.openehr.org>">
+	>
+	copyright = <"Copyright (c) 2016 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Test archetype containing only de language">
+		>
+	>
+
+definition
+	DECISION_GROUP[id1] matches {	-- Determine Tamoxifen regime.
+		execution_type matches {1}
+		override_type matches {1}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["id1"] = <
+				text = <"Determine Tamoxifen regime.">
+				description = <"-">
+			>
+		>
+	>

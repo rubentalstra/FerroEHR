@@ -5,15 +5,18 @@
 //! Reference Model class invariants **plus** the RM-mandated openEHR
 //! terminology, collecting *all* violations (not fail-fast), each keyed by an RM
 //! path. It composes three building blocks: the [`WebTemplate`] tree,
-//! [`openehr_rm::validate::validate_rm_value`] (RM class invariants), and
-//! [`openehr_term::bundle`] (openEHR terminology).
+//! [`openehr_its::rm_validate::validate_rm_invariants`] (the core RM class
+//! invariants), and the shared terminology hook
+//! [`openehr_its::rm_terminology`] (openEHR terminology, backed by
+//! [`openehr_term::bundle`]).
 //!
 //! # The three passes
 //!
 //! Validation runs three independent collecting passes over the instance:
 //!
 //! 1. **RM-invariant pass** — recurse the whole instance; for every node with a
-//!    `_type`, run its RM class invariants ([`validate_rm_value`]). This is
+//!    `_type`, run its core RM class invariants ([`validate_rm_invariants`]).
+//!    This is
 //!    independent of the (compacted) `WebTemplate`, so class invariants on nodes
 //!    the `WebTemplate` folds away (ELEMENT / `ITEM_TREE` / HISTORY / EVENT) are
 //!    still checked. Paths are RM *instance* paths (`/content[0]/…`).
@@ -59,8 +62,8 @@ mod subtype;
 mod terminology;
 
 use indexmap::IndexMap;
+use openehr_its::rm_validate::validate_rm_invariants;
 use openehr_rm::paths::PathSegment;
-use openehr_rm::validate::validate_rm_value;
 use serde_json::{Map, Value};
 
 use crate::path;
@@ -590,8 +593,12 @@ impl Validator {
             }
         }
         if has_type {
+            // The core (fast/typed) RM invariants only — the terminology-backed
+            // invariants are enforced by the dedicated `terminology_pass` (its
+            // own `ValidationKind::Terminology` rendering), so calling the
+            // core-only entry here avoids double-reporting them.
             let mut inv = Vec::new();
-            validate_rm_value(v, &mut inv);
+            validate_rm_invariants(v, &mut inv);
             for iv in inv {
                 let p = if iv.path.is_empty() {
                     norm_path(path)

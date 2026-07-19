@@ -3,10 +3,8 @@
 
 use crate::ehr_extract::sync_extract::sync_extract_spec::SyncExtractSpec;
 use crate::ehr_extract::sync_extract::x_contribution::XContribution;
-use openehr_derive::OpenEhrType;
 
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "SYNC_EXTRACT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SyncExtract {
     /// Details of specification of this Extract.
     pub specification: SyncExtractSpec,

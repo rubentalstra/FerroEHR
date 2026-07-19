@@ -1,0 +1,93 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-EVALUATION.laboratory_test_panel.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1] ∈ {                                         -- Laboratory test panel
+        items ∈ {
+            CLUSTER[id3] ∈ {                                 -- Laboratory Result
+                items ∈ {
+                    ELEMENT[id2] occurrences ∈ {0..1}        -- Result Value
+                    ELEMENT[id4] ∈ {                         -- Result Comment
+                        value ∈ {
+                            DV_TEXT[id15]
+                        }
+                    }
+                    ELEMENT[id5] occurrences ∈ {0..1} ∈ {   -- Ref. Range Guidance
+                        value ∈ {
+                            DV_TEXT[id16]
+                        }
+                    }
+                    ELEMENT[id6] occurrences ∈ {0..1} ∈ {   -- Result Value Status
+                        value ∈ {
+                            DV_CODED_TEXT[id17] ∈ {
+                                defining_code ∈ {[ac1]}
+                            }
+                        }
+                    }
+                    ELEMENT[id7] occurrences ∈ {0..1} ∈ {   -- D/T Result Val Status
+                        value ∈ {
+                            DV_DATE_TIME[id18]
+                        }
+                    }
+                }
+            }
+            allow_archetype CLUSTER[id14] ∈ {                -- Other Detail
+                include
+                    archetype_id/value ∈ {/.*/}
+            }
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <" Laboratory test panel">
+				description = <" Laboratory test panel">
+			>
+			["id2"] = <
+			    text = <"Result Value">
+                description = <"Result Value">
+			>
+			["id3"] = <
+                text = <"Laboratory Result">
+                description = <"Laboratory Result">
+            >
+            ["id4"] = <
+                text = <"Result Comment">
+                description = <"Result Comment">
+            >
+            ["id5"] = <
+                text = <"Ref. Range Guidance">
+                description = <"Ref. Range Guidance">
+            >
+            ["id6"] = <
+                text = <"Result Value Status">
+                description = <"Result Value Status">
+            >
+            ["id7"] = <
+                text = <"D/T Result Val Status">
+                description = <"D/T Result Val Status">
+            >
+            ["id14"] = <
+                text = <"Other Detail">
+                description = <"Other Detail">
+            >
+            ["at1"] = <
+                text = <"some item">
+                description = <"some item">
+            >
+		>
+    >
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <"at1">
+        >
+    >

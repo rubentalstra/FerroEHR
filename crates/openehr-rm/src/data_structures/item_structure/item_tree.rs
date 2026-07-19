@@ -7,11 +7,9 @@ use crate::common::archetyped::link::Link;
 use crate::data_structures::representation::item::Item;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Logical tree data structure. The tree may be empty. Used for representing data which are logically a tree such as audiology results, microbiology results, biochemistry results.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ITEM_TREE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ItemTree {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

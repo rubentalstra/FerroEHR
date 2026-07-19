@@ -1,0 +1,69 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-SOME_TYPE.dv_ordinal_refinement.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2021-02-02">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example to show refinement of a DV_ORDINAL.">
+			keywords = <"ADL", "ordinal", "test">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2021 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		standard_ordinal_attr matches {
+			DV_ORDINAL[id6] matches {	-- ordinal 2
+				value matches {1}
+				symbol matches {
+					DV_CODED_TEXT[id9] matches {
+						defining_code matches {[at3]}
+					}
+				}
+			}
+		}
+		clinical_ordinal_attr_1 matches {
+			DV_ORDINAL[id11] matches {
+				[value, symbol] matches {
+					[{1}, {[at3]}]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+			["id6"] = <
+				text = <"ordinal 2">
+				description = <"ordinal 2">
+			>
+			["at3"] = <
+				text = <">3 L/min">
+				description = <">3 L/min flow-rate">
+			>
+		>
+	>

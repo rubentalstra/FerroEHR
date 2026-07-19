@@ -1,0 +1,62 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated; uid=b1506a87-9bf2-4978-9eed-6ceecb0c2be9)
+	openEHR-EHR-OBSERVATION.test_regex.v1.1.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"Ars Semantica">
+		["email"] = <"thomas.beale@arssemantica.com">
+		["date"] = <"2017-03-22">
+	>
+	original_namespace = <"org.openehr">
+	original_publisher = <"openEHR Foundation">
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation">
+	copyright = <"© openEHR Foundation">
+	licence = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test regex conversion from ADL 1.4.">
+		>
+	>
+	other_details = <
+		["build_uid"] = <"6c619135-74b0-428b-8b49-f0ad4f26e881">
+		["MD5-CAM-1.0.1"] = <"0B794FDD7E013E64D0E7A004C0E71F0D">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Blood Pressure
+		protocol matches {
+			ITEM_TREE[id12] matches {	-- Tree
+				items matches {
+					allow_archetype CLUSTER[id1058] matches {	-- Structured measurement location
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Blood Pressure">
+				description = <"The local measurement of arterial blood pressure which is a surrogate for arterial pressure in the systemic circulation.  Most commonly, use of the term 'blood pressure' refers to measurement of brachial artery pressure in the upper arm.">
+			>
+			["id12"] = <
+				text = <"Tree">
+				description = <"List structure.">
+			>
+			["id1058"] = <
+				text = <"Structured measurement location">
+				description = <"Structured anatomical location of where the measurement was taken.">
+			>
+		>
+	>

@@ -7,11 +7,9 @@ use crate::common::archetyped::link::Link;
 use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Address of contact, which may be electronic or geographic.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ADDRESS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Address {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

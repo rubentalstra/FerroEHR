@@ -278,7 +278,7 @@ fn parse_typed(el: &El, type_name: &str) -> Result<Value, FlatError> {
         ($t:ty) => {{
             let v: $t = fx(&xml)
                 .map_err(|e| FlatError::Conversion(format!("TDD {}: {e}", stringify!($t))))?;
-            serde_json::to_value(v).map_err(|e| FlatError::Conversion(e.to_string()))?
+            openehr_its::json::to_canonical_value(&v)
         }};
     }
     let value = match resolved {

@@ -1878,8 +1878,6 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
             }
         }
         // NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
-        self.parent_resource
-            .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         if let Some(v) = &self.title {
             v.write_xml(w, "title", Some("String"))?;
         }
@@ -1931,7 +1929,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
         let mut __original_namespace = None;
         let mut __original_publisher = None;
         let mut __other_contributors = Vec::new();
-        let mut __parent_resource = None;
         let mut __lifecycle_state = None;
         let mut __custodian_namespace = None;
         let mut __custodian_organisation = None;
@@ -1964,10 +1961,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
                     "other_contributors" => {
                         __other_contributors
                             .push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "parent_resource" => {
-                        __parent_resource =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "lifecycle_state" => {
                         __lifecycle_state =
@@ -2028,9 +2021,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
             original_namespace: __original_namespace,
             original_publisher: __original_publisher,
             other_contributors: __other_contributors,
-            parent_resource: __parent_resource.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element parent_resource".into())
-            })?,
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
@@ -2722,7 +2712,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ValidityKind {
         tag: &str,
         _declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
-        w.write_text_element(tag, &self.0.to_string())
+        w.write_text_element(tag, self.as_str())
     }
 }
 
@@ -2731,9 +2721,8 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ValidityKind {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
-        Ok(openehr_base::prelude::ValidityKind(
-            crate::xml::runtime::FromXml::from_xml(reader, start)?,
-        ))
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        Ok(openehr_base::prelude::ValidityKind::from_wire(&__s))
     }
 }
 
@@ -2744,7 +2733,7 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::VersionStatus {
         tag: &str,
         _declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
-        w.write_text_element(tag, &self.0.to_string())
+        w.write_text_element(tag, self.as_str())
     }
 }
 
@@ -2753,9 +2742,8 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::VersionStatus {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
-        Ok(openehr_base::prelude::VersionStatus(
-            crate::xml::runtime::FromXml::from_xml(reader, start)?,
-        ))
+        let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        Ok(openehr_base::prelude::VersionStatus::from_wire(&__s))
     }
 }
 
@@ -14780,72 +14768,14 @@ impl<T: crate::xml::runtime::FromXml> crate::xml::runtime::FromXml
     }
 }
 
-impl crate::xml::runtime::ToXml for openehr_rm::prelude::ProportionKindData {
-    fn xml_type_name(&self) -> &'static str {
-        "PROPORTION_KIND"
-    }
-    fn write_xml(
-        &self,
-        w: &mut crate::xml::runtime::XmlWriter,
-        tag: &str,
-        declared: Option<&str>,
-    ) -> Result<(), crate::xml::runtime::XmlError> {
-        let mut __attrs: Vec<(&str, String)> = Vec::new();
-        if let Some(d) = declared {
-            if d != "PROPORTION_KIND" {
-                __attrs.push(("xsi:type", "PROPORTION_KIND".to_string()));
-            }
-        }
-        let mut __e = crate::xml::runtime::XmlStart::new(tag);
-        for (k, v) in &__attrs {
-            __e.push_attribute((*k, v.as_str()));
-        }
-        w.write_start(__e)?;
-        w.write_end(tag)?;
-        Ok(())
-    }
-}
-
-impl crate::xml::runtime::FromXml for openehr_rm::prelude::ProportionKindData {
-    fn from_xml(
-        reader: &mut crate::xml::runtime::XmlReader,
-        start: &crate::xml::runtime::StartTag,
-    ) -> Result<Self, crate::xml::runtime::XmlError> {
-        loop {
-            match reader.read()? {
-                crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
-                    _ => reader.skip_element()?,
-                },
-                crate::xml::runtime::XmlEvent::End => break,
-                crate::xml::runtime::XmlEvent::Text(_) => {}
-                crate::xml::runtime::XmlEvent::Eof => {
-                    return Err(crate::xml::runtime::XmlError::Parse(
-                        "unexpected EOF".into(),
-                    ));
-                }
-            }
-        }
-        Ok(openehr_rm::prelude::ProportionKindData {})
-    }
-}
-
 impl crate::xml::runtime::ToXml for openehr_rm::prelude::ProportionKind {
-    fn xml_type_name(&self) -> &'static str {
-        match self {
-            openehr_rm::prelude::ProportionKind::DvProportion(x) => x.xml_type_name(),
-            openehr_rm::prelude::ProportionKind::ProportionKind(x) => x.xml_type_name(),
-        }
-    }
     fn write_xml(
         &self,
         w: &mut crate::xml::runtime::XmlWriter,
         tag: &str,
-        declared: Option<&str>,
+        _declared: Option<&str>,
     ) -> Result<(), crate::xml::runtime::XmlError> {
-        match self {
-            openehr_rm::prelude::ProportionKind::DvProportion(x) => x.write_xml(w, tag, declared),
-            openehr_rm::prelude::ProportionKind::ProportionKind(x) => x.write_xml(w, tag, declared),
-        }
+        w.write_text_element(tag, &self.value().to_string())
     }
 }
 
@@ -14854,20 +14784,8 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ProportionKind {
         reader: &mut crate::xml::runtime::XmlReader,
         start: &crate::xml::runtime::StartTag,
     ) -> Result<Self, crate::xml::runtime::XmlError> {
-        match start.xsi_type() {
-            Some("DV_PROPORTION") => Ok(openehr_rm::prelude::ProportionKind::DvProportion(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some("PROPORTION_KIND") => Ok(openehr_rm::prelude::ProportionKind::ProportionKind(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            None => Ok(openehr_rm::prelude::ProportionKind::ProportionKind(
-                crate::xml::runtime::FromXml::from_xml(reader, start)?,
-            )),
-            Some(other) => Err(crate::xml::runtime::XmlError::Parse(format!(
-                "ProportionKind: unknown xsi:type {other}"
-            ))),
-        }
+        let __v = <i32 as crate::xml::runtime::FromXml>::from_xml(reader, start)?;
+        Ok(openehr_rm::prelude::ProportionKind::from_value(__v))
     }
 }
 
@@ -14975,8 +14893,6 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescription {
             }
         }
         // NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
-        self.parent_resource
-            .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -14992,7 +14908,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
         let mut __lifecycle_state = None;
         let mut __resource_package_uri = None;
         let mut __other_details = std::collections::BTreeMap::new();
-        let mut __parent_resource = None;
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -15018,10 +14933,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
                         let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
                         __other_details.insert(__k, __v);
                     }
-                    "parent_resource" => {
-                        __parent_resource =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
                     _ => reader.skip_element()?,
                 },
                 crate::xml::runtime::XmlEvent::End => break,
@@ -15045,9 +14956,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
             } else {
                 Some(__other_details)
             },
-            parent_resource: __parent_resource.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element parent_resource".into())
-            })?,
             details: Default::default(),
         })
     }

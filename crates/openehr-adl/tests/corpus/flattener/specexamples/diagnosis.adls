@@ -1,0 +1,75 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+    openEHR-EHR-EVALUATION.problem-diagnosis.v1.0.0
+
+specialize
+	openEHR-EHR-EVALUATION.problem.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    EVALUATION[id1.1] ∈ {                               -- Recording of diagnosis
+        /data[id2]/items[id3]/value ∈ {
+            DV_CODED_TEXT[id4] ∈ {                      -- << This node redefines 'NODE A' above
+                defining_code ∈ {[ac0.1]}
+            }
+        }
+        /data/items cardinality ∈ {0..*; ordered} ∈ {
+            before [id5]
+            ELEMENT[id0.32] occurrences ∈ {0..1} ∈ {    -- Status    ++ This node added
+                value ∈ {
+                    DV_CODED_TEXT[id0.33] ∈ {
+                        defining_code ∈ {
+                            [ac0.1]      -- provisional
+                        }
+                    }
+                }
+            }
+            after [id31]
+            CLUSTER[id0.35] occurrences ∈ {0..1}  -- Diag. criteria  ++ This node added
+            CLUSTER[id0.37] occurrences ∈ {0..1}  -- Clin. staging   ++ This node added
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Recording of diagnosis">
+				description = <"Recording of diagnosis">
+			>
+			["id0.32"] = <
+                text = <"Status">
+                description = <"Status">
+            >
+            ["ac0.1"] = <
+                text = <"Provisional">
+                description = <"Provisional">
+            >
+            ["at0.33"] = <
+                text = <"Provisional 1">
+                description = <"Provisional 1">
+            >
+            ["at0.34"] = <
+                text = <"Provisional 2">
+                description = <"Provisional 2">
+            >
+            ["id0.35"] = <
+                text = <"Diag. criteria">
+                description = <"some text">
+            >
+            ["id0.37"] = <
+                text = <"Clin. staging">
+                description = <"Clin. staging">
+            >
+		>
+	>
+	value_sets = <
+        ["ac0.1"] = <
+            id = <"ac0.1">
+            members = <"at0.33", "at0.34">
+        >
+    >

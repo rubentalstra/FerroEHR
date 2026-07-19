@@ -1,0 +1,58 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3)
+	openEHR-EHR-CLUSTER.lab_analyte-triglycerides.v0.0.1
+
+specialize
+	openEHR-EHR-CLUSTER.lab_analyte-quantity.v0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openehr.org>">
+		["organisation"] = <"OpenEHR Foundation <http://www.openehr.org>">
+	>
+	copyright = <"Copyright (c) 2018 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test tuple constraint in a specialisation is overlaid properly during flattening process.">
+		>
+	>
+
+definition
+	CLUSTER[id1.1.1] matches {	-- Triglycerides
+		/items matches {
+			ELEMENT[id2.0.1] matches {	-- Triglycerides value
+				value matches {
+					DV_QUANTITY[id0.16] matches {
+						property matches {[at0.0.1]}
+						[magnitude, units] matches {
+							[{|0.0..1000.0|}, {"mg/dL"}],
+							[{|0.0..20.0|}, {"mmol/L"}]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1.1"] = <
+				text = <"Triglycerides test result">
+				description = <"-">
+			>
+			["id2.0.1"] = <
+				text = <"Triglycerides, blood">
+				description = <"-">
+			>
+			["at0.0.1"] = <
+				text = <"concentration">
+				description = <"-">
+			>
+		>
+	>

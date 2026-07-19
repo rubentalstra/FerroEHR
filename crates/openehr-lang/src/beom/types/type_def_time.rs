@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Iso8601Time;
-use openehr_derive::OpenEhrType;
 
 /// Rules meta-type representing the primitive type Time.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TYPE_DEF_TIME")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeDefTime {
     pub type_name: String,
     pub type_anchor: Iso8601Time,

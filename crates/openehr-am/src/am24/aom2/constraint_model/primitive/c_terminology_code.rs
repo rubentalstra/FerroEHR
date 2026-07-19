@@ -7,7 +7,6 @@ use crate::am24::aom2::constraint_model::primitive::constraint_status::Constrain
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::MultiplicityInterval;
 use openehr_base::prelude::TerminologyCode;
-use openehr_derive::OpenEhrType;
 
 /// Constrainer type for instances of `Terminology_code`. The constraint attribute can contain:
 ///
@@ -17,8 +16,7 @@ use openehr_derive::OpenEhrType;
 /// If there is an assumed value for the ac-code case above, the `_assumed_value_` attribute contains a single at-code, which must come from the list of at-codes defined as the internal value set for the ac-code.
 ///
 /// The `_constraint_status_` attribute and `_constraint_required_()` function together define whether the `_constraint_` is considered formal ('required') or not. In the non-required cases, a data-item matched to this constraint may be any coded term.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_TERMINOLOGY_CODE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CTerminologyCode {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

@@ -12,6 +12,11 @@ publish = false
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+# Number formatters for the native canonical-JSON codec (`json_codec`): itoa for
+# integers (byte-identical to serde_json), ryu for reals (our chosen canonical
+# REAL lexeme; see json_codec/runtime.rs).
+itoa.workspace = true
+ryu.workspace = true
 quick-xml.workspace = true
 thiserror.workspace = true
 jsonschema.workspace = true
@@ -27,13 +32,17 @@ http.workspace = true
 # RM/BASE spec types, so these are real (non-dev) deps (ADR-005).
 openehr-base = { path = "../openehr-base" }
 openehr-rm = { path = "../openehr-rm" }
+# The native canonical-JSON codec (`json_codec/generated`, emit-json) implements
+# `ToJson` for EVERY generated spec type the `OpenEhrType` derive covers, so it
+# spans all five spec crates (not just the RM/BASE the XML codec needs).
+openehr-lang = { path = "../openehr-lang" }
+openehr-am = { path = "../openehr-am" }
+openehr-term = { path = "../openehr-term" }
 
 [dev-dependencies]
 serde_json.workspace = true
-# The opt14↔am14 divergence sentinel (`tests/opt14_am14_divergence.rs`,
-# ADR-009) exhaustively matches both constraint models so a spec bump that
-# grows either one fails the build until reconciled.
-openehr-am = { path = "../openehr-am" }
+insta.workspace = true   # canonical-output determinism snapshots (the contract gate)
+sha2.workspace = true    # corpus manifest hashing for the determinism gate
 
 [lints]
 workspace = true

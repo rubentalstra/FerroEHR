@@ -3,11 +3,9 @@
 
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// A tag with optional value that is associated with a target information entity identified by a UID.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ITEM_TAG")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ItemTag {
     /// The tag key. May not be empty or contain leading or trailing whitespace.
     pub key: String,

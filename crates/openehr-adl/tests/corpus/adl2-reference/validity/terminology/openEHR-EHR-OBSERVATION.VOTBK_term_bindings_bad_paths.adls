@@ -1,0 +1,74 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VTBK_term_bindings_paths.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VTBK validity check for paths mentioned in term_bindings.">
+		>
+	>
+	other_details = <
+		["regression"] = <"VTTBK">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Apgar score
+		data matches {
+			HISTORY[id3] matches {
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[id4] occurrences matches {0..1} matches {
+						data matches {
+							ITEM_LIST[id2] matches {
+								items cardinality matches {1..6; ordered} matches {
+									ELEMENT[id5] occurrences matches {0..1}
+								}
+							}
+						}
+					}
+					POINT_EVENT[id7] occurrences matches {0..1} matches {
+						data matches {
+							use_node ITEM_LIST[id9] /data[id3]/events[id4]/data[id2]	-- /data[history]/events[1 minute]/data[structure]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Apgar score">
+				description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle tone and skin colour.">
+			>
+			["id4"] = <
+				text = <"1 minute">
+				description = <"Apgar score 1 minute after birth">
+			>
+			["id5"] = <
+				text = <"Total">
+				description = <"The sum of the 5 ordinal scores for each component parameter.">
+			>
+			["id7"] = <
+				text = <"5 minute">
+				description = <"Apgar score 5 minutes after birth">
+			>
+		>
+	>
+	term_bindings = <
+		["LNC205"] = <
+			items = <
+				["/data[id3]/events[id4]/data[id2]/items[id5]"] = <http://LNC205.org/id/9272-6>
+				["/data[id3]/events[id7]/data/items[id5]"] = <http://LNC205.org/id/9271-8>
+				["junk_garbage"] = <http://LNC205.org/id/9271-8>
+			>
+		>
+	>

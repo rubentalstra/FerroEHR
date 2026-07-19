@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::feature::bmm_static::BmmStatic;
 use crate::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// Reference to a writable property, either a constant or computed.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_STATIC_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElStaticRef {
     /// Defined to return False.
     pub is_writable: bool,

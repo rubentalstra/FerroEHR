@@ -22,8 +22,9 @@ strictly commit → push → **create PR → merge** → `git fetch` → checkou
 next branch **from the updated develop**. NEVER cut a new working branch from
 develop while finished work sits unmerged on a feature branch — the new
 branch silently misses that work ("otherwise we are missing data"). If work
-was just committed on any `claude/*` branch, merge it to develop first, then
-branch.
+was just committed on any working branch, merge it to develop first, then
+branch. (Branch naming: conventional types `feat/…`/`fix/…`/`chore/…` per
+the CLAUDE.md hard rule, 2026-07-19 — the `claude/*` scheme is retired.)
 
 **How to apply:** each phase still closes behind the standing gates
 (workspace suites green + full ECC zero drift, run centrally via

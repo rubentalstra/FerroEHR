@@ -1,0 +1,64 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.external_code_single.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"22/03/2006">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test rewriting of single external code into new at-code, plus binding to external code">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"© openEHR Foundation">
+
+definition
+	OBSERVATION[id1] matches {	-- Test Obs
+		protocol matches {
+			ITEM_TREE[id4] matches {
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- document state
+						value matches {
+							DV_CODED_TEXT[id5] matches {
+								defining_code matches {[at1]}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Test Obs">
+				description = <"Test Obs">
+			>
+			["id3"] = <
+				text = <"document state">
+				description = <"document state">
+			>
+			["at1"] = <
+				text = <"creation">
+				description = <"creation">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/249>
+		>
+	>

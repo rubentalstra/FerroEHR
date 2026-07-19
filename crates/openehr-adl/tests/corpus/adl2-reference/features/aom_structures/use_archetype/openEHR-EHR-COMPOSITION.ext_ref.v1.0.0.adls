@@ -1,0 +1,56 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-COMPOSITION.ext_ref.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2011-06-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example of an external reference, expressed using the 'use_archetype' keyword. This defines a direct association between the archetypes, without the need for a slot, and a corresponding association (which may be an aggregation or composition) of Reference Model structures. The constraint below says concretely that the COMPOSITION object contains SECTION and OBSERVATION objects under its content attribute.">
+			keywords = <"ADL", "test", "external reference">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2011 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	COMPOSITION[id1] matches {	-- Composition
+		content matches {
+			use_archetype SECTION[id2, openEHR-EHR-SECTION.section_parent.v1] occurrences matches {0..1} 
+			use_archetype OBSERVATION[id3, openEHR-EHR-OBSERVATION.spec_test_obs.v1] occurrences matches {1} 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Composition">
+				description = <"Composition">
+			>
+			["id2"] = <
+				text = <"Section">
+				description = <"Section">
+			>
+			["id3"] = <
+				text = <"Observation">
+				description = <"Observation">
+			>
+		>
+	>

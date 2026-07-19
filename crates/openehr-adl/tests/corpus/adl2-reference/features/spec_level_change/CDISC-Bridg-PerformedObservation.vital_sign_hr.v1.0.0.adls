@@ -1,0 +1,80 @@
+archetype (adl_version=2.0.5; rm_release=0.5.0)
+	CDISC-Bridg-PerformedObservation.vital_sign_hr.v1.0.0
+
+specialize
+	CDISC-Bridg-PerformedObservation.vital_sign.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2014-06-10">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example CDISC archetype representing Heart Rate observation">
+			keywords = <"Observation", "heart rate">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+
+definition
+	PerformedObservation[id1.1] matches {	-- Heart rate BRIDG observation
+		/instantiatedDefinedActivity[id2]/nameCode matches {[ac1.1]}		-- Heart rate measurement type
+		/resultedPerformedObservationResult[id6]/value matches {
+			PQ[id0.1] 
+		}
+		/bodyPositionCode matches {[ac2.1]}		-- Heart rate measurement position
+		/approachAnatomicSiteCode matches {[ac3.1]}		-- Heart rate measurement site
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Heart rate BRIDG observation">
+				description = <"Heart rate BRIDG observation">
+			>
+			["ac1.1"] = <
+				text = <"Heart rate measurement type">
+				description = <"Heart rate measurement type">
+			>
+			["ac2.1"] = <
+				text = <"Heart rate measurement position">
+				description = <"Heart rate measurement body position">
+			>
+			["ac3.1"] = <
+				text = <"Heart rate measurement site">
+				description = <"Heart rate measurement site">
+			>
+		>
+	>
+	value_sets = <
+		["ac1.1"] = <
+			id = <"ac1.1">
+			members = <"at103", ...>
+		>
+		["ac2.1"] = <
+			id = <"ac2.1">
+			members = <"at200", "at201", "at202">
+		>
+		["ac3.1"] = <
+			id = <"ac3.1">
+			members = <"at8", "at9", "at7">
+		>
+	>

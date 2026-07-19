@@ -11,14 +11,21 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
-openehr-derive.workspace = true
-serde.workspace = true
+# No serde derive on the spec types (the native codec in `openehr-its` owns the
+# wire). `serde_json` is kept for the untyped `Value` RM representation used by
+# the hand-written path/validation helpers; `serde_jcs` canonicalises the
+# already-assembled `Value` for `VERSION.canonical_form()`.
 serde_json.workspace = true
 serde_jcs.workspace = true
 thiserror.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
+# The canonical-JSON codec lives in `openehr-its` (the spec types no longer
+# carry serde derives); the dispatch tests exercise it directly. This is a
+# dev-only dependency cycle (openehr-its depends on openehr-rm), which cargo
+# permits for dev-dependencies.
+openehr-its = { path = "../openehr-its" }
 insta.workspace = true
 jsonschema.workspace = true
 

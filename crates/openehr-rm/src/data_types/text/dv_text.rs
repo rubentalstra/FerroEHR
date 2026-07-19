@@ -5,8 +5,6 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::term_mapping::TermMapping;
 use crate::data_types::uri::dv_uri::DvUri;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// A text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one `DV_TEXT` may be more than one word). Visual formatting and hyperlinks may be included via markdown.
 ///
@@ -17,8 +15,7 @@ use serde::Serialize;
 /// * `_formatting_ = "markdown"`: text in markdown format; use of CommonMark strongly recommended.
 ///
 /// A `DV_TEXT` can be coded by adding mappings to it.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_TEXT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvTextData {
     /// Displayable rendition of the item, regardless of its underlying structure. For `DV_CODED_TEXT`, this is the rubric of the complete term as provided by the terminology service.
     pub value: String,
@@ -52,37 +49,8 @@ pub struct DvTextData {
 ///
 /// A `DV_TEXT` can be coded by adding mappings to it.
 /// Polymorphic slot of `DV_TEXT`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DvText {
     DvCodedText(DvCodedText),
     DvText(DvTextData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for DvText {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("DV_CODED_TEXT") => {
-                ::core::result::Result::Ok(Self::DvCodedText(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_TEXT") => ::core::result::Result::Ok(Self::DvText(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::DvText(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "DV_TEXT: unexpected `_type` {__other:?} (expected one of: DV_CODED_TEXT, DV_TEXT)"
-                )))
-            }
-        }
-    }
 }

@@ -1,0 +1,47 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-SECTION.VDSSID_slot_redefine_bad_id.v1.0.0
+
+specialise
+	openEHR-EHR-SECTION.slot_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"28/10/2014">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VDSSID validity check, triggered by slot redefinition that does not have same node id as in parent">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VDSSID">
+	>
+
+definition
+	SECTION[id1.1] matches {	-- Slot section
+		items matches {
+			allow_archetype OBSERVATION[id2.1] closed
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Slot redefinition">
+				description = <"Slot redefinition">
+			>
+			["id2.1"] = <
+				text = <"Slot closed">
+				description = <"Slot closed">
+			>
+		>
+	>

@@ -3,11 +3,9 @@
 
 use crate::bmm_persistence::p_bmm_schema::PBmmSchema;
 use crate::bmm3::core::model::bmm_model::BmmModel;
-use openehr_derive::OpenEhrType;
 
 /// Concrete descendant of `BMM_SCHEMA_DESCRIPTOR` that provides a way to read an ODIN or other similarly encoded P_BMM schema file.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_SCHEMA_DESCRIPTOR")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmSchemaDescriptor {
     // inherited: SCHEMA_DESCRIPTOR
     /// Persistent form of model.

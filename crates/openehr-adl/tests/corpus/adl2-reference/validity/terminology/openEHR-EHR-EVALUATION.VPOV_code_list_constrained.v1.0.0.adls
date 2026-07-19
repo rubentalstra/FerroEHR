@@ -1,0 +1,74 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.VPOV_code_list_constrained.v1.0.0
+
+specialize
+	openEHR-EHR-EVALUATION.code_list_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["date"] = <"20/02/2013">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To verify VPOV; test constraining of list of codes; it is done illegally here, because the codes should be from the parent">
+			copyright = <"copyright (c) 2013 openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"VPOV">
+	>
+
+definition
+	EVALUATION[id1.1] matches {	-- Adverse reaction exclusions
+		/data[id2]/items matches {
+			ELEMENT[id3] matches {
+				value matches {
+					DV_CODED_TEXT[id4] matches {
+						defining_code matches {[ac1.1]}		-- (added by post-parse processor)
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Adverse reaction exclusions">
+				description = <"A category of conditions or states which have been excluded as cause of adverse reaction">
+			>
+			["at0.3"] = <
+				text = <"No known adverse reactions">
+				description = <"No known adverse reactions to any substance.">
+			>
+			["at0.4"] = <
+				text = <"No known allergic reactions">
+				description = <"No known allergic reactions to any substance.">
+			>
+			["at0.5"] = <
+				text = <"No known hypersensitivity reactions">
+				description = <"No known hypersensitivity reaction to any substance.">
+			>
+			["at0.6"] = <
+				text = <"No known intolerances">
+				description = <"*">
+			>
+			["ac1.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1.1"] = <
+			id = <"ac1.1">
+			members = <"at0.3", "at0.4", "at0.5", "at0.6">
+		>
+	>

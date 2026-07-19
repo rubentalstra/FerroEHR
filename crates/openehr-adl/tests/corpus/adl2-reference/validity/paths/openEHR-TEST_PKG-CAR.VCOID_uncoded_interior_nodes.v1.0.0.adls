@@ -1,0 +1,49 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-CAR.VCOID_uncoded_interior_nodes.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VCOID validity check triggered by missing node ids on multiple alternatives of same RM type under single-valued attribute">
+			keywords = <"ADL", "test">
+			copyright = <"copyright (c) 2006 The openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VCOID">
+	>
+
+definition
+	CAR[id1] matches {	-- car
+		body matches {
+			CAR_BODY matches {
+				description matches {"hatchback body"}
+				model matches {"xxxx"}
+				parts matches {
+					CAR_BODY_PART
+				}
+			}
+			CAR_BODY matches {
+				description matches {"coupe body"}
+				model matches {"xxxx"}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"car">
+				description = <"car">
+			>
+		>
+	>

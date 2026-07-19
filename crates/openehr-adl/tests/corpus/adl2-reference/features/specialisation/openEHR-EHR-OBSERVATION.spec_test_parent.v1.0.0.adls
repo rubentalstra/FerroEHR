@@ -1,0 +1,96 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.spec_test_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"Ocean Informatics">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/8/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test OBSERVATION specialisation parent archetype">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- top-level archetype
+		data matches {
+			HISTORY[id9] matches {
+				events cardinality matches {2..*; unordered} matches {
+					EVENT[id3] matches {	-- any event
+						data matches {
+							ITEM_TREE[id10] matches {
+								items cardinality matches {2..*; ordered} matches {
+									ELEMENT[id4] matches {	-- Text field
+										value matches {
+											DV_TEXT[id11] 
+										}
+									}
+									ELEMENT[id5] matches {	-- Boolean field
+										value matches {
+											DV_BOOLEAN[id12] 
+										}
+									}
+									ELEMENT[id6] matches {	-- Quantity field
+										value matches {
+											DV_QUANTITY[id13] 
+										}
+									}
+									ELEMENT[id7] matches {	-- Multimedia field
+										value matches {
+											DV_MULTIMEDIA[id14] 
+										}
+									}
+									ELEMENT[id8] 	-- Any field
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol existence matches {1} 
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"top-level archetype">
+				description = <"top level test archetype for specialisation lineage">
+			>
+			["id3"] = <
+				text = <"any event">
+				description = <"*">
+			>
+			["id4"] = <
+				text = <"Text field">
+				description = <"test text field">
+			>
+			["id5"] = <
+				text = <"Boolean field">
+				description = <"test boolean field">
+			>
+			["id6"] = <
+				text = <"Quantity field">
+				description = <"test quantity field">
+			>
+			["id7"] = <
+				text = <"Multimedia field">
+				description = <"test multimedia field">
+			>
+			["id8"] = <
+				text = <"Any field">
+				description = <"test any-value field">
+			>
+		>
+	>

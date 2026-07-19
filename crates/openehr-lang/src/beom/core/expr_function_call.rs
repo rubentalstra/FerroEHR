@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::beom::core::expression::Expression;
-use openehr_derive::OpenEhrType;
 
 /// Node representing a function call with 0 or more arguments.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXPR_FUNCTION_CALL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprFunctionCall {
     // inherited: EXPR_LEAF
     /// The reference item from which the value of this node can be computed.

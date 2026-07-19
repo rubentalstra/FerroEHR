@@ -4,11 +4,9 @@
 use crate::terminology::code_set::CodeSet;
 use crate::terminology::terminology_group::TerminologyGroup;
 use openehr_base::prelude::Iso8601Date;
-use openehr_derive::OpenEhrType;
 
 /// Container for code sets and/or vocabularies that belong to a given logical terminology.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TERMINOLOGY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Terminology {
     /// Name of this terminology.
     pub name: String,

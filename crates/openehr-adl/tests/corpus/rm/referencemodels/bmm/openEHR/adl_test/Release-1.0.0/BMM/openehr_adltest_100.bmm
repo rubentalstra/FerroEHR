@@ -1,0 +1,1025 @@
+-- 
+-- 	component:   openEHR Archetype Project
+-- 	description: openEHR ADL test schema. This schema is a serialisatoin of the 
+--               the BMM object meta-model classes found at 
+--               http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/specialisation/libraries/common_libs/src/basic_meta_model
+-- 	keywords:    reference model, meta-model, archetypes
+--	author:      Thomas Beale <thomas.beale@openehr.org>
+--	support:     http://www.openehr.org/issues/browse/AWB
+--	copyright:   Copyright (c) 2009- The openEHR Foundation <http://www.openEHR.org>
+-- 	license:     Apache 2.0 License <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+--
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"adltest">
+rm_release = <"1.0.2">
+model_name = <"TEST_PKG">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"21">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR schema to support test archetypes">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_rm_data_types_1.0.4">
+	>
+>
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.openehr.test_pkg"] = <
+		name = <"org.openehr.test_pkg">
+		classes = <"WHOLE", "SOME_TYPE", "BOOK", "CHAPTER", "ENTRY", "CAR", "CAR_BODY", "CAR_BODY_PART", "WHEEL", "RIM", "ENGINE_PART", "ENGINE_PART_ITEM", 
+			"ITEM", "CLUSTER", "ELEMENT", "MULTIPLICITY_OBJECT",
+			"GENERIC_PARENT", "SUPPLIER", "SUPPLIER_A", "SUPPLIER_B", "GENERIC_CHILD_OPEN_T", "GENERIC_CHILD_OPEN_U", "GENERIC_CHILD_CLOSED"
+		>
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	--
+	-- -------------------- classes for validity tests ---------------------
+	--
+
+	["ITEM"] = <
+		name = <"ITEM">
+		ancestors = <"Any">
+		is_abstract = <True>
+	>
+
+	["CLUSTER"] = <
+		name = <"CLUSTER">
+		ancestors = <"ITEM">
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"ITEM">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ELEMENT"] = <
+		name = <"ELEMENT">
+		ancestors = <"ITEM">
+		properties = <
+			["null_flavour"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"null_flavour">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"DATA_VALUE">
+			>
+		>
+	>
+
+	["ENTRY"] = <
+		name = <"ENTRY">
+		ancestors = <"Any">
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"CODE_PHRASE">
+			>
+			["coded_text_value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"coded_text_value">
+				type = <"DV_CODED_TEXT">
+			>
+			["ordinal_attr_1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ordinal_attr_1">
+				type = <"DV_ORDINAL">
+			>
+			["element_attr"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"element_attr">
+				type = <"ELEMENT">
+			>
+			["element_attr_2"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"element_attr_2">
+				type_def = <
+					container_type = <"List">
+					type = <"ELEMENT">
+				>
+				cardinality = <|>=0|>
+			>
+			["item"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"item">
+				type = <"DATA_VALUE">
+			>
+		>
+	>
+
+	--
+	-- -------------------- classes for basic tests ---------------------
+	--
+
+	["BOOK"] = <
+		name = <"BOOK">
+		ancestors = <"Any", ...>
+		properties = <
+			["author"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"author">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["title"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"title">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["chapters"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"chapters">
+				type_def = <
+					container_type = <"List">
+					type = <"CHAPTER">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CHAPTER"] = <
+		name = <"CHAPTER">
+		ancestors = <"Any", ...>
+		properties = <
+			["title"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"title">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["WHOLE"] = <
+		name = <"WHOLE">
+		ancestors = <"Any", ...>
+		properties = <
+			["string_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"string_attr1">
+				type = <"String">
+			>
+			["string_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"string_attr2">
+				type = <"String">
+			>
+			["string_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"string_attr3">
+				type = <"String">
+			>
+			["string_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"string_attr4">
+				type = <"String">
+			>
+			["string_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"string_attr5">
+				type = <"String">
+			>
+
+			["boolean_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"boolean_attr1">
+				type = <"Boolean">
+			>
+			["boolean_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"boolean_attr2">
+				type = <"Boolean">
+			>
+			["boolean_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"boolean_attr3">
+				type = <"Boolean">
+			>
+			["boolean_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"boolean_attr4">
+				type = <"Boolean">
+			>
+
+			["integer_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr1">
+				type = <"Integer">
+			>
+			["integer_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr2">
+				type = <"Integer">
+			>
+			["integer_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr3">
+				type = <"Integer">
+			>
+			["integer_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr4">
+				type = <"Integer">
+			>
+			["integer_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr5">
+				type = <"Integer">
+			>
+			["integer_attr6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr6">
+				type = <"Integer">
+			>
+			["integer_attr7"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr7">
+				type = <"Integer">
+			>
+			["integer_attr8"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr8">
+				type = <"Integer">
+			>
+			["integer_attr9"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr9">
+				type = <"Integer">
+			>
+			["integer_attr10"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr10">
+				type = <"Integer">
+			>
+			["integer_attr11"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr11">
+				type = <"Integer">
+			>
+			["integer_attr12"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr12">
+				type = <"Integer">
+			>
+			["integer_attr13"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integer_attr13">
+				type = <"Integer">
+			>
+
+			["real_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr1">
+				type = <"Real">
+			>
+			["real_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr2">
+				type = <"Real">
+			>
+			["real_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr3">
+				type = <"Real">
+			>
+			["real_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr4">
+				type = <"Real">
+			>
+			["real_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr5">
+				type = <"Real">
+			>
+			["real_attr6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr6">
+				type = <"Real">
+			>
+			["real_attr7"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr7">
+				type = <"Real">
+			>
+			["real_attr8"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr8">
+				type = <"Real">
+			>
+			["real_attr9"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr9">
+				type = <"Real">
+			>
+			["real_attr10"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr10">
+				type = <"Real">
+			>
+			["real_attr11"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr11">
+				type = <"Real">
+			>
+			["real_attr12"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr12">
+				type = <"Real">
+			>
+			["real_attr13"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"real_attr13">
+				type = <"Real">
+			>
+
+			["date_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr1">
+				type = <"Iso8601_date">
+			>
+			["date_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr2">
+				type = <"Iso8601_date">
+			>
+			["date_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr3">
+				type = <"Iso8601_date">
+			>
+			["date_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr4">
+				type = <"Iso8601_date">
+			>
+			["date_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr5">
+				type = <"Iso8601_date">
+			>
+			["date_attr6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr6">
+				type = <"Iso8601_date">
+			>
+			["date_attr7"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr7">
+				type = <"Iso8601_date">
+			>
+			["date_attr8"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr8">
+				type = <"Iso8601_date">
+			>
+			["date_attr9"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr9">
+				type = <"Iso8601_date">
+			>
+			["date_attr10"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr10">
+				type = <"Iso8601_date">
+			>
+			["date_attr11"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr11">
+				type = <"Iso8601_date">
+			>
+			["date_attr12"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_attr12">
+				type = <"Iso8601_date">
+			>
+
+			["time_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr1">
+				type = <"Iso8601_time">
+			>
+			["time_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr2">
+				type = <"Iso8601_time">
+			>
+			["time_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr3">
+				type = <"Iso8601_time">
+			>
+			["time_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr4">
+				type = <"Iso8601_time">
+			>
+			["time_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr5">
+				type = <"Iso8601_time">
+			>
+			["time_attr6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr6">
+				type = <"Iso8601_time">
+			>
+			["time_attr7"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr7">
+				type = <"Iso8601_time">
+			>
+			["time_attr8"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr8">
+				type = <"Iso8601_time">
+			>
+			["time_attr9"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr9">
+				type = <"Iso8601_time">
+			>
+			["time_attr10"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr10">
+				type = <"Iso8601_time">
+			>
+			["time_attr11"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr11">
+				type = <"Iso8601_time">
+			>
+			["time_attr12"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr12">
+				type = <"Iso8601_time">
+			>
+			["time_attr13"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_attr13">
+				type = <"Iso8601_time">
+			>
+
+			["date_time_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr1">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr2">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr3">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr4">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr5">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr6">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr7"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr7">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr8"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr8">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr9"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr9">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr10"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr10">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr11"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr11">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr12"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr12">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr13"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr13">
+				type = <"Iso8601_date_time">
+			>
+			["date_time_attr14"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date_time_attr14">
+				type = <"Iso8601_date_time">
+			>
+
+			["duration_attr1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr1">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr2">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr3">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr4">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr5">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr6">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr7"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr7">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr8"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr8">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr9"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr9">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr10"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr10">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr11"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr11">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr12"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr12">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr13"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr13">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr14"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr14">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr15"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr15">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr16"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr16">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr17"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr17">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr18"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr18">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr19"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr19">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr20"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr20">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr21"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr21">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr22"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr22">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr23"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr23">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr24"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr24">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr25"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr25">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr26"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr26">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr27"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr27">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr28"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr28">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr29"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr29">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr30"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr30">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr31"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr31">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr32"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr32">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr33"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr33">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr34"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr34">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr35"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr35">
+				type = <"Iso8601_duration">
+			>
+			["duration_attr36"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_attr36">
+				type = <"Iso8601_duration">
+			>
+
+			["any_attr_1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"any_attr_1">
+				type = <"Any">
+			>
+			["any_attr_2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"any_attr_2">
+				type = <"Any">
+			>
+			["any_attr_3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"any_attr_3">
+				type = <"Any">
+			>
+			["any_attr_4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"any_attr_4">
+				type = <"Any">
+			>
+			["any_attr_5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"any_attr_5">
+				type = <"Any">
+			>
+		>
+	>
+
+	["SOME_TYPE"] = <
+		name = <"SOME_TYPE">
+		ancestors = <"Any", ...>
+		properties = <
+			["standard_quantity_attr"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"standard_quantity_attr">
+				type = <"DV_QUANTITY">
+			>
+			["clinical_quantity_attr_1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_quantity_attr_1">
+				type = <"DV_QUANTITY">
+			>
+			["clinical_quantity_attr_2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_quantity_attr_2">
+				type = <"DV_QUANTITY">
+			>
+			["clinical_quantity_attr_3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_quantity_attr_3">
+				type = <"DV_QUANTITY">
+			>
+			["clinical_quantity_attr_4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_quantity_attr_4">
+				type = <"DATA_VALUE">
+			>
+			["clinical_quantity_attr_5"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_quantity_attr_5">
+				type = <"DATA_VALUE">
+			>
+			["clinical_quantity_attr_6"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_quantity_attr_6">
+				type = <"DATA_VALUE">
+			>
+			["standard_ordinal_attr"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"standard_ordinal_attr">
+				type = <"DV_ORDINAL">
+			>
+			["clinical_ordinal_attr_1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_ordinal_attr_1">
+				type = <"DATA_VALUE">
+			>
+			["clinical_ordinal_attr_2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_ordinal_attr_2">
+				type = <"DATA_VALUE">
+			>
+			["clinical_coded_attr_1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_coded_attr_1">
+				type = <"CODE_PHRASE">
+			>
+			["clinical_coded_attr_2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_coded_attr_2">
+				type = <"CODE_PHRASE">
+			>
+			["clinical_coded_attr_3"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_coded_attr_3">
+				type = <"CODE_PHRASE">
+			>
+			["clinical_coded_attr_4"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_coded_attr_4">
+				type = <"CODE_PHRASE">
+			>
+			["standard_coded_text_attr"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"standard_coded_text_attr">
+				type = <"DV_CODED_TEXT">
+			>
+			["standard_coded_text_attr_2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"standard_coded_text_attr_2">
+				type = <"DV_CODED_TEXT">
+			>
+			["clinical_coded_text_attr_1"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_coded_text_attr_1">
+				type = <"DV_CODED_TEXT">
+			>
+			["clinical_coded_text_attr_2"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"clinical_coded_text_attr_2">
+				type = <"DV_CODED_TEXT">
+			>
+			["qty_interval_attr_1"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"qty_interval_attr_1">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_QUANTITY">
+				>
+			>
+			["qty_interval_attr_2"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"qty_interval_attr_2">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_QUANTITY">
+				>
+			>
+		>
+	>
+
+	["CAR"] = <
+		name = <"CAR">
+		ancestors = <"Any", ...>
+		properties = <
+			["body"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"body">
+				type = <"CAR_BODY">
+			>
+			["engine_parts"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"engine_parts">
+				type_def = <
+					container_type = <"List">
+					type = <"ENGINE_PART">
+				>
+				cardinality = <|>=0|>
+			>
+			["wheels"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"wheels">
+				type_def = <
+					container_type = <"List">
+					type = <"WHEEL">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CAR_BODY"] = <
+		name = <"CAR_BODY">
+		ancestors = <"Any", ...>
+		properties = <
+			["model"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"model">
+				type = <"String">
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"String">
+			>
+			["parts"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"parts">
+				type_def = <
+					container_type = <"List">
+					type = <"CAR_BODY_PART">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CAR_BODY_PART"] = <
+		name = <"CAR_BODY_PART">
+		ancestors = <"Any", ...>
+	>
+
+	["ENGINE_PART"] = <
+		name = <"ENGINE_PART">
+		ancestors = <"Any", ...>
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"ENGINE_PART_ITEM">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ENGINE_PART_ITEM"] = <
+		name = <"ENGINE_PART_ITEM">
+		ancestors = <"Any", ...>
+		properties = <
+			["model"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"model">
+				type = <"String">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"String">
+			>
+		>
+	>
+
+	["WHEEL"] = <
+		name = <"WHEEL">
+		ancestors = <"Any", ...>
+		properties = <
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"String">
+			>
+			["parts"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"parts">
+				type_def = <
+					container_type = <"List">
+					type = <"RIM">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["RIM"] = <
+		name = <"RIM">
+		ancestors = <"Any", ...>
+		properties = <
+			["nuts"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"nuts">
+				type = <"Integer">
+			>
+			["hubcap"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"hubcap">
+				type = <"String">
+			>
+		>
+	>
+
+	["MULTIPLICITY_OBJECT"] = <
+		name = <"MULTIPLICITY_OBJECT">
+		ancestors = <"Any", ...>
+		properties = <
+			["integer_list"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"integer_list">
+				type_def = <
+					container_type = <"List">
+					type = <"Integer">
+				>
+				cardinality = <|>=0|>
+			>
+			["string_list"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"string_list">
+				type_def = <
+					container_type = <"List">
+					type = <"String">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	--
+	--------------------- generic inheritance types ------------------
+	--
+
+	
+	["GENERIC_PARENT"] = <
+		name = <"GENERIC_PARENT">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"SUPPLIER">
+			>
+			["U"] = <
+				name = <"U">
+				conforms_to_type = <"SUPPLIER">
+			>
+		>
+		properties = <
+			["property_a"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"property_a">
+				type = <"T">
+			>
+			["property_b"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"property_b">
+				type = <"U">
+			>
+		>
+	>
+
+	["SUPPLIER"] = <
+		name = <"SUPPLIER">
+		is_abstract = <True>
+		properties = <
+			["abstract_prop"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"abstract_prop">
+				type = <"String">
+			>
+		>
+	>
+
+	["SUPPLIER_A"] = <
+		name = <"SUPPLIER_A">
+		ancestors = <"SUPPLIER">
+		properties = <
+			["magnitude"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"magnitude">
+				type = <"Double">
+				is_mandatory = <True>
+			>
+			["units"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"units">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["SUPPLIER_B"] = <
+		name = <"SUPPLIER_B">
+		ancestors = <"SUPPLIER">
+		properties = <
+			["property"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"property">
+				type = <"CODE_PHRASE">
+				is_mandatory = <True>
+			>
+			["precision"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"precision">
+				type = <"Integer">
+			>
+		>
+	>
+
+	["GENERIC_CHILD_OPEN_T"] = <
+		name = <"GENERIC_CHILD_OPEN_T">
+		ancestor_defs = <
+			["GENERIC_PARENT<T,SUPPLIER_B>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"GENERIC_PARENT">
+				generic_parameters = <"T", "SUPPLIER_B">
+			>
+		>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"SUPPLIER">
+			>
+		>
+		properties = <
+			["gen_child_open_t_prop"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"gen_child_open_t_prop">
+				type = <"String">
+			>
+		>
+	>
+
+	["GENERIC_CHILD_OPEN_U"] = <
+		name = <"GENERIC_CHILD_OPEN_U">
+		ancestor_defs = <
+			["GENERIC_PARENT<SUPPLIER_A,U>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"GENERIC_PARENT">
+				generic_parameters = <"SUPPLIER_A", "U">
+			>
+		>
+		generic_parameter_defs = <
+			["U"] = <
+				name = <"U">
+				conforms_to_type = <"SUPPLIER">
+			>
+		>
+		properties = <
+			["gen_child_open_u_prop"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"gen_child_open_u_prop">
+				type = <"String">
+			>
+		>
+	>
+
+	["GENERIC_CHILD_CLOSED"] = <
+		name = <"GENERIC_CHILD_CLOSED">
+		ancestor_defs = <
+			["GENERIC_PARENT<SUPPLIER_A,SUPPLIER_B>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"GENERIC_PARENT">
+				generic_parameters = <"SUPPLIER_A", "SUPPLIER_B">
+			>
+		>
+		properties = <
+			["gen_child_closed_prop"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"gen_child_closed_prop">
+				type = <"String">
+			>
+		>
+	>
+
+>
+

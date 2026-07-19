@@ -47,8 +47,8 @@ files — that is what this regenerates.
 
 ## Notes
 
-- Vendored inputs: BMM at `crates/openehr-codegen/vendor/bmm/`, XSD/OAS/JSON at
+- Vendored inputs: BMM at `tools/openehr-codegen/vendor/bmm/`, XSD/OAS/JSON at
   `crates/openehr-its/{schemas,vendor}/` (each with `PROVENANCE.md`).
 - To change generated output, edit the emitter
-  (`crates/openehr-codegen/src/{emit,emit_xml,emit_rest,emit_rm_model,xsd,oas,naming}.rs`)
-  or a `*_impl.rs` sibling — see `.claude/rules/codegen.md`.
+  (`tools/openehr-codegen/src/`, the `load/`→`analyze/`→`plan/`→`render/`
+  pipeline stages) or a `*_impl.rs` sibling — see `.claude/rules/codegen.md`.

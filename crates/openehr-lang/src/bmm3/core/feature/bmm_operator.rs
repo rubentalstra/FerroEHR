@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::feature::bmm_operator_position::BmmOperatorPosition;
-use openehr_derive::OpenEhrType;
 
 /// Definition of a symbolic operator associated with a function.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_OPERATOR")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmOperator {
     /// Position of operator in syntactic representation.
     pub position: BmmOperatorPosition,

@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constrainer class for Coded text data.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_CODED_TEXT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CCodedText {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

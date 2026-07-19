@@ -6,11 +6,9 @@ use crate::am24::aom2::constraint_model::c_object::CObject;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use openehr_base::prelude::Cardinality;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Abstract model of constraint on any kind of attribute in a class model.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_ATTRIBUTE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CAttribute {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

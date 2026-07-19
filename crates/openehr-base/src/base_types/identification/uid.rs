@@ -3,47 +3,12 @@
 use crate::base_types::identification::internet_id::InternetId;
 use crate::base_types::identification::iso_oid::IsoOid;
 use crate::base_types::identification::uuid::Uuid;
-use serde::Serialize;
 
 /// Abstract parent of classes representing unique identifiers which identify information entities in a durable way. UIDs only ever identify one IE in time or space and are never re-used.
 /// Closed subtype set of `UID`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Uid {
     InternetId(InternetId),
     IsoOid(IsoOid),
     Uuid(Uuid),
-}
-
-impl<'de> ::serde::Deserialize<'de> for Uid {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("INTERNET_ID") => {
-                ::core::result::Result::Ok(Self::InternetId(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("ISO_OID") => ::core::result::Result::Ok(Self::IsoOid(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("UUID") => ::core::result::Result::Ok(Self::Uuid(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "UID: missing required `_type` on polymorphic slot (expected one of: INTERNET_ID, ISO_OID, UUID)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "UID: unexpected `_type` {__other:?} (expected one of: INTERNET_ID, ISO_OID, UUID)"
-                )))
-            }
-        }
-    }
 }

@@ -1,0 +1,77 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.rm_conforming_rm_subtype.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2009-03-18">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test for conformance of RM subtype (here: POINT_EVENT) to statically declared RM type (EVENT). This archetype should pass validation.">
+			keywords = <"ADL", "test", "RM checking">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- An Observation
+		data matches {
+			HISTORY[id5] matches {
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[id2] occurrences matches {0..1} matches {	-- A Point_event
+						offset matches {
+							DV_DURATION[id6] matches {
+								value matches {PT1M}
+							}
+						}
+						data matches {
+							ITEM_LIST[id7] matches {
+								items cardinality matches {1..6; ordered} matches {
+									ELEMENT[id3] occurrences matches {0..1} 	-- Element #1
+									ELEMENT[id4] occurrences matches {0..1} 	-- Element #2
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"An Observation">
+				description = <"An Observation">
+			>
+			["id2"] = <
+				text = <"A Point_event">
+				description = <"A Point_event">
+			>
+			["id3"] = <
+				text = <"Element #1">
+				description = <"Element #1">
+			>
+			["id4"] = <
+				text = <"Element #2">
+				description = <"Element #2">
+			>
+		>
+	>

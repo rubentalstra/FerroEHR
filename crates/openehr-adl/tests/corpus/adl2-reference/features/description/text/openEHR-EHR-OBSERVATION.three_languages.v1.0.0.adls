@@ -1,0 +1,105 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.three_languages.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["fr"] = <
+			language = <[ISO_639-1::fr]>
+			author = <
+				["name"] = <"Frederik Tyler">
+				["email"] = <"freddy@something.somewhere.co.uk">
+			>
+			accreditation = <"British Medical Translator id 00400595">
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			author = <
+				["name"] = <"Nina Alexandrovna">
+				["organisation"] = <"Dostoevsky Media Services">
+				["email"] = <"nina@translation.dms.ru">
+			>
+			accreditation = <"Russian Translator id 892230-3A">
+		>
+	>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2012-10-21">
+	>
+	details = <
+		["fr"] = <
+			language = <[ISO_639-1::fr]>
+			purpose = <"a quoi ça sert">
+			use = <"ceçi explique la fonction de l'archetype">
+			keywords = <"ceçi", "est", "une", "liste", "de", "mots", "clés">
+			misuse = <"les interdictions de l'utilisation de cet archetype">
+			original_resource_uri = <
+				["ligne guide"] = <"http://guidelines.are.us/wherever/fr">
+				["medline"] = <"http://some%20medline%20ref">
+			>
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"what this is for">
+			use = <"this explains the usage of the archetype">
+			keywords = <"this", "is", "a", "list", "of", "keywords">
+			misuse = <"this is not what it is used for">
+			original_resource_uri = <
+				["guideline"] = <"http://guidelines.are.us/wherever/en">
+				["medline"] = <"http://some%20medline%20ref">
+			>
+		>
+		["ru"] = <
+			language = <[ISO_639-1::ru]>
+			purpose = <"funktsiia">
+			use = <"v kakih sluchaiah ispol'zuetsia dannii arkhetip">
+			keywords = <"eto", "spisok", "kliuchevih", "slov">
+			misuse = <"Eto ob'iasniaet, pochemu etot arkhetip bil ispol'zovan ne po prednaznacheniiu">
+			original_resource_uri = <
+				["guideline"] = <"http://guidelines.are.us/wherever/ru">
+				["medline"] = <"http://some%20medline%20ref">
+			>
+		>
+	>
+	other_contributors = <"friend 1", "friend 2", "friend 3">
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2003 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+
+definition
+	OBSERVATION[id1] matches {	-- most minimal
+		data 
+	}
+
+terminology
+	term_definitions = <
+		["fr"] = <
+			["id1"] = <
+				text = <"le plus minimal">
+				description = <"le plus minimal">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"most minimal">
+				description = <"most minimal">
+			>
+		>
+		["ru"] = <
+			["id1"] = <
+				text = <"le plus minimal">
+				description = <"le plus minimal">
+			>
+		>
+	>

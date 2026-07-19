@@ -1,0 +1,35 @@
+archetype (adl_version=2.0.6)
+	openEHR-TEST_PKG-ENTRY_WRONG.rm_type_wrong.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test what happens when the RM entity of the file name does not match that in the archetype id.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	ENTRY[id1]
+
+ontology
+	term_definitions = <
+		["en"] = <
+			["at0000"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

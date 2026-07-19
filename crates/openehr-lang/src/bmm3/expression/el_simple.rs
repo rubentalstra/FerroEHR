@@ -11,12 +11,10 @@ use crate::bmm3::expression::el_readonly_variable::ElReadonlyVariable;
 use crate::bmm3::expression::el_static_ref::ElStaticRef;
 use crate::bmm3::expression::el_type_ref::ElTypeRef;
 use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
-use serde::Serialize;
 
 /// Simple terminal i.e. logically atomic expression element.
 /// Closed subtype set of `EL_SIMPLE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ElSimple {
     ElAttached(ElAttached),
     ElDefined(ElDefined),
@@ -29,81 +27,4 @@ pub enum ElSimple {
     ElStaticRef(ElStaticRef),
     ElTypeRef(ElTypeRef),
     ElWritableVariable(ElWritableVariable),
-}
-
-impl<'de> ::serde::Deserialize<'de> for ElSimple {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("EL_ATTACHED") => {
-                ::core::result::Result::Ok(Self::ElAttached(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_DEFINED") => {
-                ::core::result::Result::Ok(Self::ElDefined(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => {
-                ::core::result::Result::Ok(Self::ElFunctionAgent(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => {
-                ::core::result::Result::Ok(Self::ElFunctionCall(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_LITERAL") => {
-                ::core::result::Result::Ok(Self::ElLiteral(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => {
-                ::core::result::Result::Ok(Self::ElProcedureAgent(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_PROPERTY_REF") => {
-                ::core::result::Result::Ok(Self::ElPropertyRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_READONLY_VARIABLE") => {
-                ::core::result::Result::Ok(Self::ElReadonlyVariable(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_STATIC_REF") => {
-                ::core::result::Result::Ok(Self::ElStaticRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_TYPE_REF") => {
-                ::core::result::Result::Ok(Self::ElTypeRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_WRITABLE_VARIABLE") => {
-                ::core::result::Result::Ok(Self::ElWritableVariable(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "EL_SIMPLE: missing required `_type` on polymorphic slot (expected one of: EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "EL_SIMPLE: unexpected `_type` {__other:?} (expected one of: EL_ATTACHED, EL_DEFINED, EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_LITERAL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_READONLY_VARIABLE, EL_STATIC_REF, EL_TYPE_REF, EL_WRITABLE_VARIABLE)"
-                )))
-            }
-        }
-    }
 }

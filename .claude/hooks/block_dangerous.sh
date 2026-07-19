@@ -35,8 +35,8 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push[^;|&]*(--force([^-]|$)|--f
     echo "BLOCKED: force-push touching main/master/develop is forbidden (CLAUDE.md hard rule)." >&2
     exit 2
   fi
-  if ! printf '%s' "$cmd" | grep -q 'claude/'; then
-    echo "BLOCKED: bare force-push refused. Force-push (prefer --force-with-lease) only an explicit claude/* branch." >&2
+  if ! printf '%s' "$cmd" | grep -qE '(feat|fix|chore|docs|refactor|perf|test|ci|build|release|claude)/'; then
+    echo "BLOCKED: bare force-push refused. Force-push (prefer --force-with-lease) only an explicit conventional-type branch (feat/, fix/, chore/, docs/, refactor/, perf/, test/, ci/, build/, release/)." >&2
     exit 2
   fi
 fi

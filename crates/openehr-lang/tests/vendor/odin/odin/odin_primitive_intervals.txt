@@ -1,0 +1,7 @@
+a_integer_interval_attribute1 = <|1..2|>
+a_integer_interval_attribute2 = <|>=6|>
+a_real_interval_attribute = <|>6.7..<23.24e2|>
+a_date_interval_attribute = <|>=2007-11-31|>
+a_time_interval_attribute = <|<16:23:54,5-0524|>
+a_datetime_interval_attribute = <|>2007-11-31T16:23:54,5Z..<2014-11-31T16:23:54,5Z|>
+a_duration_interval_attribute = <|P5Y2M4W5DT34H34M63.276S..P6Y2M4W5DT34H34M63.276S|>

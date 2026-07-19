@@ -582,7 +582,7 @@ fn persistent_composition_round_trip_synthesises_no_context() {
         rebuilt.get("context")
     );
     // The rebuilt Composition is still valid RM (context being optional).
-    serde_json::from_value::<openehr_rm::prelude::Composition>(rebuilt)
+    openehr_its::json::from_canonical_value::<openehr_rm::prelude::Composition>(&rebuilt)
         .expect("rebuilt deserialises as an RM Composition without a context");
 }
 

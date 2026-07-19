@@ -6,71 +6,14 @@
 
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::data_types::quantity::dv_proportion::DvProportion;
-use crate::validate::{InvariantViolation, Validate, is_integral, push_dv_amount_invariants};
-
-// ProportionKind codes.
-const PK_UNITARY: i32 = 1;
-const PK_PERCENT: i32 = 2;
-const PK_FRACTION: i32 = 3;
-const PK_INTEGER_FRACTION: i32 = 4;
-
-/// The DV_PROPORTION own-invariant core over the projected inputs — one
-/// source for the typed impl and the value-level fast path (`validate::fast`).
-/// The inherited DV_AMOUNT / DV_ORDERED invariants are pushed by the callers.
-// NOTE: openEHR/archie compare denominator against 0/1/100 by exact
-// value (`denominator.equals(0d)` etc.), so exact float comparison is the
-// intended semantics here.
-#[allow(clippy::float_cmp)]
-pub(crate) fn push_dv_proportion_invariants(
-    numerator: f64,
-    denominator: f64,
-    kind: i32,
-    precision: Option<i32>,
-    out: &mut Vec<InvariantViolation>,
-) {
-    let integral = is_integral(numerator) && is_integral(denominator);
-
-    // Type_validity: type in 0..=4.
-    if !(0..=4).contains(&kind) {
-        out.push(InvariantViolation::here(
-            "Invariant Type_validity failed on type DV_PROPORTION",
-        ));
-    }
-    // Valid_denominator: denominator != 0.
-    if denominator == 0.0 {
-        out.push(InvariantViolation::here(
-            "Invariant Valid_denominator failed on type DV_PROPORTION",
-        ));
-    }
-    // Precision_validity: precision 0 implies integral numerator & denominator.
-    if precision == Some(0) && !integral {
-        out.push(InvariantViolation::here(
-            "Invariant Precision_validity failed on type DV_PROPORTION",
-        ));
-    }
-    // Fraction_validity: fraction / integer_fraction kinds are integral.
-    if (kind == PK_FRACTION || kind == PK_INTEGER_FRACTION) && !integral {
-        out.push(InvariantViolation::here(
-            "Invariant Fraction_validity failed on type DV_PROPORTION",
-        ));
-    }
-    // Unitary_validity: unitary kind has denominator 1.
-    if kind == PK_UNITARY && denominator != 1.0 {
-        out.push(InvariantViolation::here(
-            "Invariant Unitary_validity failed on type DV_PROPORTION",
-        ));
-    }
-    // Percent_validity: percent kind has denominator 100.
-    if kind == PK_PERCENT && denominator != 100.0 {
-        out.push(InvariantViolation::here(
-            "Invariant Percent_validity failed on type DV_PROPORTION",
-        ));
-    }
-}
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for DvProportion {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_dv_proportion_invariants(
+        // DV_PROPORTION own invariants (Type_validity, Valid_denominator,
+        // Precision_validity, Fraction_validity, Unitary_validity,
+        // Percent_validity) via the generated core.
+        crate::validate::generated::dv_proportion_core(
             self.numerator,
             self.denominator,
             self.r#type,
@@ -79,12 +22,12 @@ impl Validate for DvProportion {
         );
 
         // Inherited DV_AMOUNT + DV_QUANTIFIED invariants.
-        push_dv_amount_invariants(
-            out,
+        crate::validate::generated::dv_amount_core(
             "DV_PROPORTION",
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+            out,
         );
         // Inherited DV_ORDERED Normal_range_and_status_consistency.
         push_normal_range_consistency(
@@ -106,6 +49,13 @@ impl Validate for DvProportion {
 )] // test assertions/diagnostics/fixtures
 mod tests {
     use super::*;
+
+    // ProportionKind codes, as readable test inputs (the runtime codes live in
+    // the generated `validate::generated` core).
+    const PK_UNITARY: i32 = 1;
+    const PK_PERCENT: i32 = 2;
+    const PK_FRACTION: i32 = 3;
+    const PK_INTEGER_FRACTION: i32 = 4;
 
     fn proportion(
         numerator: f64,

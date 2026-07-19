@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for function object signatures.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_FUNCTION_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmFunctionType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
@@ -20,4 +18,10 @@ pub struct BmmFunctionType {
     // inherited: BMM_ROUTINE_TYPE
     /// Type of arguments in the signature, if any; represented as a type-tuple (list of arbitrary types).
     pub argument_types: Option<BmmTupleType>,
+}
+
+impl BmmFunctionType {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Function";
 }

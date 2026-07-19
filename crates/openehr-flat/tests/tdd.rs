@@ -45,7 +45,8 @@ fn convert(opt_path: &str, tdd_rel: &str) -> Value {
 
 /// The converted COMPOSITION deserialises as RM and passes validation.
 fn assert_valid(comp: &Value, opt_path: &str) {
-    serde_json::from_value::<Composition>(comp.clone()).expect("deserialises as RM Composition");
+    openehr_its::json::from_canonical_value::<Composition>(comp)
+        .expect("deserialises as RM Composition");
     let errors = validate_composition(comp, &wt_from(opt_path));
     assert!(
         errors.is_empty(),

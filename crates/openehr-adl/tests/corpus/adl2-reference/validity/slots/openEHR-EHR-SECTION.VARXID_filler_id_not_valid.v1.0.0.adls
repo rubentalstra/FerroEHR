@@ -1,0 +1,43 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-SECTION.VARXID_filler_id_not_valid.v1.0.0
+
+specialize
+	openEHR-EHR-SECTION.slot_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"14/07/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VARXID validity check, triggered by slot filler with node id that is not specialised">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VARXID">
+	>
+
+definition
+	SECTION[id1.1] matches {	-- Filled slot section
+		/items matches {
+			use_archetype OBSERVATION[id2, openEHR-EHR-OBSERVATION.redefine_occurrences.v1] 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Filled slot section">
+				description = <"Filled slot section">
+			>
+		>
+	>

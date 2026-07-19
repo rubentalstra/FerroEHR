@@ -1,4 +1,7 @@
-//! The allocation-free fast path of [`super::validate_rm_value`] (hand-written).
+//! The allocation-free fast path of the RM class-invariant check (hand-written),
+//! exposed via [`super::try_fast_validate`]. The wire-boundary two-tier entry
+//! point that calls it then falls back to the typed dispatch lives in
+//! `openehr_its::rm_validate::validate_rm_value`.
 //!
 //! No openEHR spec governs this module — it is our own performance design; the
 //! *semantics* it realizes are exactly those of the typed dispatch in
@@ -34,8 +37,8 @@
 //!
 //! # The conformance rules mirrored from the deserialize layer
 //!
-//! The vouch check replicates, conservatively, what `#[derive(OpenEhrType)]`
-//! (and the generated `_type`-dispatched slot enums) accept:
+//! The vouch check replicates, conservatively, what the native canonical-JSON
+//! codec's `FromJson` impls (and their `_type`-dispatched slot enums) accept:
 //!
 //! - mandatory single-valued attribute: present and non-`null` (the derive's
 //!   shadow treats a `null` as absent → `missing field`);
@@ -52,8 +55,9 @@
 //! - anything not modelled here (`Hash` attributes, classes outside
 //!   [`fast_spec`], the `Interval` default-able bound flags) → fall back.
 //!
-//! **Shallow mode** mirrors [`super::prune_child_nodes`] for the structural
-//! container classes the typed path checks via `run_shallow`: a child
+//! **Shallow mode** mirrors the typed dispatcher's `prune_child_nodes` (in
+//! `openehr_its::rm_validate`) for the structural container classes the typed
+//! path checks via `run_shallow`: a child
 //! *collection* is vouched without descending iff it is empty or contains at
 //! least one object (exactly the arrays the prune empties before the typed
 //! deserialize), while single-valued nested nodes are still checked (their
@@ -67,10 +71,10 @@
 use serde_json::{Map, Value};
 
 use crate::model::{Container, RmClass};
+use crate::validate::generated;
 use crate::validate::{
-    InvariantViolation, Validate, is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_time,
-    push_archetype_node_id_valid, push_dv_amount_invariants, push_entry_root_invariants,
-    push_magnitude_status_valid, push_temporal_value_valid,
+    InvariantViolation, Validate, is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_duration,
+    is_valid_iso_time,
 };
 
 /// Validate `value` (whose `_type` is `ty`) on the fast path. Returns `true`
@@ -84,7 +88,7 @@ pub(super) fn try_validate(ty: &str, value: &Value, out: &mut Vec<InvariantViola
     // Dispatch mode: which classes have a fast invariant evaluator, and
     // whether the typed path would deserialize them shallowly (`run_shallow`)
     // or in full (`run`). Must stay in lockstep with the typed dispatch table
-    // in `super::validate_rm_value_typed`.
+    // in `openehr_its::rm_validate` (`validate_rm_value_typed`).
     let shallow = match ty {
         // `run_shallow` classes (structural containers, scalar-only invariants).
         "CLUSTER" | "POINT_EVENT" | "INTERVAL_EVENT" | "COMPOSITION" | "EVENT_CONTEXT"
@@ -373,27 +377,19 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(code_string) = str_of(obj, "code_string") else {
                 return false;
             };
-            crate::data_types::text::code_phrase_impl::push_code_phrase_invariants(
-                code_string,
-                out,
-            );
+            generated::code_phrase_core(code_string, out);
         }
         "DV_TEXT" | "DV_CODED_TEXT" => {
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            crate::data_types::text::dv_text_impl::push_dv_text_invariants(
-                ty,
-                value,
-                str_of(obj, "formatting"),
-                out,
-            );
+            generated::dv_text_core(ty, value, str_of(obj, "formatting"), out);
         }
         "DV_URI" => {
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            crate::data_types::uri::dv_uri_impl::push_dv_uri_invariants(value, out);
+            generated::dv_uri_core(value, out);
         }
         "DV_EHR_URI" => {
             let Some(value) = str_of(obj, "value") else {
@@ -405,21 +401,19 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(id) = str_of(obj, "id") else {
                 return false;
             };
-            crate::data_types::basic::dv_identifier_impl::push_dv_identifier_invariants(id, out);
+            generated::dv_identifier_core(id, out);
         }
         "TERM_MAPPING" => {
             let Some(code) = str_of(obj, "match").and_then(|s| s.chars().next()) else {
                 return false;
             };
-            crate::data_types::text::term_mapping_impl::push_term_mapping_invariants(code, out);
+            generated::term_mapping_core(code, out);
         }
         "DV_PARSABLE" => {
             let Some(formalism) = str_of(obj, "formalism") else {
                 return false;
             };
-            crate::data_types::encapsulated::dv_parsable_impl::push_dv_parsable_invariants(
-                formalism, out,
-            );
+            generated::dv_parsable_core(formalism, out);
         }
         // DV_AMOUNT descendants. `normal_range` (the only input of the
         // DV_ORDERED consistency invariant that could fire) is a DV_INTERVAL,
@@ -431,14 +425,14 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
                 let Some(value) = str_of(obj, "value") else {
                     return false;
                 };
-                push_temporal_value_valid(out, ty, crate::validate::is_valid_iso_duration(value));
+                generated::temporal_value_core(ty, is_valid_iso_duration(value), out);
             }
-            push_dv_amount_invariants(
-                out,
+            generated::dv_amount_core(
                 ty,
                 f64_of(obj, "accuracy"),
                 bool_of(obj, "accuracy_is_percent"),
                 str_of(obj, "magnitude_status"),
+                out,
             );
         }
         "DV_DATE" | "DV_TIME" | "DV_DATE_TIME" => {
@@ -450,8 +444,8 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
                 "DV_TIME" => is_valid_iso_time(value),
                 _ => is_valid_iso_date_time(value),
             };
-            push_temporal_value_valid(out, ty, valid);
-            push_magnitude_status_valid(out, ty, str_of(obj, "magnitude_status"));
+            generated::temporal_value_core(ty, valid, out);
+            generated::magnitude_status_core(ty, str_of(obj, "magnitude_status"), out);
         }
         // Only the DV_ORDERED consistency invariant, which cannot fire
         // without a (never-vouched) normal_range.
@@ -471,19 +465,13 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let precision = field(obj, "precision")
                 .and_then(Value::as_i64)
                 .and_then(|n| i32::try_from(n).ok());
-            crate::data_types::quantity::dv_proportion_impl::push_dv_proportion_invariants(
-                numerator,
-                denominator,
-                kind,
-                precision,
-                out,
-            );
-            push_dv_amount_invariants(
-                out,
+            generated::dv_proportion_core(numerator, denominator, kind, precision, out);
+            generated::dv_amount_core(
                 ty,
                 f64_of(obj, "accuracy"),
                 bool_of(obj, "accuracy_is_percent"),
                 str_of(obj, "magnitude_status"),
+                out,
             );
         }
         "ELEMENT" => {
@@ -504,7 +492,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(node_id) = str_of(obj, "archetype_node_id") else {
                 return false;
             };
-            push_archetype_node_id_valid(out, ty, node_id);
+            generated::archetype_node_id_core(ty, node_id, out);
         }
         "HISTORY" => {
             // Period_consistency needs the typed event-offset arithmetic —
@@ -518,28 +506,19 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let events_empty = field(obj, "events")
                 .and_then(Value::as_array)
                 .is_none_or(Vec::is_empty);
-            crate::data_structures::history::history_impl::push_history_basic_invariants(
-                events_empty,
-                present(obj, "summary"),
-                node_id,
-                out,
-            );
+            generated::history_basic_core(events_empty, present(obj, "summary"), node_id, out);
         }
         "COMPOSITION" => {
             let Some(node_id) = str_of(obj, "archetype_node_id") else {
                 return false;
             };
-            crate::composition::composition_impl::push_composition_invariants(
-                present(obj, "archetype_details"),
-                node_id,
-                out,
-            );
+            generated::composition_core(present(obj, "archetype_details"), node_id, out);
         }
         "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" => {
             let Some(node_id) = str_of(obj, "archetype_node_id") else {
                 return false;
             };
-            push_entry_root_invariants(out, ty, present(obj, "archetype_details"), node_id);
+            generated::entry_root_core(ty, present(obj, "archetype_details"), node_id, out);
         }
         "ACTIVITY" => {
             let (Some(action_archetype_id), Some(node_id)) = (
@@ -548,29 +527,22 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             ) else {
                 return false;
             };
-            crate::composition::content::entry::activity_impl::push_activity_invariants(
-                action_archetype_id,
-                node_id,
-                out,
-            );
+            generated::activity_core(action_archetype_id, node_id, out);
         }
         "EVENT_CONTEXT" => {
-            crate::composition::event_context_impl::push_event_context_invariants(
-                str_of(obj, "location"),
-                out,
-            );
+            generated::event_context_core(str_of(obj, "location"), out);
         }
         "ARCHETYPED" => {
             let Some(rm_version) = str_of(obj, "rm_version") else {
                 return false;
             };
-            crate::common::archetyped::archetyped_impl::push_archetyped_invariants(rm_version, out);
+            generated::archetyped_core(rm_version, out);
         }
         "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
             let has_identifiers = field(obj, "identifiers")
                 .and_then(Value::as_array)
                 .is_some_and(|a| !a.is_empty());
-            crate::common::generic::party_identified_impl::push_party_identified_invariants(
+            generated::party_identified_core(
                 ty,
                 str_of(obj, "name"),
                 has_identifiers,
@@ -602,428 +574,4 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
         _ => return false,
     }
     true
-}
-
-#[cfg(test)]
-#[allow(clippy::panic, clippy::print_stderr)] // test assertions/diagnostics
-mod tests {
-    use super::*;
-    use serde_json::json;
-
-    /// Run only the typed (fallback) dispatch — the oracle.
-    fn typed(value: &Value) -> Vec<InvariantViolation> {
-        let mut out = Vec::new();
-        if let Some(ty) = value.get("_type").and_then(Value::as_str) {
-            crate::validate::validate_rm_value_typed(ty, value, &mut out);
-        }
-        out
-    }
-
-    /// Run the public two-tier entry point.
-    fn two_tier(value: &Value) -> Vec<InvariantViolation> {
-        let mut out = Vec::new();
-        crate::validate::validate_rm_value(value, &mut out);
-        out
-    }
-
-    /// Whether the fast path handled the node (nothing appended on `false`).
-    fn fast_handled(value: &Value) -> bool {
-        let Some(ty) = value.get("_type").and_then(Value::as_str) else {
-            return false;
-        };
-        let mut out = Vec::new();
-        try_validate(ty, value, &mut out)
-    }
-
-    #[test]
-    fn fast_path_matches_typed_on_simple_nodes() {
-        let cases = [
-            json!({"_type": "CODE_PHRASE",
-                   "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "openehr"},
-                   "code_string": "433"}),
-            json!({"_type": "CODE_PHRASE",
-                   "terminology_id": {"value": "openehr"}, "code_string": ""}),
-            json!({"_type": "DV_TEXT", "value": "hello"}),
-            json!({"_type": "DV_TEXT", "value": "", "formatting": ""}),
-            json!({"_type": "DV_CODED_TEXT", "value": "event",
-                   "defining_code": {"terminology_id": {"value": "openehr"},
-                                     "code_string": "433"}}),
-            json!({"_type": "DV_QUANTITY", "magnitude": 120.0, "units": "mm[Hg]",
-                   "accuracy": 0.0, "accuracy_is_percent": true}),
-            json!({"_type": "DV_COUNT", "magnitude": 3}),
-            json!({"_type": "DV_PROPORTION", "numerator": 1.0, "denominator": 3.0,
-                   "type": 2}),
-            json!({"_type": "DV_DURATION", "value": "P1DT2H"}),
-            json!({"_type": "DV_DURATION", "value": "nonsense"}),
-            json!({"_type": "DV_DATE", "value": "2021-02-31"}),
-            json!({"_type": "DV_DATE_TIME", "value": "2021-05-17T10:30:00Z",
-                   "magnitude_status": "??"}),
-            json!({"_type": "DV_TIME", "value": "10:30:00"}),
-            json!({"_type": "DV_IDENTIFIER", "id": ""}),
-            json!({"_type": "DV_PARSABLE", "value": "x", "formalism": ""}),
-            json!({"_type": "TERM_MAPPING", "match": "=",
-                   "target": {"terminology_id": {"value": "x"}, "code_string": "1"}}),
-            json!({"_type": "TERM_MAPPING", "match": "q",
-                   "target": {"terminology_id": {"value": "x"}, "code_string": "1"}}),
-            json!({"_type": "DV_URI", "value": ""}),
-            json!({"_type": "DV_EHR_URI", "value": "http://not-ehr"}),
-            json!({"_type": "TERMINOLOGY_ID", "value": "SNOMED CT "}),
-            json!({"_type": "ARCHETYPE_ID",
-                   "value": "openEHR-EHR-OBSERVATION.blood_pressure.v1"}),
-            json!({"_type": "ARCHETYPE_ID", "value": "not-an-archetype-id"}),
-            json!({"_type": "ARCHETYPED",
-                   "archetype_id": {"value": "openEHR-EHR-COMPOSITION.x.v1"},
-                   "rm_version": ""}),
-            json!({"_type": "PARTY_IDENTIFIED"}),
-            json!({"_type": "PARTY_IDENTIFIED", "name": ""}),
-            json!({"_type": "EVENT_CONTEXT",
-                   "start_time": {"value": "2021-05-17T10:00:00Z"},
-                   "setting": {"value": "home",
-                               "defining_code": {"terminology_id": {"value": "openehr"},
-                                                 "code_string": "225"}},
-                   "location": ""}),
-        ];
-        for node in &cases {
-            assert!(
-                fast_handled(node),
-                "expected the fast path to handle {node}"
-            );
-            assert_eq!(two_tier(node), typed(node), "divergence on {node}");
-        }
-    }
-
-    #[test]
-    fn element_xor_matches_typed() {
-        let name = json!({"value": "systolic"});
-        let value = json!({"_type": "DV_QUANTITY", "magnitude": 120.0, "units": "mm[Hg]"});
-        let nf = json!({"_type": "DV_CODED_TEXT", "value": "unknown",
-                        "defining_code": {"terminology_id": {"value": "openehr"},
-                                          "code_string": "253"}});
-        for element in [
-            json!({"_type": "ELEMENT", "name": name, "archetype_node_id": "at0001",
-                   "value": value}),
-            json!({"_type": "ELEMENT", "name": name, "archetype_node_id": "at0001",
-                   "null_flavour": nf}),
-            json!({"_type": "ELEMENT", "name": name, "archetype_node_id": "at0001",
-                   "value": value, "null_flavour": nf}),
-            json!({"_type": "ELEMENT", "name": name, "archetype_node_id": "",
-                   "value": value, "null_reason": {"value": "why"}}),
-        ] {
-            assert!(fast_handled(&element), "not handled: {element}");
-            assert_eq!(two_tier(&element), typed(&element), "on {element}");
-        }
-    }
-
-    #[test]
-    fn nonconforming_nodes_fall_back_with_identical_output() {
-        // Each of these fails the typed deserialize → the fast path must
-        // decline and the two-tier output must equal the typed output
-        // (`does not conform to RM type …`).
-        let cases = [
-            // mandatory field missing
-            json!({"_type": "DV_QUANTITY", "units": "kg"}),
-            // mandatory field null
-            json!({"_type": "DV_TEXT", "value": null}),
-            // wrong scalar kind
-            json!({"_type": "DV_TEXT", "value": 42}),
-            // float where integer expected
-            json!({"_type": "DV_COUNT", "magnitude": 3.5}),
-            // i32 overflow
-            json!({"_type": "DV_PROPORTION", "numerator": 1.0, "denominator": 1.0,
-                   "type": 4_000_000_000_i64}),
-            // wrong nested _type in a slot
-            json!({"_type": "CODE_PHRASE",
-                   "terminology_id": {"_type": "DV_TEXT", "value": "x"},
-                   "code_string": "1"}),
-            // abstract slot without _type (ELEMENT.value is DATA_VALUE)
-            json!({"_type": "ELEMENT", "name": {"value": "n"},
-                   "archetype_node_id": "at0001", "value": {"value": "x"}}),
-            // Vec from null
-            json!({"_type": "DV_TEXT", "value": "ok", "mappings": null}),
-            // char from multi-char string
-            json!({"_type": "TERM_MAPPING", "match": "==",
-                   "target": {"terminology_id": {"value": "x"}, "code_string": "1"}}),
-        ];
-        for node in &cases {
-            assert!(!fast_handled(node), "fast path must not vouch for {node}");
-            let t = typed(node);
-            assert_eq!(two_tier(node), t, "fallback divergence on {node}");
-            assert!(
-                !t.is_empty(),
-                "the typed oracle should reject {node}, got clean"
-            );
-        }
-    }
-
-    #[test]
-    fn unmodelled_shapes_fall_back() {
-        // normal_range is a DV_INTERVAL — never vouched.
-        let with_range = json!({"_type": "DV_COUNT", "magnitude": 1,
-            "normal_status": {"terminology_id": {"value": "openehr"},
-                              "code_string": "N"},
-            "normal_range": {"lower": {"_type": "DV_COUNT", "magnitude": 0},
-                             "upper": {"_type": "DV_COUNT", "magnitude": 5},
-                             "lower_unbounded": false, "upper_unbounded": false,
-                             "lower_included": true, "upper_included": true}});
-        assert!(!fast_handled(&with_range));
-        assert_eq!(two_tier(&with_range), typed(&with_range));
-
-        // periodic HISTORY declines to the typed Period_consistency check.
-        let periodic = json!({"_type": "HISTORY", "name": {"value": "h"},
-            "archetype_node_id": "at0001",
-            "origin": {"value": "2021-05-17T10:00:00Z"},
-            "period": {"value": "PT1H"},
-            "events": [{"_type": "POINT_EVENT", "name": {"value": "e"},
-                        "archetype_node_id": "at0002",
-                        "time": {"value": "2021-05-17T10:30:00Z"},
-                        "data": {"_type": "ITEM_TREE", "name": {"value": "d"},
-                                 "archetype_node_id": "at0003", "items": []}}]});
-        assert!(!fast_handled(&periodic));
-        assert_eq!(two_tier(&periodic), typed(&periodic));
-
-        // A class outside the fast set keeps the typed path untouched.
-        let multimedia = json!({"_type": "DV_MULTIMEDIA",
-            "media_type": {"terminology_id": {"value": "IANA_media-types"},
-                           "code_string": "image/png"},
-            "size": 100});
-        assert!(!fast_handled(&multimedia));
-        assert_eq!(two_tier(&multimedia), typed(&multimedia));
-    }
-
-    #[test]
-    fn shallow_collections_mirror_the_prune() {
-        // Mixed object/scalar array: the prune empties it → both paths accept.
-        let mixed = json!({"_type": "CLUSTER", "name": {"value": "c"},
-            "archetype_node_id": "at0001",
-            "items": [{"_type": "ELEMENT", "name": {"value": "e"},
-                       "archetype_node_id": "", "value": {"_type": "DV_COUNT",
-                                                          "magnitude": 1}}, "stray"]});
-        assert!(fast_handled(&mixed));
-        assert_eq!(two_tier(&mixed), typed(&mixed));
-
-        // Non-empty all-scalar array is kept by the prune (typed rejects) —
-        // the fast path must decline, and outputs must match.
-        let scalars = json!({"_type": "CLUSTER", "name": {"value": "c"},
-            "archetype_node_id": "at0001", "items": ["not-an-item"]});
-        assert!(!fast_handled(&scalars));
-        assert_eq!(two_tier(&scalars), typed(&scalars));
-    }
-
-    // ── corpus equivalence: the load-bearing oracle ──────────────────────────
-
-    /// Every `_type`-bearing object node in `v`, depth-first.
-    fn collect_nodes<'a>(v: &'a Value, out: &mut Vec<&'a Value>) {
-        match v {
-            Value::Object(map) => {
-                if map.get("_type").is_some_and(Value::is_string) {
-                    out.push(v);
-                }
-                for child in map.values() {
-                    collect_nodes(child, out);
-                }
-            }
-            Value::Array(items) => {
-                for item in items {
-                    collect_nodes(item, out);
-                }
-            }
-            _ => {}
-        }
-    }
-
-    fn corpus_files() -> Vec<std::path::PathBuf> {
-        let mut roots = vec![std::path::PathBuf::from(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../openehr-its/tests/vendor/openehr_sdk"
-        ))];
-        // The benchmark CKM examples exercise the exact hot commit shapes.
-        roots.push(std::path::PathBuf::from(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../tools/benchmark/templates/ckm"
-        )));
-        let mut files = Vec::new();
-        while let Some(dir) = roots.pop() {
-            let entries = std::fs::read_dir(&dir)
-                .unwrap_or_else(|e| panic!("read corpus dir {}: {e}", dir.display()));
-            for entry in entries {
-                let path = entry.expect("dir entry").path();
-                if path.is_dir() {
-                    roots.push(path);
-                } else if path.extension().and_then(|e| e.to_str()) == Some("json") {
-                    files.push(path);
-                }
-            }
-        }
-        files.sort();
-        assert!(
-            files.len() >= 50,
-            "corpus went missing? found only {} json files",
-            files.len()
-        );
-        files
-    }
-
-    /// Every corpus node must produce byte-identical violations through the
-    /// two-tier entry point and the typed oracle.
-    #[test]
-    fn corpus_equivalence_valid_nodes() {
-        let mut total = 0usize;
-        let mut fast = 0usize;
-        for path in corpus_files() {
-            let text = std::fs::read_to_string(&path).expect("read corpus file");
-            let Ok(doc) = serde_json::from_str::<Value>(&text) else {
-                continue; // non-RM json (e.g. web templates) — skip unparseable
-            };
-            let mut nodes = Vec::new();
-            collect_nodes(&doc, &mut nodes);
-            for node in nodes {
-                total += 1;
-                if fast_handled(node) {
-                    fast += 1;
-                }
-                assert_eq!(
-                    two_tier(node),
-                    typed(node),
-                    "divergence in {} on {node}",
-                    path.display()
-                );
-            }
-        }
-        eprintln!("corpus equivalence: {total} nodes, {fast} fast-handled");
-        assert!(total > 3_000, "expected a real corpus, saw {total} nodes");
-    }
-
-    /// Mutation equivalence: for the first-seen (`_type`, key) pair in the
-    /// corpus, mutate that key through a battery of shape changes and assert
-    /// the two-tier output still equals the typed oracle. This is the drift
-    /// net for the model-vs-generated-struct agreement the fast path rests on.
-    #[test]
-    fn corpus_equivalence_mutated_nodes() {
-        let mutations: &[Value] = &[
-            Value::Null,
-            json!(42),
-            json!(3.5),
-            json!("mutated"),
-            json!(""),
-            json!(true),
-            json!([]),
-            json!({}),
-            json!([42]),
-            json!([{}]),
-            json!({"_type": "DV_QUANTITY"}),
-        ];
-        let mut seen = std::collections::HashSet::new();
-        let mut checked = 0usize;
-        for path in corpus_files() {
-            let text = std::fs::read_to_string(&path).expect("read corpus file");
-            let Ok(doc) = serde_json::from_str::<Value>(&text) else {
-                continue;
-            };
-            let mut nodes = Vec::new();
-            collect_nodes(&doc, &mut nodes);
-            for node in nodes {
-                let Value::Object(map) = node else { continue };
-                let ty = map
-                    .get("_type")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_owned();
-                let keys: Vec<String> = map.keys().cloned().collect();
-                for key in keys {
-                    if key == "_type" || !seen.insert((ty.clone(), key.clone())) {
-                        continue;
-                    }
-                    // Removal.
-                    let mut removed = map.clone();
-                    removed.shift_remove(&key);
-                    let removed = Value::Object(removed);
-                    assert_eq!(
-                        two_tier(&removed),
-                        typed(&removed),
-                        "divergence removing {ty}.{key}"
-                    );
-                    checked += 1;
-                    // Shape battery.
-                    for m in mutations {
-                        let mut mutated = map.clone();
-                        mutated.insert(key.clone(), m.clone());
-                        let mutated = Value::Object(mutated);
-                        assert_eq!(
-                            two_tier(&mutated),
-                            typed(&mutated),
-                            "divergence mutating {ty}.{key} to {m}"
-                        );
-                        checked += 1;
-                    }
-                }
-                // An unknown key must stay ignored on both paths.
-                if seen.insert((ty.clone(), "__unknown__".into())) {
-                    let mut extra = map.clone();
-                    extra.insert("__unknown_key__".into(), json!(42));
-                    let extra = Value::Object(extra);
-                    assert_eq!(
-                        two_tier(&extra),
-                        typed(&extra),
-                        "divergence adding unknown key on {ty}"
-                    );
-                    checked += 1;
-                }
-            }
-        }
-        eprintln!("mutation equivalence: {checked} mutated nodes checked");
-        assert!(checked > 500, "mutation battery too small: {checked}");
-    }
-
-    /// The hot commit shape must actually ride the fast path: on the populated
-    /// IPS example the overwhelming majority of dispatched nodes are handled
-    /// without a typed deserialize. Guards the perf property against silent
-    /// coverage regressions (a model/struct drift would first show up here).
-    #[test]
-    fn ips_nodes_ride_the_fast_path() {
-        let path = concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../tools/benchmark/templates/ckm/international-patient-summary.example.json"
-        );
-        let doc: Value =
-            serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
-                .expect("parse IPS example");
-        let mut nodes = Vec::new();
-        collect_nodes(&doc, &mut nodes);
-        // Only count nodes the typed dispatch table handles at all.
-        let mut dispatched = 0usize;
-        let mut fast = 0usize;
-        for node in nodes {
-            let mut out = Vec::new();
-            let ty = node.get("_type").and_then(Value::as_str).unwrap_or("");
-            crate::validate::validate_rm_value_typed(ty, node, &mut out);
-            let mut fast_out = Vec::new();
-            let handled = try_validate(ty, node, &mut fast_out);
-            if handled {
-                fast += 1;
-                assert_eq!(fast_out, out, "IPS divergence on {node}");
-            }
-            // Count classes with a fast evaluator as dispatch-relevant.
-            if matches!(
-                ty,
-                "CODE_PHRASE"
-                    | "DV_TEXT"
-                    | "DV_CODED_TEXT"
-                    | "DV_QUANTITY"
-                    | "DV_COUNT"
-                    | "DV_DATE_TIME"
-                    | "ELEMENT"
-                    | "CLUSTER"
-                    | "OBSERVATION"
-                    | "SECTION"
-                    | "COMPOSITION"
-                    | "TERMINOLOGY_ID"
-            ) {
-                dispatched += 1;
-            }
-        }
-        assert!(
-            fast * 10 >= dispatched * 9,
-            "fast-path coverage regressed: {fast} fast of {dispatched} hot nodes"
-        );
-    }
 }

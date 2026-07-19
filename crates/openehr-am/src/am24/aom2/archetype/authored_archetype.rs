@@ -7,18 +7,15 @@ use crate::am24::aom2::archetype::template::Template;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use crate::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use crate::am24::beom::core::statement_set::StatementSet;
+use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::ResourceAnnotations;
-use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uuid;
-use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::StatementSet;
-use serde::Serialize;
 
 /// Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "AUTHORED_ARCHETYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AuthoredArchetypeData {
     // inherited: ARCHETYPE
     /// Archetype reference of the specialisation parent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.
@@ -61,43 +58,9 @@ pub struct AuthoredArchetypeData {
 
 /// Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.
 /// Polymorphic slot of `AUTHORED_ARCHETYPE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AuthoredArchetype {
     OperationalTemplate(Box<OperationalTemplate>),
     Template(Box<Template>),
     AuthoredArchetype(AuthoredArchetypeData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for AuthoredArchetype {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("AUTHORED_ARCHETYPE") => {
-                ::core::result::Result::Ok(Self::AuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("OPERATIONAL_TEMPLATE") => {
-                ::core::result::Result::Ok(Self::OperationalTemplate(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("TEMPLATE") => ::core::result::Result::Ok(Self::Template(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::AuthoredArchetype(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "AUTHORED_ARCHETYPE: unexpected `_type` {__other:?} (expected one of: AUTHORED_ARCHETYPE, OPERATIONAL_TEMPLATE, TEMPLATE)"
-                )))
-            }
-        }
-    }
 }

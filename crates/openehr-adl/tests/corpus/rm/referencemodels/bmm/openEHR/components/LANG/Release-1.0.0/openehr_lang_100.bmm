@@ -1,0 +1,209 @@
+-- 
+-- 	component:   openEHR BMM Implementation Technology Specification
+-- 	description: openEHR LANG component formal expression. This file is an ODIN serialisation of
+--               the BMM object meta-model classes found at 
+--               https://www.openehr.org/releases/LANG/latest/p_bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/issues/?filter=11117
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as the top version in the specification:
+--     https://www.openehr.org/releases/LANG/latest/bmm_persistence.html#_amendment_record
+--
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"lang">
+rm_release = <"1.0.0">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.0.0.1">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.0.0 LANG model"> 
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_base_1.1.0">
+	>
+>
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.openehr.lang.elom"] = <
+		name = <"org.openehr.lang.elom">
+		packages = <
+			["types"] = <
+				name = <"types">
+				classes = <"EXPR_TYPE_DEF", 
+					"TYPE_DEF_BOOLEAN",
+					"TYPE_DEF_INTEGER", "TYPE_DEF_REAL", 
+					"TYPE_DEF_DATE", "TYPE_DEF_DATE_TIME", "TYPE_DEF_TIME", "TYPE_DEF_DURATION", 
+					"TYPE_DEF_STRING", "TYPE_DEF_URI", "TYPE_DEF_TERMINOLOGY_CODE"
+				>
+			>
+		>
+	>
+>
+
+class_definitions = <
+	--
+	--------------------- lang.elom.types ------------------
+	--
+
+	["EXPR_TYPE_DEF"] = <
+		name = <"EXPR_TYPE_DEF">
+		ancestors = <"Any">
+		is_abstract = <True>
+		properties = <
+			["type_name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Any">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_BOOLEAN"] = <
+		name = <"TYPE_DEF_BOOLEAN">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_INTEGER"] = <
+		name = <"TYPE_DEF_INTEGER">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Integer">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_REAL"] = <
+		name = <"TYPE_DEF_REAL">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_DATE"] = <
+		name = <"TYPE_DEF_DATE">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_date">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_DATE_TIME"] = <
+		name = <"TYPE_DEF_DATE_TIME">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_date_time">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_TIME"] = <
+		name = <"TYPE_DEF_TIME">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_time">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_DURATION"] = <
+		name = <"TYPE_DEF_DURATION">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_duration">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_STRING"] = <
+		name = <"TYPE_DEF_STRING">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_URI"] = <
+		name = <"TYPE_DEF_URI">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Uri">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TYPE_DEF_TERMINOLOGY_CODE"] = <
+		name = <"TYPE_DEF_TERMINOLOGY_CODE">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Terminology_code">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+>

@@ -1,0 +1,208 @@
+-- Basic Metamodel Syntax Version
+bmm_version = <"2.1">
+
+-------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+-------------------------------------
+rm_publisher = <"CIMI">
+schema_name = <"RM_FOUNDATION">
+rm_release = <"0.0.1">
+
+-------------------------------------
+-- schema documentation
+-------------------------------------
+schema_revision = <"Tue Nov 29 21:02:12 PST 2016">
+schema_lifecycle_state = <"dstu">
+schema_description = <"CIMI_RM_FOUNDATION.v0.0.1.mdzip - Schema generated from UML">
+
+-------------------------------------
+-- schema inclusion
+-------------------------------------
+includes = <
+	["1"] = <
+		id = <"cimi_rm_core_0.0.1">
+	>
+>
+
+-------------------------------------
+-- archetyping
+-------------------------------------
+archetype_rm_closure_packages = <"CIMI_Foundation_RM.Foundation", "CIMI_Foundation_RM.Party", ...>
+
+-------------------------------------
+-- packages
+-------------------------------------
+
+packages = <
+	["CIMI_Foundation_RM"] = <
+		name = <"CIMI_Foundation_RM">
+		packages = <
+			["Party"] = <
+				name = <"Party">
+				classes = <"PARTY", "ROLE", "ACTOR", "PARTY_RELATIONSHIP", "PARTICIPATION">
+			>
+			["Foundation"] = <
+				name = <"Foundation">
+				classes = <"ENTRY", "VIRTUAL_CLUSTER", "COMPOSITION", "CONTENT", "COMPOUND_ENTRY", "CLUSTER", "SECTION", "INDIVISIBLE_ENTRY">
+			>
+		>
+	>
+>
+
+-------------------------------------
+-- classes
+-------------------------------------
+
+class_definitions = <
+	
+	-------------------------------------
+	-- Party
+	-------------------------------------
+
+	["PARTY"] = <
+		name = <"PARTY">
+		ancestors = <"LOCATABLE", ...>
+		is_abstract = <True>
+		properties = <
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["relationship"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"relationship">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTY_RELATIONSHIP">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ROLE"] = <
+		name = <"ROLE">
+		ancestors = <"PARTY", ...>
+		is_abstract = <True>
+	>
+
+	["ACTOR"] = <
+		name = <"ACTOR">
+		ancestors = <"PARTY", ...>
+		is_abstract = <True>
+	>
+
+	["PARTY_RELATIONSHIP"] = <
+		name = <"PARTY_RELATIONSHIP">
+		ancestors = <"ASSOCIATION_CLASS", ...>
+		properties = <
+			["party"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"party">
+				type = <"PARTY">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["PARTICIPATION"] = <
+		name = <"PARTICIPATION">
+		ancestors = <"ASSOCIATION_CLASS", ...>
+		properties = <
+			["party"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"party">
+				type = <"PARTY">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	
+	-------------------------------------
+	-- Foundation
+	-------------------------------------
+
+	["ENTRY"] = <
+		name = <"ENTRY">
+		ancestors = <"CONTENT", ...>
+		is_abstract = <True>
+	>
+
+	["VIRTUAL_CLUSTER"] = <
+		name = <"VIRTUAL_CLUSTER">
+		ancestors = <"CLUSTER", ...>
+		is_abstract = <True>
+	>
+
+	["COMPOSITION"] = <
+		name = <"COMPOSITION">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"content">
+				type_def = <
+					container_type = <"List">
+					type = <"CONTENT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CONTENT"] = <
+		name = <"CONTENT">
+		ancestors = <"LOCATABLE", ...>
+		is_abstract = <True>
+	>
+
+	["COMPOUND_ENTRY"] = <
+		name = <"COMPOUND_ENTRY">
+		ancestors = <"ENTRY", ...>
+		properties = <
+			["entry"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"entry">
+				type_def = <
+					container_type = <"List">
+					type = <"ENTRY">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CLUSTER"] = <
+		name = <"CLUSTER">
+		ancestors = <"LOCATABLE", ...>
+		is_abstract = <True>
+	>
+
+	["SECTION"] = <
+		name = <"SECTION">
+		ancestors = <"CONTENT", ...>
+		properties = <
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"content">
+				type_def = <
+					container_type = <"List">
+					type = <"CONTENT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["INDIVISIBLE_ENTRY"] = <
+		name = <"INDIVISIBLE_ENTRY">
+		ancestors = <"ENTRY", ...>
+	>
+
+>
+

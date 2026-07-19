@@ -1,0 +1,162 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-CLUSTER.lab_test_panel-lipid_studies.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.lab_test_panel.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["email"] = <"ian@freshehr.com">
+		["organisation"] = <"freshEHR Clinical Informatics, UK">
+		["date"] = <"2014-04-18">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test flattening of overlays of new elements onto cloned structures. This archetype overlays one changed element on a repeated cloning of a structure with 4 elements. The flattened result will show all clones of those structures, with each being made up of the unchanged (inherited) elements, and the overridden elements defined in this archetype.">
+			keywords = <"ADL", "flattening", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	CLUSTER[id1.1] matches {	-- Lipid studies panel
+		/items matches {
+			CLUSTER[id3.1] matches {	-- LDL Cholesterol Result
+				items matches {
+					ELEMENT[id2.1] matches {	-- LDL Cholesterol
+						value matches {
+							DV_QUANTITY[id0.1] matches {
+								property matches {[at0.1]}
+								magnitude matches {|>=0.0|}
+								units matches {"mmol/l"}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id3.2] matches {	-- HDL Cholesterol Result
+				items matches {
+					ELEMENT[id2.2] matches {	-- HDL Cholesterol
+						value matches {
+							DV_QUANTITY[id0.2] matches {
+								property matches {[at0.1]}
+								magnitude matches {|>=0.0|}
+								units matches {"mmol/l"}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id3.3] matches {	-- Ratio Result
+				items matches {
+					ELEMENT[id2.3] matches {	-- Ratio
+						value matches {
+							DV_QUANTITY[id0.3] matches {
+								property matches {[at0.1]}
+								magnitude matches {|>=0.0|}
+								units matches {"mmol/l"}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id3.4] matches {	-- Triglyceride Result
+				items matches {
+					ELEMENT[id2.4] matches {	-- Triglyceride
+						value matches {
+							DV_QUANTITY[id0.4] matches {
+								property matches {[at0.1]}
+								magnitude matches {|>=0.0|}
+								units matches {"mosmol/l"}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id3.5] matches {	-- Total Result
+				items matches {
+					ELEMENT[id2.5] matches {	-- Total cholesterol
+						value matches {
+							DV_QUANTITY[id0.5] matches {
+								property matches {[at0.1]}
+								magnitude matches {|>=0.0|}
+								units matches {"mosmol/l"}
+							}
+						}
+					}
+				}
+			}
+			CLUSTER[id3.6] 	-- ! - Laboratory Result
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Lipid studies panel">
+				description = <"Laboratory test results as a single value or in a panel/battery format common to clinical pathology testing.!">
+			>
+			["id2.1"] = <
+				text = <"LDL Cholesterol">
+				description = <"Actual value of the result.">
+			>
+			["id2.2"] = <
+				text = <"HDL Cholesterol">
+				description = <"Actual value of the result.">
+			>
+			["id2.3"] = <
+				text = <"Ratio">
+				description = <"Actual value of the result.">
+			>
+			["id2.4"] = <
+				text = <"Triglyceride">
+				description = <"Actual value of the result.">
+			>
+			["id2.5"] = <
+				text = <"Total cholesterol">
+				description = <"Actual value of the result.">
+			>
+			["id3.1"] = <
+				text = <"LDL Cholesterol Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id3.2"] = <
+				text = <"HDL Cholesterol Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id3.3"] = <
+				text = <"Ratio Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id3.4"] = <
+				text = <"Triglyceride Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id3.5"] = <
+				text = <"Total Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["id3.6"] = <
+				text = <"! - Laboratory Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["at0.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>

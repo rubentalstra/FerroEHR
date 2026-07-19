@@ -1,0 +1,116 @@
+﻿archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.code_list_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2013-02-20">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Archetype containing a C_TERMINOLOGY_CODE list which can be further constrained in child archetypes.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2013 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	EVALUATION[id1] matches {	-- General statement of exclusions or states
+		data matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] occurrences matches {1..*} matches {	-- Statement
+						value matches {
+							DV_CODED_TEXT[id4] matches {
+								defining_code matches {[ac1]}		-- Statement
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"General statement of exclusions or states">
+				description = <"A category of conditions or states which have been excluded">
+			>
+			["id3"] = <
+				text = <"Statement">
+				description = <"The statement about what is excluded">
+			>
+			["at4"] = <
+				text = <"No significant illness">
+				description = <"The person has no significant medical condition">
+			>
+			["at5"] = <
+				text = <"No significant past history">
+				description = <"The person has no significant past medical history">
+			>
+			["at6"] = <
+				text = <"No significant family history">
+				description = <"The person has no relatives with significant health problems">
+			>
+			["at7"] = <
+				text = <"No known adverse reactions">
+				description = <"The person has had no adverse reactions, including intolerances, sensitivities or allergies, to medications, food, animals or chemicals">
+			>
+			["at8"] = <
+				text = <"No known sensitivities">
+				description = <"No sensitivity to any medications, foods or substances">
+			>
+			["at9"] = <
+				text = <"No known intolerances">
+				description = <"No known or recorded intolerances to medications, foods or other substances">
+			>
+			["at10"] = <
+				text = <"No relevant past history">
+				description = <"No past problems or procedures relevant to the current situation">
+			>
+			["at11"] = <
+				text = <"No hospitalisations">
+				description = <"No admissions to hospital">
+			>
+			["at12"] = <
+				text = <"No major surgery">
+				description = <"No major operations or procedures">
+			>
+			["at13"] = <
+				text = <"No relevant family history">
+				description = <"No family history relevant to the current situation">
+			>
+			["at14"] = <
+				text = <"No known allergies">
+				description = <"No allergies known to any medications, foods or substances">
+			>
+			["ac1"] = <
+				text = <"Statement">
+				description = <"The statement about what is excluded">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at4", "at5", "at6", "at7", "at10", "at13", "at14", "at11", "at12", "at8", "at9">
+		>
+	>

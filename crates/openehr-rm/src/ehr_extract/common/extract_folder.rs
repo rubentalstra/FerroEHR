@@ -7,11 +7,9 @@ use crate::common::archetyped::link::Link;
 use crate::data_types::text::dv_text::DvText;
 use crate::ehr_extract::common::extract_item::ExtractItem;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Folder in local Folder structure in an Extract. Empty Folders are allowed.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_FOLDER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractFolder {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

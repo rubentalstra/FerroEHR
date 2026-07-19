@@ -1,0 +1,1289 @@
+-- 
+-- 	component:   openEHR BMM Implementation Technology Specification
+-- 	description: openEHR AM component formal expression. This file is an ODIN serialisation of
+--               the BMM object meta-model classes found at 
+--               https://www.openehr.org/releases/LANG/latest/p_bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/issues/?filter=11117
+-- 	copyright:   Copyright (c) 2021- openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as the top version in the specification:
+--     https://www.openehr.org/releases/LANG/latest/bmm_persistence.html#_amendment_record
+--
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"am">
+rm_release = <"2.0.6">
+model_name = <"AOM2">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"2.0.6.1">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 2.0.6 AM schema">
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+    ["1"] = <
+        id = <"openehr_expression_1.0.4">
+    >
+>
+
+------------------------------------------------------
+-- packages - software structure
+------------------------------------------------------
+
+packages = <
+	["org.openehr.am.aom2"] = <
+		name = <"org.openehr.am.aom2">
+		classes = <"AUTHORED_RESOURCE", "TRANSLATION_DETAILS", "RESOURCE_DESCRIPTION", "RESOURCE_DESCRIPTION_ITEM", "RESOURCE_ANNOTATIONS"> 
+		packages = <
+			["definitions"] = <
+				name = <"definitions">
+				classes = <"ADL_CODE_DEFINITIONS">
+			>
+			["archetype"] = <
+				name = <"archetype">
+				classes = <"ARCHETYPE_HRID", "AUTHORED_ARCHETYPE", "ARCHETYPE", "TEMPLATE", "TEMPLATE_OVERLAY", "OPERATIONAL_TEMPLATE">
+			>
+			["constraint_model"] = <
+				name = <"constraint_model">
+				packages = <
+					["definition"] = <
+						name = <"primitive">
+						classes = <"C_REAL", "C_ORDERED", "C_BOOLEAN", "C_STRING", "C_INTEGER", "C_TERMINOLOGY_CODE",
+							"C_TEMPORAL", "C_TIME", "C_DATE", "C_DATE_TIME", "C_DURATION"
+						>
+					>
+				>
+				classes = <"C_COMPLEX_OBJECT", "C_PRIMITIVE_OBJECT", "C_PRIMITIVE_TUPLE", "C_SECOND_ORDER", 
+					"C_ATTRIBUTE_TUPLE", "C_ATTRIBUTE", "ARCHETYPE_SLOT", "C_OBJECT", "C_COMPLEX_OBJECT_PROXY", "C_DEFINED_OBJECT", 
+					"SIBLING_ORDER", "C_ARCHETYPE_ROOT", "ARCHETYPE_CONSTRAINT", 
+					"Cardinality", "Multiplicity_interval"
+				>
+			>
+			["profile"] = <
+				name = <"profile">
+				classes = <"AOM_PROFILE", "AOM_TYPE_MAPPING", "AOM_PROPERTY_MAPPING">
+			>
+			["terminology"] = <
+				name = <"terminology">
+				classes = <"ARCHETYPE_TERM", "ARCHETYPE_TERMINOLOGY", "TERMINOLOGY_RELATION", "VALUE_SET">
+			>
+			["persistence"] = <
+				name = <"persistence">
+			>
+		>
+    >
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	------------------------------------------------------
+	-- definitions package
+	------------------------------------------------------
+
+    ["ADL_CODE_DEFINITIONS"] = (P_BMM_CLASS) <
+        name = <"ADL_CODE_DEFINITIONS">
+        ancestors = <"Any">
+	>
+
+	------------------------------------------------------
+	-- archetype package
+	------------------------------------------------------
+
+	["ARCHETYPE_HRID"] = <
+		name = <"ARCHETYPE_HRID">
+		ancestors = <"Any">
+		properties = <
+			["namespace"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"namespace">
+				type = <"String">
+			>
+			["rm_publisher"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rm_publisher">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["rm_package"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rm_package">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["rm_class"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rm_class">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["concept_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"concept_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["release_version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"release_version">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["version_status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version_status">
+				type = <"VERSION_STATUS">
+				is_mandatory = <True>
+			>
+			["build_count"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"build_count">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	
+    ["ARCHETYPE"] = (P_BMM_CLASS) <
+        name = <"ARCHETYPE">
+        properties = <
+            ["parent_archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"parent_archetype_id">
+				type = <"String">
+            >
+            ["archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"archetype_id">
+				type = <"ARCHETYPE_HRID">
+                is_mandatory = <True>
+            >
+            ["rules"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"rules">
+				type = <"STATEMENT">
+            >
+            ["is_differential"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_differential">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+            ["terminology"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"terminology">
+				type = <"ARCHETYPE_TERMINOLOGY">
+                is_mandatory = <True>
+            >
+            ["definition"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"definition">
+				type = <"C_COMPLEX_OBJECT">
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["AUTHORED_ARCHETYPE"] = (P_BMM_CLASS) <
+        name = <"AUTHORED_ARCHETYPE">
+        ancestors = <"ARCHETYPE", "AUTHORED_RESOURCE">
+        properties = <
+            ["adl_version"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"adl_version">
+				type = <"String">
+            >
+            ["rm_release"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"rm_release">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["is_generated"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_generated">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+            ["build_uid"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"build_uid">
+				type = <"UUID">
+                is_mandatory = <True>
+            >
+            ["other_meta_data"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"other_meta_data">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "String">
+                >
+                is_mandatory = <True>
+            >
+		>
+    >
+
+    ["OPERATIONAL_TEMPLATE"] = (P_BMM_CLASS) <
+        name = <"OPERATIONAL_TEMPLATE">
+        ancestors = <"AUTHORED_ARCHETYPE">
+        properties = <
+            ["component_terminologies"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"component_terminologies">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "ARCHETYPE_TERMINOLOGY">
+                >
+            >
+            ["terminology_extracts"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"terminology_extracts">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "ARCHETYPE_TERMINOLOGY">
+                >
+            >
+        >
+    >
+    ["TEMPLATE"] = (P_BMM_CLASS) <
+        name = <"TEMPLATE">
+        ancestors = <"AUTHORED_ARCHETYPE">
+        properties = <
+            ["template_overlays"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"template_overlays">
+                type_def = <
+                    container_type = <"List">
+                    type = <"TEMPLATE_OVERLAY">
+                >
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["TEMPLATE_OVERLAY"] = (P_BMM_CLASS) <
+        name = <"TEMPLATE_OVERLAY">
+        ancestors = <"ARCHETYPE">
+    >
+
+	------------------------------------------------------
+	-- terminology package
+	------------------------------------------------------
+
+    ["ARCHETYPE_TERMINOLOGY"] = (P_BMM_CLASS) <
+        name = <"ARCHETYPE_TERMINOLOGY">
+        ancestors = <"Any">
+        properties = <
+            ["term_bindings"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"term_bindings">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameter_defs = <
+                        ["K"] = (P_BMM_SIMPLE_TYPE) <
+                            type = <"String">
+                        >
+                        ["V"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"Hash">
+                            generic_parameters = <"String", "Uri">
+                        >
+                    >
+                >
+            >
+            ["original_language"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"original_language">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["value_sets"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"value_sets">
+                type_def = <
+                    root_type = <"Hash">
+					generic_parameters = <"String", "VALUE_SET">
+                >
+            >
+            ["concept_code"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"concept_code">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["terminology_extracts"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"terminology_extracts">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameter_defs = <
+                        ["K"] = (P_BMM_SIMPLE_TYPE) <
+                            type = <"String">
+                        >
+                        ["V"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"Hash">
+                            generic_parameters = <"String", "ARCHETYPE_TERM">
+                        >
+                    >
+                >
+            >
+            ["term_definitions"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"term_definitions">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameter_defs = <
+                        ["K"] = (P_BMM_SIMPLE_TYPE) <
+                            type = <"String">
+                        >
+                        ["V"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"Hash">
+                            generic_parameters = <"String", "ARCHETYPE_TERM">
+                        >
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["is_differential"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_differential">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["TERMINOLOGY_RELATION"] = (P_BMM_CLASS) <
+        name = <"TERMINOLOGY_RELATION">
+        ancestors = <"Any">
+        properties = <
+            ["id"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"id">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["members"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"members">
+                type_def = <
+                    container_type = <"List">
+                    type = <"String">
+                >
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["VALUE_SET"] = (P_BMM_CLASS) <
+        name = <"VALUE_SET">
+        ancestors = <"TERMINOLOGY_RELATION">
+    >
+
+    ["ARCHETYPE_TERM"] = (P_BMM_CLASS) <
+        name = <"ARCHETYPE_TERM">
+        ancestors = <"Any">
+        properties = <
+            ["code"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"code">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["text"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"text">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["description"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"description">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["other_items"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"other_items">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "String">
+                >
+            >
+        >
+    >
+
+	------------------------------------------------------
+	-- constraint_model package
+	------------------------------------------------------
+
+    ["ARCHETYPE_CONSTRAINT"] = (P_BMM_CLASS) <
+        name = <"ARCHETYPE_CONSTRAINT">
+        ancestors = <"Any">
+        is_abstract = <True>
+        properties = <
+            ["parent"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"parent">
+				type = <"ARCHETYPE_CONSTRAINT">
+            >
+            ["soc_parent"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"soc_parent">
+				type = <"C_SECOND_ORDER">
+            >
+		>
+    >
+    ["C_ATTRIBUTE"] = (P_BMM_CLASS) <
+        name = <"C_ATTRIBUTE">
+        ancestors = <"ARCHETYPE_CONSTRAINT">
+        properties = <
+            ["rm_attribute_name"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"rm_attribute_name">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["existence"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"existence">
+				type = <"Multiplicity_interval">
+            >
+            ["children"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"children">
+                type_def = <
+                    container_type = <"List">
+                    type = <"C_OBJECT">
+                >
+            >
+            ["differential_path"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"differential_path">
+				type = <"String">
+            >
+            ["cardinality"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"cardinality">
+				type = <"Cardinality">
+            >
+            ["is_multiple"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_multiple">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+	--
+	-- TODO: remove from here in later AOM versions, since available in 
+	-- BASE Release-1.1.0
+	--
+
+    ["Cardinality"] = (P_BMM_CLASS) <
+        name = <"Cardinality">
+        ancestors = <"Any">
+        properties = <
+            ["is_ordered"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_ordered">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+            ["is_unique"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_unique">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+            ["interval"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"interval">
+				type = <"Multiplicity_interval">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+	--
+	-- TODO: remove from here in later AOM versions, since available in 
+	-- BASE Release-1.1.0
+	--
+
+    ["Multiplicity_interval"] = (P_BMM_CLASS) <
+        name = <"Multiplicity_interval">
+		ancestor_defs = <
+			["Interval<Integer>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"Interval">
+				generic_parameters = <"Integer">
+			>
+		>
+    >
+
+    ["C_OBJECT"] = (P_BMM_CLASS) <
+        name = <"C_OBJECT">
+        ancestors = <"ARCHETYPE_CONSTRAINT">
+        properties = <
+            ["rm_type_name"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"rm_type_name">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["occurrences"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"occurrences">
+				type = <"Multiplicity_interval">
+            >
+            ["node_id"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"node_id">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["is_deprecated"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_deprecated">
+				type = <"Boolean">
+            >
+            ["sibling_order"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"sibling_order">
+				type = <"SIBLING_ORDER">
+            >
+        >
+        is_abstract = <True>
+    >
+
+    ["SIBLING_ORDER"] = (P_BMM_CLASS) <
+        name = <"SIBLING_ORDER">
+        ancestors = <"Any">
+        properties = <
+            ["sibling_node_id"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"sibling_node_id">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["is_before"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_before">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["C_DEFINED_OBJECT"] = (P_BMM_CLASS) <
+        name = <"C_DEFINED_OBJECT">
+        ancestors = <"C_OBJECT">
+        properties = <
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Any">
+            >
+        >
+        is_abstract = <True>
+    >
+    ["C_COMPLEX_OBJECT"] = (P_BMM_CLASS) <
+        name = <"C_COMPLEX_OBJECT">
+        ancestors = <"C_DEFINED_OBJECT">
+        properties = <
+            ["attributes"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"attributes">
+                type_def = <
+                    container_type = <"List">
+                    type = <"C_ATTRIBUTE">
+                >
+            >
+            ["attribute_tuples"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"attribute_tuples">
+                type_def = <
+                    container_type = <"List">
+                    type = <"C_ATTRIBUTE_TUPLE">
+                >
+            >
+        >
+    >
+
+    ["C_ARCHETYPE_ROOT"] = (P_BMM_CLASS) <
+        name = <"C_ARCHETYPE_ROOT">
+        ancestors = <"C_COMPLEX_OBJECT">
+        properties = <
+            ["archetype_ref"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"archetype_ref">
+				type = <"String">
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["ARCHETYPE_SLOT"] = (P_BMM_CLASS) <
+        name = <"ARCHETYPE_SLOT">
+        ancestors = <"C_OBJECT">
+        properties = <
+            ["excludes"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"excludes">
+                type_def = <
+                    container_type = <"List">
+                    type = <"ASSERTION">
+                >
+            >
+            ["includes"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"includes">
+                type_def = <
+                    container_type = <"List">
+                    type = <"ASSERTION">
+                >
+            >
+            ["closed"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"closed">
+				type = <"Boolean">
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["C_COMPLEX_OBJECT_PROXY"] = (P_BMM_CLASS) <
+        name = <"C_COMPLEX_OBJECT_PROXY">
+        ancestors = <"C_OBJECT">
+        properties = <
+            ["target_path"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"target_path">
+				type = <"String">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+    ["C_PRIMITIVE_OBJECT"] = (P_BMM_CLASS) <
+        name = <"C_PRIMITIVE_OBJECT">
+        ancestors = <"C_DEFINED_OBJECT">
+        properties = <
+            ["is_enumerated_type_constraint"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"is_enumerated_type_constraint">
+				type = <"Boolean">
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Any">
+            >
+            ["constraint"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"constraint">
+				type = <"Any">
+                is_mandatory = <True>
+            >
+        >
+        is_abstract = <True>
+    >
+
+    ["C_SECOND_ORDER"] = (P_BMM_CLASS) <
+        name = <"C_SECOND_ORDER">
+        ancestors = <"Any">
+        properties = <
+            ["members"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"members">
+                type_def = <
+                    container_type = <"List">
+                    type = <"ARCHETYPE_CONSTRAINT">
+                >
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["C_ATTRIBUTE_TUPLE"] = (P_BMM_CLASS) <
+        name = <"C_ATTRIBUTE_TUPLE">
+        ancestors = <"C_SECOND_ORDER">
+        properties = <
+            ["tuples"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"tuples">
+                type_def = <
+                    container_type = <"List">
+                    type = <"C_PRIMITIVE_TUPLE">
+                >
+            >
+            ["members"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"members">
+                type_def = <
+                    container_type = <"List">
+                    type = <"C_ATTRIBUTE">
+                >
+                is_mandatory = <True>
+            >
+        >
+    >
+    ["C_PRIMITIVE_TUPLE"] = (P_BMM_CLASS) <
+        name = <"C_PRIMITIVE_TUPLE">
+        ancestors = <"C_SECOND_ORDER">
+        properties = <
+            ["members"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"members">
+                type_def = <
+                    container_type = <"List">
+                    type = <"C_PRIMITIVE_OBJECT">
+                >
+                is_mandatory = <True>
+            >
+        >
+    >
+
+
+	------------------------------------------------------
+	-- constraint_model.primitive package
+	------------------------------------------------------
+
+    ["C_BOOLEAN"] = (P_BMM_CLASS) <
+        name = <"C_BOOLEAN">
+        ancestors = <"C_PRIMITIVE_OBJECT">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type = <"Boolean">
+                >
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Boolean">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Boolean">
+            >
+        >
+    >
+
+    ["C_STRING"] = (P_BMM_CLASS) <
+        name = <"C_STRING">
+        ancestors = <"C_PRIMITIVE_OBJECT">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type = <"String">
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"String">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"String">
+            >
+        >
+    >
+    ["C_TERMINOLOGY_CODE"] = (P_BMM_CLASS) <
+        name = <"C_TERMINOLOGY_CODE">
+        ancestors = <"C_PRIMITIVE_OBJECT">
+        properties = <
+            ["constraint"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"constraint">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Terminology_code">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Terminology_code">
+            >
+        >
+    >
+    ["C_ORDERED"] = (P_BMM_CLASS) <
+        name = <"C_ORDERED">
+        ancestors = <"C_PRIMITIVE_OBJECT">
+        is_abstract = <True>
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Ordered">
+                    >
+                >
+            >
+        >
+    >
+    ["C_INTEGER"] = (P_BMM_CLASS) <
+        name = <"C_INTEGER">
+        ancestors = <"C_ORDERED">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Integer">
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Integer">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Integer">
+            >
+        >
+    >
+    ["C_REAL"] = (P_BMM_CLASS) <
+        name = <"C_REAL">
+        ancestors = <"C_ORDERED">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Real">
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Real">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Real">
+            >
+        >
+    >
+
+    ["C_TEMPORAL"] = (P_BMM_CLASS) <
+        name = <"C_TEMPORAL">
+        ancestors = <"C_ORDERED">
+        properties = <
+            ["pattern_constraint"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"pattern_constraint">
+				type = <"String">
+            >
+        >
+        is_abstract = <True>
+    >
+
+    ["C_DATE"] = (P_BMM_CLASS) <
+        name = <"C_DATE">
+        ancestors = <"C_TEMPORAL">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Date">
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Date">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Date">
+            >
+        >
+    >
+    ["C_TIME"] = (P_BMM_CLASS) <
+        name = <"C_TIME">
+        ancestors = <"C_TEMPORAL">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Time">
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Time">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Time">
+            >
+        >
+    >
+    ["C_DATE_TIME"] = (P_BMM_CLASS) <
+        name = <"C_DATE_TIME">
+        ancestors = <"C_TEMPORAL">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Date_time">
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Date_time">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Date_time">
+            >
+        >
+    >
+    ["C_DURATION"] = (P_BMM_CLASS) <
+        name = <"C_DURATION">
+        ancestors = <"C_TEMPORAL">
+        properties = <
+            ["constraint"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"constraint">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"Interval">
+                        generic_parameters = <"Duration">
+                    >
+                >
+                is_mandatory = <True>
+            >
+            ["assumed_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assumed_value">
+				type = <"Duration">
+            >
+            ["default_value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"default_value">
+				type = <"Duration">
+            >
+        >
+    >
+
+	------------------------------------------------------
+	-- profile package
+	------------------------------------------------------
+
+    ["AOM_PROFILE"] = (P_BMM_CLASS) <
+        name = <"AOM_PROFILE">
+        ancestors = <"Any">
+        properties = <
+            ["profile_name"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"profile_name">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["aom_rm_type_substitutions"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"aom_rm_type_substitutions">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "String">
+                >
+            >
+            ["aom_lifecycle_mappings"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"aom_lifecycle_mappings">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "String">
+                >
+            >
+            ["aom_rm_type_mappings"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"aom_rm_type_mappings">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "AOM_TYPE_MAPPING">
+                >
+            >
+            ["rm_primitive_type_equivalences"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"rm_primitive_type_equivalences">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "String">
+                >
+            >
+        >
+    >
+
+    ["AOM_TYPE_MAPPING"] = (P_BMM_CLASS) <
+        name = <"AOM_TYPE_MAPPING">
+        ancestors = <"Any">
+        properties = <
+            ["source_class_name"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"source_class_name">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["target_class_name"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"target_class_name">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["property_mappings"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"property_mappings">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameters = <"String", "AOM_PROPERTY_MAPPING">
+                >
+            >
+        >
+    >
+    ["AOM_PROPERTY_MAPPING"] = (P_BMM_CLASS) <
+        name = <"AOM_PROPERTY_MAPPING">
+        ancestors = <"Any">
+        properties = <
+            ["source_property"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"source_property">
+				type = <"String">
+                is_mandatory = <True>
+            >
+            ["target_property"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"target_property">
+				type = <"String">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+
+	--
+	--------------------- base.base_types.definitions ------------------
+	--
+
+	["VALIDITY_KIND"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"VALIDITY_KIND">
+		ancestors = <"String">
+		item_names = <"mandatory", "optional", "prohibited">
+	>
+
+	["VERSION_STATUS"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"VERSION_STATUS">
+		ancestors = <"String">
+		item_names = <"alpha", "beta", "release_candidate", "released", "build">
+	>
+
+
+
+	--
+	--------------------- base.resource ------------------
+	--
+
+	["AUTHORED_RESOURCE"] = <
+		name = <"AUTHORED_RESOURCE">
+		ancestors = <"Any", ...>
+		is_abstract = <True>
+		properties = <
+			["original_language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"original_language">
+				type = <"Terminology_code">
+				is_mandatory = <True>
+			>
+			["is_controlled"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"is_controlled">
+				type = <"Boolean">
+			>
+			["translations"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"translations">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "TRANSLATION_DETAILS">
+				>
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"RESOURCE_DESCRIPTION">
+			>
+			["annotations"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"annotations">
+				type = <"RESOURCE_ANNOTATIONS">
+			>
+		>
+	>
+
+	["TRANSLATION_DETAILS"] = <
+		name = <"TRANSLATION_DETAILS">
+		ancestors = <"Any", ...>
+		properties = <
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"Terminology_code">
+				is_mandatory = <True>
+			>
+			["author"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"author">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+				is_mandatory = <True>
+			>
+			["accreditation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"accreditation">
+				type = <"String">
+			>
+			["version_last_translated"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version_last_translated">
+				type = <"String">
+			>
+			["other_details"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"other_details">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+			>
+		>
+	>
+
+	["RESOURCE_DESCRIPTION"] = <
+		name = <"RESOURCE_DESCRIPTION">
+		ancestors = <"Any">
+		properties = <
+			["original_author"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"original_author">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+				is_mandatory = <True>
+			>
+			["original_namespace"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"original_namespace">
+				type = <"String">
+			>
+			["other_contributors"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"other_contributors">
+				type_def = <
+					container_type = <"List">
+					type = <"String">
+				>
+				cardinality = <|>=0|>
+			>
+			["custodian_namespace"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"custodian_namespace">
+				type = <"String">
+			>
+			["custodian_organisation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"custodian_organisation">
+				type = <"String">
+			>
+			["copyright"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"copyright">
+				type = <"String">
+			>
+			["licence"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"licence">
+				type = <"String">
+			>
+			["lifecycle_state"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lifecycle_state">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["resource_package_uri"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"resource_package_uri">
+				type = <"String">
+			>
+			["ip_acknowledgements"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"ip_acknowledgements">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+			>
+			["references"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"references">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+			>
+			["conversion_details"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"conversion_details">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+			>
+			["other_details"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"other_details">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+			>
+			["parent_resource"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"parent_resource">
+				type = <"AUTHORED_RESOURCE">
+				is_mandatory = <True>
+			>
+			["details"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"details">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "RESOURCE_DESCRIPTION_ITEM">
+				>
+				cardinality = <|>=1|>
+			>
+		>
+	>
+
+	["RESOURCE_DESCRIPTION_ITEM"] = <
+		name = <"RESOURCE_DESCRIPTION_ITEM">
+		ancestors = <"Any">
+		properties = <
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"Terminology_code">
+				is_mandatory = <True>
+			>
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"purpose">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["keywords"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"keywords">
+				type_def = <
+					container_type = <"List">
+					type = <"String">
+				>
+				cardinality = <|>=0|>
+			>
+			["use"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"use">
+				type = <"String">
+			>
+			["misuse"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"misuse">
+				type = <"String">
+			>
+			["original_resource_uri"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"original_resource_uri">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"Hash">
+						generic_parameters = <"String", "String">
+					>
+				>
+				cardinality = <|>=0|>
+			>
+			["other_details"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"other_details">
+				type_def = <
+					root_type = <"Hash">
+					generic_parameters = <"String", "String">
+				>
+			>
+		>
+	>
+
+	["RESOURCE_ANNOTATIONS"] = <
+		name = <"RESOURCE_ANNOTATIONS">
+		ancestors = <"Any">
+		properties = <
+			["documentation"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"documentation">
+				type_def = <
+					root_type = <"Hash">
+                    generic_parameter_defs = <
+                        ["K"] = (P_BMM_SIMPLE_TYPE) <
+							type = <"String">
+						>
+                        ["V"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"Hash">
+							generic_parameter_defs = <
+								["K"] = (P_BMM_SIMPLE_TYPE) <
+									type = <"String">
+								>
+								["V"] = (P_BMM_GENERIC_TYPE) <
+									root_type = <"Hash">
+									generic_parameters = <"String", "String">
+								>
+							>
+                        >
+                    >
+				>
+				is_mandatory = <True>
+			>
+		>
+	>
+
+>

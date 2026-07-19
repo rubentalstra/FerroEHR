@@ -1,7 +1,7 @@
 [package]
 name = "openehr-lang"
 version = "1.0.0"                 # = the implemented openEHR spec version: LANG 1.0.0
-description = "openEHR LANG 1.1.0: BMM/P_BMM object model, generated from BMM (ADR-004). ODIN + EL parsers are future hand-written runtime work (P8/P9)."
+description = "openEHR LANG 1.0.0: BMM/P_BMM object model (generated from BMM) plus a hand-written ODIN instance parser (the `odin` module — deliberately off the codegen path)."
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -11,9 +11,16 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
-openehr-derive.workspace = true
-serde.workspace = true
+# No serde derive on the generated types (the native codec in `openehr-its` owns
+# the wire). `serde_json` is kept for the untyped `Value` fields the generated
+# P_BMM/BEOM types carry and for the BEL `to_json` builder. The BMM-JSON loader
+# that deserializes into typed structs lives in `openehr-codegen`, which keeps
+# `serde`.
 serde_json.workspace = true
+logos.workspace = true       # DFA lexer for the ODIN instance parser (odin module)
+chumsky.workspace = true     # combinator parser for ODIN (odin.g4 / odin_values.g4)
+thiserror.workspace = true   # typed OdinError
+indexmap.workspace = true    # insertion-ordered ODIN objects
 
 [lints]
 workspace = true

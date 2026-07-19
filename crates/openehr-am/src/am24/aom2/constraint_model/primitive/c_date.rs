@@ -7,13 +7,11 @@ use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Date;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on instances representing dates in the form either of a set of validity values, or else date ranges based on the `C_ORDERED` list constraint.
 ///
 /// There is no validity flag for `_year_`, since it must always be by definition mandatory in order to have a sensible date at all. Syntax expressions of instances of this class include `"YYYY-??-??"` (date with optional month and day).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_DATE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDate {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

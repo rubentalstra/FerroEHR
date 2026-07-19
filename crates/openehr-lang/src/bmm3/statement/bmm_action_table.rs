@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::statement::bmm_action_decision_table::BmmActionDecisionTable;
-use openehr_derive::OpenEhrType;
 
 /// Multi-branch conditional statement structure
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_ACTION_TABLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmActionTable {
     /// A specialised decision table whose outputs can only be procedure agents. In execution, the matched agent will be invoked.
     pub decision_table: BmmActionDecisionTable,

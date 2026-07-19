@@ -3,11 +3,9 @@
 
 use crate::terminology::code::Code;
 use crate::terminology::terminology_status::TerminologyStatus;
-use openehr_derive::OpenEhrType;
 
 /// A code set.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "CODE_SET")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CodeSet {
     /// Name of this code set.
     pub name: String,

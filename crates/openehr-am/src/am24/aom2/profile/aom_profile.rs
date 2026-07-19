@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::profile::aom_type_mapping::AomTypeMapping;
-use openehr_derive::OpenEhrType;
 
 /// Profile of common settings relating to use of reference model(s) and terminology for a given archetype developing organisation.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "AOM_PROFILE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AomProfile {
     /// Name of this profile, usually based on the publisher it pertains to e.g. "openEHR", "CDISC", etc.
     pub profile_name: String,

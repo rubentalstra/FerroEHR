@@ -71,8 +71,8 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
         audit: UpdateAudit {
             change_type: term(change_code),
             description: None,
-            committer: serde_json::from_value::<PartyProxy>(
-                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
             system_id: None,
@@ -107,7 +107,7 @@ fn composition(name: &str, magnitude: f64) -> Value {
     }
     c["name"] = json!({ "_type": "DV_TEXT", "value": name });
     // The content OBSERVATION is an archetype root, so it must carry
-    // archetype_details (RM invariant `Is_archetypeRoot`); the vendored fixture
+    // archetype_details (RM invariant `Is_archetype_root`); the vendored fixture
     // omits it.
     c["content"][0]["archetype_details"] = json!({
         "_type": "ARCHETYPED",

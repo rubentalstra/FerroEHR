@@ -1,0 +1,899 @@
+--
+-- 	component:   openEHR BMM Implementation Technology Specification
+-- 	description: openEHR Reference Model formal expression. This file is an ODIN serialisation of
+--               the BMM object meta-model classes found at
+--               https://www.openehr.org/releases/LANG/latest/p_bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/issues/?filter=11117
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+--
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as the top version in the specification:
+--     https://www.openehr.org/releases/LANG/latest/bmm_persistence.html#_amendment_record
+--
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+schema_name = <"rm_structures">
+rm_publisher = <"openehr">
+rm_release = <"1.1.0">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.1.0.1">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.1.0 structures schema">
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_rm_data_types_1.1.0">
+	>
+>
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+
+packages = <
+	["org.openehr.rm.data_structures"] = <
+		name = <"org.openehr.rm.data_structures">
+		classes = <"DATA_STRUCTURE", ...>
+		packages = <
+			["item_structure"] = <
+				name = <"item_structure">
+				classes = <"ITEM_STRUCTURE", "ITEM_SINGLE", "ITEM_TABLE", "ITEM_TREE", "ITEM_LIST">
+				packages = <
+					["representation"] = <
+						name = <"representation">
+						classes = <"ITEM", "CLUSTER", "ELEMENT">
+					>
+				>
+			>
+			["history"] = <
+				name = <"history">
+				classes = <"HISTORY", "EVENT", "POINT_EVENT", "INTERVAL_EVENT">
+			>
+		>
+	>
+	["org.openehr.rm.common"] = <
+		name = <"org.openehr.rm.common">
+		packages = <
+			["generic"] = <
+				name = <"generic">
+				classes = <"PARTICIPATION", "PARTY_PROXY", "PARTY_SELF", "PARTY_IDENTIFIED", "PARTY_RELATED", "AUDIT_DETAILS", "ATTESTATION", "REVISION_HISTORY", "REVISION_HISTORY_ITEM">
+			>
+			["archetyped"] = <
+				name = <"archetyped">
+				classes = <"PATHABLE", "LOCATABLE", "LINK", "ARCHETYPED", "FEEDER_AUDIT", "FEEDER_AUDIT_DETAILS">
+			>
+			["change_control"] = <
+				name = <"change_control">
+				classes = <"VERSIONED_OBJECT", "CONTRIBUTION", "VERSION", "ORIGINAL_VERSION", "IMPORTED_VERSION">
+			>
+			["directory"] = <
+				name = <"directory">
+				classes = <"FOLDER">
+			>
+		>
+	>
+>
+
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	------------------------------------------------------------
+	---------------------- rm.data_structures ------------------
+	------------------------------------------------------------
+
+	["DATA_STRUCTURE"] = <
+		name = <"DATA_STRUCTURE">
+		is_abstract = <True>
+		ancestors = <"LOCATABLE", ...>
+	>
+
+	------------------------------------------------------------
+	------------- rm.data_structures.item_structure ------------
+	------------------------------------------------------------
+
+	["ITEM_STRUCTURE"] = <
+		name = <"ITEM_STRUCTURE">
+		is_abstract = <True>
+		ancestors = <"DATA_STRUCTURE", ...>
+	>
+
+	["ITEM_SINGLE"] = <
+		name = <"ITEM_SINGLE">
+		ancestors = <"ITEM_STRUCTURE", ...>
+		properties = <
+			["item"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"item">
+				type = <"ELEMENT">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ITEM_LIST"] = <
+		name = <"ITEM_LIST">
+		ancestors = <"ITEM_STRUCTURE", ...>
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"ELEMENT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ITEM_TABLE"] = <
+		name = <"ITEM_TABLE">
+		ancestors = <"ITEM_STRUCTURE">
+		properties = <
+			["rows"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"rows">
+				type_def = <
+					container_type = <"List">
+					type = <"CLUSTER">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ITEM_TREE"] = <
+		name = <"ITEM_TREE">
+		ancestors = <"ITEM_STRUCTURE">
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"ITEM">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	------------------------------------------------------------
+	---- rm.data_structures.item_structure.representation ------
+	------------------------------------------------------------
+
+	["ITEM"] = <
+		name = <"ITEM">
+		ancestors = <"LOCATABLE">
+		is_abstract = <True>
+	>
+
+	["CLUSTER"] = <
+		name = <"CLUSTER">
+		ancestors = <"ITEM">
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"ITEM">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ELEMENT"] = <
+		name = <"ELEMENT">
+		ancestors = <"ITEM">
+		properties = <
+			["null_flavour"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"null_flavour">
+				type = <"DV_CODED_TEXT">
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"DATA_VALUE">
+			>
+			["null_reason"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"null_reason">
+				type = <"DV_TEXT">
+			>
+		>
+	>
+
+	------------------------------------------------------------
+	----------------- rm.data_structures.history ---------------
+	------------------------------------------------------------
+
+	["HISTORY"] = <
+		name = <"HISTORY">
+		ancestors = <"DATA_STRUCTURE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"ITEM_STRUCTURE">
+			>
+		>
+		properties = <
+			["origin"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"origin">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["period"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"period">
+				type = <"DV_DURATION">
+			>
+			["duration"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration">
+				type = <"DV_DURATION">
+			>
+			["summary"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"summary">
+				type = <"ITEM_STRUCTURE">
+			>
+			["events"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"events">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"EVENT">
+						generic_parameters = <"T">
+					>
+				>
+				cardinality = <|>=1|>
+			>
+		>
+	>
+
+	["EVENT"] = <
+		name = <"EVENT">
+		ancestors = <"LOCATABLE">
+		is_abstract = <True>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"ITEM_STRUCTURE">
+			>
+		>
+		properties = <
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["state"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"state">
+				type = <"ITEM_STRUCTURE">
+			>
+			["data"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"data">
+				type = <"T">
+				is_mandatory = <True>
+			>
+			["offset"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"offset">
+				is_computed = <True>
+				type = <"DV_DURATION">
+			>
+		>
+	>
+
+	["POINT_EVENT"] = <
+		name = <"POINT_EVENT">
+		ancestors = <"EVENT">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+
+	["INTERVAL_EVENT"] = <
+		name = <"INTERVAL_EVENT">
+		ancestors = <"EVENT">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		properties = <
+			["width"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"width">
+				type = <"DV_DURATION">
+				is_mandatory = <True>
+			>
+			["sample_count"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"sample_count">
+				type = <"Integer">
+				is_im_runtime = <True>
+			>
+			["math_function"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"math_function">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	------------------------------------------------------------
+	---------------------- rm.common.generic -------------------
+	------------------------------------------------------------
+
+	["REVISION_HISTORY"] = <
+		name = <"REVISION_HISTORY">
+		ancestors = <"Any">
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"REVISION_HISTORY_ITEM">
+				>
+				cardinality = <|>=0|>
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["REVISION_HISTORY_ITEM"] = <
+		name = <"REVISION_HISTORY_ITEM">
+		ancestors = <"Any">
+		properties = <
+			["version_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version_id">
+				type = <"OBJECT_VERSION_ID">
+				is_mandatory = <True>
+			>
+			["audits"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"audits">
+				type_def = <
+					container_type = <"List">
+					type = <"AUDIT_DETAILS">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["AUDIT_DETAILS"] = <
+		name = <"AUDIT_DETAILS">
+		ancestors = <"Any">
+		properties = <
+			["system_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"system_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["time_committed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_committed">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+			>
+			["change_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"change_type">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"DV_TEXT">
+			>
+			["committer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"committer">
+				type = <"PARTY_PROXY">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ATTESTATION"] = <
+		name = <"ATTESTATION">
+		ancestors = <"AUDIT_DETAILS">
+		properties = <
+			["attested_view"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"attested_view">
+				type = <"DV_MULTIMEDIA">
+			>
+			["proof"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"proof">
+				type = <"String">
+			>
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_EHR_URI">
+				>
+				cardinality = <|>=0|>
+			>
+			["reason"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reason">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["is_pending"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"is_pending">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["PARTICIPATION"] = <
+		name = <"PARTICIPATION">
+		ancestors = <"Any">
+		properties = <
+			["function"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"function">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["time"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_DATE_TIME">
+				>
+				is_im_runtime = <True>
+			>
+			["mode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mode">
+				type = <"DV_CODED_TEXT">
+			>
+			["performer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"performer">
+				type = <"PARTY_PROXY">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["PARTY_PROXY"] = <
+		name = <"PARTY_PROXY">
+		is_abstract = <True>
+		ancestors = <"Any">
+		properties = <
+			["external_ref"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"external_ref">
+				type = <"PARTY_REF">
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["PARTY_IDENTIFIED"] = <
+		name = <"PARTY_IDENTIFIED">
+		ancestors = <"PARTY_PROXY">
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"String">
+			>
+			["identifiers"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"identifiers">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_IDENTIFIER">
+				>
+				cardinality = <|>=1|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["PARTY_RELATED"] = <
+		name = <"PARTY_RELATED">
+		ancestors = <"PARTY_IDENTIFIED">
+		properties = <
+			["relationship"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"relationship">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["PARTY_SELF"] = <
+		name = <"PARTY_SELF">
+		ancestors = <"PARTY_PROXY">
+	>
+
+	------------------------------------------------------------
+	--------------------- rm.common.archetyped -----------------
+	------------------------------------------------------------
+
+	["PATHABLE"] = <
+		name = <"PATHABLE">
+		is_abstract = <True>
+		ancestors = <"Any">
+	>
+
+	["LOCATABLE"] = <
+		name = <"LOCATABLE">
+		is_abstract = <True>
+		ancestors = <"PATHABLE">
+		properties = <
+			["uid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uid">
+				type = <"UID_BASED_ID">
+				is_im_infrastructure = <True>
+			>
+			["archetype_node_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_node_id">
+				type = <"String">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["archetype_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_details">
+				type = <"ARCHETYPED">
+				is_im_infrastructure = <True>
+			>
+			["feeder_audit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"feeder_audit">
+				type = <"FEEDER_AUDIT">
+				is_im_runtime = <True>
+			>
+			["links"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"links">
+				type_def = <
+					container_type = <"List">
+					type = <"LINK">
+				>
+				cardinality = <|>=1|>
+			>
+		>
+	>
+
+	["LINK"] = <
+		name = <"LINK">
+		ancestors = <"Any">
+		properties = <
+			["meaning"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"meaning">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"target">
+				type = <"DV_EHR_URI">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ARCHETYPED"] = <
+		name = <"ARCHETYPED">
+		ancestors = <"Any">
+		properties = <
+			["archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_id">
+				type = <"ARCHETYPE_ID">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["template_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"template_id">
+				type = <"TEMPLATE_ID">
+				is_im_infrastructure = <True>
+			>
+			["rm_version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rm_version">
+				type = <"String">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["FEEDER_AUDIT"] = <
+		name = <"FEEDER_AUDIT">
+		ancestors = <"Any">
+		properties = <
+			["originating_system_item_ids"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"originating_system_item_ids">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+			["feeder_system_item_ids"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"feeder_system_item_ids">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+			["original_content"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"original_content">
+				type = <"DV_ENCAPSULATED">
+				is_im_runtime = <True>
+			>
+			["originating_system_audit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"originating_system_audit">
+				type = <"FEEDER_AUDIT_DETAILS">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["feeder_system_audit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"feeder_system_audit">
+				type = <"FEEDER_AUDIT_DETAILS">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["FEEDER_AUDIT_DETAILS"] = <
+		name = <"FEEDER_AUDIT_DETAILS">
+		ancestors = <"Any">
+		properties = <
+			["system_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"system_id">
+				type = <"String">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["location"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"location">
+				type = <"PARTY_IDENTIFIED">
+				is_im_runtime = <True>
+			>
+			["provider"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"provider">
+				type = <"PARTY_IDENTIFIED">
+				is_im_runtime = <True>
+			>
+			["subject"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject">
+				type = <"PARTY_PROXY">
+				is_im_runtime = <True>
+			>
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"DV_DATE_TIME">
+				is_im_runtime = <True>
+			>
+			["version_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version_id">
+				type = <"String">
+				is_im_runtime = <True>
+			>
+			["other_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	------------------------------------------------------------
+	---------------------- rm.common.directory -------------------
+	------------------------------------------------------------
+
+	["FOLDER"] = <
+		name = <"FOLDER">
+		ancestors = <"LOCATABLE">
+		properties = <
+			["folders"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"folders">
+				type_def = <
+					container_type = <"List">
+					type = <"FOLDER">
+				>
+				cardinality = <|>=1|>
+			>
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"OBJECT_REF">
+				>
+				cardinality = <|>=0|>
+			>
+			["details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	------------------------------------------------------------
+	------------------ rm.common.change_control ----------------
+	------------------------------------------------------------
+
+	["CONTRIBUTION"] = <
+		name = <"CONTRIBUTION">
+		ancestors = <"Any">
+		properties = <
+			["uid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uid">
+				type = <"HIER_OBJECT_ID">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["audit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"audit">
+				type = <"AUDIT_DETAILS">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["versions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"versions">
+				type_def = <
+					container_type = <"List">
+					type = <"OBJECT_REF">
+				>
+				cardinality = <|>=0|>
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["VERSIONED_OBJECT"] = <
+		name = <"VERSIONED_OBJECT">
+		ancestors = <"Any">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		properties = <
+			["uid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uid">
+				type = <"HIER_OBJECT_ID">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["owner_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"owner_id">
+				type = <"OBJECT_REF">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["time_created"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_created">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["VERSION"] = <
+		name = <"VERSION">
+		ancestors = <"Any">
+		is_abstract = <True>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		properties = <
+			["contribution"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"contribution">
+				type = <"OBJECT_REF">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["commit_audit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"commit_audit">
+				type = <"AUDIT_DETAILS">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["signature"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"signature">
+				type = <"String">
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["ORIGINAL_VERSION"] = <
+		name = <"ORIGINAL_VERSION">
+		ancestors = <"VERSION">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		properties = <
+			["uid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uid">
+				type = <"OBJECT_VERSION_ID">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["preceding_version_uid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"preceding_version_uid">
+				type = <"OBJECT_VERSION_ID">
+				is_im_infrastructure = <True>
+			>
+			["other_input_version_uids"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"other_input_version_uids">
+				type_def = <
+					container_type = <"List">
+					type = <"OBJECT_VERSION_ID">
+				>
+				cardinality = <|>=1|>
+				is_im_infrastructure = <True>
+			>
+			["attestations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"attestations">
+				type_def = <
+					container_type = <"List">
+					type = <"ATTESTATION">
+				>
+				cardinality = <|>=1|>
+			>
+			["lifecycle_state"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lifecycle_state">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["data"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"data">
+				type = <"T">
+			>
+		>
+	>
+
+	["IMPORTED_VERSION"] = <
+		name = <"IMPORTED_VERSION">
+		ancestors = <"VERSION">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		properties = <
+			["item"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"item">
+				type_def = <
+					root_type = <"ORIGINAL_VERSION">
+					generic_parameters = <"T">
+				>
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+>

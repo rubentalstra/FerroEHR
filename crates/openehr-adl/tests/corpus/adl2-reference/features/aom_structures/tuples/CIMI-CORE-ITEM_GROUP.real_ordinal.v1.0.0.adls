@@ -1,0 +1,66 @@
+archetype (adl_version=2.0.5; rm_release=2.0.2)
+	CIMI-CORE-ITEM_GROUP.real_ordinal.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@OceanInformatics.com">
+		["date"] = <"2014-10-10">
+	>
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test integer ordinal values for an RM that has ORDINAL.value defined as Real; constraints should silently be promoted to Reals.">
+			keywords = <"ADL", "test", "tuples">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ITEM_GROUP[id1] matches {	-- Laboratory test ordinal
+		item matches {
+			ELEMENT[id2] matches {	-- Result value
+				value matches {
+					ORDINAL[id3] matches {
+						[symbol, value] matches {
+							[{[at1]}, {0.0}],
+							[{[at2]}, {1.0}],
+							[{[at3]}, {2.0}]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Laboratory test ordinal">
+			>
+			["id2"] = <
+				text = <"Result value">
+			>
+			["at1"] = <
+				text = <"min">
+			>
+			["at2"] = <
+				text = <"med">
+			>
+			["at3"] = <
+				text = <"max">
+			>
+		>
+	>

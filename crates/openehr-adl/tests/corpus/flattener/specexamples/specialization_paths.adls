@@ -1,0 +1,42 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-OBSERVATION.specialization_paths.v1.0.0
+
+specialize
+    openEHR-EHR-OBSERVATION.lab_test.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    OBSERVATION[id1.1] ∈ {                                   -- Thyroid function tests
+        /data[id2]/events[id3]/data[id4]/items ∈ {
+            ELEMENT[id79.2] occurrences ∈ {0..1} ∈ {    -- TSH
+                value ∈ {
+                        DV_QUANTITY[id0.7]
+                }
+            }
+            ELEMENT[id79.7] occurrences ∈ {0..1}
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Thyroid function test">
+				description = <"Thyroid function test">
+			>
+			["id79.2"] = <
+                text = <"TSH">
+                description = <"TSH">
+            >
+            ["id79.7"] = <
+                text = <" Free T3">
+                description = <" Free T3">
+            >
+
+		>
+	>

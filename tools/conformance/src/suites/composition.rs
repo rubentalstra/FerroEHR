@@ -710,7 +710,7 @@ fn content_check(ctx: &RunContext<'_>, kind: Kind, retrieved: &Value) -> Result<
             let composition =
                 openehr_its::xml::from_canonical_xml::<openehr_rm::prelude::Composition>(&xml)
                     .map_err(|e| CaseError::Codec(format!("XML fixture parse: {e}")))?;
-            serde_json::to_value(&composition).map_err(|e| CaseError::Codec(e.to_string()))?
+            openehr_its::json::to_canonical_value(&composition)
         }
     };
     support::assert_round_trip(Compare::Superset, &committed, retrieved)

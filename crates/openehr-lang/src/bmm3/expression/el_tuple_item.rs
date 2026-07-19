@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::expression::el_expression::ElExpression;
-use openehr_derive::OpenEhrType;
 
 /// A single tuple item, with an optional name.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_TUPLE_ITEM")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElTupleItem {
     /// Reference to value entity. If Void, this indicates that the item in this position is Void, e.g. within a routine call parameter list.
     pub item: Option<ElExpression>,

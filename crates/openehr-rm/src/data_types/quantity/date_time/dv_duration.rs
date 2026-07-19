@@ -5,7 +5,6 @@ use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_derive::OpenEhrType;
 
 /// Represents a period of time with respect to a notional point in time, which is not specified. A sign may be used to indicate the duration is  backwards  in time rather than forwards.
 ///
@@ -14,8 +13,7 @@ use openehr_derive::OpenEhrType;
 /// Used for recording the duration of something in the real world, particularly when there is a need a) to represent the duration in customary format, i.e. days, hours, minutes etc, and b) if it will be used in computational operations with date/time quantities, i.e. additions, subtractions etc.
 ///
 /// Misuse: Durations cannot be used to represent points in time, or intervals of time.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_DURATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvDuration {
     // inherited: DV_ORDERED
     /// Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.

@@ -5,58 +5,17 @@ use crate::demographic::group::Group;
 use crate::demographic::organisation::Organisation;
 use crate::demographic::person::Person;
 use crate::demographic::role::Role;
-use serde::Serialize;
 
 /// Ancestor of all Party types, including real world entities and their roles. A Party is any entity which can participate in an activity. The `_name_` attribute inherited from `LOCATABLE` is used to indicate the actual type of party (note that the actual names, i.e. identities of parties are indicated in the `_identities_` attribute, not the `_name_` attribute).
 ///
 /// NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in `PARTY` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
 /// For example, the `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`  would be copied to the `_uid_` field of the `PARTY` object.
 /// Closed subtype set of `PARTY`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Party {
     Agent(Agent),
     Group(Group),
     Organisation(Organisation),
     Person(Person),
     Role(Role),
-}
-
-impl<'de> ::serde::Deserialize<'de> for Party {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("AGENT") => ::core::result::Result::Ok(Self::Agent(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("GROUP") => ::core::result::Result::Ok(Self::Group(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("ORGANISATION") => {
-                ::core::result::Result::Ok(Self::Organisation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("PERSON") => ::core::result::Result::Ok(Self::Person(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("ROLE") => ::core::result::Result::Ok(Self::Role(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "PARTY: missing required `_type` on polymorphic slot (expected one of: AGENT, GROUP, ORGANISATION, PERSON, ROLE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "PARTY: unexpected `_type` {__other:?} (expected one of: AGENT, GROUP, ORGANISATION, PERSON, ROLE)"
-                )))
-            }
-        }
-    }
 }

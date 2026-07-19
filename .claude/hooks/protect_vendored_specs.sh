@@ -7,7 +7,7 @@
 #   1. docs/specs/openehr/**            — vendored upstream openEHR spec text
 #      (the conformance oracle); refreshed only by scripts/vendor-spec-docs.sh.
 #      Exception: the top-level README.md (our own index).
-#   2. crates/openehr-codegen/vendor/** — vendored BMM codegen inputs
+#   2. tools/openehr-codegen/vendor/** — vendored BMM codegen inputs
 #      crates/openehr-its/vendor/**     — vendored REST OAS
 #      crates/openehr-its/schemas/**    — vendored XSD / ITS-JSON schemas
 #      (re-vendor on a pin bump; never edit).
@@ -16,7 +16,7 @@
 #      assets (scripts/assemble-oas.sh owns spec/; CI drift-gates it).
 #   5. ANY existing file whose head carries an `@generated` marker — the
 #      generated spec crates (openehr-base/rm/am, generated impls). Change
-#      the emitter (crates/openehr-codegen) and regenerate (/regen-codegen);
+#      the emitter (tools/openehr-codegen) and regenerate (/regen-codegen);
 #      never the output. (`openehr-codegen` itself writes via its own
 #      process, not this tool, so it is unaffected.)
 #
@@ -47,14 +47,14 @@ case "$path" in
   */docs/specs/openehr/* | docs/specs/openehr/*)
     block "docs/specs/openehr/** is vendored upstream openEHR spec text (the conformance oracle) and must never be hand-edited. Re-vendor with scripts/vendor-spec-docs.sh; pins live in that script + docs/VERSIONS.md."
     ;;
-  */crates/openehr-codegen/vendor/* | crates/openehr-codegen/vendor/* | \
+  */tools/openehr-codegen/vendor/* | tools/openehr-codegen/vendor/* | \
   */crates/openehr-its/vendor/*     | crates/openehr-its/vendor/*     | \
   */crates/openehr-its/schemas/*    | crates/openehr-its/schemas/*)
     block "vendored spec inputs (BMM / OAS / XSD / ITS-JSON) are upstream-verbatim and must never be hand-edited. Re-vendor on a pin bump (provenance files + docs/VERSIONS.md)."
     ;;
   */crates/openehr-its/src/xml/generated/*  | crates/openehr-its/src/xml/generated/*  | \
   */crates/openehr-its/src/rest/generated/* | crates/openehr-its/src/rest/generated/*)
-    block "openehr-its generated/ trees are generator-owned (emit-xml / emit-rest). Edit the emitter in crates/openehr-codegen and run /regen-codegen; never the output."
+    block "openehr-its generated/ trees are generator-owned (emit-xml / emit-rest). Edit the emitter in tools/openehr-codegen and run /regen-codegen; never the output."
     ;;
   */website/api/spec/*   | website/api/spec/*   | \
   */website/api/vendor/* | website/api/vendor/*)
@@ -69,7 +69,7 @@ esac
 # at line start) — prose that merely MENTIONS @generated must not trip this
 # (a hand-written file describing the convention hit the substring form).
 if [ -f "$path" ] && head -n 10 "$path" 2>/dev/null | grep -qE '^(//|--) @generated'; then
-  block "'$path' carries an @generated marker — it is produced by openehr-codegen. Change the emitter (crates/openehr-codegen/src/emit.rs or the *_impl.rs sibling) and run /regen-codegen; never hand-edit generated output."
+  block "'$path' carries an @generated marker — it is produced by openehr-codegen. Change the emitter (tools/openehr-codegen/src/render/emit.rs or the *_impl.rs sibling) and run /regen-codegen; never hand-edit generated output."
 fi
 
 exit 0

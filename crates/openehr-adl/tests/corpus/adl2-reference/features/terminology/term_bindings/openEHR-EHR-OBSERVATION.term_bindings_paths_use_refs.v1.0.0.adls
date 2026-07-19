@@ -1,0 +1,383 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.term_bindings_paths_use_refs.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2012-10-21">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example of bindings to paths that traverse use_node references, i.e. paths that are computed when taking a use_node internal reference into account.">
+			keywords = <"ADL", "test", "terminology bindings">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2012 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- Apgar score
+		data matches {
+			HISTORY[id3] matches {
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[id4] occurrences matches {0..1} matches {	-- 1 minute
+						offset matches {
+							DV_DURATION[id46] matches {
+								value matches {PT1M}
+							}
+						}
+						data matches {
+							ITEM_LIST[id2] matches {
+								items cardinality matches {1..6; ordered} matches {
+									ELEMENT[id10] occurrences matches {0..1} matches {	-- Respiratory effort
+										value matches {
+											DV_ORDINAL[id47] matches {
+												[value, symbol] matches {
+													[{0}, {[at11]}],
+													[{1}, {[at12]}],
+													[{2}, {[at13]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Heart Rate
+										value matches {
+											DV_ORDINAL[id48] matches {
+												[value, symbol] matches {
+													[{0}, {[at7]}],
+													[{1}, {[at8]}],
+													[{2}, {[at9]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id14] occurrences matches {0..1} matches {	-- Muscle tone
+										value matches {
+											DV_ORDINAL[id49] matches {
+												[value, symbol] matches {
+													[{0}, {[at15]}],
+													[{1}, {[at16]}],
+													[{2}, {[at17]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id18] occurrences matches {0..1} matches {	-- Reflex irritability
+										value matches {
+											DV_ORDINAL[id50] matches {
+												[value, symbol] matches {
+													[{0}, {[at19]}],
+													[{1}, {[at20]}],
+													[{2}, {[at21]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id22] occurrences matches {0..1} matches {	-- Skin colour
+										value matches {
+											DV_ORDINAL[id51] matches {
+												[value, symbol] matches {
+													[{0}, {[at23]}],
+													[{1}, {[at24]}],
+													[{2}, {[at25]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id26] occurrences matches {0..1} matches {	-- Total
+										value matches {
+											DV_COUNT[id52] matches {
+												magnitude matches {|0..10|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					POINT_EVENT[id27] occurrences matches {0..1} matches {	-- 2 minute
+						offset matches {
+							DV_DURATION[id53] matches {
+								value matches {PT2M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id41] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id28] occurrences matches {0..1} matches {	-- 3 minute
+						offset matches {
+							DV_DURATION[id54] matches {
+								value matches {PT3M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id42] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id29] occurrences matches {0..1} matches {	-- 5 minute
+						offset matches {
+							DV_DURATION[id55] matches {
+								value matches {PT5M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id43] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id32] occurrences matches {0..1} matches {	-- 10 minute
+						offset matches {
+							DV_DURATION[id56] matches {
+								value matches {PT10M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id44] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					EVENT[id38] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							use_node ITEM_LIST[id45] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[id30] matches {
+				items matches {
+					ELEMENT[id31] occurrences matches {0..1} matches {	-- Notes on measurement
+						value matches {
+							DV_TEXT[id57] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Apgar score">
+				description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle tone and skin colour.">
+			>
+			["id4"] = <
+				text = <"1 minute">
+				description = <"Apgar score 1 minute after birth.">
+			>
+			["id6"] = <
+				text = <"Heart Rate">
+				description = <"Recording of the infant's heart rate.">
+			>
+			["at7"] = <
+				text = <"Absent">
+				description = <"No heart beat is seen, felt or heard.">
+			>
+			["at8"] = <
+				text = <"<100 beats per minute">
+				description = <"Heart rate less than 100 beats per minute.">
+			>
+			["at9"] = <
+				text = <"≥100 beats per minute">
+				description = <"Heart rate greater than or equal to 100 beats per minute.">
+			>
+			["id10"] = <
+				text = <"Respiratory effort">
+				description = <"Observation of the infant's respiratory effort.">
+			>
+			["at11"] = <
+				text = <"Absent">
+				description = <"No effort to breath.">
+			>
+			["at12"] = <
+				text = <"Weak or irregular">
+				description = <"Some effort to breath, moving chest.">
+			>
+			["at13"] = <
+				text = <"Normal">
+				description = <"Breathing normally or crying.">
+			>
+			["id14"] = <
+				text = <"Muscle tone">
+				description = <"Observation of the infant's muscle tone.">
+			>
+			["at15"] = <
+				text = <"Limp or flaccid">
+				description = <"No spontaneous movement.">
+			>
+			["at16"] = <
+				text = <"Reduced tone">
+				description = <"Some flexion of extremities.">
+			>
+			["at17"] = <
+				text = <"Normal tone">
+				description = <"Normal, vigorous movements.">
+			>
+			["id18"] = <
+				text = <"Reflex irritability">
+				description = <"Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter.">
+			>
+			["at19"] = <
+				text = <"No response">
+				description = <"No response to stimulation.">
+			>
+			["at20"] = <
+				text = <"Reduced response">
+				description = <"Grimace or feeble cry when stimulated.">
+			>
+			["at21"] = <
+				text = <"Normal response">
+				description = <"Grimace, sneeze, cough or pulls away when stimulated.">
+			>
+			["id22"] = <
+				text = <"Skin colour">
+				description = <"Observation of the skin colour of the infant.">
+			>
+			["at23"] = <
+				text = <"Completely blue">
+				description = <"Body and extremities are blue.">
+			>
+			["at24"] = <
+				text = <"Body pink; extremities blue">
+				description = <"Body is pink; extremities are blue.">
+			>
+			["at25"] = <
+				text = <"Completely pink">
+				description = <"Body and extremities are pink; no cyanosis.">
+			>
+			["id26"] = <
+				text = <"Total">
+				description = <"The sum of the 5 ordinal scores for each component parameter.">
+			>
+			["id27"] = <
+				text = <"2 minute">
+				description = <"Apgar score 2 minutes after birth.">
+			>
+			["id28"] = <
+				text = <"3 minute">
+				description = <"Apgar score 3 minutes after birth.">
+			>
+			["id29"] = <
+				text = <"5 minute">
+				description = <"Apgar score 5 minutes after birth.">
+			>
+			["id31"] = <
+				text = <"Notes on measurement">
+				description = <"Notes on measurement of the Apgar score.">
+			>
+			["id32"] = <
+				text = <"10 minute">
+				description = <"Apgar score 10 minutes after birth.">
+			>
+			["id38"] = <
+				text = <"Any event">
+				description = <"Apgar score at any additional time, as required.">
+			>
+			["ac1"] = <
+				text = <"Respiratory effort">
+				description = <"Observation of the infant's respiratory effort.">
+			>
+			["ac2"] = <
+				text = <"Heart Rate">
+				description = <"Recording of the infant's heart rate.">
+			>
+			["ac3"] = <
+				text = <"Muscle tone">
+				description = <"Observation of the infant's muscle tone.">
+			>
+			["ac4"] = <
+				text = <"Reflex irritability">
+				description = <"Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter.">
+			>
+			["ac5"] = <
+				text = <"Skin colour">
+				description = <"Observation of the skin colour of the infant.">
+			>
+		>
+	>
+	term_bindings = <
+		["SNOMED-CT"] = <
+			["/data[id3]/events[id4]/data[id2]/items[id26]"] = <http://snomedct.info/id/169895004>
+			["/data[id3]/events[id29]/data[id2]/items[id26]"] = <http://snomedct.info/id/169909004>
+			["/data[id3]/events[id32]/data[id2]/items[id26]"] = <http://snomedct.info/id/169922007>
+			["/data[id3]/events[id38]/data[id2]/items[id26]"] = <http://snomedct.info/id/364592005>
+			["id26"] = <http://snomedct.info/id/249228009>
+		>
+		["LOINC"] = <
+			["/data[id3]/events[id4]"] = <http://loinc.org/id/48334-7>
+			["/data[id3]/events[id4]/data[id2]/items[id6]"] = <http://loinc.org/id/32407-9>
+			["/data[id3]/events[id4]/data[id2]/items[id10]"] = <http://loinc.org/id/32410-3>
+			["/data[id3]/events[id4]/data[id2]/items[id14]"] = <http://loinc.org/id/32408-7>
+			["/data[id3]/events[id4]/data[id2]/items[id18]"] = <http://loinc.org/id/32409-5>
+			["/data[id3]/events[id4]/data[id2]/items[id22]"] = <http://loinc.org/id/32406-1>
+			["/data[id3]/events[id4]/data[id2]/items[id26]"] = <http://loinc.org/id/9272-6>
+			["/data[id3]/events[id27]/data[id2]/items[id26]"] = <http://loinc.org/id/9273-4>
+			["/data[id3]/events[id29]"] = <http://loinc.org/id/48333-9>
+			["/data[id3]/events[id29]/data[id2]/items[id6]"] = <http://loinc.org/id/32412-9>
+			["/data[id3]/events[id29]/data[id2]/items[id10]"] = <http://loinc.org/id/32415-2>
+			["/data[id3]/events[id29]/data[id2]/items[id14]"] = <http://loinc.org/id/32413-7>
+			["/data[id3]/events[id29]/data[id2]/items[id18]"] = <http://loinc.org/id/32414-5>
+			["/data[id3]/events[id29]/data[id2]/items[id22]"] = <http://loinc.org/id/32411-1>
+			["/data[id3]/events[id29]/data[id2]/items[id26]"] = <http://loinc.org/id/9274-2>
+			["/data[id3]/events[id32]"] = <http://loinc.org/id/48332-1>
+			["/data[id3]/events[id32]/data[id2]/items[id6]"] = <http://loinc.org/id/32402-0>
+			["/data[id3]/events[id32]/data[id2]/items[id10]"] = <http://loinc.org/id/32405-3>
+			["/data[id3]/events[id32]/data[id2]/items[id14]"] = <http://loinc.org/id/32403-8>
+			["/data[id3]/events[id32]/data[id2]/items[id18]"] = <http://loinc.org/id/32404-6>
+			["/data[id3]/events[id32]/data[id2]/items[id22]"] = <http://loinc.org/id/32401-2>
+			["/data[id3]/events[id32]/data[id2]/items[id26]"] = <http://loinc.org/id/9271-8>
+			["at7"] = <http://loinc.org/id/LA6716>
+			["at8"] = <http://loinc.org/id/LA6717>
+			["at9"] = <http://loinc.org/id/LA6718>
+			["at11"] = <http://loinc.org/id/LA6725>
+			["at12"] = <http://loinc.org/id/LA6726>
+			["at13"] = <http://loinc.org/id/LA6727>
+			["at15"] = <http://loinc.org/id/LA6713>
+			["at16"] = <http://loinc.org/id/LA6714>
+			["at17"] = <http://loinc.org/id/LA6715>
+			["at19"] = <http://loinc.org/id/LA6719>
+			["at20"] = <http://loinc.org/id/LA6720>
+			["at21"] = <http://loinc.org/id/LA6721>
+			["at23"] = <http://loinc.org/id/LA6722>
+			["at24"] = <http://loinc.org/id/LA6723>
+			["at25"] = <http://loinc.org/id/LA6724>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at11", "at12", "at13">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at7", "at8", "at9">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at15", "at16", "at17">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at19", "at20", "at21">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at23", "at24", "at25">
+		>
+	>

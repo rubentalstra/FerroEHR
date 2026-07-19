@@ -10,13 +10,11 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Root object of a linear history, i.e. time series structure. This is a generic class whose type parameter must be a descendant of `ITEM_STRUCTURE`, ensuring that each Event in the `_events_` of a given instance is of the same structural type, i.e. `ITEM_TREE`, `ITEM_LIST` etc.
 ///
 /// For a periodic series of events, period will be set, and the time of each Event in the History must correspond; i.e. the `EVENT._offset_` must be a multiple of period for each Event. Missing events in a period History are however allowed.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "HISTORY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct History<T> {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

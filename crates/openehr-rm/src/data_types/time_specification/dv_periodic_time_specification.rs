@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::data_types::encapsulated::dv_parsable::DvParsable;
-use openehr_derive::OpenEhrType;
 
 /// Specifies periodic points in time, linked to the calendar (phase-linked), or a real world repeating event, such as  breakfast  (event-linked). Based on the HL7v3 data types `PIVL<T>` and `EIVL<T>`.
 ///
 /// Used in therapeutic prescriptions, expressed as `INSTRUCTIONs` in the openEHR model.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_PERIODIC_TIME_SPECIFICATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvPeriodicTimeSpecification {
     // inherited: DV_TIME_SPECIFICATION
     /// The specification, in the HL7v3 syntax for `PIVL` or `EIVL` types.

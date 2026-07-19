@@ -3,11 +3,9 @@
 
 use crate::data_structures::item_structure::item_structure::ItemStructure;
 use openehr_base::prelude::LocatableRef;
-use openehr_derive::OpenEhrType;
 
 /// Used to record details of the Instruction causing an Action.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "INSTRUCTION_DETAILS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InstructionDetails {
     /// Reference to causing Instruction.
     pub instruction_id: LocatableRef,

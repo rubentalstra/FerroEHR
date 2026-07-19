@@ -1,19 +1,19 @@
 //! Hand-written RM class invariants for `EVALUATION`.
 //!
-//! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
+//! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,
 //! `Archetype_node_id_valid`). See `observation_impl` for the NOTE on the
 //! deferred terminology-bound `Entry` invariants.
 
 use crate::composition::content::entry::evaluation::Evaluation;
-use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Evaluation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_entry_root_invariants(
-            out,
+        crate::validate::generated::entry_root_core(
             "EVALUATION",
             self.archetype_details.is_some(),
             &self.archetype_node_id,
+            out,
         );
     }
 }
@@ -107,7 +107,7 @@ mod tests {
         assert!(
             e.invariants()
                 .iter()
-                .any(|m| m.message == "Invariant Is_archetypeRoot failed on type EVALUATION")
+                .any(|m| m.message == "Invariant Is_archetype_root failed on type EVALUATION")
         );
     }
 }

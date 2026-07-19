@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::model_access::bmm_schema_descriptor::BmmSchemaDescriptor;
-use openehr_derive::OpenEhrType;
 
 /// Access to BMM models that have been loaded and validated from one or more schema sets.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_MODEL_ACCESS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmModelAccess {
     /// List of directories where all the schemas loaded here are found.
     pub schema_directories: Vec<String>,

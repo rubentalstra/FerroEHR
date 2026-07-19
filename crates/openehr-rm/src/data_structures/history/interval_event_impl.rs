@@ -19,7 +19,7 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::dv_ordered_impl::{
     SECONDS_IN_DAY, format_iso_date_time, iso_date_time_parts,
 };
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl<T> IntervalEvent<T> {
     /// RM `INTERVAL_EVENT.interval_start_time()`: the start time of the
@@ -50,7 +50,11 @@ impl<T> IntervalEvent<T> {
 
 impl<T> Validate for IntervalEvent<T> {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetype_node_id_valid(out, "INTERVAL_EVENT", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core(
+            "INTERVAL_EVENT",
+            &self.archetype_node_id,
+            out,
+        );
     }
 }
 

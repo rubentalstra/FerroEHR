@@ -34,9 +34,8 @@
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
 use http::{HeaderMap, HeaderValue, StatusCode, header};
-use serde::Serialize;
-use serde::de::DeserializeOwned;
 
+use openehr_its::json_codec::runtime::{FromJson, ToJson};
 use openehr_its::rest::runtime::ApiError;
 use openehr_its::xml::{FromXml, ToXml};
 
@@ -333,7 +332,7 @@ pub(crate) fn lenient_value(body: &Bytes) -> Result<serde_json::Value, ApiError>
 /// RM endpoint, Resources.md §Simplified Formats MUST).
 pub(crate) fn rm_value<T>(headers: &HeaderMap, body: &Bytes) -> Result<serde_json::Value, ApiError>
 where
-    T: FromXml + Serialize + DeserializeOwned,
+    T: FromXml + ToJson,
 {
     match content_type_format(headers) {
         Some(WireFormat::CanonicalJson) => parse_json(body),
@@ -341,9 +340,7 @@ where
             let xml = text_body(body)?;
             let value: T = openehr_its::xml::from_canonical_xml(&xml)
                 .map_err(|e| ApiError::BadRequest(format!("invalid canonical XML body: {e}")))?;
-            serde_json::to_value(&value).map_err(|e| {
-                ApiError::Internal(format!("re-encoding XML body to JSON failed: {e}"))
-            })
+            Ok(openehr_its::json::to_canonical_value(&value))
         }
         _ => Err(ApiError::UnsupportedMediaType(format!(
             "this operation accepts application/json or application/xml only, got {}",
@@ -358,7 +355,7 @@ pub(crate) fn optional_rm_value<T>(
     body: &Bytes,
 ) -> Result<Option<serde_json::Value>, ApiError>
 where
-    T: FromXml + Serialize + DeserializeOwned,
+    T: FromXml + ToJson,
 {
     if body.is_empty() {
         return Ok(None);
@@ -387,17 +384,33 @@ fn parse_json(body: &Bytes) -> Result<serde_json::Value, ApiError> {
 /// item tags, terminology/query results). If the client's `Accept` cannot be
 /// satisfied by canonical JSON, this returns `406` (those payloads have no
 /// spec-defined canonical-XML shape). Spec-typed RM objects use [`respond_rm`].
-pub(crate) fn respond<T: Serialize>(
+pub(crate) fn respond<T: serde::Serialize>(
     headers: &HeaderMap,
     status: StatusCode,
     value: &T,
 ) -> Response {
+    // `respond` serves JSON-only, non-RM payloads: a `serde_json::Value` the
+    // service already produced (already canonical), or an application DTO with
+    // its own serde. These are not RM spec types, so they serialize via serde
+    // (not the RM canonical codec — that path is `respond_rm`/`json_response`).
     match resolve_accept(
         headers,
         &[WireFormat::CanonicalJson],
         WireFormat::CanonicalJson,
     ) {
-        Some(_) => json_response(status, value),
+        Some(_) => match serde_json::to_string(value) {
+            Ok(json) => {
+                let mut resp = (status, json).into_response();
+                resp.headers_mut().insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static(APPLICATION_JSON),
+                );
+                resp
+            }
+            Err(e) => {
+                ApiError::Internal(format!("JSON serialization failed: {e}")).into_response_body()
+            }
+        },
         None => ApiError::NotAcceptable(
             "this response is available as application/json only".to_owned(),
         )
@@ -416,7 +429,7 @@ pub(crate) fn respond_rm<T>(
     root_tag: &str,
 ) -> Response
 where
-    T: DeserializeOwned + Serialize + ToXml,
+    T: FromJson + ToXml,
 {
     match resolve_accept(headers, CANONICAL, WireFormat::CanonicalJson) {
         Some(WireFormat::CanonicalJson) => json_response(status, value),
@@ -424,7 +437,7 @@ where
             if value.is_null() {
                 return empty(status);
             }
-            let typed: T = match serde_json::from_value(value.clone()) {
+            let typed: T = match openehr_its::json::from_canonical_value(value) {
                 Ok(t) => t,
                 Err(e) => {
                     return ApiError::Internal(format!(
@@ -619,7 +632,7 @@ pub(crate) fn write_rm<T>(
     root_tag: &str,
 ) -> Response
 where
-    T: DeserializeOwned + Serialize + ToXml,
+    T: FromJson + ToXml,
 {
     let uid = resp.meta.as_ref().map(|m| m.uid.clone());
     let mut out = if prefers_representation(headers) {
@@ -671,7 +684,7 @@ pub(crate) fn read_rm<T>(
     root_tag: &str,
 ) -> Response
 where
-    T: DeserializeOwned + Serialize + ToXml,
+    T: FromJson + ToXml,
 {
     let _ = (base_path, segment);
     let mut out = respond_rm::<T>(headers, StatusCode::OK, &resp.body, root_tag);
@@ -722,20 +735,15 @@ pub(crate) fn xml_body(status: StatusCode, xml: String) -> Response {
     resp
 }
 
-fn json_response<T: Serialize>(status: StatusCode, value: &T) -> Response {
-    match openehr_its::json::to_canonical_json(value) {
-        Ok(json) => {
-            let mut resp = (status, json).into_response();
-            resp.headers_mut().insert(
-                header::CONTENT_TYPE,
-                HeaderValue::from_static(APPLICATION_JSON),
-            );
-            resp
-        }
-        Err(e) => {
-            ApiError::Internal(format!("JSON serialization failed: {e}")).into_response_body()
-        }
-    }
+fn json_response<T: ToJson>(status: StatusCode, value: &T) -> Response {
+    // The native codec serializes canonical JSON infallibly.
+    let json = openehr_its::json::to_canonical_json(value);
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_JSON),
+    );
+    resp
 }
 
 /// Small helper so error rendering here reuses the crate's [`RestError`] body.
@@ -966,9 +974,10 @@ mod tests {
     fn rm_body_decodes_from_both_json_and_xml() {
         use openehr_rm::prelude::DvText;
 
-        let dv: DvText =
-            serde_json::from_value(serde_json::json!({"_type": "DV_TEXT", "value": "hello"}))
-                .expect("dv_text");
+        let dv: DvText = openehr_its::json::from_canonical_value(
+            &serde_json::json!({"_type": "DV_TEXT", "value": "hello"}),
+        )
+        .expect("dv_text");
 
         let xml = openehr_its::xml::to_canonical_xml(&dv, "value").expect("to xml");
         let mut xml_headers = HeaderMap::new();
@@ -979,7 +988,7 @@ mod tests {
         let from_xml = rm_value::<DvText>(&xml_headers, &Bytes::from(xml)).expect("xml decode");
         assert_eq!(from_xml["value"], "hello");
 
-        let json = serde_json::to_vec(&dv).expect("to json");
+        let json = openehr_its::json::to_canonical_json(&dv).into_bytes();
         let mut json_headers = HeaderMap::new();
         json_headers.insert(
             header::CONTENT_TYPE,

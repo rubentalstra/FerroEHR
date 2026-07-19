@@ -1,0 +1,79 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.use_node-occ_override.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.use_node_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"freshEHR Clinical Informatics, UK">
+		["email"] = <"ian@freshehr.com">
+		["date"] = <"2014-04-18">
+	>
+	copyright = <"openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test use node (C_COMPLEX_OBJECT_PROXY) that overrides its target's occurrences">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Laboratory test panel!
+		/items matches {
+			CLUSTER[id3] 
+			CLUSTER[id3.1] matches {	-- Cholesterol Result
+				items matches {
+					ELEMENT[id2.1] matches {	-- Cholesterol
+						value matches {
+							DV_QUANTITY[id0.1] matches {
+								property matches {[at0.1]}
+								magnitude matches {|>=0.0|}
+								units matches {"mmol/l"}
+							}
+						}
+					}
+					use_node ELEMENT[id2.2] /items[id3]/items[id4]	-- /items[id3]/items[id4]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Laboratory test panel!">
+				description = <"Laboratory test results as a single value or in a panel/battery format common to clinical pathology testing.!">
+			>
+			["id2.1"] = <
+				text = <"Cholesterol">
+				description = <"Actual value of the result.">
+			>
+			["id3.1"] = <
+				text = <"Cholesterol Result">
+				description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+			>
+			["at0.1"] = <
+				text = <"Concentration">
+				description = <"Concentration">
+			>
+			["id2.2"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.1"] = <http://openehr.org/id/119>
+		>
+	>

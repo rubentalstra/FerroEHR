@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::base_types::identification::object_id::ObjectId;
-use openehr_derive::OpenEhrType;
 
 /// Identifier for parties in a demographic or identity service. There are typically a number of subtypes of the `PARTY` class, including `PERSON`, `ORGANISATION`, etc. Abstract supertypes are allowed if the referenced object is of a type not known by the current implementation of this class (in other words, if the demographic model is changed by the addition of a new `PARTY` or `ACTOR` subtypes, valid `PARTY_REFs` can still be constructed to them).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "PARTY_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PartyRef {
     // inherited: OBJECT_REF
     /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic . These names are not yet standardised. Legal values for `_namespace_` are:

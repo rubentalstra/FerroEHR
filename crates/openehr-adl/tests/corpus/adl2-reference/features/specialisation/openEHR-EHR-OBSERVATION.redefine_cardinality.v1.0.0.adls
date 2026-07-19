@@ -1,0 +1,49 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.redefine_cardinality.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2008-08-11">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example showing narrowing of cardinality in specialised archetype. The narrower cardinality replaces the cardinality from the parent in the computed flat form.">
+			keywords = <"ADL", "test", "specialisation", "cardinality">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2008 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- specialised archetype
+		/data/events cardinality matches {2..8; ordered} 
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"specialised archetype">
+				description = <"">
+			>
+		>
+	>

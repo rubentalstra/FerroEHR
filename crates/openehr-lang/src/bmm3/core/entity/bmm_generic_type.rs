@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_generic_class::BmmGenericClass;
 use crate::bmm3::core::entity::bmm_type::BmmType;
-use openehr_derive::OpenEhrType;
 
 /// Type reference based on a generic class, e.g. 'HashTable <List <Packet>, String>'.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_GENERIC_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmGenericType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

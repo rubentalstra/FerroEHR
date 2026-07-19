@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::TerminologyId;
-use openehr_derive::OpenEhrType;
 
 /// A fully coordinated (i.e. all coordination has been performed) term from a terminology service (as distinct from a particular terminology).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "CODE_PHRASE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CodePhrase {
     /// Identifier of the distinct terminology from which the code_string (or its elements) was extracted.
     pub terminology_id: TerminologyId,

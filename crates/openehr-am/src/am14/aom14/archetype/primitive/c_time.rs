@@ -4,11 +4,9 @@
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Time;
 use openehr_base::prelude::ValidityKind;
-use openehr_derive::OpenEhrType;
 
 /// ISO 8601-compatible constraint on instances of Time. There is no validity flag for ‘hour’, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include “HH:??:xx” (time with optional minutes and seconds not allowed).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_TIME")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CTime {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<Iso8601Time>,

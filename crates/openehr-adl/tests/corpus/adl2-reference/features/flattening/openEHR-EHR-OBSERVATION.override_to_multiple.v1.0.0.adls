@@ -1,0 +1,134 @@
+﻿archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.override_to_multiple.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.flattening_parent_1.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["date"] = <"2009-05-06">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent of flattening example archetypes.">
+			keywords = <"ADL", "flattening", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- Tobacco Use
+		/data[id2]/events[id3]/data[id4]/items[id5]/value matches {
+			DV_CODED_TEXT[id20.1] matches {
+				defining_code matches {[at0.2]}
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items[id12]/value matches {
+			DV_CODED_TEXT[id21.1] matches {
+				defining_code matches {[ac0.1]}		-- (added by post-parse processor)
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items matches {
+			ELEMENT[id13.1] matches {	-- Number smoked
+				value matches {
+					DV_QUANTITY[id0.5] matches {
+						property matches {[at0.7]}
+						units matches {"/h", "/d", "/wk"}
+					}
+				}
+			}
+			ELEMENT[id13.2] matches {	-- Grams of tobacco
+				value matches {
+					DV_QUANTITY[id0.6] matches {
+						property matches {[at0.8]}
+						units matches {"gm/d", "gm/wk"}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.2"] = <
+				text = <"Tobacco">
+				description = <"Tobacco used">
+			>
+			["at0.3"] = <
+				text = <"Cigarettes - manufactured">
+				description = <"Commercial, manufactured cigarettes">
+			>
+			["at0.4"] = <
+				text = <"Cigarettes - roll-your-own">
+				description = <"Home-made, roll-your-own cigarettes">
+			>
+			["at0.5"] = <
+				text = <"Cigars">
+				description = <"Commercial cigars">
+			>
+			["at0.6"] = <
+				text = <"Pipe">
+				description = <"Tobacco smoked within a pipe">
+			>
+			["id1.1"] = <
+				text = <"Tobacco Use">
+				description = <"Archetype to record the actual use or consumption of a tobacco at the present time, a specific time or over a period of time. ">
+			>
+			["id13.1"] = <
+				text = <"Number smoked">
+				description = <"Number of units containing tobacco consumed eg cigarettes or cigars">
+			>
+			["id13.2"] = <
+				text = <"Grams of tobacco">
+				description = <"Weight of tobacco consumed eg in a pipe">
+			>
+			["ac0.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["ac0.2"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+			["at0.7"] = <
+				text = <"Frequency">
+				description = <"Frequency">
+			>
+			["at0.8"] = <
+				text = <"Flow rate, mass">
+				description = <"Flow rate, mass">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.7"] = <http://openehr.org/id/382>
+			["at0.8"] = <http://openehr.org/id/347>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.3", "at0.4", "at0.5", "at0.6">
+		>
+		["ac0.2"] = <
+			id = <"ac0.2">
+			members = <"at7", "at8", "at9", "at10">
+		>
+	>

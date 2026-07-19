@@ -2,17 +2,21 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_type::BmmType;
-use openehr_derive::OpenEhrType;
 
 /// Built-in meta-type representing the type of a tuple, i.e. an array of any number of other types. This includes both container and unitary types, since tuple instances represent concrete objects.
 ///
 /// Note that both open and closed generic parameters are allowed, as with any generic type, but open generic parameters are only valid within the scope of a generic class.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_TUPLE_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmTupleType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
     pub documentation: Option<String>,
     /// List of types of the items of the tuple, keyed by purpose in the tuple.
     pub item_types: std::collections::BTreeMap<String, BmmType>,
+}
+
+impl BmmTupleType {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Tuple";
 }

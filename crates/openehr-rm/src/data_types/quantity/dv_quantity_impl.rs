@@ -13,16 +13,16 @@
 
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::data_types::quantity::dv_quantity::DvQuantity;
-use crate::validate::{InvariantViolation, Validate, push_dv_amount_invariants};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for DvQuantity {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_dv_amount_invariants(
-            out,
+        crate::validate::generated::dv_amount_core(
             "DV_QUANTITY",
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+            out,
         );
         push_normal_range_consistency(
             out,
@@ -80,12 +80,12 @@ mod tests {
         q.accuracy = Some(101.0);
         assert!(
             messages(&q)
-                .contains(&"Invariant Accuracy_valid failed on type DV_QUANTITY".to_owned())
+                .contains(&"Invariant Accuracy_validity failed on type DV_QUANTITY".to_owned())
         );
         q.accuracy = Some(-1.0);
         assert!(
             messages(&q)
-                .contains(&"Invariant Accuracy_valid failed on type DV_QUANTITY".to_owned())
+                .contains(&"Invariant Accuracy_validity failed on type DV_QUANTITY".to_owned())
         );
     }
 

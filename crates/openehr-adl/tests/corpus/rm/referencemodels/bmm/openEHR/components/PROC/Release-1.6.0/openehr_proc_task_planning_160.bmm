@@ -1,0 +1,1518 @@
+-- 
+-- 	component:   openEHR Reference Model (RM)
+-- 	description: openEHR PROC component schema. This file format is based on the BMM specification
+--  				http://www.openehr.org/releases/BASE/latest/docs/bmm/bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/projects/SPECPR
+-- 	copyright:   Copyright (c) 2020 openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"proc_task_planning">
+rm_release = <"1.6.0">
+model_name = <"TASK_PLANNING">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.6.0.1">
+schema_lifecycle_state = <"development">
+schema_description = <"openEHR Release 1.6.0 Task Planning schema">
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_rm_ehr_1.1.0">
+	>
+	["2"] = <
+		id = <"openehr_rm_demographic_1.1.0">
+	>
+	["3"] = <
+		id = <"openehr_lang_1.0.0">
+	>
+>
+
+
+------------------------------------------------------
+-- packages - software structure
+------------------------------------------------------
+
+packages = <
+	["org.openehr.proc.task_planning"] = <
+		name = <"org.openehr.proc.task_planning">
+		classes = <"SYSTEM_CALL", "PARAMETER_MAPPING", "PARAMETER_DEF", "QUERY_CALL", "API_CALL",
+			"TASK_LIFECYCLE", "TIME_SPECIFIER", "CLOCK_TIME", "CUSTOMARY_TIME",  
+			"TEMPORAL_RELATION", "RESUME_TYPE", "PLAN_TIME_ORIGIN"
+		>
+		packages = <
+			["definition"] = <
+				name = <"definition">
+				classes = <
+					"WORK_PLAN", "TASK_PLAN", "TASK_PARTICIPATION", "PLAN_ITEM", "TASK_GROUP", "TASK", 
+					"DISPATCHABLE_TASK", "PERFORMABLE_TASK",
+
+					"PLAN_DATA_CONTEXT", "CONTEXT_VALUE", "CONTEXT_EXPRESSION", "CONTEXT_VARIABLE",
+					"BOOLEAN_CONTEXT_EXPRESSION", "CONTEXT_CONSTANT", "EXTERNAL_VARIABLE", "LOCAL_VARIABLE",
+					"EVENT_VARIABLE", "STATE_VARIABLE", "CONTINUOUS_EVENT_VARIABLE",
+
+					"PLAN_CALENDAR", "PLAN_TIMELINE", "CALENDAR_ENTRY", "TASK_REPEAT", "ORDER_REF",
+
+					"TASK_ACTION", "PERFORMABLE_ACTION", "DISPATCHABLE_ACTION", 
+					"DEFINED_ACTION", "SYSTEM_REQUEST", "EXTERNAL_REQUEST", "LINKED_PLAN", "HAND_OFF", "SUB_PLAN", 
+					"DATASET_SPEC", "CAPTURE_DATASET_SPEC", "REVIEW_DATASET_SPEC", "DATASET_COMMIT_GROUP",
+					"RESOURCE_PARTICIPATION",
+
+					"CHOICE_GROUP", "CHOICE_BRANCH", "ADHOC_GROUP", "ADHOC_BRANCH", "OVERRIDE_TYPE",
+					"CONDITION_GROUP", "CONDITION_BRANCH", "DECISION_GROUP", "DECISION_BRANCH", "EVENT_GROUP", "EVENT_BRANCH", 
+
+					"SUBJECT_PRECONDITION", "TASK_COSTING", "EXECUTION_TYPE",
+
+					"TASK_WAIT", "TIMELINE_MOMENT", "MANUAL_NOTIFICATION", "SYSTEM_NOTIFICATION", "TASK_TRANSITION",
+					"EVENT", "PLAN_EVENT", "TIMER_EVENT", "CALENDAR_EVENT", "STATE_TRIGGER",
+					"REMINDER", "TIMER_WAIT", "EVENT_WAIT", "EVENT_ACTION", "RESUME_ACTION", "CALLBACK_WAIT", "CALLBACK_NOTIFICATION"
+				> 
+			>
+			["history"] = <
+				name = <"history">
+				classes = <
+					"TASK_PLAN_EXECUTION_HISTORY"
+				>
+			>
+		> 
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	--
+	--------------------- task_planning ------------------
+	--
+
+	["RESUME_TYPE"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"RESUME_TYPE">
+		ancestors = <"Integer">
+		item_names = <"resume_specified", "retry_current_group", "new_thread">
+	>
+
+	["TEMPORAL_RELATION"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"TEMPORAL_RELATION">
+		ancestors = <"Integer">
+		item_names = <"before", "with", "after">
+	>
+
+	["TASK_LIFECYCLE"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"TASK_LIFECYCLE">
+		ancestors = <"Integer">
+		item_names = <"planned", "available", "cancelled", "abandoned", "underway", "suspended", "completed">
+		item_values = <0, 1, 2, 4, 5, 6, 8>
+	>
+
+	["PLAN_TIME_ORIGIN"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"PLAN_TIME_ORIGIN">
+		ancestors = <"Integer">
+		item_names = <"current_work_plan", "current_task_plan", "inner_repeat_section", "outer_repeat_section">
+		item_values = <0, 1, 2, 3>
+	>
+
+	["SYSTEM_CALL"] = <
+		name = <"SYSTEM_CALL">
+		is_abstract = <True>		
+		properties = <
+			["call_name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"call_name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["system_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"system_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["parameter_map"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"parameter_map">
+				type_def = <
+					container_type = <"List">
+					type = <"PARAMETER_MAPPING">
+				>
+			>
+			["bound_parameters"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"bound_parameters">
+				type_def = <
+					container_type = <"List">
+					type = <"PARAMETER_DEF">
+				>
+			>
+		>
+	>
+
+	["PARAMETER_DEF"] = <
+		name = <"PARAMETER_DEF">
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"EXPR_TYPE_DEF">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Any">
+				is_mandatory = <True>
+			>
+		>
+	>
+	
+	["PARAMETER_MAPPING"] = <
+		name = <"PARAMETER_MAPPING">
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["context_name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"context_name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	
+	["QUERY_CALL"] = <
+		name = <"QUERY_CALL">
+		ancestors = <"SYSTEM_CALL">
+		properties = <
+			["query_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"query_id">
+				type = <"String">
+			>
+			["query_text"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"query_text">
+				type = <"String">
+			>
+		>
+	>
+	
+	["API_CALL"] = <
+		name = <"API_CALL">
+		ancestors = <"SYSTEM_CALL">
+	>
+	
+	--
+	--------------------- Plan Context ------------------
+	--
+
+	["PLAN_DATA_CONTEXT"] = <
+		name = <"PLAN_DATA_CONTEXT">
+		properties = <
+			["expressions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"expressions">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"CONTEXT_EXPRESSION">
+						generic_parameters = <"EXPR_TYPE_DEF">
+					>
+				>
+			>
+			["variables"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"variables">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"CONTEXT_VARIABLE">
+						generic_parameters = <"EXPR_TYPE_DEF">
+					>
+				>
+			>
+			["constants"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"constants">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"CONTEXT_CONSTANT">
+						generic_parameters = <"EXPR_TYPE_DEF">
+					>
+				>
+			>
+		>
+	>
+
+	["CONTEXT_VALUE"] = <
+		name = <"CONTEXT_VALUE">
+		is_abstract = <True>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"type">
+				type = <"T">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["CONTEXT_VARIABLE"] = <
+		name = <"CONTEXT_VARIABLE">
+		ancestors = <"CONTEXT_VALUE">
+		is_abstract = <True>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+	>
+
+	["CONTEXT_EXPRESSION"] = <
+		name = <"CONTEXT_EXPRESSION">
+		ancestors = <"CONTEXT_VALUE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+		properties = <
+			["expression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expression">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["BOOLEAN_CONTEXT_EXPRESSION"] = <
+		name = <"BOOLEAN_CONTEXT_EXPRESSION">
+		ancestor_defs = <
+			["CONTEXT_EXPRESSION<TIMER_EVENT>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"CONTEXT_EXPRESSION">
+				generic_parameters = <"TYPE_DEF_BOOLEAN">
+			>
+		>
+	>
+
+	["STATE_VARIABLE"] = <
+		name = <"STATE_VARIABLE">
+		ancestors = <"EXTERNAL_VARIABLE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+		properties = <
+			["required_currency"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"required_currency">
+				type = <"Iso8601_duration">
+			>
+		>
+	>
+
+	["EXTERNAL_VARIABLE"] = <
+		name = <"EXTERNAL_VARIABLE">
+		ancestors = <"CONTEXT_VARIABLE">
+		is_abstract = <True>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+		properties = <
+			["populating_request"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"populating_request">
+				type = <"SYSTEM_CALL">
+			>
+		>
+	>
+
+	["EVENT_VARIABLE"] = <
+		name = <"EVENT_VARIABLE">
+		ancestors = <"EXTERNAL_VARIABLE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+	>
+
+	["LOCAL_VARIABLE"] = <
+		name = <"LOCAL_VARIABLE">
+		ancestors = <"CONTEXT_VARIABLE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+	>
+
+	["CONTINUOUS_EVENT_VARIABLE"] = <
+		name = <"CONTINUOUS_EVENT_VARIABLE">
+		ancestors = <"EVENT_VARIABLE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+		properties = <
+			["update_variation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"update_variation">
+				type = <"Real">
+			>
+		>
+	>
+
+	["CONTEXT_CONSTANT"] = <
+		name = <"CONTEXT_CONSTANT">
+		ancestors = <"CONTEXT_VALUE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"EXPR_TYPE_DEF">
+			>
+		>
+	>
+
+	--
+	--------------------- definition / main ------------------
+	--
+	["WORK_PLAN"] = <
+		name = <"WORK_PLAN">
+		ancestors = <"CONTENT_ITEM", "AUTHORED_RESOURCE">
+		properties = <
+			["care_plan"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"care_plan">
+				type = <"LOCATABLE_REF">
+			>
+			["care_pathway"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"care_pathway">
+				type = <"ITEM_STRUCTURE">
+			>
+			["order_list"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"order_list">
+				type_def = <
+					container_type = <"List">
+					type = <"ORDER_REF">
+				>
+				cardinality = <|>=0|>
+			>
+			["calendar"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"calendar">
+				type = <"PLAN_CALENDAR">
+				is_mandatory = <True>
+			>
+			["timeline"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timeline">
+				type = <"PLAN_TIMELINE">
+				is_mandatory = <True>
+			>
+			["plans"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"plans">
+				type_def = <
+					container_type = <"List">
+					type = <"UID_BASED_ID">
+				>
+				cardinality = <|>=1|>
+			>
+			["event_wait_states"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"event_wait_states">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"EVENT_WAIT">
+						generic_parameters = <"EVENT">
+					>
+				>
+			>
+			["top_level_plans"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"top_level_plans">
+				type_def = <
+					container_type = <"List">
+					type = <"TASK_PLAN">
+				>
+				cardinality = <|>=1|>
+			>
+			["indications"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"indications">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["classification"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"classification">
+				type = <"ITEM_STRUCTURE">
+			>
+			["context"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"context">
+				type = <"PLAN_DATA_CONTEXT">
+			>
+		>
+	>
+
+	["TASK_PLAN"] = <
+		name = <"TASK_PLAN">
+		ancestors = <"CONTENT_ITEM">
+		properties = <
+			["subject"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject">
+				type = <"PARTY_PROXY">
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["guideline"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"guideline">
+				type = <"ITEM_STRUCTURE">
+			>
+			["best_practice_ref"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"best_practice_ref">
+				type = <"DV_URI">
+			>
+			["definition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"definition">
+				type = <"TASK_GROUP">
+				is_mandatory = <True>
+			>
+			["principal_performer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"principal_performer">
+				type = <"TASK_PARTICIPATION">
+			>
+			["order_set_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"order_set_type">
+				type = <"DV_IDENTIFIER">
+			>
+			["order_set_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"order_set_id">
+				type = <"DV_IDENTIFIER">
+			>
+			["due_time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"due_time">
+				type = <"Iso8601_duration">
+			>
+			["expiry_time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expiry_time">
+				type = <"Iso8601_duration">
+			>
+			["indications"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"indications">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["execution_history"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"execution_history">
+				type = <"TASK_PLAN_EXECUTION_HISTORY">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["PLAN_CALENDAR"] = <
+		name = <"PLAN_CALENDAR">
+		properties = <
+			["entries"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"entries">
+				type_def = <
+					container_type = <"List">
+					type = <"CALENDAR_ENTRY">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CALENDAR_ENTRY"] = <
+		name = <"CALENDAR_ENTRY">
+	>
+
+	["PLAN_TIMELINE"] = <
+		name = <"PLAN_TIMELINE">
+		properties = <
+			["planned_items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"planned_items">
+				type_def = <
+					container_type = <"List">
+					type = <"PLAN_ITEM">
+				>
+				cardinality = <|>=0|>
+			>
+			["timers"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"timers">
+				type_def = <
+					container_type = <"List">
+					type = <"TIMER_WAIT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ORDER_REF"] = <
+		name = <"ORDER_REF">
+		ancestors = <"LOCATABLE">
+		properties = <
+			["order_tag"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"order_tag">
+				type = <"String">
+			>
+			["order_ref"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"order_ref">
+				type = <"LOCATABLE_REF">
+			>
+			["instruction_archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"instruction_archetype_id">
+				type = <"String">
+			>
+			["action_archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"action_archetype_id">
+				type = <"String">
+			>
+		>
+	>
+
+	["TASK_PARTICIPATION"] = <
+		name = <"TASK_PARTICIPATION">
+		properties = <
+			["function"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"function">
+				type = <"DV_TEXT">
+			>
+			["role"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"role">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["mode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mode">
+				type = <"DV_CODED_TEXT">
+			>
+			["performer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"performer">
+				type = <"PARTY_PROXY">
+			>
+			["optionality"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"optionality">
+				type = <"VALIDITY_KIND">
+			>
+		>
+	>
+
+	["PLAN_ITEM"] = <
+		name = <"PLAN_ITEM">
+		ancestors = <"LOCATABLE">
+		is_abstract = <True>
+		properties = <
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["repeat_spec"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"repeat_spec">
+				type = <"TASK_REPEAT">
+			>
+			["wait_spec"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"wait_spec">
+				type = <"TASK_WAIT">
+			>
+			["review_dataset"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"review_dataset">
+				type_def = <
+					container_type = <"List">
+					type = <"REVIEW_DATASET_SPEC">
+				>
+				cardinality = <|>=0|>
+			>
+			["reminders"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"reminders">
+				type_def = <
+					container_type = <"List">
+					type = <"REMINDER">
+				>
+				cardinality = <|>=0|>
+			>
+			["classification"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"classification">
+				type = <"ITEM_STRUCTURE">
+			>
+			["guideline_step"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"guideline_step">
+				type = <"String">
+			>
+			["other_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	["TASK_REPEAT"] = <
+		name = <"TASK_REPEAT">
+		properties = <
+			["repeats"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"repeats">
+				type_def = <
+					root_type = <"Interval">
+					generic_parameters = <"Integer">
+				>
+			>
+			["terminate_condition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"terminate_condition">
+				type = <"PLAN_EVENT">
+			>
+            ["period"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"period">
+				type = <"Iso8601_duration">
+			>
+		>
+	>
+
+	["TASK_GROUP"] = <
+		name = <"TASK_GROUP">
+		ancestors = <"PLAN_ITEM">
+		properties = <
+			["execution_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"execution_type">
+				type = <"EXECUTION_TYPE">
+			>
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					container_type = <"List">
+					type = <"PLAN_ITEM">
+				>
+				cardinality = <|>=0|>
+			>
+			["training_level"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"training_level">
+				type = <"Integer">
+			>
+		>
+	>
+
+	["EXECUTION_TYPE"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"EXECUTION_TYPE">
+		ancestors = <"Integer">
+		item_names = <"sequential", "parallel">
+	>
+
+	["TASK"] = <
+		name = <"TASK">
+		ancestors = <"PLAN_ITEM">
+		is_abstract = <True>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"TASK_ACTION">
+			>
+		>
+		properties = <
+			["action"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"action">
+				type = <"T">
+				is_mandatory = <True>
+			>
+			["order_tags"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"order_tags">
+				type_def = <
+					container_type = <"List">
+					type = <"String">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["DISPATCHABLE_TASK"] = <
+		name = <"DISPATCHABLE_TASK">
+		ancestors = <"TASK">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"DISPATCHABLE_ACTION">
+			>
+		>
+		properties = <
+			["wait"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"wait">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["callback"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"callback">
+				type = <"CALLBACK_WAIT">
+			>
+		>
+	>
+
+	["PERFORMABLE_TASK"] = <
+		name = <"PERFORMABLE_TASK">
+		ancestors = <"TASK">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"PERFORMABLE_ACTION">
+			>
+		>
+		properties = <
+			["capture_dataset"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"capture_dataset">
+				type_def = <
+					container_type = <"List">
+					type = <"CAPTURE_DATASET_SPEC">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	--
+	--------------------- Actions ------------------
+	--
+
+	["TASK_ACTION"] = <
+		name = <"TASK_ACTION">
+		ancestors = <"LOCATABLE">
+		is_abstract = <True>
+		properties = <
+			["subject_preconditions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"subject_preconditions">
+				type_def = <
+					container_type = <"List">
+					type = <"SUBJECT_PRECONDITION">
+				>
+				cardinality = <|>=0|>
+			>
+			["costing_data"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"costing_data">
+				type = <"TASK_COSTING">
+			>
+			["instruction_activity"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"instruction_activity">
+				type = <"LOCATABLE_REF">
+			>
+		>
+	>
+
+	["DISPATCHABLE_ACTION"] = <
+		name = <"DISPATCHABLE_ACTION">
+		ancestors = <"TASK_ACTION">
+		is_abstract = <True>
+	>
+
+	["PERFORMABLE_ACTION"] = <
+		name = <"PERFORMABLE_ACTION">
+		ancestors = <"TASK_ACTION">
+		is_abstract = <True>
+		properties = <
+			["other_participations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"other_participations">
+				type_def = <
+					container_type = <"List">
+					type = <"TASK_PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["resources"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"resources">
+				type_def = <
+					container_type = <"List">
+					type = <"RESOURCE_PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["RESOURCE_PARTICIPATION"] = <
+		name = <"RESOURCE_PARTICIPATION">
+		properties = <
+			["resource_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"resource_type">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["external_ref"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"external_ref">
+				type = <"OBJECT_REF">
+			>
+		>
+	>
+
+	["SUBJECT_PRECONDITION"] = <
+		name = <"SUBJECT_PRECONDITION">
+		properties = <
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["expression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expression">
+				type = <"BOOLEAN_CONTEXT_EXPRESSION">
+			>
+		>
+	>
+
+	["EXTERNAL_REQUEST"] = <
+		name = <"EXTERNAL_REQUEST">
+		ancestors = <"DISPATCHABLE_ACTION">
+		properties = <
+			["organisation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"organisation">
+				type = <"PARTY_PROXY">
+				is_mandatory = <True>
+			>
+			["request_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"request_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["other_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	["DEFINED_ACTION"] = <
+		name = <"DEFINED_ACTION">
+		ancestors = <"PERFORMABLE_ACTION">
+		properties = <
+			["prototype"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"prototype">
+				type_def = <
+					container_type = <"List">
+					type = <"ENTRY">
+				>
+				cardinality = <|>=0|>
+			>
+			["optionality"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"optionality">
+				type = <"VALIDITY_KIND">
+			>
+		>
+	>
+
+	["SYSTEM_REQUEST"] = <
+		name = <"SYSTEM_REQUEST">
+		ancestors = <"DISPATCHABLE_ACTION">
+		properties = <
+			["system_call"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"system_call">
+				type = <"SYSTEM_CALL">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["DATASET_SPEC"] = <
+		name = <"DATASET_SPEC">
+		ancestors = <"LOCATABLE">
+		properties = <
+			["form_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"form_id">
+				type = <"String">
+			>
+			["template_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"template_id">
+				type = <"String">
+			>
+			["populating_call"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"populating_call">
+				type = <"SYSTEM_CALL">
+            >
+			["form_section_path"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"form_section_path">
+				type = <"String">
+            >
+			["other_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	["CAPTURE_DATASET_SPEC"] = <
+		name = <"CAPTURE_DATASET_SPEC">
+		ancestors = <"DATASET_SPEC">
+		properties = <
+			["commit_group"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"commit_group">
+				type = <"DATASET_COMMIT_GROUP">
+			>
+		>
+	>
+
+	["DATASET_COMMIT_GROUP"] = <
+		name = <"DATASET_COMMIT_GROUP">
+		properties = <
+			["group_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"group_id">
+				type = <"String">
+			>
+			["completion_step"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"completion_step">
+				type = <"Boolean">
+			>
+		>
+	>
+
+	["REVIEW_DATASET_SPEC"] = <
+		name = <"REVIEW_DATASET_SPEC">
+		ancestors = <"DATASET_SPEC">
+		properties = <
+			["capture_datasets"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"capture_datasets">
+				type_def = <
+					container_type = <"List">
+					type = <"CAPTURE_DATASET_SPEC">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["LINKED_PLAN"] = <
+		name = <"LINKED_PLAN">
+		is_abstract = <True>
+		properties = <
+			["target"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"target">
+				type = <"TASK_PLAN">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["HAND_OFF"] = <
+		name = <"HAND_OFF">
+		ancestors = <"LINKED_PLAN", "DISPATCHABLE_ACTION">
+	>
+
+	["SUB_PLAN"] = <
+		name = <"SUB_PLAN">
+		ancestors = <"LINKED_PLAN", "PERFORMABLE_ACTION">
+	>
+
+	["TASK_COSTING"] = <
+		name = <"TASK_COSTING">
+	>
+
+	--
+	--------------------- Conditionals ------------------
+	--
+	
+	["CHOICE_GROUP"] = <
+		name = <"CHOICE_GROUP">
+		is_abstract = <True>
+		ancestors = <"TASK_GROUP">
+		properties = <
+			["override_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"override_type">
+				type = <"OVERRIDE_TYPE">
+			>
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					container_type = <"List">
+					type = <"CHOICE_BRANCH">
+				>
+				cardinality = <|>=0|>
+			>
+			["timeout"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timeout">
+				type = <"TIMER_WAIT">
+			>
+		>
+	>
+
+	["OVERRIDE_TYPE"] = (P_BMM_ENUMERATION_INTEGER) <
+		name = <"OVERRIDE_TYPE">
+		ancestors = <"Integer">
+		item_names = <"allowed", "allowed_with_reason", "prohibited">
+	>
+
+	["CHOICE_BRANCH"] = <
+		name = <"CHOICE_BRANCH">
+		ancestors = <"TASK_GROUP">
+		is_abstract = <True>
+	>
+
+	["ADHOC_GROUP"] = <
+		name = <"ADHOC_GROUP">
+		ancestors = <"CHOICE_GROUP">
+		properties = <
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					container_type = <"List">
+					type = <"ADHOC_BRANCH">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ADHOC_BRANCH"] = <
+		name = <"ADHOC_BRANCH">
+		ancestors = <"CHOICE_BRANCH">
+	>
+
+	["CONDITION_GROUP"] = <
+		name = <"CONDITION_GROUP">
+		ancestors = <"CHOICE_GROUP">
+		properties = <
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					container_type = <"List">
+					type = <"CONDITION_BRANCH">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["CONDITION_BRANCH"] = <
+		name = <"CONDITION_BRANCH">
+		ancestors = <"CHOICE_BRANCH">
+		properties = <
+			["test"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"test">
+				type = <"BOOLEAN_CONTEXT_EXPRESSION">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["DECISION_GROUP"] = <
+		name = <"DECISION_GROUP">
+		ancestors = <"CHOICE_GROUP">
+		properties = <
+			["test"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"test">
+				type_def = <
+					root_type = <"CONTEXT_EXPRESSION">
+					generic_parameters = <"EXPR_TYPE_DEF">
+				>
+				is_mandatory = <True>
+			>
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					container_type = <"List">
+					type = <"DECISION_BRANCH">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["DECISION_BRANCH"] = <
+		name = <"DECISION_BRANCH">
+		ancestors = <"CHOICE_BRANCH">
+		properties = <
+			["value_constraint"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value_constraint">
+				type = <"BOOLEAN_CONTEXT_EXPRESSION">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["EVENT_GROUP"] = <
+		name = <"EVENT_GROUP">
+		ancestors = <"CHOICE_GROUP">
+		properties = <
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					container_type = <"List">
+					type = <"EVENT_BRANCH">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["EVENT_BRANCH"] = <
+		name = <"EVENT_BRANCH">
+		ancestors = <"CHOICE_BRANCH">
+	>
+
+	--
+	--------------------- Events ------------------
+	--
+
+	["TASK_WAIT"] = <
+		name = <"TASK_WAIT">
+		properties = <
+			["events"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"events">
+				type_def = <
+					container_type = <"List">
+					type = <"PLAN_EVENT">
+				>
+				cardinality = <|>=0|>
+			>
+			["event_relation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"event_relation">
+				type = <"TEMPORAL_RELATION">
+			>
+			["timeout"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timeout">
+				type = <"TIMER_WAIT">
+			>
+			["next_state"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"next_state">
+				type = <"TASK_LIFECYCLE">
+			>
+		>
+	>
+
+	["EVENT"] = <
+		name = <"EVENT">
+		ancestors = <"LOCATABLE">
+		is_abstract = <True>
+	>
+
+	["PLAN_EVENT"] = <
+		name = <"PLAN_EVENT">
+		ancestors = <"EVENT">
+		is_abstract = <True>
+		properties = <
+			["delay"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"delay">
+				type = <"Iso8601_duration">
+			>
+			["other_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	["TIMELINE_MOMENT"] = <
+		name = <"TIMELINE_MOMENT">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["timeline_offset"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timeline_offset">
+				type = <"Iso8601_duration">
+			>
+			["fixed_time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fixed_time">
+				type = <"TIME_SPECIFIER">
+			>
+			["timeline_origin"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timeline_origin">
+				type = <"PLAN_TIME_ORIGIN">
+			>
+		>
+	>
+
+	["SYSTEM_NOTIFICATION"] = <
+		name = <"SYSTEM_NOTIFICATION">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["system_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"system_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["notification_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"notification_type">
+				type = <"String">
+			>
+			["reference_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reference_id">
+				type = <"String">
+			>
+		>
+	>
+
+	["CALLBACK_NOTIFICATION"] = <
+		name = <"CALLBACK_NOTIFICATION">
+		ancestors = <"EVENT">
+		properties = <
+			["task_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"task_id">
+				type = <"UID_BASED_ID">
+				is_mandatory = <True>
+			>
+			["request_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"request_id">
+				type = <"String">
+			>
+		>
+	>
+
+	["MANUAL_NOTIFICATION"] = <
+		name = <"MANUAL_NOTIFICATION">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TASK_TRANSITION"] = <
+		name = <"TASK_TRANSITION">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["task_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"task_id">
+				type = <"UID_BASED_ID">
+				is_mandatory = <True>
+			>
+			["transitions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"transitions">
+				type_def = <
+					container_type = <"List">
+					type = <"TASK_LIFECYCLE">
+				>
+				cardinality = <|>=1|>
+			>
+		>
+	>
+
+	["EVENT_WAIT"] = <
+		name = <"EVENT_WAIT">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"PLAN_EVENT">
+			>
+		>
+		properties = <
+			["event"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"event">
+				type = <"T">
+				is_mandatory = <True>
+			>
+			["timeout"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timeout">
+				type = <"TIMER_WAIT">
+			>
+			["success_action"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"success_action">
+				type = <"EVENT_ACTION">
+			>
+		>
+	>
+
+	["STATE_TRIGGER"] = <
+		name = <"STATE_TRIGGER">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["expression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expression">
+				type = <"BOOLEAN_CONTEXT_EXPRESSION">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TIMER_EVENT"] = <
+		name = <"TIMER_EVENT">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["duration"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration">
+				type = <"Iso8601_duration">
+				is_mandatory = <True>
+			>
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"purpose">
+				type = <"String">
+			>
+		>
+	>
+
+	["REMINDER"] = <
+		name = <"REMINDER">
+		ancestors = <"EVENT_WAIT">
+	>
+
+	["TIMER_WAIT"] = <
+		name = <"TIMER_WAIT">
+		ancestor_defs = <
+			["EVENT_WAIT<TIMER_EVENT>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"EVENT_WAIT">
+				generic_parameters = <"TIMER_EVENT">
+			>
+		>
+	>
+
+	["CALLBACK_WAIT"] = <
+		name = <"CALLBACK_WAIT">
+		ancestor_defs = <
+			["EVENT_WAIT<CALLBACK_NOTIFICATION>"] = (P_BMM_GENERIC_TYPE) <
+				root_type = <"EVENT_WAIT">
+				generic_parameters = <"CALLBACK_NOTIFICATION">
+			>
+		>
+		properties = <
+			["fail_action"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fail_action">
+				type = <"EVENT_ACTION">
+			>
+			["custom_actions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"custom_actions">
+				type_def = <
+					container_type = <"List">
+					type = <"EVENT_ACTION">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["EVENT_ACTION"] = <
+		name = <"EVENT_ACTION">
+		properties = <
+			["system_call"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"system_call">
+				type_def = <
+					container_type = <"List">
+					type = <"SYSTEM_CALL">
+				>
+				cardinality = <|>=0|>
+			>
+			["resume_action"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"resume_action">
+				type = <"RESUME_ACTION">
+			>
+			["message"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"message">
+				type = <"DV_TEXT">
+			>
+			["receiver_thread_next_state"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"receiver_thread_next_state">
+				type = <"TASK_LIFECYCLE">
+			>
+		>
+	>
+
+	["CALENDAR_EVENT"] = <
+		name = <"CALENDAR_EVENT">
+		ancestors = <"PLAN_EVENT">
+		properties = <
+			["entry_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"entry_id">
+				type = <"UID_BASED_ID">
+			>
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"Iso8601_date_time">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["RESUME_ACTION"] = <
+		name = <"RESUME_ACTION">
+		properties = <
+			["resume_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"resume_type">
+				type = <"RESUME_TYPE">
+				is_mandatory = <True>
+			>
+			["resume_location"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"resume_location">
+				type = <"UID_BASED_ID">
+			>
+		>
+	>
+
+
+	--
+	--------------------- Time specification ------------------
+	--
+
+	["TIME_SPECIFIER"] = <
+		name = <"TIME_SPECIFIER">
+		is_abstract = <True>
+	>
+
+	["CLOCK_TIME"] = <
+		name = <"CLOCK_TIME">
+		ancestors = <"TIME_SPECIFIER">
+		properties = <
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"Iso8601_time">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["CUSTOMARY_TIME"] = <
+		name = <"CUSTOMARY_TIME">
+		ancestors = <"TIME_SPECIFIER">
+		properties = <
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	--
+	--------------------- history ------------------
+	--
+
+	["TASK_PLAN_EXECUTION_HISTORY"] = <
+		name = <"TASK_PLAN_EXECUTION_HISTORY">
+	>
+
+>

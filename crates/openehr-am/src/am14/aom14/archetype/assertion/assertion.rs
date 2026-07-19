@@ -3,11 +3,9 @@
 
 use crate::am14::aom14::archetype::assertion::assertion_variable::AssertionVariable;
 use crate::am14::aom14::archetype::assertion::expr_item::ExprItem;
-use openehr_derive::OpenEhrType;
 
 /// Structural model of a typed first order predicate logic assertion, in the form of an expression tree, including optional variable definitions.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ASSERTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assertion {
     /// Expression tag, used for differentiating multiple assertions.
     pub tag: Option<String>,

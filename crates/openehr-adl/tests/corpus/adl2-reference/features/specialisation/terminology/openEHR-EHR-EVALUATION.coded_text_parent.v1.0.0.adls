@@ -1,0 +1,60 @@
+﻿archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.coded_text_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2017-02-20">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Archetype containing a DV_CODED_TEXT.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2013 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	EVALUATION[id1] matches {	-- General statement of exclusions or states
+		data matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] occurrences matches {1..*} matches {	-- Statement
+						value matches {
+							DV_CODED_TEXT[id4]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"General statement of exclusions or states">
+				description = <"A category of conditions or states which have been excluded">
+			>
+			["id3"] = <
+				text = <"Statement">
+				description = <"The statement about what is excluded">
+			>
+		>
+	>

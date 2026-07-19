@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_unitary_type::BmmUnitaryType;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type of for properties of unitary type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_UNITARY_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmUnitaryProperty {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

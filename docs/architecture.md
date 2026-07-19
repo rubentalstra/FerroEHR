@@ -35,7 +35,7 @@ chapter, concrete methods).
   1.3.0), `openehr-rm` (RM 1.2.0 — the domain model everything consumes),
   `openehr-am` (AM 1.4 + 2.4, as `am14`/`am24`), `openehr-term` (TERM data
   classes + hand-written bundle/assets), `openehr-lang` (BMM/P_BMM model).
-- **Canonical JSON** — `#[derive(OpenEhrType)]` (`openehr-derive`) puts `_type`
+- **Canonical JSON** — the native `ToJson`/`FromJson` codec (`emit-json`) puts `_type`
   self-tagging on every type; `openehr-its::json` is the entry points +
   ITS-JSON schema validation.
 - **Canonical XML** (`emit-xml`) — generated `ToXml`/`FromXml` over a
@@ -46,6 +46,26 @@ chapter, concrete methods).
   (`openehr-its`); the application implements the traits.
 - **AQL front end** — hand-written `logos`+`chumsky` lexer/parser/AST
   (`openehr-query`), corpus-validated.
+- **RM invariants** (`emit-validate`) — the BMM's invariant expressions are
+  machine-classified (a pinned total tripartition) and the mechanical ones
+  emitted as generated cores in `openehr-rm/src/validate/generated.rs` —
+  the single source both the typed and fast validation paths call;
+  terminology-backed invariants enforce at the `openehr-its` dispatcher
+  against the `openehr-term` bundle; the aggregate exclusions carry
+  citation-pinned adjudications in the generated register.
+
+The generator (`tools/openehr-codegen`) is a four-stage pipeline — load
+(vendored inputs verbatim) → analyze (merged include-closures, polymorphic
+seams, ownership graph + back-reference cycle breaking, constructibility
+proof, enumerations/constants/invariants) → plan (per-class emission
+decisions + the declarative, spec-cited decision maps) → render (the only
+text-producing stage). Emitter invariants (completeness — nothing a loaded
+schema declares is silently dropped —, constructibility, byte-determinism,
+source-package mirroring, closure correctness) are themselves a test suite.
+**The spec types carry no serde**: canonical JSON is the emitted native
+codec over a small hand-written runtime (the same shape as the XML codec);
+the wire contract (`_type`-first, BMM field order, RM number typing,
+tolerant reads) is pinned by the canonical-output contract gate.
 
 Fidelity is proven by gates (`openehr-its/tests/`); a `codegen-drift` CI job
 regenerates everything and fails on any diff.
@@ -122,8 +142,9 @@ Three physical directories (consolidated 2026-07-16):
 `EhrbaseService` directly), and `ehrbase-server` (the wiring-only binary; the
 bin is still named `ehrbase`); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`conformance` — the
-ECC runner, `benchmark`, `testkit` — the shared test-database harness); **`crates/*`** holds the generated openEHR spec
-layer + its tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root
+ECC runner, `benchmark`, `testkit` — the shared test-database harness, and
+`openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
+generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
 `ehrbase-server → {ehrbase-rest, ehrbase}`, `ehrbase-rest → ehrbase`,
 `app/* → crates/openehr-*`. The former `ehrbase-sm` trait catalog is deleted:
@@ -164,7 +185,6 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-query` | AQL 1.1 lexer + parser + AST | hand-written |
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
-| `openehr-derive` | `#[derive(OpenEhrType)]` proc-macro | tooling |
 | `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
 | `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
 | `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |

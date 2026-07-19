@@ -2,51 +2,63 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::support::terminology::terminology_service::TerminologyService;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// List of identifiers for groups in the openEHR terminology.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OpenehrTerminologyGroupIdentifiersData {}
+
+impl OpenehrTerminologyGroupIdentifiersData {
+    /// Name of openEHR's own terminology.
+    /// BMM constant `Terminology_id_openehr`.
+    pub const TERMINOLOGY_ID_OPENEHR: &'static str = "openehr";
+
+    /// BMM constant `Group_id_audit_change_type`.
+    pub const GROUP_ID_AUDIT_CHANGE_TYPE: &'static str = "audit change type";
+
+    /// BMM constant `Group_id_attestation_reason`.
+    pub const GROUP_ID_ATTESTATION_REASON: &'static str = "attestation reason";
+
+    /// BMM constant `Group_id_composition_category`.
+    pub const GROUP_ID_COMPOSITION_CATEGORY: &'static str = "composition category";
+
+    /// BMM constant `Group_id_event_math_function`.
+    pub const GROUP_ID_EVENT_MATH_FUNCTION: &'static str = "event math function";
+
+    /// BMM constant `Group_id_instruction_states`.
+    pub const GROUP_ID_INSTRUCTION_STATES: &'static str = "instruction states";
+
+    /// BMM constant `Group_id_instruction_transitions`.
+    pub const GROUP_ID_INSTRUCTION_TRANSITIONS: &'static str = "instruction transitions";
+
+    /// BMM constant `Group_id_null_flavours`.
+    pub const GROUP_ID_NULL_FLAVOURS: &'static str = "null flavours";
+
+    /// BMM constant `Group_id_property`.
+    pub const GROUP_ID_PROPERTY: &'static str = "property";
+
+    /// BMM constant `Group_id_participation_function`.
+    pub const GROUP_ID_PARTICIPATION_FUNCTION: &'static str = "participation function";
+
+    /// BMM constant `Group_id_participation_mode`.
+    pub const GROUP_ID_PARTICIPATION_MODE: &'static str = "participation mode";
+
+    /// BMM constant `Group_id_setting`.
+    pub const GROUP_ID_SETTING: &'static str = "setting";
+
+    /// BMM constant `Group_id_term_mapping_purpose`.
+    pub const GROUP_ID_TERM_MAPPING_PURPOSE: &'static str = "term mapping purpose";
+
+    /// BMM constant `Group_id_subject_relationship`.
+    pub const GROUP_ID_SUBJECT_RELATIONSHIP: &'static str = "subject relationship";
+
+    /// BMM constant `Group_id_version_life_cycle_state`.
+    pub const GROUP_ID_VERSION_LIFE_CYCLE_STATE: &'static str = "version lifecycle state";
+}
 
 /// List of identifiers for groups in the openEHR terminology.
 /// Polymorphic slot of `OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OpenehrTerminologyGroupIdentifiers {
     TerminologyService(TerminologyService),
     OpenehrTerminologyGroupIdentifiers(OpenehrTerminologyGroupIdentifiersData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for OpenehrTerminologyGroupIdentifiers {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS") => {
-                ::core::result::Result::Ok(Self::OpenehrTerminologyGroupIdentifiers(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("TERMINOLOGY_SERVICE") => {
-                ::core::result::Result::Ok(Self::TerminologyService(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Ok(Self::OpenehrTerminologyGroupIdentifiers(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS: unexpected `_type` {__other:?} (expected one of: OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS, TERMINOLOGY_SERVICE)"
-                )))
-            }
-        }
-    }
 }

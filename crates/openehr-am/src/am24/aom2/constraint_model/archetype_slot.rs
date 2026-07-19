@@ -4,13 +4,11 @@
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use crate::am24::beom::core::assertion::Assertion;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::Assertion;
 
 /// Constraint describing a 'slot' where another archetype can occur.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ARCHETYPE_SLOT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeSlot {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

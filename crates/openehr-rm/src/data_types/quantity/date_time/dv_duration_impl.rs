@@ -8,20 +8,21 @@
 use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
-use crate::validate::{
-    InvariantViolation, Validate, is_valid_iso_duration, push_dv_amount_invariants,
-    push_temporal_value_valid,
-};
+use crate::validate::{InvariantViolation, Validate, is_valid_iso_duration};
 
 impl Validate for DvDuration {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_temporal_value_valid(out, "DV_DURATION", is_valid_iso_duration(&self.value));
-        push_dv_amount_invariants(
+        crate::validate::generated::temporal_value_core(
+            "DV_DURATION",
+            is_valid_iso_duration(&self.value),
             out,
+        );
+        crate::validate::generated::dv_amount_core(
             "DV_DURATION",
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+            out,
         );
         // Inherited DV_ORDERED Normal_range_and_status_consistency.
         push_normal_range_consistency(

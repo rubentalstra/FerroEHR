@@ -3,11 +3,9 @@
 
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
-use openehr_derive::OpenEhrType;
 
 /// Model of a transition in the Instruction State Machine, caused by a careflow step. The attributes document the careflow step as well as the ISM transition.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ISM_TRANSITION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IsmTransition {
     /// The ISM current state. Coded by openEHR terminology group Instruction states.
     pub current_state: DvCodedText,

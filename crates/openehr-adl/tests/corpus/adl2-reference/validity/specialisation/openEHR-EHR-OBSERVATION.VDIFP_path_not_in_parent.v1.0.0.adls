@@ -1,0 +1,40 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VDIFP_path_not_in_parent.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/8/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VDIFP check, triggered by reference to a path that is legal in the RM, but not mentioned in the parent archetype">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VDIFP">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Observation
+		/state 
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Observation">
+				description = <"Observation">
+			>
+		>
+	>
