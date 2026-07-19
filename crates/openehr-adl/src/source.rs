@@ -596,7 +596,7 @@ fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
         rm_class: (*class).to_owned(),
         concept_id: concept_id.to_owned(),
         release_version,
-        version_status: VersionStatus(version_status.to_owned()),
+        version_status: VersionStatus::from_wire(version_status),
         build_count,
     })
 }
@@ -694,7 +694,9 @@ mod tests {
         assert_eq!(h.rm_publisher, "openEHR");
         assert_eq!(h.rm_class, "OBSERVATION");
         assert_eq!(h.release_version, "1.2.3");
-        assert_eq!(h.version_status, VersionStatus(String::new()));
+        // An empty status token is outside the `VERSION_STATUS` constant set, so
+        // `from_wire` preserves it verbatim as `Other` (HRID tolerance).
+        assert_eq!(h.version_status, VersionStatus::Other(String::new()));
 
         // 1.4 single-number version normalises to 3 parts.
         let h = parse_hrid("openehr-TASK_PLANNING-TASK_PLAN.good_include.v0").expect("partial");
@@ -703,12 +705,14 @@ mod tests {
         // namespaced + release-candidate with a build count.
         let h = parse_hrid("uk.gov::openEHR-EHR-CLUSTER.device.v1.0.0-rc.2").expect("ns+rc");
         assert_eq!(h.namespace.as_deref(), Some("uk.gov"));
-        assert_eq!(h.version_status, VersionStatus("rc".to_owned()));
+        // `rc` is not a `VERSION_STATUS` constant (`release_candidate` is), so the
+        // out-of-set token is preserved as `Other`.
+        assert_eq!(h.version_status, VersionStatus::Other("rc".to_owned()));
         assert_eq!(h.build_count, "2");
 
         // alpha with no build count.
         let h = parse_hrid("openEHR-EHR-OBSERVATION.x.v0.0.1-alpha").expect("alpha");
-        assert_eq!(h.version_status, VersionStatus("alpha".to_owned()));
+        assert_eq!(h.version_status, VersionStatus::Alpha);
         assert_eq!(h.build_count, "");
 
         assert!(parse_hrid("not-an-hrid").is_err());

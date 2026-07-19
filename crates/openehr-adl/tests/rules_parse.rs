@@ -23,7 +23,7 @@ fn only_assertion(body: &str) -> Expression {
 fn binop(e: &Expression) -> (&str, &Expression, &Expression) {
     match e {
         Expression::ExprBinaryOperator(b) => {
-            (b.operator.0.as_str(), &b.left_operand, &b.right_operand)
+            (b.operator.as_str(), &b.left_operand, &b.right_operand)
         }
         other => panic!("expected binary operator, got {other:?}"),
     }
@@ -77,7 +77,7 @@ fn dependency_rule_matches_implies_exists() {
     // consequent: exists <path> (a unary operator).
     match rhs {
         Expression::ExprUnaryOperator(u) => {
-            assert_eq!(u.operator.0, "exists");
+            assert_eq!(u.operator.as_str(), "exists");
             assert_eq!(
                 archetype_ref_path(&u.operand),
                 "/data[id2]/items[id21]/items[id20]"

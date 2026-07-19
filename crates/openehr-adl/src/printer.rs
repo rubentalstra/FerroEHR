@@ -72,7 +72,7 @@ pub fn hrid_to_string(h: &ArchetypeHrid) -> String {
         "{}-{}-{}.{}.v{}",
         h.rm_publisher, h.rm_package, h.rm_class, h.concept_id, h.release_version
     );
-    let status = &h.version_status.0;
+    let status = h.version_status.as_str();
     if !status.is_empty() {
         let _ = write!(s, "-{status}");
         if !h.build_count.is_empty() {
@@ -391,7 +391,10 @@ impl Printer {
         for (path, v) in vis {
             self.line(2, &format!("[{}] = <", quoted(path)));
             if let Some(visibility) = &v.visibility {
-                self.line(3, &format!("visibility = <{}>", quoted(&visibility.0)));
+                self.line(
+                    3,
+                    &format!("visibility = <{}>", quoted(visibility.as_str())),
+                );
             }
             if let Some(alias) = &v.alias {
                 self.line(3, &format!("alias = <{}>", term_code_str(alias)));
@@ -1020,7 +1023,7 @@ fn primitive_inline(prim: &CPrimitiveObject) -> String {
 fn terminology_code_inline(c: &CTerminologyCode) -> String {
     let mut s = String::new();
     if let Some(status) = &c.constraint_status {
-        s.push_str(strength_keyword(status));
+        s.push_str(strength_keyword(*status));
         s.push(' ');
     }
     let _ = write!(s, "[{}]", c.constraint);
@@ -1029,7 +1032,7 @@ fn terminology_code_inline(c: &CTerminologyCode) -> String {
         let inner = format!("{}; {}", c.constraint, assumed.code_string);
         s = String::new();
         if let Some(status) = &c.constraint_status {
-            s.push_str(strength_keyword(status));
+            s.push_str(strength_keyword(*status));
             s.push(' ');
         }
         let _ = write!(s, "[{inner}]");
@@ -1037,12 +1040,12 @@ fn terminology_code_inline(c: &CTerminologyCode) -> String {
     s
 }
 
-fn strength_keyword(status: &ConstraintStatus) -> &'static str {
-    match status.0 {
-        1 => "extensible",
-        2 => "preferred",
-        3 => "example",
-        _ => "required",
+fn strength_keyword(status: ConstraintStatus) -> &'static str {
+    match status {
+        ConstraintStatus::Extensible => "extensible",
+        ConstraintStatus::Preferred => "preferred",
+        ConstraintStatus::Example => "example",
+        ConstraintStatus::Required | ConstraintStatus::Other(_) => "required",
     }
 }
 
@@ -1191,7 +1194,7 @@ fn expression_str(e: &Expression) -> String {
         Expression::ExprVariableRef(v) => format!("${}", v.item.name),
         Expression::ExprValueRef(r) => value_ref_str(r),
         Expression::ExprBinaryOperator(b) => {
-            let sym = b.symbol.as_deref().unwrap_or(&b.operator.0);
+            let sym = b.symbol.as_deref().unwrap_or(b.operator.as_str());
             let left = expression_str(&b.left_operand);
             if sym == "matches" {
                 format!("({left} matches {})", constraint_rhs(&b.right_operand))
@@ -1200,7 +1203,7 @@ fn expression_str(e: &Expression) -> String {
             }
         }
         Expression::ExprUnaryOperator(u) => {
-            let sym = u.symbol.as_deref().unwrap_or(&u.operator.0);
+            let sym = u.symbol.as_deref().unwrap_or(u.operator.as_str());
             if sym == "exists" {
                 // `exists` binds a bare reference leaf (no parentheses; the BEL
                 // grammar's `parse_ref_leaf`).

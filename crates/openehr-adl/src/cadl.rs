@@ -2511,13 +2511,13 @@ fn is_strength_keyword(s: &str) -> bool {
 /// Map a constraint-strength keyword to its ordinal `CONSTRAINT_STATUS`
 /// (`master09.05`: required(0) < extensible(1) < preferred(2) < example(3)).
 fn strength_status(s: &str) -> ConstraintStatus {
-    // `required` (and any unrecognised keyword) maps to the default status 0.
-    ConstraintStatus(match s {
-        "extensible" => 1,
-        "preferred" => 2,
-        "example" => 3,
-        _ => 0,
-    })
+    // `required` (and any unrecognised keyword) maps to the default status.
+    match s {
+        "extensible" => ConstraintStatus::Extensible,
+        "preferred" => ConstraintStatus::Preferred,
+        "example" => ConstraintStatus::Example,
+        _ => ConstraintStatus::Required,
+    }
 }
 
 /// Decode a double-quoted `master03` string literal (delimiters included).
@@ -2887,7 +2887,7 @@ mod tests {
         }
         match &d.attributes[3].children[0] {
             CObject::CTerminologyCode(t) => {
-                assert_eq!(t.constraint_status, Some(ConstraintStatus(2)));
+                assert_eq!(t.constraint_status, Some(ConstraintStatus::Preferred));
             }
             _ => panic!("expected CTerminologyCode with strength"),
         }

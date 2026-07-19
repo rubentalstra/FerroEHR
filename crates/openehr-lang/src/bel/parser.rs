@@ -428,9 +428,10 @@ impl<'a, 'b, B: BelBuilder> Parser<'a, 'b, B> {
 }
 
 /// An [`OperatorKind`] from its `OPERATOR_KIND` constant name
-/// (`master04-expression_object_model.adoc`).
+/// (`master04-expression_object_model.adoc`); an unknown token is tolerated as
+/// `OperatorKind::Other`.
 fn kind(name: &str) -> OperatorKind {
-    OperatorKind(name.to_owned())
+    OperatorKind::from_wire(name)
 }
 
 /// Map a relational/equality token to its `(operator_kind, symbol)`.

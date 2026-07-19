@@ -444,7 +444,7 @@ fn terminology_conforms(
 /// The numeric `constraint_status` (required=0 default), per `master04.5`
 /// §`C_TERMINOLOGY_NODE` L671-674.
 fn status_value(status: Option<&ConstraintStatus>) -> i32 {
-    status.map_or(0, |s| s.0)
+    status.map_or(0, |s| s.value())
 }
 
 #[cfg(test)]
