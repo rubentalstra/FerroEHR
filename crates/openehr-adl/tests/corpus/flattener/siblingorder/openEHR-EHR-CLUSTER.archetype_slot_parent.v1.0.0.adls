@@ -1,0 +1,32 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+        openEHR-EHR-CLUSTER.archetype_slot_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1] ∈ {
+        items ∈ {
+            allow_archetype CLUSTER[id2] matches {
+                include
+                    archetype_id/value matches {/.*/}
+            }
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id2"] = <
+                text = <"included cluster">
+                description = <"included cluster">
+            >
+        >
+	>

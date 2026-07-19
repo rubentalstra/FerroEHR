@@ -1,0 +1,56 @@
+archetype (adl_version=2.0.6; rm_release=1.0.0)
+	openehr-TASK_PLANNING-TASK_PLAN.good_include.v0.0.1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openehr.org>">
+		["organisation"] = <"OpenEHR Foundation <http://www.openehr.org>">
+	>
+	copyright = <"Copyright (c) 2018 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent archetype for template tests.">
+			keywords = <"ADL", "test">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"unmanaged">
+
+definition
+	TASK_PLAN[id1] matches {	-- Breast cancer treatment decision pathway
+		indications matches {
+			DV_TEXT[id2] occurrences matches {1} 	-- Main diagnosis
+		}
+		definition matches {
+			TASK_GROUP[id3] matches {
+				members matches {
+					use_archetype DECISION_GROUP[id4, openehr-task_planning-DECISION_GROUP.de_en_lang_arch.v0.0.1]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Breast cancer treatment decision pathway">
+				description = <"-">
+			>
+			["id2"] = <
+				text = <"Main diagnosis">
+				description = <"-">
+			>
+			["id4"] = <
+				text = <"Decide ER-positive hormone regime">
+				description = <"-">
+			>
+		>
+	>

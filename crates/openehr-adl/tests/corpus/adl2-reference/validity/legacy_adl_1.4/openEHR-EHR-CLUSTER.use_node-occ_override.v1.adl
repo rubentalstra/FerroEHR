@@ -1,0 +1,99 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.use_node-occ_override.v1
+
+specialize
+	openEHR-EHR-CLUSTER.use_node_parent.v1
+
+concept
+	[at0000.1]	-- Laboratory test panel!
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"freshEHR Clinical Informatics, UK">
+		["email"] = <"ian@freshehr.com">
+		["date"] = <"2014-04-18">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test use node (C_COMPLEX_OBJECT_PROXY) that overrides its target's occurrences">
+			copyright = <"openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"Initial">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	CLUSTER[at0000.1] matches {	-- Laboratory test panel!
+		items cardinality matches {1..*; unordered} matches {
+			CLUSTER[at0002] occurrences matches {0..*} matches {	-- Laboratory Result
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0001] occurrences matches {0..1} matches {*}
+					ELEMENT[at0003] occurrences matches {0..*} matches {	-- Result Comment
+						value matches {
+							DV_TEXT matches {*}
+						}
+					}
+				}
+			}
+			CLUSTER[at0002.1] occurrences matches {0..*} matches {	-- Cholesterol Result
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[at0001.1] occurrences matches {0..1} matches {	-- Cholesterol
+						value matches {
+							C_DV_QUANTITY <
+								property = <[openehr::119]>
+								list = <
+									["1"] = <
+										units = <"mmol/l">
+										magnitude = <|>=0.0|>
+									>
+								>
+							>
+						}
+					}
+					
+					use_node ELEMENT occurrences matches {0..*} /items[at0002]/items[at0003]	-- /items[Cholesterol Result]/items[Result Comment]
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Laboratory test panel">
+					description = <"Laboratory test results as a single value or in a panel/battery format common to clinical pathology testing.">
+				>
+				["at0000.1"] = <
+					text = <"Laboratory test panel!">
+					description = <"Laboratory test results as a single value or in a panel/battery format common to clinical pathology testing.!">
+				>
+				["at0001"] = <
+					text = <"Result Value">
+					description = <"Actual value of the result.">
+				>
+				["at0001.1"] = <
+					text = <"Cholesterol">
+					description = <"Actual value of the result.">
+				>
+				["at0002"] = <
+					text = <"Laboratory Result">
+					description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+				>
+				["at0002.1"] = <
+					text = <"Cholesterol Result">
+					description = <"Specific detailed result, including both the value of the result item, and additional information that may be useful for clinical interpretation.">
+				>
+				["at0003"] = <
+					text = <"Result Comment">
+					description = <"Comment about the Result.">
+				>
+			>
+		>
+	>

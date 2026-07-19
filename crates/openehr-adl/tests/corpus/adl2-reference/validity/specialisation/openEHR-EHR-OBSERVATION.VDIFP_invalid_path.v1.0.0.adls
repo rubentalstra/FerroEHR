@@ -1,0 +1,46 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VDIFP_invalid_path.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs3.v2
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["date"] = <"23/04/2006">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VDIFP validity check, triggered by invalid path attribute in specialisation">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VDIFP">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- obs
+		/data[id3]/events[id4]/data[id22]/items matches {
+			after [id6]
+			CLUSTER[id0.1] occurrences matches {0..1} 	-- cluster
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id1.1"] = <
+				text = <"obs">
+				description = <"obs">
+			>
+		>
+	>

@@ -1,0 +1,81 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.ordering_parent-merge_children.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.ordering_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"07/11/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example of merging child nodes into parent in a specific order.">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- Blood matching
+		/data[id2]/events[id3]/data[id4]/items matches {
+			ELEMENT[id10.1] occurrences matches {0..1} matches {	-- Rhesus
+				value matches {
+					DV_TEXT[id0.11] 
+				}
+			}
+			ELEMENT[id10.2] occurrences matches {0..1} matches {	-- ABO
+				value matches {
+					DV_TEXT[id0.12] 
+				}
+			}
+			ELEMENT[id0.1] occurrences matches {0..1} matches {	-- Antibodies detected
+				value matches {
+					DV_BOOLEAN[id0.13] 
+				}
+			}
+			before [id12]
+			CLUSTER[id0.2] occurrences matches {0..1} 	-- Antibodies
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Blood matching">
+				description = <"Blood group information including ABO, Rhesus and antibodies etc.">
+			>
+			["id0.1"] = <
+				text = <"Antibodies detected">
+				description = <"Antibodies have been detected.">
+			>
+			["id0.2"] = <
+				text = <"Antibodies">
+				description = <"Group of findings relating to one antibody.">
+			>
+			["id10.1"] = <
+				text = <"Rhesus">
+				description = <"Rhesus blood group information.">
+			>
+			["id10.2"] = <
+				text = <"ABO">
+				description = <"ABO blood group information.">
+			>
+		>
+	>

@@ -1,0 +1,78 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-EVALUATION.problem.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    EVALUATION[id1] ∈ {                                              -- Problem
+        data ∈ {
+            ITEM_TREE[id2] ∈ {
+                items cardinality ∈ {0..*; ordered} ∈ {
+                    ELEMENT[id3] occurrences ∈ {1} ∈ {
+                        value ∈ {
+                            DV_TEXT[id4]                             -- *** NODE A
+                        }
+                    }
+                    ELEMENT[id5] occurrences ∈ {0..1}      -- Date of initial onset
+                    ELEMENT[id6] occurrences ∈ {0..1}       -- Age at initial onset
+                    ELEMENT[id7] occurrences ∈ {0..1}       -- Severity
+                    ELEMENT[id8] occurrences ∈ {0..1}       -- Clinical description
+                    ELEMENT[id10] occurrences ∈ {0..1}      -- Date clinically received
+                    CLUSTER[id11] occurrences ∈ {0..1}      -- Location
+                    CLUSTER[id14] occurrences ∈ {0..1}      -- Aetiology
+                    CLUSTER[id31] -- not in example, but appears in after, so we have to add it.
+                }
+            }
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Problem">
+				description = <"Problem">
+			>
+			["id3"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id5"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id6"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id7"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id8"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id10"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id11"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id14"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+            ["id31"] = <
+                text = <"some text">
+                description = <"some text">
+            >
+
+		>
+	>

@@ -1,0 +1,59 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-CAR.c_primitive_matches_any.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["date"] = <"2014-04-14">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test handling of 'maches any' pattern at C_PRIMITIVE_OBJECT level">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+
+definition
+	CAR[id1] matches {	-- car
+		engine_parts existence matches {1} matches {
+			ENGINE_PART[id4] matches {	-- block
+				items cardinality matches {1..*; ordered} matches {
+					ENGINE_PART_ITEM[id5] 	-- piston
+					ENGINE_PART_ITEM[id6] 	-- head
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"car">
+				description = <"car">
+			>
+			["id4"] = <
+				text = <"block">
+				description = <"engine block">
+			>
+			["id5"] = <
+				text = <"piston">
+				description = <"piston">
+			>
+			["id6"] = <
+				text = <"head">
+				description = <"head">
+			>
+		>
+	>

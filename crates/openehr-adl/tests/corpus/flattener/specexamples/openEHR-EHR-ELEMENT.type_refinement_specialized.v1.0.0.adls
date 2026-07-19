@@ -1,0 +1,40 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+ 	openEHR-EHR-ELEMENT.type_refinement_specialized.v1.0.0
+
+specialize
+    openEHR-EHR-ELEMENT.type_refinement_parent.v1.0.0
+
+language
+ 	original_language = <[ISO_639-1::en]>
+
+description
+ 	lifecycle_state = <"unmanaged">
+
+definition
+    ELEMENT[id1.1] matches {
+
+         /value ∈ {
+             DV_QUANTITY[id4.1] matches {
+                 magnitude matches {|2.0..10.0|}
+                 units matches {"mmol/ml"}
+             }
+             DV_PROPORTION[id4.2] matches {
+                 numerator matches {|2.0..10.0|}
+                 type matches {1}
+             }
+             DV_AMOUNT[id4.3] matches {
+                 accuracy matches {|-0.05..0.05|}
+             }
+        }
+
+    }
+
+terminology
+ 	term_definitions = <
+ 		["en"] = <
+ 			["id1.1"] = <
+ 				text = <"element">
+ 				description = <"element">
+ 			>
+     >
+>

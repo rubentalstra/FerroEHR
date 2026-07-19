@@ -1,0 +1,37 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-CLUSTER.occurrences_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1] matches {
+        items matches {
+            ELEMENT[id3] ∈ {
+                value ∈ {
+                    DV_QUANTITY[id4]
+                    DV_INTERVAL<DV_QUANTITY>[id5]
+                    DV_COUNT[id6]
+                    DV_INTERVAL<DV_COUNT>[id7]
+                }
+            }
+        }
+    }
+
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id3"] = <
+                text = <"element">
+                description = <"element">
+            >
+		>
+	>

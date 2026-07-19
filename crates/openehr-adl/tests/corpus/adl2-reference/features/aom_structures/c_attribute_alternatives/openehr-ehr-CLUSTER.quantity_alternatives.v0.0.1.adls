@@ -1,0 +1,110 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-CLUSTER.quantity_altenatives.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2009-06-08">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Demonstrate multiple alternative Quantity expressions.">
+			keywords = <"ADL", "test", "breathing", "oxygen">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	CLUSTER[id1] matches {	-- Ambient oxygen
+		items matches {
+			ELEMENT[id52] occurrences matches {0..1} matches {	-- Oxygen flow rate
+				value matches {
+					DV_QUANTITY[id55] matches {
+						property matches {[at1]}
+						[magnitude, units, precision] matches {
+							[{|0.0..50.0|}, {"l/m"}, {1}],
+							[{|0.0..50000.0|}, {"ml/min"}, {1}]
+						}
+					}
+				}
+			}
+			ELEMENT[id54] occurrences matches {0..1} matches {	-- un
+				value matches {
+					DV_PROPORTION[id56] matches {
+						numerator matches {|0.0..1.0|; 0.21}
+						is_integral matches {False}
+						type matches {1}
+					}
+					DV_PROPORTION[id57] matches {
+						numerator matches {|0.0..100.0|; 21.0}
+						is_integral matches {False}
+						type matches {2}
+					}
+				}
+			}
+			ELEMENT[id55] occurrences matches {0..1} matches {	-- un
+				value matches {
+					DV_PROPORTION[id58] matches {
+						[numerator, is_integral, type] matches 
+							{[{|0.0..1.0|; 0.21}, {False}, {1}],
+							[{|0.0..100.0|; 21.0}, {False}, {2}]}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Ambient oxygen">
+				description = <"The amount of oxygen being delivered to the subject at the time of observation.  Assumed values of 21% O2, Fi02 of 0.21 and Oxygen flow rate of zero.">
+			>
+			["id52"] = <
+				text = <"Oxygen flow rate">
+				description = <"Flow rate of inspired oxygen.">
+			>
+			["id54"] = <
+				text = <"Inspired O2 level [NON-CO-VARYING ALTERNATIVES]">
+				description = <"Inspired oxygen.">
+			>
+			["id55"] = <
+				text = <"Inspired O2 level [CO-VARYING ALTERNATIVES]">
+				description = <"Inspired oxygen.">
+			>
+			["id56"] = <
+				text = <"FiO2">
+				description = <"Fraction of inspired oxygen.">
+			>
+			["id57"] = <
+				text = <"Percent O2">
+				description = <"Percentage of inspired oxygen.">
+			>
+			["at1"] = <
+				text = <"Flow rate, volume">
+				description = <"Flow rate, volume">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/126>
+		>
+	>

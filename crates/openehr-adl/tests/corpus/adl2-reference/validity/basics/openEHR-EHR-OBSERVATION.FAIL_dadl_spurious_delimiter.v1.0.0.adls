@@ -1,0 +1,78 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.FAIL_dadl_spurious_delimiter.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["zh-cn"] = <
+			language = <[ISO_639-1::zh-cn]>
+			author = <
+				["name"] = <"Rong Chen">
+				["organisation"] = <"A-code">
+			>
+		>
+	>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"This archetype contains a spurious '>' character at between the two term_definition blocks in the terminology section. The ODIN parser currently does not pick it up properly, although it does generate a VOTM error.">
+		>
+		["zh-cn"] = <
+			language = <[ISO_639-1::zh-cn]>
+			purpose = <"描述系统性血压测量的结果和协议">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VOTM">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Blood pressure
+		data matches {
+			HISTORY[id2] matches {	-- history
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] occurrences matches {0..*} matches {	-- any event
+						data 
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Blood pressure">
+				description = <"the measurement by any means (invasive or non-invasive) of systemic arterial blood pressure which is deemed to represent the actual systemic blood pressure">
+			>
+			["id2"] = <
+				text = <"history">
+				description = <"history Structural node">
+			>
+			["id3"] = <
+				text = <"any event">
+				description = <"other event in event history">
+			>
+		>
+	>
+		["zh-cn"] = <
+			["at0000"] = <
+				description = <"the measurement of systemic arterial blood pressure which is deemed to represent the actual systemic blood pressure">
+				text = <"血压测量">
+			>
+			["at0001"] = <
+				description = <"history Structural node">
+				text = <"既往史">
+			>
+			["at0002"] = <
+				description = <"other event in event history">
+				text = <"任意事件">
+			>
+		>

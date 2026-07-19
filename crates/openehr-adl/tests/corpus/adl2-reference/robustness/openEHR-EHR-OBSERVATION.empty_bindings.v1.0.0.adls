@@ -1,0 +1,39 @@
+﻿archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.empty_bindings.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, UK">
+		["email"] = <"Ian.mcnicoll@fresher.com">
+		["date"] = <"26/01/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test empty term_bindings">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	copyright = <"copyright (c) 2011 openEHR Foundation">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Indirect oximetry
+		data 
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Indirect oximetry">
+				description = <"Method of monitoring blood gas measurements such as Spo2 and pTCO2 by indirect, currently non-invasive, means.">
+			>
+		>
+	>

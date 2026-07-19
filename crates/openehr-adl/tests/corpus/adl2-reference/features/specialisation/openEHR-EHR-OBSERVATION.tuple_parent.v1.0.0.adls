@@ -1,0 +1,133 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.tuple_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2014-02-28">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example archetype containing tuple constraints for the types DV_QUANTITY and DV_ORDINAL.">
+			keywords = <"ADL", "test", "specialisation", "tuples">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- Intravascular pressure
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items cardinality matches {1; ordered} matches {
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Pressure
+										value matches {
+											DV_QUANTITY[id42] matches {
+												property matches {[at29]}
+												[magnitude, units, precision] matches {
+													[{|>=0.0|}, {"mm[Hg]"}, {2}],
+													[{|>=0.0|}, {"cm[H20]"}, {2}]
+												}
+											}
+										}
+									}
+									ELEMENT[id16] occurrences matches {0..1} matches {	-- Ordinal
+										value matches {
+											DV_ORDINAL[id43] matches {
+												[value, symbol] matches {
+													[{0}, {[at17]}],
+													[{2}, {[at18]}],
+													[{4}, {[at19]}],
+													[{6}, {[at20]}],
+													[{8}, {[at21]}]
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Intravascular pressure">
+				description = <"The pressure in a specific location, blood vessel or heart cavity, at a specific phase of the heart or an average over the heart cycle.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Generic event.">
+			>
+			["id6"] = <
+				text = <"Pressure">
+				description = <"The mean pressure measured.">
+			>
+			["id16"] = <
+				text = <"Ordinal">
+				description = <"Ordinal value.">
+			>
+			["at17"] = <
+				text = <"Markedly reduced">
+				description = <"The pressure is much lower than normal or expected.">
+			>
+			["at18"] = <
+				text = <"Lowered">
+				description = <"The pressure is reduced.">
+			>
+			["at19"] = <
+				text = <"Normal/expected">
+				description = <"The pressure is normal or as expected.">
+			>
+			["at20"] = <
+				text = <"raised">
+				description = <"The pressure is raised.">
+			>
+			["at21"] = <
+				text = <"Markedly increased">
+				description = <"The pressure is much higher than normal or expected.">
+			>
+			["at29"] = <
+				text = <"Pressure">
+				description = <"Pressure">
+			>
+			["ac1"] = <
+				text = <"Ordinal (synthesised)">
+				description = <"Ordinal value. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at29"] = <http://openehr.org/id/125>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at17", "at18", "at19", "at20", "at21">
+		>
+	>

@@ -1,0 +1,72 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-SOME_TYPE.property_code_phrase.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrates DV_QUANTITY with property of type CODE_PHRASE rather than STRING">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright (c) 2006 The openEHR Foundation">
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		standard_quantity_attr matches {
+			DV_QUANTITY[id2] matches {	-- quantity in celcius
+				units matches {"C"}
+				magnitude matches {|>=4.0|}
+			}
+			DV_QUANTITY[id3] matches {	-- quantity in fahrenheit
+				units matches {"F"}
+				magnitude matches {|>=40.0|}
+			}
+		}
+		clinical_quantity_attr_1 matches {
+			DV_QUANTITY[id4] matches {
+				property matches {[at1]}
+				[units, magnitude] matches {
+					[{"C"}, {|>=4.0|}],
+					[{"F"}, {|>=40.0|}]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+			["id2"] = <
+				text = <"quantity in celcius">
+				description = <"quantity in celcius">
+			>
+			["id3"] = <
+				text = <"quantity in fahrenheit">
+				description = <"quantity in fahrenheit">
+			>
+			["at1"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/127>
+		>
+	>

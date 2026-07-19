@@ -1,0 +1,48 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.VCOID_container_attribute_children_no_node_identifiers.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VCOID validity check, triggered when child objects of a container attribute don't have node identifiers.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"VCOID">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	ENTRY[id1] matches {
+		element_attr_2 cardinality matches {2} matches {
+			ELEMENT matches {
+				value matches {
+					DV_TEXT
+				}
+			}
+			ELEMENT matches {
+				value matches {
+					DV_TEXT
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

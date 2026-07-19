@@ -1,0 +1,169 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.ordering_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics UK <http://www.oceaninformatics.com>">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-11-07">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent for child that redefines and adds nodes, marked for a certain location in flat, using 'before' keyword.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- Laboratory test
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Test name
+										value matches {
+											DV_TEXT[id20] 
+										}
+									}
+									ELEMENT[id7] occurrences matches {0..1} matches {	-- Diagnostic service
+										value matches {
+											DV_TEXT[id21] 
+										}
+									}
+									ELEMENT[id8] occurrences matches {0..1} matches {	-- Test status
+										value matches {
+											DV_CODED_TEXT[id22] matches {
+												defining_code matches {[ac1]}		-- Test status (synthesised)
+											}
+										}
+									}
+									allow_archetype CLUSTER[id9] occurrences matches {0..*} matches {	-- Specimen detail
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen\.v1/}
+										exclude
+											archetype_id/value matches {/.*/}
+									}
+									ITEM[id10] occurrences matches {0..*} 	-- Result
+									allow_archetype CLUSTER[id11] occurrences matches {0..*} matches {	-- Per-result annotation
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.lab_result_annotation(-a-zA-Z0-9_]+)*\.v1/}
+										exclude
+											archetype_id/value matches {/.*/}
+									}
+									ELEMENT[id12] occurrences matches {0..1} matches {	-- Overall interpretation
+										value matches {
+											DV_TEXT[id23] 
+										}
+									}
+									ELEMENT[id13] occurrences matches {0..*} matches {	-- Multimedia representation
+										value matches {
+											DV_MULTIMEDIA[id24] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Laboratory test">
+				description = <"To record the result of a laboratory test which may be used to record a single valued test but will often be specialised or templated to represent multiple value or 'panel' tests.
+This archetype also acts as the parent for specialisations appropriate for more specific laboratory tests microbiology, histopathology.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any event.">
+			>
+			["id6"] = <
+				text = <"Test name">
+				description = <"Specific identifier for this lab test. e.g. Full blood count , blood glucose, urine microbiology.  May equate to the result name for a single value result. Commonly a coded term e.g from LOINC or SNOMED-CT.">
+			>
+			["id7"] = <
+				text = <"Diagnostic service">
+				description = <"The type of high-level diagnostic service e.g. biochemistry, haematology.">
+			>
+			["id8"] = <
+				text = <"Test status">
+				description = <"The status of the lab test as a whole.">
+			>
+			["id9"] = <
+				text = <"Specimen detail">
+				description = <"Details of the specimen being reported where all individual results are derived from the same specimen.">
+			>
+			["id10"] = <
+				text = <"Result">
+				description = <"The result of the test.">
+			>
+			["id11"] = <
+				text = <"Per-result annotation">
+				description = <"Slot to allow an annotation to be added to a particular test result at run-time.">
+			>
+			["id12"] = <
+				text = <"Overall interpretation">
+				description = <"An overall interpretative comment on this test.">
+			>
+			["id13"] = <
+				text = <"Multimedia representation">
+				description = <"Representations of the whole test in mutlimedia e.g image, audio, video.">
+			>
+			["ac1"] = <
+				text = <"Test status (synthesised)">
+				description = <"The status of the lab test as a whole. (synthesised)">
+			>
+			["at38"] = <
+				text = <"Interim">
+				description = <"This is an initial or interim result - further updates are anticipated.">
+			>
+			["at39"] = <
+				text = <"Final">
+				description = <"This is the final result. No further alterations are anticipated.">
+			>
+			["at40"] = <
+				text = <"Supplementary">
+				description = <"This is a supplementary result ehich should be appended to a previous result.">
+			>
+			["at41"] = <
+				text = <"Corrected (amended)">
+				description = <"This is a correction which should completely replace any previous results.">
+			>
+			["at75"] = <
+				text = <"Aborted">
+				description = <"The test was aborted and never completed.">
+			>
+			["at80"] = <
+				text = <"Never performed">
+				description = <"The test was never performed.">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at38", "at39", "at40", "at41", "at75", "at80">
+		>
+	>

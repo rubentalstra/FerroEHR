@@ -1,0 +1,75 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-INSTRUCTION.request.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["organisation"] = <"Ocean Informatics UK <http://www.oceaninformatics.com>">
+		["date"] = <"2009-08-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent archetype for archetypes testing flattening when child archetype contains a differential path with an overridden id code.">
+			keywords = <"ADL", "flattening", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	INSTRUCTION[id1] matches {	-- Healthcare service request
+		activities matches {
+			ACTIVITY[id2] occurrences matches {1..*} matches {	-- Request
+				description matches {
+					ITEM_TREE[id10] matches {
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[id122] matches {	-- Service requested
+								value matches {
+									DV_TEXT[id146] 
+								}
+							}
+							ELEMENT[id136] occurrences matches {0..1} matches {	-- Description of service
+								value matches {
+									DV_TEXT[id147] 
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Healthcare service request">
+				description = <"Request for a range of different healthcare services, for example, a referral, lab request, equipment request.">
+			>
+			["id2"] = <
+				text = <"Request">
+				description = <"Current Activity.">
+			>
+			["id122"] = <
+				text = <"Service requested">
+				description = <"Identification of the service requested. This is often coded with an external terminology.">
+			>
+			["id136"] = <
+				text = <"Description of service">
+				description = <"A detailed narrative description of the service requested.">
+			>
+		>
+	>

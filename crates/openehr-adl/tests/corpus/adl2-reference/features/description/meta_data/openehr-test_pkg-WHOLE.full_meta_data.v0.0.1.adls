@@ -1,0 +1,68 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openehr-test_pkg-WHOLE.full_meta_data.v0.0.1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2013-08-11">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"This archetype demonstrates the use of governance meta-data.">
+			use = <"This archetype should be used on a clear day with no wind.">
+			misuse = <"This archetype should not be used around children or dogs.">
+			keywords = <"governance", "test">
+   	        original_resource_uri = <
+		        ["resource A"] = <"Some resource available in the English language <http://aaa.bbb/path/to/resource>">
+		        ["resource B"] = <"Some other resource available in the English language <http://aaa.bbb/path/to/resource>">
+	        >
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_contributors = <"Marcus Aurelius <marcus@aurelius.net>", "Augustus Caesar <augustus@caesars_palace.net">
+	original_namespace = <"org.archetypes-r-us">
+	original_publisher = <"Archetype R Us">
+	copyright = <"Copyright (c) 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY <https://creativecommons.org/licenses/by/3.0/>">
+
+	resource_package_uri = <http://www.openehr.org/ckm/path/to/package>
+
+	ip_acknowledgements = <
+		["loinc"] = <"This content from LOINC® is copyright © 1995 Regenstrief Institute, Inc. and the LOINC Committee, and available at no cost under the license at http://loinc.org/terms-of-use">
+		["snomedct"] = <"Content from SNOMED CT® is copyright © 2007 IHTSDO <ihtsdo.org>">
+	>
+	conversion_details = <
+		["source_model"] = <"CEM model xyz <http://location.in.clinicalelementmodels.com>">
+		["tool"] = <"cem2adl v6.3.0">
+		["time"] = <"2014-11-03T09:05:00">
+	>
+	references = <
+		["1"] = <"Barthel Scale <http://en.wikipedia.org/wiki/Barthel_scale>">
+		["2"] = <"Barthel Index, the Internet Stroke Center <http://www.strokecenter.org/wp-content/uploads/2011/08/barthel.pdf>">
+		["3"] = <"O'Sullivan, Susan B; Schmitz, Thomas J (2007). Physical Rehabilitation, Fifth Edition. Philadelphia, PA: F.A. Davis Company. p. 385.">
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	WHOLE[id1] 	-- -
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"-">
+				description = <"-">
+			>
+		>
+	>

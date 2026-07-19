@@ -1,0 +1,44 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-COMPOSITION.t_non_existent_ext_ref.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"12/03/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test external reference that is lexically legal but archetype doesn't exist">
+		>
+	>
+	other_details = <
+		["regression"] = <"VARXR">
+	>
+	lifecycle_state = <"unstable">
+
+definition
+	COMPOSITION[id1] matches {
+		content matches {
+			use_archetype OBSERVATION[id2, openEHR-EHR-OBSERVATION.doesnt_exist.v1]
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Composition">
+				description = <"Composition">
+			>
+			["id2"] = <
+				text = <"Observation">
+				description = <"Observation">
+			>
+		>
+	>

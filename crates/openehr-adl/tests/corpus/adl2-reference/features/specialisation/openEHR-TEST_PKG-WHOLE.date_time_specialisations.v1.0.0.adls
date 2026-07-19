@@ -1,0 +1,48 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-WHOLE.date_time_specialisations.v1.0.0
+
+specialize
+	openehr-TEST_PKG-WHOLE.primitive_types.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2012-08-10">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Demonstrate simple specialisation of ISO8601_DURATION primitive type.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2012 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	WHOLE[id1.1] matches {	-- Specialised duration
+		duration_attr36 matches {P1D}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Specialised duration">
+				description = <"Specialised duration">
+			>
+		>
+	>

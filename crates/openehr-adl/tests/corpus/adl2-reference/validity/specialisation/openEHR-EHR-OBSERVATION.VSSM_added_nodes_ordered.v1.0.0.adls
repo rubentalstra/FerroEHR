@@ -1,0 +1,70 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VSSM_added_nodes_ordered.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/8/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VSSM validity check, triggered when order marker contains node id not found in parent archetype">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VSSM">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- specialisation containing ordered extension nodes
+		/data/events[id3]/data/items matches {
+			after [id1000]
+			ELEMENT[id0.1] matches {	-- Text field 2
+				value matches {
+					DV_TEXT[id0.4] 	-- Text field 2
+				}
+			}
+			ELEMENT[id0.2] matches {	-- Quantity 2
+				value matches {
+					DV_QUANTITY[id0.5] 	-- Quantity 2
+				}
+			}
+			before [id8]
+			ELEMENT[id0.3] matches {	-- Text field 3
+				value matches {
+					DV_TEXT[id0.6] 	-- Text field 3
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.1"] = <
+				text = <"Text field 2">
+				description = <"*">
+			>
+			["id0.2"] = <
+				text = <"Quantity 2">
+				description = <"*">
+			>
+			["id0.3"] = <
+				text = <"Text field 3">
+				description = <"*">
+			>
+			["id1.1"] = <
+				text = <"specialisation containing ordered extension nodes">
+				description = <"specialisation containing ordered extension nodes">
+			>
+		>
+	>

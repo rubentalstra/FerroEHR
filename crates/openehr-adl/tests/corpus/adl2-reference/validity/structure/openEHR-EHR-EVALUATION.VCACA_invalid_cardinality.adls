@@ -1,0 +1,56 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.VCACA_invalid_cardinality.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["submission"] = <"14/08/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VCACA validity test, triggered by cardinality of 0 (out of bounds) on CLUSTER.items">
+			copyright = <"copyright (c) 2010 The openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VCACA">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Evaluation
+		data matches {
+			ITEM_TREE[id4] matches {
+				items matches {
+					CLUSTER[id2] matches {
+						items cardinality matches {0..*; ordered} 
+					}
+					CLUSTER[id3] matches {
+						items 
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Evaluation">
+				description = <"Evaluation">
+			>
+			["id2"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id3"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+		>
+	>

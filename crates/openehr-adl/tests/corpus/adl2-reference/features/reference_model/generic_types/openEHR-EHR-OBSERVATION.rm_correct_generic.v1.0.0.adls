@@ -1,0 +1,60 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.rm_correct_generic.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2009-03-12">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrate fully conforming archetype with generic types containing type parameters, here ITEM_LIST in the HISTORY<> and EVENT<> openEHR RM types.">
+			keywords = <"test", "RM checker">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- an Observation
+		data matches {
+			HISTORY<ITEM_LIST>[id4] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT<ITEM_LIST>[id3] occurrences matches {0..*} matches {	-- some Event
+						data matches {
+							ITEM_LIST[id5] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"an Observation">
+				description = <"an Observation">
+			>
+			["id3"] = <
+				text = <"some Event">
+				description = <"some Event">
+			>
+		>
+	>

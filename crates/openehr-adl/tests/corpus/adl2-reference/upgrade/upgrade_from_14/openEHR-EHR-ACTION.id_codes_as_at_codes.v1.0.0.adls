@@ -1,0 +1,89 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-ACTION.id_codes_as_at_codes.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2006-04-17">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Show how at-codes used as ids and values are converted to id-codes and distinct at-codes">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ACTION[id1] matches {	-- Imaging investigation
+		ism_transition matches {
+			ISM_TRANSITION[id2] matches {	-- Planned
+				current_state matches {
+					DV_CODED_TEXT[id6] matches {
+						defining_code matches {[at6]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id7] matches {
+						defining_code matches {[at2]}
+					}
+				}
+			}
+			ISM_TRANSITION[id5] matches {	-- Requested
+				current_state matches {
+					DV_CODED_TEXT[id8] matches {
+						defining_code matches {[at6]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id9] matches {
+						defining_code matches {[at5]}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Imaging investigation">
+				description = <"An action related to an investigation by an imaging technique.">
+			>
+			["id2"] = <
+				text = <"Planned">
+				description = <"Imaging investigation is planned.">
+			>
+			["id5"] = <
+				text = <"Requested">
+				description = <"Imaging investigation has been requested.">
+			>
+			["at2"] = <
+				text = <"Planned">
+				description = <"Imaging investigation is planned.">
+			>
+			["at5"] = <
+				text = <"Requested">
+				description = <"Imaging investigation has been requested.">
+			>
+			["at6"] = <
+				text = <"initial">
+				description = <"initial">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at6"] = <http://openehr.org/id/524>
+		>
+	>

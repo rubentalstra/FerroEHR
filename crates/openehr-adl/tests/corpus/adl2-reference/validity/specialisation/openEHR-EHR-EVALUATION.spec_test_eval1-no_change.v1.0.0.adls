@@ -1,0 +1,42 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.spec_test_eval1-no_change.v1.0.0
+
+specialize
+	openEHR-EHR-EVALUATION.spec_test_eval1.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/6/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent archetype to test various redefinitions and additions">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	EVALUATION[id1.1] matches {	-- Evaluation
+		data matches {
+			ITEM_TREE[id2] occurrences matches {1} 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Evaluation">
+				description = <"Evaluation">
+			>
+		>
+	>

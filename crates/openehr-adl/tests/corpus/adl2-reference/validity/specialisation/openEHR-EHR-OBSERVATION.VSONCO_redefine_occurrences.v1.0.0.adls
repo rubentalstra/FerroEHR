@@ -1,0 +1,46 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VSONCO_redefine_occurrences.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.redefine_occurrences.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/8/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VSONCO validity check triggered by illegal refinement of occurrences from {0..1} to {1..*}">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VSONCO">
+	>
+
+definition
+	OBSERVATION[id1.1.1] matches {	-- specialised archetype
+		/data/events matches {
+			EVENT[id3.1.1] occurrences matches {1..*} 	-- any event - occurrences specialised again
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1.1"] = <
+				text = <"specialised archetype">
+				description = <"">
+			>
+			["id3.1.1"] = <
+				text = <"any event - occurrences specialised again">
+				description = <"">
+			>
+		>
+	>

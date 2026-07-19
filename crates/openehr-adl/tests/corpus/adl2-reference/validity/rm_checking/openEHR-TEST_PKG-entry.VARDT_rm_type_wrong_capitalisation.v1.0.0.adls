@@ -1,0 +1,35 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-TEST_PKG-entry.VARDT_rm_type_wrong_capitalisation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VARDT validity check, triggered when the RM entity of the file name is the same as that in the archetype id, but lower case.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VARDT">
+	>
+
+definition
+	ENTRY[id1]
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

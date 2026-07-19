@@ -1,0 +1,72 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VRDLA_inconsistent_lang_codes.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["zh-cn"] = <
+			language = <[ISO_639-1::zh-cn]>
+			author = <
+				["name"] = <"Rong Chen">
+	        	["organisation"] = <"A-code">
+			>
+		>
+	>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VDRLA validity check, triggered when language code in a ODIN block (e.g. this 'details' block) does not match the code used in the 'language' attribute within the block; see the following block where 'zh-cn' does not match 'zh'.">
+		>
+		["zh-cn"] = <
+			language = <[ISO_639-1::zh]>
+			purpose = <"描述系统性血压测量的结果和协议">
+			keywords = <"血压">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["regression"] = <"VRDLA">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[id1] matches {	-- Blood pressure
+		data matches {
+			HISTORY[id2] matches {	-- history
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id7] occurrences matches {0..*}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				description = <"the measurement by any means (invasive or non-invasive) of systemic arterial blood pressure which is deemed to represent the actual systemic blood pressure">
+				text = <"Blood pressure">
+			>
+			["id7"] = <
+				description = <"other event in event history">
+				text = <"any event">
+			>
+		>
+		["zh-cn"] = <
+			["id1"] = <
+				description = <"the measurement of systemic arterial blood pressure which is deemed to represent the actual systemic blood pressure">
+				text = <"血压测量">
+			>
+			["id7"] = <
+				description = <"other event in event history">
+				text = <"任意事件">
+			>
+		>
+	>
+

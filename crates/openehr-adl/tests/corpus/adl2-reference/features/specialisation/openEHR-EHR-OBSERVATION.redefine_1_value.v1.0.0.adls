@@ -1,0 +1,77 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.redefine_1_value.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2008-08-11">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example of redefinition of a value set into a narrower subset of the original.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2008 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- first level specialisation archetype
+		/data/events[id3]/data/items matches {
+			ELEMENT[id4.1] matches {	-- Redefined text field
+				value matches {
+					DV_CODED_TEXT[id0.6] matches {
+						defining_code matches {[ac0.1]}		-- (added by post-parse processor)
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.1"] = <
+				text = <"internal code A">
+				description = <"internal code A description">
+			>
+			["at0.2"] = <
+				text = <"internal code B">
+				description = <"internal code B description">
+			>
+			["id1.1"] = <
+				text = <"first level specialisation archetype">
+				description = <"first level specialisation test archetype">
+			>
+			["id4.1"] = <
+				text = <"Redefined text field">
+				description = <"redefined text field">
+			>
+			["ac0.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.1", "at0.2">
+		>
+	>

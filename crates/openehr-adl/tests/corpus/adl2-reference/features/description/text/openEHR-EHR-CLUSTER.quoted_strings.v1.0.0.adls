@@ -1,0 +1,87 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-CLUSTER.quoted_strings.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["organisation"] = <"a\"x'c\\d">
+		["name"] = <"Peter Gummer">
+		["email"] = <"a\"x'c\\d">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"This archetype should parse fine, and when saved and reparsed, no changes should occur in the strings of the at0001 term, i.e. the quoted slash and quoted double quote should remain as they are. However, both should display in the GUI without the backslash symbol">
+			use = <"\\">
+			keywords = <"a\"x'c\\d", "p\"q\\s\"">
+		>
+	>
+	lifecycle_state = <"published">
+	other_contributors = <"a\"x'c\\d", ...>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2012 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+
+definition
+	CLUSTER[id1] matches {	-- unknown
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- a\b
+				value matches {
+					DV_CODED_TEXT[id4] matches {
+						defining_code matches {[ac1]}		-- a\b
+					}
+				}
+			}
+			ELEMENT[id3] occurrences matches {0..1} matches {	-- \a\
+				value matches {
+					DV_TEXT[id5] matches {
+						value matches {"No quoting should happen here"}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"unknown">
+				description = <"unknown">
+			>
+			["id2"] = <
+				text = <"a\\b">
+				description = <"a\"b">
+			>
+			["id3"] = <
+				text = <"\\a\\">
+				description = <"\"a\"">
+			>
+			["at11"] = <
+				text = <"\\">
+				description = <"xxx">
+			>
+			["at12"] = <
+				text = <"\\\\">
+				description = <"xxx">
+			>
+			["ac1"] = <
+				text = <"a\\b">
+				description = <"a\"b">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at11", "at12">
+		>
+	>

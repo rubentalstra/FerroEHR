@@ -1,0 +1,63 @@
+archetype (adl_version=2.0.5; rm_release=1.0.4; generated)
+    openEHR-EHR-CLUSTER.siblingorderchild.v1.0.0
+
+specialize
+    openEHR-EHR-CLUSTER.siblingorderparent.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    original_author = <
+        ["name"] = <"MK">
+    >
+    lifecycle_state = <"DRAFT">
+    details = <
+        ["en"] = <
+            language = <[ISO-639_1::en]>
+            purpose = <"Testing Siblingorder">
+        >
+    >
+
+definition
+    CLUSTER[id1.1] matches {    -- SiblingOrderChild
+        /items matches {
+            CLUSTER[id6] occurrences matches {1}     -- Cluster 2
+            CLUSTER[id7] occurrences matches {0}     -- Cluster 3
+            before [id5]
+            CLUSTER[id0.2] occurrences matches {0..1}     -- New Cluster in child 1
+            before [id6]
+            CLUSTER[id0.5] occurrences matches {0..1}     -- New Cluster in child 2
+            before [id7]
+            CLUSTER[id0.8] occurrences matches {0..1}     -- New Cluster in child 3
+            after [id6]
+            CLUSTER[id0.9] occurrences matches {0..1}     -- New Cluster in child 4
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1.1"] = <
+                text = <"SiblingOrderChild">
+                description = <"Testing Siblingorder">
+                code = <"id1">
+            >
+            ["id0.2"] = <
+                text = <"New Cluster in child 1">
+                description = <"">
+            >
+            ["id0.5"] = <
+                text = <"New Cluster in child 2">
+                description = <"">
+            >
+            ["id0.8"] = <
+                text = <"New Cluster in child 3">
+                description = <"">
+            >
+            ["id0.9"] = <
+                text = <"New Cluster in child 4">
+                description = <"">
+            >
+        >
+    >

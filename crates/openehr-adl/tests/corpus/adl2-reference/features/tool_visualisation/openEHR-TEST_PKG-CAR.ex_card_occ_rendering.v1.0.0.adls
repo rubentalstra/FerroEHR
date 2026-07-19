@@ -1,0 +1,126 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-CAR.ex_card_occ_rendering.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2006-06-12">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test visual rendering of existence, cardinality and occurrences in the ADL Workbench.">
+			keywords = <"ADL", "test", "occurrences">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2006 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	CAR[id1] matches {	-- car
+		body matches {
+			CAR_BODY[id2] matches {	-- car body
+				model existence matches {1} matches {"aston martin"}
+			}
+		}
+		engine_parts existence matches {1} matches {
+			ENGINE_PART[id3] matches {	-- gearbox
+				items existence matches {1} matches {
+					ENGINE_PART_ITEM[id13] 	-- exhaust manifold
+				}
+			}
+			ENGINE_PART[id4] matches {	-- block
+				items cardinality matches {1..*; ordered} matches {
+					ENGINE_PART_ITEM[id5] 	-- Timing chain
+					ENGINE_PART_ITEM[id6] occurrences matches {0..1} 	-- Valves
+					ENGINE_PART_ITEM[id7] occurrences matches {1} 	-- Head
+					ENGINE_PART_ITEM[id8] occurrences matches {6..12} 	-- Piston
+					ENGINE_PART_ITEM[id9] occurrences matches {12} 	-- Con rod
+					ENGINE_PART_ITEM[id10] occurrences matches {4} 	-- Valve cam
+					ENGINE_PART_ITEM[id11] occurrences matches {1..5} 	-- ECI chip
+					ENGINE_PART_ITEM[id12] occurrences matches {10..20} 	-- Valve spring
+				}
+			}
+			ENGINE_PART[id13] matches {	-- exhaust manifold
+				items cardinality matches {2..5; ordered} matches {
+					ENGINE_PART_ITEM[id14] 	-- exhaust manifold gasket
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"car">
+				description = <"car">
+			>
+			["id2"] = <
+				text = <"car body">
+				description = <"car body">
+			>
+			["id3"] = <
+				text = <"gearbox">
+				description = <"gearbox">
+			>
+			["id4"] = <
+				text = <"block">
+				description = <"engine block">
+			>
+			["id5"] = <
+				text = <"Timing chain">
+				description = <"Timing chain">
+			>
+			["id6"] = <
+				text = <"Valves">
+				description = <"Valves">
+			>
+			["id7"] = <
+				text = <"Head">
+				description = <"Head">
+			>
+			["id8"] = <
+				text = <"Piston">
+				description = <"Piston">
+			>
+			["id9"] = <
+				text = <"Con rod">
+				description = <"Con rod">
+			>
+			["id10"] = <
+				text = <"Valve cam">
+				description = <"Valve cam">
+			>
+			["id11"] = <
+				text = <"ECI chip">
+				description = <"ECI chip">
+			>
+			["id12"] = <
+				text = <"Valve spring">
+				description = <"Valve spring">
+			>
+			["id13"] = <
+				text = <"exhaust manifold">
+				description = <"exhaust manifold">
+			>
+			["id14"] = <
+				text = <"exhaust manifold gasket">
+				description = <"exhaust manifold gasket">
+			>
+		>
+	>

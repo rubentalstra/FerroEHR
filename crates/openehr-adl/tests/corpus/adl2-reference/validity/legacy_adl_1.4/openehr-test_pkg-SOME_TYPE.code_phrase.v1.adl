@@ -1,0 +1,150 @@
+archetype (adl_version=1.4)
+	openehr-TEST_PKG-SOME_TYPE.code_phrase.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test terms expressed both as vanilla C_CODE_PHRASEs and as syntax equivalents">
+			keywords = <"ADL", "test">
+			copyright = <"copyright (c) 2004 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	SOME_TYPE[at0000] matches {	-- Test
+		standard_coded_text_attr matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {
+					CODE_PHRASE[at0001] matches {
+						terminology_id matches {
+							TERMINOLOGY_ID matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at0111"}
+					}
+					CODE_PHRASE[at0002] matches {
+						terminology_id matches {
+							TERMINOLOGY_ID matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at0112"}
+					}
+					CODE_PHRASE[at0003] matches {
+						terminology_id matches {
+							TERMINOLOGY_ID matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at0113"}
+					}
+					CODE_PHRASE[at0004] matches {
+						terminology_id matches {
+							TERMINOLOGY_ID matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at0114"}
+					}
+					CODE_PHRASE[at0005] matches {
+						terminology_id matches {
+							TERMINOLOGY_ID matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at0115"}
+					}
+				}
+			}
+		}
+		standard_coded_text_attr_2 matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {
+					CODE_PHRASE[at0001] matches {
+						terminology_id matches {
+							TERMINOLOGY_ID matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at0111", "at0112", "at0113", "at0114", "at0115"}
+					}
+				}
+			}
+		}
+		clinical_coded_text_attr_1 matches {
+			DV_CODED_TEXT matches {
+				defining_code matches {
+					[local::
+					at0111, 	-- Anus
+					at0112, 	-- Rectum
+					at0113, 	-- Sigmoid
+					at0114, 	-- Descending
+					at0115; 	-- Splenic
+					at0111]	-- assumed value
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					description = <"Test">
+					text = <"Test">
+				>
+				["at0001"] = <
+					description = <"coded node">
+					text = <"coded node">
+				>
+				["at0002"] = <
+					description = <"coded node">
+					text = <"coded node">
+				>
+				["at0003"] = <
+					description = <"coded node">
+					text = <"coded node">
+				>
+				["at0004"] = <
+					description = <"coded node">
+					text = <"coded node">
+				>
+				["at0005"] = <
+					description = <"coded node">
+					text = <"coded node">
+				>
+				["at0111"] = <
+					description = <"Site">
+					text = <"Anus">
+				>
+				["at0112"] = <
+					description = <"Site">
+					text = <"Rectum">
+				>
+				["at0113"] = <
+					description = <"Site">
+					text = <"Sigmoid">
+				>
+				["at0114"] = <
+					description = <"Site">
+					text = <"Descending">
+				>
+				["at0115"] = <
+					description = <"Site">
+					text = <"Splenic">
+				>
+			>
+		>
+	>

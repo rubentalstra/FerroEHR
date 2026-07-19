@@ -1,0 +1,72 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.VCOV_value_duplicated_in_ordinal.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test validity when a value is duplicated in an ordinal; currently this is valid.">
+			keywords = <"ADL", "validation", "test">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright (c) 2008 The openEHR Foundation">
+
+definition
+	ENTRY[id1] matches {	-- 
+		ordinal_attr_1 matches {
+			DV_ORDINAL[id2] matches {
+				[value, symbol] matches {
+					[{0}, {[at2]}],
+					[{1}, {[at3]}],
+					[{1}, {[at4]}],
+					[{2}, {[at5]}]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+			["at2"] = <
+				text = <"">
+				description = <"">
+			>
+			["at3"] = <
+				text = <"">
+				description = <"">
+			>
+			["at4"] = <
+				text = <"">
+				description = <"">
+			>
+			["at5"] = <
+				text = <"">
+				description = <"">
+			>
+			["ac1"] = <
+				text = <"(empty string found in original archetype)">
+				description = <"(empty string found in original archetype)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at2", "at3", "at4", "at5">
+		>
+	>

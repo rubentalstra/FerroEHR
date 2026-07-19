@@ -1,0 +1,97 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-CAR.VUNP_internal_ref_bad_path.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VUNP validity check, triggered by incorrect path in internal reference">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"VUNP">
+	>
+	copyright = <"copyright (c) 2004 The openEHR Foundation">
+
+definition
+	CAR[id1] matches {	-- car
+		wheels matches {
+			WHEEL[id2] matches {	-- front left hand wheel
+				description matches {"front left hand wheel"}
+				parts matches {
+					RIM[id3] matches {	-- wheel part
+						nuts matches {|>=4|}
+						hubcap matches {/metal|plastic/}
+					}
+				}
+			}
+			WHEEL[id4] matches {	-- front right hand wheel
+				description matches {"front right hand wheel"}
+				parts matches {
+					use_node RIM[id10] /wheels[id2]/parts[id3]	-- /wheels[front left hand wheel]/parts[wheel part]
+				}
+			}
+			WHEEL[id5] matches {	-- rear left hand wheel
+				description matches {"rear left hand wheel"}
+				parts matches {
+					use_node RIM[id11] /wheels[id2]/parts[id3]	-- /wheels[front left hand wheel]/parts[wheel part]
+				}
+			}
+			WHEEL[id6] matches {	-- rear right hand wheel
+				description matches {"rear right hand wheel"}
+				parts matches {
+					use_node RIM[id12] /engine[id2]/parts[id3]	-- /engine[front left hand wheel]/parts[wheel part]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"car">
+				description = <"car">
+			>
+			["id2"] = <
+				text = <"front left hand wheel">
+				description = <"front left hand wheel">
+			>
+			["id3"] = <
+				text = <"wheel part">
+				description = <"wheel part">
+			>
+			["id4"] = <
+				text = <"front right hand wheel">
+				description = <"front right hand wheel">
+			>
+			["id5"] = <
+				text = <"rear left hand wheel">
+				description = <"rear left hand wheel">
+			>
+			["id6"] = <
+				text = <"rear right hand wheel">
+				description = <"rear right hand wheel">
+			>
+			["id10"] = <
+				text = <"ref to wheel part">
+				description = <"ref to wheel part">
+			>
+			["id11"] = <
+				text = <"ref to wheel part">
+				description = <"ref to wheel part">
+			>
+			["id12"] = <
+				text = <"ref to wheel part">
+				description = <"ref to wheel part">
+			>
+		>
+	>

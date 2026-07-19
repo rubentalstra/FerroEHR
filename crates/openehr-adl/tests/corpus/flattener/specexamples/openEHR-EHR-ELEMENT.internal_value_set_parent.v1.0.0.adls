@@ -1,0 +1,75 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-ELEMENT.internal_value_set_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+
+definition
+    ELEMENT[id1] occurrences ∈ {0..*} ∈ {   -- System
+        name ∈ {
+            DV_CODED_TEXT[id14] ∈ {
+                defining_code ∈ {[ac1]}
+            }
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"system">
+				description = <"system">
+			>
+			["at8"] = <
+				text = <"item8">
+				description = <"item8">
+			>
+			["at9"] = <
+				text = <"item9">
+				description = <"item8">
+			>
+			["at10"] = <
+				text = <"item10">
+				description = <"item8">
+			>
+			["at11"] = <
+				text = <"item11">
+				description = <"item8">
+			>
+			["at12"] = <
+				text = <"item12">
+				description = <"item8">
+			>
+			["at13"] = <
+				text = <"item13">
+				description = <"item8">
+			>
+			["at14"] = <
+				text = <"item14">
+				description = <"item8">
+			>
+			["at15"] = <
+				text = <"item15">
+				description = <"item8">
+			>
+		>
+	>
+    value_sets = <
+        ["ac1"] = <
+            id = <"ac1">
+            members = <
+                "at8",    -- Cardiovascular system
+                "at9",    -- Respiratory system
+                "at10",   -- Gastro-intestinal system
+                "at11",   -- Reticulo-Endothelial system
+                "at12",   -- Genito-urinary system
+                "at13",   -- Endocrine System
+                "at14",   -- Central nervous system
+                "at15"    -- Musculoskeletal system
+            >
+        >
+    >

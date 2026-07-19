@@ -1,0 +1,112 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-OBSERVATION.substance_use-tobacco.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.substance_use.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"6/05/2009">
+	>
+	copyright = <"© 2016 openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test complex tuple override case">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Tobacco Use
+		/data[id2]/events[id3]/data[id4]/items[id5]/value matches {
+			DV_CODED_TEXT[id20.1] matches {
+				defining_code matches {[at0.2]}
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items[id12]/value matches {
+			DV_CODED_TEXT[id21.1] matches {
+				defining_code matches {[ac0.1]}		-- Form (synthesised)
+			}
+		}
+		/data[id2]/events[id3]/data[id4]/items[id11]/items matches {
+			ELEMENT[id13.1] matches {	-- Number smoked
+				value matches {
+					DV_QUANTITY[id0.1] matches {
+						[property, units] matches {
+							[{[at0.7]}, {"/h", "/d", "/wk"}],
+							[{[at0.8]}, {"gm/d", "gm/wk"}]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.2"] = <
+				text = <"Tobacco">
+				description = <"Tobacco used">
+			>
+			["at0.3"] = <
+				text = <"Cigarettes - manufactured">
+				description = <"Commercial, manufactured cigarettes">
+			>
+			["at0.4"] = <
+				text = <"Cigarettes - roll-your-own">
+				description = <"Home-made, roll-your-own cigarettes">
+			>
+			["at0.5"] = <
+				text = <"Cigars">
+				description = <"Commercial cigars">
+			>
+			["at0.6"] = <
+				text = <"Pipe">
+				description = <"Tobacco smoked within a pipe">
+			>
+			["id1.1"] = <
+				text = <"Tobacco Use">
+				description = <"Archetype to record the actual use or consumption of a tobacco at the present time, a specific time or over a period of time. ">
+			>
+			["id13.1"] = <
+				text = <"Amount of tobacco">
+				description = <"Amount of tobacco">
+			>
+			["at0.7"] = <
+				text = <"Frequency">
+				description = <"Frequency">
+			>
+			["at0.8"] = <
+				text = <"Flow rate, mass">
+				description = <"Flow rate, mass">
+			>
+			["ac0.1"] = <
+				text = <"Form (synthesised)">
+				description = <"Form of tobacco used (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at0.7"] = <http://openehr.org/id/382>
+			["at0.8"] = <http://openehr.org/id/347>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.3", "at0.4", "at0.5", "at0.6">
+		>
+	>

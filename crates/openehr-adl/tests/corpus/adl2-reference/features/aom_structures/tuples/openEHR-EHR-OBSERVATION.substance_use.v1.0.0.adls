@@ -1,0 +1,160 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-OBSERVATION.substance_use.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"6/05/2009">
+	>
+	copyright = <"© 2016 openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test complex tuple override case">
+		>
+	>
+	other_contributors = <"Sam Heard, Ocean Informatics, Australia", ...>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Substance Use
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- Substance
+										value matches {
+											DV_TEXT[id20] 
+										}
+									}
+									CLUSTER[id11] occurrences matches {0..1} matches {	-- Consumption details
+										items matches {
+											ELEMENT[id12] occurrences matches {0..1} matches {	-- Form
+												value matches {
+													DV_TEXT[id21] 
+												}
+											}
+											ELEMENT[id19] occurrences matches {0..1} matches {	-- Method of use
+												value matches {
+													DV_TEXT[id22] 
+												}
+											}
+											ELEMENT[id6] occurrences matches {0..1} matches {	-- Frequency
+												value matches {
+													DV_CODED_TEXT[id23] matches {
+														defining_code matches {[ac1]}		-- Frequency (synthesised)
+													}
+												}
+											}
+											ELEMENT[id13] 	-- Amount
+										}
+									}
+									ELEMENT[id14] occurrences matches {0..1} matches {	-- Triggers
+										value matches {
+											DV_TEXT[id24] 
+										}
+									}
+									allow_archetype CLUSTER[id15] matches {	-- Readiness for change
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.change\.v1/}
+									}
+									ELEMENT[id17] occurrences matches {0..1} matches {	-- Evidence of dependence
+										value matches {
+											DV_TEXT[id25] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Substance Use">
+				description = <"Generic archetype to record the actual use or consumption of a defined substance at the present time, a specific time or over a period of time. ">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any event">
+			>
+			["id5"] = <
+				text = <"Substance">
+				description = <"Identification of substance ">
+			>
+			["id6"] = <
+				text = <"Frequency">
+				description = <"Frequency of use of substance">
+			>
+			["at7"] = <
+				text = <"Daily use">
+				description = <"Used every day">
+			>
+			["at8"] = <
+				text = <"Weekly use">
+				description = <"Used at least weekly">
+			>
+			["at9"] = <
+				text = <"Irregular use">
+				description = <"Used irregularly">
+			>
+			["at10"] = <
+				text = <"No use">
+				description = <"Not used at all">
+			>
+			["id11"] = <
+				text = <"Consumption details">
+				description = <"Details about the consumption of the substance">
+			>
+			["id12"] = <
+				text = <"Form">
+				description = <"Form of the substance used">
+			>
+			["id13"] = <
+				text = <"Amount">
+				description = <"Amount of substance consumed.  Data type can be further specified in specialised archetypes or in templates">
+			>
+			["id14"] = <
+				text = <"Triggers">
+				description = <"Identified triggers which stimulate or cause use">
+			>
+			["id15"] = <
+				text = <"Readiness for change">
+				description = <"Details about the readiness to change use or consumption of substance">
+			>
+			["id17"] = <
+				text = <"Evidence of dependence">
+				description = <"Description of any evidence of dependence on the substance">
+			>
+			["id19"] = <
+				text = <"Method of use">
+				description = <"Method of use or consumption of the substance">
+			>
+			["ac1"] = <
+				text = <"Frequency (synthesised)">
+				description = <"Frequency of use of substance (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at7", "at8", "at9", "at10">
+		>
+	>

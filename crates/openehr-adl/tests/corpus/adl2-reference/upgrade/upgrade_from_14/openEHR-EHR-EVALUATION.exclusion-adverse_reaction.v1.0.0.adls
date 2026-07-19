@@ -1,0 +1,55 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-EVALUATION.exclusion-adverse_reaction.v1.0.0
+
+specialize
+	openEHR-EHR-EVALUATION.exclusion.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Heather Leslie">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"heather.leslie@oceaninformatics.com">
+		["date"] = <"2010-03-02">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To positively record statement/s about the use of medications that need to be clinically excluded from the health record at a specific point in time.">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	EVALUATION[id1.1] matches {	-- Exclusion of an Adverse Reaction
+		/data[id2]/items[id4.1]/value matches {
+			DV_CODED_TEXT[id5.1] matches {
+				defining_code matches {[ac0.1]}		-- Substances or Agents
+			}
+			DV_TEXT[id5] 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Exclusion of an Adverse Reaction">
+				description = <"Positive statement/s about adverse reactions that need to be recorded as clinically excluded from the health record at a specific point in time.">
+			>
+			["id4.1"] = <
+				text = <"Substance/Agent">
+				description = <"Identification of the specific substance or agent to which the Exclusion Statement applies.">
+			>
+			["ac0.1"] = <
+				text = <"Substances or Agents">
+				description = <"All substances or agents that may be responsible for an adverse reaction.">
+			>
+		>
+	>

@@ -1,0 +1,35 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-SECTION.section_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"8/04/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To provide a root heading for physical examination in all structured recordings">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	SECTION[id1] 	-- Physical examination
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Physical examination">
+				description = <"An open section for recording physical examination findings">
+			>
+		>
+	>

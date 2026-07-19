@@ -1,0 +1,119 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.spec_test_obs2.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/6/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent archetype to test various redefinitions and additions">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Observation
+		data matches {
+			HISTORY[id12] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] matches {	-- event
+						data matches {
+							ITEM_TREE[id13] matches {
+								items cardinality matches {2..*; ordered} matches {
+									ELEMENT[id4] matches {	-- element 1
+										value matches {
+											DV_TEXT[id14] 
+										}
+									}
+									ELEMENT[id5] matches {	-- element 2
+										value matches {
+											DV_CODED_TEXT[id15] matches {
+												defining_code matches {[ac3]}		-- element 2
+											}
+										}
+									}
+									ELEMENT[id11] occurrences matches {0..1} matches {	-- element 3
+										value matches {
+											DV_CODED_TEXT[id16] matches {
+												defining_code matches {[ac2]}		-- ref set X
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Observation">
+				description = <"Observation">
+			>
+			["id3"] = <
+				text = <"event">
+				description = <"event">
+			>
+			["id4"] = <
+				text = <"element 1">
+				description = <"element 1">
+			>
+			["id5"] = <
+				text = <"element 2">
+				description = <"element 2">
+			>
+			["at6"] = <
+				text = <"term 1">
+				description = <"term 1">
+			>
+			["at7"] = <
+				text = <"term 2">
+				description = <"term 2">
+			>
+			["at8"] = <
+				text = <"term 3">
+				description = <"term 3">
+			>
+			["at9"] = <
+				text = <"term 4">
+				description = <"term 4">
+			>
+			["at10"] = <
+				text = <"term 5">
+				description = <"term 5">
+			>
+			["id11"] = <
+				text = <"element 3">
+				description = <"element 3">
+			>
+			["ac2"] = <
+				text = <"ref set X">
+				description = <"ref set X">
+			>
+			["ac3"] = <
+				text = <"element 2">
+				description = <"element 2">
+			>
+		>
+	>
+	value_sets = <
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at6", "at7", "at8", "at9", "at10">
+		>
+	>

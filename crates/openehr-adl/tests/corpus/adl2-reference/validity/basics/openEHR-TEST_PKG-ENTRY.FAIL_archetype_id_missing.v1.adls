@@ -1,0 +1,31 @@
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test what happens when the archetype id is missing.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"FAIL">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	ENTRY[id1]
+
+ontology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

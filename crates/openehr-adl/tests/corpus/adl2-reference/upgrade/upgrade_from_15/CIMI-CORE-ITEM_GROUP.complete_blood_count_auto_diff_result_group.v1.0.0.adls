@@ -1,0 +1,30 @@
+archetype (adl_version=1.5;rm_release=2.0.2)
+	CIMI-CORE-ITEM_GROUP.complete_blood_count_auto_diff_result_group.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+		>
+	>
+	lifecycle_state = <"initial">
+
+definition
+	ITEM_GROUP[id1] matches { -- Complete blood count auto diff result group
+		item matches {
+			use_archetype ITEM_GROUP [CIMI-CORE-CLUSTER.auto_differential_panel_blood_result_group.v1] -- Auto differential panel blood
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			["at0000"] = <
+				text = <"Complete blood count auto diff result group">
+				description = <"Complete blood count auto diff result group">
+			>
+		>
+	>
