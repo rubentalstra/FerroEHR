@@ -46,6 +46,26 @@ chapter, concrete methods).
   (`openehr-its`); the application implements the traits.
 - **AQL front end** — hand-written `logos`+`chumsky` lexer/parser/AST
   (`openehr-query`), corpus-validated.
+- **RM invariants** (`emit-validate`) — the BMM's invariant expressions are
+  machine-classified (a pinned total tripartition) and the mechanical ones
+  emitted as generated cores in `openehr-rm/src/validate/generated.rs` —
+  the single source both the typed and fast validation paths call;
+  terminology-backed invariants enforce at the `openehr-its` dispatcher
+  against the `openehr-term` bundle; the aggregate exclusions carry
+  citation-pinned adjudications in the generated register.
+
+The generator (`tools/openehr-codegen`) is a four-stage pipeline — load
+(vendored inputs verbatim) → analyze (merged include-closures, polymorphic
+seams, ownership graph + back-reference cycle breaking, constructibility
+proof, enumerations/constants/invariants) → plan (per-class emission
+decisions + the declarative, spec-cited decision maps) → render (the only
+text-producing stage). Emitter invariants (completeness — nothing a loaded
+schema declares is silently dropped —, constructibility, byte-determinism,
+source-package mirroring, closure correctness) are themselves a test suite.
+**The spec types carry no serde**: canonical JSON is the emitted native
+codec over a small hand-written runtime (the same shape as the XML codec);
+the wire contract (`_type`-first, BMM field order, RM number typing,
+tolerant reads) is pinned by the canonical-output contract gate.
 
 Fidelity is proven by gates (`openehr-its/tests/`); a `codegen-drift` CI job
 regenerates everything and fails on any diff.
