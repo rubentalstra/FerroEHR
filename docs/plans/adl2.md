@@ -25,9 +25,17 @@ new hand-written spec crate:
 
 - **`openehr-adl`** — the ADL2 text + semantics engine:
   - `lexer` + `parser` — ADL2 outer syntax, cADL definition section,
-    rules/slot assertions (BEL subset); ODIN sections via `openehr-lang`'s
-    ODIN reader where it fits (evaluate first; ADL description/terminology
-    ODIN is plain ODIN).
+    rules/slot assertions (BEL subset).
+  - **ODIN lives in `openehr-lang` (owner ruling 2026-07-19):** ODIN is a
+    LANG-component spec (`docs/specs/openehr/LANG/docs/odin/`), so the
+    full ODIN value tree + self-contained lexer/parser is the new
+    `openehr_lang::odin` module — completing that crate's mirror of the
+    official LANG component set (ODIN + BMM + BMM3 + P_BMM + BEL). The
+    ADL outer parser captures each ODIN section body as a span and calls
+    `openehr_lang::odin::parse` (the ADL2 grammar likewise imports the
+    ODIN grammar from LANG). ODIN parse failures map to SDINV in
+    openehr-adl. The odin module is off the codegen path (bmm/beom
+    modules untouched).
   - `ast`→AOM build — constructs `openehr_am::am24::aom2` values directly
     (the generated model is 1:1 complete vs the spec — verified).
   - `codes` — node-id/at/ac code math (depth, `codes_conformant`,
