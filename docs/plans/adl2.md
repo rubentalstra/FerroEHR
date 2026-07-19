@@ -11,7 +11,8 @@ every coding session works from the same catalogue. Per the doc lifecycle,
 this file is DELETED in the PR that closes the row; the durable record is
 `docs/PROGRESS.md` + the living reference docs.
 
-Branch: `claude/adl2`.
+Branch: `feat/adl2` (renamed from `claude/adl2`, 2026-07-19 branch-naming
+hard rule).
 
 ---
 

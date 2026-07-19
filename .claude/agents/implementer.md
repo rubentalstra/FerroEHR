@@ -36,7 +36,9 @@ Non-negotiables (violations are rejected at review):
   green for every crate you touched, `cargo fmt` clean. Report actual
   command results; never claim green you didn't see.
 - No AI/Claude attribution anywhere; you do not commit unless the prompt
-  says to (and then on a `claude/*` branch, message `phase-NN: <task>`).
+  says to (and then on a conventional-type branch — `feat/…`, `fix/…`,
+  `chore/…` etc. per the CLAUDE.md branch hard rule — with a descriptive
+  subject).
 
 Your final message reports: what changed (files), test/clippy evidence, any
 `// NOTE:`s added, and anything you were forced to leave open.
