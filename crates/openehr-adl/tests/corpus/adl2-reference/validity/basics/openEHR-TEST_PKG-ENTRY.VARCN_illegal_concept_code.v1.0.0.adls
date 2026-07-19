@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.VARCN_illegal_concept_code.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VARCN validity check, triggered when illegal concept code is used in the definition - id2 should be id1.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"VARCN">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	ENTRY[id2]
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at1"] = <
+				text = <"">
+				description = <"">
+			>
+			["id2"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

@@ -1,0 +1,15 @@
+[package]
+name = "openehr-adl"
+version = "2.4.0"                 # = the implemented openEHR spec version: ADL/AOM 2.4.0
+description = "openEHR ADL 2.4.0: hand-written ADL2/cADL/ODIN parser, AOM2 validation catalogue, specialisation flattener, OPT2 generator, and ADL 1.4→2 conversion over the generated openehr-am::am24 model"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,151 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openehr-TEST_PKG-SOME_TYPE.code_phrase.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"in_development">
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	copyright = <"copyright (c) 2004 The openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test terms expressed both as vanilla C_CODE_PHRASEs and as syntax equivalents">
+			keywords = <"ADL", "test">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	SOME_TYPE[id1] matches {	-- Test
+		standard_coded_text_attr matches {
+			DV_CODED_TEXT[id7] matches {
+				defining_code matches {
+					CODE_PHRASE[id2] matches {	-- coded node
+						terminology_id matches {
+							TERMINOLOGY_ID[id8] matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at112"}
+					}
+					CODE_PHRASE[id3] matches {	-- coded node
+						terminology_id matches {
+							TERMINOLOGY_ID[id9] matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at113"}
+					}
+					CODE_PHRASE[id4] matches {	-- coded node
+						terminology_id matches {
+							TERMINOLOGY_ID[id10] matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at114"}
+					}
+					CODE_PHRASE[id5] matches {	-- coded node
+						terminology_id matches {
+							TERMINOLOGY_ID[id11] matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at115"}
+					}
+					CODE_PHRASE[id6] matches {	-- coded node
+						terminology_id matches {
+							TERMINOLOGY_ID[id12] matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at116"}
+					}
+				}
+			}
+		}
+		standard_coded_text_attr_2 matches {
+			DV_CODED_TEXT[id13] matches {
+				defining_code matches {
+					CODE_PHRASE[id2] matches {	-- coded node
+						terminology_id matches {
+							TERMINOLOGY_ID[id14] matches {
+								value matches {"local"}
+							}
+						}
+						code_string matches {"at112", "at113", "at114", "at115", "at116"}
+					}
+				}
+			}
+		}
+		clinical_coded_text_attr_1 matches {
+			DV_CODED_TEXT[id15] matches {
+				defining_code matches {[ac1; at112]}		-- Test (synthesised)
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Test">
+				description = <"Test">
+			>
+			["id2"] = <
+				text = <"coded node">
+				description = <"coded node">
+			>
+			["id3"] = <
+				text = <"coded node">
+				description = <"coded node">
+			>
+			["id4"] = <
+				text = <"coded node">
+				description = <"coded node">
+			>
+			["id5"] = <
+				text = <"coded node">
+				description = <"coded node">
+			>
+			["id6"] = <
+				text = <"coded node">
+				description = <"coded node">
+			>
+			["at112"] = <
+				text = <"Anus">
+				description = <"Site">
+			>
+			["at113"] = <
+				text = <"Rectum">
+				description = <"Site">
+			>
+			["at114"] = <
+				text = <"Sigmoid">
+				description = <"Site">
+			>
+			["at115"] = <
+				text = <"Descending">
+				description = <"Site">
+			>
+			["at116"] = <
+				text = <"Splenic">
+				description = <"Site">
+			>
+			["ac1"] = <
+				text = <"Test (synthesised)">
+				description = <"Test (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at112", "at113", "at114", "at115", "at116">
+		>
+	>

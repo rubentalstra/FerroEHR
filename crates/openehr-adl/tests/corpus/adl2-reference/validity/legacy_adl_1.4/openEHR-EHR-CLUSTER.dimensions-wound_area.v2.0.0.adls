@@ -1,0 +1,130 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.dimensions-wound_area.v2.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.dimensions.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["organisation"] = <"University of Heidelberg, Central Queensland University">
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"unknown">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Beschreibung der Ausmaße eines betrachteten Teils.">
+			keywords = <"Größe", "Volumen">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To describe the dimensions of a part examined or viewed">
+			keywords = <"size", "volume">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- Area of wound
+		/items matches {
+			ELEMENT[id0.7] occurrences matches {0..1} matches {	-- Way of measurement
+				value matches {
+					DV_CODED_TEXT[id0.8] matches {
+						defining_code matches {[ac0.1]}		-- Way of measurement (synthesised)
+					}
+				}
+			}
+		}
+		/items[id6]/value[id12]/units matches {"mm2", "cm2"}
+	}
+
+terminology
+	term_definitions = <
+		["de"] = <
+			["at0.10"] = <
+				text = <"*manual tracing and manual square counting(en)">
+				description = <"*wound area has been approximated by counting squares on a tracing foil(en)">
+			>
+			["at0.11"] = <
+				text = <"*digital tracing based on digital photo(en)">
+				description = <"*wound area has been approximated by a digital tracing based on a digital photo(en)">
+			>
+			["at0.12"] = <
+				text = <"*digital tracing based on (scanned) manual trace(en)">
+				description = <"*wound area has been approximated by digitally tracing of a scanned manual tracing foil(en)">
+			>
+			["id0.7"] = <
+				text = <"*Way of measurement(en)">
+				description = <"*The way of how area measure has been determined(en)">
+			>
+			["at0.8"] = <
+				text = <"*estimated(en)">
+				description = <"*wound area has been estimated by eye(en)">
+			>
+			["at0.9"] = <
+				text = <"*approximated using greatest length times greatest width(en)">
+				description = <"*wound area approximation by multiplying greatest length (head to toe) with greatest width (side to side)(en)">
+			>
+			["id1.1"] = <
+				text = <"*Area of wound(en)">
+				description = <"*The physical dimensions of a part examined!(en)">
+			>
+			["ac0.1"] = <
+				text = <"*Way of measurement(en) (synthesised)">
+				description = <"*The way of how area measure has been determined(en) (synthesised)">
+			>
+		>
+		["en"] = <
+			["at0.10"] = <
+				text = <"manual tracing and manual square counting">
+				description = <"wound area has been approximated by counting squares on a tracing foil">
+			>
+			["at0.11"] = <
+				text = <"digital tracing based on digital photo">
+				description = <"wound area has been approximated by a digital tracing based on a digital photo">
+			>
+			["at0.12"] = <
+				text = <"digital tracing based on (scanned) manual trace">
+				description = <"wound area has been approximated by digitally tracing of a scanned manual tracing foil">
+			>
+			["id0.7"] = <
+				text = <"Way of measurement">
+				description = <"The way of how area measure has been determined">
+			>
+			["at0.8"] = <
+				text = <"estimated">
+				description = <"wound area has been estimated by eye">
+			>
+			["at0.9"] = <
+				text = <"approximated using greatest length times greatest width">
+				description = <"wound area approximation by multiplying greatest length (head to toe) with greatest width (side to side)">
+			>
+			["id1.1"] = <
+				text = <"Area of wound">
+				description = <"The physical dimensions of a part examined!">
+			>
+			["ac0.1"] = <
+				text = <"Way of measurement (synthesised)">
+				description = <"The way of how area measure has been determined (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.8", "at0.9", "at0.10", "at0.11", "at0.12">
+		>
+	>

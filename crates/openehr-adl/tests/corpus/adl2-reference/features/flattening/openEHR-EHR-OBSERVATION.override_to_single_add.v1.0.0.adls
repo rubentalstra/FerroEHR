@@ -1,0 +1,53 @@
+archetype (adl_version=2.0.5; rm_release=1.1.0)
+	openEHR-EHR-OBSERVATION.override_to_single_add.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.flattening_parent_1.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+	>
+	copyright = <"Copyright (c) 2014 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test specialised node that adds a sibling, and retains the original parent. This is done by specialising the relevant id code.">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1.1] 	matches {	
+		/data[id2]/events[id3]/data[id4]/items[id5.1]/value matches {
+			DV_CODED_TEXT[id20.1] matches {
+				defining_code matches {[at0.1]}
+			}
+		}
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Single override child">
+				description = <"-">
+			>
+			["id5.1"] = <
+				text = <"Medication substance type">
+				description = <"-">
+			>
+			["at0.1"] = <
+				text = <"Medication">
+				description = <"-">
+			>
+		>
+	>

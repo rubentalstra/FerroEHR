@@ -1,0 +1,113 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-SOME_TYPE.dv_ordinals.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2004-06-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example showing openEHR DV_ORDINAL modelled with and without tuples.">
+			keywords = <"ADL", "ordinal", "test">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2004 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		standard_ordinal_attr matches {
+			DV_ORDINAL[id5] matches {	-- ordinal 1
+				value matches {0}
+				symbol matches {
+					DV_CODED_TEXT[id8] matches {
+						defining_code matches {[at2]}
+					}
+				}
+			}
+			DV_ORDINAL[id6] matches {	-- ordinal 2
+				value matches {1}
+				symbol matches {
+					DV_CODED_TEXT[id9] matches {
+						defining_code matches {[at3]}
+					}
+				}
+			}
+			DV_ORDINAL[id7] matches {	-- ordinal 3
+				value matches {2}
+				symbol matches {
+					DV_CODED_TEXT[id10] matches {
+						defining_code matches {[at4]}
+					}
+				}
+			}
+		}
+		clinical_ordinal_attr_1 matches {
+			DV_ORDINAL[id11] matches {
+				[value, symbol] matches {
+					[{0}, {[at2]}],
+					[{1}, {[at3]}],
+					[{2}, {[at4]}]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+			["at2"] = <
+				text = <"+">
+				description = <"mild">
+			>
+			["at3"] = <
+				text = <"++">
+				description = <"medium">
+			>
+			["at4"] = <
+				text = <"+++">
+				description = <"severe">
+			>
+			["id5"] = <
+				text = <"ordinal 1">
+				description = <"ordinal 1">
+			>
+			["id6"] = <
+				text = <"ordinal 2">
+				description = <"ordinal 2">
+			>
+			["id7"] = <
+				text = <"ordinal 3">
+				description = <"ordinal 3">
+			>
+			["ac1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at2", "at3", "at4">
+		>
+	>

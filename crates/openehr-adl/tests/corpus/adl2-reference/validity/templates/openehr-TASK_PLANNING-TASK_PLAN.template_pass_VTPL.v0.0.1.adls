@@ -1,0 +1,40 @@
+template (adl_version=2.0.6; rm_release=1.0.0)
+	openehr-TASK_PLANNING-TASK_PLAN.template_pass_VTPL.v0.0.1
+
+specialize
+	openehr-TASK_PLANNING-TASK_PLAN.good_include.v0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openehr.org>">
+		["organisation"] = <"OpenEHR Foundation <http://www.openehr.org>">
+	>
+	copyright = <"Copyright (c) 2018 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test template to ensure all its fillers are consistent so as to be flattened in, e.g. have a common language.">
+			keywords = <"ADL", "test">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"unmanaged">
+
+definition
+	TASK_PLAN[id1.1] 	-- -
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"-">
+				description = <"-">
+			>
+		>
+	>

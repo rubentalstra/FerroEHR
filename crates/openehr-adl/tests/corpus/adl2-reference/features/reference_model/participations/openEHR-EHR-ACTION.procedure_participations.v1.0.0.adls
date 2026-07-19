@@ -1,0 +1,555 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-ACTION.procedure_participations.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-12-03">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details about a procedure that has been performed.">
+			use = <"Use to record detailed information about the procedure that has been carried out on an individual. 
+Information about activities related to the procedure, such as anaesthesia or administration of medications, should be recorded in separate ACTION archetypes.">
+			keywords = <"procedure", ...>
+		>
+	>
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia (Editor)", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ACTION[id1] matches {	-- Procedure undertaken
+		ism_transition matches {
+			ISM_TRANSITION[id35] matches {	-- Request initiated
+				current_state matches {
+					DV_CODED_TEXT[id60] matches {
+						defining_code matches {[at49]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id61] matches {
+						defining_code matches {[at35]}
+					}
+				}
+			}
+			ISM_TRANSITION[id36] matches {	-- Request sent
+				current_state matches {
+					DV_CODED_TEXT[id62] matches {
+						defining_code matches {[at49]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id63] matches {
+						defining_code matches {[at36]}
+					}
+				}
+			}
+			ISM_TRANSITION[id39] matches {	-- Request postponed
+				current_state matches {
+					DV_CODED_TEXT[id64] matches {
+						defining_code matches {[at50]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id65] matches {
+						defining_code matches {[at39]}
+					}
+				}
+			}
+			ISM_TRANSITION[id40] matches {	-- Request cancelled
+				current_state matches {
+					DV_CODED_TEXT[id66] matches {
+						defining_code matches {[at51]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id67] matches {
+						defining_code matches {[at40]}
+					}
+				}
+			}
+			ISM_TRANSITION[id37] matches {	-- Procedure scheduled
+				current_state matches {
+					DV_CODED_TEXT[id68] matches {
+						defining_code matches {[at52]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id69] matches {
+						defining_code matches {[at37]}
+					}
+				}
+			}
+			ISM_TRANSITION[id48] matches {	-- In progress
+				current_state matches {
+					DV_CODED_TEXT[id70] matches {
+						defining_code matches {[at53]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id71] matches {
+						defining_code matches {[at48]}
+					}
+				}
+			}
+			ISM_TRANSITION[id41] matches {	-- Procedure suspended
+				current_state matches {
+					DV_CODED_TEXT[id72] matches {
+						defining_code matches {[at54]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id73] matches {
+						defining_code matches {[at41]}
+					}
+				}
+			}
+			ISM_TRANSITION[id42] matches {	-- Procedure aborted
+				current_state matches {
+					DV_CODED_TEXT[id74] matches {
+						defining_code matches {[at55]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id75] matches {
+						defining_code matches {[at42]}
+					}
+				}
+			}
+			ISM_TRANSITION[id44] matches {	-- Completed
+				current_state matches {
+					DV_CODED_TEXT[id76] matches {
+						defining_code matches {[at56]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id77] matches {
+						defining_code matches {[at44]}
+					}
+				}
+			}
+			ISM_TRANSITION[id45] matches {	-- Report authored
+				current_state matches {
+					DV_CODED_TEXT[id78] matches {
+						defining_code matches {[at56]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id79] matches {
+						defining_code matches {[at45]}
+					}
+				}
+			}
+			ISM_TRANSITION[id46] matches {	-- Report attested
+				current_state matches {
+					DV_CODED_TEXT[id80] matches {
+						defining_code matches {[at56]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id81] matches {
+						defining_code matches {[at46]}
+					}
+				}
+			}
+			ISM_TRANSITION[id47] matches {	-- Report sent
+				current_state matches {
+					DV_CODED_TEXT[id82] matches {
+						defining_code matches {[at56]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT[id83] matches {
+						defining_code matches {[at47]}
+					}
+				}
+			}
+		}
+		description matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] matches {	-- Procedure
+						value matches {
+							DV_TEXT[id84] 
+						}
+					}
+					ELEMENT[id15] matches {	-- Reason/s for procedure
+						value matches {
+							DV_TEXT[id85] 
+						}
+					}
+					ELEMENT[id52] matches {	-- Method/Technique
+						value matches {
+							DV_TEXT[id86] 
+						}
+					}
+					ELEMENT[id50] occurrences matches {0..1} matches {	-- Description
+						value matches {
+							DV_TEXT[id87] 
+						}
+					}
+					allow_archetype CLUSTER[id4] occurrences matches {0..1} matches {	-- Procedure Details
+						include
+							archetype_id/value matches {/.*/}
+					}
+					allow_archetype CLUSTER[id51] occurrences matches {0..1} matches {	-- Anatomical site details
+						include
+							archetype_id/value matches {/.*/}
+					}
+					CLUSTER[id31] occurrences matches {0..1} matches {	-- Additional tasks
+						items matches {
+							ELEMENT[id53] occurrences matches {0..1} matches {	-- Task
+								value matches {
+									DV_TEXT[id88] 
+								}
+							}
+							ELEMENT[id32] matches {	-- Task description
+								value matches {
+									DV_TEXT[id89] 
+								}
+							}
+							ELEMENT[id33] matches {	-- Record of additional task
+								value matches {
+									DV_EHR_URI[id90] 
+								}
+							}
+						}
+					}
+					ELEMENT[id49] occurrences matches {0..1} matches {	-- Outcome
+						value matches {
+							DV_TEXT[id91] 
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Procedure unsuccessful
+						value matches {
+							DV_BOOLEAN[id92] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id19] occurrences matches {0..1} 	-- Failed attempts
+					ELEMENT[id16] matches {	-- Unplanned event
+						value matches {
+							DV_TEXT[id93] 
+						}
+					}
+					ELEMENT[id7] matches {	-- Complication
+						value matches {
+							DV_TEXT[id94] 
+						}
+					}
+					ELEMENT[id59] occurrences matches {0..1} matches {	-- Emergency?
+						value matches {
+							DV_BOOLEAN[id95] matches {
+								value matches {True, False}
+							}
+						}
+					}
+					ELEMENT[id6] occurrences matches {0..1} matches {	-- Comments
+						value matches {
+							DV_TEXT[id96] 
+						}
+					}
+					ELEMENT[id14] matches {	-- Multimedia
+						value matches {
+							DV_MULTIMEDIA[id97] matches {
+								media_type 
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id54] matches {
+				items matches {
+					ELEMENT[id55] occurrences matches {0..1} matches {	-- Requestor order identifier
+						value matches {
+							DV_TEXT[id98] 
+						}
+					}
+					allow_archetype CLUSTER[id56] occurrences matches {0..1} matches {	-- Requestor
+						include
+							archetype_id/value matches {/.*/}
+					}
+					ELEMENT[id57] occurrences matches {0..1} matches {	-- Receiver order identifier
+						value matches {
+							DV_TEXT[id99] 
+						}
+					}
+					allow_archetype CLUSTER[id58] occurrences matches {0..1} matches {	-- Receiver
+						include
+							archetype_id/value matches {/.*/}
+					}
+				}
+			}
+		}
+		other_participations matches {
+			PARTICIPATION[id100] occurrences matches {0..1} matches {	-- assistant #1
+				function matches {
+					DV_CODED_TEXT[id102]  matches {
+                                                defining_code matches {[at1]}
+                                        }
+				}
+			}
+			PARTICIPATION[id101] occurrences matches {0..1} matches {	-- assistant #2
+				function matches {
+					DV_CODED_TEXT[id103] matches {
+                                                defining_code matches {[at2]}
+                                        }
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Procedure undertaken">
+				description = <"A clinical activity that has been carried out for therapeutic or diagnostic purposes.">
+			>
+			["id3"] = <
+				text = <"Procedure">
+				description = <"The name of the procedure.">
+			>
+			["id4"] = <
+				text = <"Procedure Details">
+				description = <"Detailed structure describing the procedure carried out, including preparation and details about the method and equipment/devices used.">
+			>
+			["id5"] = <
+				text = <"Procedure unsuccessful">
+				description = <"Was the procedure ultimately unsuccessful? True if unsuccessful.">
+			>
+			["id6"] = <
+				text = <"Comments">
+				description = <"Comments about the procedure.">
+			>
+			["id7"] = <
+				text = <"Complication">
+				description = <"Details about any complication arising from the procedure.">
+			>
+			["id14"] = <
+				text = <"Multimedia">
+				description = <"Multimedia representation of the procedure, including images.">
+			>
+			["id15"] = <
+				text = <"Reason/s for procedure">
+				description = <"The reason or indication for the procedure.">
+			>
+			["id16"] = <
+				text = <"Unplanned event">
+				description = <"An unplanned event prior to or related to the procedure, which may affect its execution e.g patient self-removed cannula.">
+			>
+			["id19"] = <
+				text = <"Failed attempts">
+				description = <"The number of failed attempts to perform the procedure.">
+			>
+			["id31"] = <
+				text = <"Additional tasks">
+				description = <"Record information about unplanned or unexpected activities that needed to be done during the procedure. Record the name of the task and a description within this archetype, but detail should be recorded in specific linked INSTRUCTION or ACTION archetypes.">
+			>
+			["id32"] = <
+				text = <"Task description">
+				description = <"Description of additional task performed during the procedure.">
+			>
+			["id33"] = <
+				text = <"Record of additional task">
+				description = <"Link to a detailed record of the additional task.">
+			>
+			["id35"] = <
+				text = <"Request initiated">
+				description = <"Request for procedure is initiated.">
+			>
+			["id36"] = <
+				text = <"Request sent">
+				description = <"Request for procedure sent.">
+			>
+			["id37"] = <
+				text = <"Procedure scheduled">
+				description = <"Procedure has been scheduled.">
+			>
+			["id39"] = <
+				text = <"Request postponed">
+				description = <"Request for procedure is postponed.">
+			>
+			["id40"] = <
+				text = <"Request cancelled">
+				description = <"Procedure request has been cancelled.">
+			>
+			["id41"] = <
+				text = <"Procedure suspended">
+				description = <"Procedure has been suspended.">
+			>
+			["id42"] = <
+				text = <"Procedure aborted">
+				description = <"Procedure has been aborted.">
+			>
+			["id44"] = <
+				text = <"Completed">
+				description = <"Procedure has been completed.">
+			>
+			["id45"] = <
+				text = <"Report authored">
+				description = <"Procedure report has been written.">
+			>
+			["id46"] = <
+				text = <"Report attested">
+				description = <"Procedure report has been attested.">
+			>
+			["id47"] = <
+				text = <"Report sent">
+				description = <"Procedure report has been distributed.">
+			>
+			["id48"] = <
+				text = <"In progress">
+				description = <"Procedure is being carried out.">
+			>
+			["id49"] = <
+				text = <"Outcome">
+				description = <"Outcome of procedure performed.">
+			>
+			["id50"] = <
+				text = <"Description">
+				description = <"Narrative description about the procedure carried out.">
+			>
+			["id51"] = <
+				text = <"Anatomical site details">
+				description = <"Details about the anatomical site of procedure.">
+			>
+			["id52"] = <
+				text = <"Method/Technique">
+				description = <"Identification of specific method or technique used for procedure.">
+			>
+			["id53"] = <
+				text = <"Task">
+				description = <"Name of additional task performed during the procedure.">
+			>
+			["id55"] = <
+				text = <"Requestor order identifier">
+				description = <"The local ID assigned to the order by the healthcare provider or organisation requesting the service.">
+			>
+			["id56"] = <
+				text = <"Requestor">
+				description = <"Details about the healthcare provider or organisation requesting the service.">
+			>
+			["id57"] = <
+				text = <"Receiver order identifier">
+				description = <"The ID assigned to the order by the healthcare provider or organisation receiving the request for service. This is also referred to as Filler Order Identifier.">
+			>
+			["id58"] = <
+				text = <"Receiver">
+				description = <"Details about the healthcare provider or organisation receiving the request for service.">
+			>
+			["id59"] = <
+				text = <"Emergency?">
+				description = <"Was this procedure performed as an emergency? True if Yes.">
+			>
+			["at35"] = <
+				text = <"Request initiated">
+				description = <"Request for procedure is initiated.">
+			>
+			["at36"] = <
+				text = <"Request sent">
+				description = <"Request for procedure sent.">
+			>
+			["at39"] = <
+				text = <"Request postponed">
+				description = <"Request for procedure is postponed.">
+			>
+			["at40"] = <
+				text = <"Request cancelled">
+				description = <"Procedure request has been cancelled.">
+			>
+			["at37"] = <
+				text = <"Procedure scheduled">
+				description = <"Procedure has been scheduled.">
+			>
+			["at48"] = <
+				text = <"In progress">
+				description = <"Procedure is being carried out.">
+			>
+			["at41"] = <
+				text = <"Procedure suspended">
+				description = <"Procedure has been suspended.">
+			>
+			["at42"] = <
+				text = <"Procedure aborted">
+				description = <"Procedure has been aborted.">
+			>
+			["at44"] = <
+				text = <"Completed">
+				description = <"Procedure has been completed.">
+			>
+			["at45"] = <
+				text = <"Report authored">
+				description = <"Procedure report has been written.">
+			>
+			["at46"] = <
+				text = <"Report attested">
+				description = <"Procedure report has been attested.">
+			>
+			["at47"] = <
+				text = <"Report sent">
+				description = <"Procedure report has been distributed.">
+			>
+			["at49"] = <
+				text = <"initial">
+				description = <"initial">
+			>
+			["at50"] = <
+				text = <"postponed">
+				description = <"postponed">
+			>
+			["at51"] = <
+				text = <"cancelled">
+				description = <"cancelled">
+			>
+			["at52"] = <
+				text = <"scheduled">
+				description = <"scheduled">
+			>
+			["at53"] = <
+				text = <"active">
+				description = <"active">
+			>
+			["at54"] = <
+				text = <"suspended">
+				description = <"suspended">
+			>
+			["at55"] = <
+				text = <"aborted">
+				description = <"aborted">
+			>
+			["at56"] = <
+				text = <"complete">
+				description = <"complete">
+			>
+			["id100"] = <
+				text = <"assistant #1">
+				description = <"-">
+			>
+			["id101"] = <
+				text = <"assistant #2">
+				description = <"-">
+			>
+			["at1"] = <
+				text = <"assistant type xxx">
+				description = <"-">
+			>
+			["at2"] = <
+				text = <"assistant type yyy">
+				description = <"-">
+			>
+		>
+	>

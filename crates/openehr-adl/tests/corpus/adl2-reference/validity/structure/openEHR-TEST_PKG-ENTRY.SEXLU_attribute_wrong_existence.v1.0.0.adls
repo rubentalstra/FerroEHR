@@ -1,0 +1,36 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.SEXLU_attribute_wrong_existence.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test SEXLU syntax validity check, triggered when an attribute has existence greater than 1.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"SEXLU">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	ENTRY[id1] matches {
+		value existence matches {1..2}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

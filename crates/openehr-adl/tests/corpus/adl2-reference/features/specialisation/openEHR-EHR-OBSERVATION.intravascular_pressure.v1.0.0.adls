@@ -1,0 +1,276 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-OBSERVATION.intravascular_pressure.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"28/06/2006">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Intravascular venous, arterial, pulmonary or cardiac pressure measurement. Commonly specialised for specific common pressures such as JVP and CCP.">
+			use = <"">
+			keywords = <"pressure", "intravascular">
+			misuse = <"Not to be used for systemic blood pressure. Use 'observation.blood_pressure' for this.">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_contributors = <"Ian McNicoll, Ocean Informatics, UK", ...>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"© openEHR Foundation">
+
+definition
+	OBSERVATION[id1] matches {	-- Intravascular pressure
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items cardinality matches {1; ordered} matches {
+									allow_archetype CLUSTER[id37] occurrences matches {0..1} matches {	-- Location
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-a-zA-Z0-9_]+)*\.v1/}
+										exclude
+											archetype_id/value matches {/.*/}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Pressure
+										value matches {
+											DV_QUANTITY[id42] matches {
+												property matches {[at29]}
+												[magnitude, units, precision] matches {
+													[{|>=0.0|}, {"mm[Hg]"}, {2}],
+													[{|>=0.0|}, {"cm[H20]"}, {2}]
+												}
+											}
+										}
+									}
+									ELEMENT[id16] occurrences matches {0..1} matches {	-- Relative pressure
+										value matches {
+											DV_ORDINAL[id43] matches {
+												[value, symbol] matches {
+													[{0}, {[at17]}],
+													[{2}, {[at18]}],
+													[{4}, {[at19]}],
+													[{6}, {[at20]}],
+													[{8}, {[at21]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id8] occurrences matches {0..1} matches {	-- Phase of heart cycle
+										value matches {
+											DV_CODED_TEXT[id44] matches {
+												defining_code matches {[ac1]}		-- Phase of heart cycle (synthesised)
+											}
+										}
+									}
+									ELEMENT[id35] occurrences matches {0..1} matches {	-- Multimedia
+										value matches {
+											DV_MULTIMEDIA[id45] 
+										}
+									}
+									allow_archetype CLUSTER[id34] occurrences matches {0..1} matches {	-- Waveform
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.waveform(-a-zA-Z0-9_]+)*\.v1/}
+										exclude
+											archetype_id/value matches {/.*/}
+									}
+									ELEMENT[id36] occurrences matches {0..1} matches {	-- Comment
+										value matches {
+											DV_TEXT[id46] 
+										}
+									}
+								}
+							}
+						}
+						state matches {
+							ITEM_TREE[id39] matches {
+								items matches {
+									ELEMENT[id40] occurrences matches {0..1} matches {	-- Position
+										value matches {
+											DV_TEXT[id47] 
+										}
+									}
+									ELEMENT[id41] occurrences matches {0..1} matches {	-- Confounding factors
+										value matches {
+											DV_TEXT[id48] 
+										}
+									}
+								}
+							}
+						}
+					}
+					INTERVAL_EVENT[id5] occurrences matches {0..*} matches {	-- Average over heart cycle
+						math_function matches {
+							DV_CODED_TEXT[id49] matches {
+								defining_code matches {[at30]}
+							}
+						}
+						data matches {
+							use_node ITEM_TREE[id50] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[Any event]/data[id4]
+						}
+						state matches {
+							use_node ITEM_TREE[id51] /data[id2]/events[id3]/state[id39]	-- /data[id2]/events[Any event]/state[id39]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id22] matches {
+				items matches {
+					allow_archetype CLUSTER[id31] occurrences matches {0..1} matches {	-- Device
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.device(-a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Intravascular pressure">
+				description = <"The pressure in a specific location, blood vessel or heart cavity, at a specific phase of the heart or an average over the heart cycle.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Generic event.">
+			>
+			["id5"] = <
+				text = <"Average over heart cycle">
+				description = <"The average over one heart cycle.">
+			>
+			["id6"] = <
+				text = <"Pressure">
+				description = <"The mean pressure measured.">
+			>
+			["id8"] = <
+				text = <"Phase of heart cycle">
+				description = <"The phase of the heart cycle at the time of the measurement">
+			>
+			["at9"] = <
+				text = <"Systolic">
+				description = <"During contraction of the heart.">
+			>
+			["at10"] = <
+				text = <"Diastolic">
+				description = <"During relaxation of the heart.">
+			>
+			["id16"] = <
+				text = <"Relative pressure">
+				description = <"The pressure in relative terms.">
+			>
+			["at17"] = <
+				text = <"Markedly reduced">
+				description = <"The pressure is much lower than normal or expected.">
+			>
+			["at18"] = <
+				text = <"Lowered">
+				description = <"The pressure is reduced.">
+			>
+			["at19"] = <
+				text = <"Normal/expected">
+				description = <"The pressure is normal or as expected.">
+			>
+			["at20"] = <
+				text = <"raised">
+				description = <"The pressure is raised.">
+			>
+			["at21"] = <
+				text = <"Markedly increased">
+				description = <"The pressure is much higher than normal or expected.">
+			>
+			["at24"] = <
+				text = <"Pre-systolic">
+				description = <"Phase of the heart immediately prior to contraction of the heart.">
+			>
+			["at25"] = <
+				text = <"Pre-diastolic">
+				description = <"The phase of the heart immediately prior to filling of the ventricle.">
+			>
+			["at28"] = <
+				text = <"Whole cycle">
+				description = <"The pressure measueerd is over the whole heart cycle.">
+			>
+			["id31"] = <
+				text = <"Device">
+				description = <"The device used to record the measurement.">
+			>
+			["id34"] = <
+				text = <"Waveform">
+				description = <"A waveform representation of the pressure">
+			>
+			["id35"] = <
+				text = <"Multimedia">
+				description = <"A multimedia representation of the pressure reading, other than waveforms.">
+			>
+			["id36"] = <
+				text = <"Comment">
+				description = <"A text comment on the reading.">
+			>
+			["id37"] = <
+				text = <"Location">
+				description = <"The location of the pressure measurement.">
+			>
+			["id40"] = <
+				text = <"Position">
+				description = <"Position of patient during measurement.">
+			>
+			["id41"] = <
+				text = <"Confounding factors">
+				description = <"Other factors that may interfere with interpretation of the measurement.">
+			>
+			["ac1"] = <
+				text = <"Phase of heart cycle (synthesised)">
+				description = <"The phase of the heart cycle at the time of the measurement (synthesised)">
+			>
+			["at29"] = <
+				text = <"Pressure">
+				description = <"Pressure">
+			>
+			["at30"] = <
+				text = <"mean">
+				description = <"mean">
+			>
+			["ac2"] = <
+				text = <"Relative pressure">
+				description = <"The pressure in relative terms.">
+			>
+			["ac3"] = <
+				text = <"Relative pressure (synthesised)">
+				description = <"The pressure in relative terms. (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at29"] = <http://openehr.org/id/125>
+			["at30"] = <http://openehr.org/id/146>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at9", "at10", "at24", "at25", "at28">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at17", "at18", "at19", "at20", "at21">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at17", "at18", "at19", "at20", "at21">
+		>
+	>

@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.body_temp_redefine_exist_occ.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.body_temp_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Rong Chen">
+		["email"] = <"rong.chen@cambio.se">
+		["organisation"] = <"Cambio Healthcare Systems <http://www.cambio.se/>">
+		["date"] = <"2012-04-18">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Specialised archetype showing the use of constraints for existence and occurrences matches {0}. These are used to remove attributes and objects respectively.">
+			keywords = <"ADL", "test", "specialisation", "occurrences">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2012 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- Body temperature new GP
+		/data[id3]/events[id4]/state existence matches {0} 
+		/protocol[id21]/items matches {
+			allow_archetype CLUSTER[id60] occurrences matches {0} 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Body temperature new GP">
+				description = <"A measurement of the body temperature, which is a surrogate for the whole body temperature of the person.">
+			>
+		>
+	>

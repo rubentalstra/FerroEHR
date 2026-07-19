@@ -1,0 +1,77 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.redefine_node_to_clones.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2008-08-11">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example of redefinition of a single node into multiple clones. Each of the ELEMENT[id8.x] nodes is a distinct clone of the ELEMENT[id8] node from the parent archetype.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2008 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- multi-level redefinition archetype
+		/data/events[id3]/data/items matches {
+			ELEMENT[id8.1] matches {	-- 1st redefine of at0007 node
+				value matches {
+					DV_QUANTITY[id0.7] 
+				}
+			}
+			ELEMENT[id8.2] matches {	-- 2nd redefine of at0007 node
+				value matches {
+					DV_QUANTITY[id0.8] 
+				}
+			}
+			ELEMENT[id8.3] matches {	-- 3rd redefine of at0007 node
+				value matches {
+					DV_QUANTITY[id0.9] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"multi-level redefinition archetype">
+				description = <"specialisation containing multiple redefine of a single parent node">
+			>
+			["id8.1"] = <
+				text = <"1st redefine of at0007 node">
+				description = <"1st redefine of at0007 node">
+			>
+			["id8.2"] = <
+				text = <"2nd redefine of at0007 node">
+				description = <"1st redefine of at0007 node">
+			>
+			["id8.3"] = <
+				text = <"3rd redefine of at0007 node">
+				description = <"1st redefine of at0007 node">
+			>
+		>
+	>

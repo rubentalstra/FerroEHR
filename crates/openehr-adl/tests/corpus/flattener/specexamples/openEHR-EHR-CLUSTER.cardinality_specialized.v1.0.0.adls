@@ -1,0 +1,89 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+    openEHR-EHR-CLUSTER.cardinality_specialized.v1.0.0
+
+specialize
+	openEHR-EHR-CLUSTER.cardinality_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1.1] ∈ {                -- observation
+        items ∈ {                    -- existence not changed from reference model
+            ITEM_LIST[id3] ∈ {                                      -- pre-operative check list
+                /items cardinality ∈ {3..10} ∈ {                    -- at least 3 mandatory items
+                    ELEMENT[id12.1] occurrences ∈ {1}      -- item #1
+                    ELEMENT[id12.2] occurrences ∈ {1}       -- item #2
+                    ELEMENT[id12.3] occurrences ∈ {1}       -- item #3
+                    ELEMENT[id12.4] occurrences ∈ {0..1}    -- item #4
+                    ELEMENT[id12.5] occurrences ∈ {0..1}    -- item #5
+                    ELEMENT[id12.6] occurrences ∈ {0..1}    -- item #6
+                    ELEMENT[id12.7] occurrences ∈ {0..1}    -- item #7
+                    ELEMENT[id12.8] occurrences ∈ {0..1}    -- item #8
+                    ELEMENT[id12.9] occurrences ∈ {0..1}    -- item #9
+                    ELEMENT[id12.10] occurrences ∈ {0..1}   -- item #10
+                }
+            }
+        }
+}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"observation">
+				description = <"observation">
+			>
+			["id3"] = <
+                text = <"item tree">
+                description = <"item tree">
+            >
+            ["id12"] = <
+                text = <"element">
+                description = <"element">
+            >
+            ["id12.1"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.2"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.3"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.4"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.5"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.6"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.7"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.8"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.9"] = <
+               text = <"element">
+               description = <"element">
+            >
+            ["id12.10"] = <
+               text = <"element">
+               description = <"element">
+            >
+        >
+	>

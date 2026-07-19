@@ -1,0 +1,82 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-SECTION.VDIFP_non_matching_path.v1.0.0
+
+specialize
+	openEHR-EHR-SECTION.section_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"8/04/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VDIFP validity check, triggered when a differential path is mentioned that does not occur in the parent archetype, even if the path is valid in the RM. To state this constraint correctly, it should be done as a normal constraint structure, as if it were being defined in a top-level archetype.">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VDIFP1">
+	>
+
+definition
+	SECTION[id1.1] matches {	-- section
+		/items cardinality matches {1..8; unordered} matches {
+			SECTION[id0.1] occurrences matches {0..1} 	-- sub-section 1
+			SECTION[id0.2] occurrences matches {0..1} 	-- sub-section 2
+			SECTION[id0.3] occurrences matches {0..1} 	-- sub-section 3
+			SECTION[id0.4] occurrences matches {0..1} 	-- sub-section 4
+			SECTION[id0.5] occurrences matches {0..1} 	-- sub-section 5
+			SECTION[id0.6] occurrences matches {0..1} 	-- sub-section 6
+			SECTION[id0.7] occurrences matches {0..1} 	-- sub-section 7
+			SECTION[id0.8] occurrences matches {0..1} 	-- sub-section 8
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"section">
+				description = <"section">
+			>
+			["id0.1"] = <
+				text = <"sub-section 1">
+				description = <"sub-section 1">
+			>
+			["id0.2"] = <
+				text = <"sub-section 2">
+				description = <"sub-section 2">
+			>
+			["id0.3"] = <
+				text = <"sub-section 3">
+				description = <"sub-section 3">
+			>
+			["id0.4"] = <
+				text = <"sub-section 4">
+				description = <"sub-section 4">
+			>
+			["id0.5"] = <
+				text = <"sub-section 5">
+				description = <"sub-section 5">
+			>
+			["id0.6"] = <
+				text = <"sub-section 6">
+				description = <"sub-section 6">
+			>
+			["id0.7"] = <
+				text = <"sub-section 7">
+				description = <"sub-section 7">
+			>
+			["id0.8"] = <
+				text = <"sub-section 8">
+				description = <"sub-section 8">
+			>
+		>
+	>

@@ -1,0 +1,60 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	CDISC-Bridg-PerformedObservation.observation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"10/06/2014">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example CDISC archetype representing vital sign observation">
+			keywords = <"Observation", ...>
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	copyright = <"© 2014 CDISC.org">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	PerformedObservation[id1] matches {	-- BRIDG observation
+		involvedSubject matches {
+			Subject[id2] occurrences matches {1} 	-- Observation subject
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"BRIDG observation">
+				description = <"BRIDG observation">
+			>
+			["id2"] = <
+				text = <"Observation subject">
+				description = <"-">
+			>
+		>
+	>
+
+annotations
+	items = <
+		["en"] = <
+			items = <
+				["/involvedSubject"] = <
+					items = <
+						["xls-ref"] = <"635">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"USUBJID">
+					>
+				>
+			>
+		>
+	>

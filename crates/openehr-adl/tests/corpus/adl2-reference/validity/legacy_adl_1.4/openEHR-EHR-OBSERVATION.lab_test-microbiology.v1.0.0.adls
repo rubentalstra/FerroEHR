@@ -1,0 +1,61 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-microbiology.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"openEHR Archetype Editorial Group / Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/01/2009">
+	>
+	copyright = <"copyright (c) 2010 openEHR Foundation.">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test for anomaly in generation of differential archetype from flat.">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Microbiolology
+		/data[id2]/events[id3]/data[id4]/items matches {
+			after [id6]
+			CLUSTER[id0.34] occurrences matches {0..1} matches {	-- Bodily fluid findings
+				items matches {
+					ELEMENT[id0.36] occurrences matches {0..1} matches {	-- Red cell count
+						value matches {
+							DV_QUANTITY[id0.37] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.34"] = <
+				text = <"Bodily fluid findings">
+				description = <"Findings related to a bodily fluid specimen.">
+			>
+			["id0.36"] = <
+				text = <"Red cell count">
+				description = <"Red blood cell count in the bodily fluid..">
+			>
+			["id1.1"] = <
+				text = <"Microbiolology">
+				description = <"Generic laboratory test archetype for microbiology testing.">
+			>
+		>
+	>

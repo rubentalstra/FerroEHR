@@ -1,0 +1,68 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.ref_set_redefine_to_code.v1.0.0
+
+specialize
+	openEHR-EHR-EVALUATION.ref_set_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2017-02-20">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example of narrowing constraint of ref set inherited from parent.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2017 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	EVALUATION[id1.1] matches {	-- Adverse reaction exclusions
+		/data[id2]/items[id3]/value/defining_code matches {[ac1.1]}	
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Adverse reaction exclusions">
+				description = <"A category of conditions or states which have been excluded as cause of adverse reaction">
+			>
+			["ac1.1"] = <
+				text = <"Specific exclusions">
+				description = <"Reduced set of exclusions">
+			>
+			["at0.1"] = <
+				text = <"Single mapped code">
+				description = <"Single mapped code">
+			>
+		>
+	>
+	term_bindings = <
+		["loinc"] = <
+			["at0.1"] = <http://loinc.info/id/12249-2>
+		>
+	>
+	value_sets = <
+		["ac1.1"] = <
+			id = <"ac1.1">
+			members = <"at0.1">
+		>
+	>

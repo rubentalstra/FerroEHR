@@ -1,0 +1,8 @@
+--
+-- Logical archetype library definition
+--
+
+name = <"openEHR ADL reference">
+short_name = <"ADLref">
+maintainer = <"openEHR">
+description = <"openEHR ADL 2 regression test archetypes">

@@ -1,0 +1,269 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	CDISC-Bridg-PerformedObservation.vital_sign.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"10/06/2014">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example CDISC archetype representing vital sign observation">
+			keywords = <"Observation", ...>
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	copyright = <"© 2014 CDISC.org">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	PerformedObservation[id1] matches {	-- vital sign BRIDG observation
+		instantiatedDefinedActivity matches {
+			DefinedObservation[id2] matches {
+				nameCode matches {[ac1]}		-- vital sign measurement type
+			}
+		}
+		instantiatedPlannedActivity matches {
+			PlannedActivity[id8] matches {
+				componentPlannedCompositionRelationship matches {
+					PlannedCompositionRelationship[id9] matches {	-- Encounter type
+						componentPlannedActivity matches {
+							PlannedSubjectActivityGroup[id10] occurrences matches {1} 
+						}
+					}
+				}
+			}
+		}
+		resultedPerformedObservationResult matches {
+			PerformedObservationResult[id4] 	-- Original value
+			PerformedObservationResult[id5] matches {	-- Original units
+				value matches {
+					ST[id12] 
+				}
+			}
+			PerformedObservationResult[id6] matches {	-- Result value
+				baselineIndicator existence matches {1} 
+			}
+		}
+		bodyPositionCode matches {[ac2]}		-- vital sign measurement body positions
+		approachAnatomicSiteCode matches {[ac3]}		-- vital sign measurement body sites
+		dateRange existence matches {1} 
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"vital sign BRIDG observation">
+				description = <"vital sign BRIDG observation">
+			>
+			["id4"] = <
+				text = <"Original value">
+				description = <"Original measurement value collected or received">
+			>
+			["id5"] = <
+				text = <"Original units">
+				description = <"Original measurement units collected or received">
+			>
+			["id6"] = <
+				text = <"Result value">
+				description = <"Result value for all findings">
+			>
+			["id9"] = <
+				text = <"Encounter type">
+				description = <"Encounter type">
+			>
+			["ac1"] = <
+				text = <"vital sign measurement type">
+				description = <"vital sign measurement type">
+			>
+			["ac2"] = <
+				text = <"vital sign measurement body positions">
+				description = <"vital sign measurement body positions">
+			>
+			["ac3"] = <
+				text = <"vital sign measurement body sites">
+				description = <"vital sign measurement body sites">
+			>
+			["at2"] = <
+				text = <"Left arm">
+				description = <"Left arm">
+			>
+			["at3"] = <
+				text = <"Right arm">
+				description = <"Right arm">
+			>
+			["at4"] = <
+				text = <"Left thigh">
+				description = <"Left thigh">
+			>
+			["at5"] = <
+				text = <"Right thigh">
+				description = <"Right thigh">
+			>
+			["at6"] = <
+				text = <"Head">
+				description = <"Head">
+			>
+			["at7"] = <
+				text = <"Neck">
+				description = <"Neck">
+			>
+			["at8"] = <
+				text = <"Left wrist">
+				description = <"Left wrist">
+			>
+			["at9"] = <
+				text = <"Right wrist">
+				description = <"Right wrist">
+			>
+			["at10"] = <
+				text = <"Chest">
+				description = <"Chest">
+			>
+			["at11"] = <
+				text = <"Abdomen">
+				description = <"Abdomen">
+			>
+			["at100"] = <
+				text = <"SYSBP">
+				description = <"systolic blood pressure">
+			>
+			["at101"] = <
+				text = <"DIABP">
+				description = <"diastolic blood pressure">
+			>
+			["at102"] = <
+				text = <"BMI">
+				description = <"Body mass index">
+			>
+			["at103"] = <
+				text = <"HR">
+				description = <"Heart rate">
+			>
+			["at104"] = <
+				text = <"HEIGHT">
+				description = <"Height">
+			>
+			["at105"] = <
+				text = <"WEIGHT">
+				description = <"Weight">
+			>
+			["at106"] = <
+				text = <"TEMP">
+				description = <"Body temperature">
+			>
+			["at107"] = <
+				text = <"RESP">
+				description = <"Respiration">
+			>
+			["at200"] = <
+				text = <"SITTING">
+				description = <"Sitting position">
+			>
+			["at201"] = <
+				text = <"STANDING">
+				description = <"Standing position">
+			>
+			["at202"] = <
+				text = <"SUPINE">
+				description = <"Supine position">
+			>
+			["at203"] = <
+				text = <"INCLINED">
+				description = <"Inclined position">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at100", "at101", "at102", "at103", "at104", "at105", "at106", "at107">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at200", "at201", "at202", "at203">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at2", "at3", "at4", "at5", "at6", "at7", "at8", "at9", "at10", "at11">
+		>
+	>
+
+annotations
+	items = <
+		["en"] = <
+			items = <
+				["/instantiatedDefinedActivity[id2]"] = <
+					items = <
+						["xls-ref"] = <"639">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSTESTCD">
+					>
+				>
+				["/resultedPerformedObservationResult[id4]"] = <
+					items = <
+						["xls-ref"] = <"644">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSORRES">
+					>
+				>
+				["/resultedPerformedObservationResult[id5]"] = <
+					items = <
+						["xls-ref"] = <"645">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSORRESU">
+					>
+				>
+				["/resultedPerformedObservationResult[id6]"] = <
+					items = <
+						["xls-ref"] = <"646">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSTRESC">
+					>
+				>
+				["/bodyPositionCode"] = <
+					items = <
+						["xls-ref"] = <"643">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSPOS">
+					>
+				>
+				["/approachAnatomicSiteCode"] = <
+					items = <
+						["xls-ref"] = <"651">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSLOC">
+					>
+				>
+				["/dateRange"] = <
+					items = <
+						["xls-ref"] = <"664">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSRFTDTC">
+					>
+				>
+				["/instantiatedPlannedActivity[id8]/componentPlannedCompositionRelationship[id9]/componentPlannedActivity[id10]"] = <
+					items = <
+						["xls-ref"] = <"656">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VISIT">
+					>
+				>
+				["/resultedPerformedObservationResult[id6]/baselineIndicator"] = <
+					items = <
+						["xls-ref"] = <"653">
+						["SDTM-domain"] = <"VS">
+						["SDTM-Variable"] = <"VSBLFL">
+					>
+				>
+			>
+		>
+	>

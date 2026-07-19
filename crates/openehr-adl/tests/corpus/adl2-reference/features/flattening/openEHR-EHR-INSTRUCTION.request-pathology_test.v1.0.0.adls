@@ -1,0 +1,59 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-INSTRUCTION.request-pathology_test.v1.0.0
+
+specialize
+	openEHR-EHR-INSTRUCTION.request.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["organisation"] = <"Ocean Informatics UK <http://www.oceaninformatics.com>">
+		["date"] = <"2009-08-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test flattening when child archetype contains a differential path that contains an overridden id code midway through (id122.1).">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	INSTRUCTION[id1.1] matches {	-- PathologyTest Request
+		/activities[id2]/description[id10]/items[id122.1]/name matches {
+			DV_TEXT[id0.146] 
+		}
+		/activities[id2]/description[id10]/items[id136.1]/name matches {
+			DV_TEXT[id0.147] 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"PathologyTest Request">
+				description = <"Generic request for a pathology request.">
+			>
+			["id122.1"] = <
+				text = <"Pathology Test Requested">
+				description = <"Identification of the pathology test requested. This is often coded with an external terminology.">
+			>
+			["id136.1"] = <
+				text = <"Description of Test">
+				description = <"A detailed narrative description of the pathology test requested.">
+			>
+		>
+	>

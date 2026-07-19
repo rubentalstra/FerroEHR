@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.terminology_term_binding_empty.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test what happens when the terminology has a term binding that is completely empty.">
+			keywords = <"ADL", "validation", "test">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright (c) 2008 The openEHR Foundation">
+
+definition
+	ENTRY[id1]
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>
+	term_bindings = <
+		["TEST"] = <
+		>
+	>

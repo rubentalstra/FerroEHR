@@ -1,0 +1,82 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-CLUSTER.aa.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+		["MD5-CAM-1.0.1"] = <"FA137E59335FF74A78AFA144195E76B7">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- unknown
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- New element
+				value matches {
+					DV_TEXT[id3] 
+				}
+				null_flavour matches {
+					DV_CODED_TEXT[id4] matches {
+						defining_code matches {[ac1]}		-- New element (synthesised)
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"unknown">
+				description = <"unknown">
+			>
+			["id2"] = <
+				text = <"New element">
+				description = <"*">
+			>
+			["at1"] = <
+				text = <"unknown">
+				description = <"unknown">
+			>
+			["at2"] = <
+				text = <"no information">
+				description = <"no information">
+			>
+			["at3"] = <
+				text = <"not applicable">
+				description = <"not applicable">
+			>
+			["ac1"] = <
+				text = <"New element (synthesised)">
+				description = <"* (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/253>
+			["at2"] = <http://openehr.org/id/271>
+			["at3"] = <http://openehr.org/id/273>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at1", "at2", "at3">
+		>
+	>

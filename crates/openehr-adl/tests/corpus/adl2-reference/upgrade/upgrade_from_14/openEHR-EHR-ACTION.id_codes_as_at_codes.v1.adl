@@ -1,0 +1,78 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-ACTION.id_codes_as_at_codes.v1
+
+concept
+	[at0000]	-- Imaging investigation
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"2006-04-17">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Show how at-codes used as ids and values are converted to id-codes and distinct at-codes">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"AuthorDraft">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ACTION[at0000] matches {	-- Imaging investigation
+		ism_transition matches {
+			ISM_TRANSITION[at0001] matches {	-- Planned
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::524]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0001]}		-- Planned
+					}
+				}
+			}
+			ISM_TRANSITION[at0004] matches {	-- Requested
+				current_state matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[openehr::524]}
+					}
+				}
+				careflow_step matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {[local::at0004]}		-- Requested
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Imaging investigation">
+					description = <"An action related to an investigation by an imaging technique.">
+				>
+				["at0001"] = <
+					text = <"Planned">
+					description = <"Imaging investigation is planned.">
+				>
+				["at0004"] = <
+					text = <"Requested">
+					description = <"Imaging investigation has been requested.">
+				>
+			>
+		>
+	>

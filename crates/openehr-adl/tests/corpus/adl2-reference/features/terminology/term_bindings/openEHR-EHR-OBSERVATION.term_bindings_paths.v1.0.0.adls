@@ -1,0 +1,81 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.term_bindings_paths.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2012-10-21">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Simple example of a term binding to a path rather than a code. The meaning of this is that the binding only relates to the node at the path, whereas with a code-only binding, it relates to every location where that node appears (e.g. due to use_node internal references) or that the code appears (due to static definition).">
+			keywords = <"ADL", "test", "terminology bindings">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2012 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- Apgar score
+		data matches {
+			HISTORY[id3] matches {
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[id4] occurrences matches {0..1} matches {	-- 1 minute
+						data matches {
+							ITEM_LIST[id2] matches {
+								items cardinality matches {1..6; ordered} matches {
+									ELEMENT[id5] occurrences matches {0..1} 	-- Total
+								}
+							}
+						}
+					}
+					POINT_EVENT[id7] occurrences matches {0..1} matches {	-- 5 minute
+						data matches {
+							use_node ITEM_LIST[id9] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Apgar score">
+				description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle tone and skin colour.">
+			>
+			["id4"] = <
+				text = <"1 minute">
+				description = <"Apgar score 1 minute after birth">
+			>
+			["id5"] = <
+				text = <"Total">
+				description = <"The sum of the 5 ordinal scores for each component parameter.">
+			>
+			["id7"] = <
+				text = <"5 minute">
+				description = <"Apgar score 5 minutes after birth">
+			>
+		>
+	>
+	term_bindings = <
+		["LNC205"] = <
+			["/data[id3]/events[id4]/data[id2]/items[id5]"] = <http://LNC205.org/id/9272-6>
+		>
+	>

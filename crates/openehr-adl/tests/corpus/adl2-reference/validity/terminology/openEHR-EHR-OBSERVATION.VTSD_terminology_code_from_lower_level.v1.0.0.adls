@@ -1,0 +1,62 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VTSD_terminology_code_from_lower_level.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/8/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VTSD validity check, triggered by at-code from a lower level in the ontology">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VTSD">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- specialisation containing ordered extension nodes
+		/data/events[id3]/data/items cardinality matches {2..*; ordered} matches {
+			ELEMENT[id0.1] matches {	-- Text field 2
+				value matches {
+					DV_TEXT[id0.16] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.1"] = <
+				text = <"Text field 2">
+				description = <"*">
+			>
+			["at0.1.2"] = <
+				text = <"xx">
+				description = <"xx">
+			>
+			["at0.2"] = <
+				text = <"Quantity 2">
+				description = <"*">
+			>
+			["at0.3"] = <
+				text = <"Text field 3">
+				description = <"*">
+			>
+			["id1.1"] = <
+				text = <"specialisation containing ordered extension nodes">
+				description = <"specialisation containing ordered extension nodes">
+			>
+		>
+	>

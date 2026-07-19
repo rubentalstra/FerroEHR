@@ -1,0 +1,74 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.redefine_local_code_list.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs2.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"Ocean Informatics">
+		["name"] = <"Thomas Beale">
+		["date"] = <"19/6/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test redefinition of an RM type into a RM subtype">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- obs
+		/data/events[id3]/data/items[id4]/value matches {
+			DV_CODED_TEXT[id14] matches {
+				defining_code matches {[ac0.1]}		-- (added by post-parse processor)
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["at0.1"] = <
+				text = <"term A">
+				description = <"term A">
+			>
+			["at0.2"] = <
+				text = <"term B">
+				description = <"term B">
+			>
+			["at0.3"] = <
+				text = <"term C">
+				description = <"term C">
+			>
+			["at0.4"] = <
+				text = <"term D">
+				description = <"term D">
+			>
+			["at0.5"] = <
+				text = <"term E">
+				description = <"term E">
+			>
+			["id1.1"] = <
+				text = <"obs">
+				description = <"obs">
+			>
+			["ac0.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	value_sets = <
+		["ac0.1"] = <
+			id = <"ac0.1">
+			members = <"at0.1", "at0.2", "at0.3", "at0.4", "at0.5">
+		>
+	>

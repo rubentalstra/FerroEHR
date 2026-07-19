@@ -1,0 +1,84 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-SOME_TYPE.dv_quantity_node_ids.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2005-06-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrates DV_QUANTITYs with at-codes containing alternate constraints, including no magnitude.">
+			keywords = <"ADL", "test", "quantities">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2004 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		clinical_quantity_attr_2 matches {
+			DV_QUANTITY[id4] matches {	-- first instance
+				property matches {[at4]}
+				units matches {"C", "F"}
+			}
+			DV_QUANTITY[id5] matches {	-- second instance
+				property matches {[at5]}
+				units matches {"K", "F"}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+			["at2"] = <
+				text = <"Centigrade temperature">
+				description = <"Centigrade temperature">
+			>
+			["at3"] = <
+				text = <"Fahrenheit temperature">
+				description = <"Fahrenheit temperature">
+			>
+			["id4"] = <
+				text = <"first instance">
+				description = <"first instance">
+			>
+			["id5"] = <
+				text = <"second instance">
+				description = <"second instance">
+			>
+			["at4"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+			["at5"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at4"] = <http://openehr.org/id/127>
+			["at5"] = <http://openehr.org/id/127>
+		>
+	>

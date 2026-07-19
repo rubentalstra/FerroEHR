@@ -1,0 +1,45 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+    openEHR-EHR-CLUSTER.order-parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1] ∈ {
+        items ∈ {
+            ELEMENT[id2] occurrences ∈ {*}      -- item #1
+            ELEMENT[id3] occurrences ∈ {*}      -- item #2
+            ELEMENT[id4] occurrences ∈ {0..1}    -- item #3
+            ELEMENT[id5]                        -- item #4
+
+        }
+}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id2"] = <
+                text = <"item 1">
+                description = <"item 1">
+            >
+            ["id3"] = <
+                text = <"item 2">
+                description = <"item 2">
+            >
+            ["id4"] = <
+               text = <"item 3">
+               description = <"item 3">
+            >
+            ["id5"] = <
+               text = <"item 4">
+               description = <"item 4">
+            >
+        >
+	>

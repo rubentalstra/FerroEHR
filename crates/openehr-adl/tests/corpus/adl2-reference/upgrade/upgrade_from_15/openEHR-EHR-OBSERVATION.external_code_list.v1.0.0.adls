@@ -1,0 +1,99 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.external_code_list.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"22/03/2006">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test rewriting of external code list">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"© openEHR Foundation">
+
+definition
+	OBSERVATION[id1] matches {	-- Test Obs
+		protocol matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- document state
+						value matches {
+							DV_CODED_TEXT[id4] matches {
+								defining_code matches {[ac1; at1]}		-- document state
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Test Obs">
+				description = <"Test Obs">
+			>
+			["id3"] = <
+				text = <"document state">
+				description = <"document state">
+			>
+			["ac1"] = <
+				text = <"document state">
+				description = <"document state">
+			>
+			["at1"] = <
+				text = <"modification">
+				description = <"modification">
+			>
+			["at2"] = <
+				text = <"creation">
+				description = <"creation">
+			>
+			["at3"] = <
+				text = <"synthesis">
+				description = <"synthesis">
+			>
+			["at4"] = <
+				text = <"unknown">
+				description = <"unknown">
+			>
+			["at5"] = <
+				text = <"deleted">
+				description = <"deleted">
+			>
+			["at6"] = <
+				text = <"attestation">
+				description = <"attestation">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/251>
+			["at2"] = <http://openehr.org/id/249>
+			["at3"] = <http://openehr.org/id/252>
+			["at4"] = <http://openehr.org/id/253>
+			["at5"] = <http://openehr.org/id/523>
+			["at6"] = <http://openehr.org/id/666>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at2", "at1", "at3", "at4", "at5", "at6">
+		>
+	>

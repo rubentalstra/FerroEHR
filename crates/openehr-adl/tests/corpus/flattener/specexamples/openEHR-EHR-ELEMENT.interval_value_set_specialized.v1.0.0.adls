@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-ELEMENT.internal_value_set_specialized.v1.0.0
+
+specialize
+	openEHR-EHR-ELEMENT.internal_value_set_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+
+definition
+    ELEMENT[id1.1] ∈ {   -- System
+        /name[id14]/defining_code ∈ {[ac1.1]}
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"system">
+				description = <"system">
+			>
+		>
+	>
+    value_sets = <
+        ["ac1.1"] = <
+            id = <"ac1.1">
+            members = <
+                "at10",   -- Gastro-intestinal system
+                "at11",   -- Reticulo-Endothelial system
+                "at12",   -- Genito-urinary system
+                "at13",   -- Endocrine System
+                "at15"    -- Musculoskeletal system
+            >
+        >
+    >

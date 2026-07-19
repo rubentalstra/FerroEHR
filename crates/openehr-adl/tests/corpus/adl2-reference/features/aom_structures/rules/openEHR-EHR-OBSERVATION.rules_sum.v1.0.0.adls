@@ -1,0 +1,338 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.rules_sum.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2011-06-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test sum statement in rules section">
+			keywords = <"ADL", "test", "rules">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2011 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- Apgar score
+		data matches {
+			HISTORY[id3] matches {
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[id4] occurrences matches {0..1} matches {	-- 1 minute
+						offset matches {
+							DV_DURATION[id38] matches {	-- Any event
+								value matches {PT1M}
+							}
+						}
+						data matches {
+							ITEM_LIST[id2] matches {
+								items cardinality matches {1..6; ordered} matches {
+									ELEMENT[id10] occurrences matches {0..1} matches {	-- Respiratory effort
+										value matches {
+											DV_ORDINAL[id39] matches {
+												[value, symbol] matches {
+													[{0}, {[at10]}],
+													[{1}, {[at11]}],
+													[{2}, {[at12]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Heart Rate
+										value matches {
+											DV_ORDINAL[id40] matches {
+												[value, symbol] matches {
+													[{0}, {[at6]}],
+													[{1}, {[at7]}],
+													[{2}, {[at8]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id14] occurrences matches {0..1} matches {	-- Muscle tone
+										value matches {
+											DV_ORDINAL[id41] matches {
+												[value, symbol] matches {
+													[{0}, {[at14]}],
+													[{1}, {[at15]}],
+													[{2}, {[at16]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id18] occurrences matches {0..1} matches {	-- Reflex irritability
+										value matches {
+											DV_ORDINAL[id42] matches {
+												[value, symbol] matches {
+													[{0}, {[at18]}],
+													[{1}, {[at19]}],
+													[{2}, {[at20]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id22] occurrences matches {0..1} matches {	-- Skin colour
+										value matches {
+											DV_ORDINAL[id43] matches {
+												[value, symbol] matches {
+													[{0}, {[at22]}],
+													[{1}, {[at23]}],
+													[{2}, {[at24]}]
+												}
+											}
+										}
+									}
+									ELEMENT[id26] occurrences matches {0..1} matches {	-- Total
+										value matches {
+											DV_COUNT[id44] matches {
+												magnitude matches {|0..10|}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					POINT_EVENT[id27] occurrences matches {0..1} matches {	-- 2 minute
+						offset matches {
+							DV_DURATION[id45] matches {
+								value matches {PT2M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id46] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id28] occurrences matches {0..1} matches {	-- 3 minute
+						offset matches {
+							DV_DURATION[id47] matches {
+								value matches {PT3M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id48] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id29] occurrences matches {0..1} matches {	-- 5 minute
+						offset matches {
+							DV_DURATION[id49] matches {
+								value matches {PT5M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id50] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					POINT_EVENT[id32] occurrences matches {0..1} matches {	-- 10 minute
+						offset matches {
+							DV_DURATION[id51] matches {
+								value matches {PT10M}
+							}
+						}
+						data matches {
+							use_node ITEM_LIST[id52] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+					EVENT[id38] occurrences matches {0..*} matches {	-- Any event
+						data matches {
+							use_node ITEM_LIST[id53] /data[id3]/events[id4]/data[id2]	-- /data[id3]/events[1 minute]/data[id2]
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_LIST[id30] matches {
+				items matches {
+					ELEMENT[id31] occurrences matches {0..1} matches {	-- Notes on measurement
+						value matches {
+							DV_TEXT[id54] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+rules
+	score_sum: /data[id3]/events[id4]/data[id2]/items[id26]/value[id44]/magnitude = /data[id3]/events[id4]/data[id2]/items[id6]/value[id40]/value + /data[id3]/events[id4]/data[id2]/items[id10]/value[id39]/value + /data[id3]/events[id4]/data[id2]/items[id14]/value[id41]/value + /data[id3]/events[id4]/data[id2]/items[id18]/value[id42]/value + /data[id3]/events[id4]/data[id2]/items[id22]/value[id43]/value
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Apgar score">
+				description = <"Clinical score derived from assessment of respiratory effort, heart rate, reflex irritability, muscle tone and skin colour.">
+			>
+			["id4"] = <
+				text = <"1 minute">
+				description = <"Apgar score 1 minute after birth.">
+			>
+			["id6"] = <
+				text = <"Heart Rate">
+				description = <"Recording of the infant's heart rate.">
+			>
+			["id10"] = <
+				text = <"Respiratory effort">
+				description = <"Observation of the infant's respiratory effort.">
+			>
+			["id14"] = <
+				text = <"Muscle tone">
+				description = <"Observation of the infant's muscle tone.">
+			>
+			["id18"] = <
+				text = <"Reflex irritability">
+				description = <"Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter.">
+			>
+			["id22"] = <
+				text = <"Skin colour">
+				description = <"Observation of the skin colour of the infant.">
+			>
+			["id26"] = <
+				text = <"Total">
+				description = <"The sum of the 5 ordinal scores for each component parameter.">
+			>
+			["id27"] = <
+				text = <"2 minute">
+				description = <"Apgar score 2 minutes after birth.">
+			>
+			["id28"] = <
+				text = <"3 minute">
+				description = <"Apgar score 3 minutes after birth.">
+			>
+			["id29"] = <
+				text = <"5 minute">
+				description = <"Apgar score 5 minutes after birth.">
+			>
+			["id31"] = <
+				text = <"Notes on measurement">
+				description = <"Notes on measurement of the Apgar score.">
+			>
+			["id32"] = <
+				text = <"10 minute">
+				description = <"Apgar score 10 minutes after birth.">
+			>
+			["id38"] = <
+				text = <"Any event">
+				description = <"Apgar score at any additional time, as required.">
+			>
+			["at6"] = <
+				text = <"Absent">
+				description = <"No heart beat is seen, felt or heard.">
+			>
+			["at7"] = <
+				text = <"<100 beats per minute">
+				description = <"Heart rate less than 100 beats per minute.">
+			>
+			["at8"] = <
+				text = <"â¥100 beats per minute">
+				description = <"Heart rate greater than or equal to 100 beats per minute.">
+			>
+			["at10"] = <
+				text = <"Absent">
+				description = <"No effort to breath.">
+			>
+			["at11"] = <
+				text = <"Weak or irregular">
+				description = <"Some effort to breath, moving chest.">
+			>
+			["at12"] = <
+				text = <"Normal">
+				description = <"Breathing normally or crying.">
+			>
+			["at14"] = <
+				text = <"Limp or flaccid">
+				description = <"No spontaneous movement.">
+			>
+			["at15"] = <
+				text = <"Reduced tone">
+				description = <"Some flexion of extremities.">
+			>
+			["at16"] = <
+				text = <"Normal tone">
+				description = <"Normal, vigorous movements.">
+			>
+			["at18"] = <
+				text = <"No response">
+				description = <"No response to stimulation.">
+			>
+			["at19"] = <
+				text = <"Reduced response">
+				description = <"Grimace or feeble cry when stimulated.">
+			>
+			["at20"] = <
+				text = <"Normal response">
+				description = <"Grimace, sneeze, cough or pulls away when stimulated.">
+			>
+			["at22"] = <
+				text = <"Completely blue">
+				description = <"Body and extremities are blue.">
+			>
+			["at23"] = <
+				text = <"Body pink; extremities blue">
+				description = <"Body is pink; extremities are blue.">
+			>
+			["at24"] = <
+				text = <"Completely pink">
+				description = <"Body and extremities are pink; no cyanosis.">
+			>
+			["ac1"] = <
+				text = <"Respiratory effort (synthesised)">
+				description = <"Observation of the infant's respiratory effort. (synthesised)">
+			>
+			["ac2"] = <
+				text = <"Heart Rate (synthesised)">
+				description = <"Recording of the infant's heart rate. (synthesised)">
+			>
+			["ac3"] = <
+				text = <"Muscle tone (synthesised)">
+				description = <"Observation of the infant's muscle tone. (synthesised)">
+			>
+			["ac4"] = <
+				text = <"Reflex irritability (synthesised)">
+				description = <"Observation of the response of the infant to an irritant stimulation, for example, suctioning the oropharynx and nares with a soft rubber catheter. (synthesised)">
+			>
+			["ac5"] = <
+				text = <"Skin colour (synthesised)">
+				description = <"Observation of the skin colour of the infant. (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at10", "at11", "at12">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at6", "at7", "at8">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at14", "at15", "at16">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at18", "at19", "at20">
+		>
+		["ac5"] = <
+			id = <"ac5">
+			members = <"at22", "at23", "at24">
+		>
+	>

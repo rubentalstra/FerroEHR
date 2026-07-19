@@ -1,0 +1,40 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VSANCE_redefine_existence.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_obs.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR Foundation">
+		["name"] = <"Thomas Beale">
+		["date"] = <"11/8/2008">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VSANCE validity check, triggered by non-conformant redefinition of existence from {1} to {0}.">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VSANCE">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	-- Observation
+		/protocol existence matches {0} 
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Observation">
+				description = <"Observation">
+			>
+		>
+	>

@@ -1,0 +1,68 @@
+archetype (adl_version=1.4; uid=b1506a87-9bf2-4978-9eed-6ceecb0c2be9)
+	openEHR-EHR-OBSERVATION.test_regex.v1
+
+concept
+	[at0000]	-- Blood Pressure
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"Ars Semantica">
+		["email"] = <"thomas.beale@arssemantica.com">
+		["date"] = <"2017-03-22">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test regex conversion from ADL 1.4.">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["revision"] = <"1.1.0">
+		["licence"] = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+		["build_uid"] = <"6c619135-74b0-428b-8b49-f0ad4f26e881">
+		["original_publisher"] = <"openEHR Foundation">
+		["original_namespace"] = <"org.openehr">
+		["MD5-CAM-1.0.1"] = <"0B794FDD7E013E64D0E7A004C0E71F0D">
+		["custodian_namespace"] = <"org.openehr">
+		["custodian_organisation"] = <"openEHR Foundation">
+	>
+
+definition
+	OBSERVATION[at0000] matches {	-- Blood Pressure
+		protocol matches {
+			ITEM_TREE[at0011] matches {	-- Tree
+				items cardinality matches {0..*; unordered} matches {
+					allow_archetype CLUSTER[at1057] occurrences matches {0..*} matches {	-- Structured measurement location
+						include
+							archetype_id/value matches {/openEHR-EHR-CLUSTER\.anatomical_location(-[a-zA-Z0-9_]+)*\.v1/}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Blood Pressure">
+					description = <"The local measurement of arterial blood pressure which is a surrogate for arterial pressure in the systemic circulation.  Most commonly, use of the term 'blood pressure' refers to measurement of brachial artery pressure in the upper arm.">
+				>
+				["at0011"] = <
+					text = <"Tree">
+					description = <"List structure.">
+				>
+				["at1057"] = <
+					text = <"Structured measurement location">
+					description = <"Structured anatomical location of where the measurement was taken.">
+				>
+			>
+		>
+	>

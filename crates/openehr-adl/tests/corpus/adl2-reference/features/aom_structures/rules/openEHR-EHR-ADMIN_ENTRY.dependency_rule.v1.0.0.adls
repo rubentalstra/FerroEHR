@@ -1,0 +1,185 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-ADMIN_ENTRY.dependency_rule.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["email"] = <"thomas.beale@openEHR.org">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2014-01-22">
+	>
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrate rules that express a dependency of one part of an archetype on the valu of another.">
+			keywords = <"ADL", "test", "rules">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ADMIN_ENTRY[id1] matches {	-- Orientacion de alta
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					CLUSTER[id21] occurrences matches {0..1} matches {	-- saida
+						items matches {
+							ELEMENT[id15] matches {	-- tipo de saido
+								value matches {
+									DV_CODED_TEXT[id50] matches {
+										defining_code matches {[ac1]}		-- tipo de saido (synthesised)
+									}
+								}
+							}
+							ELEMENT[id20] occurrences matches {0..1} matches {	-- transferencia externo para
+								value matches {
+									DV_TEXT[id51] 
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+rules
+        /data[id2]/items[id21]/items[id15]/value[id50]/defining_code matches {[at19]} implies exists /data[id2]/items[id21]/items[id20]
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Orientacion de alta">
+				description = <"xxxxxxxxxxxxxxx ddddddd vvvvv">
+			>
+			["id15"] = <
+				text = <"tipo de saido">
+				description = <"*">
+			>
+			["at16"] = <
+				text = <"alta">
+				description = <"xxxxxx">
+			>
+			["at17"] = <
+				text = <"obito">
+				description = <"xxxx">
+			>
+			["at19"] = <
+				text = <"transferencia">
+				description = <"xxxx">
+			>
+			["id20"] = <
+				text = <"transferencia externo para">
+				description = <"*">
+			>
+			["id21"] = <
+				text = <"saida">
+				description = <"*">
+			>
+			["at23"] = <
+				text = <"curado">
+				description = <"xxxx">
+			>
+			["at24"] = <
+				text = <"melhorado">
+				description = <"xxxx">
+			>
+			["at25"] = <
+				text = <"inalterado">
+				description = <"xxx">
+			>
+			["at26"] = <
+				text = <"a pedido">
+				description = <"xxx">
+			>
+			["at27"] = <
+				text = <"assistencia domiciliar">
+				description = <"xxxx">
+			>
+			["at33"] = <
+				text = <"acamado">
+				description = <"*">
+			>
+			["at34"] = <
+				text = <"restrito a cadeira">
+				description = <"*">
+			>
+			["at35"] = <
+				text = <"deambula occasionalmente">
+				description = <"*">
+			>
+			["at36"] = <
+				text = <"deambula frequentemente">
+				description = <"*">
+			>
+			["at37"] = <
+				text = <"Mass">
+				description = <"Mass">
+			>
+			["at38"] = <
+				text = <"image/cgm">
+				description = <"image/cgm">
+			>
+			["at39"] = <
+				text = <"image/png">
+				description = <"image/png">
+			>
+			["at40"] = <
+				text = <"image/jpeg">
+				description = <"image/jpeg">
+			>
+			["ac1"] = <
+				text = <"tipo de saido (synthesised)">
+				description = <"* (synthesised)">
+			>
+			["ac2"] = <
+				text = <"motivo de saida (synthesised)">
+				description = <"* (synthesised)">
+			>
+			["ac3"] = <
+				text = <"facebook picture (synthesised)">
+				description = <"* (synthesised)">
+			>
+			["ac4"] = <
+				text = <"atividade fisica (synthesised)">
+				description = <"* (synthesised)">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at37"] = <http://openehr.org/id/124>
+			["at38"] = <http://openehr.org/id/425>
+			["at39"] = <http://openehr.org/id/427>
+			["at40"] = <http://openehr.org/id/429>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at16", "at17", "at19">
+		>
+		["ac2"] = <
+			id = <"ac2">
+			members = <"at23", "at24", "at25", "at26", "at27">
+		>
+		["ac3"] = <
+			id = <"ac3">
+			members = <"at38", "at39", "at40">
+		>
+		["ac4"] = <
+			id = <"ac4">
+			members = <"at33", "at34", "at35", "at36">
+		>
+	>

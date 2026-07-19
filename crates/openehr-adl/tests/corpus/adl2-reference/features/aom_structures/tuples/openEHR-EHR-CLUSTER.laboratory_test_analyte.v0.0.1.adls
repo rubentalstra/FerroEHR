@@ -1,0 +1,48 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3)
+	openEHR-EHR-CLUSTER.laboratory_test_analyte.v0.0.1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openEHR.org">
+		["date"] = <"2018-03-01">
+	>
+	original_namespace = <"org.openehr">
+	original_publisher = <"openEHR Foundation">
+	copyright = <"© 2018 openEHR Foundation">
+	licence = <"This work is licensed under the Creative Commons Attribution-ShareAlike 3.0 License. To view a copy of this license, visit http://creativecommons.org/licenses/by-sa/3.0/.">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test archetype">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	CLUSTER[id1] matches {	-- Laboratory test analyte
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} 	-- Analyte result
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Laboratory test analyte">
+				description = <"The result of a laboratory test for a single analyte value.">
+			>
+			["id2"] = <
+				text = <"Analyte result">
+				description = <"Actual value of the analyte result. The name of this element is normally replaced in a specialisation, in a template or at run-time to reflect the actual analyte e.g. Serum sodium and will often be coded.">
+			>
+		>
+	>

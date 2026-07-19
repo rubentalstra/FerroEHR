@@ -1,0 +1,45 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-DEMOGRAPHIC-ORGANISATION.rm_same_cardinality.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"12/03/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test cardinality same as in RM, should report WCACA warning">
+			keywords = <"test", "RM checking">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ORGANISATION[id1] matches {	-- An organisation
+		identities matches {
+			PARTY_IDENTITY[id2] occurrences matches {1..*} 	-- A party identity
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"An organisation">
+				description = <"An orgnisation">
+			>
+			["id2"] = <
+				text = <"A party identity">
+				description = <"A party identity">
+			>
+		>
+	>

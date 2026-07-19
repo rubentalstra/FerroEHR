@@ -1,0 +1,73 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	CDISC-Bridg-PerformedObservation.vital_sign_bp.v1.0.0
+
+specialize
+	CDISC-Bridg-PerformedObservation.vital_sign.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"10/06/2014">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example CDISC archetype representing BP observation">
+			keywords = <"Observation", "blood pressure">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	copyright = <"© 2014 CDISC.org">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	PerformedObservation[id1.1] matches {	-- Blood pressure BRIDG observation
+		/instantiatedDefinedActivity[id2]/nameCode matches {[ac1.1]}		-- BP measurement type
+		/resultedPerformedObservationResult[id6]/value matches {
+			PQ[id0.1] 
+		}
+		/bodyPositionCode matches {[ac2.1]}		-- BP measurement position
+		/approachAnatomicSiteCode matches {[ac3.1]}		-- BP measurement site
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Blood pressure BRIDG observation">
+				description = <"Blood pressure BRIDG observation">
+			>
+			["ac1.1"] = <
+				text = <"BP measurement type">
+				description = <"BP measurement type">
+			>
+			["ac2.1"] = <
+				text = <"BP measurement position">
+				description = <"BP measurement body position">
+			>
+			["ac3.1"] = <
+				text = <"BP measurement site">
+				description = <"BP measurement site">
+			>
+		>
+	>
+	value_sets = <
+		["ac1.1"] = <
+			id = <"ac1.1">
+			members = <"at100", "at101">
+		>
+		["ac2.1"] = <
+			id = <"ac2.1">
+			members = <"at200", "at201">
+		>
+		["ac3.1"] = <
+			id = <"ac3.1">
+			members = <"at2", "at3", "at4", "at5">
+		>
+	>

@@ -1,0 +1,90 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-WHOLE.assumed_values.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2004-05-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test constraints on primitive types that have added 'assumed values' as defined by the AOM">
+			keywords = <"ADL", "assumed types", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright © 2004 openEHR Foundation <http://www.openEHR.org>">
+
+definition
+	WHOLE[id1] matches {	-- test entry
+		string_attr1 matches {"something", "something else"; "something else"}
+		string_attr2 matches {/this|that|something else/; "this"}
+		string_attr3 matches {/cardio.*/; "cardiology examination"}
+		boolean_attr1 matches {True}
+		boolean_attr2 matches {False}
+		boolean_attr3 matches {True, False; True}
+		integer_attr1 matches {55}
+		integer_attr2 matches {10, 20, 30; 10}
+		integer_attr3 matches {|0..100|; 10}
+		integer_attr4 matches {|>10|; 11}
+		integer_attr5 matches {|<10|; 9}
+		integer_attr6 matches {|>=10|; 10}
+		integer_attr7 matches {|<=10|; 5}
+		integer_attr8 matches {|-10..-5|; -8}
+		integer_attr9 matches {10}
+		real_attr1 matches {100.0}
+		real_attr2 matches {10.0, 20.0, 30.0; 20.0}
+		real_attr3 matches {|0.0..100.0|; 20.4}
+		real_attr4 matches {|>=10.0|; 20.0}
+		real_attr5 matches {|<=10.0|; 9.5}
+		real_attr6 matches {|>=10.0|; 20.3}
+		real_attr7 matches {|<=10.0|; 8.0}
+		real_attr8 matches {|-10.0..-5.0|; -9.8}
+		real_attr9 matches {10.0}
+		date_attr1 matches {yyyy-mm-dd; 1995-03-17}
+		date_attr2 matches {yyyy-??-??; 1995-03-17}
+		date_attr3 matches {yyyy-mm-??; 1995-03-17}
+		date_attr4 matches {yyyy-??-XX; 1995-03}
+		date_attr5 matches {1983-12-25}
+		date_attr6 matches {2000-01-01}
+		time_attr1 matches {hh:mm:ss; 12:01:30}
+		time_attr2 matches {hh:mm:XX; 12:01}
+		time_attr3 matches {hh:??:XX; 12:00}
+		time_attr4 matches {hh:??:??; 12:00}
+		time_attr5 matches {22:00:05,0}
+		time_attr6 matches {00:00:59,0}
+		time_attr7 matches {00:00:59,0}
+		date_time_attr1 matches {yyyy-mm-ddThh:mm:ss; 1995-03-17T12:01:30}
+		date_time_attr2 matches {yyyy-mm-ddThh:mm:??; 1995-03-17T12:01}
+		date_time_attr3 matches {yyyy-mm-ddThh:mm:XX; 1995-03-17T12:01}
+		date_time_attr4 matches {yyyy-mm-ddThh:??:XX; 1995-03-17T12:01}
+		date_time_attr5 matches {yyyy-??-??T??:??:??; 1995-03-17T12:01}
+		date_time_attr6 matches {1983-12-25T22:00:05,0}
+		date_time_attr7 matches {2000-01-01T00:00:59,0}
+		date_time_attr8 matches {2000-01-01T00:00:59,0}
+		duration_attr1 matches {PT0S}
+		duration_attr2 matches {P1D}
+		duration_attr3 matches {PT2H5M}
+		duration_attr4 matches {PT1H55M}
+		duration_attr5 matches {|<=PT1H|; PT30M}
+		duration_attr6 matches {PT1H30M}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"test entry">
+				description = <"test entry">
+			>
+		>
+	>

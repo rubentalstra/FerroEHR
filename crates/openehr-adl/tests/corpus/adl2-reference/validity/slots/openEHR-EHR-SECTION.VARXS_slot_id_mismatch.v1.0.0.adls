@@ -1,0 +1,47 @@
+archetype (adl_version=2.0.7; rm_release=1.0.2)
+	openEHR-EHR-SECTION.VARXS_slot_id_mismatch.v1.0.0
+
+specialize
+	openEHR-EHR-SECTION.slot_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"14/07/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VARXS validity check, triggered by slot filler with archetype id that does not match the definition">
+		>
+	>
+	lifecycle_state = <"initial">
+	other_details = <
+		["regression"] = <"VARXS">
+	>
+
+definition
+	SECTION[id1.1] matches {	-- Filled slot section
+		/items matches {
+			use_archetype OBSERVATION[id2.1, openEHR-EHR-OBSERVATION.rm_correct_generic.v1] 
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Filled slot section">
+				description = <"Filled slot section">
+			>
+			["id2.1"] = <
+				text = <"Slot filler">
+				description = <"Slot filler">
+			>
+		>
+	>

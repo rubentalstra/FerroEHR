@@ -1,0 +1,84 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.mixed_aom_node_types.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+    ["name"] = <"Thomas Beale">
+    ["organisation"] = <"openEHR Foundation">
+    ["email"] = <"thomas.beale@openEHR.org">    
+	["date"] = <"2004-05-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test various AOM C_OBJECT types together, toensure co-existence within the same object structure.">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright © 2004 openEHR Foundation">
+
+definition
+	EVALUATION[id1] matches {	-- Evaluation
+		data matches {
+			ITEM_TREE[id14] matches {
+				items matches {
+					CLUSTER[id2] matches {	-- cluster
+						items matches {
+							use_node ELEMENT[id10] /data[id14]/items[id11]/items[id13]	-- /data[id14]/items[cluster]/items[element]
+							allow_archetype CLUSTER[id4] matches {	-- element
+								include
+									archetype_id/value matches {/.*/}
+							}
+							ELEMENT[id3] 	-- element
+						}
+					}
+					CLUSTER[id11] matches {	-- cluster
+						items matches {
+							ELEMENT[id13] 	-- element
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Evaluation">
+				description = <"Evaluation">
+			>
+			["id2"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id3"] = <
+				text = <"element">
+				description = <"element">
+			>
+			["id11"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id13"] = <
+				text = <"element">
+				description = <"element">
+			>
+			["id4"] = <
+				text = <"element">
+				description = <"element">
+			>
+			["id10"] = <
+				text = <"use_node element">
+				description = <"use_node element">
+			>
+		>
+	>

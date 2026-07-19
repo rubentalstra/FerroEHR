@@ -1,0 +1,355 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2; generated)
+	openEHR-EHR-OBSERVATION.lab_test.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			author = <
+				["name"] = <"Mona Saleh">
+			>
+		>
+	>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"07/11/2009">
+	>
+	copyright = <"© openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record the result of a laboratory test which may be used to record a single valued test but will often be specialised or templated to represent multiple value or 'panel' tests.
+This archetype also acts as the parent for specialisations appropriate for more specific laboratory tests microbiology, histopathology.">
+			use = <"May be used to represent 'standard' single-value laboratory test results  but will often be specialised or templated to represent multi-value results, sometimes referred to as panels. May also be specialised to more highly structured laboratory tests such as microbiology or histopathology.
+
+Will normally be reported back to the requesting clinician within the context of an overall Composition-based laboratory report.">
+			keywords = <"lab", "pathology", "biochemistry", "haematology", "microbiology", "immunology", "laboratory">
+			misuse = <"Specialisations may be more appropriate for specific structured reports such as for microbiology or histopathology.">
+		>
+		["ar-sy"] = <
+			language = <[ISO_639-1::ar-sy]>
+			purpose = <"لتسجيل نتيجة اختبار المعمل, و التي قد يتم استخدامها لتسجيل اختبار ذي قيمة واحدة, و عادة ما يتم بعد ذلك المزيد من التخصيص أو الوضع في قالب لتمثيل اختبار متعدد القيم أو رتل من الاختبارات.
+و يمثل هذا النموذج كوالد (أب) للتخصيصات الأخرى لاختبارات معملية أكثر تحديدا مثل الميكروبيولوجيا و الهيستوباثولوجيا.">
+			use = <"قد يستخدم لتسجيل نتيجة اختبار المعمل, و التي قد يتم استخدامها لتسجيل اختبار ذي قيمة واحدة, و عادة ما يتم بعد ذلك المزيد من التخصيص أو الوضع في قالب لتمثيل اختبار متعدد القيم أو رتل من الاختبارات.
+
+يتم بعد ذلك تقديم التقرير للطبيب السريري الذي قام بطلب الاختبار في سياق تقرير معملي متكامل.">
+			keywords = <"المعمل - المختبر", "الباثولوجيا - المرضية", "الكيمياء الحيوية", "الدمويات", "الميكروبيولوجيا", "المناعيات - علم المناعة">
+			misuse = <"قد تكون التخصيصات أكثر مناسبة للتقارير المركبة مثل حالات الميكروبيولوجيا أو الهيستوباثولوجيا.">
+		>
+	>
+	other_contributors = <"Koray Atalag, University of Auckland, New Zealand", "Heath Frankel, Ocean Informatics, Australia", "Sam Heard, Ocean Informatics, Australia (Editor)", "Heather Leslie, Ocean Informatics, Australia", "Ian McNicoll, Ocean Informatics, United Kingdom (Editor)", "David Rowed, VAMC Clinic, Australia (Editor)", "Mona Saleh (Translator)">
+	references = <
+		["1"] = <"NEHTA, Australia. Pathology Episode v1.0 - Data Group library [Internet]. 2009;[cited 2009 Dec 8 ] Available from: http://www.nehta.gov.au/data-group-library/data-specifications/dgl-pathology">
+		["2"] = <"IHE. IHE, Laboratory Technical Framework, Volume 3 Content [Internet]. 2008;Available from: http://www.ihe.net/Technical_Framework/upload/ihe_lab_TF_rel2_1-Vol-3_FT_2008-08-08.pdf.">
+	>
+	other_details = <
+		["MD5-CAM-1.0.1"] = <"F6054E644F13ABC06CEA75C74E058F8A">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- Laboratory test
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id3] matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items matches {
+									ELEMENT[id6] occurrences matches {0..1} matches {	-- Test name
+										value matches {
+											DV_TEXT[id91]
+										}
+									}
+									ELEMENT[id78] occurrences matches {0..1} matches {	-- Diagnostic service
+										value matches {
+											DV_TEXT[id92]
+										}
+									}
+									ELEMENT[id74] occurrences matches {0..1} matches {	-- Test status
+										value matches {
+											DV_CODED_TEXT[id93] matches {
+												defining_code matches {[ac1]}		-- Test status (synthesised)
+											}
+										}
+									}
+									allow_archetype CLUSTER[id66] matches {	-- Specimen detail
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.specimen\.v1/}
+										exclude
+											archetype_id/value matches {/.*/}
+									}
+									ITEM[id79] 	-- Result
+									allow_archetype CLUSTER[id90] matches {	-- Per-result annotation
+										include
+											archetype_id/value matches {/openEHR-EHR-CLUSTER\.lab_result_annotation(-[a-zA-Z0-9_]+)*\.v1/}
+										exclude
+											archetype_id/value matches {/.*/}
+									}
+									ELEMENT[id58] occurrences matches {0..1} matches {	-- Overall interpretation
+										value matches {
+											DV_TEXT[id94]
+										}
+									}
+									ELEMENT[id11] matches {	-- Multimedia representation
+										value matches {
+											DV_MULTIMEDIA[id95]
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		protocol matches {
+			ITEM_TREE[id5] matches {
+				items matches {
+					CLUSTER[id14] occurrences matches {0..1} matches {	-- Test identification
+						items matches {
+							ELEMENT[id63] occurrences matches {0..1} matches {	-- Requestor order identifier
+								value matches {
+									DV_TEXT[id96]
+								}
+							}
+							ELEMENT[id64] occurrences matches {0..1} matches {	-- Receiver order Identifier
+								value matches {
+									DV_TEXT[id97]
+								}
+							}
+							ELEMENT[id69] occurrences matches {0..1} matches {	-- Laboratory test result identifier
+								value matches {
+									DV_TEXT[id98]
+								}
+							}
+							allow_archetype CLUSTER[id18] matches {	-- Receiving laboratory
+								include
+									archetype_id/value matches {/openEHR-EHR-CLUSTER\.organisation\.v1/}
+								exclude
+									archetype_id/value matches {/.*/}
+							}
+						}
+					}
+					ELEMENT[id76] occurrences matches {0..1} matches {	-- Datetime result issued
+						value matches {
+							DV_DATE_TIME[id99]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Laboratory test">
+				description = <"To record the result of a laboratory test which may be used to record a single valued test but will often be specialised or templated to represent multiple value or 'panel' tests.
+This archetype also acts as the parent for specialisations appropriate for more specific laboratory tests microbiology, histopathology.">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any event.">
+			>
+			["id6"] = <
+				text = <"Test name">
+				description = <"Specific identifier for this lab test. e.g. Full blood count , blood glucose, urine microbiology.  May equate to the result name for a single value result. Commonly a coded term e.g from LOINC or SNOMED-CT.">
+			>
+			["id11"] = <
+				text = <"Multimedia representation">
+				description = <"Representations of the whole test in mutlimedia e.g image, audio, video.">
+			>
+			["id14"] = <
+				text = <"Test identification">
+				description = <"Unique identifiers used in delivery of the care process.">
+			>
+			["id18"] = <
+				text = <"Receiving laboratory">
+				description = <"Demographic details of the laboratory with responsibility for the test. Details of secondary laboratories may also be included.">
+			>
+			["at38"] = <
+				text = <"Interim">
+				description = <"This is an initial or interim result - further updates are anticipated.">
+			>
+			["at39"] = <
+				text = <"Final">
+				description = <"This is the final result. No further alterations are anticipated.">
+			>
+			["at40"] = <
+				text = <"Supplementary">
+				description = <"This is a supplementary result ehich should be appended to a previous result.">
+			>
+			["at41"] = <
+				text = <"Corrected (amended)">
+				description = <"This is a correction which should completely replace any previous results.">
+			>
+			["id58"] = <
+				text = <"Overall interpretation">
+				description = <"An overall interpretative comment on this test.">
+			>
+			["id63"] = <
+				text = <"Requestor order identifier">
+				description = <"The local ID assigned to the order by the order requester. Equivalent to the Placer Order Identifier.">
+			>
+			["id64"] = <
+				text = <"Receiver order Identifier">
+				description = <"The local ID assigned to the test order by the order filler, usually by the (LIS) Laboratory Information System. Equivalent to the DICOM Accession Number and the Filler Order Identifier.">
+			>
+			["id66"] = <
+				text = <"Specimen detail">
+				description = <"Details of the specimen being reported where all individual results are derived from the same specimen.">
+			>
+			["id69"] = <
+				text = <"Laboratory test result identifier">
+				description = <"The identifier given to the laboratory test result of a pathology investigation.">
+			>
+			["id74"] = <
+				text = <"Test status">
+				description = <"The status of the lab test as a whole.">
+			>
+			["at75"] = <
+				text = <"Aborted">
+				description = <"The test was aborted and never completed.">
+			>
+			["id76"] = <
+				text = <"Datetime result issued">
+				description = <"The date and/or time that the result was issued for the recorded ‘test status’.">
+			>
+			["id78"] = <
+				text = <"Diagnostic service">
+				description = <"The type of high-level diagnostic service e.g. biochemistry, haematology.">
+			>
+			["id79"] = <
+				text = <"Result">
+				description = <"The result of the test.">
+			>
+			["at80"] = <
+				text = <"Never performed">
+				description = <"The test was never performed.">
+			>
+			["id90"] = <
+				text = <"Per-result annotation">
+				description = <"Slot to allow an annotation to be added to a particular test result at run-time.">
+			>
+			["at91"] = <
+				text = <"Requestor">
+				description = <"Details of the clinician or organisation requesting the laboratory test.">
+			>
+			["ac1"] = <
+				text = <"Test status (synthesised)">
+				description = <"The status of the lab test as a whole. (synthesised)">
+			>
+		>
+		["ar-sy"] = <
+			["id1"] = <
+				text = <"الاختبار المعملي">
+				description = <"لتسجيل نتيجة الاختبار و التي قد تستخدم إما لتسجيل اختبار ذي قيمة واحدة كما أنه قد يتم تخصيصه أو وضعه في قالب لتمثيل الاختبارات متعددة القيمة أو رتل من الاختبارات.
+يستخدم هذا النموذج كوالد (أب) للتخصيصات المناسبة لاختبارات أكثر تحديدا مثل حالات الميكروبيولوجيا و الهيستوباثولوجيا.">
+			>
+			["id3"] = <
+				text = <"إحدى الوقائع">
+				description = <"إحدى الوقائع">
+			>
+			["id6"] = <
+				text = <"اسم الاختبار">
+				description = <"تعريف معين لهوية هذا الاختبار. مثل العد الدموي الشامل, الغلوكوز (سكر العنب) في الدم. قد يكون هو نفسه اسم النتيجة في الاختبارات ذات النتيجة المتكونة من قيمة وحيدة. عادة ما يكون مُصطَلحاً مُرمَزًا مثل لوينك و سنوميد-سي تي.">
+			>
+			["id11"] = <
+				text = <"تمثيل الوسائط المتعددة">
+				description = <"تمثيلات الاختبار الكلي عن طريق الوسائط المتعددة مثل: الصورة, الصوت, و الفيديو">
+			>
+			["id14"] = <
+				text = <"*Test identification (en)">
+				description = <"*Unique identifiers used in delivery of the care process. (en)">
+			>
+			["id18"] = <
+				text = <"المعمل المستقبل لطلب الاختبار">
+				description = <"التفاصيل الديموغرافية عن المعمل المسئول عن الاختبار. قد يتضمن معلومات عن معامل أخرى ثانوية.">
+			>
+			["at38"] = <
+				text = <"مؤقت">
+				description = <"هذه هي النتيجة المبدئية أو المؤقتة - المزيد من التحديثات للنتيجة متوقَّعة أو منتظَرة">
+			>
+			["at39"] = <
+				text = <"نهائية">
+				description = <"هذه هي النتيجة النهائية. لا يوجد المزيد من التعديلات المتوقَّعة">
+			>
+			["at40"] = <
+				text = <"تكميلية">
+				description = <"هذه هي نتيجة تكميلية بالإضافة إلى النتيجة الموَقتة">
+			>
+			["at41"] = <
+				text = <"بعد التصحيح – معدَّلة">
+				description = <"هذا هو تصحيح لابد و أن يحل محلّ أي نتائج سابقة">
+			>
+			["id58"] = <
+				text = <"التفسير الإجمالي">
+				description = <"تعليق تفسيري إجمالي حول هذا الاختبار">
+			>
+			["id63"] = <
+				text = <"عنصر معرِّف فريد بواسطة طالب الاختبار">
+				description = <"العنصر التعريفي الفريد الذي يتم إعطاؤه للأمر بالاختبار بواسطة من يقوم بإجراء الأمر. مكافئ للعنصر التعريفي للأمر بواسطة من يقوم بطلب إجرائه.">
+			>
+			["id64"] = <
+				text = <"عنصر معرِّف فريد بواسطة مستقبل الاختبار">
+				description = <"العنصر التعريفي الذي يتم إعطاؤه للأمر بالاختبار بواسطة منفذ الاختبار, عادةً النظام المعلومات الخاص بالمعمل. يكافئ رقم الإضافة الخاص بـ دايكوم, و معرِّف أمر الاختبار ">
+			>
+			["id66"] = <
+				text = <"تفاصيل العيِّنة">
+				description = <"تفاصيل العينة حيث جميع النتائج مشتقة من نفس العينة">
+			>
+			["id69"] = <
+				text = <"العنصر التعريفي الخاص بنتيجة الاختبار">
+				description = <"العنصر التعريفي الذي تم إعطاؤه لنتيجة اختبار معملي خاص بالباثولوجيا – المَرَضية">
+			>
+			["id74"] = <
+				text = <"حالة الاختبار">
+				description = <"حالة الاختبار المعملي ككل">
+			>
+			["at75"] = <
+				text = <"مُلغاة">
+				description = <"تم إلغاء الاختبار و لم يتم استكماله بعد ذلك.">
+			>
+			["id76"] = <
+				text = <"تاريخ و وقت إصدار النتيجة">
+				description = <"التاريخ و / أو الوقت الذي تم فيه إصدار النتيجة لحالة الاختبار المسجَّلة.">
+			>
+			["id78"] = <
+				text = <"الخدمة التشخيصية">
+				description = <"نوع الخدمة التشخيصية - مستوى عالي من التشخيص - مثلا: الكيمياء الحيوية و الدمويات">
+			>
+			["id79"] = <
+				text = <"النتيجة">
+				description = <"نتيجة الاختبار">
+			>
+			["at80"] = <
+				text = <"لم يتم عملها على الإطلاق">
+				description = <"لم يتم عمل الاختبار على الإطلاق">
+			>
+			["id90"] = <
+				text = <"ملاحظات ما قبل الاختبار">
+				description = <"شرفة تسمح بإضافة ملاحظات حول نتيجة اختبار معين في أثناء إجرائه">
+			>
+			["at91"] = <
+				text = <"الطالب">
+				description = <"تفاصيل حول الطبيب السريري أو المؤسسة التي تطلب الاختبار المعملي.">
+			>
+			["ac1"] = <
+				text = <"حالة الاختبار (synthesised)">
+				description = <"حالة الاختبار المعملي ككل (synthesised)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at38", "at39", "at40", "at41", "at75", "at80">
+		>
+	>

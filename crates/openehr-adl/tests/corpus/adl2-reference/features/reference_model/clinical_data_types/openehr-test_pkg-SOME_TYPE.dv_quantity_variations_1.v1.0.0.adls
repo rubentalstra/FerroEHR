@@ -1,0 +1,112 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-SOME_TYPE.dv_quantity_variations_1.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2004-06-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrates variationns on DV_QUANTITY constraints">
+			keywords = <"ADL", "test", "quantities">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2004 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		standard_quantity_attr matches {
+			DV_QUANTITY[id2] matches {	-- Centigrade temperature
+				units matches {"C"}
+				magnitude matches {|>=4.0|}
+			}
+			DV_QUANTITY[id3] matches {	-- Fahrenheit temperature
+				units matches {"F"}
+				magnitude matches {|>=40.0|}
+			}
+		}
+		clinical_quantity_attr_1 matches {
+			DV_QUANTITY[id4] matches {
+				property matches {[at1]}
+				[units, magnitude] matches {
+					[{"C"}, {|>=4.0|}],
+					[{"F"}, {|>=40.0|}]
+				}
+			}
+		}
+		clinical_quantity_attr_2 matches {
+			DV_QUANTITY[id5] matches {
+				property matches {[at2]}
+				units matches {"C", "F"}
+			}
+		}
+		clinical_quantity_attr_4 matches {
+			DV_COUNT[id6] matches {
+				magnitude matches {|>=0|}
+			}
+		}
+		clinical_quantity_attr_5 matches {
+			DV_COUNT[id7] matches {
+				magnitude matches {|>=0|}
+			}
+		}
+		clinical_quantity_attr_6 matches {
+			DV_QUANTITY[id8] matches {
+				property matches {[at3]}
+				precision matches {2}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+			["id2"] = <
+				text = <"Centigrade temperature">
+				description = <"Centigrade temperature">
+			>
+			["id3"] = <
+				text = <"Fahrenheit temperature">
+				description = <"Fahrenheit temperature">
+			>
+			["at1"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+			["at2"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+			["at3"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/127>
+			["at2"] = <http://openehr.org/id/127>
+			["at3"] = <http://openehr.org/id/127>
+		>
+	>

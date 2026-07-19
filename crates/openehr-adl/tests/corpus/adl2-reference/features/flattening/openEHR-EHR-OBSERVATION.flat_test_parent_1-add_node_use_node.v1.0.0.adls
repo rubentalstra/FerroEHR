@@ -1,0 +1,90 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.flat_test_parent_1-add_node_use_node.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.flat_test_parent_1.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Ian McNicoll">
+		["organisation"] = <"Ocean Informatics UK <http://www.oceaninformatics.com>">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-11-07">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test flattening of differential path containing terminal attribute not in parent ('state'); test internal references to path in flat parent and path in current archetype.">
+			keywords = <"ADL", "flattening", "test">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2009 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- Blood Glucose Test Result
+		/data[id2]/events[id3]/state matches {
+			ITEM_TREE[id0.8] matches {
+				items matches {
+					ELEMENT[id0.9] occurrences matches {0..1} matches {	-- Fasting state
+						value matches {
+							DV_BOOLEAN[id0.17] matches {
+								value matches {True}
+							}
+						}
+					}
+				}
+			}
+		}
+		/data[id2]/events matches {
+			POINT_EVENT[id0.2] occurrences matches {0..1} matches {	-- Baseline Measurement
+				offset matches {
+					DV_DURATION[id0.21] matches {
+						value matches {PT0S}
+					}
+				}
+				data matches {
+					use_node ITEM_TREE[id0.22] /data[id2]/events[id3]/data[id4]	-- /data[id2]/events[id3]/data[id4]
+				}
+				state matches {
+					use_node ITEM_TREE[id0.23] /data[id2]/events[id3]/state[id0.8]	-- /data[id2]/events[id3]/state[id0.8]
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.2"] = <
+				text = <"Baseline Measurement">
+				description = <"Specific point in time measurement which provides a reference glucose reading against which subsequent measurements can be compared.">
+			>
+			["id0.3"] = <
+				text = <"1 Hour Measurement">
+				description = <"Specific point in time measurement taken 1 hour after the Baseline Measurement and subsequent glucose/insulin challenge.">
+			>
+			["id0.5"] = <
+				text = <"2 Hour Measurement">
+				description = <"Specific point in time measurement taken 2 hours after the Baseline Measurement and subsequent glucose/insulin challenge.">
+			>
+			["id0.9"] = <
+				text = <"Fasting state">
+				description = <"Fasting state">
+			>
+			["id1.1"] = <
+				text = <"Blood Glucose Test Result">
+				description = <"The findings and interpretation of glucose tests performed on plasma, serum or whole blood.">
+			>
+		>
+	>

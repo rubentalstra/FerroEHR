@@ -1,0 +1,202 @@
+archetype (adl_version=2.0.5; rm_release=1.1.0)
+	openehr-ehr-EVALUATION.term_constraint_variations.v0.0.1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+	>
+	copyright = <"Copyright (c) 2014 openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"An altered version of the openEHR Adverse Reaction archetype designed to show various kinds of terminology constraint.">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	EVALUATION[id1] matches {	-- Adverse Reaction
+		data matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {1..*; unordered} matches {
+					ELEMENT[id3] matches {	-- Substance/Agent
+						value matches {
+							DV_TEXT[id51] 
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Absolute Contraindication?
+						value matches {
+							DV_BOOLEAN[id52] matches {
+								value matches {True}
+							}
+						}
+					}
+					ELEMENT[id50] occurrences matches {0..1} matches {	-- Future Use
+						value matches {
+							DV_TEXT[id53] 
+						}
+					}
+					CLUSTER[id10] matches {	-- Reaction Event
+						items matches {
+							ELEMENT[id11] occurrences matches {0..1} matches {
+								name matches {
+									DV_CODED_TEXT[id8] matches {
+										defining_code matches {[at5]}		-- set name to 'Substance'
+									}
+								}
+								value matches {
+									DV_CODED_TEXT[id55] matches {
+										defining_code matches {[ac1]}		-- Type of Substance/Agent
+									}
+								}
+							}
+							ELEMENT[id22] occurrences matches {0..1} matches {	-- Certainty
+								value matches {
+									DV_CODED_TEXT[id58] matches {
+										defining_code matches {[ac2; at23]}	
+									}
+								}
+							}
+							ELEMENT[id12] matches {	-- Manifestation
+								value matches {
+									DV_TEXT[id56] 
+								}
+							}
+							ELEMENT[id17] occurrences matches {0..1} matches {	-- Reaction Type
+								value matches {
+									DV_TEXT[id57] 
+								}
+							}
+							ELEMENT[id13] occurrences matches {0..1} matches {	-- Reaction Description
+								value matches {
+									DV_TEXT[id59] 
+								}
+							}
+							ELEMENT[id41] occurrences matches {0..1} matches {	-- Clinical Management Description
+								value matches {
+									DV_TEXT[id65] 
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Adverse Reaction">
+				description = <"A harmful or undesirable, unexpected effect associated with exposure to any substance or agent, including food, plants, animals, venom from animal stings, or a medication at therapeutic or sub-therapeutic doses.">
+			>
+			["id3"] = <
+				text = <"Substance/Agent">
+				description = <"Identification of a substance, agent, or a class of substance, that is considered to be responsible for the Adverse Reaction.">
+			>
+			["id5"] = <
+				text = <"Absolute Contraindication?">
+				description = <"Is administration of this Substance/Agent absolutely contraindicated in this individual?">
+			>
+			["id10"] = <
+				text = <"Reaction Event">
+				description = <"Details about each Adverse Reaction Event.">
+			>
+			["id11"] = <
+				text = <"Specific Substance/Agent">
+				description = <"Specific identification of the actual Substance/Agent considered to be responsible for the Adverse Reaction event.">
+			>
+			["id12"] = <
+				text = <"Manifestation">
+				description = <"Clinical manifestation of the Adverse Reaction expressed as a single word, phrase or brief description, e.g. nausea or rash.">
+			>
+			["id13"] = <
+				text = <"Reaction Description">
+				description = <"Narrative description of the Adverse Reaction.">
+			>
+			["id17"] = <
+				text = <"Reaction Type">
+				description = <"The type of Adverse Reaction as determined by the clinician.">
+			>
+			["id22"] = <
+				text = <"Certainty">
+				description = <"Degree of certainty, as assessed by a clinician, that the specific Substance/Agent was the cause of the Adverse Reaction.">
+			>
+			["at5"] = <
+				text = <"Substance">
+				description = <"Physical substance.">
+			>
+			["at23"] = <
+				text = <"Suspected">
+				description = <"Possibly the causative agent.">
+			>
+			["at24"] = <
+				text = <"Probable">
+				description = <"Likely to be the causative agent, but not confirmed by testing or rechallenge.">
+			>
+			["at25"] = <
+				text = <"Confirmed">
+				description = <"Confirmed as the causative agent, by testing or rechallenge.">
+			>
+			["id41"] = <
+				text = <"Clinical Management Description">
+				description = <"Narrative description of the clinical management provided.">
+			>
+			["id50"] = <
+				text = <"Future Use">
+				description = <"Narrative description of clinician instructions or advice related to future exposure to, or administration of, the Substance/Agent.">
+			>
+			["ac1"] = <
+				text = <"Type of substance">
+				description = <"Type of substance that was the cause of the Adverse Reaction">
+			>
+			["ac2"] = <
+				text = <"Certainty">
+				description = <"Degree of certainty, as assessed by a clinician, that the specific Substance/Agent was the cause of the Adverse Reaction.">
+			>
+			["at10"] = <
+				text = <"Pollen">
+				description = <"Pollen">
+			>
+			["at11"] = <
+				text = <"Insect allergen">
+				description = <"Insect allergen">
+			>
+			["at12"] = <
+				text = <"Animal protein">
+				description = <"Animal protein.">
+			>
+			["at13"] = <
+				text = <"Plant material">
+				description = <"Plant material.">
+			>
+			["at14"] = <
+				text = <"Dust">
+				description = <"Dust.">
+			>
+		>
+	>
+	term_bindings = <
+		["snomedct"] = <
+			["ac1"] = <http://snomedct.info/id/123456789>
+			["at10"] = <http://snomed.info/id/406464007>
+			["at11"] = <http://snomed.info/id/406470001>
+			["at12"] = <http://snomed.info/id/406472009>
+			["at13"] = <http://snomed.info/id/410981007>
+			["at14"] = <http://snomed.info/id/410980008>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at10", "at11", "at12", "at13", "at14">
+		>
+	>

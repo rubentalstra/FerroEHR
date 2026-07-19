@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3)
+	openEHR-EHR-CLUSTER.lab_analyte-quantity.v0.0.1
+
+specialize
+	openEHR-EHR-CLUSTER.laboratory_test_analyte.v0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openehr.org>">
+		["organisation"] = <"OpenEHR Foundation <http://www.openehr.org>">
+	>
+	copyright = <"Copyright (c) 2016 openEHR Foundation">
+	licence = <"Creative Commons CC-BY 4.0 unported <http://creativecommons.org/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Lab result expressed as a quantity.">
+		>
+	>
+
+definition
+	CLUSTER[id1.1] matches {	-- -
+		/items[id2]/value matches {
+			DV_QUANTITY[id0.16] matches {
+				normal_range matches {
+					DV_INTERVAL<DV_QUANTITY>[id0.17] 
+				}
+				other_reference_ranges matches {
+					REFERENCE_RANGE<DV_QUANTITY>[id0.18] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"quantitative analyte">
+				description = <"-">
+			>
+			["id0.18"] = <
+				text = <"other reference ranges">
+				description = <"-">
+			>
+		>
+	>

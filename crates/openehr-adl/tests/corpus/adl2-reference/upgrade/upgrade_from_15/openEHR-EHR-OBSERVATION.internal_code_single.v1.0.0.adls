@@ -1,0 +1,86 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.internal_code_single.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Sam Heard">
+		["organisation"] = <"Ocean Informatics">
+		["email"] = <"sam.heard@oceaninformatics.com">
+		["date"] = <"22/03/2006">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test rewriting of a single internal code into a new at-code plus binding to external code">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"© openEHR Foundation">
+
+definition
+	OBSERVATION[id1] matches {	-- Blood Pressure
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id7] occurrences matches {0..*} matches {	-- any event
+						state matches {
+							ITEM_TREE[id8] matches {
+								items matches {
+									ELEMENT[id9] occurrences matches {0..1} matches {	-- Position
+										value matches {
+											DV_CODED_TEXT[id11] matches {
+												defining_code matches {[at11]}
+											}
+										}
+									}
+									ELEMENT[id10] occurrences matches {0..1} matches {	-- Sleep status
+										value matches {
+											DV_CODED_TEXT[id12] matches {
+												defining_code matches {[at12]}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Blood Pressure">
+				description = <"The local measurement of arterial blood pressure which is a surrogate for arterial. pressure in the systemic circulation.  Most commonly, use of the term 'blood pressure' refers to measurement of brachial artery pressure in the upper arm.">
+			>
+			["id7"] = <
+				text = <"any event">
+				description = <"Default event">
+			>
+			["id9"] = <
+				text = <"Position">
+				description = <"The position of the subject at the time of measurement.">
+			>
+			["id10"] = <
+				text = <"Sleep status">
+				description = <"Sleep status - supports interpretation of 24 hour ambulatory blood pressure records. ">
+			>
+			["at11"] = <
+				text = <"Standing">
+				description = <"Standing at the time of blood pressure measurement.">
+			>
+			["at12"] = <
+				text = <"Alert & awake">
+				description = <"Subject is fully conscious.">
+			>
+		>
+	>

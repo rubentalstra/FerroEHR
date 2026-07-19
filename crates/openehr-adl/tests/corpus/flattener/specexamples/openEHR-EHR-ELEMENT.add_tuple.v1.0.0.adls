@@ -1,0 +1,33 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-ELEMENT.add_tuple.v1.0.0
+
+specialize
+    openEHR-EHR-ELEMENT.type_refinement_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    ELEMENT[id1] ∈ {
+        value ∈ {
+            DV_QUANTITY[id4] ∈ {
+                [magnitude, units] ∈ {
+                    [{|4.0..8.0|}, {"mmol/ml"}]
+                }
+            }
+        }
+    }
+
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"element">
+				description = <"element">
+			>
+		>
+	>

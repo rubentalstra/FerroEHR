@@ -1,0 +1,48 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.VCOID_missing_ids_on_alternative_children.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VCOID validity check, triggered when alternative objects under a single-valued attribute don't have node identifiers.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VCOID">
+	>
+
+definition
+	ENTRY[id1] matches {
+		element_attr matches {
+			ELEMENT matches {
+				value matches {
+					DV_TEXT
+				}
+			}
+			ELEMENT matches {
+				value matches {
+					DV_TEXT
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+    openEHR-EHR-CLUSTER.archetype_slot_filled.v1.0.0
+
+specialize
+    openEHR-EHR-CLUSTER.archetype_slot_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1.1] ∈ {
+        items ∈ {
+            allow_archetype CLUSTER[id2] closed
+            use_archetype CLUSTER[id2.1, openEHR-EHR-CLUSTER.order-parent.v1.0.0]
+            use_archetype CLUSTER[id2.2, openEHR-EHR-CLUSTER.order-parent.v1.0.0]
+
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id2.1"] = <
+                text = <"first archetype">
+                description = <"first archetype">
+            >
+            ["id2.2"] = <
+                text = <"second archetype">
+                description = <"second archetype">
+            >
+        >
+	>
