@@ -1,0 +1,1002 @@
+//! Phase-2 specialisation validation: a differential child archetype against
+//! its flat parent.
+//!
+//! Orchestration follows
+//! `docs/specs/openehr/AM/docs/AOM2/master08-validation.adoc` §Phase 2 →
+//! Validate Specialised Definition; the individual rule texts are in
+//! `master04.5-constraint_model-class_definitions.adoc` §Validity Rules
+//! (`C_ATTRIBUTE` / `C_OBJECT` / `ARCHETYPE_SLOT` / `C_ARCHETYPE_ROOT` /
+//! `C_COMPLEX_OBJECT_PROXY`), and the conformance machinery they build on is
+//! [`super::conformance`]. Node correspondence uses path congruence
+//! (`ADL2/master09.02` §Path Congruence): a child node id matches a parent node
+//! id by `codes_conformant` (the child id is the same as, or a specialisation
+//! of, the parent id), so a differential path resolves against the flat parent
+//! without a separate id-reduction step.
+//!
+//! Per `ADL2/master09.02` §Differential and Flat Forms a top-level parent is its
+//! own flat form; the caller ([`super::run_phase2_spec`]) only invokes this with
+//! such an available flat parent (a specialised parent needs the flattener —
+//! [`super::FlatParent::NeedsFlattener`]).
+//!
+//! The [`ValidationCode`] variants `Vtpnc`/`Vtpin` (tuple conformance vs the
+//! parent node, `master08` §Phase 2 gloss) and `Vunt` (`use_node` RM type
+//! validity, `master04.5` §`C_COMPLEX_OBJECT_PROXY` VUNT L479-480) are present as
+//! the phase-2 vocabulary but not yet raised here.
+//! TODO: implement `C_PRIMITIVE_TUPLE` / `C_ATTRIBUTE_TUPLE` conformance
+//! (`master04.5` §`C_SECOND_ORDER` L729-804) to raise VTPNC/VTPIN, and resolve the
+//! `use_node` target node to raise VUNT.
+
+use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
+use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
+use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_base::prelude::MultiplicityInterval;
+
+use super::conformance::{
+    self, ValueConformance, aom_type, cardinality_conforms_to, child_occurrences,
+    collective_occurrences_of, effective_occurrences, existence_conforms_to, meta_type_conforms,
+    node_id_conforms_to,
+};
+use super::rm::{Bounds, RmModel};
+use super::{ArchetypeRepository, ValidationCode, ValidationIssue, view};
+use crate::codes::{codes_conformant, is_new_at_level, specialisation_depth};
+use crate::paths::{
+    PathSegment, complex_attributes, complex_rm_type, object_node_id, object_rm_type, parse_path,
+};
+
+/// Validate the differential child `child` against its flat parent `flat_parent`
+/// (the phase-2 specialisation catalogue). `repo` resolves external references
+/// for VARXR.
+#[must_use]
+pub(super) fn validate_phase2_spec<'a>(
+    child: &'a Archetype,
+    flat_parent: &'a Archetype,
+    rm: &'a dyn RmModel,
+    repo: &'a ArchetypeRepository,
+) -> Vec<ValidationIssue> {
+    let cv = view(child);
+    let pv = view(flat_parent);
+    let mut scan = Phase2 {
+        rm,
+        repo,
+        child_level: cv.specialisation_level(),
+        parent_root: pv.definition,
+        issues: Vec::new(),
+    };
+    let parent_rm = complex_rm_type(pv.definition).to_owned();
+    scan.walk_attributes(cv.definition, pv.definition, &parent_rm, "");
+    scan.issues
+}
+
+/// Mutable state threaded through the specialisation walk. The archetype data is
+/// borrowed for `'a` (independent of the `&mut self` used to append issues), so
+/// the walk can hold parent/child node references while pushing findings.
+struct Phase2<'a> {
+    rm: &'a dyn RmModel,
+    repo: &'a ArchetypeRepository,
+    child_level: usize,
+    parent_root: &'a CComplexObject,
+    issues: Vec<ValidationIssue>,
+}
+
+impl<'a> Phase2<'a> {
+    fn push(&mut self, code: ValidationCode, msg: impl Into<String>, path: &str) {
+        self.issues
+            .push(ValidationIssue::new(code, msg).at_path(path.to_owned()));
+    }
+
+    /// Walk the attributes of a child complex object against the corresponding
+    /// parent complex object `parent_obj` (RM type `parent_rm`), at `base_path`.
+    fn walk_attributes(
+        &mut self,
+        child_obj: &'a CComplexObject,
+        parent_obj: &'a CComplexObject,
+        parent_rm: &str,
+        base_path: &str,
+    ) {
+        for attr in complex_attributes(child_obj) {
+            self.check_attribute(attr, parent_obj, parent_rm, base_path);
+        }
+    }
+
+    /// Locate the parent attribute and its owning object for a child attribute,
+    /// then run the attribute-level and object-level checks.
+    fn check_attribute(
+        &mut self,
+        attr: &'a CAttribute,
+        current_parent: &'a CComplexObject,
+        current_parent_rm: &str,
+        base_path: &str,
+    ) {
+        // Resolve the owning parent object: through the differential path if the
+        // attribute carries one, else the current parent object.
+        let (owner, owner_rm): (&'a CComplexObject, String) =
+            if let Some(diff) = attr.differential_path.as_deref() {
+                if let Some(o) = self.resolve_object(diff) {
+                    (o, complex_rm_type(o).to_owned())
+                } else {
+                    // VDIFP: a differential path must exist in the flat parent
+                    // (`master04.5` §`C_ATTRIBUTE`, VDIFP L139-140).
+                    self.push(
+                        ValidationCode::Vdifp,
+                        format!(
+                            "differential path {:?} does not resolve in the flat parent",
+                            full_attr_path(diff, &attr.rm_attribute_name)
+                        ),
+                        base_path,
+                    );
+                    return;
+                }
+            } else {
+                (current_parent, current_parent_rm.to_owned())
+            };
+
+        let attr_path = match attr.differential_path.as_deref() {
+            Some(diff) => full_attr_path(diff, &attr.rm_attribute_name),
+            None => format!("{base_path}/{}", attr.rm_attribute_name),
+        };
+
+        let parent_attr = complex_attributes(owner)
+            .iter()
+            .find(|a| a.rm_attribute_name == attr.rm_attribute_name);
+
+        let Some(parent_attr) = parent_attr else {
+            if attr.differential_path.is_some() {
+                // A differential path whose leaf attribute is absent in the flat
+                // parent (VDIFP).
+                self.push(
+                    ValidationCode::Vdifp,
+                    format!(
+                        "attribute {:?} of differential path does not exist in the flat parent",
+                        attr.rm_attribute_name
+                    ),
+                    &attr_path,
+                );
+                return;
+            }
+            // A brand-new attribute (ADD): every child object is a new node.
+            for child in &attr.children {
+                self.check_new_object(child, &attr_path);
+            }
+            return;
+        };
+
+        // VSANCE: existence conformance to the flat parent (`master04.5`
+        // §`C_ATTRIBUTE`, VSANCE L142-143).
+        if !existence_conforms_to(attr.existence.as_ref(), parent_attr.existence.as_ref()) {
+            self.push(
+                ValidationCode::Vsance,
+                "redefined existence does not conform to the flat parent",
+                &attr_path,
+            );
+        }
+        // VSANCC: cardinality conformance to the flat parent (`master04.5`
+        // §`C_ATTRIBUTE`, VSANCC L171-172).
+        if !cardinality_conforms_to(attr.cardinality.as_ref(), parent_attr.cardinality.as_ref()) {
+            self.push(
+                ValidationCode::Vsancc,
+                "redefined cardinality does not conform to the flat parent",
+                &attr_path,
+            );
+        }
+
+        // VSAM: the multiplicity (single- vs multiply-valued) of a redefined
+        // attribute must conform to the parent (`master04.5` §`C_ATTRIBUTE`, VSAM
+        // L145-146). A restated cardinality makes the attribute a container; if
+        // the reference-model attribute is single-valued that is a mismatch.
+        if attr.cardinality.is_some()
+            && let Some(rm_attr) = self.rm.attribute(&owner_rm, &attr.rm_attribute_name)
+            && !rm_attr.is_multiple
+        {
+            self.push(
+                ValidationCode::Vsam,
+                "a redefined single-valued attribute cannot be given a cardinality (multiplicity mismatch)",
+                &attr_path,
+            );
+        }
+
+        // VSSM: sibling order node id must be in the same flat-parent container
+        // (`master04.5` §`C_OBJECT`, VSSM L391).
+        self.check_sibling_order(attr, parent_attr, &attr_path);
+
+        // VSONCO (multiple-occurrence collective case) — `master04.5` §`C_OBJECT`
+        // VSONCO L359-379, evaluated at the owning attribute.
+        self.check_collective_occurrences(attr, parent_attr, &owner_rm, &attr_path);
+
+        // Per child object: match a congruent parent node (or, for a primitive
+        // leaf with no node id, the parent attribute's same-type leaf), else a
+        // new node.
+        for child in &attr.children {
+            let child_path = child_path(&attr_path, object_node_id(child));
+            match find_congruent(parent_attr, child)
+                .or_else(|| pair_primitive_leaf(parent_attr, child))
+            {
+                Some(parent_obj) => {
+                    self.check_object_pair(child, parent_obj, attr, &owner_rm, &child_path);
+                }
+                None => self.check_new_object(child, &child_path),
+            }
+        }
+    }
+
+    /// Object-level conformance of a redefined child node to its congruent flat
+    /// parent node.
+    fn check_object_pair(
+        &mut self,
+        child: &'a CObject,
+        parent: &'a CObject,
+        owning_attr: &'a CAttribute,
+        owner_rm: &str,
+        path: &str,
+    ) {
+        // Prohibition (`occurrences {0}`) rules — `master04.5` §`C_OBJECT` VSONPT
+        // L382 / VSONPI L385.
+        if is_prohibited(child_occurrences(child)) {
+            // VSONPT: prohibition only if the matching parent node is the same
+            // AOM type.
+            if aom_type(child) != aom_type(parent) {
+                self.push(
+                    ValidationCode::Vsonpt,
+                    "prohibited (occurrences {0}) redefinition must match the parent AOM type",
+                    path,
+                );
+            }
+            // VSONPI: a prohibited redefinition must carry exactly the parent
+            // node id.
+            if object_node_id(child) != object_node_id(parent) {
+                self.push(
+                    ValidationCode::Vsonpi,
+                    "prohibited redefinition must have the same node id as the parent node",
+                    path,
+                );
+            }
+        }
+
+        // Slot handling: a redefinition of an `ARCHETYPE_SLOT` in the parent.
+        if let CObject::ArchetypeSlot(parent_slot) = parent {
+            self.check_slot_redefinition(child, parent_slot, path);
+            return;
+        }
+
+        // Proxy handling: a `C_COMPLEX_OBJECT_PROXY` in the parent.
+        if let CObject::CComplexObjectProxy(parent_proxy) = parent {
+            self.check_proxy_redefinition(child, parent_proxy, path);
+            return;
+        }
+
+        // VSONT: meta-type conformance (`master04.5` §`C_OBJECT`, VSONT L342).
+        if !meta_type_conforms(child, parent) {
+            self.push(
+                ValidationCode::Vsont,
+                format!(
+                    "redefined node AOM type {:?} does not conform to the parent AOM type {:?}",
+                    aom_type(child),
+                    aom_type(parent)
+                ),
+                path,
+            );
+            return;
+        }
+
+        // Single-occurrence VSONCO (`master04.5` §`C_OBJECT`, occurrences_conforms_to
+        // L287-299): a child redefining a single-occurrence (upper 1) parent node
+        // must be wholly contained.
+        let parent_occ =
+            effective_occurrences(child_occurrences(parent), owning_attr, owner_rm, self.rm);
+        if parent_occ.upper == Some(1)
+            && let Some(child_occ) = child_occurrences(child)
+            && !parent_occ.contains(conformance::bounds(child_occ))
+        {
+            self.push(
+                ValidationCode::Vsonco,
+                "redefined occurrences of a single-occurrence parent node is not wholly contained",
+                path,
+            );
+        }
+
+        // Reference-model type conformance of the redefined object.
+        self.check_rm_type_conformance(child, parent, owning_attr, owner_rm, path);
+
+        // Leaf value redefinition (VPOV / VUNK) for primitive nodes.
+        if aom_type(child).is_primitive() && aom_type(parent).is_primitive() {
+            match conformance::c_value_conforms_to(child, parent) {
+                ValueConformance::Conforms => {}
+                ValueConformance::Violates => self.push(
+                    ValidationCode::Vpov,
+                    "redefined leaf value constraint is not within the parent value constraint",
+                    path,
+                ),
+                ValueConformance::Unknown => self.push(
+                    ValidationCode::Vunk,
+                    "redefined leaf value constraint cannot be verified against the parent",
+                    path,
+                ),
+            }
+        }
+
+        // Recurse into complex children (VSONT already passed).
+        if let (CObject::CComplexObject(cco), CObject::CComplexObject(pco)) = (child, parent) {
+            self.walk_attributes(cco, pco, complex_rm_type(pco), path);
+        }
+    }
+
+    /// VCORMT / VSONCT: the RM type of a redefined object node.
+    ///
+    /// VCORMT (`master04.5` §`C_OBJECT` L327-328): the object type must conform to
+    /// the type stated in the RM of its owning attribute. VSONCT (§`C_OBJECT`
+    /// VSONCT L344-345): the object type must conform to the parent node's
+    /// (possibly-narrowed) RM type. VCORMT is the more fundamental failure and is
+    /// checked first.
+    fn check_rm_type_conformance(
+        &mut self,
+        child: &'a CObject,
+        parent: &'a CObject,
+        owning_attr: &'a CAttribute,
+        owner_rm: &str,
+        path: &str,
+    ) {
+        let child_rm = object_rm_type(child);
+        if child_rm.is_empty() {
+            return;
+        }
+        // VCORMT: conformance to the owning attribute's RM-declared type.
+        if let Some(rm_attr) = self.rm.attribute(owner_rm, &owning_attr.rm_attribute_name)
+            && self.rm.conforms(child_rm, &rm_attr.declared_type) == Some(false)
+        {
+            self.push(
+                ValidationCode::Vcormt,
+                format!(
+                    "redefined object type {child_rm:?} does not conform to the reference-model attribute type {:?}",
+                    rm_attr.declared_type
+                ),
+                path,
+            );
+            return;
+        }
+        // VSONCT: conformance to the parent node's RM type.
+        let parent_rm = object_rm_type(parent);
+        if !parent_rm.is_empty() && self.rm.conforms(child_rm, parent_rm) == Some(false) {
+            self.push(
+                ValidationCode::Vsonct,
+                format!(
+                    "redefined object type {child_rm:?} does not conform to the parent node type {parent_rm:?}"
+                ),
+                path,
+            );
+        }
+    }
+
+    /// VSONCO collective-occurrences rule for the container (multiple-occurrence)
+    /// case (`master04.5` §`C_OBJECT` VSONCO L359-379).
+    fn check_collective_occurrences(
+        &mut self,
+        child_attr: &'a CAttribute,
+        parent_attr: &'a CAttribute,
+        owner_rm: &str,
+        path: &str,
+    ) {
+        // The flattened cardinality upper = the child's restated cardinality if
+        // present, else the parent's.
+        let flat_card_upper =
+            finite_card_upper(child_attr).or_else(|| finite_card_upper(parent_attr));
+
+        for parent_obj in &parent_attr.children {
+            let parent_id = object_node_id(parent_obj);
+            let parent_occ = effective_occurrences(
+                child_occurrences(parent_obj),
+                parent_attr,
+                owner_rm,
+                self.rm,
+            );
+            // Multiple-occurrence parent node: upper is not exactly 1.
+            if parent_occ.upper == Some(1) {
+                continue;
+            }
+            // Members = child nodes redefining this parent node.
+            let has_members = child_attr
+                .children
+                .iter()
+                .any(|c| node_id_conforms_to(object_node_id(c), parent_id));
+            if !has_members {
+                continue;
+            }
+            let coll =
+                collective_occurrences_of(child_attr, parent_id, parent_occ, flat_card_upper);
+            if !bounds_intersect(coll, parent_occ) {
+                self.push(
+                    ValidationCode::Vsonco,
+                    format!(
+                        "collective occurrences {} of the specialised node set do not intersect the parent occurrences {}",
+                        show_bounds(coll),
+                        show_bounds(parent_occ)
+                    ),
+                    path,
+                );
+            }
+        }
+    }
+
+    /// VSSM: a sibling-order marker's node id must refer to a node found within
+    /// the same container in the flat parent, or a node redefined locally
+    /// (`master04.5` §`C_OBJECT`, VSSM L391).
+    fn check_sibling_order(
+        &mut self,
+        child_attr: &'a CAttribute,
+        parent_attr: &'a CAttribute,
+        path: &str,
+    ) {
+        for child in &child_attr.children {
+            let Some(order) = sibling_order(child) else {
+                continue;
+            };
+            let anchor = &order.sibling_node_id;
+            let in_parent = parent_attr.children.iter().any(|p| {
+                node_id_conforms_to(anchor, object_node_id(p)) || object_node_id(p) == anchor
+            });
+            let redefined_locally = child_attr
+                .children
+                .iter()
+                .any(|c| object_node_id(c) == anchor);
+            if !in_parent && !redefined_locally {
+                self.push(
+                    ValidationCode::Vssm,
+                    format!(
+                        "sibling order anchor {anchor:?} is not a node in the same flat-parent container"
+                    ),
+                    path,
+                );
+            }
+        }
+    }
+
+    /// Checks for a child node that redefines an `ARCHETYPE_SLOT` in the flat
+    /// parent (slot filling or slot narrowing).
+    fn check_slot_redefinition(
+        &mut self,
+        child: &'a CObject,
+        parent_slot: &'a ArchetypeSlot,
+        path: &str,
+    ) {
+        match child {
+            // A `C_ARCHETYPE_ROOT` filler for the slot (`master04.5` §`C_ARCHETYPE_ROOT`
+            // VARXID L427 / VARXS L424 / VARXR L419).
+            CObject::CComplexObject(CComplexObject::CArchetypeRoot(root)) => {
+                self.check_slot_filler(root, parent_slot, path);
+            }
+            // A narrowed / closed `ARCHETYPE_SLOT` (`master04.5` §`ARCHETYPE_SLOT`
+            // VDSSID L462 / VDSSP L468 / VDSSC L471).
+            CObject::ArchetypeSlot(child_slot) => {
+                // VDSSID: a redefining slot must have an identical node id.
+                if child_slot.node_id != parent_slot.node_id {
+                    self.push(
+                        ValidationCode::Vdssid,
+                        format!(
+                            "specialised slot node id {:?} is not identical to the parent slot id {:?}",
+                            child_slot.node_id, parent_slot.node_id
+                        ),
+                        path,
+                    );
+                }
+                // VDSSP: the parent slot must not already be closed.
+                if parent_slot.is_closed {
+                    self.push(
+                        ValidationCode::Vdssp,
+                        "cannot specialise a slot that is already closed in the flat parent",
+                        path,
+                    );
+                }
+                // VDSSC: a specialised slot may be closed OR narrowed, not both.
+                //
+                // NOTE: the ADL2 slot production admits `closed` XOR a `matches`
+                // body (`cadl.rs::parse_archetype_slot`, mirroring the vendored
+                // `masterAppB` slot grammar), so a parsed slot is never both
+                // closed and narrowing — this stays as a defensive guard for any
+                // future non-source-parsed AOM input.
+                let narrows = !child_slot.includes.is_empty() || !child_slot.excludes.is_empty();
+                if child_slot.is_closed && narrows {
+                    self.push(
+                        ValidationCode::Vdssc,
+                        "a specialised slot cannot be both closed and narrowed",
+                        path,
+                    );
+                }
+                // VDSSM: the narrowed constraint must be a proper subset — an
+                // added include narrows, an equal/empty include does not.
+                // TODO: compare the matched archetype sets for a strict proper
+                // subset (needs the archetype library query).
+                if !child_slot.is_closed && !narrows {
+                    self.push(
+                        ValidationCode::Vdssm,
+                        "a specialised slot must narrow the parent slot or be closed",
+                        path,
+                    );
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// VARXID / VARXS / VARXR for a `C_ARCHETYPE_ROOT` filling a parent slot.
+    fn check_slot_filler(
+        &mut self,
+        root: &'a CArchetypeRoot,
+        parent_slot: &'a ArchetypeSlot,
+        path: &str,
+    ) {
+        // VARXID: the filler node id must be a specialisation of the slot id —
+        // conformant and strictly deeper (`master04.5` §`C_ARCHETYPE_ROOT`, VARXID
+        // L427).
+        let id_ok = codes_conformant(&root.node_id, &parent_slot.node_id)
+            && specialisation_depth(&root.node_id) > specialisation_depth(&parent_slot.node_id);
+        if !id_ok {
+            self.push(
+                ValidationCode::Varxid,
+                format!(
+                    "slot filler node id {:?} is not a specialisation of the slot id {:?}",
+                    root.node_id, parent_slot.node_id
+                ),
+                path,
+            );
+        }
+
+        // VARXS: the filler archetype must satisfy the parent slot's include /
+        // exclude constraints (`master04.5` §`C_ARCHETYPE_ROOT`, VARXS L424).
+        let matches_slot = slot_admits(parent_slot, &root.archetype_ref);
+        if !matches_slot {
+            self.push(
+                ValidationCode::Varxs,
+                format!(
+                    "slot filler {:?} does not match the parent slot constraint",
+                    root.archetype_ref
+                ),
+                path,
+            );
+            return;
+        }
+
+        // VARXR: the referenced archetype must be resolvable in the repository
+        // (`master04.5` §`C_ARCHETYPE_ROOT`, VARXR L419).
+        if !root.archetype_ref.is_empty() && self.repo.get(&root.archetype_ref).is_none() {
+            self.push(
+                ValidationCode::Varxr,
+                format!(
+                    "external reference {:?} cannot be resolved in the repository",
+                    root.archetype_ref
+                ),
+                path,
+            );
+        }
+    }
+
+    /// VSUNT / VUNT for a redefinition of a `C_COMPLEX_OBJECT_PROXY` parent node
+    /// (`master04.5` §`C_COMPLEX_OBJECT_PROXY`, VSUNT L488 / VUNT L479-480).
+    fn check_proxy_redefinition(
+        &mut self,
+        child: &'a CObject,
+        _parent_proxy: &'a CComplexObjectProxy,
+        path: &str,
+    ) {
+        // VSUNT: a proxy may be redefined by another proxy, or by a
+        // `C_COMPLEX_OBJECT` that legally redefines the proxy target.
+        match child {
+            CObject::CComplexObjectProxy(_) | CObject::CComplexObject(_) => {}
+            _ => self.push(
+                ValidationCode::Vsunt,
+                "a use_node proxy may only be redefined by a proxy or a C_COMPLEX_OBJECT",
+                path,
+            ),
+        }
+    }
+
+    /// A brand-new child node (no congruent parent) — `master04.5` §`C_OBJECT`
+    /// VSONIN L354 / VSONPO L388.
+    ///
+    /// Primitive leaf nodes (`C_PRIMITIVE_OBJECT` descendants) carry synthetic
+    /// node ids, not the real object-node identifiers VSONIN/VSONPO govern, so
+    /// they are exempt — a retyped node (e.g. `DV_TEXT`→`DV_CODED_TEXT`) may add
+    /// value-constraint leaves that have no parent counterpart.
+    fn check_new_object(&mut self, child: &'a CObject, path: &str) {
+        if aom_type(child).is_primitive() {
+            return;
+        }
+        // VSONPO: a new node's occurrences may not be prohibited (`{0}`) — that
+        // only makes sense for an existing node.
+        if is_prohibited(child_occurrences(child)) {
+            self.push(
+                ValidationCode::Vsonpo,
+                "a new object node may not have prohibited (occurrences {0}) redefinition",
+                path,
+            );
+        }
+        // VSONIN: a new node carrying a node id must use a 'new' node id
+        // specialised at the child level (`at0.*`/`id0.*` form). A redefinition-
+        // style id with no parent counterpart is invalid.
+        let nid = object_node_id(child);
+        if !nid.is_empty()
+            && !matches!(child, CObject::ArchetypeSlot(_))
+            && (specialisation_depth(nid) != Some(self.child_level) || !is_new_at_level(nid))
+        {
+            // A node id that is a redefinition of a parent code but has no parent
+            // counterpart, or is not specialised to the child level.
+            self.push(
+                ValidationCode::Vsonin,
+                format!(
+                    "new object node id {nid:?} is not a valid new node id at specialisation level {}",
+                    self.child_level
+                ),
+                path,
+            );
+        }
+    }
+
+    /// Resolve a differential path to its target object in the flat parent, using
+    /// path congruence (`codes_conformant`) for the node-id predicates.
+    fn resolve_object(&self, path: &str) -> Option<&'a CComplexObject> {
+        let segments = parse_path(path);
+        let mut current: &'a CComplexObject = self.parent_root;
+        for seg in &segments {
+            let attr = complex_attributes(current)
+                .iter()
+                .find(|a| a.rm_attribute_name == seg.attribute)?;
+            let child = pick_child(attr, seg)?;
+            match child {
+                CObject::CComplexObject(cco) => current = cco,
+                _ => return None,
+            }
+        }
+        Some(current)
+    }
+}
+
+/// Choose the child object of `attr` matching a path segment's node-id predicate
+/// (congruent match), or the sole child if the segment carries no predicate.
+fn pick_child<'a>(attr: &'a CAttribute, seg: &PathSegment) -> Option<&'a CObject> {
+    match &seg.node_id {
+        Some(nid) => attr
+            .children
+            .iter()
+            .find(|c| object_node_id(c) == nid || node_id_conforms_to(nid, object_node_id(c))),
+        None if attr.children.len() == 1 => attr.children.first(),
+        None => None,
+    }
+}
+
+/// Find the flat-parent node under `parent_attr` that `child` redefines
+/// (`node_id_conforms_to` — the child id is the same as, or a specialisation of,
+/// the parent id).
+fn find_congruent<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Option<&'a CObject> {
+    let cid = object_node_id(child);
+    if cid.is_empty() {
+        return None;
+    }
+    parent_attr
+        .children
+        .iter()
+        .find(|p| node_id_conforms_to(cid, object_node_id(p)))
+}
+
+/// Pair a child primitive leaf (which carries only a synthetic node id) with the
+/// parent attribute's leaf of the same primitive AOM type, so a leaf value
+/// redefinition (VPOV/VUNK) can be compared. Only used when node-id matching
+/// ([`find_congruent`]) found no counterpart.
+fn pair_primitive_leaf<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Option<&'a CObject> {
+    let ct = aom_type(child);
+    if !ct.is_primitive() {
+        return None;
+    }
+    parent_attr.children.iter().find(|p| aom_type(p) == ct)
+}
+
+/// True if an occurrences interval is prohibited (`{0}` / `{0..0}`).
+fn is_prohibited(occ: Option<&MultiplicityInterval>) -> bool {
+    occ.is_some_and(MultiplicityInterval::is_prohibited)
+}
+
+/// The sibling-order marker of any [`CObject`], if it carries one.
+fn sibling_order(
+    obj: &CObject,
+) -> Option<&openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder> {
+    match obj {
+        CObject::ArchetypeSlot(s) => s.sibling_order.as_ref(),
+        CObject::CComplexObject(c) => match c {
+            CComplexObject::CComplexObject(d) => d.sibling_order.as_ref(),
+            CComplexObject::CArchetypeRoot(r) => r.sibling_order.as_ref(),
+        },
+        CObject::CComplexObjectProxy(p) => p.sibling_order.as_ref(),
+        CObject::CBoolean(o) => o.sibling_order.as_ref(),
+        CObject::CInteger(o) => o.sibling_order.as_ref(),
+        CObject::CReal(o) => o.sibling_order.as_ref(),
+        CObject::CString(o) => o.sibling_order.as_ref(),
+        CObject::CTerminologyCode(o) => o.sibling_order.as_ref(),
+        CObject::CDate(o) => o.sibling_order.as_ref(),
+        CObject::CTime(o) => o.sibling_order.as_ref(),
+        CObject::CDateTime(o) => o.sibling_order.as_ref(),
+        CObject::CDuration(o) => o.sibling_order.as_ref(),
+    }
+}
+
+/// The finite cardinality upper bound of an attribute, `None` if unbounded / no
+/// cardinality.
+fn finite_card_upper(attr: &CAttribute) -> Option<i32> {
+    attr.cardinality
+        .as_ref()
+        .filter(|c| !c.interval.upper_unbounded)
+        .and_then(|c| c.interval.upper)
+}
+
+/// True if two [`Bounds`] intervals intersect (share at least one integer).
+fn bounds_intersect(a: Bounds, b: Bounds) -> bool {
+    let a_ok = a.upper.is_none_or(|au| au >= b.lower);
+    let b_ok = b.upper.is_none_or(|bu| bu >= a.lower);
+    a_ok && b_ok
+}
+
+/// True if the parent slot admits the archetype `id` (satisfies an `include`
+/// assertion and is not caught by a specific `exclude`).
+///
+/// The parent slot's include/exclude assertions constrain `archetype_id/value`
+/// with a regex; a filler matches if it satisfies an include regex.
+fn slot_admits(slot: &ArchetypeSlot, id: &str) -> bool {
+    if slot.is_closed {
+        return false;
+    }
+    if slot.includes.is_empty() {
+        // An open slot with no includes admits anything not excluded.
+        return !slot.excludes.iter().any(|a| assertion_matches(a, id));
+    }
+    slot.includes.iter().any(|a| assertion_matches(a, id))
+        && !slot
+            .excludes
+            .iter()
+            .any(|a| assertion_specific_match(a, id))
+}
+
+/// True if a slot assertion's regex constraint matches `id`.
+fn assertion_matches(a: &Assertion, id: &str) -> bool {
+    let Some(re) = assertion_regex(a) else {
+        return false;
+    };
+    regex::Regex::new(&re).is_ok_and(|rx| rx.is_match(id))
+}
+
+/// True if a slot assertion is a *specific* (non-universal) regex that matches
+/// `id` (a universal `.*`/`.+` exclude does not exclude a matched include).
+fn assertion_specific_match(a: &Assertion, id: &str) -> bool {
+    let Some(re) = assertion_regex(a) else {
+        return false;
+    };
+    let trimmed = re.trim();
+    if trimmed == ".*" || trimmed == ".+" {
+        return false;
+    }
+    regex::Regex::new(&re).is_ok_and(|rx| rx.is_match(id))
+}
+
+/// Extract the regex body of a slot assertion's `matches {/re/}` constraint.
+fn assertion_regex(a: &Assertion) -> Option<String> {
+    let text = a.string_expression.as_deref()?;
+    let open = text.find('{')?;
+    let close = text.rfind('}')?;
+    let body = text.get(open + 1..close)?.trim();
+    Some(body.trim_matches('/').to_owned())
+}
+
+/// The full attribute path of a differential-path attribute (`diff` prefix +
+/// attribute name).
+fn full_attr_path(diff: &str, name: &str) -> String {
+    if diff.is_empty() {
+        format!("/{name}")
+    } else {
+        format!("{diff}/{name}")
+    }
+}
+
+fn child_path(attr_path: &str, node_id: &str) -> String {
+    if node_id.is_empty() {
+        attr_path.to_owned()
+    } else {
+        format!("{attr_path}[{node_id}]")
+    }
+}
+
+fn show_bounds(b: Bounds) -> String {
+    match b.upper {
+        Some(u) => format!("{{{}..{u}}}", b.lower),
+        None => format!("{{{}..*}}", b.lower),
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::panic)]
+mod tests {
+    use super::*;
+    use crate::assemble::parse_artefact;
+    use crate::validate::rm::ProductionRmModel;
+
+    /// The parent CLUSTER for the hand-written specialisation cases (level 0 —
+    /// its own flat form). It carries: `id2` a single-occurrence `ELEMENT` whose
+    /// `value` is a `DV_QUANTITY`; `id4` a multiple-occurrence `ELEMENT` with a
+    /// `DV_TEXT` value-list leaf; an open slot `id6` and a closed slot `id7`.
+    const PARENT: &str = "\
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+\topenEHR-EHR-CLUSTER.p2_parent.v1.0.0
+
+language
+\toriginal_language = <[ISO_639-1::en]>
+
+description
+\tlifecycle_state = <\"draft\">
+
+definition
+\tCLUSTER[id1] matches {
+\t\titems cardinality matches {0..*} matches {
+\t\t\tELEMENT[id2] occurrences matches {0..1} matches {
+\t\t\t\tvalue matches { DV_QUANTITY[id3] }
+\t\t\t}
+\t\t\tELEMENT[id4] occurrences matches {1..3} matches {
+\t\t\t\tvalue matches { DV_TEXT[id5] matches { value matches {\"a\", \"b\", \"c\"} } }
+\t\t\t}
+\t\t\tallow_archetype CLUSTER[id6] matches {
+\t\t\t\tinclude
+\t\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.foo.*\\.v1/}
+\t\t\t}
+\t\t\tallow_archetype CLUSTER[id8] closed
+\t\t}
+\t}
+
+terminology
+\tterm_definitions = <
+\t\t[\"en\"] = <
+\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id4\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id6\"] = <text=<\"\"> description=<\"\">>
+\t\t\t[\"id8\"] = <text=<\"\"> description=<\"\">>
+\t\t>
+\t>
+";
+
+    /// Wrap a differential `definition` body into a level-1 child specialising
+    /// [`PARENT`].
+    fn child(def: &str, terms: &str) -> String {
+        format!(
+            "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+             \topenEHR-EHR-CLUSTER.p2_child.v1.0.0\n\n\
+             specialize\n\topenEHR-EHR-CLUSTER.p2_parent.v1\n\n\
+             language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+             description\n\tlifecycle_state = <\"draft\">\n\n\
+             definition\n\tCLUSTER[id1.1] matches {{\n{def}\n\t}}\n\n\
+             terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n{terms}\t\t>\n\t>\n"
+        )
+    }
+
+    fn term(code: &str) -> String {
+        format!("\t\t\t[\"{code}\"] = <text=<\"x\"> description=<\"x\">>\n")
+    }
+
+    /// The error codes phase-2 raises for `def` (a child definition body).
+    fn codes(def: &str, terms: &str) -> Vec<String> {
+        let parent = parse_artefact(PARENT).unwrap();
+        let child = parse_artefact(&child(def, terms)).unwrap();
+        let repo = ArchetypeRepository::new();
+        let issues = validate_phase2_spec(&child, &parent, &ProductionRmModel, &repo);
+        issues
+            .iter()
+            .map(|i| i.code.mnemonic().to_owned())
+            .collect()
+    }
+
+    fn assert_raises(def: &str, terms: &str, code: &str) {
+        let raised = codes(def, terms);
+        assert!(
+            raised.iter().any(|c| c == code),
+            "expected {code}, raised {raised:?}"
+        );
+    }
+
+    #[test]
+    fn vsam_cardinality_on_single_valued_attribute() {
+        // Redefining the single-valued ELEMENT.value with a cardinality is a
+        // multiplicity mismatch (`master04.5` §`C_ATTRIBUTE`, VSAM).
+        assert_raises(
+            "\t\t/items[id2]/value cardinality matches {0..*} matches { DV_QUANTITY[id3.1] }",
+            &term("id3.1"),
+            "VSAM",
+        );
+    }
+
+    #[test]
+    fn vsonct_reference_type_non_conformance() {
+        // Redefining `DV_QUANTITY`[id3] to `DV_TEXT`: `DV_TEXT` conforms to the
+        // attribute type `DATA_VALUE` (so not VCORMT) but not to the parent node
+        // type `DV_QUANTITY` (`master04.5` §`C_OBJECT`, VSONCT).
+        assert_raises(
+            "\t\t/items[id2]/value matches { DV_TEXT[id3.1] }",
+            &term("id3.1"),
+            "VSONCT",
+        );
+    }
+
+    #[test]
+    fn vsont_meta_type_change() {
+        // Redefining the ELEMENT[id2] complex node (which has child attributes)
+        // with a `C_ARCHETYPE_ROOT` is an illegal AOM meta-type change (`master04.5`
+        // §`C_OBJECT`, VSONT).
+        assert_raises(
+            "\t\t/items matches { use_archetype ELEMENT[id2.1, openEHR-EHR-CLUSTER.x.v1] }",
+            &term("id2.1"),
+            "VSONT",
+        );
+    }
+
+    #[test]
+    fn vsonpi_prohibition_wrong_node_id() {
+        // Prohibiting (occurrences {0}) with a node id that is a specialisation of
+        // (not identical to) the parent node id (`master04.5` §`C_OBJECT`, VSONPI).
+        assert_raises(
+            "\t\t/items matches { ELEMENT[id2.1] occurrences matches {0} }",
+            &term("id2.1"),
+            "VSONPI",
+        );
+    }
+
+    #[test]
+    fn vsonpo_new_node_prohibited() {
+        // A brand-new node may not be prohibited — prohibition only makes sense
+        // for an existing node (`master04.5` §`C_OBJECT`, VSONPO).
+        assert_raises(
+            "\t\t/items matches { ELEMENT[id0.9] occurrences matches {0} }",
+            &term("id0.9"),
+            "VSONPO",
+        );
+    }
+
+    #[test]
+    fn vsonpt_prohibition_wrong_aom_type() {
+        // Prohibiting the slot node id6 with a `C_COMPLEX_OBJECT` (different AOM
+        // type from `ARCHETYPE_SLOT`) (`master04.5` §`C_OBJECT`, VSONPT).
+        assert_raises(
+            "\t\t/items matches { CLUSTER[id6] occurrences matches {0} }",
+            "",
+            "VSONPT",
+        );
+    }
+
+    #[test]
+    fn vpov_leaf_value_out_of_parent() {
+        // Redefining the `DV_TEXT` value list to include "z", not in the parent
+        // list {"a","b","c"} (`master08` §Phase 2 gloss, VPOV, via
+        // c_value_conforms_to).
+        assert_raises(
+            "\t\t/items[id4]/value matches { DV_TEXT[id5.1] matches { value matches {\"a\", \"z\"} } }",
+            &term("id5.1"),
+            "VPOV",
+        );
+    }
+
+    #[test]
+    fn vdssm_slot_neither_closed_nor_narrowed() {
+        // A specialised slot that neither closes nor narrows the parent slot
+        // (`master04.5` §`ARCHETYPE_SLOT`, VDSSM).
+        assert_raises(
+            "\t\t/items matches { allow_archetype CLUSTER[id6] }",
+            "",
+            "VDSSM",
+        );
+    }
+
+    #[test]
+    fn vdssp_specialise_a_closed_slot() {
+        // Specialising the already-closed slot id8 (`master04.5` §`ARCHETYPE_SLOT`,
+        // VDSSP).
+        assert_raises(
+            "\t\t/items matches { allow_archetype CLUSTER[id8] closed }",
+            "",
+            "VDSSP",
+        );
+    }
+}
