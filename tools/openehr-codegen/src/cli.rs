@@ -1,57 +1,34 @@
-#![allow(clippy::format_push_string, clippy::too_many_lines)]
-// Build-time codegen CLI (never ships in the server): the console IS its
-// user interface and a malformed vendored spec must abort loudly, so the
-// reliability deny-tier for shipped code is deliberately relaxed here
-// (.claude/rules/reliability.md §tools). `let _ = writeln!(String)` is the
-// infallible in-memory emit idiom.
-#![allow(
-    clippy::panic,
-    clippy::print_stdout,
-    clippy::print_stderr,
-    clippy::let_underscore_must_use
-)]
+//! The command-line interface: argument dispatch, input loading, and the
+//! stage-orchestrating `cmd_*` handlers that wire LOAD → ANALYZE → PLAN →
+//! RENDER together and write each emit target's files.
 
-//! `openehr-codegen` — generates the openEHR spec crates from the vendored BMM
-//! meta-model.
-//!
-//! Usage:
-//!   `openehr-codegen check`          — load + validate the vendored BMM schemas.
-//!   `openehr-codegen emit [OUTDIR]`  — emit Rust into OUTDIR (default:
-//!                                       `target/codegen-preview`).
-
-mod bmm;
-mod emit;
-mod emit_opt;
-mod emit_rest;
-mod emit_rm_model;
-mod emit_xml;
-mod naming;
-mod oas;
-mod xsd;
-
-use bmm::BmmSchema;
-use emit::{External, Model};
+use crate::analyze::{External, Model, augment_with_reemit, cross_schema_reemit, emittable_specs};
+use crate::load::bmm::BmmSchema;
+use crate::load::{oas, xsd};
+use crate::render::emit::{GenFile, emit_crate, emit_multi_crate};
+use crate::render::{emit_opt, emit_rest, emit_rm_model, emit_xml, naming};
 use std::path::{Path, PathBuf};
 
 const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
-/// generated XML/REST code).
+/// generated XML/REST code). `../../crates/openehr-its` from this tool's
+/// `tools/openehr-codegen` manifest dir.
 #[allow(dead_code)] // used by the emit-xml/emit-rest writers (landing incrementally)
-const ITS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../openehr-its");
+const ITS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../crates/openehr-its");
 /// v1 (namespace `.../v1`) RM-instance XSD bundle dir — the Stage-1 parity target.
 const XSD_V1_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL"
+    "/../../crates/openehr-its/schemas/xml/its-xml-1.0.2-nsv1/ALL"
 );
 /// v2 (namespace `.../v2`) XSD root (per-component release folders). Supplies the
 /// RM-instance types the v1 `ALL/` bundle lacks (EHR + demographic) or carries
 /// stale (extract) to the emit-xml input.
 const XSD_V2_DIR: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
+    "/../../crates/openehr-its/schemas/xml/its-xml-2.0.0-nsv2"
 );
 
-fn main() {
+pub(crate) fn run() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let cmd = args.first().map_or("check", String::as_str);
     let result = match cmd {
@@ -128,11 +105,11 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
     // OAS $ref names are PascalCase (`EhrStatus`) — the same as the emitted Rust
     // type names — so map each crate's emittable spec names through `type_name`.
     let names = emit_rest::RmNames {
-        base: emit::emittable_specs(&base_model, &base)
+        base: emittable_specs(&base_model, &base)
             .iter()
             .map(|s| naming::type_name(s))
             .collect(),
-        rm: emit::emittable_specs(&rm_model, &rm)
+        rm: emittable_specs(&rm_model, &rm)
             .iter()
             .map(|s| naming::type_name(s))
             .collect(),
@@ -243,8 +220,8 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
     let rm = load(RM_BMM)?;
     let base_model = Model::merged(&[&base]);
     let rm_model = Model::merged(&[&base, &rm]);
-    let base_specs = emit::emittable_specs(&base_model, &base);
-    let rm_specs = emit::emittable_specs(&rm_model, &rm);
+    let base_specs = emittable_specs(&base_model, &base);
+    let rm_specs = emittable_specs(&rm_model, &rm);
 
     // The AM/OPT constraint schemas share `Resource.xsd`+`BaseTypes.xsd` with the
     // RM-instance set; those shared types resolve to the RM/BASE XML impls.
@@ -316,7 +293,7 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Append the generated RM-model files to `openehr-rm`'s file set and declare the
 /// module in its `lib.rs` (the authority for the crate layout).
-fn inject_rm_model(files: &mut Vec<emit::GenFile>, mut model_files: Vec<emit::GenFile>) {
+fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>) {
     for f in files.iter_mut() {
         if f.path == "lib.rs" && !f.body.contains("pub mod model;") {
             f.body.push_str("pub mod model;\n");
@@ -394,12 +371,12 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let no_ext = External::default();
     write_crate(
         "openehr-base",
-        &emit::emit_crate(&base_model, &base, &no_ext, BASE_DOC),
+        &emit_crate(&base_model, &base, &no_ext, BASE_DOC),
     )?;
 
     // Types exported by openehr-base — downstream crates resolve references to
     // these against `openehr_base::prelude` instead of degrading to Value.
-    let base_specs = emit::emittable_specs(&base_model, &base);
+    let base_specs = emittable_specs(&base_model, &base);
     let ext_base = External::default().with(base_specs, "openehr_base::prelude");
 
     // openehr-rm: single version, depends on openehr-base. Also carries the
@@ -408,7 +385,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // `model`, and a later `emit` regenerates it byte-identically to the
     // standalone `emit-rm-model` target).
     let rm_model = Model::merged(&[&base, &rm]);
-    let mut rm_files = emit::emit_crate(&rm_model, &rm, &ext_base, RM_DOC);
+    let mut rm_files = emit_crate(&rm_model, &rm, &ext_base, RM_DOC);
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm_model));
     write_crate("openehr-rm", &rm_files)?;
 
@@ -422,14 +399,11 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let lang_model = Model::merged(&[&base, &lang]);
     write_crate(
         "openehr-lang",
-        &emit::emit_crate(&lang_model, &lang, &ext_base, LANG_DOC),
+        &emit_crate(&lang_model, &lang, &ext_base, LANG_DOC),
     )?;
-    let lang_specs = emit::emittable_specs(&lang_model, &lang);
+    let lang_specs = emittable_specs(&lang_model, &lang);
     let ext_base_lang = External::default()
-        .with(
-            emit::emittable_specs(&base_model, &base),
-            "openehr_base::prelude",
-        )
+        .with(emittable_specs(&base_model, &base), "openehr_base::prelude")
         .with(lang_specs, "openehr_lang::prelude");
 
     // openehr-am: two versions in one crate, each depending on openehr-base and
@@ -456,9 +430,9 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // re-emission (owner ruling 2026-07-19). AM 1.4 declares no cross-`include`
     // subtypes → empty closure, unchanged emission.
     let m24 = Model::merged(&[&base, &lang, &am24]);
-    let reemit24 = emit::cross_schema_reemit(&m24, &am24);
-    let am24_aug = emit::augment_with_reemit(&am24, &m24, &reemit24, &[&base, &lang]);
-    let am_files = emit::emit_multi_crate(
+    let reemit24 = cross_schema_reemit(&m24, &am24);
+    let am24_aug = augment_with_reemit(&am24, &m24, &reemit24, &[&base, &lang]);
+    let am_files = emit_multi_crate(
         &[("am14", &m14, &am14), ("am24", &m24, &am24_aug)],
         &ext_base_lang,
         AM_DOC,
@@ -471,7 +445,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let term_model = Model::merged(&[&base, &term]);
     write_crate(
         "openehr-term",
-        &emit::emit_crate(&term_model, &term, &ext_base, TERM_DOC),
+        &emit_crate(&term_model, &term, &ext_base, TERM_DOC),
     )?;
     Ok(())
 }
@@ -479,10 +453,7 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
 /// Write a generated crate's `src/` in place. Wipes the crate's `src/` first
 /// (there is no hand-written `*_impl.rs` yet; when there is, this must preserve
 /// it).
-fn write_crate(
-    crate_name: &str,
-    files: &[emit::GenFile],
-) -> Result<(), Box<dyn std::error::Error>> {
+fn write_crate(crate_name: &str, files: &[GenFile]) -> Result<(), Box<dyn std::error::Error>> {
     let src = crates_root().join(crate_name).join("src");
     // Preserve hand-written code: delete only previously-`@generated`
     // files, never the hand-written `*_impl.rs` / spec-behaviour modules beside

@@ -6,7 +6,7 @@
 # .xml/.opt are included for the executable CNF suite + canonical examples.
 #
 # This is REFERENCE DOCUMENTATION for spec-adherence checks. It is NOT a build
-# input: codegen consumes crates/openehr-codegen/vendor/** (BMM/XSD/OAS) and
+# input: codegen consumes tools/openehr-codegen/vendor/** (BMM/XSD/OAS) and
 # openehr-its/schemas/**; those vendor dirs stay authoritative for generation.
 #
 # Idempotent: wipes and re-vendors each component dir. Re-run after bumping a
@@ -36,7 +36,7 @@ COMPONENTS=(
   "ITS-JSON|specifications-ITS-JSON|master (development pin)|5acae056248e917a4b4c56f7e712f4fcfeb616a6"
 )
 # ITS-BMM is deliberately absent: it is already vendored verbatim (all
-# serializations) at crates/openehr-codegen/vendor/bmm/.
+# serializations) at tools/openehr-codegen/vendor/bmm/.
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT

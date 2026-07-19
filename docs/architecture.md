@@ -122,8 +122,9 @@ Three physical directories (consolidated 2026-07-16):
 `EhrbaseService` directly), and `ehrbase-server` (the wiring-only binary; the
 bin is still named `ehrbase`); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`conformance` — the
-ECC runner, `benchmark`, `testkit` — the shared test-database harness); **`crates/*`** holds the generated openEHR spec
-layer + its tooling (`openehr-*`, `openehr-codegen`, `openehr-derive`). Root
+ECC runner, `benchmark`, `testkit` — the shared test-database harness, and
+`openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
+generated openEHR spec layer + its tooling (`openehr-*`, `openehr-derive`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
 `ehrbase-server → {ehrbase-rest, ehrbase}`, `ehrbase-rest → ehrbase`,
 `app/* → crates/openehr-*`. The former `ehrbase-sm` trait catalog is deleted:

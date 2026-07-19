@@ -58,10 +58,10 @@
 //! model gains or loses a constraint type, forcing a reconciliation + a design-record
 //! update.
 
-use crate::emit::{XmlField, XmlType, XmlVariant};
-use crate::emit_xml::{emit_from_xml, emit_to_xml};
-use crate::naming;
-use crate::xsd::XsdModel;
+use crate::load::xsd::XsdModel;
+use crate::plan::{XmlField, XmlType, XmlVariant};
+use crate::render::emit_xml::{emit_from_xml, emit_to_xml};
+use crate::render::naming;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 

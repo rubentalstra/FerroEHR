@@ -5,7 +5,7 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
 (1.2.0).
 
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**
-  Change the emitter (`crates/openehr-codegen/src/emit.rs`) and regenerate
+  Change the emitter (`tools/openehr-codegen/src/render/emit.rs`) and regenerate
   (`/regen-codegen`); the `codegen-drift` CI job guards this.
 - Hand-written invariants / spec functions live ONLY in `*_impl.rs`
   siblings, each citing its RM spec section

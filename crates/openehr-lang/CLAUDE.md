@@ -9,7 +9,7 @@ ADL/ODIN *instance* parsing — deliberately off the codegen path).
   crates — after ANY loader/model change, run `/regen-codegen` and inspect
   the diff; the `codegen-drift` CI job is the backstop.
 - Codegen consumes the JSON BMM serialization only
-  (`crates/openehr-codegen/vendor/bmm/`); the ODIN reader exists for
+  (`tools/openehr-codegen/vendor/bmm/`); the ODIN reader exists for
   ADL/ODIN instance text, not for loading meta-models.
 - **`src/odin/` is the real ODIN reader** (a self-contained `logos` lexer +
   `chumsky` parser + `OdinValue` tree; `openehr_lang::odin::parse`), NOT part

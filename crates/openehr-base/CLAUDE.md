@@ -6,7 +6,7 @@ Foundation + base types, **generated from the vendored BMM** by
 
 - **NEVER hand-edit a file with a `// @generated … DO NOT EDIT` header.**
   To change emitted output, edit the emitter
-  (`crates/openehr-codegen/src/emit.rs` / its override map) and regenerate
+  (`tools/openehr-codegen/src/render/emit.rs` / its override map) and regenerate
   (`/regen-codegen`). The `codegen-drift` CI job fails on any divergence.
 - Hand-written spec behaviour (invariants, spec functions)
   lives ONLY in sibling `*_impl.rs` files, which the generator never
