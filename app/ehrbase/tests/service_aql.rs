@@ -107,7 +107,7 @@ fn composition(name: &str, magnitude: f64) -> Value {
     }
     c["name"] = json!({ "_type": "DV_TEXT", "value": name });
     // The content OBSERVATION is an archetype root, so it must carry
-    // archetype_details (RM invariant `Is_archetypeRoot`); the vendored fixture
+    // archetype_details (RM invariant `Is_archetype_root`); the vendored fixture
     // omits it.
     c["content"][0]["archetype_details"] = json!({
         "_type": "ARCHETYPED",

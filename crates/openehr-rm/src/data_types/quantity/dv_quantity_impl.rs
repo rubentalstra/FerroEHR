@@ -80,12 +80,12 @@ mod tests {
         q.accuracy = Some(101.0);
         assert!(
             messages(&q)
-                .contains(&"Invariant Accuracy_valid failed on type DV_QUANTITY".to_owned())
+                .contains(&"Invariant Accuracy_validity failed on type DV_QUANTITY".to_owned())
         );
         q.accuracy = Some(-1.0);
         assert!(
             messages(&q)
-                .contains(&"Invariant Accuracy_valid failed on type DV_QUANTITY".to_owned())
+                .contains(&"Invariant Accuracy_validity failed on type DV_QUANTITY".to_owned())
         );
     }
 

@@ -1,6 +1,6 @@
 //! Hand-written RM class invariants for `INSTRUCTION`.
 //!
-//! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
+//! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,
 //! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 //! archie's own `Instruction.Activities_valid` is `ignored`.
 
@@ -96,7 +96,7 @@ mod tests {
         assert!(
             i.invariants()
                 .iter()
-                .any(|m| m.message == "Invariant Is_archetypeRoot failed on type INSTRUCTION")
+                .any(|m| m.message == "Invariant Is_archetype_root failed on type INSTRUCTION")
         );
     }
 }

@@ -6,7 +6,9 @@
 
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
 use crate::data_types::quantity::dv_proportion::DvProportion;
-use crate::validate::{InvariantViolation, Validate, is_integral, push_dv_amount_invariants};
+use crate::validate::{
+    InvariantViolation, Validate, is_integral, push_dv_amount_invariants, valid_proportion_kind,
+};
 
 // ProportionKind codes.
 const PK_UNITARY: i32 = 1;
@@ -31,7 +33,7 @@ pub(crate) fn push_dv_proportion_invariants(
     let integral = is_integral(numerator) && is_integral(denominator);
 
     // Type_validity: type in 0..=4.
-    if !(0..=4).contains(&kind) {
+    if !valid_proportion_kind(kind) {
         out.push(InvariantViolation::here(
             "Invariant Type_validity failed on type DV_PROPORTION",
         ));
