@@ -17,6 +17,8 @@ serde_json.workspace = true  # default_value payloads (C_DEFINED_OBJECT.default_
 openehr-base = { path = "../openehr-base" }   # VersionStatus for the parsed HRID
 openehr-am = { path = "../openehr-am" }       # am24 ArchetypeHrid (the identification target type)
 openehr-lang = { path = "../openehr-lang" }   # openehr_lang::odin — the ODIN section parser
+uuid.workspace = true        # meta uid/build_uid (AUTHORED_ARCHETYPE.uid: Uuid)
+indexmap.workspace = true    # OdinValue::Object body (insertion-ordered map)
 
 [lints]
 workspace = true

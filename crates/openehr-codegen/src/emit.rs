@@ -562,6 +562,12 @@ impl Model {
     ) -> BTreeSet<String> {
         let mut roots = BTreeSet::new();
         for rp in self.flattened_props(class) {
+            // A back-reference field is omitted from the emitted struct
+            // (see `back_reference` / `render_struct_def`), so it contributes no
+            // import — including its target here would emit an unused `use`.
+            if back_reference(&rp.owner, &rp.prop.name).is_some() {
+                continue;
+            }
             match &rp.prop.kind {
                 BmmPropKind::Single(t) => self.effective_roots(t, &mut roots),
                 BmmPropKind::Container { item, .. } => self.effective_roots(item, &mut roots),
@@ -574,6 +580,100 @@ impl Model {
             .map(|n| subst.get(&n).cloned().unwrap_or(n))
             .filter(|n| !Self::is_mapped(n) && n != "Any" && !generics.iter().any(|g| g == n))
             .collect()
+    }
+
+    /// The set of class names that are **constructible** — a finite value
+    /// exists. Computed as a least fixpoint: a mapped/primitive type is
+    /// constructible; an abstract (untagged-enum) class is constructible if any
+    /// variant is; a concrete class is constructible iff every *mandatory
+    /// single-valued* field's type is constructible. Container (`Vec`/map) and
+    /// optional (`Option`) fields never block construction (they can be
+    /// empty/`None`), and a designated owner/parent [`back_reference`] is omitted
+    /// from the struct entirely, so it never blocks either.
+    fn constructible_classes(&self) -> BTreeSet<String> {
+        let mut ok: BTreeSet<String> = BTreeSet::new();
+        loop {
+            let mut changed = false;
+            for (name, class) in &self.classes {
+                if ok.contains(name) || Self::is_mapped(name) {
+                    continue;
+                }
+                let constructible = if class.is_abstract {
+                    self.enum_variants(name)
+                        .iter()
+                        .any(|v| ok.contains(v) || Self::is_mapped(v))
+                } else {
+                    self.flattened_props(class).iter().all(|rp| {
+                        // Only a mandatory, single-valued, non-back-reference
+                        // field can force construction of another value.
+                        if !rp.prop.is_mandatory {
+                            return true;
+                        }
+                        if back_reference(&rp.owner, &rp.prop.name).is_some() {
+                            return true;
+                        }
+                        let BmmPropKind::Single(t) = &rp.prop.kind else {
+                            return true;
+                        };
+                        // A single-valued property whose type is a container
+                        // generic (`List`/`Array`/`Set`/`Hash` → `Vec`/`BTreeMap`)
+                        // renders as an indirection that can be empty, so it never
+                        // blocks construction (mirrors `field_type`'s
+                        // `already_indirect`).
+                        if let BmmType::Generic { root, .. } = t
+                            && matches!(root.as_str(), "List" | "Array" | "Set" | "Hash")
+                        {
+                            return true;
+                        }
+                        let mut roots = BTreeSet::new();
+                        self.effective_roots(t, &mut roots);
+                        // A root blocks construction only if it is a *defined
+                        // model class* not yet known constructible. A generic
+                        // parameter (`EVENT.data: T`), `Any`, or a cross-schema
+                        // type (rendered as `serde_json::Value`) is not a model
+                        // class here — it is caller-filled/mapped and never blocks.
+                        roots
+                            .iter()
+                            .all(|r| Self::is_mapped(r) || self.get(r).is_none() || ok.contains(r))
+                    })
+                };
+                if constructible {
+                    ok.insert(name.clone());
+                    changed = true;
+                }
+            }
+            if !changed {
+                break;
+            }
+        }
+        ok
+    }
+
+    /// Prove every concrete emittable class in `schema` is constructible; panic
+    /// otherwise. This is the general ownership-cycle safeguard (orchestrator
+    /// ruling 2026-07-19): a mandatory single-valued construction cycle yields a
+    /// non-constructible infinite-value type in Rust, so it MUST be broken — and
+    /// only ever at a designated owner/parent [`back_reference`] edge, never by
+    /// relaxing a forward composition. If this fires, the fix is a spec-cited
+    /// `back_reference` entry naming the offending back-reference property, never
+    /// making a real data field `Option`.
+    fn assert_constructible(&self, schema: &BmmSchema) {
+        let ok = self.constructible_classes();
+        let mut bad: Vec<&str> = schema
+            .classes
+            .values()
+            .filter(|c| !c.is_abstract && !Self::is_mapped(&c.name))
+            .map(|c| c.name.as_str())
+            .filter(|n| !ok.contains(*n))
+            .collect();
+        bad.sort_unstable();
+        assert!(
+            bad.is_empty(),
+            "openehr-codegen: non-constructible type(s) would be emitted — an unbroken \
+             mandatory single-valued construction cycle: {bad:?}. Break each cycle at its \
+             owner/parent back-reference edge by adding a spec-cited `back_reference` entry; \
+             never relax a forward/mandatory data field to `Option`."
+        );
     }
 }
 
@@ -743,6 +843,12 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         emission: Emission<'a>,
         chain: Vec<String>,
     }
+
+    // Safeguard (owner ruling 2026-07-19): never emit a non-constructible type.
+    // A mandatory single-valued construction cycle must be broken at a designated
+    // owner/parent back-reference edge (`back_reference`); this fails loudly if a
+    // cycle is left unbroken (e.g. a future BMM addition), pointing at the fix.
+    model.assert_constructible(schema);
 
     let class_pkg = class_paths(schema);
     let used = model.used_as_type();
@@ -1161,6 +1267,23 @@ fn render_struct_def(
     let mut first = true;
     for rp in &props {
         let p = rp.prop;
+        // A designated owner/parent back-reference is a non-data navigational
+        // association, never forward-owned data and never on the canonical wire;
+        // emitting it as an owning field makes the type a non-constructible
+        // infinite value (see `back_reference`). Omit it from the struct + serde;
+        // behavioural access, if ever needed, belongs in a hand-written
+        // `*_impl.rs`. This is the only sanctioned way to break a mandatory
+        // construction cycle — a forward composition is never relaxed.
+        if let Some(citation) = back_reference(&rp.owner, &p.name) {
+            b.push_str(&format!(
+                "    // NOTE: `{}` (BMM-mandatory back-reference) omitted — {}. \
+                 A back-reference is not forward-owned data and never appears on \
+                 the canonical wire; emitting it as an owning field would make \
+                 this type non-constructible.\n",
+                p.name, citation
+            ));
+            continue;
+        }
         if rp.owner != class.name && prev_owner != Some(rp.owner.as_str()) {
             // Blank line before a new `// inherited:` group, but not as the very
             // first line inside the braces (rustfmt strips a leading blank line).
@@ -1197,6 +1320,62 @@ fn type_override(class: &str, field: &str) -> Option<&'static str> {
         // A UUID is an RFC-4122 canonical UUID — use the `uuid` crate directly.
         // (ISO_OID / INTERNET_ID / OBJECT_VERSION_ID are *not* plain UUIDs.)
         ("UUID", "value") => Some("uuid::Uuid"),
+        _ => None,
+    }
+}
+
+/// Designates a mandatory single-valued property as an **owner/parent
+/// back-reference** — a navigational association pointing from a part to the
+/// whole that owns it, *not* forward-owned data. Returns the spec citation
+/// naming it a back-reference.
+///
+/// # Why the emitter must special-case these (owner ruling 2026-07-19)
+///
+/// The spec is written in reference-semantics languages (Eiffel/Java) where an
+/// owner/parent pointer is a trivially-satisfiable back-pointer. In Rust value
+/// semantics an *owning* mandatory back-reference (`Box<Owner>`) makes the type
+/// a **non-constructible infinite value** — every `ARCHETYPE` owns a
+/// `terminology` whose `owner_archetype` is an `ARCHETYPE`, ad infinitum — so an
+/// owning emission is a *mis-modeling* of the spec, not extra strictness. These
+/// properties are never present on the canonical JSON/XML wire either. Per the
+/// repo's standing convention (root `CLAUDE.md` §Conventions: "Behavioural
+/// back-references … use `Weak` or an index, never an owning reference") such a
+/// property is emitted as a **non-data back-reference**: omitted from the owned
+/// struct fields and from serde, with behavioural access left to the
+/// hand-written `*_impl.rs`. This laxes no forward/owned data — every genuine
+/// composition field stays mandatory (see [`Model::assert_constructible`], which
+/// proves every remaining cycle is broken only at a designated edge here).
+///
+/// The BMM carries no `is_im_runtime`/`is_im_infrastructure` flag on these
+/// (verified against the vendored BMM 2026-07-19), so the designation is an
+/// explicit, spec-cited override — one entry per property, each naming the
+/// spec text that documents it as a back-reference.
+fn back_reference(class: &str, field: &str) -> Option<&'static str> {
+    match (class, field) {
+        // `ARCHETYPE_TERMINOLOGY.owner_archetype: ARCHETYPE` — "Archetype that
+        // owns this terminology" (docs/specs/openehr/AM/docs/UML/classes/
+        // org.openehr.am.aom2.archetype_terminology.adoc). Back-pointer to the
+        // owning archetype; forms the ARCHETYPE ↔ ARCHETYPE_TERMINOLOGY cycle.
+        ("ARCHETYPE_TERMINOLOGY", "owner_archetype") => Some(
+            "AM AOM2 archetype_terminology (owner_archetype: Archetype that owns this terminology)",
+        ),
+        // `RESOURCE_DESCRIPTION.parent_resource: AUTHORED_RESOURCE` — "Reference
+        // to owning resource" (docs/specs/openehr/BASE/docs/UML/classes/
+        // org.openehr.base.resource.resource_description.adoc). Back-pointer to
+        // the owning resource; forms the AUTHORED_RESOURCE ↔ RESOURCE_DESCRIPTION
+        // cycle.
+        ("RESOURCE_DESCRIPTION", "parent_resource") => Some(
+            "BASE resource resource_description (parent_resource: Reference to owning resource)",
+        ),
+        // `ARCHETYPE_ONTOLOGY.parent_archetype: ARCHETYPE` (AM 1.4) — "Archetype
+        // which owns this terminology" (docs/specs/openehr/AM/docs/UML/classes/
+        // org.openehr.am.aom14.archetype_ontology.adoc), with the invariant
+        // `parent_archetype.ontology = Current`. The ADL 1.4 owner back-reference
+        // (am14 analogue of am24 `owner_archetype`); forms the ARCHETYPE ↔
+        // ARCHETYPE_ONTOLOGY cycle.
+        ("ARCHETYPE_ONTOLOGY", "parent_archetype") => Some(
+            "AM AOM14 archetype_ontology (parent_archetype: Archetype which owns this terminology)",
+        ),
         _ => None,
     }
 }
@@ -1820,6 +1999,14 @@ impl Model {
         };
         self.flattened_props(class)
             .iter()
+            // A designated owner/parent back-reference is omitted from the
+            // emitted struct (see `back_reference` / `render_struct_def`), so it
+            // must be omitted from the canonical-XML codec too — otherwise
+            // `ToXml`/`FromXml` would name a struct field that no longer exists.
+            // On the wire these fields are XSD-`minOccurs=0` (optional), so
+            // omitting them keeps the XML schema-valid; the XSD element becomes a
+            // skipped "XSD-only" slot on write and a `skip_element` on read.
+            .filter(|rp| back_reference(&rp.owner, &rp.prop.name).is_none())
             .map(|rp| {
                 let p = rp.prop;
                 let octet = matches!(&p.kind,

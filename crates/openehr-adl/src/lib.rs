@@ -15,8 +15,10 @@
 //! reader (ODIN is a LANG-component spec); the `rules` body and slot
 //! assertion expressions are captured as raw text for a later phase.
 
+pub mod assemble;
 pub mod cadl;
 pub mod error;
 pub mod lexer;
+pub mod printer;
 pub mod rules;
 pub mod source;

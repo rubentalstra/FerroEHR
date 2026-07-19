@@ -1878,8 +1878,6 @@ impl crate::xml::runtime::ToXml for openehr_base::prelude::ResourceDescription {
             }
         }
         // NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
-        self.parent_resource
-            .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         if let Some(v) = &self.title {
             v.write_xml(w, "title", Some("String"))?;
         }
@@ -1931,7 +1929,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
         let mut __original_namespace = None;
         let mut __original_publisher = None;
         let mut __other_contributors = Vec::new();
-        let mut __parent_resource = None;
         let mut __lifecycle_state = None;
         let mut __custodian_namespace = None;
         let mut __custodian_organisation = None;
@@ -1964,10 +1961,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
                     "other_contributors" => {
                         __other_contributors
                             .push(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
-                    "parent_resource" => {
-                        __parent_resource =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
                     }
                     "lifecycle_state" => {
                         __lifecycle_state =
@@ -2028,9 +2021,6 @@ impl crate::xml::runtime::FromXml for openehr_base::prelude::ResourceDescription
             original_namespace: __original_namespace,
             original_publisher: __original_publisher,
             other_contributors: __other_contributors,
-            parent_resource: __parent_resource.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element parent_resource".into())
-            })?,
             lifecycle_state: __lifecycle_state.ok_or_else(|| {
                 crate::xml::runtime::XmlError::Parse("missing element lifecycle_state".into())
             })?,
@@ -14975,8 +14965,6 @@ impl crate::xml::runtime::ToXml for openehr_rm::prelude::ResourceDescription {
             }
         }
         // NOTE: Hash<String, RESOURCE_DESCRIPTION_ITEM> field `details` is off the RM canonical-XML wire (resource metadata); not serialized.
-        self.parent_resource
-            .write_xml(w, "parent_resource", Some("AUTHORED_RESOURCE"))?;
         w.write_end(tag)?;
         Ok(())
     }
@@ -14992,7 +14980,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
         let mut __lifecycle_state = None;
         let mut __resource_package_uri = None;
         let mut __other_details = std::collections::BTreeMap::new();
-        let mut __parent_resource = None;
         loop {
             match reader.read()? {
                 crate::xml::runtime::XmlEvent::Start(__c) => match __c.name.as_str() {
@@ -15018,10 +15005,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
                         let __v: String = crate::xml::runtime::FromXml::from_xml(reader, &__c)?;
                         __other_details.insert(__k, __v);
                     }
-                    "parent_resource" => {
-                        __parent_resource =
-                            Some(crate::xml::runtime::FromXml::from_xml(reader, &__c)?);
-                    }
                     _ => reader.skip_element()?,
                 },
                 crate::xml::runtime::XmlEvent::End => break,
@@ -15045,9 +15028,6 @@ impl crate::xml::runtime::FromXml for openehr_rm::prelude::ResourceDescription {
             } else {
                 Some(__other_details)
             },
-            parent_resource: __parent_resource.ok_or_else(|| {
-                crate::xml::runtime::XmlError::Parse("missing element parent_resource".into())
-            })?,
             details: Default::default(),
         })
     }
