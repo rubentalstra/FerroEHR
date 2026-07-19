@@ -5263,6 +5263,7 @@ dependencies = [
  "openehr-am",
  "openehr-base",
  "openehr-lang",
+ "openehr-rm",
  "regex",
  "serde_json",
  "thiserror 2.0.18",
