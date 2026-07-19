@@ -17,6 +17,7 @@ GENERATED=(
   crates/openehr-term/src
   crates/openehr-lang/src
   crates/openehr-its/src/xml/generated
+  crates/openehr-its/src/json_codec/generated
   crates/openehr-its/src/rest/generated
   crates/openehr-its/src/opt14
 )
@@ -25,6 +26,8 @@ echo "regenerating spec crates (BMM → RM/BASE/AM/TERM/LANG)…"
 cargo run -q -p openehr-codegen -- emit
 echo "regenerating ITS-XML (ToXml/FromXml impls)…"
 cargo run -q -p openehr-codegen -- emit-xml
+echo "regenerating ITS-JSON (ToJson impls)…"
+cargo run -q -p openehr-codegen -- emit-json
 echo "regenerating ITS-REST (DTOs + traits + routes)…"
 cargo run -q -p openehr-codegen -- emit-rest
 echo "regenerating OPT 1.4 model (opt14 types + XML codec)…"
@@ -34,7 +37,7 @@ cargo run -q -p openehr-codegen -- emit-rm-model
 
 if ! git diff --quiet -- "${GENERATED[@]}"; then
   echo "::error::Generated code is out of sync with the vendored specs." >&2
-  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-rest && … emit-opt && … emit-rm-model, then commit." >&2
+  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-json && … emit-rest && … emit-opt && … emit-rm-model, then commit." >&2
   git diff --stat -- "${GENERATED[@]}" >&2
   exit 1
 fi

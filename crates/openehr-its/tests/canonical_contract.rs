@@ -64,8 +64,8 @@ fn serialize_typed(ty: &str, json: &str) -> Option<Result<String, String>> {
 }
 
 /// 1. Determinism: hash-manifest snapshot of the typed serializer's output
-/// over the entire vendored corpus. A changed line means our canonical
-/// output changed — that must be a reviewed contract change, never drift.
+///    over the entire vendored corpus. A changed line means our canonical
+///    output changed — that must be a reviewed contract change, never drift.
 #[test]
 fn typed_canonical_output_is_deterministic_over_the_corpus() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor");
@@ -114,8 +114,8 @@ fn typed_canonical_output_is_deterministic_over_the_corpus() {
 }
 
 /// 2. RM number typing: integer-typed fields print as JSON integers,
-/// Real-typed fields always carry a decimal point, and the typed serializer
-/// normalizes input lexemes to the field's RM type.
+///    Real-typed fields always carry a decimal point, and the typed serializer
+///    normalizes input lexemes to the field's RM type.
 #[test]
 fn rm_number_typing_governs_the_output_lexeme() {
     // DV_COUNT.magnitude is an Integer64 (vendored ITS-JSON schema: integer).

@@ -133,6 +133,12 @@ proc-macro2 = "1"
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_with = "3"
+# Number formatters for the openehr-its native canonical-JSON codec
+# (`json_codec`): integers via itoa (byte-identical to serde_json), reals via
+# ryu (the chosen canonical REAL lexeme — spec-silent, our own design; see
+# openehr-its/src/json_codec/runtime.rs).
+itoa = "1"
+ryu = "1"
 serde_path_to_error = "0.1"
 quick-xml = { version = "0.41.0", features = ["serialize"] }   # verify latest 0.3x
 roxmltree = "0.21"                   # read-only XML DOM — XSD reader for the XML codegen (ADR-005)

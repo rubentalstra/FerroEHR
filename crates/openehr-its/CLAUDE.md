@@ -6,8 +6,16 @@ Know which half you are touching before editing anything:
 | Part | Status | To change it |
 |---|---|---|
 | `src/xml/generated/` (`ToXml`/`FromXml`) | **GENERATED** (`emit-xml`, from the XSDs + BMM) | edit the emitter, regenerate |
+| `src/json_codec/generated/` (`ToJson`) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
-| `xml/runtime.rs`, `rest/runtime.rs`, canonical-JSON entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+| `xml/runtime.rs`, `json_codec/runtime.rs`, `rest/runtime.rs`, canonical-JSON entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+
+The native canonical-JSON codec (`json_codec`) is the emitted Serialize-side
+replacement for `#[derive(OpenEhrType)]`: a hand-written writer runtime under
+emitted `ToJson` impls for EVERY spec type (all five crates), byte-identical to
+the serde path — proven by `tests/json_codec_parity.rs`. It is not yet the
+`json::to_canonical_json` entry point (a later rewrite phase switches it and
+retires the derive).
 
 - **NEVER hand-edit anything under a `generated/` directory** — the
   `codegen-drift` CI job regenerates and fails on any diff
