@@ -45,11 +45,11 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTe
 use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
 use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_am::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_base::prelude::{
     Cardinality, Interval, Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time,
     MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData, TerminologyCode,
 };
-use openehr_lang::prelude::{Assertion, ExprLiteral, Expression};
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::lexer::{Spanned, Token};
@@ -1086,12 +1086,6 @@ impl Parser<'_> {
                 _ => {}
             }
             end_byte = self.cur_span().end;
-            // Regex-compile check the common `matches {/re/}` form (`SCSRE`).
-            if let Token::ContainedRegexp(raw) = tok.clone() {
-                let span = self.cur_span();
-                let (regex, _) = self.contained_regexp_parts(&raw, span.clone())?;
-                self.check_regex(&regex, span)?;
-            }
             self.pos += 1;
         }
         if self.pos == start {
@@ -1100,19 +1094,24 @@ impl Parser<'_> {
                 "expecting an assertion after 'include'/'exclude'",
             );
         }
-        let text = self
-            .src
-            .get(start_byte..end_byte)
-            .unwrap_or_default()
-            .trim()
-            .to_owned();
-        Ok(Assertion {
-            tag: None,
-            string_expression: Some(text.clone()),
-            expression: Box::new(Expression::ExprLiteral(ExprLiteral {
-                item: serde_json::Value::String(text),
-            })),
-        })
+        let text = self.src.get(start_byte..end_byte).unwrap_or_default();
+        // Parse the real assertion tree (`EXPR_ARCHETYPE_REF matches
+        // EXPR_ARCHETYPE_ID_CONSTRAINT`, `master05` / `master04.3`) via the BEL
+        // AOM composition; `string_expression` keeps the verbatim source.
+        match crate::rules::parse_slot_assertion(text) {
+            Ok(assertion) => Ok(assertion),
+            Err(errs) => {
+                for e in errs {
+                    self.errors.push(SyntaxError::at(
+                        e.code,
+                        e.message,
+                        (e.span.start + start_byte)..(e.span.end + start_byte),
+                        self.src,
+                    ));
+                }
+                Err(())
+            }
+        }
     }
 }
 
@@ -1764,24 +1763,6 @@ impl Parser<'_> {
         }
     }
 
-    /// Compile-check a cADL regex (`master04.6` §SCSRE).
-    fn check_regex(
-        &mut self,
-        regex_with_delims: &str,
-        span: std::ops::Range<usize>,
-    ) -> PResult<()> {
-        let inner = regex_inner(regex_with_delims);
-        if regex::Regex::new(inner).is_err() {
-            self.push(
-                SyntaxErrorCode::Scsre,
-                format!("{regex_with_delims:?} is not a valid regular expression"),
-                span,
-            );
-            return Err(());
-        }
-        Ok(())
-    }
-
     /// Split a `CONTAINED_REGEXP` token (`{ /re/ [;"assumed"] }` or the `^re^`
     /// form) into `(regex-with-/-delims, assumed?)`, compile-checking it.
     fn contained_regexp_parts(
@@ -2397,6 +2378,97 @@ fn cobject_to_primitive(o: CObject) -> Option<CPrimitiveObject> {
         CObject::CTime(c) => CPrimitiveObject::CTime(c),
         _ => return None,
     })
+}
+
+/// Parse a `matches { … }` primitive-constraint right-hand side (the verbatim
+/// `{ c_primitive_object }` text, braces included) into a [`CPrimitiveObject`].
+///
+/// This is the reusable entry the rules / slot-assertion BEL builder
+/// ([`crate::rules`]) drives to construct an `EXPR_CONSTRAINT` leaf
+/// (`AOM2` master05; primitive grammar `master04.5`).
+///
+/// # Errors
+/// Returns the cADL `S*` catalogue errors if the constraint is malformed or its
+/// body is not a single primitive constraint.
+pub(crate) fn parse_inline_primitive_text(raw: &str) -> Result<CPrimitiveObject, Vec<SyntaxError>> {
+    let toks = crate::lexer::lex(raw).map_err(|e| vec![e])?;
+    let mut parser = Parser {
+        src: raw,
+        toks: &toks,
+        pos: 0,
+        errors: Vec::new(),
+    };
+    let parsed: PResult<CObject> = (|| {
+        parser.expect(
+            |t| matches!(t, Token::LCurly),
+            SyntaxErrorCode::Sccog,
+            "expecting '{' opening a constraint",
+        )?;
+        let obj = parser.parse_c_inline_primitive("Primitive_node_id".to_owned())?;
+        parser.expect(
+            |t| matches!(t, Token::RCurly),
+            SyntaxErrorCode::Sccog,
+            "expecting '}' closing a constraint",
+        )?;
+        Ok(obj)
+    })();
+    match parsed {
+        Ok(obj) if parser.errors.is_empty() => cobject_to_primitive(obj).ok_or_else(|| {
+            vec![SyntaxError::at(
+                SyntaxErrorCode::Sccog,
+                "constraint body is not a primitive constraint",
+                0..raw.len(),
+                raw,
+            )]
+        }),
+        _ => {
+            if parser.errors.is_empty() {
+                parser.errors.push(SyntaxError::at(
+                    SyntaxErrorCode::Sccog,
+                    "invalid primitive constraint",
+                    0..raw.len(),
+                    raw,
+                ));
+            }
+            Err(parser.errors)
+        }
+    }
+}
+
+/// Parse a contained-regexp right-hand side (`{ /re/ }` / `{ ^re^ }`, verbatim)
+/// into a [`CString`] — the regex matcher for an archetype-id slot assertion
+/// (`EXPR_ARCHETYPE_ID_CONSTRAINT`, `AOM2` master05; `master04.3` §Archetype
+/// Slots). The regex is compile-checked (`SCSRE`).
+///
+/// # Errors
+/// [`SyntaxErrorCode::Scsre`] if the regex does not compile.
+pub(crate) fn parse_contained_regexp_text(raw: &str) -> Result<CString, Vec<SyntaxError>> {
+    let body = raw
+        .trim()
+        .trim_start_matches('{')
+        .trim_end_matches('}')
+        .trim();
+    let (regex_part, assumed) = match body.split_once(';') {
+        Some((r, a)) => {
+            let assumed = a
+                .trim()
+                .strip_prefix('"')
+                .and_then(|s| s.strip_suffix('"'))
+                .map(decode_string_inner);
+            (r.trim(), assumed)
+        }
+        None => (body, None),
+    };
+    let inner = regex_inner(regex_part);
+    if regex::Regex::new(inner).is_err() {
+        return Err(vec![SyntaxError::at(
+            SyntaxErrorCode::Scsre,
+            format!("{inner:?} is not a valid regular expression"),
+            0..raw.len(),
+            raw,
+        )]);
+    }
+    Ok(cstring_regex(regex_part.to_owned(), assumed))
 }
 
 /// Split a differential ADL path into `(parent_path, last_attribute_name)`.

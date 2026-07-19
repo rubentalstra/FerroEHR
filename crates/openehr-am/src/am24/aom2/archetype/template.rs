@@ -6,13 +6,13 @@ use crate::am24::aom2::archetype::template_overlay::TemplateOverlay;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use crate::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use crate::am24::beom::core::statement_set::StatementSet;
+use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::ResourceAnnotations;
-use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uuid;
 use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::StatementSet;
 
 /// Class representing source template, i.e. a kind of archetype that may include template overlays, and may be restricted by tools to only defining mandations, prohibitions, and restrictions on elements already defined in the flat parent.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]

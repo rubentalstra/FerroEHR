@@ -18,4 +18,5 @@
 pub mod cadl;
 pub mod error;
 pub mod lexer;
+pub mod rules;
 pub mod source;
