@@ -58,12 +58,43 @@ pub(crate) fn relationship_routes() -> OpenApiRouter<AppState> {
 // Each snapshots the request and runs it through the demographic group
 // dispatcher (`super::dispatch::dispatch`), which routes relationship ops into [`run`].
 
-/// Create a `PARTY_RELATIONSHIP` (RM canonical JSON body). 201 with the created
-/// resource; ETag/Location headers.
+/// Create a `PARTY_RELATIONSHIP`
+/// (`POST /demographic/party_relationship`) — our own extension (no ITS-REST
+/// operation governs it; see the module docs).
 #[utoipa::path(
     post, path = "/demographic/party_relationship", tag = "demographic-relationship",
-    request_body(content = serde_json::Value, description = "An RM PARTY_RELATIONSHIP (canonical JSON)."),
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation` (the created relationship). \
+                        `return=identifier` is treated as `minimal` here (our \
+                        extension)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "An RM PARTY_RELATIONSHIP (canonical JSON or XML)."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new version \
+                                      uid (weak `W/` form), `Location` the \
+                                      resource URL. Body per `Prefer`.",
+         body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a precondition \
+                                      violation on the submitted relationship.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (relationships are not \
+                                      templated).", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (relationships are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The relationship fails RM/semantic \
+                                      validation.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn party_relationship_create(
     State(state): State<AppState>,
@@ -79,13 +110,32 @@ pub(crate) async fn party_relationship_create(
     .await
 }
 
-/// Read a `PARTY_RELATIONSHIP` by uid-based id. 404 when absent.
+/// Retrieve a `PARTY_RELATIONSHIP` by uid-based id
+/// (`GET /demographic/party_relationship/{uid_based_id}`) — our own extension.
 #[utoipa::path(
     get, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
-    params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (`version_uid`) or a \
+                        HIER_OBJECT_ID (`versioned_object_uid`) for the latest \
+                        / at-time version."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; when the id is a \
+                        `versioned_object_uid`, selects the version extant at \
+                        that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The relationship (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The relationship (RM canonical JSON/XML); \
+                                      `ETag` carries the version uid (weak `W/` \
+                                      form).", body = serde_json::Value),
+        (status = 204, description = "The relationship version at the requested \
+                                      time is deleted."),
+        (status = 404, description = "Unknown relationship, or no version at the \
+                                      requested `version_at_time`.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (relationships are not \
+                                      templated).", body = serde_json::Value)
     )
 )]
 pub(crate) async fn party_relationship_get(
@@ -102,12 +152,54 @@ pub(crate) async fn party_relationship_get(
     .await
 }
 
-/// Update a `PARTY_RELATIONSHIP` (If-Match required; RM canonical JSON body).
+/// Update a `PARTY_RELATIONSHIP`
+/// (`PUT /demographic/party_relationship/{uid_based_id}`) — our own extension.
 #[utoipa::path(
     put, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
-    params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
-    request_body(content = serde_json::Value, description = "The updated RM PARTY_RELATIONSHIP (canonical JSON)."),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID `versioned_object_uid` of the \
+                        relationship to update."),
+        ("If-Match" = String, Header,
+         description = "The latest `version_uid` (the `preceding_version_uid`), \
+                        double-quoted (weak `W/` form also accepted). \
+                        Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation`. `return=identifier` is treated \
+                        as `minimal` here (our extension)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The updated RM PARTY_RELATIONSHIP (canonical \
+                                JSON or XML)."),
+    responses(
+        (status = 200, description = "Updated (`Prefer: return=representation`); \
+                                      `ETag`/`Location` carry the new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag`/`Location` carry the new version."),
+        (status = 400, description = "Malformed request, or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown relationship.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (relationships are not \
+                                      templated).", body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (relationships are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The relationship fails RM/semantic \
+                                      validation.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn party_relationship_update(
     State(state): State<AppState>,
@@ -123,11 +215,40 @@ pub(crate) async fn party_relationship_update(
     .await
 }
 
-/// Delete a `PARTY_RELATIONSHIP` (If-Match required).
+/// Delete a `PARTY_RELATIONSHIP`
+/// (`DELETE /demographic/party_relationship/{uid_based_id}`) — our own
+/// extension.
 #[utoipa::path(
     delete, path = "/demographic/party_relationship/{uid_based_id}", tag = "demographic-relationship",
-    params(("uid_based_id" = String, Path, description = "The relationship uid-based id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
+                        version (the `preceding_version_uid`) to delete."),
+        ("If-Match" = Option<String>, Header,
+         description = "The latest `version_uid`, double-quoted (weak `W/` form \
+                        also accepted); an alternative source of the preceding \
+                        version to delete."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the delete VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted; `ETag` carries the \
+                                      deleted version uid."),
+        (status = 400, description = "Malformed request, or the relationship is \
+                                      already deleted.", body = serde_json::Value),
+        (status = 404, description = "Unknown relationship.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (relationships are not \
+                                      templated).", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (relationships are not templated).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn party_relationship_delete(
     State(state): State<AppState>,
@@ -143,11 +264,22 @@ pub(crate) async fn party_relationship_delete(
     .await
 }
 
-/// Read the `VERSIONED_PARTY_RELATIONSHIP` container.
+/// Retrieve the `VERSIONED_PARTY_RELATIONSHIP` container
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}`) —
+/// our own extension.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}", tag = "demographic-relationship",
-    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
-    responses((status = 200, description = "The VERSIONED_PARTY_RELATIONSHIP (RM canonical JSON).", body = serde_json::Value))
+    params(
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`).")
+    ),
+    responses(
+        (status = 200, description = "The VERSIONED_PARTY_RELATIONSHIP (RM \
+                                      canonical JSON/XML).", body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn versioned_party_relationship_get(
     State(state): State<AppState>,
@@ -163,11 +295,22 @@ pub(crate) async fn versioned_party_relationship_get(
     .await
 }
 
-/// The relationship's `REVISION_HISTORY`.
+/// Retrieve the relationship's `REVISION_HISTORY`
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/revision_history`)
+/// — our own extension.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/revision_history", tag = "demographic-relationship",
-    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
-    responses((status = 200, description = "The REVISION_HISTORY (RM canonical JSON).", body = serde_json::Value))
+    params(
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`).")
+    ),
+    responses(
+        (status = 200, description = "The REVISION_HISTORY (RM canonical \
+                                      JSON/XML).", body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn party_relationship_revision_history(
     State(state): State<AppState>,
@@ -183,14 +326,28 @@ pub(crate) async fn party_relationship_revision_history(
     .await
 }
 
-/// The relationship VERSION at a point in time (`?version_at_time=`).
+/// Retrieve the relationship VERSION at a point in time
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/version`)
+/// — our own extension.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/version", tag = "demographic-relationship",
     params(
-        ("versioned_object_uid" = String, Path, description = "The versioned-object uid."),
-        ("version_at_time" = Option<String>, Query, description = "Optional ISO-8601 instant; latest when omitted.")
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`)."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; selects the VERSION extant \
+                        at that time (latest when omitted).")
     ),
-    responses((status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value))
+    responses(
+        (status = 200, description = "The VERSION (RM canonical JSON/XML); \
+                                      `ETag` carries the version uid (weak `W/` \
+                                      form), `Location` the version URL.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP, or \
+                                      no version at the requested \
+                                      `version_at_time`.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn party_relationship_version_get_at_time(
     State(state): State<AppState>,
@@ -206,14 +363,25 @@ pub(crate) async fn party_relationship_version_get_at_time(
     .await
 }
 
-/// A specific relationship VERSION by version uid.
+/// Retrieve a specific relationship VERSION by version uid
+/// (`GET /demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}`)
+/// — our own extension.
 #[utoipa::path(
     get, path = "/demographic/versioned_party_relationship/{versioned_object_uid}/version/{version_uid}", tag = "demographic-relationship",
     params(
-        ("versioned_object_uid" = String, Path, description = "The versioned-object uid."),
-        ("version_uid" = String, Path, description = "The OBJECT_VERSION_ID.")
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY_RELATIONSHIP uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`)."),
+        ("version_uid" = String, Path,
+         description = "The VERSION identifier (OBJECT_VERSION_ID / \
+                        `version_uid`).")
     ),
-    responses((status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value))
+    responses(
+        (status = 200, description = "The VERSION (RM canonical JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY_RELATIONSHIP or \
+                                      version.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn party_relationship_version_get_by_id(
     State(state): State<AppState>,
