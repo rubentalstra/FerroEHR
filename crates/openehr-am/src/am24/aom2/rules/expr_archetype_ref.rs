@@ -11,7 +11,7 @@ use openehr_derive::OpenEhrType;
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
 #[openehr(type_name = "EXPR_ARCHETYPE_REF")]
 pub struct ExprArchetypeRef {
+    pub item: ArchetypeConstraint,
     /// The path to the archetype node.
     pub path: String,
-    pub item: ArchetypeConstraint,
 }

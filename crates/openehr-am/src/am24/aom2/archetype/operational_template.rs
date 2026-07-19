@@ -5,13 +5,13 @@ use crate::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
 use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use crate::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use crate::am24::beom::core::statement_set::StatementSet;
+use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::ResourceAnnotations;
-use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uuid;
 use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::StatementSet;
 
 /// Root object of an operational template. An operational template is derived from a `TEMPLATE` definition and the `ARCHETYPEs` and/or `TEMPLATE_OVERLAYs` mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
 ///

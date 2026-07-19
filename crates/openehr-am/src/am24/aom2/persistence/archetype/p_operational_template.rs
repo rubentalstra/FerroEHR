@@ -5,11 +5,11 @@ use crate::am24::aom2::persistence::archetype::p_archetype_hrid::PArchetypeHrid;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComplexObject;
 use crate::am24::aom2::persistence::terminology::p_archetype_terminology::PArchetypeTerminology;
 use crate::am24::aom2::terminology::archetype_term::ArchetypeTerm;
-use openehr_base::prelude::ResourceDescription;
+use crate::am24::bmm3::expression::el_boolean_expression::ElBooleanExpression;
+use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uid;
 use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::ElBooleanExpression;
 
 /// Root object of an operational template. An operational template is derived from a TEMPLATE definition and the ARCHETYPEs and/or TEMPLATE_OVERLAYs mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
 ///

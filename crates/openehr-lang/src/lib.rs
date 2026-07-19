@@ -17,5 +17,8 @@ pub mod beom;
 pub mod bmm;
 pub mod bmm3;
 pub mod bmm_persistence;
-pub mod odin;
 pub mod prelude;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod bel;
+pub mod odin;

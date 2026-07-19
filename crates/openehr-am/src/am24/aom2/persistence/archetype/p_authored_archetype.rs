@@ -6,11 +6,11 @@ use crate::am24::aom2::persistence::archetype::p_operational_template::POperatio
 use crate::am24::aom2::persistence::archetype::p_template::PTemplate;
 use crate::am24::aom2::persistence::constraint_model::p_c_complex_object::PCComplexObject;
 use crate::am24::aom2::persistence::terminology::p_archetype_terminology::PArchetypeTerminology;
-use openehr_base::prelude::ResourceDescription;
+use crate::am24::bmm3::expression::el_boolean_expression::ElBooleanExpression;
+use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uid;
 use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::ElBooleanExpression;
 use serde::Serialize;
 
 /// Root object of a standalone, authored archetype, including all meta-data, description, other identifiers and lifecycle.

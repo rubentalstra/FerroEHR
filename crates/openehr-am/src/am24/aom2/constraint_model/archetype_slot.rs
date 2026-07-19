@@ -4,9 +4,9 @@
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
+use crate::am24::beom::core::assertion::Assertion;
 use openehr_base::prelude::MultiplicityInterval;
 use openehr_derive::OpenEhrType;
-use openehr_lang::prelude::Assertion;
 
 /// Constraint describing a 'slot' where another archetype can occur.
 #[derive(Debug, Clone, PartialEq, OpenEhrType)]
