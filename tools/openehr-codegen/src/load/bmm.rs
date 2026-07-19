@@ -73,6 +73,30 @@ pub(crate) struct BmmClass {
     /// Enumeration definition when the class is a `P_BMM_ENUMERATION_*`
     /// (`BMM_ENUMERATION`: an underlying basic type + a set of named constants).
     pub enumeration: Option<BmmEnumeration>,
+    /// Class constants (`BMM_CLASS.constants`: named literal values, e.g. the
+    /// openEHR terminology-group / code-set identifier strings), in declaration
+    /// order. Verbatim — the render stage decodes the literal `value`.
+    pub constants: Vec<BmmConstant>,
+    /// Class invariants (`BMM_CLASS.invariants`): a map from invariant name to
+    /// its assertion-expression text (the Eiffel/UML assertion dialect), verbatim.
+    /// The `analyze` stage parses + classifies these; the loader keeps them raw.
+    pub invariants: BTreeMap<String, String>,
+}
+
+/// One `BMM_CLASS.constants` entry: a named literal value on the class. The
+/// `value` is kept as the raw BMM JSON scalar (a JSON number, or a JSON string
+/// carrying a quoted `"..."` / `'...'` literal or a bareword cross-reference to
+/// another constant); the render stage decodes it to a Rust literal.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct BmmConstant {
+    /// The verbatim BMM constant name (`Terminology_id_openehr`).
+    pub name: String,
+    /// Constant documentation (verbatim), if any.
+    pub documentation: Option<String>,
+    /// The BMM `type` (`String`, `Integer`, `Real`, `Character`, `Boolean`).
+    pub type_name: String,
+    /// The raw BMM `value` scalar (decoded by the render stage).
+    pub value: Value,
 }
 
 /// A BMM enumeration definition (`BMM_ENUMERATION` / persisted
@@ -346,6 +370,8 @@ fn parse_class(node: &Value) -> BmmClass {
         .unwrap_or_default();
 
     let enumeration = parse_enumeration(node);
+    let constants = parse_constants(node);
+    let invariants = parse_invariants(node);
 
     BmmClass {
         name,
@@ -355,7 +381,52 @@ fn parse_class(node: &Value) -> BmmClass {
         generic_params,
         properties,
         enumeration,
+        constants,
+        invariants,
     }
+}
+
+/// Parse the class's `constants` object (name → `{type, value, documentation}`)
+/// into declaration-ordered [`BmmConstant`]s (`serde_json`'s `preserve_order`
+/// keeps file order). Absent → empty.
+fn parse_constants(node: &Value) -> Vec<BmmConstant> {
+    node.get("constants")
+        .and_then(Value::as_object)
+        .map(|m| {
+            m.values()
+                .map(|c| BmmConstant {
+                    name: c
+                        .get("name")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string(),
+                    documentation: c
+                        .get("documentation")
+                        .and_then(Value::as_str)
+                        .map(str::to_string),
+                    type_name: c
+                        .get("type")
+                        .and_then(Value::as_str)
+                        .unwrap_or("String")
+                        .to_string(),
+                    value: c.get("value").cloned().unwrap_or(Value::Null),
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Parse the class's `invariants` object (name → assertion-expression string)
+/// verbatim into a deterministic map. Absent → empty.
+fn parse_invariants(node: &Value) -> BTreeMap<String, String> {
+    node.get("invariants")
+        .and_then(Value::as_object)
+        .map(|m| {
+            m.iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Parse the enumeration facet of a class node, if its `_type` marks it a
@@ -677,6 +748,60 @@ mod tests {
 
         // A non-enumeration class carries no enumeration facet.
         assert!(s.classes["DV_QUANTITY"].enumeration.is_none());
+    }
+
+    #[test]
+    fn parses_constants_and_invariants() {
+        const SNIPPET: &str = r#"{
+            "schema_name": "rm",
+            "class_definitions": {
+                "OPENEHR_CODE_SET_IDENTIFIERS": {
+                    "name": "OPENEHR_CODE_SET_IDENTIFIERS",
+                    "constants": {
+                        "Code_set_id_languages": { "name": "Code_set_id_languages", "type": "String", "value": "\"languages\"" },
+                        "Max_days_in_year": { "name": "Max_days_in_year", "type": "Integer", "value": 366 }
+                    }
+                },
+                "DV_IDENTIFIER": {
+                    "name": "DV_IDENTIFIER",
+                    "invariants": {
+                        "Id_valid": "not id.is_empty",
+                        "Size_valid": "size >= 0"
+                    }
+                }
+            }
+        }"#;
+        let s = BmmSchema::parse_json(SNIPPET).unwrap();
+
+        let cs = &s.classes["OPENEHR_CODE_SET_IDENTIFIERS"];
+        assert_eq!(cs.constants.len(), 2);
+        let lang = cs
+            .constants
+            .iter()
+            .find(|c| c.name == "Code_set_id_languages")
+            .unwrap();
+        assert_eq!(lang.type_name, "String");
+        assert_eq!(lang.value, Value::String("\"languages\"".into()));
+        let days = cs
+            .constants
+            .iter()
+            .find(|c| c.name == "Max_days_in_year")
+            .unwrap();
+        assert_eq!(days.type_name, "Integer");
+        assert_eq!(days.value, Value::from(366));
+
+        let dv = &s.classes["DV_IDENTIFIER"];
+        assert_eq!(dv.invariants.len(), 2);
+        assert_eq!(dv.invariants["Id_valid"], "not id.is_empty");
+        assert_eq!(dv.invariants["Size_valid"], "size >= 0");
+
+        // A class with neither section carries empty collections.
+        assert!(
+            s.classes["OPENEHR_CODE_SET_IDENTIFIERS"]
+                .invariants
+                .is_empty()
+        );
+        assert!(s.classes["DV_IDENTIFIER"].constants.is_empty());
     }
 
     #[test]

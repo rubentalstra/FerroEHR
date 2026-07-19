@@ -7,6 +7,29 @@ use crate::support::terminology::terminology_service::TerminologyService;
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpenehrCodeSetIdentifiersData {}
 
+impl OpenehrCodeSetIdentifiersData {
+    /// BMM constant `Code_set_id_character_sets`.
+    pub const CODE_SET_ID_CHARACTER_SETS: &'static str = "character sets";
+
+    /// BMM constant `Code_set_id_compression_algorithms`.
+    pub const CODE_SET_ID_COMPRESSION_ALGORITHMS: &'static str = "compression algorithms";
+
+    /// BMM constant `Code_set_id_countries`.
+    pub const CODE_SET_ID_COUNTRIES: &'static str = "countries";
+
+    /// BMM constant `Code_set_integrity_check_algorithms`.
+    pub const CODE_SET_INTEGRITY_CHECK_ALGORITHMS: &'static str = "integrity check algorithms";
+
+    /// BMM constant `Code_set_id_languages`.
+    pub const CODE_SET_ID_LANGUAGES: &'static str = "languages";
+
+    /// BMM constant `Code_set_id_media_types`.
+    pub const CODE_SET_ID_MEDIA_TYPES: &'static str = "media types";
+
+    /// BMM constant `Code_set_id_normal_statuses`.
+    pub const CODE_SET_ID_NORMAL_STATUSES: &'static str = "normal statuses";
+}
+
 /// List of identifiers for code sets in the openEHR terminology.
 /// Polymorphic slot of `OPENEHR_CODE_SET_IDENTIFIERS`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq)]

@@ -41,6 +41,13 @@ pub(crate) fn field_ident(spec: &str) -> String {
     }
 }
 
+/// The `SCREAMING_SNAKE_CASE` associated-constant identifier for a BMM constant
+/// name (`Terminology_id_openehr` → `TERMINOLOGY_ID_OPENEHR`). BMM constant
+/// names are `[A-Za-z0-9_]`, so upper-casing yields a valid Rust identifier.
+pub(crate) fn const_ident(spec: &str) -> String {
+    spec.to_uppercase()
+}
+
 /// Whether `s` is a Rust keyword that must be written as a raw identifier
 /// (`r#{s}`) when used as a field name. Excludes `crate`/`self`/`super`/`Self`
 /// (which cannot be raw and are handled separately in [`field_ident`]).

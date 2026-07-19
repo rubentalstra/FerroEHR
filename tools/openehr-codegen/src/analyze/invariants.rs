@@ -1,0 +1,391 @@
+//! Stage 2 — ANALYZE: the **assertion-dialect** analyzer for BMM class
+//! invariants.
+//!
+//! `BMM_CLASS.invariants` records each invariant as an expression string in
+//! openEHR's Eiffel/UML **assertion** surface (NOT `base_expressions.g4`): forms
+//! like `not links.is_empty`, `X /= Void implies not X.is_empty`, `A xor B`,
+//! `size >= 0`, `valid_iso8601_date (value)`, and the terminology/repository
+//! predicates (`terminology (…).has_code_for_group_id (…)`,
+//! `code_set (…).has_code (…)`), quantifiers (`for_all …`), and cross-object
+//! navigation/arithmetic (`time.diff (parent.origin)`).
+//!
+//! This module tokenizes an expression and **classifies** it into one of three
+//! R5 buckets (see [`Bucket`]) by a paren-aware, worst-bucket-wins recursion
+//! over the boolean structure. It never produces text — classification is plain
+//! analysis data (design doc §1: stage-2 outputs are unit-testable without
+//! rendering). The render stage consumes an [`Bucket::Emitted`] verdict to emit
+//! a check into the kept validator runtime; the other two buckets stay
+//! hand-written and are reported.
+//!
+//! Conservatism: an unrecognised leaf form classifies as [`Bucket::Complex`],
+//! never as `Emitted` — the classifier under-claims rather than over-claims, so
+//! a false "emittable" can never slip a new rejection onto the wire.
+
+/// Which R5 emission bucket a BMM invariant expression falls into.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum Bucket {
+    /// Mechanically emittable: the whole expression reduces to boolean
+    /// combinations of leaf forms the emitter can render over the class's own
+    /// fields plus the kept validator runtime (`Void`/empty checks, numeric
+    /// comparisons, `xor`/`and`/`or`/`implies`, `is_equal ("LITERAL")`, the
+    /// ISO-8601 validators, and the runtime-backed leaf predicates).
+    Emitted,
+    /// Structurally within the dialect, but a leaf predicate needs a runtime
+    /// hook the emitter cannot yet call (the openEHR terminology service, a
+    /// code-set, the demographic repository, or the versioned-object aggregate
+    /// model). Not emitted; listed. The `&str` names the missing hook.
+    RuntimeHookMissing(&'static str),
+    /// Beyond the assertion-dialect scope: a quantifier (`for_all`/`exists`), a
+    /// lambda predicate, cross-object navigation, or arithmetic over related
+    /// objects. Stays hand-written; listed. The `&str` names the reason.
+    Complex(&'static str),
+}
+
+impl Bucket {
+    /// Combine two sub-expression verdicts: the most blocking wins
+    /// (`Complex` > `RuntimeHookMissing` > `Emitted`). A boolean expression is
+    /// only emittable if every operand is.
+    fn worse(self, other: Bucket) -> Bucket {
+        fn rank(b: &Bucket) -> u8 {
+            match b {
+                Bucket::Emitted => 0,
+                Bucket::RuntimeHookMissing(_) => 1,
+                Bucket::Complex(_) => 2,
+            }
+        }
+        if rank(&other) > rank(&self) {
+            other
+        } else {
+            self
+        }
+    }
+}
+
+/// Classify one BMM invariant expression into its R5 bucket.
+pub(crate) fn classify(expr: &str) -> Bucket {
+    classify_tokens(&tokenize(expr))
+}
+
+/// Split an expression into word/paren tokens. A token is a lone `(` or `)`, or
+/// a maximal run of non-whitespace, non-paren characters. Char-based (the
+/// dialect carries multi-byte curly quotes `“ ”`), so no byte slicing.
+fn tokenize(expr: &str) -> Vec<String> {
+    let mut toks = Vec::new();
+    let mut cur = String::new();
+    for c in expr.chars() {
+        if c == '(' || c == ')' {
+            if !cur.is_empty() {
+                toks.push(std::mem::take(&mut cur));
+            }
+            toks.push(c.to_string());
+        } else if c.is_whitespace() {
+            if !cur.is_empty() {
+                toks.push(std::mem::take(&mut cur));
+            }
+        } else {
+            cur.push(c);
+        }
+    }
+    if !cur.is_empty() {
+        toks.push(cur);
+    }
+    toks
+}
+
+/// The top-level boolean connectives, lowest-binding first. Splitting at any one
+/// and recursing both sides is sound because [`Bucket::worse`] is associative
+/// and commutative — the exact split point does not change the verdict.
+const CONNECTIVES: [&str; 4] = ["implies", "xor", "or", "and"];
+
+fn classify_tokens(toks: &[String]) -> Bucket {
+    let toks = strip_outer_parens(toks);
+    if toks.is_empty() {
+        return Bucket::Complex("empty expression");
+    }
+    // Split at the first depth-0 connective, if any.
+    for kw in CONNECTIVES {
+        if let Some(i) = top_level_index(toks, kw) {
+            let left = &toks[..i];
+            // Drop a trailing `then`/`else` of `and then` / `or else`.
+            let mut rest = &toks[i + 1..];
+            if matches!(rest.first().map(String::as_str), Some("then" | "else")) {
+                rest = &rest[1..];
+            }
+            return classify_tokens(left).worse(classify_tokens(rest));
+        }
+    }
+    // A leading `not` does not change the bucket; classify the operand.
+    if toks.first().map(String::as_str) == Some("not") {
+        return classify_tokens(&toks[1..]);
+    }
+    classify_leaf(toks)
+}
+
+/// If `toks` is a single fully-enclosing `( … )` pair, return the inner slice;
+/// otherwise return `toks` unchanged.
+fn strip_outer_parens(toks: &[String]) -> &[String] {
+    if toks.len() < 2 || toks.first().map(String::as_str) != Some("(") {
+        return toks;
+    }
+    // The opening paren must close exactly at the final token.
+    let mut depth = 0i32;
+    for (i, t) in toks.iter().enumerate() {
+        match t.as_str() {
+            "(" => depth += 1,
+            ")" => {
+                depth -= 1;
+                if depth == 0 {
+                    return if i == toks.len() - 1 {
+                        strip_outer_parens(&toks[1..toks.len() - 1])
+                    } else {
+                        toks
+                    };
+                }
+            }
+            _ => {}
+        }
+    }
+    toks
+}
+
+/// The index of the first `kw` token at paren depth 0, if present.
+fn top_level_index(toks: &[String], kw: &str) -> Option<usize> {
+    let mut depth = 0i32;
+    for (i, t) in toks.iter().enumerate() {
+        match t.as_str() {
+            "(" => depth += 1,
+            ")" => depth -= 1,
+            w if depth == 0 && w == kw => return Some(i),
+            _ => {}
+        }
+    }
+    None
+}
+
+/// Named leaf predicate functions the kept validator runtime already realises
+/// (`crates/openehr-rm/src/validate.rs` + the ISO-8601 validators + the
+/// `push_*` invariant cores): a leaf that is exactly one of these applied to a
+/// field is mechanically emittable as a call into that runtime.
+const RUNTIME_PREDICATES: [&str; 8] = [
+    "valid_iso8601_date",
+    "valid_iso8601_time",
+    "valid_iso8601_date_time",
+    "valid_iso8601_duration",
+    "valid_magnitude_status",
+    "valid_percentage",
+    "valid_proportion_kind",
+    "is_valid_match_code",
+];
+
+/// Classify a leaf (no top-level connective). Order matters: the blocking
+/// signals (quantifier/navigation/arithmetic, then terminology/repository/
+/// aggregate hooks) are checked before the emittable forms, and an
+/// unrecognised leaf is conservatively `Complex`.
+fn classify_leaf(toks: &[String]) -> Bucket {
+    let joined = toks.join(" ");
+    let has = |needle: &str| toks.iter().any(|t| t.contains(needle));
+
+    // ── Complex: quantifiers / lambdas / arithmetic (true structural depth) ──
+    if has("for_all") || has("forall") || has("exists") || toks.iter().any(|t| t == "for") {
+        return Bucket::Complex("quantifier over a collection");
+    }
+    if toks.iter().any(|t| t == "|") {
+        return Bucket::Complex("lambda predicate");
+    }
+    if has(".diff") || has(".to_seconds") || has(".mod") || has(".floor") || has(".item") {
+        return Bucket::Complex("cross-object arithmetic / navigation");
+    }
+    if toks
+        .iter()
+        .any(|t| matches!(t.as_str(), "-" | "+" | "*" | "/"))
+    {
+        return Bucket::Complex("arithmetic over related objects");
+    }
+
+    // ── Runtime-hook-missing: terminology / code-set / repository / aggregate ──
+    // Checked before the generic membership/navigation signals below: the
+    // terminology/code-set predicates read as `.has_code…` (a `.has` substring),
+    // and a code lookup is a missing *hook*, not irreducible structural depth.
+    if has("terminology") || has("Terminology") || has("has_code_for_group_id") {
+        return Bucket::RuntimeHookMissing("openEHR terminology service");
+    }
+    if has("code_set") || has("has_code") {
+        return Bucket::RuntimeHookMissing("openEHR code-set access");
+    }
+    if has("repository") {
+        return Bucket::RuntimeHookMissing("demographic repository access");
+    }
+    if has("all_versions")
+        || has("all_version_ids")
+        || has("version_count")
+        || has("latest_version")
+    {
+        return Bucket::RuntimeHookMissing("versioned-object aggregate model");
+    }
+
+    // ── Complex: membership / cross-object navigation ──
+    if has(".has") || has("has_object") || has("has_key") {
+        return Bucket::Complex("membership over a related collection");
+    }
+    if toks.iter().any(|t| t == "self")
+        || has("parent.")
+        || has(".source")
+        || has(".target")
+        || has(".relationships")
+        || has(".reverse_relationships")
+        || has(".description")
+        || has(".data")
+        || has(".origin")
+    {
+        return Bucket::Complex("cross-object navigation");
+    }
+
+    // ── Emittable leaf forms ──
+    // A runtime-backed predicate applied to a field: `pred (field)` / `pred(field)`.
+    if RUNTIME_PREDICATES.iter().any(|p| has(p)) {
+        return Bucket::Emitted;
+    }
+    // `X.is_equal ("LITERAL")` — string-literal equality (curly or straight quotes).
+    if has(".is_equal") && (joined.contains('"') || joined.contains('“')) {
+        return Bucket::Emitted;
+    }
+    if is_emittable_atom(toks) {
+        return Bucket::Emitted;
+    }
+    Bucket::Complex("unrecognised leaf form")
+}
+
+/// Whether a leaf is one of the simple emittable atoms: an emptiness/`Void`
+/// check, a numeric comparison, a boolean field, or a field/field equality —
+/// each over the class's own (dot-free) attribute path.
+fn is_emittable_atom(toks: &[String]) -> bool {
+    // Drop any leading `not`.
+    let toks = if toks.first().map(String::as_str) == Some("not") {
+        &toks[1..]
+    } else {
+        toks
+    };
+    match toks {
+        // `field.is_empty` / `field.empty` (Eiffel emptiness methods, not file
+        // extensions — the pedantic extension lint is a false positive here).
+        #[allow(clippy::case_sensitive_file_extension_comparisons)]
+        [a] if a.ends_with(".is_empty") || a.ends_with(".empty") => is_field_path(trim_suffix(a)),
+        // a lone boolean field: `is_archetype_root`, `is_inline`, `is_masked`, …
+        [a] => is_field_path(a),
+        // `X /= Void`, `X = Void`, `X /= void`, `X = void`
+        [a, op, b]
+            if matches!(op.as_str(), "=" | "/=") && matches!(b.as_str(), "Void" | "void") =>
+        {
+            is_field_path(a)
+        }
+        // numeric comparison: `size >= 0`, `denominator /= 0.0`, `sequence_nr >= 1`
+        [a, op, b]
+            if matches!(op.as_str(), "=" | "/=" | ">=" | "<=" | ">" | "<") && is_number(b) =>
+        {
+            is_field_path(a)
+        }
+        // field/field equality: `type = name`, `purpose = name`
+        [a, op, b] if op == "=" && is_field_path(a) && is_field_path(b) => true,
+        _ => false,
+    }
+}
+
+fn trim_suffix(a: &str) -> &str {
+    a.strip_suffix(".is_empty")
+        .or_else(|| a.strip_suffix(".empty"))
+        .unwrap_or(a)
+}
+
+/// A simple attribute reference: an identifier possibly with dotted sub-fields,
+/// but no method calls or navigation the emitter cannot resolve on `self`.
+/// (A trailing `.is_empty`/`.empty` is stripped by the caller.)
+fn is_field_path(s: &str) -> bool {
+    !s.is_empty()
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+        && !s.starts_with('.')
+        && !s.ends_with('.')
+}
+
+fn is_number(s: &str) -> bool {
+    let s = s.strip_prefix('-').unwrap_or(s);
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_digit() || c == '.')
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+mod tests {
+    use super::*;
+
+    #[test]
+    fn simple_forms_emit() {
+        assert_eq!(classify("not links.is_empty"), Bucket::Emitted);
+        assert_eq!(
+            classify("links /= Void implies not links.is_empty"),
+            Bucket::Emitted
+        );
+        assert_eq!(classify("size >= 0"), Bucket::Emitted);
+        assert_eq!(classify("denominator /= 0.0"), Bucket::Emitted);
+        assert_eq!(classify("is_periodic xor period = Void"), Bucket::Emitted);
+        assert_eq!(classify("is_inline or is_external"), Bucket::Emitted);
+        assert_eq!(classify("type = name"), Bucket::Emitted);
+        assert_eq!(classify("valid_iso8601_date(value)"), Bucket::Emitted);
+        assert_eq!(classify("scheme.is_equal (\"EHR\")"), Bucket::Emitted);
+        // Nested parens + `and then`.
+        assert_eq!(
+            classify("(events /= Void and then not events.is_empty) or summary /= Void"),
+            Bucket::Emitted
+        );
+    }
+
+    #[test]
+    fn terminology_and_codeset_need_hooks() {
+        assert!(matches!(
+            classify("code_set(Code_set_id_languages).has_code(language)"),
+            Bucket::RuntimeHookMissing(_)
+        ));
+        assert!(matches!(
+            classify(
+                "terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_setting, setting.defining_code)"
+            ),
+            Bucket::RuntimeHookMissing(_)
+        ));
+        assert!(matches!(
+            classify("all_version_ids.count = version_count"),
+            Bucket::RuntimeHookMissing(_)
+        ));
+    }
+
+    #[test]
+    fn quantifiers_and_navigation_are_complex() {
+        assert!(matches!(
+            classify("for_all c in compositions | c.type.is_equal (\"VERSIONED_COMPOSITION\")"),
+            Bucket::Complex(_)
+        ));
+        assert!(matches!(
+            classify("interval_start_time = time - width"),
+            Bucket::Complex(_)
+        ));
+        assert!(matches!(
+            classify("source /= Void and then source.relationships.has (self)"),
+            Bucket::Complex(_)
+        ));
+    }
+
+    /// An implies whose consequent needs a hook is hook-missing, not emitted:
+    /// worst-bucket-wins across the boolean structure.
+    #[test]
+    fn worst_bucket_wins() {
+        assert!(matches!(
+            classify(
+                "mode /= Void implies terminology (Terminology_id_openehr).has_code_for_group_id (Group_id_participation_mode, mode.defining_code)"
+            ),
+            Bucket::RuntimeHookMissing(_)
+        ));
+    }
+}

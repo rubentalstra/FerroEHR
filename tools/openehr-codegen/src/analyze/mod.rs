@@ -14,6 +14,8 @@ use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
+pub(crate) mod invariants;
+
 /// A merged BMM model (e.g. BASE + RM) used for ancestor flattening and type
 /// resolution across schema boundaries.
 pub(crate) struct Model {

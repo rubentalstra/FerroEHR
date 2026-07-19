@@ -6,6 +6,7 @@
 //! This module is test scaffolding, not part of the generator's output path; it
 //! only reads the same tables and functions `cli.rs` drives.
 
+use crate::analyze::invariants::{self, Bucket};
 use crate::analyze::{Model, augment_with_reemit, class_paths, cross_schema_reemit};
 use crate::load::bmm::BmmSchema;
 use crate::plan::composition::{self, compose};
@@ -123,6 +124,54 @@ pub fn completeness(key: &str) -> Result<Completeness, Error> {
         skipped_abstract_unused,
         silently_dropped,
     })
+}
+
+// ── invariant classification (assertion-dialect analyzer) ────────────────────
+
+/// One classified BMM invariant: the owning class, the invariant name, its
+/// verbatim assertion expression, and the R5 bucket the assertion-dialect
+/// analyzer assigns it.
+#[derive(Debug, Clone)]
+pub struct ClassifiedInvariant {
+    /// The owning BMM class name.
+    pub class: String,
+    /// The BMM invariant name.
+    pub name: String,
+    /// The verbatim assertion expression.
+    pub expr: String,
+    /// The bucket: `"emitted"`, `"runtime-hook-missing"`, or `"complex"`.
+    pub bucket: &'static str,
+    /// The hook/complex reason (empty for `"emitted"`).
+    pub reason: String,
+}
+
+/// Classify every `BMM_CLASS.invariants` expression in a crate's own schema
+/// with the assertion-dialect analyzer, returning one row per invariant, sorted
+/// by (class, name) for determinism.
+///
+/// # Errors
+/// Returns an error if the crate's BMM files cannot be loaded.
+pub fn classify_invariants(key: &str) -> Result<Vec<ClassifiedInvariant>, Error> {
+    let c = compose(key)?;
+    let mut out = Vec::new();
+    for (class, def) in &c.own_schema.classes {
+        for (name, expr) in &def.invariants {
+            let (bucket, reason) = match invariants::classify(expr) {
+                Bucket::Emitted => ("emitted", String::new()),
+                Bucket::RuntimeHookMissing(r) => ("runtime-hook-missing", r.to_string()),
+                Bucket::Complex(r) => ("complex", r.to_string()),
+            };
+            out.push(ClassifiedInvariant {
+                class: class.clone(),
+                name: name.clone(),
+                expr: expr.clone(),
+                bucket,
+                reason,
+            });
+        }
+    }
+    out.sort_by(|a, b| (&a.class, &a.name).cmp(&(&b.class, &b.name)));
+    Ok(out)
 }
 
 // ── constructibility ────────────────────────────────────────────────────────

@@ -20,6 +20,12 @@ pub struct BmmRoutineTypeData {
     pub argument_types: Option<BmmTupleType>,
 }
 
+impl BmmRoutineTypeData {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Routine";
+}
+
 /// Meta-type for routine objects.
 /// Polymorphic slot of `BMM_ROUTINE_TYPE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq)]
