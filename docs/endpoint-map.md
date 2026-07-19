@@ -201,7 +201,7 @@ notes: plain 204, no headers (`204_because_deleted` declares none); 412 decorate
 ### GET /ehr/{ehr_id}/directory/{version_uid}
 chain: handler `…::directory_get_by_version_id` → `directory.rs::run` → service `EhrbaseService::get_directory_at_version` → `directory_version` → `versioning::read::read_version`
 sql: 2 round trips — SELECT vo_version⋈audit by tree id; SELECT node rows
-notes: deleted version → 204.
+notes: deleted version → 204; `?path=` selects the named sub-folder subtree in-process (slash-separated FOLDER names, unresolved → 404), same semantics as the at-time read.
 
 ## CONTRIBUTION
 

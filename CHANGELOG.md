@@ -15,6 +15,30 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+- Admin console: the Directory tab is now a complete directory experience —
+  a structured folder-tree editor (add/rename/remove sub-folders, attach and
+  remove composition item references with a picker), version history with
+  read-only views and one-click restore, a `version_at_time` time-travel
+  control, a sub-folder `path` query, and directory deletion with
+  confirmation — on top of the existing create-from-template flow (raw JSON
+  editing stays available as an advanced mode).
+
+### Fixed
+- Admin console: text typed into the EHR finder and create-EHR fields before
+  the app finished loading is no longer silently wiped (the inputs are now
+  hydration-safe, like the login form); success toasts no longer intercept
+  clicks on buttons beneath them in the e2e battery.
+- `GET /ehr/{ehr_id}/directory/{version_uid}` now honours the `path` query
+  parameter (slash-separated FOLDER names selecting a sub-folder subtree),
+  as the ITS-REST `directory_get_by_version_id` operation specifies; an
+  unresolved path returns 404. Previously the parameter was accepted but
+  ignored and the full tree was always returned.
+- The served OpenAPI now documents the full DIRECTORY wire contract
+  (`version_at_time`/`path` parameters, `Prefer` including
+  `return=identifier`, `If-Match`, and the complete status ladders
+  including 204/400/409/412).
+
 ## [3.2.0] - 2026-07-18
 
 ### Added
