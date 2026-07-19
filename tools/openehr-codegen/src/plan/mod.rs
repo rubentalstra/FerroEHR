@@ -1,41 +1,21 @@
 //! Stage 3 — PLAN. The emission-decision layer: for every analysed class,
 //! decide the Rust shape it emits as (struct / closed enum / polymorphic enum /
 //! enumeration literals / transparent newtype / skip) and the XML shape it
-//! classifies as. The decision maps ([`class_binding`], [`back_reference`],
-//! [`type_override`], [`field_default`]) are declarative lookups, each carrying
-//! its spec citation. This stage makes decisions only — the text is produced in
-//! [`crate::render`].
+//! classifies as. The decision *data* — the class bindings, back-references,
+//! type overrides, field defaults, the primitive/mapped-class tables, and the
+//! emit-xml BMM-only allowlist — lives as declarative const tables in
+//! [`overrides`], each entry carrying its spec citation; the crate → schema
+//! merge table lives in [`composition`]. This stage makes decisions only — the
+//! text is produced in [`crate::render`].
 
-use crate::analyze::{Model, primitive};
+pub(crate) mod composition;
+pub(crate) mod overrides;
+
+use crate::analyze::Model;
 use crate::load::bmm::{BmmClass, BmmEnumeration, BmmPropKind, BmmSchema, BmmType};
+use crate::plan::overrides::{back_reference, field_default, primitive};
 use crate::render::naming;
-use std::collections::{BTreeMap, BTreeSet};
-
-/// Ancestor-generic bindings the BMM drops (it records `ancestors` and some
-/// generic-content property types as bare class names, losing the `<Integer>` /
-/// `<COMPOSITION>` argument). Maps a class's generic-parameter name to the
-/// concrete spec type it is instantiated with, so the emitter can substitute it
-/// instead of degrading the field to `serde_json::Value`. Seeded here; slated to
-/// move to `codegen.toml` alongside [`type_override`].
-pub(crate) fn class_binding(class: &str) -> BTreeMap<String, String> {
-    let pairs: &[(&str, &str)] = match class {
-        // "An Interval of Integer" — openEHR files it under `primitive_types`
-        // without carrying the `Interval<Integer>` binding.
-        "Multiplicity_interval" => &[("T", "Integer")],
-        // The EHR-Extract version containers bind the versioned-content type
-        // that `X_VERSIONED_OBJECT<T>` leaves open.
-        "X_VERSIONED_COMPOSITION" => &[("T", "COMPOSITION")],
-        "X_VERSIONED_EHR_ACCESS" => &[("T", "EHR_ACCESS")],
-        "X_VERSIONED_EHR_STATUS" => &[("T", "EHR_STATUS")],
-        "X_VERSIONED_PARTY" => &[("T", "PARTY")],
-        "X_VERSIONED_FOLDER" => &[("T", "FOLDER")],
-        _ => &[],
-    };
-    pairs
-        .iter()
-        .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
-        .collect()
-}
+use std::collections::BTreeSet;
 
 /// What to emit for a class.
 pub(crate) enum Emission<'a> {
@@ -114,93 +94,6 @@ pub(crate) fn decide<'a>(
             return Emission::Newtype(prim);
         }
         Emission::Struct
-    }
-}
-
-/// Field-level type overrides mapping a `(class, field)` to a proven Rust crate
-/// type instead of the BMM primitive (the codegen override layer). Seeded here;
-/// slated to move to `codegen.toml`. Only unambiguous mappings belong here —
-/// where openEHR's semantics are broader than a crate (partial-precision ISO
-/// 8601, plain-text URIs) the field stays `String` and the crate is used in the
-/// hand-written `*_impl.rs` behavior instead.
-pub(crate) fn type_override(class: &str, field: &str) -> Option<&'static str> {
-    match (class, field) {
-        // A UUID is an RFC-4122 canonical UUID — use the `uuid` crate directly.
-        // (ISO_OID / INTERNET_ID / OBJECT_VERSION_ID are *not* plain UUIDs.)
-        ("UUID", "value") => Some("uuid::Uuid"),
-        _ => None,
-    }
-}
-
-/// Designates a mandatory single-valued property as an **owner/parent
-/// back-reference** — a navigational association pointing from a part to the
-/// whole that owns it, *not* forward-owned data. Returns the spec citation
-/// naming it a back-reference.
-///
-/// # Why the emitter must special-case these (owner ruling 2026-07-19)
-///
-/// The spec is written in reference-semantics languages (Eiffel/Java) where an
-/// owner/parent pointer is a trivially-satisfiable back-pointer. In Rust value
-/// semantics an *owning* mandatory back-reference (`Box<Owner>`) makes the type
-/// a **non-constructible infinite value** — every `ARCHETYPE` owns a
-/// `terminology` whose `owner_archetype` is an `ARCHETYPE`, ad infinitum — so an
-/// owning emission is a *mis-modeling* of the spec, not extra strictness. These
-/// properties are never present on the canonical JSON/XML wire either. Per the
-/// repo's standing convention (root `CLAUDE.md` §Conventions: "Behavioural
-/// back-references … use `Weak` or an index, never an owning reference") such a
-/// property is emitted as a **non-data back-reference**: omitted from the owned
-/// struct fields and from serde, with behavioural access left to the
-/// hand-written `*_impl.rs`. This laxes no forward/owned data — every genuine
-/// composition field stays mandatory (see [`Model::assert_constructible`], which
-/// proves every remaining cycle is broken only at a designated edge here).
-///
-/// The BMM carries no `is_im_runtime`/`is_im_infrastructure` flag on these
-/// (verified against the vendored BMM 2026-07-19), so the designation is an
-/// explicit, spec-cited override — one entry per property, each naming the
-/// spec text that documents it as a back-reference.
-pub(crate) fn back_reference(class: &str, field: &str) -> Option<&'static str> {
-    match (class, field) {
-        // `ARCHETYPE_TERMINOLOGY.owner_archetype: ARCHETYPE` — "Archetype that
-        // owns this terminology" (docs/specs/openehr/AM/docs/UML/classes/
-        // org.openehr.am.aom2.archetype_terminology.adoc). Back-pointer to the
-        // owning archetype; forms the ARCHETYPE ↔ ARCHETYPE_TERMINOLOGY cycle.
-        ("ARCHETYPE_TERMINOLOGY", "owner_archetype") => Some(
-            "AM AOM2 archetype_terminology (owner_archetype: Archetype that owns this terminology)",
-        ),
-        // `RESOURCE_DESCRIPTION.parent_resource: AUTHORED_RESOURCE` — "Reference
-        // to owning resource" (docs/specs/openehr/BASE/docs/UML/classes/
-        // org.openehr.base.resource.resource_description.adoc). Back-pointer to
-        // the owning resource; forms the AUTHORED_RESOURCE ↔ RESOURCE_DESCRIPTION
-        // cycle.
-        ("RESOURCE_DESCRIPTION", "parent_resource") => Some(
-            "BASE resource resource_description (parent_resource: Reference to owning resource)",
-        ),
-        // `ARCHETYPE_ONTOLOGY.parent_archetype: ARCHETYPE` (AM 1.4) — "Archetype
-        // which owns this terminology" (docs/specs/openehr/AM/docs/UML/classes/
-        // org.openehr.am.aom14.archetype_ontology.adoc), with the invariant
-        // `parent_archetype.ontology = Current`. The ADL 1.4 owner back-reference
-        // (am14 analogue of am24 `owner_archetype`); forms the ARCHETYPE ↔
-        // ARCHETYPE_ONTOLOGY cycle.
-        ("ARCHETYPE_ONTOLOGY", "parent_archetype") => Some(
-            "AM AOM14 archetype_ontology (parent_archetype: Archetype which owns this terminology)",
-        ),
-        _ => None,
-    }
-}
-
-/// A serde default for a field the canonical wire may omit, keyed by the field's
-/// declaring class (`owner`) and name. `Interval`'s inclusivity/boundedness
-/// flags are mandatory in the BMM but archie/EHRbase omit them: a bounded limit
-/// is *included* by default, and an unstated limit is *bounded* by default.
-/// The value is a literal Rust expression consumed by `#[openehr(default = …)]`.
-pub(crate) fn field_default(owner: &str, field: &str) -> Option<&'static str> {
-    if owner != "Interval" {
-        return None;
-    }
-    match field {
-        "lower_included" | "upper_included" => Some("true"),
-        "lower_unbounded" | "upper_unbounded" => Some("false"),
-        _ => None,
     }
 }
 

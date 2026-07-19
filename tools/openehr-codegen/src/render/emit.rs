@@ -15,14 +15,17 @@
 //! - `_type` is handled by `#[derive(OpenEhrType)]` (`openehr-derive`), not a
 //!   per-struct field.
 //! - Foundation **primitives / containers / marker traits** are mapped to Rust
-//!   (bool, i32, Vec, …) and never emitted (see [`SKIP`] and [`primitive`]).
+//!   (bool, i32, Vec, …) and never emitted (see
+//!   [`crate::plan::overrides::PRIMITIVES`] and
+//!   [`crate::plan::overrides::MAPPED_CLASSES`]).
 //!
 //! Stage 4 — RENDER. The only stage that produces text: the per-shape emit
 //! functions turn a planned class into deterministic, byte-stable Rust source.
 
 use crate::analyze::{External, Model, class_paths};
 use crate::load::bmm::{BmmClass, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType};
-use crate::plan::{Emission, back_reference, class_binding, decide, field_default, type_override};
+use crate::plan::overrides::{back_reference, class_binding, field_default, type_override};
+use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 

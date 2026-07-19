@@ -257,7 +257,8 @@ pub(crate) const RM_FILES_V1_SERVED: &[&str] = &[
 /// `xmlns` (see the `main.rs` rationale), so the v1 `LOCATABLE` — base of all
 /// these types via the flatten walk — supplies the `archetype_node_id` attribute
 /// and canonical element order for `EHR_STATUS`/`EHR_ACCESS`, the demographic
-/// PARTY hierarchy, and the extract LOCATABLE subtypes. This closes F-05-01.
+/// PARTY hierarchy, and the extract LOCATABLE subtypes — satisfying the
+/// emit-xml LOCATABLE-attribute guard for those types.
 pub(crate) const RM_FILES_V2_SUPPLEMENT: &[&str] = &[
     "RM/Release-1.1.0/Ehr.xsd",
     "RM/Release-1.1.0/Demographic.xsd",

@@ -9,7 +9,8 @@
 //! decisions in [`crate::plan`].
 
 use crate::load::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
-use crate::plan::{Emission, back_reference, decide};
+use crate::plan::overrides::{back_reference, is_mapped_class, primitive};
+use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -70,44 +71,6 @@ pub(crate) struct ResolvedProp<'a> {
     pub(crate) prop: &'a crate::load::bmm::BmmProperty,
 }
 
-/// Foundation classes that are **mapped to Rust and never emitted**: the
-/// container types, marker/functional/service classes, and constant holders.
-/// Scalar primitives are handled by [`primitive`]. `Multiplicity_interval` and
-/// `Cardinality` *are* emitted (real structs with fields); their inherited
-/// `Interval<Integer>` binding is supplied by [`class_binding`].
-const SKIP: &[&str] = &[
-    // containers → Vec / handled by container properties
-    "Container",
-    "List",
-    "Set",
-    "Array",
-    "Hash",
-    // abstract marker / algebraic traits (no data)
-    "Any",
-    "Ordered",
-    "Numeric",
-    "Ordered_Numeric",
-    "Comparable",
-    "Temporal",
-    // functional types
-    "TUPLE",
-    "TUPLE1",
-    "TUPLE2",
-    "ROUTINE",
-    "FUNCTION",
-    "PROCEDURE",
-    // service interfaces (no data)
-    "Env",
-    "Locale",
-    "Math",
-    "Quantity_converter",
-    "Statistical_evaluator",
-    // constant-holder classes (no data; become assoc consts in *_impl.rs)
-    "Time_Definitions",
-    "BASIC_DEFINITIONS",
-    "OPENEHR_DEFINITIONS",
-];
-
 impl Model {
     /// Merge several schemas into one class map (later schemas override earlier
     /// on name collision — pass BASE before RM).
@@ -143,9 +106,10 @@ impl Model {
             || c.ancestors.iter().any(|a| self.is_generic_param(a, name))
     }
 
-    /// Is `name` mapped to Rust rather than emitted (primitive or [`SKIP`])?
+    /// Is `name` mapped to Rust rather than emitted (a [`primitive`] or a
+    /// [`crate::plan::overrides::MAPPED_CLASSES`] entry)?
     pub(crate) fn is_mapped(name: &str) -> bool {
-        primitive(name).is_some() || SKIP.contains(&name)
+        primitive(name).is_some() || is_mapped_class(name)
     }
 
     /// Does `class` inherit from `target` (transitively)?
@@ -649,24 +613,36 @@ impl Model {
         ok
     }
 
-    /// Prove every concrete emittable class in `schema` is constructible; panic
-    /// otherwise. This is the general ownership-cycle safeguard (orchestrator
-    /// ruling 2026-07-19): a mandatory single-valued construction cycle yields a
-    /// non-constructible infinite-value type in Rust, so it MUST be broken — and
-    /// only ever at a designated owner/parent [`back_reference`] edge, never by
-    /// relaxing a forward composition. If this fires, the fix is a spec-cited
-    /// `back_reference` entry naming the offending back-reference property, never
-    /// making a real data field `Option`.
-    pub(crate) fn assert_constructible(&self, schema: &BmmSchema) {
+    /// The concrete emittable classes of `schema` that are **not**
+    /// constructible — an unbroken mandatory single-valued construction cycle
+    /// (sorted). Empty is the required state. This is the general ownership-cycle
+    /// analysis (orchestrator ruling 2026-07-19): a mandatory single-valued
+    /// construction cycle yields a non-constructible infinite-value type in Rust,
+    /// so it MUST be broken — and only ever at a designated owner/parent
+    /// [`back_reference`] edge, never by relaxing a forward composition. The fix
+    /// for any offender is a spec-cited `back_reference` entry naming the
+    /// offending back-reference property, never making a real data field
+    /// `Option`.
+    #[must_use]
+    pub(crate) fn constructibility_violations(&self, schema: &BmmSchema) -> Vec<String> {
         let ok = self.constructible_classes();
-        let mut bad: Vec<&str> = schema
+        let mut bad: Vec<String> = schema
             .classes
             .values()
             .filter(|c| !c.is_abstract && !Self::is_mapped(&c.name))
-            .map(|c| c.name.as_str())
-            .filter(|n| !ok.contains(*n))
+            .map(|c| c.name.clone())
+            .filter(|n| !ok.contains(n))
             .collect();
         bad.sort_unstable();
+        bad
+    }
+
+    /// Prove every concrete emittable class in `schema` is constructible; panic
+    /// otherwise (the loud safeguard on the emit path — see
+    /// [`Self::constructibility_violations`] for the pure analysis the invariant
+    /// test consumes).
+    pub(crate) fn assert_constructible(&self, schema: &BmmSchema) {
+        let bad = self.constructibility_violations(schema);
         assert!(
             bad.is_empty(),
             "openehr-codegen: non-constructible type(s) would be emitted — an unbroken \
@@ -675,21 +651,6 @@ impl Model {
              never relax a forward/mandatory data field to `Option`."
         );
     }
-}
-
-/// The set of primitive spec types → Rust types (the codegen type map).
-pub(crate) fn primitive(name: &str) -> Option<&'static str> {
-    Some(match name {
-        "Boolean" => "bool",
-        "Integer" => "i32",
-        "Integer64" => "i64",
-        "Real" | "Double" => "f64",
-        // `Uri` is a plain string until the strong-newtype override lands.
-        "String" | "Uri" => "String",
-        "Octet" => "u8",
-        "Character" => "char",
-        _ => return None,
-    })
 }
 
 fn collect_roots(t: &BmmType, out: &mut BTreeSet<String>) {
