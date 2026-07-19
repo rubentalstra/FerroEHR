@@ -10,6 +10,11 @@ authors.workspace = true
 publish = false
 
 [dependencies]
+logos.workspace = true       # DFA lexer (base_lexer.g4 + adl_keywords.g4)
+thiserror.workspace = true   # typed SyntaxError
+openehr-base = { path = "../openehr-base" }   # VersionStatus for the parsed HRID
+openehr-am = { path = "../openehr-am" }       # am24 ArchetypeHrid (the identification target type)
+openehr-lang = { path = "../openehr-lang" }   # openehr_lang::odin — the ODIN section parser
 
 [lints]
 workspace = true

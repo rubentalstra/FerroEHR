@@ -7,3 +7,13 @@
 //! spec at `docs/specs/openehr/LANG/docs/odin/`). The normative ANTLR4
 //! grammars are vendored under `vendor/grammar/` as reference input for the
 //! hand-written `logos`/`chumsky` implementation — no ANTLR runtime.
+//!
+//! This is the phase A2 surface: the [`lexer`], the outer artefact parser
+//! ([`source`]), and the shared typed [`error`] catalogue. ODIN sections are
+//! parsed by the `openehr_lang::odin` reader (ODIN is a LANG-component spec);
+//! the cADL definition and rules bodies are captured by [`source`] as raw
+//! spans for a later phase.
+
+pub mod error;
+pub mod lexer;
+pub mod source;

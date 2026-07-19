@@ -5255,6 +5255,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c08d65885ee38876c4f86fa503fb49d7b507c2b62552df7c70b2fce627e06381"
 
 [[package]]
+name = "openehr-adl"
+version = "2.4.0"
+dependencies = [
+ "logos",
+ "openehr-am",
+ "openehr-base",
+ "openehr-lang",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "openehr-am"
 version = "2.4.0"
 dependencies = [
@@ -5339,10 +5350,14 @@ dependencies = [
 name = "openehr-lang"
 version = "1.0.0"
 dependencies = [
+ "chumsky",
+ "indexmap 2.14.0",
+ "logos",
  "openehr-base",
  "openehr-derive",
  "serde",
  "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
