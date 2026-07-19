@@ -11,7 +11,7 @@
 //!   `is_structure_root` functions + a `LazyLock` name index).
 //! - `data.rs` — the generated `static CLASSES: &[RmClass]` table.
 
-use crate::bmm::{BmmClass, BmmPropKind, BmmType};
+use crate::bmm::{BmmClass, BmmEnumValue, BmmPropKind, BmmType};
 use crate::emit::{GenFile, Model};
 use std::collections::BTreeSet;
 
@@ -66,6 +66,15 @@ struct ClassModel {
     descendants: Vec<String>,
     attributes: Vec<AttrModel>,
     is_structure_root: bool,
+    /// The class's own formal generic parameters (`BMM generic_parameter_defs`),
+    /// in declaration order, with their `conforms_to` bound where declared.
+    generic_params: Vec<GenericParamModel>,
+}
+
+/// One formal generic parameter of a class (`T conforms_to ITEM_STRUCTURE`).
+struct GenericParamModel {
+    name: String,
+    conforms_to: Option<String>,
 }
 
 /// One attribute row (own or inherited, flattened ancestor-first).
@@ -74,12 +83,54 @@ struct AttrModel {
     declared_type: String,
     container: &'static str,
     is_mandatory: bool,
+    /// The generic type-argument tree of the attribute's declared value type
+    /// (empty when the type is not a generic instantiation), e.g. `[DV_QUANTITY]`
+    /// for `DV_INTERVAL<DV_QUANTITY>` or `[EVENT<ITEM_STRUCTURE>]` for
+    /// `List<EVENT<ITEM_STRUCTURE>>`. Bare parameters are resolved to their bound,
+    /// consistent with `declared_type`.
+    type_params: Vec<TypeRefModel>,
+    /// The BMM-declared container cardinality (container attributes only).
+    cardinality: Option<CardinalityModel>,
+}
+
+/// A resolved type reference: a root spec name plus its own generic arguments.
+struct TypeRefModel {
+    name: String,
+    params: Vec<TypeRefModel>,
+}
+
+/// A BMM-declared container cardinality interval (`upper = None` ⇒ unbounded).
+struct CardinalityModel {
+    lower: u32,
+    upper: Option<u32>,
+}
+
+/// One enumeration class row (`BMM_ENUMERATION`): the underlying basic type and
+/// its named constants with their (defaulted) values.
+struct EnumModel {
+    name: String,
+    /// `"INTEGER"` or `"STRING"`.
+    underlying_type: String,
+    literals: Vec<EnumLiteralModel>,
+}
+
+/// One enumeration constant (name + value).
+struct EnumLiteralModel {
+    name: String,
+    value: EnumValueModel,
+}
+
+/// The value of an enumeration constant.
+enum EnumValueModel {
+    Int(i64),
+    Str(String),
 }
 
 /// Emit the `model/` files for `openehr-rm` from the merged BASE + RM model.
 #[must_use]
 pub(crate) fn emit_files(model: &Model) -> Vec<GenFile> {
     let classes = build(model);
+    let enums = build_enums(model);
     vec![
         GenFile {
             path: "model/mod.rs".to_string(),
@@ -87,7 +138,7 @@ pub(crate) fn emit_files(model: &Model) -> Vec<GenFile> {
         },
         GenFile {
             path: "model/data.rs".to_string(),
-            body: emit_data(&classes),
+            body: emit_data(&classes, &enums),
         },
     ]
 }
@@ -114,9 +165,65 @@ fn build(model: &Model) -> Vec<ClassModel> {
             descendants: descendants_of(model, name, &concrete),
             attributes: attributes_of(model, class),
             is_structure_root: STRUCTURE_ROOTS.contains(&name.as_str()),
+            generic_params: class
+                .generic_params
+                .iter()
+                .map(|g| GenericParamModel {
+                    name: g.name.clone(),
+                    conforms_to: g.conforms_to.clone(),
+                })
+                .collect(),
         });
     }
     out
+}
+
+/// Build the enumeration table: every `BMM_ENUMERATION` class (integer- or
+/// string-based) in the merged model, in name order, with its constants resolved
+/// 1:1 to values.
+fn build_enums(model: &Model) -> Vec<EnumModel> {
+    let mut out = Vec::new();
+    for (name, class) in model.class_iter() {
+        if Model::is_mapped(name) {
+            continue;
+        }
+        let Some(e) = &class.enumeration else {
+            continue;
+        };
+        let literals = e
+            .item_names
+            .iter()
+            .enumerate()
+            .map(|(i, n)| EnumLiteralModel {
+                name: n.clone(),
+                value: enum_value(&e.underlying_type, e.item_values.as_deref(), i, n),
+            })
+            .collect();
+        out.push(EnumModel {
+            name: name.clone(),
+            underlying_type: e.underlying_type.clone(),
+            literals,
+        });
+    }
+    out
+}
+
+/// The value of the `i`-th enumeration constant. Explicit `item_values` win;
+/// where the BMM supplies none, `BMM_ENUMERATION` states "the integer values
+/// 0, 1, 2, ... are assumed" — applied for an INTEGER underlying type, while a
+/// STRING-underlying named constant takes its own name as its value.
+fn enum_value(
+    underlying: &str,
+    item_values: Option<&[BmmEnumValue]>,
+    i: usize,
+    name: &str,
+) -> EnumValueModel {
+    match item_values.and_then(|v| v.get(i)) {
+        Some(BmmEnumValue::Int(v)) => EnumValueModel::Int(*v),
+        Some(BmmEnumValue::Str(s)) => EnumValueModel::Str(s.clone()),
+        None if underlying == "STRING" => EnumValueModel::Str(name.to_string()),
+        None => EnumValueModel::Int(i64::try_from(i).unwrap_or_default()),
+    }
 }
 
 /// Transitive ancestors of `name` (mapped foundation types excluded), sorted.
@@ -155,15 +262,25 @@ fn attributes_of(model: &Model, class: &BmmClass) -> Vec<AttrModel> {
         .flattened_props(class)
         .iter()
         .map(|rp| {
-            let (declared_type, container) = match &rp.prop.kind {
-                BmmPropKind::Single(t) => (declared_type(model, &class.name, t), "None"),
+            let (declared_type, container, type_params, cardinality) = match &rp.prop.kind {
+                BmmPropKind::Single(t) => (
+                    declared_type(model, &class.name, t),
+                    "None",
+                    type_ref_params(model, &class.name, t),
+                    None,
+                ),
                 BmmPropKind::Container {
                     container_type,
                     item,
-                    ..
+                    cardinality,
                 } => (
                     declared_type(model, &class.name, item),
                     container_kind(container_type),
+                    type_ref_params(model, &class.name, item),
+                    cardinality.as_ref().map(|c| CardinalityModel {
+                        lower: c.lower,
+                        upper: c.upper,
+                    }),
                 ),
             };
             AttrModel {
@@ -171,9 +288,32 @@ fn attributes_of(model: &Model, class: &BmmClass) -> Vec<AttrModel> {
                 declared_type,
                 container,
                 is_mandatory: rp.prop.is_mandatory,
+                type_params,
+                cardinality,
             }
         })
         .collect()
+}
+
+/// The generic type-argument tree of `t` (empty for a non-generic type), each
+/// argument resolved via [`type_ref`] in `concrete`'s scope.
+fn type_ref_params(model: &Model, concrete: &str, t: &BmmType) -> Vec<TypeRefModel> {
+    match t {
+        BmmType::Simple(_) => Vec::new(),
+        BmmType::Generic { params, .. } => params
+            .iter()
+            .map(|p| type_ref(model, concrete, p))
+            .collect(),
+    }
+}
+
+/// Resolve one type reference to its spec name (bare generic parameter → bound,
+/// consistent with [`declared_type`]) plus its own generic-argument tree.
+fn type_ref(model: &Model, concrete: &str, t: &BmmType) -> TypeRefModel {
+    TypeRefModel {
+        name: declared_type(model, concrete, t),
+        params: type_ref_params(model, concrete, t),
+    }
 }
 
 /// The declared spec-type name of an attribute value, resolving a bare generic
@@ -227,8 +367,11 @@ fn emit_mod() -> String {
 //! Covers every real spec class of `openehr-base` + `openehr-rm` (foundation
 //! primitives, containers, and marker types excluded). For each class it records
 //! the flattened (own + inherited) attributes with their declared spec type,
-//! container kind, and mandatory flag; the abstract flag; the transitive ancestor
-//! set; the transitive **concrete** descendant set; and a structure-node flag.
+//! generic type-argument tree, container kind + cardinality, and mandatory flag;
+//! the abstract flag; the class's own formal generic parameters; the transitive
+//! ancestor set; the transitive **concrete** descendant set; and a structure-node
+//! flag. Enumeration classes (`BMM_ENUMERATION`) additionally carry their named
+//! constants + values in a separate table (see [`enumeration`]).
 //!
 //! # `is_structure_root`
 //!
@@ -264,6 +407,19 @@ pub struct RmClass {
     /// Whether the node codec splits this type into its own `node` row (see the
     /// module docs).
     pub is_structure_root: bool,
+    /// The class's own formal generic parameters, in declaration order (empty for
+    /// a non-generic class), e.g. `[T conforms_to ITEM_STRUCTURE]` on `HISTORY`.
+    pub generic_params: &'static [RmGenericParam],
+}
+
+/// One formal generic parameter of an [`RmClass`] (`BMM generic_parameter_defs`).
+#[derive(Debug)]
+pub struct RmGenericParam {
+    /// The parameter name, verbatim (e.g. `"T"`).
+    pub name: &'static str,
+    /// The `conforms_to` bound spec name, if the BMM declares one (e.g.
+    /// `Some("ITEM_STRUCTURE")`).
+    pub conforms_to: Option<&'static str>,
 }
 
 /// One attribute of an [`RmClass`].
@@ -272,12 +428,42 @@ pub struct RmAttribute {
     /// The attribute name, verbatim (e.g. `"content"`).
     pub name: &'static str,
     /// The declared value spec-type name (e.g. `"HISTORY"`, `"DV_TEXT"`,
-    /// `"CONTENT_ITEM"`; a generic parameter is resolved to its bound).
+    /// `"CONTENT_ITEM"`; a generic parameter is resolved to its bound). This is
+    /// the root/base name; [`Self::type_params`] carries any generic arguments.
     pub declared_type: &'static str,
     /// The attribute's container shape.
     pub container: Container,
     /// Whether the attribute is mandatory (existence ≥ 1).
     pub is_mandatory: bool,
+    /// The generic type-argument tree of the declared value type, empty when it
+    /// is not a generic instantiation. Together with [`Self::declared_type`] this
+    /// gives the full declared type: `declared_type = "DV_INTERVAL"` +
+    /// `type_params = [DV_QUANTITY]` reads `DV_INTERVAL<DV_QUANTITY>`;
+    /// `declared_type = "EVENT"` + `type_params = [ITEM_STRUCTURE]` inside a
+    /// `List` container reads `List<EVENT<ITEM_STRUCTURE>>`. Bare generic
+    /// parameters are resolved to their bound, consistent with `declared_type`.
+    pub type_params: &'static [RmTypeRef],
+    /// The BMM-declared container cardinality (`None` for a single-valued
+    /// attribute, or a container attribute the BMM leaves unconstrained).
+    pub cardinality: Option<Cardinality>,
+}
+
+/// A resolved type reference: a root spec name plus its own generic arguments.
+#[derive(Debug)]
+pub struct RmTypeRef {
+    /// The root/base spec-type name (a bare generic parameter resolved to bound).
+    pub name: &'static str,
+    /// This type's own generic arguments (empty when it is not generic).
+    pub params: &'static [RmTypeRef],
+}
+
+/// A container cardinality interval (`BMM cardinality`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Cardinality {
+    /// The lower bound (minimum number of members).
+    pub lower: u32,
+    /// The upper bound, or `None` when the container is unbounded.
+    pub upper: Option<u32>,
 }
 
 /// The container shape of an [`RmAttribute`].
@@ -291,6 +477,36 @@ pub enum Container {
     Set,
     /// Keyed map (`Hash`).
     Hash,
+}
+
+/// An RM enumeration class (`BMM_ENUMERATION`): an underlying basic type plus a
+/// set of named constants.
+#[derive(Debug)]
+pub struct RmEnumeration {
+    /// The enumeration class name, verbatim (e.g. `"PROPORTION_KIND"`).
+    pub name: &'static str,
+    /// The underlying basic type: `"INTEGER"` or `"STRING"`.
+    pub underlying_type: &'static str,
+    /// The named constants, in declaration order.
+    pub literals: &'static [RmEnumLiteral],
+}
+
+/// One constant of an [`RmEnumeration`].
+#[derive(Debug)]
+pub struct RmEnumLiteral {
+    /// The constant name, verbatim (e.g. `"pk_percent"`, `"mandatory"`).
+    pub name: &'static str,
+    /// The constant value.
+    pub value: EnumValue,
+}
+
+/// The value of an [`RmEnumLiteral`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnumValue {
+    /// An integer constant.
+    Int(i64),
+    /// A string constant.
+    Str(&'static str),
 }
 
 /// Name → class index, built once from the generated table.
@@ -346,16 +562,29 @@ pub fn is_a(sub: &str, sup: &str) -> bool {
 pub fn is_structure_root(class: &str) -> bool {
     find(class).is_some_and(|c| c.is_structure_root)
 }
+
+/// Name → enumeration index, built once from the generated table.
+static ENUM_INDEX: LazyLock<HashMap<&'static str, &'static RmEnumeration>> =
+    LazyLock::new(|| data::ENUMERATIONS.iter().map(|e| (e.name, e)).collect());
+
+/// The enumeration class named `name`, if it is one (e.g. `"PROPORTION_KIND"`).
+#[must_use]
+pub fn enumeration(name: &str) -> Option<&'static RmEnumeration> {
+    ENUM_INDEX.get(name).copied()
+}
 "#
     .to_string()
 }
 
-/// The generated `model/data.rs`: the `static CLASSES` table.
-fn emit_data(classes: &[ClassModel]) -> String {
+/// The generated `model/data.rs`: the `static CLASSES` + `static ENUMERATIONS`
+/// tables.
+fn emit_data(classes: &[ClassModel], enums: &[EnumModel]) -> String {
     let mut b = String::from(
         "// @generated by openehr-codegen (emit-rm-model) — DO NOT EDIT.\n\
          //! Static RM class/attribute table backing the `model` API.\n\n\
-         use super::{Container, RmAttribute, RmClass};\n\n\
+         use super::{\n    \
+         Cardinality, Container, EnumValue, RmAttribute, RmClass, RmEnumLiteral, RmEnumeration,\n    \
+         RmGenericParam, RmTypeRef,\n};\n\n\
          pub(super) static CLASSES: &[RmClass] = &[\n",
     );
     for c in classes {
@@ -374,16 +603,104 @@ fn emit_data(classes: &[ClassModel]) -> String {
         b.push_str("        attributes: &[\n");
         for a in &c.attributes {
             b.push_str(&format!(
-                "            RmAttribute {{ name: {:?}, declared_type: {:?}, container: Container::{}, is_mandatory: {} }},\n",
-                a.name, a.declared_type, a.container, a.is_mandatory
+                "            RmAttribute {{ name: {:?}, declared_type: {:?}, container: Container::{}, is_mandatory: {}, type_params: &{}, cardinality: {} }},\n",
+                a.name,
+                a.declared_type,
+                a.container,
+                a.is_mandatory,
+                type_refs(&a.type_params),
+                cardinality(a.cardinality.as_ref()),
             ));
         }
         b.push_str("        ],\n");
         b.push_str(&format!(
-            "        is_structure_root: {},\n    }},\n",
+            "        is_structure_root: {},\n",
             c.is_structure_root
         ));
+        b.push_str(&format!(
+            "        generic_params: &{},\n    }},\n",
+            generic_params(&c.generic_params)
+        ));
+    }
+    b.push_str("];\n\n");
+
+    b.push_str("pub(super) static ENUMERATIONS: &[RmEnumeration] = &[\n");
+    for e in enums {
+        b.push_str(&format!(
+            "    RmEnumeration {{\n        name: {:?},\n        underlying_type: {:?},\n        literals: &[\n",
+            e.name, e.underlying_type
+        ));
+        for lit in &e.literals {
+            b.push_str(&format!(
+                "            RmEnumLiteral {{ name: {:?}, value: {} }},\n",
+                lit.name,
+                enum_value_lit(&lit.value)
+            ));
+        }
+        b.push_str("        ],\n    },\n");
     }
     b.push_str("];\n");
     b
+}
+
+/// Render a `&[RmTypeRef { … }]`-body array literal (`[]` when empty), recursing
+/// into each argument's own parameter tree.
+fn type_refs(items: &[TypeRefModel]) -> String {
+    let mut b = String::from("[");
+    for (i, t) in items.iter().enumerate() {
+        if i > 0 {
+            b.push_str(", ");
+        }
+        b.push_str(&format!(
+            "RmTypeRef {{ name: {:?}, params: &{} }}",
+            t.name,
+            type_refs(&t.params)
+        ));
+    }
+    b.push(']');
+    b
+}
+
+/// Render an `Option<Cardinality>` literal.
+fn cardinality(card: Option<&CardinalityModel>) -> String {
+    card.map_or_else(
+        || "None".to_string(),
+        |c| {
+            let upper = c
+                .upper
+                .map_or_else(|| "None".to_string(), |u| format!("Some({u})"));
+            format!(
+                "Some(Cardinality {{ lower: {}, upper: {} }})",
+                c.lower, upper
+            )
+        },
+    )
+}
+
+/// Render a `&[RmGenericParam { … }]`-body array literal (`[]` when empty).
+fn generic_params(params: &[GenericParamModel]) -> String {
+    let mut b = String::from("[");
+    for (i, g) in params.iter().enumerate() {
+        if i > 0 {
+            b.push_str(", ");
+        }
+        let bound = g
+            .conforms_to
+            .as_ref()
+            .map_or_else(|| "None".to_string(), |c| format!("Some({c:?})"));
+        b.push_str(&format!(
+            "RmGenericParam {{ name: {:?}, conforms_to: {} }}",
+            g.name, bound
+        ));
+    }
+    b.push(']');
+    b
+}
+
+/// Render an `EnumValue` literal.
+fn enum_value_lit(value: &EnumValueModel) -> String {
+    match value {
+        EnumValueModel::Int(v) => format!("EnumValue::Int({v})"),
+        EnumValueModel::Str(s) => format!("EnumValue::Str({s:?})"),
+    }
 }
