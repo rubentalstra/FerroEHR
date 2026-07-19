@@ -1,15 +1,21 @@
 //! The management surface: health, info, Prometheus, metrics, env, and loggers.
 //!
-//! **No openEHR spec governs this — our own operational surface** (the
-//! classification register `docs/design/its-rest/extensions.md` verdict for
-//! `management/`: pure ops, spec-silent by design). The design authority is the
-//! observability binding design `docs/design/observability.md` (cited as
-//! "binding doc §N" throughout this subtree).
+//! **No openEHR spec governs this — our own operational surface** (pure
+//! ops, spec-silent by design).
 //!
 //! Every endpoint is **off by default**, each opt-in via [`ManagementConfig`],
 //! gated by its own access-level layer (reusing the authentication primitives),
-//! and optionally served from a separate internal port (binding doc §2/§3).
+//! and optionally served from a separate internal port.
 //! Observability must never widen the clinical API's attack surface.
+//!
+//! Reachability note: every operation here is documented **unconditionally** in
+//! the served `OpenAPI` (see [`openapi`]), but the live [`router`] mounts only
+//! the opted-in endpoints — a disabled endpoint (or one whose access level is
+//! `Off`) is simply absent from the router and answers `404`. The access-level
+//! layer ([`AccessGuard`]) is what yields the `401`/`403` documented on the
+//! gated operations: `401` when the level is Private/AdminOnly and auth is
+//! enabled but the caller is unauthenticated, `403` when the level is `AdminOnly`
+//! and the caller lacks the configured admin scope.
 
 mod env;
 mod health_routes;
@@ -257,13 +263,18 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
 
 // ── Handlers ────────────────────────────────────────────────────────────────
 
-/// Aggregate health (all registered indicators). 200 when UP/DEGRADED, 503 when
-/// DOWN. Access-level gated.
+/// Aggregate health — all registered indicators (`GET /management/health`).
+///
+/// Access-level gated by the `health` endpoint's configured [`AccessLevel`];
+/// absent (a router `404`) unless the endpoint is opted in. Body: the aggregate
+/// status plus each indicator's contribution.
 #[utoipa::path(
     get, path = "/management/health", tag = "management",
     responses(
         (status = 200, description = "Aggregate health UP or DEGRADED.", body = serde_json::Value),
-        (status = 503, description = "Aggregate health DOWN.", body = serde_json::Value)
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 503, description = "Aggregate health DOWN (one or more indicators DOWN).", body = serde_json::Value)
     )
 )]
 async fn aggregate_health(State(s): State<ManagementState>) -> Response {
@@ -274,7 +285,10 @@ async fn aggregate_health(State(s): State<ManagementState>) -> Response {
 // implements `Handler` for async functions; the `unused_async` allow records
 // that the work is synchronous and the async is the framework contract.
 
-/// Kubernetes-style liveness probe (public when probes are enabled).
+/// Kubernetes-style liveness probe (`GET /management/health/liveness`).
+///
+/// Public (no access-level layer) and always `200` while the process is alive;
+/// absent (a router `404`) unless `probes_enabled` is set.
 #[utoipa::path(
     get, path = "/management/health/liveness", tag = "management",
     responses((status = 200, description = "Process alive.", body = serde_json::Value))
@@ -284,36 +298,51 @@ async fn liveness() -> Response {
     health_routes::liveness()
 }
 
-/// Kubernetes-style readiness probe (public when probes are enabled). 503 when
-/// not ready.
+/// Kubernetes-style readiness probe (`GET /management/health/readiness`).
+///
+/// Public (no access-level layer); absent (a router `404`) unless
+/// `probes_enabled` is set. `200` when every readiness indicator is up, `503`
+/// otherwise.
 #[utoipa::path(
     get, path = "/management/health/readiness", tag = "management",
     responses(
-        (status = 200, description = "Ready to serve.", body = serde_json::Value),
-        (status = 503, description = "Not ready.", body = serde_json::Value)
+        (status = 200, description = "Ready to serve (all readiness indicators up).", body = serde_json::Value),
+        (status = 503, description = "Not ready (one or more readiness indicators down).", body = serde_json::Value)
     )
 )]
 async fn readiness(State(s): State<ManagementState>) -> Response {
     health_routes::readiness(s.health).await
 }
 
-/// Build/spec provenance (`/info`): version, git, spec pins. Access-level gated.
+/// Build/spec provenance — version, git, spec pins (`GET /management/info`).
+///
+/// Access-level gated by the `info` endpoint's configured [`AccessLevel`];
+/// absent (a router `404`) unless opted in. Body: the [`BuildInfo`] record.
 #[utoipa::path(
     get, path = "/management/info", tag = "management",
-    responses((status = 200, description = "Build + spec provenance.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "Build + spec provenance.", body = serde_json::Value),
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value)
+    )
 )]
 #[allow(clippy::unused_async)]
 async fn info_view(State(s): State<ManagementState>) -> Json<BuildInfo> {
     info_routes::info(s.build_info)
 }
 
-/// Prometheus text exposition. 503 when the recorder is not installed.
-/// Access-level gated.
+/// Prometheus text exposition (`GET /management/prometheus`).
+///
+/// Access-level gated by the `prometheus` endpoint's configured [`AccessLevel`];
+/// the live [`router`] mounts this route only when the endpoint is opted in AND
+/// the metrics recorder is installed (otherwise it is absent — a router `404`).
 #[utoipa::path(
     get, path = "/management/prometheus", tag = "management",
     responses(
         (status = 200, description = "Prometheus exposition text.", content_type = "text/plain"),
-        (status = 503, description = "Metrics recorder not installed.", body = serde_json::Value)
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 503, description = "Metrics recorder not installed (defensive; the live router mounts this route only when the recorder is present).", body = serde_json::Value)
     )
 )]
 #[allow(clippy::unused_async)]
@@ -324,13 +353,18 @@ async fn prometheus_text(State(s): State<ManagementState>) -> Response {
     }
 }
 
-/// Actuator-style JSON list of known metric names. 503 when the recorder is not
-/// installed. Access-level gated.
+/// Actuator-style JSON list of known metric names (`GET /management/metrics`).
+///
+/// Access-level gated by the `metrics` endpoint's configured [`AccessLevel`];
+/// the live [`router`] mounts this route only when the endpoint is opted in AND
+/// the metrics recorder is installed (otherwise it is absent — a router `404`).
 #[utoipa::path(
     get, path = "/management/metrics", tag = "management",
     responses(
         (status = 200, description = "Known metric names.", body = serde_json::Value),
-        (status = 503, description = "Metrics recorder not installed.", body = serde_json::Value)
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 503, description = "Metrics recorder not installed (defensive; the live router mounts this route only when the recorder is present).", body = serde_json::Value)
     )
 )]
 #[allow(clippy::unused_async)]
@@ -341,14 +375,20 @@ async fn metrics_list(State(s): State<ManagementState>) -> Response {
     }
 }
 
-/// Actuator-style JSON detail for one metric. 404 when the metric is unknown,
-/// 503 when the recorder is not installed. Access-level gated.
+/// Actuator-style JSON detail for one metric (`GET /management/metrics/{name}`).
+///
+/// Access-level gated by the `metrics` endpoint's configured [`AccessLevel`];
+/// the live [`router`] mounts this route only when the endpoint is opted in AND
+/// the metrics recorder is installed (otherwise it is absent — a router `404`).
 #[utoipa::path(
     get, path = "/management/metrics/{name}", tag = "management",
-    params(("name" = String, Path, description = "The metric name.")),
+    params(("name" = String, Path, description = "The metric name to inspect.")),
     responses(
         (status = 200, description = "The metric's current value(s).", body = serde_json::Value),
-        (status = 404, description = "Unknown metric.", body = serde_json::Value)
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 404, description = "No metric with that name is registered.", body = serde_json::Value),
+        (status = 503, description = "Metrics recorder not installed (defensive; the live router mounts this route only when the recorder is present).", body = serde_json::Value)
     )
 )]
 #[allow(clippy::unused_async)]
@@ -359,23 +399,37 @@ async fn metrics_detail(State(s): State<ManagementState>, path: Path<String>) ->
     }
 }
 
-/// The redacted effective-configuration snapshot (`/env`). Access-level gated.
+/// The redacted effective-configuration snapshot (`GET /management/env`).
+///
+/// Access-level gated by the `env` endpoint's configured [`AccessLevel`]; absent
+/// (a router `404`) unless opted in. Body: the effective config with secrets
+/// redacted at render.
 #[utoipa::path(
     get, path = "/management/env", tag = "management",
-    responses((status = 200, description = "Redacted effective configuration.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "Redacted effective configuration.", body = serde_json::Value),
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value)
+    )
 )]
 #[allow(clippy::unused_async)]
 async fn env_view(State(s): State<ManagementState>) -> Json<Value> {
     env::env(&s.env_snapshot)
 }
 
-/// The effective log-filter directives + boot filter. 503 when no reloadable
-/// filter is installed. Access-level gated.
+/// The effective log-filter directives + boot filter (`GET /management/loggers`).
+///
+/// Access-level gated by the `loggers` endpoint's configured [`AccessLevel`];
+/// the live [`router`] mounts the `loggers` routes only when the endpoint is
+/// opted in AND a reloadable filter is installed (otherwise absent — a router
+/// `404`).
 #[utoipa::path(
     get, path = "/management/loggers", tag = "management",
     responses(
         (status = 200, description = "Effective + boot log filter.", body = serde_json::Value),
-        (status = 503, description = "No reloadable filter installed.", body = serde_json::Value)
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 503, description = "No reloadable filter installed (defensive; the live router mounts this route only when a reloadable filter is present).", body = serde_json::Value)
     )
 )]
 #[allow(clippy::unused_async)]
@@ -386,16 +440,21 @@ async fn loggers_get(State(s): State<ManagementState>) -> Response {
     }
 }
 
-/// Swap the live log filter. Body: `{"filter": "ehrbase=debug,sqlx=warn"}`. 400
-/// on a parse error, 503 when no reloadable filter is installed. Access-level
-/// gated.
+/// Swap the live log filter (`POST /management/loggers`).
+///
+/// Body: `{"filter": "ehrbase=debug,sqlx=warn"}`. Access-level gated by the
+/// `loggers` endpoint's configured [`AccessLevel`]; the live [`router`] mounts
+/// this route only when the endpoint is opted in AND a reloadable filter is
+/// installed (otherwise absent — a router `404`).
 #[utoipa::path(
     post, path = "/management/loggers", tag = "management",
     request_body(content = serde_json::Value, description = "`{\"filter\": \"<env-filter directives>\"}`"),
     responses(
-        (status = 200, description = "Filter applied.", body = serde_json::Value),
-        (status = 400, description = "Malformed filter directives.", body = serde_json::Value),
-        (status = 503, description = "No reloadable filter installed.", body = serde_json::Value)
+        (status = 200, description = "Filter applied; the new effective filter is returned.", body = serde_json::Value),
+        (status = 400, description = "Malformed `env-filter` directives (parse error).", body = serde_json::Value),
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 503, description = "No reloadable filter installed (defensive; the live router mounts this route only when a reloadable filter is present).", body = serde_json::Value)
     )
 )]
 #[allow(clippy::unused_async)]
@@ -409,13 +468,18 @@ async fn loggers_post(
     }
 }
 
-/// Reset the log filter to the boot filter. 503 when no reloadable filter is
-/// installed. Access-level gated.
+/// Reset the log filter to the boot filter (`DELETE /management/loggers`).
+///
+/// Access-level gated by the `loggers` endpoint's configured [`AccessLevel`];
+/// the live [`router`] mounts this route only when the endpoint is opted in AND
+/// a reloadable filter is installed (otherwise absent — a router `404`).
 #[utoipa::path(
     delete, path = "/management/loggers", tag = "management",
     responses(
-        (status = 200, description = "Filter reset to boot value.", body = serde_json::Value),
-        (status = 503, description = "No reloadable filter installed.", body = serde_json::Value)
+        (status = 200, description = "Filter reset to the boot value; the restored filter is returned.", body = serde_json::Value),
+        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
+        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
+        (status = 503, description = "No reloadable filter installed (defensive; the live router mounts this route only when a reloadable filter is present).", body = serde_json::Value)
     )
 )]
 #[allow(clippy::unused_async)]

@@ -15,6 +15,27 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+- The served OpenAPI document now describes the COMPLETE wire for every
+  operation (162 declarations across all API groups): every path/query
+  parameter, request headers (`Prefer` incl. `return=identifier`, required
+  `If-Match` forms, the committal headers), every reachable status code
+  with its exact trigger, and the load-bearing response headers (weak
+  `ETag`, `Location`, `Last-Modified`) — audited operation-by-operation
+  against the vendored ITS-REST specification (both the operation
+  definitions and the normative overview rules). A structural completeness
+  test now gates the document.
+- A disabled Admin API now answers `405 Method Not Allowed` (the status the
+  ITS-REST specification declares for a disabled admin operation) instead
+  of `404`.
+- COMPOSITION and EHR_STATUS tag updates now honour the `Prefer` header as
+  the specification defines: the default (`return=minimal`) returns
+  `204 No Content`; `return=representation` returns `200` with the stored
+  tag list. Previously the stored list was always returned with `200`.
+- Demographic responses now carry `Last-Modified` (from the version's
+  commit time) alongside the weak `ETag`; PARTY_RELATIONSHIP create/update
+  honour `Prefer: return=identifier`.
+
 ### Added
 - Admin console: the Directory tab is now a complete directory experience —
   a structured folder-tree editor (add/rename/remove sub-folders, attach and

@@ -57,16 +57,17 @@ async fn run(
     parts: RequestParts,
 ) -> Result<Response, RestError> {
     // Config gate: the ADMIN API is opt-in. When disabled every admin route
-    // answers 404 (as if unmounted) without consulting the backend.
-    //
-    // NOTE: mirrors EHRbase's `ADMINAPI_ACTIVE` prior art — an inactive
-    // admin surface simply has no such endpoint (a 404), never a 403.
+    // answers `405 Method Not Allowed` — the status the ITS-REST OAS itself
+    // declares for a disabled admin operation
+    // (`operations/admin_ehr_delete_all.yaml`: "may be disabled in production
+    // environments, in which case server may respond with 405", with
+    // `responses/405.yaml` enumerated), rendered with the openEHR error body.
     if !state.config().admin.enabled {
-        return Err(RestError(ApiError::NotFound(
-            "admin API is disabled".to_owned(),
-        )));
+        return Ok(crate::overview::error::status_error_response(
+            http::StatusCode::METHOD_NOT_ALLOWED,
+            "the admin API is disabled on this server",
+        ));
     }
-
     let h = &parts.headers;
     let q = parts.query.as_deref();
 
