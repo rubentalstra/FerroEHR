@@ -11,7 +11,17 @@ Validation catalogue split (the V-codes):
 - `master08-validation.adoc` = the ORCHESTRATION chapter: lists every code by
   the 3 phases (Phase 1 basic integrity / Phase 2 vs flat parent / Phase 3 flat
   form) with a one-line meaning each, plus flattening/diffing prose. It does NOT
-  give full normative text for most codes.
+  give full normative text for most codes. It is a PROSE bullet list under
+  `====` sub-headings (Basic checks / AUTHORED_ARCHETYPE meta-data checks /
+  Definition Structure Validation / Basic Terminology Validation / Various
+  Structure Validation / Code Validation / Validate Annotations), NOT a table.
+  CRITICAL: master08 carries NO severity column/markings — Error vs Warning is
+  NOT stated here (inferable only from the V/W name prefix). W-codes WACMCL,
+  WOUC, WOSU, WOTC are ABSENT from master08 entirely; so is VSONIF (its full
+  text + the phase-2 sibling-identity role live in master04.5 line 356-357,
+  where it forward-references VACMI which is itself undefined tree-wide — an
+  archie/spec-draft dangling ref). VRDLA + "resource description language"
+  phrase: absent tree-wide (archie-only).
 - Full normative text of each code is scattered in the CLASS-DEFINITION files:
   - `master03-archetype_package.adoc` §Validity Rules → ARCHETYPE-level codes
     (VARAV VARRV VARCN VATDF VACDF VATDA VETDF VOTM VOKU VARDT VRANP VRRLP VARID
