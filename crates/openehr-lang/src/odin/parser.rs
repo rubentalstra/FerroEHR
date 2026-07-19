@@ -152,28 +152,40 @@ fn rm_type_id<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 fn primitive_object<'a>() -> impl Parser<'a, &'a [Token], OdinValue, Err<'a>> + Clone {
     let leaf = leaf_value();
 
-    // primitive_value | primitive_list_value: a single leaf, or 2+ comma-
-    // separated leaves, or a single leaf followed by `, ...` (open list).
+    // primitive_value | primitive_list_value: a single leaf (scalar), or a
+    // comma-separated list of leaves, optionally left open with a trailing
+    // `, ...` continuation marker. Per `master07` §"Lists of Built-in Types",
+    // `...` is the open-list continuation marker: a single-datum list `v, ...`
+    // *requires* it (to distinguish the list from a bare scalar `v`), and a
+    // multi-datum list `v1, v2, ..., vn, ...` may equally be left open with it
+    // (as the published CIMI reference-model schemas do). The `odin_values.g4`
+    // `string_list_value : v ( (',' v)+ | ',' SYM_LIST_CONTINUE )` encoding
+    // admits only the single-datum-plus-continue and the closed-multi forms;
+    // the general `v (',' v)* (',' '...')?` accepted here is a strict superset
+    // that additionally admits the open multi-datum list the spec prose
+    // describes. A bare leaf with no following comma stays a scalar.
     let list = leaf
         .clone()
         .then(
-            choice((
-                just(Token::Comma)
-                    .ignore_then(leaf.clone())
-                    .repeated()
-                    .at_least(1)
-                    .collect::<Vec<OdinValue>>(),
-                just(Token::Comma)
-                    .ignore_then(just(Token::ListContinue))
-                    .to(vec![OdinValue::ListContinue]),
-            ))
-            .or_not(),
+            just(Token::Comma)
+                .ignore_then(leaf.clone())
+                .repeated()
+                .collect::<Vec<OdinValue>>(),
         )
-        .map(|(first, rest)| match rest {
-            None => first,
-            Some(mut more) => {
+        .then(
+            just(Token::Comma)
+                .ignore_then(just(Token::ListContinue))
+                .or_not(),
+        )
+        .map(|((first, mut more), open)| {
+            if more.is_empty() && open.is_none() {
+                first
+            } else {
                 let mut v = vec![first];
                 v.append(&mut more);
+                if open.is_some() {
+                    v.push(OdinValue::ListContinue);
+                }
                 OdinValue::List(v)
             }
         });
