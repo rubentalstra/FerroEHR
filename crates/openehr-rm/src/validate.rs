@@ -82,21 +82,55 @@ pub(crate) fn is_integral(v: f64) -> bool {
     v.is_finite() && v.floor() == v
 }
 
+// ── named runtime realizations of the BMM assertion-dialect predicates ────────
+//
+// These are the callable runtime helpers the assertion-dialect emitter maps its
+// leaf predicates onto (the `plan::overrides` dialect table names each). They
+// were previously inlined into the invariant cores below; extracting them under
+// the BMM predicate spelling makes the emitter's future generated cores call one
+// named runtime function per dialect predicate. Behaviour is identical to the
+// former inline forms.
+
+/// BASE/RM `valid_magnitude_status (s)`: `s` is one of `= < > <= >= ~` — the
+/// DV_QUANTIFIED `Magnitude_status_valid` predicate
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_quantified.adoc`).
+#[must_use]
+pub(crate) fn valid_magnitude_status(s: &str) -> bool {
+    matches!(s, "=" | "<" | ">" | "<=" | ">=" | "~")
+}
+
+/// RM `valid_percentage (v)`: `0 <= v <= 100` — the DV_AMOUNT `Accuracy_validity`
+/// predicate for a percent-recorded accuracy
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_amount.adoc`).
+#[must_use]
+pub(crate) fn valid_percentage(v: f64) -> bool {
+    (0.0..=100.0).contains(&v)
+}
+
+/// RM `valid_proportion_kind (k)`: `k` is one of the PROPORTION_KIND codes
+/// `0..=4` (ratio, unitary, percent, fraction, integer_fraction) — the
+/// DV_PROPORTION `Type_validity` predicate
+/// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.proportion_kind.adoc`).
+#[must_use]
+pub(crate) fn valid_proportion_kind(k: i32) -> bool {
+    (0..=4).contains(&k)
+}
+
 /// DV_QUANTIFIED `Magnitude_status_valid`: if present, `magnitude_status` must
-/// be one of `= < > <= >= ~` (archie `DvQuantified.VALID_MAGNITUDE_STATUS_CODES`).
+/// be one of `= < > <= >= ~` (`valid_magnitude_status`).
 pub(crate) fn push_magnitude_status_valid(
     out: &mut Vec<InvariantViolation>,
     rm_type: &str,
     magnitude_status: Option<&str>,
 ) {
     if let Some(s) = magnitude_status
-        && !matches!(s, "=" | "<" | ">" | "<=" | ">=" | "~")
+        && !valid_magnitude_status(s)
     {
         out.push(invariant_failed("Magnitude_status_valid", rm_type));
     }
 }
 
-/// The DV_AMOUNT invariants (`Accuracy_is_percent_validity`, `Accuracy_valid`)
+/// The DV_AMOUNT invariants (`Accuracy_is_percent_validity`, `Accuracy_validity`)
 /// plus the inherited DV_QUANTIFIED `Magnitude_status_valid`. Shared by every
 /// concrete DV_AMOUNT descendant (DV_QUANTITY, DV_COUNT, DV_DURATION,
 /// DV_PROPORTION) — mirrors archie `DvAmount` / `DvQuantified`.
@@ -112,12 +146,12 @@ pub(crate) fn push_dv_amount_invariants(
     if accuracy == Some(0.0) && accuracy_is_percent == Some(true) {
         out.push(invariant_failed("Accuracy_is_percent_validity", rm_type));
     }
-    // Accuracy_valid: recorded as percent implies 0 <= accuracy <= 100.
+    // Accuracy_validity: recorded as percent implies 0 <= accuracy <= 100.
     if accuracy_is_percent == Some(true)
         && let Some(a) = accuracy
-        && !(0.0..=100.0).contains(&a)
+        && !valid_percentage(a)
     {
-        out.push(invariant_failed("Accuracy_valid", rm_type));
+        out.push(invariant_failed("Accuracy_validity", rm_type));
     }
     push_magnitude_status_valid(out, rm_type, magnitude_status);
 }
@@ -135,9 +169,11 @@ pub(crate) fn push_archetype_node_id_valid(
     }
 }
 
-/// The shared ENTRY-root invariants (archie `Is_archetypeRoot` on every
-/// concrete ENTRY subtype + inherited LOCATABLE `Archetype_node_id_valid`):
-/// an ENTRY is an archetype root, so `archetype_details` must be present.
+/// The shared ENTRY-root invariants (BMM `ENTRY.Is_archetype_root` — `is_archetype_root`
+/// — on every concrete ENTRY subtype + inherited LOCATABLE `Archetype_node_id_valid`):
+/// an ENTRY is an archetype root, so `archetype_details` must be present (openEHR
+/// derives `is_archetype_root` from `archetype_details /= Void`,
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`).
 /// One core for the typed `Validate` impls and the value-level fast path.
 pub(crate) fn push_entry_root_invariants(
     out: &mut Vec<InvariantViolation>,
@@ -146,7 +182,7 @@ pub(crate) fn push_entry_root_invariants(
     archetype_node_id: &str,
 ) {
     if !has_archetype_details {
-        out.push(invariant_failed("Is_archetypeRoot", rm_type));
+        out.push(invariant_failed("Is_archetype_root", rm_type));
     }
     push_archetype_node_id_valid(out, rm_type, archetype_node_id);
 }

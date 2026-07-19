@@ -1,6 +1,6 @@
 //! Hand-written RM class invariants for `ADMIN_ENTRY`.
 //!
-//! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
+//! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,
 //! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 
 use crate::composition::content::entry::admin_entry::AdminEntry;
@@ -100,7 +100,7 @@ mod tests {
         assert!(
             a.invariants()
                 .iter()
-                .any(|m| m.message == "Invariant Is_archetypeRoot failed on type ADMIN_ENTRY")
+                .any(|m| m.message == "Invariant Is_archetype_root failed on type ADMIN_ENTRY")
         );
     }
 }

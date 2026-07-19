@@ -16,6 +16,17 @@ workflow refuses a tag that has no matching section here.
 ## [Unreleased]
 
 ### Changed
+- **RM validation invariant messages now carry the spec's (BMM) invariant
+  names.** Three class-invariant violation messages were reconciled from their
+  inherited archie spellings to the openEHR BMM invariant names, so a `422`
+  validation payload reporting one of them changes text: `Accuracy_valid` →
+  `Accuracy_validity` (DV_AMOUNT and its descendants — DV_QUANTITY, DV_COUNT,
+  DV_DURATION, DV_PROPORTION), `Is_archetypeRoot` → `Is_archetype_root` (the
+  ENTRY subtypes — OBSERVATION, EVALUATION, INSTRUCTION, ACTION, ADMIN_ENTRY),
+  and `Location_validity` → `location_valid` (EVENT_CONTEXT). The check logic
+  and HTTP status codes are unchanged; only the invariant name inside the
+  `Invariant <name> failed on type <TYPE>` message differs.
+
 - **Canonical-JSON codec cutover.** The openEHR spec types are now
   (de)serialized to/from canonical JSON entirely by a native emitted
   `ToJson`/`FromJson` codec in `openehr-its` — the spec types (`openehr-base`,

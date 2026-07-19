@@ -192,6 +192,13 @@ fn classify_leaf(toks: &[String]) -> Bucket {
     if toks.iter().any(|t| t == "|") {
         return Bucket::Complex("lambda predicate");
     }
+    // A boolean-returning *method* call (a BMM function, not a stored property):
+    // the emitter has no field to project it from, so it is not mechanically
+    // evaluable. `is_empty`/`empty` are handled as the recognised emptiness
+    // methods below; `is_justified` (ITEM_TAG) is a real function call.
+    if has(".is_justified") {
+        return Bucket::Complex("boolean method call (a BMM function, not a field)");
+    }
     if has(".diff") || has(".to_seconds") || has(".mod") || has(".floor") || has(".item") {
         return Bucket::Complex("cross-object arithmetic / navigation");
     }
@@ -375,6 +382,18 @@ mod tests {
             classify("source /= Void and then source.relationships.has (self)"),
             Bucket::Complex(_)
         ));
+    }
+
+    /// A boolean *method* call (`key.is_justified`, `ITEM_TAG` `Inv_key_valid`)
+    /// is Complex — the emitter has no field to project it from — so the whole
+    /// `and` is Complex even though `not key.is_empty` alone would emit.
+    #[test]
+    fn boolean_method_call_is_complex() {
+        assert!(matches!(
+            classify("not key.is_empty and key.is_justified"),
+            Bucket::Complex(_)
+        ));
+        assert!(matches!(classify("key.is_justified"), Bucket::Complex(_)));
     }
 
     /// An implies whose consequent needs a hook is hook-missing, not emitted:

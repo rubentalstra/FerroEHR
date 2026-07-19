@@ -322,9 +322,12 @@ fn invariant_classification_is_a_total_tripartition() {
     // The RM 1.2.0 BMM carries exactly 155 class invariants.
     assert_eq!(total, 155, "RM 1.2.0 invariant count changed");
     // Pinned tripartition (design doc §4 R5): a change here is deliberate.
-    assert_eq!(emitted, 91, "EMITTED count drifted");
+    // ITEM_TAG.Inv_key_valid is COMPLEX, not EMITTED: `key.is_justified` is a
+    // boolean-returning BMM function (a method call), which the assertion-dialect
+    // emitter cannot project from a field — so 90 emitted / 31 complex (R5b).
+    assert_eq!(emitted, 90, "EMITTED count drifted");
     assert_eq!(hook, 34, "RUNTIME-HOOK-MISSING count drifted");
-    assert_eq!(complex, 30, "COMPLEX count drifted");
+    assert_eq!(complex, 31, "COMPLEX count drifted");
 
     // A non-emitted row always names its reason; an emitted row never does.
     for r in &rows {
