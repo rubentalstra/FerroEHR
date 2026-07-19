@@ -4,11 +4,9 @@
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::text::dv_text::DvText;
-use openehr_derive::OpenEhrType;
 
 /// Defines a named range to be associated with any `DV_ORDERED` datum. Each such range is particular to the patient and context, e.g. sex, age, and any other factor which affects ranges. May be used to represent normal, therapeutic, dangerous, critical etc ranges.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "REFERENCE_RANGE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ReferenceRange {
     /// Term whose value indicates the meaning of this range, e.g.  normal,  critical,  therapeutic  etc.
     pub meaning: DvText,

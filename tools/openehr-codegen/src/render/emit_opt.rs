@@ -179,7 +179,6 @@ pub(crate) struct OptModel<'a> {
 struct OptField {
     xml: XmlField,
     decl_type: String,
-    rename: Option<String>,
 }
 
 impl<'a> OptModel<'a> {
@@ -301,7 +300,6 @@ impl<'a> OptModel<'a> {
         let mut out = Vec::new();
         for a in &attrs {
             let rust_name = naming::field_ident(&a.name);
-            let rename = naming::serde_rename(&a.name, &rust_name);
             let decl_type = if a.required {
                 "String".to_string()
             } else {
@@ -318,13 +316,11 @@ impl<'a> OptModel<'a> {
                     default: None,
                 },
                 decl_type,
-                rename,
             });
         }
         for e in &elems {
             let res = self.resolve(&e.type_name);
             let rust_name = naming::field_ident(&e.name);
-            let rename = naming::serde_rename(&e.name, &rust_name);
             let (base, target) = Self::base_decl(&res, &e.type_name);
             let is_hash = matches!(res, Resolved::Hash);
             let is_gen_enum = matches!(res, Resolved::Gen(_, true));
@@ -386,7 +382,6 @@ impl<'a> OptModel<'a> {
             out.push(OptField {
                 xml: xml_field,
                 decl_type,
-                rename,
             });
         }
         out
@@ -450,9 +445,9 @@ impl<'a> OptModel<'a> {
                     continue;
                 }
                 b.push_str(&doc);
-                b.push_str(
-                    "#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]\n",
-                );
+                // OPT 1.4 is an XML-only model (`ToXml`/`FromXml`); it carries no
+                // serde — the OPT types are plain data records parsed from XML.
+                b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
                 let _ = writeln!(b, "pub enum {rust} {{");
                 for d in &descendants {
                     let ident = naming::type_name(d);
@@ -461,14 +456,9 @@ impl<'a> OptModel<'a> {
                 b.push_str("}\n\n");
             } else {
                 b.push_str(&doc);
-                b.push_str(
-                    "#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]\n",
-                );
+                b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
                 let _ = writeln!(b, "pub struct {rust} {{");
                 for f in self.fields(spec) {
-                    if let Some(rename) = &f.rename {
-                        let _ = writeln!(b, "    #[serde(rename = \"{rename}\")]");
-                    }
                     let _ = writeln!(b, "    pub {}: {},", f.xml.rust_name, f.decl_type);
                 }
                 b.push_str("}\n\n");

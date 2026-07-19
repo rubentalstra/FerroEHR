@@ -3,11 +3,9 @@
 
 use crate::am14::aom14::archetype::assertion::assertion::Assertion;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint describing a  slot' where another archetype can occur.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ARCHETYPE_SLOT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeSlot {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

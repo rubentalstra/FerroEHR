@@ -59,8 +59,8 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
         audit: UpdateAudit {
             change_type: term(change_code),
             description: None,
-            committer: serde_json::from_value::<PartyProxy>(
-                json!({ "_type": "PARTY_IDENTIFIED", "name": "branching tester" }),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "branching tester" }),
             )
             .expect("committer"),
             system_id: None,
@@ -227,7 +227,7 @@ async fn import_foreign(
     let target = ehrbase::ids::EhrId::new();
     svc.import_ehr(
         Some(target),
-        serde_json::from_value(extract).expect("EXTRACT deserializes"),
+        openehr_its::json::from_canonical_value(&extract).expect("EXTRACT deserializes"),
     )
     .await
     .expect("import_ehr");
@@ -392,7 +392,8 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
     // import is first-class).
     let mut extracts = svc
         .export_ehr_extracts(
-            serde_json::from_value(all_versions_spec(target)).expect("EXTRACT_SPEC"),
+            openehr_its::json::from_canonical_value(&all_versions_spec(target))
+                .expect("EXTRACT_SPEC"),
         )
         .await
         .expect("re-export (all versions)");
@@ -407,7 +408,7 @@ async fn a_version_tree_with_branches_reexports_and_reimports_whole() {
     third_svc
         .import_ehr(
             Some(third),
-            serde_json::from_value(extracts.remove(0)).expect("EXTRACT"),
+            openehr_its::json::from_canonical_value(&extracts.remove(0)).expect("EXTRACT"),
         )
         .await
         .expect("re-import of a branched, multi-system version tree");

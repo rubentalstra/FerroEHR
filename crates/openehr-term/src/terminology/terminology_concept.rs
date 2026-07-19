@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::terminology::terminology_status::TerminologyStatus;
-use openehr_derive::OpenEhrType;
 
 /// A single terminology concept in a vocabulary.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TERMINOLOGY_CONCEPT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TerminologyConcept {
     /// The code of this concept.
     pub id: String,

@@ -12,8 +12,9 @@ publish = false
 [dependencies]
 openehr-base = { path = "../openehr-base" }
 openehr-lang = { path = "../openehr-lang" }
-openehr-derive.workspace = true
-serde.workspace = true
+# No serde derive on the spec types (the native codec in `openehr-its` owns the
+# wire). `serde_json` is kept for the untyped `Value` fields the generator emits
+# for cross-schema-`Any` slots.
 serde_json.workspace = true
 
 [lints]

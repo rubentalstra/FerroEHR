@@ -4,11 +4,9 @@
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of `BMM_GENERIC_PROPERTY`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_GENERIC_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmGenericProperty {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

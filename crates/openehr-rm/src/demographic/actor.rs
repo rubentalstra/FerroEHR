@@ -4,51 +4,13 @@ use crate::demographic::agent::Agent;
 use crate::demographic::group::Group;
 use crate::demographic::organisation::Organisation;
 use crate::demographic::person::Person;
-use serde::Serialize;
 
 /// Ancestor of all real-world types, including people and organisations. An actor is any real-world entity capable of taking on a role.
 /// Closed subtype set of `ACTOR`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Actor {
     Agent(Agent),
     Group(Group),
     Organisation(Organisation),
     Person(Person),
-}
-
-impl<'de> ::serde::Deserialize<'de> for Actor {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("AGENT") => ::core::result::Result::Ok(Self::Agent(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("GROUP") => ::core::result::Result::Ok(Self::Group(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("ORGANISATION") => {
-                ::core::result::Result::Ok(Self::Organisation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("PERSON") => ::core::result::Result::Ok(Self::Person(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "ACTOR: missing required `_type` on polymorphic slot (expected one of: AGENT, GROUP, ORGANISATION, PERSON)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "ACTOR: unexpected `_type` {__other:?} (expected one of: AGENT, GROUP, ORGANISATION, PERSON)"
-                )))
-            }
-        }
-    }
 }

@@ -21,7 +21,9 @@
 mod common;
 
 use common::{corpus_files, excluded};
-use openehr_its::json::validate_canonical;
+use openehr_its::json::{
+    from_canonical_json, to_canonical_json, to_canonical_value, validate_canonical,
+};
 use openehr_rm::prelude::{Composition, Contribution, EhrStatus, Folder, ItemTree};
 use std::fs;
 use std::path::Path;
@@ -31,8 +33,8 @@ use std::path::Path;
 fn deserialize_as(ty: &str, json: &str) -> Result<(), String> {
     macro_rules! roundtrip {
         ($T:ty) => {{
-            let v: $T = serde_json::from_str(json).map_err(|e| e.to_string())?;
-            serde_json::to_string(&v).map_err(|e| e.to_string())?;
+            let v: $T = from_canonical_json(json).map_err(|e| e.to_string())?;
+            let _ = to_canonical_json(&v);
             Ok(())
         }};
     }
@@ -51,8 +53,8 @@ fn deserialize_as(ty: &str, json: &str) -> Result<(), String> {
 fn reserialize(ty: &str, json: &str) -> Result<serde_json::Value, String> {
     macro_rules! rt {
         ($T:ty) => {{
-            let v: $T = serde_json::from_str(json).map_err(|e| e.to_string())?;
-            serde_json::to_value(&v).map_err(|e| e.to_string())
+            let v: $T = from_canonical_json(json).map_err(|e| e.to_string())?;
+            Ok(to_canonical_value(&v))
         }};
     }
     match ty {

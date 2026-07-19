@@ -7,11 +7,9 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::ehr::ehr_access::EhrAccess;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// Form of `X_VERSIONED_OBJECT` for `EHR_ACCESS` EHR object.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "X_VERSIONED_EHR_ACCESS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct XVersionedEhrAccess {
     // inherited: X_VERSIONED_OBJECT
     /// Uid of original `VERSIONED_OBJECT`.

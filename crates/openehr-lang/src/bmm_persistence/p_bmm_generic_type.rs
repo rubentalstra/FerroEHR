@@ -3,11 +3,9 @@
 
 use crate::bmm_persistence::p_bmm_type::PBmmType;
 use crate::bmm3::core::entity::bmm_generic_type::BmmGenericType;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of `BMM_GENERIC_TYPE`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_GENERIC_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmGenericType {
     /// Result of `_create_bmm_type()_` call.
     pub bmm_type: Option<BmmGenericType>,

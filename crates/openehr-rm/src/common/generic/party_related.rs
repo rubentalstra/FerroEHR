@@ -4,11 +4,9 @@
 use crate::data_types::basic::dv_identifier::DvIdentifier;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_base::prelude::PartyRef;
-use openehr_derive::OpenEhrType;
 
 /// Proxy type for identifying a party and its relationship to the subject of the record. Use where the relationship between the party and the subject of the record must be known.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "PARTY_RELATED")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PartyRelated {
     // inherited: PARTY_PROXY
     /// Optional reference to more detailed demographic or identification information for this party, in an external system.

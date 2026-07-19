@@ -50,8 +50,8 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
         audit: UpdateAudit {
             change_type: term(change_code),
             description: None,
-            committer: serde_json::from_value::<PartyProxy>(
-                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
             system_id: None,
@@ -181,7 +181,7 @@ async fn export_ehr_extracts_honours_item_list_and_all_versions() {
 
     // Request only the EHR_STATUS version container, all versions, with revision
     // history.
-    let spec: ExtractSpec = serde_json::from_value(json!({
+    let spec: ExtractSpec = openehr_its::json::from_canonical_value(&json!({
         "_type": "EXTRACT_SPEC",
         "version_spec": {
             "_type": "EXTRACT_VERSION_SPEC",
@@ -299,7 +299,7 @@ async fn extract_spec_flags_are_honoured() {
         "include_multimedia": true, "priority": 0, "link_depth": 0, "criteria": []
     });
     let err = svc
-        .export_ehr_extracts(serde_json::from_value(spec.clone()).expect("spec"))
+        .export_ehr_extracts(openehr_its::json::from_canonical_value(&spec).expect("spec"))
         .await
         .expect_err("an extract_type outside the group must be rejected");
     assert!(
@@ -313,7 +313,7 @@ async fn extract_spec_flags_are_honoured() {
     spec["extract_type"]["defining_code"]["code_string"] = json!("openehr-ehr");
     spec["include_multimedia"] = json!(false);
     let extracts = svc
-        .export_ehr_extracts(serde_json::from_value(spec).expect("spec"))
+        .export_ehr_extracts(openehr_its::json::from_canonical_value(&spec).expect("spec"))
         .await
         .expect("export");
     let wire = serde_json::to_string(&extracts[0]).unwrap();
@@ -328,7 +328,7 @@ async fn extract_spec_flags_are_honoured() {
     let err = svc
         .import_ehr(
             Some(ehrbase::ids::EhrId::new()),
-            serde_json::from_value(extract).expect("extract"),
+            openehr_its::json::from_canonical_value(&extract).expect("extract"),
         )
         .await
         .expect_err("masked item carrying content must be rejected");

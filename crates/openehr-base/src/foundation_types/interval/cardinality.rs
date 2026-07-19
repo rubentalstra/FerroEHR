@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::foundation_types::interval::multiplicity_interval::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Express constraints on the cardinality of container objects which are the values of multiply-valued attributes, including uniqueness and ordering, providing the means to state that a container acts like a logical list, set or bag.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "Cardinality")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Cardinality {
     /// The interval of this cardinality.
     pub interval: MultiplicityInterval,

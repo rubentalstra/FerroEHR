@@ -6,11 +6,9 @@ use crate::common::generic::audit_details::AuditDetails;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::ObjectVersionId;
-use openehr_derive::OpenEhrType;
 
 /// A Version containing locally created content and optional attestations.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ORIGINAL_VERSION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OriginalVersion<T> {
     // inherited: VERSION
     /// Contribution in which this version was added.

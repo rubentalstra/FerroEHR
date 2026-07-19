@@ -2,12 +2,10 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmType;
 
 /// A routine local variable (writable).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_LOCAL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmLocal {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

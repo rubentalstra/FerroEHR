@@ -4,15 +4,13 @@
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::term_mapping::TermMapping;
 use crate::data_types::uri::dv_uri::DvUri;
-use openehr_derive::OpenEhrType;
 
 /// A text item whose value must be the rubric from a controlled terminology, the key (i.e. the 'code') of which is the `_defining_code_` attribute. In other words: a `DV_CODED_TEXT` is a combination of a `CODE_PHRASE` (effectively a code) and the rubric of that term, from a terminology service, in the language in which the data were authored.
 ///
 /// Since `DV_CODED_TEXT` is a subtype of `DV_TEXT`, it can be used in place of it, effectively allowing the type `DV_TEXT` to mean  a text item, which may optionally be coded.
 ///
 /// Misuse: If the intention is to represent a term code attached in some way to a fragment of plain text, `DV_CODED_TEXT` should not be used; instead use a `DV_TEXT` and a `TERM_MAPPING` to a `CODE_PHRASE`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_CODED_TEXT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvCodedText {
     // inherited: DV_TEXT
     /// Displayable rendition of the item, regardless of its underlying structure. For `DV_CODED_TEXT`, this is the rubric of the complete term as provided by the terminology service.

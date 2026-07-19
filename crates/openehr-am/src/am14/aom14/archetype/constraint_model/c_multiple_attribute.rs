@@ -4,11 +4,9 @@
 use crate::am14::aom14::archetype::constraint_model::c_object::CObject;
 use crate::am14::aom14::archetype::constraint_model::cardinality::Cardinality;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Concrete model of constraint on multiply-valued (ie. container) attribute node.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_MULTIPLE_ATTRIBUTE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CMultipleAttribute {
     // inherited: C_ATTRIBUTE
     /// Reference model attribute within the enclosing type represented by a C_OBJECT.

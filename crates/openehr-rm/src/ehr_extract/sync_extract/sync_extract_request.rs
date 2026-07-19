@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::ehr_extract::sync_extract::sync_extract_spec::SyncExtractSpec;
-use openehr_derive::OpenEhrType;
 
 /// Type of request designed for synchronisation of Contributions between openEHR servers.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "SYNC_EXTRACT_REQUEST")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SyncExtractRequest {
     /// Details of specification of synchronisation request.
     pub specification: SyncExtractSpec,

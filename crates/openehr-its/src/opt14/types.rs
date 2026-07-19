@@ -11,14 +11,14 @@
 )]
 
 /// openEHR AOM/OPT `ANNOTATION`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Annotation {
     pub path: String,
     pub items: indexmap::IndexMap<String, String>,
 }
 
 /// openEHR AOM/OPT `ARCHETYPE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Archetype {
     pub original_language: openehr_base::prelude::CodePhrase,
     pub is_controlled: Option<bool>,
@@ -36,7 +36,7 @@ pub struct Archetype {
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_CONSTRAINT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ArchetypeConstraint {
     ArchetypeInternalRef(ArchetypeInternalRef),
     ArchetypeSlot(ArchetypeSlot),
@@ -56,7 +56,7 @@ pub enum ArchetypeConstraint {
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_INTERNAL_REF`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeInternalRef {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -65,7 +65,7 @@ pub struct ArchetypeInternalRef {
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_ONTOLOGY`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeOntology {
     pub term_definitions: Vec<Codedefinitionset>,
     pub constraint_definitions: Vec<Codedefinitionset>,
@@ -74,7 +74,7 @@ pub struct ArchetypeOntology {
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_SLOT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeSlot {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -84,14 +84,14 @@ pub struct ArchetypeSlot {
 }
 
 /// openEHR AOM/OPT `ARCHETYPE_TERM`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeTerm {
     pub code: String,
     pub items: indexmap::IndexMap<String, String>,
 }
 
 /// openEHR AOM/OPT `ASSERTION`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assertion {
     pub tag: Option<String>,
     pub string_expression: Option<String>,
@@ -100,20 +100,20 @@ pub struct Assertion {
 }
 
 /// openEHR AOM/OPT `ASSERTION_VARIABLE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AssertionVariable {
     pub name: String,
     pub definition: String,
 }
 
 /// openEHR AOM/OPT `AUTHORED_RESOURCE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AuthoredResource {
     Archetype(Archetype),
 }
 
 /// openEHR AOM/OPT `CARDINALITY`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Cardinality {
     pub is_ordered: bool,
     pub is_unique: bool,
@@ -121,14 +121,14 @@ pub struct Cardinality {
 }
 
 /// openEHR AOM/OPT `CONSTRAINT_BINDING_ITEM`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ConstraintBindingItem {
     pub code: String,
     pub value: String,
 }
 
 /// openEHR AOM/OPT `CONSTRAINT_REF`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ConstraintRef {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -137,7 +137,7 @@ pub struct ConstraintRef {
 }
 
 /// openEHR AOM/OPT `C_ARCHETYPE_ROOT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CArchetypeRoot {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -150,14 +150,14 @@ pub struct CArchetypeRoot {
 }
 
 /// openEHR AOM/OPT `C_ATTRIBUTE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CAttribute {
     CMultipleAttribute(CMultipleAttribute),
     CSingleAttribute(CSingleAttribute),
 }
 
 /// openEHR AOM/OPT `C_BOOLEAN`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CBoolean {
     pub true_valid: bool,
     pub false_valid: bool,
@@ -165,7 +165,7 @@ pub struct CBoolean {
 }
 
 /// openEHR AOM/OPT `C_CODE_PHRASE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CCodePhrase {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -176,7 +176,7 @@ pub struct CCodePhrase {
 }
 
 /// openEHR AOM/OPT `C_CODE_REFERENCE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CCodeReference {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -188,7 +188,7 @@ pub struct CCodeReference {
 }
 
 /// openEHR AOM/OPT `C_COMPLEX_OBJECT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CComplexObject {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -197,7 +197,7 @@ pub struct CComplexObject {
 }
 
 /// openEHR AOM/OPT `C_DATE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDate {
     pub pattern: Option<String>,
     pub timezone_validity: Option<String>,
@@ -206,7 +206,7 @@ pub struct CDate {
 }
 
 /// openEHR AOM/OPT `C_DATE_TIME`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDateTime {
     pub pattern: Option<String>,
     pub timezone_validity: Option<String>,
@@ -215,7 +215,7 @@ pub struct CDateTime {
 }
 
 /// openEHR AOM/OPT `C_DEFINED_OBJECT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDefinedObject {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -223,7 +223,7 @@ pub struct CDefinedObject {
 }
 
 /// openEHR AOM/OPT `C_DOMAIN_TYPE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CDomainType {
     CCodePhrase(CCodePhrase),
     CCodeReference(CCodeReference),
@@ -233,7 +233,7 @@ pub enum CDomainType {
 }
 
 /// openEHR AOM/OPT `C_DURATION`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDuration {
     pub pattern: Option<String>,
     pub range: Option<Intervalofduration>,
@@ -241,7 +241,7 @@ pub struct CDuration {
 }
 
 /// openEHR AOM/OPT `C_DV_ORDINAL`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDvOrdinal {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -251,7 +251,7 @@ pub struct CDvOrdinal {
 }
 
 /// openEHR AOM/OPT `C_DV_QUANTITY`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDvQuantity {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -262,7 +262,7 @@ pub struct CDvQuantity {
 }
 
 /// openEHR AOM/OPT `C_DV_STATE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDvState {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -272,7 +272,7 @@ pub struct CDvState {
 }
 
 /// openEHR AOM/OPT `C_INTEGER`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CInteger {
     pub list: Vec<i32>,
     pub range: Option<Intervalofinteger>,
@@ -280,7 +280,7 @@ pub struct CInteger {
 }
 
 /// openEHR AOM/OPT `C_MULTIPLE_ATTRIBUTE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CMultipleAttribute {
     pub rm_attribute_name: String,
     pub existence: Intervalofinteger,
@@ -289,7 +289,7 @@ pub struct CMultipleAttribute {
 }
 
 /// openEHR AOM/OPT `C_OBJECT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CObject {
     ArchetypeInternalRef(ArchetypeInternalRef),
     ArchetypeSlot(ArchetypeSlot),
@@ -307,7 +307,7 @@ pub enum CObject {
 }
 
 /// openEHR AOM/OPT `C_PRIMITIVE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CPrimitive {
     CBoolean(CBoolean),
     CDate(CDate),
@@ -320,7 +320,7 @@ pub enum CPrimitive {
 }
 
 /// openEHR AOM/OPT `C_PRIMITIVE_OBJECT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CPrimitiveObject {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -329,7 +329,7 @@ pub struct CPrimitiveObject {
 }
 
 /// openEHR AOM/OPT `C_QUANTITY_ITEM`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CQuantityItem {
     pub magnitude: Option<Intervalofreal>,
     pub precision: Option<Intervalofinteger>,
@@ -337,7 +337,7 @@ pub struct CQuantityItem {
 }
 
 /// openEHR AOM/OPT `C_REAL`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CReal {
     pub list: Vec<f64>,
     pub range: Option<Intervalofreal>,
@@ -345,7 +345,7 @@ pub struct CReal {
 }
 
 /// openEHR AOM/OPT `C_SINGLE_ATTRIBUTE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CSingleAttribute {
     pub rm_attribute_name: String,
     pub existence: Intervalofinteger,
@@ -353,7 +353,7 @@ pub struct CSingleAttribute {
 }
 
 /// openEHR AOM/OPT `C_STRING`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CString {
     pub pattern: Option<String>,
     pub list: Vec<String>,
@@ -362,7 +362,7 @@ pub struct CString {
 }
 
 /// openEHR AOM/OPT `C_TIME`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CTime {
     pub pattern: Option<String>,
     pub timezone_validity: Option<String>,
@@ -371,21 +371,21 @@ pub struct CTime {
 }
 
 /// openEHR AOM/OPT `CodeDefinitionSet`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Codedefinitionset {
     pub language: String,
     pub items: Vec<ArchetypeTerm>,
 }
 
 /// openEHR AOM/OPT `ConstraintBindingSet`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Constraintbindingset {
     pub terminology: String,
     pub items: Vec<ConstraintBindingItem>,
 }
 
 /// openEHR AOM/OPT `EXPR_BINARY_OPERATOR`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprBinaryOperator {
     pub r#type: String,
     pub operator: String,
@@ -395,7 +395,7 @@ pub struct ExprBinaryOperator {
 }
 
 /// openEHR AOM/OPT `EXPR_ITEM`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprItem {
     ExprBinaryOperator(ExprBinaryOperator),
     ExprLeaf(ExprLeaf),
@@ -403,7 +403,7 @@ pub enum ExprItem {
 }
 
 /// openEHR AOM/OPT `EXPR_LEAF`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprLeaf {
     pub r#type: String,
     pub item: serde_json::Value,
@@ -411,14 +411,14 @@ pub struct ExprLeaf {
 }
 
 /// openEHR AOM/OPT `EXPR_OPERATOR`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprOperator {
     ExprBinaryOperator(ExprBinaryOperator),
     ExprUnaryOperator(ExprUnaryOperator),
 }
 
 /// openEHR AOM/OPT `EXPR_UNARY_OPERATOR`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprUnaryOperator {
     pub r#type: String,
     pub operator: String,
@@ -427,7 +427,7 @@ pub struct ExprUnaryOperator {
 }
 
 /// openEHR AOM/OPT `FLAT_ARCHETYPE_ONTOLOGY`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FlatArchetypeOntology {
     pub archetype_id: String,
     pub term_definitions: Vec<Codedefinitionset>,
@@ -437,7 +437,7 @@ pub struct FlatArchetypeOntology {
 }
 
 /// openEHR AOM/OPT `IntervalOfDate`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofdate {
     pub lower_included: Option<bool>,
     pub upper_included: Option<bool>,
@@ -448,7 +448,7 @@ pub struct Intervalofdate {
 }
 
 /// openEHR AOM/OPT `IntervalOfDateTime`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofdatetime {
     pub lower_included: Option<bool>,
     pub upper_included: Option<bool>,
@@ -459,7 +459,7 @@ pub struct Intervalofdatetime {
 }
 
 /// openEHR AOM/OPT `IntervalOfDuration`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofduration {
     pub lower_included: Option<bool>,
     pub upper_included: Option<bool>,
@@ -470,7 +470,7 @@ pub struct Intervalofduration {
 }
 
 /// openEHR AOM/OPT `IntervalOfInteger`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofinteger {
     pub lower_included: Option<bool>,
     pub upper_included: Option<bool>,
@@ -481,7 +481,7 @@ pub struct Intervalofinteger {
 }
 
 /// openEHR AOM/OPT `IntervalOfReal`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intervalofreal {
     pub lower_included: Option<bool>,
     pub upper_included: Option<bool>,
@@ -492,7 +492,7 @@ pub struct Intervalofreal {
 }
 
 /// openEHR AOM/OPT `IntervalOfTime`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Intervaloftime {
     pub lower_included: Option<bool>,
     pub upper_included: Option<bool>,
@@ -503,14 +503,14 @@ pub struct Intervaloftime {
 }
 
 /// openEHR AOM/OPT `NON_TERMINAL_STATE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NonTerminalState {
     pub name: String,
     pub transitions: Vec<Transition>,
 }
 
 /// openEHR AOM/OPT `OPERATIONAL_TEMPLATE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OperationalTemplate {
     pub language: openehr_base::prelude::CodePhrase,
     pub is_controlled: Option<bool>,
@@ -528,7 +528,7 @@ pub struct OperationalTemplate {
 }
 
 /// openEHR AOM/OPT `RESOURCE_DESCRIPTION`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescription {
     pub original_author: indexmap::IndexMap<String, String>,
     pub other_contributors: Vec<String>,
@@ -540,12 +540,11 @@ pub struct ResourceDescription {
 }
 
 /// openEHR AOM/OPT `RESOURCE_DESCRIPTION_ITEM`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescriptionItem {
     pub language: openehr_base::prelude::CodePhrase,
     pub purpose: String,
     pub keywords: Vec<String>,
-    #[serde(rename = "use")]
     pub use_: Option<String>,
     pub misuse: Option<String>,
     pub copyright: Option<String>,
@@ -554,33 +553,33 @@ pub struct ResourceDescriptionItem {
 }
 
 /// openEHR AOM/OPT `STATE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum State {
     NonTerminalState(NonTerminalState),
     TerminalState(TerminalState),
 }
 
 /// openEHR AOM/OPT `STATE_MACHINE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StateMachine {
     pub states: Vec<State>,
 }
 
 /// openEHR AOM/OPT `TERMINAL_STATE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TerminalState {
     pub name: String,
 }
 
 /// openEHR AOM/OPT `TERM_BINDING_ITEM`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TermBindingItem {
     pub code: String,
     pub value: openehr_base::prelude::CodePhrase,
 }
 
 /// openEHR AOM/OPT `TRANSITION`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Transition {
     pub event: String,
     pub action: Option<String>,
@@ -589,7 +588,7 @@ pub struct Transition {
 }
 
 /// openEHR AOM/OPT `TRANSLATION_DETAILS`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TranslationDetails {
     pub language: openehr_base::prelude::CodePhrase,
     pub author: indexmap::IndexMap<String, String>,
@@ -598,7 +597,7 @@ pub struct TranslationDetails {
 }
 
 /// openEHR AOM/OPT `T_ATTRIBUTE`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TAttribute {
     pub rm_attribute_name: String,
     pub children: Vec<TComplexObject>,
@@ -606,7 +605,7 @@ pub struct TAttribute {
 }
 
 /// openEHR AOM/OPT `T_COMPLEX_OBJECT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TComplexObject {
     pub rm_type_name: String,
     pub occurrences: Intervalofinteger,
@@ -616,13 +615,13 @@ pub struct TComplexObject {
 }
 
 /// openEHR AOM/OPT `T_CONSTRAINT`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TConstraint {
     pub attributes: Vec<TAttribute>,
 }
 
 /// openEHR AOM/OPT `TermBindingSet`.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Termbindingset {
     pub terminology: String,
     pub items: Vec<TermBindingItem>,

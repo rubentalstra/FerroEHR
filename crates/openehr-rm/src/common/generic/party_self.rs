@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::PartyRef;
-use openehr_derive::OpenEhrType;
 
 /// Party proxy representing the subject of the record. Used to indicate that the party is the owner of the record. May or may not have `_external_ref_` set.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "PARTY_SELF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PartySelf {
     // inherited: PARTY_PROXY
     /// Optional reference to more detailed demographic or identification information for this party, in an external system.

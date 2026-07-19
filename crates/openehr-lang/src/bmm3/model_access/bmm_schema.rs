@@ -4,11 +4,9 @@
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::model_access::bmm_include_spec::BmmIncludeSpec;
 use crate::bmm3::model_access::bmm_schema_state::BmmSchemaState;
-use openehr_derive::OpenEhrType;
 
 /// Abstract parent of any persistable form of a BMM model, e.g. `P_BMM_SCHEMA`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_SCHEMA")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmSchema {
     // inherited: BMM_MODEL_METADATA
     /// Publisher of model expressed in the schema.

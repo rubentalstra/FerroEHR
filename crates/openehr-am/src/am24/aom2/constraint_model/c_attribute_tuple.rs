@@ -3,11 +3,9 @@
 
 use crate::am24::aom2::constraint_model::c_attribute::CAttribute;
 use crate::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
-use openehr_derive::OpenEhrType;
 
 /// Object representing a constraint on an attribute tuple, i.e. a group of attributes that are constrained together. Typically used for representing co-varying constraints like `{units, range}` constraints.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_ATTRIBUTE_TUPLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CAttributeTuple {
     /// List of `C_ATTRIBUTEs` forming the definition of the tuple.
     pub members: Vec<CAttribute>,

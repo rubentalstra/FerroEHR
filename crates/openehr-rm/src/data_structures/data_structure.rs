@@ -6,61 +6,14 @@ use crate::data_structures::item_structure::item_single::ItemSingle;
 use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_structures::item_structure::item_table::ItemTable;
 use crate::data_structures::item_structure::item_tree::ItemTree;
-use serde::Serialize;
 
 /// Abstract parent class of all data structure types. Includes the `_as_hierarchy_` function which can generate the equivalent CEN EN13606 single hierarchy for each subtype's physical representation. For example, the physical representation of an `ITEM_LIST` is `List<ELEMENT>`; its implementation of `_as_hierarchy_` will generate a `CLUSTER` containing the set of `ELEMENT` nodes from the list.
 /// Closed subtype set of `DATA_STRUCTURE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataStructure {
     History(History<ItemStructure>),
     ItemList(ItemList),
     ItemSingle(ItemSingle),
     ItemTable(ItemTable),
     ItemTree(ItemTree),
-}
-
-impl<'de> ::serde::Deserialize<'de> for DataStructure {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("HISTORY") => ::core::result::Result::Ok(Self::History(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("ITEM_LIST") => {
-                ::core::result::Result::Ok(Self::ItemList(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("ITEM_SINGLE") => {
-                ::core::result::Result::Ok(Self::ItemSingle(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("ITEM_TABLE") => {
-                ::core::result::Result::Ok(Self::ItemTable(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("ITEM_TREE") => {
-                ::core::result::Result::Ok(Self::ItemTree(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "DATA_STRUCTURE: missing required `_type` on polymorphic slot (expected one of: HISTORY, ITEM_LIST, ITEM_SINGLE, ITEM_TABLE, ITEM_TREE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "DATA_STRUCTURE: unexpected `_type` {__other:?} (expected one of: HISTORY, ITEM_LIST, ITEM_SINGLE, ITEM_TABLE, ITEM_TREE)"
-                )))
-            }
-        }
-    }
 }

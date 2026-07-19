@@ -4,11 +4,9 @@
 use crate::common::change_control::original_version::OriginalVersion;
 use crate::common::generic::audit_details::AuditDetails;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// Versions whose content is an `ORIGINAL_VERSION` copied from another location; this class inherits `_commit_audit_` and `_contribution_` from `VERSION<T>`, providing imported versions with their own audit trail and Contribution, distinct from those of the imported `ORIGINAL_VERSION`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "IMPORTED_VERSION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ImportedVersion<T> {
     // inherited: VERSION
     /// Contribution in which this version was added.

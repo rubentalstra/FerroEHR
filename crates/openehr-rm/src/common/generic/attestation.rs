@@ -7,15 +7,13 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use crate::data_types::uri::dv_ehr_uri::DvEhrUri;
-use openehr_derive::OpenEhrType;
 
 /// Record an attestation of a party (the committer) to item(s) of record content. An attestation is an explicit signing by one healthcare agent of particular content for various particular purposes, including:
 ///
 /// * for authorisation of a controlled substance or procedure (e.g. sectioning of patient under mental health act);
 /// * witnessing of content by senior clinical professional;
 /// * indicating acknowledgement of content by intended recipient, e.g. GP who ordered a test result.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ATTESTATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Attestation {
     // inherited: AUDIT_DETAILS
     /// Identifier of the logical EHR system where the change was committed. This is almost always owned by the organisation legally responsible for the EHR, and is distinct from any application, or any hosting infrastructure.

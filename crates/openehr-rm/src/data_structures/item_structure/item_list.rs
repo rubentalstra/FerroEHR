@@ -7,15 +7,13 @@ use crate::common::archetyped::link::Link;
 use crate::data_structures::representation::element::Element;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Logical list data structure, where each item has a value and can be referred to by a name and a positional index in the list. The list may be empty.
 ///
 /// `ITEM_LIST` is used to represent any data which is logically a list of values, such as blood pressure, most protocols, many blood tests etc.
 ///
 /// Not to be used for time-based lists, which should be represented with the proper temporal class, i.e. `HISTORY`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ITEM_LIST")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ItemList {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

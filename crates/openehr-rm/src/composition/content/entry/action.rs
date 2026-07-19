@@ -14,11 +14,9 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Used to record a clinical action that has been performed, which may have been ad hoc, or due to the execution of an Activity in an Instruction workflow. Every Action corresponds to a careflow step of some kind or another.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ACTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Action {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

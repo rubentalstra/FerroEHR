@@ -3,11 +3,9 @@
 
 use crate::am14::aom14::archetype::primitive::c_primitive::CPrimitive;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on a primitive type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_PRIMITIVE_OBJECT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CPrimitiveObject {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

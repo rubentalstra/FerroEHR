@@ -2,14 +2,12 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
-use openehr_derive::OpenEhrType;
 
 /// Expression tree leaf item representing a reference to a value found in data at a location specified by a path in the archetype definition.
 ///
 /// * A path referring to a value in the archetype (paths with a leading ‘/’ are in the definition section.
 /// * Paths with no leading ‘/’ are in the outer part of the archetype, e.g. “archetype_id/value” refers to the String value of the archetype_id attribute of the enclosing archetype.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXPR_ARCHETYPE_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprArchetypeRef {
     pub item: ArchetypeConstraint,
     /// The path to the archetype node.

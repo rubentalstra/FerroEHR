@@ -13,7 +13,8 @@ use openehr_rm::prelude::Composition;
 fn composition_serializes_to_canonical_xml() {
     let json =
         include_str!("vendor/openehr_sdk/composition/canonical_json/minimal_evaluation.json");
-    let compo: Composition = serde_json::from_str(json).expect("deserialize composition JSON");
+    let compo: Composition =
+        openehr_its::json::from_canonical_json(json).expect("deserialize composition JSON");
     let xml = to_canonical_xml(&compo, "composition").expect("serialize to XML");
     println!("{xml}");
     assert!(xml.starts_with("<composition"), "root element");

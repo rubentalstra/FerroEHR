@@ -285,7 +285,7 @@ fn reject_duplicate_singleton_containers(containers: &[ImportContainer]) -> Resu
 fn parse_import_containers(
     extract: &Extract,
 ) -> Result<(Vec<ImportContainer>, Vec<ImportContainer>), SmError> {
-    let value = serde_json::to_value(extract).map_err(ServiceError::from)?;
+    let value = openehr_its::json::to_canonical_value(extract);
     let empty: Vec<Value> = Vec::new();
     let mut by_container: BTreeMap<VoId, ImportContainer> = BTreeMap::new();
     let mut parties: BTreeMap<VoId, ImportContainer> = BTreeMap::new();

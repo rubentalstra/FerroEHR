@@ -4,72 +4,13 @@ use crate::bmm3::core::literal_value::bmm_container_value::BmmContainerValue;
 use crate::bmm3::core::literal_value::bmm_indexed_container_value::BmmIndexedContainerValue;
 use crate::bmm3::core::literal_value::bmm_interval_value::BmmIntervalValue;
 use crate::bmm3::core::literal_value::bmm_primitive_value::BmmPrimitiveValue;
-use serde::Serialize;
 
 /// Meta-type for literal instance values declared in a model. Instance values may be inline values of primitive types in the usual fashion or complex objects in syntax form, e.g. JSON.
 /// Closed subtype set of `BMM_LITERAL_VALUE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmLiteralValue {
     BmmContainerValue(BmmContainerValue),
     BmmIndexedContainerValue(BmmIndexedContainerValue),
     BmmIntervalValue(BmmIntervalValue),
     BmmPrimitiveValue(BmmPrimitiveValue),
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmLiteralValue {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_CONTAINER_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmContainerValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmIndexedContainerValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INTEGER_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INTERVAL_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmIntervalValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_STRING_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "BMM_LITERAL_VALUE: missing required `_type` on polymorphic slot (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_LITERAL_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_CONTAINER_VALUE, BMM_INDEXED_CONTAINER_VALUE, BMM_INTEGER_VALUE, BMM_INTERVAL_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
-                )))
-            }
-        }
-    }
 }

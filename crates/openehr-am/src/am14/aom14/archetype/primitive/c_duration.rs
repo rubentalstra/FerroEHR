@@ -3,7 +3,6 @@
 
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Duration;
-use openehr_derive::OpenEhrType;
 
 /// ISO 8601-compatible constraint on instances of Duration. In ISO 8601 terms, constraints might are of the form “PWD” (weeks and/or days), “PDTHMS” (days, hours, minutes, seconds) and so on.
 ///
@@ -13,8 +12,7 @@ use openehr_derive::OpenEhrType;
 ///
 /// * the ‘W’ (week) designator can be mixed in - the allowed patterns are: `P[Y|y][M|m][D|d][T[H|h][M|m][S|s]]` and `P[W|w]`;
 /// * the values used in an interval constraint may be negated, i.e. a leading minus (`'-'`) sign may be used.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_DURATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDuration {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<Iso8601Duration>,

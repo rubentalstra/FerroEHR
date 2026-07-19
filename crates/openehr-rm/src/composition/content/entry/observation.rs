@@ -12,13 +12,11 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Entry subtype for all clinical data in the past or present, i.e. which (by the time it is recorded) has already occurred. `OBSERVATION` data is expressed using the class `HISTORY<T>`, which guarantees that it is situated in time. `OBSERVATION` is used for all notionally objective (i.e. measured in some way) observations of phenomena, and patient-reported phenomena, e.g. pain.
 ///
 /// Not to be used for recording opinion or future statements of any kind, including instructions, intentions, plans etc.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "OBSERVATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Observation {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

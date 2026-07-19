@@ -3,10 +3,8 @@
 
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_ERROR")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractError {
     pub request_id: Option<ObjectRef>,
     pub reason: DvText,

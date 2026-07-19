@@ -3,11 +3,9 @@
 
 use crate::bmm3::expression::el_expression::ElExpression;
 use crate::bmm3::expression::el_function_call::ElFunctionCall;
-use openehr_derive::OpenEhrType;
 
 /// Unary operator expression node.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_UNARY_OPERATOR")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElUnaryOperator {
     // inherited: EL_OPERATOR
     /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.

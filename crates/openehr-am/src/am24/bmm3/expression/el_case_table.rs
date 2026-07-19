@@ -3,15 +3,13 @@
 
 use crate::am24::bmm3::expression::el_case::ElCase;
 use crate::am24::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// Compound expression consisting of a list of value-range / expression pairs, and an  `_else_` member that as a whole, represents a case statement flavour of decision table.
 ///
 /// Evaluated by iterating through `_items_` and for each one, comparing `_input_` to the item `_value_range_`. If the `_input_` is in the range, the evaluation result of the table is that item's `_result_` evaluation result.
 ///
 /// If no member of `_items_` has a True-returning `_condition_`, the evaluation result is the result of evaluating the `_else_` expression.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_CASE_TABLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElCaseTable<T> {
     /// Members of the chain, equivalent to branches in an if/then/else chain and cases in a case statement.
     pub items: Vec<ElCase<T>>,

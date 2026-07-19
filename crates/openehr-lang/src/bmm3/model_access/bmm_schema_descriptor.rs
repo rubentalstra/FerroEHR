@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::model::bmm_model::BmmModel;
 use crate::bmm3::model_access::bmm_schema::BmmSchema;
-use openehr_derive::OpenEhrType;
 
 /// Descriptor for a BMM schema. Contains a meta-data table of attributes obtained from a mini-ODIN parse of the  schema file.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_SCHEMA_DESCRIPTOR")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmSchemaDescriptor {
     /// Persistent form of model.
     pub bmm_schema: Option<BmmSchema>,

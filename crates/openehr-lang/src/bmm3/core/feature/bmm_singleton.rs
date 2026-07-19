@@ -6,11 +6,9 @@ use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_feature_extension::BmmFeatureExtension;
 use crate::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for static value properties computed once by a function invocation.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_SINGLETON")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmSingleton {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

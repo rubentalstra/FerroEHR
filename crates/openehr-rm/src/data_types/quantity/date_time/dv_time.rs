@@ -6,13 +6,11 @@ use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_derive::OpenEhrType;
 
 /// Represents an absolute point in time from an origin usually interpreted as meaning the start of the current day, specified to a fraction of a second. Semantics defined by ISO 8601.
 ///
 /// Used for recording real world times, rather than scientifically measured fine amounts of time. The partial form is used for approximate times of events and substance administrations.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_TIME")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvTime {
     // inherited: DV_ORDERED
     /// Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.

@@ -3,11 +3,9 @@
 
 use crate::common::generic::audit_details::AuditDetails;
 use openehr_base::prelude::ObjectVersionId;
-use openehr_derive::OpenEhrType;
 
 /// An entry in a revision history, corresponding to a version from a versioned container. Consists of `AUDIT_DETAILS` instances with revision identifier of the revision to which the `AUDIT_DETAILS` instance belongs.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "REVISION_HISTORY_ITEM")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RevisionHistoryItem {
     /// Version identifier for this revision.
     pub version_id: ObjectVersionId,

@@ -3,13 +3,11 @@
 
 use crate::bmm3::expression::el_expression::ElExpression;
 use crate::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// Statement type representing an assignment from a value-generating source to a writable entity, i.e. a variable reference or property.
 ///
 /// At the meta-model level, may be understood as an initialisation of an existing meta-model instance.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_ASSIGNMENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmAssignment {
     /// The target variable on the notional left-hand side of this assignment.
     pub target: ElValueGenerator,

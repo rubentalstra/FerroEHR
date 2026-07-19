@@ -3,11 +3,9 @@
 
 use crate::bmm_persistence::p_bmm_container_type::PBmmContainerType;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of a function parameter whose type is a container type such as `List<T>`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_CONTAINER_FUNCTION_PARAMETER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmContainerFunctionParameter {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

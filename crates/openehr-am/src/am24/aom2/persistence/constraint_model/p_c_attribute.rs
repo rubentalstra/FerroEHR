@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::persistence::constraint_model::p_c_object::PCObject;
-use openehr_derive::OpenEhrType;
 
 /// Abstract model of constraint on any kind of attribute node.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_C_ATTRIBUTE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PCAttribute {
     /// Reference model attribute within the enclosing type represented by a C_OBJECT.
     pub rm_attribute_name: String,

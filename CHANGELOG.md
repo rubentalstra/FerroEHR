@@ -16,6 +16,19 @@ workflow refuses a tag that has no matching section here.
 ## [Unreleased]
 
 ### Changed
+- **Canonical-JSON codec cutover.** The openEHR spec types are now
+  (de)serialized to/from canonical JSON entirely by a native emitted
+  `ToJson`/`FromJson` codec in `openehr-its` — the spec types (`openehr-base`,
+  `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang`) no longer carry a
+  serde derive, and the `openehr-derive` proc-macro crate is removed. The wire
+  bytes are unchanged (proven by the R0 determinism manifest + the byte-hazard
+  gates); the only externally visible difference is the **error-message shape on
+  a malformed JSON request body** — the codec's parser reports `expected … at
+  line N column M` / `missing field … on …` diagnostics instead of the previous
+  serde phrasing (the HTTP status codes are unchanged: still `400`/`422`). A
+  present-but-`null` array field is now rejected as a type error (was silently
+  treated as an empty array), matching the strict tolerance contract.
+
 - The served OpenAPI document now describes the COMPLETE wire for every
   operation (162 declarations across all API groups): every path/query
   parameter, request headers (`Prefer` incl. `return=identifier`, required

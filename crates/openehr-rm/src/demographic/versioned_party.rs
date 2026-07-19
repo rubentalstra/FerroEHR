@@ -4,11 +4,9 @@
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// Static type formed by binding generic parameter of `VERSIONED_OBJECT<T>` to `PARTY`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "VERSIONED_PARTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VersionedParty {
     // inherited: VERSIONED_OBJECT
     /// Unique identifier of this version container in the form of a UID with no extension. This id will be the same in all instances of the same container in a distributed environment, meaning that it can be understood as the uid of the  virtual version tree.

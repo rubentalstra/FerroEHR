@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::statement::bmm_statement_item::BmmStatementItem;
-use openehr_derive::OpenEhrType;
 
 /// A statement 'block' corresponding to the programming language concept of the same name. May be used to establish scope in specific languages.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_STATEMENT_BLOCK")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmStatementBlock {
     /// Child blocks of the current block.
     pub items: Vec<BmmStatementItem>,

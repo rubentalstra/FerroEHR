@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::expression::el_expression::ElExpression;
-use openehr_derive::OpenEhrType;
 
 /// Boolean-returning expression.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_BOOLEAN_EXPRESSION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElBooleanExpression {
     // inherited: EL_CONSTRAINED
     /// The base expression of this constrained form.

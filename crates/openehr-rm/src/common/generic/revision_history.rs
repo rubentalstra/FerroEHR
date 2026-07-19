@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::common::generic::revision_history_item::RevisionHistoryItem;
-use openehr_derive::OpenEhrType;
 
 /// Purpose Defines the notion of a revision history of audit items, each associated with the version for which that audit was committed. The list is in most-recent-first order.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "REVISION_HISTORY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RevisionHistory {
     /// The items in this history in most-recent-last order.
     pub items: Vec<RevisionHistoryItem>,

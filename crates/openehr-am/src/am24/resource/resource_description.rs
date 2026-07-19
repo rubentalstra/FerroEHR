@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::ResourceDescriptionItem;
-use openehr_derive::OpenEhrType;
 
 /// Defines the descriptive meta-data of a resource.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "RESOURCE_DESCRIPTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescription {
     /// Long-form descriptive title of the resource, typically needed in templates and occasionally in specialised archetypes where the root archetype/template name is not descriptive enough to disambiguate from similar archetypes/templates.
     pub title: Option<String>,

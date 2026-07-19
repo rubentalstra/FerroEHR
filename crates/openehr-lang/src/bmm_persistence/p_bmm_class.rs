@@ -8,12 +8,9 @@ use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
 use crate::bmm3::core::entity::bmm_class::BmmClass;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// Definition of persistent form of `BMM_CLASS` for serialisation to ODIN, JSON, XML etc.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_CLASS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmClassData {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
@@ -48,49 +45,8 @@ pub struct PBmmClassData {
 
 /// Definition of persistent form of `BMM_CLASS` for serialisation to ODIN, JSON, XML etc.
 /// Polymorphic slot of `P_BMM_CLASS`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PBmmClass {
     PBmmEnumeration(PBmmEnumeration),
     PBmmClass(PBmmClassData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for PBmmClass {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("P_BMM_CLASS") => {
-                ::core::result::Result::Ok(Self::PBmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_ENUMERATION") => {
-                ::core::result::Result::Ok(Self::PBmmEnumeration(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_ENUMERATION_INTEGER") => {
-                ::core::result::Result::Ok(Self::PBmmEnumeration(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_ENUMERATION_STRING") => {
-                ::core::result::Result::Ok(Self::PBmmEnumeration(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::PBmmClass(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "P_BMM_CLASS: unexpected `_type` {__other:?} (expected one of: P_BMM_CLASS, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING)"
-                )))
-            }
-        }
-    }
 }

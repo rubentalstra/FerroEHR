@@ -4,11 +4,9 @@
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// Reference to a writable property.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_PROPERTY_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElPropertyRef {
     /// Defined to return True.
     pub is_writable: bool,

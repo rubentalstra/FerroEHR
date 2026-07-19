@@ -16,8 +16,8 @@ pub struct VersionOfParty {
     pub _type: Option<String>,
     pub contribution: ObjectRefOfHierObjectId,
     pub signature: Option<String>,
-    pub commit_audit: openehr_rm::prelude::AuditDetails,
-    pub data: openehr_rm::prelude::Party,
+    pub commit_audit: serde_json::Value,
+    pub data: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,8 +40,8 @@ pub type ListOfPartyIdentity = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDate {
     pub _type: Option<String>,
-    pub lower: Option<openehr_rm::prelude::DvDate>,
-    pub upper: Option<openehr_rm::prelude::DvDate>,
+    pub lower: Option<serde_json::Value>,
+    pub upper: Option<serde_json::Value>,
 }
 
 pub type ListOfContact = Vec<serde_json::Value>;
@@ -64,33 +64,33 @@ pub type ListOfCapability = Vec<serde_json::Value>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectRefOfHierObjectId {
-    pub id: Option<openehr_base::prelude::HierObjectId>,
+    pub id: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateAudit {
     pub _type: Option<String>,
     pub system_id: Option<String>,
-    pub change_type: openehr_rm::prelude::DvCodedText,
-    pub description: Option<openehr_rm::prelude::DvText>,
-    pub committer: openehr_rm::prelude::PartyProxy,
+    pub change_type: serde_json::Value,
+    pub description: Option<serde_json::Value>,
+    pub committer: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateAttestation {
     pub _type: Option<String>,
-    pub attested_view: Option<openehr_rm::prelude::DvMultimedia>,
+    pub attested_view: Option<serde_json::Value>,
     pub proof: Option<String>,
     pub items: Option<Vec<serde_json::Value>>,
-    pub reason: openehr_rm::prelude::DvText,
+    pub reason: serde_json::Value,
     pub is_pending: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateVersion {
-    pub preceding_version_uid: Option<openehr_base::prelude::ObjectVersionId>,
+    pub preceding_version_uid: Option<serde_json::Value>,
     pub signature: Option<String>,
-    pub lifecycle_state: openehr_rm::prelude::DvCodedText,
+    pub lifecycle_state: serde_json::Value,
     pub attestations: Option<Vec<serde_json::Value>>,
     pub data: Versionable,
     pub commit_audit: UpdateAudit,
@@ -98,14 +98,14 @@ pub struct UpdateVersion {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewContribution {
-    pub uid: Option<openehr_base::prelude::HierObjectId>,
+    pub uid: Option<serde_json::Value>,
     pub versions: Vec<serde_json::Value>,
     pub audit: UpdateAudit,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ObjectRefOfObjectVersionId {
-    pub id: Option<openehr_base::prelude::ObjectVersionId>,
+    pub id: Option<serde_json::Value>,
 }
 
 pub type ItemTagOfPerson = std::collections::BTreeMap<String, serde_json::Value>;

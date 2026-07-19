@@ -5,11 +5,9 @@ use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
-use openehr_derive::OpenEhrType;
 
 /// Definition of a simple class, i.e. a class that has no generic parameters and is 1:1 with the type it generates.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_SIMPLE_CLASS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmSimpleClass {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

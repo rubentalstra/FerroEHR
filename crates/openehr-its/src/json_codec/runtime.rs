@@ -1224,17 +1224,20 @@ pub fn optional_field<N: JsonNode, T: FromJson>(
     }
 }
 
-/// Read a container field (absent or `null` → empty `Vec`). Verbatim from the
-/// derive: a `Vec` field defaults to empty.
+/// Read a container field (absent → empty `Vec`). Verbatim from the derive: a
+/// `Vec` field defaults to empty when the key is ABSENT, but a present-but-`null`
+/// value is an error — serde's `Vec::deserialize(null)` rejects a null as "not a
+/// sequence" (the `#[serde(default)]` only covered a missing key), so the native
+/// codec rejects it identically rather than silently emptying it.
 ///
 /// # Errors
-/// Returns a [`JsonParseError`] if a present, non-null value fails to parse.
+/// Returns a [`JsonParseError`] if a present value (including `null`) is not an
+/// array of `T`.
 pub fn container_field<N: JsonNode, T: FromJson>(
     node: &N,
     key: &str,
 ) -> Result<Vec<T>, JsonParseError> {
     match node.get(key) {
-        Some(v) if v.is_null() => Ok(Vec::new()),
         Some(v) => Vec::from_json(v).map_err(|e| e.in_field(key)),
         None => Ok(Vec::new()),
     }

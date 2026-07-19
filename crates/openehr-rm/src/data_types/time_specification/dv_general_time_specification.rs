@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::data_types::encapsulated::dv_parsable::DvParsable;
-use openehr_derive::OpenEhrType;
 
 /// Specifies points in time in a general syntax. Based on the HL7v3 GTS data type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_GENERAL_TIME_SPECIFICATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvGeneralTimeSpecification {
     // inherited: DV_TIME_SPECIFICATION
     /// The specification, in the HL7v3 syntax for `PIVL` or `EIVL` types.

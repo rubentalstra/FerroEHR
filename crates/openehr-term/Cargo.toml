@@ -11,19 +11,14 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
-openehr-derive.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+# No serde: the spec types are plain data records; the terminology data model
+# carries no untyped `Any` field, so neither `serde` nor `serde_json` is needed.
 # Hand-written terminology loader (bundle.rs): read-only XML DOM + error type.
 roxmltree.workspace = true
 thiserror.workspace = true
 
 [lints]
 workspace = true
-
-[package.metadata.cargo-machete]
-# serde_json is emitted by the generator only for schema Any fields; this crate currently has none.
-ignored = ["serde_json"]
 
 [lib]
 # Generated doc comments are verbatim openEHR spec prose (indented examples,

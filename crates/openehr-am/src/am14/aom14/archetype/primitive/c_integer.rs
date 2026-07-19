@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on instances of Integer.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_INTEGER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CInteger {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<i32>,

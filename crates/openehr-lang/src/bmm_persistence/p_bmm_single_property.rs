@@ -5,11 +5,9 @@ use crate::bmm_persistence::p_bmm_simple_type::PBmmSimpleType;
 use crate::bmm_persistence::p_bmm_type::PBmmType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of `BMM_SINGLE_PROPERTY`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_SINGLE_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmSingleProperty {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

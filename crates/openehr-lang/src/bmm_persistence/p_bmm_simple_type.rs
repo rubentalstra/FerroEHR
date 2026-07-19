@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of `BMM_SIMPLE_TYPE`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_SIMPLE_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmSimpleType {
     /// Result of `_create_bmm_type()_` call.
     pub bmm_type: Option<BmmSimpleType>,

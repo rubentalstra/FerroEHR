@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type of for properties of linear container type, such as `Hash<Index_type, T>` etc.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_INDEXED_CONTAINER_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmIndexedContainerProperty {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

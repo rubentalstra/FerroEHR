@@ -2,51 +2,15 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::support::terminology::terminology_service::TerminologyService;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// List of identifiers for groups in the openEHR terminology.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OpenehrTerminologyGroupIdentifiersData {}
 
 /// List of identifiers for groups in the openEHR terminology.
 /// Polymorphic slot of `OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum OpenehrTerminologyGroupIdentifiers {
     TerminologyService(TerminologyService),
     OpenehrTerminologyGroupIdentifiers(OpenehrTerminologyGroupIdentifiersData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for OpenehrTerminologyGroupIdentifiers {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS") => {
-                ::core::result::Result::Ok(Self::OpenehrTerminologyGroupIdentifiers(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("TERMINOLOGY_SERVICE") => {
-                ::core::result::Result::Ok(Self::TerminologyService(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Ok(Self::OpenehrTerminologyGroupIdentifiers(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS: unexpected `_type` {__other:?} (expected one of: OPENEHR_TERMINOLOGY_GROUP_IDENTIFIERS, TERMINOLOGY_SERVICE)"
-                )))
-            }
-        }
-    }
 }

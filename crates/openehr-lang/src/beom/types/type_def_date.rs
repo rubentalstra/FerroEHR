@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Iso8601Date;
-use openehr_derive::OpenEhrType;
 
 /// Rules meta-type representing the primitive type Date.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TYPE_DEF_DATE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeDefDate {
     pub type_name: String,
     pub type_anchor: Iso8601Date,

@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::foundation_types::terminology::terminology_code::TerminologyCode;
-use openehr_derive::OpenEhrType;
 
 /// Leaf type representing a standalone term from a terminology, which consists of the term text and the code, i.e. a concept reference.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "Terminology_term")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TerminologyTerm {
     /// Reference to the terminology concept formally representing this term.
     pub concept: TerminologyCode,

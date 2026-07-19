@@ -6,7 +6,6 @@ use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::reference_range::ReferenceRange;
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_coded_text::DvCodedText;
-use openehr_derive::OpenEhrType;
 
 /// A data type that represents scale values, where there is:
 ///
@@ -29,8 +28,7 @@ use openehr_derive::OpenEhrType;
 /// ----
 ///
 /// For scores that include only Integers, `DV_SCALE` may also be used, but `DV_ORDINAL` should be supported to accommodate existing data instances of that type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_SCALE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvScale {
     // inherited: DV_ORDERED
     /// Optional normal status indicator of value with respect to normal range for this value. Often included by lab, even if the normal range itself is not included. Coded by ordinals in series HHH, HH, H, (nothing), L, LL, LLL; see openEHR terminology group  `normal_status`.

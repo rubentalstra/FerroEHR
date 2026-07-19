@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_class::BmmClass;
-use openehr_derive::OpenEhrType;
 
 /// Type reference to a single type i.e. not generic or container type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_SIMPLE_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmSimpleType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

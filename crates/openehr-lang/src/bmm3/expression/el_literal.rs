@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::literal_value::bmm_literal_value::BmmLiteralValue;
-use openehr_derive::OpenEhrType;
 
 /// Literal value of any type known in the model, including primitive types. Defined via a `BMM_LITERAL_VALUE`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_LITERAL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElLiteral {
     /// The reference item from which the value of this node can be computed.
     pub value: BmmLiteralValue,

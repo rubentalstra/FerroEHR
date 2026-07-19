@@ -3,12 +3,9 @@
 
 use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use crate::bmm3::core::feature::bmm_unitary_property::BmmUnitaryProperty;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// Model of a property definition within a class definition of an object model. Generic parameter takes care of variants.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmPropertyData<T> {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
@@ -29,53 +26,9 @@ pub struct BmmPropertyData<T> {
 
 /// Model of a property definition within a class definition of an object model. Generic parameter takes care of variants.
 /// Polymorphic slot of `BMM_PROPERTY`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmProperty<T> {
     BmmContainerProperty(BmmContainerProperty),
     BmmUnitaryProperty(BmmUnitaryProperty),
     BmmProperty(BmmPropertyData<T>),
-}
-
-impl<'de, T> ::serde::Deserialize<'de> for BmmProperty<T>
-where
-    T: ::serde::de::DeserializeOwned,
-{
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_UNITARY_PROPERTY") => {
-                ::core::result::Result::Ok(Self::BmmUnitaryProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmProperty(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_PROPERTY: unexpected `_type` {__other:?} (expected one of: BMM_CONTAINER_PROPERTY, BMM_INDEXED_CONTAINER_PROPERTY, BMM_PROPERTY, BMM_UNITARY_PROPERTY)"
-                )))
-            }
-        }
-    }
 }

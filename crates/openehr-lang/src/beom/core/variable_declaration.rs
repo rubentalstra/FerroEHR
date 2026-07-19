@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::beom::types::expr_type_def::ExprTypeDef;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for the declaration of a named variable that can be used in an expression.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "VARIABLE_DECLARATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VariableDeclaration {
     /// Name of the variable.
     pub name: String,

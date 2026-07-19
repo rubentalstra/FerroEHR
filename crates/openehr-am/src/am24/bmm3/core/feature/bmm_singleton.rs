@@ -3,14 +3,12 @@
 
 use crate::am24::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::am24::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmClass;
 use openehr_lang::prelude::BmmFeatureExtension;
 use openehr_lang::prelude::BmmType;
 
 /// Meta-type for static value properties computed once by a function invocation.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_SINGLETON")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmSingleton {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

@@ -60,8 +60,8 @@ fn uv(data: Value, change_code: &str, preceding: Option<&str>) -> UpdateVersion 
         audit: UpdateAudit {
             change_type: term(change_code),
             description: None,
-            committer: serde_json::from_value::<PartyProxy>(
-                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
             system_id: None,
@@ -111,7 +111,7 @@ async fn seed_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
 async fn export_one(svc: &EhrbaseService, ehr: ehrbase::ids::EhrId) -> Extract {
     let mut extracts = svc.extract_ehrs(ehr).await.expect("export_ehrs");
     assert_eq!(extracts.len(), 1, "one EHR id → one EXTRACT");
-    serde_json::from_value(extracts.remove(0))
+    openehr_its::json::from_canonical_value(&extracts.remove(0))
         .expect("EXTRACT deserializes into the typed RM model")
 }
 
@@ -257,7 +257,7 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
         find_by_xtype(&whole[0], "X_VERSIONED_FOLDER").unwrap()["item"]["versions"][0]["data"]
             .clone();
 
-    let spec: ExtractSpec = serde_json::from_value(json!({
+    let spec: ExtractSpec = openehr_its::json::from_canonical_value(&json!({
         "_type": "EXTRACT_SPEC",
         "manifest": {
             "_type": "EXTRACT_MANIFEST",
@@ -295,7 +295,8 @@ async fn import_ehr_extract_adds_a_versioned_object_and_rejects_re_import() {
         .await
         .expect("folder-only export");
     let folder_extract: Extract =
-        serde_json::from_value(folder_extracts.remove(0)).expect("folder EXTRACT");
+        openehr_its::json::from_canonical_value(&folder_extracts.remove(0))
+            .expect("folder EXTRACT");
 
     // A fresh target EHR (its own EHR_STATUS/EHR_ACCESS, no directory yet).
     let tgt_ehr = target.create_ehr(None).await.expect("target ehr");

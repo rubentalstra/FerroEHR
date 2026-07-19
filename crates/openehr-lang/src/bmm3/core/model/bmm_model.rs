@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
-use openehr_derive::OpenEhrType;
 
 /// Model of a BMM schema (along with what is inherited from BMM_SCHEMA_CORE).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_MODEL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmModel {
     // inherited: BMM_SCHEMA_CORE
     /// Publisher of model expressed in the schema. Persisted attribute.

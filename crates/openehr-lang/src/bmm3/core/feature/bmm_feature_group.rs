@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::feature::bmm_feature::BmmFeature;
 use crate::bmm3::core::feature::bmm_visibility::BmmVisibility;
-use openehr_derive::OpenEhrType;
 
 /// A logical group of features, with a name and set of properties that applies to the group.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_FEATURE_GROUP")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmFeatureGroup {
     /// Name of this feature group; defaults to 'feature'.
     pub name: String,

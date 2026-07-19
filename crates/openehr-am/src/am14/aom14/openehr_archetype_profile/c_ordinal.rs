@@ -3,11 +3,9 @@
 
 use crate::am14::aom14::openehr_archetype_profile::ordinal::Ordinal;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constrainer class for Ordinal data.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_ORDINAL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct COrdinal {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

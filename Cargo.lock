@@ -5275,9 +5275,7 @@ name = "openehr-am"
 version = "2.4.0"
 dependencies = [
  "openehr-base",
- "openehr-derive",
  "openehr-lang",
- "serde",
  "serde_json",
 ]
 
@@ -5285,9 +5283,6 @@ dependencies = [
 name = "openehr-base"
 version = "1.3.0"
 dependencies = [
- "openehr-derive",
- "serde",
- "serde_json",
  "thiserror 2.0.18",
  "uuid",
 ]
@@ -5299,17 +5294,6 @@ dependencies = [
  "roxmltree",
  "serde_json",
  "serde_norway",
-]
-
-[[package]]
-name = "openehr-derive"
-version = "3.2.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "serde",
- "serde_json",
- "syn 2.0.118",
 ]
 
 [[package]]
@@ -5365,8 +5349,6 @@ dependencies = [
  "indexmap 2.14.0",
  "logos",
  "openehr-base",
- "openehr-derive",
- "serde",
  "serde_json",
  "thiserror 2.0.18",
 ]
@@ -5387,8 +5369,7 @@ dependencies = [
  "insta",
  "jsonschema",
  "openehr-base",
- "openehr-derive",
- "serde",
+ "openehr-its",
  "serde_jcs",
  "serde_json",
  "thiserror 2.0.18",
@@ -5400,10 +5381,7 @@ name = "openehr-term"
 version = "3.1.0"
 dependencies = [
  "openehr-base",
- "openehr-derive",
  "roxmltree",
- "serde",
- "serde_json",
  "thiserror 2.0.18",
 ]
 

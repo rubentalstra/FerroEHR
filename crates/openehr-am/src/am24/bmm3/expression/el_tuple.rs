@@ -2,12 +2,10 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::expression::el_tuple_item::ElTupleItem;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmTupleType;
 
 /// Defines an array of optionally named items each of any type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_TUPLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElTuple {
     /// Items in the tuple, potentially with names. Typical use is to represent an argument list to routine call.
     pub items: Vec<ElTupleItem>,

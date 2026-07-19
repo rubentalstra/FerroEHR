@@ -65,25 +65,6 @@ impl ::core::convert::TryFrom<i64> for ConstraintStatus {
     }
 }
 
-impl ::serde::Serialize for ConstraintStatus {
-    fn serialize<S>(&self, serializer: S) -> ::core::result::Result<S::Ok, S::Error>
-    where
-        S: ::serde::Serializer,
-    {
-        serializer.serialize_i32(self.value())
-    }
-}
-
-impl<'de> ::serde::Deserialize<'de> for ConstraintStatus {
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __v = <i32 as ::serde::Deserialize>::deserialize(deserializer)?;
-        ::core::result::Result::Ok(Self::from_value(__v))
-    }
-}
-
 /// The error returned by [`ConstraintStatus::try_from`] for a value outside the `CONSTRAINT_STATUS`
 /// constant set.
 #[derive(Debug, Clone, PartialEq, Eq)]
