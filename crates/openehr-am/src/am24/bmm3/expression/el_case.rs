@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::constraint_model::c_object::CObject;
-use openehr_derive::OpenEhrType;
 
 /// One branch of a Case table, consisting of a value constraint (the match criterion) and a result, of the generic parameter type T.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_CASE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElCase<T> {
     // inherited: EL_DECISION_BRANCH
     /// Result expression of conditional, if its `_condition_` evaluates to True.

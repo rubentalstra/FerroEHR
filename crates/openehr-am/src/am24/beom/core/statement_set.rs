@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::beom::core::statement::Statement;
-use openehr_derive::OpenEhrType;
 
 /// A container for a specific set of statements intended to be used together.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "STATEMENT_SET")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct StatementSet {
     /// The member statements of this statement set.
     pub statement: Vec<Statement>,

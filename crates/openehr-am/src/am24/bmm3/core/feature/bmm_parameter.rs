@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmParameterDirection;
 use openehr_lang::prelude::BmmType;
 
 /// A routine parameter variable (read-only).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PARAMETER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmParameter {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

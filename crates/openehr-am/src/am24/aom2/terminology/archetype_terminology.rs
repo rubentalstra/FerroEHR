@@ -3,11 +3,9 @@
 
 use crate::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use crate::am24::aom2::terminology::value_set::ValueSet;
-use openehr_derive::OpenEhrType;
 
 /// Local terminology of an archetype. This class defines the semantics of the terminology of an archetype.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ARCHETYPE_TERMINOLOGY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeTerminology {
     /// True if this terminology only contains terms relating to a differential specialisation of the owning artefact, rather than a complete set.
     pub is_differential: bool,

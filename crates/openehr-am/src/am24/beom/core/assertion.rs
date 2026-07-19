@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::beom::core::expression::Expression;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for a first order predicate logic expression with a Boolean result.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ASSERTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assertion {
     /// Expression tag, used for differentiating multiple assertions.
     pub tag: Option<String>,

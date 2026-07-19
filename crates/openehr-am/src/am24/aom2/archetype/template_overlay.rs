@@ -6,11 +6,9 @@ use crate::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use crate::am24::aom2::rm_overlay::rm_overlay::RmOverlay;
 use crate::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use crate::am24::beom::core::statement_set::StatementSet;
-use openehr_derive::OpenEhrType;
 
 /// A concrete form of the bare `ARCHETYPE` class, used to represent overlays in a source template. Overlays have no meta-data of their own, and are instead documented by their owning template.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TEMPLATE_OVERLAY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TemplateOverlay {
     // inherited: ARCHETYPE
     /// Archetype reference of the specialisation parent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.

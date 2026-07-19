@@ -6,15 +6,13 @@ use crate::am24::bmm3::core::feature::bmm_parameter::BmmParameter;
 use crate::am24::bmm3::core::feature::bmm_result::BmmResult;
 use crate::am24::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
 use crate::am24::bmm3::statement::bmm_assertion::BmmAssertion;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmClass;
 use openehr_lang::prelude::BmmFeatureExtension;
 use openehr_lang::prelude::BmmOperator;
 use openehr_lang::prelude::BmmType;
 
 /// A formal element with signature of the form: `name ({arg:TArg}*):TResult`. A function is a computed (rather than data) element, generally assumed to be non-state-changing.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_FUNCTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmFunction {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

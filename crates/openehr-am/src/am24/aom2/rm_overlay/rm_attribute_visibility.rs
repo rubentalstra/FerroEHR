@@ -3,11 +3,9 @@
 
 use crate::am24::aom2::rm_overlay::visibility_type::VisibilityType;
 use openehr_base::prelude::TerminologyCode;
-use openehr_derive::OpenEhrType;
 
 /// Definition of visibility of an RM attribute within a larger archetype structure.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "RM_ATTRIBUTE_VISIBILITY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RmAttributeVisibility {
     /// Visibility setting of a non-archetyped RM attribute (RM attributes that are constrained or within the archetyped structure are visible by default).
     pub visibility: Option<VisibilityType>,

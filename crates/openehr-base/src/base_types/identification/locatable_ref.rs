@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::base_types::identification::uid_based_id::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Reference to a `LOCATABLE` instance inside the top-level content structure inside a `VERSION<T>` identified by the `_id_` attribute. The `_path_` attribute is applied to the object that `VERSION._data_` points to.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "LOCATABLE_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct LocatableRef {
     // inherited: OBJECT_REF
     /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic . These names are not yet standardised. Legal values for `_namespace_` are:

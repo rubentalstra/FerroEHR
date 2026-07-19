@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::feature::bmm_readonly_variable::BmmReadonlyVariable;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type of read-only variables, including routine parameter and the special variable 'Self'.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_READONLY_VARIABLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElReadonlyVariable {
     /// Defined to return False in all cases.
     pub is_writable: bool,

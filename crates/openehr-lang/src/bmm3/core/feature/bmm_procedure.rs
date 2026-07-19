@@ -8,11 +8,9 @@ use crate::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
 use crate::bmm3::core::feature::bmm_parameter::BmmParameter;
 use crate::bmm3::core::feature::bmm_routine_definition::BmmRoutineDefinition;
 use crate::bmm3::statement::bmm_assertion::BmmAssertion;
-use openehr_derive::OpenEhrType;
 
 /// A formal element with signature of the form: `name ({arg:TArg}*):TStatus`, where `TStatus` is the built-in type `BMM_STATUS_TYPE`.. A procedure is a computed (rather than data) element, generally assumed to be state-changing, and is usually called in the form `name ({arg:TArg}*)`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PROCEDURE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmProcedure {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

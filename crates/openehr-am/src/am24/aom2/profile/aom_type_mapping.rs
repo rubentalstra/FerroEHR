@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::profile::aom_property_mapping::AomPropertyMapping;
-use openehr_derive::OpenEhrType;
 
 /// Data object expressing a mapping between two types.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "AOM_TYPE_MAPPING")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AomTypeMapping {
     /// Name of the AOM type being mapped to an RM type.
     pub source_class_name: String,

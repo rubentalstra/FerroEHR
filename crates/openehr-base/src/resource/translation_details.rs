@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::foundation_types::terminology::terminology_code::TerminologyCode;
-use openehr_derive::OpenEhrType;
 
 /// Class providing details of a natural language translation.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TRANSLATION_DETAILS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TranslationDetails {
     /// Language of the translation, encoded following the RFC 5646 standard, using ISO 639-1 (two-character) language codes, e.g. "en". It may include a region subtag conforming to ISO 3166-1 alpha-2 (two-character country codes), e.g. "pt-br" for Brazilian Portuguese.
     pub language: TerminologyCode,

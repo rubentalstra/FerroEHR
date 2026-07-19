@@ -2,12 +2,10 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::beom::core::expr_value::ExprValue;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::VariableDeclaration;
 
 /// Meta-type representing the assignment statement, which associates a named variable with an expression, and produces no value.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ASSIGNMENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assignment {
     /// The target variable on the notional left-hand side of this assignment.
     pub target: VariableDeclaration,

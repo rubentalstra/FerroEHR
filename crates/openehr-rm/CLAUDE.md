@@ -13,7 +13,8 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
   (`PATHABLE.parent()`) use `Weak`/index, never an owning reference.
 - Emission conventions are settled — do not re-litigate per class: closed
   subtype sets → untagged enums; recursion → `Box`; `_type` via
-  `#[derive(OpenEhrType)]`; flattened concrete structs.
+  the native `ToJson`/`FromJson` codec in `openehr-its` (no serde on the spec
+  types); flattened concrete structs.
 - The BMM-generated RM *model* (attribute→types, multiplicity,
   descendants) feeds the AQL planner and the validator — treat model-shape
   changes as engine-facing and re-run ECC.

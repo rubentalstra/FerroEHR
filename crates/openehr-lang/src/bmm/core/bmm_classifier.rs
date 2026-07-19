@@ -10,12 +10,10 @@ use crate::bmm3::core::entity::bmm_signature::BmmSignature;
 use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use serde::Serialize;
 
 /// Abstract idea of specifying a type either by definition or by reference.
 /// Closed subtype set of `BMM_CLASSIFIER`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmClassifier {
     BmmClass(BmmClass),
     BmmContainerType(BmmContainerType),
@@ -27,126 +25,4 @@ pub enum BmmClassifier {
     BmmSimpleType(BmmSimpleType),
     BmmStatusType(BmmStatusType),
     BmmTupleType(BmmTupleType),
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmClassifier {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_CLASS") => {
-                ::core::result::Result::Ok(Self::BmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_CONTAINER_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmContainerType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ENUMERATION") => {
-                ::core::result::Result::Ok(Self::BmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ENUMERATION_INTEGER") => {
-                ::core::result::Result::Ok(Self::BmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ENUMERATION_STRING") => {
-                ::core::result::Result::Ok(Self::BmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_GENERIC_CLASS") => {
-                ::core::result::Result::Ok(Self::BmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_GENERIC_PARAMETER") => {
-                ::core::result::Result::Ok(Self::BmmGenericParameter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_GENERIC_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmGenericType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INDEXED_CONTAINER_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmContainerType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_OPEN_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmOpenType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PARAMETER_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmParameterType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_SIGNATURE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_SIMPLE_CLASS") => {
-                ::core::result::Result::Ok(Self::BmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_SIMPLE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSimpleType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmStatusType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmTupleType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "BMM_CLASSIFIER: missing required `_type` on polymorphic slot (expected one of: BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_CLASSIFIER: unexpected `_type` {__other:?} (expected one of: BMM_CLASS, BMM_CONTAINER_TYPE, BMM_ENUMERATION, BMM_ENUMERATION_INTEGER, BMM_ENUMERATION_STRING, BMM_FUNCTION_TYPE, BMM_GENERIC_CLASS, BMM_GENERIC_PARAMETER, BMM_GENERIC_TYPE, BMM_INDEXED_CONTAINER_TYPE, BMM_OPEN_TYPE, BMM_PARAMETER_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_SIMPLE_CLASS, BMM_SIMPLE_TYPE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
-                )))
-            }
-        }
-    }
 }

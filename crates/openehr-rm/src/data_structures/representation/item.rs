@@ -2,41 +2,11 @@
 
 use crate::data_structures::representation::cluster::Cluster;
 use crate::data_structures::representation::element::Element;
-use serde::Serialize;
 
 /// The abstract parent of `CLUSTER` and `ELEMENT` representation classes.
 /// Closed subtype set of `ITEM`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Cluster(Cluster),
     Element(Element),
-}
-
-impl<'de> ::serde::Deserialize<'de> for Item {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("CLUSTER") => ::core::result::Result::Ok(Self::Cluster(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("ELEMENT") => ::core::result::Result::Ok(Self::Element(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "ITEM: missing required `_type` on polymorphic slot (expected one of: CLUSTER, ELEMENT)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "ITEM: unexpected `_type` {__other:?} (expected one of: CLUSTER, ELEMENT)"
-                )))
-            }
-        }
-    }
 }

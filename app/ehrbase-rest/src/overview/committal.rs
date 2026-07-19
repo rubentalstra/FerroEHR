@@ -213,7 +213,7 @@ fn build_committer(pairs: &[(String, String)]) -> Option<PartyProxy> {
             "id": { "_type": "HIER_OBJECT_ID", "value": id },
         });
     }
-    serde_json::from_value(party).ok()
+    openehr_its::json::from_canonical_value(&party).ok()
 }
 
 /// The value of the first `key` in a parsed pair list.
@@ -302,8 +302,8 @@ mod tests {
             audit: UpdateAudit {
                 change_type: openehr_code("249"),
                 description: Some("default".to_owned()),
-                committer: serde_json::from_value(
-                    serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "default" }),
+                committer: openehr_its::json::from_canonical_value(
+                    &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "default" }),
                 )
                 .unwrap(),
                 system_id: None,
@@ -373,7 +373,7 @@ mod tests {
             uv.audit.system_id.as_deref(),
             Some("example.openehr.systemid")
         );
-        let committer = serde_json::to_value(&uv.audit.committer).unwrap();
+        let committer = openehr_its::json::to_canonical_value(&uv.audit.committer);
         assert_eq!(committer["_type"], "PARTY_IDENTIFIED");
         assert_eq!(committer["name"], "John Doe");
         assert_eq!(committer["external_ref"]["namespace"], "demographic");

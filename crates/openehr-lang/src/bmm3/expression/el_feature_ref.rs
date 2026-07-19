@@ -5,63 +5,14 @@ use crate::bmm3::expression::el_function_call::ElFunctionCall;
 use crate::bmm3::expression::el_procedure_agent::ElProcedureAgent;
 use crate::bmm3::expression::el_property_ref::ElPropertyRef;
 use crate::bmm3::expression::el_static_ref::ElStaticRef;
-use serde::Serialize;
 
 /// A reference that is scoped by a containing entity and requires a context qualifier if it is not the currently scoping entity.
 /// Closed subtype set of `EL_FEATURE_REF`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ElFeatureRef {
     ElFunctionAgent(ElFunctionAgent),
     ElFunctionCall(ElFunctionCall),
     ElProcedureAgent(ElProcedureAgent),
     ElPropertyRef(ElPropertyRef),
     ElStaticRef(ElStaticRef),
-}
-
-impl<'de> ::serde::Deserialize<'de> for ElFeatureRef {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("EL_FUNCTION_AGENT") => {
-                ::core::result::Result::Ok(Self::ElFunctionAgent(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_FUNCTION_CALL") => {
-                ::core::result::Result::Ok(Self::ElFunctionCall(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_PROCEDURE_AGENT") => {
-                ::core::result::Result::Ok(Self::ElProcedureAgent(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_PROPERTY_REF") => {
-                ::core::result::Result::Ok(Self::ElPropertyRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EL_STATIC_REF") => {
-                ::core::result::Result::Ok(Self::ElStaticRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "EL_FEATURE_REF: missing required `_type` on polymorphic slot (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "EL_FEATURE_REF: unexpected `_type` {__other:?} (expected one of: EL_FUNCTION_AGENT, EL_FUNCTION_CALL, EL_PROCEDURE_AGENT, EL_PROPERTY_REF, EL_STATIC_REF)"
-                )))
-            }
-        }
-    }
 }

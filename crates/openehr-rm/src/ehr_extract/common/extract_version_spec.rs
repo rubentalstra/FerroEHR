@@ -3,11 +3,9 @@
 
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::dv_interval::DvInterval;
-use openehr_derive::OpenEhrType;
 
 /// Specification of what versions should be included in an Extract. By default, only latest versions are included in the Extract, in which case this part of the Extract specification is not needed at all. The attributes `_include_all_versions_` and `_commit_time_interval_` are used to modify this; the former forces all versions to be included; the latter limits the versions to be those latest versions committed in the time interval, or if `_include_all_versions_` is `True`, all versions committed in the time interval.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_VERSION_SPEC")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractVersionSpec {
     /// True if all versions of each item in the Extract are included.
     pub include_all_versions: bool,

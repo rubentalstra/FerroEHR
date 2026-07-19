@@ -46,7 +46,8 @@ fn term(code: &str) -> TerminologyCode {
 }
 
 fn committer(name: &str) -> PartyProxy {
-    serde_json::from_value(json!({ "_type": "PARTY_IDENTIFIED", "name": name })).expect("committer")
+    openehr_its::json::from_canonical_value(&json!({ "_type": "PARTY_IDENTIFIED", "name": name }))
+        .expect("committer")
 }
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM write.
@@ -393,8 +394,9 @@ async fn canonical_xml_carries_the_signature() {
     const CORPUS: &str = include_str!(
         "../../../crates/openehr-its/tests/vendor/openehr_sdk/composition/canonical_json/minimal_persistent.json"
     );
-    let data: Composition = serde_json::from_str(CORPUS).expect("typed composition");
-    let ov: OriginalVersion<Composition> = serde_json::from_value(json!({
+    let data: Composition =
+        openehr_its::json::from_canonical_json(CORPUS).expect("typed composition");
+    let ov: OriginalVersion<Composition> = openehr_its::json::from_canonical_value(&json!({
         "_type": "ORIGINAL_VERSION",
         "contribution": {
             "_type": "OBJECT_REF", "namespace": "local", "type": "CONTRIBUTION",
@@ -413,7 +415,7 @@ async fn canonical_xml_carries_the_signature() {
         },
         "lifecycle_state": change_type("532", "complete"),
         "signature": "sha256:jtWX/CULavvzX0ehjowv2XZPICTQhN1t0+AXHfbEaNc=",
-        "data": data
+        "data": openehr_its::json::to_canonical_value(&data)
     }))
     .expect("typed ORIGINAL_VERSION");
 

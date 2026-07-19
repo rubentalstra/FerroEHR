@@ -4,11 +4,9 @@
 use crate::am24::bmm3::core::feature::bmm_function::BmmFunction;
 use crate::am24::bmm3::expression::el_tuple::ElTuple;
 use crate::am24::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// An agent whose signature is of a function, i.e. has a result type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_FUNCTION_AGENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElFunctionAgent {
     // inherited: EL_AGENT
     pub is_writable: bool,

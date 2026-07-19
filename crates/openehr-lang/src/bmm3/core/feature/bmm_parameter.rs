@@ -4,11 +4,9 @@
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_parameter_direction::BmmParameterDirection;
 use crate::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_derive::OpenEhrType;
 
 /// A routine parameter variable (read-only).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PARAMETER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmParameter {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

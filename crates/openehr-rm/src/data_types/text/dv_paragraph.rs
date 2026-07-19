@@ -2,7 +2,6 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::data_types::text::dv_text::DvText;
-use openehr_derive::OpenEhrType;
 
 /// DEPRECATED: use markdown formatted `DV_TEXT` instead.
 ///
@@ -11,8 +10,7 @@ use openehr_derive::OpenEhrType;
 /// A logical composite text value consisting of a series of `DV_TEXTs`, i.e. plain text (optionally coded) potentially with simple formatting, to form a larger tract of prose, which may be interpreted for display purposes as a paragraph.
 ///
 /// `DV_PARAGRAPH` is the standard way for constructing longer text items in summaries, reports and so on.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_PARAGRAPH")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvParagraph {
     /// Items making up the paragraph, each of which is a text item (which may have its own formatting, and/or have hyperlinks).
     pub items: Vec<DvText>,

@@ -4,55 +4,13 @@ use crate::composition::content::entry::action::Action;
 use crate::composition::content::entry::evaluation::Evaluation;
 use crate::composition::content::entry::instruction::Instruction;
 use crate::composition::content::entry::observation::Observation;
-use serde::Serialize;
 
 /// The abstract parent of all clinical `ENTRY` subtypes. A `CARE_ENTRY` defines protocol and guideline attributes for all clinical Entry subtypes.
 /// Closed subtype set of `CARE_ENTRY`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum CareEntry {
     Action(Action),
     Evaluation(Evaluation),
     Instruction(Instruction),
     Observation(Observation),
-}
-
-impl<'de> ::serde::Deserialize<'de> for CareEntry {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("ACTION") => ::core::result::Result::Ok(Self::Action(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("EVALUATION") => {
-                ::core::result::Result::Ok(Self::Evaluation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("INSTRUCTION") => {
-                ::core::result::Result::Ok(Self::Instruction(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("OBSERVATION") => {
-                ::core::result::Result::Ok(Self::Observation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "CARE_ENTRY: missing required `_type` on polymorphic slot (expected one of: ACTION, EVALUATION, INSTRUCTION, OBSERVATION)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "CARE_ENTRY: unexpected `_type` {__other:?} (expected one of: ACTION, EVALUATION, INSTRUCTION, OBSERVATION)"
-                )))
-            }
-        }
-    }
 }

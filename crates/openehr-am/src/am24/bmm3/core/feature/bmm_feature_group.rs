@@ -2,12 +2,10 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::core::feature::bmm_feature::BmmFeature;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmVisibility;
 
 /// A logical group of features, with a name and set of properties that applies to the group.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_FEATURE_GROUP")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmFeatureGroup {
     /// Name of this feature group; defaults to 'feature'.
     pub name: String,

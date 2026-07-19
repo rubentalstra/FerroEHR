@@ -4,10 +4,8 @@
 use crate::bmm_persistence::p_bmm_indexed_container_type::PBmmIndexedContainerType;
 use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_INDEXED_CONTAINER_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmIndexedContainerProperty {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

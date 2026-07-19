@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for a literal Boolean value, for which `_type_` is fixed to the `BMM_TYPE` representing `Boolean` and `_value_` is of type `Boolean`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_BOOLEAN_VALUE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmBooleanValue {
     // inherited: BMM_LITERAL_VALUE
     /// A serial representation of the value.

@@ -10,11 +10,9 @@ use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Defines a single interval event in a series.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "INTERVAL_EVENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IntervalEvent<T> {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

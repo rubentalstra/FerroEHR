@@ -49,7 +49,7 @@ fn serialize_typed(ty: &str, json: &str) -> Option<Result<String, String>> {
             Some(
                 from_canonical_json::<$T>(json)
                     .map_err(|e| e.to_string())
-                    .and_then(|v| to_canonical_json(&v).map_err(|e| e.to_string())),
+                    .map(|v| to_canonical_json(&v)),
             )
         }};
     }
@@ -121,7 +121,7 @@ fn rm_number_typing_governs_the_output_lexeme() {
     // DV_COUNT.magnitude is an Integer64 (vendored ITS-JSON schema: integer).
     let count: DvCount =
         from_canonical_json(r#"{"_type":"DV_COUNT","magnitude":5}"#).expect("count parses");
-    let out = to_canonical_json(&count).expect("count serializes");
+    let out = to_canonical_json(&count);
     assert!(
         out.contains(r#""magnitude":5"#) && !out.contains(r#""magnitude":5.0"#),
         "integer-typed magnitude must not print a decimal point: {out}"
@@ -132,7 +132,7 @@ fn rm_number_typing_governs_the_output_lexeme() {
         r#"{"_type":"DV_ORDINAL","value":2,"symbol":{"_type":"DV_CODED_TEXT","value":"x","defining_code":{"_type":"CODE_PHRASE","terminology_id":{"_type":"TERMINOLOGY_ID","value":"local"},"code_string":"at0001"}}}"#,
     )
     .expect("ordinal parses");
-    let out = to_canonical_json(&ordinal).expect("ordinal serializes");
+    let out = to_canonical_json(&ordinal);
     assert!(
         out.contains(r#""value":2"#) && !out.contains(r#""value":2.0"#),
         "integer-typed ordinal value must not print a decimal point: {out}"
@@ -145,7 +145,7 @@ fn rm_number_typing_governs_the_output_lexeme() {
     let quantity: DvQuantity =
         from_canonical_json(r#"{"_type":"DV_QUANTITY","magnitude":5,"units":"mm"}"#)
             .expect("quantity parses from an integer lexeme");
-    let out = to_canonical_json(&quantity).expect("quantity serializes");
+    let out = to_canonical_json(&quantity);
     assert!(
         out.contains(r#""magnitude":5.0"#),
         "Real-typed magnitude prints with a decimal point (normalized): {out}"
@@ -157,7 +157,7 @@ fn rm_number_typing_governs_the_output_lexeme() {
 fn type_discriminator_is_the_first_member() {
     let count: DvCount =
         from_canonical_json(r#"{"_type":"DV_COUNT","magnitude":1}"#).expect("parses");
-    let out = to_canonical_json(&count).expect("serializes");
+    let out = to_canonical_json(&count);
     assert!(
         out.starts_with(r#"{"_type":"DV_COUNT""#),
         "_type must lead the object: {out}"

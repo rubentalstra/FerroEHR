@@ -12,11 +12,9 @@ use openehr_base::prelude::ResourceAnnotations;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uuid;
-use openehr_derive::OpenEhrType;
 
 /// Class representing source template, i.e. a kind of archetype that may include template overlays, and may be restricted by tools to only defining mandations, prohibitions, and restrictions on elements already defined in the flat parent.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TEMPLATE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Template {
     // inherited: ARCHETYPE
     /// Archetype reference of the specialisation parent of this archetype, if applicable. May take the form of an archetype interface identifier, i.e. the identifier up to the major version only, or may be a full archetype identifier.

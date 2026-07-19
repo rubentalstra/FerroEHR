@@ -10,14 +10,10 @@ authors.workspace = true
 publish = false
 
 [dependencies]
-openehr-derive.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+# No serde: the spec types are plain data records; canonical-JSON
+# (de)serialization is the native `ToJson`/`FromJson` codec in `openehr-its`.
 thiserror.workspace = true
 uuid.workspace = true
-
-[dev-dependencies]
-serde_json.workspace = true
 
 [lints]
 workspace = true

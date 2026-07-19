@@ -3,11 +3,9 @@
 
 use crate::am24::bmm3::expression::el_function_agent::ElFunctionAgent;
 use crate::am24::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// A call made on a closed function agent, returning a result. Equivalent to an 'application' of a function in Lambda calculus.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_FUNCTION_CALL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElFunctionCall {
     /// Defined to return False.
     pub is_writable: bool,

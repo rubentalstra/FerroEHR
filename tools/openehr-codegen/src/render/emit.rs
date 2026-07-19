@@ -6,14 +6,15 @@
 //!   fields (ancestor-first, `// inherited: X` banners); one hop to any field.
 //! - **`Option<T>`** for non-mandatory single properties; **`Vec<T>`** for
 //!   containers (optional containers get `default` + `skip_serializing_if`).
-//! - **Enums** (`#[serde(untagged)]`) for abstract classes used as a property
-//!   type — the closed polymorphic slots (`DATA_VALUE`, `ITEM`, …).
+//! - **Enums** (plain closed subtype sets) for abstract classes used as a
+//!   property type — the closed polymorphic slots (`DATA_VALUE`, `ITEM`, …).
 //! - **Transparent newtypes** for enumeration classes that are just a
 //!   primitive on the wire (`VALIDITY_KIND` → `String`).
 //! - **Generics** only for classes the BMM declares generic (`Interval<T>`);
 //!   the actual type argument is emitted at each use site.
-//! - `_type` is handled by `#[derive(OpenEhrType)]` (`openehr-derive`), not a
-//!   per-struct field.
+//! - Canonical-JSON (de)serialization and the `_type` discriminator are NOT
+//!   emitted here: the native `ToJson`/`FromJson` impls are generated into
+//!   `openehr-its` by `emit-json`. These type files carry no serde/derive.
 //! - Foundation **primitives / containers / marker traits** are mapped to Rust
 //!   (bool, i32, Vec, …) and never emitted (see
 //!   [`crate::plan::overrides::PRIMITIVES`] and
@@ -24,7 +25,7 @@
 
 use crate::analyze::{External, Model, class_paths};
 use crate::load::bmm::{BmmClass, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType};
-use crate::plan::overrides::{back_reference, class_binding, field_default, type_override};
+use crate::plan::overrides::{back_reference, class_binding, type_override};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
 use std::collections::{BTreeMap, BTreeSet};
@@ -324,8 +325,10 @@ fn render_struct_def(
     };
     let mut b = String::new();
     doc_block(&mut b, class.documentation.as_deref(), "");
-    b.push_str("#[derive(Debug, Clone, PartialEq, OpenEhrType)]\n");
-    b.push_str(&format!("#[openehr(type_name = \"{}\")]\n", class.name));
+    // No serde/`_type` derive: canonical-JSON (de)serialization is provided by
+    // the emitted `ToJson`/`FromJson` impls in `openehr-its` (`emit-json`), not by
+    // a per-struct derive. The type is a plain data record.
+    b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
     b.push_str(&format!("pub struct {struct_ty}{gen_decl} {{\n"));
 
     let props = model.flattened_props(class);
@@ -360,13 +363,10 @@ fn render_struct_def(
         first = false;
         doc_block(&mut b, p.documentation.as_deref(), "    ");
 
+        // The wire name (rename) and literal default are consumed by the JSON
+        // codec emitter (`emit-json`, which reads them from the BMM), not from a
+        // struct attribute — so no serde/`openehr` field attribute is emitted here.
         let ident = naming::field_ident(&p.name);
-        if let Some(rename) = naming::serde_rename(&p.name, &ident) {
-            b.push_str(&format!("    #[openehr(rename = \"{rename}\")]\n"));
-        }
-        if let Some(default) = field_default(&rp.owner, &p.name) {
-            b.push_str(&format!("    #[openehr(default = \"{default}\")]\n"));
-        }
         let rust_ty = field_type(model, class, p, generics, subst, local, external);
         b.push_str(&format!("    pub {ident}: {rust_ty},\n"));
     }
@@ -375,8 +375,8 @@ fn render_struct_def(
     b
 }
 
-/// Compute a field's Rust type (`OpenEhrType` handles skip-if-none/empty, so no
-/// serde attributes are needed on the field).
+/// Compute a field's Rust type (the JSON codec handles `None`/empty omission at
+/// its field call sites, so no attribute is needed on the field).
 fn field_type(
     model: &Model,
     class: &BmmClass,
@@ -567,34 +567,11 @@ fn emit_enum(
         );
     }
 
-    // ── `_type` dispatch (mirrors the XML xsi:type runtime) ─────────────────
-    // The ITS-JSON schema requires `_type` on an *abstract* polymorphic slot
-    // (`DATA_VALUE`, `UID`, `VERSION`, …) and rejects a `_type`-less value, while
-    // a *concrete* polymorphic slot (`DV_TEXT`, holding a plain DV_TEXT or a
-    // DV_CODED_TEXT) makes `_type` optional and defaults a `_type`-less value to
-    // the base concrete type. We emit a hand-rolled `Deserialize` that dispatches
-    // on `_type` (deep descendants routed to their direct variant, which
-    // recurses) instead of `#[serde(untagged)]`, whose structural guessing
-    // silently mis-types a `_type`-less value. Serialize keeps
-    // `#[serde(untagged)]` — its output is byte-identical (variant payload only).
-    let dispatch = model.xsi_dispatch(&class.name, variants);
-    // `_type` dispatch is valid only when every concrete target actually carries
-    // a `_type` on the wire (a Struct or PolyEnum, not a transparent enumeration
-    // Newtype); otherwise keep the structural `#[serde(untagged)]` reader.
-    let type_dispatch = !dispatch.is_empty()
-        && dispatch
-            .iter()
-            .all(|(spec, _)| model.concrete_carries_type(spec));
-    // The variant a `_type`-less value defaults to: `Some` for a concrete
-    // polymorphic slot (its own `{Name}Data`), `None` for an abstract slot (a
-    // `_type`-less value is rejected, per the schema).
-    let self_ident = dispatch
-        .iter()
-        .find(|(spec, _)| *spec == class.name)
-        .map(|(_, id)| id.clone());
-
-    // Header: an untagged enum uses serde derives; a polymorphic-concrete file
-    // also emits an `OpenEhrType` struct, so it needs that import too.
+    // No serde: the canonical-JSON `_type` dispatch (abstract slots require
+    // `_type`; concrete polymorphic slots default a `_type`-less value to the
+    // base type) is emitted as a native `FromJson` impl in `openehr-its`
+    // (`emit-json`), and serialization as a native `ToJson` impl there. This
+    // enum is a plain closed subtype set with no derive/serde attributes.
     b.push_str(&format!(
         "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n",
         class.name
@@ -603,18 +580,7 @@ fn emit_enum(
         b.push_str("// Hand-written spec functions/invariants live in the sibling `*_impl.rs`.\n");
     }
     b.push('\n');
-    // When we hand-roll `Deserialize`, only `Serialize` is derived; `Deserialize`
-    // is referenced by full path in the emitted impl, so drop its import.
-    let fixed: &[&str] = match (self_data, type_dispatch) {
-        (true, true) => &["use serde::Serialize;", "use openehr_derive::OpenEhrType;"],
-        (true, false) => &[
-            "use serde::{Deserialize, Serialize};",
-            "use openehr_derive::OpenEhrType;",
-        ],
-        (false, true) => &["use serde::Serialize;"],
-        (false, false) => &["use serde::{Deserialize, Serialize};"],
-    };
-    write_uses(&mut b, fixed, &imports);
+    write_uses(&mut b, &[], &imports);
 
     // The `{Name}Data` struct (the class's own instances) precedes the enum.
     if self_data {
@@ -640,119 +606,12 @@ fn emit_enum(
         "/// {slot} of `{}`: a closed subtype set dispatched on each payload's `_type`.\n",
         class.name
     ));
-    if type_dispatch {
-        b.push_str("#[derive(Debug, Clone, PartialEq, Serialize)]\n");
-    } else {
-        b.push_str("#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]\n");
-    }
-    b.push_str("#[serde(untagged)]\n");
+    b.push_str("#[derive(Debug, Clone, PartialEq)]\n");
     b.push_str(&format!("pub enum {ty}{gen_decl} {{\n"));
     for (variant, payload) in &payloads {
         b.push_str(&format!("    {variant}({payload}),\n"));
     }
     b.push_str("}\n");
-
-    if type_dispatch {
-        b.push('\n');
-        b.push_str(&emit_type_dispatch_deser(
-            &ty,
-            &enum_generics,
-            &class.name,
-            &dispatch,
-            self_ident.as_deref(),
-        ));
-    }
-    b
-}
-
-/// Emit a hand-rolled `Deserialize` for an abstract/polymorphic enum that
-/// dispatches on the canonical-JSON `_type` discriminator instead of
-/// `#[serde(untagged)]`'s structural fallback.
-///
-/// The value is buffered into a `serde_json::Value` (these types are
-/// canonical-JSON-only for serde; XML has its own `FromXml` path), its `_type`
-/// read, and the whole value re-deserialized into the one matching variant via
-/// `serde_json::from_value` — which preserves that variant's precise inner error
-/// and re-checks `_type` + unknown keys in the inner `OpenEhrType`
-/// reader. A deep descendant (`DV_CODED_TEXT` in a `DATA_VALUE` slot) routes to
-/// its direct variant (`DvText`), whose own dispatcher recurses.
-///
-/// `self_ident` is `Some(variant)` for a concrete polymorphic slot — a
-/// `_type`-less value defaults to the base concrete type, matching the schema's
-/// `if not required _type then <base>` construction — and `None` for an abstract
-/// slot, where a `_type`-less value is rejected (schema `required: [_type]`).
-fn emit_type_dispatch_deser(
-    ty: &str,
-    generics: &[String],
-    spec_name: &str,
-    dispatch: &[(String, String)],
-    self_ident: Option<&str>,
-) -> String {
-    let expected = dispatch
-        .iter()
-        .map(|(s, _)| s.clone())
-        .collect::<Vec<_>>()
-        .join(", ");
-    let (impl_hdr, ty_ref, where_cl) = if generics.is_empty() {
-        ("impl<'de>".to_string(), ty.to_string(), String::new())
-    } else {
-        let ps = generics.join(", ");
-        // `from_value` deserializes an owned `Value`, so each parameter must be
-        // `DeserializeOwned` (satisfied at every call site — the RM types are all
-        // owned, and canonical JSON is parsed from owned input).
-        let wc = generics
-            .iter()
-            .map(|p| format!("{p}: ::serde::de::DeserializeOwned"))
-            .collect::<Vec<_>>()
-            .join(", ");
-        (
-            format!("impl<'de, {ps}>"),
-            format!("{ty}<{ps}>"),
-            format!("\nwhere\n{wc},"),
-        )
-    };
-
-    let mut b = String::new();
-    b.push_str(&format!(
-        "{impl_hdr} ::serde::Deserialize<'de> for {ty_ref}{where_cl} {{\n"
-    ));
-    // `too_many_lines`: enums with many concrete descendants generate a long
-    // match. `match_same_arms`: several `_type`s can route to one direct variant
-    // (deep descendants collapse), yielding intentionally-identical arms.
-    b.push_str("    #[allow(clippy::too_many_lines, clippy::match_same_arms)]\n");
-    b.push_str(
-        "    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>\n",
-    );
-    b.push_str("    where\n        D: ::serde::Deserializer<'de>,\n    {\n");
-    b.push_str(
-        "        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;\n",
-    );
-    b.push_str("        match __value.get(\"_type\").and_then(::serde_json::Value::as_str) {\n");
-    for (spec, ident) in dispatch {
-        b.push_str(&format!(
-            "            ::core::option::Option::Some({spec:?}) => ::core::result::Result::Ok(\n                Self::{ident}(::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?),\n            ),\n"
-        ));
-    }
-    if let Some(ident) = self_ident {
-        b.push_str(&format!(
-            "            ::core::option::Option::None => ::core::result::Result::Ok(\n                Self::{ident}(::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?),\n            ),\n"
-        ));
-    } else {
-        let msg = format!(
-            "{spec_name}: missing required `_type` on polymorphic slot (expected one of: {expected})"
-        );
-        b.push_str(&format!(
-            "            ::core::option::Option::None => ::core::result::Result::Err(::serde::de::Error::custom(\n                {msg:?},\n            )),\n"
-        ));
-    }
-    // Inline the binding (`{__other:?}`) so the generated `format!` is
-    // clippy-clean (`uninlined_format_args`).
-    let fmt =
-        format!("{spec_name}: unexpected `_type` {{__other:?}} (expected one of: {expected})");
-    b.push_str(&format!(
-        "            ::core::option::Option::Some(__other) => ::core::result::Result::Err(::serde::de::Error::custom(\n                ::std::format!({fmt:?}),\n            )),\n"
-    ));
-    b.push_str("        }\n    }\n}\n");
     b
 }
 
@@ -760,13 +619,14 @@ fn emit_newtype(class: &BmmClass, prim: &str) -> String {
     let ty = naming::type_name(&class.name);
     let mut b = String::new();
     b.push_str(&format!(
-        "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n\n\
-         use serde::{{Deserialize, Serialize}};\n\n",
+        "// @generated by openehr-codegen from BMM (`{}`) — DO NOT EDIT.\n\n",
         class.name
     ));
     doc_block(&mut b, class.documentation.as_deref(), "");
-    b.push_str("#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]\n");
-    b.push_str("#[serde(transparent)]\n");
+    // A transparent primitive newtype; canonical-JSON (de)serialization is the
+    // emitted `ToJson`/`FromJson` impl in `openehr-its` (`emit-json`), which
+    // delegates through the inner primitive.
+    b.push_str("#[derive(Debug, Clone, PartialEq, Eq)]\n");
     b.push_str(&format!("pub struct {ty}(pub {prim});\n"));
     b
 }
@@ -953,33 +813,11 @@ fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration) -> String 
         ));
     }
 
-    // Byte-identical serde (see the fn doc for the proof).
-    b.push_str(&format!(
-        "impl ::serde::Serialize for {ty} {{\n    \
-         fn serialize<S>(&self, serializer: S) -> ::core::result::Result<S::Ok, S::Error>\n    \
-         where\n        S: ::serde::Serializer,\n    {{\n"
-    ));
-    if is_int {
-        b.push_str("        serializer.serialize_i32(self.value())\n    }\n}\n\n");
-    } else {
-        b.push_str("        serializer.serialize_str(self.as_str())\n    }\n}\n\n");
-    }
-    b.push_str(&format!(
-        "impl<'de> ::serde::Deserialize<'de> for {ty} {{\n    \
-         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>\n    \
-         where\n        D: ::serde::Deserializer<'de>,\n    {{\n"
-    ));
-    if is_int {
-        b.push_str(
-            "        let __v = <i32 as ::serde::Deserialize>::deserialize(deserializer)?;\n        \
-             ::core::result::Result::Ok(Self::from_value(__v))\n    }\n}\n\n",
-        );
-    } else {
-        b.push_str(
-            "        let __s = <::std::string::String as ::serde::Deserialize>::deserialize(deserializer)?;\n        \
-             ::core::result::Result::Ok(Self::from_wire(&__s))\n    }\n}\n\n",
-        );
-    }
+    // Canonical-JSON (de)serialization is the emitted `ToJson`/`FromJson` impl in
+    // `openehr-its` (`emit-json`): `ToJson` writes `as_str`/`value` (the constant
+    // token or verbatim `Other` payload) and `FromJson` maps the bare primitive
+    // through the total `from_wire`/`from_value`, byte-identical to the primitive
+    // it replaces. No serde impl is emitted here.
 
     // The strict-seam error type (hand-rolled Display + Error, no `thiserror`).
     b.push_str(&format!(
@@ -1046,13 +884,13 @@ fn struct_header(b: &mut String, class: &str, imports: &BTreeSet<String>) {
         "// @generated by openehr-codegen from BMM (`{class}`) — DO NOT EDIT.\n\
          // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.\n\n"
     ));
-    write_uses(b, &["use openehr_derive::OpenEhrType;"], imports);
+    write_uses(b, &[], imports);
 }
 
 /// Emit a crate's `use` block as a single lexicographically-sorted list (so the
 /// output matches `rustfmt`'s default import ordering — `crate::…` before
-/// `openehr_base::…` before `openehr_derive::…`/`serde::…`), followed by a blank
-/// line. `fixed` holds always-present uses (the derive / serde); `imports` holds
+/// `openehr_base::…`), followed by a blank line. `fixed` holds always-present
+/// uses (none now that the type files carry no derive/serde); `imports` holds
 /// the per-file resolved spec imports.
 fn write_uses(b: &mut String, fixed: &[&str], imports: &BTreeSet<String>) {
     let mut all: BTreeSet<String> = imports.clone();

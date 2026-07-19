@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::expression::el_boolean_expression::ElBooleanExpression;
-use openehr_derive::OpenEhrType;
 
 /// A statement that asserts the truth of its expression. If the expression evaluates to False the execution generates an exception (depending on run-time settings).
 ///
 /// May be rendered in syntax as `assert condition` or similar.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_ASSERTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmAssertion {
     /// Boolean-valued expression of the assertion.
     pub expression: ElBooleanExpression,

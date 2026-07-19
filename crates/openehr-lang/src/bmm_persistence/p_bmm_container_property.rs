@@ -5,12 +5,9 @@ use crate::bmm_persistence::p_bmm_container_type::PBmmContainerType;
 use crate::bmm_persistence::p_bmm_indexed_container_property::PBmmIndexedContainerProperty;
 use crate::bmm3::core::feature::bmm_container_property::BmmContainerProperty;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// Persistent form of `BMM_CONTAINER_PROPERTY`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_CONTAINER_PROPERTY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmContainerPropertyData {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
@@ -37,41 +34,8 @@ pub struct PBmmContainerPropertyData {
 
 /// Persistent form of `BMM_CONTAINER_PROPERTY`.
 /// Polymorphic slot of `P_BMM_CONTAINER_PROPERTY`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PBmmContainerProperty {
     PBmmIndexedContainerProperty(PBmmIndexedContainerProperty),
     PBmmContainerProperty(PBmmContainerPropertyData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for PBmmContainerProperty {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("P_BMM_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::PBmmContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::PBmmIndexedContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Ok(Self::PBmmContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "P_BMM_CONTAINER_PROPERTY: unexpected `_type` {__other:?} (expected one of: P_BMM_CONTAINER_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY)"
-                )))
-            }
-        }
-    }
 }

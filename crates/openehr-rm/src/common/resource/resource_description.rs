@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::common::resource::resource_description_item::ResourceDescriptionItem;
-use openehr_derive::OpenEhrType;
 
 /// Defines the descriptive meta-data of a resource.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "RESOURCE_DESCRIPTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescription {
     /// Original author of this resource, with all relevant details, including organisation.
     pub original_author: std::collections::BTreeMap<String, String>,

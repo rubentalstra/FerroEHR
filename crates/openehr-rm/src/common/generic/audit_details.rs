@@ -6,12 +6,9 @@ use crate::common::generic::party_proxy::PartyProxy;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// The set of attributes required to document the committal of an information item to a repository.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "AUDIT_DETAILS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AuditDetailsData {
     /// Identifier of the logical EHR system where the change was committed. This is almost always owned by the organisation legally responsible for the EHR, and is distinct from any application, or any hosting infrastructure.
     pub system_id: String,
@@ -27,39 +24,8 @@ pub struct AuditDetailsData {
 
 /// The set of attributes required to document the committal of an information item to a repository.
 /// Polymorphic slot of `AUDIT_DETAILS`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AuditDetails {
     Attestation(Attestation),
     AuditDetails(AuditDetailsData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for AuditDetails {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("ATTESTATION") => {
-                ::core::result::Result::Ok(Self::Attestation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("AUDIT_DETAILS") => {
-                ::core::result::Result::Ok(Self::AuditDetails(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::AuditDetails(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "AUDIT_DETAILS: unexpected `_type` {__other:?} (expected one of: ATTESTATION, AUDIT_DETAILS)"
-                )))
-            }
-        }
-    }
 }

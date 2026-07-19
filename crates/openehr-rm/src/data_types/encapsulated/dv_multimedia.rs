@@ -3,11 +3,9 @@
 
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::uri::dv_uri::DvUri;
-use openehr_derive::OpenEhrType;
 
 /// A specialisation of `DV_ENCAPSULATED` for audiovisual and bio-signal types. Includes further metadata relating to multimedia types which are not applicable to other subtypes of `DV_ENCAPSULATED`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_MULTIMEDIA")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvMultimedia {
     // inherited: DV_ENCAPSULATED
     /// Name of character encoding scheme in which this value is encoded. Coded from openEHR Code Set  character sets . Unicode is the default assumption in openEHR, with UTF-8 being the assumed encoding. This attribute allows for variations from these assumptions.

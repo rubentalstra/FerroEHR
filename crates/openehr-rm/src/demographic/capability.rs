@@ -9,11 +9,9 @@ use crate::data_types::quantity::date_time::dv_date::DvDate;
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Capability of a role, such as  ehr modifier,  health care provider. Capability should be backed up by credentials.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "CAPABILITY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Capability {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

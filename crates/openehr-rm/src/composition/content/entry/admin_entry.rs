@@ -11,15 +11,13 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Entry subtype for administrative information, i.e. information about setting up the clinical process, but not itself clinically relevant. Archetypes will define contained information.
 ///
 /// Used for administrative details of admission, episode, ward location, discharge, appointment (if not stored in a practice management or appointments system).
 ///
 /// Not to be used for any clinically significant information.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ADMIN_ENTRY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AdminEntry {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

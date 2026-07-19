@@ -5,11 +5,9 @@ use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstrai
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same archetype. Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on a `COMPLEX_OBJECT_PROXY` should always be used; when setting this from a serialised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of `{1..1}`); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_COMPLEX_OBJECT_PROXY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CComplexObjectProxy {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

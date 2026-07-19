@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_derive::OpenEhrType;
 
 /// Class providing details of a natural language translation.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TRANSLATION_DETAILS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TranslationDetails {
     /// Language of the translation.
     pub language: CodePhrase,

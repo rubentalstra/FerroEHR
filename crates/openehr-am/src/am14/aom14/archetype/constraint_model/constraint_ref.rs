@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Reference to a constraint described in the same archetype, but outside the main constraint structure. This is used to refer to constraints expressed in terms of external resources, such as constraints on terminology value sets.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "CONSTRAINT_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ConstraintRef {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

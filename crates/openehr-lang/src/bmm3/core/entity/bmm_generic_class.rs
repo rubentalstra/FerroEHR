@@ -6,11 +6,9 @@ use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
-use openehr_derive::OpenEhrType;
 
 /// Definition of a generic class in an object model.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_GENERIC_CLASS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmGenericClass {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmProperty;
 use openehr_lang::prelude::BmmType;
 
 /// Reference to a writable property.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_PROPERTY_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElPropertyRef {
     /// Defined to return True.
     pub is_writable: bool,

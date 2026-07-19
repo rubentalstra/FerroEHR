@@ -3,51 +3,12 @@
 use crate::am24::beom::core::expr_binary_operator::ExprBinaryOperator;
 use crate::am24::beom::core::expr_for_all::ExprForAll;
 use crate::am24::beom::core::expr_unary_operator::ExprUnaryOperator;
-use serde::Serialize;
 
 /// Abstract parent of operator types.
 /// Closed subtype set of `EXPR_OPERATOR`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprOperator {
     ExprBinaryOperator(ExprBinaryOperator),
     ExprForAll(ExprForAll),
     ExprUnaryOperator(ExprUnaryOperator),
-}
-
-impl<'de> ::serde::Deserialize<'de> for ExprOperator {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("EXPR_BINARY_OPERATOR") => {
-                ::core::result::Result::Ok(Self::ExprBinaryOperator(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_FOR_ALL") => {
-                ::core::result::Result::Ok(Self::ExprForAll(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_UNARY_OPERATOR") => {
-                ::core::result::Result::Ok(Self::ExprUnaryOperator(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "EXPR_OPERATOR: missing required `_type` on polymorphic slot (expected one of: EXPR_BINARY_OPERATOR, EXPR_FOR_ALL, EXPR_UNARY_OPERATOR)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "EXPR_OPERATOR: unexpected `_type` {__other:?} (expected one of: EXPR_BINARY_OPERATOR, EXPR_FOR_ALL, EXPR_UNARY_OPERATOR)"
-                )))
-            }
-        }
-    }
 }

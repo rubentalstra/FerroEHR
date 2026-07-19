@@ -49,9 +49,6 @@ unreachable_pub = "warn"            # visibility is deliberate (CI-deny via -D w
 # ─────────────────────────────────────────────────────────────────────────────
 [workspace.dependencies]
 
-# ── openEHR spec-generation (ADR-004) ────────────────────────────────────────
-openehr-derive = { path = "crates/openehr-derive" }
-
 # ── Web framework & HTTP core ────────────────────────────────────────────────
 axum = "0.8"                        # 0.8.8 current (MSRV 1.78)
 axum-extra = { version = "0.12.6", features = ["typed-header", "query"] }
@@ -123,11 +120,6 @@ sea-query-sqlx = { version = "0.9.1", features = ["sqlx-postgres", "runtime-toki
 jiff-sqlx = { version = "0.2.0", features = ["postgres"] }   # official jiff<->sqlx 0.9 codec for plain sqlx queries
 deadpool-postgres = "0.14"         # optional pipelined hot-read path (verify latest)
 tokio-postgres = "0.7"            # paired with deadpool for pipelining
-
-# ── Proc-macro toolkit (openehr-derive) ──────────────────────────────────────
-syn = { version = "2", features = ["full"] }
-quote = "1"
-proc-macro2 = "1"
 
 # ── Serialization & data formats ─────────────────────────────────────────────
 serde = { version = "1", features = ["derive", "rc"] }

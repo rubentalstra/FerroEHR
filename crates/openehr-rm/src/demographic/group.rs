@@ -11,11 +11,9 @@ use crate::demographic::party_identity::PartyIdentity;
 use crate::demographic::party_relationship::PartyRelationship;
 use openehr_base::prelude::PartyRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// A group is a real world group of parties which is created by another party, usually an organisation, for some specific purpose. A typical clinical example is that of the specialist care team, e.g.  cardiology team . The members of the group usually work together.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "GROUP")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Group {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

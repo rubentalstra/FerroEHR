@@ -2,45 +2,11 @@
 
 use crate::ehr_extract::sync_extract::sync_extract::SyncExtract;
 use crate::ehr_extract::sync_extract::sync_extract_request::SyncExtractRequest;
-use serde::Serialize;
 
 /// Abstract parent of message payload types.
 /// Closed subtype set of `MESSAGE_CONTENT`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MessageContent {
     SyncExtract(SyncExtract),
     SyncExtractRequest(SyncExtractRequest),
-}
-
-impl<'de> ::serde::Deserialize<'de> for MessageContent {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("SYNC_EXTRACT") => {
-                ::core::result::Result::Ok(Self::SyncExtract(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("SYNC_EXTRACT_REQUEST") => {
-                ::core::result::Result::Ok(Self::SyncExtractRequest(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "MESSAGE_CONTENT: missing required `_type` on polymorphic slot (expected one of: SYNC_EXTRACT, SYNC_EXTRACT_REQUEST)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "MESSAGE_CONTENT: unexpected `_type` {__other:?} (expected one of: SYNC_EXTRACT, SYNC_EXTRACT_REQUEST)"
-                )))
-            }
-        }
-    }
 }

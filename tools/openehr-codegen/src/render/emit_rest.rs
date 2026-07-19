@@ -182,11 +182,14 @@ impl Ctx<'_> {
     fn rust_type(&self, schema: &Value) -> String {
         // A `$ref` (possibly to a name we resolve without following it).
         if let Some(name) = Oas::ref_name(schema) {
-            if self.names.rm.contains(&name) {
-                return format!("openehr_rm::prelude::{name}");
-            }
-            if self.names.base.contains(&name) {
-                return format!("openehr_base::prelude::{name}");
+            // RM/BASE spec types are opaque canonical-JSON payloads at the REST
+            // boundary: the application exchanges `serde_json::Value` bodies and
+            // validates them via the native codec + `openehr_its::rm_validate`.
+            // The spec types carry no serde derive (the codec owns the wire), so
+            // the contract DTOs carry any RM/BASE payload as an untyped `Value`
+            // rather than the typed spec struct.
+            if self.names.rm.contains(&name) || self.names.base.contains(&name) {
+                return "serde_json::Value".to_string();
             }
             if self.dtos.contains(&name) {
                 return dto_type(&name);

@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// A predicate taking one external variable reference argument, that returns true if the reference is resolvable, i.e. the external value is obtainable.
 ///
 /// NOTE: probably to be removed.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_DEFINED")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElDefined {
     // inherited: EL_PREDICATE
     /// The target instance of this predicate.

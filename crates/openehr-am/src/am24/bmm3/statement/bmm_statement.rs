@@ -5,63 +5,14 @@ use crate::am24::bmm3::statement::bmm_assignment::BmmAssignment;
 use crate::am24::bmm3::statement::bmm_declaration::BmmDeclaration;
 use crate::am24::bmm3::statement::bmm_procedure_call::BmmProcedureCall;
 use openehr_lang::prelude::BmmActionTable;
-use serde::Serialize;
 
 /// Abstract parent of 'statement' types that may be defined to implement BMM Routines.
 /// Closed subtype set of `BMM_STATEMENT`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmStatement {
     BmmActionTable(BmmActionTable),
     BmmAssertion(BmmAssertion),
     BmmAssignment(BmmAssignment),
     BmmDeclaration(BmmDeclaration),
     BmmProcedureCall(BmmProcedureCall),
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmStatement {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_ACTION_TABLE") => {
-                ::core::result::Result::Ok(Self::BmmActionTable(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ASSERTION") => {
-                ::core::result::Result::Ok(Self::BmmAssertion(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ASSIGNMENT") => {
-                ::core::result::Result::Ok(Self::BmmAssignment(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_DECLARATION") => {
-                ::core::result::Result::Ok(Self::BmmDeclaration(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PROCEDURE_CALL") => {
-                ::core::result::Result::Ok(Self::BmmProcedureCall(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "BMM_STATEMENT: missing required `_type` on polymorphic slot (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_STATEMENT: unexpected `_type` {__other:?} (expected one of: BMM_ACTION_TABLE, BMM_ASSERTION, BMM_ASSIGNMENT, BMM_DECLARATION, BMM_PROCEDURE_CALL)"
-                )))
-            }
-        }
-    }
 }

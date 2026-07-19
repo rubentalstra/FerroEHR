@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::ehr_extract::common::extract_entity_manifest::ExtractEntityManifest;
-use openehr_derive::OpenEhrType;
 
 /// Specification of the candidate entities and optionally top-level items (e.g. Compositions) to be included in the Extract.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_MANIFEST")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractManifest {
     /// List of entity manifests uids of items included in the Extract; for openEHR data, these are uids identifying the version containers.
     pub entities: Vec<ExtractEntityManifest>,

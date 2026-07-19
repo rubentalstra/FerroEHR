@@ -7,13 +7,11 @@ use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601DateTime;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on instances representing date/times, i.e. instants in time.
 ///
 /// There is no validity flag for `_year_`, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include `"YYYY-MM-DDT??:??:??"` (date/time with optional time) and `"YYYY-MMDDTHH:MM:xx"` (date/time, seconds not allowed).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_DATE_TIME")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDateTime {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

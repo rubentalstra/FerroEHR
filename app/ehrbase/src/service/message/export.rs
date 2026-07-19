@@ -153,7 +153,7 @@ impl EhrbaseService {
         validate_extract_type(&extract_spec)?;
         let link_depth = extract_spec.link_depth;
         let criteria_present = !extract_spec.criteria.is_empty();
-        let spec_value = serde_json::to_value(&extract_spec).map_err(ServiceError::from)?;
+        let spec_value = openehr_its::json::to_canonical_value(&extract_spec);
 
         let mut out = Vec::with_capacity(extract_spec.manifest.entities.len());
         let mut exported_ehrs: Vec<EhrId> =
@@ -179,7 +179,7 @@ impl EhrbaseService {
             } else {
                 let mut resolved = Vec::with_capacity(entity.item_list.len());
                 for obj_ref in &entity.item_list {
-                    let value = serde_json::to_value(obj_ref).map_err(ServiceError::from)?;
+                    let value = openehr_its::json::to_canonical_value(obj_ref);
                     let raw = value
                         .pointer("/id/value")
                         .and_then(Value::as_str)
@@ -744,7 +744,7 @@ fn link_target_uuids(items: &[Value]) -> Vec<VoId> {
 /// `generic-emr`, `other`). The group is published in the EHR-Extract spec, not
 /// the terminology XML bundle, so the member set is validated literally here.
 fn validate_extract_type(spec: &ExtractSpec) -> Result<(), SmError> {
-    let value = serde_json::to_value(&spec.extract_type).unwrap_or(Value::Null);
+    let value = openehr_its::json::to_canonical_value(&spec.extract_type);
     let code = value
         .pointer("/defining_code/code_string")
         .and_then(Value::as_str)

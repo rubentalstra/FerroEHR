@@ -2,15 +2,13 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::core::feature::bmm_feature_group::BmmFeatureGroup;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmClass;
 use openehr_lang::prelude::BmmFeatureExtension;
 use openehr_lang::prelude::BmmLiteralValue;
 use openehr_lang::prelude::BmmType;
 
 /// An immutable, static value-returning element scoped to a class. The `_value_` is the result of the evaluation of the `_generator_`, which may be as simple as a literal value, or may be any expression, including a function call.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_CONSTANT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmConstant {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

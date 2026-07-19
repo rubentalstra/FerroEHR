@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::data_types::text::code_phrase::CodePhrase;
-use openehr_derive::OpenEhrType;
 
 /// Language-specific detail of resource description. When a resource is translated for use in another language environment, each `RESOURCE_DESCRIPTION_ITEM` needs to be copied and translated into the new language.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "RESOURCE_DESCRIPTION_ITEM")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ResourceDescriptionItem {
     /// The localised language in which the items in this description item are written. Coded from openEHR code set `languages`.
     pub language: CodePhrase,
@@ -15,7 +13,6 @@ pub struct ResourceDescriptionItem {
     /// Keywords which characterise this resource, used e.g. for indexing and searching.
     pub keywords: Vec<String>,
     /// Description of the uses of the resource, i.e. contexts in which it could be used.
-    #[openehr(rename = "use")]
     pub use_: Option<String>,
     /// Description of any misuses of the resource, i.e. contexts in which it should not be used.
     pub misuse: Option<String>,

@@ -14,12 +14,10 @@ use crate::bmm_persistence::p_bmm_single_function_parameter::PBmmSingleFunctionP
 use crate::bmm_persistence::p_bmm_single_function_parameter_open::PBmmSingleFunctionParameterOpen;
 use crate::bmm_persistence::p_bmm_single_property::PBmmSingleProperty;
 use crate::bmm_persistence::p_bmm_single_property_open::PBmmSinglePropertyOpen;
-use serde::Serialize;
 
 /// Persistent form of `BMM_MODEL_ELEMENT`.
 /// Closed subtype set of `P_BMM_MODEL_ELEMENT`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PBmmModelElement {
     PBmmClass(PBmmClass),
     PBmmConstant(PBmmConstant),
@@ -35,116 +33,4 @@ pub enum PBmmModelElement {
     PBmmSingleFunctionParameterOpen(PBmmSingleFunctionParameterOpen),
     PBmmSingleProperty(PBmmSingleProperty),
     PBmmSinglePropertyOpen(PBmmSinglePropertyOpen),
-}
-
-impl<'de> ::serde::Deserialize<'de> for PBmmModelElement {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("P_BMM_CLASS") => {
-                ::core::result::Result::Ok(Self::PBmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_CONSTANT") => {
-                ::core::result::Result::Ok(Self::PBmmConstant(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_CONTAINER_FUNCTION_PARAMETER") => {
-                ::core::result::Result::Ok(Self::PBmmContainerFunctionParameter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::PBmmContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_ENUMERATION") => {
-                ::core::result::Result::Ok(Self::PBmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_ENUMERATION_INTEGER") => {
-                ::core::result::Result::Ok(Self::PBmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_ENUMERATION_STRING") => {
-                ::core::result::Result::Ok(Self::PBmmClass(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_FUNCTION") => {
-                ::core::result::Result::Ok(Self::PBmmFunction(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_GENERIC_FUNCTION_PARAMETER") => {
-                ::core::result::Result::Ok(Self::PBmmGenericFunctionParameter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_GENERIC_PARAMETER") => {
-                ::core::result::Result::Ok(Self::PBmmGenericParameter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_GENERIC_PROPERTY") => {
-                ::core::result::Result::Ok(Self::PBmmGenericProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_INDEXED_CONTAINER_PROPERTY") => {
-                ::core::result::Result::Ok(Self::PBmmContainerProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_INTERFACE") => {
-                ::core::result::Result::Ok(Self::PBmmInterface(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_PACKAGE") => {
-                ::core::result::Result::Ok(Self::PBmmPackage(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_SINGLE_FUNCTION_PARAMETER") => {
-                ::core::result::Result::Ok(Self::PBmmSingleFunctionParameter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN") => {
-                ::core::result::Result::Ok(Self::PBmmSingleFunctionParameterOpen(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY") => {
-                ::core::result::Result::Ok(Self::PBmmSingleProperty(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_BMM_SINGLE_PROPERTY_OPEN") => {
-                ::core::result::Result::Ok(Self::PBmmSinglePropertyOpen(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "P_BMM_MODEL_ELEMENT: missing required `_type` on polymorphic slot (expected one of: P_BMM_CLASS, P_BMM_CONSTANT, P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_CONTAINER_PROPERTY, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_FUNCTION, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_GENERIC_PARAMETER, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_INTERFACE, P_BMM_PACKAGE, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "P_BMM_MODEL_ELEMENT: unexpected `_type` {__other:?} (expected one of: P_BMM_CLASS, P_BMM_CONSTANT, P_BMM_CONTAINER_FUNCTION_PARAMETER, P_BMM_CONTAINER_PROPERTY, P_BMM_ENUMERATION, P_BMM_ENUMERATION_INTEGER, P_BMM_ENUMERATION_STRING, P_BMM_FUNCTION, P_BMM_GENERIC_FUNCTION_PARAMETER, P_BMM_GENERIC_PARAMETER, P_BMM_GENERIC_PROPERTY, P_BMM_INDEXED_CONTAINER_PROPERTY, P_BMM_INTERFACE, P_BMM_PACKAGE, P_BMM_SINGLE_FUNCTION_PARAMETER, P_BMM_SINGLE_FUNCTION_PARAMETER_OPEN, P_BMM_SINGLE_PROPERTY, P_BMM_SINGLE_PROPERTY_OPEN)"
-                )))
-            }
-        }
-    }
 }

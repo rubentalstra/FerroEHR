@@ -4,11 +4,9 @@
 use crate::common::change_control::version::Version;
 use crate::common::generic::audit_details::AuditDetails;
 use openehr_base::prelude::HierObjectId;
-use openehr_derive::OpenEhrType;
 
 /// Serialised form of Contribution for an Extract.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "X_CONTRIBUTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct XContribution {
     /// Uid of Contribution in source system.
     pub uid: HierObjectId,

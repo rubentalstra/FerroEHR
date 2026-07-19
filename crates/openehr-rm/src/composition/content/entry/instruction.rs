@@ -14,13 +14,11 @@ use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::ObjectRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Used to specify actions in the future. Enables simple and complex specifications to be expressed, including in a fully-computable workflow form. Used for any actionable statement such as medication and therapeutic orders, monitoring, recall and review. Enough details must be provided for the specification to be directly executed by an actor, either human or machine.
 ///
 /// Not to be used for plan items which are only specified in general terms.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "INSTRUCTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Instruction {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

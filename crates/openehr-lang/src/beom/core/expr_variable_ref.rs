@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::beom::core::variable_declaration::VariableDeclaration;
-use openehr_derive::OpenEhrType;
 
 /// Expression tree leaf item representing a reference to a declared variable.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXPR_VARIABLE_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprVariableRef {
     /// The variable referred to.
     pub item: VariableDeclaration,

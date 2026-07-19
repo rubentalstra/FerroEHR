@@ -8,12 +8,10 @@ use crate::beom::core::expr_unary_operator::ExprUnaryOperator;
 use crate::beom::core::expr_value_ref::ExprValueRef;
 use crate::beom::core::expr_variable_ref::ExprVariableRef;
 use crate::beom::core::external_query::ExternalQuery;
-use serde::Serialize;
 
 /// Any kind of statement element that can be evaluated. The type will either be supplied in descendant types or else will be inferred by an assignment statement linked to a typed variable.
 /// Closed subtype set of `EXPR_VALUE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprValue {
     ExprBinaryOperator(ExprBinaryOperator),
     ExprForAll(ExprForAll),
@@ -23,66 +21,4 @@ pub enum ExprValue {
     ExprValueRef(ExprValueRef),
     ExprVariableRef(ExprVariableRef),
     ExternalQuery(ExternalQuery),
-}
-
-impl<'de> ::serde::Deserialize<'de> for ExprValue {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("EXPR_BINARY_OPERATOR") => {
-                ::core::result::Result::Ok(Self::ExprBinaryOperator(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_FOR_ALL") => {
-                ::core::result::Result::Ok(Self::ExprForAll(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_FUNCTION_CALL") => {
-                ::core::result::Result::Ok(Self::ExprFunctionCall(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_LITERAL") => {
-                ::core::result::Result::Ok(Self::ExprLiteral(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_UNARY_OPERATOR") => {
-                ::core::result::Result::Ok(Self::ExprUnaryOperator(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_VALUE_REF") => {
-                ::core::result::Result::Ok(Self::ExprValueRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXPR_VARIABLE_REF") => {
-                ::core::result::Result::Ok(Self::ExprVariableRef(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXTERNAL_QUERY") => {
-                ::core::result::Result::Ok(Self::ExternalQuery(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "EXPR_VALUE: missing required `_type` on polymorphic slot (expected one of: EXPR_BINARY_OPERATOR, EXPR_FOR_ALL, EXPR_FUNCTION_CALL, EXPR_LITERAL, EXPR_UNARY_OPERATOR, EXPR_VALUE_REF, EXPR_VARIABLE_REF, EXTERNAL_QUERY)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "EXPR_VALUE: unexpected `_type` {__other:?} (expected one of: EXPR_BINARY_OPERATOR, EXPR_FOR_ALL, EXPR_FUNCTION_CALL, EXPR_LITERAL, EXPR_UNARY_OPERATOR, EXPR_VALUE_REF, EXPR_VARIABLE_REF, EXTERNAL_QUERY)"
-                )))
-            }
-        }
-    }
 }

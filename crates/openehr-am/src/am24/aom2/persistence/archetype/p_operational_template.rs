@@ -9,13 +9,11 @@ use crate::am24::bmm3::expression::el_boolean_expression::ElBooleanExpression;
 use crate::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::TranslationDetails;
 use openehr_base::prelude::Uid;
-use openehr_derive::OpenEhrType;
 
 /// Root object of an operational template. An operational template is derived from a TEMPLATE definition and the ARCHETYPEs and/or TEMPLATE_OVERLAYs mentioned by that template by a process of flattening, and potentially removal of unneeded languages and terminologies.
 ///
 /// An operational template is used for generating and validating canonical openEHR data, and also as a source artefact for generating other downstream technical artefacts, including XML schemas, APIs and UI form definitions.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_OPERATIONAL_TEMPLATE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct POperationalTemplate {
     // inherited: P_ARCHETYPE
     /// Identifier of the specialisation parent of this archetype.

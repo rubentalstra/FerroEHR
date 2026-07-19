@@ -4,13 +4,11 @@
 use crate::data_types::quantity::date_time::dv_duration::DvDuration;
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::data_types::text::dv_coded_text::DvCodedText;
-use openehr_derive::OpenEhrType;
 
 /// Specification of the how the request should be processed by server. The request can be persisted in the server, meaning that a) it can be re-activated by the requesting system simply by indicating Request id, and b) that a changes-only pattern of Extract updates can be set up. To achieve this, the server has to remember what was sent in the previous response.
 ///
 /// The update mode may be event-driven and periodic update or a mixture of both. The candidate items to be sent each time are the result of re-evaluating the content and versioning parts of the specification; what is actually sent is determined by the `_send_changes_only_` flag.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_UPDATE_SPEC")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractUpdateSpec {
     /// If True, this Request is persisted in the server until further notice.
     pub persist_in_server: bool,

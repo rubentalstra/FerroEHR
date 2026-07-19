@@ -2,12 +2,10 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_derive::OpenEhrType;
 use openehr_lang::prelude::BmmType;
 
 /// Automatically declared variable representing result of a Function call (writable).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_RESULT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmResult {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

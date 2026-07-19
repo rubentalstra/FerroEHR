@@ -4,11 +4,9 @@
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// The EHR object is the root object and access point of an EHR for a subject of care.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EHR")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Ehr {
     /// The identifier of the logical EHR management system in which this EHR was created.
     pub system_id: HierObjectId,

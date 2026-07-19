@@ -68,8 +68,8 @@ fn uv(data: Value) -> UpdateVersion {
         audit: UpdateAudit {
             change_type: term("249"),
             description: None,
-            committer: serde_json::from_value::<PartyProxy>(
-                json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }),
             )
             .expect("committer"),
             system_id: None,

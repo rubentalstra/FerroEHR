@@ -60,8 +60,10 @@ fn uv(data: Value, change_code: &str) -> UpdateVersion {
         audit: UpdateAudit {
             change_type: term(change_code),
             description: None,
-            committer: serde_json::from_value::<PartyProxy>(committer("event tester"))
-                .expect("committer"),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(&committer(
+                "event tester",
+            ))
+            .expect("committer"),
             system_id: None,
         },
         signature: None,
@@ -531,7 +533,7 @@ async fn import_writes_one_phi_free_outbox_row() {
 
     let mut extracts = source.extract_ehrs(ehr).await.expect("export");
     let extract: openehr_rm::ehr_extract::common::extract::Extract =
-        serde_json::from_value(extracts.remove(0)).expect("typed extract");
+        openehr_its::json::from_canonical_value(&extracts.remove(0)).expect("typed extract");
 
     // Import into the fresh (empty) target: exactly one import CONTRIBUTION.
     target.import_ehr(None, extract).await.expect("import_ehr");

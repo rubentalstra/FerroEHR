@@ -8,11 +8,9 @@ use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Defines a single point event in a series.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "POINT_EVENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PointEvent<T> {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_type::BmmType;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for reference to a non-abstract type as an object. Assumed to be accessible at run-time. Typically represented syntactically as `TypeName` or `{TypeName}`.
 ///
 /// May be used as a value, or as the qualifier for a function or constant access.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_TYPE_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElTypeRef {
     // inherited: EL_VALUE_GENERATOR
     pub is_writable: bool,

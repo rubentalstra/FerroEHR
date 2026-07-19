@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::bmm3::core::feature::bmm_writable_variable::BmmWritableVariable;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type of writable variables, including routine locals and the special variable 'Result'.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_WRITABLE_VARIABLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElWritableVariable {
     /// Defined to return True in all cases.
     pub is_writable: bool,

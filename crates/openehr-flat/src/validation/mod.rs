@@ -59,8 +59,8 @@ mod subtype;
 mod terminology;
 
 use indexmap::IndexMap;
+use openehr_its::rm_validate::validate_rm_value;
 use openehr_rm::paths::PathSegment;
-use openehr_rm::validate::validate_rm_value;
 use serde_json::{Map, Value};
 
 use crate::path;

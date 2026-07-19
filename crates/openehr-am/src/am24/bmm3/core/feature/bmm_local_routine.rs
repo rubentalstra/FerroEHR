@@ -3,11 +3,9 @@
 
 use crate::am24::bmm3::core::feature::bmm_local::BmmLocal;
 use crate::am24::bmm3::statement::bmm_statement_block::BmmStatementBlock;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type for locally declared routine body.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_LOCAL_ROUTINE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmLocalRoutine {
     /// Local variables of the routine, if there is a body defined.
     pub locals: Vec<BmmLocal>,

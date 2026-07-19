@@ -2,65 +2,11 @@
 
 use crate::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use crate::am24::aom2::persistence::archetype::p_authored_archetype::PAuthoredArchetype;
-use serde::Serialize;
 
 /// Abstract idea of an online resource created by a human author.
 /// Closed subtype set of `AUTHORED_RESOURCE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum AuthoredResource {
     AuthoredArchetype(Box<AuthoredArchetype>),
     PAuthoredArchetype(Box<PAuthoredArchetype>),
-}
-
-impl<'de> ::serde::Deserialize<'de> for AuthoredResource {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("AUTHORED_ARCHETYPE") => {
-                ::core::result::Result::Ok(Self::AuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("OPERATIONAL_TEMPLATE") => {
-                ::core::result::Result::Ok(Self::AuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_AUTHORED_ARCHETYPE") => {
-                ::core::result::Result::Ok(Self::PAuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_OPERATIONAL_TEMPLATE") => {
-                ::core::result::Result::Ok(Self::PAuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("P_TEMPLATE") => {
-                ::core::result::Result::Ok(Self::PAuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("TEMPLATE") => {
-                ::core::result::Result::Ok(Self::AuthoredArchetype(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "AUTHORED_RESOURCE: missing required `_type` on polymorphic slot (expected one of: AUTHORED_ARCHETYPE, OPERATIONAL_TEMPLATE, P_AUTHORED_ARCHETYPE, P_OPERATIONAL_TEMPLATE, P_TEMPLATE, TEMPLATE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "AUTHORED_RESOURCE: unexpected `_type` {__other:?} (expected one of: AUTHORED_ARCHETYPE, OPERATIONAL_TEMPLATE, P_AUTHORED_ARCHETYPE, P_OPERATIONAL_TEMPLATE, P_TEMPLATE, TEMPLATE)"
-                )))
-            }
-        }
-    }
 }

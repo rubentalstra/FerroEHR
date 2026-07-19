@@ -7,11 +7,9 @@ use crate::bmm_persistence::p_bmm_generic_parameter::PBmmGenericParameter;
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
 use crate::bmm_persistence::p_bmm_property::PBmmProperty;
 use crate::bmm3::core::entity::range_constrained::bmm_enumeration_integer::BmmEnumerationInteger;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of an instance of `BMM_ENUMERATION_INTEGER`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_ENUMERATION_INTEGER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmEnumerationInteger {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

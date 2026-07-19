@@ -16,7 +16,8 @@ fn string_hash_round_trips() {
         "language": {"terminology_id": "ISO_639-1", "code_string": "de"},
         "author": {"name": "Dr. Ada", "organisation": "openEHR"}
     }"#;
-    let td: TranslationDetails = serde_json::from_str(json).expect("deserialize JSON");
+    let td: TranslationDetails =
+        openehr_its::json::from_canonical_json(json).expect("deserialize JSON");
     let xml = to_canonical_xml(&td, "translations").expect("serialize");
     eprintln!("{xml}");
     assert!(

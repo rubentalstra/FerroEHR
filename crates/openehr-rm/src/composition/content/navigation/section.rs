@@ -7,11 +7,9 @@ use crate::common::archetyped::link::Link;
 use crate::composition::content::content_item::ContentItem;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Represents a heading in a heading structure, or  section tree.  Created according to archetyped structures for typical headings such as SOAP,  physical examination, but also pathology result heading structures.  Should not be used instead of `ENTRY` hierarchical structures.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "SECTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Section {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

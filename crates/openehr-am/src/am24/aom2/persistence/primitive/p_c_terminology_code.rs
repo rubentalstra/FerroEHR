@@ -2,15 +2,13 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::TerminologyCode;
-use openehr_derive::OpenEhrType;
 
 /// Constrainer type for instances of TERMINOLOGY_CODE. The primary expression of the constraint is in the property `tuple_constraint', and comes in 3 variations:
 /// * a single at-code
 /// * a single ac-code, representing a value-set that is defined in the archetype terminology
 /// * a list of at- and/or ac-codes, representing the possibilities of a tuple constraint
 /// The last possibility above is enabled by the merge_tuple routine, which enables the constraint of another single-valued C_TERMINOLOGY_CODE to be merged with the current one.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_C_TERMINOLOGY_CODE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PCTerminologyCode {
     // inherited: P_C_OBJECT
     /// Reference model type that this node corresponds to.

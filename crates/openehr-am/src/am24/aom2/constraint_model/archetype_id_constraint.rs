@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::am24::aom2::constraint_model::primitive::c_string::CString;
-use openehr_derive::OpenEhrType;
 
 /// Constraint expression representing a regex constraint on an archetype identifier.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ARCHETYPE_ID_CONSTRAINT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeIdConstraint {
     /// Right hand side of the constraint expression, in the form of a `C_STRING`, i.e. string value constrainer.
     pub constraint: CString,

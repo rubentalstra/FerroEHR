@@ -11,8 +11,11 @@ publish = false
 
 [dependencies]
 openehr-base = { path = "../openehr-base" }
-openehr-derive.workspace = true
-serde.workspace = true
+# No serde derive on the generated types (the native codec in `openehr-its` owns
+# the wire). `serde_json` is kept for the untyped `Value` fields the generated
+# P_BMM/BEOM types carry and for the BEL `to_json` builder. The BMM-JSON loader
+# that deserializes into typed structs lives in `openehr-codegen`, which keeps
+# `serde`.
 serde_json.workspace = true
 logos.workspace = true       # DFA lexer for the ODIN instance parser (odin module)
 chumsky.workspace = true     # combinator parser for ODIN (odin.g4 / odin_values.g4)

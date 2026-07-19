@@ -6,13 +6,11 @@ use crate::data_types::encapsulated::dv_parsable::DvParsable;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::ehr_extract::common::extract_manifest::ExtractManifest;
 use crate::ehr_extract::common::extract_version_spec::ExtractVersionSpec;
-use openehr_derive::OpenEhrType;
 
 /// Specification of an Extract's contents. Subtypes can be used to add details specific to the type of Extract. The specification consists of attributes specifying the directory, and two further groups of attributes in their own classes, namely a version specfication (which versions of information items are to be included) and a manifest (which entities are to be included in the extract).
 ///
 /// Use: Used in a request to specify an Extract, as well as to describe what is contained in an Extract.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_SPEC")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractSpec {
     /// Specification of which versions of information items to include in the Extract. If Void, the default is latest versions only (which is reasonable for non-versioning systems as well).
     pub version_spec: Option<ExtractVersionSpec>,

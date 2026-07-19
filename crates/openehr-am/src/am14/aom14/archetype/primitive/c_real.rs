@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on instances of Real.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_REAL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CReal {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<f64>,

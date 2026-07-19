@@ -345,11 +345,13 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
     // deserialises to an anonymous PARTY_SELF (external_ref None), which is
     // accepted. Scoped to the subject slot to keep the RM-1.2.0-vs-corpus skew
     // off the whole-object guard.
-    serde_json::from_value::<openehr_rm::prelude::PartySelf>(subject.clone()).map_err(|e| {
-        unproc(format!(
-            "EHR_STATUS.subject must be a PARTY_SELF (RM ehr master04 §EHR Status): {e}"
-        ))
-    })?;
+    openehr_its::json::from_canonical_value::<openehr_rm::prelude::PartySelf>(subject).map_err(
+        |e| {
+            unproc(format!(
+                "EHR_STATUS.subject must be a PARTY_SELF (RM ehr master04 §EHR Status): {e}"
+            ))
+        },
+    )?;
 
     let external_ref = subject
         .as_object()

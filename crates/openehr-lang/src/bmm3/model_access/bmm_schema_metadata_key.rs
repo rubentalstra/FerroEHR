@@ -84,25 +84,6 @@ impl ::core::convert::TryFrom<&str> for BmmSchemaMetadataKey {
     }
 }
 
-impl ::serde::Serialize for BmmSchemaMetadataKey {
-    fn serialize<S>(&self, serializer: S) -> ::core::result::Result<S::Ok, S::Error>
-    where
-        S: ::serde::Serializer,
-    {
-        serializer.serialize_str(self.as_str())
-    }
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmSchemaMetadataKey {
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __s = <::std::string::String as ::serde::Deserialize>::deserialize(deserializer)?;
-        ::core::result::Result::Ok(Self::from_wire(&__s))
-    }
-}
-
 /// The error returned by [`BmmSchemaMetadataKey::try_from`] for a value outside the `BMM_SCHEMA_METADATA_KEY`
 /// constant set.
 #[derive(Debug, Clone, PartialEq, Eq)]

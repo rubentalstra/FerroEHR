@@ -7,14 +7,12 @@ use crate::common::archetyped::link::Link;
 use crate::data_types::text::dv_text::DvText;
 use crate::ehr::access_control_settings::AccessControlSettings;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// EHR-wide access control object. All access decisions to data in the EHR must be made in accordance with the policies and rules in this object.
 ///
 /// NOTE: It is strongly recommended that the inherited attribute `_uid_` be populated in `EHR_ACCESS` objects, using the UID copied from the `_object_id()_` of the `_uid_` field of the enclosing `VERSION` object. +
 /// For example, the `ORIGINAL_VERSION.uid` `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2` would be copied to the `_uid_` field of the `EHR_ACCESS` object.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EHR_ACCESS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EhrAccess {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
