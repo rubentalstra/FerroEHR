@@ -95,20 +95,33 @@ Decision for the rewrite:
    and serde/serde_json become removable from the spec crates entirely.
 2. **Sequencing: Serialize side first, per-crate (base → rm → am),
    Deserialize second.**
-3. **Prerequisite gate — byte-exact snapshots.** The current fidelity
-   corpus gate is SEMANTIC equality (5 == 5.0 passes); byte identity is
-   not proven anywhere today. Before any codec work: add byte-for-byte
-   canonical-JSON snapshot gates over the corpus. A codec change that
-   alters a byte fails.
-4. **The two wire hazards, handled deliberately:**
-   - Number lexemes: the Value passthrough preserves integer-vs-real
-     distinctions BY ACCIDENT today; the codec must lock a deliberate
-     number-formatting contract (Ryū-parity for f64; i64 paths never
-     printing `.0`; DV_QUANTITY f64 vs DV_COUNT i64 verified per type)
-     — the XML runtime's hand-patched `120.0` quirk generalises here.
-   - Key order: emitted fixed order (`_type` first) — locked and
-     snapshot-gated.
-5. **Storage-codec conversion is a SEPARATE row** (not this rewrite):
+3. **Prerequisite gate — the deliberate canonical-output CONTRACT
+   (owner correction 2026-07-19: byte-freezing today's output was
+   wrong).** The openEHR specs do NOT define canonical JSON at the byte
+   level: ITS-JSON governs structure via schema; RFC 8259 makes 5 and
+   5.0 the same number and key order meaningless — and today's bytes
+   round-trip through PostgreSQL jsonb, which does not preserve key
+   order, so byte stability never existed on the real wire (ECC passes
+   regardless: proof bytes were never the contract). Freezing current
+   bytes would enshrine serde_json accidents and legacy quirks as
+   pseudo-spec. Instead, R0 AUTHORS the output contract from the spec:
+   - spec-governed rules, cited: ITS-JSON schema validity; `_type`
+     discipline; integer-typed fields (DV_COUNT.magnitude,
+     DV_ORDINAL.value, …) never print a decimal point;
+   - spec-silent choices made deliberately, flagged our-own-design:
+     field order = `_type` first then BMM declaration order; ONE chosen
+     REAL formatting rule (whole reals print `x.0`, matching the RM
+     typing, mirroring the XML runtime's rule); None/empty omission per
+     the existing ITS-JSON superset rules;
+   - gates: schema validation + SEMANTIC round-trip equality (the
+     spec-correct equivalence) + determinism snapshots OF THE NEW
+     CONTRACT (our serializer's output can never drift accidentally;
+     snapshot changes are deliberate contract changes, reviewed) + a
+     zero-drift ECC run.
+   Legacy accidental behaviours (input-lexeme echo through Value,
+   jsonb-shaped key order) are explicitly NOT preserved — they die with
+   the passthrough wherever the typed codec takes over.
+4. **Storage-codec conversion is a SEPARATE row** (not this rewrite):
    converting decompose/reassemble from Value trees to typed/streaming
    codecs is where any real throughput lives (comp-create-large,
    aql-ward), and it must be profile-driven (criterion micro-benches:
@@ -172,8 +185,12 @@ gain downstream knowledge).
 
 ## 7. Phasing (compiling, tested increments)
 
-1. **R0 — byte-exact snapshot gates** (prerequisite; also closes the
-   semantic-gate gap found by the audit).
+1. **R0 — the canonical-output contract + its gates** (prerequisite):
+   author the contract (§3.3), add the determinism-snapshot suite over
+   the corpus for the CURRENT typed serializer (baseline: snapshot what
+   the contract will govern; deliberate contract changes update
+   snapshots under review), and the integer-typing assertions. Closes
+   the audit's gate gap without freezing legacy bytes.
 2. **R1 — pipeline skeleton + move to tools/**: stages as modules,
    current behaviour preserved, output byte-identical (drift gate).
 3. **R2 — decision maps to declarative data** + the tested emitter
