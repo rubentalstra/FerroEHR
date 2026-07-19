@@ -499,10 +499,21 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   no fixture drives it): the ODIN lexer rejects `\a \b \f \v \?` (allowed
   by base_lexer.g4 ESCAPE_SEQ) and accepts 8-hex `\uHHHHHHHH` (grammar
   allows 4-hex only) — align to the grammar + add the fixture cases.
-- [ ] **A6b — consume the A5b model data**: un-defer VCORMT
+- [x] **A6b — consume the A5b model data**: un-defer VCORMT
   generic-parameter substitution, VCACA's tight lower-bound half on the
   production model, VCORMENV/VCORMENU/VCORMEN; re-claim the adjudicated
-  `VCORMT_rm_non_conforming_type1` fixture; new tests per code.
+  `VCORMT_rm_non_conforming_type1` fixture; new tests per code. Done:
+  `RmAttr.declared_type` now carries generic arguments + `type_conforms`
+  matches them covariantly (master04.2 §`Rm_type_name`); `ProductionRmModel`
+  serves real BMM cardinality (permissive `{0..*}` fallback only where the
+  BMM is un-cardinalitied); new `RmModel::enumeration` + `RmEnum` feed the
+  enum-literal checks (VCORMEN kind-mismatch, VCORMENV/VCORMENU out-of-set —
+  the V/U/EN partition is our reading of the spec-silent master08 gloss,
+  NOTE-flagged). RM corpus harness shifts exact 5→6, adjudicated 2→1
+  (VCORMT re-claimed); 111/111 `openehr-adl` green. NOTE registered: the
+  emitter resolves a formal generic parameter to its bound, so VCORMT checks
+  a stated argument against the RM parameter's bound (sound, never
+  false-fires) — a tighter instantiated-binding check is not derivable.
 - [ ] **A6 — conformance functions + phase-2 specialisation validation**:
   master04.5 machinery incl. collective occurrences; the full phase-2
   catalogue; specialisation corpus green.

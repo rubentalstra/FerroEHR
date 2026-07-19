@@ -126,6 +126,24 @@ pub enum ValidationCode {
     /// VCAM — attribute single/multiple arity matches the RM (`master04.5`
     /// §`C_ATTRIBUTE`; checked in [`rm`]).
     Vcam,
+    /// VCORMEN — enumeration type constraint kind validity: a primitive
+    /// constraint on an enumeration-typed RM slot must match the enumeration's
+    /// underlying primitive (an integer constraint on a string-based
+    /// enumeration, or vice versa, is invalid). `master08` §Phase 2 lists
+    /// (VCORMENV, VCORMENU, VCORMEN) with no full vendored text; the V/U/EN
+    /// partition below is our reading of that gloss against `master04.2`
+    /// §Constraints on Enumeration Types — NOTE-flagged in [`rm`].
+    Vcormen,
+    /// VCORMENV — enumeration integer-value validity: an integer constraint
+    /// value on an integer-based enumeration slot must be a declared literal
+    /// value (`master08` §Phase 2 + `master04.2` §Constraints on Enumeration
+    /// Types; spec-silent full text — NOTE-flagged in [`rm`]).
+    Vcormenv,
+    /// VCORMENU — enumeration string-value validity: a string constraint value
+    /// on a string-based enumeration slot must be a declared literal value
+    /// (`master08` §Phase 2 + `master04.2` §Constraints on Enumeration Types;
+    /// spec-silent full text — NOTE-flagged in [`rm`]).
+    Vcormenu,
     /// VATCV — terminology code format validity (`master08` §Phase 1; no full
     /// vendored text — NOTE-flagged).
     Vatcv,
@@ -336,6 +354,9 @@ impl ValidationCode {
             Self::Vcaex => "VCAEX",
             Self::Vcaca => "VCACA",
             Self::Vcam => "VCAM",
+            Self::Vcormen => "VCORMEN",
+            Self::Vcormenv => "VCORMENV",
+            Self::Vcormenu => "VCORMENU",
             Self::Vatcv => "VATCV",
             Self::Vtsd => "VTSD",
             Self::Vtlc => "VTLC",
@@ -776,6 +797,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::too_many_lines)] // one line per catalogue code — an exhaustive list, not logic
     fn every_code_has_a_unique_mnemonic_and_severity() {
         let all = [
             ValidationCode::Vardt,
@@ -794,6 +816,9 @@ mod tests {
             ValidationCode::Vcaex,
             ValidationCode::Vcaca,
             ValidationCode::Vcam,
+            ValidationCode::Vcormen,
+            ValidationCode::Vcormenv,
+            ValidationCode::Vcormenu,
             ValidationCode::Vatcv,
             ValidationCode::Vtsd,
             ValidationCode::Vtlc,
@@ -874,6 +899,6 @@ mod tests {
             };
             assert_eq!(c.severity(), expected, "{c} severity");
         }
-        assert_eq!(seen.len(), 85);
+        assert_eq!(seen.len(), 88);
     }
 }
