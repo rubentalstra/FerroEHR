@@ -10,6 +10,7 @@
 - [Vendored corpora fully exercised](vendored-corpora-fully-exercised.md) — owner hard rule: 100% of any vendored test corpus exercised with expected outcomes + coverage gate; adjudicated skips only
 - [Generated-model gaps fixed in codegen](generated-model-gaps-fixed-in-codegen.md) — owner hard rule: emitter+regen, never consumer workarounds/shadow types; downstream enum re-opening for cross-component subtypes
 - [Codegen emits the complete model](codegen-emits-complete-model.md) — owner hard rule: never trim/prune/suppress generated output; full closures, source-package mirroring, big diffs welcome; fix generator defects in-change
+- [Conventional branch naming](conventional-branch-naming.md) — owner hard rule 2026-07-19: `<type>/<kebab-slug>` (feat/fix/chore/…); `claude/*` retired, never create one again
 
 Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
 already records (CLAUDE.md, ADR-004/005/008, docs/spec-audit, the blueprint)
