@@ -464,8 +464,38 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
 - [ ] **A11 — close**: full-workspace gates, ECC, PROGRESS/worklist close,
   DELETE this plan file.
 
-Exit criteria: every S-code and V-code has a typed variant + test; the
-adl2-tests corpus passes keyed-by-code; round-trip parse/print stability;
-the master10 template → OPT worked example reproduces; 1.4→2 conversion of
-our stored OPT corpus validates; REST group serves all spec-declared
-representations; ECC zero drift.
+### Corpus coverage — HARD REQUIREMENT (owner, 2026-07-19)
+
+**Every file under `crates/openehr-adl/tests/corpus/` is exercised with an
+asserted expected outcome — 100%, no dead fixtures.** This is the same
+discipline that gives archie its validation depth; the corpus is the
+use-case library. Enforcement:
+
+- A **coverage gate test** walks the whole corpus tree and fails if any
+  file is not claimed by exactly one harness category — new or unclaimed
+  files break CI.
+- Per-category harnesses:
+  - `adl2-reference/validity/**` — parse + validate; a filename carrying a
+    rule code (V*/S*/W*) MUST raise exactly that code (WOUC-style W-codes
+    as warnings); code-less files must pass clean.
+  - `adl2-reference/features/**` — parse + validate clean; specialised
+    cases also flatten successfully.
+  - `adl2-reference/robustness/**` — never panic; typed errors only.
+  - `adl2-reference/upgrade/upgrade_from_14/**` — each `.adl` (1.4)
+    converts via the `adl14` module and the result is checked against its
+    paired expected `.adls` (the converter oracle).
+  - `adl2-reference/validity/legacy_adl_1.4/**` — the documented 1.4
+    tolerance behaviours.
+  - `flattener/specexamples/**` + `flattener/siblingorder/**` — flatten
+    and compare against the expected flat outputs (each fixture
+    spec-verified per the PROVENANCE note).
+- Skips only via a documented adjudication entry (file + reason + spec
+  citation) — never a silent exclusion; the adjudication list shrinks to
+  zero by row close unless a fixture is proven defective against the spec
+  text.
+
+Exit criteria: every S-code and V-code has a typed variant + test; **the
+full corpus coverage gate above is green (100% of files exercised)**;
+round-trip parse/print stability; the master10 template → OPT worked
+example reproduces; 1.4→2 conversion of our stored OPT corpus validates;
+REST group serves all spec-declared representations; ECC zero drift.
