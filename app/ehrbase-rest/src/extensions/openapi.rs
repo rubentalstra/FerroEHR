@@ -200,14 +200,20 @@ fn require_auth(doc: &mut utoipa::openapi::OpenApi) {
 
 // ── The OAS meta-endpoints (documented + served by real handlers) ─────────────
 
-/// The served extension-surface `OpenAPI` JSON document. This handler carries
-/// the `#[utoipa::path]` metadata that puts this endpoint into the composed
-/// document (via [`meta_openapi`]); the **live** route serves the document
-/// pre-serialized once at assembly ([`prebuild_docs`], [`swagger_router`]), so
-/// this body runs only if the endpoint is ever mounted directly.
+/// The served `OpenAPI` JSON document — the complete server surface
+/// (`GET /ehrbase/rest/api-docs/openapi.json`).
+///
+/// No openEHR spec governs an OAS-serving endpoint — our own discoverability
+/// surface. Public (no auth requirement) and always `200 application/json`.
+/// Config-gated by the Swagger UI: when it is disabled the route is not mounted
+/// and the path is absent (a router `404`). This handler carries the
+/// `#[utoipa::path]` metadata that puts the endpoint into the composed document
+/// (via [`meta_openapi`]); the **live** route serves the document pre-serialized
+/// once at assembly ([`prebuild_docs`], [`swagger_router`]), so this body runs
+/// only if the endpoint is ever mounted directly.
 #[utoipa::path(
     get, path = "/ehrbase/rest/api-docs/openapi.json", tag = "openapi",
-    responses((status = 200, description = "The extension-surface `OpenAPI` document.", body = serde_json::Value))
+    responses((status = 200, description = "The complete server-surface `OpenAPI` document (JSON).", body = serde_json::Value))
 )]
 async fn openapi_json(State(state): State<AppState>) -> Response {
     let doc = extensions_document(state.config());
@@ -215,14 +221,21 @@ async fn openapi_json(State(state): State<AppState>) -> Response {
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
-/// The Swagger UI (HTML). The spec selector offers one document per API family
-/// — the standardised ITS-REST groups (`openEHR — …`, selected by resource
-/// path) and the server's own extensions (`EHRbase — …`, selected by tag) —
-/// each filtered from the one server-generated composed document, plus that
-/// complete document last. Nothing vendored is served.
+/// The Swagger UI index (`GET /ehrbase/rest/swagger-ui`).
+///
+/// No openEHR spec governs a Swagger UI — our own discoverability surface.
+/// Public (no auth requirement); config-gated by the Swagger UI (absent — a
+/// router `404` — when disabled). Serves the embedded `index.html`
+/// (`200 text/html`); the sibling asset route (`{*file}`, a plain route, not
+/// documented here) answers `404` for an unknown asset. The spec selector
+/// offers one document per API family — the standardised ITS-REST groups
+/// (`openEHR — …`, selected by resource path) and the server's own extensions
+/// (`EHRbase — …`, selected by tag) — each filtered from the one
+/// server-generated composed document, plus that complete document last.
+/// Nothing vendored is served.
 #[utoipa::path(
     get, path = "/ehrbase/rest/swagger-ui", tag = "openapi",
-    responses((status = 200, description = "The Swagger UI index.", content_type = "text/html"))
+    responses((status = 200, description = "The Swagger UI index page.", content_type = "text/html"))
 )]
 async fn swagger_ui_index(State(state): State<AppState>) -> Response {
     let config = swagger_config(state.config());

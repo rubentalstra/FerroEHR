@@ -275,11 +275,16 @@ fn discovery_response(body: Bytes) -> Response {
     ([(header::CONTENT_TYPE, "application/json")], body).into_response()
 }
 
-/// The SMART App Launch service-discovery document (master04 §Service
-/// Discovery). Unauthenticated, `application/json` (R-02). This handler carries
-/// the `#[utoipa::path]` metadata that documents the endpoint (via [`openapi`]);
-/// the **live** route serves the document pre-serialized once at assembly
-/// ([`router`]), so this body runs only if the endpoint is mounted directly.
+/// The SMART App Launch service-discovery document
+/// (`GET /ehrbase/rest/.well-known/smart-configuration`, master04 §Service
+/// Discovery).
+///
+/// Unauthenticated (served pre-auth) and always `200 application/json` (R-02).
+/// Config-gated: when SMART is disabled the [`router`] is empty and the path is
+/// absent (a router `404`). This handler carries the `#[utoipa::path]` metadata
+/// that documents the endpoint (via [`openapi`]); the **live** route serves the
+/// document pre-serialized once at assembly ([`router`]), so this body runs only
+/// if the endpoint is mounted directly.
 #[utoipa::path(
     get, path = "/ehrbase/rest/.well-known/smart-configuration", tag = "smart",
     responses((status = 200, description = "The SMART configuration document.", body = serde_json::Value))

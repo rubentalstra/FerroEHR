@@ -152,7 +152,15 @@ pub(super) async fn run(
                 .backend()
                 .target_tags_replace(ehr_id, p.uid_based_id, "EHR_STATUS", body)
                 .await?;
-            Ok(negotiate::respond(h, ok, &Value::Array(tags)))
+            // ehr_status_tags_update.yaml — 200 (the stored ITEM_TAG list) on
+            // `Prefer: return=representation`; 204 (`204_updated.yaml`) when
+            // `Prefer` is missing or `return=minimal` (the default —
+            // overview §Prefer).
+            if negotiate::prefers_representation(h) {
+                Ok(negotiate::respond(h, ok, &Value::Array(tags)))
+            } else {
+                Ok(negotiate::empty(no_content))
+            }
         }
         "ehr_status_tags_delete" => {
             let p = params::build::<EhrStatusTagsDeleteParams>(&parts.path, q, h)?;

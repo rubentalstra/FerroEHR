@@ -123,13 +123,15 @@ async fn ehr_exists(app: &Router, id: &str) -> bool {
 }
 
 #[tokio::test]
-async fn disabled_admin_is_404_and_never_deletes() {
+async fn disabled_admin_is_405_and_never_deletes() {
     let (_pg, app) = app(false).await;
     // Create a real EHR, then attempt the (disabled) admin delete.
     let id = create_ehr(&app).await;
     let (status, _) = send(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
-    // The gate answers 404 as if the route were unmounted.
-    assert_eq!(status, StatusCode::NOT_FOUND);
+    // The gate answers 405 Method Not Allowed — the status the OAS itself
+    // declares for a disabled admin operation
+    // (`admin_ehr_delete_all.yaml` + `responses/405.yaml`).
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
     // RE-TARGET (was a call-counter assertion): the backend was never reached,
     // proven by the EHR still existing.
     assert!(ehr_exists(&app, &id).await, "the EHR must not be deleted");
@@ -193,12 +195,15 @@ async fn enabled_delete_all_repeated_param_reaches_backend_with_both_ids() {
 }
 
 #[tokio::test]
-async fn disabled_admin_config_is_404() {
+async fn disabled_admin_config_is_405() {
     // The config view shares the group gate: with the admin API disabled it
-    // answers 404 as if unmounted (never a 403), like the deletes.
+    // answers 405 Method Not Allowed (never a 403) — the status the OAS
+    // declares for a disabled admin operation
+    // (`admin_ehr_delete_all.yaml` + `responses/405.yaml`), applied
+    // uniformly across the group.
     let (_pg, app) = app(false).await;
     let (status, _) = send(&app, get(format!("{BASE}/admin/config"))).await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
 }
 
 #[tokio::test]
