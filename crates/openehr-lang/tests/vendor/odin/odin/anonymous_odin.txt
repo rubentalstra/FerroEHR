@@ -1,0 +1,13 @@
+--
+-- ODIN Anonymous Object Document
+--
+<
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+    attr_2 = <
+        attr_22 = <leaf_value>
+    >
+>

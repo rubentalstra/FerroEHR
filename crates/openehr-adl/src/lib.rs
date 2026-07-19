@@ -13,7 +13,9 @@
 //! ([`cadl`], phase A3a) that builds the generated `openehr_am::am24::aom2`
 //! constraint model. ODIN sections are parsed by the `openehr_lang::odin`
 //! reader (ODIN is a LANG-component spec); the `rules` body and slot
-//! assertion expressions are captured as raw text for a later phase.
+//! assertion expressions are captured as raw text alongside a structured
+//! placeholder.
+//! TODO: model rule/slot assertion expressions as full BEL/beom trees.
 
 pub mod assemble;
 pub mod cadl;

@@ -1,0 +1,32 @@
+person = (List<PERSON>) <
+    [01234] = <
+        name = < -- person's name
+            forenames = <"Sherlock">
+            family_name = <"Holmes">
+            salutation = <"Mr">
+        >
+        address = < -- person's address
+            habitation_number = <"221B">
+            street_name = <"Baker St">
+            city = <"London">
+            country = <"England">
+        >
+    >
+>
+
+parent = <
+    ["ELEMENT"] = <
+            name = <"ELEMENT">
+            ancestors = <"ITEM", ...>
+            properties = <
+                ["null_flavor"] = (P_BMM_SINGLE_PROPERTY) <
+                    name = <"null_flavor">
+                    bmmType = <"CODED_TEXT">
+                >
+                ["value"] = (P_BMM_SINGLE_PROPERTY) <
+                    name = <"value">
+                    bmmType = <"DATA_VALUE">
+                >
+            >
+     >
+>

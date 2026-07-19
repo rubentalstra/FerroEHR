@@ -1,6 +1,6 @@
-//! The cADL definition-section parser (phase A3a).
+//! The cADL definition-section parser.
 //!
-//! A hand-written recursive-descent parser over the A2 token stream
+//! A hand-written recursive-descent parser over the lexer's token stream
 //! ([`crate::lexer`]), transcribed 1:1 from the vendored normative grammars
 //! `crates/openehr-adl/vendor/grammar/{cadl2.g4, cadl2_primitives.g4}`. It
 //! builds the **generated** AOM2 constraint model
@@ -18,10 +18,12 @@
 //! Scope of A3a: full cADL object/attribute/tuple/slot/proxy/primitive
 //! coverage building the AOM2 tree, with the `S*` syntax-validity codes raised
 //! at position. Slot include/exclude **assertion** expressions and the `rules`
-//! section are captured as raw text (BEL expression parsing is a later phase),
+//! section are captured as raw text (structured BEL expression parsing is a
+//! TODO),
 //! preserved in `ASSERTION.string_expression` so slots stay usable; the common
 //! `archetype_id/value matches {/regex/}` form is additionally regex-compile
-//! checked (`SCSRE`). Semantic (V-code) validation is a later phase.
+//! checked (`SCSRE`). Semantic (V-code) validation is separate
+//! (`crate::validate`).
 
 use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
 use openehr_am::am24::aom2::constraint_model::c_archetype_root::CArchetypeRoot;
@@ -114,7 +116,7 @@ pub fn parse_definition_body(body: &str) -> Result<CComplexObject, Vec<SyntaxErr
 /// token ranges), not the token stream or owned text, so this convenience
 /// re-lexes just the definition body substring (`src[definition.bytes]`) via
 /// [`parse_definition_body`] and re-offsets error spans back to the whole
-/// file. Bodies are small, so the extra lex is cheap, and the A2
+/// file. Bodies are small, so the extra lex is cheap, and the outer
 /// [`crate::source::parse_source`] API + error contract stay untouched.
 /// To parse an overlay's definition, take `art.overlays[i].definition` and
 /// call [`parse_definition_body`] on `&src[bytes]` directly.
@@ -358,7 +360,7 @@ impl Parser<'_> {
         // NOTE: `cadl2.g4` requires `'[' ID_CODE ']'`, but a *missing* node id
         // is a semantic defect (VCOID, `AOM2/master08`), not a syntax error —
         // the ADL Workbench parses it and flags VCOID in validation. We do the
-        // same: an absent `[…]` yields an empty node id for the later phase.
+        // same: an absent `[…]` yields an empty node id that validation flags.
         let node_id = if self.eat(|t| matches!(t, Token::LBracket)) {
             let n = self.parse_node_id()?;
             self.expect(
@@ -637,8 +639,8 @@ impl Parser<'_> {
         )?;
         let interval = self.parse_multiplicity(SyntaxErrorCode::Soccf)?;
         // NOTE: `ADL2/master04.3` — a container without an explicit ordering
-        // modifier is an ordered list; uniqueness is off unless stated. Full
-        // RM-driven defaulting is a later phase.
+        // modifier is an ordered list; uniqueness is off unless stated.
+        // TODO: apply full RM-driven ordering/uniqueness defaulting.
         let mut is_ordered = true;
         let mut is_unique = false;
         for _ in 0..2 {
@@ -1064,15 +1066,16 @@ impl Parser<'_> {
         }))
     }
 
-    /// Capture one slot include/exclude assertion as a raw span (BEL parsing is
-    /// a later phase; `master04.6`). The raw text is preserved in
+    /// Capture one slot include/exclude assertion as a raw span (`master04.6`).
+    /// TODO: parse the assertion as a BEL expression tree. The raw text is
+    /// preserved in
     /// `ASSERTION.string_expression`; the common `archetype_id/value matches
     /// {/regex/}` form is regex-compile checked (`SCSRE`).
     ///
     /// NOTE: multiple assertions in one `include`/`exclude` block are captured
     /// as a single raw span here (the token run to the next `exclude`/`}` at
-    /// brace-depth 0); splitting them requires the BEL expression grammar,
-    /// which lands in a later phase.
+    /// brace-depth 0).
+    /// TODO: split multiple assertions via the BEL expression grammar.
     fn parse_slot_assertion(&mut self) -> PResult<Assertion> {
         let start = self.pos;
         let start_byte = self.cur_span().start;

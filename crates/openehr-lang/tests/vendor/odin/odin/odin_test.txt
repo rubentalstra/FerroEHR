@@ -1,0 +1,78 @@
+person = (List<PERSON>) <
+    [01234] = <
+        name = < -- person's name
+            forenames = <"Sherlock">
+            family_name = <"Holmes">
+            salutation = <"Mr">
+        >
+        address = < -- person's address
+            habitation_number = <"221B">
+            street_name = <"Baker St">
+            city = <"London">
+            country = <"England">
+        >
+    >
+>
+
+term = <text = <"plan">; description = <"The clinician's advice">>
+
+people = <
+    [1] = <name = <"akmal"> birth_date = <1975-02-21> interests = <"painting", "running"> >
+    [2] = <name = <"akmal"> birth_date = <1965-02-23> interests = <"knitting", "watching plants grow"> >
+    [3] = <name = <"gianni"> birth_date = <1921-05-22> interests = <"sky diving", "boxing", "reading a book"> >
+>
+
+people = <
+    ["akmal:1975-04-22"] = <name = <"akmal"> birth_date = <1975-04-22> interests = <"painting", "running"> >
+    ["akmal:1962-02-11"] = <name = <"akmal"> birth_date = <1962-02-11> interests = <"knitting", "watching plants grow"> >
+    ["gianni:1978-11-30"] = <name = <"gianni"> birth_date = <1978-11-30> interests = <"sky diving", "boxing", "reading a book"> >
+>
+
+school_schedule = <
+    lesson_times = <08:30:00, ...>
+
+    locations = <
+        [1] = <"under the big plane tree">
+        [2] = <"under the north arch">
+        [3] = <"in a garden">
+    >
+
+    subjects = <
+        ["philosophy:plato"] = < -- note construction of key
+            name = <"philosophy">
+            teacher = <"plato">
+            topics = <"meta-physics", "natural science">
+            weighting = <"76%">
+        >
+        ["philosophy:kant"] = <
+            name = <"philosophy">
+            teacher = <"kant">
+            topics = <"meaning and reason", "meta-physics", "ethics">
+            weighting = <"80%">
+        >
+        ["art"] = <
+            name = <"art">
+            teacher = <"goya">
+            topics = <"technique", "portraiture", "satire">
+            weighting = <"78%">
+        >
+    >
+>
+
+destinations = <
+    ["seville"] = <
+        hotels = <
+            ["gran sevilla"] = </hotels["gran sevilla"]>
+            ["sofitel"] = </hotels["sofitel"]>
+            ["hotel real"] = </hotels["hotel real"]>
+        >
+    >
+>
+
+hotels = <
+    ["gran sevilla"] = (HISTORIC_HOTEL) <name=<"Gran Sevilla Hotel">>
+    ["sofitel"] = (LUXURY_HOTEL) <name=<"Sofitel">>
+    ["hotel real"] = (PENSION) <name=<"Hotel Real">>
+>
+
+

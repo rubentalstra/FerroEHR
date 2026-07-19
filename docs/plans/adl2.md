@@ -484,8 +484,18 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
 - [ ] **A4 — codes + paths + phase-1 validation**: code math, path
   grammar, the full phase-1 catalogue + class invariants; corpus cases
   keyed by rule code assert the exact code.
-- [ ] **A5 — RM validation**: VCORM/VCARM/VCORMT/VCAEX/VCACA/VCAM (+enum
-  glosses) against the generated RM model.
+- [x] **A5 — RM validation**: VCORM/VCARM/VCORMT/VCAEX/VCACA/VCAM against
+  the pluggable RmModel seam (production = generated openehr-rm model;
+  corpus = BMM-loaded openEHR test models, full 48-schema archie
+  referencemodels set vendored); VACSO/interior-VATID un-deferred;
+  phase gating per master08.
+- [ ] **A5b — emit-rm-model completeness (generator-first follow-up from
+  A5)**: the generated `openehr_rm::model` lacks (1) generic type
+  parameters (blocks VCORMT generic substitution — one fixture
+  adjudicated), (2) RM container cardinality (blocks VCACA's tight
+  lower-bound half on the production model), (3) enumeration literals
+  (blocks VCORMENV/VCORMENU/VCORMEN). Extend `emit-rm-model` + regenerate,
+  then un-defer those checks and re-claim the adjudicated fixture.
 - [ ] **A6 — conformance functions + phase-2 specialisation validation**:
   master04.5 machinery incl. collective occurrences; the full phase-2
   catalogue; specialisation corpus green.

@@ -1,0 +1,533 @@
+-- Basic Metamodel Syntax Version
+bmm_version = <"2.1">
+
+-------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+-------------------------------------
+rm_publisher = <"CIMI">
+schema_name = <"RM_CORE">
+rm_release = <"0.0.1">
+
+-------------------------------------
+-- schema documentation
+-------------------------------------
+schema_revision = <"Tue Nov 29 21:02:12 PST 2016">
+schema_lifecycle_state = <"dstu">
+schema_description = <"CIMI_RM_CORE.v0.0.1.mdzip - Schema generated from UML">
+
+
+-------------------------------------
+-- archetyping
+-------------------------------------
+archetype_rm_closure_packages = <"CIMI_Reference_Model.Core", "CIMI_Reference_Model.Data_Value_Types", "CIMI_Reference_Model.Primitive_Types", ...>
+
+-------------------------------------
+-- packages
+-------------------------------------
+
+packages = <
+	["CIMI_Reference_Model"] = <
+		name = <"CIMI_Reference_Model">
+		packages = <
+			["Primitive_Types"] = <
+				name = <"Primitive_Types">
+				classes = <"Array", "Integer", "Character", "Byte", "Real", "List", "String", "Boolean", "Any", "URI">
+			>
+			["Data_Value_Types"] = <
+				name = <"Data_Value_Types">
+				classes = <"ORDERED_VALUE", "QUANTITY", "EHR_URI", "MULTIMEDIA", "URI_VALUE", "TERM_MAPPING", "TEXT", "TIME", "ORDINAL", "DATA_VALUE", "QUANTIFIED", "INTERVAL_VALUE", "YESNO", "DATE", "PLAIN_TEXT", "AMOUNT", "CODED_TEXT", "ENCAPSULATED", "COUNT", "DATE_TIME", "IDENTIFIER", "PARSABLE", "PROPORTION", "DURATION">
+			>
+			["Core"] = <
+				name = <"Core">
+				classes = <"ARCHETYPED", "LOCATABLE", "ASSOCIATION_CLASS">
+			>
+		>
+	>
+>
+
+-------------------------------------
+-- classes
+-------------------------------------
+
+class_definitions = <
+	
+	-------------------------------------
+	-- Data_Value_Types
+	-------------------------------------
+
+	["ORDERED_VALUE"] = <
+		name = <"ORDERED_VALUE">
+		ancestors = <"DATA_VALUE", ...>
+		is_abstract = <True>
+	>
+
+	["QUANTITY"] = <
+		name = <"QUANTITY">
+		ancestors = <"AMOUNT", ...>
+		properties = <
+			["precision"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"precision">
+				type = <"Integer">
+			>
+			["units"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"units">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["EHR_URI"] = <
+		name = <"EHR_URI">
+		ancestors = <"URI_VALUE", ...>
+	>
+
+	["MULTIMEDIA"] = <
+		name = <"MULTIMEDIA">
+		ancestors = <"ENCAPSULATED", ...>
+		properties = <
+			["data"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"data">
+				type_def = <
+					container_type = <"List">
+					type = <"Byte">
+				>
+				cardinality = <|>=0|>
+			>
+			["media_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"media_type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["alternate_text"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"alternate_text">
+				type = <"Byte">
+			>
+			["uri"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uri">
+				type = <"URI_VALUE">
+			>
+		>
+	>
+
+	["URI_VALUE"] = <
+		name = <"URI_VALUE">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"URI">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TERM_MAPPING"] = <
+		name = <"TERM_MAPPING">
+		properties = <
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"purpose">
+				type = <"CODED_TEXT">
+			>
+			["match"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"match">
+				type = <"Character">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"target">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TEXT"] = <
+		name = <"TEXT">
+		ancestors = <"DATA_VALUE", ...>
+		is_abstract = <True>
+		properties = <
+			["mapping"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"mapping">
+				type_def = <
+					container_type = <"List">
+					type = <"TERM_MAPPING">
+				>
+				cardinality = <|>=0|>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["TIME"] = <
+		name = <"TIME">
+		ancestors = <"DATE_TIME", ...>
+	>
+
+	["ORDINAL"] = <
+		name = <"ORDINAL">
+		ancestors = <"ORDERED_VALUE", ...>
+		properties = <
+			["symbol"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"symbol">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["DATA_VALUE"] = <
+		name = <"DATA_VALUE">
+		is_abstract = <True>
+	>
+
+	["QUANTIFIED"] = <
+		name = <"QUANTIFIED">
+		ancestors = <"ORDERED_VALUE", ...>
+		is_abstract = <True>
+		properties = <
+			["value_status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value_status">
+				type = <"String">
+			>
+		>
+	>
+
+	["INTERVAL_VALUE"] = <
+		name = <"INTERVAL_VALUE">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"ORDERED_VALUE">
+			>
+		>
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["lower_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lower_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"upper_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"lower">
+				type = <"T">
+			>
+			["upper"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"upper">
+				type = <"T">
+			>
+			["lower_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lower_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"upper_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["YESNO"] = <
+		name = <"YESNO">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["DATE"] = <
+		name = <"DATE">
+		ancestors = <"DATE_TIME", ...>
+	>
+
+	["PLAIN_TEXT"] = <
+		name = <"PLAIN_TEXT">
+		ancestors = <"TEXT", ...>
+		properties = <
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+
+	["AMOUNT"] = <
+		name = <"AMOUNT">
+		ancestors = <"QUANTIFIED", ...>
+		is_abstract = <True>
+		properties = <
+			["accuracy"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"accuracy">
+				type = <"Real">
+			>
+			["accuracy_is_percent"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"accuracy_is_percent">
+				type = <"Boolean">
+			>
+		>
+	>
+
+	["CODED_TEXT"] = <
+		name = <"CODED_TEXT">
+		ancestors = <"TEXT", ...>
+		properties = <
+			["terminology_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"terminology_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["term"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"term">
+				type = <"String">
+			>
+			["uri"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uri">
+				type = <"URI">
+			>
+			["terminology_version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"terminology_version">
+				type = <"String">
+			>
+		>
+	>
+
+	["ENCAPSULATED"] = <
+		name = <"ENCAPSULATED">
+		ancestors = <"DATA_VALUE", ...>
+		is_abstract = <True>
+	>
+
+	["COUNT"] = <
+		name = <"COUNT">
+		ancestors = <"AMOUNT", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Integer">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["DATE_TIME"] = <
+		name = <"DATE_TIME">
+		ancestors = <"QUANTIFIED", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["IDENTIFIER"] = <
+		name = <"IDENTIFIER">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["issuer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"issuer">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["PARSABLE"] = <
+		name = <"PARSABLE">
+		ancestors = <"ENCAPSULATED", ...>
+		properties = <
+			["formalism"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"formalism">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["PROPORTION"] = <
+		name = <"PROPORTION">
+		ancestors = <"AMOUNT", ...>
+		properties = <
+			["precision"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"precision">
+				type = <"Integer">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["denominator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"denominator">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+			["numerator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"numerator">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["DURATION"] = <
+		name = <"DURATION">
+		ancestors = <"QUANTITY", ...>
+		properties = <
+			["duration_text"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"duration_text">
+				type = <"String">
+			>
+		>
+	>
+
+	
+	-------------------------------------
+	-- Core
+	-------------------------------------
+
+	["ARCHETYPED"] = <
+		name = <"ARCHETYPED">
+		properties = <
+			["rm_version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rm_version">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["LOCATABLE"] = <
+		name = <"LOCATABLE">
+		is_abstract = <True>
+		properties = <
+			["archetype_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_details">
+				type = <"ARCHETYPED">
+			>
+			["archetype_node_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_node_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ASSOCIATION_CLASS"] = <
+		name = <"ASSOCIATION_CLASS">
+		is_abstract = <True>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"TEXT">
+			>
+		>
+	>
+
+>
+
+-------------------------------------
+-- primitive types
+-------------------------------------
+
+primitive_types = <
+	["Array"] = <
+		name = <"Array">
+		generic_parameter_defs = <
+			["null"] = <
+				name = <"null">
+			>
+		>
+	>
+	["Integer"] = <
+		name = <"Integer">
+	>
+	["Character"] = <
+		name = <"Character">
+	>
+	["Byte"] = <
+		name = <"Byte">
+	>
+	["Real"] = <
+		name = <"Real">
+	>
+	["List"] = <
+		name = <"List">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"Any">
+			>
+		>
+	>
+	["String"] = <
+		name = <"String">
+	>
+	["Boolean"] = <
+		name = <"Boolean">
+	>
+	["Any"] = <
+		name = <"Any">
+	>
+	["URI"] = <
+		name = <"URI">
+	>
+>
+

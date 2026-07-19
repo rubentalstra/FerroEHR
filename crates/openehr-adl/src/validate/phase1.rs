@@ -7,10 +7,14 @@
 //! cannot be checked against a missing/inconsistent terminology). Every check
 //! cites the spec file + section that defines it.
 //!
-//! Deferred in phase 1 (variant present, check not run here): VDIFP (needs the
-//! flat parent — A7), VETDF (needs an external terminology service), VARXR (the
-//! external-reference resolution half — phase 2), VSONIF (flat siblings —
-//! phase 2), and the reference-model path halves of VRANP/VRRLP/VRMVP (A5).
+//! Not run in phase 1 (the variant is present as the catalogue vocabulary):
+//! the reference-model checks live in [`super::rm`]. The rest need machinery
+//! phase 1 does not have —
+//! TODO: run VDIFP (needs the specialisation flattener's flat parent),
+//! VSONIF (needs the flattened parent siblings), the external-reference
+//! resolution half of VARXR (needs the supplier repository), VETDF (needs an
+//! external terminology service), and the pure reference-model path halves of
+//! VRANP/VRRLP/VRMVP (a reference-model path walk, `super::rm`).
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -251,9 +255,10 @@ fn check_specialisation_depth(
 /// VALC: the languages of a specialised archetype must be the same as or a
 /// subset of the flat parent's (master03 §Validity Rules).
 ///
-/// NOTE: uses the parent's *un-flattened* language set as the reference (the
-/// flattener lands in A7); a parent's own languages are a superset of nothing
-/// discarded here, so this is a sound conservative approximation for phase 1.
+/// NOTE: uses the parent's *un-flattened* language set as the reference; a
+/// parent's own languages are a superset of nothing discarded here, so this is
+/// a sound conservative approximation.
+/// TODO: compare against the flattened parent once the flattener exists.
 fn check_language_conformance(
     v: &ArchetypeView<'_>,
     repo: Option<&ArchetypeRepository>,
@@ -333,7 +338,8 @@ impl Scan<'_> {
         // §`C_OBJECT`). Synthetic primitive ids are exempt. Deferred for a
         // specialised archetype: a differential legitimately re-references an
         // inherited node id at a redefinition, so uniqueness is a flat-form
-        // property (checked after flattening, A7).
+        // property.
+        // TODO: check VCOSU uniqueness on the flattened specialised form.
         if is_identified && !nid.is_empty() && !self.v.is_specialised() {
             if let Some(first) = self.seen_node_ids.get(nid) {
                 let dup = format!("node id {nid:?} is not unique (also at {first})");
@@ -355,14 +361,16 @@ impl Scan<'_> {
             | CObject::CTime(_)
             | CObject::CDateTime(_)
             | CObject::CDuration(_) => self.check_primitive_assumed(path, obj),
-            CObject::CComplexObjectProxy(_) => {} // VUNP is phase 3
+            // TODO: run VUNP (`C_COMPLEX_OBJECT_PROXY` target) on the flat form.
+            CObject::CComplexObjectProxy(_) => {}
         }
     }
 
     fn walk_complex(&mut self, path: &str, cco: &CComplexObject) {
         // VARXNC / VARXAV / VARXTV: `C_ARCHETYPE_ROOT` validity (master08 §Phase 1
-        // §Various Structure Validation). The external-reference resolution
-        // (VARXR) is phase 2 and deferred.
+        // §Various Structure Validation).
+        // TODO: run VARXR (external-reference resolution) against the supplier
+        // repository.
         if let CComplexObject::CArchetypeRoot(r) = cco {
             if r.node_id.is_empty() {
                 self.push(
@@ -427,15 +435,15 @@ impl Scan<'_> {
         // attribute's *stated* cardinality (master04.5 §`C_ATTRIBUTE`). They run
         // only when a cardinality is present (which reliably means the attribute
         // is a container) and the archetype is its own flat form — a specialised
-        // archetype may not restate the inherited cardinality (A7).
+        // archetype may not restate the inherited cardinality.
         //
         // NOTE: VACSO ("child of a single-valued attribute cannot have
-        // occurrences upper > 1") is deferred to the RM checks (A5). A
-        // single-valued attribute is defined by `C_ATTRIBUTE._is_multiple_`
-        // being False, which is an RM-derived property; the parser's heuristic
-        // (`is_multiple = cardinality present`) misclassifies a multi-valued RM
-        // attribute that omits its cardinality (e.g. `CLUSTER.items`) as
-        // single-valued, so a robust VACSO needs the generated RM model.
+        // occurrences upper > 1") is a reference-model check — a single-valued
+        // attribute is `C_ATTRIBUTE._is_multiple_` False, an RM-derived property
+        // the parser's `is_multiple = cardinality present` heuristic cannot
+        // supply (it misclassifies e.g. `CLUSTER.items`); it runs in
+        // [`super::rm`].
+        // TODO: apply VACMCU/WACMCL on the flattened specialised form.
         if !self.v.is_specialised() && attr.is_multiple {
             self.check_container_cardinality(&attr_path, attr);
         }
@@ -559,10 +567,11 @@ impl Scan<'_> {
     /// (master04.5 §`C_PRIMITIVE_OBJECT`). Implemented for the enumerable
     /// primitives (Boolean / String), whose value space is an explicit list.
     ///
-    /// NOTE: interval containment for the ordered primitives
-    /// (Integer/Real/Date/Time/DateTime/Duration) is deferred to the
-    /// conformance-function work (A6, the `c_value_conforms_to` machinery); the
-    /// enumerable cases cover the standalone phase-1 need.
+    /// NOTE: only the enumerable primitives (Boolean / String) are covered
+    /// here; the ordered primitives cover the standalone phase-1 need.
+    /// TODO: interval containment for the ordered primitives
+    /// (Integer/Real/Date/Time/DateTime/Duration) via the `c_value_conforms_to`
+    /// conformance functions.
     fn check_primitive_assumed(&mut self, path: &str, obj: &CObject) {
         match obj {
             CObject::CBoolean(b) => {
@@ -620,12 +629,12 @@ fn check_terminology(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
     // VATID: the root concept code must be defined in the terminology (master08
     // §Code Validation; NOTE-flagged, no full vendored text).
     //
-    // NOTE: the per-node id-code definedness half is deferred — whether an
-    // interior node id-code must be defined depends on the RM multiplicity of
-    // its owning attribute (master07 §Overview: "for nodes that are children of
-    // single-valued attribute, a term definition is optional"), which needs the
-    // RM model (A5); and for specialised archetypes it needs the flattened
-    // terminology (A7). Phase-1 checks only the always-local root concept code.
+    // NOTE: the per-node id-code definedness half is a reference-model check —
+    // whether an interior node id-code must be defined depends on the RM
+    // multiplicity of its owning attribute (master07 §Overview: "for nodes that
+    // are children of single-valued attribute, a term definition is optional");
+    // it runs in [`super::rm`]. Phase-1 checks only the always-local root
+    // concept code.
     let root_id = complex_node_id(v.definition);
     if !root_id.is_empty()
         && (is_id_code(root_id) || is_at_code(root_id))
@@ -639,8 +648,9 @@ fn check_terminology(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
 
     // VATDF: at-codes used in term constraints defined in the terminology of the
     // flattened form (master03 §Validity Rules). For a specialised archetype the
-    // flat form is not yet available (A7), so this runs only when the archetype
+    // flat form is not available here, so this runs only when the archetype
     // is its own flat form (non-specialised).
+    // TODO: run VATDF against the flattened terminology for specialised archetypes.
     // VACDF: ac-codes defined in the current archetype (master03 — "current",
     // not flattened; runs for all). VATCD: code level <= archetype level.
     let flat_self = !v.is_specialised();
@@ -831,8 +841,9 @@ fn check_value_sets(
             }
         }
         // VTVSMD: members must be defined in the terminology of the *flattened*
-        // form (master07). Deferred for a specialised archetype (the flat form
-        // lands in A7); runs only when the archetype is its own flat form.
+        // form (master07). Runs only when the archetype is its own flat form.
+        // TODO: check VTVSMD against the flattened terminology for specialised
+        // archetypes.
         if flat_self {
             for m in &set.members {
                 if !defined.contains(m.as_str()) {
@@ -885,7 +896,7 @@ fn check_bindings(
             } else if has_node_id_predicate(key) {
                 // VTTBK: a node-id-predicated path must resolve within the
                 // archetype (master07 §Validity Rules). A pure-RM path (no
-                // predicate) is deferred to the RM checks (A5).
+                // predicate) is a reference-model concern (`super::rm`).
                 if resolve(v.definition, key) != Resolution::Found {
                     issues.push(ValidationIssue::new(
                         ValidationCode::Vttbk,
@@ -903,8 +914,8 @@ fn check_bindings(
 /// valid for the root class (master03 §Validity Rules).
 ///
 /// NOTE: only paths carrying a node-id predicate are resolved against the
-/// archetype here; a pure reference-model path (no `[id…]` predicate) is an RM
-/// question deferred to the RM checks (A5).
+/// archetype here; a pure reference-model path (no `[id…]` predicate) is a
+/// reference-model question (`super::rm`).
 fn check_annotations(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
     let Some(annotations) = v.annotations else {
         return;
@@ -967,7 +978,8 @@ fn check_resource_description_languages(v: &ArchetypeView<'_>, issues: &mut Vec<
 /// §Validity). The path's node-id-predicated part must resolve; the alias must
 /// be a defined at-code.
 ///
-/// NOTE: the pure-RM tail of a visibility path is deferred to the RM checks.
+/// NOTE: the pure-RM tail of a visibility path is a reference-model concern
+/// (`super::rm`).
 fn check_rm_overlay(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
     let Some(overlay) = v.rm_overlay else {
         return;
@@ -1008,7 +1020,8 @@ fn check_rm_overlay(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
 ///
 /// NOTE: implemented by scanning the raw `rules` section text for node-id-
 /// predicated path literals and resolving them; the RM-valid-extension half is
-/// deferred to the RM checks (A5). Pure-RM rule paths are accepted here.
+/// a reference-model concern (`super::rm`). Pure-RM rule paths are accepted
+/// here.
 fn check_rule_paths(
     v: &ArchetypeView<'_>,
     src: &SourceArtefact,

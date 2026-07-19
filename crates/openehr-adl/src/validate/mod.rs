@@ -5,22 +5,30 @@
 //! (one variant per AOM2 validity code), a [`Severity`], a message, and — where
 //! derivable — the archetype path the issue is anchored at.
 //!
-//! Phase 1 (basic integrity, standalone) is implemented here
-//! ([`validate_phase1`] / [`validate_source_phase1`]); phases 2 (RM +
-//! specialised-vs-flat-parent) and 3 (flat form) land in later phases. The
+//! Phase 1 (basic integrity, standalone) is implemented in [`phase1`]
+//! ([`validate_phase1`] / [`validate_source_phase1`]); the phase-2
+//! reference-model checks are in [`rm`] ([`rm::validate_phase2_rm`]). The
 //! phase-1 catalogue and its orchestration are defined in
 //! `docs/specs/openehr/AM/docs/AOM2/master08-validation.adoc` §Phase 1 - Basic
 //! Integrity, with the full rule texts in `master03-archetype_package.adoc`,
 //! `master04.5-constraint_model-class_definitions.adoc`,
 //! `master06-rm_overlay.adoc`, and `master07-terminology_package.adoc` (cited
-//! per check in [`phase1`]).
+//! per check in [`phase1`]); the phase-2 RM checks are `master08` §Phase 2 →
+//! Validate Against Reference Model (cited per check in [`rm`]).
 //!
-//! Parent seam: parent-dependent checks (VACSD's depth comparison, VASID,
-//! VALC, VTPL) take an optional [`ArchetypeRepository`]; when a parent is not
-//! supplied they degrade to the standalone half they can compute (or are
-//! skipped), so phase 2 (A6) slots in without re-architecture.
+//! Phase orchestration follows `master08` "multi-pass … more basic kinds of
+//! errors being checked first": phase 2 runs only after phase 1 passes, which
+//! [`validate`] / [`validate_source`] apply (`master08` §Overview). Parent-
+//! dependent checks (VACSD's depth comparison, VASID, VALC, VTPL) take an
+//! optional [`ArchetypeRepository`]; when a parent is not supplied they degrade
+//! to the standalone half they can compute (or are skipped).
+//!
+//! TODO: the specialised-archetype-vs-flat-parent phase-2 checks (VSON*/
+//! VDSS*/VARX*) and the phase-3 flat-form checks (VUNP, VACMCO) need the
+//! specialisation flattener before they can run.
 
 mod phase1;
+pub mod rm;
 
 use std::collections::HashMap;
 
@@ -85,9 +93,29 @@ pub enum ValidationCode {
     /// VDIFV — differential path only in specialised archetype (master04.5
     /// §`C_ATTRIBUTE`).
     Vdifv,
-    /// VDIFP — differential path exists in flat parent (master04.5 §`C_ATTRIBUTE`;
-    /// deferred — needs the flat parent + RM).
+    /// VDIFP — differential path exists in flat parent (master04.5 §`C_ATTRIBUTE`).
+    ///
+    /// TODO: needs the specialisation flattener (the flat parent) + the RM path
+    /// walk before it can run.
     Vdifp,
+    /// VCORM — object constraint type name exists in the RM (master04.5
+    /// §`C_OBJECT`; checked in [`rm`]).
+    Vcorm,
+    /// VCORMT — object type conforms to the owning attribute's RM type
+    /// (master04.5 §`C_OBJECT`; checked in [`rm`]).
+    Vcormt,
+    /// VCARM — attribute name exists on the enclosing RM type (master04.5
+    /// §`C_ATTRIBUTE`; checked in [`rm`]).
+    Vcarm,
+    /// VCAEX — attribute existence conforms to the RM existence (master04.5
+    /// §`C_ATTRIBUTE`; checked in [`rm`]).
+    Vcaex,
+    /// VCACA — attribute cardinality conforms to the RM cardinality (master04.5
+    /// §`C_ATTRIBUTE`; checked in [`rm`]).
+    Vcaca,
+    /// VCAM — attribute single/multiple arity matches the RM (master04.5
+    /// §`C_ATTRIBUTE`; checked in [`rm`]).
+    Vcam,
     /// VATCV — terminology code format validity (master08 §Phase 1; no full
     /// vendored text — NOTE-flagged).
     Vatcv,
@@ -99,8 +127,8 @@ pub enum ValidationCode {
     Vttbk,
     /// VTCBK — constraint binding key valid (master07 §Validity Rules).
     Vtcbk,
-    /// VETDF — external term validity (master03 §Validity Rules; deferred —
-    /// needs an external terminology service).
+    /// VETDF — external term validity (master03 §Validity Rules).
+    /// TODO: check against an external terminology service.
     Vetdf,
     /// VTVSID — value-set id defined (master07 §Validity Rules).
     Vtvsid,
@@ -119,8 +147,8 @@ pub enum ValidationCode {
     Varxnc,
     /// VARXAV — `C_ARCHETYPE_ROOT` archetype-ref validity (master08 §Phase 1).
     Varxav,
-    /// VARXR — external reference resolution (master08 §Phase 2; deferred —
-    /// needs the supplier repository).
+    /// VARXR — external reference resolution (master08 §Phase 2).
+    /// TODO: resolve external references against the supplier repository.
     Varxr,
     /// VARXTV — `C_ARCHETYPE_ROOT` type validity (master08 §Phase 1).
     Varxtv,
@@ -130,15 +158,16 @@ pub enum ValidationCode {
     /// VATCD — archetype code specialisation level validity (master03 §Validity
     /// Rules).
     Vatcd,
-    /// VATDF — value code (at-code) validity (master03 §Validity Rules; the
-    /// flat-parent half is NOTE-deferred for specialised archetypes).
+    /// VATDF — value code (at-code) validity (master03 §Validity Rules).
+    /// TODO: check the flat-parent half for specialised archetypes (needs the
+    /// flattener).
     Vatdf,
     /// VACDF — constraint code (ac-code) validity (master03 §Validity Rules).
     Vacdf,
     /// VATDA — value-set assumed value code validity (master03 §Validity Rules).
     Vatda,
     /// VRANP — annotation path valid (master03 §Validity Rules; the RM-path half
-    /// is NOTE-deferred to the RM checks).
+    /// is a reference-model check, [`rm`]).
     Vranp,
     /// VOKU — object key unique in keyed lists (master03 §Validity Rules).
     Voku,
@@ -154,11 +183,11 @@ pub enum ValidationCode {
     /// VALC — archetype language conformance (master03 §Validity Rules; fires
     /// only when the parent is supplied).
     Valc,
-    /// VTPL — template/filler language consistency (master03 §Validity Rules;
-    /// deferred — needs the resolved fillers).
+    /// VTPL — template/filler language consistency (master03 §Validity Rules).
+    /// TODO: check once template fillers are resolved.
     Vtpl,
     /// VRRLP — rule path valid (master03 §Validity Rules; the RM-extension half
-    /// is NOTE-deferred to the RM checks).
+    /// is a reference-model check, [`rm`]).
     Vrrlp,
     /// VCOCD — object constraint definition validity (master04.5 §`C_OBJECT`).
     Vcocd,
@@ -185,7 +214,8 @@ pub enum ValidationCode {
     /// §`C_ATTRIBUTE`).
     Vacmcu,
     /// VSONIF — object node identification validity in flat siblings (master04.5
-    /// §`ARCHETYPE_SLOT`; deferred — needs the flat parent; refs undefined VACMI).
+    /// §`ARCHETYPE_SLOT`; refs undefined VACMI).
+    /// TODO: check against the flattened parent siblings (needs the flattener).
     Vsonif,
     /// VRDLA — resource-description language-code consistency (archie parity; no
     /// openEHR spec governs this — our own design/extension, NOTE-flagged).
@@ -215,6 +245,12 @@ impl ValidationCode {
             Self::Votm => "VOTM",
             Self::Vdifv => "VDIFV",
             Self::Vdifp => "VDIFP",
+            Self::Vcorm => "VCORM",
+            Self::Vcormt => "VCORMT",
+            Self::Vcarm => "VCARM",
+            Self::Vcaex => "VCAEX",
+            Self::Vcaca => "VCACA",
+            Self::Vcam => "VCAM",
             Self::Vatcv => "VATCV",
             Self::Vtsd => "VTSD",
             Self::Vtlc => "VTLC",
@@ -409,6 +445,49 @@ pub fn validate_source_phase1(
     Ok(issues)
 }
 
+/// Validate an assembled [`Archetype`] against phase 1 and — only if phase 1
+/// raised no [`Severity::Error`] — the phase-2 reference-model checks against
+/// `rm`.
+///
+/// This is the `master08` §Overview phase gate ("more basic kinds of errors
+/// being checked first"): the RM pass runs on a structurally-sound archetype
+/// only. Source-level phase-1 checks (VOKU) are not included — use
+/// [`validate_source`] for those.
+#[must_use]
+pub fn validate(
+    archetype: &Archetype,
+    repo: Option<&ArchetypeRepository>,
+    rm: &dyn rm::RmModel,
+) -> Vec<ValidationIssue> {
+    let mut issues = validate_phase1(archetype, repo);
+    if issues.iter().all(|i| i.severity != Severity::Error) {
+        issues.extend(rm::validate_phase2_rm(archetype, rm));
+    }
+    issues
+}
+
+/// Parse and validate ADL2 `src` against phase 1 (including the source-level
+/// checks) and — only if phase 1 is error-free — the phase-2 reference-model
+/// checks against `rm` (`master08` §Overview phase gate).
+///
+/// # Errors
+/// Returns the parse [`SyntaxError`]s if `src` does not parse into an
+/// [`Archetype`]; validation runs only on a successful parse.
+pub fn validate_source(
+    src: &str,
+    repo: Option<&ArchetypeRepository>,
+    rm: &dyn rm::RmModel,
+) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
+    let source = parse_source(src)?;
+    let archetype = crate::assemble::assemble(&source, src)?;
+    let mut issues = Vec::new();
+    phase1::run(&view(&archetype), repo, Some((&source, src)), &mut issues);
+    if issues.iter().all(|i| i.severity != Severity::Error) {
+        issues.extend(rm::validate_phase2_rm(&archetype, rm));
+    }
+    Ok(issues)
+}
+
 /// A borrowed, artefact-kind-agnostic view of an [`Archetype`]'s common fields
 /// — the single access point the checks read through.
 pub(crate) struct ArchetypeView<'a> {
@@ -528,6 +607,12 @@ mod tests {
             ValidationCode::Votm,
             ValidationCode::Vdifv,
             ValidationCode::Vdifp,
+            ValidationCode::Vcorm,
+            ValidationCode::Vcormt,
+            ValidationCode::Vcarm,
+            ValidationCode::Vcaex,
+            ValidationCode::Vcaca,
+            ValidationCode::Vcam,
             ValidationCode::Vatcv,
             ValidationCode::Vtsd,
             ValidationCode::Vtlc,
@@ -583,6 +668,6 @@ mod tests {
             };
             assert_eq!(c.severity(), expected, "{c} severity");
         }
-        assert_eq!(seen.len(), 54);
+        assert_eq!(seen.len(), 60);
     }
 }

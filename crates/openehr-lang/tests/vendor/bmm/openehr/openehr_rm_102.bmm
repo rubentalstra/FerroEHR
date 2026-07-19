@@ -1,0 +1,48 @@
+-- 
+-- 	component:   openEHR Archetype Project
+-- 	description: openEHR Reference Model formal expression. This file is a DADL serialisation of
+--               the BMM object meta-model classes found at 
+--               http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/specialisation/libraries/common_libs/src/basic_meta_model
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale
+-- 	support:     Ocean Informatics <support@OceanInformatics.com>
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as value of 'Bmm_internal_version' in 
+--     http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/adl1.5/libraries/common_libs/src/basic_meta_model/bmm_definitions.e
+--
+------------------------------------------------------
+bmm_version = <"2.0">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"rm">
+rm_release = <"1.0.2">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"$LastChangedRevision: 27 $">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.0.2 reference model schema">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_ehr_1.0.2">
+	>
+	["2"] = <
+		id = <"openehr_demographic_1.0.2">
+	>
+>
+
+

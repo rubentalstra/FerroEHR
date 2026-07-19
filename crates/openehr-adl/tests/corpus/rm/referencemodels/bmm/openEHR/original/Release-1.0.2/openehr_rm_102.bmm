@@ -1,0 +1,48 @@
+-- 
+-- 	component:   openEHR BMM Implementation Technology Specification
+-- 	description: openEHR Reference Model formal expression. This file is an ODIN serialisation of
+--               the BMM object meta-model classes found at 
+--               https://www.openehr.org/releases/LANG/latest/p_bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/issues/?filter=11117
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as the top version in the specification:
+--     https://www.openehr.org/releases/LANG/latest/bmm_persistence.html#_amendment_record
+--
+------------------------------------------------------
+bmm_version = <"2.1">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"rm">
+rm_release = <"1.0.2">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"$LastChangedRevision: 27 $">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.0.2 reference model schema">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_ehr_1.0.2">
+	>
+	["2"] = <
+		id = <"openehr_demographic_1.0.2">
+	>
+>
+
+

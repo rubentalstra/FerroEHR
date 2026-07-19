@@ -1,0 +1,303 @@
+-- 
+-- 	component:   openEHR BMM Implementation Technology Specification
+-- 	description: openEHR Reference Model formal expression. This file is an ODIN serialisation of
+--               the BMM object meta-model classes found at 
+--               https://www.openehr.org/releases/LANG/latest/p_bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/issues/?filter=11117
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as the top version in the specification:
+--     https://www.openehr.org/releases/LANG/latest/bmm_persistence.html#_amendment_record
+--
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"rm_demographic">
+rm_release = <"1.1.0">
+model_name = <"DEMOGRAPHIC">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.1.0.1">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.1.0 demographic model schema"> 
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_rm_structures_1.1.0">
+	>
+>
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.openehr.rm.demographic"] = <
+		name = <"org.openehr.rm.demographic">
+		classes = <"PARTY", "ROLE", "ACTOR", "PERSON", "ORGANISATION", "AGENT", "GROUP", "PARTY_RELATIONSHIP", "CAPABILITY", "CONTACT", "ADDRESS", "PARTY_IDENTITY">
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	["PARTY"] = <
+		name = <"PARTY">
+		is_abstract = <True>
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["uid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uid">
+				type = <"UID_BASED_ID">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"details">
+				type = <"ITEM_STRUCTURE">
+			>
+			["identities"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"identities">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTY_IDENTITY">
+				>
+				is_mandatory = <True>
+				cardinality = <|>=1|>
+			>
+			["contacts"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"contacts">
+				type_def = <
+					container_type = <"Set">
+					type = <"CONTACT">
+				>
+				cardinality = <|>=1|>
+			>
+			["relationships"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"relationships">
+				type_def = <
+					container_type = <"Set">
+					type = <"PARTY_RELATIONSHIP">
+				>
+				cardinality = <|>=1|>
+			>
+			["reverse_relationships"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"reverse_relationships">
+				type_def = <
+					container_type = <"List">
+					type = <"LOCATABLE_REF">
+				>
+				cardinality = <|>=1|>
+				is_im_runtime = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"DV_TEXT">
+				is_computed = <True>
+			>
+		>
+	>
+    
+	["PARTY_IDENTITY"] = <
+		name = <"PARTY_IDENTITY">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"details">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"purpose">
+				type = <"DV_TEXT">
+				is_computed = <True>
+			>
+		>
+	>
+	
+	["CONTACT"] = <
+		name = <"CONTACT">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["time_validity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time_validity">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_DATE">
+				>
+				is_im_runtime = <True>
+			>
+			["addresses"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"addresses">
+				type_def = <
+					container_type = <"List">
+					type = <"ADDRESS">
+				>
+				cardinality = <|>=1|>
+			>
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"purpose">
+				type = <"DV_TEXT">
+				is_computed = <True>
+			>
+		>
+	>
+	
+	["ADDRESS"] = <
+		name = <"ADDRESS">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"details">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"DV_TEXT">
+				is_computed = <True>
+			>
+		>
+	>
+	
+	["ACTOR"] = <
+		name = <"ACTOR">
+		is_abstract = <True>
+		ancestors = <"PARTY", ...>
+		properties = <
+			["roles"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"roles">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTY_REF">
+				>
+				cardinality = <|>=1|>
+			>
+			["languages"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"languages">
+				type_def = <
+					container_type = <"List">
+					type = <"DV_TEXT">
+				>
+				cardinality = <|>=1|>
+			>
+		>
+	>
+
+	["PERSON"] = <
+		name = <"PERSON">
+		ancestors = <"ACTOR", ...>
+	>
+
+	["ORGANISATION"] = <
+		name = <"ORGANISATION">
+		ancestors = <"ACTOR", ...>
+	>
+
+	["GROUP"] = <
+		name = <"GROUP">
+		ancestors = <"ACTOR", ...>
+	>
+
+	["AGENT"] = <
+		name = <"AGENT">
+		ancestors = <"ACTOR", ...>
+	>
+
+	["ROLE"] = <
+		name = <"ROLE">
+		ancestors = <"PARTY", ...>
+		properties = <
+			["performer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"performer">
+				type = <"PARTY_REF">
+				is_mandatory = <True>
+			>
+			["capabilities"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"capabilities">
+				type_def = <
+					container_type = <"List">
+					type = <"CAPABILITY">
+				>
+				cardinality = <|>=1|>
+			>
+			["time_validity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time_validity">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_DATE">
+				>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["CAPABILITY"] = <
+		name = <"CAPABILITY">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["credentials"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"credentials">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+			["time_validity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time_validity">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_DATE">
+				>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["PARTY_RELATIONSHIP"] = <
+		name = <"PARTY_RELATIONSHIP">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["source"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"source">
+				type = <"PARTY_REF">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"target">
+				type = <"PARTY_REF">
+				is_mandatory = <True>
+			>
+			["details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"details">
+				type = <"ITEM_STRUCTURE">
+			>
+			["time_validity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time_validity">
+				type_def = <
+					root_type = <"DV_INTERVAL">
+					generic_parameters = <"DV_DATE">
+				>
+				is_im_runtime = <True>
+			>
+		>
+	>
+>
+

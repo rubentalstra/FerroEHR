@@ -7,8 +7,8 @@
 //!
 //! - a tag naming a **phase-1** code ⇒ the validator raises exactly that code;
 //! - a `PASS`/untagged-features file ⇒ zero phase-1 errors (warnings allowed);
-//! - a tag naming a **phase-2/3/RM or deferred phase-1** code ⇒ no phase-1
-//!   error false-positive (recorded as deferred-to-later-phase);
+//! - a tag naming a **phase-2/3/RM or not-yet-run phase-1** code ⇒ no phase-1
+//!   error false-positive (recorded as not-yet-checked);
 //! - `FAIL` / `S*` (syntax) tags stay claimed by the parse gates — asserted
 //!   only to reject (parse error or any typed error).
 //!
@@ -23,8 +23,8 @@ use openehr_adl::validate::{ArchetypeRepository, Severity, validate_source_phase
 
 const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-reference");
 
-/// The phase-1 codes the validator actively raises (A4). A tag in this set must
-/// be raised exactly; a tag outside it (but still a V/W code) is deferred.
+/// The phase-1 codes the validator actively raises. A tag in this set must be
+/// raised exactly; a tag outside it (but still a V/W code) is not asserted here.
 const PHASE1_FIRING: &[&str] = &[
     "VARDT", "VARCN", "STCNT", "VACSD", "VOLT", "VARAV", "VARRV", "VOTM", "VDIFV", "VATCV", "VTSD",
     "VTLC", "VTTBK", "VTCBK", "VTVSID", "VTVSMD", "VTVSUQ", "VDSEV", "VDSIV", "VARXNC", "VARXAV",
@@ -32,41 +32,45 @@ const PHASE1_FIRING: &[&str] = &[
     "VARD", "VASID", "VALC", "VRRLP", "VCOID", "VCOSU", "VCATU", "VDFAI", "VOBAV", "VRMVP",
     "VRMVAV", "VACMCU", "WACMCL", "VRDLA",
     "WOUC",
-    // VACSO is deferred to A5 (its single-valued determination needs the RM
-    // `is_multiple`; the parser's cardinality heuristic misclassifies).
+    // VACSO is a reference-model check (its single-valued determination needs
+    // the RM `is_multiple`, not the parser's cardinality heuristic); it is
+    // asserted in the reference-model corpus harness (`corpus_validity_rm.rs`).
 ];
 
 /// Documented adjudications — files skipped with a spec-cited reason (never a
 /// silent exclusion). The `regression` tag names a phase-1 code whose check is
-/// genuinely deferred beyond A4.
+/// genuinely not checked in phase 1.
 fn adjudicated_skip(name: &str) -> Option<&'static str> {
     if name.ends_with("VATID_id_code_in_node_not_in_terminology.v1.0.0.adls") {
         // The per-node id-code definedness half of VATID depends on the RM
         // multiplicity of the owning attribute (master07 §Overview: a term
         // definition is optional for children of single-valued attributes),
-        // which needs the RM model (A5). Phase 1 checks only the root concept
-        // code; this interior-node case is deferred.
-        Some("VATID interior-node definedness needs RM attribute multiplicity (A5)")
+        // which needs the reference model; phase 1 checks only the root concept
+        // code. This interior-node case is asserted in the reference-model
+        // corpus harness (`corpus_validity_rm.rs`).
+        Some("VATID interior-node definedness is a reference-model check (corpus_validity_rm.rs)")
     } else if name.ends_with("ENTRY_WRONG.rm_type_wrong.v1.0.0.adls") {
-        // An RM-checking support fixture: the identifier RM class `ENTRY_WRONG`
-        // is an intentionally non-existent RM type (the subject of the RM check
-        // VCORM, A5) and the header omits `rm_release`. Tagged PASS by the
-        // corpus for the RM-check purpose, but it is not a phase-1-clean
-        // archetype; adjudicated out of the phase-1 gate.
-        Some("RM-check support fixture with an intentional non-RM type + no rm_release (A5)")
+        // Definition root type `ENTRY` != identifier RM class `ENTRY_WRONG`, so
+        // VARDT (master03 §Validity Rules L238) fires; the corpus tags it PASS —
+        // a documented tag/spec inconsistency (INVENTORY §3). Adjudicated in
+        // both harnesses rather than weakening VARDT.
+        Some("VARDT fires (ENTRY != ENTRY_WRONG, master03 L238); corpus PASS tag inconsistent")
     } else if name.ends_with("FAIL_dadl_spurious_delimiter.v1.0.0.adls") {
         // The file carries a spurious ODIN delimiter that the ADL2 lexer/parser
         // rejects at parse time (SDINV, `ADL2/master04.6`), before the VOTM
         // semantic check the tag names can run. The stricter-parse vs
-        // lenient-parse gap is an A2/A3 parser concern, not phase-1 validation.
+        // lenient-parse gap is a parser concern, not phase-1 validation.
         Some("spurious ODIN delimiter rejected at parse (SDINV) before VOTM is reachable")
     } else if name.ends_with("SOME_TYPE.code_phrase.v1.0.0.adls") {
         // A legacy ADL 1.4 source (validity/legacy_adl_1.4, INVENTORY §10 "1.4
         // tolerance") that reuses id-code `id2` for structurally-repeated
         // CODE_PHRASE nodes. VCOSU archetype-wide node-id uniqueness (master04.5
         // §C_OBJECT) is a flat-form property not enforced on un-migrated 1.4
-        // sources; the in-CDR 1.4→2 migration (A9) allocates fresh ids.
-        Some("legacy 1.4 node-id reuse; VCOSU uniqueness enforced post-migration (A9)")
+        // sources.
+        //
+        // TODO: enforce VCOSU uniqueness once the in-CDR 1.4→2 migration
+        // allocates fresh node ids for such sources.
+        Some("legacy 1.4 node-id reuse; VCOSU uniqueness is a post-migration flat-form property")
     } else {
         None
     }
@@ -229,7 +233,7 @@ fn corpus_phase1_outcomes() {
                         violations.push(format!("{name}: expected {t} but raised {error_codes:?}"));
                     }
                 }
-                // A phase-2/3/RM code, or a deferred phase-1 code: assert no
+                // A phase-2/3/RM code, or a not-yet-run phase-1 code: assert no
                 // phase-1 error false positive.
                 Some(t) => {
                     if error_codes.is_empty() {

@@ -1,0 +1,1270 @@
+-- xxx
+bmm_version = <"2.1">
+
+------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------
+rm_publisher = <"CDISC">
+schema_name = <"core">
+rm_release = <"0.5.0">
+
+------------------------------------
+-- schema documentation
+------------------------------------
+schema_revision = <"0.5">
+schema_lifecycle_state = <"experimental">
+schema_description = <"CDISC core '20 classes' model, built for archetyping POC project">
+
+------------------------------------
+-- inclusions
+------------------------------------
+includes = <
+    ["1"] = <
+         id = <"iso_21090_0.9.0">
+    >
+>
+
+------------------------------------
+-- archetyping
+------------------------------------
+archetype_rm_closure_packages = <"org.cdisc.Bridg", ...>
+
+------------------------------------
+-- packages
+------------------------------------
+
+packages = <
+    ["org.cdisc.bridg"] = <
+        name = <"org.cdisc.bridg">
+        packages = <
+            ["Common"] = <
+                name = <"Common">
+                classes = <"BiologicEntity", "BiologicEntityIdentifier", "Person", "Subject", "SubjectIdentifier", "Organization", "OrganizationIdentifier",
+                	"Product", "Activity", "Performer">
+            >
+            ["ProtocolRepresentation"] = <
+                name = <"ProtocolRepresentation">
+                classes = <"StudyProtocolVersion", "DefinedActivity", "DefinedObservation", "PlannedSubjectActivityGroup", "StudyActivity", "PlannedActivity", 
+					"StudyAgent", "PlannedCompositionRelationship", "DefinedCompositionRelationship">
+            >
+            ["StudyConduct"] = <
+                name = <"StudyConduct">
+                classes = <"StudySite", "StudySubject", "StudySubjectProtocolVersionRelationship", "StudySiteProtocolVersionRelationship", 
+							"PerformedActivity", "PerformedObservation", "PerformedObservationResult", "PerformedCompositionRelationship">
+            >
+        >
+    >
+>
+
+------------------------------------
+-- classes
+------------------------------------
+
+class_definitions = <
+
+    ------------------------------------
+    -- Core
+    ------------------------------------
+
+    ["BiologicEntity"] = <
+        name = <"BiologicEntity">
+        properties = <
+            ["actualIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"actualIndicator">
+                type = <"BL">
+                is_mandatory = <True>
+            >
+            ["administrativeGenderCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"administrativeGenderCode">
+                type = <"CD">
+            >
+            ["birthCountryCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"birthCountryCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["birthDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"birthDate">
+                type = <"DATETIME">
+				is_im_runtime = <True>
+            >
+            ["birthOrder"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"birthOrder">
+                type = <"INT">
+				is_im_runtime = <True>
+            >
+            ["deathDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"deathDate">
+                type = <"DATETIME">
+				is_im_runtime = <True>
+            >
+            ["deathDateEstimatedIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"deathDateEstimatedIndicator">
+                type = <"BL">
+				is_im_runtime = <True>
+            >
+            ["deathIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"deathIndicator">
+                type = <"BL">
+				is_im_runtime = <True>
+            >
+            ["name"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"name">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"EN">
+                >
+            >
+            ["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"identifier">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"BiologicEntityIdentifier">
+                >
+				is_im_runtime = <True>
+            >
+        >
+    >
+
+	["Person"] = <
+		name = <"Person">
+		ancestors = <"BiologicEntity", ...>
+        properties = <
+            ["educationLevelCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"educationLevelCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["educationGroupCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"educationGroupCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+				is_im_runtime = <True>
+            >
+            ["initials"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"initials">
+                type = <"ST">
+				is_im_runtime = <True>
+            >
+            ["maritalStatusCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"maritalStatusCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+			["occupationDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"occupationDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATE">
+				>	
+				is_im_runtime = <True>
+			>
+            ["postalAddress"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"postalAddress">
+                type = <"AD">
+				is_im_runtime = <True>
+            >
+            ["primaryOccupationCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"primaryOccupationCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["raceCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"raceCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+				is_im_runtime = <True>
+            >
+            ["telecomAddress"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"telecomAddress">
+                type_def = <
+                    container_type = <"Bag">
+                    type = <"TEL">
+                >
+				is_im_runtime = <True>
+            >
+		>
+	>
+
+	["BiologicEntityIdentifier"] = <
+		name = <"BiologicEntityIdentifier">
+        properties = <
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+                is_mandatory = <True>
+				is_im_runtime = <True>
+            >
+            ["missingIdentifierReasonCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"missingIdentifierReasonCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+			["effectiveDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"effectiveDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+		>
+	>
+	
+	["Subject"] = <
+		name = <"Subject">
+		ancestors = <"Any", ...>
+        properties = <
+            ["performingBiologicEntity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"performingBiologicEntity">
+                type = <"BiologicEntity">
+            >
+            ["performingOrganization"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"performingOrganization">
+                type = <"Organization">
+            >
+            ["identifyingSubjectIdentifier"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"identifyingSubjectIdentifier">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"BiologicEntityIdentifier">
+                >
+				is_im_runtime = <True>
+            >
+		>
+	>
+	
+	["SubjectIdentifier"] = <
+		name = <"SubjectIdentifier">
+        properties = <
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+                is_mandatory = <True>
+				is_im_runtime = <True>
+            >
+			["effectiveDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"effectiveDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+            ["primaryIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"primaryIndicator">
+                type = <"BL">
+            >
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+            ["assigningOrganization"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assigningOrganization">
+                type = <"Organization">
+				is_im_runtime = <True>
+            >
+		>
+	>
+	
+	["Organization"] = <
+		name = <"Organization">
+        properties = <
+            ["actualIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"actualIndicator">
+                type = <"BL">
+                is_mandatory = <True>
+            >
+			["effectiveDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"effectiveDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+            ["name"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"name">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"ON">
+                >
+				is_im_runtime = <True>
+            >
+            ["description"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"description">
+                type = <"ST">
+				is_im_runtime = <True>
+            >
+            ["postalAddress"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"postalAddress">
+                type = <"AD">
+				is_im_runtime = <True>
+            >
+            ["identifyingOrganizationIdentifier"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"identifyingOrganizationIdentifier">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"OrganizationIdentifier">
+                >
+				is_im_runtime = <True>
+            >
+            ["assignedOrganizationIdentifier"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"assignedOrganizationIdentifier">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"OrganizationIdentifier">
+                >
+				is_im_runtime = <True>
+            >
+            ["telecomAddress"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"telecomAddress">
+                type_def = <
+                    container_type = <"Bag">
+                    type = <"TEL">
+                >
+				is_im_runtime = <True>
+            >
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+		>
+	>
+	
+	["OrganizationIdentifier"] = <
+		name = <"OrganizationIdentifier">
+        properties = <
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+                is_mandatory = <True>
+				is_im_runtime = <True>
+            >
+            ["primaryIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"primaryIndicator">
+                type = <"BL">
+            >
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+            ["assigner"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assigner">
+                type = <"Organization">
+				is_im_runtime = <True>
+            >
+		>
+	>
+
+	["Product"] = <
+		name = <"Product">
+        properties = <
+            ["classCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"classCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+            >
+            ["expirationDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"expirationDate">
+                type = <"DATE">
+				is_im_runtime = <True>
+            >
+            ["lotNumberText"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"lotNumberText">
+                type = <"SIMPLE">
+				is_im_runtime = <True>
+            >
+            ["pre1938Indicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"pre1938Indicator">
+                type = <"BL">
+            >
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+		>
+	>
+	
+	["StudySite"] = <
+		name = <"StudySite">
+        properties = <
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+				is_im_runtime = <True>
+            >
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"dateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+            ["leadIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"leadIndicator">
+                type = <"BL">
+            >
+            ["plannedDuration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"plannedDuration">
+                type = <"TIME">
+            >
+            ["statusCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusCode">
+                type = <"CD">
+            >
+            ["statusDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusDate">
+                type = <"DATETIME">
+            >
+			["targetAccrualNumberRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"targetAccrualNumberRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"NONNEG">
+				>	
+			>
+            ["exectuedStudySiteProtocolVersionRelationship"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"exectuedStudySiteProtocolVersionRelationship">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"StudySiteProtocolVersionRelationship">
+                >
+            >
+            ["performingOrganization"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"performingOrganization">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"Organization">
+                >
+            >
+		>
+	>
+	
+	["StudySubject"] = <
+		name = <"StudySubject">
+		ancestors = <"Subject", ...>
+        properties = <
+            ["confidentialityIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"confidentialityIndicator">
+                type = <"BL">
+            >
+            ["statusCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusCode">
+                type = <"CD">
+            >
+            ["paymentMethodCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"paymentMethodCode">
+                type = <"CD">
+            >
+            ["statusDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusDate">
+                type = <"DATETIME">
+            >
+            ["assignedStudySubjectProtocolVersionRelationship"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"assignedStudySubjectProtocolVersionRelationship">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"StudySubjectProtocolVersionRelationship">
+                >
+            >
+		>
+	>
+	
+	["StudySubjectProtocolVersionRelationship"] = <
+		name = <"StudySubjectProtocolVersionRelationship">
+        properties = <
+            ["assigningStudySiteProtocolVersionRelationship"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"assigningStudySiteProtocolVersionRelationship">
+                type = <"StudySiteProtocolVersionRelationship">
+                is_mandatory = <True>
+            >
+			["effectiveDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"effectiveDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+		>
+	>
+	
+	["Performer"] = <
+		name = <"Performer">
+        properties = <
+            ["postalAddress"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"postalAddress">
+                type = <"AD">
+				is_im_runtime = <True>
+            >
+            ["telecomAddress"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"telecomAddress">
+                type_def = <
+                    container_type = <"Bag">
+                    type = <"TEL">
+                >
+				is_im_runtime = <True>
+            >
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+				is_im_runtime = <True>
+            >
+			["effectiveDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"effectiveDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+		>
+	>
+	
+	["StudySiteProtocolVersionRelationship"] = <
+		name = <"StudySiteProtocolVersionRelationship">
+        properties = <
+			["effectiveDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"effectiveDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+		>
+	>
+	
+	["StudyAgent"] = <
+		name = <"StudyAgent">
+        properties = <
+            ["blindedName"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"blindedName">
+                type = <"ST">
+				is_im_runtime = <True>
+            >
+            ["characteristicModifiedIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"characteristicModifiedIndicator">
+                type = <"BL">
+            >
+            ["expandedAccessIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"expandedAccessIndicator">
+                type = <"BL">
+            >
+            ["firstInHumanIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"firstInHumanIndicator">
+                type = <"BL">
+            >
+            ["firstInHumanRiskFactorCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"firstInHumanRiskFactorCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+            >
+            ["functionCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"functionCode">
+                type = <"CD">
+            >
+            ["pediatricFormulationIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"pediatricFormulationIndicator">
+                type = <"BL">
+            >
+            ["statusCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusCode">
+                type = <"CD">
+            >
+            ["statusDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusDate">
+                type = <"DATETIME">
+				is_im_runtime = <True>
+            >
+            ["substitutionAllowedIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"substitutionAllowedIndicator">
+                type = <"BL">
+            >
+            ["performingProduct"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"performingProduct">
+                type = <"Product">
+                is_mandatory = <True>
+            >
+		>
+	>
+
+	["StudyProtocolVersion"] = <
+		name = <"StudyProtocolVersion">
+        properties = <
+            ["accrualReportingMethodCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"accrualReportingMethodCode">
+                type = <"CD">
+            >
+            ["acronym"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"acronym">
+                type = <"ST">
+            >
+            ["adaptiveDesignIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"adaptiveDesignIndicator">
+                type = <"BL">
+            >
+            ["aeCodingSystem"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"aeCodingSystem">
+                type = <"OID">
+            >
+            ["amendmentGracePeriod"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"amendmentGracePeriod">
+                type = <"TIME">
+            >
+            ["companionCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"companionCode">
+                type = <"CD">
+            >
+            ["conditionCodingSystem"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"conditionCodingSystem">
+                type = <"OID">
+            >
+            ["delayedRegistryPostingIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"delayedRegistryPostingIndicator">
+                type = <"BL">
+            >
+            ["designConfigurationCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"designConfigurationCode">
+                type = <"CD">
+            >
+            ["mandatoryIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"mandatoryIndicator">
+                type = <"BL">
+            >
+            ["multiInstitutionIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"multiInstitutionIndicator">
+                type = <"BL">
+            >
+            ["participatingLocationCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"participatingLocationCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+            >
+            ["participatingOrganizationTypeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"participatingOrganizationTypeCode">
+                type = <"CD">
+            >
+            ["periodicTargetAccrualNumber"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"periodicTargetAccrualNumber">
+                type = <"RTO">
+            >
+            ["phaseCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"phaseCode">
+                type = <"CD">
+            >
+            ["plannedDuration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"plannedDuration">
+                type = <"TIME">
+            >
+			["plannedSiteNumberRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"plannedSiteNumberRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"POS">
+				>	
+			>
+            ["plannedStudySubjectExperience"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"plannedStudySubjectExperience">
+                type = <"ST">
+            >
+            ["populationDescription"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"populationDescription">
+                type = <"ST">
+            >
+            ["primaryPurposeTypeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"primaryPurposeTypeCode">
+                type = <"CD">
+            >
+            ["purposeStatement"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"purposeStatement">
+                type = <"ST">
+            >
+            ["responsiblePartyCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"responsiblePartyCode">
+                type = <"CD">
+            >
+            ["studySchematic"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"studySchematic">
+                type = <"ED">
+            >
+            ["studySubjectTypeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"studySubjectTypeCode">
+                type = <"CD">
+            >
+			["targetAccrualNumberRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"targetAccrualNumberRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"NONNEG">
+				>	
+			>
+            ["targetAnatomicalSiteCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"targetAnatomicalSiteCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+            >
+            ["therapeuticAreaCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"therapeuticAreaCode">
+                type = <"CD">
+            >
+            ["evaluatedStudyAgent"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"evaluatedStudyAgent">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"StudyAgent">
+                >
+            >
+            ["executedPerformedActivity"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"executedPerformedActivity">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"PerformedActivity">
+                >
+            >
+            ["usedStudyActivity"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"usedStudyActivity">
+                type_def = <
+                    container_type = <"Set">
+                    type = <"StudyActivity">
+                >
+            >
+		>
+	>
+	
+	["DefinedActivity"] = <
+		name = <"DefinedActivity">
+		ancestors = <"Activity", ...>
+        properties = <
+            ["nameCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"nameCode">
+                type = <"CD">
+            >
+            ["repeatFrequencyCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"repeatFrequencyCode">
+                type = <"CD">
+            >
+            ["categoryCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"categoryCode">
+                type = <"CD">
+            >
+            ["repeatDuration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"repeatDuration">
+                type = <"TIME">
+				is_computed = <True>
+			>
+			["repeatFrequencyRatio"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"repeatFrequencyRatio">
+				type = <"RTO">
+			>
+			["repeatQuantityRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"repeatQuantityRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"NONNEG">
+				>	
+			>
+            ["statusCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusCode">
+                type = <"CD">
+            >
+            ["statusDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusDate">
+                type = <"DATETIME">
+            >
+            ["subCategoryCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"subCategoryCode">
+                type = <"CD">
+            >
+            ["instantiatingPerformedActivity"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"instantiatingPerformedActivity">
+                type_def = <
+                    container_type = <"List">
+                    type = <"PerformedActivity">
+                >
+            >
+            ["focusedDefinedObservation"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"focusedDefinedObservation">
+                type_def = <
+                    container_type = <"List">
+                    type = <"DefinedObservation">
+                >
+            >
+            ["componentDefinedCompositionRelationship"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"componentDefinedCompositionRelationship">
+                type_def = <
+                    container_type = <"List">
+                    type = <"DefinedCompositionRelationship">
+                >
+            >
+		>
+	>
+	
+	["DefinedCompositionRelationship"] = <
+		name = <"DefinedCompositionRelationship">
+		ancestors = <"Any", ...>
+        properties = <
+            ["componentDefinedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"componentDefinedActivity">
+                type = <"DefinedActivity">
+                is_mandatory = <True>
+            >
+            ["compositeDefinedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"compositeDefinedActivity">
+                type = <"DefinedActivity">
+                is_mandatory = <True>
+            >
+			["pauseQuantity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"pauseQuantity">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TIME">
+				>	
+			>
+            ["sequenceNumber"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"sequenceNumber">
+                type = <"NONNEG">
+            >
+		>
+	>
+
+	["DefinedObservation"] = <
+		name = <"DefinedObservation">
+		ancestors = <"DefinedActivity", ...>
+        properties = <
+            ["approachAnatomicSiteCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"approachAnatomicSiteCode">
+                type = <"CD">
+            >
+            ["bodyPositionCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"bodyPositionCode">
+                type = <"CD">
+            >
+            ["methodCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"methodCode">
+                type = <"CD">
+            >
+			["focalDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"focalDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+			>
+            ["targetAnatomicSiteCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"targetAnatomicSiteCode">
+                type = <"CD">
+            >
+		>
+	>
+	
+	["PerformedActivity"] = <
+		name = <"PerformedActivity">
+		ancestors = <"Activity", ...>
+        properties = <
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"dateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_im_runtime = <True>
+			>
+            ["dateRangeValidationCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"dateRangeValidationCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["delayDuration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"delayDuration">
+                type = <"TIME">
+				is_computed = <True>
+				is_im_runtime = <True>
+            >
+            ["duration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"duration">
+                type = <"TIME">
+				is_computed = <True>
+				is_im_runtime = <True>
+            >
+            ["fastingStatusIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"fastingStatusIndicator">
+                type = <"BL">
+				is_computed = <True>
+				is_im_runtime = <True>
+            >
+            ["medicalHistoryIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"medicalHistoryIndicator">
+                type = <"BL">
+				is_computed = <True>
+				is_im_runtime = <True>
+            >
+            ["negationIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"negationIndicator">
+                type = <"BL">
+				is_im_runtime = <True>
+            >
+            ["negationReason"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"negationReason">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"SC">
+                >
+				is_im_runtime = <True>
+            >
+            ["repetitionNumber"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"repetitionNumber">
+                type = <"POS">
+				is_computed = <True>
+				is_im_runtime = <True>
+            >
+            ["statusCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusCode">
+                type = <"CD">
+            >
+            ["statusDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"statusDate">
+                type = <"DATETIME">
+				is_im_runtime = <True>
+            >
+			["studyDayRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"studyDayRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"INT">
+				>	
+				is_computed = <True>
+				is_im_runtime = <True>
+			>
+            ["instantiatedPlannedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"instantiatedPlannedActivity">
+                type = <"PlannedActivity">
+            >
+            ["instantiatedDefinedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"instantiatedDefinedActivity">
+                type = <"DefinedActivity">
+            >
+            ["versionStudyProtocolVersion"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"versionStudyProtocolVersion">
+                type = <"StudyProtocolVersion">
+            >
+            ["componentPerformedCompositionRelationship"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"componentPerformedCompositionRelationship">
+                type_def = <
+                    container_type = <"List">
+                    type = <"PerformedCompositionRelationship">
+                >
+            >
+		>
+	>
+	
+	["PerformedCompositionRelationship"] = <
+		name = <"PerformedCompositionRelationship">
+		ancestors = <"Any", ...>
+        properties = <
+            ["componentPerformedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"componentPerformedActivity">
+                type = <"PerformedActivity">
+                is_mandatory = <True>
+            >
+		>
+	>
+
+	["PerformedObservation"] = <
+		name = <"PerformedObservation">
+		ancestors = <"PerformedActivity", ...>
+        properties = <
+            ["approachAnatomicSiteCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"approachAnatomicSiteCode">
+                type = <"CD">
+            >
+            ["bodyPositionCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"bodyPositionCode">
+                type = <"CD">
+            >
+            ["bodySystemCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"bodySystemCode">
+                type = <"CD">
+            >
+			["focalDateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"focalDateRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"DATETIME">
+				>	
+				is_computed = <True>
+				is_im_runtime = <True>
+			>
+            ["focalDuration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"focalDuration">
+                type = <"TIME">
+				is_computed = <True>
+				is_im_runtime = <True>
+            >
+            ["methodCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"methodCode">
+                type = <"CD">
+            >
+            ["targetAnatomicSiteCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"targetAnatomicSiteCode">
+                type = <"CD">
+            >
+            ["resultedPerformedObservationResult"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"resultedPerformedObservationResult">
+                type_def = <
+                    container_type = <"List">
+                    type = <"PerformedObservationResult">
+                >
+            >
+            ["commentedPerformedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"commentedPerformedActivity">
+                type = <"PerformedActivity">
+            >
+		>
+	>
+	
+	["PerformedObservationResult"] = <
+		name = <"PerformedObservationResult">
+		ancestors = <"Any", ...>
+        properties = <
+            ["baselineIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"baselineIndicator">
+                type = <"BL">
+				is_im_runtime = <True>
+            >
+            ["comment"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"comment">
+                type = <"ST">
+				is_im_runtime = <True>
+            >
+            ["confidentialityCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"confidentialityCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+				is_im_runtime = <True>
+            >
+            ["reportedDate"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"reportedDate">
+                type = <"DATETIME">
+				is_im_runtime = <True>
+            >
+            ["resultClassificationCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"resultClassificationCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+            >
+            ["typeCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"typeCode">
+                type = <"CD">
+            >
+            ["uncertaintyCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"uncertaintyCode">
+                type = <"CD">
+				is_im_runtime = <True>
+            >
+            ["value"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"value">
+                type = <"21090_ANY">
+            >
+            ["valueCodeModifiedText"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"valueCodeModifiedText">
+                type = <"ST">
+            >
+            ["valueNullFlavorReason"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"valueNullFlavorReason">
+                type = <"ST">
+				is_im_runtime = <True>
+            >
+            ["inferredPerformedObservationResult"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"inferredPerformedObservationResult">
+                type_def = <
+                    container_type = <"List">
+                    type = <"PerformedObservationResult">
+                >
+            >
+		>
+	>
+
+	["Activity"] = <
+		name = <"Activity">
+		ancestors = <"Any", ...>
+        properties = <
+            ["comment"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"comment">
+                type = <"ST">
+            >
+            ["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"identifier">
+                type = <"II">
+            >
+            ["reasonCode"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"reasonCode">
+                type_def = <
+                    container_type = <"DSET">
+                    type = <"CD">
+                >
+            >
+            ["performingPerformer"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"performingPerformer">
+                type = <"Performer">
+            >
+            ["involvedSubject"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"involvedSubject">
+                type = <"Subject">
+            >
+		>
+	>
+
+	["StudyActivity"] = <
+		name = <"StudyActivity">
+		ancestors = <"PlannedActivity", ...>
+        properties = <
+            ["studyFocusIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"studyFocusIndicator">
+                type = <"BL">
+            >
+            ["usedDefinedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"usedDefinedActivity">
+                type = <"DefinedActivity">
+                is_mandatory = <True>
+            >
+            ["usingStudyProtocolVersion"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"usingStudyProtocolVersion">
+                type = <"StudyProtocolVersion">
+                is_mandatory = <True>
+            >
+		>
+	>
+
+	["PlannedActivity"] = <
+		name = <"PlannedActivity">
+		ancestors = <"Activity", ...>
+        properties = <
+            ["blindedDescription"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"blindedDescription">
+                type = <"ST">
+            >
+            ["description"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"description">
+                type = <"ST">
+            >
+            ["name"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"name">
+                type = <"ST">
+            >
+            ["duration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"duration">
+                type = <"TIME">
+            >
+            ["repeatFrequencyCode"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"repeatFrequencyCode">
+                type = <"CD">
+            >
+            ["repeatDuration"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"repeatDuration">
+                type = <"TIME">
+				is_computed = <True>
+			>
+			["repeatFrequencyRatio"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"repeatFrequencyRatio">
+				type = <"RTO">
+			>
+			["repeatQuantityRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"repeatQuantityRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"NONNEG">
+				>	
+			>
+            ["usedStudyActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"usedStudyActivity">
+                type = <"StudyActivity">
+                is_mandatory = <True>
+            >
+            ["componentPlannedCompositionRelationship"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"componentPlannedCompositionRelationship">
+                type_def = <
+                    container_type = <"List">
+                    type = <"PlannedCompositionRelationship">
+                >
+            >
+		>
+	>
+
+	["PlannedSubjectActivityGroup"] = <
+		name = <"PlannedSubjectActivityGroup">
+		ancestors = <"PlannedActivity", ...>
+        properties = <
+            ["sequenceNumber"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"sequenceNumber">
+                type = <"NONNEG">
+				is_computed = <True>
+            >
+			["targetAccrualNumberRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"targetAccrualNumberRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"NONNEG">
+				>	
+			>
+		>
+	>
+
+	["PlannedCompositionRelationship"] = <
+		name = <"PlannedCompositionRelationship">
+		ancestors = <"Any", ...>
+        properties = <
+            ["componentPlannedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"componentPlannedActivity">
+                type = <"PlannedActivity">
+                is_mandatory = <True>
+            >
+            ["compositePlannedActivity"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"compositePlannedActivity">
+                type = <"PlannedActivity">
+                is_mandatory = <True>
+            >
+			["pauseQuantity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"pauseQuantity">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TIME">
+				>	
+			>
+            ["sequenceNumber"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"sequenceNumber">
+                type = <"NONNEG">
+            >
+		>
+	>
+
+>

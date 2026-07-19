@@ -6,7 +6,7 @@
 //! (`adl2.g4`), ODIN (`odin.g4`/`odin_values.g4`), cADL
 //! (`cadl2.g4`/`cadl2_primitives.g4`) and the rules sub-syntax
 //! (`base_expressions.g4`) — because a whole ADL2 source file is lexed once as
-//! a single stream. Phase A2 only *parses* the identification header and the
+//! a single stream. The outer parser only *parses* the identification header and the
 //! ODIN sections; the cADL definition and rules bodies are captured as raw
 //! spans, so their tokens only need to *lex* here, not classify perfectly.
 //!
