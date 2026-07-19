@@ -1022,3 +1022,41 @@ async fn duplicate_sibling_folder_names_accepted() {
         "duplicate sibling folder names are valid: {body}"
     );
 }
+
+// ── 21. round-trip: PUT the FETCHED body back (the console's edit flow) ──────
+
+/// The read decorates the root FOLDER with its `uid` (`OBJECT_VERSION_ID`,
+/// RM FOLDER class NOTE); an editor that fetches, mutates, and PUTs the SAME
+/// body back (the admin console's flow) must succeed — the stale embedded
+/// `uid` is versioning metadata, not client intent (`directory_update.yaml`).
+#[tokio::test]
+async fn update_with_a_fetched_body_round_trips() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+    let sub = folder_json("episode_x", vec![]);
+    let (_s, h, _b) = create_directory(&app, &ehr, &folder_json("root", vec![sub]), None).await;
+    let v1 = etag_uid(&h);
+
+    // Fetch the directory the way a client editor does.
+    let (status, _h, body) = send(&app, get(format!("{BASE}/ehr/{ehr}/directory"), None)).await;
+    assert_eq!(status, StatusCode::OK);
+    let mut fetched: Value = serde_json::from_str(&body).expect("folder json");
+    assert!(
+        fetched.get("uid").is_some(),
+        "the read carries the root uid (RM FOLDER class NOTE)"
+    );
+
+    // Mutate: add one more sub-folder, then PUT the fetched body back.
+    fetched["folders"]
+        .as_array_mut()
+        .expect("folders array")
+        .push(folder_json("added", vec![]));
+    let (status, h, body) = update_directory(&app, &ehr, &fetched, Some(&quoted(&v1)), None).await;
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "PUT of a fetched body must succeed: {body}"
+    );
+    let v2 = etag_uid(&h);
+    assert!(v2.ends_with("::2"), "trunk v2, got {v2}");
+}

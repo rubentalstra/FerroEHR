@@ -33,9 +33,9 @@ use serde_json::{Value, json};
 use crate::pages::ehr_detail::commit_version_uid;
 
 use crate::error::AdminUiError;
-use crate::pages::ehr_detail::directory::create::create_section;
+use crate::pages::ehr_detail::directory::create::{CreateState, create_section};
 use crate::pages::ehr_detail::directory::panels::directory_toolbar;
-use crate::pages::ehr_detail::directory::tree::tree_editor;
+use crate::pages::ehr_detail::directory::tree::{EditorState, seed, tree_editor};
 use crate::pages::ehrs::{ResultPage, table_skeleton};
 
 /// The EHR's directory as its canonical FOLDER JSON body plus the current
@@ -173,7 +173,12 @@ pub async fn fetch_directory(ehr_id: String) -> Result<Option<DirectoryState>, A
         .cdr
         .get(&session.credential, &url, "application/json")
         .await?;
-    if response.status == 404 {
+    // 404 = the EHR has no directory; 204 = the latest version is a logical
+    // delete (`204_deleted_at_time` — ITS-REST `directory_get_at_time.yaml`).
+    // Both are the first-class "no live directory" state: the create flow
+    // renders, and creating opens a NEW hierarchy (the deleted one's history
+    // stays readable by version_uid).
+    if response.status == 404 || response.status == 204 {
         return Ok(None);
     }
     let body = crate::cdr::CdrClient::expect_success(response)?.body;
@@ -587,6 +592,16 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     // version") — part of the directory resource's source.
     let reload = RwSignal::new(0u32);
 
+    // The directory editor's + create flow's long-lived reactive state, created
+    // ONCE here — ABOVE the `<Transition>`/`Suspend` — and (for the editor)
+    // re-seeded idempotently per loaded version. Creating these signals INSIDE
+    // the Suspend is the rules §4 disposal defect this fixes: a Suspend re-runs
+    // on every resource notification (every write refetches the directory) and
+    // disposes the previous run's owner, leaving mounted DOM handlers / icon
+    // views pointing at dead signals (panic on the next interaction).
+    let editor = EditorState::new(update);
+    let create_state = CreateState::new();
+
     // Toast each write's success (outside-world side-effect — rules §2); a
     // `412` conflict gets a distinct "reload" toast, other failures stay
     // inline in the relevant feedback pane.
@@ -773,19 +788,31 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
             {move || Suspend::new(async move {
                 match directory.await {
                     Ok(Some(state)) => {
-                        tree_editor(
-                            &state,
-                            ehr_id,
-                            update,
-                            force_save,
-                            reload,
-                            picker,
-                            picker_target,
-                        )
+                        match seed(&editor, &state, update) {
+                            Ok(()) => {
+                                tree_editor(
+                                    &editor,
+                                    ehr_id,
+                                    update,
+                                    force_save,
+                                    reload,
+                                    picker,
+                                    picker_target,
+                                )
+                            }
+                            Err(e) => crate::components::format_view::inline_error(&e),
+                        }
                     }
                     Ok(None) => {
                         match templates.await {
-                            Ok(list) => create_section(list.unwrap_or_default(), ehr_id, create),
+                            Ok(list) => {
+                                create_section(
+                                    create_state,
+                                    list.unwrap_or_default(),
+                                    ehr_id,
+                                    create,
+                                )
+                            }
                             Err(e) => crate::components::format_view::inline_error(&e),
                         }
                     }

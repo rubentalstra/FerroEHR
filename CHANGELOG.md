@@ -25,6 +25,10 @@ workflow refuses a tag that has no matching section here.
   editing stays available as an advanced mode).
 
 ### Fixed
+- Admin console: text typed into the EHR finder and create-EHR fields before
+  the app finished loading is no longer silently wiped (the inputs are now
+  hydration-safe, like the login form); success toasts no longer intercept
+  clicks on buttons beneath them in the e2e battery.
 - `GET /ehr/{ehr_id}/directory/{version_uid}` now honours the `path` query
   parameter (slash-separated FOLDER names selecting a sub-folder subtree),
   as the ITS-REST `directory_get_by_version_id` operation specifies; an
