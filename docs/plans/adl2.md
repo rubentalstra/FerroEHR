@@ -26,6 +26,18 @@ new hand-written spec crate:
 - **`openehr-adl`** — the ADL2 text + semantics engine:
   - `lexer` + `parser` — ADL2 outer syntax, cADL definition section,
     rules/slot assertions (BEL subset).
+  - **BEL lives in `openehr-lang` too (owner ruling 2026-07-19):** BEL is
+    a LANG spec (`docs/specs/openehr/LANG/docs/BEL/`; the generated
+    `openehr_lang::beom` model already realizes it). The core expression
+    parser (statements, assertions, assignments, operators, literals →
+    beom types) is a hand-written `openehr_lang::bel` module beside
+    `odin`. The three AOM-specific expression leaves are AM classes
+    (AOM2 master05: EXPR_ARCHETYPE_REF, EXPR_CONSTRAINT wrapping a cADL
+    C_PRIMITIVE_OBJECT, EXPR_ARCHETYPE_ID_CONSTRAINT), so `openehr-adl`'s
+    rules/slot-assertion parser COMPOSES: core grammar from
+    `openehr_lang::bel` + the AOM leaf productions on top (this mirrors
+    upstream: base_expressions.g4 sits in the adl grammar set because it
+    imports cadl2_primitives — it stays vendored in openehr-adl).
   - **ODIN lives in `openehr-lang` (owner ruling 2026-07-19):** ODIN is a
     LANG-component spec (`docs/specs/openehr/LANG/docs/odin/`), so the
     full ODIN value tree + self-contained lexer/parser is the new
