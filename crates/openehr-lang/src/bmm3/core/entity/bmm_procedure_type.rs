@@ -17,3 +17,9 @@ pub struct BmmProcedureType {
     /// Type of arguments in the signature, if any; represented as a type-tuple (list of arbitrary types).
     pub argument_types: Option<BmmTupleType>,
 }
+
+impl BmmProcedureType {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Procedure";
+}

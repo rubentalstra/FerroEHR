@@ -14,3 +14,9 @@ pub struct BmmTupleType {
     /// List of types of the items of the tuple, keyed by purpose in the tuple.
     pub item_types: std::collections::BTreeMap<String, BmmType>,
 }
+
+impl BmmTupleType {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Tuple";
+}

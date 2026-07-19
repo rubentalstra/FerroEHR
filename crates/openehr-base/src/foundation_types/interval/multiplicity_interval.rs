@@ -18,3 +18,13 @@ pub struct MultiplicityInterval {
     /// True if `_upper_` boundary value included in range if `not _upper_unbounded_`.
     pub upper_included: bool,
 }
+
+impl MultiplicityInterval {
+    /// Marker to use in string form of interval between limits.
+    /// BMM constant `Multiplicity_range_marker`.
+    pub const MULTIPLICITY_RANGE_MARKER: &'static str = "..";
+
+    /// Symbol to use to indicate upper limit unbounded.
+    /// BMM constant `Multiplicity_unbounded_marker`.
+    pub const MULTIPLICITY_UNBOUNDED_MARKER: char = '*';
+}

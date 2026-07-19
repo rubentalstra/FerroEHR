@@ -15,6 +15,12 @@ pub struct BmmSignatureData {
     pub result_type: Box<BmmType>,
 }
 
+impl BmmSignatureData {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Signature";
+}
+
 /// Built-in meta-type that expresses the type structure of any referenceable element of a model. Consists of potential `_arguments_` and `_result_`, with constraints in descendants determining the exact form.
 /// Polymorphic slot of `BMM_SIGNATURE`: a closed subtype set dispatched on each payload's `_type`.
 #[derive(Debug, Clone, PartialEq)]

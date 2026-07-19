@@ -24,7 +24,9 @@
 //! functions turn a planned class into deterministic, byte-stable Rust source.
 
 use crate::analyze::{External, Model, class_paths};
-use crate::load::bmm::{BmmClass, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType};
+use crate::load::bmm::{
+    BmmClass, BmmConstant, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType,
+};
 use crate::plan::overrides::{back_reference, class_binding, type_override};
 use crate::plan::{Emission, decide};
 use crate::render::naming;
@@ -293,6 +295,7 @@ fn emit_struct(
     b.push_str(&render_struct_def(
         model, class, &ty, &generics, &subst, local, external,
     ));
+    b.push_str(&render_constants(class, &ty));
     b
 }
 
@@ -373,6 +376,136 @@ fn render_struct_def(
 
     b.push_str("}\n");
     b
+}
+
+/// Emit the class's `BMM_CLASS.constants` as an `impl {ty} { pub const … }`
+/// block (empty when the class has none). `ty` is the struct the constants hang
+/// on — `type_name(class)` for a plain struct, `{Name}Data` for a polymorphic
+/// slot. Each constant carries a doc line citing its verbatim BMM name (the BMM
+/// is the authority); the literal is decoded from the raw BMM `value`.
+fn render_constants(class: &BmmClass, ty: &str) -> String {
+    if class.constants.is_empty() {
+        return String::new();
+    }
+    let siblings: BTreeSet<&str> = class.constants.iter().map(|c| c.name.as_str()).collect();
+    let mut b = String::new();
+    b.push_str(&format!("\nimpl {ty} {{\n"));
+    for (i, c) in class.constants.iter().enumerate() {
+        if i > 0 {
+            b.push('\n');
+        }
+        doc_block(&mut b, c.documentation.as_deref(), "    ");
+        b.push_str(&format!("    /// BMM constant `{}`.\n", c.name));
+        let (rust_ty, lit) = const_literal(c, &siblings);
+        b.push_str(&format!(
+            "    pub const {}: {rust_ty} = {lit};\n",
+            naming::const_ident(&c.name)
+        ));
+    }
+    b.push_str("}\n");
+    b
+}
+
+/// Decode a BMM constant's raw `value` to a Rust `(type, literal)` pair. A JSON
+/// number keys off the BMM `type` (`Real`/`Double` → `f64`, else `i64`); a JSON
+/// string carries a quoted `"…"` (→ `&'static str`) or `'…'` (→ `char`) literal,
+/// a bareword cross-reference to a sibling constant (→ `Self::OTHER`), or a
+/// boolean keyword. Numeric character references (`&#42;`) and Eiffel octal
+/// escapes (`\015`) inside literals are decoded.
+fn const_literal(c: &BmmConstant, siblings: &BTreeSet<&str>) -> (String, String) {
+    let is_real = matches!(c.type_name.as_str(), "Real" | "Double");
+    match &c.value {
+        serde_json::Value::Number(n) if is_real => (
+            "f64".to_string(),
+            format!("{:?}", n.as_f64().unwrap_or(0.0)),
+        ),
+        serde_json::Value::Number(n) => ("i64".to_string(), format!("{}", n.as_i64().unwrap_or(0))),
+        serde_json::Value::Bool(b) => ("bool".to_string(), format!("{b}")),
+        serde_json::Value::String(s) => {
+            let t = s.trim();
+            if let Some(inner) = strip_delims(t, '"') {
+                (
+                    "&'static str".to_string(),
+                    format!("{:?}", decode_entities(inner)),
+                )
+            } else if let Some(inner) = strip_delims(t, '\'') {
+                ("char".to_string(), format!("{:?}", decode_char(inner)))
+            } else if siblings.contains(t) {
+                let rust_ty = if is_real { "f64" } else { "i64" };
+                (
+                    rust_ty.to_string(),
+                    format!("Self::{}", naming::const_ident(t)),
+                )
+            } else if c.type_name == "Boolean" {
+                (
+                    "bool".to_string(),
+                    format!("{}", t.eq_ignore_ascii_case("true")),
+                )
+            } else {
+                // A bareword that is neither a sibling nor a boolean: emit as a
+                // string literal (verbatim), the safest total decoding.
+                ("&'static str".to_string(), format!("{t:?}"))
+            }
+        }
+        serde_json::Value::Null | serde_json::Value::Array(_) | serde_json::Value::Object(_) => {
+            ("&'static str".to_string(), "\"\"".to_string())
+        }
+    }
+}
+
+/// Strip a matching pair of delimiter characters (`"…"` or `'…'`) from `s`,
+/// returning the inner text; `None` if `s` is not so delimited.
+fn strip_delims(s: &str, delim: char) -> Option<&str> {
+    s.strip_prefix(delim).and_then(|r| r.strip_suffix(delim))
+}
+
+/// Decode numeric character references (`&#42;` → `*`) in a BMM literal, without
+/// byte slicing (clinical-text-safe). Non-references pass through verbatim.
+fn decode_entities(s: &str) -> String {
+    let mut out = String::new();
+    let mut chars = s.chars().peekable();
+    while let Some(c) = chars.next() {
+        if c == '&' && chars.peek() == Some(&'#') {
+            chars.next();
+            let mut num = String::new();
+            while let Some(&d) = chars.peek() {
+                if d == ';' {
+                    chars.next();
+                    break;
+                }
+                if d.is_ascii_digit() {
+                    num.push(d);
+                    chars.next();
+                } else {
+                    break;
+                }
+            }
+            if let Some(ch) = num.parse::<u32>().ok().and_then(char::from_u32) {
+                out.push(ch);
+            } else {
+                out.push('&');
+                out.push('#');
+                out.push_str(&num);
+            }
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// Decode a single-character BMM literal body: numeric references first, then an
+/// Eiffel octal escape (`\015` → CR); falls back to the first decoded char.
+fn decode_char(inner: &str) -> char {
+    let decoded = decode_entities(inner);
+    if let Some(rest) = decoded.strip_prefix('\\')
+        && !rest.is_empty()
+        && rest.bytes().all(|b| (b'0'..=b'7').contains(&b))
+        && let Some(ch) = u32::from_str_radix(rest, 8).ok().and_then(char::from_u32)
+    {
+        return ch;
+    }
+    decoded.chars().next().unwrap_or('\u{0}')
 }
 
 /// Compute a field's Rust type (the JSON codec handles `None`/empty omission at
@@ -593,6 +726,7 @@ fn emit_enum(
             local,
             external,
         ));
+        b.push_str(&render_constants(class, &data_ty));
         b.push('\n');
     }
 

@@ -293,3 +293,128 @@ fn composition_table_integrity() {
         );
     }
 }
+
+// ── invariant classification (assertion-dialect analyzer) ────────────────────
+
+/// The assertion-dialect analyzer accounts for **every** RM 1.2.0 class
+/// invariant in exactly one bucket — nothing is silently dropped. `emitted +
+/// runtime-hook-missing + complex == total`, and the per-bucket counts are
+/// pinned as the current classifier's verdict (a deliberate classifier or
+/// BMM-pin change updates them under review), so an accidental
+/// mis-classification or a dropped invariant fails the suite.
+#[test]
+fn invariant_classification_is_a_total_tripartition() {
+    let rows = testsupport::classify_invariants("rm").unwrap();
+    let total = rows.len();
+    let emitted = rows.iter().filter(|r| r.bucket == "emitted").count();
+    let hook = rows
+        .iter()
+        .filter(|r| r.bucket == "runtime-hook-missing")
+        .count();
+    let complex = rows.iter().filter(|r| r.bucket == "complex").count();
+
+    // Every row lands in one of the three known buckets (no unexpected label).
+    assert_eq!(
+        emitted + hook + complex,
+        total,
+        "some invariant carries an unknown bucket label",
+    );
+    // The RM 1.2.0 BMM carries exactly 155 class invariants.
+    assert_eq!(total, 155, "RM 1.2.0 invariant count changed");
+    // Pinned tripartition (design doc §4 R5): a change here is deliberate.
+    assert_eq!(emitted, 91, "EMITTED count drifted");
+    assert_eq!(hook, 34, "RUNTIME-HOOK-MISSING count drifted");
+    assert_eq!(complex, 30, "COMPLEX count drifted");
+
+    // A non-emitted row always names its reason; an emitted row never does.
+    for r in &rows {
+        if r.bucket == "emitted" {
+            assert!(
+                r.reason.is_empty(),
+                "{}::{} is emitted but carries a reason",
+                r.class,
+                r.name,
+            );
+        } else {
+            assert!(
+                !r.reason.is_empty(),
+                "{}::{} ({}) is missing its reason",
+                r.class,
+                r.name,
+                r.bucket,
+            );
+        }
+    }
+}
+
+/// Spot-checks pinning the classifier's verdict on representative invariants so
+/// the buckets cannot silently swap: a terminology/code-set predicate needs a
+/// runtime hook, a quantifier is complex, and a plain emptiness/`Void` check is
+/// emittable.
+#[test]
+fn invariant_classification_spot_checks() {
+    let rows = testsupport::classify_invariants("rm").unwrap();
+    let bucket = |class: &str, name: &str| -> &'static str {
+        rows.iter()
+            .find(|r| r.class == class && r.name == name)
+            .map_or("MISSING", |r| r.bucket)
+    };
+    assert_eq!(bucket("DV_IDENTIFIER", "Id_valid"), "emitted");
+    assert_eq!(bucket("DV_DATE", "Value_valid"), "emitted");
+    assert_eq!(bucket("LOCATABLE", "Links_valid"), "emitted");
+    assert_eq!(
+        bucket("COMPOSITION", "Category_validity"),
+        "runtime-hook-missing",
+    );
+    assert_eq!(
+        bucket("COMPOSITION", "Territory_valid"),
+        "runtime-hook-missing"
+    );
+    assert_eq!(bucket("EHR", "Compositions_valid"), "complex");
+    assert_eq!(bucket("HISTORY", "Period_consistency"), "complex");
+}
+
+// ── constants emission (BMM `BMM_CLASS.constants`) ───────────────────────────
+
+/// Every constant the BMM declares on an **emitted** class is rendered as a
+/// `pub const` in that crate's output — the R5 constants-emission completeness
+/// guard. Checked over the two RM terminology identifier classes (22 constants)
+/// whose hand-written `*_impl.rs` was deleted in favour of emission.
+#[test]
+fn emitted_classes_render_their_bmm_constants() {
+    let files = testsupport::render_all_to_memory().unwrap();
+    let group = files
+        .get("openehr-rm/support/terminology/openehr_terminology_group_identifiers.rs")
+        .unwrap();
+    let code_set = files
+        .get("openehr-rm/support/terminology/openehr_code_set_identifiers.rs")
+        .unwrap();
+
+    // The 15 terminology-group identifier constants + the openEHR terminology id.
+    for c in [
+        "TERMINOLOGY_ID_OPENEHR",
+        "GROUP_ID_AUDIT_CHANGE_TYPE",
+        "GROUP_ID_VERSION_LIFE_CYCLE_STATE",
+    ] {
+        assert!(
+            group.contains(&format!("pub const {c}:")),
+            "group-identifiers output is missing constant {c}",
+        );
+    }
+    assert!(
+        group.contains(r#"= "openehr";"#),
+        "constant value not emitted"
+    );
+
+    // The 7 code-set identifier constants (incl. the `_id`-less integrity one).
+    for c in [
+        "CODE_SET_ID_LANGUAGES",
+        "CODE_SET_INTEGRITY_CHECK_ALGORITHMS",
+        "CODE_SET_ID_NORMAL_STATUSES",
+    ] {
+        assert!(
+            code_set.contains(&format!("pub const {c}:")),
+            "code-set output is missing constant {c}",
+        );
+    }
+}

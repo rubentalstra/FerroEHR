@@ -8,3 +8,9 @@ pub struct BmmStatusType {
     /// Optional documentation of this element.
     pub documentation: Option<String>,
 }
+
+impl BmmStatusType {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Status";
+}
