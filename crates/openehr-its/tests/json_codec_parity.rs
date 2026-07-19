@@ -27,10 +27,10 @@ mod common;
 
 use common::{corpus_files, excluded};
 use openehr_its::json::{from_canonical_json, to_canonical_json};
-use openehr_its::json_codec::runtime::{ToJson, to_json_string};
+use openehr_its::json_codec::runtime::{ToJson, from_json_str, to_json_string};
 use openehr_rm::prelude::{
-    Composition, Contribution, DvCount, DvInterval, DvOrdinal, DvQuantity, DvTextData, EhrStatus,
-    Folder, ItemTree, ProportionKind,
+    Composition, Contribution, DataValue, DvCount, DvInterval, DvOrdinal, DvQuantity, DvText,
+    DvTextData, EhrStatus, Folder, ItemTree, ProportionKind,
 };
 use std::fs;
 use std::path::Path;
@@ -255,4 +255,226 @@ fn typed_literal_enum_including_other() {
         let serde = serde_json::to_string(&pk).unwrap();
         assert_eq!(serde, to_json_string(&pk), "ProportionKind {pk:?}");
     }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Deserialize-side parity: the native `FromJson` reader (`from_json_str`) must
+// produce the SAME typed value as the serde `Deserialize` (`from_canonical_json`)
+// it shadows — and reproduce the retired derive's tolerance rules, rule by rule.
+// ════════════════════════════════════════════════════════════════════════════
+
+/// Parse the corpus doc by its top-level `_type` through BOTH readers and compare
+/// the typed values for equality; `None` = not a dispatchable root (same skip set
+/// as the serialize gate).
+fn deser_parity_of(ty: &str, json: &str) -> Option<Result<(), String>> {
+    macro_rules! cmp {
+        ($T:ty) => {{
+            Some((|| {
+                let serde: $T = from_canonical_json(json).map_err(|e| format!("serde: {e}"))?;
+                let codec: $T = from_json_str(json).map_err(|e| format!("codec: {e}"))?;
+                if serde == codec {
+                    Ok(())
+                } else {
+                    // Re-serialize both for a diffable diagnostic.
+                    Err(first_divergence(
+                        &to_canonical_json(&serde).unwrap_or_default(),
+                        &to_json_string(&codec),
+                    ))
+                }
+            })())
+        }};
+    }
+    match ty {
+        "COMPOSITION" => cmp!(Composition),
+        "FOLDER" => cmp!(Folder),
+        "EHR_STATUS" => cmp!(EhrStatus),
+        "CONTRIBUTION" => cmp!(Contribution),
+        "ITEM_TREE" => cmp!(ItemTree),
+        _ => None,
+    }
+}
+
+/// 3. Corpus deserialize parity: every dispatchable canonical root reads to the
+/// SAME typed value through the native codec and the serde path. This is where
+/// the unknown-key tolerance (the RM-1.1 corpus carries keys RM 1.2 does not
+/// place identically) is proven for the native reader.
+#[test]
+fn codec_deserialize_matches_serde_over_the_corpus() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/vendor");
+    let mut compared = 0usize;
+    let mut failures: Vec<(String, String)> = Vec::new();
+    for path in corpus_files() {
+        let Ok(text) = fs::read_to_string(&path) else {
+            continue;
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+            continue;
+        };
+        let Some(ty) = value.get("_type").and_then(|t| t.as_str()) else {
+            continue;
+        };
+        let rel = path
+            .strip_prefix(&root)
+            .unwrap_or(&path)
+            .display()
+            .to_string()
+            .replace('\\', "/");
+        if excluded(&rel).is_some() {
+            continue;
+        }
+        match deser_parity_of(ty, &text) {
+            Some(Ok(())) => compared += 1,
+            Some(Err(e)) => failures.push((rel, e)),
+            None => {}
+        }
+    }
+    for (f, e) in failures.iter().take(20) {
+        println!("\n--- DESER MISMATCH: {f}\n{e}");
+    }
+    assert!(
+        failures.is_empty(),
+        "{} corpus doc(s) deserialized differently between the serde path and the native codec",
+        failures.len()
+    );
+    assert!(
+        compared >= 50,
+        "the corpus shrank unexpectedly ({compared} docs compared) — the deser parity gate lost its subject"
+    );
+    println!("codec/serde deserialize parity: {compared} canonical corpus roots identical");
+}
+
+/// A minimal `DV_QUANTITY` JSON (mandatory fields only).
+const QTY: &str = r#"{"_type":"DV_QUANTITY","magnitude":5,"units":"mm"}"#;
+
+/// Tolerance rule 1 — **unknown wire keys are ignored** (the deliberate superset
+/// of the ITS-JSON schema's `additionalProperties: false`, matching the derive).
+#[test]
+fn tolerance_unknown_keys_ignored() {
+    let base: DvQuantity = from_json_str(QTY).unwrap();
+    let with_extra: DvQuantity = from_json_str(
+        r#"{"_type":"DV_QUANTITY","magnitude":5,"units":"mm","not_a_field":42,"another":{"x":[1,2]}}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        base, with_extra,
+        "unknown keys must be ignored, not rejected"
+    );
+    // And identical to the serde reader's own leniency.
+    let serde: DvQuantity = from_canonical_json(
+        r#"{"_type":"DV_QUANTITY","magnitude":5,"units":"mm","not_a_field":42,"another":{"x":[1,2]}}"#,
+    )
+    .unwrap();
+    assert_eq!(with_extra, serde);
+}
+
+/// Tolerance rule 2 — **members may arrive out of order** (`_type` last, fields
+/// permuted) and still parse to the same value.
+#[test]
+fn tolerance_out_of_order_members() {
+    let canonical: DvQuantity = from_json_str(QTY).unwrap();
+    let permuted: DvQuantity =
+        from_json_str(r#"{"units":"mm","magnitude":5,"_type":"DV_QUANTITY"}"#).unwrap();
+    assert_eq!(canonical, permuted);
+}
+
+/// Tolerance rule 3 — a **present-but-wrong `_type` on a concrete type is an
+/// error**; an **absent `_type` is accepted** on a concrete (unambiguous) type.
+#[test]
+fn tolerance_concrete_type_discipline() {
+    // Present-but-wrong → error (both readers agree).
+    assert!(from_json_str::<DvCount>(r#"{"_type":"DV_QUANTITY","magnitude":1}"#).is_err());
+    assert!(from_canonical_json::<DvCount>(r#"{"_type":"DV_QUANTITY","magnitude":1}"#).is_err());
+    // Absent → accepted (the slot type is unambiguous).
+    let a: DvCount = from_json_str(r#"{"magnitude":1}"#).unwrap();
+    let b: DvCount = from_canonical_json(r#"{"magnitude":1}"#).unwrap();
+    assert_eq!(a, b);
+}
+
+/// Tolerance rule 4 — an **abstract polymorphic slot rejects a missing `_type`**
+/// and an unknown `_type`, and routes a known (incl. deep-descendant) `_type` to
+/// its variant.
+#[test]
+fn tolerance_abstract_slot_requires_type() {
+    // Missing `_type` on the abstract DATA_VALUE slot → error.
+    assert!(from_json_str::<DataValue>(r#"{"value":"x"}"#).is_err());
+    // Unknown `_type` → error.
+    assert!(from_json_str::<DataValue>(r#"{"_type":"NOPE","value":"x"}"#).is_err());
+    // A valid `_type` routes (deep descendant DV_CODED_TEXT → the DvText variant).
+    let coded = r#"{"_type":"DV_CODED_TEXT","value":"x","defining_code":{"_type":"CODE_PHRASE","terminology_id":{"_type":"TERMINOLOGY_ID","value":"local"},"code_string":"at1"}}"#;
+    let a: DataValue = from_json_str(coded).unwrap();
+    let b: DataValue = from_canonical_json(coded).unwrap();
+    assert_eq!(a, b);
+}
+
+/// Tolerance rule 5 — a **concrete polymorphic slot defaults a `_type`-less value
+/// to the base concrete type** (DV_TEXT holds a plain DV_TEXT or a DV_CODED_TEXT).
+#[test]
+fn tolerance_concrete_poly_slot_defaults_type() {
+    let a: DvText = from_json_str(r#"{"value":"hi"}"#).unwrap();
+    let b: DvText = from_canonical_json(r#"{"value":"hi"}"#).unwrap();
+    assert_eq!(
+        a, b,
+        "a _type-less concrete polymorphic slot defaults to base"
+    );
+}
+
+/// Tolerance rule 6 — **`Option`/`Vec` defaulting** and the **`Interval` literal
+/// flag defaults** are reproduced (minimal input, defaults materialized).
+#[test]
+fn tolerance_option_vec_and_interval_defaults() {
+    // Option absent → None, Vec absent → empty: a minimal DV_TEXT.
+    let a: DvTextData = from_json_str(r#"{"_type":"DV_TEXT","value":""}"#).unwrap();
+    let b: DvTextData = from_canonical_json(r#"{"_type":"DV_TEXT","value":""}"#).unwrap();
+    assert_eq!(a, b);
+    // Interval `*_included`/`*_unbounded` flags omitted → their literal defaults.
+    let json = r#"{"_type":"DV_INTERVAL","lower":{"_type":"DV_QUANTITY","magnitude":1.0,"units":"mm"},"upper":{"_type":"DV_QUANTITY","magnitude":2.0,"units":"mm"}}"#;
+    let a: DvInterval<DvQuantity> = from_json_str(json).unwrap();
+    let b: DvInterval<DvQuantity> = from_canonical_json(json).unwrap();
+    assert_eq!(a, b);
+    // The flags materialize (they round-trip through re-serialization).
+    let out = to_json_string(&a);
+    for flag in [
+        "lower_included",
+        "upper_included",
+        "lower_unbounded",
+        "upper_unbounded",
+    ] {
+        assert!(out.contains(flag), "default flag {flag} missing: {out}");
+    }
+}
+
+/// Tolerance rule 7 — **RM number typing on read**: an integer lexeme in a Real
+/// field widens to the field's type (so it re-serializes as `x.0`), matching the
+/// serde reader; an integer field stays an integer.
+#[test]
+fn tolerance_number_typing_on_read() {
+    let a: DvQuantity = from_json_str(QTY).unwrap();
+    let b: DvQuantity = from_canonical_json(QTY).unwrap();
+    assert_eq!(a, b);
+    assert!(to_json_string(&a).contains(r#""magnitude":5.0"#));
+    let c: DvCount = from_json_str(r#"{"_type":"DV_COUNT","magnitude":5}"#).unwrap();
+    assert!(to_json_string(&c).contains(r#""magnitude":5"#) && !to_json_string(&c).contains("5.0"));
+}
+
+/// Tolerance rule 8 — **string escaping on read**: control escapes, `\uXXXX`, and
+/// a surrogate-pair astral character parse identically to the serde reader.
+#[test]
+fn tolerance_string_escapes_and_surrogate_pairs() {
+    // `\uD83D\uDE00` is the UTF-16 surrogate pair for U+1F600 (😀); the
+    // tokenizer must combine it. `\u00e9` is a BMP escape (é). Plus \t \n \/ .
+    let json = "{\"_type\":\"DV_TEXT\",\"value\":\"tab\\tlf\\nquote\\\"slash\\/emoji \\uD83D\\uDE00 bmp \\u00e9\"}";
+    let a: DvTextData = from_json_str(json).unwrap();
+    let b: DvTextData = from_canonical_json(json).unwrap();
+    assert_eq!(a, b);
+    assert!(
+        a.value.contains('\u{1F600}'),
+        "surrogate pair not decoded: {:?}",
+        a.value
+    );
+    assert!(
+        a.value.contains('\u{00e9}'),
+        "\\u00e9 not decoded: {:?}",
+        a.value
+    );
+    assert!(a.value.contains('\t') && a.value.contains('\n') && a.value.contains('/'));
 }

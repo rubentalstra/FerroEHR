@@ -192,6 +192,11 @@ pub(crate) struct JsonField {
     pub wire_name: String,
     pub rust_name: String,
     pub kind: JsonFieldKind,
+    /// A literal default (`"true"`/`"false"`) for a mandatory (`Plain`) field the
+    /// wire may omit — the `Interval` `*_included`/`*_unbounded` flags. When set,
+    /// a missing field deserializes to this default instead of erroring, matching
+    /// the retired derive's `#[openehr(default = "…")]`.
+    pub default: Option<String>,
 }
 
 /// How a field is written on serialize — matching the derive's classification by
@@ -218,20 +223,44 @@ pub(crate) enum JsonType {
         generics: Vec<String>,
         fields: Vec<JsonField>,
     },
-    /// An untagged enum (abstract slot or polymorphic-concrete) — forwards to the
-    /// active variant's payload (`_type` comes from the payload).
+    /// An untagged enum (abstract slot or polymorphic-concrete). Serialize
+    /// forwards to the active variant's payload (`_type` comes from the payload);
+    /// deserialize dispatches per [`JsonEnumDispatch`].
     Enum {
         rust: String,
         generics: Vec<String>,
         /// The Rust variant identifiers, in the same order the struct/enum
         /// emitter declares them (a `PolyEnum`'s self-data variant is last).
         variant_idents: Vec<String>,
+        /// How the deserialize side selects a variant.
+        dispatch: JsonEnumDispatch,
     },
     /// A transparent newtype over a primitive — forwards to its inner value.
     Newtype { rust: String },
     /// A BMM enumeration emitted as a typed enum — writes its wire token
     /// (`as_str`) or integer (`value`), byte-identical to the bare primitive.
     EnumLiterals { rust: String, string_backed: bool },
+}
+
+/// How a [`JsonType::Enum`] selects a variant on deserialize — the exact split
+/// `emit_enum` makes for the serde reader (`_type` dispatch vs structural
+/// `#[serde(untagged)]`), projected for the native `FromJson`.
+pub(crate) enum JsonEnumDispatch {
+    /// `_type`-keyed dispatch (every concrete target carries a `_type`). `arms`
+    /// maps each concrete descendant spec → its direct variant ident (deep
+    /// descendants collapse onto their intermediate variant, which recurses).
+    /// `self_ident` is `Some` for a concrete polymorphic slot (a `_type`-less
+    /// value defaults to it) and `None` for an abstract slot (a `_type`-less value
+    /// is rejected). `spec_name` + `expected` build the error messages.
+    ByType {
+        arms: Vec<(String, String)>,
+        self_ident: Option<String>,
+        spec_name: String,
+        expected: String,
+    },
+    /// Structural fallback (a target does not carry `_type`): try each variant in
+    /// declaration order, first success wins — mirrors `#[serde(untagged)]`.
+    Structural { variant_idents: Vec<String> },
 }
 
 impl Model {
@@ -267,6 +296,7 @@ impl Model {
                     wire_name: p.name.clone(),
                     rust_name: naming::field_ident(&p.name),
                     kind,
+                    default: field_default(&rp.owner, &p.name).map(str::to_string),
                 }
             })
             .collect()
@@ -305,17 +335,25 @@ impl Model {
                     // The polymorphic-concrete self-data variant is emitted last;
                     // its identifier is the enum's own name (`DvText(DvTextData)`).
                     idents.push(rust.clone());
+                    let dispatch = self.json_enum_dispatch(name, &variants, &idents);
                     out.push(JsonType::Enum {
                         rust,
                         generics,
                         variant_idents: idents,
+                        dispatch,
                     });
                 }
-                Emission::Enum(variants) => out.push(JsonType::Enum {
-                    rust,
-                    generics,
-                    variant_idents: variants.iter().map(|v| naming::type_name(v)).collect(),
-                }),
+                Emission::Enum(variants) => {
+                    let idents: Vec<String> =
+                        variants.iter().map(|v| naming::type_name(v)).collect();
+                    let dispatch = self.json_enum_dispatch(name, &variants, &idents);
+                    out.push(JsonType::Enum {
+                        rust,
+                        generics,
+                        variant_idents: idents,
+                        dispatch,
+                    });
+                }
                 Emission::EnumLiterals(enumeration) => out.push(JsonType::EnumLiterals {
                     rust,
                     string_backed: enumeration.underlying_type != "INTEGER",
@@ -325,6 +363,45 @@ impl Model {
             }
         }
         out
+    }
+
+    /// Decide how a canonical-JSON enum deserializes, reproducing exactly the
+    /// split `emit_enum` makes for the serde reader: `_type` dispatch when every
+    /// concrete target carries a `_type`, else the structural `#[serde(untagged)]`
+    /// fallback. `variant_idents` are the ToJson-order variant idents used by the
+    /// structural path.
+    fn json_enum_dispatch(
+        &self,
+        spec: &str,
+        variants: &[String],
+        variant_idents: &[String],
+    ) -> JsonEnumDispatch {
+        let dispatch = self.xsi_dispatch(spec, variants);
+        let type_dispatch = !dispatch.is_empty()
+            && dispatch
+                .iter()
+                .all(|(target, _)| self.concrete_carries_type(target));
+        if type_dispatch {
+            let self_ident = dispatch
+                .iter()
+                .find(|(target, _)| target == spec)
+                .map(|(_, id)| id.clone());
+            let expected = dispatch
+                .iter()
+                .map(|(s, _)| s.clone())
+                .collect::<Vec<_>>()
+                .join(", ");
+            JsonEnumDispatch::ByType {
+                arms: dispatch,
+                self_ident,
+                spec_name: spec.to_string(),
+                expected,
+            }
+        } else {
+            JsonEnumDispatch::Structural {
+                variant_idents: variant_idents.to_vec(),
+            }
+        }
     }
 
     /// The flattened fields of a concrete class for XML emission (same order and
