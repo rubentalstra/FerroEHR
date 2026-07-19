@@ -449,7 +449,17 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   design with issue #94's generator walk — keep the seam compatible).
 - The registration validator in `app/ehrbase/src/validation/adl2/` is
   REPLACED by `openehr-adl` (delete the hand-rolled probe; service calls
-  the real parser/validator).
+  the real parser/validator). **Audit finding (2026-07-19, the
+  generator-first hard-rule sweep):** `validation/adl2/odin.rs` is a
+  confirmed shadow of `openehr_lang::odin` — its justifying comment
+  ("no `openehr_lang::odin` item exists") went stale on this branch, it
+  forks ODIN acceptance on the upload wire (422/409 path), and it carries
+  a banned tracker ID (G-09-04). Its deletion is a named exit criterion
+  of this phase, not a nice-to-have. (The only other audit finding — the
+  cadl.rs Assertion placeholder — is being fixed in A3b; the rest of the
+  consumer scope audited CLEAN: AQL uses the generated RM model, OPT
+  validation uses opt14 DTOs, FLAT/ITS runtimes/REST contract all consume
+  the generated model directly.)
 - Admin/console + book chapter + changelog in the same PRs as the wire
   changes.
 
