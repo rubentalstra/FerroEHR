@@ -2,14 +2,13 @@
 //! stage-orchestrating `cmd_*` handlers that wire LOAD → ANALYZE → PLAN →
 //! RENDER together and write each emit target's files.
 
-use crate::analyze::{External, Model, augment_with_reemit, cross_schema_reemit, emittable_specs};
+use crate::analyze::{augment_with_reemit, cross_schema_reemit, emittable_specs};
 use crate::load::bmm::BmmSchema;
 use crate::load::{oas, xsd};
+use crate::plan::composition::{self, compose};
 use crate::render::emit::{GenFile, emit_crate, emit_multi_crate};
 use crate::render::{emit_opt, emit_rest, emit_rm_model, emit_xml, naming};
 use std::path::{Path, PathBuf};
-
-const VENDOR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/vendor/bmm");
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
 /// generated XML/REST code). `../../crates/openehr-its` from this tool's
 /// `tools/openehr-codegen` manifest dir.
@@ -52,31 +51,13 @@ pub(crate) fn run() {
     }
 }
 
-// Paths are relative to `VENDOR` and mirror the upstream ITS-BMM layout
-// (`components/<COMPONENT>/json/…`) — the full meta-model is vendored verbatim
-// (json + odin + yaml, all released versions); the JSON forms below are the
-// codegen input for our pinned versions (see `docs/VERSIONS.md`).
-const BASE_BMM: &str = "components/BASE/json/openehr_base_1.3.0.bmm.json";
-const RM_BMM: &str = "components/RM/json/openehr_rm_1.2.0.bmm.json";
-const TERM_BMM: &str = "components/TERM/json/openehr_term_3.1.0.bmm.json";
-const AM14_BMM: &str = "components/AM/json/openehr_am_1.4.0.bmm.json";
-const AM24_BMM: &str = "components/AM/json/openehr_am_2.4.0.bmm.json";
-const LANG_BMM: &str = "components/LANG/json/openehr_lang_1.1.0.bmm.json";
-/// LANG's model spans two vendored files: the primary one above (persisted BMM
-/// with `EXPR_*` and `STATEMENT_SET`/`ASSERTION`, which AM's rules/slots
-/// reference) and this BMM-3 file (the full `BMM_*` object model with the
-/// `EL_*` expression language, which AM's persisted-archetype rules reference).
-/// Both are merged into the `openehr-lang` crate.
-const LANG_BMM3: &str = "components/LANG/json/openehr_lang_1.1.0-bmm3.bmm.json";
-
-fn load(file: &str) -> Result<BmmSchema, Box<dyn std::error::Error>> {
-    let src = std::fs::read_to_string(Path::new(VENDOR).join(file))?;
-    Ok(BmmSchema::parse_json(&src)?)
-}
-
 fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
-    for file in [BASE_BMM, RM_BMM, TERM_BMM] {
-        let s = load(file)?;
+    for file in [
+        composition::BASE_BMM,
+        composition::RM_BMM,
+        composition::TERM_BMM,
+    ] {
+        let s = composition::load_bmm(file)?;
         let abstract_n = s.classes.values().filter(|c| c.is_abstract).count();
         let generic_n = s
             .classes
@@ -98,18 +79,16 @@ fn cmd_check() -> Result<(), Box<dyn std::error::Error>> {
 fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
     // Groups with operations (overview is an index, system has none).
     const GROUPS: &[&str] = &["admin", "definition", "demographic", "ehr", "query"];
-    let base = load(BASE_BMM)?;
-    let rm = load(RM_BMM)?;
-    let base_model = Model::merged(&[&base]);
-    let rm_model = Model::merged(&[&base, &rm]);
+    let base = compose("base")?;
+    let rm = compose("rm")?;
     // OAS $ref names are PascalCase (`EhrStatus`) — the same as the emitted Rust
     // type names — so map each crate's emittable spec names through `type_name`.
     let names = emit_rest::RmNames {
-        base: emittable_specs(&base_model, &base)
+        base: emittable_specs(&base.model, &base.own_schema)
             .iter()
             .map(|s| naming::type_name(s))
             .collect(),
-        rm: emittable_specs(&rm_model, &rm)
+        rm: emittable_specs(&rm.model, &rm.own_schema)
             .iter()
             .map(|s| naming::type_name(s))
             .collect(),
@@ -150,10 +129,8 @@ fn cmd_emit_rest() -> Result<(), Box<dyn std::error::Error>> {
 /// `openehr-its/src/xml/generated/`. Generates both wire lineages: v1
 /// (`.../v1`, parity target) and v2 (`.../v2`, latest).
 fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
-    let base = load(BASE_BMM)?;
-    let rm = load(RM_BMM)?;
-    let base_model = Model::merged(&[&base]);
-    let rm_model = Model::merged(&[&base, &rm]);
+    let base = compose("base")?;
+    let rm = compose("rm")?;
 
     // The RM-instance wire shape (element names, order, xsi:type, attributes) is
     // identical across the two ITS-XML lineages; they differ only by the root
@@ -179,13 +156,13 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 
     let schemas = [
         emit_xml::XmlSchema {
-            model: &base_model,
-            schema: &base,
+            model: &base.model,
+            schema: &base.own_schema,
             prelude: "openehr_base::prelude",
         },
         emit_xml::XmlSchema {
-            model: &rm_model,
-            schema: &rm,
+            model: &rm.model,
+            schema: &rm.own_schema,
             prelude: "openehr_rm::prelude",
         },
     ];
@@ -216,12 +193,10 @@ fn cmd_emit_xml() -> Result<(), Box<dyn std::error::Error>> {
 /// constraint XSD closure (`Template.xsd` + includes). RM instance types
 /// resolve to the already-generated `openehr-base`/`openehr-rm` impls.
 fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
-    let base = load(BASE_BMM)?;
-    let rm = load(RM_BMM)?;
-    let base_model = Model::merged(&[&base]);
-    let rm_model = Model::merged(&[&base, &rm]);
-    let base_specs = emittable_specs(&base_model, &base);
-    let rm_specs = emittable_specs(&rm_model, &rm);
+    let base = compose("base")?;
+    let rm = compose("rm")?;
+    let base_specs = emittable_specs(&base.model, &base.own_schema);
+    let rm_specs = emittable_specs(&rm.model, &rm.own_schema);
 
     // The AM/OPT constraint schemas share `Resource.xsd`+`BaseTypes.xsd` with the
     // RM-instance set; those shared types resolve to the RM/BASE XML impls.
@@ -256,10 +231,8 @@ fn cmd_emit_opt() -> Result<(), Box<dyn std::error::Error>> {
 /// touch the generated spec files) and declares `pub mod model;` in `lib.rs` if
 /// absent, so it is correct run standalone; `emit` produces the identical output.
 fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
-    let base = load(BASE_BMM)?;
-    let rm = load(RM_BMM)?;
-    let rm_model = Model::merged(&[&base, &rm]);
-    let files = emit_rm_model::emit_files(&rm_model);
+    let rm = compose("rm")?;
+    let files = emit_rm_model::emit_files(&rm.model);
 
     let src = crates_root().join("openehr-rm").join("src");
     let mut written = Vec::new();
@@ -342,69 +315,44 @@ fn cmd_check_xsd() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-const BASE_DOC: &str = "openEHR BASE (foundation + base types), generated from the BMM meta-model.";
-
 fn crates_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .join("crates")
 }
 
-const AM_DOC: &str = "openEHR AM (Archetype Model): am14 (AM 1.4.0, for ADL 1.4) and am24 \
-    (AM 2.4.0, for ADL 2) — both generated from BMM. Both ADL versions are in use.";
-
-const RM_DOC: &str = "openEHR RM (Reference Model), generated from the BMM meta-model.";
-const TERM_DOC: &str = "openEHR TERM (Terminology) data model, generated from the BMM \
-    meta-model. The vendored terminology XML content lives in `assets/` (data, not \
-    generated); an XML→model loader is added when composition validation needs it.";
-const LANG_DOC: &str = "openEHR LANG: the BMM / P_BMM object model, generated from the BMM \
-    meta-model. The generator's own BMM reader lives in openehr-codegen (tooling, not spec); \
-    the runtime ODIN and EL parsers are future hand-written work (P8/P9).";
-
 fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let base = load(BASE_BMM)?;
-    let rm = load(RM_BMM)?;
-    let term = load(TERM_BMM)?;
+    // Each crate's schema composition (member BMM files, dependency preludes) is
+    // the declarative `plan::composition::COMPOSITIONS` table; `compose` resolves
+    // an entry into the merged model + own schema + prelude index. See that table
+    // for the `includes` citations behind each merge.
 
     // openehr-base: single version, no dependency crates.
-    let base_model = Model::merged(&[&base]);
-    let no_ext = External::default();
+    let base = compose("base")?;
     write_crate(
         "openehr-base",
-        &emit_crate(&base_model, &base, &no_ext, BASE_DOC),
+        &emit_crate(&base.model, &base.own_schema, &base.external, base.doc),
     )?;
 
-    // Types exported by openehr-base — downstream crates resolve references to
-    // these against `openehr_base::prelude` instead of degrading to Value.
-    let base_specs = emittable_specs(&base_model, &base);
-    let ext_base = External::default().with(base_specs, "openehr_base::prelude");
-
-    // openehr-rm: single version, depends on openehr-base. Also carries the
-    // static RM attribute/type model, emitted
-    // here too so a plain `emit` keeps the crate self-consistent (lib.rs declares
-    // `model`, and a later `emit` regenerates it byte-identically to the
-    // standalone `emit-rm-model` target).
-    let rm_model = Model::merged(&[&base, &rm]);
-    let mut rm_files = emit_crate(&rm_model, &rm, &ext_base, RM_DOC);
-    inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm_model));
+    // openehr-rm: depends on openehr-base. Also carries the static RM attribute/
+    // type model, emitted here too so a plain `emit` keeps the crate
+    // self-consistent (lib.rs declares `model`, and a later `emit` regenerates it
+    // byte-identically to the standalone `emit-rm-model` target).
+    let rm = compose("rm")?;
+    let mut rm_files = emit_crate(&rm.model, &rm.own_schema, &rm.external, rm.doc);
+    inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
     write_crate("openehr-rm", &rm_files)?;
 
-    // openehr-lang: the BMM/P_BMM object model (86 classes), fully generated.
-    // The generator's own reader lives here in `openehr-codegen`, so there is no
-    // bootstrap cycle. The runtime ODIN/EL parsers are future hand-written work.
+    // openehr-lang: the BMM/P_BMM object model, fully generated. The generator's
+    // own reader lives in `openehr-codegen`, so there is no bootstrap cycle.
     // Emitted before AM because AM's rule model references LANG types
     // (`ARCHETYPE.rules : List<STATEMENT_SET>`, `ARCHETYPE_SLOT.includes :
     // List<ASSERTION>`), so AM resolves them against `openehr_lang::prelude`.
-    let lang = load(LANG_BMM)?.combined(&load(LANG_BMM3)?);
-    let lang_model = Model::merged(&[&base, &lang]);
+    let lang = compose("lang")?;
     write_crate(
         "openehr-lang",
-        &emit_crate(&lang_model, &lang, &ext_base, LANG_DOC),
+        &emit_crate(&lang.model, &lang.own_schema, &lang.external, lang.doc),
     )?;
-    let lang_specs = emittable_specs(&lang_model, &lang);
-    let ext_base_lang = External::default()
-        .with(emittable_specs(&base_model, &base), "openehr_base::prelude")
-        .with(lang_specs, "openehr_lang::prelude");
 
     // openehr-am: two versions in one crate, each depending on openehr-base and
     // openehr-lang. Each version merges BASE so its ancestors (e.g. ARCHETYPE ←
@@ -418,34 +366,34 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     // set composing the LANG variants + the AM leaves), so `ARCHETYPE.rules` /
     // `ARCHETYPE_SLOT.includes` resolve against the AM-level types. openehr-lang
     // stays byte-identical (the closure is emitted only here, never upstream).
-    let am14 = load(AM14_BMM)?;
-    let am24 = load(AM24_BMM)?;
-    let m14 = Model::merged(&[&base, &am14]);
-    // The AM 2.4 model merges the full LANG include-closure (`lang` = the beom
-    // expression/statement object model + BMM3/EL), matching the AM BMM's
-    // `includes: openehr_lang_1.1.0`, so every ancestor/descendant of the AM
-    // `rules` leaves resolves. `cross_schema_reemit` then computes the COMPLETE
-    // set of upstream classes whose Rust form widens downstream and grafts them
-    // into the AM schema at their source package paths — a full, non-minimal
-    // re-emission (owner ruling 2026-07-19). AM 1.4 declares no cross-`include`
-    // subtypes → empty closure, unchanged emission.
-    let m24 = Model::merged(&[&base, &lang, &am24]);
-    let reemit24 = cross_schema_reemit(&m24, &am24);
-    let am24_aug = augment_with_reemit(&am24, &m24, &reemit24, &[&base, &lang]);
+    let am14 = compose("am14")?;
+    let am24 = compose("am24")?;
+    // `cross_schema_reemit` computes the COMPLETE set of upstream classes whose
+    // Rust form widens downstream and grafts them into the AM schema at their
+    // source package paths — a full, non-minimal re-emission (owner ruling
+    // 2026-07-19). AM 1.4 declares no cross-`include` subtypes → empty closure,
+    // unchanged emission. The augment sources are AM 2.4's model dependency
+    // schemas (BASE + LANG), so re-emitted classes mirror their source packages.
+    let reemit24 = cross_schema_reemit(&am24.model, &am24.own_schema);
+    let am24_dep_refs: Vec<&BmmSchema> = am24.dep_schemas.iter().collect();
+    let am24_aug = augment_with_reemit(&am24.own_schema, &am24.model, &reemit24, &am24_dep_refs);
     let am_files = emit_multi_crate(
-        &[("am14", &m14, &am14), ("am24", &m24, &am24_aug)],
-        &ext_base_lang,
-        AM_DOC,
+        &[
+            ("am14", &am14.model, &am14.own_schema),
+            ("am24", &am24.model, &am24_aug),
+        ],
+        &am24.external,
+        am24.doc,
     );
     write_crate("openehr-am", &am_files)?;
 
     // openehr-term: the TERM data model (CODE_SET, TERMINOLOGY, …), depends on
     // openehr-base (TERMINOLOGY.date : Iso8601_date). The vendored terminology
     // XML in `assets/` is data (outside `src/`, survives regen).
-    let term_model = Model::merged(&[&base, &term]);
+    let term = compose("term")?;
     write_crate(
         "openehr-term",
-        &emit_crate(&term_model, &term, &ext_base, TERM_DOC),
+        &emit_crate(&term.model, &term.own_schema, &term.external, term.doc),
     )?;
     Ok(())
 }
