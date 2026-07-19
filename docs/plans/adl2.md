@@ -277,6 +277,10 @@ VATID VATCD VATDF VACDF VATDA · VRANP.
 Plus class invariants not phase-listed: VOKU VARID VDEOL VARD VASID VALC
 VTPL VRRLP VCOCD VCOID VCOSU VCATU VDFAI VDSIV VOBAV VRMVP VRMVAV
 VACSO VACMCU WACMCL(warning) VSONIF.
+Plus corpus-adjudicated additions (2026-07-19; no full vendored text —
+NOTE-flagged, archie ErrorType parity): VRDLA (resource-description
+language-code consistency) · WOUC (warning: defined terminology code
+unused in the definition).
 
 **Phase 2 — vs RM + vs flat parent (specialised only for the latter):**
 RM: VCORM VCARM VCORMT VCAEX VCACA VCAM (+ VCORMENV VCORMENU VCORMEN —
@@ -471,13 +475,34 @@ asserted expected outcome — 100%, no dead fixtures.** This is the same
 discipline that gives archie its validation depth; the corpus is the
 use-case library. Enforcement:
 
+- **The oracle is the in-file `regression` tag, never the filename**
+  (inventory finding 2026-07-19: every adl2-reference file embeds
+  `other_details["regression"] = <"CODE"|"PASS"|"FAIL">`; 13 filenames
+  contradict their tag — full list in
+  `crates/openehr-adl/tests/corpus/INVENTORY.md`). Harnesses read the tag.
+  Normalisations: `VDIFP1`→VDIFP, `VSONCOm`→VSONCO, `SEXLU`→SEXLU1/2
+  family, `VACMC`→VACMCU; `VCOV` file is tagged PASS (assert clean).
+- **Catalogue additions from the corpus** (adjudicated 2026-07-19):
+  `VRDLA` (resource-description language-code consistency — corpus
+  `validity/basics`; archie ErrorType parity; no full vendored AOM2 text —
+  NOTE-flagged) and `WOUC` (warning: terminology code unused in
+  definition). Both get typed variants + corpus claims.
+- **85 catalogue codes have ZERO corpus cases** (list in INVENTORY.md §3b
+  — most of the SC*AV/SC*PT primitive families and the specialisation
+  VSON*/VDSS*/VARX* families): each gets a HAND-WRITTEN case in the phase
+  that implements its check — "every code has a test" stands regardless
+  of corpus coverage.
 - A **coverage gate test** walks the whole corpus tree and fails if any
   file is not claimed by exactly one harness category — new or unclaimed
-  files break CI.
+  files break CI. Keys on FULL PATH (2 duplicate basenames); must include
+  a `.adl` walker (31 ADL-1.4 files: legacy_adl_1.4, upgrade_from_14, one
+  features file — currently unexercised by the `.adls`-only A2 tests).
+  Untagged files in `features/**`/`upgrade/**` = PASS-expected; an
+  untagged file under `validity/**` fails the gate.
 - Per-category harnesses:
-  - `adl2-reference/validity/**` — parse + validate; a filename carrying a
-    rule code (V*/S*/W*) MUST raise exactly that code (WOUC-style W-codes
-    as warnings); code-less files must pass clean.
+  - `adl2-reference/validity/**` — parse + validate; tag carrying a rule
+    code MUST raise exactly that code (W* as warnings); PASS-tagged files
+    must pass clean; FAIL-tagged = any typed error.
   - `adl2-reference/features/**` — parse + validate clean; specialised
     cases also flatten successfully.
   - `adl2-reference/robustness/**` — never panic; typed errors only.
@@ -487,8 +512,15 @@ use-case library. Enforcement:
   - `adl2-reference/validity/legacy_adl_1.4/**` — the documented 1.4
     tolerance behaviours.
   - `flattener/specexamples/**` + `flattener/siblingorder/**` — flatten
-    and compare against the expected flat outputs (each fixture
-    spec-verified per the PROVENANCE note).
+    child→parent and assert against HAND-AUTHORED spec-derived
+    expectations (no goldens are vendored — archie keeps them in Java
+    test code; each authored assertion cites AOM2 master08/master09).
+    Parent-only fixtures are claimed as flatten-inputs. Pair map in
+    INVENTORY.md §7. NOTE: these 38 files are the ONLY corpus files using
+    the unicode operator forms (∈ etc.) — they also regression-pin the
+    dual-form lexer.
+  - `upgrade/upgrade_from_15/**` — parse + validate clean (no 1.5 source
+    inputs vendored, so no conversion comparison).
 - Skips only via a documented adjudication entry (file + reason + spec
   citation) — never a silent exclusion; the adjudication list shrinks to
   zero by row close unless a fixture is proven defective against the spec
