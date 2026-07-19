@@ -306,9 +306,13 @@ pub fn EhrsPage() -> impl IntoView {
 /// both-or-neither rule is validated client-side (inline) before dispatch and
 /// re-checked server-side; a CDR validation diagnostic surfaces inline
 /// verbatim.
+#[allow(clippy::too_many_lines)] // one erased section: the create card's inputs + validation + action wiring (rules §1)
 fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
-    let subject_id = RwSignal::new(String::new());
-    let subject_namespace = RwSignal::new(String::new());
+    // UNCONTROLLED inputs, read at dispatch (rules §5) — a controlled input
+    // resets to its empty signal at hydration, wiping pre-WASM typing (the
+    // login form's proven pattern).
+    let subject_id_ref = NodeRef::<leptos::html::Input>::new();
+    let subject_namespace_ref = NodeRef::<leptos::html::Input>::new();
     let validation = RwSignal::new(Option::<String>::None);
     let create = Action::new(|(id, ns): &(String, String)| {
         let id = id.clone();
@@ -332,8 +336,18 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
     });
 
     let on_click = move |_| {
-        let id = subject_id.get().trim().to_owned();
-        let ns = subject_namespace.get().trim().to_owned();
+        let id = subject_id_ref
+            .get_untracked()
+            .map(|el| el.value())
+            .unwrap_or_default()
+            .trim()
+            .to_owned();
+        let ns = subject_namespace_ref
+            .get_untracked()
+            .map(|el| el.value())
+            .unwrap_or_default()
+            .trim()
+            .to_owned();
         if id.is_empty() != ns.is_empty() {
             validation.set(Some(
                 "Provide both a subject id and a namespace, or leave both empty for an anonymous EHR."
@@ -358,8 +372,7 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
                         type="text"
                         class=INPUT
                         placeholder="external subject id"
-                        prop:value=move || subject_id.get()
-                        on:input:target=move |ev| subject_id.set(ev.target().value())
+                        node_ref=subject_id_ref
                     />
                 </div>
                 <div class="flex flex-col gap-1">
@@ -371,8 +384,7 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
                         type="text"
                         class=INPUT
                         placeholder="namespace"
-                        prop:value=move || subject_namespace.get()
-                        on:input:target=move |ev| subject_namespace.set(ev.target().value())
+                        node_ref=subject_namespace_ref
                     />
                 </div>
                 <button
@@ -438,10 +450,19 @@ fn offset_from_url() -> Signal<u32> {
 #[allow(clippy::too_many_lines)] // two finder modes assembled as one erased section (rules §1) — splitting would separate a mode from its state
 fn finder_section() -> AnyView {
     // ── Mode 1: jump by EHR id ──────────────────────────────────────────────
-    let lookup = RwSignal::new(String::new());
+    // UNCONTROLLED inputs, read at dispatch (rules §5): a controlled
+    // (signal-driven) input resets to its empty signal at hydration, wiping
+    // anything typed before the WASM loaded — the login form's proven fix,
+    // applied here after the finder e2e journey caught the same wipe live.
+    let lookup_ref = NodeRef::<leptos::html::Input>::new();
     let by_id_navigate = leptos_router::hooks::use_navigate();
     let on_lookup = move |_| {
-        let id = lookup.get().trim().to_owned();
+        let id = lookup_ref
+            .get_untracked()
+            .map(|el| el.value())
+            .unwrap_or_default()
+            .trim()
+            .to_owned();
         if !id.is_empty() {
             by_id_navigate(
                 &format!("/ehrs/{id}"),
@@ -451,8 +472,8 @@ fn finder_section() -> AnyView {
     };
 
     // ── Mode 2: find by subject id + namespace ──────────────────────────────
-    let subject_id = RwSignal::new(String::new());
-    let subject_namespace = RwSignal::new(String::new());
+    let subject_id_ref = NodeRef::<leptos::html::Input>::new();
+    let subject_namespace_ref = NodeRef::<leptos::html::Input>::new();
     let find = Action::new(|(id, ns): &(String, String)| {
         let id = id.clone();
         let ns = ns.clone();
@@ -469,8 +490,18 @@ fn finder_section() -> AnyView {
         }
     });
     let on_find_subject = move |_| {
-        let id = subject_id.get().trim().to_owned();
-        let ns = subject_namespace.get().trim().to_owned();
+        let id = subject_id_ref
+            .get_untracked()
+            .map(|el| el.value())
+            .unwrap_or_default()
+            .trim()
+            .to_owned();
+        let ns = subject_namespace_ref
+            .get_untracked()
+            .map(|el| el.value())
+            .unwrap_or_default()
+            .trim()
+            .to_owned();
         if !id.is_empty() && !ns.is_empty() {
             find.dispatch((id, ns));
         }
@@ -495,8 +526,7 @@ fn finder_section() -> AnyView {
                         type="text"
                         class=INPUT
                         placeholder="ehr_id (UUID)"
-                        prop:value=move || lookup.get()
-                        on:input:target=move |ev| lookup.set(ev.target().value())
+                        node_ref=lookup_ref
                     />
                 </div>
                 <button id="ehr-find" type="button" class=BTN_PRIMARY on:click=on_lookup>
@@ -513,8 +543,7 @@ fn finder_section() -> AnyView {
                         type="text"
                         class=INPUT
                         placeholder="external subject id"
-                        prop:value=move || subject_id.get()
-                        on:input:target=move |ev| subject_id.set(ev.target().value())
+                        node_ref=subject_id_ref
                     />
                 </div>
                 <div class="flex flex-col gap-1">
@@ -526,8 +555,7 @@ fn finder_section() -> AnyView {
                         type="text"
                         class=INPUT
                         placeholder="namespace"
-                        prop:value=move || subject_namespace.get()
-                        on:input:target=move |ev| subject_namespace.set(ev.target().value())
+                        node_ref=subject_namespace_ref
                     />
                 </div>
                 <button

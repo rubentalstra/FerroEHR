@@ -16,6 +16,7 @@
 //! §Folders). Multi-hierarchy write management is owned by WORKLIST W-6.
 
 use crate::ids::{EhrId, VoId};
+use crate::service::response::ResourceMeta;
 use crate::service::response::ServiceResponse;
 use crate::service::status::SmError;
 use crate::service::version_update::UpdateVersion;
@@ -61,8 +62,13 @@ impl EhrbaseService {
         self.ensure_content_writable(ehr_id).await?;
         // `POST /directory` manages the single directory slot = EHR.directory
         // (= folders[1], RM ehr §EHR Class Directory_in_folders); it conflicts
-        // when a hierarchy already occupies that slot.
-        if self.directory_vo_opt(ehr_id).await?.is_some() {
+        // only when a LIVE hierarchy occupies that slot. After a logical
+        // delete the container remains (RM common master06 §Logical Deletion)
+        // but the slot is vacant, so create opens a NEW hierarchy (RM ehr
+        // master04 §Folders); the exact conflict status is spec-silent — 409
+        // is our choice (CNF master09 E.2 requires an error for a live
+        // directory only).
+        if crate::storage::ehr_repo::live_directory_exists(&self.pool, ehr_id).await? {
             return Err(ServiceError::Conflict(format!(
                 "EHR {ehr_id} already has a directory"
             )));
@@ -130,17 +136,22 @@ impl EhrbaseService {
         }
     }
 
-    /// A specific version of the directory (from a `version_uid`). A deleted
-    /// version resolves to `Value::Null` (→ 204).
+    /// A specific version of the directory (from a `version_uid`),
+    /// optionally navigated to a sub-folder `path` (ITS-REST
+    /// `directory_get_by_version_id` — "If `path` is supplied, retrieves
+    /// from the directory only the sub-FOLDER that is associated with that
+    /// path"). A deleted version resolves to `Value::Null` (→ 204).
     ///
     /// # Errors
-    /// [`ServiceError::NotFound`] when the version does not exist or belongs
-    /// to another EHR; [`ServiceError::Database`] on a storage failure.
+    /// [`ServiceError::NotFound`] when the version does not exist, belongs
+    /// to another EHR, or the sub-folder path does not resolve;
+    /// [`ServiceError::Database`] on a storage failure.
     pub(in crate::service) async fn directory_version(
         &self,
         ehr_id: EhrId,
         vo_id: VoId,
         version: TreeId,
+        path: Option<&str>,
     ) -> Result<ServiceResponse, ServiceError> {
         let read = read_version(&self.pool, vo_id, version)
             .await?
@@ -149,7 +160,12 @@ impl EhrbaseService {
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
-        Ok(self.version_response(ehr_id, vo_id, read))
+        let mut response = self.version_response(ehr_id, vo_id, read);
+        if let Some(path) = path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
+            response.body = select_subfolder(&response.body, path)
+                .ok_or_else(|| ServiceError::NotFound(format!("folder path {path:?}")))?;
+        }
+        Ok(response)
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's directory
@@ -408,7 +424,8 @@ impl EhrbaseService {
     }
 
     /// SM `I_EHR_DIRECTORY.create_directory` — create the EHR's directory,
-    /// returning the new version uid.
+    /// returning the new version's resource metadata (uid + commit time for
+    /// the wire's `ETag`/`Last-Modified`).
     ///
     /// # Errors
     /// [`SmError`] when the EHR does not exist (404-equivalent), the FOLDER
@@ -418,12 +435,15 @@ impl EhrbaseService {
         &self,
         an_ehr_id: EhrId,
         a_dir_struct: UpdateVersion,
-    ) -> Result<String, SmError> {
-        super::version_uid(self.commit_new_directory(an_ehr_id, a_dir_struct).await?)
+    ) -> Result<ResourceMeta, SmError> {
+        super::committed_meta(self.commit_new_directory(an_ehr_id, a_dir_struct).await?)
     }
 
     /// SM `I_EHR_DIRECTORY.get_directory_at_time` — the directory FOLDER
-    /// current at `a_time` (or now), optionally navigated to `a_path`.
+    /// current at `a_time` (or now), optionally navigated to `a_path`. The
+    /// response carries the resource metadata so the wire can emit
+    /// `ETag`/`Last-Modified` on reads too (ITS-REST overview §"`ETag` and
+    /// Last-Modified": both SHOULD accompany versioned resources).
     ///
     /// # Errors
     /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing
@@ -433,16 +453,16 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_time: Option<String>,
         a_path: Option<String>,
-    ) -> Result<Value, SmError> {
+    ) -> Result<ServiceResponse, SmError> {
         let at = a_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self
             .directory_at_time(an_ehr_id, at, a_path.as_deref())
-            .await?
-            .body)
+            .await?)
     }
 
     /// SM `I_EHR_DIRECTORY.update_directory` — commit a new directory version,
-    /// returning the new version uid.
+    /// returning the new version's resource metadata (uid + commit time for
+    /// the wire's `ETag`/`Last-Modified`).
     ///
     /// # Errors
     /// [`SmError`] when the EHR has no directory (404-equivalent), the
@@ -453,7 +473,7 @@ impl EhrbaseService {
         &self,
         an_ehr_id: EhrId,
         a_dir_struct: UpdateVersion,
-    ) -> Result<String, SmError> {
+    ) -> Result<ResourceMeta, SmError> {
         // Resolve the directory-slot vo_id + its current version metadata + the
         // EHR's is_modifiable flag ONCE (the `If-Match` pre-read); a missing
         // directory is `NotFound` (the same error the inner write's slot
@@ -469,7 +489,7 @@ impl EhrbaseService {
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
-        super::version_uid(
+        super::committed_meta(
             self.commit_directory_update(an_ehr_id, vo_id, a_dir_struct, expected, is_modifiable)
                 .await?,
         )
@@ -503,21 +523,23 @@ impl EhrbaseService {
     }
 
     /// The directory FOLDER at the named version
-    /// (`GET /ehr/{ehr_id}/directory/{version_uid}`).
+    /// (`GET /ehr/{ehr_id}/directory/{version_uid}`), optionally navigated
+    /// to the sub-folder `a_path` (ITS-REST `directory_get_by_version_id`:
+    /// slash-separated FOLDER names; an unresolved path is 404-equivalent).
     ///
     /// # Errors
     /// [`SmError`] for a malformed `OBJECT_VERSION_ID`, an unknown version
-    /// (404-equivalent), or a read failure.
+    /// or unresolved path (404-equivalent), or a read failure.
     pub async fn get_directory_at_version(
         &self,
         an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
-    ) -> Result<Value, SmError> {
+        a_path: Option<&str>,
+    ) -> Result<ServiceResponse, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
         Ok(self
-            .directory_version(an_ehr_id, vo_id, version)
-            .await?
-            .body)
+            .directory_version(an_ehr_id, vo_id, version, a_path)
+            .await?)
     }
 
     /// SM `I_EHR_DIRECTORY.has_directory_version` — whether the named

@@ -350,8 +350,8 @@ fn filter_form(query: Memo<leptos_router::params::ParamsMap>) -> AnyView {
                 <label class="flex flex-col gap-1 text-xs text-ink-muted">
                     // Initial selection via the option `selected` attribute:
                     // it server-renders (a `prop:` would not) and the select
-                    "Outcome" // stays uncontrolled — the GET form owns the state.
-                    <select name="outcome" class=select_class>
+                    // stays uncontrolled — the GET form owns the state.
+                    "Outcome" <select name="outcome" class=select_class>
                         <option value="" selected=initial("outcome").is_empty()>
                             "any"
                         </option>

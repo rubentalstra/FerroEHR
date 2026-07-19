@@ -231,6 +231,27 @@ impl Harness {
         panic!("URL never contained `{fragment}` (last: {url})");
     }
 
+    /// Wait until no toast card is on screen (a visible `thaw` toast overlays
+    /// the bottom-right corner and INTERCEPTS clicks on buttons underneath —
+    /// an explicit condition, not a sleep). Toasts auto-dismiss; bounded wait.
+    ///
+    /// # Panics
+    /// When a toast is still visible after 15 s.
+    pub async fn wait_toasts_cleared(&self) {
+        for _ in 0..75 {
+            let toasts = self
+                .driver
+                .find_all(By::Css(".thaw-toast-body"))
+                .await
+                .unwrap_or_default();
+            if toasts.is_empty() {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+        panic!("a toast never cleared (it would intercept the next click)");
+    }
+
     /// Numbered step screenshot: `{journey}-{step}-{slug}.png`.
     ///
     /// # Panics

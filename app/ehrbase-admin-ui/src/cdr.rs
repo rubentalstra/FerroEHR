@@ -173,6 +173,29 @@ impl CdrClient {
         Self::finish(Self::authorize(request, credential)).await
     }
 
+    /// DELETE `url` as `credential` with the given extra headers (e.g.
+    /// `If-Match` = the preceding `version_uid` on a versioned directory
+    /// delete). No request body; asks for `application/json` so an error body
+    /// (the openEHR diagnostic) is returned in the negotiated format.
+    ///
+    /// # Errors
+    /// [`AdminUiError::CdrUnreachable`] on transport failure.
+    pub async fn delete(
+        &self,
+        credential: &Credential,
+        url: &str,
+        headers: &[(&str, &str)],
+    ) -> Result<CdrResponse, AdminUiError> {
+        let mut request = self
+            .http
+            .delete(url)
+            .header(http::header::ACCEPT, "application/json");
+        for (name, value) in headers {
+            request = request.header(*name, *value);
+        }
+        Self::finish(Self::authorize(request, credential)).await
+    }
+
     /// PUT a text body to `url` as `credential` (stored-query writes use
     /// `text/plain` AQL per the Definition API).
     ///
