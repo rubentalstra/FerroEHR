@@ -33,5 +33,6 @@ pub mod json;
 pub mod json_codec;
 pub mod opt14;
 pub mod rest;
+pub mod rm_terminology;
 pub mod rm_validate;
 pub mod xml;
