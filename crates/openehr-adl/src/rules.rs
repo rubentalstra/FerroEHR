@@ -74,8 +74,8 @@ impl AmBuilder {
     }
 }
 
-/// A parse-time placeholder for `EXPR_ARCHETYPE_REF.item` (the referenced node),
-/// which is resolved in a later phase against the archetype definition.
+/// A parse-time placeholder for `EXPR_ARCHETYPE_REF.item` (the referenced node).
+/// TODO: resolve it against the archetype definition (currently a placeholder).
 ///
 /// NOTE: `EXPR_ARCHETYPE_REF.item : ARCHETYPE_CONSTRAINT` is mandatory in the
 /// generated AOM model but is the *resolved* target of the path, unknown at
@@ -386,7 +386,7 @@ pub fn parse_artefact_rules(
 /// a real AM-level [`Assertion`] — `archetype_id_path matches { /regex/ }` →
 /// `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT` (`master05`). The
 /// verbatim `text` is preserved in `string_expression` so the slot stays usable
-/// even when a future form is not yet structurally modelled.
+/// even for a form that is not structurally modelled.
 ///
 /// # Errors
 /// Returns the `S*` errors on a malformed slot assertion (regex compile `SCSRE`,

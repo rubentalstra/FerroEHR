@@ -1,0 +1,33 @@
+# specifications-ITS-BMM
+
+BMM schemas for use with openEHR systems and tools. The repository is structured as follows:
+
+----
+/original				# BMMs from original openEHR, prior to separated components
+/example				# BMM containing documentation on format with examples
+/components
+	/BASE				# BMMs for BASE component
+		/Release-1.0.0 		# BMMs for Release-1.0.0 of BASE
+		/etc
+		/latest			# BMMs for working version of BASE
+	/LANG				# BMMs for LANG component
+		/Release-1.0.0 		# BMMs for Release-1.0.0 of LANG
+		/etc
+		/latest			# BMMs for working version of LANG
+	/RM				# BMMs for RM component
+		/Release-1.0.3 		# BMMs for Release-1.0.3 of RM
+		/Release-1.0.4 		# BMMs for Release-1.0.4 of RM
+		/etc
+		/latest			# BMMs for working version of RM
+	/PROC				# BMMs for PROC component
+		/Release-1.0.0 		# BMMs for Release-1.0.0 of PROC
+		/etc
+		/latest			# BMMs for working version of PROC
+/adl_test/
+		/Release-1.0.0 		# BMMs for Release-1.0.0 of ADL-test model
+		/latest			# BMMs for working version of ADL-test
+	
+----
+
+To use these files in tools, the recommended approach is to point the tool to the `components` (or `original`, if using Release 1.0.2) directory of a clone checkout area, and to manage a table of files identified by schema id (determined by meta-data inside the files), and to resolve the include references via this table.
+

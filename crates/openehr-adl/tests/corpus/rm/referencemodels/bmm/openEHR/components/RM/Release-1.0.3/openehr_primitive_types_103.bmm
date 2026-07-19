@@ -1,0 +1,223 @@
+-- 
+-- 	component:   openEHR BMM Implementation Technology Specification
+-- 	description: openEHR BASE component formal expression. This file is an ODIN serialisation of
+--               the BMM object meta-model classes found at 
+--               https://www.openehr.org/releases/LANG/latest/p_bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale <thomas.beale@openEHR.org>
+-- 	support:     https://openehr.atlassian.net/issues/?filter=11117
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation <https://www.openEHR.org>
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as the top version in the specification:
+--     https://www.openehr.org/releases/LANG/latest/bmm_persistence.html#_amendment_record
+--
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"primitive_types">
+rm_release = <"1.0.3">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.0.3.1">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.0.3 reference model assumed types package"> 
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.openehr.rm.support.assumed_types"] = <
+		name = <"org.openehr.rm.support.assumed_types">
+		classes = <"Any", "Ordered", "Numeric", "Ordered_Numeric", "Octet", "Byte", "Boolean", "Integer", "Integer64", "Real", "Double", "Character", "String", "List", "Array", "Set", "Interval", "Hash", "ISO8601_TYPE", "ISO8601_DATE", "ISO8601_TIME", "ISO8601_DATE_TIME", "ISO8601_DURATION">
+	>
+>
+
+------------------------------------------------------
+-- primitive types
+------------------------------------------------------
+
+primitive_types = <
+	["Any"] = <
+		name = <"Any">
+		is_abstract = <True>
+	>
+	["Ordered"] = <
+		name = <"Ordered">
+		is_abstract = <True>
+		documentation = <"Ancestor of types with total order relation defined, i.e. '<' and '='.">
+		ancestors = <"Any", ...>
+	>
+	["Numeric"] = <
+		name = <"Numeric">
+		is_abstract = <True>
+		documentation = <"Ancestor of numeric types.">
+		ancestors = <"Any", ...>
+	>
+	["Ordered_Numeric"] = <
+		name = <"Ordered_Numeric">
+		is_abstract = <True>
+		documentation = <"Ancestor of ordered numeric types.">
+		ancestors = <"Numeric", "Ordered">
+	>
+	["Byte"] = <
+		name = <"Byte">
+		ancestors = <"Any", ...>
+	>
+	["Octet"] = <
+		name = <"Octet">
+		ancestors = <"Ordered", ...>
+	>
+	["Boolean"] = <
+		name = <"Boolean">
+		ancestors = <"Any", ...>
+	>
+	["Integer"] = <
+		name = <"Integer">
+		ancestors = <"Ordered_Numeric", ...>
+	>
+	["Integer64"] = <
+		name = <"Integer64">
+		ancestors = <"Ordered_Numeric", ...>
+	>
+	["Real"] = <
+		name = <"Real">
+		ancestors = <"Ordered_Numeric", ...>
+	>
+	["Double"] = <
+		name = <"Double">
+		ancestors = <"Ordered_Numeric", ...>
+	>
+	["Character"] = <
+		name = <"Character">
+		ancestors = <"Ordered", ...>
+	>
+	["String"] = <
+		name = <"String">
+		ancestors = <"Ordered", ...>
+	>
+	["List"] = <
+		name = <"List">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+	["Array"] = <
+		name = <"Array">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+	["Set"] = <
+		name = <"Set">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+	["Interval"] = <
+		name = <"Interval">
+		documentation = <"Type defining an interval of any ordered type.">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"Ordered">
+			>
+		>
+		properties = <
+			["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"lower">
+				type = <"T">
+			>
+			["upper"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"upper">
+				type = <"T">
+			>
+			["lower_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lower_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"upper_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["lower_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lower_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"upper_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["Hash"] = <
+		name = <"Hash">
+		documentation = <"Type defining Hash table / hash map structure, whose type parameters V and K represent a value type and an Ordered key type respectively.">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["V"] = <
+				name = <"V">
+			>
+			["K"] = <
+				name = <"K">
+				conforms_to_type = <"Ordered">
+			>
+		>
+	>
+	
+	["ISO8601_TYPE"] = <
+		name = <"ISO8601_TYPE">
+		ancestors = <"Ordered", ...>
+	>
+
+	["ISO8601_DATE"] = <
+		name = <"ISO8601_DATE">
+		documentation = <"Date type based on IS8601 representation.">
+		ancestors = <"ISO8601_TYPE", ...>
+	>
+
+	["ISO8601_TIME"] = <
+		name = <"ISO8601_TIME">
+		documentation = <"Time type based on IS8601 representation.">
+		ancestors = <"ISO8601_TYPE", ...>
+	>
+
+	["ISO8601_DATE_TIME"] = <
+		name = <"ISO8601_DATE_TIME">
+		documentation = <"Date Time type based on IS8601 representation.">
+		ancestors = <"ISO8601_TYPE", ...>
+	>
+
+	["ISO8601_DURATION"] = <
+		name = <"ISO8601_DURATION">
+		documentation = <"Duration type based on IS8601 representation.">
+		ancestors = <"ISO8601_TYPE", ...>
+	>
+
+>
+

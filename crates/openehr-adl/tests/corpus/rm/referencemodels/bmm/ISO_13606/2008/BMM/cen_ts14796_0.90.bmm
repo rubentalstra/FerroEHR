@@ -1,0 +1,619 @@
+--
+-- 	keywords:    data types, data types
+-- 	author:      Thomas Beale
+--	support:	 thomas.beale@oceaninformatics.com
+-- 	copyright:   Copyright (c) 2011 openEHR Foundation
+-- 	license:     See end of file
+-- 
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as value of 'Bmm_internal_version' in 
+--     http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/adl1.5/libraries/common_libs/src/basic_meta_model/bmm_definitions.e
+--
+------------------------------------------------------
+bmm_version = <"2.0">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"cen">
+schema_name = <"TS14796">
+rm_release = <"0.90">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"$LastChangedRevision: 93 $">
+schema_lifecycle_state = <"experimental">
+schema_description = <"CEN data types according to CEN/TS 14796:2004">
+schema_author = <"thomas.beale@oceaninformatics.com">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_primitive_types_1.0.2">
+	>
+>
+
+------------------------------------------------------
+-- archetyping
+------------------------------------------------------
+archetype_data_value_parent_class = <"DATA_VALUE">
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.cen.en13606.data_types"] = <
+		name = <"org.cen.en13606.data_types">
+		packages = <
+			["Basic"] = <
+				name = <"Basic">
+				classes = <"DATA_VALUE", "ED", "URI", "BL", "OID", "IVL", "II">
+			>
+			["Text"] = <
+				name = <"Text">
+				classes = <"CS", "CD", "CV", "TEXT", "SIMPLE_TEXT", "CODED_TEXT">
+			>
+			["Quantity"] = <
+				name = <"Quantity">
+				classes = <"INT", "RTO", "ORD", "PQ", "QUANTITY", "QUANTITY_RANGE", "DURATION", "IVLPQ">
+			>
+			["Time"] = <
+				name = <"Time">
+				classes = <"TS", "DATE", "EIVL", "PIVL", "IVLTS">
+			>
+		>
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	------------------------------------------------------
+	--- 
+	------------------------------------------------------
+
+   ["DATA_VALUE"] = <
+		name = <"DATA_VALUE">
+		ancestors = <"Any", ...>
+		is_abstract = <True>
+		properties = <		
+			["nullFlavor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"nullFlavor">
+				type = <"CS">
+			>
+		>
+	>
+
+	["ED"] = <
+		name = <"ED">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["mediaType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mediaType">
+				type = <"CS">
+				is_mandatory = <True>
+			>
+			["charset"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"charset">
+				type = <"CS">
+				is_mandatory = <True>
+			>
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CS">
+				is_mandatory = <True>
+			>
+			["size"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"size">
+				type = <"Integer">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["compression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"compression">
+				type = <"CV">
+				is_mandatory = <True>
+			>
+			["reference"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reference">
+				type = <"URI">
+				is_mandatory = <True>
+			>
+			["integrityCheck"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"integrityCheck">
+				type_def = <
+					container_type = <"Array">
+					type = <"Byte">
+				>
+				cardinality = <|>=0|>
+			>
+			["data"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"data">
+				type_def = <
+					container_type = <"Array">
+					type = <"Byte">
+				>
+				cardinality = <|>=0|>
+			>
+			["integrityCheckAlgorithm"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integrityCheckAlgorithm">
+				type = <"CV">
+				is_mandatory = <True>
+			>
+			["thumbnail"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"thumbnail">
+				type = <"ED">
+			>
+			["alternateString"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"alternateString">
+				type = <"TEXT">
+			>
+		>
+	>
+	["URI"] = <
+		name = <"URI">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+			>
+			["scheme"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scheme">
+				type = <"String">
+			>
+			["path"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"path">
+				type = <"String">
+			>
+			["fragment_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fragment_id">
+				type = <"String">
+			>
+			["uri_query"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uri_query">
+				type = <"String">
+			>
+			["literal"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"literal">
+				type = <"String">
+			>
+		>
+	>
+
+	["BL"] = <
+		name = <"BL">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Boolean">
+			>
+		>
+	>
+
+	["OID"] = <
+		name = <"OID">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["oid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"oid">
+				type = <"String">
+				is_im_infrastructure = <True>
+			>
+		>
+	>
+
+	["II"] = <
+		name = <"II">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["root"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"root">
+				type = <"OID">
+			>
+			["extension"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"extension">
+				type = <"String">
+			>
+			["assigningAuthorityName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"assigningAuthorityName">
+				type = <"String">
+			>
+			["time_validity"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time_validity">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["IVL"] = <
+		name = <"IVL">
+		ancestors = <"DATA_VALUE", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+		properties = <
+			["low"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"low">
+				type = <"T">
+			>
+			["high"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"high">
+				type = <"T">
+			>
+			["lowClosed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lowClosed">
+				type = <"Boolean">
+			>
+			["highClosed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"highClosed">
+				type = <"Boolean">
+			>
+			["literal"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"literal">
+				type = <"String">
+			>
+		>
+	>
+
+	------------------------------------------------------
+	--- Text classes
+	------------------------------------------------------
+
+	["CS"] = <
+		name = <"CS">
+		ancestors = <"CV", ...>
+	>
+	
+	["CD"] = <
+		name = <"CD">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["codeValue"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codeValue">
+				type = <"String">
+			>
+			["codingScheme"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codingScheme">
+				type = <"OID">
+			>
+			["codingSchemeName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codingSchemeName">
+				type = <"String">
+			>
+			["codingSchemeVersion"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codingSchemeVersion">
+				type = <"String">
+			>
+			["displayName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"displayName">
+				type = <"String">
+			>
+			["translations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"translations">
+				type_def = <
+					type = <"CD">
+					container_type = <"Set">
+				>
+			>
+		>
+	>
+	
+	["CV"] = <
+		name = <"CV">
+		ancestors = <"CD", ...>
+	>
+
+	["TEXT"] = <
+		name = <"TEXT">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["originalText"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"originalText">
+				type = <"String">
+			>
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CS">
+				is_im_infrastructure = <True>
+			>
+			["charset"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"charset">
+				type = <"CS">
+			>
+		>
+	>
+	
+	["SIMPLE_TEXT"] = <
+		name = <"SIMPLE_TEXT">
+		ancestors = <"TEXT", ...>
+	>
+	
+	["CODED_TEXT"] = <
+		name = <"CODED_TEXT">
+		ancestors = <"TEXT", ...>
+		properties = <		
+			["codedValue"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codedValue">
+				type = <"CD">
+			>
+		>
+	>
+	
+	------------------------------------------------------
+	--- Quantity types
+	------------------------------------------------------
+
+	["QUANTITY"] = <
+		name = <"QUANTITY">
+		ancestors = <"DATA_VALUE", ...>
+		is_abstract = <True>
+	>
+
+	["RTO"] = <
+		name = <"RTO">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["numerator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"numerator">
+				type = <"PQ">
+			>
+			["denominator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"denominator">
+				type = <"PQ">
+			>
+		>
+	>
+
+	["INT"] = <
+		name = <"INT">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Integer">
+			>
+		>
+	>
+
+	["ORD"] = <
+		name = <"ORD">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Integer">
+			>
+			["symbol"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"symbol">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+
+	["PQ"] = <
+		name = <"PQ">
+		ancestors = <"QUANTITY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Real">
+			>
+			["property"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"property">
+				type = <"CD">
+			>
+			["units"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"units">
+				type = <"CS">
+			>
+			["precision"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"precision">
+				type = <"Integer">
+			>
+		>
+	>
+
+	["DURATION"] = <
+		name = <"DURATION">
+		ancestors = <"QUANTITY", ...>
+		properties = <		
+			["days"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"days">
+				type = <"Integer">
+			>
+			["hours"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"hours">
+				type = <"Integer">
+			>
+			["minutes"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"minutes">
+				type = <"Integer">
+			>
+			["seconds"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"seconds">
+				type = <"Integer">
+			>
+			["fractional_second"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fractional_second">
+				type = <"Double">
+			>
+			["sign"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"sign">
+				type = <"Integer">
+			>
+		>
+	>
+
+	["QUANTITY_RANGE"] = <
+		name = <"QUANTITY_RANGE">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["range"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"range">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"PQ">
+				>	
+			>
+		>
+	>
+
+	--
+	-- replacement for IVT<PQ>; synonym type for QUANTITY_RANGE
+	--
+	["IVLPQ"] = <
+		name = <"IVLPQ">
+		ancestors = <"IVL", ...>
+		properties = <		
+			["low"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"low">
+				type = <"PQ">
+			>
+			["high"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"high">
+				type = <"PQ">
+			>
+		>
+	>
+
+	--
+	-- replacement for IVL_<TS>
+	--
+	["IVLTS"] = <
+		name = <"IVLTS">
+		ancestors = <"IVL", ...>
+		properties = <		
+			["low"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"low">
+				type = <"TS">
+			>
+			["high"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"high">
+				type = <"TS">
+			>
+			["width"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"width">
+				type = <"DURATION">
+			>
+		>
+	>
+
+	------------------------------------------------------
+	--- Time types
+	------------------------------------------------------
+
+	["EIVL"] = <
+		name = <"EIVL">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["event"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"event">
+				type = <"CD">
+			>
+			["offset"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"offset">
+				type = <"DURATION">
+			>
+		>
+	>
+
+	["PIVL"] = <
+		name = <"PIVL">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <		
+			["phase"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"phase">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>	
+			>
+			["period"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"period">
+				type = <"DURATION">
+			>
+			["alignment"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"alignment">
+				type = <"CD">
+			>
+		>
+	>
+
+	["TS"] = <
+		name = <"TS">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"String">
+			>
+		>
+	>
+
+	["DATE"] = <
+		name = <"DATE">
+		ancestors = <"DATA_VALUE", ...>
+		properties = <
+			["date"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"date">
+				type = <"String">
+			>
+		>
+	>
+	
+>
+
+--|
+--| ***** BEGIN LICENSE BLOCK *****
+--| Version: MPL 1.1/GPL 2.0/LGPL 2.1
+--|
+--| The contents of this file are subject to the Mozilla Public License Version
+--| 1.1 (the 'License'); you may not use this file except in compliance with
+--| the License. You may obtain a copy of the License at
+--| http://www.mozilla.org/MPL/
+--|
+--| Software distributed under the License is distributed on an 'AS IS' basis,
+--| WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+--| for the specific language governing rights and limitations under the
+--| License.
+--|
+--| The Original Code is cen_data_types_0.90.bmm
+--|
+--| The Initial Developer of the Original Code is Thomas Beale.
+--| Portions created by the Initial Developer are Copyright (C) 2011
+--| the Initial Developer. All Rights Reserved.
+--|
+--| Contributor(s):
+--|
+--| Alternatively, the contents of this file may be used under the terms of
+--| either the GNU General Public License Version 2 or later (the 'GPL'), or
+--| the GNU Lesser General Public License Version 2.1 or later (the 'LGPL'),
+--| in which case the provisions of the GPL or the LGPL are applicable instead
+--| of those above. If you wish to allow use of your version of this file only
+--| under the terms of either the GPL or the LGPL, and not to allow others to
+--| use your version of this file under the terms of the MPL, indicate your
+--| decision by deleting the provisions above and replace them with the notice
+--| and other provisions required by the GPL or the LGPL. If you do not delete
+--| the provisions above, a recipient may use your version of this file under
+--| the terms of any one of the MPL, the GPL or the LGPL.
+--|
+--| ***** END LICENSE BLOCK *****
+--|

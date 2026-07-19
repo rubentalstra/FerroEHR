@@ -1,0 +1,10 @@
+term_bindings = <
+    ["snomed-ct"] = <
+      items = <
+        ["id1.1"] = <http://snomed.info/id/138875005>
+        ["id0.2"] = <http://snomed.info/id/138875005>
+        ["id0.3"] = <http://snomed.info/id/138875005>
+        ["id0.4"] = <http://snomed.info/id/138875005>
+      >
+    >
+  >

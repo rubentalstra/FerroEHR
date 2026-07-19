@@ -4,16 +4,16 @@
 //! [`CComplexObject`] tree — the model-level half of the ADL path grammar
 //! (`docs/specs/openehr/AM/docs/ADL2/master05-paths.adoc`; the outer lexer
 //! already tokenises paths). These are used by the phase-1 validation
-//! catalogue (VRANP annotation paths, VTTBK binding paths, VRRLP rule paths)
-//! and later by VUNP (`C_COMPLEX_OBJECT_PROXY` targets, phase 3).
+//! catalogue (VRANP annotation paths, VTTBK binding paths, VRRLP rule paths).
+//! TODO: reuse for the VUNP `C_COMPLEX_OBJECT_PROXY`-target check.
 //!
 //! Model-level only: this walks attribute + node-id predicates over the
 //! archetype's own constraint tree and knows **nothing** about the reference
 //! model. A path segment carrying only an RM attribute name (no `[id…]`
 //! predicate) that leaves the archetype tree is an RM-path extension whose
 //! validity is a reference-model question — resolution stops and reports
-//! "left the archetype" rather than guessing (RM path validity lands with the
-//! RM-model checks). See [`resolve`].
+//! "left the archetype" rather than guessing (RM path validity is a
+//! reference-model concern, `crate::validate::rm`). See [`resolve`].
 
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
@@ -136,7 +136,7 @@ pub enum Resolution {
 ///   matching node (the path is archetype-invalid).
 /// - [`Resolution::LeftArchetype`] — a pure-RM (un-predicated) segment could
 ///   not continue within the archetype tree; whether it is a legal RM
-///   extension is deferred to the reference-model checks.
+///   extension is a reference-model question (`crate::validate::rm`).
 #[must_use]
 pub fn resolve(root: &CComplexObject, path: &str) -> Resolution {
     let segments = parse_path(path);
@@ -252,6 +252,28 @@ pub fn object_node_id(obj: &CObject) -> &str {
         CObject::CTime(o) => &o.node_id,
         CObject::CDateTime(o) => &o.node_id,
         CObject::CDuration(o) => &o.node_id,
+    }
+}
+
+/// The reference-model type name of any [`CObject`] (empty string for a
+/// primitive object, whose RM type is implicit in its cADL leaf kind). Used by
+/// the reference-model checks (VCORM/VCORMT), which apply only to the
+/// non-primitive object nodes that carry an explicit `rm_type_name`.
+#[must_use]
+pub fn object_rm_type(obj: &CObject) -> &str {
+    match obj {
+        CObject::ArchetypeSlot(s) => &s.rm_type_name,
+        CObject::CComplexObject(c) => complex_rm_type(c),
+        CObject::CComplexObjectProxy(p) => &p.rm_type_name,
+        CObject::CBoolean(_)
+        | CObject::CInteger(_)
+        | CObject::CReal(_)
+        | CObject::CString(_)
+        | CObject::CTerminologyCode(_)
+        | CObject::CDate(_)
+        | CObject::CTime(_)
+        | CObject::CDateTime(_)
+        | CObject::CDuration(_) => "",
     }
 }
 

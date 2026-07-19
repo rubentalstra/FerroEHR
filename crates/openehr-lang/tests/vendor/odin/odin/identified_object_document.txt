@@ -1,0 +1,28 @@
+--
+-- ODIN Identified Object Document
+--
+["id_1"] = <
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+>
+
+["id_2"] = <
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+>
+
+...
+
+["id_N"] = <
+    attr_1 = <
+        attr_12 = <
+            attr_13 = <leaf_value>
+        >
+    >
+>

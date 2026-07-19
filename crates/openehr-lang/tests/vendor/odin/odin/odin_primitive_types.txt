@@ -1,0 +1,12 @@
+-- a comment
+a_string_attribute = <"a string value">
+a_boolean_attribute = <false>
+a_integer_attribute = <1>
+a_real_attribute = <-3.05e-10>
+a_char_attribute = <'c'>
+a_term_code_attribute = <[ISO_639-1::en]>
+a_date_attribute = <2007-11-31>
+a_time_attribute = <16:23:54,5+2221>
+a_datetime_attribute = <2007-11-31T16:23:54,5Z>
+a_duration_attribute = <P5Y2M4W5DT34H34M63.276S>
+a_uri_attribute = <http://www.domain.com/some/path?attr1>

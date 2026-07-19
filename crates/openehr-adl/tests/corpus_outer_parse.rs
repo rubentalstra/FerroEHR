@@ -3,7 +3,7 @@
 //! [`openehr_adl::source::SourceArtefact`] — the sections split, the HRID
 //! parsed, the ODIN sections parsed.
 //!
-//! Semantic (V-code) failures in the corpus still parse (phase A2 does no
+//! Semantic (V-code) failures in the corpus still parse (the outer parser does no
 //! semantic validation), so they stay included. Only *lexer/parser-level*
 //! intentional-fail fixtures are excluded, each named with its reason in
 //! `EXCLUSIONS` — these are files whose outer structure the parser correctly
@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 
 /// Files the outer parser correctly *rejects* (an intentional structural FAIL
 /// fixture), each with the reason. These are exactly the `FAIL_*` cases whose
-/// defect is at the outer/ODIN layer that phase A2 checks.
+/// defect is at the outer/ODIN layer the outer parser checks.
 const EXCLUSIONS: &[(&str, &str)] = &[
     (
         "openEHR-TEST_PKG-ENTRY.FAIL_archetype_id_missing.v1.adls",

@@ -1,0 +1,507 @@
+-- 
+-- 	component:   openEHR Reference Model (RM)
+-- 	description: openEHR Reference Model schema. This file format is based on the BMM specification
+--  				http://www.openehr.org/releases/BASE/latest/docs/bmm/bmm.html
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale
+-- 	support:     https://openehr.atlassian.net/projects/SPECPR
+-- 	copyright:   Copyright (c) 2016 openEHR Foundation
+-- 	license:     Apache 2.0 License <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+------------------------------------------------------
+bmm_version = <"2.3">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"expression">
+rm_release = <"1.0.4">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"1.0.4.1">
+schema_lifecycle_state = <"development">
+schema_description = <"openEHR Release 1.0.4 BASE model Expression package"> 
+schema_author = <"Thomas Beale <thomas.beale@openehr.org>">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+    ["1"] = <
+        id = <"openehr_base_1.0.4">
+    >
+>
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.openehr.base"] = <
+		name = <"org.openehr.base">
+		packages = <
+			["expression"] = <
+				name = <"expression">
+				classes = <"STATEMENT", "VARIABLE_DECLARATION", "ASSIGNMENT", "ASSERTION", "EXPRESSION", "EXPR_VALUE", 
+					"EXTERNAL_QUERY", "EXPR_VARIABLE_REF", "EXPR_LEAF", "EXPR_OPERATOR", "EXPR_LITERAL", "EXPR_UNARY_OPERATOR", 
+					"EXPR_BINARY_OPERATOR", "EXPR_VALUE_REF", "EXPR_FUNCTION",
+					"BUILTIN_FUNCTIONS", "BUILTIN_OPERATORS", "FUNCTION_DEF", "FUNCTION_DEF_BUILTIN", "OPERATOR_DEF_BUILTIN", "OPERATOR_DEF"
+				>
+				packages = <
+					["types"] = <
+						name = <"types">
+						classes = <"EXPR_TYPE_DEF",
+							"TYPE_DEF_BOOLEAN", "TYPE_DEF_INTEGER", "TYPE_DEF_REAL", 
+							"TYPE_DEF_DATE", "TYPE_DEF_DATE_TIME", "TYPE_DEF_TIME", "TYPE_DEF_DURATION",
+							"TYPE_DEF_STRING", "TYPE_DEF_URI", "TYPE_DEF_TERMINOLOGY_CODE", "TYPE_DEF_OBJECT_REF"
+						>
+					>
+				>
+			>
+		>
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	------------------------------------------------------------
+	------------------ base.expression ---------------
+	------------------------------------------------------------
+
+	["STATEMENT"] = <
+		name = <"STATEMENT">
+		ancestors = <"Any">
+		is_abstract = <True>
+	>
+
+	["VARIABLE_DECLARATION"] = <
+		name = <"VARIABLE_DECLARATION">
+		ancestors = <"STATEMENT">
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"EXPR_TYPE_DEF">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ASSIGNMENT"] = <
+		name = <"ASSIGNMENT">
+		ancestors = <"STATEMENT">
+		properties = <
+			["source"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"source">
+				type = <"EXPR_VALUE">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"target">
+				type = <"VARIABLE_DECLARATION">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ASSERTION"] = <
+		name = <"ASSERTION">
+		ancestors = <"STATEMENT">
+		properties = <
+			["tag"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"tag">
+				type = <"String">
+			>
+			["string_expression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"string_expression">
+				type = <"String">
+			>
+			["expression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expression">
+				type = <"EXPRESSION">
+                is_mandatory = <True>
+			>
+		>
+	>
+
+	["EXPR_VALUE"] = <
+		name = <"EXPR_VALUE">
+		is_abstract = <True>
+	>
+
+	["EXTERNAL_QUERY"] = <
+		name = <"EXTERNAL_QUERY">
+		ancestors = <"EXPR_VALUE">
+		properties = <
+			["context"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"context">
+				type = <"String">
+                is_mandatory = <True>
+			>
+			["query_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"query_id">
+				type = <"String">
+                is_mandatory = <True>
+			>
+            ["query_args"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"query_args">
+                type_def = (P_BMM_CONTAINER_TYPE) <
+                    container_type = <"List">
+                    type = <"String">
+                >
+            >
+		>
+	>
+
+	["EXPRESSION"] = <
+		name = <"EXPRESSION">
+		ancestors = <"EXPR_VALUE">
+		is_abstract = <True>
+	>
+
+	["EXPR_LEAF"] = <
+		name = <"EXPR_LEAF">
+		ancestors = <"EXPRESSION">
+		is_abstract = <True>
+		properties = <
+			["item"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"item">
+				type = <"Any">
+			>
+		>
+	>
+	
+	["EXPR_OPERATOR"] = <
+		name = <"EXPR_OPERATOR">
+		ancestors = <"EXPRESSION">
+		is_abstract = <True>
+		properties = <
+			["precedence_overridden"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"precedence_overridden">
+				type = <"Boolean">
+			>
+			["symbol"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"symbol">
+				type = <"String">
+			>
+			["operator_def"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"operator_def">
+				type = <"OPERATOR_DEF">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["EXPR_UNARY_OPERATOR"] = <
+		name = <"EXPR_UNARY_OPERATOR">
+		ancestors = <"EXPR_OPERATOR">
+		properties = <
+			["operand"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"operand">
+				type = <"EXPRESSION">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["EXPR_BINARY_OPERATOR"] = <
+		name = <"EXPR_BINARY_OPERATOR">
+		ancestors = <"EXPR_OPERATOR">
+		properties = <
+			["left_operand"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"left_operand">
+				type = <"EXPRESSION">
+                is_mandatory = <True>
+			>
+			["right_operand"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"right_operand">
+				type = <"EXPRESSION">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["EXPR_LITERAL"] = <
+		name = <"EXPR_LITERAL">
+		ancestors = <"EXPR_LEAF">
+		properties = <
+			["item"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"item">
+				type = <"Any">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["EXPR_FUNCTION"] = <
+		name = <"EXPR_FUNCTION">
+		ancestors = <"EXPR_LEAF">
+		properties = <
+            ["arguments"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"arguments">
+                type_def = (P_BMM_CONTAINER_TYPE) <
+                    container_type = <"List">
+                    type = <"EXPRESSION">
+                >
+            >
+			["function_def"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"function_def">
+				type = <"FUNCTION_DEF">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["EXPR_VARIABLE_REF"] = <
+		name = <"EXPR_VARIABLE_REF">
+		ancestors = <"EXPR_LEAF">
+		properties = <
+			["item"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"item">
+				type = <"VARIABLE_DECLARATION">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["EXPR_VALUE_REF"] = <
+		name = <"EXPR_VALUE_REF">
+		ancestors = <"EXPR_LEAF">
+		is_abstract = <True>
+	>
+
+	["EXPR_TYPE_DEF"] = <
+		name = <"EXPR_TYPE_DEF">
+		is_abstract = <True>
+		properties = <
+			["type_name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_name">
+				type = <"String">
+                is_mandatory = <True>
+			>
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Any">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_BOOLEAN"] = <
+		name = <"TYPE_DEF_BOOLEAN">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Boolean">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_INTEGER"] = <
+		name = <"TYPE_DEF_INTEGER">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Integer">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_REAL"] = <
+		name = <"TYPE_DEF_REAL">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Real">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_DATE"] = <
+		name = <"TYPE_DEF_DATE">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_date">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_DATE_TIME"] = <
+		name = <"TYPE_DEF_DATE_TIME">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_date_time">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_TIME"] = <
+		name = <"TYPE_DEF_TIME">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_time">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_DURATION"] = <
+		name = <"TYPE_DEF_DURATION">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Iso8601_duration">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_STRING"] = <
+		name = <"TYPE_DEF_STRING">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"String">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_URI"] = <
+		name = <"TYPE_DEF_URI">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Uri">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_TERMINOLOGY_CODE"] = <
+		name = <"TYPE_DEF_TERMINOLOGY_CODE">
+		ancestors = <"EXPR_TYPE_DEF">
+		properties = <
+			["type_anchor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type_anchor">
+				type = <"Terminology_code">
+                is_mandatory = <True>
+			>
+		>
+	>
+	
+	["TYPE_DEF_OBJECT_REF"] = <
+		name = <"TYPE_DEF_OBJECT_REF">
+		ancestors = <"EXPR_TYPE_DEF">
+	>
+	
+	["OPERATOR_DEF"] = <
+		name = <"OPERATOR_DEF">
+		is_abstract = <True>
+		properties = <
+			["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"identifier">
+				type = <"String">
+                is_mandatory = <True>
+			>
+		>
+	>
+
+	["FUNCTION_DEF"] = <
+		name = <"FUNCTION_DEF">
+		is_abstract = <True>
+		properties = <
+			["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"identifier">
+				type = <"String">
+                is_mandatory = <True>
+			>
+		>
+	>
+
+	["OPERATOR_DEF_BUILTIN"] = <
+		name = <"OPERATOR_DEF_BUILTIN">
+		ancestors = <"OPERATOR_DEF", "BUILTIN_OPERATORS">
+	>
+	
+	["FUNCTION_DEF_BUILTIN"] = <
+		name = <"FUNCTION_DEF_BUILTIN">
+		ancestors = <"FUNCTION_DEF", "BUILTIN_FUNCTIONS">
+	>
+	
+	["BUILTIN_OPERATORS"] = <
+		name = <"BUILTIN_OPERATORS">
+		properties = <
+            ["op_table"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"op_table">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameter_defs = <
+						["K"] = (P_BMM_SIMPLE_TYPE) <
+						    type = <"String">
+						>
+					    ["V"] = (P_BMM_GENERIC_TYPE) <
+                           root_type = <"List">
+                           generic_parameters = <"String">
+                       >
+					>
+                >
+                is_mandatory = <True>
+            >
+		>
+	>
+
+	["BUILTIN_FUNCTIONS"] = <
+		name = <"BUILTIN_FUNCTIONS">
+		properties = <
+            ["func_table"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"func_table">
+                type_def = <
+                    root_type = <"Hash">
+                    generic_parameter_defs = <
+						["K"] = (P_BMM_SIMPLE_TYPE) <
+						    type = <"String">
+						>
+					    ["V"] = (P_BMM_GENERIC_TYPE) <
+                           root_type = <"List">
+                           generic_parameters = <"String">
+                       >
+					>
+                >
+                is_mandatory = <True>
+            >
+		>
+	>
+	
+>

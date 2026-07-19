@@ -1,0 +1,39 @@
+-- A BMM test that contains the same class twice
+
+bmm_version = <"2.1">
+rm_publisher = <"My publisher">
+rm_release = <"3.1">
+schema_name = <"duplicate_class">
+schema_revision = <"Monday, October 19, 2015">
+schema_lifecycle_state = <"test">
+schema_author=<"Pieter Bos">
+schema_description = <"A manually created very simplified BMM for testing purposes">
+schema_contributors = <"John Doe", "Francis Johnson">
+
+packages = <
+    ["ParentPackage"] = <
+        name = <"ParentPackage">
+        classes = <"ParentType1", "String", "Any">
+    >
+>
+
+class_definitions = <
+
+
+    ["ParentType1"] = <
+        name = <"ParentType1">
+    >
+
+    ["String"] = <
+         name = <"String">
+     >
+
+    ["Any"] = <
+      name = <"Any">
+    >
+
+    ["UnknownClass"] = <
+        name = <"UnknownClass">
+    >
+
+>

@@ -5,10 +5,10 @@
 //! `docs/specs/openehr/AM/docs/ADL2/master04.6-cadl_validity_rules.adoc`
 //! (§Syntax Validity Rules). The full catalogue is present as the error
 //! vocabulary for the whole ADL2 front end; the outer/ODIN parser in this
-//! crate (phase A2) raises only the subset reachable at the artefact +
-//! identification + ODIN-section level. Codes raised only by the cADL
-//! definition / rules parser (a later phase) are present-but-unused here by
-//! design — the enum is the catalogue, not only the A2-reachable slice.
+//! crate raises only the subset reachable at the artefact + identification +
+//! ODIN-section level. Codes raised only by the cADL definition / rules parser
+//! are present-but-unused here by design — the enum is the catalogue, not only
+//! the slice this outer parser reaches.
 
 /// An ADL2 syntax-error code.
 ///

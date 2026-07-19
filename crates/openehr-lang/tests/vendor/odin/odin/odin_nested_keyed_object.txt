@@ -1,0 +1,16 @@
+term_definitions = <
+    ["en"] = <
+          ["id1.1"] = <
+            text = <"Actor">
+          >
+          ["id0.2"] = <
+            text = <"Language">
+          >
+          ["id0.3"] = <
+            text = <"Description">
+          >
+          ["id0.4"] = <
+            text = <"Actor type">
+          >
+    >
+>

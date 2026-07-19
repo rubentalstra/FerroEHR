@@ -1,0 +1,562 @@
+-- 
+-- 	component:   openEHR Archetype Project
+-- 	description: openEHR Reference Model ehr package formal expression. This file is a DADL serialisation of
+--               the BMM object meta-model classes found at 
+--               http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/specialisation/libraries/common_libs/src/basic_meta_model
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Thomas Beale
+-- 	support:     Ocean Informatics <support@OceanInformatics.com>
+-- 	copyright:   Copyright (c) 2009- openEHR Foundation
+-- 	license:     Apache 2.0 <http://www.apache.org/licenses/LICENSE-2.0.html>
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as value of 'Bmm_internal_version' in 
+--     https://github.com/openEHR/adl-tools/blob/master/libraries/common_libs/src/basic_meta_model/bmm_definitions.e
+--
+------------------------------------------------------
+bmm_version = <"2.0">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"openehr">
+schema_name = <"ehr">
+rm_release = <"1.0.2">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"$LastChangedRevision: 26 $">
+schema_lifecycle_state = <"stable">
+schema_description = <"openEHR Release 1.0.2 EHR schema">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_structures_1.0.2">
+	>
+>
+
+
+------------------------------------------------------
+-- archetyping
+------------------------------------------------------
+archetype_rm_closure_packages = <"org.openehr.rm.ehr", "org.openehr.rm.common.directory">
+
+
+------------------------------------------------------
+-- packages - software structure
+------------------------------------------------------
+
+packages = <
+	["org.openehr.rm.ehr"] = <
+		name = <"org.openehr.rm.ehr">
+		classes = <"EHR", "EHR_ACCESS", "EHR_STATUS", "ACCESS_CONTROL_SETTINGS"> 
+	>
+	["org.openehr.rm.composition"] = <
+		name = <"org.openehr.rm.composition">
+		classes = <"COMPOSITION", "EVENT_CONTEXT"> 
+		packages = <
+			["content"] = <
+				name = <"content">
+				classes = <"CONTENT_ITEM", ...>
+				packages = <
+					["navigation"] = <
+						name = <"navigation">
+						classes = <"SECTION", ...> 
+					>
+					["entry"] = <
+						name = <"entry">
+						classes = <"ENTRY", "CARE_ENTRY", "ADMIN_ENTRY", "OBSERVATION", "EVALUATION", "INSTRUCTION", "ACTION", "ACTIVITY", "ISM_TRANSITION", "INSTRUCTION_DETAILS"> 
+					>
+					["integration"] = <
+						name = <"integration">
+						classes = <"GENERIC_ENTRY"> 
+					>
+				>
+			>
+		>
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	--
+	--------------------- rm.ehr ------------------
+	--
+	["EHR"] = <
+		name = <"EHR">
+		properties = <
+			["system_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"system_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["ehr_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ehr_id">
+				type = <"HIER_OBJECT_ID">
+				is_mandatory = <True>
+			>
+			["time_created"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_created">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+			>
+			["ehr_access"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ehr_access">
+				type = <"OBJECT_REF">
+				is_mandatory = <True>
+			>
+			["ehr_status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ehr_status">
+				type = <"OBJECT_REF">
+				is_mandatory = <True>
+			>
+			["directory"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"directory">
+				type = <"OBJECT_REF">
+			>
+			["compositions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"compositions">
+				type_def = <
+					container_type = <"List">
+					type = <"OBJECT_REF">
+				>
+				cardinality = <|>=0|>
+				is_mandatory = <True>
+			>
+			["contributions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"contributions">
+				type_def = <
+					container_type = <"List">
+					type = <"OBJECT_REF">
+				>
+				cardinality = <|>=0|>
+				is_mandatory = <True>
+			>
+			--
+			-- add this function to create a reachability link from EHR to COMPOSITION, which allows
+			-- correct inference that openEHR-EHR-XXX archetypes can be archetypes of COMPOSITION as 
+			-- well as EHR objects
+			--
+			["most_recent_composition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"most_recent_composition">
+				type = <"COMPOSITION">
+				is_computed = <True>
+			>
+		>
+	>
+
+	["EHR_ACCESS"] = <
+		name = <"EHR_ACCESS">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["settings"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"settings">
+				type = <"ACCESS_CONTROL_SETTINGS">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ACCESS_CONTROL_SETTINGS"] = <
+		name = <"ACCESS_CONTROL_SETTINGS">
+		ancestors = <"Any", ...>
+		is_abstract = <True>
+	>
+
+	["EHR_STATUS"] = <
+		name = <"EHR_STATUS">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["subject"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject">
+				type = <"PARTY_SELF">
+				is_mandatory = <True>
+			>
+			["is_queryable"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"is_queryable">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["is_modifiable"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"is_modifiable">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["other_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_details">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	--
+	--------------------- rm.composition ------------------
+	--
+
+	["COMPOSITION"] = <
+		name = <"COMPOSITION">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CODE_PHRASE">
+				is_mandatory = <True>
+			>
+			["territory"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"territory">
+				type = <"CODE_PHRASE">
+				is_mandatory = <True>
+			>
+			["category"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"category">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["composer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"composer">
+				type = <"PARTY_PROXY">
+				is_mandatory = <True>
+			>
+			["context"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"context">
+				type = <"EVENT_CONTEXT">
+			>
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"content">
+				type_def = <
+					container_type = <"List">
+					type = <"CONTENT_ITEM">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["EVENT_CONTEXT"] = <
+		name = <"EVENT_CONTEXT">
+		ancestors = <"PATHABLE", ...>
+		properties = <
+			["health_care_facility"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"health_care_facility">
+				type = <"PARTY_IDENTIFIED">
+			>
+			["start_time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"start_time">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+			>
+			["end_time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"end_time">
+				type = <"DV_DATE_TIME">
+			>
+			["participations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"participations">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["location"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"location">
+				type = <"String">
+			>
+			["setting"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"setting">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["other_context"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_context">
+				type = <"ITEM_STRUCTURE">
+			>
+		>
+	>
+
+	--
+	--------------------- rm.composition.content ------------------
+	--
+
+	["CONTENT_ITEM"] = <
+		name = <"CONTENT_ITEM">
+		ancestors = <"LOCATABLE", ...>
+		is_abstract = <True>
+	>
+
+	--
+	--------------- rm.composition.content.navigation -------------
+	--
+
+	["SECTION"] = <
+		name = <"SECTION">
+		ancestors = <"CONTENT_ITEM", ...>
+		properties = <
+			["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					container_type = <"List">
+					type = <"CONTENT_ITEM">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	--
+	--------------- rm.composition.content.entry -------------
+	--
+
+	["ENTRY"] = <
+		name = <"ENTRY">
+		is_abstract = <True>
+		ancestors = <"CONTENT_ITEM", ...>
+		properties = <
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CODE_PHRASE">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["encoding"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"encoding">
+				type = <"CODE_PHRASE">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["subject"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject">
+				type = <"PARTY_PROXY">
+				is_mandatory = <True>
+			>
+			["provider"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"provider">
+				type = <"PARTY_PROXY">
+			>
+			["other_participations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"other_participations">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["workflow_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"workflow_id">
+				type = <"OBJECT_REF">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["ADMIN_ENTRY"] = <
+		name = <"ADMIN_ENTRY">
+		ancestors = <"ENTRY", ...>
+		properties = <
+			["data"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"data">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+		>
+	>
+	
+	["CARE_ENTRY"] = <
+		name = <"CARE_ENTRY">
+		is_abstract = <True>
+		documentation = <"Abstract ENTRY subtype corresponding to any type of ENTRY in the clinical care cycle.">
+		ancestors = <"ENTRY", ...>
+		properties = <
+			["protocol"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"protocol">
+				type = <"ITEM_STRUCTURE">
+			>
+			["guideline_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"guideline_id">
+				type = <"OBJECT_REF">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["OBSERVATION"] = <
+		name = <"OBSERVATION">
+		documentation = <"ENTRY subtype used to represent observation information in time, as either a single or multiple samples.">
+		ancestors = <"CARE_ENTRY", ...>
+		properties = <
+			["data"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"data">
+				documentation = <"Data of the observation, in the form of a HISTORY of EVENTs.">
+				is_mandatory = <True>
+				type_def = <
+					root_type = <"HISTORY">
+					generic_parameters = <"ITEM_STRUCTURE">
+				>
+			>
+			["state"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"state">
+				type_def = <
+					root_type = <"HISTORY">
+					generic_parameters = <"ITEM_STRUCTURE">
+				>
+			>
+		>
+	>
+
+	["EVALUATION"] = <
+		name = <"EVALUATION">
+		ancestors = <"CARE_ENTRY", ...>
+		properties = <
+			["data"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"data">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["INSTRUCTION"] = <
+		name = <"INSTRUCTION">
+		ancestors = <"CARE_ENTRY", ...>
+		properties = <
+			["narrative"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"narrative">
+				type = <"DV_TEXT">
+				is_mandatory = <True>
+			>
+			["expiry_time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expiry_time">
+				type = <"DV_DATE_TIME">
+			>
+			["wf_definition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"wf_definition">
+				type = <"DV_PARSABLE">
+				is_im_runtime = <True>
+			>
+			["activities"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"activities">
+				type_def = <
+					container_type = <"List">
+					type = <"ACTIVITY">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ACTIVITY"] = <
+		name = <"ACTIVITY">
+		ancestors = <"LOCATABLE", ...>
+		properties = <
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+			["timing"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timing">
+				type = <"DV_PARSABLE">
+				is_mandatory = <True>
+			>
+			["action_archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"action_archetype_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["ACTION"] = <
+		name = <"ACTION">
+		ancestors = <"CARE_ENTRY", ...>
+		properties = <
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+				type = <"DV_DATE_TIME">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"ITEM_STRUCTURE">
+				is_mandatory = <True>
+			>
+			["ism_transition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ism_transition">
+				type = <"ISM_TRANSITION">
+				is_mandatory = <True>
+			>
+			["instruction_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"instruction_details">
+				type = <"INSTRUCTION_DETAILS">
+			>
+		>
+	>
+
+	["INSTRUCTION_DETAILS"] = <
+		name = <"INSTRUCTION_DETAILS">
+		ancestors = <"PATHABLE", ...>
+		properties = <
+			["instruction_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"instruction_id">
+				type = <"LOCATABLE_REF">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["wf_details"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"wf_details">
+				type = <"ITEM_STRUCTURE">
+				is_im_runtime = <True>
+			>
+			["activity_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"activity_id">
+				type = <"String">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["ISM_TRANSITION"] = <
+		name = <"ISM_TRANSITION">
+		ancestors = <"PATHABLE", ...>
+		properties = <
+			["current_state"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"current_state">
+				type = <"DV_CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["transition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"transition">
+				type = <"DV_CODED_TEXT">
+			>
+			["careflow_step"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"careflow_step">
+				type = <"DV_CODED_TEXT">
+			>
+		>
+	>
+
+	["GENERIC_ENTRY"] = <
+		name = <"GENERIC_ENTRY">
+		ancestors = <"CONTENT_ITEM", ...>
+		properties = <
+			["data"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"data">
+				type = <"ITEM_TREE">
+			>
+		>
+	>
+	
+>
+

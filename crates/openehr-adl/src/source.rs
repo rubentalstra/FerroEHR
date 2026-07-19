@@ -5,7 +5,8 @@
 //! the pinned grammar lacks. It produces a [`SourceArtefact`]: the artefact
 //! kind, identification meta + HRID, the specialise parent reference, each
 //! ODIN section parsed via `openehr_lang::odin`, and the cADL `definition` /
-//! `rules` bodies captured as **raw spans** (cADL parsing is a later phase).
+//! `rules` bodies captured as **raw spans** (cADL parsing is a separate pass,
+//! `crate::cadl`).
 //!
 //! Section boundaries follow the grammar's `'\n'`-anchoring of the section
 //! keywords (`adl_keywords.g4`): a section header is a keyword at column 0
@@ -66,7 +67,8 @@ pub struct ArtefactMeta {
 }
 
 /// A parsed ADL2 source artefact (outer structure only; the definition/rules
-/// bodies stay raw for a later phase).
+/// bodies stay raw here, parsed on demand by `crate::cadl` /
+/// `openehr_lang::odin`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SourceArtefact {
     /// The artefact kind.

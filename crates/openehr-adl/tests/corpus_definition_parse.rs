@@ -2,13 +2,13 @@
 //! also have its `definition` section (and every template overlay's
 //! definition) cADL-parse into an AOM2 `CComplexObject` tree.
 //!
-//! Discipline (mirrors the A2 outer-parse gate): a file whose *intended*
+//! Discipline (mirrors the outer-parse gate): a file whose *intended*
 //! failure is at the cADL syntax level (an `S*` rule-code name in the file,
 //! or a structural malformation phase A3a correctly rejects) is excluded from
 //! the clean-parse assertion, each with a reason. Files whose intended failure
 //! is semantic (`V*`-code names) MUST still parse — semantic validation is a
-//! later phase. Files that do not outer-parse are skipped here (they are the
-//! A2 gate's concern).
+//! validation harness. Files that do not outer-parse are skipped here (they
+//! are the outer-parse gate's concern).
 
 // A corpus test reports its pass counts on stdout for the developer running it.
 #![allow(clippy::print_stdout)]
@@ -104,7 +104,8 @@ fn every_definition_cadl_parses() {
         }
         let src = std::fs::read_to_string(path).expect("read corpus file");
         let Ok(art) = parse_source(&src) else {
-            // Not an A3a concern: the A2 gate governs outer-parse failures.
+            // Not a definition-parse concern: the outer-parse gate governs
+            // outer-parse failures.
             outer_failed += 1;
             continue;
         };
