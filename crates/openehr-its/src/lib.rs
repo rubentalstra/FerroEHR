@@ -8,6 +8,9 @@
 //!   the RM types via `#[derive(OpenEhrType)]` (`openehr-derive`); this module
 //!   is the named entry points + the vendored ITS-JSON schema + the interop
 //!   fidelity gate (round-trip the EHRbase corpus, `tests/`).
+//! - [`json_codec`] — **ITS-JSON**, native codec: emitted `ToJson` impls over a
+//!   hand-written writer runtime (the Serialize-side replacement for the serde
+//!   derive; byte-identical, proven by `tests/json_codec_parity.rs`).
 //! - [`xml`] — **ITS-XML**: canonical XML via `quick-xml`, validated against the
 //!   vendored XSDs (`schemas/xml/`). (Implementation is P5.)
 //! - [`rest`] — **ITS-REST**: the openEHR REST API contract. The machine-readable
@@ -23,6 +26,7 @@
 
 pub mod bmm;
 pub mod json;
+pub mod json_codec;
 pub mod opt14;
 pub mod rest;
 pub mod xml;

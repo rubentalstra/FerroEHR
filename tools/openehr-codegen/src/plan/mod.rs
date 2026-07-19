@@ -177,7 +177,156 @@ pub(crate) enum XmlType {
     },
 }
 
+// ── JSON codegen support ─────────────────────────────────────────────
+// A thin, semantic view of the generated types for the canonical-JSON emitter
+// (`emit_json`). The JSON wire shape is entirely BMM-driven — field order =
+// declaration order, `_type` first, `None`/empty-`Vec` omitted — so unlike the
+// XML view there is no XSD input; this view only needs each field's wire name,
+// Rust accessor, and omission kind. It must reproduce, byte-for-byte, the
+// `#[derive(OpenEhrType)]` serde `Serialize` (`openehr-derive`).
+
+/// One field of an instantiable type on the canonical-JSON wire. `wire_name` is
+/// the JSON key (the openEHR property name, which the derive's rename logic
+/// always resolves back to), `rust_name` the Rust accessor.
+pub(crate) struct JsonField {
+    pub wire_name: String,
+    pub rust_name: String,
+    pub kind: JsonFieldKind,
+}
+
+/// How a field is written on serialize — matching the derive's classification by
+/// Rust type head (`Option` → omit when `None`; `Vec` → omit when empty; else
+/// always present).
+pub(crate) enum JsonFieldKind {
+    /// `Option<T>` — omitted when `None`.
+    Optional,
+    /// `Vec<T>` — omitted when empty.
+    Container,
+    /// Anything else (including a mandatory `Box<T>`, a `BTreeMap`, or a
+    /// `#[openehr(default)]` flag) — always emitted.
+    Plain,
+}
+
+/// An instantiable type needing a `ToJson` impl. Mirrors [`XmlType`] but carries
+/// only what the JSON serialize side needs.
+pub(crate) enum JsonType {
+    /// A struct: a plain `Struct` class, or a `PolyEnum`'s `{Name}Data`. Emits
+    /// `_type` first, then the fields.
+    Struct {
+        spec: String,
+        rust: String,
+        generics: Vec<String>,
+        fields: Vec<JsonField>,
+    },
+    /// An untagged enum (abstract slot or polymorphic-concrete) — forwards to the
+    /// active variant's payload (`_type` comes from the payload).
+    Enum {
+        rust: String,
+        generics: Vec<String>,
+        /// The Rust variant identifiers, in the same order the struct/enum
+        /// emitter declares them (a `PolyEnum`'s self-data variant is last).
+        variant_idents: Vec<String>,
+    },
+    /// A transparent newtype over a primitive — forwards to its inner value.
+    Newtype { rust: String },
+    /// A BMM enumeration emitted as a typed enum — writes its wire token
+    /// (`as_str`) or integer (`value`), byte-identical to the bare primitive.
+    EnumLiterals { rust: String, string_backed: bool },
+}
+
 impl Model {
+    /// The flattened fields of a concrete class for canonical-JSON emission —
+    /// same order and flattening as struct emission, with the same designated
+    /// back-reference fields omitted (they are not emitted as struct fields, so
+    /// the codec must not name them). The omission kind mirrors the derive's
+    /// classification by Rust type head.
+    #[must_use]
+    pub(crate) fn json_fields(&self, class_name: &str) -> Vec<JsonField> {
+        let Some(class) = self.get(class_name) else {
+            return Vec::new();
+        };
+        self.flattened_props(class)
+            .iter()
+            .filter(|rp| back_reference(&rp.owner, &rp.prop.name).is_none())
+            .map(|rp| {
+                let p = rp.prop;
+                // A byte buffer (`Array<Octet>`) renders as a `String`/`Option<
+                // String>`, not a `Vec` — so it is never a Container; every other
+                // container is a `Vec<T>`.
+                let octet = matches!(&p.kind,
+                    BmmPropKind::Container { item, .. } if item.root_name() == "Octet");
+                let multiple = matches!(&p.kind, BmmPropKind::Container { .. }) && !octet;
+                let kind = if multiple {
+                    JsonFieldKind::Container
+                } else if p.is_mandatory {
+                    JsonFieldKind::Plain
+                } else {
+                    JsonFieldKind::Optional
+                };
+                JsonField {
+                    wire_name: p.name.clone(),
+                    rust_name: naming::field_ident(&p.name),
+                    kind,
+                }
+            })
+            .collect()
+    }
+
+    /// The instantiable canonical-JSON types of a schema, in class order (the
+    /// same decisions [`Model::xml_types`] makes, projected to the JSON view).
+    #[must_use]
+    pub(crate) fn json_types(&self, schema: &BmmSchema) -> Vec<JsonType> {
+        let used = self.used_as_type();
+        let mut out = Vec::new();
+        for (name, class) in &schema.classes {
+            let generics: Vec<String> = self
+                .used_generic_params(name)
+                .into_iter()
+                .map(|(n, _)| n)
+                .collect();
+            let rust = naming::type_name(name);
+            match decide(self, class, &used) {
+                Emission::Struct => out.push(JsonType::Struct {
+                    spec: name.clone(),
+                    rust,
+                    generics,
+                    fields: self.json_fields(name),
+                }),
+                Emission::PolyEnum(variants) => {
+                    // The `{Name}Data` struct (own instances) + the `{Name}` enum.
+                    out.push(JsonType::Struct {
+                        spec: name.clone(),
+                        rust: format!("{rust}Data"),
+                        generics: generics.clone(),
+                        fields: self.json_fields(name),
+                    });
+                    let mut idents: Vec<String> =
+                        variants.iter().map(|v| naming::type_name(v)).collect();
+                    // The polymorphic-concrete self-data variant is emitted last;
+                    // its identifier is the enum's own name (`DvText(DvTextData)`).
+                    idents.push(rust.clone());
+                    out.push(JsonType::Enum {
+                        rust,
+                        generics,
+                        variant_idents: idents,
+                    });
+                }
+                Emission::Enum(variants) => out.push(JsonType::Enum {
+                    rust,
+                    generics,
+                    variant_idents: variants.iter().map(|v| naming::type_name(v)).collect(),
+                }),
+                Emission::EnumLiterals(enumeration) => out.push(JsonType::EnumLiterals {
+                    rust,
+                    string_backed: enumeration.underlying_type != "INTEGER",
+                }),
+                Emission::Newtype(_) => out.push(JsonType::Newtype { rust }),
+                Emission::Skip => {}
+            }
+        }
+        out
+    }
+
     /// The flattened fields of a concrete class for XML emission (same order and
     /// flattening as struct emission).
     #[must_use]
