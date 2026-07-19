@@ -19,7 +19,17 @@ hand-written. `openehr-codegen` reads the vendored specs and emits Rust:
   emits it as part of `openehr-rm`; this target refreshes just that subtree.
 - `emit-opt` → the OPT 1.4 model + XML codec (`opt14`) into `openehr-its`.
 
-## The two hard rules
+## The three hard rules
+
+**The generator emits the COMPLETE model — never minimize (owner hard
+rule, 2026-07-19).** Everything the vendored inputs (and any legitimate
+emission closure over them) define gets emitted in full, mirrored to its
+source package path — including classes nothing consumes yet; future need
+is the point. Forbidden moves: narrowing a schema merge to shrink a
+closure, pruning "unrelated" classes out of an emission, suppressing
+generated files to quiet a diff, or restoring-around a generation defect
+instead of fixing it. If an emission change pulls in a large new class
+set, that is the CORRECT outcome — emit it all and let the diff be big.
 
 **A generated-model gap is fixed in the GENERATOR, never worked around in a
 consumer (owner hard rule, 2026-07-19).** When a consumer (`ehrbase-*`,
