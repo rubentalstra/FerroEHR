@@ -489,13 +489,16 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   corpus = BMM-loaded openEHR test models, full 48-schema archie
   referencemodels set vendored); VACSO/interior-VATID un-deferred;
   phase gating per master08.
-- [ ] **A5b — emit-rm-model completeness (generator-first follow-up from
-  A5)**: the generated `openehr_rm::model` lacks (1) generic type
-  parameters (blocks VCORMT generic substitution — one fixture
-  adjudicated), (2) RM container cardinality (blocks VCACA's tight
-  lower-bound half on the production model), (3) enumeration literals
-  (blocks VCORMENV/VCORMENU/VCORMEN). Extend `emit-rm-model` + regenerate,
-  then un-defer those checks and re-claim the adjudicated fixture.
+- [ ] **A5b — emit-rm-model completeness, EMITTER ONLY (owner split
+  2026-07-19)**: the generated `openehr_rm::model` lacks (1) generic type
+  parameters, (2) RM container cardinality, (3) enumeration literals.
+  Extend the `emit-rm-model` emitter to expose all three from the BMM +
+  regenerate — model-surface change only, zero consumer changes, all
+  existing suites stay green.
+- [ ] **A6b — consume the A5b model data**: un-defer VCORMT
+  generic-parameter substitution, VCACA's tight lower-bound half on the
+  production model, VCORMENV/VCORMENU/VCORMEN; re-claim the adjudicated
+  `VCORMT_rm_non_conforming_type1` fixture; new tests per code.
 - [ ] **A6 — conformance functions + phase-2 specialisation validation**:
   master04.5 machinery incl. collective occurrences; the full phase-2
   catalogue; specialisation corpus green.
