@@ -9,9 +9,10 @@
 //! with no attributes. Deserialization dispatches child elements by name (order
 //! -independent) and polymorphic slots by `xsi:type`.
 
-use crate::bmm::BmmSchema;
-use crate::emit::{Model, XmlField, XmlType};
-use crate::xsd::XsdModel;
+use crate::analyze::Model;
+use crate::load::bmm::BmmSchema;
+use crate::load::xsd::XsdModel;
+use crate::plan::{XmlField, XmlType};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
@@ -71,7 +72,7 @@ pub(crate) fn emit_file(
         return Err(format!(
             "emit-xml guard (F-05-01): {} LOCATABLE subtype(s) have no XSD closure, so \
              `archetype_node_id` would serialize as a child element instead of the required \
-             XML attribute: {}. Extend the XSD input (crates/openehr-codegen/src/xsd.rs) so \
+             XML attribute: {}. Extend the XSD input (tools/openehr-codegen/src/load/xsd.rs) so \
              these types reach `LOCATABLE`.",
             locatable_violations.len(),
             locatable_violations.join(", ")
@@ -82,8 +83,8 @@ pub(crate) fn emit_file(
             "emit-xml guard (F-05-02): {} BMM field(s) of XSD-covered type(s) have no matching \
              XSD element/attribute, so the XSD-driven `ToXml` would silently drop them while the \
              BMM-driven `FromXml` still reads them (an undetectable JSON/XML divergence). Either \
-             extend the driving XSD input (crates/openehr-codegen/src/xsd.rs) so the field gets a \
-             deterministic slot, or add it to `XML_BMM_ONLY_ALLOWLIST` in emit_xml.rs (with a \
+             extend the driving XSD input (tools/openehr-codegen/src/load/xsd.rs) so the field gets a \
+             deterministic slot, or add it to `XML_BMM_ONLY_ALLOWLIST` in render/emit_xml.rs (with a \
              spec-delta citation) to have it appended as a trailing canonical-XML element. \
              Fields: {}.",
             bmm_only_violations.len(),

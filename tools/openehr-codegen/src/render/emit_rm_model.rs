@@ -11,8 +11,9 @@
 //!   `is_structure_root` functions + a `LazyLock` name index).
 //! - `data.rs` — the generated `static CLASSES: &[RmClass]` table.
 
-use crate::bmm::{BmmClass, BmmEnumValue, BmmPropKind, BmmType};
-use crate::emit::{GenFile, Model};
+use crate::analyze::Model;
+use crate::load::bmm::{BmmClass, BmmEnumValue, BmmPropKind, BmmType};
+use crate::render::emit::GenFile;
 use std::collections::BTreeSet;
 
 /// Classes the node codec splits into their own `node` row — mirrored **verbatim**

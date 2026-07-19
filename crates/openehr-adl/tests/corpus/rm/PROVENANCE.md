@@ -7,7 +7,7 @@ the parser + validator; these files supply the **reference models** those
 fixtures are authored against, plus the reference BMM/ODIN test inputs.
 
 **Reference input for the test harnesses only** — never a codegen input
-(codegen consumes `crates/openehr-codegen/vendor/bmm/*.bmm.json`), never
+(codegen consumes `tools/openehr-codegen/vendor/bmm/*.bmm.json`), never
 hand-edited (added, never modified). The reference-model validation harness is
 `tests/corpus_validity_rm.rs`.
 

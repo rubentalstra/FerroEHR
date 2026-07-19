@@ -3,7 +3,7 @@
 Test-only inputs for cross-validating the hand-written `openehr_lang::odin`
 reader (and a future `openehr_lang` ODIN-BMM reader) against openEHR's
 reference implementation (archie). **Reference input for tests only** — never a
-codegen input (codegen consumes `crates/openehr-codegen/vendor/bmm/*.bmm.json`),
+codegen input (codegen consumes `tools/openehr-codegen/vendor/bmm/*.bmm.json`),
 added, never edited.
 
 ## Source

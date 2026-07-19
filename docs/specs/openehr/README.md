@@ -12,7 +12,7 @@ prior art; these documents are the oracle.
 - Text formats only (`.adoc`, `.md`, `.txt`, `.csv`, `.json`, `.yaml`,
   `.robot`, `.xml`, `.opt`). Images/UML/XSD/PDF excluded — see each
   component's `PROVENANCE.md` for the pinned commit to fetch them from.
-- **Not a build input.** Codegen consumes `crates/openehr-codegen/vendor/**`
+- **Not a build input.** Codegen consumes `tools/openehr-codegen/vendor/**`
   (BMM/XSD/OAS) and `crates/openehr-its/schemas/**`; those stay authoritative
   for generation. This tree is for *reading and conformance-checking*.
 - Never hand-edit anything under `docs/specs/openehr/` except this README.
@@ -37,7 +37,7 @@ Spec documents are AsciiDoc books: `docs/<spec>/master.adoc` includes the
 | `ITS-JSON/` | ITS-JSON @ `5acae05` | `components/**` — the canonical-JSON schemas (same pin as the fidelity-gate schema in `crates/openehr-its/schemas/`) |
 
 ITS-BMM is deliberately not here: it is vendored verbatim (all serializations)
-at `crates/openehr-codegen/vendor/bmm/` as the codegen input.
+at `tools/openehr-codegen/vendor/bmm/` as the codegen input.
 
 ## How to use (agents + humans)
 

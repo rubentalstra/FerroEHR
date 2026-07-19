@@ -1,5 +1,5 @@
 ---
-paths: ["crates/openehr-codegen/**", "crates/openehr-base/**", "crates/openehr-rm/**", "crates/openehr-am/**", "crates/openehr-lang/**", "crates/openehr-term/**", "crates/openehr-its/src/**/generated/**"]
+paths: ["tools/openehr-codegen/**", "crates/openehr-base/**", "crates/openehr-rm/**", "crates/openehr-am/**", "crates/openehr-lang/**", "crates/openehr-term/**", "crates/openehr-its/src/**/generated/**"]
 ---
 
 # Code generation
@@ -48,8 +48,9 @@ fix is large, register a worklist row; the workaround is still forbidden.
 Existing workarounds get removal rows on discovery.
 
 **Never hand-edit a `// @generated` file.** To change generated output, edit the
-emitter (`crates/openehr-codegen/src/{emit,emit_xml,emit_rest,emit_rm_model,xsd,oas,naming}.rs`)
-or a hand-written `*_impl.rs` sibling (spec behaviour), then regenerate.
+emitter (`tools/openehr-codegen/src/`, the `load/`→`analyze/`→`plan/`→`render/`
+pipeline stages; decision maps live in `plan/mod.rs`, text producers in
+`render/`) or a hand-written `*_impl.rs` sibling (spec behaviour), then regenerate.
 A hand edit is silently overwritten on the next `emit` and fails the CI
 `codegen-drift` job.
 

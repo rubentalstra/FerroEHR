@@ -9,8 +9,8 @@
 //! than being re-emitted. `ehrbase-rest` implements the trait and wires axum
 //! (the handler logic is the ported `EHRbase` behaviour — not generatable).
 
-use crate::naming;
-use crate::oas::{Oas, Operation};
+use crate::load::oas::{Oas, Operation};
+use crate::render::naming;
 use serde_json::Value;
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
