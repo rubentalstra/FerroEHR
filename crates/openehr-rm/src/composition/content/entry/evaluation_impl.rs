@@ -5,15 +5,15 @@
 //! deferred terminology-bound `Entry` invariants.
 
 use crate::composition::content::entry::evaluation::Evaluation;
-use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Evaluation {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_entry_root_invariants(
-            out,
+        crate::validate::generated::entry_root_core(
             "EVALUATION",
             self.archetype_details.is_some(),
             &self.archetype_node_id,
+            out,
         );
     }
 }

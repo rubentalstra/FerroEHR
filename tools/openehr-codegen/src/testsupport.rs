@@ -13,7 +13,7 @@ use crate::plan::composition::{self, compose};
 use crate::plan::overrides;
 use crate::plan::{Emission, decide};
 use crate::render::emit::{GenFile, emit_crate, emit_multi_crate};
-use crate::render::emit_rm_model;
+use crate::render::{emit_rm_model, emit_validate};
 use std::collections::{BTreeMap, BTreeSet};
 
 type Error = Box<dyn std::error::Error>;
@@ -242,6 +242,10 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
     let rm = compose("rm")?;
     let mut rm_files = emit_crate(&rm.model, &rm.own_schema, &rm.external, rm.doc);
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
+    inject_validate(
+        &mut rm_files,
+        emit_validate::emit_files(&rm.model, &rm.own_schema),
+    );
     add("openehr-rm", &rm_files);
 
     let lang = compose("lang")?;
@@ -273,6 +277,12 @@ pub fn render_all_to_memory() -> Result<BTreeMap<String, String>, Error> {
         &emit_crate(&term.model, &term.own_schema, &term.external, term.doc),
     );
     Ok(out)
+}
+
+/// Mirror of `cli::inject_validate` (kept private there): append the generated
+/// invariant-core file (the module is declared by a hand edit in `validate.rs`).
+fn inject_validate(files: &mut Vec<GenFile>, mut validate_files: Vec<GenFile>) {
+    files.append(&mut validate_files);
 }
 
 /// Mirror of `cli::inject_rm_model` (kept private there): append the RM-model
@@ -477,7 +487,43 @@ pub fn decision_maps() -> Vec<DeclMap> {
                 })
                 .collect(),
         },
+        DeclMap {
+            map: "dialect_predicates",
+            // The keys are BMM assertion-dialect predicate spellings, not
+            // class/field names, so existence is checked against the classifier
+            // (see `dialect_predicates_match_the_classifier`), not the schema.
+            check_existence: false,
+            entries: overrides::DIALECT_PREDICATES
+                .iter()
+                .map(|e| DeclEntry {
+                    key: e.predicate.to_string(),
+                    decision: format!("→ {}", e.runtime_fn),
+                    citation: e.citation.to_string(),
+                    reason: e.reason.to_string(),
+                })
+                .collect(),
+        },
     ]
+}
+
+/// The assertion-dialect predicate → runtime-function map (predicate spelling,
+/// runtime function), for the lockstep test against the classifier.
+#[must_use]
+pub fn dialect_predicates() -> Vec<(String, String)> {
+    overrides::DIALECT_PREDICATES
+        .iter()
+        .map(|e| (e.predicate.to_string(), e.runtime_fn.to_string()))
+        .collect()
+}
+
+/// The classifier's recognised runtime-backed leaf predicates
+/// (`analyze::invariants::RUNTIME_PREDICATES`).
+#[must_use]
+pub fn runtime_predicates() -> Vec<String> {
+    invariants::runtime_predicates()
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect()
 }
 
 /// Does `class` exist as a class in any loaded composition model?

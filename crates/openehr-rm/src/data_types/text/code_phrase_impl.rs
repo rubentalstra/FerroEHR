@@ -6,19 +6,9 @@
 use crate::data_types::text::code_phrase::CodePhrase;
 use crate::validate::{InvariantViolation, Validate};
 
-/// The `Code_string_valid` core over the projected input — one source for the
-/// typed impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_code_phrase_invariants(code_string: &str, out: &mut Vec<InvariantViolation>) {
-    if code_string.is_empty() {
-        out.push(InvariantViolation::here(
-            "Invariant Code_string_valid failed on type CODE_PHRASE",
-        ));
-    }
-}
-
 impl Validate for CodePhrase {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_code_phrase_invariants(&self.code_string, out);
+        crate::validate::generated::code_phrase_core(&self.code_string, out);
     }
 }
 

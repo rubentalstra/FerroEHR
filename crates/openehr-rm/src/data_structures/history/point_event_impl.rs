@@ -13,11 +13,15 @@
 //! on this type.
 
 use crate::data_structures::history::point_event::PointEvent;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl<T> Validate for PointEvent<T> {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetype_node_id_valid(out, "POINT_EVENT", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core(
+            "POINT_EVENT",
+            &self.archetype_node_id,
+            out,
+        );
     }
 }
 

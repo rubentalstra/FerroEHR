@@ -7,7 +7,9 @@ use crate::load::bmm::BmmSchema;
 use crate::load::{oas, xsd};
 use crate::plan::composition::{self, compose};
 use crate::render::emit::{GenFile, emit_crate, emit_multi_crate};
-use crate::render::{emit_json, emit_opt, emit_rest, emit_rm_model, emit_xml, naming};
+use crate::render::{
+    emit_json, emit_opt, emit_rest, emit_rm_model, emit_validate, emit_xml, naming,
+};
 use std::path::{Path, PathBuf};
 /// The `openehr-its` crate root (holds the vendored XSDs/OAS and receives the
 /// generated XML/REST code). `../../crates/openehr-its` from this tool's
@@ -39,9 +41,10 @@ pub(crate) fn run() {
         "emit-rest" => cmd_emit_rest(),
         "emit-opt" => cmd_emit_opt(),
         "emit-rm-model" => cmd_emit_rm_model(),
+        "emit-validate" => cmd_emit_validate(),
         other => {
             eprintln!(
-                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, or `emit-rm-model`"
+                "unknown command {other:?}; use `check`, `emit [OUTDIR]`, `check-xsd`, `emit-xml`, `emit-json`, `emit-rest`, `emit-opt`, `emit-rm-model`, or `emit-validate`"
             );
             std::process::exit(2);
         }
@@ -339,6 +342,42 @@ fn cmd_emit_rm_model() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Emit the RM class-invariant cores (`openehr-rm/src/validate/generated.rs`) —
+/// the single source both the typed `Validate` impls and the fast path call.
+/// Writes the one generated file in place; the module declaration
+/// (`pub(crate) mod generated;`) is a permanent hand edit in the hand-written
+/// `validate.rs`, so this target never touches a hand-written file. `emit`
+/// produces the identical output (via `inject_validate`).
+fn cmd_emit_validate() -> Result<(), Box<dyn std::error::Error>> {
+    let rm = compose("rm")?;
+    let files = emit_validate::emit_files(&rm.model, &rm.own_schema);
+
+    let src = crates_root().join("openehr-rm").join("src");
+    let mut written = Vec::new();
+    for f in &files {
+        let full = src.join(&f.path);
+        if let Some(parent) = full.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(&full, &f.body)?;
+        written.push(full);
+    }
+    rustfmt(&written)?;
+    println!(
+        "emitted {} file(s) into {}",
+        files.len(),
+        src.join("validate").display()
+    );
+    Ok(())
+}
+
+/// Append the generated invariant-core file to `openehr-rm`'s file set. The
+/// module is declared by the permanent `pub(crate) mod generated;` hand edit in
+/// the hand-written `validate.rs`, so nothing else is touched here.
+fn inject_validate(files: &mut Vec<GenFile>, mut validate_files: Vec<GenFile>) {
+    files.append(&mut validate_files);
+}
+
 /// Append the generated RM-model files to `openehr-rm`'s file set and declare the
 /// module in its `lib.rs` (the authority for the crate layout).
 fn inject_rm_model(files: &mut Vec<GenFile>, mut model_files: Vec<GenFile>) {
@@ -416,6 +455,10 @@ fn cmd_emit(_outdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> 
     let rm = compose("rm")?;
     let mut rm_files = emit_crate(&rm.model, &rm.own_schema, &rm.external, rm.doc);
     inject_rm_model(&mut rm_files, emit_rm_model::emit_files(&rm.model));
+    inject_validate(
+        &mut rm_files,
+        emit_validate::emit_files(&rm.model, &rm.own_schema),
+    );
     write_crate("openehr-rm", &rm_files)?;
 
     // openehr-lang: the BMM/P_BMM object model, fully generated. The generator's

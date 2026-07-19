@@ -6,19 +6,9 @@
 use crate::common::archetyped::archetyped::Archetyped;
 use crate::validate::{InvariantViolation, Validate};
 
-/// The `Rm_version_valid` core over the projected input — one source for the
-/// typed impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_archetyped_invariants(rm_version: &str, out: &mut Vec<InvariantViolation>) {
-    if rm_version.is_empty() {
-        out.push(InvariantViolation::here(
-            "Invariant Rm_version_valid failed on type ARCHETYPED",
-        ));
-    }
-}
-
 impl Validate for Archetyped {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetyped_invariants(&self.rm_version, out);
+        crate::validate::generated::archetyped_core(&self.rm_version, out);
     }
 }
 

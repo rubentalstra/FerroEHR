@@ -834,3 +834,80 @@ pub(crate) fn xml_bmm_only_allowed(spec: &str, wire_name: &str) -> bool {
         .iter()
         .any(|e| e.spec == spec && e.wire_name == wire_name)
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Assertion-dialect leaf-predicate → runtime-function table
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// One assertion-dialect leaf predicate the invariant classifier recognises
+/// (`crate::analyze::invariants::RUNTIME_PREDICATES`), mapped to the named
+/// runtime function the invariant-core layer calls to realize it. This is the
+/// declarative bridge between the BMM assertion spelling and the hand-written
+/// runtime in `openehr-rm`'s `validate.rs`.
+pub(crate) struct DialectPredicate {
+    /// The BMM assertion-dialect predicate spelling, as it appears in a
+    /// `BMM_CLASS.invariants` expression (e.g. `valid_iso8601_date`).
+    pub predicate: &'static str,
+    /// The runtime function realizing it (in `openehr_rm::validate`, or a spec
+    /// method for `is_valid_match_code`).
+    pub runtime_fn: &'static str,
+    /// Spec citation (BMM/RM section) for the predicate.
+    pub citation: &'static str,
+    /// One-line reason.
+    pub reason: &'static str,
+}
+
+/// The assertion-dialect predicate → runtime-function map. Its predicate set is
+/// exactly `crate::analyze::invariants::RUNTIME_PREDICATES` (the classifier's
+/// recognised runtime-backed leaves) — the emitter-invariant suite pins the two
+/// in lockstep, so a new recognised predicate without a runtime hook fails CI.
+pub(crate) const DIALECT_PREDICATES: &[DialectPredicate] = &[
+    DialectPredicate {
+        predicate: "valid_iso8601_date",
+        runtime_fn: "openehr_rm::validate::is_valid_iso_date",
+        citation: "BASE Iso8601_date (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date.adoc)",
+        reason: "ISO-8601 date well-formedness (openEHR partial-precision subset).",
+    },
+    DialectPredicate {
+        predicate: "valid_iso8601_time",
+        runtime_fn: "openehr_rm::validate::is_valid_iso_time",
+        citation: "BASE Iso8601_time (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc)",
+        reason: "ISO-8601 time well-formedness (openEHR partial-precision subset).",
+    },
+    DialectPredicate {
+        predicate: "valid_iso8601_date_time",
+        runtime_fn: "openehr_rm::validate::is_valid_iso_date_time",
+        citation: "BASE Iso8601_date_time (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_date_time.adoc)",
+        reason: "ISO-8601 date-time well-formedness (openEHR partial-precision subset).",
+    },
+    DialectPredicate {
+        predicate: "valid_iso8601_duration",
+        runtime_fn: "openehr_rm::validate::is_valid_iso_duration",
+        citation: "BASE Iso8601_duration (docs/specs/openehr/BASE/docs/UML/classes/org.openehr.base.foundation_types.iso8601_duration.adoc)",
+        reason: "ISO-8601 duration well-formedness (openEHR sign + W designator deviation).",
+    },
+    DialectPredicate {
+        predicate: "valid_percentage",
+        runtime_fn: "openehr_rm::validate::valid_percentage",
+        citation: "RM DV_AMOUNT.Accuracy_validity (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_amount.adoc)",
+        reason: "0 <= v <= 100 for a percent-recorded accuracy.",
+    },
+    DialectPredicate {
+        predicate: "valid_magnitude_status",
+        runtime_fn: "openehr_rm::validate::valid_magnitude_status",
+        citation: "RM DV_QUANTIFIED.Magnitude_status_valid (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_quantified.adoc)",
+        reason: "magnitude_status is one of = < > <= >= ~.",
+    },
+    DialectPredicate {
+        predicate: "valid_proportion_kind",
+        runtime_fn: "openehr_rm::validate::valid_proportion_kind",
+        citation: "RM PROPORTION_KIND (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.proportion_kind.adoc)",
+        reason: "proportion kind code is one of 0..=4.",
+    },
+    DialectPredicate {
+        predicate: "is_valid_match_code",
+        runtime_fn: "openehr_rm::data_types::text::term_mapping::TermMapping::is_valid_match_code",
+        citation: "RM TERM_MAPPING.Match_valid (docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.term_mapping.adoc)",
+        reason: "TERM_MAPPING.match is one of < = > ?.",
+    },
+];

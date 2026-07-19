@@ -377,6 +377,99 @@ fn invariant_classification_spot_checks() {
     assert_eq!(bucket("HISTORY", "Period_consistency"), "complex");
 }
 
+// ── invariant-core emission (emit-validate) ──────────────────────────────────
+
+/// The generated invariant-core file (`emit-validate`) honestly accounts for
+/// every RM class invariant the emitter claims to cover: each **emitted-core**
+/// invariant appears as a violation-message literal, and each **inert**
+/// (runtime-hook-missing) invariant appears in the pending-adjudication doc
+/// register — so nothing the classifier flagged is silently dropped.
+#[test]
+fn invariant_core_file_accounts_for_emitted_and_inert_invariants() {
+    let files = testsupport::render_all_to_memory().unwrap();
+    let gen_file = files
+        .get("openehr-rm/validate/generated.rs")
+        .expect("emit-validate did not produce validate/generated.rs");
+
+    // The invariants the emitted cores realize (their violation messages carry
+    // the BMM invariant name verbatim).
+    for name in [
+        "Code_string_valid",
+        "Valid_value",
+        "Formatting_valid",
+        "Value_valid",
+        "Id_valid",
+        "Match_valid",
+        "Formalism_valid",
+        "Accuracy_is_percent_validity",
+        "Accuracy_validity",
+        "Magnitude_status_valid",
+        "Type_validity",
+        "Valid_denominator",
+        "Precision_validity",
+        "Fraction_validity",
+        "Unitary_validity",
+        "Percent_validity",
+        "Archetype_node_id_valid",
+        "Events_valid",
+        "Is_archetype_root",
+        "Action_archetype_id_valid",
+        "location_valid",
+        "Rm_version_valid",
+        "Basic_validity",
+        "Name_valid",
+    ] {
+        assert!(
+            gen_file.contains(name),
+            "emitted-core invariant {name:?} is not named in validate/generated.rs",
+        );
+    }
+
+    // Every runtime-hook-missing (inert) RM invariant is named in the pending
+    // register — the same classifier verdict the emitter derives it from.
+    let rows = testsupport::classify_invariants("rm").unwrap();
+    let hook: Vec<_> = rows
+        .iter()
+        .filter(|r| r.bucket == "runtime-hook-missing")
+        .collect();
+    assert!(!hook.is_empty(), "no runtime-hook-missing invariants found");
+    for r in hook {
+        assert!(
+            gen_file.contains(&r.name),
+            "inert invariant {}::{} is not named in the pending register",
+            r.class,
+            r.name,
+        );
+    }
+}
+
+/// The assertion-dialect predicate → runtime-function table
+/// (`plan::overrides::DIALECT_PREDICATES`) covers **exactly** the classifier's
+/// recognised runtime-backed leaf predicates (`RUNTIME_PREDICATES`) — no
+/// recognised predicate lacks a runtime hook, and no stale table entry names a
+/// predicate the classifier no longer recognises.
+#[test]
+fn dialect_predicates_match_the_classifier() {
+    use std::collections::BTreeSet;
+    let table: BTreeSet<String> = testsupport::dialect_predicates()
+        .into_iter()
+        .map(|(p, _)| p)
+        .collect();
+    let classifier: BTreeSet<String> = testsupport::runtime_predicates().into_iter().collect();
+    assert_eq!(
+        table, classifier,
+        "DIALECT_PREDICATES and the classifier's RUNTIME_PREDICATES drifted apart",
+    );
+    // Every mapped runtime function is non-empty (the integrity test in
+    // `decision_map_integrity_*` already checks citation/reason/decision).
+    for (predicate, runtime_fn) in testsupport::dialect_predicates() {
+        assert!(
+            !runtime_fn.trim().is_empty(),
+            "dialect predicate {predicate:?} has no runtime function",
+        );
+    }
+}
+
 // ── constants emission (BMM `BMM_CLASS.constants`) ───────────────────────────
 
 /// Every constant the BMM declares on an **emitted** class is rendered as a

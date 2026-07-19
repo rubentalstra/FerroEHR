@@ -4,11 +4,11 @@
 //! `Section.Items_valid` is `ignored`.
 
 use crate::composition::content::navigation::section::Section;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Section {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetype_node_id_valid(out, "SECTION", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core("SECTION", &self.archetype_node_id, out);
     }
 }
 

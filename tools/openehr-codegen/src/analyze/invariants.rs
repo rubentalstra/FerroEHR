@@ -177,6 +177,14 @@ const RUNTIME_PREDICATES: [&str; 8] = [
     "is_valid_match_code",
 ];
 
+/// The classifier's recognised runtime-backed leaf predicates — the ones a
+/// leaf `pred (field)` classifies as [`Bucket::Emitted`] because a named runtime
+/// function realizes them. The `plan::overrides::DIALECT_PREDICATES` table maps
+/// each to that function; the emitter-invariant suite pins the two in lockstep.
+pub(crate) fn runtime_predicates() -> &'static [&'static str] {
+    &RUNTIME_PREDICATES
+}
+
 /// Classify a leaf (no top-level connective). Order matters: the blocking
 /// signals (quantifier/navigation/arithmetic, then terminology/repository/
 /// aggregate hooks) are checked before the emittable forms, and an
