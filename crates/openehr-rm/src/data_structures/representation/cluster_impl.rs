@@ -7,11 +7,11 @@
 //! we do not either — enforcing it would over-reject relative to the reference.
 
 use crate::data_structures::representation::cluster::Cluster;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Cluster {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetype_node_id_valid(out, "CLUSTER", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core("CLUSTER", &self.archetype_node_id, out);
     }
 }
 

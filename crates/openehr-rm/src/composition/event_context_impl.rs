@@ -12,22 +12,9 @@
 use crate::composition::event_context::EventContext;
 use crate::validate::{InvariantViolation, Validate};
 
-/// The EVENT_CONTEXT invariant core over the projected input — one source for
-/// the typed impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_event_context_invariants(
-    location: Option<&str>,
-    out: &mut Vec<InvariantViolation>,
-) {
-    if location.is_some_and(str::is_empty) {
-        out.push(InvariantViolation::here(
-            "Invariant location_valid failed on type EVENT_CONTEXT",
-        ));
-    }
-}
-
 impl Validate for EventContext {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_event_context_invariants(self.location.as_deref(), out);
+        crate::validate::generated::event_context_core(self.location.as_deref(), out);
     }
 }
 

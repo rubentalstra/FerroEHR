@@ -10,15 +10,20 @@
 use crate::data_types::quantity::date_time::dv_date::DvDate;
 use crate::data_types::quantity::dv_ordered::DvOrdered;
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
-use crate::validate::{
-    InvariantViolation, Validate, is_valid_iso_date, push_magnitude_status_valid,
-    push_temporal_value_valid,
-};
+use crate::validate::{InvariantViolation, Validate, is_valid_iso_date};
 
 impl Validate for DvDate {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_temporal_value_valid(out, "DV_DATE", is_valid_iso_date(&self.value));
-        push_magnitude_status_valid(out, "DV_DATE", self.magnitude_status.as_deref());
+        crate::validate::generated::temporal_value_core(
+            "DV_DATE",
+            is_valid_iso_date(&self.value),
+            out,
+        );
+        crate::validate::generated::magnitude_status_core(
+            "DV_DATE",
+            self.magnitude_status.as_deref(),
+            out,
+        );
         // Inherited DV_ORDERED Normal_range_and_status_consistency (the
         // normal_range element type is the DvOrdered enum here).
         push_normal_range_consistency(

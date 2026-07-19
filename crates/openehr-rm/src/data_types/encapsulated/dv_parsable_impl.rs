@@ -18,19 +18,9 @@ impl DvParsable {
     }
 }
 
-/// The `Formalism_valid` core over the projected input — one source for the
-/// typed impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_dv_parsable_invariants(formalism: &str, out: &mut Vec<InvariantViolation>) {
-    if formalism.is_empty() {
-        out.push(InvariantViolation::here(
-            "Invariant Formalism_valid failed on type DV_PARSABLE",
-        ));
-    }
-}
-
 impl Validate for DvParsable {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_dv_parsable_invariants(&self.formalism, out);
+        crate::validate::generated::dv_parsable_core(&self.formalism, out);
     }
 }
 

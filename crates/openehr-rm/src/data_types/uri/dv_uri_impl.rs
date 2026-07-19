@@ -64,19 +64,9 @@ impl DvUriData {
     }
 }
 
-/// The `Value_valid` core over the projected input — one source for the typed
-/// impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_dv_uri_invariants(value: &str, out: &mut Vec<InvariantViolation>) {
-    if value.is_empty() {
-        out.push(InvariantViolation::here(
-            "Invariant Value_valid failed on type DV_URI",
-        ));
-    }
-}
-
 impl Validate for DvUriData {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_dv_uri_invariants(&self.value, out);
+        crate::validate::generated::dv_uri_core(&self.value, out);
     }
 }
 

@@ -46,6 +46,13 @@ use serde_json::Value;
 pub use openehr_base::validate::{InvariantViolation, Validate};
 
 mod fast;
+/// The generated RM class-invariant cores (`openehr-codegen -- emit-validate`):
+/// one `pub(crate) fn <name>_core` per mechanically-shaped invariant group, the
+/// single source both the typed `Validate` impls and [`fast`] call. This is the
+/// ONE hand-declared module for that `// @generated` file — the runtime helpers
+/// the cores call (`invariant_failed`, the ISO-8601 validators, the dialect
+/// predicates) stay hand-written below.
+pub(crate) mod generated;
 
 /// Run the allocation-free fast-path RM class-invariant check for a single
 /// canonical-JSON node, dispatching on its `_type`. Returns `true` when the fast
@@ -114,91 +121,6 @@ pub(crate) fn valid_percentage(v: f64) -> bool {
 #[must_use]
 pub(crate) fn valid_proportion_kind(k: i32) -> bool {
     (0..=4).contains(&k)
-}
-
-/// DV_QUANTIFIED `Magnitude_status_valid`: if present, `magnitude_status` must
-/// be one of `= < > <= >= ~` (`valid_magnitude_status`).
-pub(crate) fn push_magnitude_status_valid(
-    out: &mut Vec<InvariantViolation>,
-    rm_type: &str,
-    magnitude_status: Option<&str>,
-) {
-    if let Some(s) = magnitude_status
-        && !valid_magnitude_status(s)
-    {
-        out.push(invariant_failed("Magnitude_status_valid", rm_type));
-    }
-}
-
-/// The DV_AMOUNT invariants (`Accuracy_is_percent_validity`, `Accuracy_validity`)
-/// plus the inherited DV_QUANTIFIED `Magnitude_status_valid`. Shared by every
-/// concrete DV_AMOUNT descendant (DV_QUANTITY, DV_COUNT, DV_DURATION,
-/// DV_PROPORTION) — mirrors archie `DvAmount` / `DvQuantified`.
-#[allow(clippy::float_cmp)] // exact accuracy == 0 test, mirrors archie's `accuracy == 0.0`
-pub(crate) fn push_dv_amount_invariants(
-    out: &mut Vec<InvariantViolation>,
-    rm_type: &str,
-    accuracy: Option<f64>,
-    accuracy_is_percent: Option<bool>,
-    magnitude_status: Option<&str>,
-) {
-    // Accuracy_is_percent_validity: accuracy = 0 implies not recorded as percent.
-    if accuracy == Some(0.0) && accuracy_is_percent == Some(true) {
-        out.push(invariant_failed("Accuracy_is_percent_validity", rm_type));
-    }
-    // Accuracy_validity: recorded as percent implies 0 <= accuracy <= 100.
-    if accuracy_is_percent == Some(true)
-        && let Some(a) = accuracy
-        && !valid_percentage(a)
-    {
-        out.push(invariant_failed("Accuracy_validity", rm_type));
-    }
-    push_magnitude_status_valid(out, rm_type, magnitude_status);
-}
-
-/// LOCATABLE `Archetype_node_id_valid`: `archetype_node_id` must be non-empty
-/// (archie `Locatable`, `nullOrNotEmpty`). Applied by every concrete LOCATABLE
-/// impl.
-pub(crate) fn push_archetype_node_id_valid(
-    out: &mut Vec<InvariantViolation>,
-    rm_type: &str,
-    archetype_node_id: &str,
-) {
-    if archetype_node_id.is_empty() {
-        out.push(invariant_failed("Archetype_node_id_valid", rm_type));
-    }
-}
-
-/// The shared ENTRY-root invariants (BMM `ENTRY.Is_archetype_root` — `is_archetype_root`
-/// — on every concrete ENTRY subtype + inherited LOCATABLE `Archetype_node_id_valid`):
-/// an ENTRY is an archetype root, so `archetype_details` must be present (openEHR
-/// derives `is_archetype_root` from `archetype_details /= Void`,
-/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.common.locatable.adoc`).
-/// One core for the typed `Validate` impls and the value-level fast path.
-pub(crate) fn push_entry_root_invariants(
-    out: &mut Vec<InvariantViolation>,
-    rm_type: &str,
-    has_archetype_details: bool,
-    archetype_node_id: &str,
-) {
-    if !has_archetype_details {
-        out.push(invariant_failed("Is_archetype_root", rm_type));
-    }
-    push_archetype_node_id_valid(out, rm_type, archetype_node_id);
-}
-
-/// The temporal `Value_valid` invariant (see the ISO-8601 module notes above:
-/// archie enforces well-formedness structurally; our string-valued model
-/// expresses it as an explicit class invariant). One core for the typed
-/// impls and the value-level fast path.
-pub(crate) fn push_temporal_value_valid(
-    out: &mut Vec<InvariantViolation>,
-    rm_type: &str,
-    valid: bool,
-) {
-    if !valid {
-        out.push(invariant_failed("Value_valid", rm_type));
-    }
 }
 
 // ── ISO-8601 value validation ────────────────────────────────────────────────

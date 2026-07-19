@@ -34,10 +34,12 @@ echo "regenerating OPT 1.4 model (opt14 types + XML codec)…"
 cargo run -q -p openehr-codegen -- emit-opt
 echo "regenerating the RM attribute/type model (openehr-rm/src/model)…"
 cargo run -q -p openehr-codegen -- emit-rm-model
+echo "regenerating the RM invariant cores (openehr-rm/src/validate/generated.rs)…"
+cargo run -q -p openehr-codegen -- emit-validate
 
 if ! git diff --quiet -- "${GENERATED[@]}"; then
   echo "::error::Generated code is out of sync with the vendored specs." >&2
-  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-json && … emit-rest && … emit-opt && … emit-rm-model, then commit." >&2
+  echo "Run: cargo run -p openehr-codegen -- emit && … emit-xml && … emit-json && … emit-rest && … emit-opt && … emit-rm-model && … emit-validate, then commit." >&2
   git diff --stat -- "${GENERATED[@]}" >&2
   exit 1
 fi

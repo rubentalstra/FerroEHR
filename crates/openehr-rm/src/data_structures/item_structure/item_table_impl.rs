@@ -8,7 +8,7 @@
 
 use crate::data_structures::item_structure::item_table::ItemTable;
 use crate::data_structures::representation::item::Item;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for ItemTable {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
@@ -68,7 +68,11 @@ impl Validate for ItemTable {
                 ));
             }
         }
-        push_archetype_node_id_valid(out, "ITEM_TABLE", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core(
+            "ITEM_TABLE",
+            &self.archetype_node_id,
+            out,
+        );
     }
 }
 

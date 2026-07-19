@@ -71,10 +71,10 @@
 use serde_json::{Map, Value};
 
 use crate::model::{Container, RmClass};
+use crate::validate::generated;
 use crate::validate::{
-    InvariantViolation, Validate, is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_time,
-    push_archetype_node_id_valid, push_dv_amount_invariants, push_entry_root_invariants,
-    push_magnitude_status_valid, push_temporal_value_valid,
+    InvariantViolation, Validate, is_valid_iso_date, is_valid_iso_date_time, is_valid_iso_duration,
+    is_valid_iso_time,
 };
 
 /// Validate `value` (whose `_type` is `ty`) on the fast path. Returns `true`
@@ -377,27 +377,19 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(code_string) = str_of(obj, "code_string") else {
                 return false;
             };
-            crate::data_types::text::code_phrase_impl::push_code_phrase_invariants(
-                code_string,
-                out,
-            );
+            generated::code_phrase_core(code_string, out);
         }
         "DV_TEXT" | "DV_CODED_TEXT" => {
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            crate::data_types::text::dv_text_impl::push_dv_text_invariants(
-                ty,
-                value,
-                str_of(obj, "formatting"),
-                out,
-            );
+            generated::dv_text_core(ty, value, str_of(obj, "formatting"), out);
         }
         "DV_URI" => {
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            crate::data_types::uri::dv_uri_impl::push_dv_uri_invariants(value, out);
+            generated::dv_uri_core(value, out);
         }
         "DV_EHR_URI" => {
             let Some(value) = str_of(obj, "value") else {
@@ -409,21 +401,19 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(id) = str_of(obj, "id") else {
                 return false;
             };
-            crate::data_types::basic::dv_identifier_impl::push_dv_identifier_invariants(id, out);
+            generated::dv_identifier_core(id, out);
         }
         "TERM_MAPPING" => {
             let Some(code) = str_of(obj, "match").and_then(|s| s.chars().next()) else {
                 return false;
             };
-            crate::data_types::text::term_mapping_impl::push_term_mapping_invariants(code, out);
+            generated::term_mapping_core(code, out);
         }
         "DV_PARSABLE" => {
             let Some(formalism) = str_of(obj, "formalism") else {
                 return false;
             };
-            crate::data_types::encapsulated::dv_parsable_impl::push_dv_parsable_invariants(
-                formalism, out,
-            );
+            generated::dv_parsable_core(formalism, out);
         }
         // DV_AMOUNT descendants. `normal_range` (the only input of the
         // DV_ORDERED consistency invariant that could fire) is a DV_INTERVAL,
@@ -435,14 +425,14 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
                 let Some(value) = str_of(obj, "value") else {
                     return false;
                 };
-                push_temporal_value_valid(out, ty, crate::validate::is_valid_iso_duration(value));
+                generated::temporal_value_core(ty, is_valid_iso_duration(value), out);
             }
-            push_dv_amount_invariants(
-                out,
+            generated::dv_amount_core(
                 ty,
                 f64_of(obj, "accuracy"),
                 bool_of(obj, "accuracy_is_percent"),
                 str_of(obj, "magnitude_status"),
+                out,
             );
         }
         "DV_DATE" | "DV_TIME" | "DV_DATE_TIME" => {
@@ -454,8 +444,8 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
                 "DV_TIME" => is_valid_iso_time(value),
                 _ => is_valid_iso_date_time(value),
             };
-            push_temporal_value_valid(out, ty, valid);
-            push_magnitude_status_valid(out, ty, str_of(obj, "magnitude_status"));
+            generated::temporal_value_core(ty, valid, out);
+            generated::magnitude_status_core(ty, str_of(obj, "magnitude_status"), out);
         }
         // Only the DV_ORDERED consistency invariant, which cannot fire
         // without a (never-vouched) normal_range.
@@ -475,19 +465,13 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let precision = field(obj, "precision")
                 .and_then(Value::as_i64)
                 .and_then(|n| i32::try_from(n).ok());
-            crate::data_types::quantity::dv_proportion_impl::push_dv_proportion_invariants(
-                numerator,
-                denominator,
-                kind,
-                precision,
-                out,
-            );
-            push_dv_amount_invariants(
-                out,
+            generated::dv_proportion_core(numerator, denominator, kind, precision, out);
+            generated::dv_amount_core(
                 ty,
                 f64_of(obj, "accuracy"),
                 bool_of(obj, "accuracy_is_percent"),
                 str_of(obj, "magnitude_status"),
+                out,
             );
         }
         "ELEMENT" => {
@@ -508,7 +492,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(node_id) = str_of(obj, "archetype_node_id") else {
                 return false;
             };
-            push_archetype_node_id_valid(out, ty, node_id);
+            generated::archetype_node_id_core(ty, node_id, out);
         }
         "HISTORY" => {
             // Period_consistency needs the typed event-offset arithmetic —
@@ -522,28 +506,19 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let events_empty = field(obj, "events")
                 .and_then(Value::as_array)
                 .is_none_or(Vec::is_empty);
-            crate::data_structures::history::history_impl::push_history_basic_invariants(
-                events_empty,
-                present(obj, "summary"),
-                node_id,
-                out,
-            );
+            generated::history_basic_core(events_empty, present(obj, "summary"), node_id, out);
         }
         "COMPOSITION" => {
             let Some(node_id) = str_of(obj, "archetype_node_id") else {
                 return false;
             };
-            crate::composition::composition_impl::push_composition_invariants(
-                present(obj, "archetype_details"),
-                node_id,
-                out,
-            );
+            generated::composition_core(present(obj, "archetype_details"), node_id, out);
         }
         "OBSERVATION" | "EVALUATION" | "INSTRUCTION" | "ACTION" | "ADMIN_ENTRY" => {
             let Some(node_id) = str_of(obj, "archetype_node_id") else {
                 return false;
             };
-            push_entry_root_invariants(out, ty, present(obj, "archetype_details"), node_id);
+            generated::entry_root_core(ty, present(obj, "archetype_details"), node_id, out);
         }
         "ACTIVITY" => {
             let (Some(action_archetype_id), Some(node_id)) = (
@@ -552,29 +527,22 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             ) else {
                 return false;
             };
-            crate::composition::content::entry::activity_impl::push_activity_invariants(
-                action_archetype_id,
-                node_id,
-                out,
-            );
+            generated::activity_core(action_archetype_id, node_id, out);
         }
         "EVENT_CONTEXT" => {
-            crate::composition::event_context_impl::push_event_context_invariants(
-                str_of(obj, "location"),
-                out,
-            );
+            generated::event_context_core(str_of(obj, "location"), out);
         }
         "ARCHETYPED" => {
             let Some(rm_version) = str_of(obj, "rm_version") else {
                 return false;
             };
-            crate::common::archetyped::archetyped_impl::push_archetyped_invariants(rm_version, out);
+            generated::archetyped_core(rm_version, out);
         }
         "PARTY_IDENTIFIED" | "PARTY_RELATED" => {
             let has_identifiers = field(obj, "identifiers")
                 .and_then(Value::as_array)
                 .is_some_and(|a| !a.is_empty());
-            crate::common::generic::party_identified_impl::push_party_identified_invariants(
+            generated::party_identified_core(
                 ty,
                 str_of(obj, "name"),
                 has_identifiers,

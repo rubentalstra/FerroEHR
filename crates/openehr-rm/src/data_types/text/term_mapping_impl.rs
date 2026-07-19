@@ -48,19 +48,9 @@ impl TermMapping {
     }
 }
 
-/// The `Match_valid` core over the projected input — one source for the typed
-/// impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_term_mapping_invariants(match_code: char, out: &mut Vec<InvariantViolation>) {
-    if !TermMapping::is_valid_match_code(match_code) {
-        out.push(InvariantViolation::here(
-            "Invariant Match_valid failed on type TERM_MAPPING",
-        ));
-    }
-}
-
 impl Validate for TermMapping {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_term_mapping_invariants(self.r#match, out);
+        crate::validate::generated::term_mapping_core(self.r#match, out);
     }
 }
 
