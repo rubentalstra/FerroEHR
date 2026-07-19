@@ -17,7 +17,7 @@
 //! - Foundation **primitives / containers / marker traits** are mapped to Rust
 //!   (bool, i32, Vec, …) and never emitted (see [`SKIP`] and [`primitive`]).
 
-use crate::bmm::{BmmClass, BmmPropKind, BmmSchema, BmmType};
+use crate::bmm::{BmmClass, BmmEnumValue, BmmEnumeration, BmmPropKind, BmmSchema, BmmType};
 use crate::naming;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -771,7 +771,14 @@ enum Emission<'a> {
     /// Emits a `{Name}Data` struct for the class's own instances plus a `{Name}`
     /// enum over `{Name}Data` and each immediate concrete subtype.
     PolyEnum(Vec<String>),
-    /// Transparent newtype over a Rust primitive (an enumeration-of-strings, …).
+    /// A BMM enumeration class (`BMM_ENUMERATION`) — a real Rust enum over its
+    /// named constants plus a tolerance-preserving `Other(String|i32)` catch-all,
+    /// with hand-written serde byte-identical to the bare primitive it replaces.
+    EnumLiterals(&'a BmmEnumeration),
+    /// Transparent newtype over a Rust primitive (a genuine primitive alias).
+    /// After enumeration classes route to [`Emission::EnumLiterals`] this arm is
+    /// the fallback for a 0-field concrete leaf over a primitive that carries no
+    /// enumeration facet (none exist in the current vendored BMM).
     Newtype(&'a str),
     Skip,
 }
@@ -780,6 +787,16 @@ enum Emission<'a> {
 fn decide<'a>(model: &Model, class: &'a BmmClass, used: &BTreeSet<String>) -> Emission<'a> {
     if Model::is_mapped(&class.name) {
         return Emission::Skip;
+    }
+    // A BMM enumeration is a typed literal set on the wire, regardless of how the
+    // rest of the BMM shapes the class. This preempts BOTH the transparent-newtype
+    // path (`VALIDITY_KIND`) AND the polymorphic-enum path that `PROPORTION_KIND`
+    // wrongly fell into — the RM BMM lists `PROPORTION_KIND` in
+    // `DV_PROPORTION.ancestors`, so `enum_variants` is non-empty and the concrete
+    // branch below would emit a nonsense `ProportionKind`/`ProportionKindData`
+    // poly enum. The enumeration facet is authoritative, so it wins first.
+    if let Some(enumeration) = &class.enumeration {
+        return Emission::EnumLiterals(enumeration);
     }
     if class.is_abstract {
         let variants = model.enum_variants(&class.name);
@@ -900,6 +917,7 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
             Emission::PolyEnum(variants) => {
                 emit_enum(model, p.class, variants, true, &index, &local, external)
             }
+            Emission::EnumLiterals(enumeration) => emit_enum_literals(p.class, enumeration),
             Emission::Newtype(prim) => emit_newtype(p.class, prim),
             Emission::Skip => unreachable!(),
         };
@@ -1792,6 +1810,235 @@ fn emit_newtype(class: &BmmClass, prim: &str) -> String {
     b
 }
 
+/// One enumeration constant resolved for emission: the BMM constant name, its
+/// Rust variant identifier, and its wire value (the string token or the integer).
+struct EnumLit {
+    /// The verbatim BMM constant name (`release_candidate`) — for doc lines.
+    name: String,
+    /// The Rust variant identifier (`ReleaseCandidate`).
+    ident: String,
+    wire: EnumLitWire,
+}
+
+enum EnumLitWire {
+    Str(String),
+    Int(i32),
+}
+
+/// Resolve an enumeration's constants to `(ident, wire)` pairs, applying the same
+/// value rule as the RM-model emitter (`BMM_ENUMERATION`: explicit `item_values`
+/// win; an INTEGER with none assumes 0,1,2,…; a STRING with none takes each
+/// constant name as its own value).
+fn enum_literals(enumeration: &BmmEnumeration) -> Vec<EnumLit> {
+    let is_int = enumeration.underlying_type == "INTEGER";
+    enumeration
+        .item_names
+        .iter()
+        .enumerate()
+        .map(|(i, name)| {
+            let ident = naming::type_name(name);
+            let wire = match enumeration.item_values.as_ref().and_then(|v| v.get(i)) {
+                Some(BmmEnumValue::Int(v)) => {
+                    EnumLitWire::Int(i32::try_from(*v).unwrap_or_default())
+                }
+                Some(BmmEnumValue::Str(s)) => EnumLitWire::Str(s.clone()),
+                None if is_int => EnumLitWire::Int(i32::try_from(i).unwrap_or_default()),
+                None => EnumLitWire::Str(name.clone()),
+            };
+            EnumLit {
+                name: name.clone(),
+                ident,
+                wire,
+            }
+        })
+        .collect()
+}
+
+/// Emit a BMM enumeration class as a real Rust enum: one variant per named
+/// constant, plus a tolerance-preserving `Other(String|i32)` catch-all.
+///
+/// The hand-written serde is provably byte-identical to the transparent
+/// `String`/`i32` newtype it replaces: `serialize` writes `as_str`/`value` (the
+/// constant token for a known variant, the verbatim payload for `Other`), and
+/// `deserialize` reads the bare primitive then maps it through the total
+/// `from_wire`/`from_value`. Because `as_str ∘ from_wire` (and `value ∘
+/// from_value`) is the identity for every input, the round-trip preserves every
+/// byte. A strict `TryFrom` seam alongside rejects out-of-set values with a
+/// per-enum typed error and never yields `Other`.
+fn emit_enum_literals(class: &BmmClass, enumeration: &BmmEnumeration) -> String {
+    let ty = naming::type_name(&class.name);
+    let spec = &class.name;
+    let is_int = enumeration.underlying_type == "INTEGER";
+    let lits = enum_literals(enumeration);
+    let err_ty = format!("Unknown{ty}");
+    let (payload, err_inner): (&str, &str) = if is_int {
+        ("i32", "i64")
+    } else {
+        ("String", "String")
+    };
+
+    let mut b = String::new();
+    b.push_str(&format!(
+        "// @generated by openehr-codegen from BMM (`{spec}`) — DO NOT EDIT.\n\n"
+    ));
+    doc_block(&mut b, class.documentation.as_deref(), "");
+    let derive = if is_int {
+        "#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n"
+    } else {
+        "#[derive(Debug, Clone, PartialEq, Eq, Hash)]\n"
+    };
+    b.push_str(derive);
+    b.push_str(&format!("pub enum {ty} {{\n"));
+    for lit in &lits {
+        match &lit.wire {
+            EnumLitWire::Str(s) => b.push_str(&format!("    /// `{s}`\n")),
+            EnumLitWire::Int(v) => b.push_str(&format!("    /// `{}` = {v}\n", lit.name)),
+        }
+        b.push_str(&format!("    {},\n", lit.ident));
+    }
+    b.push_str(&format!(
+        "    /// A value outside the `{spec}` constant set.\n    ///\n    \
+         /// NOTE: no openEHR spec governs an out-of-set value — our own\n    \
+         /// tolerance-preserving design (`BMM_ENUMERATION` defines only the listed\n    \
+         /// constants), retained so this enum's wire form stays byte-identical to\n    \
+         /// the bare `{payload}` it replaces.\n    \
+         Other({payload}),\n}}\n\n"
+    ));
+
+    // Inherent conversions.
+    b.push_str(&format!("impl {ty} {{\n"));
+    if is_int {
+        b.push_str(
+            "    /// The `i32` wire value of this constant (the verbatim payload for\n    \
+             /// [`Self::Other`]).\n    #[must_use]\n    pub fn value(self) -> i32 {\n        match self {\n",
+        );
+        for lit in &lits {
+            if let EnumLitWire::Int(v) = &lit.wire {
+                b.push_str(&format!("            Self::{} => {v},\n", lit.ident));
+            }
+        }
+        b.push_str("            Self::Other(__v) => __v,\n        }\n    }\n\n");
+        b.push_str(
+            "    /// This constant for an `i32` wire value, tolerating an unknown\n    \
+             /// value as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
+             pub fn from_value(__v: i32) -> Self {\n        match __v {\n",
+        );
+        for lit in &lits {
+            if let EnumLitWire::Int(v) = &lit.wire {
+                b.push_str(&format!("            {v} => Self::{},\n", lit.ident));
+            }
+        }
+        b.push_str("            _ => Self::Other(__v),\n        }\n    }\n}\n\n");
+    } else {
+        b.push_str(
+            "    /// The wire string of this constant (the verbatim token for\n    \
+             /// [`Self::Other`]).\n    #[must_use]\n    pub fn as_str(&self) -> &str {\n        match self {\n",
+        );
+        for lit in &lits {
+            if let EnumLitWire::Str(s) = &lit.wire {
+                b.push_str(&format!("            Self::{} => {s:?},\n", lit.ident));
+            }
+        }
+        b.push_str("            Self::Other(__s) => __s.as_str(),\n        }\n    }\n\n");
+        b.push_str(
+            "    /// This constant for a wire string, tolerating an unknown token\n    \
+             /// as [`Self::Other`] (total — never fails).\n    #[must_use]\n    \
+             pub fn from_wire(__s: &str) -> Self {\n        match __s {\n",
+        );
+        for lit in &lits {
+            if let EnumLitWire::Str(s) = &lit.wire {
+                b.push_str(&format!("            {s:?} => Self::{},\n", lit.ident));
+            }
+        }
+        b.push_str("            _ => Self::Other(__s.to_owned()),\n        }\n    }\n}\n\n");
+    }
+
+    // Strict `TryFrom` seam (never yields `Other`).
+    if is_int {
+        b.push_str(&format!(
+            "impl ::core::convert::TryFrom<i64> for {ty} {{\n    type Error = {err_ty};\n\n    \
+             /// # Errors\n    /// Returns [`{err_ty}`] when `__v` is not a `{spec}` value\n    \
+             /// (unlike [`Self::from_value`], which is total).\n    \
+             fn try_from(__v: i64) -> ::core::result::Result<Self, Self::Error> {{\n        match __v {{\n"
+        ));
+        for lit in &lits {
+            if let EnumLitWire::Int(v) = &lit.wire {
+                b.push_str(&format!(
+                    "            {v} => ::core::result::Result::Ok(Self::{}),\n",
+                    lit.ident
+                ));
+            }
+        }
+        b.push_str(&format!(
+            "            _ => ::core::result::Result::Err({err_ty}(__v)),\n        }}\n    }}\n}}\n\n"
+        ));
+    } else {
+        b.push_str(&format!(
+            "impl ::core::convert::TryFrom<&str> for {ty} {{\n    type Error = {err_ty};\n\n    \
+             /// # Errors\n    /// Returns [`{err_ty}`] when `__s` is not a `{spec}` value\n    \
+             /// (unlike [`Self::from_wire`], which is total).\n    \
+             fn try_from(__s: &str) -> ::core::result::Result<Self, Self::Error> {{\n        match __s {{\n"
+        ));
+        for lit in &lits {
+            if let EnumLitWire::Str(s) = &lit.wire {
+                b.push_str(&format!(
+                    "            {s:?} => ::core::result::Result::Ok(Self::{}),\n",
+                    lit.ident
+                ));
+            }
+        }
+        b.push_str(&format!(
+            "            _ => ::core::result::Result::Err({err_ty}(__s.to_owned())),\n        }}\n    }}\n}}\n\n"
+        ));
+    }
+
+    // Byte-identical serde (see the fn doc for the proof).
+    b.push_str(&format!(
+        "impl ::serde::Serialize for {ty} {{\n    \
+         fn serialize<S>(&self, serializer: S) -> ::core::result::Result<S::Ok, S::Error>\n    \
+         where\n        S: ::serde::Serializer,\n    {{\n"
+    ));
+    if is_int {
+        b.push_str("        serializer.serialize_i32(self.value())\n    }\n}\n\n");
+    } else {
+        b.push_str("        serializer.serialize_str(self.as_str())\n    }\n}\n\n");
+    }
+    b.push_str(&format!(
+        "impl<'de> ::serde::Deserialize<'de> for {ty} {{\n    \
+         fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>\n    \
+         where\n        D: ::serde::Deserializer<'de>,\n    {{\n"
+    ));
+    if is_int {
+        b.push_str(
+            "        let __v = <i32 as ::serde::Deserialize>::deserialize(deserializer)?;\n        \
+             ::core::result::Result::Ok(Self::from_value(__v))\n    }\n}\n\n",
+        );
+    } else {
+        b.push_str(
+            "        let __s = <::std::string::String as ::serde::Deserialize>::deserialize(deserializer)?;\n        \
+             ::core::result::Result::Ok(Self::from_wire(&__s))\n    }\n}\n\n",
+        );
+    }
+
+    // The strict-seam error type (hand-rolled Display + Error, no `thiserror`).
+    b.push_str(&format!(
+        "/// The error returned by [`{ty}::try_from`] for a value outside the `{spec}`\n\
+         /// constant set.\n#[derive(Debug, Clone, PartialEq, Eq)]\npub struct {err_ty}(pub {err_inner});\n\n"
+    ));
+    let fmt = if is_int {
+        format!("unknown {spec} value: {{}}")
+    } else {
+        format!("unknown {spec} value: {{:?}}")
+    };
+    b.push_str(&format!(
+        "impl ::core::fmt::Display for {err_ty} {{\n    \
+         fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {{\n        \
+         ::core::write!(f, {fmt:?}, self.0)\n    }}\n}}\n\n"
+    ));
+    b.push_str(&format!("impl ::std::error::Error for {err_ty} {{}}\n"));
+    b
+}
+
 // ── import + header helpers ──────────────────────────────────────────────────
 
 /// Precise `use` lines for a struct's referenced spec types: `crate::…` for
@@ -1984,9 +2231,21 @@ pub(crate) enum XmlType {
         /// the intermediate variant (`DvText`), which recurses.
         dispatch: Vec<(String, String)>,
     },
-    /// A transparent newtype over a primitive (`VALIDITY_KIND(String)`) — writes
-    /// its inner value as element text.
+    /// A transparent newtype over a primitive — writes its inner value as
+    /// element text. No enumeration class emits as a newtype anymore (they route
+    /// to [`XmlType::EnumLiterals`]); kept for a future genuine primitive alias.
     Newtype { spec: String, rust: String },
+    /// A BMM enumeration emitted as a typed enum (`VALIDITY_KIND`,
+    /// `PROPORTION_KIND`) — writes its wire token (`as_str`) or integer (`value`)
+    /// as element text; reads the bare primitive back through `from_wire`/
+    /// `from_value`.
+    EnumLiterals {
+        spec: String,
+        rust: String,
+        /// `true` for a STRING-underlying enum (`as_str`/`from_wire`), `false`
+        /// for an INTEGER-underlying enum (`value`/`from_value`).
+        string_backed: bool,
+    },
 }
 
 impl Model {
@@ -2073,6 +2332,14 @@ impl Model {
         let Some(class) = self.get(name) else {
             return false;
         };
+        // A BMM enumeration is a bare scalar on the wire (string/int), never a
+        // `_type`-tagged object — so it is never a `_type`-dispatch target. This
+        // must precede the `enum_variants` check below: `PROPORTION_KIND` has a
+        // spurious concrete descendant (`DV_PROPORTION` inherits it in the RM
+        // BMM), which would otherwise report `true`.
+        if class.enumeration.is_some() {
+            return false;
+        }
         if !self.enum_variants(name).is_empty() {
             return true; // PolyEnum — the `{Name}` enum + `{Name}Data` both tag.
         }
@@ -2153,6 +2420,11 @@ impl Model {
                         dispatch,
                     });
                 }
+                Emission::EnumLiterals(enumeration) => out.push(XmlType::EnumLiterals {
+                    spec: name.clone(),
+                    rust,
+                    string_backed: enumeration.underlying_type != "INTEGER",
+                }),
                 Emission::Newtype(_) => out.push(XmlType::Newtype {
                     spec: name.clone(),
                     rust,

@@ -553,6 +553,26 @@ pub(crate) fn emit_to_xml(
                  w.write_text_element(tag, &self.0.to_string())\n}}\n}}\n\n"
             );
         }
+        XmlType::EnumLiterals {
+            rust,
+            string_backed,
+            ..
+        } => {
+            // Write the enum's wire token/integer as element text — byte-identical
+            // to the primitive it replaces (`as_str` = the constant token, `value`
+            // = the constant integer; the verbatim payload for `Other`).
+            let text = if *string_backed {
+                "w.write_text_element(tag, self.as_str())"
+            } else {
+                "w.write_text_element(tag, &self.value().to_string())"
+            };
+            let _ = write!(
+                b,
+                "impl crate::xml::runtime::ToXml for {prelude}::{rust} {{\n\
+                 fn write_xml(&self, w: &mut crate::xml::runtime::XmlWriter, tag: &str, _declared: Option<&str>) -> Result<(), crate::xml::runtime::XmlError> {{\n\
+                 {text}\n}}\n}}\n\n"
+            );
+        }
     }
 }
 
@@ -783,6 +803,29 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
                 "impl crate::xml::runtime::FromXml for {prelude}::{rust} {{\n\
                  fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
                  Ok({prelude}::{rust}(crate::xml::runtime::FromXml::from_xml(reader, start)?))\n}}\n}}\n\n"
+            );
+        }
+        XmlType::EnumLiterals {
+            rust,
+            string_backed,
+            ..
+        } => {
+            // Read the bare primitive back, then map it through the total
+            // `from_wire`/`from_value` (an unknown token/integer becomes `Other`).
+            let body = if *string_backed {
+                format!(
+                    "let __s = <::std::string::String as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\nOk({prelude}::{rust}::from_wire(&__s))"
+                )
+            } else {
+                format!(
+                    "let __v = <i32 as crate::xml::runtime::FromXml>::from_xml(reader, start)?;\nOk({prelude}::{rust}::from_value(__v))"
+                )
+            };
+            let _ = write!(
+                b,
+                "impl crate::xml::runtime::FromXml for {prelude}::{rust} {{\n\
+                 fn from_xml(reader: &mut crate::xml::runtime::XmlReader, start: &crate::xml::runtime::StartTag) -> Result<Self, crate::xml::runtime::XmlError> {{\n\
+                 {body}\n}}\n}}\n\n"
             );
         }
     }

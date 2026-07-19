@@ -491,7 +491,7 @@ fn assemble_rm_overlay(rm_overlay: &OdinValue) -> RmOverlay {
                 RmAttributeVisibility {
                     visibility: obj
                         .and_then(|o| string_of(o.get("visibility")))
-                        .map(VisibilityType),
+                        .map(|s| VisibilityType::from_wire(&s)),
                     alias: obj.and_then(|o| o.get("alias")).map(term_code_of),
                 },
             );

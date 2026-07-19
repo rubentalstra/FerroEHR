@@ -210,7 +210,7 @@ impl BelBuilder for AmBuilder {
         };
         Ok(Expression::ExprForAll(Box::new(ExprForAll {
             precedence_overridden: None,
-            operator: OperatorKind("for_all".to_owned()),
+            operator: OperatorKind::ForAll,
             symbol: Some("for_all".to_owned()),
             condition: Box::new(Assertion {
                 tag: None,

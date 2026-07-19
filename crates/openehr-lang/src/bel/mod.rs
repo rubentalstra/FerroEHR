@@ -351,7 +351,7 @@ impl BelBuilder for BeomBuilder {
         Ok(Expression::ExprForAll(Box::new(
             crate::beom::core::expr_for_all::ExprForAll {
                 precedence_overridden: None,
-                operator: OperatorKind("for_all".to_owned()),
+                operator: OperatorKind::ForAll,
                 symbol: Some("for_all".to_owned()),
                 condition: Box::new(Assertion {
                     tag: None,

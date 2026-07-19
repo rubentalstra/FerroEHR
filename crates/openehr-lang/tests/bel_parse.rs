@@ -19,7 +19,7 @@ fn one_assertion(src: &str) -> Expression {
 fn binary(e: &Expression) -> (&str, &Expression, &Expression) {
     match e {
         Expression::ExprBinaryOperator(b) => {
-            (b.operator.0.as_str(), &b.left_operand, &b.right_operand)
+            (b.operator.as_str(), &b.left_operand, &b.right_operand)
         }
         other => panic!("expected a binary operator, got {other:?}"),
     }
@@ -94,7 +94,7 @@ fn symbol_and_text_operator_forms_are_equivalent() {
 fn not_unary_both_forms() {
     for src in ["not a", "~a", "\u{00AC}a"] {
         match one_assertion(src) {
-            Expression::ExprUnaryOperator(u) => assert_eq!(u.operator.0, "not"),
+            Expression::ExprUnaryOperator(u) => assert_eq!(u.operator.as_str(), "not"),
             other => panic!("{src:?}: expected unary not, got {other:?}"),
         }
     }
@@ -104,7 +104,7 @@ fn not_unary_both_forms() {
 fn exists_path_is_unary() {
     match one_assertion("exists /data/events") {
         Expression::ExprUnaryOperator(u) => {
-            assert_eq!(u.operator.0, "exists");
+            assert_eq!(u.operator.as_str(), "exists");
             assert!(is_path(&u.operand, "/data/events"));
         }
         other => panic!("expected unary exists, got {other:?}"),

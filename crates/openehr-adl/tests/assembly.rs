@@ -15,6 +15,7 @@ use openehr_adl::assemble::{parse_artefact, regression_tag};
 use openehr_adl::printer::print;
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::am24::aom2::rm_overlay::visibility_type::VisibilityType;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
 
@@ -174,7 +175,7 @@ fn rm_overlay_maps_visibility_and_alias() {
         let vis = rm.rm_visibility.as_ref().expect("rm_visibility");
         let entry = vis.get("/context/other_context").expect("path entry");
         assert_eq!(
-            entry.visibility.as_ref().map(|v| v.0.as_str()),
+            entry.visibility.as_ref().map(VisibilityType::as_str),
             Some("hide")
         );
         assert_eq!(

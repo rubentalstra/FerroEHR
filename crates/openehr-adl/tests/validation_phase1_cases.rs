@@ -254,7 +254,7 @@ fn vrmvp_and_vrmvav_rm_overlay() {
     map.insert(
         "/element_attr[id99]".to_owned(),
         RmAttributeVisibility {
-            visibility: Some(VisibilityType("hide".to_owned())),
+            visibility: Some(VisibilityType::Hide),
             alias: Some(TerminologyCode {
                 terminology_id: "local".to_owned(),
                 terminology_version: None,
