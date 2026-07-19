@@ -77,32 +77,71 @@ fn proportion_kind_consts(model: &Model) -> String {
     b
 }
 
-/// The pending-adjudication register: every RM class invariant the
-/// assertion-dialect classifier marks `runtime-hook-missing`, one doc line each,
-/// sorted `(class, name)`. Keeps the generated file honest — it names every
-/// invariant no core realizes yet and why (the missing runtime hook).
+/// The class-invariant runtime-hook register, split by adjudication verdict.
+///
+/// Every RM class invariant the assertion-dialect classifier marks
+/// `runtime-hook-missing` needs a runtime lookup the pure `openehr-rm` core
+/// cannot perform (no `openehr-term` dependency). Since the INV-UNIFY wiring the
+/// terminology/code-set family is **enforced at the wire-boundary dispatcher**
+/// (`openehr-its` `rm_terminology::validate_rm_terminology`, run by
+/// `validate_rm_value` as a post-core check, backed by the openEHR terminology
+/// bundle, TERM 3.1.0), audited clean against the whole corpus before
+/// enforcement. Only the versioned-object aggregate invariants stay unrealized
+/// (they are a versioning/service-layer concern, not a property of one node).
+/// Both groups are named here so nothing the classifier flagged is silently
+/// dropped, sorted `(class, name)`.
 fn pending_register(own_schema: &BmmSchema) -> String {
-    let mut hooks: Vec<(String, String, &'static str)> = Vec::new();
+    let mut enforced: Vec<(String, String, &'static str)> = Vec::new();
+    let mut aggregate: Vec<(String, String, &'static str)> = Vec::new();
     for (class, def) in &own_schema.classes {
         for (name, expr) in &def.invariants {
             if let Bucket::RuntimeHookMissing(reason) = classify(expr) {
-                hooks.push((class.clone(), name.clone(), reason));
+                // The versioned-object aggregate invariants stay pending; the
+                // terminology-service / code-set family is now enforced at the
+                // dispatcher.
+                if reason == "versioned-object aggregate model" {
+                    aggregate.push((class.clone(), name.clone(), reason));
+                } else {
+                    enforced.push((class.clone(), name.clone(), reason));
+                }
             }
         }
     }
-    hooks.sort();
+    enforced.sort();
+    aggregate.sort();
+
     let mut b = String::from(
+        "//!\n\
+         //! # Terminology-backed invariants (enforced at the dispatcher, openEHR-its)\n\
+         //!\n\
+         //! These BMM class invariants bind a coded value to an openEHR terminology\n\
+         //! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`).\n\
+         //! The pure `openehr-rm` core defers them (it has no `openehr-term`\n\
+         //! dependency); they are realized at the wire-boundary dispatcher —\n\
+         //! `openehr-its` `rm_terminology::validate_rm_terminology`, run by\n\
+         //! `validate_rm_value` as a post-core check over the openEHR terminology\n\
+         //! bundle (TERM 3.1.0). Enforcement was audited clean against the whole\n\
+         //! corpus first, so none newly rejects previously-accepted data:\n\
+         //!\n",
+    );
+    for (class, name, reason) in &enforced {
+        b.push_str(&format!(
+            "//! - `{class}.{name}` — enforced at the dispatcher ({reason}).\n"
+        ));
+    }
+    b.push_str(
         "//!\n\
          //! # Pending adjudication (runtime-hook-missing)\n\
          //!\n\
-         //! These BMM class invariants are structurally within the dialect but each\n\
-         //! needs a runtime hook the core layer cannot yet call (the openEHR\n\
-         //! terminology service, a code-set, the demographic repository, or the\n\
-         //! versioned-object aggregate model). No core realizes them here; they are\n\
-         //! named so nothing is silently dropped:\n\
+         //! The VERSIONED_OBJECT aggregate invariants quantify over the whole\n\
+         //! version container (`all_versions`, `all_version_ids`, `version_count`,\n\
+         //! `latest_version`) — a property of the versioning/service layer, not of\n\
+         //! any single stored value node — so no per-node core can honestly\n\
+         //! evaluate them (RM `common versioned_object.adoc` §Invariants). They stay\n\
+         //! unrealized here:\n\
          //!\n",
     );
-    for (class, name, reason) in &hooks {
+    for (class, name, reason) in &aggregate {
         b.push_str(&format!("//! - `{class}.{name}` — {reason}.\n"));
     }
     b
@@ -157,17 +196,26 @@ const MODULE_DOC_INTRO: &str = "\
 /// aggregate constraints realized outside the RM-crate core layer).
 const MODULE_DOC_EXCLUDED: &str = "\
 //!
-//! # Explicitly excluded
+//! # Explicitly excluded (adjudicated — realized outside the core layer)
 //!
-//! These RM invariants are not emitted even as pending-register entries: they
-//! are aggregate/structural constraints realized outside the RM-crate invariant
-//! core layer (the service/versioning layer, or structural typing):
+//! These RM invariants are not emitted even as pending-register entries: each is
+//! an aggregate, cross-object, or structural constraint that no single stored
+//! value node can honestly evaluate, so it is realized elsewhere (the EHR /
+//! versioning service layer, or structural typing):
 //!
-//! - `EHR.Ehr_status_valid`, `EHR.Ehr_access_valid`, `EHR.Directory_valid` —
-//!   cross-object references resolved by the EHR service, not on the value.
-//! - `VERSIONED_OBJECT.Uid_validity`, `VERSION.Preceding_version_uid_validity`,
-//!   `REVISION_HISTORY_ITEM.Audit_valid` — the versioning aggregate model.
-//! - `REFERENCE_RANGE.Range_is_simple` — a structural interval-shape constraint.
+//! - `EHR.Ehr_status_valid`, `EHR.Ehr_access_valid`, `EHR.Directory_valid`
+//!   (RM `ehr ehr.adoc` §Invariants) — each asserts a cross-object reference
+//!   (`ehr_status`/`ehr_access`/`directory` resolve to the right versioned
+//!   object); resolved by the EHR service against the store, not present on the
+//!   value being validated.
+//! - `VERSIONED_OBJECT.Uid_validity` (RM `common versioned_object.adoc`),
+//!   `VERSION.Preceding_version_uid_validity` (RM `common version.adoc`),
+//!   `REVISION_HISTORY_ITEM.Audit_valid` (RM `common revision_history_item.adoc`)
+//!   — the versioning aggregate / audit chain, owned by the versioning layer's
+//!   commit path, not by a per-node RM invariant.
+//! - `REFERENCE_RANGE.Range_is_simple` (RM `data_types reference_range.adoc`) — a
+//!   structural interval-shape constraint the typed `DV_INTERVAL` model already
+//!   enforces at deserialize, so no runtime check is needed.
 ";
 
 /// The imports the cores rely on, from the hand-written `validate.rs` parent.

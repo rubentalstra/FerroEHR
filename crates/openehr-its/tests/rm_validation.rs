@@ -19,7 +19,10 @@
 //! otherwise).
 
 use openehr_base::validate::InvariantViolation;
-use openehr_its::rm_validate::{validate_rm_value, validate_rm_value_typed};
+use openehr_its::rm_terminology::validate_rm_terminology;
+use openehr_its::rm_validate::{
+    validate_rm_invariants, validate_rm_value, validate_rm_value_typed,
+};
 use openehr_rm::validate::try_fast_validate;
 use serde_json::{Value, json};
 
@@ -32,8 +35,18 @@ fn typed(value: &Value) -> Vec<InvariantViolation> {
     out
 }
 
-/// Run the public two-tier entry point.
+/// Run the two-tier **core** (fast + typed) entry point — the tier the
+/// fast-vs-typed equivalence property pins. The terminology-backed layer
+/// ([`validate_rm_terminology`]) is orthogonal and is exercised separately, so
+/// the equivalence assertions here compare core against core.
 fn two_tier(value: &Value) -> Vec<InvariantViolation> {
+    let mut out = Vec::new();
+    validate_rm_invariants(value, &mut out);
+    out
+}
+
+/// Run the full unified public entry point (core + terminology).
+fn full(value: &Value) -> Vec<InvariantViolation> {
     let mut out = Vec::new();
     validate_rm_value(value, &mut out);
     out
@@ -473,4 +486,233 @@ fn ips_nodes_ride_the_fast_path() {
         fast * 10 >= dispatched * 9,
         "fast-path coverage regressed: {fast} fast of {dispatched} hot nodes"
     );
+}
+
+// ── terminology-backed invariants (INV-UNIFY) ────────────────────────────────
+//
+// The dispatcher-level terminology hook (`rm_terminology::validate_rm_terminology`,
+// run by `validate_rm_value` as a post-core check). Two properties: the
+// corpus-audit safety property (no valid corpus document is newly rejected) and
+// the per-vocabulary enforcement property (an out-of-vocabulary code IS
+// rejected). Spec: the RM class invariants under
+// `docs/specs/openehr/RM/docs/UML/classes/` resolved against the openEHR
+// terminology bundle (TERM 3.1.0).
+
+/// A bare `CODE_PHRASE` for an external (ISO/IANA) code-set slot.
+fn code_phrase(terminology: &str, code: &str) -> Value {
+    json!({
+        "_type": "CODE_PHRASE",
+        "terminology_id": {"_type": "TERMINOLOGY_ID", "value": terminology},
+        "code_string": code,
+    })
+}
+
+/// A `DV_CODED_TEXT` for an openEHR-group slot.
+fn coded(terminology: &str, code: &str) -> Value {
+    json!({
+        "_type": "DV_CODED_TEXT", "value": "x",
+        "defining_code": code_phrase(terminology, code),
+    })
+}
+
+fn terminology_of(ty: &str, value: &Value) -> Vec<InvariantViolation> {
+    let mut out = Vec::new();
+    validate_rm_terminology(ty, value, &mut out);
+    out
+}
+
+/// **Corpus audit (the enforce-safety property).** Running the terminology hook
+/// over every `_type` node of the whole valid corpus produces ZERO violations:
+/// enforcing these invariants at the dispatcher never rejects a document the
+/// repository already accepts. (This is the per-invariant AUDIT-mode sweep that
+/// clears every wired invariant for enforcement — a corpus-breaking invariant
+/// would surface here as a concrete finding rather than being enforced.)
+#[test]
+fn corpus_terminology_audit_is_clean() {
+    let mut total = 0usize;
+    let mut findings: Vec<String> = Vec::new();
+    for path in corpus_files() {
+        let text = std::fs::read_to_string(&path).expect("read corpus file");
+        let Ok(doc) = serde_json::from_str::<Value>(&text) else {
+            continue;
+        };
+        let mut nodes = Vec::new();
+        collect_nodes(&doc, &mut nodes);
+        for node in nodes {
+            let ty = node.get("_type").and_then(Value::as_str).unwrap_or("");
+            let v = terminology_of(ty, node);
+            total += 1;
+            for iv in v {
+                findings.push(format!(
+                    "{}: {ty} {} — {}",
+                    path.file_name().and_then(|s| s.to_str()).unwrap_or("?"),
+                    iv.path,
+                    iv.message,
+                ));
+            }
+        }
+    }
+    assert!(total > 3_000, "expected a real corpus, saw {total} nodes");
+    assert!(
+        findings.is_empty(),
+        "terminology enforcement would reject {} valid corpus node(s) — \
+         adjudicate each as EXCLUDED-PENDING before enforcing:\n{}",
+        findings.len(),
+        findings.join("\n"),
+    );
+    eprintln!("terminology corpus audit: {total} nodes, all clean");
+}
+
+/// The full unified entry (`validate_rm_value`) equals core + terminology on a
+/// coded node: a valid code adds nothing beyond the core invariants, an invalid
+/// code adds exactly the terminology violation.
+#[test]
+fn full_entry_is_core_plus_terminology() {
+    // A valid DV_TEXT.encoding adds no terminology violation over the core.
+    let good = json!({"_type": "DV_TEXT", "value": "x",
+                      "encoding": code_phrase("IANA_character-sets", "UTF-8")});
+    assert_eq!(full(&good), two_tier(&good), "valid encoding: core == full");
+
+    // An invalid encoding adds exactly one terminology violation over the core.
+    let bad = json!({"_type": "DV_TEXT", "value": "x",
+                     "encoding": code_phrase("IANA_character-sets", "NOT-A-CHARSET")});
+    let core = two_tier(&bad);
+    let extra: Vec<_> = full(&bad)
+        .into_iter()
+        .filter(|iv| !core.contains(iv))
+        .collect();
+    assert_eq!(
+        extra.len(),
+        1,
+        "one extra terminology violation, got {extra:?}"
+    );
+    assert!(
+        extra[0].message.contains("Encoding_valid"),
+        "expected Encoding_valid, got {extra:?}"
+    );
+}
+
+/// Group bindings (`has_code_for_group_id`): an out-of-group openEHR code is
+/// rejected, a valid one is clean, and a non-`openehr` terminology binding is
+/// out of scope (skipped).
+#[test]
+fn terminology_group_enforcement() {
+    // COMPOSITION.category (composition_category).
+    assert!(
+        terminology_of(
+            "COMPOSITION",
+            &json!({"_type": "COMPOSITION", "category": coded("openehr", "99999")})
+        )
+        .iter()
+        .any(|iv| iv.message.contains("Category_validity")),
+        "bad category must be rejected"
+    );
+    assert!(
+        terminology_of(
+            "COMPOSITION",
+            &json!({"_type": "COMPOSITION", "category": coded("openehr", "433")})
+        )
+        .is_empty(),
+        "valid category 433 must be clean"
+    );
+    // A non-openehr terminology binding is out of scope for the group check.
+    assert!(
+        terminology_of(
+            "COMPOSITION",
+            &json!({"_type": "COMPOSITION", "category": coded("local", "99999")})
+        )
+        .is_empty(),
+        "non-openehr terminology is out of scope for the openEHR-group check"
+    );
+    // PARTY_RELATED.relationship, AUDIT_DETAILS.change_type, ATTESTATION.reason,
+    // ISM_TRANSITION.current_state, TERM_MAPPING.purpose, VERSION.lifecycle_state.
+    for (ty, field, invariant) in [
+        ("PARTY_RELATED", "relationship", "Relationship_valid"),
+        ("AUDIT_DETAILS", "change_type", "Change_type_valid"),
+        ("ATTESTATION", "reason", "Reason_valid"),
+        ("ISM_TRANSITION", "current_state", "Current_state_valid"),
+        ("TERM_MAPPING", "purpose", "Purpose_valid"),
+        (
+            "ORIGINAL_VERSION",
+            "lifecycle_state",
+            "Lifecycle_state_valid",
+        ),
+        ("PARTICIPATION", "function", "Function_valid"),
+        ("PARTICIPATION", "mode", "Mode_valid"),
+    ] {
+        let node = json!({"_type": ty, field: coded("openehr", "99999")});
+        assert!(
+            terminology_of(ty, &node)
+                .iter()
+                .any(|iv| iv.message.contains(invariant)),
+            "{ty}.{field} bad code must trip {invariant}"
+        );
+    }
+}
+
+/// Code-set bindings (`code_set(id).has_code`): the code value is validated
+/// against the set regardless of the stated terminology id; a member is clean.
+#[test]
+fn terminology_code_set_enforcement() {
+    // COMPOSITION.language (ISO 639-1) + .territory (ISO 3166-1).
+    let bad = json!({
+        "_type": "COMPOSITION",
+        "language": code_phrase("ISO_639-1", "zz"),
+        "territory": code_phrase("ISO_3166-1", "ZZ"),
+    });
+    let v = terminology_of("COMPOSITION", &bad);
+    assert!(v.iter().any(|iv| iv.message.contains("Language_valid")));
+    assert!(v.iter().any(|iv| iv.message.contains("Territory_valid")));
+    let good = json!({
+        "_type": "COMPOSITION",
+        "language": code_phrase("ISO_639-1", "en"),
+        "territory": code_phrase("ISO_3166-1", "US"),
+    });
+    assert!(terminology_of("COMPOSITION", &good).is_empty());
+
+    // DV_TEXT.encoding (IANA character sets), DV_QUANTITY.normal_status,
+    // DV_MULTIMEDIA.media_type + compression/integrity algorithms.
+    assert!(
+        terminology_of(
+            "DV_TEXT",
+            &json!({"_type": "DV_TEXT", "value": "x",
+                    "encoding": code_phrase("IANA_character-sets", "NOT-A-CHARSET")})
+        )
+        .iter()
+        .any(|iv| iv.message.contains("Encoding_valid"))
+    );
+    assert!(
+        terminology_of(
+            "DV_QUANTITY",
+            &json!({"_type": "DV_QUANTITY", "magnitude": 1.0, "units": "kg",
+                    "normal_status": code_phrase("openehr", "X")})
+        )
+        .iter()
+        .any(|iv| iv.message.contains("Normal_status_validity"))
+    );
+    assert!(
+        terminology_of(
+            "DV_MULTIMEDIA",
+            &json!({"_type": "DV_MULTIMEDIA", "media_type": code_phrase("IANA_media-types", "no/such")})
+        )
+        .iter()
+        .any(|iv| iv.message.contains("Media_type_valid"))
+    );
+}
+
+/// An uncoded slot (plain `DV_TEXT` participation function) or an absent optional
+/// slot is skipped — the `generating_type = DV_CODED_TEXT` / `/= Void`
+/// antecedents guard the terminology check.
+#[test]
+fn terminology_uncoded_and_absent_slots_are_skipped() {
+    // PARTICIPATION.function as a plain DV_TEXT (no defining_code): skipped.
+    let plain = json!({
+        "_type": "PARTICIPATION",
+        "function": {"_type": "DV_TEXT", "value": "attending physician"},
+    });
+    assert!(terminology_of("PARTICIPATION", &plain).is_empty());
+    // Absent optional slot (ISM_TRANSITION.transition): skipped.
+    let no_transition =
+        json!({"_type": "ISM_TRANSITION", "current_state": coded("openehr", "245")});
+    assert!(terminology_of("ISM_TRANSITION", &no_transition).is_empty());
 }

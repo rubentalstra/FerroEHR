@@ -15,6 +15,24 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+- **RM terminology-backed invariant validation.** Composition (and any RM
+  value) validation now enforces the openEHR terminology-service and code-set
+  RM class invariants at the wire-boundary dispatcher, unified into a single
+  hook (`openehr-its`) that every validation consumer inherits. The 30 wired
+  invariants (each audited clean against the whole corpus before enforcement):
+  `COMPOSITION` category/language/territory, `EVENT_CONTEXT` setting,
+  `ELEMENT` null-flavour, `ISM_TRANSITION` current-state/transition,
+  `PARTICIPATION` + `EXTRACT_PARTICIPATION` function/mode, `INTERVAL_EVENT`
+  math-function, `TERM_MAPPING` purpose, `AUDIT_DETAILS` change-type,
+  `ATTESTATION` reason, `PARTY_RELATED` relationship, `VERSION`
+  lifecycle-state, `ENTRY`/`DV_TEXT` language + encoding, `DV_MULTIMEDIA`
+  media-type/charset/language/compression/integrity algorithms, `DV_PARSABLE`
+  charset/language, `DV_ORDERED` normal-status, and the `AUTHORED_RESOURCE` /
+  `RESOURCE_DESCRIPTION_ITEM` / `TRANSLATION_DETAILS` original-language. An
+  out-of-vocabulary openEHR code is a `422` naming the violated RM invariant;
+  HTTP status codes are unchanged.
+
 ### Changed
 - **RM validation invariant messages now carry the spec's (BMM) invariant
   names.** Three class-invariant violation messages were reconciled from their

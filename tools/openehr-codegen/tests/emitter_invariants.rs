@@ -514,3 +514,59 @@ fn emitted_classes_render_their_bmm_constants() {
         );
     }
 }
+
+/// The register records the INV-UNIFY adjudication state: the terminology /
+/// code-set family is `enforced at the dispatcher` and only the four
+/// `VERSIONED_OBJECT` aggregate invariants stay `runtime-hook-missing`. Pins the
+/// split so a regression (an invariant silently sliding back to "pending", or the
+/// enforced count drifting) fails the suite.
+#[test]
+fn register_records_terminology_invariants_as_enforced() {
+    let files = testsupport::render_all_to_memory().unwrap();
+    let gen_file = files
+        .get("openehr-rm/validate/generated.rs")
+        .expect("emit-validate did not produce validate/generated.rs");
+
+    assert!(
+        gen_file.contains("# Terminology-backed invariants (enforced at the dispatcher"),
+        "the enforced-at-dispatcher register heading is missing",
+    );
+
+    // Every runtime-hook-missing invariant is adjudicated as either enforced at
+    // the dispatcher (terminology/code-set) or a versioned-object aggregate.
+    let rows = testsupport::classify_invariants("rm").unwrap();
+    let hook: Vec<_> = rows
+        .iter()
+        .filter(|r| r.bucket == "runtime-hook-missing")
+        .collect();
+    let mut enforced = 0usize;
+    let mut aggregate = 0usize;
+    let mut unadjudicated: Vec<String> = Vec::new();
+    for r in &hook {
+        let enforced_line = format!("`{}.{}` — enforced at the dispatcher", r.class, r.name);
+        let aggregate_line = format!(
+            "`{}.{}` — versioned-object aggregate model",
+            r.class, r.name
+        );
+        if gen_file.contains(&enforced_line) {
+            enforced += 1;
+        } else if gen_file.contains(&aggregate_line) {
+            aggregate += 1;
+        } else {
+            unadjudicated.push(format!("{}::{}", r.class, r.name));
+        }
+    }
+    assert!(
+        unadjudicated.is_empty(),
+        "invariant(s) carry no adjudication verdict in the register: {unadjudicated:?}",
+    );
+    // 30 terminology/code-set invariants wired to the dispatcher; the 4
+    // `VERSIONED_OBJECT` aggregate invariants stay pending.
+    assert_eq!(enforced, 30, "enforced-at-dispatcher count drifted");
+    assert_eq!(aggregate, 4, "versioned-aggregate pending count drifted");
+    assert_eq!(
+        enforced + aggregate,
+        hook.len(),
+        "register split is not total"
+    );
+}

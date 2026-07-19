@@ -40,60 +40,82 @@
 //! after `history_basic_core`), and DV_ORDERED
 //! `Normal_range_and_status_consistency` (`dv_ordered_impl`).
 //!
+//! # Terminology-backed invariants (enforced at the dispatcher, openEHR-its)
+//!
+//! These BMM class invariants bind a coded value to an openEHR terminology
+//! group (`has_code_for_group_id`) or a code set (`code_set (id).has_code`).
+//! The pure `openehr-rm` core defers them (it has no `openehr-term`
+//! dependency); they are realized at the wire-boundary dispatcher —
+//! `openehr-its` `rm_terminology::validate_rm_terminology`, run by
+//! `validate_rm_value` as a post-core check over the openEHR terminology
+//! bundle (TERM 3.1.0). Enforcement was audited clean against the whole
+//! corpus first, so none newly rejects previously-accepted data:
+//!
+//! - `ATTESTATION.Reason_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `AUDIT_DETAILS.Change_type_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `AUTHORED_RESOURCE.Original_language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `COMPOSITION.Category_validity` — enforced at the dispatcher (openEHR terminology service).
+//! - `COMPOSITION.Language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `COMPOSITION.Territory_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_ENCAPSULATED.Charset_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_ENCAPSULATED.Language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_MULTIMEDIA.Compression_algorithm_validity` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_MULTIMEDIA.Integrity_check_algorithm_validity` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_MULTIMEDIA.Media_type_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_ORDERED.Normal_status_validity` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_TEXT.Encoding_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `DV_TEXT.Language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `ELEMENT.Inv_null_flavour_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `ENTRY.Encoding_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `ENTRY.Language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `EVENT_CONTEXT.Setting_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `EXTRACT_PARTICIPATION.Function_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `EXTRACT_PARTICIPATION.Mode_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `INTERVAL_EVENT.Math_function_validity` — enforced at the dispatcher (openEHR terminology service).
+//! - `ISM_TRANSITION.Current_state_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `ISM_TRANSITION.Transition_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `PARTICIPATION.Function_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `PARTICIPATION.Mode_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `PARTY_RELATED.Relationship_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `RESOURCE_DESCRIPTION_ITEM.Language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `TERM_MAPPING.Purpose_valid` — enforced at the dispatcher (openEHR terminology service).
+//! - `TRANSLATION_DETAILS.Language_valid` — enforced at the dispatcher (openEHR code-set access).
+//! - `VERSION.Lifecycle_state_ valid` — enforced at the dispatcher (openEHR terminology service).
+//!
 //! # Pending adjudication (runtime-hook-missing)
 //!
-//! These BMM class invariants are structurally within the dialect but each
-//! needs a runtime hook the core layer cannot yet call (the openEHR
-//! terminology service, a code-set, the demographic repository, or the
-//! versioned-object aggregate model). No core realizes them here; they are
-//! named so nothing is silently dropped:
+//! The VERSIONED_OBJECT aggregate invariants quantify over the whole
+//! version container (`all_versions`, `all_version_ids`, `version_count`,
+//! `latest_version`) — a property of the versioning/service layer, not of
+//! any single stored value node — so no per-node core can honestly
+//! evaluate them (RM `common versioned_object.adoc` §Invariants). They stay
+//! unrealized here:
 //!
-//! - `ATTESTATION.Reason_valid` — openEHR terminology service.
-//! - `AUDIT_DETAILS.Change_type_valid` — openEHR terminology service.
-//! - `AUTHORED_RESOURCE.Original_language_valid` — openEHR code-set access.
-//! - `COMPOSITION.Category_validity` — openEHR terminology service.
-//! - `COMPOSITION.Language_valid` — openEHR code-set access.
-//! - `COMPOSITION.Territory_valid` — openEHR code-set access.
-//! - `DV_ENCAPSULATED.Charset_valid` — openEHR code-set access.
-//! - `DV_ENCAPSULATED.Language_valid` — openEHR code-set access.
-//! - `DV_MULTIMEDIA.Compression_algorithm_validity` — openEHR code-set access.
-//! - `DV_MULTIMEDIA.Integrity_check_algorithm_validity` — openEHR code-set access.
-//! - `DV_MULTIMEDIA.Media_type_valid` — openEHR code-set access.
-//! - `DV_ORDERED.Normal_status_validity` — openEHR code-set access.
-//! - `DV_TEXT.Encoding_valid` — openEHR code-set access.
-//! - `DV_TEXT.Language_valid` — openEHR code-set access.
-//! - `ELEMENT.Inv_null_flavour_valid` — openEHR terminology service.
-//! - `ENTRY.Encoding_valid` — openEHR code-set access.
-//! - `ENTRY.Language_valid` — openEHR code-set access.
-//! - `EVENT_CONTEXT.Setting_valid` — openEHR terminology service.
-//! - `EXTRACT_PARTICIPATION.Function_valid` — openEHR terminology service.
-//! - `EXTRACT_PARTICIPATION.Mode_valid` — openEHR terminology service.
-//! - `INTERVAL_EVENT.Math_function_validity` — openEHR terminology service.
-//! - `ISM_TRANSITION.Current_state_valid` — openEHR terminology service.
-//! - `ISM_TRANSITION.Transition_valid` — openEHR terminology service.
-//! - `PARTICIPATION.Function_valid` — openEHR terminology service.
-//! - `PARTICIPATION.Mode_valid` — openEHR terminology service.
-//! - `PARTY_RELATED.Relationship_valid` — openEHR terminology service.
-//! - `RESOURCE_DESCRIPTION_ITEM.Language_valid` — openEHR code-set access.
-//! - `TERM_MAPPING.Purpose_valid` — openEHR terminology service.
-//! - `TRANSLATION_DETAILS.Language_valid` — openEHR code-set access.
-//! - `VERSION.Lifecycle_state_ valid` — openEHR terminology service.
 //! - `VERSIONED_OBJECT.All_version_ids_valid` — versioned-object aggregate model.
 //! - `VERSIONED_OBJECT.All_versions_valid` — versioned-object aggregate model.
 //! - `VERSIONED_OBJECT.Latest_version_valid` — versioned-object aggregate model.
 //! - `VERSIONED_OBJECT.Version_count_valid` — versioned-object aggregate model.
 //!
-//! # Explicitly excluded
+//! # Explicitly excluded (adjudicated — realized outside the core layer)
 //!
-//! These RM invariants are not emitted even as pending-register entries: they
-//! are aggregate/structural constraints realized outside the RM-crate invariant
-//! core layer (the service/versioning layer, or structural typing):
+//! These RM invariants are not emitted even as pending-register entries: each is
+//! an aggregate, cross-object, or structural constraint that no single stored
+//! value node can honestly evaluate, so it is realized elsewhere (the EHR /
+//! versioning service layer, or structural typing):
 //!
-//! - `EHR.Ehr_status_valid`, `EHR.Ehr_access_valid`, `EHR.Directory_valid` —
-//!   cross-object references resolved by the EHR service, not on the value.
-//! - `VERSIONED_OBJECT.Uid_validity`, `VERSION.Preceding_version_uid_validity`,
-//!   `REVISION_HISTORY_ITEM.Audit_valid` — the versioning aggregate model.
-//! - `REFERENCE_RANGE.Range_is_simple` — a structural interval-shape constraint.
+//! - `EHR.Ehr_status_valid`, `EHR.Ehr_access_valid`, `EHR.Directory_valid`
+//!   (RM `ehr ehr.adoc` §Invariants) — each asserts a cross-object reference
+//!   (`ehr_status`/`ehr_access`/`directory` resolve to the right versioned
+//!   object); resolved by the EHR service against the store, not present on the
+//!   value being validated.
+//! - `VERSIONED_OBJECT.Uid_validity` (RM `common versioned_object.adoc`),
+//!   `VERSION.Preceding_version_uid_validity` (RM `common version.adoc`),
+//!   `REVISION_HISTORY_ITEM.Audit_valid` (RM `common revision_history_item.adoc`)
+//!   — the versioning aggregate / audit chain, owned by the versioning layer's
+//!   commit path, not by a per-node RM invariant.
+//! - `REFERENCE_RANGE.Range_is_simple` (RM `data_types reference_range.adoc`) — a
+//!   structural interval-shape constraint the typed `DV_INTERVAL` model already
+//!   enforces at deserialize, so no runtime check is needed.
 
 use super::{
     InvariantViolation, invariant_failed, is_integral, valid_magnitude_status, valid_percentage,

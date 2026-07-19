@@ -121,10 +121,9 @@ fn prune_child_nodes(value: &Value) -> Value {
     Value::Object(out)
 }
 
-/// Run the RM class invariants for a single canonical-JSON node, dispatching on
-/// its `_type`. A node with no (or an unrecognised) `_type` runs no invariants
-/// (returns without appending). The composition validator calls this per
-/// node and prefixes the absolute RM path onto each [`InvariantViolation`].
+/// Run the **core** (non-terminology) RM class invariants for a single
+/// canonical-JSON node, dispatching on its `_type`. A node with no (or an
+/// unrecognised) `_type` runs no invariants (returns without appending).
 ///
 /// Two tiers (performance: the RM-invariant pass visits every `_type` node of a
 /// commit, ~1.5k for a populated composition, so the per-node cost is
@@ -139,7 +138,12 @@ fn prune_child_nodes(value: &Value) -> Value {
 ///    **typed dispatch** below ([`validate_rm_value_typed`]), which
 ///    deserializes into the concrete RM type (surfacing `does not conform to
 ///    RM type …` for a structural mismatch) and runs the typed invariants.
-pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
+///
+/// This is the tier the fast-path equivalence battery pins (the fast path must
+/// vouch only when byte-identical to the typed oracle). The terminology-backed
+/// invariants ([`crate::rm_terminology`]) are an orthogonal layer added by
+/// [`validate_rm_value`], not part of the fast/typed equivalence.
+pub fn validate_rm_invariants(value: &Value, out: &mut Vec<InvariantViolation>) {
     let Some(ty) = value.get("_type").and_then(Value::as_str) else {
         return;
     };
@@ -147,6 +151,27 @@ pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
         return;
     }
     validate_rm_value_typed(ty, value, out);
+}
+
+/// Run **all** RM class invariants for a single canonical-JSON node — the core
+/// (fast/typed) invariants ([`validate_rm_invariants`]) plus the
+/// terminology-backed invariants ([`crate::rm_terminology::validate_rm_terminology`],
+/// the openEHR-terminology group and code-set membership checks the pure
+/// `openehr-rm` layer defers). This is the unified dispatcher every consumer
+/// calls; the composition validator invokes it per node and prefixes the
+/// absolute RM path onto each [`InvariantViolation`].
+pub fn validate_rm_value(value: &Value, out: &mut Vec<InvariantViolation>) {
+    let Some(ty) = value.get("_type").and_then(Value::as_str) else {
+        return;
+    };
+    if openehr_rm::validate::try_fast_validate(ty, value, out) {
+        // The fast path handled the core invariants; still run the orthogonal
+        // terminology layer (it dispatches on the same `_type`).
+        crate::rm_terminology::validate_rm_terminology(ty, value, out);
+        return;
+    }
+    validate_rm_value_typed(ty, value, out);
+    crate::rm_terminology::validate_rm_terminology(ty, value, out);
 }
 
 /// The typed dispatch tier of [`validate_rm_value`]: deserialize the node into
