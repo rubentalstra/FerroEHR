@@ -7,6 +7,7 @@
 - [ECC: our own conformance framework](ecc-own-conformance-framework.md) — own numbering/taxonomy, generated data sets, latest-versions-only, no Robot/Python/legacy-CNF mapping ever
 - [Verify crate versions from live sources](verify-crate-versions-live.md) — never pin from training data; lapin is 4.x (owner-corrected twice)
 - [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout develop, start next without asking; never branch while finished work sits unmerged
+- [Vendored corpora fully exercised](vendored-corpora-fully-exercised.md) — owner hard rule: 100% of any vendored test corpus exercised with expected outcomes + coverage gate; adjudicated skips only
 
 Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
 already records (CLAUDE.md, ADR-004/005/008, docs/spec-audit, the blueprint)
