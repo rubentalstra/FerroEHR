@@ -38,6 +38,12 @@ new hand-written spec crate:
     `openehr_lang::bel` + the AOM leaf productions on top (this mirrors
     upstream: base_expressions.g4 sits in the adl grammar set because it
     imports cadl2_primitives — it stays vendored in openehr-adl).
+    **EL is NOT needed** (owner-settled 2026-07-19): ADL2 rules depend on
+    BEL (STABLE); EL is DEVELOPMENT-status and targets Task Planning /
+    guidelines. Where the rules chapter defers operator semantics to the
+    EL text (`master07.11-adl_rulesNEW`), cite the vendored
+    `docs/specs/openehr/LANG/docs/EL/` — a documentation dependency only.
+    If a future roadmap item needs EL, it lands as `openehr_lang::el`.
   - **ODIN lives in `openehr-lang` (owner ruling 2026-07-19):** ODIN is a
     LANG-component spec (`docs/specs/openehr/LANG/docs/odin/`), so the
     full ODIN value tree + self-contained lexer/parser is the new
