@@ -12,6 +12,8 @@ publish = false
 [dependencies]
 logos.workspace = true       # DFA lexer (base_lexer.g4 + adl_keywords.g4)
 thiserror.workspace = true   # typed SyntaxError
+regex.workspace = true       # compile-check cADL C_STRING / slot archetype-id regexes (SCSRE; master04.5)
+serde_json.workspace = true  # default_value payloads (C_DEFINED_OBJECT.default_value: serde_json::Value)
 openehr-base = { path = "../openehr-base" }   # VersionStatus for the parsed HRID
 openehr-am = { path = "../openehr-am" }       # am24 ArchetypeHrid (the identification target type)
 openehr-lang = { path = "../openehr-lang" }   # openehr_lang::odin — the ODIN section parser

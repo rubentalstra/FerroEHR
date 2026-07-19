@@ -5262,6 +5262,8 @@ dependencies = [
  "openehr-am",
  "openehr-base",
  "openehr-lang",
+ "regex",
+ "serde_json",
  "thiserror 2.0.18",
 ]
 
