@@ -17,8 +17,11 @@
 
 pub mod assemble;
 pub mod cadl;
+pub mod codes;
 pub mod error;
 pub mod lexer;
+pub mod paths;
 pub mod printer;
 pub mod rules;
 pub mod source;
+pub mod validate;
