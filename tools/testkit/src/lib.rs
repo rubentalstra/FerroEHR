@@ -351,7 +351,12 @@ async fn template_complete(
     template: &str,
     stamp: &str,
 ) -> Result<bool, TestkitError> {
-    let complete: Option<bool> = sqlx::query_scalar(
+    // The scalar itself is nullable: `shobj_description` is NULL for a
+    // template that exists but has no comment yet (a build in progress in
+    // another process, or a carcass) — `NULL = $2` is NULL, and a
+    // non-nullable decode explodes with `UnexpectedNullError`. NULL means
+    // "not complete", never an error.
+    let complete: Option<Option<bool>> = sqlx::query_scalar(
         "SELECT shobj_description(oid, 'pg_database') = $2 \
          FROM pg_database WHERE datname = $1",
     )
@@ -359,7 +364,7 @@ async fn template_complete(
     .bind(stamp)
     .fetch_optional(admin)
     .await?;
-    Ok(complete == Some(true))
+    Ok(complete.flatten() == Some(true))
 }
 
 /// Build the template under the (already held) advisory lock: re-check,
