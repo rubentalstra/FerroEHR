@@ -12,6 +12,23 @@
 //! is identical to the former table-driven `mount()` adapter (same
 //! `EHR_ACCESS` gate, ABAC PEP, and ATNA audit tagging).
 //!
+//! The `#[utoipa::path]` documentation is spec-exact against the demographic
+//! operation YAMLs (`operations/{agent,person,group,organisation,role}_*.yaml`,
+//! `versioned_party_*.yaml`, `demographic_contribution_*.yaml`, the `*_tags_*`
+//! ops) and their `$ref`d responses/parameters/headers, with the
+//! DEVELOPMENT-status gaps filled from the ITS-REST overview prose
+//! (`docs/overview/Requests_and_responses.md`): the weak `W/` `ETag` MUST, the
+//! `Prefer` `return=minimal|representation|identifier` triad, the
+//! committal-header (`openehr-version`/`openehr-audit-details`) MUST-accept
+//! rule, and the `If-Match` 400/412 rules.
+//! Every versioned response also carries `Last-Modified` from the version's
+//! commit time (overview §"`ETag` and Last-Modified": both SHOULD accompany
+//! versioned resources). Demographic `PARTY`/`PARTY_RELATIONSHIP`
+//! resources are not templated, so a Simplified-Format `Content-Type`/`Accept`
+//! is rejected (`415`/`406` — our own design, since no template governs a
+//! party); this is not in the YAMLs' `Accept_LOCATABLE` enum but is the real
+//! wire ([`super::party`] runs `guard_non_templated` for every op).
+//!
 //! The own-design `PARTY_RELATIONSHIP` extension is *not* here — it lives in
 //! [`super::relationship`] (no ITS-REST operation governs it).
 
@@ -71,10 +88,53 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 
 // ── AGENT ───────────────────────────────────────────────────────────────────
 
-/// Create an `AGENT`. 201 with the created resource.
+/// Create an `AGENT` (`POST /demographic/agent`).
 #[utoipa::path(
     post, path = "/demographic/agent", tag = "AGENT",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created AGENT), or \
+                        `return=identifier` (only the uid)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION (e.g. \
+                        `lifecycle_state.code_string`); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS (committer, \
+                        description, change_type); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
+                        stored set is echoed in the response header."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with this VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The AGENT (RM canonical JSON or XML)."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new version \
+                                      uid (weak `W/` form), `Location` the \
+                                      resource URL. Body per `Prefer`; stored \
+                                      ITEM_TAGs ride the \
+                                      `openehr-item-tag`/`openehr-version-item-tag` \
+                                      response headers.", body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a precondition \
+                                      violation on the submitted AGENT.",
+         body = serde_json::Value),
+        (status = 404, description = "A referenced resource does not exist.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The AGENT is syntactically valid but \
+                                      fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn agent_create(
     State(state): State<AppState>,
@@ -84,13 +144,33 @@ pub(crate) async fn agent_create(
     guarded_dispatch(state, "agent_create", parts, super::dispatch::dispatch).await
 }
 
-/// Read an `AGENT` by uid-based id. 404 when absent.
+/// Retrieve an `AGENT` by uid-based id
+/// (`GET /demographic/agent/{uid_based_id}`).
 #[utoipa::path(
     get, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
+                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
+                        latest / at-time version."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; when the id is a \
+                        `versioned_object_uid`, selects the version extant at \
+                        that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The AGENT (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The AGENT (RM canonical JSON/XML); `ETag` \
+                                      carries the version uid (weak `W/` form), \
+                                      any ITEM_TAGs ride the item-tag response \
+                                      headers.", body = serde_json::Value),
+        (status = 204, description = "The AGENT version at the requested time \
+                                      is deleted."),
+        (status = 404, description = "Unknown AGENT, or no version at the \
+                                      requested `version_at_time`.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn agent_get(
@@ -101,11 +181,55 @@ pub(crate) async fn agent_get(
     guarded_dispatch(state, "agent_get", parts, super::dispatch::dispatch).await
 }
 
-/// Update an `AGENT` (If-Match required). 200 with the updated resource.
+/// Update an `AGENT` (`PUT /demographic/agent/{uid_based_id}`).
 #[utoipa::path(
     put, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID `versioned_object_uid` of the AGENT \
+                        to update."),
+        ("If-Match" = String, Header,
+         description = "The latest `version_uid` (the `preceding_version_uid`), \
+                        double-quoted (weak `W/` form also accepted). \
+                        Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation`, or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the new VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new AGENT (RM canonical JSON or XML); any \
+                                `uid` must match the path id."),
+    responses(
+        (status = 200, description = "Updated (`Prefer: return=representation` \
+                                      or `return=identifier`); `ETag`/`Location` \
+                                      carry the new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag`/`Location` carry the new version."),
+        (status = 400, description = "Malformed request, or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown AGENT.", body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The AGENT fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn agent_update(
     State(state): State<AppState>,
@@ -115,11 +239,30 @@ pub(crate) async fn agent_update(
     guarded_dispatch(state, "agent_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete an `AGENT` (If-Match required).
+/// Delete an `AGENT` (`DELETE /demographic/agent/{uid_based_id}`).
 #[utoipa::path(
     delete, path = "/demographic/agent/{uid_based_id}", tag = "AGENT",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
+                        version (the `preceding_version_uid`) to delete."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the delete VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted; `ETag` carries the \
+                                      deleted version uid."),
+        (status = 400, description = "Malformed request, or the AGENT is \
+                                      already deleted.", body = serde_json::Value),
+        (status = 404, description = "Unknown AGENT.", body = serde_json::Value),
+        (status = 409, description = "The supplied `uid_based_id` is not the \
+                                      latest version; `ETag` carries the current \
+                                      latest version uid.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn agent_delete(
     State(state): State<AppState>,
@@ -131,10 +274,53 @@ pub(crate) async fn agent_delete(
 
 // ── GROUP ─────────────────────────────────────────────────────────────────
 
-/// Create a `GROUP`. 201 with the created resource.
+/// Create a `GROUP` (`POST /demographic/group`).
 #[utoipa::path(
     post, path = "/demographic/group", tag = "GROUP",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created GROUP), or \
+                        `return=identifier` (only the uid)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION (e.g. \
+                        `lifecycle_state.code_string`); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS (committer, \
+                        description, change_type); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
+                        stored set is echoed in the response header."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with this VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The GROUP (RM canonical JSON or XML)."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new version \
+                                      uid (weak `W/` form), `Location` the \
+                                      resource URL. Body per `Prefer`; stored \
+                                      ITEM_TAGs ride the \
+                                      `openehr-item-tag`/`openehr-version-item-tag` \
+                                      response headers.", body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a precondition \
+                                      violation on the submitted GROUP.",
+         body = serde_json::Value),
+        (status = 404, description = "A referenced resource does not exist.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The GROUP is syntactically valid but \
+                                      fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn group_create(
     State(state): State<AppState>,
@@ -144,13 +330,33 @@ pub(crate) async fn group_create(
     guarded_dispatch(state, "group_create", parts, super::dispatch::dispatch).await
 }
 
-/// Read a `GROUP` by uid-based id. 404 when absent.
+/// Retrieve a `GROUP` by uid-based id
+/// (`GET /demographic/group/{uid_based_id}`).
 #[utoipa::path(
     get, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
+                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
+                        latest / at-time version."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; when the id is a \
+                        `versioned_object_uid`, selects the version extant at \
+                        that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The GROUP (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The GROUP (RM canonical JSON/XML); `ETag` \
+                                      carries the version uid (weak `W/` form), \
+                                      any ITEM_TAGs ride the item-tag response \
+                                      headers.", body = serde_json::Value),
+        (status = 204, description = "The GROUP version at the requested time \
+                                      is deleted."),
+        (status = 404, description = "Unknown GROUP, or no version at the \
+                                      requested `version_at_time`.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn group_get(
@@ -161,11 +367,55 @@ pub(crate) async fn group_get(
     guarded_dispatch(state, "group_get", parts, super::dispatch::dispatch).await
 }
 
-/// Update a `GROUP` (If-Match required). 200 with the updated resource.
+/// Update a `GROUP` (`PUT /demographic/group/{uid_based_id}`).
 #[utoipa::path(
     put, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID `versioned_object_uid` of the GROUP \
+                        to update."),
+        ("If-Match" = String, Header,
+         description = "The latest `version_uid` (the `preceding_version_uid`), \
+                        double-quoted (weak `W/` form also accepted). \
+                        Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation`, or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the new VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new GROUP (RM canonical JSON or XML); any \
+                                `uid` must match the path id."),
+    responses(
+        (status = 200, description = "Updated (`Prefer: return=representation` \
+                                      or `return=identifier`); `ETag`/`Location` \
+                                      carry the new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag`/`Location` carry the new version."),
+        (status = 400, description = "Malformed request, or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown GROUP.", body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The GROUP fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn group_update(
     State(state): State<AppState>,
@@ -175,11 +425,30 @@ pub(crate) async fn group_update(
     guarded_dispatch(state, "group_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete a `GROUP` (If-Match required).
+/// Delete a `GROUP` (`DELETE /demographic/group/{uid_based_id}`).
 #[utoipa::path(
     delete, path = "/demographic/group/{uid_based_id}", tag = "GROUP",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
+                        version (the `preceding_version_uid`) to delete."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the delete VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted; `ETag` carries the \
+                                      deleted version uid."),
+        (status = 400, description = "Malformed request, or the GROUP is \
+                                      already deleted.", body = serde_json::Value),
+        (status = 404, description = "Unknown GROUP.", body = serde_json::Value),
+        (status = 409, description = "The supplied `uid_based_id` is not the \
+                                      latest version; `ETag` carries the current \
+                                      latest version uid.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn group_delete(
     State(state): State<AppState>,
@@ -191,10 +460,53 @@ pub(crate) async fn group_delete(
 
 // ── ORGANISATION ────────────────────────────────────────────────────────────
 
-/// Create an `ORGANISATION`. 201 with the created resource.
+/// Create an `ORGANISATION` (`POST /demographic/organisation`).
 #[utoipa::path(
     post, path = "/demographic/organisation", tag = "ORGANISATION",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created ORGANISATION), or \
+                        `return=identifier` (only the uid)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION (e.g. \
+                        `lifecycle_state.code_string`); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS (committer, \
+                        description, change_type); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
+                        stored set is echoed in the response header."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with this VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The ORGANISATION (RM canonical JSON or XML)."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new version \
+                                      uid (weak `W/` form), `Location` the \
+                                      resource URL. Body per `Prefer`; stored \
+                                      ITEM_TAGs ride the \
+                                      `openehr-item-tag`/`openehr-version-item-tag` \
+                                      response headers.", body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a precondition \
+                                      violation on the submitted ORGANISATION.",
+         body = serde_json::Value),
+        (status = 404, description = "A referenced resource does not exist.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The ORGANISATION is syntactically valid \
+                                      but fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn organisation_create(
     State(state): State<AppState>,
@@ -210,13 +522,33 @@ pub(crate) async fn organisation_create(
     .await
 }
 
-/// Read an `ORGANISATION` by uid-based id. 404 when absent.
+/// Retrieve an `ORGANISATION` by uid-based id
+/// (`GET /demographic/organisation/{uid_based_id}`).
 #[utoipa::path(
     get, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
+                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
+                        latest / at-time version."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; when the id is a \
+                        `versioned_object_uid`, selects the version extant at \
+                        that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The ORGANISATION (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ORGANISATION (RM canonical JSON/XML); \
+                                      `ETag` carries the version uid (weak `W/` \
+                                      form), any ITEM_TAGs ride the item-tag \
+                                      response headers.", body = serde_json::Value),
+        (status = 204, description = "The ORGANISATION version at the requested \
+                                      time is deleted."),
+        (status = 404, description = "Unknown ORGANISATION, or no version at the \
+                                      requested `version_at_time`.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn organisation_get(
@@ -227,11 +559,57 @@ pub(crate) async fn organisation_get(
     guarded_dispatch(state, "organisation_get", parts, super::dispatch::dispatch).await
 }
 
-/// Update an `ORGANISATION` (If-Match required). 200 with the updated resource.
+/// Update an `ORGANISATION`
+/// (`PUT /demographic/organisation/{uid_based_id}`).
 #[utoipa::path(
     put, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID `versioned_object_uid` of the \
+                        ORGANISATION to update."),
+        ("If-Match" = String, Header,
+         description = "The latest `version_uid` (the `preceding_version_uid`), \
+                        double-quoted (weak `W/` form also accepted). \
+                        Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation`, or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the new VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new ORGANISATION (RM canonical JSON or XML); \
+                                any `uid` must match the path id."),
+    responses(
+        (status = 200, description = "Updated (`Prefer: return=representation` \
+                                      or `return=identifier`); `ETag`/`Location` \
+                                      carry the new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag`/`Location` carry the new version."),
+        (status = 400, description = "Malformed request, or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown ORGANISATION.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The ORGANISATION fails RM/semantic \
+                                      validation.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn organisation_update(
     State(state): State<AppState>,
@@ -247,11 +625,32 @@ pub(crate) async fn organisation_update(
     .await
 }
 
-/// Delete an `ORGANISATION` (If-Match required).
+/// Delete an `ORGANISATION`
+/// (`DELETE /demographic/organisation/{uid_based_id}`).
 #[utoipa::path(
     delete, path = "/demographic/organisation/{uid_based_id}", tag = "ORGANISATION",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
+                        version (the `preceding_version_uid`) to delete."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the delete VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted; `ETag` carries the \
+                                      deleted version uid."),
+        (status = 400, description = "Malformed request, or the ORGANISATION is \
+                                      already deleted.", body = serde_json::Value),
+        (status = 404, description = "Unknown ORGANISATION.",
+         body = serde_json::Value),
+        (status = 409, description = "The supplied `uid_based_id` is not the \
+                                      latest version; `ETag` carries the current \
+                                      latest version uid.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn organisation_delete(
     State(state): State<AppState>,
@@ -269,10 +668,53 @@ pub(crate) async fn organisation_delete(
 
 // ── PERSON ────────────────────────────────────────────────────────────────
 
-/// Create a `PERSON`. 201 with the created resource.
+/// Create a `PERSON` (`POST /demographic/person`).
 #[utoipa::path(
     post, path = "/demographic/person", tag = "PERSON",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created PERSON), or \
+                        `return=identifier` (only the uid)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION (e.g. \
+                        `lifecycle_state.code_string`); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS (committer, \
+                        description, change_type); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
+                        stored set is echoed in the response header."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with this VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The PERSON (RM canonical JSON or XML)."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new version \
+                                      uid (weak `W/` form), `Location` the \
+                                      resource URL. Body per `Prefer`; stored \
+                                      ITEM_TAGs ride the \
+                                      `openehr-item-tag`/`openehr-version-item-tag` \
+                                      response headers.", body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a precondition \
+                                      violation on the submitted PERSON.",
+         body = serde_json::Value),
+        (status = 404, description = "A referenced resource does not exist.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The PERSON is syntactically valid but \
+                                      fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn person_create(
     State(state): State<AppState>,
@@ -282,13 +724,33 @@ pub(crate) async fn person_create(
     guarded_dispatch(state, "person_create", parts, super::dispatch::dispatch).await
 }
 
-/// Read a `PERSON` by uid-based id. 404 when absent.
+/// Retrieve a `PERSON` by uid-based id
+/// (`GET /demographic/person/{uid_based_id}`).
 #[utoipa::path(
     get, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
+                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
+                        latest / at-time version."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; when the id is a \
+                        `versioned_object_uid`, selects the version extant at \
+                        that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The PERSON (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The PERSON (RM canonical JSON/XML); `ETag` \
+                                      carries the version uid (weak `W/` form), \
+                                      any ITEM_TAGs ride the item-tag response \
+                                      headers.", body = serde_json::Value),
+        (status = 204, description = "The PERSON version at the requested time \
+                                      is deleted."),
+        (status = 404, description = "Unknown PERSON, or no version at the \
+                                      requested `version_at_time`.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn person_get(
@@ -299,11 +761,55 @@ pub(crate) async fn person_get(
     guarded_dispatch(state, "person_get", parts, super::dispatch::dispatch).await
 }
 
-/// Update a `PERSON` (If-Match required). 200 with the updated resource.
+/// Update a `PERSON` (`PUT /demographic/person/{uid_based_id}`).
 #[utoipa::path(
     put, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID `versioned_object_uid` of the PERSON \
+                        to update."),
+        ("If-Match" = String, Header,
+         description = "The latest `version_uid` (the `preceding_version_uid`), \
+                        double-quoted (weak `W/` form also accepted). \
+                        Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation`, or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the new VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new PERSON (RM canonical JSON or XML); any \
+                                `uid` must match the path id."),
+    responses(
+        (status = 200, description = "Updated (`Prefer: return=representation` \
+                                      or `return=identifier`); `ETag`/`Location` \
+                                      carry the new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag`/`Location` carry the new version."),
+        (status = 400, description = "Malformed request, or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown PERSON.", body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The PERSON fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn person_update(
     State(state): State<AppState>,
@@ -313,11 +819,30 @@ pub(crate) async fn person_update(
     guarded_dispatch(state, "person_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete a `PERSON` (If-Match required).
+/// Delete a `PERSON` (`DELETE /demographic/person/{uid_based_id}`).
 #[utoipa::path(
     delete, path = "/demographic/person/{uid_based_id}", tag = "PERSON",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
+                        version (the `preceding_version_uid`) to delete."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the delete VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted; `ETag` carries the \
+                                      deleted version uid."),
+        (status = 400, description = "Malformed request, or the PERSON is \
+                                      already deleted.", body = serde_json::Value),
+        (status = 404, description = "Unknown PERSON.", body = serde_json::Value),
+        (status = 409, description = "The supplied `uid_based_id` is not the \
+                                      latest version; `ETag` carries the current \
+                                      latest version uid.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn person_delete(
     State(state): State<AppState>,
@@ -329,10 +854,53 @@ pub(crate) async fn person_delete(
 
 // ── ROLE ────────────────────────────────────────────────────────────────────
 
-/// Create a `ROLE`. 201 with the created resource.
+/// Create a `ROLE` (`POST /demographic/role`).
 #[utoipa::path(
     post, path = "/demographic/role", tag = "ROLE",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created ROLE), or \
+                        `return=identifier` (only the uid)."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION (e.g. \
+                        `lifecycle_state.code_string`); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS (committer, \
+                        description, change_type); accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the VERSIONED_PARTY; the \
+                        stored set is echoed in the response header."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with this VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The ROLE (RM canonical JSON or XML)."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the new version \
+                                      uid (weak `W/` form), `Location` the \
+                                      resource URL. Body per `Prefer`; stored \
+                                      ITEM_TAGs ride the \
+                                      `openehr-item-tag`/`openehr-version-item-tag` \
+                                      response headers.", body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a precondition \
+                                      violation on the submitted ROLE.",
+         body = serde_json::Value),
+        (status = 404, description = "A referenced resource does not exist.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The ROLE is syntactically valid but \
+                                      fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn role_create(
     State(state): State<AppState>,
@@ -342,13 +910,33 @@ pub(crate) async fn role_create(
     guarded_dispatch(state, "role_create", parts, super::dispatch::dispatch).await
 }
 
-/// Read a `ROLE` by uid-based id. 404 when absent.
+/// Retrieve a `ROLE` by uid-based id
+/// (`GET /demographic/role/{uid_based_id}`).
 #[utoipa::path(
     get, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (a specific `version_uid`) \
+                        or a HIER_OBJECT_ID (`versioned_object_uid`) for the \
+                        latest / at-time version."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; when the id is a \
+                        `versioned_object_uid`, selects the version extant at \
+                        that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The ROLE (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ROLE (RM canonical JSON/XML); `ETag` \
+                                      carries the version uid (weak `W/` form), \
+                                      any ITEM_TAGs ride the item-tag response \
+                                      headers.", body = serde_json::Value),
+        (status = 204, description = "The ROLE version at the requested time \
+                                      is deleted."),
+        (status = 404, description = "Unknown ROLE, or no version at the \
+                                      requested `version_at_time`.",
+         body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn role_get(
@@ -359,11 +947,55 @@ pub(crate) async fn role_get(
     guarded_dispatch(state, "role_get", parts, super::dispatch::dispatch).await
 }
 
-/// Update a `ROLE` (If-Match required). 200 with the updated resource.
+/// Update a `ROLE` (`PUT /demographic/role/{uid_based_id}`).
 #[utoipa::path(
     put, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID `versioned_object_uid` of the ROLE \
+                        to update."),
+        ("If-Match" = String, Header,
+         description = "The latest `version_uid` (the `preceding_version_uid`), \
+                        double-quoted (weak `W/` form also accepted). \
+                        Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation`, or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the new VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "ITEM_TAGs to associate with the new VERSION; the stored \
+                        set is echoed in the response header.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new ROLE (RM canonical JSON or XML); any \
+                                `uid` must match the path id."),
+    responses(
+        (status = 200, description = "Updated (`Prefer: return=representation` \
+                                      or `return=identifier`); `ETag`/`Location` \
+                                      carry the new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); \
+                                      `ETag`/`Location` carry the new version."),
+        (status = 400, description = "Malformed request, or missing `If-Match`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown ROLE.", body = serde_json::Value),
+        (status = 406, description = "A Simplified Format was requested via \
+                                      `Accept` (parties are not templated).",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.", body = serde_json::Value),
+        (status = 415, description = "A Simplified Format `Content-Type` was \
+                                      sent (parties are not templated).",
+         body = serde_json::Value),
+        (status = 422, description = "The ROLE fails RM/semantic validation.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn role_update(
     State(state): State<AppState>,
@@ -373,11 +1005,30 @@ pub(crate) async fn role_update(
     guarded_dispatch(state, "role_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete a `ROLE` (If-Match required).
+/// Delete a `ROLE` (`DELETE /demographic/role/{uid_based_id}`).
 #[utoipa::path(
     delete, path = "/demographic/role/{uid_based_id}", tag = "ROLE",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 204, description = "Deleted."))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID `version_uid` of the latest \
+                        version (the `preceding_version_uid`) to delete."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Optional committal metadata for the delete VERSION; \
+                        accepted per the committal-header MUST-accept rule."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Optional committal AUDIT_DETAILS; accepted per the \
+                        committal-header MUST-accept rule.")
+    ),
+    responses(
+        (status = 204, description = "Logically deleted; `ETag` carries the \
+                                      deleted version uid."),
+        (status = 400, description = "Malformed request, or the ROLE is \
+                                      already deleted.", body = serde_json::Value),
+        (status = 404, description = "Unknown ROLE.", body = serde_json::Value),
+        (status = 409, description = "The supplied `uid_based_id` is not the \
+                                      latest version; `ETag` carries the current \
+                                      latest version uid.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn role_delete(
     State(state): State<AppState>,
@@ -389,13 +1040,20 @@ pub(crate) async fn role_delete(
 
 // ── VERSIONED_PARTY ──────────────────────────────────────────────────────────
 
-/// Read the `VERSIONED_PARTY` container. 404 when absent.
+/// Retrieve the `VERSIONED_PARTY` container
+/// (`GET /demographic/versioned_party/{versioned_object_uid}`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}", tag = "VERSIONED_PARTY",
-    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
+    params(
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The VERSIONED_PARTY (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The VERSIONED_PARTY (RM canonical \
+                                      JSON/XML).", body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_party_get(
@@ -412,13 +1070,20 @@ pub(crate) async fn versioned_party_get(
     .await
 }
 
-/// The party's `REVISION_HISTORY`. 404 when absent.
+/// Retrieve the party's `REVISION_HISTORY`
+/// (`GET /demographic/versioned_party/{versioned_object_uid}/revision_history`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/revision_history", tag = "VERSIONED_PARTY",
-    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
+    params(
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The REVISION_HISTORY (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The REVISION_HISTORY (RM canonical \
+                                      JSON/XML).", body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_party_revision_history(
@@ -435,13 +1100,25 @@ pub(crate) async fn versioned_party_revision_history(
     .await
 }
 
-/// The party VERSION at a point in time (`?version_at_time=`). 404 when absent.
+/// Retrieve the party VERSION at a point in time
+/// (`GET /demographic/versioned_party/{versioned_object_uid}/version`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/version", tag = "VERSIONED_PARTY",
-    params(("versioned_object_uid" = String, Path, description = "The versioned-object uid.")),
+    params(
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`)."),
+        ("version_at_time" = Option<String>, Query,
+         description = "Extended ISO 8601 instant; selects the VERSION extant \
+                        at that time (latest when omitted).")
+    ),
     responses(
-        (status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The VERSION (RM canonical JSON/XML); \
+                                      `ETag` carries the version uid (weak `W/` \
+                                      form).", body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY, or no version at \
+                                      the requested `version_at_time`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_party_version_get_at_time(
@@ -458,16 +1135,23 @@ pub(crate) async fn versioned_party_version_get_at_time(
     .await
 }
 
-/// A specific party VERSION by version uid. 404 when absent.
+/// Retrieve a specific party VERSION by version uid
+/// (`GET /demographic/versioned_party/{versioned_object_uid}/version/{version_uid}`).
 #[utoipa::path(
     get, path = "/demographic/versioned_party/{versioned_object_uid}/version/{version_uid}", tag = "VERSIONED_PARTY",
     params(
-        ("versioned_object_uid" = String, Path, description = "The versioned-object uid."),
-        ("version_uid" = String, Path, description = "The OBJECT_VERSION_ID.")
+        ("versioned_object_uid" = String, Path,
+         description = "The VERSIONED_PARTY uid (a HIER_OBJECT_ID / \
+                        `versioned_object_uid`)."),
+        ("version_uid" = String, Path,
+         description = "The VERSION identifier (OBJECT_VERSION_ID / \
+                        `version_uid`).")
     ),
     responses(
-        (status = 200, description = "The VERSION (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The VERSION (RM canonical JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown VERSIONED_PARTY or version.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_party_version_get_by_id(
@@ -486,10 +1170,32 @@ pub(crate) async fn versioned_party_version_get_by_id(
 
 // ── CONTRIBUTION ─────────────────────────────────────────────────────────────
 
-/// Create a demographic `CONTRIBUTION`. 201 with the created resource.
+/// Create a demographic `CONTRIBUTION` (`POST /demographic/contribution`).
 #[utoipa::path(
     post, path = "/demographic/contribution", tag = "CONTRIBUTION",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the created CONTRIBUTION), or \
+                        `return=identifier` (only the uid).")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The CONTRIBUTION (canonical JSON/XML envelope); \
+                                the `audit` and each `versions[i].commit_audit` \
+                                are UPDATE_AUDIT objects; an optional `uid` is \
+                                honoured when not already in use."),
+    responses(
+        (status = 201, description = "Created; `ETag` carries the \
+                                      `contribution_uid` (weak `W/` form), \
+                                      `Location` the resource URL. Body per \
+                                      `Prefer`.", body = serde_json::Value),
+        (status = 400, description = "Malformed request, or a modification type \
+                                      that does not match the operation (e.g. a \
+                                      first-version MODIFICATION).",
+         body = serde_json::Value),
+        (status = 409, description = "A CONTRIBUTION with the same `uid` already \
+                                      exists.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn contribution_create(
     State(state): State<AppState>,
@@ -505,13 +1211,19 @@ pub(crate) async fn contribution_create(
     .await
 }
 
-/// Read a demographic `CONTRIBUTION` by uid. 404 when absent.
+/// Retrieve a demographic `CONTRIBUTION` by uid
+/// (`GET /demographic/contribution/{contribution_uid}`).
 #[utoipa::path(
     get, path = "/demographic/contribution/{contribution_uid}", tag = "CONTRIBUTION",
-    params(("contribution_uid" = String, Path, description = "The CONTRIBUTION uid.")),
+    params(
+        ("contribution_uid" = String, Path,
+         description = "The CONTRIBUTION uid.")
+    ),
     responses(
-        (status = 200, description = "The CONTRIBUTION (RM canonical JSON).", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The CONTRIBUTION (canonical JSON/XML \
+                                      envelope).", body = serde_json::Value),
+        (status = 404, description = "No CONTRIBUTION with that \
+                                      `contribution_uid`.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn contribution_get(
@@ -524,12 +1236,22 @@ pub(crate) async fn contribution_get(
 
 // ── ITEM_TAG sub-resources ───────────────────────────────────────────────────
 
-/// List every `ITEM_TAG` known to the demographic surface. 404 when absent.
+/// List `ITEM_TAG`s across the demographic surface (`GET /demographic/tags`).
 #[utoipa::path(
     get, path = "/demographic/tags", tag = "ITEM_TAG",
+    params(
+        ("tag_key" = Option<String>, Query,
+         description = "Filter by ITEM_TAG `key` (exact match)."),
+        ("tag_value" = Option<String>, Query,
+         description = "Filter by ITEM_TAG `value` (exact match)."),
+        ("tag_target_path" = Option<String>, Query,
+         description = "Filter by ITEM_TAG `target_path` (exact match).")
+    ),
     responses(
-        (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The matching ITEM_TAGs (an empty array \
+                                      when none match).", body = serde_json::Value),
+        (status = 400, description = "A filter query parameter is invalid.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn demographic_tags_get(
@@ -546,13 +1268,21 @@ pub(crate) async fn demographic_tags_get(
     .await
 }
 
-/// Read an `AGENT`'s `ITEM_TAGs`. 404 when absent.
+/// Retrieve an `AGENT`'s `ITEM_TAG`s
+/// (`GET /demographic/agent/{uid_based_id}/tags`).
 #[utoipa::path(
     get, path = "/demographic/agent/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target AGENT VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAGs on the target (an empty \
+                                      array when none exist).",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn agent_tags_get(
@@ -563,11 +1293,31 @@ pub(crate) async fn agent_tags_get(
     guarded_dispatch(state, "agent_tags_get", parts, super::dispatch::dispatch).await
 }
 
-/// Upsert an `AGENT`'s `ITEM_TAGs`. 200 with the stored tags.
+/// Replace an `AGENT`'s `ITEM_TAG`s
+/// (`PUT /demographic/agent/{uid_based_id}/tags`).
 #[utoipa::path(
     put, path = "/demographic/agent/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target AGENT VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation` (the stored ITEM_TAG list).")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to store; an empty array \
+                                removes all tags on the target."),
+    responses(
+        (status = 200, description = "Stored (`Prefer: return=representation`); \
+                                      body is the stored ITEM_TAG list.",
+         body = serde_json::Value),
+        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
+        (status = 400, description = "The ITEM_TAG list is invalid.",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn agent_tags_update(
     State(state): State<AppState>,
@@ -577,14 +1327,22 @@ pub(crate) async fn agent_tags_update(
     guarded_dispatch(state, "agent_tags_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete one `ITEM_TAG` from an `AGENT` by key.
+/// Delete one `ITEM_TAG` from an `AGENT` by key
+/// (`DELETE /demographic/agent/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
     delete, path = "/demographic/agent/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("uid_based_id" = String, Path, description = "The party uid-based id."),
-        ("key" = String, Path, description = "The ITEM_TAG key.")
+        ("uid_based_id" = String, Path,
+         description = "The target AGENT VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The ITEM_TAG was deleted."),
+        (status = 404, description = "The `uid_based_id` does not exist, or no \
+                                      ITEM_TAG has that `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn agent_tags_delete(
     State(state): State<AppState>,
@@ -594,13 +1352,21 @@ pub(crate) async fn agent_tags_delete(
     guarded_dispatch(state, "agent_tags_delete", parts, super::dispatch::dispatch).await
 }
 
-/// Read a `GROUP`'s `ITEM_TAGs`. 404 when absent.
+/// Retrieve a `GROUP`'s `ITEM_TAG`s
+/// (`GET /demographic/group/{uid_based_id}/tags`).
 #[utoipa::path(
     get, path = "/demographic/group/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target GROUP VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAGs on the target (an empty \
+                                      array when none exist).",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn group_tags_get(
@@ -611,11 +1377,31 @@ pub(crate) async fn group_tags_get(
     guarded_dispatch(state, "group_tags_get", parts, super::dispatch::dispatch).await
 }
 
-/// Upsert a `GROUP`'s `ITEM_TAGs`. 200 with the stored tags.
+/// Replace a `GROUP`'s `ITEM_TAG`s
+/// (`PUT /demographic/group/{uid_based_id}/tags`).
 #[utoipa::path(
     put, path = "/demographic/group/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target GROUP VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation` (the stored ITEM_TAG list).")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to store; an empty array \
+                                removes all tags on the target."),
+    responses(
+        (status = 200, description = "Stored (`Prefer: return=representation`); \
+                                      body is the stored ITEM_TAG list.",
+         body = serde_json::Value),
+        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
+        (status = 400, description = "The ITEM_TAG list is invalid.",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn group_tags_update(
     State(state): State<AppState>,
@@ -625,14 +1411,22 @@ pub(crate) async fn group_tags_update(
     guarded_dispatch(state, "group_tags_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete one `ITEM_TAG` from a `GROUP` by key.
+/// Delete one `ITEM_TAG` from a `GROUP` by key
+/// (`DELETE /demographic/group/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
     delete, path = "/demographic/group/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("uid_based_id" = String, Path, description = "The party uid-based id."),
-        ("key" = String, Path, description = "The ITEM_TAG key.")
+        ("uid_based_id" = String, Path,
+         description = "The target GROUP VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The ITEM_TAG was deleted."),
+        (status = 404, description = "The `uid_based_id` does not exist, or no \
+                                      ITEM_TAG has that `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn group_tags_delete(
     State(state): State<AppState>,
@@ -642,13 +1436,21 @@ pub(crate) async fn group_tags_delete(
     guarded_dispatch(state, "group_tags_delete", parts, super::dispatch::dispatch).await
 }
 
-/// Read an `ORGANISATION`'s `ITEM_TAGs`. 404 when absent.
+/// Retrieve an `ORGANISATION`'s `ITEM_TAG`s
+/// (`GET /demographic/organisation/{uid_based_id}/tags`).
 #[utoipa::path(
     get, path = "/demographic/organisation/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target ORGANISATION VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAGs on the target (an empty \
+                                      array when none exist).",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn organisation_tags_get(
@@ -665,11 +1467,31 @@ pub(crate) async fn organisation_tags_get(
     .await
 }
 
-/// Upsert an `ORGANISATION`'s `ITEM_TAGs`. 200 with the stored tags.
+/// Replace an `ORGANISATION`'s `ITEM_TAG`s
+/// (`PUT /demographic/organisation/{uid_based_id}/tags`).
 #[utoipa::path(
     put, path = "/demographic/organisation/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target ORGANISATION VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation` (the stored ITEM_TAG list).")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to store; an empty array \
+                                removes all tags on the target."),
+    responses(
+        (status = 200, description = "Stored (`Prefer: return=representation`); \
+                                      body is the stored ITEM_TAG list.",
+         body = serde_json::Value),
+        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
+        (status = 400, description = "The ITEM_TAG list is invalid.",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn organisation_tags_update(
     State(state): State<AppState>,
@@ -685,14 +1507,22 @@ pub(crate) async fn organisation_tags_update(
     .await
 }
 
-/// Delete one `ITEM_TAG` from an `ORGANISATION` by key.
+/// Delete one `ITEM_TAG` from an `ORGANISATION` by key
+/// (`DELETE /demographic/organisation/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
     delete, path = "/demographic/organisation/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("uid_based_id" = String, Path, description = "The party uid-based id."),
-        ("key" = String, Path, description = "The ITEM_TAG key.")
+        ("uid_based_id" = String, Path,
+         description = "The target ORGANISATION VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The ITEM_TAG was deleted."),
+        (status = 404, description = "The `uid_based_id` does not exist, or no \
+                                      ITEM_TAG has that `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn organisation_tags_delete(
     State(state): State<AppState>,
@@ -708,13 +1538,21 @@ pub(crate) async fn organisation_tags_delete(
     .await
 }
 
-/// Read a `PERSON`'s `ITEM_TAGs`. 404 when absent.
+/// Retrieve a `PERSON`'s `ITEM_TAG`s
+/// (`GET /demographic/person/{uid_based_id}/tags`).
 #[utoipa::path(
     get, path = "/demographic/person/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target PERSON VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAGs on the target (an empty \
+                                      array when none exist).",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn person_tags_get(
@@ -725,11 +1563,31 @@ pub(crate) async fn person_tags_get(
     guarded_dispatch(state, "person_tags_get", parts, super::dispatch::dispatch).await
 }
 
-/// Upsert a `PERSON`'s `ITEM_TAGs`. 200 with the stored tags.
+/// Replace a `PERSON`'s `ITEM_TAG`s
+/// (`PUT /demographic/person/{uid_based_id}/tags`).
 #[utoipa::path(
     put, path = "/demographic/person/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target PERSON VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation` (the stored ITEM_TAG list).")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to store; an empty array \
+                                removes all tags on the target."),
+    responses(
+        (status = 200, description = "Stored (`Prefer: return=representation`); \
+                                      body is the stored ITEM_TAG list.",
+         body = serde_json::Value),
+        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
+        (status = 400, description = "The ITEM_TAG list is invalid.",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn person_tags_update(
     State(state): State<AppState>,
@@ -745,14 +1603,22 @@ pub(crate) async fn person_tags_update(
     .await
 }
 
-/// Delete one `ITEM_TAG` from a `PERSON` by key.
+/// Delete one `ITEM_TAG` from a `PERSON` by key
+/// (`DELETE /demographic/person/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
     delete, path = "/demographic/person/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("uid_based_id" = String, Path, description = "The party uid-based id."),
-        ("key" = String, Path, description = "The ITEM_TAG key.")
+        ("uid_based_id" = String, Path,
+         description = "The target PERSON VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The ITEM_TAG was deleted."),
+        (status = 404, description = "The `uid_based_id` does not exist, or no \
+                                      ITEM_TAG has that `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn person_tags_delete(
     State(state): State<AppState>,
@@ -768,13 +1634,21 @@ pub(crate) async fn person_tags_delete(
     .await
 }
 
-/// Read a `ROLE`'s `ITEM_TAGs`. 404 when absent.
+/// Retrieve a `ROLE`'s `ITEM_TAG`s
+/// (`GET /demographic/role/{uid_based_id}/tags`).
 #[utoipa::path(
     get, path = "/demographic/role/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target ROLE VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`).")
+    ),
     responses(
-        (status = 200, description = "The ITEM_TAGs.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAGs on the target (an empty \
+                                      array when none exist).",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn role_tags_get(
@@ -785,11 +1659,31 @@ pub(crate) async fn role_tags_get(
     guarded_dispatch(state, "role_tags_get", parts, super::dispatch::dispatch).await
 }
 
-/// Upsert a `ROLE`'s `ITEM_TAGs`. 200 with the stored tags.
+/// Replace a `ROLE`'s `ITEM_TAG`s
+/// (`PUT /demographic/role/{uid_based_id}/tags`).
 #[utoipa::path(
     put, path = "/demographic/role/{uid_based_id}/tags", tag = "ITEM_TAG",
-    params(("uid_based_id" = String, Path, description = "The party uid-based id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("uid_based_id" = String, Path,
+         description = "The target ROLE VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body) or \
+                        `return=representation` (the stored ITEM_TAG list).")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to store; an empty array \
+                                removes all tags on the target."),
+    responses(
+        (status = 200, description = "Stored (`Prefer: return=representation`); \
+                                      body is the stored ITEM_TAG list.",
+         body = serde_json::Value),
+        (status = 204, description = "Stored (`Prefer: return=minimal`)."),
+        (status = 400, description = "The ITEM_TAG list is invalid.",
+         body = serde_json::Value),
+        (status = 404, description = "The `uid_based_id` does not exist.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn role_tags_update(
     State(state): State<AppState>,
@@ -799,14 +1693,22 @@ pub(crate) async fn role_tags_update(
     guarded_dispatch(state, "role_tags_update", parts, super::dispatch::dispatch).await
 }
 
-/// Delete one `ITEM_TAG` from a `ROLE` by key.
+/// Delete one `ITEM_TAG` from a `ROLE` by key
+/// (`DELETE /demographic/role/{uid_based_id}/tags/{key}`).
 #[utoipa::path(
     delete, path = "/demographic/role/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("uid_based_id" = String, Path, description = "The party uid-based id."),
-        ("key" = String, Path, description = "The ITEM_TAG key.")
+        ("uid_based_id" = String, Path,
+         description = "The target ROLE VERSION (`version_uid`) or \
+                        VERSIONED_PARTY (`versioned_object_uid`)."),
+        ("key" = String, Path, description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The ITEM_TAG was deleted."),
+        (status = 404, description = "The `uid_based_id` does not exist, or no \
+                                      ITEM_TAG has that `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn role_tags_delete(
     State(state): State<AppState>,

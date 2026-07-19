@@ -4,7 +4,6 @@
 //! `definition_template_adl2_list` / `_upload` / `_get` / `_example_get` /
 //! `_version_get`. Governing spec text:
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! ADL2 artefacts are served as `text/plain` source
 //! (`200_Template_adl2_retrieved.yaml`: `text/plain` `OperationalTemplateV2 |
@@ -12,7 +11,7 @@
 //! (`DefinitionAdl2Service::get_artefact`) + the wire-shaped `DefinitionAdapter`
 //! (`template_adl2_upload`/`template_adl2_list`). The `example` and `version`
 //! operations stay `501` (they need an example generator / a cADL source parser
-//! the tree lacks — WORKLIST W-4).
+//! the tree lacks — deferred to the planned full-ADL2 work).
 
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, StatusCode, header};
@@ -53,8 +52,7 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 ///
 /// NOTE: the `at_version` (`version`) query parameter is
 /// `deprecated: true` (`parameters/query/at_version.yaml`); dropping it is
-/// spec-permitted, so only `Prefer` is read. Recorded as residue, not a defect
-/// (`docs/design/its-rest/definition.md` G-7).
+/// spec-permitted, so only `Prefer` is read. Recorded as residue, not a defect.
 pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p = params::build::<DefinitionTemplateAdl2UploadParams>(
@@ -86,7 +84,7 @@ pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Res
 /// `template_id` → 404). `406`s an `Accept` outside `Accept_Template_adl2` that
 /// this build cannot serve: the `application/json`
 /// `OperationalTemplateV2` and `application/xml` forms need a cADL parser
-/// (deferred, WORKLIST W-4), so a request that names *only* one of those is a
+/// (deferred to the planned full-ADL2 work), so a request that names *only* one of those is a
 /// `406` rather than a wrong body.
 pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -111,7 +109,7 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
 ///
 /// NOTE: needs an example generator over a cADL/AOM2 source
 /// model (none in the tree). ADL2 is OPTIONAL for CNF; the example generator
-/// lands with WORKLIST W-4 (`docs/design/its-rest/definition.md` G-6).
+/// lands with the planned full-ADL2 work.
 pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
     params::build::<DefinitionTemplateAdl2ExampleGetParams>(
         &parts.path,
@@ -126,7 +124,7 @@ pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
 /// NOTE: needs a cADL source parser for the JSON
 /// `OperationalTemplateV2` form; the operation is `deprecated: true`
 /// (`operations/definition_template_adl2_version_get.yaml`) and ADL2 is OPTIONAL
-/// for CNF (`docs/design/its-rest/definition.md` G-6).
+/// for CNF.
 pub(super) fn version_get(parts: &RequestParts) -> Result<Response, RestError> {
     params::build::<DefinitionTemplateAdl2VersionGetParams>(
         &parts.path,

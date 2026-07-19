@@ -1,14 +1,13 @@
 //! HTTP dispatch for the event-subscription admin extension API group over the
 //! [`EventSubscriptionAdapter`](ehrbase::service::EventSubscriptionAdapter) seam.
 //!
-//! **No openEHR spec governs this — our own enterprise feature (E1, eventing).**
+//! **No openEHR spec governs this — our own enterprise feature (eventing).**
 //! Event/subscription semantics have no SM or ITS-REST governance, so this
 //! surface is ours: exposed under the server's extension namespace and excluded
-//! from the ITS-REST drift check (design record: `docs/enterprise/product-roadmap.md`
-//! §2.2 and the classification register `docs/design/its-rest/extensions.md`).
-//! It is mounted under `/admin/` (a subscription store is an administrative
-//! resource), so the coarse RBAC gate fail-safe classes it as `Admin` (requires
-//! the admin role when RBAC is on), matching the physical-delete ADMIN group.
+//! from the ITS-REST drift check. It is mounted under `/admin/` (a subscription
+//! store is an administrative resource), so the coarse RBAC gate fail-safe
+//! classes it as `Admin` (requires the admin role when RBAC is on), matching
+//! the physical-delete ADMIN group.
 //!
 //! NOTE (no SM call, no ABAC/audit): the CRUD dispatches to the
 //! [`EventSubscriptionAdapter`] extension, not an SM interface. Like the
@@ -51,10 +50,16 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         ))
 }
 
-/// List every event subscription.
+/// List every event subscription (`GET /admin/event_subscription`).
+///
+/// Config-gated: `404` when `events_admin_api` is off (the route stays mounted
+/// but the backend is never consulted).
 #[utoipa::path(
     get, path = "/admin/event_subscription", tag = "event-subscription",
-    responses((status = 200, description = "The subscription records.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "The subscription records.", body = serde_json::Value),
+        (status = 404, description = "The event-subscription extension is disabled (`events_admin_api` off).", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn event_subscription_list(
     State(state): State<AppState>,
@@ -64,12 +69,20 @@ pub(crate) async fn event_subscription_list(
     guarded_dispatch(state, "event_subscription_list", parts, dispatch).await
 }
 
-/// Create a subscription. Body: `{name, kind?, change_type?, template_id?,
-/// archetype?, enabled?}`.
+/// Create a subscription (`POST /admin/event_subscription`).
+///
+/// Body: `{name, kind?, change_type?, template_id?, archetype?, enabled?}`
+/// (`enabled` defaults to `true`).
 #[utoipa::path(
     post, path = "/admin/event_subscription", tag = "event-subscription",
-    request_body(content = serde_json::Value, description = "The subscription definition."),
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    request_body(content = serde_json::Value, description = "The subscription definition (canonical JSON)."),
+    responses(
+        (status = 201, description = "Created; the stored subscription record is returned.", body = serde_json::Value),
+        (status = 400, description = "`name` is missing/empty or not matching `[A-Za-z0-9_.-]`, or the body is not valid JSON.", body = serde_json::Value),
+        (status = 409, description = "A subscription with that name already exists.", body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
+        (status = 404, description = "The event-subscription extension is disabled (`events_admin_api` off).", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn event_subscription_create(
     State(state): State<AppState>,
@@ -79,13 +92,15 @@ pub(crate) async fn event_subscription_create(
     guarded_dispatch(state, "event_subscription_create", parts, dispatch).await
 }
 
-/// Read one subscription by id. 404 when absent.
+/// Read one subscription by id
+/// (`GET /admin/event_subscription/{subscription_id}`).
 #[utoipa::path(
     get, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
     responses(
         (status = 200, description = "The subscription record.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 400, description = "`subscription_id` is not a valid UUID.", body = serde_json::Value),
+        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled.", body = serde_json::Value)
     )
 )]
 pub(crate) async fn event_subscription_get(
@@ -96,12 +111,21 @@ pub(crate) async fn event_subscription_get(
     guarded_dispatch(state, "event_subscription_get", parts, dispatch).await
 }
 
-/// Replace one subscription's predicates + enabled flag.
+/// Replace one subscription's predicates + enabled flag
+/// (`PUT /admin/event_subscription/{subscription_id}`).
+///
+/// The `name` is immutable (it is the queue key); only the predicates and the
+/// `enabled` flag are replaced.
 #[utoipa::path(
     put, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
-    request_body(content = serde_json::Value, description = "The updated subscription definition."),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    request_body(content = serde_json::Value, description = "The updated subscription definition (canonical JSON)."),
+    responses(
+        (status = 200, description = "Updated; the stored subscription record is returned.", body = serde_json::Value),
+        (status = 400, description = "`subscription_id` is not a valid UUID, or the body is not valid JSON.", body = serde_json::Value),
+        (status = 415, description = "The request `Content-Type` is not `application/json`.", body = serde_json::Value),
+        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn event_subscription_update(
     State(state): State<AppState>,
@@ -111,11 +135,16 @@ pub(crate) async fn event_subscription_update(
     guarded_dispatch(state, "event_subscription_update", parts, dispatch).await
 }
 
-/// Delete one subscription.
+/// Delete one subscription
+/// (`DELETE /admin/event_subscription/{subscription_id}`).
 #[utoipa::path(
     delete, path = "/admin/event_subscription/{subscription_id}", tag = "event-subscription",
     params(("subscription_id" = String, Path, description = "The subscription UUID.")),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "Deleted."),
+        (status = 400, description = "`subscription_id` is not a valid UUID.", body = serde_json::Value),
+        (status = 404, description = "No subscription with that id, or the event-subscription extension is disabled.", body = serde_json::Value)
+    )
 )]
 pub(crate) async fn event_subscription_delete(
     State(state): State<AppState>,

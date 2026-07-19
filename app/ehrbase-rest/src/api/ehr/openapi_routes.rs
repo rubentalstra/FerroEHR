@@ -62,12 +62,29 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
 
 // ── EHR ───────────────────────────────────────────────────────────────────────
 
-/// Retrieve an EHR by subject (`GET /ehr`).
+/// Retrieve an EHR by subject id (`GET /ehr`).
+///
+/// Matches `subject_id`/`subject_namespace` against the EHR's
+/// `EHR_STATUS.subject.external_ref.id.value` and `.namespace`.
 #[utoipa::path(
     get, path = "/ehr", tag = "EHR",
+    params(
+        ("subject_id" = String, Query,
+         description = "The EHR subject id (matched against \
+                        EHR_STATUS.subject.external_ref.id.value). Required."),
+        ("subject_namespace" = String, Query,
+         description = "The EHR subject id namespace (matched against \
+                        EHR_STATUS.subject.external_ref.namespace). Required.")
+    ),
     responses(
-        (status = 200, description = "The EHR.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`).",
+         body = serde_json::Value),
+        (status = 400, description = "A required subject query parameter is \
+                                      missing or malformed.",
+         body = serde_json::Value),
+        (status = 404, description = "No EHR exists with the supplied subject \
+                                      id and namespace.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn ehr_get_by_subject(
@@ -84,10 +101,35 @@ pub(crate) async fn ehr_get_by_subject(
     .await
 }
 
-/// Create a new EHR (`POST /ehr`).
+/// Create a new EHR with an auto-generated id (`POST /ehr`).
+///
+/// The committal headers `openehr-version` / `openehr-audit-details` are
+/// accepted and merged into the `EHR_STATUS` commit
+/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     post, path = "/ehr", tag = "EHR",
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "Optional EHR_STATUS for the new EHR; when \
+                                omitted a default (is_queryable=true, \
+                                is_modifiable=true, PARTY_SELF subject) is used."),
+    responses(
+        (status = 201, description = "Created; `ETag` (weak `W/` form) carries \
+                                      the new `ehr_id`, `Location` the EHR URL. \
+                                      Body per `Prefer` (representation or \
+                                      identifier; empty for minimal).",
+         body = serde_json::Value),
+        (status = 400, description = "The supplied EHR_STATUS is invalid or the \
+                                      request could not be parsed.",
+         body = serde_json::Value),
+        (status = 409, description = "An EHR already exists for the subject \
+                                      id/namespace of the supplied EHR_STATUS.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn ehr_create(
     State(state): State<AppState>,
@@ -106,10 +148,13 @@ pub(crate) async fn ehr_create(
 /// Retrieve an EHR by id (`GET /ehr/{ehr_id}`).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}", tag = "EHR",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(("ehr_id" = String, Path,
+            description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
     responses(
-        (status = 200, description = "The EHR.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`).",
+         body = serde_json::Value),
+        (status = 404, description = "No EHR exists with `ehr_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn ehr_get_by_id(
@@ -127,10 +172,37 @@ pub(crate) async fn ehr_get_by_id(
 }
 
 /// Create an EHR with a client-supplied id (`PUT /ehr/{ehr_id}`).
+///
+/// `ehr_id` must be a valid `HIER_OBJECT_ID` (a UUID is strongly recommended).
+/// The committal headers `openehr-version` / `openehr-audit-details` are
+/// accepted and merged into the `EHR_STATUS` commit
+/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}", tag = "EHR",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
-    responses((status = 200, description = "Created/updated.", body = serde_json::Value))
+    params(
+        ("ehr_id" = String, Path,
+         description = "The client-supplied EHR id (a valid `HIER_OBJECT_ID`; \
+                        a UUID is strongly recommended)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "Optional EHR_STATUS for the new EHR; when \
+                                omitted a default (is_queryable=true, \
+                                is_modifiable=true, PARTY_SELF subject) is used."),
+    responses(
+        (status = 201, description = "Created; `ETag` (weak `W/` form) carries \
+                                      the `ehr_id`, `Location` the EHR URL. Body \
+                                      per `Prefer` (representation or identifier; \
+                                      empty for minimal).",
+         body = serde_json::Value),
+        (status = 400, description = "`ehr_id` is not a valid `HIER_OBJECT_ID` or \
+                                      the supplied EHR_STATUS is invalid.",
+         body = serde_json::Value),
+        (status = 409, description = "An EHR already exists with this `ehr_id`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn ehr_create_with_id(
     State(state): State<AppState>,
@@ -153,12 +225,24 @@ pub(crate) async fn ehr_create_with_id(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/ehr_status/{version_uid}", tag = "EHR_STATUS",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("version_uid" = String, Path, description = "The version uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("version_uid" = String, Path,
+         description = "VERSION identifier, taken from VERSION.uid.value \
+                        (an OBJECT_VERSION_ID, e.g. \
+                        `…::openEHRSys.example.com::2`).")
     ),
     responses(
-        (status = 200, description = "The EHR_STATUS.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The EHR_STATUS at that version; `ETag` \
+                                      (weak `W/` form) carries the version uid, \
+                                      `Last-Modified` the commit time. Any \
+                                      associated item tags MAY be echoed in the \
+                                      `openehr-item-tag`/`openehr-version-item-tag` \
+                                      response headers.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`, or no EHR_STATUS version \
+                                      with `version_uid`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn ehr_status_get_by_version_id(
@@ -179,10 +263,26 @@ pub(crate) async fn ehr_status_get_by_version_id(
 /// (`GET /ehr/{ehr_id}/ehr_status`).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/ehr_status", tag = "EHR_STATUS",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("version_at_time" = Option<String>, Query,
+         description = "A time in the extended ISO 8601 format; the version \
+                        extant at that time is returned. Absent means the \
+                        latest version.")
+    ),
     responses(
-        (status = 200, description = "The EHR_STATUS.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The EHR_STATUS; `ETag` (weak `W/` form) \
+                                      carries the version uid, `Last-Modified` \
+                                      the commit time. Item tags MAY be echoed \
+                                      in the `openehr-item-tag`/\
+                                      `openehr-version-item-tag` response headers.",
+         body = serde_json::Value),
+        (status = 400, description = "Malformed `version_at_time`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`, or no EHR_STATUS version \
+                                      at the specified time.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn ehr_status_get_at_time(
@@ -200,10 +300,51 @@ pub(crate) async fn ehr_status_get_at_time(
 }
 
 /// Update the `EHR_STATUS` (`PUT /ehr/{ehr_id}/ehr_status`).
+///
+/// The committal headers `openehr-version` / `openehr-audit-details` are
+/// accepted and merged into the commit
+/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/ehr_status", tag = "EHR_STATUS",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    params(
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("If-Match" = String, Header,
+         description = "The latest EHR_STATUS version uid (the \
+                        `preceding_version_uid`), double-quoted (weak `W/` \
+                        form also accepted). Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the VERSIONED_EHR_STATUS \
+                        (VERSIONED_OBJECT-level); an empty value removes all. \
+                        MAY be echoed back."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the new EHR_STATUS VERSION; an empty \
+                        value removes all. MAY be echoed back.")
+    ),
+    request_body(content = serde_json::Value,
+                 description = "The new EHR_STATUS."),
+    responses(
+        (status = 200, description = "Updated; body per `Prefer` \
+                                      (representation or identifier). `ETag` \
+                                      (weak `W/` form) + `Location` carry the \
+                                      new version.",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); `ETag` \
+                                      (weak `W/` form) + `Location` carry the \
+                                      new version."),
+        (status = 400, description = "Invalid EHR_STATUS, or `If-Match` expected \
+                                      but missing/malformed.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn ehr_status_update(
     State(state): State<AppState>,
@@ -225,10 +366,14 @@ pub(crate) async fn ehr_status_update(
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status`).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status", tag = "EHR_STATUS",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(("ehr_id" = String, Path,
+            description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
     responses(
-        (status = 200, description = "The VERSIONED_EHR_STATUS.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The VERSIONED_EHR_STATUS container \
+                                      (canonical JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_ehr_status_get(
@@ -249,10 +394,14 @@ pub(crate) async fn versioned_ehr_status_get(
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/revision_history`).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status/revision_history", tag = "EHR_STATUS",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(("ehr_id" = String, Path,
+            description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
     responses(
-        (status = 200, description = "The revision history.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The REVISION_HISTORY of the \
+                                      VERSIONED_EHR_STATUS (canonical JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_ehr_status_revision_history(
@@ -273,10 +422,24 @@ pub(crate) async fn versioned_ehr_status_revision_history(
 /// (`GET /ehr/{ehr_id}/versioned_ehr_status/version`).
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status/version", tag = "EHR_STATUS",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("version_at_time" = Option<String>, Query,
+         description = "A time in the extended ISO 8601 format; the VERSION \
+                        extant at that time is returned. Absent means the \
+                        latest VERSION.")
+    ),
     responses(
-        (status = 200, description = "The EHR_STATUS version.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
+                                      (canonical JSON/XML); `ETag` (weak `W/` \
+                                      form) carries the version uid.",
+         body = serde_json::Value),
+        (status = 400, description = "Malformed `version_at_time`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`, or no VERSION at the \
+                                      specified time.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_ehr_status_version_get_at_time(
@@ -298,12 +461,20 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}", tag = "EHR_STATUS",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("version_uid" = String, Path, description = "The version uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("version_uid" = String, Path,
+         description = "VERSION identifier, taken from VERSION.uid.value \
+                        (an OBJECT_VERSION_ID).")
     ),
     responses(
-        (status = 200, description = "The EHR_STATUS version.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
+                                      identified by `version_uid` (canonical \
+                                      JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`, or no VERSION with \
+                                      `version_uid`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_ehr_status_version_get_by_id(
@@ -322,10 +493,31 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
 
 // ── COMPOSITION ───────────────────────────────────────────────────────────────
 
-/// Create a COMPOSITION (`POST /ehr/{ehr_id}/composition`).
+/// Create the first version of a COMPOSITION
+/// (`POST /ehr/{ehr_id}/composition`).
+///
+/// The committal headers `openehr-version` / `openehr-audit-details` are
+/// accepted and merged into the commit
+/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     post, path = "/ehr/{ehr_id}/composition", tag = "COMPOSITION",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`."),
+        ("openehr-template-id" = Option<String>, Header,
+         description = "The template id; required when the body is a Simplified \
+                        Format (which carries no template_id)."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the VERSIONED_COMPOSITION \
+                        (VERSIONED_OBJECT-level); an empty value removes all. \
+                        MAY be echoed back."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the new COMPOSITION VERSION; an \
+                        empty value removes all. MAY be echoed back.")
+    ),
     request_body(
 
         // COMPOSITION content negotiates canonical JSON/XML + the two Simplified
@@ -334,10 +526,28 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
         description = "A COMPOSITION in canonical JSON/XML or a Simplified Format \
                        (the `openehr-template-id` header is required for a simplified body)."
     ),
-    responses((
-        status = 201, description = "Created.",
-        content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
-    ))
+    responses(
+        (
+            status = 201, description = "Created; `ETag` (weak `W/` form) carries \
+                                        the new version uid, `Location` the \
+                                        COMPOSITION version URL. Body per `Prefer` \
+                                        (representation or identifier; empty for \
+                                        minimal). Item tags MAY be echoed in the \
+                                        `openehr-item-tag`/\
+                                        `openehr-version-item-tag` response headers.",
+            content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
+        ),
+        (status = 400, description = "The COMPOSITION could not be parsed, or a \
+                                      required header/parameter is missing or \
+                                      invalid.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value),
+        (status = 422, description = "The COMPOSITION parsed but failed semantic \
+                                      validation (e.g. unknown template, or the \
+                                      template does not validate the content).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn composition_create(
     State(state): State<AppState>,
@@ -358,15 +568,34 @@ pub(crate) async fn composition_create(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The composition uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "Either an OBJECT_VERSION_ID (VERSION.uid.value — a \
+                        specific version) or a HIER_OBJECT_ID \
+                        (VERSIONED_OBJECT.uid.value — the version container, \
+                        resolving with `version_at_time` or to the latest)."),
+        ("version_at_time" = Option<String>, Query,
+         description = "A time in the extended ISO 8601 format; used only when \
+                        `uid_based_id` is a HIER_OBJECT_ID. Absent means the \
+                        latest version.")
     ),
     responses(
         (
-            status = 200, description = "The COMPOSITION.",
+            status = 200, description = "The COMPOSITION; `ETag` (weak `W/` form) \
+                                        carries the version uid, `Last-Modified` \
+                                        the commit time. Item tags MAY be echoed \
+                                        in the `openehr-item-tag`/\
+                                        `openehr-version-item-tag` response headers.",
             content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 204, description = "The COMPOSITION was (logically) deleted at \
+                                      the requested time."),
+        (status = 400, description = "Malformed `version_at_time`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`, or no COMPOSITION version \
+                                      at the specified time.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn composition_get(
@@ -385,11 +614,36 @@ pub(crate) async fn composition_get(
 
 /// Update a COMPOSITION
 /// (`PUT /ehr/{ehr_id}/composition/{uid_based_id}`).
+///
+/// The committal headers `openehr-version` / `openehr-audit-details` are
+/// accepted and merged into the commit
+/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The composition uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "The HIER_OBJECT_ID (VERSIONED_OBJECT.uid.value) of the \
+                        COMPOSITION to update; a body COMPOSITION.uid, if \
+                        present, must identify the same versioned object."),
+        ("If-Match" = String, Header,
+         description = "The latest COMPOSITION version uid (the \
+                        `preceding_version_uid`), double-quoted (weak `W/` form \
+                        also accepted). Required."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`."),
+        ("openehr-template-id" = Option<String>, Header,
+         description = "The template id; required when the body is a Simplified \
+                        Format (which carries no template_id)."),
+        ("openehr-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the VERSIONED_COMPOSITION \
+                        (VERSIONED_OBJECT-level); an empty value removes all. \
+                        MAY be echoed back."),
+        ("openehr-version-item-tag" = Option<String>, Header,
+         description = "Item tags to set on the new COMPOSITION VERSION; an \
+                        empty value removes all. MAY be echoed back.")
     ),
     request_body(
 
@@ -397,10 +651,34 @@ pub(crate) async fn composition_get(
         description = "A COMPOSITION in canonical JSON/XML or a Simplified Format \
                        (the `openehr-template-id` header is required for a simplified body)."
     ),
-    responses((
-        status = 200, description = "Updated.",
-        content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
-    ))
+    responses(
+        (
+            status = 200, description = "Updated; body per `Prefer` \
+                                        (representation or identifier). `ETag` \
+                                        (weak `W/` form) + `Location` carry the \
+                                        new version. Item tags MAY be echoed in \
+                                        the `openehr-item-tag`/\
+                                        `openehr-version-item-tag` response headers.",
+            content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
+        ),
+        (status = 204, description = "Updated (`Prefer: return=minimal`); `ETag` \
+                                      (weak `W/` form) + `Location` carry the new \
+                                      version."),
+        (status = 400, description = "The COMPOSITION could not be parsed, a body \
+                                      uid mismatches the path, or `If-Match` is \
+                                      missing/malformed.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
+         body = serde_json::Value),
+        (status = 412, description = "`If-Match` does not match the latest \
+                                      version; `ETag` carries the current latest \
+                                      version uid.",
+         body = serde_json::Value),
+        (status = 422, description = "The COMPOSITION parsed but failed semantic \
+                                      validation (e.g. unknown template, or the \
+                                      template does not validate the content).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn composition_update(
     State(state): State<AppState>,
@@ -418,13 +696,34 @@ pub(crate) async fn composition_update(
 
 /// Delete a COMPOSITION
 /// (`DELETE /ehr/{ehr_id}/composition/{uid_based_id}`).
+///
+/// The committal headers `openehr-version` / `openehr-audit-details` are
+/// accepted and merged into the deletion commit
+/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     delete, path = "/ehr/{ehr_id}/composition/{uid_based_id}", tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The composition uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "The OBJECT_VERSION_ID (VERSION.uid.value) of the latest \
+                        version — the `preceding_version_uid` to delete; a bare \
+                        HIER_OBJECT_ID is rejected with 400.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "Logically deleted (a new deleted version \
+                                      is committed); `ETag` carries the deleted \
+                                      version uid."),
+        (status = 400, description = "`uid_based_id` is not an OBJECT_VERSION_ID, \
+                                      or the COMPOSITION is already deleted.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
+         body = serde_json::Value),
+        (status = 409, description = "`uid_based_id` is not the latest version \
+                                      (stale); `ETag` carries the current latest \
+                                      version uid.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn composition_delete(
     State(state): State<AppState>,
@@ -447,12 +746,18 @@ pub(crate) async fn composition_delete(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}", tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("versioned_object_uid" = String, Path, description = "The versioned object uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("versioned_object_uid" = String, Path,
+         description = "VERSIONED_COMPOSITION identifier, taken from \
+                        VERSIONED_COMPOSITION.uid.value (a HIER_OBJECT_ID UUID).")
     ),
     responses(
-        (status = 200, description = "The VERSIONED_COMPOSITION.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The VERSIONED_COMPOSITION container \
+                                      (canonical JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `versioned_object_uid`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_composition_get(
@@ -476,12 +781,18 @@ pub(crate) async fn versioned_composition_get(
     path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/revision_history",
     tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("versioned_object_uid" = String, Path, description = "The versioned object uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("versioned_object_uid" = String, Path,
+         description = "VERSIONED_COMPOSITION identifier, taken from \
+                        VERSIONED_COMPOSITION.uid.value (a HIER_OBJECT_ID UUID).")
     ),
     responses(
-        (status = 200, description = "The revision history.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The REVISION_HISTORY of the \
+                                      VERSIONED_COMPOSITION (canonical JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `versioned_object_uid`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_composition_revision_history(
@@ -505,12 +816,26 @@ pub(crate) async fn versioned_composition_revision_history(
     path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version",
     tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("versioned_object_uid" = String, Path, description = "The versioned object uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("versioned_object_uid" = String, Path,
+         description = "VERSIONED_COMPOSITION identifier, taken from \
+                        VERSIONED_COMPOSITION.uid.value (a HIER_OBJECT_ID UUID)."),
+        ("version_at_time" = Option<String>, Query,
+         description = "A time in the extended ISO 8601 format; the VERSION \
+                        extant at that time is returned. Absent means the \
+                        latest VERSION.")
     ),
     responses(
-        (status = 200, description = "The COMPOSITION version.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ORIGINAL_VERSION of the COMPOSITION \
+                                      (canonical JSON/XML); `ETag` (weak `W/` \
+                                      form) carries the version uid.",
+         body = serde_json::Value),
+        (status = 400, description = "Malformed `version_at_time`.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `versioned_object_uid`, \
+                                      or no VERSION at the specified time.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_composition_version_get_at_time(
@@ -534,13 +859,23 @@ pub(crate) async fn versioned_composition_version_get_at_time(
     path = "/ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}",
     tag = "COMPOSITION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("versioned_object_uid" = String, Path, description = "The versioned object uid."),
-        ("version_uid" = String, Path, description = "The version uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("versioned_object_uid" = String, Path,
+         description = "VERSIONED_COMPOSITION identifier, taken from \
+                        VERSIONED_COMPOSITION.uid.value (a HIER_OBJECT_ID UUID)."),
+        ("version_uid" = String, Path,
+         description = "VERSION identifier, taken from VERSION.uid.value \
+                        (an OBJECT_VERSION_ID).")
     ),
     responses(
-        (status = 200, description = "The COMPOSITION version.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ORIGINAL_VERSION of the COMPOSITION \
+                                      identified by `version_uid` (canonical \
+                                      JSON/XML).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `versioned_object_uid`, \
+                                      or no VERSION with `version_uid`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn versioned_composition_version_get_by_id(
@@ -750,7 +1085,17 @@ pub(crate) async fn directory_get_by_version_id(
 /// Create a CONTRIBUTION (`POST /ehr/{ehr_id}/contribution`).
 #[utoipa::path(
     post, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default), `return=representation`, \
+                        or `return=identifier`."),
+        ("openehr-template-id" = Option<String>, Header,
+         description = "The template id; required when an inner \
+                        `versions[].data` uses a Simplified Format (which \
+                        carries no template_id).")
+    ),
     request_body(
 
         // The envelope is always canonical JSON; a Simplified media type selects
@@ -760,10 +1105,26 @@ pub(crate) async fn directory_get_by_version_id(
         description = "A CONTRIBUTION (canonical JSON envelope; inner versions[].data \
                        may be a Simplified Format with the `openehr-template-id` header)."
     ),
-    responses((
-        status = 201, description = "Created.",
-        content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
-    ))
+    responses(
+        (
+            status = 201, description = "Created; `ETag` (weak `W/` form) carries \
+                                        the new `contribution_uid`, `Location` \
+                                        the CONTRIBUTION URL. Body per `Prefer` \
+                                        (representation or identifier; empty for \
+                                        minimal).",
+            content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
+        ),
+        (status = 400, description = "The CONTRIBUTION could not be parsed or is \
+                                      invalid (e.g. a version's modification type \
+                                      does not match — a MODIFICATION as first \
+                                      version).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value),
+        (status = 409, description = "A CONTRIBUTION with the supplied `uid` \
+                                      already exists.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn contribution_create(
     State(state): State<AppState>,
@@ -789,13 +1150,25 @@ pub(crate) async fn contribution_create(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/contribution", tag = "CONTRIBUTION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("offset" = Option<i64>, Query, description = "Row offset (default 0)."),
-        ("fetch" = Option<i64>, Query, description = "Max rows (default 20, capped at 100).")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("offset" = Option<i64>, Query,
+         description = "OUR EXTENSION — row offset into the newest-first list \
+                        (default 0)."),
+        ("fetch" = Option<i64>, Query,
+         description = "OUR EXTENSION — maximum rows to return (default 20, \
+                        capped at 100).")
     ),
     responses(
-        (status = 200, description = "The EHR's CONTRIBUTIONs (newest first).", body = serde_json::Value),
-        (status = 404, description = "Unknown EHR.", body = serde_json::Value)
+        (status = 200, description = "The EHR's CONTRIBUTIONs, newest first: \
+                                      `{ rows: [{ uid, time_committed, committer, \
+                                      change_type }], total }`.",
+         body = serde_json::Value),
+        (status = 400, description = "Malformed `offset` or `fetch` query \
+                                      parameter.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn contribution_list(
@@ -817,15 +1190,22 @@ pub(crate) async fn contribution_list(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/contribution/{contribution_uid}", tag = "CONTRIBUTION",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("contribution_uid" = String, Path, description = "The contribution uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("contribution_uid" = String, Path,
+         description = "The CONTRIBUTION uid (a UUID).")
     ),
     responses(
         (
-            status = 200, description = "The CONTRIBUTION.",
+            status = 200, description = "The CONTRIBUTION (canonical JSON \
+                                        envelope; when a Simplified Format is \
+                                        requested, only each `versions[].data` \
+                                        payload uses that form).",
             content((serde_json::Value = "application/json"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 404, description = "Unknown `ehr_id`, or no CONTRIBUTION with \
+                                      `contribution_uid`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn contribution_get(
@@ -845,12 +1225,28 @@ pub(crate) async fn contribution_get(
 // ── Item tags ─────────────────────────────────────────────────────────────────
 
 /// Retrieve the EHR-level item tags (`GET /ehr/{ehr_id}/tags`).
+///
+/// Lists every `ITEM_TAG` on any target within the EHR, optionally filtered.
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/tags", tag = "ITEM_TAG",
-    params(("ehr_id" = String, Path, description = "The EHR id.")),
+    params(
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("tag_key" = Option<String>, Query,
+         description = "Filter by ITEM_TAG key; omit to match any."),
+        ("tag_value" = Option<String>, Query,
+         description = "Filter by ITEM_TAG value; omit to match any."),
+        ("tag_target_path" = Option<String>, Query,
+         description = "Filter by ITEM_TAG target_path; omit to match any.")
+    ),
     responses(
-        (status = 200, description = "The item tags.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The matching ITEM_TAG list (empty when none \
+                                      match).",
+         body = serde_json::Value),
+        (status = 400, description = "A filter query parameter is malformed.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn ehr_tags_get(
@@ -872,12 +1268,19 @@ pub(crate) async fn ehr_tags_get(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The composition uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "An OBJECT_VERSION_ID (tags of a specific COMPOSITION \
+                        version) or a HIER_OBJECT_ID (tags of the \
+                        VERSIONED_COMPOSITION container).")
     ),
     responses(
-        (status = 200, description = "The item tags.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAG list for the target (empty \
+                                      when none).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn composition_tags_get(
@@ -899,10 +1302,34 @@ pub(crate) async fn composition_tags_get(
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The composition uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; `204 No Content`) or \
+                        `return=representation` (`200` with the stored \
+                        ITEM_TAG list). `return=identifier` behaves as \
+                        `minimal` (a tag list has no single identifier)."),
+        ("uid_based_id" = String, Path,
+         description = "An OBJECT_VERSION_ID (tags of a specific COMPOSITION \
+                        version) or a HIER_OBJECT_ID (tags of the \
+                        VERSIONED_COMPOSITION container).")
     ),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to associate with the \
+                                target; an empty list removes all tags."),
+    responses(
+        (status = 200, description = "Updated; the stored ITEM_TAG list is \
+                                      returned (`Prefer: \
+                                      return=representation`).",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer` missing or \
+                                      `return=minimal` — the default; \
+                                      `204_updated.yaml`)."),
+        (status = 400, description = "The ITEM_TAG list is malformed.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn composition_tags_update(
     State(state): State<AppState>,
@@ -923,11 +1350,20 @@ pub(crate) async fn composition_tags_update(
 #[utoipa::path(
     delete, path = "/ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The composition uid."),
-        ("key" = String, Path, description = "The tag key.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "An OBJECT_VERSION_ID (a specific COMPOSITION version) or \
+                        a HIER_OBJECT_ID (the VERSIONED_COMPOSITION container)."),
+        ("key" = String, Path,
+         description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The matching ITEM_TAG(s) were deleted."),
+        (status = 404, description = "Unknown `ehr_id`, `uid_based_id`, or no \
+                                      ITEM_TAG with `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn composition_tags_delete(
     State(state): State<AppState>,
@@ -948,12 +1384,19 @@ pub(crate) async fn composition_tags_delete(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The EHR_STATUS uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "An OBJECT_VERSION_ID (tags of a specific EHR_STATUS \
+                        version) or a HIER_OBJECT_ID (tags of the \
+                        VERSIONED_EHR_STATUS container).")
     ),
     responses(
-        (status = 200, description = "The item tags.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 200, description = "The ITEM_TAG list for the target (empty \
+                                      when none).",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn ehr_status_tags_get(
@@ -975,10 +1418,34 @@ pub(crate) async fn ehr_status_tags_get(
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags", tag = "ITEM_TAG",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The EHR_STATUS uid.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; `204 No Content`) or \
+                        `return=representation` (`200` with the stored \
+                        ITEM_TAG list). `return=identifier` behaves as \
+                        `minimal` (a tag list has no single identifier)."),
+        ("uid_based_id" = String, Path,
+         description = "An OBJECT_VERSION_ID (tags of a specific EHR_STATUS \
+                        version) or a HIER_OBJECT_ID (tags of the \
+                        VERSIONED_EHR_STATUS container).")
     ),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    request_body(content = serde_json::Value,
+                 description = "The full ITEM_TAG list to associate with the \
+                                target; an empty list removes all tags."),
+    responses(
+        (status = 200, description = "Updated; the stored ITEM_TAG list is \
+                                      returned (`Prefer: \
+                                      return=representation`).",
+         body = serde_json::Value),
+        (status = 204, description = "Updated (`Prefer` missing or \
+                                      `return=minimal` — the default; \
+                                      `204_updated.yaml`)."),
+        (status = 400, description = "The ITEM_TAG list is malformed.",
+         body = serde_json::Value),
+        (status = 404, description = "Unknown `ehr_id` or `uid_based_id`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn ehr_status_tags_update(
     State(state): State<AppState>,
@@ -999,11 +1466,20 @@ pub(crate) async fn ehr_status_tags_update(
 #[utoipa::path(
     delete, path = "/ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}", tag = "ITEM_TAG",
     params(
-        ("ehr_id" = String, Path, description = "The EHR id."),
-        ("uid_based_id" = String, Path, description = "The EHR_STATUS uid."),
-        ("key" = String, Path, description = "The tag key.")
+        ("ehr_id" = String, Path,
+         description = "EHR identifier, taken from EHR.ehr_id.value (a UUID)."),
+        ("uid_based_id" = String, Path,
+         description = "An OBJECT_VERSION_ID (a specific EHR_STATUS version) or a \
+                        HIER_OBJECT_ID (the VERSIONED_EHR_STATUS container)."),
+        ("key" = String, Path,
+         description = "The ITEM_TAG key to delete.")
     ),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "The matching ITEM_TAG(s) were deleted."),
+        (status = 404, description = "Unknown `ehr_id`, `uid_based_id`, or no \
+                                      ITEM_TAG with `key`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn ehr_status_tags_delete(
     State(state): State<AppState>,

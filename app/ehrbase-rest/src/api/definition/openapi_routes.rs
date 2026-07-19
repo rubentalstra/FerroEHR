@@ -10,6 +10,36 @@
 //! `definition_template_adl1.4_list`, `definition_query_store.yaml`) — invalid
 //! Rust identifiers, so the handler fn names sanitise `.` to `_` while the op
 //! string passed to the dispatcher is the verbatim generated id it matches on.
+//!
+//! ## Prose-vs-OAS reconciliations (documented real wire, per handler)
+//!
+//! - **ADL 2 upload** (`definition_template_adl2_upload.yaml`): the OAS declares
+//!   `201/400/409`; the REST adapter emits the `409` on a duplicate HRID (the
+//!   native SM `upload_artefact` would replace — this seam does not), and
+//!   additionally returns `422` when the ADL2/AOM2 artefact is invalid on the
+//!   store path (the OAS folds that under `400`). The `at_version` query
+//!   parameter is `deprecated: true` and is dropped (spec-permitted); only
+//!   `Prefer` is honoured.
+//! - **ADL 2 get** (`definition_template_adl2_get.yaml`): the OAS lists a `400`
+//!   that is unreachable here (`template_id` is a path segment, always present);
+//!   the build serves only the `text/plain` ADL2 source, so an `Accept` naming
+//!   *only* the not-yet-produced `application/json` (`OperationalTemplateV2`) or
+//!   `application/xml` projections is a `406` (the cADL source parser is
+//!   deferred to the planned full-ADL2 work). ADL2 is OPTIONAL for CNF.
+//! - **ADL 2 example / version get** (`_example_get`, `_version_get`, the latter
+//!   `deprecated: true`): both return `501 Not Implemented` — they need an
+//!   example generator / cADL source parser the tree lacks (deferred,
+//!   the planned full-ADL2 work); the OAS `200/400/404/406` shapes are not produced.
+//! - **ADL 1.4 upload** (`definition_template_adl1.4_upload.yaml`): the OAS
+//!   declares `201/400/409`; our wire additionally returns `422` when the OPT
+//!   parses as XML but is structurally invalid (the OAS folds that under `400`).
+//! - **ADL 1.4 get / example** (`_get`, `_example_get`): the OAS `400` on `_get`
+//!   is unreachable (only a path parameter); the reachable statuses are the
+//!   ones documented on each operation below.
+//! - **Stored-query list by name** (`definition_query_list.yaml`): the qualified
+//!   name is a prefix pattern (empty = wildcard), so an unmatched name yields an
+//!   empty `200` list, never `404` — matching the OAS, which declares only
+//!   `200`.
 
 use axum::extract::State;
 use axum::response::Response;
@@ -44,10 +74,30 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         ))
 }
 
-/// List every stored ADL 1.4 operational template.
+/// List the stored ADL 1.4 operational templates
+/// (`GET /definition/template/adl1.4`).
 #[utoipa::path(
     get, path = "/definition/template/adl1.4", tag = "ADL1.4",
-    responses((status = 200, description = "The template ids.", body = serde_json::Value))
+    params(
+        ("template_id" = Option<String>, Query,
+         description = "Glob pattern (supports `*`) matched against each stored \
+                        `template_id`; omit to match any."),
+        ("concept" = Option<String>, Query,
+         description = "Glob pattern (supports `*`) matched against each \
+                        template's `concept`; omit to match any."),
+        ("version" = Option<String>, Query,
+         description = "Version filter (e.g. `1.2.*`, or `*` for all versions); \
+                        absent returns only the latest version of each match."),
+        ("offset" = Option<i64>, Query,
+         description = "Row offset into the result set (`0`-based, default `0`)."),
+        ("fetch" = Option<i64>, Query,
+         description = "Maximum rows to return; absent/`0` returns all matches.")
+    ),
+    responses(
+        (status = 200, description = "The matching template summaries (canonical \
+                                      JSON; empty when none match).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_template_adl1_4_list(
     State(state): State<AppState>,
@@ -63,10 +113,38 @@ pub(crate) async fn definition_template_adl1_4_list(
     .await
 }
 
-/// Upload an ADL 1.4 operational template (OPT XML).
+/// Upload an ADL 1.4 operational template
+/// (`POST /definition/template/adl1.4`).
+///
+/// The template arrives as canonical OPT XML (`Content-Type: application/xml`).
 #[utoipa::path(
     post, path = "/definition/template/adl1.4", tag = "ADL1.4",
-    responses((status = 201, description = "Template stored.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the stored OPT XML), or \
+                        `return=identifier` (the `{template_id}` JSON object).")
+    ),
+    request_body(content((serde_json::Value = "application/xml")),
+                 description = "The operational template as canonical OPT XML."),
+    responses(
+        (status = 201, description = "Stored; `Location` addresses the template, \
+                                      `ETag` (weak `W/` form) carries the \
+                                      `template_id`. Body per `Prefer` \
+                                      (representation → OPT XML; identifier → \
+                                      `{template_id}`; empty for minimal).",
+         body = serde_json::Value),
+        (status = 400, description = "The request body is not an XML template \
+                                      string.",
+         body = serde_json::Value),
+        (status = 409, description = "A template with the same `template_id` is \
+                                      already stored.",
+         body = serde_json::Value),
+        (status = 422, description = "OUR WIRE — the OPT XML parsed as XML but is \
+                                      structurally invalid (the OAS folds this \
+                                      under `400`); an `invalid_template` reject.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_template_adl1_4_upload(
     State(state): State<AppState>,
@@ -82,19 +160,33 @@ pub(crate) async fn definition_template_adl1_4_upload(
     .await
 }
 
-/// Retrieve one ADL 1.4 template by id.
+/// Retrieve one ADL 1.4 template by id
+/// (`GET /definition/template/adl1.4/{template_id}`).
 #[utoipa::path(
     get, path = "/definition/template/adl1.4/{template_id}", tag = "ADL1.4",
-    params(("template_id" = String, Path, description = "The template id.")),
+    params(
+        ("template_id" = String, Path,
+         description = "The `template_id`; a partial id resolves to the latest \
+                        major version of that template."),
+        ("Accept" = Option<String>, Header,
+         description = "`application/xml` (the canonical OPT; also the default \
+                        for absent/`*/*`), or `application/openehr.wt+json` / \
+                        `application/json` (the Web Template document — the only \
+                        JSON projection of an OPT).")
+    ),
     responses(
         (
-            status = 200, description = "The template.", 
-            // The canonical OPT is application/xml; the Web Template document is
-            // application/openehr.wt+json (Accept_template; a bare application/json
-            // also returns the Web Template — the only JSON projection of an OPT).
+            status = 200, description = "The template; `ETag` (weak `W/` form) \
+                                        carries the `template_id`. Body per \
+                                        `Accept`: OPT XML, or the Web Template.",
             content((serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt+json"), (serde_json::Value = "application/json"))
         ),
-        (status = 404, description = "Unknown template.", body = serde_json::Value)
+        (status = 404, description = "No template with `template_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "`Accept` is outside `application/xml`, \
+                                      `application/openehr.wt+json`, and \
+                                      `application/json`.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_template_adl1_4_get(
@@ -111,18 +203,40 @@ pub(crate) async fn definition_template_adl1_4_get(
     .await
 }
 
-/// An example COMPOSITION for an ADL 1.4 template.
+/// Generate an example COMPOSITION for an ADL 1.4 template
+/// (`GET /definition/template/adl1.4/{template_id}/example`).
 #[utoipa::path(
     get, path = "/definition/template/adl1.4/{template_id}/example", tag = "ADL1.4",
-    params(("template_id" = String, Path, description = "The template id.")),
+    params(
+        ("template_id" = String, Path,
+         description = "The `template_id`; a partial id resolves to the latest \
+                        major version."),
+        ("type" = Option<String>, Query,
+         description = "`input` (default; ready to commit) or `output` (as it \
+                        would appear when retrieved)."),
+        ("detail_level" = Option<String>, Query,
+         description = "Example detail: `required` (default), `medium`, or \
+                        `complete`."),
+        ("Accept" = Option<String>, Header,
+         description = "One of `application/json` (default), `application/xml`, \
+                        `application/openehr.wt.flat+json`, or \
+                        `application/openehr.wt.structured+json`.")
+    ),
     responses(
         (
-            status = 200, description = "An example COMPOSITION.", 
-            // The example is generated as canonical RM and serialized per Accept
-            // in any of the four LOCATABLE forms (Accept_LOCATABLE).
+            status = 200, description = "The generated example COMPOSITION, \
+                                        serialized per `Accept` (canonical \
+                                        JSON/XML or a Simplified Format).",
             content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
-        (status = 404, description = "Unknown template.", body = serde_json::Value)
+        (status = 400, description = "`type` or `detail_level` is outside its \
+                                      enumerated set.",
+         body = serde_json::Value),
+        (status = 404, description = "No template with `template_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "`Accept` is outside the four supported \
+                                      example representations.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_template_adl1_4_example_get(
@@ -139,10 +253,29 @@ pub(crate) async fn definition_template_adl1_4_example_get(
     .await
 }
 
-/// List every stored ADL 2 template.
+/// List the stored ADL 2 templates (`GET /definition/template/adl2`).
 #[utoipa::path(
     get, path = "/definition/template/adl2", tag = "ADL2",
-    responses((status = 200, description = "The template ids.", body = serde_json::Value))
+    params(
+        ("template_id" = Option<String>, Query,
+         description = "Glob pattern (supports `*`) matched against each stored \
+                        `template_id`; omit to match any."),
+        ("concept" = Option<String>, Query,
+         description = "Glob pattern (supports `*`) matched against each \
+                        template's `concept`; omit to match any."),
+        ("version" = Option<String>, Query,
+         description = "Version filter (e.g. `1.2.*`, or `*` for all versions); \
+                        absent returns only the latest version of each match."),
+        ("offset" = Option<i64>, Query,
+         description = "Row offset into the result set (`0`-based, default `0`)."),
+        ("fetch" = Option<i64>, Query,
+         description = "Maximum rows to return; absent/`0` returns all matches.")
+    ),
+    responses(
+        (status = 200, description = "The matching template summaries (canonical \
+                                      JSON; empty when none match).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_template_adl2_list(
     State(state): State<AppState>,
@@ -158,10 +291,38 @@ pub(crate) async fn definition_template_adl2_list(
     .await
 }
 
-/// Upload an ADL 2 template.
+/// Upload an ADL 2 operational template (`POST /definition/template/adl2`).
+///
+/// The template arrives as `text/plain` ADL2 source. The deprecated `at_version`
+/// query parameter is dropped (spec-permitted).
 #[utoipa::path(
     post, path = "/definition/template/adl2", tag = "ADL2",
-    responses((status = 201, description = "Template stored.", body = serde_json::Value))
+    params(
+        ("Prefer" = Option<String>, Header,
+         description = "`return=minimal` (default; empty body), \
+                        `return=representation` (the stored ADL2 source, \
+                        `text/plain`), or `return=identifier` (the \
+                        `{template_id}` JSON object).")
+    ),
+    request_body(content((String = "text/plain")),
+                 description = "The ADL2 operational-template source."),
+    responses(
+        (status = 201, description = "Stored; `Location` addresses the template. \
+                                      Body per `Prefer` (representation → ADL2 \
+                                      source; identifier → `{template_id}`; empty \
+                                      for minimal).",
+         body = serde_json::Value),
+        (status = 400, description = "The source fails the registration \
+                                      validator (a precondition violation).",
+         body = serde_json::Value),
+        (status = 409, description = "An ADL2 template with the same HRID is \
+                                      already stored.",
+         body = serde_json::Value),
+        (status = 422, description = "OUR WIRE — the ADL2/AOM2 artefact is \
+                                      invalid on the store path (the OAS folds \
+                                      this under `400`).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_template_adl2_upload(
     State(state): State<AppState>,
@@ -177,13 +338,34 @@ pub(crate) async fn definition_template_adl2_upload(
     .await
 }
 
-/// Retrieve one ADL 2 template by id.
+/// Retrieve one ADL 2 template by id
+/// (`GET /definition/template/adl2/{template_id}`).
+///
+/// Served as `text/plain` ADL2 source; see the module doc for the `406` on an
+/// `Accept` naming only the not-yet-produced JSON/XML projections.
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}", tag = "ADL2",
-    params(("template_id" = String, Path, description = "The template id.")),
+    params(
+        ("template_id" = String, Path,
+         description = "The `template_id`; a partial id resolves to the latest \
+                        major version."),
+        ("Accept" = Option<String>, Header,
+         description = "`text/plain` (the ADL2 source; also the default for \
+                        absent/`*/*`/`text/*`). `application/json` \
+                        (`OperationalTemplateV2`) and `application/xml` are \
+                        enumerated by the spec but not yet produced → `406`.")
+    ),
     responses(
-        (status = 200, description = "The template.", body = serde_json::Value),
-        (status = 404, description = "Unknown template.", body = serde_json::Value)
+        (status = 200, description = "The ADL2 operational-template source \
+                                      (`text/plain`).",
+         content((String = "text/plain"))),
+        (status = 404, description = "No template with `template_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "OUR WIRE — `Accept` names only the \
+                                      `application/json`/`application/xml` \
+                                      projections (a cADL parser is deferred, \
+                                      the planned full-ADL2 work).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_template_adl2_get(
@@ -200,13 +382,29 @@ pub(crate) async fn definition_template_adl2_get(
     .await
 }
 
-/// An example COMPOSITION for an ADL 2 template.
+/// Generate an example COMPOSITION for an ADL 2 template
+/// (`GET /definition/template/adl2/{template_id}/example`).
+///
+/// NOT IMPLEMENTED — returns `501`; it needs an example generator over a
+/// cADL/AOM2 source model the tree lacks (deferred to the planned full-ADL2 work; ADL2 is
+/// OPTIONAL for CNF). The OAS `200/400/404/406` shapes are not produced.
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}/example", tag = "ADL2",
-    params(("template_id" = String, Path, description = "The template id.")),
+    params(
+        ("template_id" = String, Path,
+         description = "The `template_id`; a partial id resolves to the latest \
+                        major version."),
+        ("type" = Option<String>, Query,
+         description = "`input` (default) or `output` (accepted but not acted \
+                        on; the operation is not implemented)."),
+        ("detail_level" = Option<String>, Query,
+         description = "`required` (default), `medium`, or `complete` (accepted \
+                        but not acted on; the operation is not implemented).")
+    ),
     responses(
-        (status = 200, description = "An example COMPOSITION.", body = serde_json::Value),
-        (status = 404, description = "Unknown template.", body = serde_json::Value)
+        (status = 501, description = "OUR WIRE — the ADL2 example generator is \
+                                      not implemented (deferred to the planned full-ADL2 work).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_template_adl2_example_get(
@@ -223,16 +421,27 @@ pub(crate) async fn definition_template_adl2_example_get(
     .await
 }
 
-/// Retrieve one ADL 2 template at a specific version.
+/// Retrieve one ADL 2 template at a specific version
+/// (`GET /definition/template/adl2/{template_id}/{version}`).
+///
+/// DEPRECATED in the OAS, and NOT IMPLEMENTED here — returns `501`; it needs a
+/// cADL source parser for the `OperationalTemplateV2` JSON form (the full
+/// ADL2 implementation is planned work; ADL2 is OPTIONAL for CNF). The OAS
+/// `200/400/404` shapes are not produced.
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}/{version}", tag = "ADL2",
     params(
-        ("template_id" = String, Path, description = "The template id."),
-        ("version" = String, Path, description = "The template version.")
+        ("template_id" = String, Path,
+         description = "The `template_id`; a partial id resolves to the latest \
+                        major version."),
+        ("version" = String, Path,
+         description = "A SEMVER version (exact, or a `{major}`/`{major}.{minor}` \
+                        prefix resolving to the highest match).")
     ),
     responses(
-        (status = 200, description = "The template version.", body = serde_json::Value),
-        (status = 404, description = "Unknown template version.", body = serde_json::Value)
+        (status = 501, description = "OUR WIRE — the ADL2 versioned get is not \
+                                      implemented (deferred to the planned full-ADL2 work).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_template_adl2_version_get(
@@ -249,11 +458,18 @@ pub(crate) async fn definition_template_adl2_version_get(
     .await
 }
 
-/// List every stored query (the empty-prefix form of the named list — our
-/// own convenience extension of the OAS route's prefix semantics).
+/// List every stored query (`GET /definition/query`).
+///
+/// OUR OWN EXTENSION — no openEHR spec governs the bare form; the vendored OAS
+/// defines only the `{qualified_query_name}` route. This is the empty-prefix
+/// case of that route's documented prefix semantics ("List stored queries").
 #[utoipa::path(
     get, path = "/definition/query", tag = "Query",
-    responses((status = 200, description = "Every stored query.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "Every stored query, all versions (canonical \
+                                      JSON; empty when none are stored).",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_query_list_all(
     State(state): State<AppState>,
@@ -269,13 +485,23 @@ pub(crate) async fn definition_query_list_all(
     .await
 }
 
-/// List the stored versions of a named stored query.
+/// List the stored versions of a named stored query
+/// (`GET /definition/query/{qualified_query_name}`).
+///
+/// The name is a prefix pattern (`[{namespace}::]{query-name}`), so an unmatched
+/// name yields an empty `200` list, never `404` (see the module doc).
 #[utoipa::path(
     get, path = "/definition/query/{qualified_query_name}", tag = "Query",
-    params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
+    params(
+        ("qualified_query_name" = String, Path,
+         description = "The qualified stored-query name as a prefix pattern \
+                        (`[{namespace}::]{query-name}`); it matches every query \
+                        whose name starts with it (case-insensitive).")
+    ),
     responses(
-        (status = 200, description = "The stored query versions.", body = serde_json::Value),
-        (status = 404, description = "Unknown stored query.", body = serde_json::Value)
+        (status = 200, description = "The matching stored queries, all versions \
+                                      (canonical JSON; empty when none match).",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_query_list(
@@ -292,11 +518,30 @@ pub(crate) async fn definition_query_list(
     .await
 }
 
-/// Store a named AQL query (auto-versioned).
+/// Store a named AQL query, server-assigned SEMVER
+/// (`PUT /definition/query/{qualified_query_name}`).
+///
+/// The AQL text is the `text/plain` request body.
 #[utoipa::path(
     put, path = "/definition/query/{qualified_query_name}", tag = "Query",
-    params(("qualified_query_name" = String, Path, description = "The qualified stored-query name.")),
-    responses((status = 200, description = "Stored.", body = serde_json::Value))
+    params(
+        ("qualified_query_name" = String, Path,
+         description = "The qualified stored-query name \
+                        (`[{namespace}::]{query-name}`)."),
+        ("query_type" = Option<String>, Query,
+         description = "The query formalism (default `AQL`); a non-AQL formalism \
+                        is an honest unsupported-formalism `400`.")
+    ),
+    request_body(content((String = "text/plain")),
+                 description = "The AQL query text."),
+    responses(
+        (status = 200, description = "Stored; `Location` addresses the stored \
+                                      query at its auto-assigned version.",
+         body = serde_json::Value),
+        (status = 400, description = "The AQL fails to parse, or `query_type` is \
+                                      an unsupported non-AQL formalism.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_query_store_yaml(
     State(state): State<AppState>,
@@ -312,16 +557,25 @@ pub(crate) async fn definition_query_store_yaml(
     .await
 }
 
-/// Retrieve a named stored query at a specific version.
+/// Retrieve a named stored query at a specific version
+/// (`GET /definition/query/{qualified_query_name}/{version}`).
 #[utoipa::path(
     get, path = "/definition/query/{qualified_query_name}/{version}", tag = "Query",
     params(
-        ("qualified_query_name" = String, Path, description = "The qualified stored-query name."),
-        ("version" = String, Path, description = "The stored-query version.")
+        ("qualified_query_name" = String, Path,
+         description = "The qualified stored-query name \
+                        (`[{namespace}::]{query-name}`)."),
+        ("version" = String, Path,
+         description = "A SEMVER version (exact, or a `{major}`/`{major}.{minor}` \
+                        prefix resolving to the highest matching version).")
     ),
     responses(
-        (status = 200, description = "The stored query.", body = serde_json::Value),
-        (status = 404, description = "Unknown stored query version.", body = serde_json::Value)
+        (status = 200, description = "The stored query and its metadata \
+                                      (canonical JSON).",
+         body = serde_json::Value),
+        (status = 404, description = "No stored query matches that name and \
+                                      version.",
+         body = serde_json::Value)
     )
 )]
 pub(crate) async fn definition_query_version_get(
@@ -338,14 +592,35 @@ pub(crate) async fn definition_query_version_get(
     .await
 }
 
-/// Store a named AQL query at a specific version.
+/// Store a named AQL query at a specific version
+/// (`PUT /definition/query/{qualified_query_name}/{version}`).
+///
+/// The AQL text is the `text/plain` request body; the version is stored verbatim.
 #[utoipa::path(
     put, path = "/definition/query/{qualified_query_name}/{version}", tag = "Query",
     params(
-        ("qualified_query_name" = String, Path, description = "The qualified stored-query name."),
-        ("version" = String, Path, description = "The stored-query version.")
+        ("qualified_query_name" = String, Path,
+         description = "The qualified stored-query name \
+                        (`[{namespace}::]{query-name}`)."),
+        ("version" = String, Path,
+         description = "The exact SEMVER version to store the query under."),
+        ("query_type" = Option<String>, Query,
+         description = "The query formalism (default `AQL`); a non-AQL formalism \
+                        is an honest unsupported-formalism `400`.")
     ),
-    responses((status = 200, description = "Stored.", body = serde_json::Value))
+    request_body(content((String = "text/plain")),
+                 description = "The AQL query text."),
+    responses(
+        (status = 200, description = "Stored; `Location` addresses the stored \
+                                      query at this version.",
+         body = serde_json::Value),
+        (status = 400, description = "The AQL fails to parse, or `query_type` is \
+                                      an unsupported non-AQL formalism.",
+         body = serde_json::Value),
+        (status = 409, description = "A stored query already exists at this \
+                                      `(name, version)`.",
+         body = serde_json::Value)
+    )
 )]
 pub(crate) async fn definition_query_version_store_yaml(
     State(state): State<AppState>,

@@ -107,7 +107,7 @@ struct ErrorBody {
 /// Render an arbitrary status as the `{ error, message }` openEHR error body.
 /// Used for the method-status responses (`405`/`501`) that have no dedicated
 /// [`ApiError`] variant (the contract's `ApiError` cannot represent `405`).
-fn status_error_response(status: StatusCode, message: &str) -> Response {
+pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Response {
     let body = ErrorBody {
         error: status.canonical_reason().unwrap_or("Error").to_owned(),
         message: message.to_owned(),

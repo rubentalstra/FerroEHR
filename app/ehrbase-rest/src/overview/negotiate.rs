@@ -275,7 +275,7 @@ pub(crate) fn flat_json_body(status: StatusCode, json: String) -> Response {
 // ── Body decoders ──────────────────────────────────────────────────────────
 
 /// Format an HTTP-date (RFC 7231 IMF-fixdate, always GMT) for `Last-Modified`.
-fn http_date(at: jiff::Timestamp) -> String {
+pub(crate) fn http_date(at: jiff::Timestamp) -> String {
     at.strftime("%a, %d %b %Y %H:%M:%S GMT").to_string()
 }
 
@@ -531,7 +531,7 @@ fn identifier_status(minimal_status: StatusCode, repr_status: StatusCode) -> Sta
 
 /// Render a `return=identifier` response body: `{ "uid": "<uid>" }` in JSON, or
 /// the `<uid>` element when XML is negotiated.
-fn identifier_response(headers: &HeaderMap, status: StatusCode, uid: &str) -> Response {
+pub(crate) fn identifier_response(headers: &HeaderMap, status: StatusCode, uid: &str) -> Response {
     match resolve_accept(headers, CANONICAL, WireFormat::CanonicalJson) {
         Some(WireFormat::CanonicalXml) => {
             // The OAS defines the identifier body only for JSON; the spec is

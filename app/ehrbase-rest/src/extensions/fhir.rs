@@ -7,8 +7,7 @@
 //! data-binding frames, whereas this connector *commits* inbound FHIR resources
 //! as COMPOSITIONs and *serves* them back — the roadmap's "FHIR/HL7v2 frames =
 //! the connector seam" means SPS reuses this machinery, not that either
-//! subsumes the other. Design record: `docs/enterprise/product-roadmap.md` §2.1
-//! and the classification register `docs/design/its-rest/extensions.md`.
+//! subsumes the other.
 //!
 //! Two surfaces, both config-gated (`AppConfig::fhir_api_enabled`, default
 //! `false`): when disabled every route answers `404` (an `OperationOutcome`)
@@ -89,15 +88,21 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
         ))
 }
 
-/// Inbound connector: commit a FHIR R4 resource as an openEHR COMPOSITION. Only
-/// the starter set (Patient, Observation, Condition, `DocumentReference`) is
-/// supported; anything else is 501. Responses are `application/fhir+json`.
+/// Inbound connector: commit a FHIR R4 resource as an openEHR COMPOSITION
+/// (`POST /fhir/r4/{resource_type}`).
+///
+/// Only the starter set (Patient, Observation, Condition, `DocumentReference`)
+/// is supported; anything else is `501`. EVERY response (success and error) is
+/// a FHIR `OperationOutcome` in `application/fhir+json`. Config-gated on the
+/// FHIR connector: `404` when `fhir_api_enabled` is off.
 #[utoipa::path(
     post, path = "/fhir/r4/{resource_type}", tag = "fhir",
     params(("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only).")),
     request_body(content = serde_json::Value, description = "A FHIR R4 resource (JSON)."),
     responses(
-        (status = 201, description = "Committed as a COMPOSITION (informational OperationOutcome + ETag/Location).", content_type = "application/fhir+json"),
+        (status = 201, description = "Committed as a COMPOSITION (informational OperationOutcome + ETag/Location pointing at the openEHR COMPOSITION).", content_type = "application/fhir+json"),
+        (status = 400, description = "The request body is not valid JSON, or a mapping precondition failed (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 422, description = "Mapped COMPOSITION failed validation (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
     )
@@ -111,17 +116,23 @@ pub(crate) async fn fhir_ingest(
 }
 
 /// Read façade: a patient-scoped FHIR searchset Bundle of reverse-mapped
-/// resources. `patient` is mandatory. Responses are `application/fhir+json`.
+/// resources (`GET /fhir/r4/{resource_type}`).
+///
+/// `patient` is mandatory — the façade serves only this explicit scope, never
+/// generic FHIR Search. The success Bundle is `application/fhir+json`; errors
+/// are FHIR `OperationOutcome`. Config-gated on the FHIR connector: `404` when
+/// `fhir_api_enabled` is off.
 #[utoipa::path(
     get, path = "/fhir/r4/{resource_type}", tag = "fhir",
     params(
         ("resource_type" = String, Path, description = "The FHIR R4 resource type (starter set only)."),
-        ("patient" = String, Query, description = "The patient scope (EHR subject or id) — required."),
+        ("patient" = String, Query, description = "The patient scope (EHR subject or id) — required, non-empty."),
         ("_count" = Option<i64>, Query, description = "Optional page size.")
     ),
     responses(
-        (status = 200, description = "A FHIR searchset Bundle.", content_type = "application/fhir+json"),
-        (status = 400, description = "Missing `patient` scope (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 200, description = "A FHIR searchset Bundle of reverse-mapped resources.", content_type = "application/fhir+json"),
+        (status = 400, description = "The `patient` scope is missing or blank (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json"),
         (status = 501, description = "Resource type outside the starter set (OperationOutcome).", content_type = "application/fhir+json")
     )
 )]
@@ -133,8 +144,9 @@ pub(crate) async fn fhir_search(
     guarded_dispatch(state, "fhir_search", parts, dispatch).await
 }
 
-/// The RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** transaction: a FHIR
-/// search over the local Audit Record Repository, returning a `searchset`
+/// The RESTful-ATNA **ITI-81 Retrieve ATNA Audit Event** transaction
+/// (`GET /fhir/r4/AuditEvent`): a FHIR search over the local Audit Record
+/// Repository, returning a `searchset`
 /// Bundle of stored FHIR R4 `AuditEvent` documents (IHE BALP shape). Gated by
 /// the local store (`[audit.store]`; 404 when off — independent of the FHIR
 /// connector gate) and admin-only under RBAC (the node's security log is an
@@ -168,10 +180,16 @@ pub(crate) async fn audit_event_search(
     guarded_dispatch(state, "audit_event_search", parts, dispatch).await
 }
 
-/// List the FHIR mapping artefacts (mapping-as-data).
+/// List the FHIR mapping artefacts — mapping-as-data (`GET /admin/fhir_mapping`).
+///
+/// Config-gated on the FHIR connector: `404` (a FHIR `OperationOutcome`) when
+/// `fhir_api_enabled` is off. The success list is `application/json`.
 #[utoipa::path(
     get, path = "/admin/fhir_mapping", tag = "fhir",
-    responses((status = 200, description = "The mapping records.", body = serde_json::Value))
+    responses(
+        (status = 200, description = "The mapping records.", body = serde_json::Value),
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json")
+    )
 )]
 pub(crate) async fn fhir_mapping_list(
     State(state): State<AppState>,
@@ -181,11 +199,20 @@ pub(crate) async fn fhir_mapping_list(
     guarded_dispatch(state, "fhir_mapping_list", parts, dispatch).await
 }
 
-/// Create a FHIR mapping artefact.
+/// Create a FHIR mapping artefact (`POST /admin/fhir_mapping`).
+///
+/// Body: `{name, definition, template_id?}`. The success record is
+/// `application/json`; every error is a FHIR `OperationOutcome`.
 #[utoipa::path(
     post, path = "/admin/fhir_mapping", tag = "fhir",
-    request_body(content = serde_json::Value, description = "The mapping definition."),
-    responses((status = 201, description = "Created.", body = serde_json::Value))
+    request_body(content = serde_json::Value, description = "The mapping definition (canonical JSON)."),
+    responses(
+        (status = 201, description = "Created; the stored mapping record is returned.", body = serde_json::Value),
+        (status = 400, description = "`name`/`definition` is missing or malformed, the `template_id` is unknown (FK), or the body is not valid JSON (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 409, description = "A mapping with that name already exists (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 415, description = "The request `Content-Type` is not `application/json` (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "The FHIR connector is disabled (`fhir_api_enabled` off) (OperationOutcome).", content_type = "application/fhir+json")
+    )
 )]
 pub(crate) async fn fhir_mapping_create(
     State(state): State<AppState>,
@@ -195,13 +222,17 @@ pub(crate) async fn fhir_mapping_create(
     guarded_dispatch(state, "fhir_mapping_create", parts, dispatch).await
 }
 
-/// Read one FHIR mapping artefact by id. 404 when absent.
+/// Read one FHIR mapping artefact by id
+/// (`GET /admin/fhir_mapping/{mapping_id}`).
+///
+/// The success record is `application/json`; errors are FHIR `OperationOutcome`.
 #[utoipa::path(
     get, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
     responses(
         (status = 200, description = "The mapping record.", body = serde_json::Value),
-        (status = 404, description = "Not found.", body = serde_json::Value)
+        (status = 400, description = "`mapping_id` is not a valid UUID (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome).", content_type = "application/fhir+json")
     )
 )]
 pub(crate) async fn fhir_mapping_get(
@@ -212,12 +243,21 @@ pub(crate) async fn fhir_mapping_get(
     guarded_dispatch(state, "fhir_mapping_get", parts, dispatch).await
 }
 
-/// Update one FHIR mapping artefact.
+/// Update one FHIR mapping artefact (`PUT /admin/fhir_mapping/{mapping_id}`).
+///
+/// The success record is `application/json`; every error is a FHIR
+/// `OperationOutcome`.
 #[utoipa::path(
     put, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
-    request_body(content = serde_json::Value, description = "The updated mapping definition."),
-    responses((status = 200, description = "Updated.", body = serde_json::Value))
+    request_body(content = serde_json::Value, description = "The updated mapping definition (canonical JSON)."),
+    responses(
+        (status = 200, description = "Updated; the stored mapping record is returned.", body = serde_json::Value),
+        (status = 400, description = "`mapping_id` is not a valid UUID, the definition is malformed, the `template_id` is unknown (FK), or the body is not valid JSON (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 409, description = "A mapping with that name already exists (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 415, description = "The request `Content-Type` is not `application/json` (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome).", content_type = "application/fhir+json")
+    )
 )]
 pub(crate) async fn fhir_mapping_update(
     State(state): State<AppState>,
@@ -227,11 +267,18 @@ pub(crate) async fn fhir_mapping_update(
     guarded_dispatch(state, "fhir_mapping_update", parts, dispatch).await
 }
 
-/// Delete one FHIR mapping artefact.
+/// Delete one FHIR mapping artefact
+/// (`DELETE /admin/fhir_mapping/{mapping_id}`).
+///
+/// Errors are FHIR `OperationOutcome`.
 #[utoipa::path(
     delete, path = "/admin/fhir_mapping/{mapping_id}", tag = "fhir",
     params(("mapping_id" = String, Path, description = "The mapping UUID.")),
-    responses((status = 204, description = "Deleted."))
+    responses(
+        (status = 204, description = "Deleted."),
+        (status = 400, description = "`mapping_id` is not a valid UUID (OperationOutcome).", content_type = "application/fhir+json"),
+        (status = 404, description = "No mapping with that id, or the FHIR connector is disabled (OperationOutcome).", content_type = "application/fhir+json")
+    )
 )]
 pub(crate) async fn fhir_mapping_delete(
     State(state): State<AppState>,
