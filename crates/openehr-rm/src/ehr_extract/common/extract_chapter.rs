@@ -8,12 +8,9 @@ use crate::data_types::text::dv_text::DvText;
 use crate::ehr_extract::common::extract_entity_chapter::ExtractEntityChapter;
 use crate::ehr_extract::common::extract_item::ExtractItem;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// One content chapter of an Extract; contains information relating to only one entity.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_CHAPTER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractChapterData {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.
@@ -36,39 +33,8 @@ pub struct ExtractChapterData {
 
 /// One content chapter of an Extract; contains information relating to only one entity.
 /// Polymorphic slot of `EXTRACT_CHAPTER`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExtractChapter {
     ExtractEntityChapter(ExtractEntityChapter),
     ExtractChapter(ExtractChapterData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for ExtractChapter {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("EXTRACT_CHAPTER") => {
-                ::core::result::Result::Ok(Self::ExtractChapter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EXTRACT_ENTITY_CHAPTER") => {
-                ::core::result::Result::Ok(Self::ExtractEntityChapter(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::ExtractChapter(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "EXTRACT_CHAPTER: unexpected `_type` {__other:?} (expected one of: EXTRACT_CHAPTER, EXTRACT_ENTITY_CHAPTER)"
-                )))
-            }
-        }
-    }
 }

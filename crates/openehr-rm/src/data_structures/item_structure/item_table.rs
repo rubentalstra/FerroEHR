@@ -7,7 +7,6 @@ use crate::common::archetyped::link::Link;
 use crate::data_structures::representation::cluster::Cluster;
 use crate::data_types::text::dv_text::DvText;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Logical relational database style table data structure, in which columns are named and ordered with respect to each other. Implemented using Cluster-per-row encoding. Each row Cluster must have an identical number of Elements, each of which in turn must have identical names and value types in the corresponding positions in each row.
 ///
@@ -16,8 +15,7 @@ use openehr_derive::OpenEhrType;
 /// Used for representing any data which is logically a table of values, such as blood pressure, most protocols, many blood tests etc.
 ///
 /// Misuse: Not to be used for time-based data, which should be represented with the temporal class `HISTORY`. The table may be empty.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ITEM_TABLE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ItemTable {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use openehr_derive::OpenEhrType;
 
 /// Form of routine specific to procedure object signatures, with  `_result_type_` being the special Status meta-type
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PROCEDURE_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmProcedureType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.
@@ -18,4 +16,10 @@ pub struct BmmProcedureType {
     // inherited: BMM_ROUTINE_TYPE
     /// Type of arguments in the signature, if any; represented as a type-tuple (list of arbitrary types).
     pub argument_types: Option<BmmTupleType>,
+}
+
+impl BmmProcedureType {
+    /// Base name (built-in).
+    /// BMM constant `base_name`.
+    pub const BASE_NAME: &'static str = "Procedure";
 }

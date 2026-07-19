@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of `BMM_GENERIC_PARAMETER`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_GENERIC_PARAMETER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmGenericParameter {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

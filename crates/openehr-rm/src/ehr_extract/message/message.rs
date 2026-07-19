@@ -4,11 +4,9 @@
 use crate::common::generic::audit_details::AuditDetails;
 use crate::common::generic::party_proxy::PartyProxy;
 use crate::ehr_extract::message::message_content::MessageContent;
-use openehr_derive::OpenEhrType;
 
 /// A “message” is an authored, possibly signed, piece of content intended for one or more recipients. Since the recipient may or may not be known directly, recipients are specified in the `ADDRESSED_MESSAGE` class.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "MESSAGE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     /// Details of who actually created the message and when. This is the person who entered the data or otherwise caused the message to be created, or might be a piece of software.
     pub audit: AuditDetails,

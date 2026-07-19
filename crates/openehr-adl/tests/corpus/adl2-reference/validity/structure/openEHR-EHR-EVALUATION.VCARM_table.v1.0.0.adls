@@ -1,0 +1,56 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.VCARM_table.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["date"] = <"01/05/2004">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test archetype of openEHR ITEM_TABLE type">
+			keywords = <"ADL", "test">
+			copyright = <"copyright (c) 2010 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"FAIL">
+	>
+	lifecycle_state = <"unmanaged">
+
+definition
+	EVALUATION[id1] matches {	-- outer object
+		data matches {
+			ITEM_TABLE[id2] matches {	-- some kind of result
+				columns cardinality matches {3; ordered} matches {
+					CLUSTER[id3] matches {	-- aspect
+						name matches {
+							DV_CODED_TEXT
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				description = <"outer object">
+				text = <"outer object">
+			>
+			["id2"] = <
+				description = <"some kind of result">
+				text = <"some kind of result">
+			>
+			["id3"] = <
+				description = <"aspect">
+				text = <"aspect">
+			>
+		>
+	>

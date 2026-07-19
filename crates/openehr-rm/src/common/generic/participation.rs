@@ -6,13 +6,11 @@ use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::text::dv_coded_text::DvCodedText;
 use crate::data_types::text::dv_text::DvText;
-use openehr_derive::OpenEhrType;
 
 /// Model of a participation of a Party (any Actor or Role) in an activity.  Used to represent any participation of a Party in some activity, which is not  explicitly in the model, e.g. assisting nurse. Can be used to record past or  future participations.
 ///
 /// Should not be used in place of more permanent relationships between demographic entities.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "PARTICIPATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Participation {
     /// The function of the Party in this participation (note that a given party might participate in more than one way in a particular activity). This attribute should be coded, but cannot be limited to the HL7v3:ParticipationFunction vocabulary, since it is too limited and hospital-oriented.
     pub function: DvText,

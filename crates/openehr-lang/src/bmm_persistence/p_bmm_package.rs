@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::model::bmm_package::BmmPackage;
-use openehr_derive::OpenEhrType;
 
 /// Persisted form of a package as a tree structure whose nodes can contain more packages and/or classes.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_PACKAGE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmPackage {
     // inherited: P_BMM_PACKAGE_CONTAINER
     /// Package structure as a hierarchy of packages each potentially containing names of classes in that package in the original model.

@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::base_types::identification::object_id::ObjectId;
-use openehr_derive::OpenEhrType;
 
 /// Reference to access group in an access control service.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ACCESS_GROUP_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AccessGroupRef {
     // inherited: OBJECT_REF
     /// Namespace to which this identifier belongs in the local system context (and possibly in any other openEHR compliant environment) e.g.  terminology ,  demographic . These names are not yet standardised. Legal values for `_namespace_` are:

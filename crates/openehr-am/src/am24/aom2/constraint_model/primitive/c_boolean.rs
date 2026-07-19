@@ -5,11 +5,9 @@ use crate::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstrai
 use crate::am24::aom2::constraint_model::c_second_order::CSecondOrder;
 use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on instances of `Boolean`. Both attributes cannot be set to False, since this would mean that the Boolean value being constrained cannot be `True` or `False`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_BOOLEAN")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CBoolean {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

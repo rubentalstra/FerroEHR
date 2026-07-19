@@ -3,11 +3,9 @@
 
 use crate::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use crate::am24::aom2::terminology::value_set::ValueSet;
-use openehr_derive::OpenEhrType;
 
 /// Local ontology of an archetype.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_ARCHETYPE_TERMINOLOGY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PArchetypeTerminology {
     pub is_differential: bool,
     pub original_language: String,

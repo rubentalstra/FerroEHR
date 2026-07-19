@@ -7,16 +7,16 @@
 
 use crate::data_types::quantity::dv_count::DvCount;
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;
-use crate::validate::{InvariantViolation, Validate, push_dv_amount_invariants};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for DvCount {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_dv_amount_invariants(
-            out,
+        crate::validate::generated::dv_amount_core(
             "DV_COUNT",
             self.accuracy,
             self.accuracy_is_percent,
             self.magnitude_status.as_deref(),
+            out,
         );
         push_normal_range_consistency(
             out,

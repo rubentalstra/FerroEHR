@@ -2,45 +2,11 @@
 
 use crate::data_types::time_specification::dv_general_time_specification::DvGeneralTimeSpecification;
 use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
-use serde::Serialize;
 
 /// This is an abstract class of which all timing specifications are specialisations. Specifies points in time, possibly linked to the calendar, or a real world repeating event, such as  breakfast.
 /// Closed subtype set of `DV_TIME_SPECIFICATION`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DvTimeSpecification {
     DvGeneralTimeSpecification(DvGeneralTimeSpecification),
     DvPeriodicTimeSpecification(DvPeriodicTimeSpecification),
-}
-
-impl<'de> ::serde::Deserialize<'de> for DvTimeSpecification {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("DV_GENERAL_TIME_SPECIFICATION") => {
-                ::core::result::Result::Ok(Self::DvGeneralTimeSpecification(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_PERIODIC_TIME_SPECIFICATION") => {
-                ::core::result::Result::Ok(Self::DvPeriodicTimeSpecification(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "DV_TIME_SPECIFICATION: missing required `_type` on polymorphic slot (expected one of: DV_GENERAL_TIME_SPECIFICATION, DV_PERIODIC_TIME_SPECIFICATION)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "DV_TIME_SPECIFICATION: unexpected `_type` {__other:?} (expected one of: DV_GENERAL_TIME_SPECIFICATION, DV_PERIODIC_TIME_SPECIFICATION)"
-                )))
-            }
-        }
-    }
 }

@@ -1,0 +1,68 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.new_VSONCO-redef_to_multiple_singles-FAIL.v1.0.0
+
+specialise
+	openEHR-EHR-OBSERVATION.test_new_VSONCO_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"openEHR International">
+		["name"] = <"Thomas Beale">
+		["date"] = <"08/11/2022">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Redefine a multiple occurrences node in a way that cannot be satisfied">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"VSONCOm">
+	>
+
+definition
+	OBSERVATION[id1.1] matches {	
+		/data/events[id3]/data/items matches {
+			ELEMENT[id6.1] occurrences matches {0..1} matches {
+				value matches {
+					DV_QUANTITY[id13] 
+				}
+			}
+			ELEMENT[id6.2] occurrences matches {2..*} matches {
+				value matches {
+					DV_QUANTITY[id13] 
+				}
+			}
+			ELEMENT[id6.3] occurrences matches {2..*} matches {
+				value matches {
+					DV_QUANTITY[id13] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"top-level archetype">
+				description = <"top level test archetype for specialisation lineage">
+			>
+			["id6.1"] = <
+				text = <"Quantity field 1">
+				description = <"quantity field">
+			>
+			["id6.2"] = <
+				text = <"Quantity field 2">
+				description = <"quantity field">
+			>
+			["id6.3"] = <
+				text = <"Quantity field 3">
+				description = <"quantity field">
+			>
+		>
+	>

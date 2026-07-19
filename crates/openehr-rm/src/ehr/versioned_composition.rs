@@ -4,11 +4,9 @@
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// Version-controlled composition abstraction, defined by inheriting `VERSIONED_OBJECT<COMPOSITION>`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "VERSIONED_COMPOSITION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct VersionedComposition {
     // inherited: VERSIONED_OBJECT
     /// Unique identifier of this version container in the form of a UID with no extension. This id will be the same in all instances of the same container in a distributed environment, meaning that it can be understood as the uid of the  virtual version tree.

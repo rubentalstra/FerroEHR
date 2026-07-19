@@ -1,0 +1,311 @@
+-- A simple test BMM file that tests most variation: A work in progress
+
+bmm_version = <"1.1">
+rm_publisher = <"My publisher">
+rm_release = <"3.1">
+schema_name = <"Test1">
+schema_revision = <"Monday, October 19, 2015">
+schema_lifecycle_state = <"test">
+schema_author=<"John Doe">
+schema_description = <"A manually created very simplified BMM for testing purposes">
+schema_contributors = <"John Doe", "Francis Johnson">
+archetype_parent_class= <"Any">
+archetype_data_value_parent_class=<"DATA_VALUE">
+archetype_rm_closure_packages = <"ParentPackage", ...>
+archetype_visualize_descendants_of=<"Any">
+
+includes = <
+    ["1"] = <
+        id = <"my_include.2.1.12">
+    >
+    ["2"] = <
+        id = <"your_include.1_1_11">
+    >
+>
+
+packages = <
+    ["ParentPackage"] = <
+        name = <"ParentPackage">
+        classes = <"ParentType1", "ParentType2", "String", "Any", "Integer", "List">
+        packages = <
+            ["ChildPackage1"] = <
+                name = <"ChildPackage1">
+                classes = <"Interval", "Ordered", "Party", "Quantity", "ProportionKind", "ProportionKind2", "MagnitudeStatus", "NamePart">
+            >
+            ["ChildPackage2"] = <
+                name = <"ChildPackage2">
+                classes = <"QuantityInterval", "Patient", "ReferenceRange", "RangeOfIntervalOfQuantity", "CrazyType", "ChildType1", "GrandChildType1">
+            >
+        >
+    >
+>
+
+class_definitions = <
+
+
+    ["ParentType1"] = <
+        name = <"ParentType1">
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Any">
+            >
+        >
+        properties = <
+            ["property_1"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"property_1">
+                type = <"String">
+                is_mandatory = <True>
+            >
+            ["property_2"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"property_2">
+                type = <"T">
+            >
+        >
+    >
+
+    ["ParentType2"] = <
+             name = <"ParentType2">
+             properties = <
+                 ["property_1"] = (P_BMM_GENERIC_PROPERTY) <
+                     name = <"property_1">
+                     type_def = <
+                         root_type = <"Interval">
+                         generic_parameters = <"Quantity">
+                     >
+                 >
+                 ["property_2"] = (P_BMM_CONTAINER_PROPERTY) <
+                     name = <"property_2">
+                     type_def = <
+                         container_type = <"List">
+                         type = <"QUANTITY">
+                     >
+                     cardinality = <|>=1|>
+                     is_mandatory = <True>
+                 >
+             >
+         >
+
+    ["ChildType1"] = <
+        name = <"ChildType1">
+        ancestors = <"ParentType1", ...>
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Any">
+            >
+        >
+        properties = <
+            ["property_3"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"property_3">
+                type = <"Integer">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+    ["GrandChildType1"] = <
+        name = <"GrandChildType1">
+        ancestors = <"ChildType1", ...>
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Any">
+            >
+        >
+        properties = <
+            ["property_4"] = (P_BMM_SINGLE_PROPERTY) <
+                name = <"property_4">
+                type = <"String">
+                is_mandatory = <True>
+            >
+        >
+    >
+
+    ["String"] = <
+         name = <"String">
+     >
+
+    ["Any"] = <
+      name = <"Any">
+    >
+
+    ["Integer"] = <
+      name = <"Integer">
+    >
+
+    ["List"] = <
+        name = <"List">
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Any">
+            >
+        >
+    >
+
+    ["Interval"] = <
+        name = <"Interval">
+        ancestors = <"Any", ...>
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Ordered">
+            >
+        >
+        properties = <
+            ["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"lower">
+                type = <"T">
+            >
+            ["upper"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+                name = <"upper">
+                type = <"T">
+            >
+        >
+    >
+
+    ["QuantityInterval"] = <
+        name = <"QuantityInterval">
+        ancestors = <"Any", ...>
+        properties = <
+            ["qty_interval_attr"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"qty_interval_attr">
+                type_def = <
+                    root_type = <"Interval">
+                    generic_parameters = <"Quantity">
+                >
+            >
+        >
+    >
+
+    ["Ordered"] = <
+        name = <"Ordered">
+    >
+
+    ["Party"] = <
+            name = <"Party">
+        >
+
+    ["Quantity"] = <
+        name = <"Quantity">
+        ancestors = <"Ordered", ...>
+    >
+
+    ["Patient"] = <
+        name = <"Patient">
+        ancestors = <"Any", ...>
+        properties = <
+            ["careProvider"] = (P_BMM_CONTAINER_PROPERTY) <
+                name = <"careProvider">
+                type_def = <
+                    container_type = <"List">
+                    type_def = (P_BMM_GENERIC_TYPE) <
+                        root_type = <"ResourceReference">
+                        generic_parameters = <"Party">
+                    >
+                >
+                cardinality = <|>=0|>
+            >
+        >
+    >
+
+    ["ReferenceRange"] = <
+        name = <"ReferenceRange">
+        ancestors = <"Any", ...>
+        generic_parameter_defs = <
+            ["T"] = <
+                name = <"T">
+                conforms_to_type = <"Ordered">
+            >
+        >
+        properties = <
+            ["range"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"range">
+                type_def = <
+                    root_type = <"Interval">
+                    generic_parameters = <"T">
+                >
+                is_mandatory = <True>
+            >
+        >
+    >
+
+    ["RangeOfIntervalOfQuantity"] = <
+        name = <"RangeOfIntervalOfQuantity">
+        ancestors = <"Any", ...>
+        properties = <
+            ["range"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"range">
+                type_def = <
+                    root_type = <"ReferenceRange">
+                    generic_parameter_defs = <
+                        ["T"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"Interval">
+                            generic_parameters = <"Quantity">
+                        >
+                    >
+                >
+            >
+        >
+    >
+
+    ["CrazyType"] = <
+        name = <"CrazyType">
+        ancestors = <"Any", ...>
+        properties = <
+            ["range"] = (P_BMM_GENERIC_PROPERTY) <
+                name = <"range">
+                type_def = <
+                    root_type = <"ReferenceRange">
+                    generic_parameter_defs = <
+                        ["T"] = (P_BMM_GENERIC_TYPE) <
+                            root_type = <"Interval">
+                            generic_parameters = <"Quantity">
+                        >
+                        ["U"] = (P_BMM_SIMPLE_TYPE) <
+                            type = <"Integer">
+                        >
+                        ["V"] = (P_BMM_CONTAINER_TYPE) <
+                            type = <"Quantity">
+                            container_type = <"List">
+                        >
+                        ["W"] = (P_BMM_CONTAINER_TYPE) <
+                            type_def = (P_BMM_GENERIC_TYPE) <
+                                root_type = <"Interval">
+                                generic_parameters = <"Quantity">
+                            >
+                            container_type = <"List">
+                        >
+                    >
+                >
+            >
+        >
+    >
+
+    ["ProportionKind"] = (P_BMM_ENUMERATION_INTEGER) <
+        name = <"ProportionKind">
+        ancestors = <"Integer", ...>
+        item_names = <"pk_ratio", "pk_unitary", "pk_percent", "pk_fraction", "pk_integer_fraction">
+    >
+
+    ["ProportionKind2"] = (P_BMM_ENUMERATION_INTEGER) <
+        name = <"ProportionKind2">
+        ancestors = <"Integer", ...>
+        item_names = <"pk_ratio", "pk_unitary", "pk_percent", "pk_fraction", "pk_integer_fraction">
+        item_values = <0, 1001, 1002, 1003>
+    >
+
+    ["MagnitudeStatus"] = (P_BMM_ENUMERATION_STRING) <
+         name = <"MagnitudeStatus">
+         ancestors = <"String", ...>
+         item_names = <"le", "ge", "eq", "approx_eq">
+         item_values = <"<=", ">=", "=", "~">
+    >
+
+    ["NamePart"] = (P_BMM_ENUMERATION_STRING) <
+         name = <"NamePart">
+         ancestors = <"String", ...>
+         item_names = <"FIRST", "MIDDLE", "LAST">
+    >
+>

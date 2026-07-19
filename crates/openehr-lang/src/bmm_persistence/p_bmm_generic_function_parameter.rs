@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm_persistence::p_bmm_generic_type::PBmmGenericType;
-use openehr_derive::OpenEhrType;
 
 /// Persistent form of a function parameter whose type is a generic type such as `Interval<Time>`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_GENERIC_FUNCTION_PARAMETER")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmGenericFunctionParameter {
     // inherited: P_BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

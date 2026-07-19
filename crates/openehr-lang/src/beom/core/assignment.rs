@@ -3,11 +3,9 @@
 
 use crate::beom::core::expr_value::ExprValue;
 use crate::beom::core::variable_declaration::VariableDeclaration;
-use openehr_derive::OpenEhrType;
 
 /// Meta-type representing the assignment statement, which associates a named variable with an expression, and produces no value.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ASSIGNMENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assignment {
     /// The target variable on the notional left-hand side of this assignment.
     pub target: VariableDeclaration,

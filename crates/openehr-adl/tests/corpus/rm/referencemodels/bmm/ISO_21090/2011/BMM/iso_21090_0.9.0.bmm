@@ -1,0 +1,883 @@
+--
+-- 	keywords:    data types, 21090
+-- 	author:      Thomas Beale
+--	support:	 thomas.beale@oceaninformatics.com
+-- 	copyright:   Copyright (c) 2011 openEHR Foundation
+-- 	license:     Apache 2.0
+-- 
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as value of 'Bmm_internal_version' in 
+--     http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/adl1.5/libraries/common_libs/src/basic_meta_model/bmm_definitions.e
+--
+------------------------------------------------------
+bmm_version = <"2.0">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"iso">
+schema_name = <"21090">
+rm_release = <"0.9.0">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"0.9.5">
+schema_lifecycle_state = <"experimental">
+schema_description = <"13606 Release 2008 draft reference model, expressed in 'basic meta-model' format described in ISO 13606">
+schema_author = <"thomas.beale@oceaninformatics.com">
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"openehr_primitive_types_1.0.2">
+	>
+>
+
+------------------------------------------------------
+-- archetyping
+------------------------------------------------------
+archetype_data_value_parent_class = <"HXIT">
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.iso.21090.data_types"] = <
+		name = <"org.iso.21090.data_types">
+		classes = <"21090_ANY", "ED", "TS", "URI", "BL", "OID", "IVL", "IVLTS", "II", 
+			"CS", "CD", "CV", "TEXT", "SIMPLE", "CODED_TEXT", 
+			"RTO", "CO", "PQ", "QTY", "INT", "NONNEG", "POS", "PQR", 
+			"DATE", "TIME", "DATETIME", "INSTANT", "EIVL", "PIVL", "HXIT", "ST", "SC", "MO", 
+			"QSET", "DSET",
+			"EN", "ENXP", "EntityNameUse", "EntityNamePartQualifier", "EntityNamePartType", "ON",
+			"AD", "ADXP", "AddressPartType", "PostalAddressUse", "TEL", "TelecommunicationAddressUse">
+	>
+	["org.openehr.rm.assumed_types"] = <
+		name = <"org.openehr.rm.assumed_types">
+		classes = <"Binary", "Uid", "Decimal", "Bag", "Sequence">
+	>
+>
+
+------------------------------------------------------
+-- primitive types
+------------------------------------------------------
+
+primitive_types = <
+	["Binary"] = <
+		name = <"Binary">
+		ancestors = <"Any", ...>
+	>
+	["Decimal"] = <
+		name = <"Decimal">
+		ancestors = <"Any", ...>
+	>
+	["Uid"] = <
+		name = <"Uid">
+		ancestors = <"Any", ...>
+	>
+	["Bag"] = <
+		name = <"Bag">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+	["Sequence"] = <
+		name = <"Sequence">
+		ancestors = <"Any", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+			>
+		>
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+	------------------------------------------------------
+	--- Core
+	------------------------------------------------------
+
+   ["HXIT"] = <
+		name = <"HXIT">
+		is_abstract = <True>
+		properties = <		
+			["validTimeLow"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"validTimeLow">
+				type = <"String">
+			>
+			["validTimeHigh"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"validTimeHigh">
+				type = <"String">
+			>
+			["contolInformationRoot"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"contolInformationRoot">
+				type = <"Uid">
+			>
+			["contolInformationExtension"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"contolInformationExtension">
+				type = <"Uid">
+			>
+		>
+	>
+
+   ["21090_ANY"] = <
+		name = <"21090_ANY">
+		ancestors = <"HXIT", ...>
+		is_abstract = <True>
+		properties = <		
+			["nullFlavor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"nullFlavor">
+				type = <"CS">
+			>
+			["flavorId"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"flavorId">
+				type_def = <
+					type = <"String">
+					container_type = <"Set">
+				>
+			>
+			["updateMode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"updateMode">
+				type = <"CS">
+			>
+		>
+	>
+
+	["ED"] = <
+		name = <"ED">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["mediaType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mediaType">
+				type = <"CS">
+			>
+			["charset"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"charset">
+				type = <"CS">
+			>
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CS">
+			>
+			["size"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"size">
+				type = <"Integer">
+			>
+			["compression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"compression">
+				type = <"CS">
+			>
+			["reference"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reference">
+				type = <"URI">
+			>
+			["integrityCheck"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integrityCheck">
+				type = <"Binary">
+			>
+			["data"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"data">
+				type = <"Binary">
+			>
+			["integrityCheckAlgorithm"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"integrityCheckAlgorithm">
+				type = <"String">
+			>
+			["thumbnail"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"thumbnail">
+				type = <"ED">
+			>
+		>
+	>
+	["URI"] = <
+		name = <"URI">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["scheme"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scheme">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["path"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"path">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["fragment_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fragment_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["query"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"query">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["literal"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"literal">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["BL"] = <
+		name = <"BL">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Boolean">
+			>
+		>
+	>
+
+	["OID"] = <
+		name = <"OID">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["oid"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"oid">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["II"] = <
+		name = <"II">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["root"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codingSchemeName">
+				type = <"Uid">
+			>
+			["extension"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"extension">
+				type = <"String">
+			>
+			["identifiedName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"identifiedName">
+				type = <"String">
+			>
+			["scope"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scope">
+				type = <"CS">
+			>
+			["identifierReliability"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"identifierReliability">
+				type = <"CS">
+			>
+			["displayable"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"displayable">
+				type = <"Boolean">
+			>
+		>
+	>
+
+	["IVL"] = <
+		name = <"IVL">
+		ancestors = <"21090_ANY", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"QTY">
+			>
+		>
+		properties = <
+			["low"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"low">
+				type = <"T">
+			>
+			["high"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"high">
+				type = <"T">
+			>
+			["lowClosed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lowClosed">
+				type = <"Boolean">
+			>
+			["highClosed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"highClosed">
+				type = <"Boolean">
+			>
+			["width"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"width">
+				type = <"QTY">
+			>
+			["any"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				name = <"any">
+				type = <"T">
+			>
+		>
+	>
+
+	["IVLTS"] = <
+		name = <"IVLTS">
+		ancestors = <"IVL", ...>
+		properties = <
+			["low"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"low">
+				type = <"TS">
+			>
+			["high"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"high">
+				type = <"TS">
+			>
+			["any"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"any">
+				type = <"TS">
+			>
+		>
+	>
+
+	------------------------------------------------------
+	--- Text classes
+	------------------------------------------------------
+
+	["ST"] = <
+		name = <"ST">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"language">
+				type = <"CS">
+			>
+			["translation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"translation">
+				type_def = <
+					type = <"ST">
+					container_type = <"Set">
+				>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+			>
+		>
+	>
+
+	["SC"] = <
+		name = <"SC">
+		ancestors = <"ST", ...>
+		properties = <		
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code">
+				type = <"CD">
+			>
+		>
+	>
+
+	------------------------------------------------------
+	--- coded Text classes
+	------------------------------------------------------
+
+	["CS"] = <
+		name = <"CS">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["codeValue"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codeValue">
+				type = <"String">
+			>
+			["codingSystem"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codeSystem">
+				type = <"Uid">
+			>
+			["codeSystemName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codeSystemName">
+				type = <"String">
+			>
+			["codeSystemVersion"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codeSystemVersion">
+				type = <"String">
+			>
+			["originalText"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"originalText">
+				type = <"ED">
+			>
+		>
+	>
+	
+	["CD"] = <
+		name = <"CD">
+		ancestors = <"CS", ...>
+		properties = <		
+			["valueSet"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"valueSet">
+				type = <"Uid">
+			>
+			["valueSetVersion"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"valueSetVersion">
+				type = <"String">
+			>
+			["displayName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"displayName">
+				type = <"ST">
+			>
+			["codingRationale"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codingRationale">
+				type = <"CS">
+			>
+			["source"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"source">
+				type = <"CD">
+			>
+			["translation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"translation">
+				type_def = <
+					type = <"CD">
+					container_type = <"Set">
+				>
+			>
+		>
+	>
+	
+	["CV"] = <
+		name = <"CV">
+		ancestors = <"CD", ...>
+	>
+
+	["TEXT"] = <
+		name = <"TEXT">
+		ancestors = <"ED", ...>
+	>
+	
+	["SIMPLE"] = <
+		name = <"SIMPLE">
+		ancestors = <"ST", ...>
+	>
+	
+	["CODED_TEXT"] = <
+		name = <"CODED_TEXT">
+		ancestors = <"CD", ...>
+	>
+	
+	------------------------------------------------------
+	--- Quantity types
+	------------------------------------------------------
+
+	["QTY"] = <
+		name = <"QTY">
+		ancestors = <"21090_ANY", ...>
+		is_abstract = <True>
+		properties = <		
+			["expression"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expression">
+				type = <"ED">
+			>
+			["originalText"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"originalText">
+				type = <"TEXT">
+			>
+			["uncertainty"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uncertainty">
+				type = <"QTY">
+			>
+			["uncertaintyType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uncertaintyType">
+				type = <"CS">
+			>
+			["uncertainRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"uncertainRange">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"QTY">
+				>	
+			>
+		>
+	>
+
+	["INT"] = <
+		name = <"INT">
+		ancestors = <"QTY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Integer">
+			>
+		>
+	>
+
+	["NONNEG"] = <
+		name = <"NONNEG">
+		ancestors = <"INT", ...>
+	>
+
+	["POS"] = <
+		name = <"POS">
+		ancestors = <"NONNEG", ...>
+	>
+
+	["RTO"] = <
+		name = <"RTO">
+		ancestors = <"QTY", ...>
+		properties = <		
+			["numerator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"numerator">
+				type = <"QTY">
+			>
+			["denominator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"denominator">
+				type = <"QTY">
+			>
+		>
+	>
+
+	["CO"] = <
+		name = <"CO">
+		ancestors = <"QTY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Decimal">
+			>
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code">
+				type = <"CD">
+			>
+		>
+	>
+	["PQ"] = <
+		name = <"PQ">
+		ancestors = <"QTY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Decimal">
+			>
+			["units"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"units">
+				type = <"CS">
+			>
+			["translation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"translation">
+				type_def = <
+					type = <"PQR">
+					container_type = <"Set">
+				>
+			>
+			["codingRationale"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"codingRationale">
+				type = <"CS">
+			>
+		>
+	>
+	["PQR"] = <
+		name = <"PQR">
+		ancestors = <"CD", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Decimal">
+			>
+		>
+	>
+
+	["MO"] = <
+		name = <"MO">
+		ancestors = <"QTY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Decimal">
+			>
+			["currency"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"currency">
+				type = <"CS">
+			>
+		>
+	>
+
+	["QSET"] = <
+		name = <"QSET">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["originalText"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"originalText">
+				type = <"TEXT">
+			>
+		>
+	>
+
+	["EIVL"] = <
+		name = <"EIVL">
+		ancestors = <"QSET", ...>
+		properties = <		
+			["event"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"event">
+				type = <"CD">
+			>
+			["offset"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"offset">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"PQ">
+				>	
+			>
+		>
+	>
+
+	["PIVL"] = <
+		name = <"PIVL">
+		ancestors = <"QSET", ...>
+		properties = <		
+			["phase"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"phase">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>	
+			>
+			["frequency"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"frequency">
+				type = <"RTO">
+			>
+			["period"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"period">
+				type = <"PQ">
+			>
+			["alignment"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"alignment">
+				type = <"CD">
+			>
+			["isFlexible"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"isFlexible">
+				type = <"Boolean">
+			>
+			["count"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"count">
+				type = <"INT">
+			>
+		>
+	>
+
+	["TS"] = <
+		name = <"TS">
+		ancestors = <"QTY", ...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"String">
+			>
+		>
+	>
+
+	["INSTANT"] = <
+		name = <"INSTANT">
+		ancestors = <"TS", ...>
+	>
+	
+	["DATE"] = <
+		name = <"DATE">
+		ancestors = <"TS", ...>
+	>
+	
+	["TIME"] = <
+		name = <"TIME">
+		ancestors = <"TS", ...>
+	>
+
+	["DATETIME"] = <
+		name = <"DATETIME">
+		ancestors = <"TS", ...>
+	>
+
+	------------------------------------------------------
+	--- Container classes
+	------------------------------------------------------
+
+	["DSET"] = <
+		name = <"DSET">
+		ancestors = <"21090_ANY", ...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"21090_ANY">
+			>
+		>
+		properties = <		
+			["item"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"item">
+				type_def = <
+					type = <"T">
+					container_type = <"Bag">
+				>
+			>
+		>
+	>
+
+	------------------------------------------------------
+	--- Entity Name classes
+	------------------------------------------------------
+
+	["EN"] = <
+		name = <"EN">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["part"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"part">
+				type_def = <
+					type = <"ENXP">
+					container_type = <"Sequence">
+				>
+			>
+			["use"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"use">
+				type_def = <
+					type = <"EntityNameUse">
+					container_type = <"Set">
+				>
+			>
+		>
+	>
+
+	["EntityNameUse"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"EntityNameUse">
+		ancestors = <"String", ...>
+		item_names = <"C", "OR", "T", "I", "P", "A", "R", "OLD", "DN", "M", "SRCH", "PHON", "ABC", "SYL", "IDE">
+	>
+
+	["EntityNamePartQualifier"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"EntityNamePartQualifier">
+		ancestors = <"String", ...>
+		item_names = <"LS", "AC", "NB", "PR", "HON", "BR", "AD", "SP", "MID", "CL", "IN", "PFX", "SFX">
+	>
+
+	["EntityNamePartType"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"EntityNamePartType">
+		ancestors = <"String", ...>
+		item_names = <"FAM", "GIV", "TITLE", "DEL">
+	>
+
+	["ENXP"] = <
+		name = <"ENXP">
+		ancestors = <"Any", ...>
+		properties = <		
+			["qualifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"qualifier">
+				type_def = <
+					type = <"EntityNamePartQualifier">
+					container_type = <"Set">
+				>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"EntityNamePartType">
+			>
+		>
+	>
+
+	["ON"] = <
+		name = <"ON">
+		ancestors = <"EN", ...>
+	>
+
+	------------------------------------------------------
+	--- Address classes
+	------------------------------------------------------
+
+	["AD"] = <
+		name = <"AD">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["part"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"part">
+				type_def = <
+					type = <"ADXP">
+					container_type = <"Sequence">
+				>
+			>
+			["use"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"use">
+				type_def = <
+					type = <"PostalAddressUse">
+					container_type = <"Set">
+				>
+			>
+		>
+	>
+
+	["PostalAddressUse"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"PostalAddressUse">
+		ancestors = <"String", ...>
+		item_names = <"H", "HP", "HV", "WP", "DIR", "PUB", "BAD", "PHYS", "PST", "TMP", "ABC", "IDE", "SYL", "SRCH", "SNDX", "PHON">
+	>
+
+	["ADXP"] = <
+		name = <"ADXP">
+		ancestors = <"Any", ...>
+		properties = <		
+			["qualifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"qualifier">
+				type_def = <
+					type = <"EntityNamePartQualifier">
+					container_type = <"Set">
+				>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"EntityNamePartType">
+			>
+		>
+	>
+
+	["AddressPartType"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"AddressPartType">
+		ancestors = <"String", ...>
+		item_names = <"AL", "ADL", "UNID", "UNIT", "DAL", "DINST", "DINSTA", "DINSTQ", "DMOD", "DMODID", "SAL", "BNR", "BNN", "BNS", "STR", "STB", "STTYP", "DIR", "INT", "CAR", "CEN", "CNT", "CPA", "CTY", "DEL", "POB", "PRE", "STA", "ZIP">
+	>
+
+	["TEL"] = <
+		name = <"TEL">
+		ancestors = <"21090_ANY", ...>
+		properties = <		
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"Uri">
+			>
+			["usablePeriod"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"usablePeriod">
+				type_def = <
+					type = <"TS">
+					container_type = <"QSET">
+				>
+			>
+			["use"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"use">
+				type_def = <
+					type = <"TelecommunicationAddressUse">
+					container_type = <"Set">
+				>
+			>
+		>
+	>
+
+	["TelecommunicationAddressUse"] = (P_BMM_ENUMERATION_STRING) <
+		name = <"TelecommunicationAddressUse">
+		ancestors = <"String", ...>
+		item_names = <"H", "HP", "HV", "WP", "DIR", "PUB", "BAD", "TMP", "AS", "EC", "MC", "PG">
+	>
+
+>
+

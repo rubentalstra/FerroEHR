@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.6; rm_release=2.0.2)
+	CIMI-CORE-ITEM_GROUP.auto_differential_panel_blood_result_group.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"???">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+
+definition
+	ITEM_GROUP[id1] matches {	-- Auto differential blood panel
+		item matches {
+			ELEMENT[id4] occurrences matches {1} matches {	-- Name
+				value matches {
+					TEXT[id5] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Auto differential blood panel">
+				description = <"Auto differential blood panel">
+			>
+			["id4"] = <
+				text = <"Name">
+				description = <"Name">
+			>
+		>
+	>

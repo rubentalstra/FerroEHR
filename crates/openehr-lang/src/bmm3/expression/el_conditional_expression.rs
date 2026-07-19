@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::expression::el_expression::ElExpression;
-use openehr_derive::OpenEhrType;
 
 /// Conditional structure used in condition chain expressions. Evaluated by evaluating its `_condition_`, which is a Boolean-returning expression, and if this returns True, the result is the evaluation result of `_expression_`.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_CONDITIONAL_EXPRESSION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElConditionalExpression<T> {
     // inherited: EL_DECISION_BRANCH
     /// Result expression of conditional, if its `_condition_` evaluates to True.

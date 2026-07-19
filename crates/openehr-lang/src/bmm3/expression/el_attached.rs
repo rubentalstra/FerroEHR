@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// A predicate on any object reference (including function call) that returns True if the reference is attached, i.e. non-Void.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_ATTACHED")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElAttached {
     // inherited: EL_PREDICATE
     /// The target instance of this predicate.

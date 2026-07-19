@@ -21,12 +21,10 @@ use crate::data_types::text::dv_text::DvText;
 use crate::data_types::time_specification::dv_general_time_specification::DvGeneralTimeSpecification;
 use crate::data_types::time_specification::dv_periodic_time_specification::DvPeriodicTimeSpecification;
 use crate::data_types::uri::dv_uri::DvUri;
-use serde::Serialize;
 
 /// Abstract parent of all `DV_` data value types.
 /// Closed subtype set of `DATA_VALUE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum DataValue {
     DvBoolean(DvBoolean),
     DvCount(DvCount),
@@ -48,120 +46,4 @@ pub enum DataValue {
     DvText(DvText),
     DvTime(DvTime),
     DvUri(DvUri),
-}
-
-impl<'de> ::serde::Deserialize<'de> for DataValue {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("DV_BOOLEAN") => {
-                ::core::result::Result::Ok(Self::DvBoolean(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_CODED_TEXT") => {
-                ::core::result::Result::Ok(Self::DvText(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_COUNT") => ::core::result::Result::Ok(Self::DvCount(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_DATE") => ::core::result::Result::Ok(Self::DvDate(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_DATE_TIME") => {
-                ::core::result::Result::Ok(Self::DvDateTime(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_DURATION") => {
-                ::core::result::Result::Ok(Self::DvDuration(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_EHR_URI") => ::core::result::Result::Ok(Self::DvUri(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_GENERAL_TIME_SPECIFICATION") => {
-                ::core::result::Result::Ok(Self::DvGeneralTimeSpecification(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_IDENTIFIER") => {
-                ::core::result::Result::Ok(Self::DvIdentifier(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_INTERVAL") => {
-                ::core::result::Result::Ok(Self::DvInterval(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_MULTIMEDIA") => {
-                ::core::result::Result::Ok(Self::DvMultimedia(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_ORDINAL") => {
-                ::core::result::Result::Ok(Self::DvOrdinal(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_PARAGRAPH") => {
-                ::core::result::Result::Ok(Self::DvParagraph(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_PARSABLE") => {
-                ::core::result::Result::Ok(Self::DvParsable(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_PERIODIC_TIME_SPECIFICATION") => {
-                ::core::result::Result::Ok(Self::DvPeriodicTimeSpecification(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_PROPORTION") => {
-                ::core::result::Result::Ok(Self::DvProportion(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_QUANTITY") => {
-                ::core::result::Result::Ok(Self::DvQuantity(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("DV_SCALE") => ::core::result::Result::Ok(Self::DvScale(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_STATE") => ::core::result::Result::Ok(Self::DvState(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_TEXT") => ::core::result::Result::Ok(Self::DvText(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_TIME") => ::core::result::Result::Ok(Self::DvTime(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("DV_URI") => ::core::result::Result::Ok(Self::DvUri(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "DATA_VALUE: missing required `_type` on polymorphic slot (expected one of: DV_BOOLEAN, DV_CODED_TEXT, DV_COUNT, DV_DATE, DV_DATE_TIME, DV_DURATION, DV_EHR_URI, DV_GENERAL_TIME_SPECIFICATION, DV_IDENTIFIER, DV_INTERVAL, DV_MULTIMEDIA, DV_ORDINAL, DV_PARAGRAPH, DV_PARSABLE, DV_PERIODIC_TIME_SPECIFICATION, DV_PROPORTION, DV_QUANTITY, DV_SCALE, DV_STATE, DV_TEXT, DV_TIME, DV_URI)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "DATA_VALUE: unexpected `_type` {__other:?} (expected one of: DV_BOOLEAN, DV_CODED_TEXT, DV_COUNT, DV_DATE, DV_DATE_TIME, DV_DURATION, DV_EHR_URI, DV_GENERAL_TIME_SPECIFICATION, DV_IDENTIFIER, DV_INTERVAL, DV_MULTIMEDIA, DV_ORDINAL, DV_PARAGRAPH, DV_PARSABLE, DV_PERIODIC_TIME_SPECIFICATION, DV_PROPORTION, DV_QUANTITY, DV_SCALE, DV_STATE, DV_TEXT, DV_TIME, DV_URI)"
-                )))
-            }
-        }
-    }
 }

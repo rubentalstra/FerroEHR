@@ -15,7 +15,49 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+- **RM terminology-backed invariant validation.** Composition (and any RM
+  value) validation now enforces the openEHR terminology-service and code-set
+  RM class invariants at the wire-boundary dispatcher, unified into a single
+  hook (`openehr-its`) that every validation consumer inherits. The 30 wired
+  invariants (each audited clean against the whole corpus before enforcement):
+  `COMPOSITION` category/language/territory, `EVENT_CONTEXT` setting,
+  `ELEMENT` null-flavour, `ISM_TRANSITION` current-state/transition,
+  `PARTICIPATION` + `EXTRACT_PARTICIPATION` function/mode, `INTERVAL_EVENT`
+  math-function, `TERM_MAPPING` purpose, `AUDIT_DETAILS` change-type,
+  `ATTESTATION` reason, `PARTY_RELATED` relationship, `VERSION`
+  lifecycle-state, `ENTRY`/`DV_TEXT` language + encoding, `DV_MULTIMEDIA`
+  media-type/charset/language/compression/integrity algorithms, `DV_PARSABLE`
+  charset/language, `DV_ORDERED` normal-status, and the `AUTHORED_RESOURCE` /
+  `RESOURCE_DESCRIPTION_ITEM` / `TRANSLATION_DETAILS` original-language. An
+  out-of-vocabulary openEHR code is a `422` naming the violated RM invariant;
+  HTTP status codes are unchanged.
+
 ### Changed
+- **RM validation invariant messages now carry the spec's (BMM) invariant
+  names.** Three class-invariant violation messages were reconciled from their
+  inherited archie spellings to the openEHR BMM invariant names, so a `422`
+  validation payload reporting one of them changes text: `Accuracy_valid` →
+  `Accuracy_validity` (DV_AMOUNT and its descendants — DV_QUANTITY, DV_COUNT,
+  DV_DURATION, DV_PROPORTION), `Is_archetypeRoot` → `Is_archetype_root` (the
+  ENTRY subtypes — OBSERVATION, EVALUATION, INSTRUCTION, ACTION, ADMIN_ENTRY),
+  and `Location_validity` → `location_valid` (EVENT_CONTEXT). The check logic
+  and HTTP status codes are unchanged; only the invariant name inside the
+  `Invariant <name> failed on type <TYPE>` message differs.
+
+- **Canonical-JSON codec cutover.** The openEHR spec types are now
+  (de)serialized to/from canonical JSON entirely by a native emitted
+  `ToJson`/`FromJson` codec in `openehr-its` — the spec types (`openehr-base`,
+  `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang`) no longer carry a
+  serde derive, and the `openehr-derive` proc-macro crate is removed. The wire
+  bytes are unchanged (proven by the R0 determinism manifest + the byte-hazard
+  gates); the only externally visible difference is the **error-message shape on
+  a malformed JSON request body** — the codec's parser reports `expected … at
+  line N column M` / `missing field … on …` diagnostics instead of the previous
+  serde phrasing (the HTTP status codes are unchanged: still `400`/`422`). A
+  present-but-`null` array field is now rejected as a type error (was silently
+  treated as an empty array), matching the strict tolerance contract.
+
 - The served OpenAPI document now describes the COMPLETE wire for every
   operation (162 declarations across all API groups): every path/query
   parameter, request headers (`Prefer` incl. `return=identifier`, required

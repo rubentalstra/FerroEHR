@@ -1,0 +1,94 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openehr-TEST_PKG-SOME_TYPE.c_dv_quantity.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"in_development">
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	copyright = <"copyright (c) 2004 The openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrates the use of inline dADL representing C_DV_QUANTITY, including with no magnitude">
+			keywords = <"ADL", "test">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		standard_quantity_attr matches {
+			DV_QUANTITY[id2] matches {	-- Centigrade temperature
+				units matches {"C"}
+				magnitude matches {|>=4.0|}
+			}
+			DV_QUANTITY[id3] matches {	-- Fahrenheit temperature
+				units matches {"F"}
+				magnitude matches {|>=40.0|}
+			}
+		}
+		clinical_quantity_attr_1 matches {
+			DV_QUANTITY[id4] matches {
+				property matches {[at1]}
+				[magnitude, units] matches {
+					[{|>=4.0|}, {"C"}],
+					[{|>=40.0|}, {"F"}]
+				}
+			}
+		}
+		clinical_quantity_attr_2 matches {
+			DV_QUANTITY[id5] matches {
+				property matches {[at1]}
+				units matches {"C", "F"}
+			}
+		}
+		clinical_quantity_attr_4 matches {
+			DV_COUNT[id6] matches {
+				magnitude matches {|>=0|}
+			}
+		}
+		clinical_quantity_attr_5 matches {
+			DV_COUNT[id7] matches {
+				magnitude matches {|>=0|}
+			}
+		}
+		clinical_quantity_attr_6 matches {
+			DV_QUANTITY[id8] matches {
+				property matches {[at1]}
+				precision matches {2}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+			["id2"] = <
+				text = <"Centigrade temperature">
+				description = <"Centigrade temperature">
+			>
+			["id3"] = <
+				text = <"Fahrenheit temperature">
+				description = <"Fahrenheit temperature">
+			>
+			["at1"] = <
+				text = <"Temperature">
+				description = <"Temperature">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/127>
+		>
+	>

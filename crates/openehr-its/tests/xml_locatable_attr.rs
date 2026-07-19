@@ -44,7 +44,8 @@ fn ehr_status_archetype_node_id_is_attribute() {
         "is_queryable": true,
         "is_modifiable": true
     }"#;
-    let status: EhrStatus = serde_json::from_str(json).expect("deserialize EHR_STATUS JSON");
+    let status: EhrStatus =
+        openehr_its::json::from_canonical_json(json).expect("deserialize EHR_STATUS JSON");
     let xml = to_canonical_xml(&status, "ehr_status").expect("serialize EHR_STATUS");
     assert_archetype_node_id_is_attribute(&xml, "openEHR-EHR-EHR_STATUS.generic.v1");
     // FromXml must read the attribute back (same XSD-driven attr classification).
@@ -64,7 +65,8 @@ fn ehr_access_archetype_node_id_is_attribute() {
         "name": {"value": "EHR Access"},
         "archetype_node_id": "at0000"
     }"#;
-    let access: EhrAccess = serde_json::from_str(json).expect("deserialize EHR_ACCESS JSON");
+    let access: EhrAccess =
+        openehr_its::json::from_canonical_json(json).expect("deserialize EHR_ACCESS JSON");
     let xml = to_canonical_xml(&access, "ehr_access").expect("serialize EHR_ACCESS");
     assert_archetype_node_id_is_attribute(&xml, "at0000");
     let back: EhrAccess = from_xml(&xml).expect("parse EHR_ACCESS");
@@ -80,7 +82,8 @@ fn demographic_person_archetype_node_id_is_attribute() {
         "name": {"value": "Patient"},
         "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1"
     }"#;
-    let person: Person = serde_json::from_str(json).expect("deserialize PERSON JSON");
+    let person: Person =
+        openehr_its::json::from_canonical_json(json).expect("deserialize PERSON JSON");
     let xml = to_canonical_xml(&person, "person").expect("serialize PERSON");
     assert_archetype_node_id_is_attribute(&xml, "openEHR-DEMOGRAPHIC-PERSON.person.v1");
     let back: Person = from_xml(&xml).expect("parse PERSON");
@@ -101,8 +104,8 @@ fn extract_generic_content_item_archetype_node_id_is_attribute() {
         "archetype_node_id": "at0001",
         "is_primary": true
     }"#;
-    let item: GenericContentItem =
-        serde_json::from_str(json).expect("deserialize GENERIC_CONTENT_ITEM JSON");
+    let item: GenericContentItem = openehr_its::json::from_canonical_json(json)
+        .expect("deserialize GENERIC_CONTENT_ITEM JSON");
     let xml = to_canonical_xml(&item, "content_item").expect("serialize GENERIC_CONTENT_ITEM");
     assert_archetype_node_id_is_attribute(&xml, "at0001");
     let back: GenericContentItem = from_xml(&xml).expect("parse GENERIC_CONTENT_ITEM");

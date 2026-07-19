@@ -4,11 +4,9 @@
 use crate::common::archetyped::feeder_audit_details::FeederAuditDetails;
 use crate::data_types::basic::dv_identifier::DvIdentifier;
 use crate::data_types::encapsulated::dv_encapsulated::DvEncapsulated;
-use openehr_derive::OpenEhrType;
 
 /// The `FEEDER_AUDIT` class defines the semantics of an audit trail which is constructed to describe the origin of data that have been transformed into openEHR form and committed to the system.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "FEEDER_AUDIT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FeederAudit {
     /// Identifiers used for the item in the originating system, e.g. filler and placer ids.
     pub originating_system_item_ids: Vec<DvIdentifier>,

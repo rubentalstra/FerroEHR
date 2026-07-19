@@ -7,12 +7,10 @@ use crate::composition::content::entry::instruction::Instruction;
 use crate::composition::content::entry::observation::Observation;
 use crate::composition::content::navigation::section::Section;
 use crate::integration::generic_entry::GenericEntry;
-use serde::Serialize;
 
 /// Abstract ancestor of all concrete content types.
 /// Closed subtype set of `CONTENT_ITEM`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ContentItem {
     Action(Action),
     AdminEntry(AdminEntry),
@@ -21,57 +19,4 @@ pub enum ContentItem {
     Instruction(Instruction),
     Observation(Observation),
     Section(Section),
-}
-
-impl<'de> ::serde::Deserialize<'de> for ContentItem {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("ACTION") => ::core::result::Result::Ok(Self::Action(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some("ADMIN_ENTRY") => {
-                ::core::result::Result::Ok(Self::AdminEntry(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("EVALUATION") => {
-                ::core::result::Result::Ok(Self::Evaluation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("GENERIC_ENTRY") => {
-                ::core::result::Result::Ok(Self::GenericEntry(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("INSTRUCTION") => {
-                ::core::result::Result::Ok(Self::Instruction(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("OBSERVATION") => {
-                ::core::result::Result::Ok(Self::Observation(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("SECTION") => ::core::result::Result::Ok(Self::Section(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "CONTENT_ITEM: missing required `_type` on polymorphic slot (expected one of: ACTION, ADMIN_ENTRY, EVALUATION, GENERIC_ENTRY, INSTRUCTION, OBSERVATION, SECTION)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "CONTENT_ITEM: unexpected `_type` {__other:?} (expected one of: ACTION, ADMIN_ENTRY, EVALUATION, GENERIC_ENTRY, INSTRUCTION, OBSERVATION, SECTION)"
-                )))
-            }
-        }
-    }
 }

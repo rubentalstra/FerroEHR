@@ -74,7 +74,7 @@ on 2026-07-03 (the versions available as clean `*.bmm.json`).
 | ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-its` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
 | ITS-REST (REST API) | development @ `e8a093e9` | mixed (per API: Overview/System/EHR/Query/Definition/Formats STABLE; Demographic/Admin/SMART DEVELOPMENT) | the identity the B5 conformance instrument derives (`development@e8a093e`); spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** — all 7 API groups (incl. DEMOGRAPHIC/ADMIN/SYSTEM) |
 | ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
-| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `crates/openehr-codegen/vendor/bmm/` with provenance |
+| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance |
 
 **Spec text vendored in-repo:** the normative documentation for every
 component above — plus SM (platform service model / SDT) and **CNF (the
@@ -82,7 +82,7 @@ conformance guide + Platform Conformance Test Schedule + Robot suite)** — is
 vendored at `docs/specs/openehr/` by `scripts/vendor-spec-docs.sh`, pinned to
 these same versions (exact commits in each component's `PROVENANCE.md` and in
 the script). It is the read/conformance oracle; codegen still consumes only
-`crates/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
+`tools/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
 
 **RM-version divergence note:** these are the *latest* spec versions; stock
 EHRbase/`archie` emits an RM 1.1.0-era wire format. Track this divergence as a

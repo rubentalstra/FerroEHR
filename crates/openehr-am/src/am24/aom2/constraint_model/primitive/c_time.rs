@@ -7,13 +7,11 @@ use crate::am24::aom2::constraint_model::sibling_order::SiblingOrder;
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601Time;
 use openehr_base::prelude::MultiplicityInterval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on instances representing times in the form either of a set of validity values, or else time ranges based on the `C_ORDERED` list constraint.
 ///
 /// There is no validity flag for `_hour_`, since it must always be by definition mandatory in order to have a sensible time at all. Syntax expressions of instances of this class include `"HH:??:xx"` (time with optional minutes and seconds not allowed).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_TIME")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CTime {
     // inherited: ARCHETYPE_CONSTRAINT
     /// Parent node, except in the case of the top of a tree, i.e. root `C_COMPLEX_OBJECT` of an archetype definition.

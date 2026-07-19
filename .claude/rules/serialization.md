@@ -21,21 +21,28 @@ reference material. The SM `serial_data_formats` + `simplified_im_b` docs are
 DEVELOPMENT-state model documents (their terse string encodings conflict with
 the STABLE suffix encoding — never implement them); the SDT spec is retired.
 
-## The `_type` mechanism (generated — do not improvise)
+## The `_type` mechanism (generated native codec — do not improvise)
 
-Canonical-JSON `_type` self-tagging is the **`#[derive(OpenEhrType)]`**
-proc-macro (`openehr-derive`), emitted on every generated concrete class by
-`openehr-codegen`. The contract (know it; never hand-write it):
+Canonical-JSON `_type` self-tagging is the **native `ToJson`/`FromJson`
+codec** emitted into `openehr-its` by `openehr-codegen -- emit-json` (over the
+hand-written `json_codec/runtime.rs`). The spec types carry NO serde derive —
+there is no `#[derive(OpenEhrType)]` (that proc-macro is deleted). The contract
+(know it; never hand-write it):
 
-- **Serialize** emits `"_type": "<CLASS>"` first, then fields; `Option`
-  fields are omitted when `None`, `Vec` fields when empty — no `null`s.
-- **Deserialize** accepts input with or without `_type`; present-but-wrong
-  `_type` is an error (this is what lets untagged enums dispatch).
-- Closed subtype-set enums are `#[serde(untagged)]` (emitter-written);
-  never `#[serde(tag = "_type")]`.
+- **Serialize** (`ToJson`) emits `"_type": "<CLASS>"` first, then fields in BMM
+  declaration order; `Option` fields are omitted when `None`, `Vec` fields when
+  empty — no `null`s. Integer-typed RM fields print as JSON integers; Real-typed
+  fields carry a decimal point.
+- **Deserialize** (`FromJson`) accepts input with or without `_type`;
+  present-but-wrong `_type` on a concrete type is an error; an abstract
+  polymorphic slot requires `_type` and dispatches on it; unknown keys are
+  ignored (a deliberate superset of the schema — RM-version skew).
+- Closed subtype-set enums are plain Rust enums whose `FromJson` dispatches on
+  each payload's `_type` (deep descendants routed to their direct variant).
 
-Wrong `_type`/serialization behaviour → fix the **emitter or the derive
-macro** and regenerate (`/regen-codegen`); never hand-edit `// @generated`.
+Wrong `_type`/serialization behaviour → fix the **emitter** (`emit.rs` /
+`emit_json.rs`) or the hand-written `json_codec/runtime.rs`, and regenerate
+(`/regen-codegen`); never hand-edit `// @generated`.
 
 ## Canonical JSON (ITS-JSON)
 

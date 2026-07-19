@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.VSAM_rm_cardinality_on_single_attr.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"10/03/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VSAM validity check, triggered by cardinality constraint defined on a single-valued attribute">
+			keywords = <"test", "RM checker">
+		>
+	>
+	other_details = <
+		["regression"] = <"VSAM">
+	>
+	lifecycle_state = <"unmanaged">
+
+definition
+	EVALUATION[id1] matches {	
+		protocol cardinality matches {1..*}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				description = <"Some evaluation">
+				text = <"Some evaluation">
+			>
+		>
+	>

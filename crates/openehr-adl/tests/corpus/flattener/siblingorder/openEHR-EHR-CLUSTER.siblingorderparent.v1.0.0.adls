@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.4)
+    openEHR-EHR-CLUSTER.siblingorderparent.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    original_author = <
+        ["name"] = <"MK">
+    >
+    lifecycle_state = <"DRAFT">
+    details = <
+        ["en"] = <
+            language = <[ISO-639_1::en]>
+            purpose = <"Testing Siblingorder">
+        >
+    >
+
+definition
+    CLUSTER[id1] matches {    -- SiblingOrderParent
+
+        items matches {
+            CLUSTER[id5] occurrences matches {0..*}     -- Cluster 1
+            CLUSTER[id6] occurrences matches {0..*}     -- Cluster 2
+            CLUSTER[id7] occurrences matches {0..*}     -- Cluster 3
+        }
+
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <
+                text = <"SiblingOrderParent">
+                description = <"Testing Siblingorder">
+                code = <"id1">
+            >
+            ["id5"] = <
+                text = <"Cluster 1">
+                description = <"">
+            >
+            ["id6"] = <
+                text = <"Cluster 2">
+                description = <"">
+            >
+            ["id7"] = <
+                text = <"Cluster 3">
+                description = <"">
+            >
+        >
+    >

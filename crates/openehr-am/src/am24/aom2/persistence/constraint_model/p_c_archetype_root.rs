@@ -3,10 +3,8 @@
 
 use crate::am24::aom2::persistence::constraint_model::p_c_attribute::PCAttribute;
 use crate::am24::aom2::persistence::constraint_model::p_c_attribute_tuple::PCAttributeTuple;
-use openehr_derive::OpenEhrType;
 
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_C_ARCHETYPE_ROOT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PCArchetypeRoot {
     // inherited: P_C_OBJECT
     /// Reference model type that this node corresponds to.

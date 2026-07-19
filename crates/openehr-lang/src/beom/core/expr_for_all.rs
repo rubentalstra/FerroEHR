@@ -4,11 +4,9 @@
 use crate::beom::core::assertion::Assertion;
 use crate::beom::core::expr_value_ref::ExprValueRef;
 use crate::beom::core::operator_kind::OperatorKind;
-use openehr_derive::OpenEhrType;
 
 /// Universal quantification operator, usually known as `for_all`, whose operand is a collection of items referenced by an `EXPR_VALUE_REF`. The `_condition_` attribute represents an assertion that is applied to every member of the collection at runtime to determine the result.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXPR_FOR_ALL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExprForAll {
     // inherited: EXPR_OPERATOR
     /// True if the natural precedence of operators is overridden in the expression represented by this node of the expression tree. If True, parentheses should be introduced around the totality of the syntax expression corresponding to this operator node and its operands.

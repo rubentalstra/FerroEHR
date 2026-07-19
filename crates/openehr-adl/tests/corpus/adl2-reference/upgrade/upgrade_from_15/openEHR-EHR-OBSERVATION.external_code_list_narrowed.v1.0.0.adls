@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.external_code_list_narrowed.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.external_code_list.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"22/01/2014">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test narrowing of external code list">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"© 2014 openEHR Foundation">
+
+definition
+	OBSERVATION[id1.1] matches {	-- Test Obs specialised
+		/protocol[id2]/items[id3]/value/defining_code matches {[ac1.1]}		-- (added by post-parse processor)
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Test Obs specialised">
+				description = <"Test Obs specialised">
+			>
+			["ac1.1"] = <
+				text = <"(added by post-parse processor)">
+				description = <"(added by post-parse processor)">
+			>
+		>
+	>
+	value_sets = <
+		["ac1.1"] = <
+			id = <"ac1.1">
+			members = <"at2", "at1", "at6">
+		>
+	>

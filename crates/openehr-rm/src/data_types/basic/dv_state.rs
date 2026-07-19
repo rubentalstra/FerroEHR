@@ -2,13 +2,11 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::data_types::text::dv_coded_text::DvCodedText;
-use openehr_derive::OpenEhrType;
 
 /// For representing state values which obey a defined state machine, such as a variable  representing the states of an instruction or care process.
 ///
 /// DV_STATE is expressed as a String but its values are driven by archetype-defined  state machines. This provides a powerful way of capturing stateful complex processes  in simple data.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "DV_STATE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DvState {
     /// The state name. State names are determined by a state/event table defined in archetypes, and coded using openEHR Terminology or local archetype terms, as specified by the archetype.
     pub value: DvCodedText,

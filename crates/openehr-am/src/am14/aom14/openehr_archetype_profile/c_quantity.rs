@@ -3,11 +3,9 @@
 
 use crate::am14::aom14::openehr_archetype_profile::c_quantity_item::CQuantityItem;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constrainer class for Quantity data.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_QUANTITY")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CQuantity {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

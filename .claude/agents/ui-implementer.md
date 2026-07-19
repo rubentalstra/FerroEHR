@@ -43,7 +43,10 @@ Non-negotiables (violations are rejected at review):
 - Workspace discipline unchanged: pinned workspace deps
   (`dep.workspace = true`), `thiserror` (a `FromServerFnError` domain enum,
   not stringified errors), no `unwrap`/`expect` outside tests, never weaken
-  or delete a test, no AI attribution anywhere, `claude/*` branches only if
+  or delete a test, deferred work always `// TODO: <what>` (never prose
+  deferrals or phase/tracker markers in comments), no AI attribution
+  anywhere, conventional-type branches
+  (`feat/…`, `fix/…`, `chore/…` per the CLAUDE.md branch hard rule) only if
   told to commit.
 - Done = ALL of: `cargo clippy -p ehrbase-admin-ui --all-targets` green,
   `cargo clippy -p ehrbase-admin-ui --target wasm32-unknown-unknown` green

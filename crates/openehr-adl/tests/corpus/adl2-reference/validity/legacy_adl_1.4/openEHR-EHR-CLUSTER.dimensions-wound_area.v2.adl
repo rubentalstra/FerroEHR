@@ -1,0 +1,237 @@
+archetype (adl_version=1.4)
+	openEHR-EHR-CLUSTER.dimensions-wound_area.v2
+specialize
+	openEHR-EHR-CLUSTER.dimensions.v1
+
+concept
+	[at0000.1]	-- Area of wound
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			author = <
+				["organisation"] = <"University of Heidelberg, Central Queensland University">
+				["name"] = <"Jasmin Buck, Sebastian Garde">
+			>
+		>
+	>
+description
+	original_author = <
+		["name"] = <"unknown">
+	>
+	details = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+			purpose = <"Zur Beschreibung der Ausmaße eines betrachteten Teils.">
+			keywords = <"Größe", "Volumen">
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To describe the dimensions of a part examined or viewed">
+			keywords = <"size", "volume">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	lifecycle_state = <"Initial">
+
+definition
+	CLUSTER[at0000.1] matches {	-- Area of wound
+		items matches {
+			ELEMENT[at0005] occurrences matches {0..1} matches {	-- Area
+				value matches {
+					C_DV_QUANTITY <
+						property = <[openehr::335]>
+						list = <
+							["1"] = <
+								units = <"mm2">
+							>
+							["2"] = <
+								units = <"cm2">
+							>
+						>
+					>
+				}
+			}
+			ELEMENT[at0.7] occurrences matches {0..1} matches {	-- Way of measurement
+				value matches {
+					DV_CODED_TEXT matches {
+						defining_code matches {
+							[local::
+							at0.8, 	-- estimated
+							at0.9, 	-- approximated using greatest length times greatest width
+							at0.10, 	-- manual tracing and manual square counting
+							at0.11, 	-- digital tracing based on digital photo
+							at0.12]	-- digital tracing based on (scanned) manual trace
+						}
+					}
+				}
+			}
+		}
+	}
+
+ontology
+	term_definitions = <
+		["de"] = <
+			items = <
+				["at0.10"] = <
+					text = <"*manual tracing and manual square counting(en)">
+					description = <"*wound area has been approximated by counting squares on a tracing foil(en)">
+				>
+				["at0.11"] = <
+					text = <"*digital tracing based on digital photo(en)">
+					description = <"*wound area has been approximated by a digital tracing based on a digital photo(en)">
+				>
+				["at0.12"] = <
+					text = <"*digital tracing based on (scanned) manual trace(en)">
+					description = <"*wound area has been approximated by digitally tracing of a scanned manual tracing foil(en)">
+				>
+				["at0.7"] = <
+					text = <"*Way of measurement(en)">
+					description = <"*The way of how area measure has been determined(en)">
+				>
+				["at0.8"] = <
+					text = <"*estimated(en)">
+					description = <"*wound area has been estimated by eye(en)">
+				>
+				["at0.9"] = <
+					text = <"*approximated using greatest length times greatest width(en)">
+					description = <"*wound area approximation by multiplying greatest length (head to toe) with greatest width (side to side)(en)">
+				>
+				["at0000"] = <
+					text = <"Ausmaße">
+					description = <"Die Ausmaße eines betrachteten Teils">
+				>
+				["at0000.1"] = <
+					text = <"*Area of wound(en)">
+					description = <"*The physical dimensions of a part examined!(en)">
+				>
+				["at0001"] = <
+					text = <"Umfang">
+					description = <"Der Umfang des betrachteten Teils">
+				>
+				["at0001.1"] = <
+					text = <"*! - Circumference(en)">
+					description = <"*The circumference of the part examined(en)">
+				>
+				["at0002"] = <
+					text = <"Länge">
+					description = <"Die Länge des betrachteten Teils (longidudinale Körperachse)">
+				>
+				["at0002.1"] = <
+					text = <"*! - Length(en)">
+					description = <"*The length of the part examined (longitudinal anatomical axis)(en)">
+				>
+				["at0003"] = <
+					text = <"Breite">
+					description = <"Die Breite oder Weite (transversale Körperachse)">
+				>
+				["at0003.1"] = <
+					text = <"*! - Breadth(en)">
+					description = <"*The width or breadth (transverse anatomical axis)(en)">
+				>
+				["at0004"] = <
+					text = <"Tiefe">
+					description = <"Die Tiefe des betrachteten Teils (dorsal-ventrale Körperachse)">
+				>
+				["at0004.1"] = <
+					text = <"*! - Depth(en)">
+					description = <"*The depth of the part examined (dorso-ventral anatomical axis)(en)">
+				>
+				["at0005"] = <
+					text = <"*Area(en)">
+					description = <"*The area of the examined wound(en)">
+				>
+				["at0006"] = <
+					text = <"Volumen">
+					description = <"Das Volumen des betrachteten Teils">
+				>
+				["at0006.1"] = <
+					text = <"*! - Volume(en)">
+					description = <"*The volume of the part examined(en)">
+				>
+			>
+		>
+		["en"] = <
+			items = <
+				["at0.10"] = <
+					text = <"manual tracing and manual square counting">
+					description = <"wound area has been approximated by counting squares on a tracing foil">
+				>
+				["at0.11"] = <
+					text = <"digital tracing based on digital photo">
+					description = <"wound area has been approximated by a digital tracing based on a digital photo">
+				>
+				["at0.12"] = <
+					text = <"digital tracing based on (scanned) manual trace">
+					description = <"wound area has been approximated by digitally tracing of a scanned manual tracing foil">
+				>
+				["at0.7"] = <
+					text = <"Way of measurement">
+					description = <"The way of how area measure has been determined">
+				>
+				["at0.8"] = <
+					text = <"estimated">
+					description = <"wound area has been estimated by eye">
+				>
+				["at0.9"] = <
+					text = <"approximated using greatest length times greatest width">
+					description = <"wound area approximation by multiplying greatest length (head to toe) with greatest width (side to side)">
+				>
+				["at0000"] = <
+					text = <"Dimensions">
+					description = <"The physical dimensions of a part examined">
+				>
+				["at0000.1"] = <
+					text = <"Area of wound">
+					description = <"The physical dimensions of a part examined!">
+				>
+				["at0001"] = <
+					text = <"Circumference">
+					description = <"The circumference of the part examined">
+				>
+				["at0001.1"] = <
+					text = <"! - Circumference">
+					description = <"The circumference of the part examined">
+				>
+				["at0002"] = <
+					text = <"Length">
+					description = <"The length of the part examined (longitudinal anatomical axis)">
+				>
+				["at0002.1"] = <
+					text = <"! - Length">
+					description = <"The length of the part examined (longitudinal anatomical axis)">
+				>
+				["at0003"] = <
+					text = <"Breadth">
+					description = <"The width or breadth (transverse anatomical axis)">
+				>
+				["at0003.1"] = <
+					text = <"! - Breadth">
+					description = <"The width or breadth (transverse anatomical axis)">
+				>
+				["at0004"] = <
+					text = <"Depth">
+					description = <"The depth of the part examined (dorso-ventral anatomical axis)">
+				>
+				["at0004.1"] = <
+					text = <"! - Depth">
+					description = <"The depth of the part examined (dorso-ventral anatomical axis)">
+				>
+				["at0005"] = <
+					text = <"Area">
+					description = <"The area of the examined wound">
+				>
+				["at0006"] = <
+					text = <"Volume">
+					description = <"The volume of the part examined">
+				>
+				["at0006.1"] = <
+					text = <"! - Volume">
+					description = <"The volume of the part examined">
+				>
+			>
+		>
+	>

@@ -3,11 +3,9 @@
 
 use crate::am14::aom14::archetype::constraint_model::c_attribute::CAttribute;
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constraint on complex objects, i.e. any object that consists of other object constraints.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_COMPLEX_OBJECT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CComplexObject {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

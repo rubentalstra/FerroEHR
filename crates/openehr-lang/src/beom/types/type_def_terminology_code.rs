@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::TerminologyCode;
-use openehr_derive::OpenEhrType;
 
 /// Rules meta-type representing the primitive type Terminology_code.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "TYPE_DEF_TERMINOLOGY_CODE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TypeDefTerminologyCode {
     pub type_name: String,
     pub type_anchor: TerminologyCode,

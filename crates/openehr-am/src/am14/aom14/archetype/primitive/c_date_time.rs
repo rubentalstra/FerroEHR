@@ -4,11 +4,9 @@
 use openehr_base::prelude::Interval;
 use openehr_base::prelude::Iso8601DateTime;
 use openehr_base::prelude::ValidityKind;
-use openehr_derive::OpenEhrType;
 
 /// ISO 8601-compatible constraint on instances of Date_Time. There is no validity flag for ‘year’, since it must always be by definition mandatory in order to have a sensible date/time at all. Syntax expressions of instances of this class include “YYYY-MM-DDT??:??:??” (date/time with optional time) and “YYYY-MMDDTHH:MM:xx” (date/time, seconds not allowed).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_DATE_TIME")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CDateTime {
     /// The value to assume if this item is not included in data, due to being part of an optional structure.
     pub assumed_value: Option<Iso8601DateTime>,

@@ -5,11 +5,9 @@ use crate::common::generic::party_identified::PartyIdentified;
 use crate::common::generic::party_proxy::PartyProxy;
 use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
-use openehr_derive::OpenEhrType;
 
 /// Audit details for any system in a feeder system chain. Audit details here means the general notion of who/where/when the information item to which the audit is attached was created. None of the attributes is defined as mandatory, however, in different scenarios, various combinations of attributes will usually be mandatory. This can be controlled by specifying feeder audit details in legacy archetypes.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "FEEDER_AUDIT_DETAILS")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FeederAuditDetails {
     /// Identifier of the system which handled the information item. This is the IT system owned by the organisation legally responsible for handling the data, and at which the data were previously created or passed by an earlier system.
     pub system_id: String,

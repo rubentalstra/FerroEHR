@@ -1,0 +1,183 @@
+-- Basic Metamodel Syntax Version
+bmm_version = <"2.1">
+
+-- ----------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+-- ----------------------------------
+rm_publisher = <"CIMI">
+schema_name = <"RM_FOUNDATION">
+rm_release = <"0.0.3">
+
+-- ----------------------------------
+-- schema documentation
+-- ----------------------------------
+schema_revision = <"Wed Jul 26 08:19:06 PDT 2017">
+schema_lifecycle_state = <"dstu">
+schema_description = <"CIMI_RM_FOUNDATION.v0.0.3.mdzip - Schema generated from UML">
+
+
+-- ----------------------------------
+-- archetyping
+-- ----------------------------------
+archetype_rm_closure_packages = <"CIMI_Foundation_RM.Foundation", "CIMI_Foundation_RM.Party">
+includes = <
+	["1"] = <
+		id = <"cimi_rm_core_0.0.3">
+	>
+>
+packages = <
+	["CIMI_Foundation_RM"] = <
+		name = <"CIMI_Foundation_RM">
+		packages = <
+			["Foundation"] = <
+				name = <"Foundation">
+				classes = <"COMPOSITION", "CONTENT", "SECTION", "ENTRY", "CLUSTER", "VIRTUAL_CLUSTER", "BASE_ENTITY">
+			>
+			["Party"] = <
+				name = <"Party">
+				classes = <"PARTY", "PARTY_RELATIONSHIP", "PARTICIPATION", "BASE_ROLE", "BASE_ACTOR">
+			>
+		>
+	>
+>
+class_definitions = <
+	["COMPOSITION"] = <
+		documentation = <"A composition is considered the unit of modification of the record, the unit of transmission in record extracts, and the unit of attestation by authorising clinicians. In this latter sense, it may be considered equivalent to a signed document.">
+		name = <"COMPOSITION">
+		ancestors = <"LOCATABLE",...>
+		properties = <
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The content that makes up a composition.">
+				name = <"content">
+				type_def = <
+					container_type = <"List">
+					type = <"CONTENT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["CONTENT"] = <
+		documentation = <"Abstract ancestor of all concrete content types. A unit of content that makes up a composition - e.g., a clinical statement in a patient record, a simple or composite action is a knowledge document.">
+		name = <"CONTENT">
+		ancestors = <"LOCATABLE",...>
+	>
+	["SECTION"] = <
+		documentation = <"Represents a heading in a heading structure, or section tree . Can also be used to represent a collection of entries without metadata. (For collections of entries with shared metadata, use COMPOUND _ENTRY instead). Created according to archetyped structures for typical headings such as SOAP, physical examination, but also pathology result heading structures. Should not be used instead of ENTRY hierarchical structures.">
+		name = <"SECTION">
+		ancestors = <"CONTENT",...>
+		properties = <
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The content that makes up a section in a composition.">
+				name = <"content">
+				type_def = <
+					container_type = <"List">
+					type = <"CONTENT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["ENTRY"] = <
+		documentation = <"An ENTRY is the root of a logical item of hard clinical information created in the clinical statement context, within a clinical session or of clinical knowledge in a knowledge artifact. 
+
+With regards to clinical information entries, there can be numerous such contexts in a clinical session. Observations and other Entry types only ever document information captured&#47;created in the event documented by the enclosing Composition.
+
+An ENTRY is also the minimal unit of information any query should return, since a whole ENTRY (including subparts) records spatial structure, timing information, and contextual information, as well as the subject and generator of the information.
+">
+		name = <"ENTRY">
+		ancestors = <"CONTENT",...>
+	>
+	["CLUSTER"] = <
+		documentation = <"Abstract class representing a reusable structure in a model such as an address or an entity such as a device.">
+		name = <"CLUSTER">
+		ancestors = <"LOCATABLE",...>
+	>
+	["VIRTUAL_CLUSTER"] = <
+		documentation = <"A dependent model structure designed to support attribute reuse but which may be ignored by tooling such as code generators. This allows grouping of attributes to be used in a number of compositional structures in order to encourage pattern reuse and consistency but which can be structurally flattened in a derived artifact (e.g., a java class representing the composition). An example of this pattern is the CIMI Clinical Statement pattern which combines statement context and topic to build the set of relevant clinical statements.">
+		name = <"VIRTUAL_CLUSTER">
+		ancestors = <"CLUSTER",...>
+	>
+	["BASE_ENTITY"] = <
+		documentation = <"Parent class for all entities.">
+		name = <"BASE_ENTITY">
+		ancestors = <"CLUSTER",...>
+	>
+	["PARTY"] = <
+		documentation = <"A party involved in an activity. PARTY has two specializations: ACTOR and ROLE.">
+		name = <"PARTY">
+		ancestors = <"LOCATABLE",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code for the party.">
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["relationship"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Party relationship(s) associated with this party. E.g., the roles an actor may play.">
+				name = <"relationship">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTY_RELATIONSHIP">
+				>
+				cardinality = <|>=0|>
+			>
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An identifier for the party.">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["PARTY_RELATIONSHIP"] = <
+		documentation = <"Association class relating two parties such as the association of an actor with one or more roles.">
+		name = <"PARTY_RELATIONSHIP">
+		ancestors = <"ASSOCIATION_CLASS",...>
+		properties = <
+			["party"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The party target of the relationship.">
+				name = <"party">
+				type = <"PARTY">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["PARTICIPATION"] = <
+		documentation = <"Model of a participation of a Party (any Actor or Role) in an activity. Used to represent any participation of a Party in some activity, which is not explicitly in the model, e.g. assisting nurse. Can be used to record past or future participations. Should not be used in place of more permanent relationships between demographic entities.">
+		name = <"PARTICIPATION">
+		ancestors = <"ASSOCIATION_CLASS",...>
+		properties = <
+			["party"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A party involved in an activity. PARTY has two specializations: ACTOR and ROLE.">
+				name = <"party">
+				type = <"PARTY">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["BASE_ROLE"] = <
+		documentation = <"Capacity in which an actor is involved in an activity. For instance, 'attending physician'.">
+		name = <"BASE_ROLE">
+		ancestors = <"PARTY",...>
+	>
+	["BASE_ACTOR"] = <
+		documentation = <"An entity acting as an actor assuming a role in a participation. For instance, a person may act as a provider in an encounter with a patient.">
+		name = <"BASE_ACTOR">
+		ancestors = <"PARTY",...>
+		properties = <
+			["actor"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Entity involved in an activity. Typically a specific person or  organization.">
+				name = <"actor">
+				type = <"BASE_ENTITY">
+				is_mandatory = <True>
+			>
+		>
+	>
+>
+

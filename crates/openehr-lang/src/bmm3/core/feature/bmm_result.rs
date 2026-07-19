@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_derive::OpenEhrType;
 
 /// Automatically declared variable representing result of a Function call (writable).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_RESULT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmResult {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

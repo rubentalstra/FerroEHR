@@ -5,12 +5,9 @@ use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::bmm3::core::literal_value::bmm_boolean_value::BmmBooleanValue;
 use crate::bmm3::core::literal_value::bmm_integer_value::BmmIntegerValue;
 use crate::bmm3::core::literal_value::bmm_string_value::BmmStringValue;
-use openehr_derive::OpenEhrType;
-use serde::Serialize;
 
 /// Meta-type for literals whose concrete type is a primitive type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PRIMITIVE_VALUE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmPrimitiveValueData {
     // inherited: BMM_LITERAL_VALUE
     /// A serial representation of the value.
@@ -25,51 +22,10 @@ pub struct BmmPrimitiveValueData {
 
 /// Meta-type for literals whose concrete type is a primitive type.
 /// Polymorphic slot of `BMM_PRIMITIVE_VALUE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmPrimitiveValue {
     BmmBooleanValue(BmmBooleanValue),
     BmmIntegerValue(BmmIntegerValue),
     BmmStringValue(BmmStringValue),
     BmmPrimitiveValue(BmmPrimitiveValueData),
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmPrimitiveValue {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_BOOLEAN_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmBooleanValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_INTEGER_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmIntegerValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PRIMITIVE_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_STRING_VALUE") => {
-                ::core::result::Result::Ok(Self::BmmStringValue(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => ::core::result::Result::Ok(Self::BmmPrimitiveValue(
-                ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-            )),
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_PRIMITIVE_VALUE: unexpected `_type` {__other:?} (expected one of: BMM_BOOLEAN_VALUE, BMM_INTEGER_VALUE, BMM_PRIMITIVE_VALUE, BMM_STRING_VALUE)"
-                )))
-            }
-        }
-    }
 }

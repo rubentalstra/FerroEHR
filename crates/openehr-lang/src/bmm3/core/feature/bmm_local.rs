@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_routine::BmmRoutine;
-use openehr_derive::OpenEhrType;
 
 /// A routine local variable (writable).
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_LOCAL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmLocal {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

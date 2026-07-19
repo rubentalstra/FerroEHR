@@ -1,0 +1,114 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openehr-demographic-PERSON.test.v0.0.1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+	>
+	copyright = <"Copyright (c) 2012 openEHR Foundation ">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"???">
+		>
+	>
+
+definition
+	PERSON[id1] matches {	-- -
+		name matches {
+			DV_TEXT[id2] 
+		}
+		identities matches {
+			PARTY_IDENTITY[id3] occurrences matches {1} matches {	-- Legal name
+				details matches {
+					ITEM_TREE[id8] occurrences matches {0..1} 
+				}
+				name matches {
+					DV_CODED_TEXT[id13] 
+				}
+			}
+		}
+		details matches {
+			ITEM_TREE[id4] matches {
+				items matches {
+					CLUSTER[id5] 	-- Project
+					ELEMENT[id6] occurrences matches {0..1} matches {	-- Rating
+						value matches {
+							DV_QUANTITY[id14] matches {
+								normal_range matches {
+									DV_INTERVAL[id15] 
+								}
+								magnitude matches {|0.0..1.0|}
+								units matches {/.*/}
+							}
+						}
+					}
+					ELEMENT[id16] occurrences matches {1} matches {	-- asdf
+						value matches {
+							DV_COUNT[id17] matches {
+								magnitude matches {|0..1|}
+							}
+						}
+					}
+				}
+				name matches {
+					DV_TEXT[id7] 
+				}
+			}
+		}
+		contacts matches {
+			CONTACT[id9] 	-- Work
+			CONTACT[id10] occurrences matches {0..1} matches {	-- Home
+				addresses matches {
+					ADDRESS[id11] occurrences matches {1} matches {	-- Home address
+						details matches {
+							ITEM_TREE[id12] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"-">
+				description = <"-">
+			>
+			["id3"] = <
+				text = <"Legal name">
+				description = <"-">
+			>
+			["id5"] = <
+				text = <"Project">
+				description = <"-">
+			>
+			["id6"] = <
+				text = <"Rating">
+				description = <"-">
+			>
+			["id9"] = <
+				text = <"Work">
+				description = <"-">
+			>
+			["id10"] = <
+				text = <"Home">
+				description = <"-">
+			>
+			["id11"] = <
+				text = <"Home address">
+				description = <"-">
+			>
+			["id16"] = <
+				text = <"asdf">
+				description = <"-">
+			>
+		>
+	>

@@ -1,0 +1,41 @@
+archetype (adl_version=1.4)
+	openehr-TEST_PKG-SOME_TYPE.FAIL_c_dv_quantity_minimal.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Show that empty dADL objects are not accepted">
+			keywords = <"ADL", "test">
+			copyright = <"copyright (c) 2010 The openEHR Foundation">
+		>
+	>
+	other_details = <
+		["regression"] = <"SDINV">
+	>
+	lifecycle_state = <"draft">
+
+definition
+	SOME_TYPE[at0000] matches {	-- root item
+		clinical_quantity_attr_1 matches {
+			(C_DV_QUANTITY) <
+			>
+		}
+	}
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					description = <"xxxx">
+					text = <"root item">
+				>
+			>
+		>
+	>

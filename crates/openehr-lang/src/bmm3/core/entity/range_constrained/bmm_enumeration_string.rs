@@ -5,11 +5,9 @@ use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::core::feature::bmm_property::BmmProperty;
 use crate::bmm3::core::model::bmm_package::BmmPackage;
-use openehr_derive::OpenEhrType;
 
 /// String-based enumeration type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_ENUMERATION_STRING")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmEnumerationString {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

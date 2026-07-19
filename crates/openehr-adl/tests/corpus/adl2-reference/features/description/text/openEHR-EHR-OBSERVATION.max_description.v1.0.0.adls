@@ -1,0 +1,75 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.max_description.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["fr"] = <
+			language = <[ISO_639-1::fr]>
+			author = <
+				["name"] = <"unknown">
+			>
+		>
+	>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"author name">
+		["email"] = <"someone@home">
+	>
+	details = <
+		["fr"] = <
+			language = <[ISO_639-1::fr]>
+			purpose = <"a quoi ça sert">
+			use = <"ceçi explique la fonction de l'archetype">
+			keywords = <"ceçi", "est", "une", "liste", "de", "mots", "clés">
+			misuse = <"les interdictions de cet archetype">
+			original_resource_uri = <
+				["ligne guide"] = <"http://guidelines.are.us/wherever/fr">
+				["medline"] = <"http://some%20medline%20ref">
+			>
+		>
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"what this is for">
+			use = <"this is what it is used for">
+			keywords = <"this", "is", "a", "list", "of", "keywords">
+			misuse = <"this is not what it is used for">
+			original_resource_uri = <
+				["guideline"] = <"http://guidelines.are.us/wherever/en">
+				["medline"] = <"http://some%20medline%20ref">
+			>
+		>
+	>
+	other_contributors = <"friend 1", "friend 2", "friend 3">
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2012 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+
+definition
+	OBSERVATION[id1] matches {	-- most minimal
+		data 
+	}
+
+terminology
+	term_definitions = <
+		["fr"] = <
+			["id1"] = <
+				text = <"le plus minimal">
+				description = <"le plus minimal">
+			>
+		>
+		["en"] = <
+			["id1"] = <
+				text = <"most minimal">
+				description = <"most minimal">
+			>
+		>
+	>

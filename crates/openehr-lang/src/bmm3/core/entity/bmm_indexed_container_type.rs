@@ -4,11 +4,9 @@
 use crate::bmm3::core::entity::bmm_class::BmmClass;
 use crate::bmm3::core::entity::bmm_simple_type::BmmSimpleType;
 use crate::bmm3::core::entity::bmm_type::BmmType;
-use openehr_derive::OpenEhrType;
 
 /// Type reference that specifies an indexed container such as `Hash<K,V>`, i.e. a container whose members are accessed via a key (index) type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_INDEXED_CONTAINER_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmIndexedContainerType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

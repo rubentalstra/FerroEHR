@@ -1,0 +1,115 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-CAR.paths_basic.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["date"] = <"2006-03-20">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test paths in archetypes. This archetype contains a single-valed attribute 'body', with one object, and a multiple-valued attribute, 'engine', which has a number of sub-items.">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright © 2006 openEHR Foundation <http://www.openEHR.org>">
+
+definition
+	CAR[id1] matches {	-- car
+		body matches {
+			CAR_BODY[id2] matches {	-- car body
+				description matches {"principal car body"}
+				model matches {"xxxx"}
+			}
+		}
+		engine_parts matches {
+			ENGINE_PART[id4] matches {	-- block
+				items matches {
+					ENGINE_PART_ITEM[id5] matches {	-- head
+						model matches {"xxx"}
+						type matches {"xxx"}
+					}
+					ENGINE_PART_ITEM[id6] matches {	-- body
+						model matches {"xxx"}
+						type matches {"xxx"}
+					}
+					ENGINE_PART_ITEM[id7] matches {	-- pistons
+						model matches {"xxx"}
+						type matches {"xxx"}
+					}
+					ENGINE_PART_ITEM[id8] matches {	-- cam shaft
+						model matches {"xxx"}
+						type matches {"xxx"}
+					}
+					ENGINE_PART_ITEM[id9] matches {	-- sump
+						model matches {"xxx"}
+						type matches {"xxx"}
+					}
+				}
+			}
+			ENGINE_PART[id10] matches {	-- exhaust manifold
+				items matches {
+					ENGINE_PART_ITEM[id11] matches {	-- exhaust manifold gasket
+						model matches {"xxx"}
+						type matches {"xxx"}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"car">
+				description = <"car">
+			>
+			["id2"] = <
+				text = <"car body">
+				description = <"car body">
+			>
+			["id4"] = <
+				text = <"block">
+				description = <"engine block">
+			>
+			["id5"] = <
+				text = <"head">
+				description = <"engine block head">
+			>
+			["id6"] = <
+				text = <"body">
+				description = <"engine block body">
+			>
+			["id7"] = <
+				text = <"pistons">
+				description = <"engine pistons">
+			>
+			["id8"] = <
+				text = <"cam shaft">
+				description = <"engine cam shaft">
+			>
+			["id9"] = <
+				text = <"sump">
+				description = <"oil sump">
+			>
+			["id10"] = <
+				text = <"exhaust manifold">
+				description = <"exhaust manifold">
+			>
+			["id11"] = <
+				text = <"exhaust manifold gasket">
+				description = <"exhaust manifold gasket">
+			>
+		>
+	>

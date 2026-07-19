@@ -96,11 +96,11 @@ fn validate_party_ref(reference: &Value, context: &str) -> Result<(), ServiceErr
 fn party_check(rm_type: &str, data: &Value) -> Result<(), ServiceError> {
     use openehr_rm::prelude::{Agent, Group, Organisation, Person, Role};
     let typed = match rm_type {
-        "AGENT" => serde_json::from_value::<Agent>(data.clone()).map(drop),
-        "GROUP" => serde_json::from_value::<Group>(data.clone()).map(drop),
-        "ORGANISATION" => serde_json::from_value::<Organisation>(data.clone()).map(drop),
-        "PERSON" => serde_json::from_value::<Person>(data.clone()).map(drop),
-        "ROLE" => serde_json::from_value::<Role>(data.clone()).map(drop),
+        "AGENT" => openehr_its::json::from_canonical_value::<Agent>(data).map(drop),
+        "GROUP" => openehr_its::json::from_canonical_value::<Group>(data).map(drop),
+        "ORGANISATION" => openehr_its::json::from_canonical_value::<Organisation>(data).map(drop),
+        "PERSON" => openehr_its::json::from_canonical_value::<Person>(data).map(drop),
+        "ROLE" => openehr_its::json::from_canonical_value::<Role>(data).map(drop),
         other => {
             return Err(ServiceError::Unprocessable(format!(
                 "not a demographic party type: {other:?}"
@@ -192,7 +192,7 @@ fn relationship_check(data: &Value) -> Result<(), ServiceError> {
     // one already fails deserialization; the explicit checks below give a
     // relationship-specific `422` message (and guard against a future optionality
     // change in the generated type).
-    serde_json::from_value::<PartyRelationship>(data.clone()).map_err(|e| {
+    openehr_its::json::from_canonical_value::<PartyRelationship>(data).map_err(|e| {
         ServiceError::Unprocessable(format!("body does not validate as PARTY_RELATIONSHIP: {e}"))
     })?;
     for field in ["source", "target"] {

@@ -1,0 +1,49 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.VCORMT_rm_non_conforming_type2.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openEHR.org">
+		["date"] = <"12/03/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VCORMT validity check, triggered by non-conforming type">
+			keywords = <"test", "RM checker">
+		>
+	>
+	other_details = <
+		["regression"] = <"VCORMT">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	OBSERVATION[id1] matches {
+		data matches {
+			HISTORY<ITEM_LIST>[id2] matches {	
+				events cardinality matches {1..*; unordered} matches {
+					CLUSTER[id3] occurrences matches {0..*}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				description = <"an Observation">
+				text = <"an Observation">
+			>
+			["id3"] = <
+				description = <"some Event">
+				text = <"some Event">
+			>
+		>
+	>

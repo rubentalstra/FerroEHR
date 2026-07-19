@@ -7,11 +7,9 @@ use crate::composition::composition::Composition;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// Form of `X_VERSIONED_OBJECT` for `COMPOSITION` EHR object.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "X_VERSIONED_COMPOSITION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct XVersionedComposition {
     // inherited: X_VERSIONED_OBJECT
     /// Uid of original `VERSIONED_OBJECT`.

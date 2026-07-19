@@ -104,16 +104,8 @@ impl AuditInput {
         default_description: &str,
         fallback_system_id: &str,
     ) -> Self {
-        let committer = match serde_json::to_value(&update.committer) {
-            Ok(v) => v,
-            // Unreachable for a well-formed PARTY_PROXY (no non-string keys,
-            // no non-finite numbers); if it ever fires, say so loudly instead
-            // of silently attributing the commit to the system identity.
-            Err(e) => {
-                tracing::error!(error = %e, "UPDATE_VERSION committer failed to serialize; falling back to the system identity");
-                serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "EHRbase" })
-            }
-        };
+        // The native codec serializes a PARTY_PROXY infallibly.
+        let committer = openehr_its::json::to_canonical_value(&update.committer);
         Self {
             system_id: update
                 .system_id

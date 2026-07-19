@@ -1,0 +1,4750 @@
+-- Basic Metamodel Syntax Version
+bmm_version = <"2.1">
+
+------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+-------------------------------------
+rm_publisher = <"CIMI">
+schema_name = <"RM_CLINICAL">
+rm_release = <"0.0.2">
+
+-------------------------------------
+-- schema documentation
+-------------------------------------
+schema_revision = <"Tue Mar 07 00:47:54 PST 2017">
+schema_lifecycle_state = <"dstu">
+schema_description = <"CIMI_RM_CLINICAL.v0.0.2.mdzip - Schema generated from UML">
+
+
+-------------------------------------
+-- archetyping
+-------------------------------------
+archetype_rm_closure_packages = <"CIMI_Clinical.ClinicalStatement", "CIMI_Clinical.Data_Structure", "CIMI_Clinical.Party", "CIMI_Clinical.Relationship", "CIMI_Clinical.Participation">
+includes = <
+	["1"] = <
+		id = <"cimi_rm_core_0.0.2">
+	>
+	["2"] = <
+		id = <"cimi_rm_foundation_0.0.2">
+	>
+>
+packages = <
+	["CIMI_Clinical"] = <
+		name = <"CIMI_Clinical">
+		packages = <
+			["ClinicalStatement"] = <
+				name = <"ClinicalStatement">
+				classes = <"IndivisibleClinicalStatement", "CompoundClinicalStatement", "BaseClinicalStatement">
+			>
+			["Data_Structure"] = <
+				name = <"Data_Structure">
+				classes = <"Attribution", "USPostalAddress", "AddressLine", "Part", "Street", "StreetNumber", "Signature", "Entity", "AnatomicalLocation", "Specimen", "ElectronicContact", "Location", "LocationName", "Provenance", "ReferenceRange", "PartyName", "ActorName", "Use", "PersonName", "PersonNameDetailed", "OrganizationName", "ClinicalStatementAssociation", "Justification", "StatementTopic", "StatementContext", "Act", "Finding", "Procedure", "LaboratoryProcedure", "ActionContext", "FindingContext", "Proposal", "Performance", "NonPerformance", "Plan", "KnownOrSuspectedPresent", "Absent", "ProposalAgainst", "EvaluationResult", "Device", "Order", "NonCompletion", "LaboratoryTestResult", "Assertion", "Interpretation", "PhysicalEvaluationResult", "RiskAssertion", "PresenceAbsenceContext", "QuantitativeReferenceRange", "QualitativeReferenceRange", "Registration", "Qualification", "Substance", "Medication", "Ingredient", "UnitOfDistribution", "SubstanceContainer", "ProductBatch", "MedicationProduct", "MedicationPackage", "Accreditation", "AdvanceDirective", "Age", "BiometricData", "BirthData", "ContactInformation", "Citizenship", "DeathData", "Entitlement", "Industry", "LanguageCapability", "Occupation", "Person", "Residency", "SpecimenContainer", "SpecimenCollection", "SpecimenTreatment", "WoundAssertion", "Tunneling", "Undermining", "WoundBedAndEdge", "WoundExudate", "WoundDressing", "DimensionalFeature", "MedicationAct", "DispenseInstructions", "Dosage", "SubstitutionBase", "SubstitutionInstruction", "SubstitutionInformation", "DispenseEvent", "DispenseBase", "Timing", "MedicationDispensePerformance", "MedicationOrder", "BaseEvaluationResult", "BaseAssertion", "BaseAddress", "Promise", "MedicationAdministration", "MedicationDispense", "GenericAddress", "FindingSiteAssertion", "DeviceAssertion", "PharmacyPromise", "Request", "BaseEncounter", "Admission", "Discharge", "Transfer", "Referral", "Encounter", "PatientRelatedEducation", "PatientEducationPerformed", "Diagnosis", "EmergencyEncounter", "AbstractDurableEncounter", "VirtualEncounter", "OutpatientVisit", "HomeBasePrimaryCareEncounter", "InpatientEncounter", "ShortStay", "LongTermCare", "Hospice", "SurgicalProcedure", "Organization", "Event", "EventContext", "BradenAssessment">
+			>
+			["Party"] = <
+				name = <"Party">
+				classes = <"Role", "HealthCareProviderRole", "HealthCareProviderOrganizationRole", "HealthCareProviderIndividualRole", "HealthCareConsumerRole">
+			>
+			["Relationship"] = <
+				name = <"Relationship">
+				classes = <"PartyRelationship", "NextOfKinRelationship", "HealthCareProviderRelationship", "OrganizationRelationship", "EmployerRelationship">
+			>
+			["Participation"] = <
+				name = <"Participation">
+				classes = <"SubjectOfInformation",...>
+			>
+		>
+	>
+>
+class_definitions = <
+	["IndivisibleClinicalStatement"] = <
+		documentation = <"The documentation of clinical information about a subject of information such as a patient or a relative of the patient, asserted by a particular source, recorded, and potentially verified. The ClinicalStatement class provides the core pattern for more specific clinical statement archetypes, such as a statement that a finding has been found in a patient or that a procedure has been proposed by a clinical decision support system.
+
+The ClinicalStatement pattern defines the core attributes common to most clinical statements and specifies a composition pattern that encourage model component reuse and better alignment with the SNOMED CT Concept Model. 
+
+A clinical statement is composed of the StatementTopic class (grouping of attributes for capturing information about a procedure or a clinical finding) and the StatementContext class (grouping of attributes providing the context for the statement topic such as whether a procedure was performed, requested, not performed or whether a finding is suspected present or absent in the patient). At the archetype level, the topic and context components are coordinated to form the clinical statement. For instance, the composition of the ProcedureTopic with the NotPerformed context indicates that the given procedure was not performed. 
+">
+		name = <"IndivisibleClinicalStatement">
+		ancestors = <"SIMPLE_ENTRY", "BaseClinicalStatement">
+	>
+	["CompoundClinicalStatement"] = <
+		documentation = <"Clinical statement representing multiple units of information that are treated as a whole such as a panel. A compound clinical statement is a collection of independent clinical statement, whether indivisible or compound.
+
+Note that complex medications are indivisible clinical statements even though their structure may be a composite data structure. They are generally treated as an independent entry in a record and their parts do not constitute independent entries in a record.">
+		name = <"CompoundClinicalStatement">
+		ancestors = <"COMPOSITE_ENTRY", "BaseClinicalStatement">
+	>
+	["BaseClinicalStatement"] = <
+		documentation = <"The documentation of clinical information about a subject of information such as a patient or a relative of the patient, asserted by a particular source, recorded, and potentially verified. The ClinicalStatement class provides the core pattern for more specific clinical statement archetypes, such as a statement that a finding has been found in a patient or that a procedure has been proposed by a clinical decision support system.
+
+The ClinicalStatement pattern defines the core attributes common to most clinical statements and specifies a composition pattern that encourage model component reuse and better alignment with the SNOMED CT Concept Model. 
+
+A clinical statement is composed of the StatementTopic class (grouping of attributes for capturing information about a procedure or a clinical finding) and the StatementContext class (grouping of attributes providing the context for the statement topic such as whether a procedure was performed, requested, not performed or whether a finding is suspected present or absent in the patient). At the archetype level, the topic and context components are coordinated to form the clinical statement. For instance, the composition of the ProcedureTopic with the NotPerformed context indicates that the given procedure was not performed. 
+">
+		name = <"BaseClinicalStatement">
+		ancestors = <"ENTRY",...>
+		properties = <
+			["key"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The 'key' attribute is an optional attribute allowing the coding of some of the information represented by the clinical statement. The range of this attribute (i.e., allowable codes assigned as a value for this attribute) must derive from and conform with the SNOMED CT Situation with Explicit Context (SWEC) concept hierarchies defined in SNOMED CT. Note that this attribute may consist of precoordinated codes (not recommended) or SNOMED CT expressions.">
+				name = <"key">
+				type = <"CODED_TEXT">
+			>
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The unique identifier(s) of this clinical statement. It must be entered if user wants it returned as part of any output (e.g.,  a wound number), otherwise it will be auto-generated, if needed, by the system serving the record. An identifier does not need to be the actual identifier of the source system. 
+">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["topic"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"What the statement is about, e.g., the kind of finding or procedure asserted. Attribute aligns with the SNOMED CT Situation with Explicit Context (SWEC) Concept Model attributes 'Associated finding (attribute)' (SCTID: 246090004) and 'Associated procedure (attribute)' (SCTID: 363589002). The range of this attribute is a structure (StatementTopic) rather than a value set. The topic of the clinical statement must align with the range specified by the SWEC Concept Model. For instance, if the 'topic' attribute's meaning is bound to 'Associated finding', then the topic may not be a specialization of the Act statement topic.">
+				name = <"topic">
+				type = <"StatementTopic">
+			>
+			["context"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The ontological status of the statement, e.g., whether it exists, does not exist, is planned, etc. Attribute aligns with the SNOMED CT Situation with Explicit Context Concept Model context attributes 'Finding context (attribute)' (SCTID: 408729009) and 'Procedure context (attribute)' (SCTID: 408730004). The range of this attribute is a structure (StatementContext) rather than a value set. The context of the clinical statement must align with the range specified by the SWEC Concept Model. For instance, if the 'context' attribute's meaning is bound to 'Finding context', then the context may not be a specialization of the ActionContext statement context. Instead, it should be a specialization of the FindingContext statement context.">
+				name = <"context">
+				type = <"StatementContext">
+			>
+			["contextAttribution"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The attribution for the given context such as the who, what, when, where, how (e.g., origination mode) responsible for proposing, planning, ordering and authorizing, etc... 
+
+The contextAttribution attribute is intended to be constrained appropriately within CIMI archetypes.">
+				name = <"contextAttribution">
+				type = <"Attribution">
+			>
+			["contextStatusHistory"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A record of the states for an action in a specified action context, e.g., an order may evolve from draft to placed to in progress to completed or canceled.
+
+The use of Attribution rather than a simple code for status supports the consistent capture of additional metadata associated with the specified status. For instance, if the proposal was declined, who declined it, when was it declined, and so on ...
+">
+				name = <"contextStatusHistory">
+				type_def = <
+					container_type = <"List">
+					type = <"Attribution">
+				>
+				cardinality = <|>=0|>
+			>
+			["authored"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Provenance information specific to the assertion being made (e.g., the author(s), when authored, the location where the assertion was made, etc...).">
+				name = <"authored">
+				type = <"Attribution">
+			>
+			["recorded"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Provenance information specific to the recording of the clinical statement (e.g., when recorded, where recorded, etc...).">
+				name = <"recorded">
+				type = <"Attribution">
+			>
+			["verified"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Provenance information specific to the verification process associated with this statement (e.g., verifier, verification method, when verified, etc...).">
+				name = <"verified">
+				type = <"Attribution">
+			>
+			["signed"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Provenance information specific to the signing of the clinical statement.">
+				name = <"signed">
+				type_def = <
+					container_type = <"List">
+					type = <"Attribution">
+				>
+				cardinality = <|>=0|>
+			>
+			["cosigned"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Provenance information specific to the cosigning of the clinical statement.">
+				name = <"cosigned">
+				type_def = <
+					container_type = <"List">
+					type = <"Attribution">
+				>
+				cardinality = <|>=0|>
+			>
+			["additionalText"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Unstructured notes appended to a clinical statement.">
+				name = <"additionalText">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["recordStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Concept indicating the state of this record. E.g., 'entered in error'.">
+				name = <"recordStatus">
+				type = <"CODED_TEXT">
+			>
+			["originatingFrom"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The encounter or episode of care from which this statement originates.">
+				name = <"originatingFrom">
+				type = <"BaseClinicalStatement">
+			>
+			["encounter"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Encounter associated with this clinical statement.">
+				name = <"encounter">
+				type = <"BaseClinicalStatement">
+			>
+		>
+	>
+	["Attribution"] = <
+		documentation = <"Attribution provides a formal pattern and reusable structure for attributes of a record that describes an activity in a process involved in producing, delivering or otherwise influencing that resource. Attribution provides a critical foundation for assessing authenticity, enabling trust, and allowing reproducibility. Provenance assertions are a form of contextual metadata and can themselves become important records with their own provenance. Provenance statement indicates clinical significance in terms of confidence in authenticity, reliability, and trustworthiness, integrity, and stage in lifecycle (e.g. Document Completion - has the artifact been legally authenticated), all of which may impact security, privacy, and trust policies.
+
+Attribution provides a common reference model pattern that may be included directly within a clinical statement (e.g., the metadata associated with the recording of a clinical statement in a system) or within the Provenance pattern when it is preferrable to have such information external to but referencing the clinical statement (see Provenance). Note that, when included directly within a clinical statement, updates made to attribution attribute values will result in a versioning change in the instance. When part of the Provenance class, updates to provenance do not result in an update of the clinical statement referenced by the Provenance class (see Provenance.target).">
+		name = <"Attribution">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A token that uniquely identifies the act of attribution.">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["activity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An activity is something that occurs over a period of time and acts upon or with entities; it may include asserting, recording, verifying, consuming, processing, transforming, modifying, relocating, using, or generating entities.">
+				name = <"activity">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["recordedOn"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The time at which the activity was recorded.">
+				name = <"recordedOn">
+				type = <"DATE_TIME">
+			>
+			["recordedBy"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The person or entity capturing the attribution information.">
+				name = <"recordedBy">
+				type = <"PARTICIPATION">
+			>
+			["datetimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The period during which the activity occurred.">
+				name = <"datetimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["reason"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The reason that the activity was taking place.">
+				name = <"reason">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["location"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Where the activity occurred, if relevant.">
+				name = <"location">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["policy"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Policy or plan that defines the activity. Typically, a single activity may have multiple applicable policy documents, such as patient consent, guarantor funding, etc.">
+				name = <"policy">
+				type_def = <
+					container_type = <"List">
+					type = <"URI">
+				>
+				cardinality = <|>=0|>
+			>
+			["agent"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A person or other party responsible for execution of some facet of the activity. The agent in an activity for which it can be assigned some degree of responsibility for the activity taking place. The agent comprises both the party involved and its role.">
+				name = <"agent">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["entity"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An entity used in this activity.">
+				name = <"entity">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["signature"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A digital signature on the target Reference(s). The signer should match a Provenance.agent. The purpose of the signature is indicated.">
+				name = <"signature">
+				type_def = <
+					container_type = <"List">
+					type = <"Signature">
+				>
+				cardinality = <|>=0|>
+			>
+			["method"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"This component captures the method used to perform the activity.  For instance, in Verified, it captures how verification is achieved (verbal, written, telephone, etc.). In a specimen collection, examples include sputum, finger stick.">
+				name = <"method">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["USPostalAddress"] = <
+		documentation = <"Type representing an address.">
+		name = <"USPostalAddress">
+		ancestors = <"BaseAddress",...>
+		properties = <
+			["addressLine"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An address line.">
+				name = <"addressLine">
+				type_def = <
+					container_type = <"List">
+					type = <"AddressLine">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["AddressLine"] = <
+		documentation = <"An address line.">
+		name = <"AddressLine">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["lineNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The number of this address line in a multi-line address.">
+				name = <"lineNumber">
+				type = <"COUNT">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+			["additionalLocator"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"additionalLocator">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["siteName"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The name of the site.">
+				name = <"siteName">
+				type = <"CODED_TEXT">
+			>
+			["unitNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The number of the unit.">
+				name = <"unitNumber">
+				type = <"CODED_TEXT">
+			>
+			["unitType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of unit.">
+				name = <"unitType">
+				type = <"CODED_TEXT">
+			>
+			["postalBoxNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A P.O. Box number.">
+				name = <"postalBoxNumber">
+				type = <"CODED_TEXT">
+			>
+			["floorOrLevelNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The floor or level of the residence or business.">
+				name = <"floorOrLevelNumber">
+				type = <"CODED_TEXT">
+			>
+			["floorOrLevelType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of floor or level.">
+				name = <"floorOrLevelType">
+				type = <"CODED_TEXT">
+			>
+			["lotNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The number of the lot.">
+				name = <"lotNumber">
+				type = <"CODED_TEXT">
+			>
+			["street"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Information about the street.">
+				name = <"street">
+				type = <"Street">
+			>
+			["streetNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The number of the location on the street.">
+				name = <"streetNumber">
+				type = <"StreetNumber">
+			>
+			["intersectionDescription"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Information about the nearest intersection.">
+				name = <"intersectionDescription">
+				type = <"CODED_TEXT">
+			>
+			["visualization"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"visualization">
+				type = <"CODED_TEXT">
+			>
+			["censusArea"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The census area.">
+				name = <"censusArea">
+				type = <"CODED_TEXT">
+			>
+			["deliveryPointIdentifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The delivery point identifier.">
+				name = <"deliveryPointIdentifier">
+				type = <"CODED_TEXT">
+			>
+			["deliveryNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The delivery number.">
+				name = <"deliveryNumber">
+				type = <"CODED_TEXT">
+			>
+			["deliveryInstallationType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The category of delivery installation.  The valid values are: 
+ 
+BDP = Bureau De Poste CC = Concession Commerciale CDO = Commercial Dealership Outlet CMC = Community Mail Centre CPC = Centre Postal Communautaire CSP = Comptoir Service Postal LCD = Letter Carrier Depot PDF = Poste De Facteurs PO = Post Office RPO = Retail Postal Outlet STN = Station SUCC = Succursale ">
+				name = <"deliveryInstallationType">
+				type = <"CODED_TEXT">
+			>
+			["deliveryInstallationArea"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The name of a village, town, municipality, city or metropolitan area that forms part of a DELIVERY INSTALLATION NAME.">
+				name = <"deliveryInstallationArea">
+				type = <"CODED_TEXT">
+			>
+			["deliveryInstallationQualifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"When more than one delivery installation serves an area described by the DELIVERY INSTALLATION AREA NAME, the qualifier name uniquely identifies the delivery installation.">
+				name = <"deliveryInstallationQualifier">
+				type = <"CODED_TEXT">
+			>
+			["deliveryMode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Both U.S and Canada have delivery modes and the value set is realm specific:
+
+https:&#47;&#47;www.uspsoig.gov&#47;blog&#47;modes-delivery
+
+https:&#47;&#47;www.canadapost.ca&#47;cpo&#47;mr&#47;assets&#47;pdf&#47;business&#47;delmodetechspecs_en.pdf">
+				name = <"deliveryMode">
+				type = <"CODED_TEXT">
+			>
+			["deliveryModeIdentifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"deliveryModeIdentifier">
+				type = <"CODED_TEXT">
+			>
+			["postalCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The postal or zip code.">
+				name = <"postalCode">
+				type = <"CODED_TEXT">
+			>
+			["district"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The district code.">
+				name = <"district">
+				type = <"CODED_TEXT">
+			>
+			["suburbTownOrLocality"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The suburb, town, or locality code.">
+				name = <"suburbTownOrLocality">
+				type = <"CODED_TEXT">
+			>
+			["city"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The city code.">
+				name = <"city">
+				type = <"CODED_TEXT">
+			>
+			["stateTerritoryOrProvince"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The state or territory or province code.">
+				name = <"stateTerritoryOrProvince">
+				type = <"CODED_TEXT">
+			>
+			["country"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The country">
+				name = <"country">
+				type = <"CODED_TEXT">
+			>
+			["careOf"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Care of information.">
+				name = <"careOf">
+				type = <"CODED_TEXT">
+			>
+			["delimiter"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"delimiter">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Part"] = <
+		documentation = <"A component of a name or an address.">
+		name = <"Part">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["partNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The position of the part in the overall structure.">
+				name = <"partNumber">
+				type = <"COUNT">
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The value of the given part - e.g., a given name such as 'John'.">
+				name = <"value">
+				type = <"TEXT">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of the part - e.g., 'given name' or 'street number'.">
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Street"] = <
+		documentation = <"The name of a street.">
+		name = <"Street">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION
+
+How does this differ from streetType?">
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Name of the street from a list of names maintained by an organization such as the US Postal Service.">
+				name = <"name">
+				type = <"CODED_TEXT">
+			>
+			["streetType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of street - Court, Lane, Street, Road, Circle, etc...">
+				name = <"streetType">
+				type = <"TEXT">
+			>
+			["direction"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Direction code such as N, S, W, NE, etc...">
+				name = <"direction">
+				type = <"CODED_TEXT">
+			>
+			["suffix"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Term used to qualify the street name suitable for directional references.">
+				name = <"suffix">
+				type = <"TEXT">
+			>
+		>
+	>
+	["StreetNumber"] = <
+		documentation = <"The number of a residence in a street.">
+		name = <"StreetNumber">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Type of street number.
+
+NEED DEFINITION AND EXAMPLES">
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+			["numeric"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The street number.">
+				name = <"numeric">
+				type = <"TEXT">
+			>
+			["suffix"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"suffix">
+				type = <"TEXT">
+			>
+		>
+	>
+	["Signature"] = <
+		documentation = <"A digital signature along with supporting context. The signature may be electronic&#47;cryptographic in nature, or a graphical image representing a hand-written signature, or a signature process. Different Signature approaches have different utilities.">
+		name = <"Signature">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["type"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An indication of the reason that the entity signed this document. This may be explicitly included as part of the signature information and can be used when determining accountability for various actions concerning the document.">
+				name = <"type">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+			["when"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"When the digital signature was signed.">
+				name = <"when">
+				type = <"DATE_TIME">
+				is_mandatory = <True>
+			>
+			["who"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A reference to an application-usable description of the identity that signed (e.g. the signature used their private key).">
+				name = <"who">
+				type = <"PARTICIPATION">
+				is_mandatory = <True>
+			>
+			["onBehalfOf"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A reference to an application-usable description of the identity that is represented by the signature.">
+				name = <"onBehalfOf">
+				type = <"PARTICIPATION">
+			>
+			["mimeType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A mime type that indicates the technical format of the signature. Important mime types are application&#47;signature+xml for X ML DigSig, application&#47;jwt for JWT, and image&#47;* for a graphical image of a signature, etc.">
+				name = <"mimeType">
+				type = <"CODED_TEXT">
+			>
+			["signatureContext"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The base64 encoding of the Signature content. When signature is not recorded electronically this element would be empty.">
+				name = <"signatureContext">
+				type = <"ENCAPSULATED">
+			>
+		>
+	>
+	["Entity"] = <
+		documentation = <"Root class for material entities such as anatomical locations, devices, and substances.">
+		name = <"Entity">
+		ancestors = <"BASE_ENTITY",...>
+		properties = <
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An identifier for the material entity.">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["entityName"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The name or code of the entity.">
+				name = <"entityName">
+				type = <"TEXT">
+			>
+			["description"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A description of the entity.">
+				name = <"description">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["AnatomicalLocation"] = <
+		documentation = <"A part of the body.">
+		name = <"AnatomicalLocation">
+		ancestors = <"Entity",...>
+		properties = <
+			["laterality"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The laterality  of a bilaterally duplicated structure.">
+				name = <"laterality">
+				type = <"TEXT">
+			>
+			["anatomicalDirection"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Example values: proximal, distal, lateral, medial...">
+				name = <"anatomicalDirection">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Specimen"] = <
+		documentation = <"Sample for analysis">
+		name = <"Specimen">
+		ancestors = <"Entity",...>
+		properties = <
+			["accessionIdentifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifier assigned by the lab">
+				name = <"accessionIdentifier">
+				type = <"IDENTIFIER">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating the status of the specimen. E.g., available, unavailable, unsatisfactory">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["sourceSpecimen"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifier for the source specimen from which this specimen was derived.">
+				name = <"sourceSpecimen">
+				type = <"Specimen">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Kind of material that forms the specimen">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["collection"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Attribution information about the specimen collection activity.">
+				name = <"collection">
+				type = <"SpecimenCollection">
+			>
+			["container"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Information about the vessel holding the specimen.">
+				name = <"container">
+				type = <"SpecimenContainer">
+			>
+			["treatment"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Treatment and processing step details">
+				name = <"treatment">
+				type_def = <
+					container_type = <"List">
+					type = <"SpecimenTreatment">
+				>
+				cardinality = <|>=0|>
+			>
+			["handlingRisk"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Cautions on the handling of this specimen.">
+				name = <"handlingRisk">
+				type = <"TEXT">
+			>
+			["specialHandling"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Information about the proper handling of the specimen.">
+				name = <"specialHandling">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["receiveAction"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Attribution information associated with receiving the specimen.">
+				name = <"receiveAction">
+				type = <"Attribution">
+			>
+		>
+	>
+	["ElectronicContact"] = <
+		documentation = <"Data structure representing an electronic contact such as an email address.">
+		name = <"ElectronicContact">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The electronic contact address.">
+				name = <"value">
+				type = <"TEXT">
+			>
+			["protocol"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Telecommunications form for contact point - what communications system is required to make use of the contact.">
+				name = <"protocol">
+				type = <"CODED_TEXT">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED A DEFINITION">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["medium"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED A DEFINITION:
+
+The mime type for the communication. ">
+				name = <"medium">
+				type = <"CODED_TEXT">
+			>
+			["use"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifies the purpose for the contact point.">
+				name = <"use">
+				type = <"CODED_TEXT">
+			>
+			["preferredTiming"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The period of day during which the contact should be used.">
+				name = <"preferredTiming">
+				type = <"TEXT">
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Time period when the contact point was&#47;is in use">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["preferenceIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating whether the contact information is preferred.">
+				name = <"preferenceIndicator">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Location"] = <
+		documentation = <"Data structure representing a geographical location such as a location on a map.
+">
+		name = <"Location">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The identifier of the location.">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A narrative describing the location.">
+				name = <"description">
+				type = <"PLAIN_TEXT">
+			>
+			["locationName"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Names associated with this location. E.g., 10 West">
+				name = <"locationName">
+				type_def = <
+					container_type = <"List">
+					type = <"LocationName">
+				>
+				cardinality = <|>=0|>
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The location's category.">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["condition"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A description of the condition of the location.">
+				name = <"condition">
+				type = <"TEXT">
+			>
+			["address"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The postal addresses associated with this location.">
+				name = <"address">
+				type_def = <
+					container_type = <"List">
+					type = <"USPostalAddress">
+				>
+				cardinality = <|>=0|>
+			>
+			["electronicContact"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Contact information associated with this location - for instance, contact information to reserve the location.">
+				name = <"electronicContact">
+				type_def = <
+					container_type = <"List">
+					type = <"ElectronicContact">
+				>
+				cardinality = <|>=0|>
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The interval of time when this location is relevant or available.">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A code representing the status of the location.">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["mobileIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An indicator of whether or not the location is mobile.">
+				name = <"mobileIndicator">
+				type = <"CODED_TEXT">
+			>
+			["directions"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"How to navigate to the location. May be context-sensitive.">
+				name = <"directions">
+				type = <"TEXT">
+			>
+			["position"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Description of the position of the location.">
+				name = <"position">
+				type = <"TEXT">
+			>
+			["gpsLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The location's geospatial coordinates such as latitude and longitude.">
+				name = <"gpsLocation">
+				type = <"TEXT">
+			>
+			["pointOfCare"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The care setting at the location.">
+				name = <"pointOfCare">
+				type = <"TEXT">
+			>
+			["room"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The room at the specified location and floor - E.g., 10 West">
+				name = <"room">
+				type = <"TEXT">
+			>
+			["bed"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The bed at the specified location, floor, and room - E.g., 10 West Bed 2">
+				name = <"bed">
+				type = <"TEXT">
+			>
+			["floor"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The floor at the specified location.">
+				name = <"floor">
+				type = <"TEXT">
+			>
+			["building"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The building at the specified location.">
+				name = <"building">
+				type = <"TEXT">
+			>
+		>
+	>
+	["LocationName"] = <
+		documentation = <"Data structure capturing the name of a location">
+		name = <"LocationName">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The location's name">
+				name = <"value">
+				type = <"PLAIN_TEXT">
+				is_mandatory = <True>
+			>
+			["use"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifies the purpose for this name.">
+				name = <"use">
+				type = <"CODED_TEXT">
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Time period when name was&#47;is in use">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+		>
+	>
+	["Provenance"] = <
+		documentation = <"The Provenance pattern supports the attachment of attribution information to one or more clinical statements and is not part of the clinical statements themselves.
+
+The attachment of provenance information to a clinical statement in this manner does not impact the versioning of the clinical statement target since attribution information is external to the statement.">
+		name = <"Provenance">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["attribution"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The activity provenance details. Refer to the Attribution class.">
+				name = <"attribution">
+				type = <"Attribution">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The clinical statement that were generated or updated by the activity described. A provenance can point to more than one target if multiple resources were created&#47;updated by the same activity.">
+				name = <"target">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+		>
+	>
+	["ReferenceRange"] = <
+		documentation = <"A reference range for the specific instance after lookup from, say, a reference range table given specific criteria. Note that this reference range is not definitional in nature but rather refers to the reference range considered for the given observation for a subject.">
+		name = <"ReferenceRange">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["referenceCriterion"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Indicates whether the given range is normal, critically high, ...">
+				name = <"referenceCriterion">
+				type = <"CODED_TEXT">
+			>
+			["narrative"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"narrative">
+				type = <"TEXT">
+			>
+			["criteria"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The specific criteria that apply for the given reference range. For instance, reference ranges may be specified in a lookup table based on a set of criteria. If a row in this table is selected as the applicable reference range for a measurement, 'criteria' lists the specific criteria for that row in the table. E.g., reference range for post-menopausal women.">
+				name = <"criteria">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["PartyName"] = <
+		documentation = <"Abstract supertype for the name of a party.">
+		name = <"PartyName">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"TEXT">
+			>
+		>
+	>
+	["ActorName"] = <
+		documentation = <"The name of an actor - typically either the name of a person or of an organization.">
+		name = <"ActorName">
+		ancestors = <"PartyName",...>
+	>
+	["Use"] = <
+		documentation = <"Structure capturing usage preferences for, say, a name, an address, or contact information. ">
+		name = <"Use">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A code for the use.">
+				name = <"value">
+				type = <"TEXT">
+				is_mandatory = <True>
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Period when the use is in effect.">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An identifier for the use.">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["PersonName"] = <
+		documentation = <"The generic representation of the name of a person. The name of a person can vary greatly across cultures and countries.">
+		name = <"PersonName">
+		ancestors = <"ActorName",...>
+		properties = <
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An identifier for the name.">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["part"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A component of a name.">
+				name = <"part">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+			["use"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Context of use">
+				name = <"use">
+				type_def = <
+					container_type = <"List">
+					type = <"Use">
+				>
+				cardinality = <|>=0|>
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Time period when the name was used.">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["usageConditions"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION AND EXAMPLE">
+				name = <"usageConditions">
+				type = <"TEXT">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"status">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["preferredFlag"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating the preference associated with the use of this name.">
+				name = <"preferredFlag">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["PersonNameDetailed"] = <
+		documentation = <"NEED TO CONSIDER REFACTORING THIS CLASS">
+		name = <"PersonNameDetailed">
+		ancestors = <"PersonName",...>
+		properties = <
+			["title"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The person's title - e.g., Dr, Mr, etc...">
+				name = <"title">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+			["givenName"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The person's given name - e.g., John">
+				name = <"givenName">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+			["middleName"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The person's middle name.">
+				name = <"middleName">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+			["familyName"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The person's surname (family name).">
+				name = <"familyName">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+			["suffix"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The suffix for the name.">
+				name = <"suffix">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["OrganizationName"] = <
+		documentation = <"The name of an organization.">
+		name = <"OrganizationName">
+		ancestors = <"ActorName",...>
+		properties = <
+			["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An identifier for the organization.">
+				name = <"identifier">
+				type = <"IDENTIFIER">
+			>
+			["usage"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating when the name is used.">
+				name = <"usage">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["ClinicalStatementAssociation"] = <
+		documentation = <"Association class used to represent the relationship between a class and one or more clinical statements where the relationship is qualified by one or more attributes.">
+		name = <"ClinicalStatementAssociation">
+		ancestors = <"ASSOCIATION_CLASS",...>
+		properties = <
+			["target"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The associated statement(s)">
+				name = <"target">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+		>
+	>
+	["Justification"] = <
+		documentation = <"Asserted clinical justification to perform or not perform an act such as a diagnostic test, a medication treatment, or a procedure.
+
+The justification can be specified as a code or as a clinical statement, e.g., code for diabetes (ICD-9-CM 250.0) or a Condition occurrence statement (with diabetes code) documented elsewhere in a patient's record.
+">
+		name = <"Justification">
+		ancestors = <"ClinicalStatementAssociation",...>
+		properties = <
+			["justificationCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A code or narrative representing the justification. Typically, the code is for a condition that is suspected or is observed in a patient.">
+				name = <"justificationCode">
+				type = <"TEXT">
+			>
+		>
+	>
+	["StatementTopic"] = <
+		documentation = <"Compositional and reusable grouping of clinical statement attributes that make up the clinical focus of the statement. StatementTopic class attributes are aligned with SNOMED CT Concept Model attributes when such an overlap exists. Note that this class does not include contextual attributes such as the nature of the action (ordered, proposed, planned, etc...), the nature of the patient state being described (e.g., present, suspected present, absent), and the provenance of this information (the who, when, where, how, why of the information recorded).">
+		name = <"StatementTopic">
+		ancestors = <"VIRTUAL_CLUSTER",...>
+	>
+	["StatementContext"] = <
+		documentation = <"Compositional and reusable grouping of clinical statement attributes that provides the context for the topic of a clinical statement. The StatementContext class aligns with the SNOMED CT Situations with Explicit Context. The StatementContext provides the expressivity required to specify that an act was performed or not performed or that a finding was asserted to be present or absent for the given subject of information. It also often holds provenance information relevant to the context of the clinical statement. It is important to note that by default the context applies to the conjunction of the attribute specified in the statement. For instance, if a clinical statement has a topic describing a rash on left arm and a context of 'absent', then the statement states that the subject of interest did not have a rash on the left arm but might have had one on the right arm.">
+		name = <"StatementContext">
+		ancestors = <"VIRTUAL_CLUSTER",...>
+		properties = <
+			["context"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The ontological status of the statement, e.g., whether it exists, does not exist, is planned, etc. Attribute aligns with the SNOMED CT Situation with Explicit Context (SWEC) Concept Model context attributes: 'Finding context (attribute)' (SCTID: 408729009) and 'Procedure context (attribute)' (SCTID: 408730004). 
+
+The range allowed for this attribute shall be consistent with the SNOMED CT concept model specification for SWEC.">
+				name = <"context">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["subjectOfInformation"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The entity being described by this statement. The entity may be animate (a patient, a relative of the patient, a veterinary patient, a cohort) or inanimate (a well, a geographical location). The subject of information is constrained in archetypes. 
+
+This attribute aligns with the SNOMED CT Situation with Explicit Context (SWEC) and is bound to the SNOMED attribute: 'Subject relationship context (attribute)' (SCTID: 408732007).
+
+">
+				name = <"subjectOfInformation">
+				type = <"PARTICIPATION">
+			>
+			["relationshipToSubjectOfRecord"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Indicates the statement's subject relationship to the subject of record. For instance, the statement maybe about the subject of record in which case the relationship is self or the subject of the statement may be a relative to the subject of record such as is the case with family history statements.">
+				name = <"relationshipToSubjectOfRecord">
+				type = <"CODED_TEXT">
+			>
+			["temporalContext"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Whether the topic is prospective or retrospective. E.g., action occurred in the past. This attribute is aligned with the SNOMED Situation With Explicit Context temporal context attribute.">
+				name = <"temporalContext">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Act"] = <
+		documentation = <"Description of a healthcare action, independent of action context.
+">
+		name = <"Act">
+		ancestors = <"StatementTopic",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Concept representing the type of act">
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An account of the act in narrative form.">
+				name = <"description">
+				type = <"PLAIN_TEXT">
+			>
+			["priority"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Priority assigned to a procedure.">
+				name = <"priority">
+				type = <"CODED_TEXT">
+			>
+			["reason"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reason">
+				type = <"TEXT">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["method"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Technique or way of accomplishing the act. E.g., endoscopic, arthroscopic, etc...">
+				name = <"method">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Finding"] = <
+		documentation = <"The characteristics looked for in medical investigations or diagnostics and the outcome.
+">
+		name = <"Finding">
+		ancestors = <"StatementTopic",...>
+		properties = <
+			["key"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The conceptual classification of the thing being observed.">
+				name = <"key">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Description of the finding.">
+				name = <"description">
+				type = <"PLAIN_TEXT">
+			>
+			["multimedia"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Associated media produced during the evaluation such as an X-ray.">
+				name = <"multimedia">
+				type_def = <
+					container_type = <"List">
+					type = <"MULTIMEDIA">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Procedure"] = <
+		documentation = <"An action intended to treat, cure, or restore function or structure such as surgical and physical rehabilitation procedures.">
+		name = <"Procedure">
+		ancestors = <"Act",...>
+		properties = <
+			["site"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Anatomical location of the procedure.">
+				name = <"site">
+				type_def = <
+					container_type = <"List">
+					type = <"AnatomicalLocation">
+				>
+				cardinality = <|>=0|>
+			>
+			["device"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Instrument, apparatus, appliance, software, material, or other article - whether used alone or in combination, associated with the performance of the procedure. For instance,  an endoscope.
+
+Note that this differs from an implant which remains in the body after the procedure is performed.">
+				name = <"device">
+				type_def = <
+					container_type = <"List">
+					type = <"Device">
+				>
+				cardinality = <|>=0|>
+			>
+			["deviceCode"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Instrument, apparatus, appliance, software, material, or other article - whether used alone or in combination, associated with the performance of the procedure. For instance,  an endoscope.
+
+Note that this differs from an implant which remains in the body after the procedure is performed.">
+				name = <"deviceCode">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["findings"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Records clinically significant observations confirmed or discovered during the procedure or surgery. For example, 'Necrotic left ovarian cyst was discovered'">
+				name = <"findings">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["usingSubstance"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Substance used to execute the action of a procedure. E.g., radiographic contrast media.">
+				name = <"usingSubstance">
+				type_def = <
+					container_type = <"List">
+					type = <"Substance">
+				>
+				cardinality = <|>=0|>
+			>
+			["usingEnergy"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The energy used to execute the procedure. E.g., gamma rays.">
+				name = <"usingEnergy">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["LaboratoryProcedure"] = <
+		documentation = <"Specialization of Procedure that represents a procedure performed on a collected specimen such as a blood panel or a biopsy.">
+		name = <"LaboratoryProcedure">
+		ancestors = <"Procedure",...>
+		properties = <
+			["specimen"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Tissues, objects, or samples taken from the patient during the procedure including biopsies, aspiration fluid, or other samples sent for pathological analysis.">
+				name = <"specimen">
+				type = <"Specimen">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["ActionContext"] = <
+		documentation = <"The ActionContext class aligns with the SNOMED Situations with Explicit Context and provides the context for the Act topic of a clinical statement. For instance, a statement about a procedure may specify that the procedure has been proposed, ordered, planned, performed or possibly not performed. ">
+		name = <"ActionContext">
+		ancestors = <"StatementContext",...>
+		properties = <
+			["justification"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Reason the action was done or justification for the action. Reasons may also be specified for not performing an action. 
+">
+				name = <"justification">
+				type_def = <
+					container_type = <"List">
+					type = <"Justification">
+				>
+				cardinality = <|>=0|>
+			>
+			["currentStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The latest status of an action within the specified context. An action may be interpretable within a specific context such as whether it is planned, ordered, or performed. Moreover, within each of these context, an action may have a set of allowable states in which it can exist. For instance, a proposal may be rejected or an order may be signed, canceled or superceded by another order. It is expected that set of such states will vary based on the type of action context. 
+
+The status code must coincide with the activity code of one of the attribution elements of statusHistory if a context status history is provided.">
+				name = <"currentStatus">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["FindingContext"] = <
+		documentation = <"The FindingContext class aligns with the SNOMED Situation with Explicit Context for findings and provides the context for the EvaluationResult and Assertion topics of a clinical statement. For instance, a statement about findings may state that the finding was observed present or absent.">
+		name = <"FindingContext">
+		ancestors = <"StatementContext",...>
+		properties = <
+			["currentStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Current state of the evaluation (e.g., pending, complete, partial).">
+				name = <"currentStatus">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Proposal"] = <
+		documentation = <"An offer or a suggestion to perform a healthcare act. A recommendation to a provider is an example of proposal made by a CDS system. A proposal must be accepted by an entity in order for it to be performed.
+">
+		name = <"Proposal">
+		ancestors = <"Request",...>
+	>
+	["Performance"] = <
+		documentation = <"Context indicating actual performance or execution of a healthcare-related action, e.g., 3rd dose of Hepatitis B vaccine administered on Dec 4th 2012, appendectomy performed today.
+">
+		name = <"Performance">
+		ancestors = <"ActionContext",...>
+		properties = <
+			["performer"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The party that performed the action.">
+				name = <"performer">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["performedOn"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"When the activity was performed.">
+				name = <"performedOn">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["enactsPlan"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The plan that is partly or wholly enacted by the performance of this act.
+">
+				name = <"enactsPlan">
+				type = <"BaseClinicalStatement">
+			>
+			["fulfillsOrder"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The order that is partly or wholly enacted by the performance of this act.
+">
+				name = <"fulfillsOrder">
+				type = <"BaseClinicalStatement">
+			>
+			["basedOn"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The proposal that is partly or wholly fulfilled  by the performance of this act.
+">
+				name = <"basedOn">
+				type_def = <
+					container_type = <"List">
+					type = <"BaseClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["isDiscontinued"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Was the performance of the action discontinued.">
+				name = <"isDiscontinued">
+				type = <"YESNO">
+			>
+			["duration"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The duration of time the action was performed.">
+				name = <"duration">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["NonPerformance"] = <
+		documentation = <"A record that a clinical act was not performed and&#47;or never initiated. Do not use this context if the act was initiated or started but aborted or cancelled. Use the NotPerformed context instead.">
+		name = <"NonPerformance">
+		ancestors = <"ActionContext",...>
+		properties = <
+			["nonPerformanceTime"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The time period during which the act had been intended for execution.
+">
+				name = <"nonPerformanceTime">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+		>
+	>
+	["Plan"] = <
+		documentation = <"Description of action that is planned to be performed. Typically, this would include a time at which the action is scheduled to be performed.
+">
+		name = <"Plan">
+		ancestors = <"ActionContext",...>
+		properties = <
+			["fulfillsOrder"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The order that is partly or wholly enacted by the performance of this act.
+">
+				name = <"fulfillsOrder">
+				type = <"BaseClinicalStatement">
+			>
+			["basedOn"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The proposal that is partly or wholly fulfilled  by the performance of this act.">
+				name = <"basedOn">
+				type_def = <
+					container_type = <"List">
+					type = <"BaseClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["expectedPerformanceTime"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The time when the action is expected to be performed.">
+				name = <"expectedPerformanceTime">
+				type = <"DATE_TIME">
+			>
+			["expectedPerformer"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Persons who are expected to or intended to perform this action, e.g., the person who will perform the surgery. ">
+				name = <"expectedPerformer">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["KnownOrSuspectedPresent"] = <
+		documentation = <"Context indicating that finding is known present or suspected present.">
+		name = <"KnownOrSuspectedPresent">
+		ancestors = <"PresenceAbsenceContext",...>
+		properties = <
+			["certainty"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"certainty">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Absent"] = <
+		documentation = <"Context indicating the known absence of a finding in the subject of information. If the finding is suspected to be absent, use the known or suspected present context instead.">
+		name = <"Absent">
+		ancestors = <"PresenceAbsenceContext",...>
+		properties = <
+			["informationAbsentReason"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The reason for missing information. Mostly relevant for evaluation results.">
+				name = <"informationAbsentReason">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["ProposalAgainst"] = <
+		documentation = <"Concept represents a recommendation from a clinical decision support system or advice from a consultation to not perform an act.">
+		name = <"ProposalAgainst">
+		ancestors = <"ActionContext",...>
+		properties = <
+			["nonPerformanceTime"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The time period during which the act should not be performed.">
+				name = <"nonPerformanceTime">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+		>
+	>
+	["EvaluationResult"] = <
+		documentation = <"The outcome of an evaluation of a characteristic. This model holds a 'question' in the key and holds a value in the result. This value is further qualified through the model's properties.
+">
+		name = <"EvaluationResult">
+		ancestors = <"BaseEvaluationResult",...>
+		properties = <
+			["method"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The means by which a measurement, evaluation, or assessment was made.">
+				name = <"method">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["device"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The device used to evaluate the characteristic such as the type of blood pressure cuff used on a patient.">
+				name = <"device">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["priority"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The urgency of the evaluation result. 
+
+To reviewers: should we retain this attribute in the model.">
+				name = <"priority">
+				type = <"CODED_TEXT">
+			>
+			["sequence"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Sequence is a number placed onto the data which refers to the order it occurred in or needs to be retrieved by.">
+				name = <"sequence">
+				type = <"CODED_TEXT">
+			>
+			["deltaFlag"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Flag indicating whether there was a significant change from previous results.">
+				name = <"deltaFlag">
+				type = <"CODED_TEXT">
+			>
+			["referenceRange"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The range for the measurement.">
+				name = <"referenceRange">
+				type_def = <
+					container_type = <"List">
+					type = <"ReferenceRange">
+				>
+				cardinality = <|>=0|>
+			>
+			["evaluationProcedure"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"evaluationProcedure">
+				type = <"IndivisibleClinicalStatement">
+				is_mandatory = <True>
+			>
+			["interpretation"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A clinical judgment about the significance of an evaluation result.
+
+Interpretation is used to clarify data from measurements and other evaluations. For example, if a measured analyte is greater than a predetermined threshold the interpretation could be Positive, or if a measurement is lower than a normal physiological range the interpretation could be low or critical low. Some values include normal, abnormal, panic high, panic low, ...
+
+Interpretation may also be used to indicate whether or not the result is outside the range for the patient.">
+				name = <"interpretation">
+				type = <"CODED_TEXT">
+			>
+			["precondition"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Describes the previously existing conditions or states that could effect a measurement or assesment. For example; a patients weight taken while clothed, a patients height with or without shoes, a patients blood pressure taken while standing or lying down.
+
+Precondition aligns with the SNOMED CT Observable model attribute 704326004 |Precondition (attribute)|
+">
+				name = <"precondition">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Device"] = <
+		documentation = <"This resource identifies an instance or a type of a manufactured item that is used in the provision of healthcare without being substantially changed through that activity. The device may be a medical or non-medical device. Medical devices includes durable (reusable) medical equipment, implantable devices, as well as disposable equipment used for diagnostic, treatment, and research for healthcare and public health. Non-medical devices may include items such as a machine, cellphone, computer, application, etc.">
+		name = <"Device">
+		ancestors = <"Entity",...>
+		properties = <
+			["udiCarrier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Unique device identifier (UDI) barcode or rfid string assigned to device label or package.">
+				name = <"udiCarrier">
+				type = <"IDENTIFIER">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Status of the Device availability.">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The kind of device.">
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["lotNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Lot number assigned by the manufacturer.">
+				name = <"lotNumber">
+				type = <"TEXT">
+			>
+			["manufacturer"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A name of the manufacturer.">
+				name = <"manufacturer">
+				type = <"TEXT">
+			>
+			["manufactureDate"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The date and time when the device was manufactured.">
+				name = <"manufactureDate">
+				type = <"DATE_TIME">
+			>
+			["expirationDate"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The date and time beyond which this device is no longer valid or should not be used (if applicable).">
+				name = <"expirationDate">
+				type = <"DATE_TIME">
+			>
+			["model"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The 'model' is an identifier assigned by the manufacturer to identify the product by its type. This number is shared by the all devices sold as the same type.">
+				name = <"model">
+				type = <"TEXT">
+			>
+			["version"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The device software or firmware version label.">
+				name = <"version">
+				type = <"TEXT">
+			>
+			["owner"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A party that is responsible for the provision and ongoing maintenance of the device.">
+				name = <"owner">
+				type = <"PARTICIPATION">
+			>
+			["contact"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Contact details for an organization or a particular human that is responsible for the device.">
+				name = <"contact">
+				type_def = <
+					container_type = <"List">
+					type = <"ElectronicContact">
+				>
+				cardinality = <|>=0|>
+			>
+			["url"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A network address on which the device may be contacted directly.">
+				name = <"url">
+				type = <"URI">
+			>
+			["note"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Descriptive information, usage information or implantation information that is not captured in an existing element.">
+				name = <"note">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Order"] = <
+		documentation = <"An instruction by a healthcare provider to another healthcare provider to perform some act.">
+		name = <"Order">
+		ancestors = <"Request",...>
+		properties = <
+			["basedOn"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The proposal that is partly or wholly fulfilled  by the performance of this act.">
+				name = <"basedOn">
+				type_def = <
+					container_type = <"List">
+					type = <"BaseClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["neededNoLaterThan"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"neededNoLaterThan">
+				type = <"DATE_TIME">
+			>
+			["patientInstructions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"patientInstructions">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["startDateTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"startDateTime">
+				type = <"DATE_TIME">
+			>
+			["stopDateTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"stopDateTime">
+				type = <"DATE_TIME">
+			>
+		>
+	>
+	["NonCompletion"] = <
+		documentation = <"A record that a clinical act was initiated by not completed. ">
+		name = <"NonCompletion">
+		ancestors = <"Performance",...>
+		properties = <
+			["nonCompletionTimeframe"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The time interval considered when the action had been intended for execution.">
+				name = <"nonCompletionTimeframe">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+		>
+	>
+	["LaboratoryTestResult"] = <
+		documentation = <"Measurement resulted from a laboratory.">
+		name = <"LaboratoryTestResult">
+		ancestors = <"EvaluationResult",...>
+		properties = <
+			["diagnosticService"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The service completing the observations, e.g. biochemistry,  microbiology, blood bank, etc.">
+				name = <"diagnosticService">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["specimen"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The specimen used for the analysis.">
+				name = <"specimen">
+				type_def = <
+					container_type = <"List">
+					type = <"Specimen">
+				>
+				cardinality = <|>=0|>
+			>
+			["poctIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION OR REMOVE (STAN?)">
+				name = <"poctIndicator">
+				type = <"CODED_TEXT">
+			>
+			["diagnosis"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A condition for which the lab result  is pathoneumonic. The lab result is sufficient to assert the diagnosis.">
+				name = <"diagnosis">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Assertion"] = <
+		documentation = <"Clinical Assertions assert the existence of clinical conditions, diseases, symptoms, etc. in the patient.">
+		name = <"Assertion">
+		ancestors = <"BaseAssertion",...>
+		properties = <
+			["dueTo"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"This attribute is used to relate a |Clinical finding| directly to its cause. If a clinical finding merely predisposes to or worsens another disorder, rather than causing it directly, then the more general attribute | ASSOCIATED WITH | is used instead.">
+				name = <"dueTo">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["causativeAgent"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An exogenous physical substance or force that causes the disease. It does not include vectors, e.g. a mosquito that transmits malaria.  The range of this attribute can be found in the following SNOMED CT hierarchies:
+
+| Organism | 410607006 (&lt;&lt;)
+| Substance | 105590001 (&lt;&lt;)
+| Physical object | 260787004 (&lt;&lt;)
+| Physical force | 78621006 (&lt;&lt;)
+| Pharmaceutical &#47; biologic product | 373873005 (&lt;&lt; Q only)
+| SNOMED CT Concept | 138875005 (==)">
+				name = <"causativeAgent">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["dueToCode"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The cause of the Clinical finding. This includes such causes as disease vectors and endogenous states (e.g., macular degeneration due to diabetes). Exogenous substances and forces should be captured as causative agent. ">
+				name = <"dueToCode">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["severity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Intensity of a symptom or condition. The criteria for this value differ by condition.">
+				name = <"severity">
+				type = <"CODED_TEXT">
+			>
+			["clinicalCourse"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Both the course and onset of a disease. Many conditions with an acute (sudden) onset also have an acute (short duration) course. Few diseases with a chronic (long - term) course would need to have their onset sub-divided into rapid or gradual subtypes, and thus there is no clear need for separating the rapidity of onset from the duration of a disease; based on testing by implementers and modelers, a single attribute with values that combine these meanings has clearly been more reproducible
+and useful than two attributes that attempt to separate the meanings.">
+				name = <"clinicalCourse">
+				type = <"CODED_TEXT">
+			>
+			["episodicity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"TO DISCUSS: Do we need this? (STAN)
+
+|EPISODICITY| is used to represent episodes of care provided by a physician or other care provider, typically a general practitioner, not episodes of disease experienced by the patient. See EPISODICITY no longer modeled in active content (7.1), regarding the origin of the attribute. For example, asthma with |EPISODICITY|=|
+first episode | represents the first time the patient presents to their health care provider with asthma. EPISODICITY is not used to model any concepts pre-coordinated in the International Release but it can still be used in post-coordination as a qualifier.">
+				name = <"episodicity">
+				type = <"CODED_TEXT">
+			>
+			["interpretation"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A clinical judgment concerning the significance of an observation. This attribute refers to the entity being evaluated or interpreted, when an evaluation, interpretation or “judgment” is intrinsic to the meaning of a concept. This attribute is usually grouped with the | HAS INTERPRETATION | attribute.">
+				name = <"interpretation">
+				type_def = <
+					container_type = <"List">
+					type = <"Interpretation">
+				>
+				cardinality = <|>=0|>
+			>
+			["dateOfOnset"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Date or time when the characteristic was first observed.
+
+When the asserted condition began manifesting. This property may have a broad precision (e.g., a year rather than a date).">
+				name = <"dateOfOnset">
+				type = <"DATE_TIME">
+			>
+			["ageAtOnset"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The age of the patient or subject at onset of the Condition. Note that this property could potentially be derived.">
+				name = <"ageAtOnset">
+				type = <"QUANTITY">
+			>
+			["dateAbated"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Date, if known, when clinical finding abated.">
+				name = <"dateAbated">
+				type = <"DATE_TIME">
+			>
+			["hasAbated"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"hasAbated">
+				type = <"YESNO">
+			>
+			["clinicalStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The physiological state of the condition with respect to whether it is actually of concern. Values may typicall include: Active, Relapse, Remission, Resolved, Confirmed, Ruled out, Unknown.">
+				name = <"clinicalStatus">
+				type = <"CODED_TEXT">
+			>
+			["diseasePhase"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The physiological state of a condition that develops over time. For instance, Incubation period (exposed, asymptomatic), Prodromal (symptoms but not full disease breakout), Acute (full manifestation of disease), Convalescent.">
+				name = <"diseasePhase">
+				type = <"CODED_TEXT">
+			>
+			["associatedPrecondition"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Previously existing conditions or states that could affect a measurement or assesment. For example; a patients weight taken while clothed, a patients height with or without shoes, a patients blood pressure taken while standing or lying down.">
+				name = <"associatedPrecondition">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["associatedSignAndSymptom"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Physical observations captured by a clinician or subjective conditions experienced by a patient that are related to a medical condition.">
+				name = <"associatedSignAndSymptom">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["alleviatingFactor"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An action or intervention which makes a symptom less severe. Examples of data from the value set may include: rest, heat, ice, etc. 
+
+[TO ADDRESS: we may need a semantic scope: are these substances or procedures? Procedures, with the assumption that if you put in a substance it means “application (procedure)”?
+">
+				name = <"alleviatingFactor">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["exacerbatingFactor"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An action or intervention which makes a symptom more severe.">
+				name = <"exacerbatingFactor">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["periodicity"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The length of time from one occurrence to the next (e.g., intermittent, weekly, continuous).">
+				name = <"periodicity">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Interpretation"] = <
+		documentation = <"The interpretation provided by the containing type for the set of clinical statements that comprise the target of the relationship. 
+
+For instance, Assertion.interpretation can be interpreted as follows: the assertion interprets the set of clinical statements specified as the range of Assertion.interpretation.target and the interpretation is specified by the Assertion.interpretation.hasInterpretation code.">
+		name = <"Interpretation">
+		ancestors = <"ClinicalStatementAssociation",...>
+		properties = <
+			["hasInterpretation"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Narrative or code representing the interpretation assigned by the containing class on the set of clinical statements that comprise the target of the relationship.">
+				name = <"hasInterpretation">
+				type = <"TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["PhysicalEvaluationResult"] = <
+		documentation = <"Measurement resulting from a physical assessment procedure.">
+		name = <"PhysicalEvaluationResult">
+		ancestors = <"EvaluationResult",...>
+		properties = <
+			["bodyLocation"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Captures the post-coordinated location on the body where the characteristic was observed.">
+				name = <"bodyLocation">
+				type_def = <
+					container_type = <"List">
+					type = <"AnatomicalLocation">
+				>
+				cardinality = <|>=0|>
+			>
+			["bodyLocationPrecoord"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Captures the pre-coordinated body location information, for example pre-coordinating body side left with body location hand to make left hand. .">
+				name = <"bodyLocationPrecoord">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["bodyPosition"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Captures the position of the body when an observation is done. E.g., supine, prone, etc...">
+				name = <"bodyPosition">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["RiskAssertion"] = <
+		documentation = <"Context for clinical risks.">
+		name = <"RiskAssertion">
+		ancestors = <"BaseAssertion",...>
+	>
+	["PresenceAbsenceContext"] = <
+		name = <"PresenceAbsenceContext">
+		ancestors = <"FindingContext",...>
+	>
+	["QuantitativeReferenceRange"] = <
+		documentation = <"A reference range specifying a quantity interval.">
+		name = <"QuantitativeReferenceRange">
+		ancestors = <"ReferenceRange",...>
+		properties = <
+			["range"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The specified reference range.">
+				name = <"range">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"QUANTITY",...>
+				>
+				is_mandatory = <True>
+			>
+		>
+	>
+	["QualitativeReferenceRange"] = <
+		documentation = <"A qualitative reference range specified by a code - e.g., abnormal, severely abnormal.">
+		name = <"QualitativeReferenceRange">
+		ancestors = <"ReferenceRange",...>
+		properties = <
+			["referenceValue"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Code representing the reference range.">
+				name = <"referenceValue">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=1|>
+				is_mandatory = <True>
+			>
+		>
+	>
+	["Registration"] = <
+		documentation = <"NEED DEFINITION">
+		name = <"Registration">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"identifier">
+				type = <"IDENTIFIER">
+			>
+			["registeringOrganization"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"registeringOrganization">
+				type = <"TEXT">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+		>
+	>
+	["Qualification"] = <
+		documentation = <"Education, training or special skills.">
+		name = <"Qualification">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The name of the qualification">
+				name = <"name">
+				type = <"TEXT">
+				is_mandatory = <True>
+			>
+			["level"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The level of the qualification">
+				name = <"level">
+				type = <"CODED_TEXT">
+			>
+			["issuingInstitution"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The organization responsible for issuing the qualification.">
+				name = <"issuingInstitution">
+				type = <"TEXT">
+			>
+			["issuingCountry"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The issuing country where the qualification is valid.">
+				name = <"issuingCountry">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["dateIssued"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The date the qualification was issued.">
+				name = <"dateIssued">
+				type = <"DATE">
+			>
+			["role"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The roles where the qualification applies - e.g. registered nurse, physician">
+				name = <"role">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["employer"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A person's employing organization.">
+				name = <"employer">
+				type_def = <
+					container_type = <"List">
+					type = <"EmployerRelationship">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Substance"] = <
+		documentation = <"A homogeneous material with a definite composition.">
+		name = <"Substance">
+		ancestors = <"Entity",...>
+		properties = <
+			["ingredient"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"A substance can be composed of other substances.">
+				name = <"ingredient">
+				type_def = <
+					container_type = <"List">
+					type = <"Ingredient">
+				>
+				cardinality = <|>=0|>
+			>
+			["instance"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Substance may be used to describe a kind of substance, or a specific package&#47;container of the substance: an instance.">
+				name = <"instance">
+				type_def = <
+					container_type = <"List">
+					type = <"SubstanceContainer">
+				>
+				cardinality = <|>=0|>
+			>
+			["category"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A code that classifies the general type of substance. This is used for searching, sorting and display purposes.">
+				name = <"category">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Medication"] = <
+		documentation = <"Class representing a medication. It covers the ingredients and the packaging for a medication.">
+		name = <"Medication">
+		ancestors = <"Entity",...>
+		properties = <
+			["product"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Information that only applies to medication products (not packages).">
+				name = <"product">
+				type = <"MedicationProduct">
+			>
+			["package"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The form in which the product is marketed.">
+				name = <"package">
+				type = <"MedicationPackage">
+			>
+			["manufacturer"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The manufacturer of the substance.">
+				name = <"manufacturer">
+				type = <"Organization">
+			>
+		>
+	>
+	["Ingredient"] = <
+		documentation = <"A components that go to make up the described item.">
+		name = <"Ingredient">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["substanceCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifies a component items">
+				name = <"substanceCode">
+				type = <"CODED_TEXT">
+			>
+			["substance"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifies a component item.">
+				name = <"substance">
+				type = <"Substance">
+			>
+			["amount"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The amount of the component item.">
+				name = <"amount">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["UnitOfDistribution"] = <
+		documentation = <"Abstract class representing a substance container or package.">
+		name = <"UnitOfDistribution">
+		ancestors = <"CLUSTER",...>
+	>
+	["SubstanceContainer"] = <
+		documentation = <"A specific package&#47;container of the substance.">
+		name = <"SubstanceContainer">
+		ancestors = <"UnitOfDistribution",...>
+		properties = <
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Identifier of the package&#47;container">
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["expiry"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"When no longer valid to use.">
+				name = <"expiry">
+				type = <"DATE_TIME">
+			>
+			["quantity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Amount of substance in the package.">
+				name = <"quantity">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["ProductBatch"] = <
+		documentation = <"Information about a group of medication produced or packaged from one production run.">
+		name = <"ProductBatch">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["lotNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The assigned lot number of a batch of the specified product.">
+				name = <"lotNumber">
+				type = <"TEXT">
+			>
+			["expirationDate"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"When this specific batch of product will expire.">
+				name = <"expirationDate">
+				type = <"DATE_TIME">
+			>
+		>
+	>
+	["MedicationProduct"] = <
+		documentation = <"Information that only applies to medication products (not packages).">
+		name = <"MedicationProduct">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["form"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Describes the form of the item. Powder; tablets; capsule.">
+				name = <"form">
+				type = <"CODED_TEXT">
+			>
+			["ingredient"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Identifies a particular constituent of interest in the product.">
+				name = <"ingredient">
+				type_def = <
+					container_type = <"List">
+					type = <"Ingredient">
+				>
+				cardinality = <|>=0|>
+			>
+			["amount"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"amount">
+				type = <"QUANTITY">
+			>
+			["batch"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Information about a group of medication produced or packaged from one production run.">
+				name = <"batch">
+				type_def = <
+					container_type = <"List">
+					type = <"ProductBatch">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["MedicationPackage"] = <
+		documentation = <"A package for a medication.">
+		name = <"MedicationPackage">
+		ancestors = <"UnitOfDistribution",...>
+		properties = <
+			["containerType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The kind of container that this package comes as.">
+				name = <"containerType">
+				type = <"CODED_TEXT">
+			>
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The set of medication ingredients">
+				name = <"content">
+				type_def = <
+					container_type = <"List">
+					type = <"Ingredient">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Accreditation"] = <
+		documentation = <"Type supporting the capture of accreditation information.">
+		name = <"Accreditation">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An identifier for the accreditation.">
+				name = <"identifier">
+				type = <"IDENTIFIER">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of accreditation - e.g., degree, board certified, license.">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["validityPeriod"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The period of validity for the accreditation.">
+				name = <"validityPeriod">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+			["accreditationOrganization"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The organization that supplies the accreditation.">
+				name = <"accreditationOrganization">
+				type = <"HealthCareProviderRelationship">
+			>
+		>
+	>
+	["AdvanceDirective"] = <
+		documentation = <"Patient or proxy-supplied prospective instructions for treatment.">
+		name = <"AdvanceDirective">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["category"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Legal function of directive; e.g., living will, poa, organ donation permission.">
+				name = <"category">
+				type = <"TEXT">
+			>
+			["comments"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Additional notes or instructions concerning the directive.">
+				name = <"comments">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The period of time during which the directive is intended to apply.">
+				name = <"dateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+			["directiveDocument"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The physical advance directive document such as an image of the document or the document in PDF form.">
+				name = <"directiveDocument">
+				type = <"MULTIMEDIA">
+			>
+			["paperLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Where the physically signed copy of the directive can be found.">
+				name = <"paperLocation">
+				type = <"TEXT">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Whether the directive is applicable. Active, inactive.">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Age"] = <
+		documentation = <"Type for the capture of age-related information.">
+		name = <"Age">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The age of the entity.">
+				name = <"value">
+				type = <"DURATION">
+				is_mandatory = <True>
+			>
+			["ageGroup"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Classification of age - e.g., neonatal, infant, pre-adolescent, etc...">
+				name = <"ageGroup">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["BiometricData"] = <
+		documentation = <"Type supporting the capture of biometric information.">
+		name = <"BiometricData">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Type of biometric used - finger print, iris scan, etc...">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["dataTemplate"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Electronic persistence algorithm for this biometric pattern.
+
+WE SOLICIT COMMENTS FOR A BETTER DEFINITION.">
+				name = <"dataTemplate">
+				type = <"TEXT">
+			>
+			["quality"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The quality of the biometric information capture.">
+				name = <"quality">
+				type = <"CODED_TEXT">
+			>
+			["creatingAuthority"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The creating authority.">
+				name = <"creatingAuthority">
+				type = <"TEXT">
+			>
+			["locationOfBiometricIdentifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"locationOfBiometricIdentifier">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["schema"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION">
+				name = <"schema">
+				type = <"TEXT">
+			>
+			["biometricDeviceIdentification"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifier for the device used in the capture of the biometric information.">
+				name = <"biometricDeviceIdentification">
+				type = <"IDENTIFIER">
+			>
+			["creationDate"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The date the biometric data was captured.">
+				name = <"creationDate">
+				type = <"DATE">
+			>
+		>
+	>
+	["BirthData"] = <
+		documentation = <"Type supporting the capture of birth-related information.">
+		name = <"BirthData">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["birthDatetime"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"When the birth occurred.">
+				name = <"birthDatetime">
+				type = <"DATE_TIME">
+			>
+			["birthAddress"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Address where birth occurred.">
+				name = <"birthAddress">
+				type = <"USPostalAddress">
+			>
+			["multipleBirthIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Indicates whether the birth event was a multiple birth event.">
+				name = <"multipleBirthIndicator">
+				type = <"CODED_TEXT">
+			>
+			["birthPlurality"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The number of babies resulting from a single pregnancy">
+				name = <"birthPlurality">
+				type = <"COUNT">
+			>
+			["birthOrder"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Integer indicating the sequence number of this birth.">
+				name = <"birthOrder">
+				type = <"COUNT">
+			>
+			["birthCertificateNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The birth certificate number associated with this birth.">
+				name = <"birthCertificateNumber">
+				type = <"PLAIN_TEXT">
+			>
+		>
+	>
+	["ContactInformation"] = <
+		documentation = <"Represents contact details such as an emergency contact or contact information for a next-of-kin.">
+		name = <"ContactInformation">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of contact information - e.g., an emergency contact.">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The name of the person to contact.">
+				name = <"name">
+				type = <"PersonName">
+			>
+			["contact"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The contact information for this person.">
+				name = <"contact">
+				type_def = <
+					container_type = <"List">
+					type = <"ElectronicContact">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Citizenship"] = <
+		documentation = <"Type supporting the capture of citizenship information. ">
+		name = <"Citizenship">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code representing the country of citizenship.">
+				name = <"value">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The period when the citizenship was held.">
+				name = <"dateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+		>
+	>
+	["DeathData"] = <
+		documentation = <"Information of about a death event.">
+		name = <"DeathData">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["deceasedIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating whether the patient is deceased.">
+				name = <"deceasedIndicator">
+				type = <"CODED_TEXT">
+			>
+			["deathDatetime"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The time of death to the level of granularity known.">
+				name = <"deathDatetime">
+				type = <"DATE_TIME">
+			>
+			["ageAtDeath"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The age of the person at death">
+				name = <"ageAtDeath">
+				type = <"DURATION">
+			>
+			["recorded"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifier for the entity that provided information about the deceased status of the person.">
+				name = <"recorded">
+				type = <"Attribution">
+			>
+			["deathAddress"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Address where the patient expired.">
+				name = <"deathAddress">
+				type_def = <
+					container_type = <"List">
+					type = <"USPostalAddress">
+				>
+				cardinality = <|>=0|>
+			>
+			["deathCertificateNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The death certificate number.">
+				name = <"deathCertificateNumber">
+				type = <"PLAIN_TEXT">
+			>
+		>
+	>
+	["Entitlement"] = <
+		documentation = <"Indicates characteristic of patient that may requires special consideration in handling or information disclosure - e.g., royalty, celebrity, felon, etc...">
+		name = <"Entitlement">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["number"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifier for entitlement.">
+				name = <"number">
+				type = <"IDENTIFIER">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Concept representing or description for the entitlement - e.g., queen, convicted murderer, etc...">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Validity period for entitlement.">
+				name = <"dateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+			["identificationComment"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Description of how entitlement was ascertained.">
+				name = <"identificationComment">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Description of the entitlement above and beyond that provided by the type.">
+				name = <"description">
+				type = <"PLAIN_TEXT">
+			>
+		>
+	>
+	["Industry"] = <
+		documentation = <"Type representing an industry.">
+		name = <"Industry">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The industry name.">
+				name = <"value">
+				type = <"TEXT">
+				is_mandatory = <True>
+			>
+			["qualifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Additional description or further refinement for the industry">
+				name = <"qualifier">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["LanguageCapability"] = <
+		documentation = <"Type representing proficiency in a language.">
+		name = <"LanguageCapability">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["languageCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"ISO code representing the language name. ">
+				name = <"languageCode">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["mode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The channel of communication evaluated; e.g., spoken, written, heard.">
+				name = <"mode">
+				type = <"CODED_TEXT">
+			>
+			["proficiency"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Degree of fluency in the language.">
+				name = <"proficiency">
+				type = <"TEXT">
+			>
+			["translatorRequired"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating need for translator.">
+				name = <"translatorRequired">
+				type = <"CODED_TEXT">
+			>
+			["preferenceIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating whether the language is preferred for communication.">
+				name = <"preferenceIndicator">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Occupation"] = <
+		documentation = <"An association between a person and a kind of job that the person has held.">
+		name = <"Occupation">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An occupation. Likely to be realm-specific.">
+				name = <"value">
+				type = <"TEXT">
+				is_mandatory = <True>
+			>
+			["qualifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Additional description for the occupation such journeyman, master, apprentice, etc...">
+				name = <"qualifier">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["years"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Years performing this occupation.">
+				name = <"years">
+				type = <"DURATION">
+			>
+		>
+	>
+	["Person"] = <
+		name = <"Person">
+		ancestors = <"Entity",...>
+		properties = <
+			["address"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"address">
+				type_def = <
+					container_type = <"List">
+					type = <"BaseAddress">
+				>
+				cardinality = <|>=0|>
+			>
+			["electronicContact"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"electronicContact">
+				type_def = <
+					container_type = <"List">
+					type = <"ElectronicContact">
+				>
+				cardinality = <|>=0|>
+			>
+			["contactPerson"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"contactPerson">
+				type_def = <
+					container_type = <"List">
+					type = <"ContactInformation">
+				>
+				cardinality = <|>=0|>
+			>
+			["administrativeGender"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"administrativeGender">
+				type = <"CODED_TEXT">
+			>
+			["mothersIdentifier"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mothersIdentifier">
+				type = <"IDENTIFIER">
+			>
+			["mothersFamilyName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mothersFamilyName">
+				type = <"PLAIN_TEXT">
+			>
+			["fathersName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fathersName">
+				type = <"PLAIN_TEXT">
+			>
+			["spouseName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"spouseName">
+				type = <"PLAIN_TEXT">
+			>
+			["maritalStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"maritalStatus">
+				type = <"TEXT">
+			>
+			["race"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"race">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["ethnicity"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"ethnicity">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"dateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+			["citizenship"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"citizenship">
+				type_def = <
+					container_type = <"List">
+					type = <"Citizenship">
+				>
+				cardinality = <|>=0|>
+			>
+			["residency"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"residency">
+				type_def = <
+					container_type = <"List">
+					type = <"Residency">
+				>
+				cardinality = <|>=0|>
+			>
+			["religion"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"religion">
+				type = <"TEXT">
+			>
+			["organDonorType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"organDonorType">
+				type = <"CODED_TEXT">
+			>
+			["birthData"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"birthData">
+				type = <"BirthData">
+			>
+			["deathData"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"deathData">
+				type = <"DeathData">
+			>
+			["biometricData"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"biometricData">
+				type_def = <
+					container_type = <"List">
+					type = <"BiometricData">
+				>
+				cardinality = <|>=0|>
+			>
+			["language"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"language">
+				type_def = <
+					container_type = <"List">
+					type = <"LanguageCapability">
+				>
+				cardinality = <|>=0|>
+			>
+			["translatorRequired"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"translatorRequired">
+				type = <"CODED_TEXT">
+			>
+			["educationLevel"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"educationLevel">
+				type = <"TEXT">
+			>
+			["qualification"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"qualification">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["disability"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"disability">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["occupation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"occupation">
+				type_def = <
+					container_type = <"List">
+					type = <"Occupation">
+				>
+				cardinality = <|>=0|>
+			>
+			["industry"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"industry">
+				type_def = <
+					container_type = <"List">
+					type = <"Industry">
+				>
+				cardinality = <|>=0|>
+			>
+			["studentCategory"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"studentCategory">
+				type = <"TEXT">
+			>
+			["advanceDirective"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"advanceDirective">
+				type_def = <
+					container_type = <"List">
+					type = <"AdvanceDirective">
+				>
+				cardinality = <|>=0|>
+			>
+			["entitlement"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"entitlement">
+				type_def = <
+					container_type = <"List">
+					type = <"Entitlement">
+				>
+				cardinality = <|>=0|>
+			>
+			["identificationComment"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"identificationComment">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["healthCareProvider"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"healthCareProvider">
+				type_def = <
+					container_type = <"List">
+					type = <"HealthCareProviderRelationship">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Residency"] = <
+		documentation = <"Type supporting the capture of residency information.">
+		name = <"Residency">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Residency code.">
+				name = <"value">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Period when residency was in effect.">
+				name = <"dateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+		>
+	>
+	["SpecimenContainer"] = <
+		documentation = <"Direct container of specimen (tube&#47;slide, etc.)">
+		name = <"SpecimenContainer">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["identifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An identifier for the vessel containing the specimen.">
+				name = <"identifier">
+				type = <"IDENTIFIER">
+			>
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Textual description of the container">
+				name = <"description">
+				type = <"PLAIN_TEXT">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Kind of container holding the specimen - e.g. a vial or well.">
+				name = <"type">
+				type = <"TEXT">
+			>
+			["capacity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Container volume or size.">
+				name = <"capacity">
+				type = <"QUANTITY">
+			>
+			["specimenQuantity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Quantity of specimen within container.">
+				name = <"specimenQuantity">
+				type = <"QUANTITY">
+			>
+			["additive"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Additive associated with container.">
+				name = <"additive">
+				type_def = <
+					container_type = <"List">
+					type = <"Substance">
+				>
+				cardinality = <|>=0|>
+			>
+			["additiveCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Additive associated with container.">
+				name = <"additiveCode">
+				type = <"TEXT">
+			>
+			["sequenceNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The sequence number for this specimen in a collection of specimens.">
+				name = <"sequenceNumber">
+				type = <"TEXT">
+			>
+		>
+	>
+	["SpecimenCollection"] = <
+		documentation = <"Attribution specific to the collection of a specimen.">
+		name = <"SpecimenCollection">
+		ancestors = <"Procedure",...>
+		properties = <
+			["comment"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Specimen collection notes.">
+				name = <"comment">
+				type_def = <
+					container_type = <"List">
+					type = <"PLAIN_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["collectionSite"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Anatomical collection site as a post-coordinated body site.">
+				name = <"collectionSite">
+				type_def = <
+					container_type = <"List">
+					type = <"AnatomicalLocation">
+				>
+				cardinality = <|>=0|>
+			>
+			["collectionSitePrecoord"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Anatomical collection site as a precoordinated code.">
+				name = <"collectionSitePrecoord">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["amount"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The quantity of specimen collected">
+				name = <"amount">
+				type = <"QUANTITY">
+			>
+			["volume"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The volume of the collected specimen">
+				name = <"volume">
+				type = <"QUANTITY">
+			>
+			["size"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The size of the collected specimen.">
+				name = <"size">
+				type = <"TEXT">
+			>
+			["dimension"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The dimension of the collected specimen.">
+				name = <"dimension">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["SpecimenTreatment"] = <
+		documentation = <"Treatment performed on the specimen.">
+		name = <"SpecimenTreatment">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["description"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"description">
+				type = <"PLAIN_TEXT">
+			>
+			["procedure"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"procedure">
+				type = <"CODED_TEXT">
+			>
+			["additive"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"additive">
+				type_def = <
+					container_type = <"List">
+					type = <"Substance">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["WoundAssertion"] = <
+		documentation = <"An assertion of a wound.">
+		name = <"WoundAssertion">
+		ancestors = <"FindingSiteAssertion",...>
+		properties = <
+			["periwoundCondition"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A description of the skin around the wound (periwound). (LOINC)">
+				name = <"periwoundCondition">
+				type = <"CODED_TEXT">
+			>
+			["woundSize"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"woundSize">
+				type = <"DimensionalFeature">
+			>
+			["tunneling"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"tunneling">
+				type_def = <
+					container_type = <"List">
+					type = <"Tunneling">
+				>
+				cardinality = <|>=0|>
+			>
+			["undermining"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"undermining">
+				type_def = <
+					container_type = <"List">
+					type = <"Undermining">
+				>
+				cardinality = <|>=0|>
+			>
+			["woundBedAndEdge"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"woundBedAndEdge">
+				type = <"WoundBedAndEdge">
+			>
+			["exudate"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"exudate">
+				type = <"WoundExudate">
+			>
+			["dressing"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"dressing">
+				type = <"WoundDressing">
+			>
+			["visibleInternalStructure"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Internal structure that is visible outside the body.">
+				name = <"visibleInternalStructure">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Tunneling"] = <
+		documentation = <"whether tunneling is present">
+		name = <"Tunneling">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["direction"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"direction from center of wound to tunneling, expressed as the clock number if the 12 position were at the cranial, superior, or proximal position of the wound">
+				name = <"direction">
+				type = <"CODED_TEXT">
+			>
+			["length"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"distance from the wound edge to the farthest extent of the tunneling">
+				name = <"length">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["Undermining"] = <
+		documentation = <"whether undermining is present">
+		name = <"Undermining">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["direction"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"direction from center of wound to undermining, expressed as the clock number if the 12 position were at the cranial, superior, or proximal position of the wound">
+				name = <"direction">
+				type = <"CODED_TEXT">
+			>
+			["length"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"distance from the wound edge to the farthest extent of the undermining">
+				name = <"length">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["WoundBedAndEdge"] = <
+		documentation = <"Characteristics of the wound's base and its edge.">
+		name = <"WoundBedAndEdge">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["woundBaseAppearance"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"LOINC: 'Described as necrotic, sloughing, fibrinous, granulated, intact, approximated, etc. The wound bed appearance may or may not be differentiated from the wound edge, especially if the wound is healing well.' Need to rewrite, e.g., 'physiological state of wound surface tissue as evaluated by visual inspection'">
+				name = <"woundBaseAppearance">
+				type = <"CODED_TEXT">
+			>
+			["woundBedAppearanceToWoundBaseBedRatio"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"the area of identified wound bed appearance (necrotic, sloughing, etc.; see LOINC 72371-8) compared to the total area of the wound bed. For example, 40% of the wound bed is necrotic. Results can either be subjective or measured.">
+				name = <"woundBedAppearanceToWoundBaseBedRatio">
+				type = <"PROPORTION">
+			>
+			["woundBaseColor"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The color of the base of the wound.">
+				name = <"woundBaseColor">
+				type = <"CODED_TEXT">
+			>
+			["woundEdgeAppearance"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The appearance of the edge of a wound.">
+				name = <"woundEdgeAppearance">
+				type = <"CODED_TEXT">
+			>
+			["woundEdgeColor"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The color of the edge of the wound when different than the bed.">
+				name = <"woundEdgeColor">
+				type = <"CODED_TEXT">
+			>
+			["woundClosureType"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Description of the wound closure.">
+				name = <"woundClosureType">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["WoundExudate"] = <
+		documentation = <"Description of the exudate from a wound.">
+		name = <"WoundExudate">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["odor"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"odor">
+				type = <"CODED_TEXT">
+			>
+			["color"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"color">
+				type = <"CODED_TEXT">
+			>
+			["drainageAmount"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"drainageAmount">
+				type = <"QUANTITY">
+			>
+			["_drainageAmountQualitative"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"_drainageAmountQualitative">
+				type = <"CODED_TEXT">
+			>
+			["appearance"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"appearance">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["WoundDressing"] = <
+		documentation = <"Description of the dressing on a wound.">
+		name = <"WoundDressing">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["dressing"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of dressing used.">
+				name = <"dressing">
+				type = <"CODED_TEXT">
+			>
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The purpose of the dressing.">
+				name = <"purpose">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["DimensionalFeature"] = <
+		documentation = <"Feature's physical attributes such as a growth or wound.">
+		name = <"DimensionalFeature">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["area"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"area">
+				type = <"QUANTITY">
+			>
+			["circumference"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"circumference">
+				type = <"QUANTITY">
+			>
+			["volume"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"volume">
+				type = <"QUANTITY">
+			>
+			["width"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"width">
+				type = <"QUANTITY">
+			>
+			["depth"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"depth">
+				type = <"QUANTITY">
+			>
+			["length"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"length">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["MedicationAct"] = <
+		name = <"MedicationAct">
+		ancestors = <"Act",...>
+		properties = <
+			["medication"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifies the medication being administered, ordered, dispensed, or currently being taken.">
+				name = <"medication">
+				type = <"Medication">
+			>
+			["medicationPrecoord"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Identifies the medication being administered, ordered, dispensed, or currently being taken.">
+				name = <"medicationPrecoord">
+				type = <"CODED_TEXT">
+			>
+			["device"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The device used in administering the medication to the patient. For example, a particular infusion pump.">
+				name = <"device">
+				type_def = <
+					container_type = <"List">
+					type = <"Device">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["DispenseInstructions"] = <
+		name = <"DispenseInstructions">
+		ancestors = <"DispenseBase",...>
+		properties = <
+			["areRefillsAuthorizedAsNeeded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"areRefillsAuthorizedAsNeeded">
+				type = <"YESNO">
+			>
+			["dispensingInstructions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dispensingInstructions">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["expirationDate"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expirationDate">
+				type = <"DATE_TIME">
+			>
+			["validityPeriod"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"validityPeriod">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["numberOfRefillsAuthorized"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"numberOfRefillsAuthorized">
+				type = <"COUNT">
+			>
+			["expectedSupplyDuration"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expectedSupplyDuration">
+				type = <"DURATION">
+			>
+			["neededNoLaterThan"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"neededNoLaterThan">
+				type = <"YESNO">
+			>
+			["needsHumanReview"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"needsHumanReview">
+				type = <"YESNO">
+			>
+		>
+	>
+	["Dosage"] = <
+		name = <"Dosage">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["dosageAsText"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"dosageAsText">
+				type = <"PLAIN_TEXT">
+			>
+			["dosageInstruction"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dosageInstruction">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["bodySite"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"bodySite">
+				type_def = <
+					container_type = <"List">
+					type = <"AnatomicalLocation">
+				>
+				cardinality = <|>=0|>
+			>
+			["bodySitePrecoord"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"bodySitePrecoord">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["route"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"route">
+				type = <"CODED_TEXT">
+			>
+			["doseQuantity"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"doseQuantity">
+				type = <"QUANTITY">
+			>
+			["rateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"rateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"QUANTITY",...>
+				>
+			>
+			["maxDosePerPeriod"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"maxDosePerPeriod">
+				type = <"QUANTITY">
+			>
+			["maxDosePerAdministration"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"maxDosePerAdministration">
+				type = <"QUANTITY">
+			>
+			["method"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"method">
+				type = <"CODED_TEXT">
+			>
+			["timing"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"timing">
+				type = <"Timing">
+			>
+			["maxDosePerLifetime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"maxDosePerLifetime">
+				type = <"QUANTITY">
+			>
+			["asNeeded"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"asNeeded">
+				type = <"CODED_TEXT">
+			>
+			["sequence"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"sequence">
+				type = <"COUNT">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["SubstitutionBase"] = <
+		documentation = <"Base class for prospective and retrospective medication substitution information.">
+		name = <"SubstitutionBase">
+		ancestors = <"VIRTUAL_CLUSTER",...>
+		properties = <
+			["reason"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Why should or was (not) substitution made">
+				name = <"reason">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["SubstitutionInstruction"] = <
+		name = <"SubstitutionInstruction">
+		ancestors = <"SubstitutionBase",...>
+		properties = <
+			["allowSubstitutions"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"allowSubstitutions">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["SubstitutionInformation"] = <
+		name = <"SubstitutionInformation">
+		ancestors = <"SubstitutionBase",...>
+		properties = <
+			["wasSubstituted"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"wasSubstituted">
+				type = <"YESNO">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+			["responsibleParty"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"responsibleParty">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["DispenseEvent"] = <
+		name = <"DispenseEvent">
+		ancestors = <"DispenseBase",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+			["daysSupply"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"daysSupply">
+				type = <"QUANTITY">
+			>
+			["whenPrepared"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"whenPrepared">
+				type = <"DATE_TIME">
+			>
+			["whenHandedOver"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"whenHandedOver">
+				type = <"DATE_TIME">
+			>
+			["destination"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"destination">
+				type = <"PARTICIPATION">
+			>
+			["dispenseRecipient"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dispenseRecipient">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["method"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"method">
+				type = <"CODED_TEXT">
+			>
+			["fillSequenceNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"fillSequenceNumber">
+				type = <"COUNT">
+			>
+			["productSelectionCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"productSelectionCode">
+				type = <"CODED_TEXT">
+			>
+			["specialPackaging"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"specialPackaging">
+				type = <"CODED_TEXT">
+			>
+			["totalDailyDose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"totalDailyDose">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["DispenseBase"] = <
+		name = <"DispenseBase">
+		ancestors = <"VIRTUAL_CLUSTER",...>
+	>
+	["Timing"] = <
+		name = <"Timing">
+	>
+	["MedicationDispensePerformance"] = <
+		name = <"MedicationDispensePerformance">
+		ancestors = <"Performance",...>
+		properties = <
+			["dispense"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"dispense">
+				type = <"DispenseEvent">
+				is_mandatory = <True>
+			>
+			["substitution"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"substitution">
+				type = <"SubstitutionInformation">
+			>
+		>
+	>
+	["MedicationOrder"] = <
+		name = <"MedicationOrder">
+		ancestors = <"Order",...>
+		properties = <
+			["dispenseInstructions"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"dispenseInstructions">
+				type = <"DispenseInstructions">
+			>
+			["substitutionInstructions"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"substitutionInstructions">
+				type = <"SubstitutionInstruction">
+			>
+			["pharmacyOrderCategory"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"pharmacyOrderCategory">
+				type = <"CODED_TEXT">
+			>
+			["pharmacyOrderSetting"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"pharmacyOrderSetting">
+				type = <"CODED_TEXT">
+			>
+			["prnReason"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Condition under which the ordered act should be performed. E.g.., shortness of breath, SpO2 less than x%, insomnia, nausea.">
+				name = <"prnReason">
+				type_def = <
+					container_type = <"List">
+					type = <"Justification">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["BaseEvaluationResult"] = <
+		name = <"BaseEvaluationResult">
+		ancestors = <"Finding",...>
+		properties = <
+			["result"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The unqualified value of the evaluation.">
+				name = <"result">
+				type = <"DATA_VALUE">
+			>
+			["exceptionValue"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"exceptionValue">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["BaseAssertion"] = <
+		name = <"BaseAssertion">
+		ancestors = <"Finding",...>
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Concept representing a clinical finding.">
+				name = <"name">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["diagnosisDate"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Date and time the health problem was diagnosed. Added for Public Health Reporting Initiative, 10&#47;5&#47;2012.">
+				name = <"diagnosisDate">
+				type = <"DATE_TIME">
+			>
+			["verificationStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The state of knowledge concerning the presence of a putative condition; e.g., confirmed, refuted, provisional, suspected.
+">
+				name = <"verificationStatus">
+				type = <"CODED_TEXT">
+			>
+			["findingMethod"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The means by which a clinical finding is determined.
+">
+				name = <"findingMethod">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["BaseAddress"] = <
+		name = <"BaseAddress">
+		ancestors = <"CLUSTER",...>
+		properties = <
+			["use"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating use preference for this address.">
+				name = <"use">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Period when address is in effect.">
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"NEED DEFINITION AND EXAMPLES">
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["preferenceIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating whether this address is preferred.">
+				name = <"preferenceIndicator">
+				type = <"CODED_TEXT">
+			>
+			["noFixedAddressIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Code indicating if person has no fixed address.">
+				name = <"noFixedAddressIndicator">
+				type = <"CODED_TEXT">
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Unstructured address when a structured address is not obtainable or for system that cannot process structured addresses.">
+				name = <"value">
+				type = <"PLAIN_TEXT">
+			>
+		>
+	>
+	["Promise"] = <
+		name = <"Promise">
+		ancestors = <"ActionContext",...>
+		properties = <
+			["fulfillsOrder"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The order that is partly or wholly enacted by the performance of this act.
+">
+				name = <"fulfillsOrder">
+				type = <"BaseClinicalStatement">
+			>
+			["orderModality"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"orderModality">
+				type = <"CODED_TEXT">
+			>
+			["orderDiscontinueDate"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"orderDiscontinueDate">
+				type = <"DATE_TIME">
+			>
+		>
+	>
+	["MedicationAdministration"] = <
+		name = <"MedicationAdministration">
+		ancestors = <"MedicationAct",...>
+		properties = <
+			["dosage"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dosage">
+				type_def = <
+					container_type = <"List">
+					type = <"Dosage">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["MedicationDispense"] = <
+		name = <"MedicationDispense">
+		ancestors = <"MedicationAct",...>
+		properties = <
+			["quantity"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"quantity">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["GenericAddress"] = <
+		name = <"GenericAddress">
+		ancestors = <"BaseAddress",...>
+		properties = <
+			["addressPart"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"An address component that is not an address line.">
+				name = <"addressPart">
+				type_def = <
+					container_type = <"List">
+					type = <"Part">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["FindingSiteAssertion"] = <
+		documentation = <"An assertion about a finding found on the body.">
+		name = <"FindingSiteAssertion">
+		ancestors = <"Assertion",...>
+		properties = <
+			["findingSite"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The body site affected by a condition.">
+				name = <"findingSite">
+				type_def = <
+					container_type = <"List">
+					type = <"AnatomicalLocation">
+				>
+				cardinality = <|>=0|>
+			>
+			["findingSitePrecoord"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Captures the pre-coordinated body location information, for example pre-coordinating body side left with body location hand to make left hand.">
+				name = <"findingSitePrecoord">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["DeviceAssertion"] = <
+		name = <"DeviceAssertion">
+		ancestors = <"BaseAssertion",...>
+	>
+	["PharmacyPromise"] = <
+		name = <"PharmacyPromise">
+		ancestors = <"Promise",...>
+		properties = <
+			["appointmentTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"appointmentTime">
+				type = <"DATE_TIME">
+			>
+			["expirationDate"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"expirationDate">
+				type = <"DATE_TIME">
+			>
+			["isHospitalSuppliedSelfAdministered"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"isHospitalSuppliedSelfAdministered">
+				type = <"YESNO">
+			>
+			["isSelfAdministered"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"isSelfAdministered">
+				type = <"YESNO">
+			>
+			["lastDispenseDate"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lastDispenseDate">
+				type = <"DATE_TIME">
+			>
+			["needsHumanReview"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"needsHumanReview">
+				type = <"YESNO">
+			>
+			["numberOfRefillsOrDosesDispensed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"numberOfRefillsOrDosesDispensed">
+				type = <"COUNT">
+			>
+			["numberOfRefillsRemaining"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"numberOfRefillsRemaining">
+				type = <"COUNT">
+			>
+			["requestedAdministrationTime"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"requestedAdministrationTime">
+				type_def = <
+					container_type = <"List">
+					type_def = (P_BMM_GENERIC_TYPE) <
+						root_type = <"INTERVAL_VALUE">
+						generic_parameters = <"DATE_TIME",...>
+					>
+				>
+				cardinality = <|>=0|>
+			>
+			["requestedDuration"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"requestedDuration">
+				type = <"QUANTITY">
+			>
+			["scheduleType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scheduleType">
+				type = <"CODED_TEXT">
+			>
+			["substitution"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"substitution">
+				type = <"SubstitutionInformation">
+			>
+			["totalDailyDose"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"totalDailyDose">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["Request"] = <
+		name = <"Request">
+		ancestors = <"ActionContext",...>
+		properties = <
+			["requested"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Metadata for the requested activity.">
+				name = <"requested">
+				type = <"Attribution">
+			>
+			["expectedPerformanceTime"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"Time when the requested act is expected to be performed.">
+				name = <"expectedPerformanceTime">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["expectedPerformer"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Persons who are expected to or intended to perform this action, e.g., the person who will perform the surgery. ">
+				name = <"expectedPerformer">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["urgency"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"How quickly the action must be initiated. Includes concepts such as stat, urgent, routine.">
+				name = <"urgency">
+				type = <"CODED_TEXT">
+			>
+			["frequency"] = (P_BMM_GENERIC_PROPERTY) <
+				documentation = <"The frequency at which the activity should be performed - e.g, once daily, thrice daily, etc...">
+				name = <"frequency">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["frequencyCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The frequency at which the activity should be performed - e.g, QD, BID, etc...">
+				name = <"frequencyCode">
+				type = <"CODED_TEXT">
+			>
+			["duration"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"duration">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["durationCode"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The anticipated duration for the action.">
+				name = <"durationCode">
+				type = <"CODED_TEXT">
+			>
+			["prnReason"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Condition under which the ordered act should be performed. E.g.., shortness of breath, SpO2 less than x%, insomnia, nausea.">
+				name = <"prnReason">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["BaseEncounter"] = <
+		name = <"BaseEncounter">
+		ancestors = <"Act",...>
+		properties = <
+			["confidentialityCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"confidentialityCode">
+				type = <"CODED_TEXT">
+			>
+			["partOf"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"partOf">
+				type = <"IndivisibleClinicalStatement">
+			>
+		>
+	>
+	["Admission"] = <
+		name = <"Admission">
+		ancestors = <"Act",...>
+		properties = <
+			["levelOfCare"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"levelOfCare">
+				type = <"CODED_TEXT">
+			>
+			["source"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"source">
+				type = <"CODED_TEXT">
+			>
+			["dietType"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dietType">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["needsPreAdmitTest"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"needsPreAdmitTest">
+				type = <"YESNO">
+			>
+			["preAdmitAccount"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"preAdmitAccount">
+				type = <"YESNO">
+			>
+			["precautionCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"precautionCode">
+				type = <"CODED_TEXT">
+			>
+			["reAdmissionIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reAdmissionIndicator">
+				type = <"CODED_TEXT">
+			>
+			["admissionDiagnosis"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"admissionDiagnosis">
+				type_def = <
+					container_type = <"List">
+					type = <"Diagnosis">
+				>
+				cardinality = <|>=0|>
+			>
+			["preAdmissionIdentifier"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Pre-admission identifier">
+				name = <"preAdmissionIdentifier">
+				type = <"IDENTIFIER">
+			>
+		>
+	>
+	["Discharge"] = <
+		name = <"Discharge">
+		ancestors = <"Act",...>
+		properties = <
+			["disposition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"disposition">
+				type = <"CODED_TEXT">
+			>
+			["needOutpatientFollowup"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"needOutpatientFollowup">
+				type = <"YESNO">
+			>
+			["dischargeInstructionsStatement"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dischargeInstructionsStatement">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["dischargeInstructions"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"dischargeInstructions">
+				type = <"TEXT">
+			>
+			["dischargeFromLocation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dischargeFromLocation">
+				type_def = <
+					container_type = <"List">
+					type = <"Location">
+				>
+				cardinality = <|>=0|>
+			>
+			["dischargeToLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"dischargeToLocation">
+				type = <"Location">
+			>
+			["dischargeDiagnosis"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"dischargeDiagnosis">
+				type_def = <
+					container_type = <"List">
+					type = <"Diagnosis">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Transfer"] = <
+		name = <"Transfer">
+		ancestors = <"Act",...>
+		properties = <
+			["category"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"category">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["transferFromLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"transferFromLocation">
+				type = <"Location">
+			>
+			["transferToLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"transferToLocation">
+				type = <"Location">
+			>
+		>
+	>
+	["Referral"] = <
+		name = <"Referral">
+		ancestors = <"Act",...>
+		properties = <
+			["groupIdentifier"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"groupIdentifier">
+				type = <"IDENTIFIER">
+			>
+			["serviceRequested"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"serviceRequested">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["context"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"context">
+				type = <"IndivisibleClinicalStatement">
+			>
+			["specialty"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"specialty">
+				type = <"CODED_TEXT">
+			>
+			["recipient"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"recipient">
+				type_def = <
+					container_type = <"List">
+					type = <"PARTICIPATION">
+				>
+				cardinality = <|>=0|>
+			>
+			["supportingInformation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"supportingInformation">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Encounter"] = <
+		name = <"Encounter">
+		ancestors = <"BaseEncounter",...>
+		properties = <
+			["accountId"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"accountId">
+				type = <"IDENTIFIER">
+			>
+			["accountStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"accountStatus">
+				type = <"CODED_TEXT">
+			>
+			["alternateVisitId"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"alternateVisitId">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["ambulatoryStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ambulatoryStatus">
+				type = <"TEXT">
+			>
+			["chargePriceIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"chargePriceIndicator">
+				type = <"CODED_TEXT">
+			>
+			["chiefComplaint"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"chiefComplaint">
+				type = <"TEXT">
+			>
+			["encounterBillingType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"encounterBillingType">
+				type = <"CODED_TEXT">
+			>
+			["financialClass"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"financialClass">
+				type = <"CODED_TEXT">
+			>
+			["hospitalService"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"hospitalService">
+				type = <"CODED_TEXT">
+			>
+			["isEmploymentRelated"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"isEmploymentRelated">
+				type = <"YESNO">
+			>
+			["modeOfArrival"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"modeOfArrival">
+				type = <"CODED_TEXT">
+			>
+			["patientClass"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"patientClass">
+				type = <"TEXT">
+			>
+			["patientType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"patientType">
+				type = <"CODED_TEXT">
+			>
+			["previousServiceDate"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"previousServiceDate">
+				type = <"DATE_TIME">
+			>
+			["publicityCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"publicityCode">
+				type = <"CODED_TEXT">
+			>
+			["reasonForVisit"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"reasonForVisit">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["referralSource"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"referralSource">
+				type = <"CODED_TEXT">
+			>
+			["servicingFacility"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"servicingFacility">
+				type = <"CODED_TEXT">
+			>
+			["specialArrangements"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"specialArrangements">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["specialCourtesy"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"specialCourtesy">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["triageNotes"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"triageNotes">
+				type = <"CODED_TEXT">
+			>
+			["assignedPatientLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"assignedPatientLocation">
+				type = <"Location">
+			>
+			["pendingLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"pendingLocation">
+				type = <"Location">
+			>
+			["serviceDeliveryLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"serviceDeliveryLocation">
+				type = <"Location">
+			>
+			["temporaryLocation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"temporaryLocation">
+				type = <"Location">
+			>
+			["priorTemporaryLocation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"priorTemporaryLocation">
+				type_def = <
+					container_type = <"List">
+					type = <"Location">
+				>
+				cardinality = <|>=0|>
+			>
+			["origin"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The location from which the patient came before admission">
+				name = <"origin">
+				type = <"Location">
+			>
+		>
+	>
+	["PatientRelatedEducation"] = <
+		name = <"PatientRelatedEducation">
+		ancestors = <"Act",...>
+		properties = <
+			["educationBarrier"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"educationBarrier">
+				type = <"CODED_TEXT">
+			>
+			["educationMethod"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"educationMethod">
+				type = <"CODED_TEXT">
+			>
+			["predefinedEducationalMaterial"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"predefinedEducationalMaterial">
+				type = <"CODED_TEXT">
+			>
+			["personalizedEducationMaterial"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"personalizedEducationMaterial">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["location"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"location">
+				type = <"Location">
+			>
+			["visit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"visit">
+				type = <"IndivisibleClinicalStatement">
+			>
+		>
+	>
+	["PatientEducationPerformed"] = <
+		name = <"PatientEducationPerformed">
+		ancestors = <"Performance",...>
+		properties = <
+			["oralCommunicationSummary"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"oralCommunicationSummary">
+				type = <"TEXT">
+			>
+			["percentComplete"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"percentComplete">
+				type = <"QUANTITY">
+			>
+			["levelOfUnderstanding"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"levelOfUnderstanding">
+				type = <"CODED_TEXT">
+			>
+			["professionalTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"professionalTime">
+				type = <"QUANTITY">
+			>
+			["textProvided"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"textProvided">
+				type = <"TEXT">
+			>
+		>
+	>
+	["Diagnosis"] = <
+		name = <"Diagnosis">
+		properties = <
+			["rank"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rank">
+				type = <"COUNT">
+			>
+			["diagnosisCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"diagnosisCode">
+				type = <"CODED_TEXT">
+			>
+			["diagnosis"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"diagnosis">
+				type = <"IndivisibleClinicalStatement">
+			>
+		>
+	>
+	["EmergencyEncounter"] = <
+		name = <"EmergencyEncounter">
+		ancestors = <"Encounter",...>
+		properties = <
+			["activityTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"activityTime">
+				type = <"DATE_TIME">
+			>
+			["arrivedBy"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"arrivedBy">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["AbstractDurableEncounter"] = <
+		name = <"AbstractDurableEncounter">
+		ancestors = <"Encounter",...>
+		properties = <
+			["patientAdmission"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"patientAdmission">
+				type = <"IndivisibleClinicalStatement">
+			>
+			["patientTransfer"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"patientTransfer">
+				type_def = <
+					container_type = <"List">
+					type = <"IndivisibleClinicalStatement">
+				>
+				cardinality = <|>=0|>
+			>
+			["patientDischarge"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"patientDischarge">
+				type = <"IndivisibleClinicalStatement">
+			>
+			["patientCondition"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"patientCondition">
+				type = <"CODED_TEXT">
+			>
+			["patientStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"patientStatus">
+				type = <"CODED_TEXT">
+			>
+			["serviceProvider"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"serviceProvider">
+				type = <"Organization">
+			>
+		>
+	>
+	["VirtualEncounter"] = <
+		name = <"VirtualEncounter">
+		ancestors = <"Encounter",...>
+	>
+	["OutpatientVisit"] = <
+		name = <"OutpatientVisit">
+		ancestors = <"Encounter",...>
+		properties = <
+			["serviceCategory"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"serviceCategory">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["HomeBasePrimaryCareEncounter"] = <
+		name = <"HomeBasePrimaryCareEncounter">
+		ancestors = <"AbstractDurableEncounter",...>
+	>
+	["InpatientEncounter"] = <
+		name = <"InpatientEncounter">
+		ancestors = <"AbstractDurableEncounter",...>
+		properties = <
+			["lengthOfStay"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lengthOfStay">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["ShortStay"] = <
+		name = <"ShortStay">
+		ancestors = <"AbstractDurableEncounter",...>
+		properties = <
+			["lengthOfStay"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"lengthOfStay">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["LongTermCare"] = <
+		name = <"LongTermCare">
+		ancestors = <"AbstractDurableEncounter",...>
+	>
+	["Hospice"] = <
+		name = <"Hospice">
+		ancestors = <"AbstractDurableEncounter",...>
+	>
+	["SurgicalProcedure"] = <
+		name = <"SurgicalProcedure">
+		ancestors = <"Procedure",...>
+		properties = <
+			["surgicalApproach"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The technique used to reach the site of the procedure. Approaches may be through the skin or mucous membrane, through an orifice or external.">
+				name = <"surgicalApproach">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["access"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The route used to access the site of a procedure. It is used to distinguish open, closed, and percutaneous procedures.">
+				name = <"access">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["implant"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Something placed in a person's body or on its surface during the procedure and remains postoperatively. E.g., stents, tubes, artificial joints, and drains.">
+				name = <"implant">
+				type_def = <
+					container_type = <"List">
+					type = <"Device">
+				>
+				cardinality = <|>=0|>
+			>
+			["implantCode"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Concept representing something placed in a person's body or on its surface during the procedure and remains postoperatively. E.g., stents, tubes, artificial joints, and drains.">
+				name = <"implantCode">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["Organization"] = <
+		name = <"Organization">
+		ancestors = <"Entity",...>
+		properties = <
+			["address"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"address">
+				type_def = <
+					container_type = <"List">
+					type = <"BaseAddress">
+				>
+				cardinality = <|>=0|>
+			>
+			["electronicContact"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"electronicContact">
+				type_def = <
+					container_type = <"List">
+					type = <"ElectronicContact">
+				>
+				cardinality = <|>=0|>
+			>
+			["departmentOrUnit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"departmentOrUnit">
+				type = <"TEXT">
+			>
+			["industry"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"industry">
+				type = <"TEXT">
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["accreditation"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"accreditation">
+				type_def = <
+					container_type = <"List">
+					type = <"Accreditation">
+				>
+				cardinality = <|>=0|>
+			>
+			["dateRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"dateRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE",...>
+				>
+			>
+		>
+	>
+	["Event"] = <
+		name = <"Event">
+		ancestors = <"StatementTopic",...>
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["EventContext"] = <
+		name = <"EventContext">
+		ancestors = <"StatementContext",...>
+	>
+	["BradenAssessment"] = <
+		documentation = <"A Braden Assessment represents the Braden score used to assess an adult patient's susceptibility to skin breakdown. The summation of the scores range is from 6-23.">
+		name = <"BradenAssessment">
+		ancestors = <"Assertion",...>
+		properties = <
+			["moistureExposure"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The moisture exposure attribute is an element of the braden score skin assessment tool. It evaluates the degree to which skin is exposed to moisture. Values range from 1-4 and correspond as follows: '1'corresponds to the patients being constantly moist, '2' corresponds to Moist, '3' to Occasionally moist, and a '4' to Rarely moist.">
+				name = <"moistureExposure">
+				type = <"CODED_TEXT">
+			>
+			["sensoryPerception"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An element of the braden score skin assessment tool. This section evaluates a patient's ability to respond meaningfully to pressure-related discomfort. Values range from 1-4 and correspond as follows: '1' corresponds completely limited ability, '2' corresponds to a Very Limited ability, '3' to a Slightly Limited ability, and a '4' to No Impairment.">
+				name = <"sensoryPerception">
+				type = <"CODED_TEXT">
+			>
+			["physicalActivity"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An element of the braden score skin assessment tool. This section evaluates the patient's degree of physical activity. Values range from 1-4 and the numbers correspond as follows: '1'corresponds to the patients being bedfast, '2' corresponds to Chairfast, '3' to Walks occasionally, and a '4' to Walks frequently.">
+				name = <"physicalActivity">
+				type = <"CODED_TEXT">
+			>
+			["physicalMobility"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An element of the braden score skin assessment tool. This section evaluates the patient's ability to change and control their body position. Values range from 1-4 and correspond as follows: '1'corresponds to the patient being completely immobile, '2' corresponds to 'Very limited' mobility, '3' to 'Slightly Limited' mobility, and a '4' to 'No limitations'.">
+				name = <"physicalMobility">
+				type = <"CODED_TEXT">
+			>
+			["nutritionIntakePattern"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An element of the braden score skin assessment tool. This section evaluates the patient's usual food intake pattern. Values range from 1-4 and correspond as follows: '1'corresponds to 'very poor' nutrition, '2' corresponds to 'probably inadequate' nutrition, '3' to 'Adequate' nutrition, and a '4' to 'Excellent'.">
+				name = <"nutritionIntakePattern">
+				type = <"CODED_TEXT">
+			>
+			["frictionAndShear"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"An element of the braden score skin assessment tool. This section evaluates the patient's potential exposure to skin friction and shear. Values range from 1-3 and correspond as follows: '1'corresponds to 'Problem' with friction and shear, '2' corresponds to 'Potential problem', '3' to 'No apparent problem'.">
+				name = <"frictionAndShear">
+				type = <"CODED_TEXT">
+			>
+			["totalScore"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The summation of the 6 elements of the braden score skin assessment tool. Values range from 6-23.">
+				name = <"totalScore">
+				type = <"QUANTITY">
+			>
+			["riskLevel"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The overall, qualitative risk to the patient based on the Braden Total Score and the answers are No Risk: Total score 19-23 , Mild risk: total score 15-18 , Moderate risk: total score 13-14 , High risk: total score 10-12 , and Very high risk: total score 9 or lower . modeler: N Davis version: 1.0 status: draft.">
+				name = <"riskLevel">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["Role"] = <
+		name = <"Role">
+		ancestors = <"BASE_ROLE",...>
+		properties = <
+			["dateTimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"dateTimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["confidentialityLevel"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"confidentialityLevel">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["HealthCareProviderRole"] = <
+		name = <"HealthCareProviderRole">
+		ancestors = <"Role",...>
+		properties = <
+			["fieldOfPractice"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"fieldOfPractice">
+				type_def = <
+					container_type = <"List">
+					type = <"CODED_TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["primaryIndicator"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"primaryIndicator">
+				type = <"CODED_TEXT">
+			>
+			["providerType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"providerType">
+				type = <"TEXT">
+			>
+			["providerClassification"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"providerClassification">
+				type = <"TEXT">
+			>
+			["organizationRelationship"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"organizationRelationship">
+				type_def = <
+					container_type = <"List">
+					type = <"OrganizationRelationship">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["HealthCareProviderOrganizationRole"] = <
+		name = <"HealthCareProviderOrganizationRole">
+		ancestors = <"HealthCareProviderRole",...>
+	>
+	["HealthCareProviderIndividualRole"] = <
+		name = <"HealthCareProviderIndividualRole">
+		ancestors = <"HealthCareProviderRole",...>
+		properties = <
+			["registration"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"registration">
+				type_def = <
+					container_type = <"List">
+					type = <"Registration">
+				>
+				cardinality = <|>=0|>
+			>
+			["qualification"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"qualification">
+				type_def = <
+					container_type = <"List">
+					type = <"Qualification">
+				>
+				cardinality = <|>=0|>
+			>
+			["role"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"role">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["employer"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"employer">
+				type_def = <
+					container_type = <"List">
+					type = <"EmployerRelationship">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["HealthCareConsumerRole"] = <
+		name = <"HealthCareConsumerRole">
+		ancestors = <"Role",...>
+		properties = <
+			["importance"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"importance">
+				type = <"TEXT">
+			>
+			["paperRecord"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"paperRecord">
+				type = <"TEXT">
+			>
+			["organDonorType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"organDonorType">
+				type = <"CODED_TEXT">
+			>
+			["diet"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"diet">
+				type_def = <
+					container_type = <"List">
+					type = <"TEXT">
+				>
+				cardinality = <|>=0|>
+			>
+			["healthCareProvider"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"healthCareProvider">
+				type_def = <
+					container_type = <"List">
+					type = <"HealthCareProviderRelationship">
+				>
+				cardinality = <|>=0|>
+			>
+			["nextOfKin"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"nextOfKin">
+				type_def = <
+					container_type = <"List">
+					type = <"NextOfKinRelationship">
+				>
+				cardinality = <|>=0|>
+			>
+			["preferredWrittenCommunicationFormat"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"preferredWrittenCommunicationFormat">
+				type = <"TEXT">
+			>
+			["preferredContactMethod"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"preferredContactMethod">
+				type = <"CODED_TEXT">
+			>
+			["preferredContactTime"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"preferredContactTime">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+		>
+	>
+	["PartyRelationship"] = <
+		name = <"PartyRelationship">
+		ancestors = <"PARTY_RELATIONSHIP",...>
+		properties = <
+			["scopingStatus"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scopingStatus">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["location"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"location">
+				type_def = <
+					container_type = <"List">
+					type = <"Location">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["NextOfKinRelationship"] = <
+		name = <"NextOfKinRelationship">
+		ancestors = <"PartyRelationship",...>
+		properties = <
+			["datetimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"datetimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["priority"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"priority">
+				type_def = <
+					container_type = <"List">
+					type = <"COUNT">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["HealthCareProviderRelationship"] = <
+		name = <"HealthCareProviderRelationship">
+		ancestors = <"PartyRelationship",...>
+		properties = <
+			["datetimeRange"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"datetimeRange">
+				type_def = <
+					root_type = <"INTERVAL_VALUE">
+					generic_parameters = <"DATE_TIME",...>
+				>
+			>
+			["status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"status">
+				type = <"CODED_TEXT">
+			>
+			["identifier"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"identifier">
+				type_def = <
+					container_type = <"List">
+					type = <"IDENTIFIER">
+				>
+				cardinality = <|>=0|>
+			>
+			["priority"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"priority">
+				type = <"COUNT">
+			>
+		>
+	>
+	["OrganizationRelationship"] = <
+		name = <"OrganizationRelationship">
+		ancestors = <"PartyRelationship",...>
+	>
+	["EmployerRelationship"] = <
+		name = <"EmployerRelationship">
+		ancestors = <"OrganizationRelationship",...>
+		properties = <
+			["role"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"role">
+				type = <"TEXT">
+			>
+			["rank"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rank">
+				type = <"TEXT">
+			>
+			["occupation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"occupation">
+				type = <"TEXT">
+			>
+			["salaryType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"salaryType">
+				type = <"TEXT">
+			>
+			["salaryQuantity"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"salaryQuantity">
+				type = <"QUANTITY">
+			>
+		>
+	>
+	["SubjectOfInformation"] = <
+		name = <"SubjectOfInformation">
+		ancestors = <"PARTICIPATION",...>
+		properties = <
+			["subjectRelationship"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subjectRelationship">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+>
+

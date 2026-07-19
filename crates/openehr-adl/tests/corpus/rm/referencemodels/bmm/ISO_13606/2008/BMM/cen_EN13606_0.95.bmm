@@ -1,0 +1,1029 @@
+--
+-- 	keywords:    reference model, meta-model, archetypes
+-- 	author:      Christoph Rinner
+--	support:	 christoph@rinner.at
+-- 	copyright:   Copyright (c) 2010 Christoph Rinner
+-- 	license:     See end of file
+-- 
+-- TODOs
+--  * demographic not included
+--  * unit instead of units since the java ADL parser has problems with units
+--  * not all cardinalities tested
+-- 
+
+------------------------------------------------------
+-- BMM version on which these schemas are based.
+-- Current BMM version can be found as value of 'Bmm_internal_version' in 
+--     http://www.openehr.org/svn/ref_impl_eiffel/BRANCHES/adl1.5/libraries/common_libs/src/basic_meta_model/bmm_definitions.e
+--
+------------------------------------------------------
+bmm_version = <"2.0">
+
+------------------------------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+------------------------------------------------------
+rm_publisher = <"CEN">
+schema_name = <"EN13606">
+rm_release = <"0.95">
+
+------------------------------------------------------
+-- schema documentation
+------------------------------------------------------
+schema_revision = <"$LastChangedRevision: 26 $">
+schema_lifecycle_state = <"experimental">
+schema_description = <"ISO 13606 Release 2008 draft reference model, expressed in openEHR 'basic meta-model' format">
+schema_author = <"christoph.rinner@meduniwien.ac.at">
+schema_contributors = <"thomas.beale@oceaninformatics.com", ...>
+
+------------------------------------------------------
+-- inclusions
+------------------------------------------------------
+includes = <
+	["1"] = <
+		id = <"cen_ts14796_0.90">
+	>
+>
+
+------------------------------------------------------
+-- archetyping
+------------------------------------------------------
+-- NOTE - 13606 does not use RECORD_COMPONENT as parent of any demographic types, so for now, to allow
+-- archetyping of those, we don't mention an archetype parent class
+-- archetype_parent_class = <"RECORD_COMPONENT">
+archetype_visualise_descendants_of = <"RECORD_COMPONENT">
+archetype_rm_closure_packages = <"org.cen.en13606", ...>
+
+
+------------------------------------------------------
+-- packages
+------------------------------------------------------
+packages = <
+	["org.cen.en13606"] = <
+		name = <"org.cen.en13606">
+		packages = <
+			["ehr_extract"] = <
+				name = <"ehr_extract">
+				classes = <"EHR_EXTRACT", "EXTRACT_CRITERIA", "FOLDER", "COMPOSITION"> 
+				packages = <
+					["base"] = <
+						name = <"base">
+						classes = <"RECORD_COMPONENT", "LINK", "RELATED_PARTY", "FUNCTIONAL_ROLE", "ATTESTATION_INFO">
+					>
+					["entry"] = <
+						name = <"entry">
+						classes = <"AUDIT_INFO", "SECTION", "ENTRY", "CONTENT", "ITEM", "CLUSTER", "ELEMENT">
+					>
+				>
+			>
+			["demographics"] = <
+				name = <"demographics">
+				classes = <"IDENTIFIED_ENTITY", "TELECOM", "SOFTWARE_OR_DEVICE", "ORGANISATION", "PERSON", 
+							"IDENTIFIED_HEALTHCARE_PROFESSIONAL", "SUBJECT_OF_CARE_PERSON_IDENTIFICATION" , 
+							"POSTAL_ADDRESS", "ENTITY_NAME", "POSTAL_ADDRESS_PART", "ENTITY_NAME_PART", 
+							"HEALTHCARE_PROFESSIONAL_ROLE">
+			>
+		>
+	>
+>
+
+------------------------------------------------------
+-- classes
+------------------------------------------------------
+
+class_definitions = <
+
+------------------------------------------------------
+--- ISO 13606-1:2008(E) DEMOGRAPHICS Package
+------------------------------------------------------
+
+	["IDENTIFIED_ENTITY"] = <
+		name = <"IDENTIFIED_ENTITY">
+		is_abstract = <True>
+		ancestors = <"Any", ...>
+		properties = <
+			["extract_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"extract_id">
+			    type = <"II">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["id"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"id">
+				type_def = <
+					type = <"II">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+			["telecom"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"telecom">
+				type_def = <
+					type = <"TELECOM">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["ORGANISATION"] = <
+		name = <"ORGANISATION">
+		ancestors = <"IDENTIFIED_ENTITY", ...>
+		properties = <
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code">
+			    type = <"CD">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["desc"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"desc">
+			    type = <"String">
+				is_mandatory = <True>
+			>
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+			    type = <"String">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["addr"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"addr">
+				type_def = <
+					type = <"POSTAL_ADDRESS">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["SOFTWARE_OR_DEVICE"] = <
+		name = <"SOFTWARE_OR_DEVICE">
+		ancestors = <"Any", ...>
+		properties = <
+			["desc"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"desc">
+			    type = <"String">
+				is_mandatory = <True>
+			>
+			["manufacturerModelName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"manufacturerModelName">
+			    type = <"String">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code">
+			    type = <"CD">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version">
+			    type = <"String">
+				is_im_runtime = <True>
+			>
+			["owningOrganisation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"owningOrganisation">
+			    type = <"ORGANISATION">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["PERSON"] = <
+		name = <"PERSON">
+		ancestors = <"IDENTIFIED_ENTITY", ...>
+		properties = <
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"code">
+			    type = <"CD">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["desc"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"desc">
+			    type = <"String">
+				is_mandatory = <True>
+			>
+			["addr"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"addr">
+				type_def = <
+					type = <"POSTAL_ADDRESS">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+			["name"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"name">
+				type_def = <
+					type = <"ENTITY_NAME">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["IDENTIFIED_HEALTHCARE_PROFESSIONAL"] = <
+		name = <"IDENTIFIED_HEALTHCARE_PROFESSIONAL">
+		ancestors = <"PERSON", ...>
+		properties = <
+			["role"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"role">
+				type_def = <
+					type = <"HEALTHCARE_PROFESSIONAL_ROLE">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["HEALTHCARE_PROFESSIONAL_ROLE"] = <
+		name = <"HEALTHCARE_PROFESSIONAL_ROLE">
+		ancestors = <"Any", ...>
+		properties = <
+			["specialty"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"specialty">
+			    type = <"CD">
+			>
+			["profession"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"profession">
+			    type = <"CD">
+			>
+			["position_or_grade"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"position_or_grade">
+			    type = <"CD">
+			>
+			["scoping_organisation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"scoping_organisation">
+			    type = <"ORGANISATION">
+				is_im_runtime = <True>
+			>
+			["id"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"id">
+				type_def = <
+					type = <"II">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["SUBJECT_OF_CARE_PERSON_IDENTIFICATION"] = <
+		name = <"SUBJECT_OF_CARE_PERSON_IDENTIFICATION">
+		ancestors = <"PERSON", ...>
+		properties = <
+			["administrativeGenderCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"administrativeGenderCode">
+			    type = <"CS">
+				is_mandatory = <True>
+			>
+			["birthTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"birthTime">
+			    type = <"TS">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["deceasedTime"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"deceasedTime">
+			    type = <"TS">
+				is_im_runtime = <True>
+			>
+			["birthOrderNumber"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"birthOrderNumber">
+			    type = <"Integer">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["POSTAL_ADDRESS"] = <
+		name = <"POSTAL_ADDRESS">
+		ancestors = <"Any", ...>
+		properties = <
+			["postalCode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"postalCode">
+			    type = <"CD">
+				is_im_runtime = <True>
+			>
+			["validTime"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"validTime">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+				is_im_runtime = <True>
+			>
+			["addressUse"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"addressUse">
+				type_def = <
+					type = <"CS">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["addrPart"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"addrPart">
+				type_def = <
+					type = <"POSTAL_ADDRESS_PART">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["POSTAL_ADDRESS_PART"] = <
+		name = <"POSTAL_ADDRESS_PART">
+		ancestors = <"Any", ...>
+		properties = <
+			["addressLine"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"addressLine">
+			    type = <"String">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["addressLineType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"addressLineType">
+			    type = <"CS">
+			>
+		>
+	>
+
+	["TELECOM"] = <
+		name = <"TELECOM">
+		ancestors = <"Any", ...>
+		properties = <
+			["telecomAddress"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"telecomAddress">
+			    type = <"URI">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["validTime"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"validTime">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+				is_im_runtime = <True>
+			>
+			["use"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"use">
+				type_def = <
+					type = <"CS">
+					container_type = <"Set">
+				>
+				cardinality = <|>=1|>
+			>
+		>
+	>
+
+	["ENTITY_NAME"] = <
+		name = <"ENTITY_NAME">
+		ancestors = <"Any", ...>
+		properties = <
+			["use"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"use">
+			    type = <"CD">
+				is_mandatory = <True>
+			>
+			["validTime"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"validTime">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+				is_im_runtime = <True>
+			>
+			["namePart"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"namePart">
+				type_def = <
+					type = <"ENTITY_NAME_PART">
+					container_type = <"List">
+				>
+				cardinality = <|>=1|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["ENTITY_NAME_PART"] = <
+		name = <"ENTITY_NAME_PART">
+		ancestors = <"Any", ...>
+		properties = <
+			["entityPartName"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"entityPartName">
+			    type = <"String">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["namePartType"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"namePartType">
+			    type = <"CS">
+				is_mandatory = <True>
+			>
+			["namePartQualifier"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"namePartQualifier">
+			    type = <"CS">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+------------------------------------------------------
+--- ISO 13606-1:2008(E) EXTRACT Package
+------------------------------------------------------
+	["EHR_EXTRACT"] = <
+		name = <"EHR_EXTRACT">
+		ancestors = <"Any", ...>
+		properties = <
+			["ehr_system"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ehr_system">
+			    type = <"II">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["ehr_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ehr_id">
+			    type = <"II">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["subject_of_care"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject_of_care">
+			    type = <"II">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["time_created"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_created">
+			    type = <"TS">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["authorising_party"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"authorising_party">
+			    type = <"II">
+				is_im_runtime = <True>
+			>
+			["rm_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rm_id">
+				type = <"String">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["folders"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"folders">
+				type_def = <
+					type = <"FOLDER">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["criteria"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"criteria">
+				type_def = <
+					type = <"EXTRACT_CRITERIA">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["all_compositions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"all_compositions">
+				type_def = <
+					type = <"COMPOSITION">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["demographic_entity"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"demographic_entity">
+				type_def = <
+					type = <"IDENTIFIED_ENTITY">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["EXTRACT_CRITERIA"] = <
+		name = <"EXTRACT_CRITERIA">
+		ancestors = <"Any", ...>
+		properties = <
+			["time_period"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"time_period">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+			>
+			["max_sensitivity"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"max_sensitivity">
+				type = <"Integer">
+			>
+			["all_versions"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"all_versions">
+				type = <"Boolean">
+			>
+			["multimedia_included"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"multimedia_included">
+				type = <"Boolean">
+			>
+			["archetype_ids"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"archetype_ids">
+				type_def = <
+					container_type = <"Set">
+					type = <"II">
+				>
+			>
+			["other_constraints"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"other_constraints">
+				type = <"String">
+			>
+		>
+	>
+
+	["RECORD_COMPONENT"] = <
+		name = <"RECORD_COMPONENT">
+		is_abstract = <True>
+		ancestors = <"Any", ...>
+		properties = <
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"name">
+				type = <"TEXT">
+				is_mandatory = <True>
+			>
+			["archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"archetype_id">
+				type = <"String">
+				is_im_infrastructure = <True>
+			>
+			["rc_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"rc_id">
+				type = <"II">
+				is_mandatory = <True>
+				is_im_infrastructure = <True>
+			>
+			["meaning"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"meaning">
+				type = <"CD">
+				is_im_infrastructure = <True>
+			>
+			["synthesised"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"synthesised">
+				type = <"Boolean">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["policy_ids"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"policy_ids">
+				type_def = <
+					container_type = <"Set">
+					type = <"II">
+				>
+				is_im_runtime = <True>
+			>
+			["sensitivity"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"sensitivity">
+				type = <"Integer">
+			>
+			["orig_parent_ref"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"orig_parent_ref">
+				type = <"II">
+				is_im_infrastructure = <True>
+			>
+			["links"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"links">
+				type_def = <
+					type = <"LINK">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>	
+			["feeder_audit"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"feeder_audit">
+				type = <"AUDIT_INFO">
+				is_im_runtime = <True>
+			>
+		>
+	>
+
+	["FOLDER"] = <
+		name = <"FOLDER">
+		ancestors = <"RECORD_COMPONENT",...>	
+		properties = <
+			["compositions"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"compositions">
+				type_def = <
+					type = <"II">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["sub_folders"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"sub_folders">
+				type_def = <
+					type = <"FOLDER">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["attestations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"attestations">
+				type_def = <
+					type = <"ATTESTATION_INFO">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+		>
+	>
+	
+	["COMPOSITION"] = <
+		name = <"COMPOSITION">
+		ancestors = <"RECORD_COMPONENT",...>	
+		properties = <
+			["session_time"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"session_time">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+				is_im_runtime = <True>
+			>
+			["territory"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"territory">
+			    type = <"CS">
+				is_im_infrastructure = <True>
+			>
+			["committal"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"committal">
+				is_mandatory = <True>
+				type_def = <
+					type = <"AUDIT_INFO">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_infrastructure = <True>
+			>
+			["attestations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"attestations">
+				type_def = <
+					type = <"ATTESTATION_INFO">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+				is_im_runtime = <True>
+			>
+			["other_participations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"other_participations">
+				type_def = <
+					type = <"FUNCTIONAL_ROLE">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["composer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"composer">
+			    type = <"FUNCTIONAL_ROLE">
+			>
+			["content"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"content">
+				type_def = <
+					type = <"CONTENT">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	
+	["CONTENT"] = <
+		name = <"CONTENT">
+		ancestors = <"RECORD_COMPONENT",...>	
+		is_abstract = <True>
+	>
+
+	["ENTRY"] = <
+		name = <"ENTRY">
+		ancestors = <"CONTENT",...>
+		properties = <
+			["act_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"act_id">
+				type = <"String">
+				is_im_runtime = <True>
+			>
+			["act_status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"act_status">
+			    type = <"CS">
+			>
+			["uncertainty_expressed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"uncertainty_expressed">
+				type = <"Boolean">
+				is_mandatory = <True>
+				is_im_runtime = <True>
+			>
+			["subject_of_information_category"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject_of_information_category">
+				type = <"CS">
+			>
+		    ["items"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"items">
+				type_def = <
+					type = <"ITEM">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+			>
+			["other_participations"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"other_participations">
+				type_def = <
+					type = <"FUNCTIONAL_ROLE">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>
+			["info_provider"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"info_provider">
+			    type = <"FUNCTIONAL_ROLE">
+			>
+			["subject_of_information"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"subject_of_information">
+			    type = <"RELATED_PARTY">
+			>
+		>
+	>
+
+	["SECTION"] = <
+		name = <"SECTION">
+		ancestors = <"CONTENT",...>
+		properties = <
+			["members"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"members">
+				type_def = <
+					type = <"CONTENT">
+					container_type = <"List">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+
+	["ITEM"] = <
+		name = <"ITEM">
+		ancestors = <"RECORD_COMPONENT",...>	
+		is_abstract = <True>
+		properties = <
+			["emphasis"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"emphasis">
+			    type = <"CD">
+			>
+			["obs_time"] = (P_BMM_GENERIC_PROPERTY) <
+				name = <"obs_time">
+				type_def = <
+					root_type = <"IVL">
+					generic_parameters = <"TS">
+				>
+				is_im_runtime = <True>
+			>
+			["item_category"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"item_category">
+			    type = <"CS">
+			>
+		>
+	>
+
+	["CLUSTER"] = <
+		name = <"CLUSTER">
+		ancestors = <"ITEM",...>
+		properties = <
+			["structure_type"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"structure_type">
+			    type = <"CS">
+				is_mandatory = <True>
+			>
+			["parts"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"parts">
+				type_def = <
+					type = <"ITEM">
+					container_type = <"Set">
+				>
+				cardinality = <|>=0|>
+			>		
+		>	
+	>
+
+	["ELEMENT"] = <
+		name = <"ELEMENT">
+		ancestors = <"ITEM",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"value">
+				type = <"DATA_VALUE">
+			>
+		>
+	>
+
+	["AUDIT_INFO"] = <
+		name = <"AUDIT_INFO">
+		ancestors = <"Any", ...>
+		properties = <
+			["ehr_system"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"ehr_system">
+			    type = <"II">
+				is_mandatory = <True>
+			>
+			["time_committed"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time_committed">
+			    type = <"TS">
+				is_mandatory = <True>
+			>
+			["committer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"committer">
+			    type = <"II">
+				is_mandatory = <True>
+			>
+			["version_status"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version_status">
+			    type = <"CS">
+			>
+			["reason_for_revision"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reason_for_revision">
+			    type = <"CD">
+			>
+			["previous_version"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"previous_version">
+			    type = <"II">
+			>
+			["version_set_id"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"version_set_id">
+			    type = <"II">
+			>
+		>
+	>
+
+	["ATTESTATION_INFO"] = <
+		name = <"ATTESTATION_INFO">
+		ancestors = <"Any", ...>
+		properties = <
+			["time"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"time">
+			    type = <"TS">
+				is_mandatory = <True>
+			>
+			["proof"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"proof">
+			    type = <"ED">
+			>
+			["attested_view"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"attested_view">
+			    type = <"ED">
+			>
+			["reason_for_attestation"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"reason_for_revision">
+			    type = <"CD">
+				is_mandatory = <True>
+			>
+			["attester"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"attester">
+			    type = <"FUNCTIONAL_ROLE">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"target">
+				type_def = <
+					type = <"II">
+					container_type = <"List">
+				>
+				cardinality = <|>=1|>
+			>	
+		>
+	>
+
+	["FUNCTIONAL_ROLE"] = <
+		name = <"FUNCTIONAL_ROLE">
+		ancestors = <"Any", ...>
+		properties = <
+			["function"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"function">
+			    type = <"CD">
+			>
+			["performer"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"performer">
+			    type = <"II">
+				is_mandatory = <True>
+			>
+			["mode"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"mode">
+			    type = <"CS">
+			>
+			["healthcare_facility"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"healthcare_facility">
+			    type = <"II">
+				is_im_runtime = <True>
+			>
+			["service_setting"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"service_setting">
+			    type = <"CD">
+			>
+		>
+	>
+
+	["RELATED_PARTY"] = <
+		name = <"RELATED_PARTY">
+		ancestors = <"Any", ...>
+		properties = <
+			["party"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"party">
+			    type = <"II">
+			>
+			["relationship"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"relationship">
+			    type = <"TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+
+	["LINK"] = <
+		name = <"LINK">
+		ancestors = <"Any", ...>
+		properties = <
+			["nature"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"nature">
+			    type = <"CS">
+				is_mandatory = <True>
+			>
+			["role"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"role">
+			    type = <"CD">
+			>
+			["follow_link"] = (P_BMM_SINGLE_PROPERTY) <
+				name = <"follow_link">
+			    type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["target"] = (P_BMM_CONTAINER_PROPERTY) <
+				name = <"target">
+				type_def = <
+					type = <"II">
+					container_type = <"Set">
+				>
+				cardinality = <|>=1|>
+			>		
+		>
+	>
+	
+>
+
+--|
+--| ***** BEGIN LICENSE BLOCK *****
+--| Version: MPL 1.1/GPL 2.0/LGPL 2.1
+--|
+--| The contents of this file are subject to the Mozilla Public License Version
+--| 1.1 (the 'License'); you may not use this file except in compliance with
+--| the License. You may obtain a copy of the License at
+--| http://www.mozilla.org/MPL/
+--|
+--| Software distributed under the License is distributed on an 'AS IS' basis,
+--| WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+--| for the specific language governing rights and limitations under the
+--| License.
+--|
+--| The Original Code is cen_EN13606_0.9.dadl
+--|
+--| The Initial Developer of the Original Code is Christoph Rinner.
+--| Portions created by the Initial Developer are Copyright (C) 2010
+--| the Initial Developer. All Rights Reserved.
+--|
+--| Contributor(s):
+--|
+--| Alternatively, the contents of this file may be used under the terms of
+--| either the GNU General Public License Version 2 or later (the 'GPL'), or
+--| the GNU Lesser General Public License Version 2.1 or later (the 'LGPL'),
+--| in which case the provisions of the GPL or the LGPL are applicable instead
+--| of those above. If you wish to allow use of your version of this file only
+--| under the terms of either the GPL or the LGPL, and not to allow others to
+--| use your version of this file under the terms of the MPL, indicate your
+--| decision by deleting the provisions above and replace them with the notice
+--| and other provisions required by the GPL or the LGPL. If you do not delete
+--| the provisions above, a recipient may use your version of this file under
+--| the terms of any one of the MPL, the GPL or the LGPL.
+--|
+--| ***** END LICENSE BLOCK *****
+--|

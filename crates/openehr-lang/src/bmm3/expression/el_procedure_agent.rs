@@ -4,11 +4,9 @@
 use crate::bmm3::core::feature::bmm_procedure::BmmProcedure;
 use crate::bmm3::expression::el_tuple::ElTuple;
 use crate::bmm3::expression::el_value_generator::ElValueGenerator;
-use openehr_derive::OpenEhrType;
 
 /// An agent whose signature is of a procedure, i.e. has no result type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EL_PROCEDURE_AGENT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ElProcedureAgent {
     // inherited: EL_AGENT
     pub is_writable: bool,

@@ -1,0 +1,39 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-WHOLE.most_minimal.v3.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["email"] = <"thomas.beale@openEHR.org">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2004-06-01">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test what happens when a different major version (v3) of an existing archetype is encountered by tools. The tool should treat this archteype as distinct from other major versions of this archetype.">
+			keywords = <"ADL", "test">
+  		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2004 openEHR Foundation <http://www.openEHR.org>">
+
+definition
+	WHOLE[id1] 	-- most minimal
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"most minimal">
+				description = <"most minimal">
+			>
+		>
+	>

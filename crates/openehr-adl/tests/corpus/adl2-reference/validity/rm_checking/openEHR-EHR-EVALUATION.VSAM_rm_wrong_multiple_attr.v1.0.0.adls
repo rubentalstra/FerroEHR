@@ -1,0 +1,56 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.VSAM_rm_wrong_multiple_attr.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale <thomas.beale@openEHR.org>">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"10/03/2009">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VSAM validity check, triggered by attribute (EVALUATION.data) that is declared as multiple in archetype but is single-valued in RM. Note that the violation is found in the parser, not the validator">
+			keywords = <"test", "RM checker">
+		>
+	>
+	other_details = <
+		["regression"] = <"VSAM">
+	>
+	lifecycle_state = <"AuthorDraft">
+
+definition
+	EVALUATION[id1] matches {	
+		data cardinality matches {0..*} matches {
+			ITEM_TREE[id2] matches {
+				items cardinality matches {0..*; unordered} matches {
+					ELEMENT[id3] matches {
+						value matches {
+							DV_TEXT[id5]
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				description = <"Some evaluation">
+				text = <"Some evaluation">
+			>
+			["id2"] = <
+				description = <"Structure">
+				text = <"Structure">
+			>
+			["id3"] = <
+				description = <"An Element">
+				text = <"An Element">
+			>
+		>
+	>

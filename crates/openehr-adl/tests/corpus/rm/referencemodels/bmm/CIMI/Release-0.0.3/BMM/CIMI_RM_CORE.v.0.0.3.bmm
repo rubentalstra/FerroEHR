@@ -1,0 +1,678 @@
+-- Basic Metamodel Syntax Version
+bmm_version = <"2.1">
+
+-- ----------------------------------
+-- schema identification
+-- (schema_id computed as <rm_publisher>_<schema_name>_<rm_release>)
+-- ----------------------------------
+rm_publisher = <"CIMI">
+schema_name = <"RM_CORE">
+rm_release = <"0.0.3">
+
+-- ----------------------------------
+-- schema documentation
+-- ----------------------------------
+schema_revision = <"Wed Jul 26 08:19:06 PDT 2017">
+schema_lifecycle_state = <"dstu">
+schema_description = <"CIMI_RM_CORE.v0.0.3.mdzip - Schema generated from UML">
+
+
+-- ----------------------------------
+-- archetyping
+-- ----------------------------------
+archetype_rm_closure_packages = <"CIMI_Reference_Model.Core", "CIMI_Reference_Model.Data_Value_Types", "CIMI_Reference_Model.Primitive_Types">
+packages = <
+	["CIMI_Reference_Model"] = <
+		name = <"CIMI_Reference_Model">
+		packages = <
+			["Core"] = <
+				name = <"Core">
+				classes = <"ARCHETYPED", "ASSOCIATION_CLASS", "LOCATABLE">
+			>
+			["Data_Value_Types"] = <
+				name = <"Data_Value_Types">
+				classes = <"AMOUNT", "CODED_TEXT", "COUNT", "DATA_VALUE", "DATE", "DATE_TIME", "DURATION", "EHR_URI", "ENCAPSULATED", "IDENTIFIER", "INTERVAL_VALUE", "MULTIMEDIA", "ORDERED_VALUE", "ORDINAL", "PARSABLE", "PLAIN_TEXT", "PROPORTION", "QUANTIFIED", "QUANTITY", "TERM_MAPPING", "TEXT", "TIME", "URI_VALUE", "YESNO", "INSTANT", "POSITIVE_INTEGER_COUNT", "UNSIGNED_INTEGER_COUNT", "RATIO">
+			>
+			["Primitive_Types"] = <
+				name = <"Primitive_Types">
+				classes = <"Any", "Array", "List", "Boolean", "Byte", "Character", "Integer", "Real", "String", "URI", "TERMINOLOGY_CODE">
+			>
+		>
+	>
+>
+class_definitions = <
+	["ARCHETYPED"] = <
+		documentation = <"Archetypes act as the configuration basis for the particular structures of instances defined by the reference model. To enable archetypes to be used to create valid data, key classes in the reference model act as root points for archetyping; accordingly, these classes have the archetype_details attribute set.
+
+An instance of the class ARCHETYPED contains the relevant archetype identification information, allowing generating archetypes to be matched up with data instances.">
+		name = <"ARCHETYPED">
+		properties = <
+			["archetype_id"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Globally unique archetype identifier.">
+				name = <"archetype_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["rm_version"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Version of the CIMI reference model used to create this object. Expressed in terms of the release version string, e.g. 1.0 , 1.2.4 .">
+				name = <"rm_version">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["ASSOCIATION_CLASS"] = <
+		documentation = <"Abstract parent type for an association class.">
+		name = <"ASSOCIATION_CLASS">
+		properties = <
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The type of the association.">
+				name = <"type">
+				type = <"TEXT">
+			>
+		>
+	>
+	["LOCATABLE"] = <
+		documentation = <"Most classes in the CIMI reference model inherit from the LOCATABLE class, which defines the idea of 'locatability in an archetyped structure'. LOCATABLE defines a runtime name and an archetype_node_id. The archetype_node_id is the standardised semantic code for a node and comes from the corresponding node in the archetype used to create the data. The only exception is at archetype root points in data, where archetype_node_id carries the archetype identifier in string form rather than an interior node id from an archetype. LOCATABLE also provides the attribute archetype_details, which is non-Void for archetype root points in data, and carries meta-data relevant to root points. The name attribute carries a name created at runtime. The 'meaning' of any node is derived formally from the archetype by obtaining the text value for the archetype_node_id code from the archetype ontology section, in the language required.">
+		name = <"LOCATABLE">
+		properties = <
+			["archetype_node_id"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The standardised semantic code for a node and comes from the corresponding node in the archetype used to create the data. The only exception is at archetype root points in data, where archetype_node_id carries the archetype identifier in string form rather than an interior node id from an archetype. ">
+				name = <"archetype_node_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["name"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A name created at runtime">
+				name = <"name">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["archetype_details"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"LOCATABLE also provides the attribute Archetype_details, which is non-Void for archetype root points in data, and carries meta-data relevant to root points. ">
+				name = <"archetype_details">
+				type = <"ARCHETYPED">
+			>
+		>
+	>
+	["AMOUNT"] = <
+		documentation = <"Abstract class defining the concept of relative quantified amounts. For relative quantities, the +' and -' operators are defined.">
+		name = <"AMOUNT">
+		ancestors = <"QUANTIFIED",...>
+		properties = <
+			["accuracy"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Accuracy of measurement, expressed either as a half-range percent value (accuracy_is_percent = True) or a half-range quantity. A value of 0 means that accuracy is 100%, i.e. no error.
+
+A value of unknown_accuracy_value means that accuracy was not recorded.">
+				name = <"accuracy">
+				type = <"Real">
+			>
+			["accuracy_is_percent"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"If True, indicates that when this object was created, accuracy was recorded as a percent value; if False, as an absolute quantity value.">
+				name = <"accuracy_is_percent">
+				type = <"Boolean">
+			>
+		>
+	>
+	["CODED_TEXT"] = <
+		documentation = <"A text item whose value must be the rubric from a controlled terminology, the key (i.e. the code') of which is the code attribute. In other words: a CODED_TEXT is a combination of a CODE_PHRASE (effectively a code) and the rubric of that term, from a terminology service, in the language in which the data was authored.
+
+Since CODED_TEXT is a subtype of TEXT, it can be used in place of it, effectively allowing the type TEXT to mean a text item, which may optionally be coded.
+
+Misuse: If the intention is to represent a term code attached in some way to a fragment of plain text, CODED_TEXT should not be used.">
+		name = <"CODED_TEXT">
+		ancestors = <"TEXT",...>
+		properties = <
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The identifier of a concept in a terminology.">
+				name = <"code">
+				type = <"TERMINOLOGY_CODE">
+				is_mandatory = <True>
+			>
+			["term"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The preferred textual rendition of the code attribute.">
+				name = <"term">
+				type = <"String">
+			>
+		>
+	>
+	["COUNT"] = <
+		documentation = <"Countable quantities. Used for countable types such as pregnancies and steps (taken by a physiotherapy patient), number of cigarettes smoked in a day.
+
+Misuse: Not to be used for amounts of physical entities (which all have units).">
+		name = <"COUNT">
+		ancestors = <"AMOUNT",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The integer count value.">
+				name = <"value">
+				type = <"Integer">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["DATA_VALUE"] = <
+		documentation = <"Serves as a common ancestor of all CIMI complex types.">
+		name = <"DATA_VALUE">
+	>
+	["DATE"] = <
+		documentation = <"Represents an absolute point in time, as measured on the Gregorian calendar, and specified only to the day. Semantics defined by ISO 8601. Used for recording dates in real world time. The partial form is used for approximate birth dates, dates of death, etc.">
+		name = <"DATE">
+		ancestors = <"DATE_TIME",...>
+	>
+	["DATE_TIME"] = <
+		documentation = <"Represents an absolute point in time, specified to the second. Semantics defined by ISO 8601.
+
+Used for recording a precise point in real world time, and for approximate time stamps, e.g. the origin of a HISTORY in an OBSERVATION which is only partially known.">
+		name = <"DATE_TIME">
+		ancestors = <"QUANTIFIED",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"ISO8601 date&#47;time string.">
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["DURATION"] = <
+		documentation = <"Represents a period of time with respect to a notional point in time, which is not specified. A sign may be used to indicate the duration is backwards in time rather than forwards.
+
+NOTE
+a deviation from ISO8601 is supported, allowing the W' designator to be mixed with other designators. See assumed types section in the Support IM.
+Used for recording the duration of something in the real world, particularly when there is a need a) to represent the duration in customary format, i.e. days, hours, minutes etc, and b) if it will be used in computational operations with date&#47;time quantities, i.e. additions, subtractions etc.
+
+Misuse: Durations cannot be used to represent points in time, or intervals of time.">
+		name = <"DURATION">
+		ancestors = <"QUANTITY",...>
+		properties = <
+			["duration_text"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"ISO8601 duration string.">
+				name = <"duration_text">
+				type = <"String">
+			>
+		>
+	>
+	["EHR_URI"] = <
+		documentation = <"A EHR_URI is a URI which has the scheme name 'ehr', and which can only reference items in EHRs.
+
+Used to reference items in an EHR, which may be the same as the current EHR (containing this link), or another.">
+		name = <"EHR_URI">
+		ancestors = <"URI_VALUE",...>
+	>
+	["ENCAPSULATED"] = <
+		documentation = <"Abstract class defining the common meta-data of all types of encapsulated data.">
+		name = <"ENCAPSULATED">
+		ancestors = <"DATA_VALUE",...>
+	>
+	["IDENTIFIER"] = <
+		documentation = <"Type for representing identifiers of real-world entities. Typical identifiers include drivers licence number, social security number, veterans affairs number, prescription id, order id, and so on.">
+		name = <"IDENTIFIER">
+		ancestors = <"DATA_VALUE",...>
+		properties = <
+			["use"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The purpose of this identifier. Use is considered a modifying attribute because applications should not mistake a temporary id for a permanent one. Applications can assume that an identifier is permanent unless it explicitly says that it is temporary.">
+				name = <"use">
+				type = <"CODED_TEXT">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Optional identifier type, such as prescription, or Social Security Number. One day a controlled vocabulary might be possible for this.">
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["issuer"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Optional organisation that assigned the id to the item being identified.">
+				name = <"issuer">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["namespace"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The namespace in which the id is unique.">
+				name = <"namespace">
+				type = <"URI_VALUE">
+			>
+			["id"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The identifier value. Often structured, according to the definition of the issuing authority’s rules.">
+				name = <"id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["INTERVAL_VALUE"] = <
+		documentation = <"Generic class defining an interval (i.e. range) of a comparable type. An interval is a contiguous subrange of a comparable base type. Used to define intervals of dates, times, quantities (whose units match) and so on. The type parameter, T, must be a descendant of the type ORDERED_VALUE, which is necessary (but not sufficient) for instances to be compared (strictly_comparable is also needed).
+
+The basic semantics are derived from the class Interval&lt;T&gt;, described in the support RM.">
+		name = <"INTERVAL_VALUE">
+		ancestors = <"DATA_VALUE",...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"ORDERED_VALUE">
+			>
+		>
+		properties = <
+			["lower_included"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"True if the lower bound of the interval is included. False otherwise.">
+				name = <"lower_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["lower_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"True if the interval does not specify a lower bound. False otherwise.">
+				name = <"lower_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_included"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"True if the upper bound of the interval is included. Otherwise, false.">
+				name = <"upper_included">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["upper_unbounded"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"True if the upper bound is unspecified. False otherwise.">
+				name = <"upper_unbounded">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+			["lower"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				documentation = <"The  interval's lower bound. Values outside the lower bound lie outside the range specified by this interval.">
+				name = <"lower">
+				type = <"T">
+			>
+			["upper"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				documentation = <"The reference range's upper bound. Values outside the upper bound lie outside the  range specified by this interval.">
+				name = <"upper">
+				type = <"T">
+			>
+		>
+	>
+	["MULTIMEDIA"] = <
+		documentation = <"A specialisation of DV_ENCAPSULATED for audiovisual and biosignal types. Includes further metadata relating to multimedia types which are not applicable to other subtypes of DV_ENCAPSULATED.">
+		name = <"MULTIMEDIA">
+		ancestors = <"ENCAPSULATED",...>
+		properties = <
+			["alternate_text"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Text to display in lieu of multimedia display&#47;replay.">
+				name = <"alternate_text">
+				type = <"Byte">
+			>
+			["data"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"The actual data found at uri, if supplied inline.">
+				name = <"data">
+				type_def = <
+					container_type = <"List">
+					type = <"Byte">
+				>
+				cardinality = <|>=0|>
+			>
+			["media_type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Data media type coded from openEHR code set media types (interface for the IANA MIME types code set).">
+				name = <"media_type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["uri"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"URI reference to electronic information stored outside the record as a file, database entry etc, if supplied as a reference.">
+				name = <"uri">
+				type = <"URI_VALUE">
+			>
+		>
+	>
+	["ORDERED_VALUE"] = <
+		documentation = <"Abstract class defining the concept of ordered values, which includes ordinals as well as true quantities.">
+		name = <"ORDERED_VALUE">
+		ancestors = <"DATA_VALUE",...>
+	>
+	["ORDINAL"] = <
+		documentation = <"Models rankings and scores, e.g. pain, Apgar values, etc, where there is a) implied ordering, b) no implication that the distance between each value is constant, and c) the total number of values is finite. Note that although the term ordinal' in mathematics means natural numbers only, here any integer is allowed, since negative and zero values are often used by medical professionals for values around a neutral point. Examples of sets of ordinal values:
+
+-3, -2, -1, 0, 1, 2, 3  — reflex response values
+0, 1, 2  — Apgar values
+This class is used for recording any clinical datum which is customarily recorded using symbolic values. Example: the results on a urinalysis strip, e.g. {neg, trace, , , } are used for leucocytes, protein, nitrites etc; for non-haemolysed blood {neg, trace, moderate}; for haemolysed blood small, moderate, large}.">
+		name = <"ORDINAL">
+		ancestors = <"ORDERED_VALUE",...>
+		properties = <
+			["symbol"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Coded textual representation of this value in the enumeration, which may be strings made from + symbols, or other enumerations of terms such as mild , moderate , severe , or even the same number series as the values, e.g. 1 , 2 , 3 . Codes come from archetype.">
+				name = <"symbol">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Value in ordered enumeration of values. Any integer value can be used.">
+				name = <"value">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["PARSABLE"] = <
+		documentation = <"Encapsulated data expressed as a parsable String. The internal model of the data item is not described in the openEHR model in common with other encapsulated types, but in this case, the form of the data is assumed to be plaintext, rather than compressed or other types of large binary data.
+">
+		name = <"PARSABLE">
+		ancestors = <"ENCAPSULATED",...>
+		properties = <
+			["formalism"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Name of the formalism, e.g. GLIF 1.0 , Proforma etc.">
+				name = <"formalism">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The string, which may validly be empty in some syntaxes.">
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["PLAIN_TEXT"] = <
+		documentation = <"Plain text potentially with simple formatting">
+		name = <"PLAIN_TEXT">
+		ancestors = <"TEXT",...>
+		properties = <
+			["language"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The text's language.">
+				name = <"language">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+	["PROPORTION"] = <
+		documentation = <"Models a ratio of values, i.e. where the numerator and denominator are both pure numbers. The valid_proportion_kind property of the PROPORTION_KIND class is used to control the type attribute to be one of a defined set.
+
+Used for recording titers (e.g. 1:128), concentration ratios, e.g. Na:K (unitary denominator), albumin:creatinine ratio, and percentages, e.g. red cell distirbution width (RDW).
+
+Misuse: Should not be used to represent things like blood pressure which are often written using a '&#47;' character, giving the misleading impression that the item is a ratio, when in fact it is a structured value. Similarly, visual acuity, often written as (e.g.) “6&#47;24” in clinical notes is not a ratio but an ordinal (which includes non-numeric symbols like CF = count fingers etc). Should not be used for formulations.">
+		name = <"PROPORTION">
+		ancestors = <"AMOUNT",...>
+		properties = <
+			["denominator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Denominator of ratio.">
+				name = <"denominator">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+			["numerator"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Numerator of ratio.">
+				name = <"numerator">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+			["precision"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Precision to which the numerator and denominator values of the proportion are expressed, in terms of number of decimal places. The value 0 implies an integral quantity. The value -1 implies no limit, i.e. any number of decimal places.">
+				name = <"precision">
+				type = <"Integer">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Indicates semantic type of proportion, including percent, unitary etc.">
+				name = <"type">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["QUANTIFIED"] = <
+		documentation = <"Abstract class defining the concept of true quantified values, i.e. values which are not only ordered, but which have a precise magnitude.">
+		name = <"QUANTIFIED">
+		ancestors = <"ORDERED_VALUE",...>
+		properties = <
+			["value_status"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Optional status of magnitude with values:
+
+= : magnitude is a point value
+&lt; : value is &lt; magnitude
+&gt; : value is &gt; magnitude
+&lt;= : value is &lt;= magnitude
+&gt;= : value is &gt;= magnitude
+~ : value is approximately magnitude
+If not present, meaning is = .">
+				name = <"value_status">
+				type = <"TEXT">
+			>
+		>
+	>
+	["QUANTITY"] = <
+		documentation = <"Quantitified type representing scientific quantities, i.e. quantities expressed as a magnitude and units. Units were inspired by the Unified Code for Units of Measure (UCUM), developed by Gunther Schadow and Clement J. McDonald of The Regenstrief Institute.
+
+Can also be used for time durations, where it is more convenient to treat these as simply a number of seconds rather than days, months, years.">
+		name = <"QUANTITY">
+		ancestors = <"AMOUNT",...>
+		properties = <
+			["precision"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Precision to which the value of the quantity is expressed, in terms of number of decimal places. The value 0 implies an integral quantity. The value -1 implies no limit, i.e. any number of decimal places.">
+				name = <"precision">
+				type = <"Integer">
+			>
+			["units"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Units, expressed expressed as codes (generally UCUM), e.g. 'kg&#47;m2', “mm[Hg]', 'ms-1', 'km&#47;h'. Implemented accordingly in subtypes.">
+				name = <"units">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Numeric magnitude of the quantity.
+
+">
+				name = <"value">
+				type = <"Real">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["TERM_MAPPING"] = <
+		documentation = <"Represents a coded term mapped to a TEXT, and the relative match of the target term with respect to the mapped item. Plain or coded text items may appear in the EHR for which one or mappings in alternative terminologies are required. Mappings are only used to enable computer processing, so they can only be instances of CODED_TEXT. Used for adding classification terms (e.g. adding ICD classifiers to SNOMED descriptive terms), or mapping into equivalents in other terminologies (e.g. across nursing vocabularies).">
+		name = <"TERM_MAPPING">
+		properties = <
+			["match"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The relative match of the target term with respect to the mapped text item. Result meanings:
+
+'&gt;': the mapping is to a broader term e.g. orginal text = arbovirus infection , target = viral infection
+'=': the mapping is to a (supposedly) equivalent to the original item
+'&lt;': the mapping is to a narrower term. e.g. original text = diabetes , mapping = diabetes mellitus .
+'?': the kind of mapping is unknown.
+The first three values are taken from the ISO standards 2788 ( Guide to Establishment and development of monolingual thesauri ) and 5964 ( Guide to Establishment and development of multilingual thesauri ).">
+				name = <"match">
+				type = <"Character">
+				is_mandatory = <True>
+			>
+			["purpose"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Purpose of the mapping e.g. automated data mining , billing , interoperability">
+				name = <"purpose">
+				type = <"CODED_TEXT">
+			>
+			["target"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The target term of the mapping.">
+				name = <"target">
+				type = <"CODED_TEXT">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["TEXT"] = <
+		documentation = <"Abstract parent for text and coded text item, which may contain any amount of legal characters arranged as e.g. words, sentences etc (i.e. one TEXT may be more than one word). Visual formatting and hyperlinks may be included.">
+		name = <"TEXT">
+		ancestors = <"DATA_VALUE",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Displayable rendition of the item, regardless of its underlying structure. For CODED_TEXT, this is the rubric of the complete term as provided by the terminology service. No carriage returns, line feeds, or other non-printing characters permitted.">
+				name = <"value">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["mapping"] = (P_BMM_CONTAINER_PROPERTY) <
+				documentation = <"Terms from other terminologies most closely matching this term, typically used where the originator (e.g. pathology lab) of information uses a local terminology but also supplies one or more equivalents from well known terminologies (e.g. LOINC).">
+				name = <"mapping">
+				type_def = <
+					container_type = <"List">
+					type = <"TERM_MAPPING">
+				>
+				cardinality = <|>=0|>
+			>
+		>
+	>
+	["TIME"] = <
+		documentation = <"Represents an absolute point in time from an origin usually interpreted as meaning the start of the current day, specified to a fraction of a second. Semantics defined by ISO 8601.
+
+Used for recording real world times, rather than scientifically measured fine amounts of time. The partial form is used for approximate times of events and substance administrations.">
+		name = <"TIME">
+		ancestors = <"DATE_TIME",...>
+	>
+	["URI_VALUE"] = <
+		documentation = <"A reference to an object which conforms to the Universal Resource Identifier (URI) standard. See 'Universal Resource Identifiers in WWW' by Tim Berners-Lee at http:&#47;&#47;www.ietf.org&#47;rfc&#47;rfc3986.txt. This is a World-Wide Web RFC for global identification of resources. See http:&#47;&#47;www.w3.org&#47;Addressing for a starting point on URIs.">
+		name = <"URI_VALUE">
+		ancestors = <"DATA_VALUE",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Value of URI">
+				name = <"value">
+				type = <"URI">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["YESNO"] = <
+		documentation = <"Items which are truly boolean data, such as true&#47;false or yes&#47;no answers. For such data, it is important to devise the meanings (usually questions in subjective data) carefully, so that the only allowed results are in fact true or false.
+
+Misuse: The DV_BOOLEAN class should not be used as a replacement for naively modelled enumerated types such as male&#47;female etc. Such values should be coded, and in any case the enumeration often has more than two values.">
+		name = <"YESNO">
+		ancestors = <"DATA_VALUE",...>
+		properties = <
+			["value"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The boolean value for the type.">
+				name = <"value">
+				type = <"Boolean">
+				is_mandatory = <True>
+			>
+		>
+	>
+	["INSTANT"] = <
+		documentation = <"An instant in time - known at least to the second and always includes a time zone. Note: This is intended for precisely observed times (typically system logs etc.), and not human-reported times - for them, use date and dateTime. instant is a more constrained dateTime">
+		name = <"INSTANT">
+		ancestors = <"DATE_TIME",...>
+	>
+	["POSITIVE_INTEGER_COUNT"] = <
+		documentation = <"An integer whose value is greater than zero.">
+		name = <"POSITIVE_INTEGER_COUNT">
+		ancestors = <"UNSIGNED_INTEGER_COUNT",...>
+	>
+	["UNSIGNED_INTEGER_COUNT"] = <
+		documentation = <"An integer whose value is greater or equal to zero.">
+		name = <"UNSIGNED_INTEGER_COUNT">
+		ancestors = <"COUNT",...>
+	>
+	["RATIO"] = <
+		documentation = <"A parameterizable ratio.">
+		name = <"RATIO">
+		ancestors = <"DATA_VALUE",...>
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"ORDERED_VALUE">
+			>
+		>
+		properties = <
+			["denominator"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				documentation = <"The denominator of the ratio.">
+				name = <"denominator">
+				type = <"T">
+			>
+			["numerator"] = (P_BMM_SINGLE_PROPERTY_OPEN) <
+				documentation = <"The numerator of the ratio.">
+				name = <"numerator">
+				type = <"T">
+			>
+			["type"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"Indicates semantic type of the ratio.">
+				name = <"type">
+				type = <"CODED_TEXT">
+			>
+		>
+	>
+>
+primitive_types = <
+	["Any"] = <
+		documentation = <"Abstract supertype. Usually maps to a type like “Any” or “Object” in an object system. Defined here to provide the value and reference equality semantics.">
+		name = <"Any">
+	>
+	["Array"] = <
+		documentation = <"physical container of items indexed by number">
+		name = <"Array">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"Any">
+			>
+		>
+	>
+	["List"] = <
+		documentation = <"container of items, implied order, non-unique membership">
+		name = <"List">
+		generic_parameter_defs = <
+			["T"] = <
+				name = <"T">
+				conforms_to_type = <"Any">
+			>
+		>
+	>
+	["Boolean"] = <
+		documentation = <"logical True&#47;False values; usually physically represented as an integer, but need not be">
+		name = <"Boolean">
+	>
+	["Byte"] = <
+		documentation = <"a type whose value is an 8-bit value.">
+		name = <"Byte">
+	>
+	["Character"] = <
+		documentation = <"a type whose value is a member of an 8-bit character-set (ISO: 'repertoire').">
+		name = <"Character">
+	>
+	["Integer"] = <
+		documentation = <"An integer type">
+		name = <"Integer">
+	>
+	["Real"] = <
+		documentation = <"32-bit real numbers in any interoperable representation, including single-width IEEE floating point">
+		name = <"Real">
+	>
+	["String"] = <
+		documentation = <"represents unicode-enabled strings">
+		name = <"String">
+	>
+	["URI"] = <
+		documentation = <"A URI">
+		name = <"URI">
+	>
+	["TERMINOLOGY_CODE"] = <
+		documentation = <"Reference to a concept in a terminology.">
+		name = <"TERMINOLOGY_CODE">
+		properties = <
+			["code"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The identifier of a concept in a terminology.">
+				name = <"code">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["terminology_id"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The terminology that provides the namespace for the code attribute.">
+				name = <"terminology_id">
+				type = <"String">
+				is_mandatory = <True>
+			>
+			["terminology_version"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"The version of the terminology where the concept exists.">
+				name = <"terminology_version">
+				type = <"String">
+			>
+			["uri"] = (P_BMM_SINGLE_PROPERTY) <
+				documentation = <"A URI representation for the identifier of the concept represented by CODED_TEXT.">
+				name = <"uri">
+				type = <"URI">
+			>
+		>
+	>
+>
+

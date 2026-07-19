@@ -7,10 +7,14 @@
 //! (`Archetype_node_id_valid`).
 
 use crate::integration::generic_entry::GenericEntry;
-use crate::validate::{InvariantViolation, Validate, push_archetype_node_id_valid};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for GenericEntry {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_archetype_node_id_valid(out, "GENERIC_ENTRY", &self.archetype_node_id);
+        crate::validate::generated::archetype_node_id_core(
+            "GENERIC_ENTRY",
+            &self.archetype_node_id,
+            out,
+        );
     }
 }

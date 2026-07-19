@@ -59,9 +59,9 @@ does not decide the work is done on your behalf.
 7. **Move the row to the WORKLIST `## Closed` table** with the merged-PR
    link, and **delete the implemented plan file** in the same PR (the
    delete-on-implementation lifecycle; `docs/plans/README.md`).
-8. **Remind the user to commit** as `phase-NN: phase complete` on the
-   current `claude/phase-NN-*` branch — this skill edits files but does not
-   run git commands itself.
+8. **Remind the user to commit** the close on the current
+   conventional-type branch (`feat/…` etc., per the CLAUDE.md branch hard
+   rule) — this skill edits files but does not run git commands itself.
 
 ## What this skill does not do
 

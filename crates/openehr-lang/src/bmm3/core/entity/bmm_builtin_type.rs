@@ -3,71 +3,12 @@
 use crate::bmm3::core::entity::bmm_signature::BmmSignature;
 use crate::bmm3::core::entity::bmm_status_type::BmmStatusType;
 use crate::bmm3::core::entity::bmm_tuple_type::BmmTupleType;
-use serde::Serialize;
 
 /// Parent of built-in types, which are treated as being primitive and non-abstract.
 /// Closed subtype set of `BMM_BUILTIN_TYPE`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum BmmBuiltinType {
     BmmSignature(BmmSignature),
     BmmStatusType(BmmStatusType),
     BmmTupleType(BmmTupleType),
-}
-
-impl<'de> ::serde::Deserialize<'de> for BmmBuiltinType {
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("BMM_FUNCTION_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PROCEDURE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_PROPERTY_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_ROUTINE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_SIGNATURE") => {
-                ::core::result::Result::Ok(Self::BmmSignature(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_STATUS_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmStatusType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("BMM_TUPLE_TYPE") => {
-                ::core::result::Result::Ok(Self::BmmTupleType(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "BMM_BUILTIN_TYPE: missing required `_type` on polymorphic slot (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "BMM_BUILTIN_TYPE: unexpected `_type` {__other:?} (expected one of: BMM_FUNCTION_TYPE, BMM_PROCEDURE_TYPE, BMM_PROPERTY_TYPE, BMM_ROUTINE_TYPE, BMM_SIGNATURE, BMM_STATUS_TYPE, BMM_TUPLE_TYPE)"
-                )))
-            }
-        }
-    }
 }

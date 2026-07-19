@@ -1,0 +1,79 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.ordering_added_nodes.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.spec_test_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2008-08-11">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Example specialised archetype containing additional nodes and ordering markers within a container attribute defined in the parent. The parent container already includes member ELEMENTs, so the 'after' and 'before' markers in this descendant are used to obtain the intended overall order in the flattened result.">
+			keywords = <"ADL", "test", "specialisation">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2008 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1.1] matches {	-- specialisation containing ordered extension nodes
+		/data/events[id3]/data/items matches {
+			after [id5]
+			ELEMENT[id0.1] matches {	-- Text field 2
+				value matches {
+					DV_TEXT[id0.3] 	-- Text field 3
+				}
+			}
+			ELEMENT[id0.2] matches {	-- Quantity 2
+				value matches {
+					DV_QUANTITY[id0.4] 
+				}
+			}
+			before [id8]
+			ELEMENT[id0.3] matches {	-- Text field 3
+				value matches {
+					DV_TEXT[id0.5] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.1"] = <
+				text = <"Text field 2">
+				description = <"*">
+			>
+			["id0.2"] = <
+				text = <"Quantity 2">
+				description = <"*">
+			>
+			["id0.3"] = <
+				text = <"Text field 3">
+				description = <"*">
+			>
+			["id1.1"] = <
+				text = <"specialisation containing ordered extension nodes">
+				description = <"specialisation containing ordered extension nodes">
+			>
+		>
+	>

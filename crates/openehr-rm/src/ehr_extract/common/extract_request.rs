@@ -8,11 +8,9 @@ use crate::data_types::text::dv_text::DvText;
 use crate::ehr_extract::common::extract_spec::ExtractSpec;
 use crate::ehr_extract::common::extract_update_spec::ExtractUpdateSpec;
 use openehr_base::prelude::HierObjectId;
-use openehr_derive::OpenEhrType;
 
 /// Generic model of a Request for an Extract, containing an Extract specification.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EXTRACT_REQUEST")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExtractRequest {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

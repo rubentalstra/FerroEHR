@@ -1,0 +1,88 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.audiogram.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2014-06-10">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrate enumerated type constraints. In this archetype, the DV_PROPORTION.type field has integer values that are actually the values of a declared enumeration type PROPORTION_KIND based on the Integer primitive type.">
+			keywords = <"ADL", "test", "enumerated types">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	OBSERVATION[id1] matches {	-- Enumeration test
+		data matches {
+			HISTORY[id2] matches {
+				events cardinality matches {1..*; unordered} matches {
+					POINT_EVENT[id3] occurrences matches {0..1} matches {	-- Any event
+						data matches {
+							ITEM_TREE[id4] matches {
+								items cardinality matches {1..*; unordered} matches {
+									ELEMENT[id5] occurrences matches {0..1} matches {	-- test enum 1
+										value matches {
+											DV_PROPORTION[id6] matches {
+												numerator matches {|0.0..1.0|; 0.0}
+												is_integral matches {False}
+												type matches {1}
+											}
+										}
+									}
+									ELEMENT[id7] occurrences matches {0..1} matches {	-- test enum 2
+										value matches {
+											DV_PROPORTION[id8] matches {
+												numerator matches {|0.0..1.0|; 0.0}
+												is_integral matches {False}
+												type matches {2, 3}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Enumeration test">
+				description = <"Enumeration test">
+			>
+			["id3"] = <
+				text = <"Any event">
+				description = <"Any unspecified point in time or interval event.">
+			>
+			["id5"] = <
+				text = <"test enum 1">
+				description = <"test enum 1">
+			>
+			["id7"] = <
+				text = <"test enum 2">
+				description = <"test enum 2">
+			>
+		>
+	>

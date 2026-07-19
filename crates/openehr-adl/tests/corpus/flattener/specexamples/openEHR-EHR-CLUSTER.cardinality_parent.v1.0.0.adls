@@ -1,0 +1,37 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-CLUSTER.cardinality_parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1] ∈ {                -- observation
+        items ∈ {                    -- existence not changed from reference model
+           ITEM_LIST[id3] ∈ {                                      -- general check list
+               items cardinality ∈ {0..*} ∈ {                      -- any number of items
+                   ELEMENT[id12] occurrences ∈ {0..*}    -- generic checklist item
+               }
+           }
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"observation">
+				description = <"observation">
+			>
+			["id3"] = <
+                text = <"item tree">
+                description = <"item tree">
+            >
+            ["id12"] = <
+                text = <"element">
+                description = <"element">
+            >
+>
+	>

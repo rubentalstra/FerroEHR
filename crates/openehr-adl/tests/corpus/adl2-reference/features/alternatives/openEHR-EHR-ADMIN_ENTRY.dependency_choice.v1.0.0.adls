@@ -1,0 +1,101 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-ADMIN_ENTRY.dependency_choice.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["email"] = <"thomas.beale@openEHR.org">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2014-01-22">
+	>
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+	copyright = <"Copyright © 2014 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrate choice between a single term and one or more others, with dependency that if the first is chosen, none of the others can be.">
+			keywords = <"ADL", "test", "rules">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	ADMIN_ENTRY[id1] matches {	-- Orientacion de alta
+		data matches {
+			ITEM_TREE[id2] matches {
+				items matches {
+					CLUSTER[id3] occurrences matches {0..1} matches {	-- tipo de cuidado
+						items matches {
+							ELEMENT[id6] matches {	-- Pleno/nao pleno
+								value matches {
+									DV_BOOLEAN[id7]
+								}
+							}
+							ELEMENT[id4] occurrences matches {0..*} matches {	-- DNX
+								value matches {
+									DV_CODED_TEXT[id5] matches {
+										defining_code matches {[ac1]}		-- DNX directive
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+rules
+        /data[id2]/items[id3]/items[id6]/value/value matches {false} implies exists /data[id2]/items[id3]/items[id4]
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Orientacion de alta">
+				description = <"xxxxxxxxxxxxxxx ddddddd vvvvv">
+			>
+			["id3"] = <
+				text = <"tipo de cuidado">
+				description = <"*">
+			>
+			["id4"] = <
+				text = <"Directivas especiais">
+				description = <"*">
+			>
+			["id6"] = <
+				text = <"Pleno">
+				description = <"Cuidado normal">
+			>
+			["at16"] = <
+				text = <"DNR">
+				description = <"Do not resuscitate">
+			>
+			["at17"] = <
+				text = <"DNI">
+				description = <"Do not intubate">
+			>
+			["at19"] = <
+				text = <"DNUTI">
+				description = <"Do not admit to ICU">
+			>
+			["ac1"] = <
+				text = <"DNX directive">
+				description = <"DNX directive">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at16", "at17", "at19">
+		>
+	>

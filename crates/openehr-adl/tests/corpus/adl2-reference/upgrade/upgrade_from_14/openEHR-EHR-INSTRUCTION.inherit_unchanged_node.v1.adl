@@ -1,0 +1,98 @@
+﻿archetype (adl_version=1.4)
+	openEHR-EHR-INSTRUCTION.inherit_unchanged_node.v1
+
+specialise
+	openEHR-EHR-INSTRUCTION.inherit_unchanged_parent.v1
+
+concept
+	[at0000.1]	-- Imaging Examination Request
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"Ocean Informatics, United Kingdom">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"2009-12-08">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Child archetype to test detection of identical DV_CODED_TEXT that AOM_151_CONVERTER should detect, and ARCHETYPE_COMPARATOR should remove">
+			copyright = <"© openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"CommitteeDraft">
+	other_contributors = <"Heather Leslie, Ocean Informatics, Australia", ...>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	INSTRUCTION[at0000.1] matches {	-- Imaging Examination Request
+		activities cardinality matches {0..*; unordered} matches {
+			ACTIVITY[at0001] occurrences matches {1..*} matches {	-- Request
+				description matches {
+					ITEM_TREE[at0009] matches {	-- Tree
+						items cardinality matches {1..*; unordered} matches {
+							ELEMENT[at0068] occurrences matches {0..1} matches {	-- Urgency
+								value matches {
+									DV_CODED_TEXT matches {
+										defining_code matches {
+											[local::
+											at0136, 	-- Emergency
+											at0137, 	-- Urgent
+											at0138]	-- Routine
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+ontology
+	term_definitions = <
+		["en"] = <
+			items = <
+				["at0000"] = <
+					text = <"Healthcare service request">
+					description = <"Request for a range of different healthcare services, for example, a referral, lab request, equipment request.">
+				>
+				["at0000.1"] = <
+					text = <"Imaging Examination Request">
+					description = <"Generic request for an imaging examination request.">
+				>
+				["at0001"] = <
+					text = <"Request">
+					description = <"Current Activity">
+				>
+				["at0009"] = <
+					text = <"Tree">
+					description = <"@ internal @">
+				>
+				["at0068"] = <
+					text = <"Urgency">
+					description = <"Urgency of the request.">
+				>
+				["at0136"] = <
+					text = <"Emergency">
+					description = <"The request is an emergency.">
+				>
+				["at0137"] = <
+					text = <"Urgent">
+					description = <"The request is urgent.">
+				>
+				["at0138"] = <
+					text = <"Routine">
+					description = <"The request is routine.">
+				>
+			>
+		>
+	>

@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// Constrainer class for a single Quantity.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "C_QUANTITY_ITEM")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CQuantityItem {
     /// Quantity magnitude constraint.
     pub magnitude: Interval<f64>,

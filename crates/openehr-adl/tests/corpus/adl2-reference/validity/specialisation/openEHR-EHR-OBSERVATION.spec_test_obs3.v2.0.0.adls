@@ -1,0 +1,95 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-OBSERVATION.spec_test_obs3.v2.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation">
+		["email"] = <"thomas.beale@openehr.org">
+		["date"] = <"23/04/2010">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Parent of specialised archetype(s) that test use of attribute paths">
+			use = <"">
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1] matches {	-- obs
+		data matches {
+			HISTORY[id3] matches {	-- history
+				events cardinality matches {1..*; unordered} matches {
+					EVENT[id4] occurrences matches {0..*} matches {	-- event
+						data matches {
+							ITEM_TREE[id2] matches {	-- tree
+								items matches {
+									CLUSTER[id6] occurrences matches {0..1} matches {	-- cluster
+										items cardinality matches {1..8; ordered} matches {
+											ELEMENT[id5] occurrences matches {0..1} matches {	-- element
+												value matches {
+													DV_QUANTITY[id7] matches {
+														property matches {[at1]}
+														units matches {"kPa"}
+														magnitude matches {|>=0.0|}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"obs">
+				description = <"obs">
+			>
+			["id2"] = <
+				text = <"tree">
+				description = <"tree">
+			>
+			["id3"] = <
+				text = <"history">
+				description = <"history">
+			>
+			["id4"] = <
+				text = <"event">
+				description = <"event">
+			>
+			["id5"] = <
+				text = <"element">
+				description = <"element">
+			>
+			["id6"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["at1"] = <
+				text = <"Pressure">
+				description = <"Pressure">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/125>
+		>
+	>

@@ -2,53 +2,11 @@
 
 use crate::foundation_types::interval::point_interval::PointInterval;
 use crate::foundation_types::interval::proper_interval::ProperInterval;
-use serde::Serialize;
 
 /// Interval abstraction, featuring upper and lower limits that may be open or closed, included or not included.
 /// Closed subtype set of `Interval`: a closed subtype set dispatched on each payload's `_type`.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Interval<T> {
     PointInterval(PointInterval<T>),
     ProperInterval(ProperInterval<T>),
-}
-
-impl<'de, T> ::serde::Deserialize<'de> for Interval<T>
-where
-    T: ::serde::de::DeserializeOwned,
-{
-    #[allow(clippy::too_many_lines, clippy::match_same_arms)]
-    fn deserialize<D>(deserializer: D) -> ::core::result::Result<Self, D::Error>
-    where
-        D: ::serde::Deserializer<'de>,
-    {
-        let __value = <::serde_json::Value as ::serde::Deserialize>::deserialize(deserializer)?;
-        match __value.get("_type").and_then(::serde_json::Value::as_str) {
-            ::core::option::Option::Some("Multiplicity_interval") => {
-                ::core::result::Result::Ok(Self::ProperInterval(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("Point_interval") => {
-                ::core::result::Result::Ok(Self::PointInterval(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::Some("Proper_interval") => {
-                ::core::result::Result::Ok(Self::ProperInterval(
-                    ::serde_json::from_value(__value).map_err(::serde::de::Error::custom)?,
-                ))
-            }
-            ::core::option::Option::None => {
-                ::core::result::Result::Err(::serde::de::Error::custom(
-                    "Interval: missing required `_type` on polymorphic slot (expected one of: Multiplicity_interval, Point_interval, Proper_interval)",
-                ))
-            }
-            ::core::option::Option::Some(__other) => {
-                ::core::result::Result::Err(::serde::de::Error::custom(::std::format!(
-                    "Interval: unexpected `_type` {__other:?} (expected one of: Multiplicity_interval, Point_interval, Proper_interval)"
-                )))
-            }
-        }
-    }
 }

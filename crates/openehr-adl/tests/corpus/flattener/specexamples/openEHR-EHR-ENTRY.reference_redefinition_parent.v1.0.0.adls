@@ -1,0 +1,42 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+ 	openEHR-EHR-ENTRY.reference_redefinition_parent.v1.0.0
+
+language
+ 	original_language = <[ISO_639-1::en]>
+
+description
+ 	lifecycle_state = <"unmanaged">
+
+definition
+    ENTRY[id1]∈ {
+        data ∈ {
+            CLUSTER[id2] ∈ {
+                items ∈ {
+                   ELEMENT[id4]
+                }
+            }
+            use_node CLUSTER[id3] /data[id2]
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"entry">
+				description = <"entry">
+			>
+			["id2"] = <
+                text = <"cluster">
+                description = <"cluster">
+            >
+            ["id3"] = <
+                text = <"use node cluster">
+                description = <"use node cluster">
+            >
+            ["id4"] = <
+                text = <"Some element">
+                description = <"Some element">
+            >
+		>
+	>

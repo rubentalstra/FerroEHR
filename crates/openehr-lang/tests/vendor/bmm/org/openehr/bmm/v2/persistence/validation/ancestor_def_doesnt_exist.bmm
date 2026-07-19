@@ -1,0 +1,39 @@
+-- A BMM test that contains an ancestor def that does not exist
+
+bmm_version = <"2.1">
+rm_publisher = <"My publisher">
+rm_release = <"3.1">
+schema_name = <"ancestor_def_doesnt_exist">
+schema_revision = <"Monday, October 19, 2015">
+schema_lifecycle_state = <"test">
+schema_author=<"Pieter Bos">
+schema_description = <"A manually created very simplified BMM for testing purposes">
+
+packages = <
+    ["ParentPackage"] = <
+        name = <"ParentPackage">
+        classes = <"ParentType1", "String", "Any">
+    >
+>
+
+class_definitions = <
+
+
+    ["ParentType1"] = <
+        name = <"ParentType1">
+        ancestor_defs = <
+            ["UNKNOWN"] = (P_BMM_SIMPLE_TYPE) <
+                type = <"UNKNOWN">
+            >
+        >
+
+    >
+
+    ["String"] = <
+         name = <"String">
+     >
+
+    ["Any"] = <
+      name = <"Any">
+    >
+>

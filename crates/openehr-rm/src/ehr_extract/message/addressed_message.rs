@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::ehr_extract::message::message::Message;
-use openehr_derive::OpenEhrType;
 
 /// The concept of a message addressed to nominated recipients.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ADDRESSED_MESSAGE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AddressedMessage {
     /// Party sending the message.
     pub sender: String,

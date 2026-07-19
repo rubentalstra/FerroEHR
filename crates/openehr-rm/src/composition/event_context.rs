@@ -6,11 +6,9 @@ use crate::common::generic::party_identified::PartyIdentified;
 use crate::data_structures::item_structure::item_structure::ItemStructure;
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use crate::data_types::text::dv_coded_text::DvCodedText;
-use openehr_derive::OpenEhrType;
 
 /// Documents the context information of a healthcare event involving the subject of care and the health system. The context information recorded here are independent of the attributes recorded in the version audit, which document the  system interaction  context, i.e. the context of a user interacting with the health record system. Healthcare events include patient contacts, and any other business activity, such as pathology investigations which take place on behalf of the patient.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "EVENT_CONTEXT")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EventContext {
     /// Start time of the clinical session or other kind of event during which a provider performs a service of any kind for the patient.
     pub start_time: DvDateTime,

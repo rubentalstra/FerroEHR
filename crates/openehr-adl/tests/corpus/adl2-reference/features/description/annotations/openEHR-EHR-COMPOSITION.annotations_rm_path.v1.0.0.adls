@@ -1,0 +1,143 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-COMPOSITION.annotations_rm_path.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["email"] = <"thomas.beale@openEHR.org">
+		["date"] = <"2010-11-09">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Demonstrate annotations on pure Reference Model paths, i.e. paths that must be valid, but have not been archetyped. They are thus still valid for annotations.">
+			use = <"The typical use is to add design notes about RM data items that are not archetyped (i.e. don't specifically need to be constrained) but whose meaning is specific to the archetype.">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2010 openEHR Foundation <http://www.openEHR.org>">
+
+definition
+	COMPOSITION[id1] matches {	-- Prescription
+		category matches {
+			DV_CODED_TEXT[id10] matches {
+				defining_code matches {[at1]}
+			}
+		}
+		context matches {
+			EVENT_CONTEXT[id11] matches {
+				other_context matches {
+					ITEM_TREE[id2] matches {
+						items matches {
+							CLUSTER[id3] occurrences matches {0..*} matches {	-- Qualification
+								items matches {
+									ELEMENT[id4] occurrences matches {0..1} matches {	-- OrderID
+										value matches {
+											DV_EHR_URI[id12] 
+											DV_IDENTIFIER[id13] 
+										}
+									}
+									ELEMENT[id5] occurrences matches {0..*} matches {	-- Endorsement
+										value matches {
+											DV_TEXT[id14] 
+										}
+									}
+									ELEMENT[id6] occurrences matches {0..*} matches {	-- AuthorisationID
+										value matches {
+											DV_IDENTIFIER[id15] 
+										}
+									}
+									ELEMENT[id7] occurrences matches {0..*} matches {	-- Comment
+										value matches {
+											DV_TEXT[id16] 
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		content cardinality matches {1..*; unordered} matches {
+			allow_archetype INSTRUCTION[id8] occurrences matches {1..*} matches {	-- Medication instruction
+				include
+					archetype_id/value matches {/openEHR-EHR-INSTRUCTION\.medication\.v1/}
+			}
+			allow_archetype ENTRY[id9] occurrences matches {0..*} matches {	-- Other data
+				include
+					archetype_id/value matches {/.*/}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Prescription">
+				description = <"A document authorising supply and administration of one or more medicines, vaccines or other therapeutic goods (as a collection of medication instrations) to be communicated to a dispensing or administration provider.">
+			>
+			["id3"] = <
+				text = <"Qualification">
+				description = <"Qualifications on any medication order included in the prescription.">
+			>
+			["id4"] = <
+				text = <"OrderID">
+				description = <"The path or ID of the order referenced. If there is no OrderID then the endorsement relates to the entire prescription.">
+			>
+			["id5"] = <
+				text = <"Endorsement">
+				description = <"Asserting that a special condition applies such as approval for  enhanced subsidy or concurrent supply. Australian examples include Regulation 24 (PBS), Hardship Conditions (RPBS) or CTG for 'close the gap'.">
+			>
+			["id6"] = <
+				text = <"AuthorisationID">
+				description = <"An identifier authorising prescription, dispensing or reimbursement for this medication order.">
+			>
+			["id7"] = <
+				text = <"Comment">
+				description = <"Comment on any qualification.">
+			>
+			["id8"] = <
+				text = <"Medication instruction">
+				description = <"Contains one or more medication instructions to be supplied.">
+			>
+			["id9"] = <
+				text = <"Other data">
+				description = <"Other observational or relevant data.">
+			>
+			["at1"] = <
+				text = <"event">
+				description = <"event">
+			>
+		>
+	>
+	term_bindings = <
+		["openehr"] = <
+			["at1"] = <http://openehr.org/id/433>
+		>
+	>
+
+annotations
+	documentation = <
+		["en"] = <
+			["/context/start_time"] = <
+				["test"] = <"XXXX">
+				["local_name"] = <"consultation start time">
+			>
+			["/context/location"] = <
+				["design note"] = <"Note on use of the non-archteyped context/location RM element in this data">
+			>
+			["/context/health_care_facility/name"] = <
+				["design note"] = <"Note on use of non-archteyped context/health_care_facility/name RM element in this data">
+			>
+		>
+	>

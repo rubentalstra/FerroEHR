@@ -1,7 +1,8 @@
 //! Hand-written RM class invariant for `EVENT_CONTEXT`.
 //!
-//! `Location_validity` (archie `EventContext`, `nullOrNotEmpty`): if present,
-//! `location` must be non-empty.
+//! `location_valid` (BMM `EVENT_CONTEXT.location_valid`,
+//! `location /= Void implies not location.is_empty`): if present, `location`
+//! must be non-empty.
 //!
 //! NOTE: archie's `Setting_valid` is terminology-bound (deferred), and its
 //! `Participations_validity` is `ignored`. archie does **not** enforce
@@ -11,22 +12,9 @@
 use crate::composition::event_context::EventContext;
 use crate::validate::{InvariantViolation, Validate};
 
-/// The EVENT_CONTEXT invariant core over the projected input — one source for
-/// the typed impl and the value-level fast path (`validate::fast`).
-pub(crate) fn push_event_context_invariants(
-    location: Option<&str>,
-    out: &mut Vec<InvariantViolation>,
-) {
-    if location.is_some_and(str::is_empty) {
-        out.push(InvariantViolation::here(
-            "Invariant Location_validity failed on type EVENT_CONTEXT",
-        ));
-    }
-}
-
 impl Validate for EventContext {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_event_context_invariants(self.location.as_deref(), out);
+        crate::validate::generated::event_context_core(self.location.as_deref(), out);
     }
 }
 
@@ -91,7 +79,7 @@ mod tests {
     fn empty_location_invalid() {
         assert_eq!(
             context(Some("")).invariants()[0].message,
-            "Invariant Location_validity failed on type EVENT_CONTEXT"
+            "Invariant location_valid failed on type EVENT_CONTEXT"
         );
     }
 }

@@ -1,0 +1,53 @@
+archetype (adl_version=2.0.6; rm_release=1.0.3; generated)
+	openEHR-EHR-OBSERVATION.lab_test-microbiology-csf.v1.0.0
+
+specialize
+	openEHR-EHR-OBSERVATION.lab_test-microbiology.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+	original_author = <
+		["name"] = <"Dr Ian McNicoll">
+		["organisation"] = <"openEHR Archetype Editorial Group / Ocean Informatics">
+		["email"] = <"ian.mcnicoll@oceaninformatics.com">
+		["date"] = <"27/01/2009">
+	>
+	copyright = <"copyright (c) 2010 openEHR Foundation">
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test for anomaly in generation of differential archetypes">
+		>
+	>
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	OBSERVATION[id1.1.1] matches {	-- Microbiolology of cerebro-spinal fluid
+		/data[id2]/events[id3]/data[id4]/items[id0.34]/items matches {
+			after [id0.36]
+			ELEMENT[id0.0.39] occurrences matches {0..1} matches {	-- Lymphocyte count
+				value matches {
+					DV_QUANTITY[id0.0.40] 
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id0.0.39"] = <
+				text = <"Lymphocyte count">
+				description = <"Count of lymphocytes found in cerebro-spinal fluid.">
+			>
+			["id1.1.1"] = <
+				text = <"Microbiolology of cerebro-spinal fluid">
+				description = <"Cerebro-spinal fluid microbiology test result.">
+			>
+		>
+	>

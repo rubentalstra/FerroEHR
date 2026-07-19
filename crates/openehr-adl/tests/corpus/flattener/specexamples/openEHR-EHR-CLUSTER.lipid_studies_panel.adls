@@ -1,0 +1,101 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-EVALUATION.lipid_studies_panel.v1.0.0
+
+specialize
+    openEHR-EHR-EVALUATION.laboratory_test_panel.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+   CLUSTER[id1.1] ∈ {                                 -- Lipid studies panel
+        /items ∈ {
+            CLUSTER[id3.1] ∈ {                         -- LDL
+                items ∈ {
+                    ELEMENT[id2.1] ∈ {
+                        value ∈ {
+                            DV_QUANTITY[id0.1] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+            CLUSTER[id3.2] ∈ {                         -- HDL
+                items ∈ {
+                    ELEMENT[id2.2] ∈ {
+                        value matches {
+                            DV_QUANTITY[id0.2] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+
+            CLUSTER[id3.5] ∈ {                         -- Cholesterol Result
+                items ∈ {
+                    ELEMENT[id2.5] ∈ {
+                        value matches {
+                            DV_QUANTITY[id0.5] ∈ {
+                                property ∈ {[at0.1]}
+                                magnitude ∈ {|>=0.0|}
+                                units ∈ {"mosmol/l"}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Lipid studies panel">
+				description = <"Lipid studies panel">
+			>
+			["id2.1"] = <
+                text = <"LDL cholesterol">
+                description = <"LDL cholesterol">
+            >
+			["id3.1"] = <
+                text = <"LDL">
+                description = <"LDL">
+            >
+            ["id2.2"] = <
+                text = <"HDL cholesterol">
+                description = <"HDL cholesterol">
+            >
+            ["id3.2"] = <
+                text = <"HDL">
+                description = <"HDL">
+            >
+           ["id2.4"] = <
+                text = <"result cholesterol">
+                description = <"result cholesterol">
+            >
+            ["id3.5"] = <
+                text = <"Cholesterol result">
+                description = <"Cholesterol result">
+            >
+            ["at0.1"] = <
+                text = <"some item">
+                description = <"some item">
+            >
+		>
+    >
+    value_sets = <
+        ["ac0.1"] = < -- synthesized
+            id = <"ac0.1">
+            members = <"at0.1">
+        >
+    >

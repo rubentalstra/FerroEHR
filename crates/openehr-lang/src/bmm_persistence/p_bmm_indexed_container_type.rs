@@ -3,10 +3,8 @@
 
 use crate::bmm_persistence::p_bmm_base_type::PBmmBaseType;
 use crate::bmm3::core::entity::bmm_indexed_container_type::BmmIndexedContainerType;
-use openehr_derive::OpenEhrType;
 
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "P_BMM_INDEXED_CONTAINER_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PBmmIndexedContainerType {
     /// Result of `_create_bmm_type()_` call.
     pub bmm_type: Option<BmmIndexedContainerType>,

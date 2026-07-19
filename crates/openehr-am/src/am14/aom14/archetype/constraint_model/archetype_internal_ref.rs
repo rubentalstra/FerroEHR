@@ -2,14 +2,12 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use openehr_base::prelude::Interval;
-use openehr_derive::OpenEhrType;
 
 /// A constraint defined by proxy, using a reference to an object constraint defined elsewhere in the same
 /// archetype.
 ///
 /// Note that since this object refers to another node, there are two objects with available occurrences values. The local occurrences value on an ARCHETYPE_INTERNAL_REF should always be used; when setting this from a serialised form, if no occurrences is mentioned, the target occurrences should be used (not the standard default of {1..1}); otherwise the locally specified occurrences should be used as normal. When serialising out, if the occurrences is the same as that of the target, it can be left out.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ARCHETYPE_INTERNAL_REF")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArchetypeInternalRef {
     // inherited: C_OBJECT
     /// Reference model type that this node corresponds to.

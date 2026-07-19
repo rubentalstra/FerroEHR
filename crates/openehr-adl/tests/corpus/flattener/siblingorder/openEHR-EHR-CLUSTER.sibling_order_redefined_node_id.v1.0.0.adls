@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+    openEHR-EHR-CLUSTER.sibling_order_redefined_node_id.v1.0.0
+
+specialize
+    openEHR-EHR-CLUSTER.order-parent.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    CLUSTER[id1.1] ∈ {
+        items ∈ {
+            --resulting order: id0.6, id3.1, id0.5, id0.7, id2, id4, id5
+            after[id3.1]
+            ELEMENT[id0.5]
+            before[id2]
+            ELEMENT[id0.6]
+            ELEMENT[id3.1] occurrences matches {1}
+            ELEMENT[id0.7]
+
+        }
+}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"cluster">
+				description = <"cluster">
+			>
+			["id3.1"] = <
+                text = <"item 2 (redefined)">
+                description = <"item 2 (redefined)">
+            >
+			["id0.5"] = <
+                text = <"item 5">
+                description = <"item 5">
+            >
+            ["id0.6"] = <
+                text = <"item 6">
+                description = <"item 6">
+            >
+            ["id0.7"] = <
+                text = <"item 7">
+                description = <"item 7">
+            >
+        >
+	>

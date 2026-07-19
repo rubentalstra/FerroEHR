@@ -3,11 +3,9 @@
 
 use crate::data_types::quantity::date_time::dv_date_time::DvDateTime;
 use openehr_base::prelude::HierObjectId;
-use openehr_derive::OpenEhrType;
 
 /// Details of specification of Extract, used in a request to specify an Extract, or in a response, to describe what is actually in the Extract.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "SYNC_EXTRACT_SPEC")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SyncExtractSpec {
     /// True if the Versions from the Contribution are included; False if just the Contribution and its Audit are included.
     pub includes_versions: bool,

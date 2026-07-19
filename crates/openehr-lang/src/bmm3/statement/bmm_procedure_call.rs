@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::expression::el_procedure_agent::ElProcedureAgent;
-use openehr_derive::OpenEhrType;
 
 /// A call made on a closed procedure agent. The method in BMM via which external actions are achieved from within a program.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PROCEDURE_CALL")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmProcedureCall {
     /// The procedure agent being called.
     pub agent: ElProcedureAgent,

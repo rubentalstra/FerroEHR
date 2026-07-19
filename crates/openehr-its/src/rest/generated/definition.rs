@@ -330,18 +330,18 @@ pub type Versionable = std::collections::BTreeMap<String, serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDateTime {
     pub _type: Option<String>,
-    pub lower: Option<openehr_rm::prelude::DvDateTime>,
-    pub upper: Option<openehr_rm::prelude::DvDateTime>,
+    pub lower: Option<serde_json::Value>,
+    pub upper: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AbstractEntry {
-    pub language: openehr_rm::prelude::CodePhrase,
-    pub encoding: openehr_rm::prelude::CodePhrase,
+    pub language: serde_json::Value,
+    pub encoding: serde_json::Value,
     pub other_participations: Option<Vec<serde_json::Value>>,
-    pub workflow_id: Option<openehr_base::prelude::ObjectRef>,
-    pub subject: openehr_rm::prelude::PartyProxy,
-    pub provider: Option<openehr_rm::prelude::PartyProxy>,
+    pub workflow_id: Option<serde_json::Value>,
+    pub subject: serde_json::Value,
+    pub provider: Option<serde_json::Value>,
 }
 
 pub type ListOfPartyIdentity = Vec<serde_json::Value>;
@@ -349,8 +349,8 @@ pub type ListOfPartyIdentity = Vec<serde_json::Value>;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DvIntervalOfDate {
     pub _type: Option<String>,
-    pub lower: Option<openehr_rm::prelude::DvDate>,
-    pub upper: Option<openehr_rm::prelude::DvDate>,
+    pub lower: Option<serde_json::Value>,
+    pub upper: Option<serde_json::Value>,
 }
 
 pub type ListOfContact = Vec<serde_json::Value>;

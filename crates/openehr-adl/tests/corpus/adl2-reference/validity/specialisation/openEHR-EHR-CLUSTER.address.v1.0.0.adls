@@ -1,0 +1,161 @@
+﻿archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-CLUSTER.address.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["organisation"] = <"Ocean Informatics">
+		["name"] = <"Ian McNicoll">
+		["date"] = <"11/11/2007">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To record details of one or more personal addresses for an individual">
+			use = <"">
+			keywords = <"address", ...>
+			misuse = <"">
+		>
+	>
+	lifecycle_state = <"unmanaged">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"copyright (c) 2010 openEHR Foundation">
+
+definition
+	CLUSTER[id1] matches {	-- Address
+		items matches {
+			CLUSTER[id2] occurrences matches {0..*} matches {	-- Address
+				items matches {
+					ELEMENT[id7] matches {	-- Address Type
+						value matches {
+							DV_CODED_TEXT[id17] matches {
+								defining_code matches {[ac1]}		-- Address Type
+							}
+						}
+					}
+					ELEMENT[id3] occurrences matches {0..1} matches {	-- Unstructured address
+						value matches {
+							DV_TEXT[id18] 
+						}
+					}
+					CLUSTER[id4] occurrences matches {0..1} matches {	-- Structured address
+						items matches {
+							ELEMENT[id6] occurrences matches {0..1} matches {	-- Property number
+								value matches {
+									DV_TEXT[id19] 
+								}
+							}
+							ELEMENT[id10] occurrences matches {0..4} matches {	-- Address line
+								value matches {
+									DV_TEXT[id20] 
+								}
+							}
+						}
+					}
+					ELEMENT[id5] occurrences matches {0..1} matches {	-- Post code
+						value matches {
+							DV_TEXT[id21] 
+						}
+					}
+					CLUSTER[id16] occurrences matches {0..1} matches {	-- AddressValid Period
+						items matches {
+							ELEMENT[id8] occurrences matches {0..1} matches {	-- Valid from
+								value matches {
+									DV_DATE_TIME[id22] matches {
+										value matches {yyyy-??-??T??:??:??}
+									}
+								}
+							}
+							ELEMENT[id9] occurrences matches {0..1} matches {	-- Valid to
+								value matches {
+									DV_DATE_TIME[id23] matches {
+										value matches {yyyy-??-??T??:??:??}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Address">
+				description = <"To record details of one or more personal addresses">
+			>
+			["id2"] = <
+				text = <"Address">
+				description = <"One or more adresses for an individual">
+			>
+			["id3"] = <
+				text = <"Unstructured address">
+				description = <"A postal address expressed in an unstructured format. ENV 13606 - 4:2000 7.11.15">
+			>
+			["id4"] = <
+				text = <"Structured address">
+				description = <"The structure of a postal address representing the residence of a patient or the physical location of an organisation.  ENV 13606-4:2000 7.11.1">
+			>
+			["id5"] = <
+				text = <"Post code">
+				description = <"Post code">
+			>
+			["id6"] = <
+				text = <"Property number">
+				description = <"The number of the property">
+			>
+			["id7"] = <
+				text = <"Address Type">
+				description = <"The type of address">
+			>
+			["id8"] = <
+				text = <"Valid from">
+				description = <"The start of the period for which this address is valid">
+			>
+			["id9"] = <
+				text = <"Valid to">
+				description = <"Date from which the Address is no longer valid">
+			>
+			["id10"] = <
+				text = <"Address line">
+				description = <"A series of address lines">
+			>
+			["at12"] = <
+				text = <"Residential">
+				description = <"*">
+			>
+			["at13"] = <
+				text = <"Correspondence">
+				description = <"*">
+			>
+			["at14"] = <
+				text = <"Business">
+				description = <"*">
+			>
+			["at15"] = <
+				text = <"Temporary">
+				description = <"*">
+			>
+			["id16"] = <
+				text = <"AddressValid Period">
+				description = <"The period during which the associated address is applicable to the person / organisation.  ENV 13606 - 4:2000 7.11.11.  This describes the actual period.">
+			>
+			["ac1"] = <
+				text = <"Address Type">
+				description = <"The type of address">
+			>
+		>
+	>
+	value_sets = <
+		["ac1"] = <
+			id = <"ac1">
+			members = <"at12", "at13", "at14", "at15">
+		>
+	>

@@ -1,0 +1,52 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-ENTRY.VTLC_ac_code_not_in_all_languages.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+	translations = <
+		["de"] = <
+			language = <[ISO_639-1::de]>
+		>
+	>
+
+description
+	original_author = <
+		["name"] = <"Peter Gummer">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Test VTLC validation, triggered when an ac-code used in the definition is in the terminology of the primary language but not of another language.">
+			keywords = <"ADL", "validation", "test">
+			copyright = <"copyright (c) 2008 The openEHR Foundation">
+		>
+	>
+	lifecycle_state = <"unstable">
+	other_details = <
+		["regression"] = <"VTLC">
+	>
+
+definition
+	ENTRY[id1] matches {
+		value matches {[ac2]}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+			["ac2"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+		["de"] = <
+			["id1"] = <
+				text = <"">
+				description = <"">
+			>
+		>
+	>

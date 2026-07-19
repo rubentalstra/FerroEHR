@@ -10,11 +10,9 @@ use openehr_base::prelude::ResourceAnnotations;
 use openehr_base::prelude::ResourceDescription;
 use openehr_base::prelude::TerminologyCode;
 use openehr_base::prelude::TranslationDetails;
-use openehr_derive::OpenEhrType;
 
 /// Archetype equivalent to ARCHETYPED class in Common reference model. Defines semantics of identfication, lifecycle, versioning, composition and specialisation.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "ARCHETYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Archetype {
     /// OID identifier of this archetype.
     pub uid: Option<HierObjectId>,

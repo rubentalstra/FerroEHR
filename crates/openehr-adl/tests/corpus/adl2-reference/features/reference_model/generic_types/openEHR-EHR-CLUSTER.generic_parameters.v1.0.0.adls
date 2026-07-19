@@ -1,0 +1,63 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-CLUSTER.generic_parameters.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2014-06-12">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrate constraining of fields whose types in the RM are a generic type parameter, i.e. typically 'T', 'U' etc. In this example, the upper and lower fields are of type 'T' in the RM definition of DV_INTERVAL.">
+			keywords = <"ADL", "test", "generic types">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2006 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	CLUSTER[id1] matches {	-- Specimen
+		items matches {
+			ELEMENT[id2] occurrences matches {0..1} matches {	-- Datetime range
+				value matches {
+					DV_INTERVAL<DV_DATE_TIME>[id3] matches {
+						upper matches {
+							DV_DATE_TIME[id4] 
+						}
+						lower matches {
+							DV_DATE_TIME[id5] 
+						}
+					}
+				}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"Specimen">
+				description = <"unknown">
+			>
+			["id2"] = <
+				text = <"Datetime range">
+				description = <"Date/time range">
+			>
+		>
+	>

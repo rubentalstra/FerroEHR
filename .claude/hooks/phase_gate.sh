@@ -37,5 +37,5 @@ if ! git diff HEAD --quiet -- docs/plans 2>/dev/null; then
   exit 0
 fi
 
-echo "worklist gate: no commit was made and docs/plans/WORKLIST.md was not touched this session. Follow the worklist workflow (CLAUDE.md): record/close the worklist row for what you did and commit on a claude/* branch. If this session was purely informational, stop again to end anyway." >&2
+echo "worklist gate: no commit was made and docs/plans/WORKLIST.md was not touched this session. Follow the worklist workflow (CLAUDE.md): record/close the worklist row for what you did and commit on a conventional-type branch (feat/, fix/, chore/, ...). If this session was purely informational, stop again to end anyway." >&2
 exit 2

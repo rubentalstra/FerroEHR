@@ -4,11 +4,9 @@
 use crate::common::generic::audit_details::AuditDetails;
 use openehr_base::prelude::HierObjectId;
 use openehr_base::prelude::ObjectRef;
-use openehr_derive::OpenEhrType;
 
 /// Documents a Contribution (change set) of one or more versions added to a change-controlled repository.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "CONTRIBUTION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Contribution {
     /// Unique identifier for this Contribution.
     pub uid: HierObjectId,

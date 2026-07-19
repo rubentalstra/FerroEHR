@@ -83,7 +83,6 @@ pub use crate::data_types::quantity::dv_quantified::DvQuantified;
 pub use crate::data_types::quantity::dv_quantity::DvQuantity;
 pub use crate::data_types::quantity::dv_scale::DvScale;
 pub use crate::data_types::quantity::proportion_kind::ProportionKind;
-pub use crate::data_types::quantity::proportion_kind::ProportionKindData;
 pub use crate::data_types::quantity::reference_range::ReferenceRange;
 pub use crate::data_types::text::code_phrase::CodePhrase;
 pub use crate::data_types::text::dv_coded_text::DvCodedText;

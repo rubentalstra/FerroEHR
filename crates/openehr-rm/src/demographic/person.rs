@@ -11,11 +11,9 @@ use crate::demographic::party_identity::PartyIdentity;
 use crate::demographic::party_relationship::PartyRelationship;
 use openehr_base::prelude::PartyRef;
 use openehr_base::prelude::UidBasedId;
-use openehr_derive::OpenEhrType;
 
 /// Generic description of persons. Provides a dedicated type to which Person archetypes can be targeted.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "PERSON")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Person {
     // inherited: LOCATABLE
     /// Runtime name of this fragment, used to build runtime paths. This is the term provided via a clinical application or batch process to name this EHR construct: its retention in the EHR faithfully preserves the original label by which this entry was known to end users.

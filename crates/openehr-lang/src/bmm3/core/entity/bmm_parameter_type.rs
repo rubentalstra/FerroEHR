@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm3::core::entity::bmm_effective_type::BmmEffectiveType;
-use openehr_derive::OpenEhrType;
 
 /// Definition of a generic parameter in a class definition of a generic type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_PARAMETER_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmParameterType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

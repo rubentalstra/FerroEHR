@@ -1,18 +1,18 @@
 //! Hand-written RM class invariants for `ACTION`.
 //!
-//! Inherited `Entry` + LOCATABLE invariants (`Is_archetypeRoot`,
+//! Inherited `Entry` + LOCATABLE invariants (`Is_archetype_root`,
 //! `Archetype_node_id_valid`). See `observation_impl` for the NOTE.
 
 use crate::composition::content::entry::action::Action;
-use crate::validate::{InvariantViolation, Validate, push_entry_root_invariants};
+use crate::validate::{InvariantViolation, Validate};
 
 impl Validate for Action {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        push_entry_root_invariants(
-            out,
+        crate::validate::generated::entry_root_core(
             "ACTION",
             self.archetype_details.is_some(),
             &self.archetype_node_id,
+            out,
         );
     }
 }
@@ -132,7 +132,7 @@ mod tests {
         assert!(
             a.invariants()
                 .iter()
-                .any(|m| m.message == "Invariant Is_archetypeRoot failed on type ACTION")
+                .any(|m| m.message == "Invariant Is_archetype_root failed on type ACTION")
         );
     }
 }

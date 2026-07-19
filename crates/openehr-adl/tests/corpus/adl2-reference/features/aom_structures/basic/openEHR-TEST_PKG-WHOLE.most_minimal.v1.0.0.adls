@@ -1,0 +1,30 @@
+--
+-- archetype containing the minimum possible meta-data and content
+--
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openehr-TEST_PKG-WHOLE.most_minimal.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+
+definition
+	WHOLE[id1] 	-- most minimal
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"most minimal">
+				description = <"most minimal">
+			>
+		>
+	>

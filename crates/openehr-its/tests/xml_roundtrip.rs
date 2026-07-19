@@ -42,7 +42,7 @@ fn composition_xml_round_trips() {
             continue;
         }
         let json = std::fs::read_to_string(&path).unwrap();
-        let Ok(compo) = serde_json::from_str::<Composition>(&json) else {
+        let Ok(compo) = openehr_its::json::from_canonical_json::<Composition>(&json) else {
             skipped += 1; // not a canonical composition
             continue;
         };

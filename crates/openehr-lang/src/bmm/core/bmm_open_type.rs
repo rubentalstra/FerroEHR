@@ -2,11 +2,9 @@
 // Hand-written spec functions/invariants live in the sibling `*_impl.rs`.
 
 use crate::bmm::core::bmm_generic_parameter::BmmGenericParameter;
-use openehr_derive::OpenEhrType;
 
 /// Open type reference to a single type parameter, i.e. typically 'T', 'V', 'K' etc. The parameter must be in the type declaration of the owning BMM_CLASS.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_OPEN_TYPE")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmOpenType {
     // inherited: BMM_MODEL_ELEMENT
     /// Optional documentation of this element.

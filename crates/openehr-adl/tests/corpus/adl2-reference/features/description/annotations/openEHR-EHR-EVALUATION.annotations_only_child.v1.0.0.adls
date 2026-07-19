@@ -1,0 +1,51 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-EHR-EVALUATION.annotations_only_child.v1.0.0
+
+specialize
+	openEHR-EHR-EVALUATION.annotations_parent.v1
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	original_author = <
+		["name"] = <"Thomas Beale">
+		["email"] = <"thomas.beale@openEHR.org">
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2010-12-12">
+	>
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"To test use of specialisation that adds only annotations, i.e. no other changes">
+			keywords = <"ADL", "test">
+		>
+	>
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2010 openEHR Foundation <http://www.openEHR.org>">
+
+definition
+	EVALUATION[id1.1] 	-- Annotations specialisation
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1.1"] = <
+				text = <"Annotations specialisation">
+				description = <"Annotations specialisation">
+			>
+		>
+	>
+
+annotations
+	documentation = <
+		["en"] = <
+			["/data[id2]/items[id3]"] = <
+				["design note"] = <"this is a SPECIALISED design note on Statement">
+				["NEW TAG"] = <"this is a SPECIALISED design note on Statement">
+			>
+		>
+	>

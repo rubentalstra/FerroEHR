@@ -1,0 +1,29 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2; generated)
+	openEHR-EHR-OBSERVATION.empty_observation.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	lifecycle_state = <"unmanaged">
+
+definition
+    OBSERVATION[id1] ∈ {                -- observation
+        protocol ∈ {                    -- existence not changed from reference model
+            ITEM_TREE[id2]              -- some content
+        }
+}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"observation">
+				description = <"observation">
+			>
+			["id2"] = <
+                text = <"item tree">
+                description = <"item tree">
+            >
+		>
+	>

@@ -3,11 +3,9 @@
 
 use crate::bmm3::core::entity::bmm_type::BmmType;
 use crate::bmm3::expression::el_writable_variable::ElWritableVariable;
-use openehr_derive::OpenEhrType;
 
 /// Declaration of a writable variable, associating a name with a type.
-#[derive(Debug, Clone, PartialEq, OpenEhrType)]
-#[openehr(type_name = "BMM_DECLARATION")]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BmmDeclaration {
     pub name: String,
     pub result: ElWritableVariable,

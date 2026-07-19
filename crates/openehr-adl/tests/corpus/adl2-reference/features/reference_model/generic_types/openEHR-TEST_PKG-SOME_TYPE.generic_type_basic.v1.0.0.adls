@@ -1,0 +1,63 @@
+archetype (adl_version=2.0.5; rm_release=1.0.2)
+	openEHR-TEST_PKG-SOME_TYPE.generic_type_basic.v1.0.0
+
+language
+	original_language = <[ISO_639-1::en]>
+
+description
+	custodian_namespace = <"org.openehr">
+	custodian_organisation = <"openEHR Foundation <http://www.openEHR.org>">
+
+	original_author = <
+		["name"] = <"Thomas Beale">
+ 		["email"] = <"thomas.beale@openEHR.org">    
+		["organisation"] = <"openEHR Foundation <http://www.openEHR.org>">
+		["date"] = <"2006-06-17">
+	>
+
+	details = <
+		["en"] = <
+			language = <[ISO_639-1::en]>
+			purpose = <"Illustrates the use of generic types with filled parameter types, here DV_QUANTITY.">
+			keywords = <"ADL", "test">
+		>
+	>
+
+	lifecycle_state = <"published">
+	other_details = <
+		["regression"] = <"PASS">
+	>
+	copyright = <"Copyright © 2006 openEHR Foundation <http://www.openEHR.org>">
+	licence = <"Creative Commons CC-BY-SA <https://creativecommons.org/licenses/by-sa/3.0/>">
+
+definition
+	SOME_TYPE[id1] matches {	-- root item
+		qty_interval_attr_1 matches {
+			DV_INTERVAL<DV_QUANTITY>[id2] matches {
+				lower matches {
+					DV_QUANTITY[id3] matches {
+						units matches {"C"}
+						magnitude matches {|>=37.0|}
+					}
+				}
+				upper matches {
+					DV_QUANTITY[id4] matches {
+						units matches {"C"}
+						magnitude matches {|>=39.0|}
+					}
+				}
+				lower_included matches {True}
+				upper_included matches {True}
+			}
+		}
+	}
+
+terminology
+	term_definitions = <
+		["en"] = <
+			["id1"] = <
+				text = <"root item">
+				description = <"xxxx">
+			>
+		>
+	>
