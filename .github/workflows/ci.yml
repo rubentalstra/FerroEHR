@@ -372,6 +372,12 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      # Structure check runs UNCONDITIONALLY — the no-changelog label waives
+      # the entry requirement below, never the file's Keep-a-Changelog
+      # validity (duplicate '### Added'/'### Fixed' headers in one release
+      # section shipped into release notes twice before this guard).
+      - name: Changelog structure (no duplicate subsections, canonical types)
+        run: bash scripts/check-changelog-structure.sh
       - name: Require a CHANGELOG entry for user-visible changes
         env:
           BASE: ${{ github.event.pull_request.base.sha }}
