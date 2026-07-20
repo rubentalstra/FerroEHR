@@ -222,9 +222,9 @@ mod tests {
         assert!(v["solution"].is_string());
         assert!(v["solution_version"].is_string());
         assert!(v["vendor"].is_string());
-        // The tested development-edition contract identity (shared provenance,
-        // matching management `/info` + the ECC report), not the retired
-        // `1.0.3` release label; the profile is the machine-computed verdict.
+        // The released ITS-REST contract version (shared provenance, matching
+        // management `/info` + the ECC report); the profile is the
+        // machine-computed verdict.
         assert_eq!(
             v["restapi_specs_version"],
             ehrbase::telemetry::provenance::ITS_REST

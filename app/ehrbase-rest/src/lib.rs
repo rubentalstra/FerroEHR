@@ -1,4 +1,4 @@
-//! openEHR **ITS-REST 1.0.3** server surface (`axum`) — the protocol adapter
+//! openEHR **ITS-REST 1.1.0** server surface (`axum`) — the protocol adapter
 //! over the SM native API (`ehrbase-sm`).
 //!
 //! The crate is organised **per ITS-REST specification**, one folder per spec area:

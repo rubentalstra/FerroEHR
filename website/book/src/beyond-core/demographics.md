@@ -7,10 +7,10 @@ the relationships between them, served over a REST surface that mirrors the EHR
 APIs.
 
 > [!NOTE]
-> The openEHR ITS-REST 1.0.3 contract does not define a demographic wire API, so
-> this surface is served by direct analogy with the EHR group and is an
+> The demographic wire API — including party relationships — is defined by
+> the openEHR ITS-REST Release-1.1.0 Demographic API (carried at DEVELOPMENT
+> lifecycle status within the released specification). It is an
 > **Options-profile** capability, not part of the Core or Standard profile.
-> Party relationships specifically are an EHRbase-rs extension.
 
 ## What is stored
 

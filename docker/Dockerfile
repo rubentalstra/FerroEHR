@@ -49,7 +49,7 @@ ENTRYPOINT ["/usr/local/bin/ehrbase"]
 ARG VERSION="0.1.0"
 ARG REVISION=""
 LABEL org.opencontainers.image.title="ehrbase-rs" \
-      org.opencontainers.image.description="Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.0.3 + AQL 1.1)" \
+      org.opencontainers.image.description="Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL 1.1)" \
       org.opencontainers.image.source="https://github.com/rubentalstra/ehrbase-rs" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}" \

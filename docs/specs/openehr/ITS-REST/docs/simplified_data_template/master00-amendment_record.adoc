@@ -4,7 +4,7 @@
 |===
 |Issue|Details|Raiser|Completed
 
-4+^h|*ITS_REST Release (unreleased)*
+4+^h|*ITS_REST Release 1.1.0*
 
 |[[latest_issue]]1.1.0
 |{spec_tickets}/SPECITS-61[SPECITS-61^]. Cleanup and consolidate Simplified Formats specification; Deprecating Simplified Data Template (SDT) specification

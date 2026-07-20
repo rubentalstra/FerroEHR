@@ -15,9 +15,8 @@ use ehrbase::telemetry::provenance;
 
 /// `/rest/status` body — server and conformance-target versions. The
 /// `openehr_rest_api_version` is the single shared provenance identity
-/// ([`provenance::ITS_REST`]) — the tested development-edition contract that
-/// management `/info` and the System Options manifest also report — not the
-/// retired `1.0.3` release label.
+/// ([`provenance::ITS_REST`]) — the released ITS-REST contract version that
+/// management `/info` and the System Options manifest also report.
 #[derive(Debug, Serialize)]
 struct ServerStatus {
     status: &'static str,

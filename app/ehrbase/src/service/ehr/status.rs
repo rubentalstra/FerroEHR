@@ -316,7 +316,7 @@ impl EhrbaseService {
     /// / content-CONTRIBUTION writes only — the
     /// [`crate::versioning::CommitEnv`] `ensure_content_writable` hook.
     ///
-    /// NOTE (wire): ITS-REST 1.0.3 does not enumerate a status code for a
+    /// NOTE (wire): ITS-REST 1.1.0 does not enumerate a status code for a
     /// write to a non-modifiable EHR (`composition_create.yaml` lists only
     /// 201/400/404/422; the CNF schedule `master06-func_tc_ehr.adoc` tests the
     /// flag flip, not the write-block outcome), so the code is

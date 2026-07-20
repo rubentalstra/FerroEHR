@@ -70,7 +70,7 @@ const MINIMAL_OPT_FILE: &str = "minimal/minimal_evaluation.opt";
 /// The ADL 1.4 template resource base.
 const ADL14: &str = "/definition/template/adl1.4";
 
-const OPT_CITATION: &str = "CNF master04 §I_DEFINITION_ADL14; ITS-REST 1.0.3 DEFINITION ADL 1.4 API (upload/get/validate); \
+const OPT_CITATION: &str = "CNF master04 §I_DEFINITION_ADL14; ITS-REST 1.1.0 DEFINITION ADL 1.4 API (upload/get/validate); \
      AM 1.4 §OPERATIONAL_TEMPLATE";
 
 /// The four master04 `delete_opt` cases: SM operation with no ITS-REST ADL 1.4
@@ -78,7 +78,7 @@ const OPT_CITATION: &str = "CNF master04 §I_DEFINITION_ADL14; ITS-REST 1.0.3 DE
 const DELETE_BINDING: Binding =
     Binding::NoRestBinding("I_DEFINITION_ADL14.delete_opt (master04 §delete_opt)");
 const DELETE_CITATION: &str = "CNF master04 §delete_opt — SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 DELETE \
-     binding (no DELETE verb on /definition/template/adl1.4/{id} in development@e8a093e nor \
+     binding (no DELETE verb on /definition/template/adl1.4/{id} in Release-1.1.0 nor \
      Release-1.0.3; OPT deletion is ADMIN-API-only)";
 const DELETE_SKIP: &str = "master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — \
      deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a \
@@ -150,7 +150,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "tpl/upload-opt-valid-opt",
             "Upload OPT — valid OPT (provisions ADL 1.4 archetypes)",
             Capability::Adl14ArchetypeProvisioning,
-            "CNF master04 §upload_opt; ITS-REST 1.0.3 DEFINITION ADL 1.4 API §upload OPT; \
+            "CNF master04 §upload_opt; ITS-REST 1.1.0 DEFINITION ADL 1.4 API §upload OPT; \
              AM 1.4 §OPERATIONAL_TEMPLATE; CORE Adl14ArchetypeProvisioning evidenced via the OPT \
              (archetypes embedded in the OPT)",
             ScheduleTrace::Schedule(
@@ -198,7 +198,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get OPT — retrieve single",
             Capability::Adl14OptProvisioning,
             "CNF master04 §get_opt-retrieve_single (retrieved OPT == uploaded OPT NOTE); \
-             ITS-REST 1.0.3 DEFINITION ADL 1.4 API §get OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
+             ITS-REST 1.1.0 DEFINITION ADL 1.4 API §get OPT; AM 1.4 §OPERATIONAL_TEMPLATE",
             ScheduleTrace::Schedule(
                 "I_DEFINITION_ADL14.get_opt-retrieve_single (master04 §get_opt)",
             ),
@@ -242,7 +242,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "List OPTs — retrieve all",
             Capability::Adl14OptProvisioning,
             "CNF master04 §get_opts-retrieve_all (all loaded OPTs returned, latest-only); \
-             ITS-REST 1.0.3 DEFINITION ADL 1.4 API §list OPTs; AM 1.4 §OPERATIONAL_TEMPLATE",
+             ITS-REST 1.1.0 DEFINITION ADL 1.4 API §list OPTs; AM 1.4 §OPERATIONAL_TEMPLATE",
             ScheduleTrace::Schedule(
                 "I_DEFINITION_ADL14.get_opts-retrieve_all (master04 §get_opts)",
             ),
@@ -254,7 +254,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "List OPTs — retrieve all no OPTs",
             Capability::Adl14OptProvisioning,
             "CNF master04 §get_opts-retrieve_all_no_opts (empty server → empty set, no failure); \
-             ITS-REST 1.0.3 DEFINITION ADL 1.4 API §list OPTs",
+             ITS-REST 1.1.0 DEFINITION ADL 1.4 API §list OPTs",
             ScheduleTrace::Schedule(
                 "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts (master04 §get_opts)",
             ),

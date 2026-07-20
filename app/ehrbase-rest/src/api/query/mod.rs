@@ -1,4 +1,4 @@
-//! The ITS-REST **query API** (development edition) —
+//! The ITS-REST **query API** (Release-1.1.0, STABLE) —
 //! `docs/specs/openehr/ITS-REST/specifications/docs/query/` + the
 //! `query-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
 //!

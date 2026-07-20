@@ -912,8 +912,8 @@ fn miss(reason: &str) -> OpOutcome {
 // ── Response parsing ──────────────────────────────────────────────────────────
 
 /// The version uid from a versioned write: the `ETag` — parsed by the
-/// conformance wire layer, which handles the weak form `W/"…"` the
-/// development edition emits (ITS-REST overview §"`ETag` and Last-Modified");
+/// conformance wire layer, which handles the weak form `W/"…"` that
+/// Release-1.1.0 emits (ITS-REST overview §"`ETag` and Last-Modified");
 /// a hand-rolled quote-strip kept the `W/` prefix and poisoned every stored
 /// uid — else the last path segment of `Location`.
 fn version_uid_from(resp: &HttpResponse) -> Option<String> {
@@ -1063,7 +1063,7 @@ mod tests {
 
     #[test]
     fn version_uid_strips_the_weak_etag_form() {
-        // The development edition emits weak ETags (ITS-REST overview §"ETag
+        // Release-1.1.0 emits weak ETags (ITS-REST overview §"ETag
         // and Last-Modified"); the stored uid must be the bare
         // OBJECT_VERSION_ID — the C1 smoke run caught the unstripped form
         // 404-ing every subsequent read.

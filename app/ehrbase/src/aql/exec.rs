@@ -2,7 +2,7 @@
 //!
 //! [`execute`] plans-to-SQL ([`super::sql::build`]), runs the one statement on
 //! the `sqlx` pool, and assembles a [`QueryResult`] (column metadata + canonical
-//! JSON rows) the service renders as an ITS-REST 1.0.3 `RESULT_SET`. Scalar cells
+//! JSON rows) the service renders as an ITS-REST 1.1.0 `RESULT_SET`. Scalar cells
 //! are read directly as canonical JSON (`jsonb`); whole-object cells reassemble
 //! their node subtree through the codec ([`crate::storage::codec::reassemble`]).
 
@@ -20,12 +20,12 @@ use crate::storage::node_repo::SubtreeAnchor;
 ///
 /// `RESULT_SET_COLUMN.archetype_id [0..1]` is deliberately absent: the SM
 /// `result_set_column.adoc` marks it "check on whether needed or **inside the
-/// path**", and the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
+/// path**", and the ITS-REST 1.1.0 `ResultSetColumn` examples carry the
 /// archetype/node codes inline in `path` (never a separate `archetype_id`), so a
 /// distinct field has no pinned semantics or golden to validate against.
 // NOTE: no `archetype_id` field is emitted (the decision is recorded in
 // the register): SM `result_set_column.adoc` marks it "check on whether needed
-// or inside the path", the ITS-REST 1.0.3 `ResultSetColumn` examples carry the
+// or inside the path", the ITS-REST 1.1.0 `ResultSetColumn` examples carry the
 // archetype/node codes inline in `path`, and no golden pins a standalone field.
 // Should a future CNF case pin one, derive it from the leaf's deepest archetype
 // predicate (cheaply available on `ir::LeafPath`) and have `result_set.rs` emit

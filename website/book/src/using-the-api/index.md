@@ -1,8 +1,8 @@
 # Using the API
 
-EHRbase-rs exposes the openEHR **REST API** (the current development edition
-of ITS-REST — the edition the server reports and is conformance-tested
-against): a resource-based HTTP interface for creating EHRs, committing and
+EHRbase-rs exposes the openEHR **REST API** (ITS-REST Release-1.1.0 — the
+version the server reports and is conformance-tested against): a
+resource-based HTTP interface for creating EHRs, committing and
 retrieving versioned clinical documents, managing folders and contributions,
 and running queries. This part
 is the practical reference for client developers — the resources and their

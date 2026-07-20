@@ -3,7 +3,7 @@
 These committed TOML files (`<sut>.toml`) let the ECC runner report a fair
 verdict for a **non-`ehrbase-rs`** SUT. The ECC catalogue is *our own*
 instrument, authored against the pinned specs (RM 1.2.0, ITS-REST
-development@e8a093e) with adjudicated skips for *our* server; running it
+Release-1.1.0) with adjudicated skips for *our* server; running it
 unmodified against another product would unfairly fail it on version skew and
 on our own extensions. A register **only reclassifies with a citation — it
 never edits, weakens, or skips a case** (honesty rule 10 / standing rule 3).

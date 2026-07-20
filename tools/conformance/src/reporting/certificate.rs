@@ -342,7 +342,7 @@ mod tests {
                 base_url: "http://sut".to_owned(),
                 product: ProductIdentity::default(),
                 kind,
-                edition_policy: EditionPolicy::Pinned(Edition::Development),
+                edition_policy: EditionPolicy::Pinned(Edition::Release110),
                 versions: SpecVersions::latest(),
                 auth_mode: "basic".to_owned(),
             },

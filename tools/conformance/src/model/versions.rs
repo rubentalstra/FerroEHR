@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 pub struct SpecVersions {
     /// The openEHR Reference Model version (e.g. `"1.2.0"`).
     pub rm: String,
-    /// The tested ITS-REST contract identity (e.g. `"development@e8a093e"`),
+    /// The tested ITS-REST contract identity (e.g. `"Release-1.1.0"`),
     /// derived from the vendored `-codegen` OAS provenance, not the
     /// released spec-text version.
     pub its_rest: String,
@@ -31,11 +31,9 @@ impl SpecVersions {
     ///
     /// `its_rest` is **not** a hand-asserted literal: it is derived from
     /// the vendored `-codegen` OAS provenance
-    /// ([`crate::model::provenance::tested_its_rest`]) so the report claims exactly the
-    /// ITS-REST contract the SUT implements — `development@<commit>`, not
-    /// `"1.0.3"` (the OAS is pinned to openEHR's unreleased development line;
-    /// the released 1.0.3 spec *text* is a separate vendored tree, used only for
-    /// the per-case `§`-section citations).
+    /// ([`crate::model::provenance::tested_its_rest`]) so the report claims
+    /// exactly the ITS-REST contract the SUT implements — the pinned release
+    /// tag (`Release-1.1.0`) or, for a pre-release pin, `development@<commit>`.
     #[must_use]
     pub fn latest() -> Self {
         SpecVersions {

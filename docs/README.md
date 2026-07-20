@@ -1,6 +1,6 @@
 # docs/ — map of the documentation tree
 
-A pure-Rust, openEHR-spec-conformant CDR (ITS-REST 1.0.3 + AQL 1.1) with
+A pure-Rust, openEHR-spec-conformant CDR (ITS-REST 1.1.0 + AQL 1.1) with
 greenfield PG18-native internals. This file says what lives where and which
 document is authoritative for what. When two docs disagree, the **newer
 decision wins**. *(The former `ADRs/`, `blueprint/`, `enterprise/`, and

@@ -6,7 +6,7 @@
 )] // test assertions/diagnostics/fixtures
 //! End-to-end AQL engine tests against a real PostgreSQL 18 (shared testkit harness):
 //! seed EHRs + COMPOSITIONs through the service, then execute AQL through the
-//! `QueryService` seam and assert on the assembled ITS-REST 1.0.3 `RESULT_SET`.
+//! `QueryService` seam and assert on the assembled ITS-REST 1.1.0 `RESULT_SET`.
 //!
 //! Fixtures: the vendored openEHR SDK `minimal_observation` composition
 //! (`openehr-its/tests/vendor/openehr_sdk/composition/canonical_json`), with its
@@ -905,7 +905,7 @@ async fn executed_aql_substitutes_bound_parameters() {
     );
 }
 
-/// The assembled query response carries the ITS-REST 1.0.3 `RESULT_SET` shape.
+/// The assembled query response carries the ITS-REST 1.1.0 `RESULT_SET` shape.
 ///
 /// Asserts only what the schema requires:
 /// * `rows` is present and an array — the sole `required` field of

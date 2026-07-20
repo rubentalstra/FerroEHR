@@ -14,7 +14,7 @@ flowchart TB
     specs["openEHR machine-readable specifications<br/>(Reference Model · XML schemas · OpenAPI — vendored &amp; pinned)"]
 
     subgraph gen ["Specification layer (generated, never hand-edited)"]
-        types["RM 1.2.0 types · canonical JSON &amp; XML<br/>ITS-REST contract (development edition) · AQL 1.1 parser · SDT formats"]
+        types["RM 1.2.0 types · canonical JSON &amp; XML<br/>ITS-REST contract (Release-1.1.0) · AQL 1.1 parser · SDT formats"]
     end
 
     subgraph app ["Application layer (the server)"]

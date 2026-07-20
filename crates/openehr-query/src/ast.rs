@@ -456,7 +456,7 @@ pub enum Primitive {
 
 // ── path text rendering (RESULT_SET column `path`) ─────────────────────────────
 //
-// ITS-REST 1.0.3 RESULT_SET columns carry the SELECT expression's path
+// ITS-REST 1.1.0 RESULT_SET columns carry the SELECT expression's path
 // (`{"name": "#0", "path": "/ehr_id/value"}`); the CNF query goldens compare it
 // verbatim, so the renderer reproduces the path exactly as written in the query
 // (minus the root variable) rather than a normalized reconstruction.

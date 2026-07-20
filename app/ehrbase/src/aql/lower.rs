@@ -262,7 +262,7 @@ impl Planner {
             }
         };
         // The RESULT_SET column `path` echoes the query's own path text
-        // (ITS-REST 1.0.3 RESULT_SET; the CNF query goldens compare it verbatim).
+        // (ITS-REST 1.1.0 RESULT_SET; the CNF query goldens compare it verbatim).
         let path = match &col.column {
             ColumnExpr::Path(p) => Some(p.column_path_text()),
             _ => None,

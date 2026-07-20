@@ -18,7 +18,7 @@ mkdir -p "$DST"
 # The upstream bundles carry `info.version: latest`; the served copy stamps the
 # pinned ITS-REST release (docs/VERSIONS.md) so Swagger UI shows a real version.
 # The Admin API is dev-branch-only upstream — its honest `development` stays.
-ITS_REST_VERSION="1.0.3"
+ITS_REST_VERSION="1.1.0"
 for group in $OAS_GROUPS; do
   sed -e "1,10s/^  version: latest\$/  version: ${ITS_REST_VERSION}/" \
     "$SRC/${group}-html.openapi.yaml" > "$DST/${group}.openapi.yaml"

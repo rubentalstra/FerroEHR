@@ -1,7 +1,7 @@
 # Admin console
 
 `ehrbase-admin-ui` is a standalone web console for managing an
-ITS-REST-1.0.3 CDR — this server or any other. It is a **pure REST client**:
+ITS-REST-1.1.0 CDR — this server or any other. It is a **pure REST client**:
 everything it does goes through the CDR's public API (never the database),
 so what you see in the console is exactly what the API serves. The whole
 application is Rust (Leptos SSR + WebAssembly); there is no hand-written
