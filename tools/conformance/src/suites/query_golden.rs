@@ -49,7 +49,12 @@ use crate::engine::harness::{CaseError, CaseFuture, DataSetReport, HttpRequest, 
 use crate::engine::registry::CaseEntry;
 use crate::model::case::{Binding, Capability, CaseMeta, Compare, Format, ScheduleTrace};
 use crate::model::catalog::Area;
+use crate::suites::support;
 use crate::testdata::fixtures;
+
+/// The corpus placeholder the loaded-db `C` queries carry for the EHR to scope
+/// to; the driver substitutes the run's own created EHR id.
+const EHR_ID_PLACEHOLDER: &str = "__MODIFY_EHR_ID_1__";
 
 const JSON: &[Format] = &[Format::Json];
 
@@ -717,10 +722,108 @@ fn run_b_loaded<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({ run_golden_group(ctx, "B", "loaded_db").await })
 }
 fn run_c_loaded<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    boxed!({ run_golden_group(ctx, "C", "loaded_db").await })
+    boxed!({ run_c_loaded_db(ctx).await })
 }
 fn run_d_loaded<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({ run_golden_group(ctx, "D", "loaded_db").await })
+}
+
+/// `qry/corpus-c-loaded-db` (`ECC-QRY-012`) — the loaded-db `C` goldens, every
+/// one of which scopes to an EHR via the `__MODIFY_EHR_ID_1__` placeholder (the
+/// generic [`run_golden_group`] treats the placeholder as `unrunnable` and the
+/// case skipped for `total == 0`). This driver substitutes the run's own created
+/// EHR id for the placeholder so each query executes, then diffs the served
+/// `RESULT_SET` through the normalizer in `columns`-only [`Mode`] — the
+/// deterministic, data-independent oracle (the SELECT projection depends on the
+/// query text, not on which rows a shared SUT holds), exactly the basis the
+/// sibling loaded-db group cases (`ECC-QRY-010/011/013`) already use. The
+/// column-vector correctness is the same one the empty-db `C` case
+/// (`ECC-QRY-008`) proves for these identical query shapes.
+///
+/// Golden disposition over the 11 `C/loaded_db` goldens (never a silent drop):
+///
+/// - **Testable (6): `300`, `301`, `302`, `303`, `400`, `500`** — real
+///   `RESULT_SET` goldens; executed here (ehr-id substitution + columns-only
+///   diff). No `C` query uses a `$`-bind, so no bind substitution is needed.
+/// - **Dialect-routed (1): `103`** (`TIMEWINDOW`, removed by AQL 1.1 —
+///   QUERY `master00-amendment_record` SPECQUERY-20) — owned by its dedicated
+///   `qry/dialect-timewindow-c103` case; routed out, not covered here.
+/// - **Adjudicated untestable (4): `100`, `101`, `102`, `200`** — the vendored
+///   corpus golden carries **no expected `RESULT_SET`** (only `NOTE`/`q`
+///   fields). `100`/`200` are explicitly parked by the corpus authors ("needs
+///   to wait until the openEHR SEC defines what to do with the generic ENTRY
+///   class in AQL"); `101`/`102` ship no expected result. With no golden to
+///   diff, there is nothing to assert — cited here, never silently passed.
+async fn run_c_loaded_db(ctx: &RunContext<'_>) -> Result<DataSetReport, CaseError> {
+    let ehr_id = support::create_ehr(ctx).await?;
+    let goldens = fixtures::aql_expected("loaded_db", "C").map_err(|e| codec(&e))?;
+
+    let mut passed = 0u32;
+    let mut total = 0u32;
+    let mut adjudicated = 0u32;
+    let mut dialect = 0u32;
+    let mut first_fail: Option<String> = None;
+
+    for gold in goldens {
+        let Some(aql) = paired_query("C", &gold.name)? else {
+            continue; // a golden with no paired query fixture
+        };
+        // The TIMEWINDOW golden is owned by its dedicated dialect case.
+        if is_dialect_routed(&aql) {
+            dialect += 1;
+            continue;
+        }
+        let golden_value = gold.json().map_err(|e| codec(&e))?;
+        // A note-only golden has no `columns`/`rows` — nothing to diff against.
+        if golden_value.get("columns").is_none() {
+            adjudicated += 1;
+            continue;
+        }
+        // Substitute the run's own EHR id so the query executes end to end.
+        let aql = aql.replace(EHR_ID_PLACEHOLDER, &ehr_id);
+        // No `C` golden carries a `$`-bind; guard defensively (a residual bind
+        // would need values we do not hold — adjudicated, not a false pass).
+        if aql.contains('$') {
+            adjudicated += 1;
+            continue;
+        }
+        total += 1;
+        let resp = adhoc(ctx, &aql).await?;
+        if resp.status != 200 {
+            first_fail.get_or_insert(format!(
+                "C/{}: valid query rejected with status {}",
+                gold.name, resp.status
+            ));
+            continue;
+        }
+        let cmp = compare(&golden_value, &resp.json()?, Mode::ColumnsOnly);
+        if cmp.matched {
+            passed += 1;
+        } else {
+            first_fail.get_or_insert(format!(
+                "C/{} (ColumnsOnly, suppressed via [{}]): {}",
+                gold.name,
+                cmp.applied_labels(),
+                cmp.detail.unwrap_or_default()
+            ));
+        }
+    }
+
+    if total == 0 {
+        return Err(CaseError::Skipped(format!(
+            "all C/loaded_db goldens are dialect-routed ({dialect}) or adjudicated untestable \
+             ({adjudicated}) — no runnable golden"
+        )));
+    }
+    if passed == total {
+        Ok(DataSetReport::all(passed))
+    } else {
+        Err(CaseError::Assertion(format!(
+            "{passed}/{total} C/loaded_db goldens matched ({dialect} dialect-routed, \
+             {adjudicated} adjudicated untestable); first divergence: {}",
+            first_fail.unwrap_or_default()
+        )))
+    }
 }
 
 // ── dialect cases: assert the spec-derived reject (4xx) ────────────────────────

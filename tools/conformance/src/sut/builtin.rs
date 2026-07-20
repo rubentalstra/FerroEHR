@@ -24,6 +24,8 @@ pub fn ehrbase_rs(
         admin_auth,
         edition_policy: EditionPolicy::Pinned(Edition::Release110),
         product_label: format!("ehrbase-rs {}", env!("CARGO_PKG_VERSION")),
+        sig_pgp_base_url: None,
+        sig_pgp_key_path: None,
     }
 }
 
@@ -49,6 +51,8 @@ pub fn ehrbase_java(
         admin_auth,
         edition_policy: EditionPolicy::Auto,
         product_label: format!("EHRbase {version_label}"),
+        sig_pgp_base_url: None,
+        sig_pgp_key_path: None,
     }
 }
 

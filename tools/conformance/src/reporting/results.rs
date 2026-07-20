@@ -225,12 +225,16 @@ pub enum CaseStatus {
     Errored,
     /// The case was skipped for a stated reason.
     Skipped,
-    /// The case is not applicable to this SUT — an adjudicated extension route
-    /// or an RM-version-sensitive comparison the SUT cannot be expected to
-    /// satisfy (§3a.3/§3a.4). Excluded from pass/fail counts and from
-    /// capability computation; reported in its own section. Distinct from
-    /// `Skipped` (which is an in-run "could not determine" from a case's own
-    /// probe), this is a committed, cited adjudication about the SUT.
+    /// The case is not applicable — either (a) an adjudicated extension route
+    /// or RM-version-sensitive comparison the SUT cannot be expected to satisfy
+    /// (§3a.3/§3a.4, the fairness register, foreign SUTs), or (b) a
+    /// native-API-only SM operation with no ITS-REST wire binding anywhere,
+    /// raised by the case's own run function ([`crate::engine::harness::CaseError::NotApplicable`])
+    /// for every SUT — the HTTP-only instrument cannot reach it. Excluded from
+    /// pass/fail counts and from capability computation; reported in its own
+    /// section with its SM citation + native-test evidence pointer. Distinct
+    /// from `Skipped` (an in-run "could not determine" from a case's own
+    /// probe), this is a committed, cited adjudication.
     NotApplicable,
 }
 

@@ -15,10 +15,11 @@
 //! server the real-server mode (`--tx-server-url`) is contrasted against, and
 //! (3) recording the exchange (received requests) into the conformance report.
 
+use std::net::TcpListener;
 use std::time::Duration;
 
 use serde_json::{Value, json};
-use wiremock::matchers::{method, path};
+use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 use crate::reporting::results::TxExchange;
@@ -30,6 +31,25 @@ pub const SURFACE_VS: &str = "http://hl7.org/fhir/ValueSet/surface";
 pub const SURFACE_SYS: &str = "http://hl7.org/fhir/surface";
 /// A member code of [`SURFACE_VS`] (`B` = Buccal).
 pub const SURFACE_MEMBER: &str = "B";
+
+/// A `$expand` `url` value that makes the [conformance fixture](
+/// FhirTxFixture::start_conformance) inject the [`Fault::Timeout`] fault, so a
+/// SUT wired to the fixture sees a terminology-server timeout for a `TERMINOLOGY(
+/// 'expand', 'hl7.org/fhir/4.0', <this>)` operand.
+pub const FAULT_TIMEOUT_VS: &str = "http://ehrbase.invalid/fault/timeout";
+/// A `$expand` `url` value that makes the conformance fixture answer
+/// [`Fault::ServerError`] (`503`).
+pub const FAULT_SERVER_ERROR_VS: &str = "http://ehrbase.invalid/fault/server-error";
+/// A `$expand` `url` value that makes the conformance fixture answer
+/// [`Fault::Malformed`] (a `200` whose body is not FHIR JSON).
+pub const FAULT_MALFORMED_VS: &str = "http://ehrbase.invalid/fault/malformed";
+
+/// The per-fault `$expand` `url` markers, paired with the fault each triggers.
+const FAULT_MARKERS: [(&str, Fault); 3] = [
+    (FAULT_TIMEOUT_VS, Fault::Timeout),
+    (FAULT_SERVER_ERROR_VS, Fault::ServerError),
+    (FAULT_MALFORMED_VS, Fault::Malformed),
+];
 
 /// A fault a fixture injects on **every** terminology operation, so a SUT (or a
 /// direct client) driving it sees the corresponding failure mode (the
@@ -183,11 +203,58 @@ impl FhirTxFixture {
         Self { server }
     }
 
+    /// Start the **conformance** fixture: canned happy-path responses on every
+    /// operation (as [`start_canned`](Self::start_canned)) **plus** per-fault
+    /// `$expand` routes keyed by the `url` query value ([`FAULT_MARKERS`]), so a
+    /// SUT wired to the single fixture URL sees the canned expansion for a
+    /// normal value set and the matching fault for a `TERMINOLOGY('expand',
+    /// 'hl7.org/fhir/4.0', <FAULT_*_VS>)` operand — the one wiring that serves
+    /// both the FHIR-provider case and the three fault cases (`ECC-TS-006…009`).
+    ///
+    /// `listener`, when given, fixes the bind address (e.g. `0.0.0.0:PORT`) so a
+    /// composed SUT can reach the host fixture at a known port via
+    /// `host.docker.internal`; `None` binds a random `127.0.0.1` port (the
+    /// in-process default).
+    pub async fn start_conformance(listener: Option<TcpListener>) -> Self {
+        let server = match listener {
+            Some(l) => MockServer::builder().listener(l).start().await,
+            None => MockServer::start().await,
+        };
+        // Canned happy path on every operation (any query).
+        for op in OPS {
+            Mock::given(method("GET"))
+                .and(path(op))
+                .respond_with(ok_response(op))
+                .mount(&server)
+                .await;
+        }
+        // Higher-priority (`1` beats the default `5`) fault routes on `$expand`,
+        // matched by the exact `url` marker so only the fault cases hit them.
+        for (marker, fault) in FAULT_MARKERS {
+            Mock::given(method("GET"))
+                .and(path("/ValueSet/$expand"))
+                .and(query_param("url", marker))
+                .respond_with(fault.response())
+                .with_priority(1)
+                .mount(&server)
+                .await;
+        }
+        Self { server }
+    }
+
     /// The fixture's FHIR base URL (e.g. `http://127.0.0.1:53412`); the
     /// terminology operations hang directly off it (`{base}/ValueSet/$expand`).
     #[must_use]
     pub fn base_url(&self) -> String {
         self.server.uri()
+    }
+
+    /// A loopback base URL for the runner's own host-side calls (the
+    /// [`self_check`](Self::self_check)): a fixed-port fixture binds `0.0.0.0`
+    /// (so a composed SUT reaches it via `host.docker.internal`), but a client
+    /// connecting to `0.0.0.0` is not portable — normalise it to `127.0.0.1`.
+    fn loopback_base(&self) -> String {
+        self.base_url().replace("//0.0.0.0:", "//127.0.0.1:")
     }
 
     /// The exchange the fixture has served so far — every received request as a
@@ -218,7 +285,7 @@ impl FhirTxFixture {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(2))
             .build()?;
-        let base = self.base_url();
+        let base = self.loopback_base();
         for (op, query) in [
             ("/ValueSet/$expand", &[("url", SURFACE_VS)][..]),
             (
@@ -389,6 +456,48 @@ mod tests {
                 build_url(&fx.base_url(), "/ValueSet/$expand", &[("url", SURFACE_VS)])
                     .expect("url"),
             )
+            .send()
+            .await
+            .expect_err("must time out");
+        assert!(err.is_timeout(), "expected a timeout, got {err}");
+    }
+
+    #[tokio::test]
+    async fn conformance_fixture_serves_canned_and_routes_faults_on_one_server() {
+        let fx = FhirTxFixture::start_conformance(None).await;
+        let c = client(2_000);
+        let base = fx.base_url();
+
+        // A normal value set → the canned expansion.
+        let ok = fetch(&c, &base, "/ValueSet/$expand", &[("url", SURFACE_VS)]).await;
+        assert_eq!(ok.status().as_u16(), 200);
+        let body: Value = ok.json().await.expect("json");
+        assert_eq!(body["resourceType"], "ValueSet");
+
+        // The server-error marker → 503.
+        let se = fetch(
+            &c,
+            &base,
+            "/ValueSet/$expand",
+            &[("url", FAULT_SERVER_ERROR_VS)],
+        )
+        .await;
+        assert_eq!(se.status().as_u16(), 503);
+
+        // The malformed marker → 200 with a non-JSON body.
+        let mal = fetch(
+            &c,
+            &base,
+            "/ValueSet/$expand",
+            &[("url", FAULT_MALFORMED_VS)],
+        )
+        .await;
+        assert_eq!(mal.status().as_u16(), 200);
+        assert!(serde_json::from_str::<Value>(&mal.text().await.expect("text")).is_err());
+
+        // The timeout marker → exceeds a short client deadline.
+        let err = client(300)
+            .get(build_url(&base, "/ValueSet/$expand", &[("url", FAULT_TIMEOUT_VS)]).expect("url"))
             .send()
             .await
             .expect_err("must time out");

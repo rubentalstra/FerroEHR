@@ -413,10 +413,21 @@ pub(crate) async fn commit_version_set(
                 if let Some(ehr_id) = ehr_id {
                     reject_duplicate_singleton(cx, ehr_id, kind, &data).await?;
                 }
+                // A COMPOSITION stamps `vo_version.template_id` exactly like
+                // the direct commit path — the template-delete 409 guard
+                // counts that column, so a contribution-committed composition
+                // must protect its template from physical deletion too
+                // (found by ECC `tpl/delete-opt-delete-specific-version`).
+                let template_id = (kind == Kind::Composition)
+                    .then(|| {
+                        crate::service::ehr::validation::composition_template_id(&data)
+                            .map(str::to_owned)
+                    })
+                    .flatten();
                 Change::Create {
                     kind,
                     canonical: data,
-                    template_id: None,
+                    template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
                     attestations: v.accompanying,
@@ -434,12 +445,20 @@ pub(crate) async fn commit_version_set(
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
                 cx.validate_for_commit(kind, &data, v.incomplete).await?;
+                // Same template stamping as the Create arm (the delete guard
+                // counts every version row, modifications included).
+                let template_id = (kind == Kind::Composition)
+                    .then(|| {
+                        crate::service::ehr::validation::composition_template_id(&data)
+                            .map(str::to_owned)
+                    })
+                    .flatten();
                 Change::Modify {
                     vo_id,
                     kind,
                     canonical: data,
                     expected: Some(expected),
-                    template_id: None,
+                    template_id,
                     signature: v.signature,
                     lifecycle_state: v.lifecycle_state,
                     attestations: v.accompanying,
