@@ -47,7 +47,7 @@ const CREATED: &[(Edition, u16)] = &[(Edition::Development, 201)];
 const OK: &[(Edition, u16)] = &[(Edition::Development, 200)];
 const ABSENT: &[(Edition, u16)] = &[(Edition::Development, 404)];
 
-/// Every registered DEMOGRAPHIC case (24 carried + 7 new: get_party_at_time +
+/// Every registered DEMOGRAPHIC case (24 carried + 7 new: `get_party_at_time` +
 /// the relationship family).
 #[must_use]
 #[expect(
