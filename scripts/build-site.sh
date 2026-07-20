@@ -31,6 +31,7 @@ bash "$ROOT/scripts/assemble-oas.sh"
 #     data-ecc markers are filled after the copy (step 3). Sources carry no
 #     numbers (CI: scripts/check-conformance-numbers.sh).
 bash "$ROOT/scripts/render-conformance-stats.sh" includes
+bash "$ROOT/scripts/render-comparison.sh"
 
 # 2. Clean + recreate _site.
 rm -rf "$OUT"

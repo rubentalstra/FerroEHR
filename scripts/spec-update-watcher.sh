@@ -273,19 +273,24 @@ while IFS="$US" read -r key component summary source resolved fixv comps status 
     skipped=$((skipped + 1))
     continue
   fi
-  # Title leads with WHERE THE CHANGE LANDS upstream (the Jira fix version),
-  # not with our pin — our vendored baseline is context and lives in the body.
+  # Title = key + summary, nothing else (owner ruling: component and target
+  # version live in the BODY and the spec:* label, never as title clutter).
+  # Long Jira summaries (some embed whole URLs) are capped for readability;
+  # dedup only needs the key, which always leads.
   case "$fixv_plain" in
     ""|"—") target="version unassigned" ;;
     *) target="$fixv_plain" ;;
   esac
   if [ -n "$component" ]; then
     pin=$(pin_for_component "$component")
-    title="[spec-update] $key — $summary ($component → $target)"
   else
     pin="n/a"
-    title="[spec-update] $key — $summary (cross-component → $target)"
   fi
+  short_summary="$summary"
+  if [ "${#short_summary}" -gt 90 ]; then
+    short_summary="${short_summary:0:87}..."
+  fi
+  title="[spec-update] $key — $short_summary"
   label_args=(--label spec-update)
   lbl=$([ -n "$component" ] && label_for_component "$component" || true)
   [ -n "${lbl:-}" ] && label_args+=(--label "$lbl")
