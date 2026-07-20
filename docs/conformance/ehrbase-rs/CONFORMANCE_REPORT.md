@@ -14,9 +14,9 @@
 | Edition policy | pinned (development) |
 | Spec versions | RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0 |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
-| Run started | 2026-07-19T23:16:28.33549Z |
+| Run started | 2026-07-20T13:12:05.443491Z |
 
-**386 case×format executions · 351 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
+**402 case×format executions · 367 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
 
 ## 2. Per-area matrix
 
@@ -38,6 +38,8 @@
 | MSG — Messaging | 10 | 0 | 0 | 0 | 10 | 0 |
 | TS — Terminology-server integration | 9 | 5 | 0 | 0 | 4 | 0 |
 | SF — Simplified Formats (FLAT / STRUCTURED / Web Template) | 16 | 16 | 0 | 0 | 0 | 0 |
+| ADL2 — ADL2 template provisioning | 12 | 12 | 0 | 0 | 0 | 0 |
+| AQT — AQL terminology functions | 4 | 4 | 0 | 0 | 0 | 0 |
 
 ## 3. Capability matrix
 
@@ -47,6 +49,7 @@ Cases grouped by capability; the evidence classification folds a transport error
 |---|--:|--:|--:|--:|--:|---|
 | Adl14ArchetypeProvisioning | 1 | 0 | 0 | 0 | 0 | pass |
 | Adl14OptProvisioning | 12 | 0 | 0 | 4 | 0 | pass |
+| Adl2Provisioning | 12 | 0 | 0 | 0 | 0 | pass |
 | EhrOperations | 12 | 0 | 0 | 0 | 0 | pass |
 | EhrStatus | 10 | 0 | 0 | 0 | 0 | pass |
 | CompositionOps | 35 | 0 | 0 | 0 | 0 | pass |
@@ -57,6 +60,7 @@ Cases grouped by capability; the evidence classification folds a transport error
 | QueryProvisioning | 5 | 0 | 0 | 2 | 0 | pass |
 | AqlBasic | 23 | 0 | 0 | 1 | 0 | pass |
 | AqlAdvanced | 1 | 0 | 0 | 0 | 0 | pass |
+| AqlTerminology | 4 | 0 | 0 | 0 | 0 | pass |
 | PartyOperations | 25 | 0 | 0 | 0 | 0 | pass |
 | PartyRelationshipOperations | 6 | 0 | 0 | 0 | 0 | pass |
 | AdminActivityReport | 0 | 0 | 0 | 4 | 0 | not evidenced |
@@ -112,11 +116,11 @@ CORE/STANDARD are all-of (every listed capability must be `pass`); OPTIONS is an
 
 | Capability | Passed | Failed | Skipped | N/A | Evidence |
 |---|--:|--:|--:|--:|---|
-| Adl2Provisioning | 0 | 0 | 0 | 0 | no cases |
+| Adl2Provisioning | 12 | 0 | 0 | 0 | pass |
 | PartyOperations | 25 | 0 | 0 | 0 | pass |
 | PartyRelationshipOperations | 6 | 0 | 0 | 0 | pass |
 | AqlAdvanced | 1 | 0 | 0 | 0 | pass |
-| AqlTerminology | 0 | 0 | 0 | 0 | no cases |
+| AqlTerminology | 4 | 0 | 0 | 0 | pass |
 | AdminActivityReport | 0 | 0 | 4 | 0 | not evidenced |
 | AdminPhysicalDeletion | 6 | 0 | 1 | 0 | pass |
 | AdminEhrDumpLoad | 0 | 0 | 1 | 0 | not evidenced |
@@ -153,11 +157,11 @@ _No failures in this run._
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
 | NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the demographic extension; the archive path is proven natively by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged | 1 |
 | NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the demographic extension; exercised natively by app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner | 1 |
-| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:54461 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:64859 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — the digest cases prove the Signing capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:54461 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:54461 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:54461 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64859 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64859 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64859 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 | all 11 C/loaded_db goldens are dialect-routed or require id-substitution/binds | 1 |
 | master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the Admin area. | 4 |
 | master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query. An edition exposing a bare-list resource would make this case live (register 02 G-2 edition probe). | 2 |
@@ -419,6 +423,22 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 - **ECC-SF-014** DIRECTORY (FOLDER) has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
 - **ECC-SF-015** Demographic PARTY has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
 - **ECC-SF-016** FLAT ctx/time sets EVENT_CONTEXT.start_time; ctx/setting defaults to openehr::238 — the CNF Platform Conformance Test Schedule defines no simplified-formats chapter; ECC-derived from the STABLE ITS-REST Simplified Formats specification (docs/specs/openehr/ITS-REST/docs/simplified_formats/ + specifications/docs/overview/Resources.md §Simplified Formats)
+- **ECC-ADL2-001** Upload a valid ADL2 template → 201 with Location; Prefer selects minimal/representation/identifier bodies — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-002** Upload the same ADL2 HRID twice → the second is a 409 conflict — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-003** Upload an unparseable ADL2 source → 422 carrying syntax rule codes in validationErrors — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-004** Upload a semantically invalid ADL2 template (missing description) → 422 with the AOM2 rule code VARD — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-005** Upload a parent archetype, then a specialised child that validates against the stored parent → 201 — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-006** Get an ADL2 template as text/plain source, application/json OperationalTemplateV2, and 406 on xml-only — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-007** Get an unknown ADL2 template_id → 404 — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-008** Version get resolves an exact SEMVER and a major prefix (latest match) → 200; an unknown version → 404 — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-009** Get a template example in each of the four Accept_LOCATABLE forms → 200; the JSON form is a COMPOSITION rooted at the template's archetype — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-010** Example honours the detail_level enum (required/medium/complete) and rejects a bad type/detail_level with 400 — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-011** Example for an unknown template_id → 404; an Accept outside the four LOCATABLE forms → 406 — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-ADL2-012** List ADL2 templates → TemplateMetadata carrying template_id, concept, archetype_id, created_timestamp — the CNF Platform Conformance Test Schedule defines no ADL 2 test case (master04 I_DEFINITION_ADL2 has no upstream cases); ECC-derived from the DEVELOPMENT-status ITS-REST DEFINITION ADL2 operation YAMLs (docs/specs/openehr/ITS-REST/specifications/operations/definition_template_adl2_*.yaml). ADL 2 is OPTIONAL for openEHR conformance (docs/VERSIONS.md ITS-REST DEVELOPMENT row) — OPTIONS-tier, never CORE/STANDARD-gating.
+- **ECC-AQT-001** TERMINOLOGY('expand') as a matches operand filters committed compositions by the value set's codes — the CNF Platform Conformance Test Schedule defines no terminology-function test case (master05/master11 name none); ECC-derived from QUERY master03-syntax §TERMINOLOGY + profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS).
+- **ECC-AQT-002** A non-expand TERMINOLOGY operation as a matches operand (lookup/map) → 400 — the CNF Platform Conformance Test Schedule defines no terminology-function test case (master05/master11 name none); ECC-derived from QUERY master03-syntax §TERMINOLOGY + profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS).
+- **ECC-AQT-003** TERMINOLOGY() in an unsupported position (a SELECT column) → 400 — the CNF Platform Conformance Test Schedule defines no terminology-function test case (master05/master11 name none); ECC-derived from QUERY master03-syntax §TERMINOLOGY + profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS).
+- **ECC-AQT-004** A Boolean TERMINOLOGY assertion with an unsupported operation (lookup) → 400 — the CNF Platform Conformance Test Schedule defines no terminology-function test case (master05/master11 name none); ECC-derived from QUERY master03-syntax §TERMINOLOGY + profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS).
 
 ## 11. Detailed test report
 
@@ -810,10 +830,26 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 | ECC-SF-014 | SimplifiedFormats | json | 2/2 | — | PASS |
 | ECC-SF-015 | SimplifiedFormats | json | 2/2 | — | PASS |
 | ECC-SF-016 | SimplifiedFormats | json | 2/2 | — | PASS |
+| ECC-ADL2-001 | Adl2Provisioning | json | 3/3 | — | PASS |
+| ECC-ADL2-002 | Adl2Provisioning | json | 1/1 | — | PASS |
+| ECC-ADL2-003 | Adl2Provisioning | json | 1/1 | — | PASS |
+| ECC-ADL2-004 | Adl2Provisioning | json | 1/1 | — | PASS |
+| ECC-ADL2-005 | Adl2Provisioning | json | 2/2 | — | PASS |
+| ECC-ADL2-006 | Adl2Provisioning | json | 3/3 | — | PASS |
+| ECC-ADL2-007 | Adl2Provisioning | json | 1/1 | — | PASS |
+| ECC-ADL2-008 | Adl2Provisioning | json | 3/3 | — | PASS |
+| ECC-ADL2-009 | Adl2Provisioning | json | 4/4 | — | PASS |
+| ECC-ADL2-010 | Adl2Provisioning | json | 5/5 | — | PASS |
+| ECC-ADL2-011 | Adl2Provisioning | json | 2/2 | — | PASS |
+| ECC-ADL2-012 | Adl2Provisioning | json | 1/1 | — | PASS |
+| ECC-AQT-001 | AqlTerminology | json | 1/1 | — | PASS |
+| ECC-AQT-002 | AqlTerminology | json | 2/2 | — | PASS |
+| ECC-AQT-003 | AqlTerminology | json | 1/1 | — | PASS |
+| ECC-AQT-004 | AqlTerminology | json | 1/1 | — | PASS |
 
 ## 12. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:54461`
+- Server: `http://127.0.0.1:64859`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):
