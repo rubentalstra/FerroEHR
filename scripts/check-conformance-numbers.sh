@@ -19,7 +19,7 @@ pattern_verdicts='(CORE|STANDARD|OPTIONS|Core|Standard|Options)[[:space:]]*[:·]
 
 fail=0
 for pattern in "$pattern_counts" "$pattern_verdicts"; do
-  if hits=$(grep -rInE "$pattern" website/landing website/book/src 2>/dev/null); then
+  if hits=$(grep -rInE "$pattern" website/landing website/book/src README.md 2>/dev/null); then
     echo "$hits"
     fail=1
   fi
