@@ -263,6 +263,16 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
 - `console_error_panic_hook` is set in the hydrate entry point (real stack
   traces in the browser — `getting_started/leptos_dx`). RustRover users:
   leptosfmt runs via the FileWatchers plugin (no rust-analyzer there).
+- **The `ui-screenshot-guard` CI job** (`.github/workflows/ci.yml`): any PR
+  that touches `app/ehrbase-admin-ui/src/` or `style/` must EITHER commit
+  refreshed captures under `website/book/src/admin-ui/img/` (run
+  `scripts/ui-e2e.sh` with `UI_E2E_DOCS_SHOTS=1` and commit the PNGs) OR
+  carry the **`no-ui-visual-change`** PR label — reserved for changes with
+  zero visual effect (doc comments, server-side-only logic, test-only
+  edits). The label is read from the PR event payload, so adding it AFTER
+  the guard has failed needs a fresh event: close + reopen the PR (a
+  re-run of the failed job re-uses the stale payload — same gotcha as
+  `no-changelog` on the changelog-guard).
 
 ## 11. Islands (deferred option — do not use yet)
 
