@@ -24,9 +24,9 @@ on:
         type: boolean
         default: false
       window_days:
-        description: "Jira resolutiondate window (days)"
+        description: "Jira resolutiondate window in days (default: full history — dedup + the vendored baseline make wide windows free)"
         type: string
-        default: "14"
+        default: "3650"
 
 permissions:
   issues: write
