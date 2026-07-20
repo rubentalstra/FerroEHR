@@ -25,7 +25,7 @@
 //! - **Surface C — per-kind RM structural validators (a seam, NOT here).** The
 //!   RM-invariant checks on template-less commit bodies (`EHR_STATUS`,
 //!   `EHR_ACCESS`, FOLDER, party roots) live with their kinds under
-//!   `service/`; the commit dispatch owns the routing (F-07-01 single seam).
+//!   `service/`; the commit dispatch owns the routing (single seam).
 //!
 //! The boundaries between the files under `opt` follow the **AM constraint
 //! taxonomy** (kind-of-check: structural invariant / RM conformance /
@@ -49,7 +49,7 @@
 //! - **Surface-C dispatch (wired).** `service::ehr`'s `validate_for_commit`
 //!   routes each template-less kind (`EHR_STATUS`/`EHR_ACCESS`/FOLDER/party/
 //!   party-relationship) to its per-kind RM validator, so no commit path
-//!   bypasses validation (F-07-01 single seam).
+//!   bypasses validation (single seam).
 //! - **NOTE — surface-B closed-world semantics.** The
 //!   closed-world check lives in `openehr-flat::validation` (a spec crate,
 //!   outside this crate's ownership). AOM 1.4 defines only the positive

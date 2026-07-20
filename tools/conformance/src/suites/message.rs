@@ -1,8 +1,7 @@
-//! MESSAGING (EHR Extract + TDS) cases — the master13 spine
-//! (`docs/design/conformance/10-messaging.md`).
+//! MESSAGING (EHR Extract + TDS) cases — the master13 spine.
 //!
 //! master13-func_tc_messaging.adoc ships **no concrete test case** (all
-//! SM-operation subsections are `TBD` stubs — register 10 §2), and it carries a
+//! SM-operation subsections are `TBD` stubs), and it carries a
 //! schedule defect: `I_EHR_EXTRACT.export_ehr()` appears **twice** (an authoring
 //! duplicate). So every case is [`ScheduleTrace::EccOriginal`], stub-derived
 //! (owner ruling 2026-07-13). openEHR Messaging is an OPTIONS-profile capability
@@ -13,11 +12,11 @@
 //!
 //! **Disposition: `SKIPPED(NativeApiOnly)`, every case** — each cites the real
 //! `app/ehrbase` testcontainer integration test that proves the operation, so
-//! the capability's evidence is traceable off the wire, never fabricated
-//! (register 10 G-1). The `schedule` reproduces the chapter's literal interface
+//! the capability's evidence is traceable off the wire, never fabricated.
+//! The `schedule` reproduces the chapter's literal interface
 //! name (`I_EHR_EXTRACT` / `I_TDD`) while the `binding` keeps the SM-trait name
 //! (`I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`) — both correct at their own layer;
-//! the divergence is a schedule authoring quirk (register 10 G-2). A skip fn
+//! the divergence is a schedule authoring quirk. A skip fn
 //! embeds its reason as a literal (a `CaseRun` is a bare `fn` pointer).
 
 use crate::engine::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
@@ -157,7 +156,7 @@ fn case(
 /// Generate a `SKIPPED(NativeApiOnly)` run function embedding its cited evidence
 /// as a literal (a `CaseRun` is a bare `fn` pointer and cannot close over it).
 /// The cited `app/ehrbase` integration-test names must stay in lockstep with
-/// `app/ehrbase/tests/` (register 10 G-1: a stale citation silently breaks the
+/// `app/ehrbase/tests/` (a stale citation silently breaks the
 /// off-wire traceability that is the whole evidentiary basis).
 macro_rules! skip_fn {
     ($name:ident, $reason:literal) => {

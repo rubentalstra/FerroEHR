@@ -11,8 +11,8 @@ use crate::validate::{InvariantViolation, Validate};
 // NOTE: `Limits_consistent` needs an ordering on `T`. For BASE intervals
 // `T` is an ordered foundation type, so we bound on `PartialOrd`. (RM
 // `DV_INTERVAL<T: DV_ORDERED>` cannot use this — openEHR ordered-magnitude
-// comparison is the P16 `openehr_magnitude` concern — so it checks only the
-// boundary-flag invariants; see `openehr-rm`.)
+// comparison is the AQL engine's `openehr_magnitude` concern — so it checks
+// only the boundary-flag invariants; see `openehr-rm`.)
 impl<T: PartialOrd> Validate for ProperIntervalData<T> {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
         // Lower_included_valid: an unbounded lower boundary is not included.

@@ -20,8 +20,7 @@
 //! # Our extension
 //!
 //! Everything below the store/version/audit obligation is therefore an
-//! extension: **no openEHR spec governs the concrete scheme — our own design**
-//! (`docs/design/ehr-access-scheme.md`). Likewise the SM defines **no
+//! extension: **no openEHR spec governs the concrete scheme — our own design**. Likewise the SM defines **no
 //! `I_EHR_ACCESS` interface** (authorisation is placed out of band — SM
 //! `openehr_platform/master02-overview.adoc` §General Assumptions), so the
 //! settings read (`EhrbaseService::current_ehr_access_settings`) is a
@@ -36,8 +35,7 @@ use serde_json::Value;
 /// subtype on the wire (canonical JSON). `EHR_ACCESS.scheme()` derives from
 /// it.
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`).
+/// No openEHR spec governs the concrete scheme — our own design.
 pub const EHR_ACCESS_CONTROL_V1_TYPE: &str = "EHRBASE_ACCESS_CONTROL_V1";
 
 /// The scheme name `EHR_ACCESS.scheme()` reports for settings of this type
@@ -47,8 +45,7 @@ pub const EHR_ACCESS_CONTROL_V1_SCHEME: &str = "ehrbase.access_control.v1";
 /// The default access disposition of an EHR whose `EHR_ACCESS.settings` use
 /// this scheme (`master07` "sensible defaults").
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`).
+/// No openEHR spec governs the concrete scheme — our own design.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DefaultAccess {
@@ -63,8 +60,7 @@ pub enum DefaultAccess {
 
 /// The access kind granted to a matched principal.
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`).
+/// No openEHR spec governs the concrete scheme — our own design.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AccessLevel {
@@ -78,8 +74,7 @@ pub enum AccessLevel {
 /// One entry of the access list: a principal and the access it is granted
 /// (`master07` §Access Control — "identified individuals" and "categories").
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`).
+/// No openEHR spec governs the concrete scheme — our own design.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccessEntry {
     /// `user:<authenticated id>` (Basic username / OIDC subject) or
@@ -100,8 +95,7 @@ pub struct AccessEntry {
 /// within jurisdictions of use" — BASE
 /// `architecture_overview/master07-security.adoc` §Access Control).
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`).
+/// No openEHR spec governs the concrete scheme — our own design.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Privacy {
     /// The privacy level of every Composition without an override.
@@ -131,8 +125,7 @@ impl Privacy {
 
 /// A privacy-level pin for one versioned Composition.
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`).
+/// No openEHR spec governs the concrete scheme — our own design.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CompositionOverride {
     /// The `VERSIONED_COMPOSITION` uid (versioned-object head).
@@ -143,8 +136,7 @@ pub struct CompositionOverride {
 
 /// Parsed `EHR_ACCESS.settings` for the `ehrbase.access_control.v1` scheme.
 ///
-/// No openEHR spec governs the concrete scheme — our own design
-/// (`docs/design/ehr-access-scheme.md`); it realizes the `master07` policy
+/// No openEHR spec governs the concrete scheme — our own design; it realizes the `master07` policy
 /// prose (access list + gate-keeper + privacy levels + sensible defaults).
 /// Deserialization is tolerant: every field defaults, so an absent or partial
 /// object still yields a usable (default-open) value.

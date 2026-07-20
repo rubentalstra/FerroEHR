@@ -1,5 +1,4 @@
-//! The authorization request types the ABAC PDP seam consumes
-//! (`docs/enterprise/access-control.md` §5.3): the resource kind, the access
+//! The authorization request types the ABAC PDP seam consumes: the resource kind, the access
 //! mode (the Cedar action axis), the resolved attributes, and the multi-valued
 //! fan-out semantics (§5.4) both engines share.
 //!

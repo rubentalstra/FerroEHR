@@ -6,6 +6,10 @@
 
 openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&nbsp; ADL 1.4 + ADL 2.4 templates &nbsp;·&nbsp; SM Platform Service Model &nbsp;·&nbsp; PostgreSQL 18-native storage
 
+[![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
+[![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
+
 [![CI](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml)
 [![Docs](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/docs.yml/badge.svg?branch=develop)](https://rubentalstra.github.io/ehrbase-rs/)
 [![Containers](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml)
@@ -19,9 +23,6 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![ECC STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![ECC OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-options.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 
-[![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
-[![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
 [![openEHR BASE](https://img.shields.io/badge/openEHR_BASE-1.3.0-1F6FEB.svg)](https://specifications.openehr.org/releases/BASE/latest)
 [![openEHR RM](https://img.shields.io/badge/openEHR_RM-1.2.0-1F6FEB.svg)](https://specifications.openehr.org/releases/RM/latest)
 [![openEHR AM](https://img.shields.io/badge/openEHR_AM-1.4_%2B_2.4-1F6FEB.svg)](https://specifications.openehr.org/releases/AM/latest)

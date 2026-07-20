@@ -1,12 +1,11 @@
-//! AQL planner errors (P16 packages 2+3).
+//! AQL planner errors.
 //!
 //! Two families, both surfaced before any SQL is built:
 //!
 //! * [`AqlFeatureError`] — the feature-envelope rejections. Every variant names
 //!   the rejected construct and cites the governing QUERY 1.1 spec section, so a
 //!   rejection is always explainable against the vendored spec
-//!   (`docs/specs/openehr/QUERY/docs/AQL/`). The accept/reject envelope is
-//!   documented in `docs/design/aql-engine.md` §Feature envelope and must remain
+//!   (`docs/specs/openehr/QUERY/docs/AQL/`). The accept/reject envelope must remain
 //!   a superset of `EHRbase`'s.
 //! * [`AnalysisError`] — path analysis / typing failures (unknown class or
 //!   variable, unresolvable attribute, type mismatch, unbound parameter).

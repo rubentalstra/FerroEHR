@@ -8,7 +8,7 @@ use crate::sut::descriptor::{SutDescriptor, SutKind};
 
 /// ehrbase-rs behind the root compose stack (`scripts/conformance.sh`). Edition is
 /// PINNED to development: the ladder must never mask a wire regression in
-/// our own server (register 90 §4).
+/// our own server.
 #[must_use]
 pub fn ehrbase_rs(
     base_url: String,

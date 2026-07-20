@@ -331,8 +331,8 @@ async fn incomplete_lifecycle_relaxes_lower_bounds_but_not_wrongness() {
 // The commit path validates each COMPOSITION against its operational template's
 // derived-runtime `WebTemplate`, resolved through `web_template_for`. That seam
 // is cache-first: once a template is warm, subsequent commits are served from
-// the in-memory `WebTemplate` cache and never re-read `template_store` (P20 T3 —
-// the profiled per-commit OPT read). No openEHR spec governs the cache; S-09
+// the in-memory `WebTemplate` cache and never re-read `template_store` (the
+// profiled per-commit OPT read). No openEHR spec governs the cache; the spec
 // blesses a compiled near-runtime form, the caching is our own design.
 
 /// A second commit against an already-warm template is served from the cached

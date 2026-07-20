@@ -2,7 +2,7 @@
 //!
 //! Every ADL source file under `tests/corpus/**` (both `.adls` and `.adl`) must
 //! be claimed by exactly one harness category — 100% coverage, no dead fixtures
-//! (`docs/plans/adl2.md` §Corpus coverage — HARD REQUIREMENT). This gate is the
+//! (a HARD REQUIREMENT: every vendored corpus file is exercised). This gate is the
 //! accounting layer: it walks the whole tree, categorises each file by its path,
 //! and fails if any file is unclaimed (a new or moved fixture breaks CI). It
 //! keys on the FULL PATH (two duplicate basenames exist — `tests/corpus/INVENTORY.md`

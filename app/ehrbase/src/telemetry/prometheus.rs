@@ -49,7 +49,7 @@ pub const AQL_QUERIES: &str = "aql_queries_total";
 /// AQL query phase-latency histogram (`phase` = plan/sql/execute/assemble).
 pub const AQL_QUERY_DURATION: &str = "aql_query_duration_seconds";
 /// AQL plan-cache event counter (`event` = hit/miss): the bounded cache of
-/// lowered query plans keyed on the query text (P20 — no openEHR spec governs
+/// lowered query plans keyed on the query text (no openEHR spec governs
 /// this, our own performance design).
 pub const AQL_PLAN_CACHE_EVENTS: &str = "aql_plan_cache_events_total";
 /// Committed-composition counter (`change_type`).

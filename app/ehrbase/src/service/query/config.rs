@@ -1,7 +1,6 @@
 //! The `[query]` section — AQL execution knobs.
 //!
-//! No openEHR spec governs these tuning knobs — our own operational extension
-//! (`docs/design/configuration.md` §3.12). A field of the one config tree
+//! No openEHR spec governs these tuning knobs — our own operational extension. A field of the one config tree
 //! ([`crate::config::EhrbaseConfig`]); no loader of its own. These replace the
 //! two former raw-env reads (`EHRBASE__QUERY__PLAN_CACHE_CAPACITY` /
 //! `EHRBASE__QUERY__TIMEOUT_MS`) whose parse failures were silently swallowed —

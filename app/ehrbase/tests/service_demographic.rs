@@ -357,7 +357,7 @@ async fn person_lifecycle_end_to_end() {
     assert!(after.is_empty(), "deleted current read is 204 (Null body)");
 }
 
-/// P20-item-34 party write-path fix: the create/update representation is now
+/// Party write-path fix: the create/update representation is now
 /// built **from the commit result** (never a post-commit re-read). It must be
 /// byte-identical to a fresh read — the served body is
 /// `inject_uid(reassemble(decompose(body)))` and the node codec round-trips

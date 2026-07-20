@@ -1,7 +1,7 @@
 //! openEHR **SMART App Launch and Service Discovery** (development edition)
 //! — `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master00-09*.adoc`.
 //!
-//! Register + full design: `docs/design/its-rest/smart.md`. This server is
+//! This server is
 //! the SMART *Platform's openEHR CDR* (the `org.openehr.rest` resource
 //! server) — the three capabilities that belong here (master02 §Overview
 //! capability split):

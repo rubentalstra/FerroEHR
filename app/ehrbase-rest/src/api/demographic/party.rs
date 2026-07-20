@@ -136,8 +136,8 @@ pub(super) async fn run(
 
 /// Persist any `openehr-item-tag` request-header `ITEM_TAGs` against the
 /// just-written party and reflect the stored set on the response metadata seam
-/// so the response headers echo them (`person_create.yaml` / `person_update.yaml`
-/// G-3). The party must already exist (`item_tag.target_vo_id` FK), so this runs
+/// so the response headers echo them (`person_create.yaml` /
+/// `person_update.yaml`). The party must already exist (`item_tag.target_vo_id` FK), so this runs
 /// after the create/update write. A present-but-empty header clears all tags
 /// (the "remove all `ITEM_TAGs`" signal); an absent header is a no-op.
 async fn persist_request_tags(

@@ -1,5 +1,5 @@
 # Own-corpus adjudications — committed reclassification of vendored-data defects
-# for OUR OWN baseline (register 07 §4 G-3; format documented in
+# for OUR OWN baseline (format documented in
 # `src/model/adjudication.rs`). Applied by the runner (`src/engine/run.rs`) to
 # every SUT, keyed by ECC id:
 #

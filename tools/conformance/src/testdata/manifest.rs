@@ -25,7 +25,7 @@
 //! - **note** — required; cites the schedule section that references the data
 //!   (or the defect/adjudication for owned/derived rows). Never empty.
 //!
-//! The register-80 ruling governs this file: the Robot corpus is raw material
+//! A standing ruling governs this file: the Robot corpus is raw material
 //! only, named per fixture key; the runner resolves fixture keys through the
 //! manifest ONLY (no free-path corpus seam).
 
@@ -80,7 +80,7 @@ pub enum ManifestError {
     },
 }
 
-/// The kind of data a fixture row names (the register-80 `kind` vocabulary).
+/// The kind of data a fixture row names (the `kind` vocabulary).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
     /// An operational template (`.opt`).

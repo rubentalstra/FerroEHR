@@ -94,7 +94,7 @@ impl EhrbaseService {
 }
 
 /// The default `EHR_ACCESS` created with every EHR (RM ehr master04 §EHR
-/// Creation; finding F-06-07). `EHR_ACCESS` is a LOCATABLE with only the
+/// Creation). `EHR_ACCESS` is a LOCATABLE with only the
 /// optional `settings`; with no access-control scheme configured (Stage 1 has
 /// no RBAC), it is committed with none.
 pub(in crate::service) fn default_ehr_access() -> Value {

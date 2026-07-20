@@ -14,7 +14,7 @@
 //!
 //! The REST layer holds **no caches of its own** — in particular, `WebTemplate`
 //! resolution is a single service-owned concern reached through
-//! [`ehrbase::service::WebTemplateService`] (W2-K / finding F-13-02).
+//! [`ehrbase::service::WebTemplateService`].
 
 use std::sync::Arc;
 

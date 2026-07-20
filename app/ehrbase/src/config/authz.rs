@@ -1,8 +1,7 @@
 //! Authorization configuration ([`AuthzConfig`]) — the `[authz]` section of the
-//! one server configuration tree (`docs/design/configuration.md`); it carries
+//! one server configuration tree; it carries
 //! **no loader of its own** — the whole tree is assembled once by
-//! `ehrbase::config` and this struct is deserialized as a field of it. §8 of
-//! `docs/enterprise/access-control.md`.
+//! `ehrbase::config` and this struct is deserialized as a field of it.
 //!
 //! Authorization is spec-silent: no openEHR spec governs RBAC/ABAC (the SM
 //! places it out of band), so this is our own enterprise design.

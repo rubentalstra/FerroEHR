@@ -1,8 +1,7 @@
 //! The `[multimedia]` section — `DV_MULTIMEDIA` externalization.
 //!
 //! **No openEHR spec governs this — our own design/extension.** A field of the
-//! one config tree ([`crate::config::EhrbaseConfig`],
-//! `docs/design/configuration.md` §3.15); no loader of its own.
+//! one config tree ([`crate::config::EhrbaseConfig`]); no loader of its own.
 //!
 //! **Off by default** (`enabled = false`): with externalization disabled the
 //! commit/read paths are byte-identical to today's inline behaviour and no

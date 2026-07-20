@@ -1,5 +1,5 @@
 //! `AUDIT_DETAILS` — the commit provenance every version and contribution
-//! carries (S-20..S-23), and the `audit_change_type` terminology codes it is
+//! carries, and the `audit_change_type` terminology codes it is
 //! coded from.
 //!
 //! Spec: RM common `master04-generic_package.adoc` §Audit Details

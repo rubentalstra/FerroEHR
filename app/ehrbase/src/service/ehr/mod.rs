@@ -74,8 +74,7 @@ fn committed_meta(
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
 }
 
-/// Enforce the full-`OBJECT_VERSION_ID` `If-Match` precondition (F-01-09 /
-/// F-02-08): the client's `preceding_version_uid` MUST equal the resource's
+/// Enforce the full-`OBJECT_VERSION_ID` `If-Match` precondition: the client's `preceding_version_uid` MUST equal the resource's
 /// current latest `version_uid` **in full** (`object_id` + creating-system id +
 /// version), not merely the trunk number (ITS-REST `parameters/If-Match`). A
 /// mismatch is a `412`. A `None` `latest` defers first-version/not-found

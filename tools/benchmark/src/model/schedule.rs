@@ -13,8 +13,8 @@
 //!   bootstrapped in the warmup window, new admits at their (measured) admission
 //!   time. See the [`event`](crate::model::event) module NOTE.
 //! - **Arrival shape.** `hour`/`smoke` spread occurrences uniformly over the
-//!   active window; `day` samples from the diurnal weight curve (register 00 §3
-//!   peaks ~08:00/14:00, bumps 07:00/15:00/23:00, night trough).
+//!   active window; `day` samples from the diurnal weight curve (peaks
+//!   ~08:00/14:00, bumps 07:00/15:00/23:00, night trough).
 
 use std::time::Duration;
 
@@ -364,8 +364,8 @@ fn sim_time(at: Duration, window_s: f64) -> String {
     format!("2024-06-01T{hh:02}:{mm:02}:{ss:02}.{ms:03}Z")
 }
 
-/// The normalized cumulative distribution of the diurnal weight curve
-/// (register 00 §3). `cdf[i]` is the cumulative weight up to bucket `i`.
+/// The normalized cumulative distribution of the diurnal weight curve.
+/// `cdf[i]` is the cumulative weight up to bucket `i`.
 fn diurnal_cdf() -> Vec<f64> {
     let mut weights = Vec::with_capacity(DIURNAL_BUCKETS);
     let mut total = 0.0;
@@ -385,7 +385,7 @@ fn diurnal_cdf() -> Vec<f64> {
     cdf
 }
 
-/// The diurnal activity weight at day fraction `tau` (register 00 §3): a low
+/// The diurnal activity weight at day fraction `tau`: a low
 /// night base with morning (08:00) and afternoon (14:00) peaks and shift-change
 /// bumps at 07:00/15:00/23:00.
 fn diurnal_weight(tau: f64) -> f64 {
@@ -507,7 +507,7 @@ mod tests {
     #[test]
     fn read_write_budget_is_about_seventy_thirty() {
         // Clinical write budget counts a CONTRIBUTION as its committed
-        // compositions (register 00 §2.1 capacity-planning lineage): a batch
+        // compositions (capacity-planning lineage): a batch
         // commit of N compositions is N clinical writes.
         let ops = build(&spec(Profile::Hour, 64, 3));
         let mut reads = 0u64;

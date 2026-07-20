@@ -8,9 +8,8 @@ metadata:
 ---
 
 The conformance instrument is the **ehrbase-rs Conformance Catalogue (ECC)**
-— our own framework, design v4 in `docs/design/conformance-framework.md`,
-plan `docs/plans/s2-phase-05-cnf-engine-rewrite.md`, branch
-`claude/cnf-hardening`.
+— our own framework; its design lives in the `tools/conformance` crate's own
+doc comments (`src/lib.rs` + the module headers) and git history.
 
 **Why:** the official openEHR CNF corpus is frozen/unmaintained upstream
 (dormant since 2024-08, stub chapters, 2019 Robot/Python harness). Owner

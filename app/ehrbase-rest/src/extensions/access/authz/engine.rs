@@ -1,5 +1,4 @@
-//! The policy-decision-point (PDP) seam (`docs/enterprise/access-control.md`
-//! §5.4): one async trait behind which the embedded [`CedarEngine`] and the
+//! The policy-decision-point (PDP) seam: one async trait behind which the embedded [`CedarEngine`] and the
 //! v1-compatible [`RemotePdp`] are interchangeable.
 //!
 //! The engine **owns** the multi-valued fan-out semantics (§5.4): given an

@@ -43,7 +43,7 @@ serde_json = { workspace = true }
 indexmap = { workspace = true }
 
 # Config, errors, observability, time. (Configuration is one root tree owned by
-# the `ehrbase` binary — `docs/design/configuration.md`; this crate defines the
+# the `ehrbase` binary; this crate defines the
 # adapter's config slice as plain serde structs, with no loader of its own.)
 thiserror = { workspace = true }
 tracing = { workspace = true }

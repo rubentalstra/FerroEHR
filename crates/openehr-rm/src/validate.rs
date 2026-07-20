@@ -33,7 +33,7 @@
 //!   `Encoding_valid`, `Category_validity`, `Setting_valid`, `Change_type_valid`,
 //!   `Normal_status_validity`, `Media_type_valid`, `Current_state_valid`, …).
 //!   `openehr-rm` has no `openehr-term` dependency; these belong to the
-//! composition validator + terminology binding (P15 PR-C), which resolves
+//! composition validator + terminology binding, which resolves
 //!   codes against the openEHR terminology bundle.
 //! - **archie's `ignored = true` invariants** (never executed by archie —
 //!   implementing them would over-reject relative to the reference).

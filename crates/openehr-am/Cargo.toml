@@ -1,7 +1,7 @@
 [package]
 name = "openehr-am"
 version = "2.4.0"                 # = the implemented openEHR spec version: AM 2.4.0 (also carries the AM 1.4 profile as am14)
-description = "openEHR AM: Archetype Model 1.4.0 (am14) + 2.4.0 (am24), generated from BMM (ADR-004)"
+description = "openEHR AM: Archetype Model 1.4.0 (am14) + 2.4.0 (am24), generated from BMM"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

@@ -9,7 +9,7 @@
 //! NOTE (RM common `master06-change_control_package.adoc` §Digital
 //! Signature): the spec models `VERSION.signature` as a stored fact carried
 //! with the data (a signature "created by the committer", potentially in
-//! another agreed serialization — S-44). Client-supplied signatures are
+//! another agreed serialization). Client-supplied signatures are
 //! therefore exempt from our digest/pgp recomputation: a foreign signature
 //! (neither our `sha256:` digest nor a PGP signature we hold a key for) is
 //! [`Verdict::ClientForeign`] and never a failure. Only our own output formats

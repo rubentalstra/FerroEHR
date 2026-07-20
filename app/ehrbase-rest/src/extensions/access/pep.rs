@@ -8,8 +8,7 @@
 //!   authorisation out of band (SM `openehr_platform/master02-overview.adoc`
 //!   §General Assumptions), and no CNF profile carries an authorisation
 //!   requirement. The attribute model, the patient gate, and the PDP fan-out
-//!   here are **our own enterprise design** (`docs/enterprise/access-control.md`
-//!   §5.7/§7), not a spec surface — flagged explicitly per the repo rule that
+//!   here are **our own enterprise design**, not a spec surface — flagged explicitly per the repo rule that
 //!   spec-silent behaviour is called out rather than dressed as conformance.
 //! - **SMART App Launch IS spec-grounded.** The scope grammar and the
 //!   launch-context binding come from the vendored openEHR SMART edition
@@ -590,7 +589,7 @@ async fn smart_gate(
         // `patient` claim (master07 token-response table); it is matched against
         // the EHR *subject* external ref, so an operator binds SMART patient
         // compartments by configuring the launch-context claim to carry the
-        // subject id the EHR is keyed by (docs/design/its-rest/smart.md).
+        // subject id the EHR is keyed by.
         Ok(Some(ctx)) => subject_gate(abac, principal, Some(ctx.as_str()), ehr_id).await,
     }
 }

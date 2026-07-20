@@ -57,7 +57,7 @@ impl EhrbaseService {
             &self.effective_system_id(),
         );
         // 553|incomplete| relaxes validation strictness (master06 §Version
-        // Lifecycle; blueprint incomplete-lifecycle rule).
+        // Lifecycle).
         let incomplete = version.lifecycle_state.code_string == "553";
         let composition = version.data;
         // The EHR-existence (404) and content-writability (409) gates in one
@@ -93,7 +93,7 @@ impl EhrbaseService {
 
     /// Retrieve a COMPOSITION by its versioned-object id, optionally at a
     /// specific version (else the latest). A deleted version resolves to
-    /// `Value::Null` (→ `204`, F-02-01) — never 404 or 500.
+    /// `Value::Null` (→ `204`) — never 404 or 500.
     ///
     /// # Errors
     /// [`ServiceError::NotFound`] when the version does not exist or belongs
@@ -192,8 +192,7 @@ impl EhrbaseService {
     }
 
     /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `at`, or the latest
-    /// when `at` is `None` (`GET …/versioned_composition/{uid}/version`,
-    /// F-02-04). A deleted version still returns `200` with the
+    /// when `at` is `None` (`GET …/versioned_composition/{uid}/version`). A deleted version still returns `200` with the
     /// deleted-lifecycle `ORIGINAL_VERSION` (no `data`).
     ///
     /// # Errors
@@ -228,7 +227,7 @@ impl EhrbaseService {
     /// returning the committed version identity. ONE merged pre-read
     /// (`current_composition_meta`) carries the whole write pre-check: the
     /// owning EHR (ownership → 404), the full-`OBJECT_VERSION_ID` `If-Match`
-    /// identity (412, F-02-08 — ITS-REST overview §Concurrency control), the
+    /// identity (412 — ITS-REST overview §Concurrency control), the
     /// lifecycle (deleted → 404), the stored template root fragment (422) and
     /// the EHR's `is_modifiable` flag (409) — the former `If-Match` meta read,
     /// modify pre-read, and `is_modifiable` side-SELECT are one statement.
@@ -427,7 +426,7 @@ impl EhrbaseService {
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
         // Lean delete pre-read: the pre-checks need only the owning EHR, the
-        // lifecycle (already-deleted → 400, F-02-05), and the current
+        // lifecycle (already-deleted → 400), and the current
         // `VERSION_TREE_ID` (the `preceding_version_uid` conflict compare) —
         // not a full node reassembly (the deleted version stores no nodes
         // anyway).
@@ -650,7 +649,7 @@ impl EhrbaseService {
 
     /// The `ORIGINAL_VERSION` of a COMPOSITION extant at `a_time`, or the
     /// latest when `a_time` is `None`
-    /// (`GET …/versioned_composition/{uid}/version`, F-02-04).
+    /// (`GET …/versioned_composition/{uid}/version`).
     ///
     /// # Errors
     /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing

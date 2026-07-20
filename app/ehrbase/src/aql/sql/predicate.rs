@@ -2,8 +2,7 @@
 //! operators), the whitelisted scalar functions (§Functions), and the node/
 //! source predicate conditions (§Standard predicate, §Node predicate).
 //!
-//! No openEHR spec governs the SQL shapes — this is our own design
-//! (`docs/design/aql-engine.md`). Every operator maps to a typed `sea-query`
+//! No openEHR spec governs the SQL shapes — this is our own design. Every operator maps to a typed `sea-query`
 //! binary op; string functions extract as text and numeric functions through the
 //! magnitude coercion, following each function's declared signature.
 
@@ -43,7 +42,7 @@ impl Builder<'_> {
                 rhs,
                 coercion,
             } => {
-                // Typed EHR-id equality (item 24): `e/ehr_id/value = <uuid>` as
+                // Typed EHR-id equality: `e/ehr_id/value = <uuid>` as
                 // a uuid comparison on `ehr.id` instead of a text-cast on both
                 // sides (which blinded the btree on `ehr.id` and left the join
                 // unbounded). uuid equality is value-based — case-insensitive —
@@ -87,7 +86,7 @@ impl Builder<'_> {
                 values,
                 coercion,
             } => {
-                // G-12 (matches item 1, QUERY master03 §matches): a mixed-type
+                // Matches (QUERY master03 §matches): a mixed-type
                 // leaf matched against numeric literals compares numerically.
                 let numeric = *coercion == Coercion::Raw
                     && values.iter().any(|b| {
@@ -112,7 +111,7 @@ impl Builder<'_> {
         }
     }
 
-    /// The typed EHR-id comparison fast path (item 24): fires only for
+    /// The typed EHR-id comparison fast path: fires only for
     /// `Eq`/`Ne` between an `EHR.ehr_id/value` path and a string literal or
     /// parameter. Returns `None` (fall through to the generic text lowering)
     /// for every other shape — ordering comparisons stay textual (uuid byte

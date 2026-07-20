@@ -37,10 +37,10 @@ EHRbase gets its RM canonical XML from the external `archie` library, which
 bundles the **v1-namespace** schemas. So for a 1:1 faithful port, our XML
 *output* must be v1-namespace to match EHRbase byte-for-byte at the REST surface.
 
-## Decision status — SETTLED, refined by ADR-005 (both namespaces generated)
+## Decision status — SETTLED (both namespaces generated)
 
 - RM *model* stays 1.2.0 internally (JSON serialization unaffected).
-- `emit-xml` generates **both** wire lineages (ADR-005): **v1**
+- `emit-xml` generates **both** wire lineages: **v1**
   (`its-xml-1.0.2-nsv1/`, namespace `.../v1`) is the **default / Stage-1 parity
   target** (what stock EHRbase emits); **v2** (`its-xml-2.0.0-nsv2/`,
   `.../v2`) is generated behind a flag as the latest-spec target for the

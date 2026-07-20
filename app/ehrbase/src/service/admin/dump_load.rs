@@ -707,7 +707,7 @@ impl EhrbaseService {
         // non-overlap invariant check the regular write path holds by
         // construction (RM common master06: one valid version per lineage at
         // any instant; the enforcement mechanism is our own design — the
-        // baseline's P20 NOTE). A corrupted or hand-crafted archive with
+        // baseline schema NOTE). A corrupted or hand-crafted archive with
         // overlapping validity fails the whole record before commit.
         let overlap: bool = sqlx::query_scalar(
             "SELECT EXISTS ( \

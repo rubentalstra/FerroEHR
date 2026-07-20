@@ -1,5 +1,5 @@
 //! Axum handlers for the logger-reload surface (model:
-//! [`ehrbase::telemetry::log_reload::LogReload`]; W-14 B+C split).
+//! [`ehrbase::telemetry::log_reload::LogReload`]).
 
 use axum::Json;
 use axum::response::{IntoResponse, Response};

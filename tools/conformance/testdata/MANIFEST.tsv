@@ -1,5 +1,5 @@
 # Fixture manifest — the committed, single source of truth for every data set
-# the conformance suites use (register-80 ruling, docs/design/conformance/80-data-sets.md).
+# the conformance suites use.
 #
 # Format: one tab-separated row per fixture key.
 #   key <TAB> kind <TAB> source <TAB> adaptation <TAB> note
@@ -76,7 +76,7 @@ composition.all-types-v2.vendored	composition	corpus:query/data_load/composition
 # ── Owned vendored external template (not a corpus correction; REGISTER.md) ──
 owned.template.ips	opt	owned:valid/templates/international_patient_summary.opt	none	REGISTER.md International Patient Summary — official openEHR CKM OPT export (CKM template 1013.26.376); drives tpl/adl14-example-roundtrip (ITS-REST development definition_template_adl1.4_example_get + CNF master15 L38 template-valid instances)
 
-# ── Programmatically authored data sets (register-80 preferred source; master15 §Implementation notes) ──
+# ── Programmatically authored data sets (preferred source; master15 §Implementation notes) ──
 # "the constraint archetypes should be generated" — the authoring code lives in
 # the content suites (testdata/author.rs); resolution here returns a marker.
 content.author-opt	opt	generated:author_content_opt	none	master15 Content §Implementation notes — constraint archetypes should be generated (OPT authoring)
@@ -89,31 +89,31 @@ nested.template.opt	opt	corpus:valid_templates/nested/nested.opt	none	registers 
 nested.composition.json	composition	corpus:compositions/CANONICAL_JSON/nested.en.v1__full.json	none	registers 11 SIG/TS — canonical event composition (category 433) committed for signing + TERMINOLOGY expand
 # The minimal admin OPT + its CONTRIBUTION creation/modification — the SIG
 # all-kinds + client-verbatim cases commit these over the CONTRIBUTION path.
-minimal-admin.template.opt	opt	corpus:valid_templates/minimal/minimal_admin.opt	none	register 11 SIG — minimal admin constraining OPT for the CONTRIBUTION-path signing cases
-minimal-admin.contribution.create	contribution	corpus:contributions/valid/minimal/minimal_admin.contribution.json	none	register 11 SIG — CONTRIBUTION creation (v1) for sig/all-kinds + sig/client-verbatim (RM common master06 §Contribution)
-minimal-admin.contribution.modification	contribution	corpus:contributions/valid/minimal/minimal_admin.contribution.modification.complete.json	none	register 11 SIG — CONTRIBUTION modification (v2) for sig/all-kinds multi-version signing (RM common master06 §Version tree)
+minimal-admin.template.opt	opt	corpus:valid_templates/minimal/minimal_admin.opt	none	SIG — minimal admin constraining OPT for the CONTRIBUTION-path signing cases
+minimal-admin.contribution.create	contribution	corpus:contributions/valid/minimal/minimal_admin.contribution.json	none	SIG — CONTRIBUTION creation (v1) for sig/all-kinds + sig/client-verbatim (RM common master06 §Contribution)
+minimal-admin.contribution.modification	contribution	corpus:contributions/valid/minimal/minimal_admin.contribution.modification.complete.json	none	SIG — CONTRIBUTION modification (v2) for sig/all-kinds multi-version signing (RM common master06 §Version tree)
 # A FOLDER write for the SIG all-kinds fourth data set (directory read serves the
-# bare FOLDER; signature proven off-wire per register 11 §2).
-subfolders.directory.json	directory	corpus:directory/subfolders_in_directory.json	none	register 11 SIG — FOLDER write for sig/all-kinds data set 4 (RM ehr §DIRECTORY)
+# bare FOLDER; signature proven off-wire).
+subfolders.directory.json	directory	corpus:directory/subfolders_in_directory.json	none	SIG — FOLDER write for sig/all-kinds data set 4 (RM ehr §DIRECTORY)
 
-# ── Content data-validation bases + authored variants (register 12; master15/16) ──
+# ── Content data-validation bases + authored variants (master15/16) ──
 # The category-event COMPOSITION base for the master15 content-cardinality/context
 # cases (compositions/valid/ is outside the composition.canonical-json dir key).
-content.base.minimal-evaluation.composition	composition	corpus:compositions/valid/minimal_evaluation_1.composition.json	none	master15 Content §COMPOSITION Test Cases — category-event base for content-cardinality × context-occurrences authoring (register 12 §2.1)
+content.base.minimal-evaluation.composition	composition	corpus:compositions/valid/minimal_evaluation_1.composition.json	none	master15 Content §COMPOSITION Test Cases — category-event base for content-cardinality × context-occurrences authoring
 # Authored constraint OPT families (master15 §Implementation notes: "the
-# archetype/template test cases … should be generated"; register 12 G-2). Each
+# archetype/template test cases … should be generated). Each
 # names the author.rs tightening transform as its source class over the base OPT;
 # resolution returns a marker — the authoring path is the content suite.
-content.comp-cardinality.opt	opt	generated:set_root_multiple_cardinality	none	master15 Content §COMPOSITION Test Cases — COMPOSITION.content cardinality tightened from minimal/minimal_evaluation.opt (register 12 G-2)
-content.comp-context-mandatory.opt	opt	generated:set_root_single_mandatory	none	master15 Content §COMPOSITION Test Cases — COMPOSITION.context existence 1..1 tightened from minimal/minimal_evaluation.opt (register 12 G-2)
-content.hist-events-cardinality.opt	opt	generated:constrain_nested_multiple	none	master16 Content §HISTORY Test Cases — HISTORY.events cardinality tightened from minimal_persistent/persistent_minimal.opt (register 12 G-2)
-content.hist-summary-mandatory.opt	opt	generated:constrain_nested_single_mandatory	none	master16 Content §HISTORY Test Cases — HISTORY.summary existence 1..1 tightened from minimal_persistent/persistent_minimal.opt (register 12 G-2)
-content.obs-existence.opt	opt	generated:constrain_nested_single_mandatory	none	master16 Content §OBSERVATION Test Cases — OBSERVATION.state/protocol existence tightened from minimal_persistent/persistent_minimal.opt (register 12 G-1/G-2)
-content.event-state-existence.opt	opt	generated:constrain_nested_single_mandatory	none	master16 Content §EVENT Test Cases — EVENT.state existence tightened from minimal_persistent/persistent_minimal.opt (register 12 G-1/G-2)
-content.event-type-narrow.opt	opt	generated:narrow_nested_child_type	none	master16 Content §EVENT Test Cases — HISTORY.events narrowed to POINT_EVENT/INTERVAL_EVENT from minimal_persistent/persistent_minimal.opt (register 12 G-2)
-content.itemstr-reopen.opt	opt	generated:retype_attr_child	none	master16 Content §ITEM_STRUCTURE Test Cases — EVALUATION.data slot re-opened to abstract ITEM_STRUCTURE from validation/clinical_content_validation.opt (register 12 G-2)
-# Fabricated composition variants (register 12 G-1/G-8): valid RM subtrees the
+content.comp-cardinality.opt	opt	generated:set_root_multiple_cardinality	none	master15 Content §COMPOSITION Test Cases — COMPOSITION.content cardinality tightened from minimal/minimal_evaluation.opt
+content.comp-context-mandatory.opt	opt	generated:set_root_single_mandatory	none	master15 Content §COMPOSITION Test Cases — COMPOSITION.context existence 1..1 tightened from minimal/minimal_evaluation.opt
+content.hist-events-cardinality.opt	opt	generated:constrain_nested_multiple	none	master16 Content §HISTORY Test Cases — HISTORY.events cardinality tightened from minimal_persistent/persistent_minimal.opt
+content.hist-summary-mandatory.opt	opt	generated:constrain_nested_single_mandatory	none	master16 Content §HISTORY Test Cases — HISTORY.summary existence 1..1 tightened from minimal_persistent/persistent_minimal.opt
+content.obs-existence.opt	opt	generated:constrain_nested_single_mandatory	none	master16 Content §OBSERVATION Test Cases — OBSERVATION.state/protocol existence tightened from minimal_persistent/persistent_minimal.opt
+content.event-state-existence.opt	opt	generated:constrain_nested_single_mandatory	none	master16 Content §EVENT Test Cases — EVENT.state existence tightened from minimal_persistent/persistent_minimal.opt
+content.event-type-narrow.opt	opt	generated:narrow_nested_child_type	none	master16 Content §EVENT Test Cases — HISTORY.events narrowed to POINT_EVENT/INTERVAL_EVENT from minimal_persistent/persistent_minimal.opt
+content.itemstr-reopen.opt	opt	generated:retype_attr_child	none	master16 Content §ITEM_STRUCTURE Test Cases — EVALUATION.data slot re-opened to abstract ITEM_STRUCTURE from validation/clinical_content_validation.opt
+# Fabricated composition variants: valid RM subtrees the
 # vendored bases lack, built by the named author-fn over the persistent base.
-content.obs-state-protocol.composition	composition	generated:inject_obs_state_protocol	none	master16 Content §OBSERVATION Test Cases — persistent_minimal base + injected state (HISTORY) + protocol (ITEM_STRUCTURE) for the present-accept row (register 12 G-1/G-8)
-content.event-state.composition	composition	generated:inject_event_state	none	master16 Content §EVENT Test Cases — persistent_minimal base + injected EVENT.state (ITEM_STRUCTURE) for the present-accept row (register 12 G-1/G-8)
-content.interval-event.composition	composition	generated:build_interval_event	none	master16 Content §EVENT Test Cases type_interval_event — persistent_minimal POINT_EVENT promoted to a valid INTERVAL_EVENT (+ width PT1H / math_function openehr::146|mean|) (register 12 G-8)
+content.obs-state-protocol.composition	composition	generated:inject_obs_state_protocol	none	master16 Content §OBSERVATION Test Cases — persistent_minimal base + injected state (HISTORY) + protocol (ITEM_STRUCTURE) for the present-accept row
+content.event-state.composition	composition	generated:inject_event_state	none	master16 Content §EVENT Test Cases — persistent_minimal base + injected EVENT.state (ITEM_STRUCTURE) for the present-accept row
+content.interval-event.composition	composition	generated:build_interval_event	none	master16 Content §EVENT Test Cases type_interval_event — persistent_minimal POINT_EVENT promoted to a valid INTERVAL_EVENT (+ width PT1H / math_function openehr::146|mean|)

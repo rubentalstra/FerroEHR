@@ -19,7 +19,7 @@
 //!
 //! ## Data-set discipline
 //!
-//! Every ADL 2 source is **generated in-harness** (register-80 preference order
+//! Every ADL 2 source is **generated in-harness** (preference order
 //! `generated: > owned: > corpus:`): a minimal, spec-valid ADL 2
 //! `operational_template` / `archetype` synthesized by [`opt_source`] /
 //! [`archetype_parent`] / [`specialised_child`] — the same minimal shape the
@@ -225,7 +225,7 @@ macro_rules! boxed {
     };
 }
 
-// ── source generators (register-80 `generated:` discipline) ──────────────────
+// ── source generators (`generated:` discipline) ──────────────────────────────
 
 /// A fresh, unique COMPOSITION HRID: `openEHR-EHR-COMPOSITION.ecc_<hex>.v1.0.0`.
 /// The `ecc_` prefix keeps the concept a valid identifier (a bare hex digit

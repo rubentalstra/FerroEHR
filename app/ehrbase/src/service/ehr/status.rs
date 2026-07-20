@@ -226,8 +226,7 @@ impl EhrbaseService {
     }
 
     /// The `ORIGINAL_VERSION` of an EHR's `EHR_STATUS` extant at `at`, or the
-    /// latest when `at` is `None` (`GET …/versioned_ehr_status/version`,
-    /// F-01-05). The metadata carries the `version_uid` for the
+    /// latest when `at` is `None` (`GET …/versioned_ehr_status/version`). The metadata carries the `version_uid` for the
     /// `200_VERSION_at_time` `ETag`/`Location`.
     ///
     /// # Errors
@@ -315,8 +314,7 @@ impl EhrbaseService {
     /// than the `EHR_STATUS` object". The `EHR_STATUS` object itself "is
     /// always modifiable", so this guard is applied to COMPOSITION / DIRECTORY
     /// / content-CONTRIBUTION writes only — the
-    /// [`crate::versioning::CommitEnv`] `ensure_content_writable` hook
-    /// (G-6-adjacent).
+    /// [`crate::versioning::CommitEnv`] `ensure_content_writable` hook.
     ///
     /// NOTE (wire): ITS-REST 1.0.3 does not enumerate a status code for a
     /// write to a non-modifiable EHR (`composition_create.yaml` lists only
@@ -495,7 +493,7 @@ impl EhrbaseService {
         Ok(self.status_at(an_ehr_id, at).await?.body)
     }
 
-    /// The bare `EHR_STATUS` at a specific version (F-01-03 — not an
+    /// The bare `EHR_STATUS` at a specific version (not an
     /// `ORIGINAL_VERSION`). `a_version` is the `VERSION_TREE_ID` lexical form.
     ///
     /// # Errors
@@ -659,7 +657,7 @@ impl EhrbaseService {
 
     /// The `ORIGINAL_VERSION` of the EHR's `EHR_STATUS` extant at `a_time`, or
     /// the latest when `a_time` is `None`
-    /// (`GET …/versioned_ehr_status/version`, F-01-05).
+    /// (`GET …/versioned_ehr_status/version`).
     ///
     /// # Errors
     /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing version

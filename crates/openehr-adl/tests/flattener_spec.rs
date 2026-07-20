@@ -480,7 +480,7 @@ fn flattener_corpus_coverage_gate() {
     // Every `.adls` file under `tests/corpus/flattener/**` is claimed: a
     // specialised fixture is a flatten subject; a level-0 parent-only fixture
     // flattens to itself (used as a parent input). No dead fixtures
-    // (`docs/plans/adl2.md` §Corpus coverage — HARD REQUIREMENT).
+    // (a HARD REQUIREMENT: every vendored corpus file is exercised).
     let mut claimed = 0usize;
     for dir in [SX, SO] {
         let repo = repo_of(dir);

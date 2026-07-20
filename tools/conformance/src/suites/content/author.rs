@@ -19,8 +19,8 @@
 //! This is not a fabricated pass: the constraint is really expressed in a real OPT
 //! the SUT ingests and builds a `WebTemplate` from, and the accept/reject outcome
 //! is the server's genuine validation decision. Each authored OPT family is
-//! declared as a `generated:` fixture in `testdata/MANIFEST.tsv` (register 12
-//! G-2), naming the tightening transform below as its source class.
+//! declared as a `generated:` fixture in `testdata/MANIFEST.tsv`,
+//! naming the tightening transform below as its source class.
 
 use openehr_its::opt14::{
     self, CArchetypeRoot, CAttribute, CBoolean, CDate, CDateTime, CDuration, CInteger, CObject,

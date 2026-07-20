@@ -8,7 +8,7 @@
 //! `OPTIONS` is obtained if any optional capability is passed in testing."*
 //!
 //! Verdicts are machine-computed from run results only — never
-//! hand-asserted (honesty invariant 4, register 90 §7).
+//! hand-asserted.
 
 use serde::Serialize;
 
@@ -89,8 +89,8 @@ pub enum CapabilityEvidence {
     /// Cases exist but all were skipped/not-applicable (adjudicated, config-
     /// gated, or no REST binding) — the capability is not wire-evidenced.
     NotEvidenced,
-    /// No case in the catalogue exercises the capability — a coverage bound,
-    /// logged per honesty invariant 3.
+    /// No case in the catalogue exercises the capability — a logged coverage
+    /// bound.
     NoCases,
 }
 

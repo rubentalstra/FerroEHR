@@ -2,7 +2,7 @@
 //! `versioned_composition` reads (`VERSIONED_PARTY`, its `REVISION_HISTORY`, and
 //! its `ORIGINAL_VERSION`s). ITS-REST 1.0.3 defines no demographic wire
 //! contract, so this whole surface is our own extension by analogy with the EHR
-//! group (register `docs/design/platform/04-service-demographic-ehr-index.md`).
+//! group.
 //!
 //! The assembly (and its version-spine reads through
 //! `crate::storage::version_repo`) is shared with the relationship surface in
@@ -20,7 +20,7 @@ use crate::versioning::object_version_id::TreeId;
 impl EhrbaseService {
     /// The `VERSIONED_PARTY` for a party (any of the five kinds). A non-party id
     /// is `404`. `time_created` is the commit time of the earliest held version
-    /// (for a locally-created party, v1); the G-6 `owner_id` NOTE lives in
+    /// (for a locally-created party, v1); the `owner_id` NOTE lives in
     /// `support::versioned_wrapper`.
     pub(super) async fn versioned_party(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_party(vo_id).await?;

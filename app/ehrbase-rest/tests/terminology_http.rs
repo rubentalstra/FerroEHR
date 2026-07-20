@@ -5,13 +5,12 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end HTTP tests for the terminology extension API group (SM
-//! `I_TERMINOLOGY_SERVICE`, wire design `docs/design/sm-platform/
-//! 08-target-architecture.md` §7): the config gate
+//! `I_TERMINOLOGY_SERVICE`): the config gate
 //! (`AppConfig::terminology_api_enabled`), the `200`/`404`/`400` wire outcomes
 //! for `get_terminology_ids` / `get_terminology_description` / `get_term` /
 //! `subsumes` / `get_value_set` / `value_set_validate`, and the JSON body shapes
 //! — driven through the assembled router over the **real** `EhrbaseService`
-//! (W-14 B+C: the scripted `Mock` is gone). The terminology service is the
+//! (the scripted `Mock` is gone). The terminology service is the
 //! in-process openEHR bundle (TERM 3.1.0), so no DB seeding is needed and every
 //! assertion observes the real bundle.
 //!

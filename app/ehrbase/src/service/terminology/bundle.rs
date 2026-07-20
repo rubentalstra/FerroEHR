@@ -43,11 +43,11 @@
 //!   being **strict** (`i_terminology_service.adoc` `subsumes`), even the
 //!   identity case is `false`. Hierarchical subsumption is the FHIR
 //!   provider's `$subsumes`.
-//! - **`at_date` (NOTE — G-1 bundle side).** The bundle is a single
+//! - **`at_date` (NOTE — bundle side).** The bundle is a single
 //!   pinned version (TERM 3.1.0), so `at_date` never changes the answer
 //!   here; the temporal parameter is threaded to (and honoured by) the FHIR
 //!   provider.
-//! - **`attributes` (NOTE — G-3 bundle side).** No meta-model
+//! - **`attributes` (NOTE — bundle side).** No meta-model
 //!   attributes are defined for the openEHR bundle
 //!   (`Terminology_description.attributes` is `None`), so the `get_term`
 //!   `attributes` allow-list has nothing to filter.
@@ -199,7 +199,7 @@ pub(super) fn terminology_description(
             publisher: "openEHR Foundation".to_owned(),
             available_versions: bundle_version().map(|v| vec![v]),
             // No meta-model attributes are exposed for the openEHR bundle
-            // (`terminology_description.adoc` `attributes` 0..1; G-3).
+            // (`terminology_description.adoc` `attributes` 0..1).
             attributes: None,
             uri: OPENEHR_TERM_URI.to_owned(),
         });

@@ -1,5 +1,4 @@
-//! Seeded instance-payload rendering over the vendored fixture skeletons
-//! (`docs/design/benchmark/00-workload-model.md` §4).
+//! Seeded instance-payload rendering over the vendored fixture skeletons.
 //!
 //! The module is `render` rather than `gen` because `gen` is a reserved keyword
 //! in Rust edition 2024.
@@ -78,7 +77,7 @@ const NOW: &str = "2024-01-01T00:00:00Z";
 pub const SUBJECT_NAMESPACE: &str = "ehrbase-bench";
 
 /// The vendored contribution envelope reused (and re-filled) for batch commits —
-/// a proven both-SUT-accepted `CONTRIBUTION` shape (register 00 §4; E4). The
+/// a proven both-SUT-accepted `CONTRIBUTION` shape. The
 /// `contribution.valid` corpus-dir file.
 pub const CONTRIBUTION_ENVELOPE: &str = "minimal/minimal_observation.contribution.json";
 

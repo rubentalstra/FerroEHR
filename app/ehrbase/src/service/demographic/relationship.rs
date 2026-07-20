@@ -7,7 +7,7 @@
 //! has its own `versioned_party_relationship` read surface).
 //!
 //! NOTEs on the SM spec asymmetries this module normalizes to the PARTY
-//! pattern (register `docs/design/platform/04-service-demographic-ehr-index.md`):
+//! pattern:
 //! - `i_party_relationship.adoc` gives **no** `has_party_relationship`
 //!   precondition on `get_party_relationship`, yet lists a
 //!   `versioned_object_does_not_exist` error — we treat an unknown id as `404`,
@@ -314,7 +314,7 @@ impl EhrbaseService {
     /// is `404`.
     ///
     /// No ITS-REST demographic contract governs this — our own extension by
-    /// analogy with the EHR group (assembly + G-6 owner NOTE in
+    /// analogy with the EHR group (assembly + owner NOTE in
     /// `support::versioned_wrapper`).
     pub(super) async fn versioned_relationship(&self, vo_id: VoId) -> Result<Value, ServiceError> {
         self.ensure_any_relationship(vo_id).await?;

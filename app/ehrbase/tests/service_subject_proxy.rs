@@ -9,8 +9,7 @@
 //! (shared testkit harness).
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/openehr_platform/master10-subject_proxy_service.adoc`
-//! and its `UML/classes/*.adoc`; design
-//! `docs/design/sm-platform/08-target-architecture.md` §4.4.
+//! and its `UML/classes/*.adoc`.
 //!
 //! Coverage: register subject / variable / binding + data set; bind and pull a
 //! variable through the **openEHR frame** (AQL executed via the Query service)
@@ -377,7 +376,7 @@ async fn subject_proxy_preconditions_and_reset() {
     );
 }
 
-// ── FHIR frame executor (G-4, config-gated) ─────────────────────────────────
+// ── FHIR frame executor (config-gated) ──────────────────────────────────────
 //
 // `i_data_binding.adoc` (`API_CALL`/`fhir_get`) + `hl7_fhir_sample.adoc`; a
 // hermetic `wiremock` FHIR server stands in for the remote system (no network).

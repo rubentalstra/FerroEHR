@@ -7,12 +7,12 @@
 //! §Purpose of the OPT, §Types of OPT; `master03-opt_raw.adoc` §Flattening) and,
 //! being a descendant of `AUTHORED_RESOURCE`
 //! (`docs/specs/openehr/BASE/docs/resource/master02-resource_package.adoc`
-//! §Meta-data), carries the S-01/S-02/S-03 meta-data (original language +
+//! §Meta-data), carries the meta-data (original language +
 //! translations, `RESOURCE_DESCRIPTION`, revision history).
 //!
-//! NOTE (G-T11 — OPT 1.4 has no prose master): there is **no normative
+//! NOTE (OPT 1.4 has no prose master): there is **no normative
 //! prose chapter** for the OPT 1.4 wire structure (the OPT2 masters describe the
-//! ADL2 successor; blueprint `docs/blueprint/03-am.md` §Spec defects). The OPT
+//! ADL2 successor). The OPT
 //! 1.4 canonical XML this module ingests is governed by the **ITS-XML v1
 //! Template XSD** plus AOM 1.4 — cite those, never the OPT2 masters, for
 //! structure conformance. The tolerant [`openehr_its::opt14`] codec decodes it;
@@ -21,7 +21,7 @@
 //! (`crate::validation::structure::validate_opt_structure`) — the store calls
 //! it before every ingest (see [`crate::templates::store`]).
 //!
-//! NOTE (G-T12 — meta-data parsed, not surfaced): the S-01/S-02/S-03
+//! NOTE (meta-data parsed, not surfaced): the
 //! meta-data (`language` / `description` / `translations` / `revision_history`)
 //! is parsed by the codec but we index only `template_id` / `concept` / root
 //! archetype for lookup and listing (see [`crate::templates::store`]); the spec

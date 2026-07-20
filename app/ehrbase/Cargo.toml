@@ -55,7 +55,7 @@ sqlx.workspace = true
 thiserror.workspace = true
 # One-config-tree loader (`config` module): serialize the effective config to
 # redacted TOML for `config check` / `/management/env`. No openEHR spec governs
-# configuration — our own design (`docs/design/configuration.md`).
+# configuration — our own design (no openEHR spec governs the config tree).
 toml.workspace = true
 uuid.workspace = true
 

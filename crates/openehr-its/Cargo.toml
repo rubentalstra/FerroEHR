@@ -22,14 +22,14 @@ thiserror.workspace = true
 jsonschema.workspace = true
 uuid.workspace = true
 # The generated `opt14` model keeps `StringDictionaryItem` groups in
-# document order (XSD ordered sequence; F-09-05) — order-preserving map.
+# document order (XSD ordered sequence) — order-preserving map.
 indexmap.workspace = true
 # The generated ITS-REST contract: an async_trait server trait + axum-typed DTOs.
 async-trait.workspace = true
 axum.workspace = true
 http.workspace = true
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
-# RM/BASE spec types, so these are real (non-dev) deps (ADR-005).
+# RM/BASE spec types, so these are real (non-dev) deps.
 openehr-base = { path = "../openehr-base" }
 openehr-rm = { path = "../openehr-rm" }
 # The native canonical-JSON codec (`json_codec/generated`, emit-json) implements

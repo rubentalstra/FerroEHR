@@ -24,9 +24,7 @@
 //! This module re-generates the AOM 1.4 `C_*` constraint tree that
 //! `openehr-am::am14` (BMM-generated) already carries. That duplication is
 //! **intentional and scoped**, not an oversight — the two models are *not*
-//! structurally reconcilable (see `docs/spec-audit/findings/09-templates-opt14.md`
-//! F-09-02 and `the opt14-wire-model design record` for the field-by-field
-//! evidence and the full rationale). In summary, the Ocean **OPT-XML** wire shape
+//! structurally reconcilable. In summary, the Ocean **OPT-XML** wire shape
 //! (`Template.xsd` + `OpenehrProfile.xsd`, the codegen input here) diverges from
 //! the **AOM 1.4 BMM** logical model that drives `am14`:
 //!
@@ -123,7 +121,7 @@ const OPAQUE_TYPES: &[&str] = &["T_VIEW"];
 /// NOTE: a defaulted `occurrences`/`existence` of `0..1` is a
 /// *fallback for non-conformant input only* — conformant OPTs always carry the
 /// element. It is a guess (a node that should be `1..1` is silently made
-/// optional-single), so any downstream multiplicity check (P15 validation) must
+/// optional-single), so any downstream multiplicity check (composition validation) must
 /// resolve multiplicity from the `definition`/archetype, never trust a defaulted
 /// `0..1` from this reader.
 fn lenient_default(field_name: &str) -> Option<String> {

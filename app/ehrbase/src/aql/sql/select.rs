@@ -3,8 +3,7 @@
 //! whole-object columns project four locator columns the executor reassembles
 //! through the node codec.
 //!
-//! No openEHR spec governs the projection mechanics — this is our own design
-//! (`docs/design/aql-engine.md`). A scalar column is emitted as `to_jsonb(expr)`;
+//! No openEHR spec governs the projection mechanics — this is our own design. A scalar column is emitted as `to_jsonb(expr)`;
 //! a whole structure object emits (`vo_id`, `sys_version`, `num`, `num_cap`) and
 //! is reassembled at read time.
 

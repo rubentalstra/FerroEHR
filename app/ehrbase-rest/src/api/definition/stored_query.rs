@@ -5,7 +5,6 @@
 //! `definition_query_version_get` / `definition_query_version_store.yaml`.
 //! Governing spec text:
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/`.
-//! Register (gaps + target): `docs/design/its-rest/definition.md`.
 //!
 //! Queries route through the wire-shaped `DefinitionAdapter`
 //! (`query_list`/`query_version_get`/`query_store`) — the SM

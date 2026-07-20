@@ -432,7 +432,7 @@ async fn aql_acceptance_set() {
     );
 }
 
-/// P20 overhead checklist item 14 — the whole-object result-assembly N+1 fix.
+/// The whole-object result-assembly N+1 fix.
 ///
 /// A dashboard-sized multi-row whole-COMPOSITION projection must reassemble
 /// **every** row's composition byte-identically to a direct
@@ -514,7 +514,7 @@ async fn whole_object_projection_batches_over_a_multi_row_page() {
     }
 }
 
-/// Archetype-specialisation subsumption (W-3b T2): a query naming a **parent**
+/// Archetype-specialisation subsumption: a query naming a **parent**
 /// archetype matches data created with any **specialisation child**, bounded to
 /// the same qualified RM entity and major version.
 ///
@@ -656,7 +656,7 @@ async fn latest_versus_all_versions() {
         "latest magnitude is 30"
     );
 
-    // F6: the synthesized `c/uid/value` is version-correct under both scopes.
+    // uid synthesis: the synthesized `c/uid/value` is version-correct under both scopes.
     // LATEST → the current (v3) OBJECT_VERSION_ID.
     let r = run_aql(
         &svc,
@@ -1143,7 +1143,7 @@ async fn scalar_functions_execute() {
     );
 }
 
-// ── P20 promoted context_start ORDER BY + F6 uid synthesis ───────────────────
+// ── Promoted context_start ORDER BY + uid synthesis ─────────────────────────
 
 /// An event COMPOSITION with an explicit `context.start_time`.
 fn composition_at(name: &str, magnitude: f64, start_time: &str) -> Value {
@@ -1178,11 +1178,11 @@ async fn create_comp_body(svc: &EhrbaseService, ehr_id: &str, body: Value, name:
         .version_uid()
 }
 
-/// P20 + F6, end to end against real PG 18: the patient-dashboard shape orders
+/// uid synthesis, end to end against real PG 18: the patient-dashboard shape orders
 /// by the promoted `node.context_start` column (verified byte-equal to the
 /// pre-promotion correlated-subquery ordering in both directions, including the
 /// NULL-context row), and `c/uid/value` returns the exact server-assigned
-/// OBJECT_VERSION_ID (F6) — never null.
+/// OBJECT_VERSION_ID (uid synthesis) — never null.
 #[tokio::test]
 async fn dashboard_context_start_ordering_and_uid() {
     let db = testkit::db().await.expect("testkit database");
@@ -1235,7 +1235,7 @@ async fn dashboard_context_start_ordering_and_uid() {
     for row in rows(&r) {
         assert!(
             row[0].as_str().is_some(),
-            "F6: c/uid/value must be a non-null OBJECT_VERSION_ID: {row:?}"
+            "uid synthesis: c/uid/value must be a non-null OBJECT_VERSION_ID: {row:?}"
         );
     }
     let names_desc: Vec<&str> = rows(&r)
@@ -1266,7 +1266,7 @@ async fn dashboard_context_start_ordering_and_uid() {
         "ASC: oldest→newest, NULL context last"
     );
 
-    // ── F6: the synthesized uid equals the OBJECT_VERSION_ID create returned. ──
+    // ── uid synthesis: the synthesized uid equals the OBJECT_VERSION_ID create returned. ──
     let r = run_aql(
         &svc,
         "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c \
@@ -1280,7 +1280,7 @@ async fn dashboard_context_start_ordering_and_uid() {
         "c/uid/value == the created OBJECT_VERSION_ID"
     );
 
-    // ── F6: `c/uid` returns the OBJECT_VERSION_ID object for a specific row. ──
+    // ── uid synthesis: `c/uid` returns the OBJECT_VERSION_ID object for a specific row. ──
     let r = run_aql(
         &svc,
         "SELECT c/uid FROM EHR e CONTAINS COMPOSITION c WHERE c/name/value = 'mid'",

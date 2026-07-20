@@ -1,7 +1,7 @@
 [package]
 name = "openehr-codegen"
 version.workspace = true
-description = "BMM-driven code generator: emits the openEHR spec crates from the vendored BMM meta-model (ADR-004)"
+description = "BMM-driven code generator: emits the openEHR spec crates from the vendored BMM meta-model"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

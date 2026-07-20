@@ -61,7 +61,7 @@ impl Default for DbConfig {
     fn default() -> Self {
         Self {
             url: SecretUrl::new(DEFAULT_URL),
-            // Deliberate P20 defaults: 20 max (10 hard-capped realistic write
+            // Deliberate defaults: 20 max (10 hard-capped realistic write
             // concurrency ×2), 2 min (no cold reopen churn at idle).
             max_connections: 20,
             min_connections: 2,
@@ -237,7 +237,7 @@ pub async fn connect_tenant_scoped(settings: &DbConfig) -> Result<PgPool, DbErro
 static EXT_MIGRATOR: Migrator = sqlx::migrate!("migrations/ext");
 
 /// The `ehr` schema — the greenfield PG18-native CDR schema (no openEHR spec
-/// governs the physical schema, spike-validated at P10): the unified
+/// governs the physical schema, spike-validated): the unified
 /// per-version `node` table, the temporal `vo_version` table, and the
 /// supporting tables.
 static EHR_MIGRATOR: Migrator = sqlx::migrate!("migrations/ehr");

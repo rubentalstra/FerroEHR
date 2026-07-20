@@ -2,8 +2,7 @@
 //! typed coercions (QUERY master03 §Comparison operators + §ORDER BY), VERSION /
 //! EHR metadata fields, ORDER BY, and paging.
 //!
-//! No openEHR spec governs the extraction mechanics — this is our own design
-//! (`docs/design/aql-engine.md` §path split): a leaf whose anchor is empty reads
+//! No openEHR spec governs the extraction mechanics — this is our own design: a leaf whose anchor is empty reads
 //! its `data` fragment off the source node alias; a leaf with structure hops
 //! reads through a **correlated scalar subquery** walking the anchor chain
 //! (interval containment + promoted-column filters per step). The extracted
@@ -69,12 +68,12 @@ impl Builder<'_> {
         mode: ValueMode,
     ) -> Result<Expr, AqlError> {
         // The server-assigned OBJECT_VERSION_ID (`uid[/value]`) is synthesized
-        // from the joined `vo_version`, not stored in the fragment (F6).
+        // from the joined `vo_version`, not stored in the fragment (uid synthesis).
         if let Some(expr) = self.version_uid_expr(leaf, mode) {
             return Ok(expr);
         }
         // A registered promoted leaf reads its indexed `node` column instead of
-        // the correlated subtree extraction (P20 fast path).
+        // the correlated subtree extraction (fast path).
         if let Some(expr) = self.promoted_leaf_expr(leaf, mode) {
             return Ok(expr);
         }
@@ -113,7 +112,7 @@ impl Builder<'_> {
     }
 
     /// The server-assigned `OBJECT_VERSION_ID` for a `uid` / `uid/value` path on
-    /// a versioned-object-root variable (F6). The uid is assigned at commit and
+    /// a versioned-object-root variable (uid synthesis). The uid is assigned at commit and
     /// is **not** persisted in the canonical fragment (the REST read path injects
     /// it — `service::ehr::meta::with_uid`), so an AQL jsonb extraction finds
     /// nothing; QUERY master03 §Identified paths lists `COMPOSITION.uid.value` as
@@ -162,7 +161,7 @@ impl Builder<'_> {
         }
     }
 
-    /// The promoted-leaf fast path (P20; `docs/plans/phase-20-optimization.md`):
+    /// The promoted-leaf fast path:
     /// when `leaf` addresses a registered promoted leaf on its versioned-object
     /// root and the requested `mode` matches the column's kind, read
     /// `node.<column>` (indexed) instead of lowering the correlated subtree

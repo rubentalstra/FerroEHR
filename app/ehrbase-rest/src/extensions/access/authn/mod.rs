@@ -18,8 +18,7 @@
 //! # RBAC (spec-silent)
 //!
 //! No openEHR spec governs role-based authorization — the SM places it out of
-//! band. The coarse RBAC gate is our own enterprise extension
-//! (`docs/enterprise/access-control.md` §5.2), kept clearly separate from the
+//! band. The coarse RBAC gate is our own enterprise extension, kept clearly separate from the
 //! spec-grounded authn above.
 //!
 //! Applied as one axum middleware over the API router (not per handler). A
@@ -69,7 +68,7 @@ pub struct Principal {
     /// Roles granted to the caller, normalized to upper-case. Extracted from the
     /// configured JWT claim paths (default `realm_access.roles` + `scope`) for
     /// Bearer; from the Basic user's configured roles for Basic. Consumed by the
-    /// RBAC gate (§5.2 of `docs/enterprise/access-control.md`).
+    /// RBAC gate.
     pub roles: Vec<String>,
     /// The retained, validated JWT claim set (Bearer only; empty for Basic).
     /// Kept so the Stage-2 ABAC layer can resolve attributes (organization /

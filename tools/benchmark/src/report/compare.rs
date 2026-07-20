@@ -1,8 +1,7 @@
 //! The cross-SUT comparison artefact (`bench compare`): a side-by-side
 //! Markdown matrix + grouped-bar SVG charts generated from two committed
 //! `results.json` records. Measured numbers only, both directions — the
-//! "where the other side wins" section is computed, never editorial
-//! (`docs/design/benchmarking.md` §7).
+//! "where the other side wins" section is computed, never editorial.
 
 use std::collections::BTreeMap;
 
@@ -53,7 +52,7 @@ pub fn render(results: &[Results], knees: &[KneeResults]) -> Comparison {
     md.push_str(
         "> **Measured, not asserted.** Every number below is read from a committed \
          `results.json`; both directions are reported. The workload, client, and \
-         host are identical by construction (`docs/design/benchmarking.md` §3).\n\n",
+         host are identical by construction.\n\n",
     );
     if results.len() < 2 {
         md.push_str("Fewer than two runs supplied — nothing to compare.\n");
@@ -207,7 +206,7 @@ fn headline_charts(md: &mut String, charts: &mut Vec<(String, String)>, a: &Resu
         md.push_str("## Cold start\n\n");
         md.push_str("![Cold start](charts/comparison-coldstart.svg)\n\n");
     }
-    // Efficiency ratios (register 01 §2): req/s per core + per GB peak RSS.
+    // Efficiency ratios: req/s per core + per GB peak RSS.
     if let (Some(aa), Some(ba)) = (&a.resources.app, &b.resources.app) {
         md.push_str("## Efficiency (computed)\n\n");
         md.push_str("| | req/s per CPU-core | req/s per GB peak RSS |\n|---|--:|--:|\n");
