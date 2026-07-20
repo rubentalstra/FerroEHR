@@ -15,9 +15,8 @@ deleted in the PR that implements it.)*
 | Path | What it is | Authoritative for |
 |---|---|---|
 | root `ROADMAP.md` | The forward product roadmap | where the product goes next |
-| `plans/WORKLIST.md` | The single open-items tracker (one row per item) | what's open |
-| `plans/current-phase.md` | Live pointer to the active work | what's active right now |
-| `PROGRESS.md` | One row per phase + rebuild checkpoints | the historical record of what shipped |
+| GitHub Issues (`gh issue list --state open`) | The open-items tracker (root `CLAUDE.md` §Issue workflow) | what's open + what's active (pinned = current focus) |
+| Closed issues + PR descriptions + `CHANGELOG.md` | The build record (the former `PROGRESS.md` is retired — its content lives in git history) | the historical record of what shipped |
 | `endpoint-map.md` | Every endpoint traced route → dispatcher → service → SQL, plus the background loops | the navigation + optimization instrument |
 
 ## Decisions
@@ -26,7 +25,7 @@ The former `ADRs/` layer has been **deleted** (owner ruling 2026-07-17 — the
 ADRs caused more confusion than value: they were superseded piecemeal and left
 stale claims behind). Architectural decisions now live inline, in the durable
 record: the living reference docs (`architecture.md`, this tree, `VERSIONS.md`),
-`PROGRESS.md`, `CHANGELOG.md`, and git history. **No document reads, writes, or
+the closed issues + PR descriptions, `CHANGELOG.md`, and git history. **No document reads, writes, or
 cites an ADR; the only citable references are the vendored specs and official
 external documentation.** (The current design in brief: the spec + ITS layer is
 generated from the vendored machine-readable specs by `openehr-codegen`; the
@@ -45,10 +44,10 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
 
 ## Plans
 
-- `plans/` — `current-phase.md` (live pointer), `WORKLIST.md` (the tracker),
-  the active `w14-*` register/tracker files, and
-  `feature-flat-structured.md`. Completed plan files are pruned once their
-  close is recorded in `PROGRESS.md` (all in git history). See
+- `plans/` — one deep working plan per open tracker issue that needs one,
+  plus `WORKLIST.md` (the retired tracker's pointer stub). Completed plan
+  files are pruned in the PR that lands them, with the close recorded in
+  the PR description + issue handoff comment (all in git history). See
   `plans/README.md`.
 
 ## Platform + verification

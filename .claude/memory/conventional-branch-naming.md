@@ -13,8 +13,9 @@ names use the industry-standard conventional types —
 `<type>/<kebab-case-slug>`, type ∈ feat | fix | chore | docs | refactor |
 perf | test | ci | build | release (mirrors the Conventional Commits type
 set). The former `claude/*` scheme is RETIRED — never create a new
-`claude/*` branch; existing ones remain as historical facts. A
-worklist-row phase branch is normally `feat/<row-slug>`.
+`claude/*` branch; existing ones remain as historical facts. A tracker
+issue's phase branch is normally `feat/<issue-slug>` (see
+[[tracker-is-github-issues]]).
 
 **Why:** match industry convention, not an AI-specific namespace.
 

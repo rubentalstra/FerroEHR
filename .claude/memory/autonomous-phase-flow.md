@@ -28,7 +28,8 @@ the CLAUDE.md hard rule, 2026-07-19 — the `claude/*` scheme is retired.)
 
 **How to apply:** each phase still closes behind the standing gates
 (workspace suites green + full ECC zero drift, run centrally via
-scripts/conformance.sh; phase file ticked; blueprint/roadmap updated). Only
+scripts/conformance.sh; tracker-issue exit criteria ticked + the PR
+declaring `Closes #N` — see [[tracker-is-github-issues]]). Only
 genuinely new design decisions (spec-silent seams needing a design choice the
 owner hasn't made) still warrant an AskUserQuestion — mechanical
 continuation never does. Related: [[verify-crate-versions-live]],

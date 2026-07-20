@@ -41,10 +41,11 @@ if printf '%s' "$cmd" | grep -qE 'git[[:space:]]+push[^;|&]*(--force([^-]|$)|--f
   fi
 fi
 
-# Never delete the live phase pointer or the plans guide. Completed phase files
-# may be pruned once their close is recorded in docs/PROGRESS.md.
+# Never delete the tracker pointer or the plans guide (the tracker itself is
+# GitHub Issues; these files are the pointer + lifecycle guide). Completed
+# plan files may be pruned once their close is recorded in the PR description.
 if printf '%s' "$cmd" | grep -qE '(^|[;&|[:space:]])(git[[:space:]]+rm|rm)[^;|&]*docs/plans/(WORKLIST\.md|README\.md)'; then
-  echo "BLOCKED: docs/plans/WORKLIST.md and docs/plans/README.md are the single tracker + guide and must not be deleted. Implemented plan files are deleted in the PR that lands them." >&2
+  echo "BLOCKED: docs/plans/WORKLIST.md (the tracker pointer) and docs/plans/README.md (the lifecycle guide) must not be deleted. The tracker is GitHub Issues; implemented plan files are deleted in the PR that lands them." >&2
   exit 2
 fi
 
