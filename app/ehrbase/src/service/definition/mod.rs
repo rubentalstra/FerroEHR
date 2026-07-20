@@ -8,6 +8,10 @@
 //!   source archetypes (keyed by `ARCHETYPE_ID`) + OPTs (keyed by `UUID`).
 //! - [`adl2`]  — `I_DEFINITION_ADL2` (`i_definition_adl2.adoc`): ADL2 artefacts
 //!   (keyed by `ARCHETYPE_HRID`).
+//! - [`opt14_convert`] — the OPT-1.4 → ADL2 decomposition front end (a
+//!   service-only capability, no wire): reads a stored OPT's `opt14` model,
+//!   decomposes it into one 1.4-shaped `am24` source per embedded archetype
+//!   root, and runs each through the `openehr_adl::adl14` converter.
 //! - [`query`] — `I_DEFINITION_QUERY` (`i_definition_query.adoc`) +
 //!   `QUERY_DESCRIPTOR` + the stored-query CRUD. DEFINITION *owns* query
 //!   registration (`master04` §Registered Queries); the Query service only
@@ -36,6 +40,7 @@
 
 mod adl14;
 mod adl2;
+mod opt14_convert;
 mod query;
 mod wire;
 

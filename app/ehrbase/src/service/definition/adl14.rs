@@ -101,12 +101,11 @@ impl EhrbaseService {
     /// codes); re-differentialisation against a converted+flattened parent is a
     /// separate concern of the converter's `differ`.
     ///
-    /// Only stored 1.4 *source archetypes* are convertible: the converter takes an
-    /// assembled `am24` archetype, and no REST surface exposes 1.4→2 OPT
-    /// conversion (this method is a service-only capability with no endpoint).
-    /// TODO: convert stored 1.4 *OPTs* (`template_store`, XML/`opt14` DTOs) when an
-    /// OPT-1.4 → `am24` reader front end for the converter is built (the 1.4-OPT
-    /// conversion capability tracked in the worklist).
+    /// Stored 1.4 *operational templates* are converted by the sibling
+    /// [`EhrbaseService::adl14_convert_opt_to_adl2`] (an OPT is
+    /// specialisation-flattened, so it decomposes into one source per embedded
+    /// archetype root); this method handles the stored 1.4 *source archetype*
+    /// case, which the converter consumes directly.
     ///
     /// # Errors
     ///
@@ -120,6 +119,54 @@ impl EhrbaseService {
         let converted = parse_and_convert(&source, &ConvertConfig::default(), &mut log)
             .map_err(|e| ServiceError::Unprocessable(format!("1.4 → 2 conversion failed: {e}")))?;
         Ok(openehr_adl::printer::print(&converted))
+    }
+
+    /// Convert a stored ADL 1.4 **operational template** (by `UUID`) to ADL2
+    /// source text via the `openehr_adl::adl14` converter, returning one ADL2
+    /// source per embedded archetype root (the top COMPOSITION root first, then
+    /// each component in document order).
+    ///
+    /// A 1.4 OPT is specialisation-flattened: its `definition` is one
+    /// `C_ARCHETYPE_ROOT` tree with the component archetypes embedded as nested
+    /// `C_ARCHETYPE_ROOT` nodes, each with its own at-code space. The
+    /// [`super::opt14_convert`] front end decomposes it into one scoped
+    /// 1.4-shaped `am24` source per embedded root and converts each; the
+    /// recovered composition structure is available on the front end's result
+    /// (not surfaced here — this method returns the converted sources).
+    ///
+    /// **NOTE: no openEHR spec governs 1.4 → 2 conversion — our own
+    /// design/extension** (the vendored ITS-REST OAS declares no conversion
+    /// operation), so there is no REST endpoint; this is a service capability
+    /// only.
+    ///
+    /// # Errors
+    ///
+    /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
+    ///   (`400`).
+    /// - No OPT with that id → `template_does_not_exist` (`404`).
+    /// - The stored OPT no longer parses or does not convert → `content_invalid`
+    ///   (`422`).
+    /// - A database failure (`exception` → `500`).
+    pub async fn adl14_convert_opt_to_adl2(
+        &self,
+        an_opt_id: String,
+    ) -> Result<Vec<String>, SmError> {
+        // Preserve the granular SM status through the lossy ServiceError
+        // round-trip (the same boundary re-raise the TDD import uses).
+        let xml = match self.opt_get(&an_opt_id).await {
+            Ok(xml) => xml,
+            Err(ServiceError::NotFound(m)) => {
+                return Err(SmError::new(CallStatusType::TemplateDoesNotExist, m));
+            }
+            Err(e) => return Err(e.into()),
+        };
+        let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| {
+            ServiceError::Unprocessable(format!("stored OPT no longer parses: {e:?}"))
+        })?;
+        let conversion = super::opt14_convert::convert_opt_to_adl2(&opt).map_err(|e| {
+            ServiceError::Unprocessable(format!("OPT 1.4 → 2 conversion failed: {e}"))
+        })?;
+        Ok(conversion.roots.into_iter().map(|r| r.adl2).collect())
     }
 
     /// `get_archetype` — the ADL 1.4 source of the archetype with id `an_id`
