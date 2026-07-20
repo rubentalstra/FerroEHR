@@ -560,7 +560,7 @@ fn token_text(t: &Token) -> Option<String> {
 ///
 /// # Errors
 /// Returns a message describing the first structural problem.
-fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
+pub fn parse_hrid(s: &str) -> Result<ArchetypeHrid, String> {
     let (namespace, rest) = match s.split_once("::") {
         Some((ns, rest)) => (Some(ns.to_owned()), rest),
         None => (None, s),

@@ -311,3 +311,59 @@ async fn example_with_invalid_detail_level_is_bad_request() {
         "got {err:?}"
     );
 }
+
+/// The OPT-1.4 → ADL2 conversion capability (service-only, no wire): a stored
+/// operational template is loaded by UUID, decomposed into one 1.4-shaped source
+/// per embedded archetype root, and each is converted to ADL2 source text. No
+/// openEHR spec governs 1.4 → 2 conversion — our own design/extension.
+#[tokio::test]
+async fn opt_converts_to_adl2_sources() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+    // A minimal template: a COMPOSITION root with one embedded OBSERVATION root.
+    let xml = corpus_opt("tests/resources/service/knowledge/opt/minimal_observation.opt");
+    svc.upload_opt(xml).await.expect("upload opt");
+    let opt_uuid = svc
+        .list_opts_adl14(Page::all())
+        .await
+        .expect("list opts")
+        .into_iter()
+        .next()
+        .expect("one stored OPT uuid");
+
+    // The service loads the stored OPT by UUID, decomposes + converts it, and
+    // returns one ADL2 source per embedded archetype root (>= 2 here: the
+    // COMPOSITION root and the embedded OBSERVATION).
+    let sources = svc
+        .adl14_convert_opt_to_adl2(opt_uuid)
+        .await
+        .expect("convert stored OPT to ADL2");
+    assert!(
+        sources.len() >= 2,
+        "expected >= 2 converted sources, got {}",
+        sources.len()
+    );
+    for src in &sources {
+        assert!(
+            src.contains("archetype"),
+            "each converted source is ADL2 text: {}",
+            src.lines().next().unwrap_or_default()
+        );
+    }
+
+    // An unknown OPT id is a 404 (`template_does_not_exist`).
+    let missing = svc
+        .adl14_convert_opt_to_adl2("00000000-0000-0000-0000-000000000000".to_owned())
+        .await
+        .expect_err("unknown OPT id must 404");
+    assert!(
+        matches!(
+            missing,
+            SmError {
+                status: CallStatusType::TemplateDoesNotExist,
+                ..
+            }
+        ),
+        "got {missing:?}"
+    );
+}
