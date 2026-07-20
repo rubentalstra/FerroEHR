@@ -73,12 +73,20 @@ label_for_component() { # vendored component dir -> label
     *) echo "" ;;
   esac
 }
-# Pin (human ref + vendored SHA) from the vendor script's COMPONENTS array.
+# Our vendored pin, human-readable: the spec VERSION we currently have
+# (parsed out of the vendor ref) + the vendored commit. This is the BASELINE
+# ("what we already have"), never a ceiling — upstream changes targeting any
+# newer version still get an issue.
 pin_for_component() {
-  local comp="$1" line
+  local comp="$1" line ref sha ver
   line=$(grep -E "^  \"${comp}\|" scripts/vendor-spec-docs.sh | head -1 | tr -d '"') || true
   [ -n "$line" ] || { echo "unpinned"; return 0; }
-  echo "$line" | awk -F'|' '{printf "%s @ %.9s", $3, $4}'
+  ref=$(echo "$line" | awk -F'|' '{print $3}')
+  sha=$(echo "$line" | awk -F'|' '{printf "%.9s", $4}')
+  # "master (BASE 1.3.0)" -> 1.3.0 · "Release-1.1.0" -> 1.1.0 · else the ref word
+  ver=$(echo "$ref" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  [ -n "$ver" ] || ver=$(echo "$ref" | awk '{print $1}')
+  echo "$ver @ $sha"
 }
 repo_for_component() {
   local comp="$1" line
@@ -195,12 +203,18 @@ while IFS="$US" read -r key component summary source resolved fixv comps; do
     skipped=$((skipped + 1))
     continue
   fi
+  # Title leads with WHERE THE CHANGE LANDS upstream (the Jira fix version),
+  # not with our pin — our vendored baseline is context and lives in the body.
+  case "$fixv" in
+    ""|"—") target="version unassigned" ;;
+    *) target="$fixv" ;;
+  esac
   if [ -n "$component" ]; then
     pin=$(pin_for_component "$component")
-    title="[spec-update] $key — $summary ($component pin $pin)"
+    title="[spec-update] $key — $summary ($component → $target)"
   else
-    pin="(cross-component)"
-    title="[spec-update] $key — $summary (cross-component)"
+    pin="n/a"
+    title="[spec-update] $key — $summary (cross-component → $target)"
   fi
   label_args=(--label spec-update)
   lbl=$([ -n "$component" ] && label_for_component "$component" || true)
@@ -212,9 +226,9 @@ Upstream openEHR spec change completed — conformance-impact triage needed.
 - **Jira:** [$key]($JIRA/browse/$key)
 - **Detected via:** $source poll
 - **Completed (resolved):** $resolved
-- **Fix version(s):** $fixv
+- **Lands in upstream version:** $target
 - **Jira component(s):** $comps
-- **Our vendored pin:** ${component:-n/a} ${pin} (\`docs/VERSIONS.md\` / \`scripts/vendor-spec-docs.sh\`)
+- **What we currently have vendored (the baseline this is newer than):** ${component:-n/a} ${pin} (\`docs/VERSIONS.md\` / \`scripts/vendor-spec-docs.sh\`)
 
 ### Summary
 
