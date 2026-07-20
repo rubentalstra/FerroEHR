@@ -121,7 +121,7 @@ openEHR spec versions are pinned in the "Code generation" section above (RM 1.2.
 ```bash
 cargo build --workspace
 cargo nextest run --workspace
-cargo clippy --workspace --all-targets
+cargo clippy --workspace --all-targets --all-features   # the EXACT CI flags — dropping --all-features misses feature-gated lints
 cargo fmt --all
 cargo audit && cargo deny check
 # conformance runner (the acceptance instrument) — present and green:
