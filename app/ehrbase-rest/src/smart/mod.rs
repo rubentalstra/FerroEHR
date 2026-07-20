@@ -1,4 +1,5 @@
-//! openEHR **SMART App Launch and Service Discovery** (development edition)
+//! openEHR **SMART App Launch and Service Discovery** (Release-1.1.0,
+//! DEVELOPMENT status)
 //! — `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master00-09*.adoc`.
 //!
 //! This server is

@@ -22,8 +22,9 @@ import from, the legacy Robot/Python CNF suites.
   and emits the full artefact set incl. the Certificate for every SUT
   (always a framework self-assessment, never official openEHR
   certification). The fairness register applies to foreign SUTs only; the
-  edition ladder is pinned to `development` for our own CI runs so it can
-  never mask a regression.
+  edition ladder is pinned to the newest released rung (`release-1.1.0`;
+  `development` stays a parse alias) for our own CI runs so it can never
+  mask a regression.
 - Profile verdicts (CORE/STANDARD/OPTIONS) are machine-computed by the
   runner — never hand-asserted in reports or docs.
 - **ECC gate policy:** phase-close runs must show zero drift vs the

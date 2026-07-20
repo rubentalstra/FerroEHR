@@ -43,9 +43,9 @@ const JSON: &[Format] = &[Format::Json];
 
 /// Single-rung ladders: the DEMOGRAPHIC API exists only in the DEVELOPMENT
 /// edition (a DEVELOPMENT-status ITS-REST API), so there is no lower rung.
-const CREATED: &[(Edition, u16)] = &[(Edition::Development, 201)];
-const OK: &[(Edition, u16)] = &[(Edition::Development, 200)];
-const ABSENT: &[(Edition, u16)] = &[(Edition::Development, 404)];
+const CREATED: &[(Edition, u16)] = &[(Edition::Release110, 201)];
+const OK: &[(Edition, u16)] = &[(Edition::Release110, 200)];
+const ABSENT: &[(Edition, u16)] = &[(Edition::Release110, 404)];
 
 /// Every registered DEMOGRAPHIC case (24 carried + 7 new: `get_party_at_time` +
 /// the relationship family).

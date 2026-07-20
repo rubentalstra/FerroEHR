@@ -1,6 +1,6 @@
-//! Demographic (ehr-less) CONTRIBUTION — commit + retrieval. Our own extension:
-//! ITS-REST 1.0.3 defines no demographic wire contract, and the SM demographic
-//! service is abstract. A demographic
+//! Demographic (ehr-less) CONTRIBUTION — commit + retrieval, per the
+//! Demographic API of ITS-REST Release-1.1.0 (DEVELOPMENT lifecycle within
+//! the released spec; the SM demographic service is abstract). A demographic
 //! CONTRIBUTION wraps a change-set of party / relationship versions with
 //! `ehr_id = None`, committed through the shared CONTRIBUTION engine
 //! ([`crate::versioning::contribution::commit_version_set`]) with `party_only = true`

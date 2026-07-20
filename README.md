@@ -4,7 +4,7 @@
 
 **A pure-Rust openEHR Clinical Data Repository — spec-compliant, measured, and built for production.**
 
-openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&nbsp; ADL 1.4 + ADL 2.4 templates &nbsp;·&nbsp; SM Platform Service Model &nbsp;·&nbsp; PostgreSQL 18-native storage
+openEHR REST API (ITS-REST 1.1.0) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&nbsp; ADL 1.4 + ADL 2.4 templates &nbsp;·&nbsp; SM Platform Service Model &nbsp;·&nbsp; PostgreSQL 18-native storage
 
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
 [![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
@@ -27,15 +27,15 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![openEHR RM](https://img.shields.io/badge/openEHR_RM-1.2.0-1F6FEB.svg)](https://specifications.openehr.org/releases/RM/latest)
 [![openEHR AM](https://img.shields.io/badge/openEHR_AM-1.4_%2B_2.4-1F6FEB.svg)](https://specifications.openehr.org/releases/AM/latest)
 [![openEHR QUERY](https://img.shields.io/badge/openEHR_AQL-1.1.0-1F6FEB.svg)](https://specifications.openehr.org/releases/QUERY/latest)
-[![openEHR ITS-REST](https://img.shields.io/badge/openEHR_ITS--REST-1.0.3-1F6FEB.svg)](https://specifications.openehr.org/releases/ITS-REST/latest)
+[![openEHR ITS-REST](https://img.shields.io/badge/openEHR_ITS--REST-1.1.0-1F6FEB.svg)](https://specifications.openehr.org/releases/ITS-REST/latest)
 [![openEHR TERM](https://img.shields.io/badge/openEHR_TERM-3.1.0-1F6FEB.svg)](https://specifications.openehr.org/releases/TERM/latest)
 [![openEHR SM](https://img.shields.io/badge/openEHR_SM-platform-1F6FEB.svg)](https://specifications.openehr.org/releases/SM/latest)
-[![GHCR](https://img.shields.io/badge/ghcr.io-ehrbase--rs-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Security policy](https://img.shields.io/badge/security-policy-yellow.svg)](SECURITY.md)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![GHCR](https://img.shields.io/badge/ghcr.io-ehrbase--rs-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
 
 [**Documentation website**](https://rubentalstra.github.io/ehrbase-rs/) · [Quick start](#quick-start) · [Features](#features) · [Architecture](#architecture) · [Conformance](#conformance-measured-not-asserted) · [Deployment](#deployment) · [Building](#building-from-source) · [Documentation](#documentation)
 
@@ -66,7 +66,7 @@ Conformance Statement and Certificate.
   — and the [Conformance Report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
   carries the full per-case record.
 - **The latest openEHR specifications**, generated from the official
-  machine-readable models: REST API 1.0.3, AQL 1.1, RM 1.2.0, Archetype
+  machine-readable models: REST API 1.1.0, AQL 1.1, RM 1.2.0, Archetype
   Model 1.4 + 2.4, Terminology 3.1. A specification update is a
   regeneration, not a rewrite — and a CI drift-check makes silent divergence
   impossible.
@@ -89,7 +89,7 @@ Conformance Statement and Certificate.
 
 ### openEHR platform
 
-- **REST API (ITS-REST 1.0.3)** — EHR, EHR_STATUS, COMPOSITION, DIRECTORY,
+- **REST API (ITS-REST 1.1.0)** — EHR, EHR_STATUS, COMPOSITION, DIRECTORY,
   CONTRIBUTION, query, template, and admin resources, with canonical JSON
   *and* XML on the wire
 - **AQL 1.1 engine** — typed path analysis over a spec-generated Reference
@@ -220,7 +220,7 @@ flowchart TB
     end
 
     subgraph app ["app/* — the application (three crates, three roles)"]
-        rest["ehrbase-rest<br/>ITS-REST 1.0.3 protocol adapter (axum)<br/>+ access (authn · RBAC/ABAC) + wire mapping"]
+        rest["ehrbase-rest<br/>ITS-REST 1.1.0 protocol adapter (axum)<br/>+ access (authn · RBAC/ABAC) + wire mapping"]
         core["ehrbase<br/>the platform library: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing ·<br/>eventing · FHIR · multimedia — one service module<br/>per SM Platform Service Model chapter"]
         bin["ehrbase-server<br/>the wiring-only binary"]
     end

@@ -297,5 +297,5 @@ fn default_sut_kind() -> SutKind {
 }
 
 fn default_edition_policy() -> EditionPolicy {
-    EditionPolicy::Pinned(crate::edition::Edition::Development)
+    EditionPolicy::Pinned(crate::edition::Edition::Release110)
 }

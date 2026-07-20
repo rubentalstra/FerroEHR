@@ -188,9 +188,9 @@ async fn status_endpoint_is_public() {
     assert_eq!(status, StatusCode::OK);
     let v: serde_json::Value = serde_json::from_str(&body).unwrap();
     assert_eq!(v["status"], "UP");
-    // The served identity is provenance-derived (the tested development
-    // edition of ITS-REST), never a hand-asserted release label.
-    assert_eq!(v["openehr_rest_api_version"], "development@e8a093e");
+    // The served identity is the released ITS-REST contract version, shared
+    // from the single provenance constant.
+    assert_eq!(v["openehr_rest_api_version"], "Release-1.1.0");
 }
 
 #[tokio::test]

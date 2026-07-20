@@ -1,7 +1,7 @@
 //! Typed response-header parsing, edition-classified.
 //!
 //! Spec grounding: ITS-REST overview §"`ETag` and Last-Modified" — the `ETag` is
-//! weak-type (`W/"…"`) in the development edition; the bare quoted form is
+//! weak-type (`W/"…"`) in Release-1.1.0; the bare quoted form is
 //! the deprecated Release-1.0.3-era emission. `Location` per the ITS-REST
 //! operation responses; `Last-Modified` per the same overview section.
 
@@ -15,7 +15,7 @@ pub struct Etag {
     /// `OBJECT_VERSION_ID` or an `ehr_id`, per the operation).
     pub value: String,
     /// The edition rung the observed form belongs to: weak `W/"…"` =
-    /// [`Edition::Development`]; deprecated bare `"…"` =
+    /// [`Edition::Release110`]; deprecated bare `"…"` =
     /// [`Edition::Release103`].
     pub edition: Edition,
 }
@@ -26,7 +26,7 @@ pub struct Etag {
 /// [`CaseError::Assertion`] if the header is present but empty/unquotable.
 pub fn parse_etag(raw: &str) -> Result<Etag, CaseError> {
     let (stripped, edition) = match raw.strip_prefix("W/").or_else(|| raw.strip_prefix("w/")) {
-        Some(rest) => (rest, Edition::Development),
+        Some(rest) => (rest, Edition::Release110),
         None => (raw, Edition::Release103),
     };
     let value = stripped.trim().trim_matches('"');
@@ -107,7 +107,7 @@ mod tests {
     fn weak_etag_is_development_form() {
         let e = parse_etag("W/\"abc::sys::1\"").expect("parse");
         assert_eq!(e.value, "abc::sys::1");
-        assert_eq!(e.edition, Edition::Development);
+        assert_eq!(e.edition, Edition::Release110);
     }
 
     #[test]

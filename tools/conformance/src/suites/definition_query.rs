@@ -14,7 +14,7 @@
 //! - **`list_queries` split.** ITS-REST binds the list resource as
 //!   `GET /definition/query/{qualified_query_name}` (verbs `[get, put]`); a bare
 //!   `GET /definition/query` collection is absent in Release-1.0.3 and
-//!   development@e8a093e. So `list_queries-non_empty` is rebound to the named
+//!   Release-1.1.0. So `list_queries-non_empty` is rebound to the named
 //!   resource (a live [`Binding::Rest`] case), while `list_queries-empty` /
 //!   `-select_items` carry [`Binding::NoRestBinding`] and skip-with-reason.
 //!   The bare-list endpoint is an edition-ladder probe: a future/other-CDR
@@ -44,12 +44,12 @@ use crate::testdata::fixtures;
 
 const JSON: &[Format] = &[Format::Json];
 
-const STORE_CITATION: &str = "ITS-REST 1.0.3 DEFINITION QUERY API §store/get stored query; AQL 1.1 (master05 stub — case id only)";
+const STORE_CITATION: &str = "ITS-REST 1.1.0 DEFINITION QUERY API §store/get stored query; AQL 1.1 (master05 stub — case id only)";
 
 /// The bare-list endpoint is unbound in ITS-REST (the list resource is the
 /// named-query GET).
 const LIST_SKIP: &str = "master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST \
-     binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, \
+     binding — Release-1.0.3 and Release-1.1.0 expose GET /definition/query/{qualified_query_name}, \
      not a bare GET /definition/query. An edition exposing a bare-list resource would make this case \
      live (an edition probe).";
 const LIST_BINDING: Binding = Binding::NoRestBinding(
@@ -65,7 +65,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "sqr/valid-query-valid",
             "Store stored query — valid",
             STORE_CITATION,
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.valid_query-valid (master05:54, A.3.a)",
             Binding::Rest("PUT /definition/query/{qualified_query_name}/{version}"),
             run_store_valid,
@@ -74,7 +74,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "sqr/valid-query-invalid",
             "Store stored query — invalid",
             STORE_CITATION,
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.valid_query-invalid (master05:67, A.3.b)",
             Binding::Rest("PUT /definition/query/{qualified_query_name}/{version}"),
             run_store_invalid,
@@ -83,7 +83,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "sqr/valid-query-bad-formalism",
             "Store stored query — bad formalism",
             STORE_CITATION,
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.valid_query-bad_formalism (master05:80, A.3.c)",
             Binding::Rest("PUT /definition/query/{qualified_query_name}/{version}"),
             run_store_bad_formalism,
@@ -93,7 +93,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "sqr/has-query-existing",
             "Stored query existence check — existing",
             STORE_CITATION,
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.has_query-xxx (master05:37, placeholder id; slug descriptivised)",
             Binding::Rest("GET /definition/query/{qualified_query_name}/{version}"),
             run_has_query,
@@ -102,9 +102,9 @@ pub fn entries() -> Vec<CaseEntry> {
         rest_case(
             "sqr/list-queries-non-empty",
             "List stored queries — non empty",
-            "ITS-REST 1.0.3 DEFINITION QUERY API §get stored query versions (named list resource); \
+            "ITS-REST 1.1.0 DEFINITION QUERY API §get stored query versions (named list resource); \
              AQL 1.1 (master05 stub — case id only)",
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY (named list \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY (named list \
              resource, D2 rebind) + AQL 1.1 — I_DEFINITION_QUERY.list_queries-non_empty (master05:110)",
             Binding::Rest("GET /definition/query/{qualified_query_name}"),
             run_list_non_empty,
@@ -113,13 +113,13 @@ pub fn entries() -> Vec<CaseEntry> {
         skip_case(
             "sqr/list-queries-empty",
             "List stored queries — empty",
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.list_queries-empty (master05:97)",
         ),
         skip_case(
             "sqr/list-queries-select-items",
             "List stored queries — select items",
-            "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
+            "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.list_queries-select_items (master05:123)",
         ),
     ]

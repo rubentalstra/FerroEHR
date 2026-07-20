@@ -1,8 +1,8 @@
 //! `VERSIONED_PARTY` read surface — the demographic analogue of the EHR
 //! `versioned_composition` reads (`VERSIONED_PARTY`, its `REVISION_HISTORY`, and
-//! its `ORIGINAL_VERSION`s). ITS-REST 1.0.3 defines no demographic wire
-//! contract, so this whole surface is our own extension by analogy with the EHR
-//! group.
+//! its `ORIGINAL_VERSION`s). The wire is the Demographic API of ITS-REST
+//! Release-1.1.0 (DEVELOPMENT lifecycle within the released spec), which
+//! mirrors the EHR group's versioned-object reads by design.
 //!
 //! The assembly (and its version-spine reads through
 //! `crate::storage::version_repo`) is shared with the relationship surface in

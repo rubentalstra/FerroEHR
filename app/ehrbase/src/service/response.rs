@@ -2,7 +2,7 @@
 //! which the ITS-REST adapter derives `ETag`/`Location`/`Last-Modified`.
 //!
 //! No openEHR spec governs this — our own design: the SM returns plain
-//! values; ITS-REST 1.0.3 mandates the headers (`headers/ETag_*.yaml`,
+//! values; ITS-REST 1.1.0 mandates the headers (`headers/ETag_*.yaml`,
 //! `headers/Location_*.yaml`; `Last-Modified` per the ITS-REST overview,
 //! `VERSION.commit_audit.time_committed.value`). This envelope is the seam
 //! that carries what the headers need.

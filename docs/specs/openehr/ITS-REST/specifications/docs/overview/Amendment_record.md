@@ -17,6 +17,9 @@
     </thead>
     <tbody>
     <tr>
+        <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.1.0" target="_blank" rel="noopener">Release-1.1.0</a></th>
+    </tr>
+    <tr>
         <td>5.9</td>
         <td><a href="https://specifications.openehr.org/tickets/SPECITS-95" target="_blank" rel="noopener">SPECITS-95</a>:
             Fix <code>UPDATE_AUDIT.change_type</code> typing - use <code>DV_CODED_TEXT</code> instead of <code>TERMINOLOGY_CODE</code> (same correction applied to <code>UPDATE_VERSION.lifecycle_state</code> in the ehr and demographic APIs); add optional <code>system_id</code>, make the examples consistent with the schema, clarify that <code>UPDATE_AUDIT</code> is <code>AUDIT_DETAILS</code> minus server-assigned attributes including the <code>_type</code> handling, and remove the now-unused <code>TERMINOLOGY_CODE</code> base schema</td>
@@ -46,8 +49,8 @@
     </tr>
     <tr>
         <td>5.6</td>
-        <td><a href="https://specifications.openehr.org/tickets/SPECITS-88" target="_blank" rel="noopener">SPECITS-88</a>:
-            Add support for filters in listTemplates operation</td>
+        <td><a href="https://specifications.openehr.org/tickets/SPECITS-86" target="_blank" rel="noopener">SPECITS-86</a>:
+            Changes regarding <code>template_id</code>: add <code>template_id</code> and <code>version</code> filter parameters to the listTemplates operation (adl1.4 and adl2)</td>
         <td>REST WG</td>
         <td>11 Feb 2026</td>
     </tr>
@@ -130,20 +133,20 @@
     </tr>
     <tr>
         <td>5.1</td>
-        <td><a href="https://specifications.openehr.org/tickets/SPECITS-73" target="_blank" rel="noopener">SPECITS-73</a>:
+        <td><a href="https://specifications.openehr.org/tickets/SPECITS-70" target="_blank" rel="noopener">SPECITS-70</a>:
             Add Demographic API endpoint</td>
         <td>P Pazos, S Iancu</td>
         <td>11 Sep 2024</td>
     </tr>
     <tr>
         <td>5.0</td>
-        <td><a href="https://specifications.openehr.org/tickets/SPECITS-75" target="_blank" rel="noopener">SPECITS-75</a>:
+        <td><a href="https://specifications.openehr.org/tickets/SPECITS-73" target="_blank" rel="noopener">SPECITS-73</a>:
             Change structure and improve yaml specs</td>
         <td>S Iancu</td>
         <td>11 Sep 2024</td>
     </tr>
     <tr>
-        <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/latest" target="_blank" rel="noopener">Release-1.0.3</a></th>
+        <th colspan="4"><a href="https://specifications.openehr.org/releases/ITS-REST/Release-1.0.3" target="_blank" rel="noopener">Release-1.0.3</a></th>
     </tr>
     <tr>
         <td>4.1</td>

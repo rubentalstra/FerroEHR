@@ -61,14 +61,14 @@
         },
         {
             "id": "demographic",
-            "title": "DEMOGRAPHIC REST API",
-            "title_short": "DEMOGRAPHIC API",
-            "description": "openEHR DEMOGRAPHIC REST API",
-            "summary": "This specification describes service endpoints, resources, functions and operations as well as details of requests and responses that interacts with an openEHR DEMOGRAPHIC API in a RESTful manner.",
-            "micro_summary": "DEMOGRAPHIC API",
+            "title": "Demographic REST API",
+            "title_short": "Demographic API",
+            "description": "openEHR Demographic REST API",
+            "summary": "This specification describes service endpoints, resources, functions and operations as well as details of requests and responses that interacts with an openEHR Demographic API in a RESTful manner.",
+            "micro_summary": "Demographic API",
             "copyright_year": "2024",
             "spec_status": "DEVELOPMENT",
-            "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, DEMOGRAPHIC"
+            "keywords": "openEHR, ITS, REST APIs, REST, API, RESTful, services, Demographic"
         },
         {
             "id": "admin",
@@ -131,8 +131,16 @@
     },
     "releases": [
         {
-            "id": "1.1.0",
+            "id": "1.2.0",
             "date": "",
+            "jira": {
+                "crs": "SPECITS/versions/12642",
+                "prs": "SPECPR/versions/12708"
+            }
+        },
+        {
+            "id": "1.1.0",
+            "date": "2026-07-19",
             "jira": {
                 "crs": "SPECITS/versions/12529",
                 "prs": "SPECPR/versions/12532"

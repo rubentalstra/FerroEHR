@@ -1,6 +1,6 @@
 //! `I_QUERY_SERVICE` (`i_query_service.adoc`) — ad-hoc + stored AQL execution,
 //! and the orchestration behind it: parse → plan → execute → assemble the
-//! ITS-REST 1.0.3 `RESULT_SET`, the paging composition, the `ehr_ids`
+//! ITS-REST 1.1.0 `RESULT_SET`, the paging composition, the `ehr_ids`
 //! resolution, and the per-query execution budget.
 //!
 //! Paging (ITS-REST QUERY `Request.md`): `fetch` is the row limit and "cannot
