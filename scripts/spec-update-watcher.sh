@@ -265,11 +265,34 @@ done <<< "$amendment_files"
 # Sort so the richer Jira-sourced row wins over an amendment duplicate.
 sort -t"$US" -k1,1 -k4,4r "$CANDIDATES" | awk -F"$US" '!seen[$1]++' > "$tmp/unique.tsv"
 
-created=0 skipped=0
+# Keys the AMENDMENT cross-check detected — the text-has-landed evidence for
+# the auto-unblock below. Collected independently of the dedup's source
+# priority (a Jira-window hit for the same key must not mask the landing).
+amendment_keys=$(awk -F"$US" '$4 == "amendment" { print $1 }' "$CANDIDATES" | sort -u)
+
+created=0 skipped=0 unblocked=0
 while IFS="$US" read -r key component summary source resolved fixv comps status resolution itype jcreated fixv_plain descr; do
   [ -n "$key" ] || continue
-  existing=$(gh issue list --state all --search "\"$key\" in:title" --json number --jq 'length')
-  if [ "$existing" -gt 0 ]; then
+  match=$(gh issue list --state all --search "\"$key\" in:title" --json number,state,labels --jq '.[0] // empty')
+  if [ -n "$match" ]; then
+    # AUTO-UNBLOCK: an amendment-diff hit means the key's normative text has
+    # now LANDED upstream. If the board carries this key as an OPEN issue
+    # labelled blocked-upstream (resolved in Jira before the text was
+    # published), announce the landing and drop the label; every other
+    # existing-issue hit keeps the silent dedup skip.
+    if echo "$amendment_keys" | grep -qxF "$key" &&
+      [ "$(echo "$match" | jq -r '.state')" = "OPEN" ] &&
+      [ "$(echo "$match" | jq -r '[.labels[].name] | any(. == "blocked-upstream")')" = "true" ]; then
+      num=$(echo "$match" | jq -r '.number')
+      if [ "$DRY_RUN" = "1" ]; then
+        echo "DRY-RUN would unblock #$num ($key): $summary"
+      else
+        gh issue comment "$num" --body "Auto-unblock (spec-update watcher): the normative text for $key has landed upstream — $summary. Re-vendor the component at pickup; this issue is implementable now." >/dev/null
+        gh issue edit "$num" --remove-label blocked-upstream >/dev/null
+        echo "unblocked #$num ($key)"
+      fi
+      unblocked=$((unblocked + 1))
+    fi
     skipped=$((skipped + 1))
     continue
   fi
@@ -332,4 +355,4 @@ EOF
   created=$((created + 1))
 done < "$tmp/unique.tsv"
 
-echo "spec-update-watcher: done — $created new, $skipped already on the board (dedup by key)."
+echo "spec-update-watcher: done — $created new, $unblocked unblocked, $skipped already on the board (dedup by key)."
