@@ -418,7 +418,7 @@ sql: 1–2 round trips — SELECT hrid (exact) or SELECT hrid[] (partial-resolve
 notes: `text/plain` = the stored source verbatim (`200_Template_adl2_retrieved.yaml`); `application/json` = the `OperationalTemplateV2` canonical JSON (opaque `type: object` in the OAS → the AOM2 OPT JSON satisfies it, built via `openehr_adl::opt::create_opt` for non-OPT kinds); `application/xml` has no declared response body → 406. Unknown HRID → 404.
 
 ### GET /definition/template/adl2/{template_id}/example
-chain: handler `…::definition_template_adl2_example_get` → `template_adl2.rs::example_get` → params parse → `ApiError::NotImplemented` (501)
+chain: handler `…::definition_template_adl2_example_get` → `template_adl2.rs::example_get` → `EhrbaseService::template_adl2_example` → `adl2_resolve` (HRID) → `adl2_get` (source) → `openehr_adl::opt::create_opt` → `openehr_flat::webtemplate::build_web_template_am24` (am24 → Web Template) → `openehr_flat::example::example_composition` → `Accept_LOCATABLE` negotiation (canonical JSON/XML + FLAT/STRUCTURED); 400 (bad `type`/`detail_level`), 404 (unknown template), 406 (unsupported Accept)
 spine: standard api/** dispatch
 sql: 0 round trips
 notes: needs an example generator over an `am24`-OPT WebTemplate (the same generator issue #94 builds); ADL2 is OPTIONAL for CNF.

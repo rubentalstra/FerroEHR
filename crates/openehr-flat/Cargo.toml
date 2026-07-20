@@ -13,6 +13,7 @@ publish = false
 openehr-rm = { path = "../openehr-rm" }
 openehr-its = { path = "../openehr-its" }
 openehr-am = { path = "../openehr-am" }
+openehr-base = { path = "../openehr-base" }
 openehr-term = { path = "../openehr-term" }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -26,10 +27,10 @@ quick-xml = { workspace = true }
 [dev-dependencies]
 insta = { workspace = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
+# The ADL2 → OPT compiler, used only by the am24 Web-Template builder tests to
+# turn real ADL2 corpus sources into operational templates (dev-only; the
+# production am24 front end takes an already-created OPT as input).
+openehr-adl = { path = "../openehr-adl" }
 
 [lints]
 workspace = true
-
-[package.metadata.cargo-machete]
-# `openehr-am` is wired for the (later) FLAT/ADL2 paths; not consumed yet.
-ignored = ["openehr-am"]

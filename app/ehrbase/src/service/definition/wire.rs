@@ -92,6 +92,29 @@ impl EhrbaseService {
         Ok(self.template_example(&template_id, level, kind).await?)
     }
 
+    /// `GET /definition/template/adl2/{template_id}/example` — an example
+    /// COMPOSITION built from the ADL2 template's `WebTemplate` (the am24 front
+    /// end feeding the shared example generator). `kind`/`detail_level` are the
+    /// `example_type`/`example_detail_level` query enums.
+    ///
+    /// # Errors
+    ///
+    /// - An out-of-enum `detail_level` or `kind` value → `BadRequest` (`400`).
+    /// - No template with that `template_id` → `NotFound` (`404`).
+    /// - The stored template cannot be compiled/built → `Unprocessable` (`422`).
+    /// - A database failure (`500`).
+    pub async fn template_adl2_example(
+        &self,
+        template_id: String,
+        detail_level: Option<String>,
+        kind: Option<String>,
+    ) -> Result<Value, ServiceError> {
+        let level =
+            DetailLevel::from_query(detail_level.as_deref()).map_err(ServiceError::BadRequest)?;
+        let kind = ExampleType::from_query(kind.as_deref()).map_err(ServiceError::BadRequest)?;
+        self.adl2_example(&template_id, level, kind).await
+    }
+
     /// `POST /definition/template/adl2` — validate ADL2 operational-template
     /// source (text/plain) through the `openehr-adl` engine, store it, and
     /// return the stored `ARCHETYPE_HRID`; the dispatcher builds `Location` +

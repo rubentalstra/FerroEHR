@@ -51,9 +51,14 @@ workflow refuses a tag that has no matching section here.
   `text/plain` source, and resolves a partial `template_id` to the latest
   matching version; the previously `501` `…/{template_id}/{version}` (versioned
   get, marked deprecated in the spec) is implemented, and template list rows now
-  carry `concept` and `archetype_id`. `…/{template_id}/example` remains `501`
-  (the example generator is tracked separately). An `Accept` naming only
-  `application/xml` is a `406` (the operation declares no XML response body).
+  carry `concept` and `archetype_id`. `GET …/{template_id}/example` now generates
+  an example COMPOSITION from the compiled operational template (an ADL2 →
+  Web Template front end feeding the shared example generator), served across the
+  four `Accept_LOCATABLE` representations (canonical JSON/XML, `openehr.wt.flat`,
+  `openehr.wt.structured`) with `type` (`input`/`output`) + `detail_level`
+  (`required`/`medium`/`complete`) query parameters, and `400`/`404`/`406` exactly
+  as the ADL 1.4 example endpoint. An `Accept` naming only `application/xml` on
+  the plain template GET is a `406` (the operation declares no XML response body).
 - **ADL 1.4 archetypes are now validated by the ADL 1.4 engine, and can be
   migrated to ADL 2.** An ADL 1.4 source archetype (the `I_DEFINITION_ADL14`
   archetype surface) is now parsed and validated **as ADL 1.4** by the

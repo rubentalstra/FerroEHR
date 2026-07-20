@@ -19,7 +19,11 @@ use openehr_adl::validate::{
 };
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
+use openehr_flat::webtemplate::{WebTemplate, build_web_template_am24};
 use openehr_its::rest::runtime::ValidationError;
+use serde_json::Value;
 use sqlx::Row;
 
 use crate::service::EhrbaseService;
@@ -408,6 +412,95 @@ impl EhrbaseService {
             ServiceError::Unprocessable(format!("cannot project OperationalTemplateV2: {e}"))
         })?;
         Ok(openehr_its::json::to_canonical_json(&opt))
+    }
+
+    /// Generate an example COMPOSITION for a stored ADL2 template
+    /// (`GET …/definition/template/adl2/{template_id}/example`).
+    ///
+    /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
+    /// its operational template (`create_opt`), turned into a `WebTemplate` by
+    /// the am24 front end
+    /// ([`build_web_template_am24`](openehr_flat::webtemplate::build_web_template_am24)),
+    /// and walked into a canonical example COMPOSITION at the requested
+    /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
+    /// uses (`ITS-REST simplified_formats master04 §"Web Template Metadata"` is
+    /// the dialect-neutral seam). The `output` form ([`ExampleType::Output`])
+    /// carries a deterministic `uid`.
+    ///
+    /// Example generation is not spec-mandated (a convenience surface); a
+    /// generated example is self-consistent with its `WebTemplate` by construction
+    /// and validated by the template-independent RM-invariant + terminology pass
+    /// ([`openehr_flat::validation::validate_rm_and_terminology`]).
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::NotFound`] (`404`) — no stored template matches
+    ///   `template_id`.
+    /// - [`ServiceError::Internal`] (`500`) — the stored source no longer parses
+    ///   (it was engine-valid at upload, so this is a server fault).
+    /// - [`ServiceError::Unprocessable`] (`422`) — the OPT cannot be compiled (an
+    ///   unresolved constituent reference) or built into a `WebTemplate`.
+    pub(super) async fn adl2_example(
+        &self,
+        template_id: &str,
+        level: DetailLevel,
+        kind: ExampleType,
+    ) -> Result<Value, ServiceError> {
+        let wt = self.web_template_adl2(template_id).await?;
+        let mut composition = example_composition(&wt, level);
+        if kind == ExampleType::Output {
+            apply_output_uid(&mut composition, &wt.template_id);
+        }
+        Ok(composition)
+    }
+
+    /// The [`WebTemplate`] of a stored ADL2 template: resolve `template_id` →
+    /// HRID, fetch the source, compile it to its operational template, and build
+    /// the Web Template with the am24 front end
+    /// ([`build_web_template_am24`](openehr_flat::webtemplate::build_web_template_am24)).
+    /// The ADL2 twin of [`web_template`](Self::web_template) (which reads the
+    /// ADL 1.4 OPT store), used by the example endpoint's FLAT/STRUCTURED
+    /// negotiation.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::NotFound`] (`404`) — no stored template matches.
+    /// - [`ServiceError::Internal`] (`500`) — the stored source no longer parses.
+    /// - [`ServiceError::Unprocessable`] (`422`) — the OPT cannot be compiled or
+    ///   built into a `WebTemplate`.
+    pub async fn web_template_adl2(&self, template_id: &str) -> Result<WebTemplate, ServiceError> {
+        let hrid = self.adl2_resolve(template_id, None).await?;
+        let source = self.adl2_get(&hrid).await?;
+        let opt = self.adl2_operational_template(&source).await?;
+        build_web_template_am24(&opt).map_err(|e| {
+            ServiceError::Unprocessable(format!(
+                "ADL2 template {hrid} could not be built into a WebTemplate: {e}"
+            ))
+        })
+    }
+
+    /// Compile stored ADL2 `source` to its operational template: a stored
+    /// `operational_template` is parsed as-is; any other kind is flattened +
+    /// compiled via `create_opt` (OPT2 master03).
+    async fn adl2_operational_template(
+        &self,
+        source: &str,
+    ) -> Result<OperationalTemplate, ServiceError> {
+        let archetype = parse_artefact(source).map_err(|errs| {
+            ServiceError::Internal(format!(
+                "stored ADL2 source no longer parses: {}",
+                join_syntax_errors(&errs)
+            ))
+        })?;
+        if let Archetype::AuthoredArchetype(a) = &archetype
+            && let AuthoredArchetype::OperationalTemplate(opt) = a.as_ref()
+        {
+            return Ok(opt.as_ref().clone());
+        }
+        let repo = self.adl2_repository().await?;
+        create_opt(&archetype, &repo).map_err(|e| {
+            ServiceError::Unprocessable(format!("cannot compile operational template: {e}"))
+        })
     }
 
     /// The ADL2 source of the artefact with `ARCHETYPE_HRID` `an_id`; absent
