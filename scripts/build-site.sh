@@ -26,12 +26,20 @@ build_book() {
 # 1. Served OAS is a byte copy of the vendored ITS-REST bundles.
 bash "$ROOT/scripts/assemble-oas.sh"
 
+# 1b. Conformance claims are derived from the committed runner artifacts —
+#     the book include is generated before mdbook runs, and the landing's
+#     data-ecc markers are filled after the copy (step 3). Sources carry no
+#     numbers (CI: scripts/check-conformance-numbers.sh).
+bash "$ROOT/scripts/render-conformance-stats.sh" includes
+
 # 2. Clean + recreate _site.
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
-# 3. Landing at the site root (relative-URL HTML, so no base-path rewriting).
+# 3. Landing at the site root (relative-URL HTML, so no base-path rewriting);
+#    conformance markers filled from the committed artifacts.
 cp -R "$ROOT/website/landing/." "$OUT/"
+bash "$ROOT/scripts/render-conformance-stats.sh" fill-html "$OUT/index.html"
 
 # 4. API endpoint reference at /api/ (Swagger UI + vendored dist + served specs).
 mkdir -p "$OUT/api"

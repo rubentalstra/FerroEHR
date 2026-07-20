@@ -28,9 +28,9 @@ what you query and what you read back.
 
 - **Compliance you can verify, not just read.** Every release runs the full
   openEHR conformance catalogue against the live server, in both JSON and XML,
-  and computes the profile verdicts automatically — currently **CORE: PASS,
-  STANDARD: PASS, OPTIONS: OBTAINED**, with zero failing cases. See
-  [Conformance](conformance.md).
+  and computes the profile verdicts automatically. The current, run-derived
+  result — every number generated from the committed artifacts, never
+  hand-typed — is on the [Conformance](conformance.md) page.
 - **The latest openEHR specifications**, generated directly from the official
   machine-readable models: the REST API development edition, AQL 1.1,
   Reference Model 1.2.0, Archetype Model 1.4 and 2.4, Terminology 3.1. A
