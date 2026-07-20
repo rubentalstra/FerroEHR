@@ -11,6 +11,14 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![Containers](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml)
 [![Last commit](https://img.shields.io/github/last-commit/rubentalstra/ehrbase-rs/develop?logo=github)](https://github.com/rubentalstra/ehrbase-rs/commits/develop)
 
+<!-- ECC conformance badges: shields.io endpoint scheme over the runner-generated
+     badge JSONs on develop — auto-updating on every merged ECC ratchet, zero
+     manual edits (issue #138). -->
+[![ECC conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
+[![ECC CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-core.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
+[![ECC STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
+[![ECC OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-options.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
+
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
 [![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
@@ -21,10 +29,6 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![openEHR ITS-REST](https://img.shields.io/badge/openEHR_ITS--REST-1.0.3-1F6FEB.svg)](https://specifications.openehr.org/releases/ITS-REST/latest)
 [![openEHR TERM](https://img.shields.io/badge/openEHR_TERM-3.1.0-1F6FEB.svg)](https://specifications.openehr.org/releases/TERM/latest)
 [![openEHR SM](https://img.shields.io/badge/openEHR_SM-platform-1F6FEB.svg)](https://specifications.openehr.org/releases/SM/latest)
-[![ECC conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge.json)](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
-[![ECC CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-core.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
-[![ECC STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
-[![ECC OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-options.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![GHCR](https://img.shields.io/badge/ghcr.io-ehrbase--rs-2496ED.svg?logo=docker&logoColor=white)](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)

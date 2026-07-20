@@ -39,6 +39,8 @@ jobs:
           tool: mdbook@${{ env.MDBOOK_VERSION }},mdbook-mermaid@${{ env.MDBOOK_MERMAID_VERSION }},mdbook-toc@${{ env.MDBOOK_TOC_VERSION }},mdbook-lint@${{ env.MDBOOK_LINT_VERSION }},lychee@${{ env.LYCHEE_VERSION }}
       - name: OAS drift gate (docs copy == vendored ITS-REST)
         run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
+      - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
+        run: bash scripts/check-conformance-numbers.sh
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
