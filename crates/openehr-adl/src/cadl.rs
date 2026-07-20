@@ -15,7 +15,7 @@
 //! matches the existing outer parser idiom ([`crate::source`], hand-rolled RD
 //! over `&[Spanned]`).
 //!
-//! Scope of A3a: full cADL object/attribute/tuple/slot/proxy/primitive
+//! Scope: full cADL object/attribute/tuple/slot/proxy/primitive
 //! coverage building the AOM2 tree, with the `S*` syntax-validity codes raised
 //! at position. Slot include/exclude **assertion** expressions and the `rules`
 //! section are captured as raw text (structured BEL expression parsing is a
@@ -52,6 +52,7 @@ use openehr_base::prelude::{
     Cardinality, Interval, Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time,
     MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData, TerminologyCode,
 };
+use openehr_lang::odin::OdinValue;
 
 use crate::error::{SyntaxError, SyntaxErrorCode};
 use crate::lexer::{Spanned, Token};
@@ -70,43 +71,7 @@ type PResult<T> = Result<T, ()>;
 /// Returns every [`SyntaxError`] found (the `S*` catalogue codes of
 /// `ADL2/master04.6`). Lexer failures surface as [`SyntaxErrorCode::Sunk`].
 pub fn parse_definition_body(body: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
-    let toks = match crate::lexer::lex(body) {
-        Ok(t) => t,
-        Err(e) => return Err(vec![e]),
-    };
-    let mut parser = Parser {
-        src: body,
-        toks: &toks,
-        pos: 0,
-        errors: Vec::new(),
-    };
-    let root = parser.parse_root();
-    match root {
-        Ok(cco) if parser.errors.is_empty() => {
-            if parser.pos < parser.toks.len() {
-                let span = parser.span_at(parser.pos);
-                parser.push(
-                    SyntaxErrorCode::Sunk,
-                    "unexpected trailing input after the definition object",
-                    span,
-                );
-                Err(parser.errors)
-            } else {
-                Ok(cco)
-            }
-        }
-        _ => {
-            if parser.errors.is_empty() {
-                parser.errors.push(SyntaxError::at(
-                    SyntaxErrorCode::Sunk,
-                    "empty definition",
-                    0..0,
-                    body,
-                ));
-            }
-            Err(parser.errors)
-        }
-    }
+    parse_definition_body_with(body, Dialect::Adl2)
 }
 
 /// Parse the **root artefact's** `definition` section of a whole ADL2 source
@@ -151,12 +116,93 @@ pub fn parse_definition(src: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
     })
 }
 
+/// Which ADL dialect the cADL parser accepts.
+///
+/// `Adl2` is the spec-conformant grammar (`cadl2.g4`); `Adl14` additionally
+/// tolerates the ADL 1.4-only definition forms the `adl14` 1.4→2 converter
+/// front end feeds it — qualified/listed terminology constraints
+/// (`[local::at0001]`, `[local:: a, b, c ; assumed]`, `[openehr::524]`) and the
+/// inline dADL domain constraints (`C_DV_QUANTITY <…>`, `(C_DV_ORDINAL) <…>`).
+///
+/// NOTE: no openEHR spec governs 1.4→2 conversion — the `Adl14` acceptance here
+/// exists only to feed `crate::adl14`; it is our own design (see the module
+/// flag on `crate::adl14`). It is purely additive (the tolerated forms are not
+/// valid `cadl2.g4`), so `Adl2` parsing is byte-identical.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Dialect {
+    /// The spec-conformant ADL2 grammar.
+    Adl2,
+    /// ADL2 plus the 1.4-only tolerance forms (converter front end only).
+    Adl14,
+}
+
+/// Parse a **1.4-dialect** definition body into a [`CComplexObject`].
+///
+/// The 1.4-only terminology-constraint and inline-dADL domain forms are kept in
+/// a converter-internal encoding (qualified codes and lists in the
+/// `C_TERMINOLOGY_CODE.constraint` string; domain blocks lowered to a
+/// `DV_QUANTITY`/`DV_ORDINAL` with a `property` at-code + a tuple/attribute set)
+/// that `crate::adl14::convert` rewrites into spec-valid ADL2. See the
+/// `crate::adl14` module flag: no openEHR spec governs this.
+///
+/// # Errors
+/// Returns every [`SyntaxError`] the cADL parse raises (including
+/// [`SyntaxErrorCode::Sdinv`] for a malformed inline dADL domain block).
+pub fn parse_definition_body_adl14(body: &str) -> Result<CComplexObject, Vec<SyntaxError>> {
+    parse_definition_body_with(body, Dialect::Adl14)
+}
+
+fn parse_definition_body_with(
+    body: &str,
+    dialect: Dialect,
+) -> Result<CComplexObject, Vec<SyntaxError>> {
+    let toks = match crate::lexer::lex(body) {
+        Ok(t) => t,
+        Err(e) => return Err(vec![e]),
+    };
+    let mut parser = Parser {
+        src: body,
+        toks: &toks,
+        pos: 0,
+        errors: Vec::new(),
+        dialect,
+    };
+    let root = parser.parse_root();
+    match root {
+        Ok(cco) if parser.errors.is_empty() => {
+            if parser.pos < parser.toks.len() {
+                let span = parser.span_at(parser.pos);
+                parser.push(
+                    SyntaxErrorCode::Sunk,
+                    "unexpected trailing input after the definition object",
+                    span,
+                );
+                Err(parser.errors)
+            } else {
+                Ok(cco)
+            }
+        }
+        _ => {
+            if parser.errors.is_empty() {
+                parser.errors.push(SyntaxError::at(
+                    SyntaxErrorCode::Sunk,
+                    "empty definition",
+                    0..0,
+                    body,
+                ));
+            }
+            Err(parser.errors)
+        }
+    }
+}
+
 /// The recursive-descent cADL parser over a token slice.
 struct Parser<'a> {
     src: &'a str,
     toks: &'a [Spanned],
     pos: usize,
     errors: Vec<SyntaxError>,
+    dialect: Dialect,
 }
 
 // ── cursor + error helpers ────────────────────────────────────────────────
@@ -859,6 +905,16 @@ impl Parser<'_> {
         if self.eat(|t| matches!(t, Token::SymStar)) {
             return Ok(Vec::new()); // deprecated `matches {*}` == any.
         }
+        // 1.4-only (converter front end; no openEHR spec — see `crate::adl14`):
+        // a qualified/listed terminology constraint (`[local::at1]`,
+        // `[local:: a, b ; c]`, `[openehr::524]`). A single `[local::code]` is
+        // one `TermCodeRef` token; a list lexes as `[` ident `::` codes …. Both
+        // must reach `parse_adl14_term_object` rather than the ADL2 inline
+        // terminology-code path (which expects a bare `[at1]`/`[ac1]`).
+        if self.dialect == Dialect::Adl14 && self.is_adl14_qualified_code_start() {
+            let obj = self.parse_adl14_term_object()?;
+            return Ok(vec![obj]);
+        }
         if self.is_inline_primitive_start() {
             let obj = self.parse_c_inline_primitive("Primitive_node_id".to_owned())?;
             return Ok(vec![obj]);
@@ -908,6 +964,27 @@ impl Parser<'_> {
     /// `c_regular_object : c_complex_object | c_archetype_root |
     /// c_complex_object_proxy | archetype_slot | c_regular_primitive_object`.
     fn parse_c_regular_object(&mut self) -> PResult<CObject> {
+        if self.dialect == Dialect::Adl14 {
+            // 1.4-only object forms (converter front end; no openEHR spec —
+            // see `crate::adl14`): a bare qualified/listed terminology
+            // constraint, or an inline dADL domain block `(TYPE) <…>`.
+            match self.peek() {
+                Some(Token::TermCodeRef(_) | Token::LBracket) => {
+                    return self.parse_adl14_term_object();
+                }
+                Some(Token::LParen) => return self.parse_adl14_domain_object(true),
+                // Bare `C_DV_QUANTITY <…>` / `C_DV_ORDINAL <…>` (no parens): a
+                // domain type immediately followed by an ODIN block would
+                // otherwise be misread as a generic type by `parse_rm_type_id`.
+                Some(Token::AlphaUcId(id))
+                    if is_adl14_domain_type(id)
+                        && matches!(self.peek_at(1), Some(Token::SymLt)) =>
+                {
+                    return self.parse_adl14_domain_object(false);
+                }
+                _ => {}
+            }
+        }
         match self.peek() {
             Some(Token::SymUseArchetype) => self.parse_c_archetype_root(),
             Some(Token::SymUseNode) => self.parse_c_complex_object_proxy(),
@@ -917,6 +994,188 @@ impl Parser<'_> {
                 SyntaxErrorCode::Sccog,
                 "expecting a new node definition, primitive node, 'use' path, or archetype reference",
             ),
+        }
+    }
+
+    /// True if the cursor is at a 1.4 qualified/listed terminology constraint
+    /// (`[terminology::…]`): either a single-token `TermCodeRef`, or a
+    /// `[` ident `::` opening (a code list the lexer split into loose tokens).
+    fn is_adl14_qualified_code_start(&self) -> bool {
+        match self.peek() {
+            Some(Token::TermCodeRef(_)) => true,
+            Some(Token::LBracket) => {
+                matches!(
+                    self.peek_at(1),
+                    Some(Token::AlphaLcId(_) | Token::AlphaUcId(_))
+                ) && matches!(self.peek_at(2), Some(Token::SymColon))
+            }
+            _ => false,
+        }
+    }
+
+    /// 1.4-only: a bare terminology-code object — a single qualified code
+    /// (`[local::at0001]` / `[openehr::524]`, one `TermCodeRef` token) or a
+    /// code list (`[local:: a, b, c ; assumed]`, loose tokens). The full 1.4
+    /// form is preserved verbatim in `C_TERMINOLOGY_CODE.constraint` for
+    /// `crate::adl14::convert` to rewrite. No openEHR spec governs this — our
+    /// own design (1.4→2 converter front end).
+    fn parse_adl14_term_object(&mut self) -> PResult<CObject> {
+        let constraint = if let Some(Token::TermCodeRef(raw)) = self.peek().cloned() {
+            self.pos += 1;
+            // `[terminology::code]` → `terminology::code`.
+            raw.trim_start_matches('[').trim_end_matches(']').to_owned()
+        } else {
+            // `[` terminology `::` code ( `,` code )* ( `;` assumed )? `]`.
+            self.expect(
+                |t| matches!(t, Token::LBracket),
+                SyntaxErrorCode::Stccp,
+                "expecting '[' opening a terminology code",
+            )?;
+            let Some(Token::AlphaLcId(terminology) | Token::AlphaUcId(terminology)) = self.bump()
+            else {
+                return self.err(SyntaxErrorCode::Stccp, "expecting a terminology id");
+            };
+            // `::`
+            self.expect(
+                |t| matches!(t, Token::SymColon),
+                SyntaxErrorCode::Stccp,
+                "expecting ':' in a qualified code",
+            )?;
+            self.expect(
+                |t| matches!(t, Token::SymColon),
+                SyntaxErrorCode::Stccp,
+                "expecting '::' in a qualified code",
+            )?;
+            let mut codes: Vec<String> = Vec::new();
+            let mut assumed: Option<String> = None;
+            loop {
+                match self.peek().cloned() {
+                    // External codes may be bare integers (`[openehr:: 253, …]`)
+                    // as well as at/ac/id codes (`[local:: at0136, …]`).
+                    Some(
+                        Token::AtCode(c) | Token::AcCode(c) | Token::IdCode(c) | Token::Integer(c),
+                    ) => {
+                        self.pos += 1;
+                        codes.push(c);
+                    }
+                    _ => return self.err(SyntaxErrorCode::Stccp, "expecting an at/ac code"),
+                }
+                if self.eat(|t| matches!(t, Token::SymComma)) {
+                    continue;
+                }
+                if self.eat(|t| matches!(t, Token::SymSemiColon)) {
+                    match self.peek().cloned() {
+                        Some(Token::AtCode(a)) => {
+                            self.pos += 1;
+                            assumed = Some(a);
+                        }
+                        _ => {
+                            return self
+                                .err(SyntaxErrorCode::Stccp, "assumed value must be an at-code");
+                        }
+                    }
+                }
+                break;
+            }
+            self.expect(
+                |t| matches!(t, Token::RBracket),
+                SyntaxErrorCode::Stccp,
+                "expecting ']' closing a terminology code",
+            )?;
+            let mut s = format!("{terminology}::{}", codes.join(","));
+            if let Some(a) = assumed {
+                s.push(';');
+                s.push_str(&a);
+            }
+            s
+        };
+        Ok(CObject::CTerminologyCode(CTerminologyCode {
+            parent: None,
+            soc_parent: None,
+            rm_type_name: "Terminology_code".to_owned(),
+            occurrences: None,
+            node_id: "Primitive_node_id".to_owned(),
+            alternative_ids: Vec::new(),
+            is_deprecated: None,
+            sibling_order: None,
+            default_value: None,
+            assumed_value: None,
+            is_enumerated_type_constraint: None,
+            constraint,
+            constraint_status: None,
+        }))
+    }
+
+    /// 1.4-only: an inline dADL domain constraint `(C_DV_QUANTITY) <…>` /
+    /// `C_DV_ORDINAL <…>`. The ODIN block is parsed via `openehr_lang::odin`
+    /// and lowered to a `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` (the RM
+    /// type the domain constrainer targets), carrying the `property` external
+    /// code as a `C_TERMINOLOGY_CODE` and the `list` rows as an attribute tuple
+    /// (multi-member) or plain attributes (single member). No openEHR spec
+    /// governs this — our own design (1.4→2 converter front end;
+    /// `AOM2/master04.4` §Second-Order Constraints is the ADL2 tuple target).
+    fn parse_adl14_domain_object(&mut self, parenthesised: bool) -> PResult<CObject> {
+        let start = self.cur_span().start;
+        if parenthesised {
+            self.pos += 1; // '('
+        }
+        let Some(Token::AlphaUcId(rm_type)) = self.bump() else {
+            return self.err(
+                SyntaxErrorCode::Sccog,
+                "expecting a domain constrainer type",
+            );
+        };
+        if parenthesised {
+            self.expect(
+                |t| matches!(t, Token::RParen),
+                SyntaxErrorCode::Sccog,
+                "expecting ')' after the domain type",
+            )?;
+        }
+        // The ODIN block spans from the opening '<' to its matching '>'.
+        let open = self.pos;
+        if !matches!(self.peek(), Some(Token::SymLt)) {
+            return self.err(
+                SyntaxErrorCode::Sdinv,
+                "expecting '<' opening a domain block",
+            );
+        }
+        let mut depth = 0usize;
+        let mut close = None;
+        while let Some(tok) = self.peek() {
+            match tok {
+                Token::SymLt => depth += 1,
+                Token::SymGt => {
+                    depth -= 1;
+                    if depth == 0 {
+                        close = Some(self.pos);
+                        self.pos += 1;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+            self.pos += 1;
+        }
+        let Some(close) = close else {
+            return self.err(SyntaxErrorCode::Sdinv, "unterminated domain block '<…>'");
+        };
+        let block = &self.src[self.span_at(open).start..self.span_at(close).end];
+        let Ok(odin) = openehr_lang::odin::parse(block) else {
+            let span = start..self.span_at(close).end;
+            self.push(SyntaxErrorCode::Sdinv, "invalid dADL in domain block", span);
+            return Err(());
+        };
+        if let Some(obj) = lower_adl14_domain(&rm_type, &odin) {
+            Ok(obj)
+        } else {
+            let span = start..self.span_at(close).end;
+            self.push(
+                SyntaxErrorCode::Sdinv,
+                "empty or unsupported inline dADL domain block",
+                span,
+            );
+            Err(())
         }
     }
 
@@ -989,17 +1248,27 @@ impl Parser<'_> {
     fn parse_c_complex_object_proxy(&mut self) -> PResult<CObject> {
         self.pos += 1; // SYM_USE_NODE
         let rm_type = self.parse_rm_type_id()?;
-        self.expect(
-            |t| matches!(t, Token::LBracket),
-            SyntaxErrorCode::Sccog,
-            "expecting '[' after 'use_node'",
-        )?;
-        let node_id = self.parse_node_id()?;
-        self.expect(
-            |t| matches!(t, Token::RBracket),
-            SyntaxErrorCode::Sccog,
-            "expecting ']' after the node id",
-        )?;
+        // ADL 1.4 `use_node TYPE /path` carries no `[id]` bracket (the converter
+        // synthesises one). Accept the missing bracket in the 1.4 dialect;
+        // `cadl2.g4` mandates it otherwise. No openEHR spec governs 1.4→2 — see
+        // `crate::adl14`.
+        let node_id =
+            if self.dialect == Dialect::Adl14 && !matches!(self.peek(), Some(Token::LBracket)) {
+                String::new()
+            } else {
+                self.expect(
+                    |t| matches!(t, Token::LBracket),
+                    SyntaxErrorCode::Sccog,
+                    "expecting '[' after 'use_node'",
+                )?;
+                let n = self.parse_node_id()?;
+                self.expect(
+                    |t| matches!(t, Token::RBracket),
+                    SyntaxErrorCode::Sccog,
+                    "expecting ']' after the node id",
+                )?;
+                n
+            };
         let occurrences = if matches!(self.peek(), Some(Token::SymOccurrences)) {
             Some(self.parse_occurrences()?)
         } else {
@@ -2419,6 +2688,413 @@ fn local_term_code(code: &str) -> TerminologyCode {
     }
 }
 
+// ── ADL 1.4 inline dADL domain lowering (converter front end) ──────────────
+//
+// NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` pipeline
+// (including this lowering) is our own design (archie's converter is prior
+// art). `C_DV_QUANTITY`/`C_DV_ORDINAL` are ADL 1.4-only inline dADL
+// constrainers with no ADL2/AOM2 class; ADL2 expresses the same constraint as
+// a `DV_QUANTITY`/`DV_ORDINAL` `C_COMPLEX_OBJECT` with an attribute tuple
+// (`AOM2/master04.4` §Second-Order Constraints). We lower to that shape and
+// leave code renumbering + `property` binding synthesis to
+// `crate::adl14::convert`.
+
+fn is_adl14_domain_type(id: &str) -> bool {
+    matches!(id, "C_DV_QUANTITY" | "C_DV_ORDINAL")
+}
+
+/// Lower a parsed 1.4 inline dADL domain block into a `DV_QUANTITY`/`DV_ORDINAL`
+/// complex object. Returns `None` for an empty/unusable block (→ `SDINV`).
+fn lower_adl14_domain(rm_type: &str, odin: &OdinValue) -> Option<CObject> {
+    let OdinValue::Object(map) = odin else {
+        return None; // empty `<>` or a bare scalar — nothing to constrain.
+    };
+    if map.is_empty() {
+        return None;
+    }
+    let target_rm = if rm_type == "C_DV_ORDINAL" {
+        "DV_ORDINAL"
+    } else {
+        "DV_QUANTITY"
+    };
+    let mut attributes: Vec<CAttribute> = Vec::new();
+    let mut attribute_tuples: Vec<CAttributeTuple> = Vec::new();
+
+    // `property = <[openehr::122]>` → a `property` at-code constraint (the
+    // external code is rewritten to a synthesised at-code + binding by the
+    // converter).
+    if let Some(OdinValue::TermCode(tc)) = map.get("property") {
+        let constraint = tc.trim_start_matches('[').trim_end_matches(']').to_owned();
+        attributes.push(cattr_single(
+            "property",
+            CObject::CTerminologyCode(CTerminologyCode {
+                parent: None,
+                soc_parent: None,
+                rm_type_name: "Terminology_code".to_owned(),
+                occurrences: None,
+                node_id: "Primitive_node_id".to_owned(),
+                alternative_ids: Vec::new(),
+                is_deprecated: None,
+                sibling_order: None,
+                default_value: None,
+                assumed_value: None,
+                is_enumerated_type_constraint: None,
+                constraint,
+                constraint_status: None,
+            }),
+        ));
+    }
+
+    // `list = <["1"] = <units=<…> magnitude=<…>> …>` → per-attribute
+    // constraints. One distinct attribute → a plain constraint merging every
+    // row's values; two or more → an attribute tuple, one `C_PRIMITIVE_TUPLE`
+    // per row (`AOM2/master04.4`).
+    if let Some(list) = map.get("list") {
+        let rows = domain_list_rows(list);
+        // Distinct attribute names in first-appearance order.
+        let mut names: Vec<String> = Vec::new();
+        for row in &rows {
+            for (k, _) in row {
+                if !names.iter().any(|n| n == k) {
+                    names.push(k.clone());
+                }
+            }
+        }
+        if names.len() >= 2 {
+            let members: Vec<CAttribute> = names.iter().map(|n| cattr_empty(n)).collect::<Vec<_>>();
+            let mut tuples: Vec<CPrimitiveTuple> = Vec::new();
+            for row in &rows {
+                let mut prim_members = Vec::new();
+                for n in &names {
+                    let v = row
+                        .iter()
+                        .find(|(k, _)| k == n)
+                        .and_then(|(_, v)| domain_value_to_primitive(n, v))
+                        .unwrap_or_else(|| any_primitive(n));
+                    prim_members.push(v);
+                }
+                tuples.push(CPrimitiveTuple {
+                    members: prim_members,
+                });
+            }
+            attribute_tuples.push(CAttributeTuple { members, tuples });
+        } else if let Some(name) = names.first() {
+            // Single attribute: merge every row's values into one constraint.
+            let values: Vec<CPrimitiveObject> = rows
+                .iter()
+                .filter_map(|row| row.iter().find(|(k, _)| k == name))
+                .filter_map(|(_, v)| domain_value_to_primitive(name, v))
+                .collect();
+            if let Some(merged) = merge_primitives(values) {
+                attributes.push(cattr_single(name, primitive_to_cobject(merged)));
+            }
+        }
+    }
+
+    Some(complex_object(
+        target_rm.to_owned(),
+        String::new(),
+        attributes,
+        attribute_tuples,
+        None,
+    ))
+}
+
+/// The `["1"] = <…> …` rows of a domain `list`, each an ordered
+/// `(attribute, value)` vec. The corpus always uses a keyed list; a bare object
+/// is treated as a single row.
+fn domain_list_rows(list: &OdinValue) -> Vec<Vec<(String, OdinValue)>> {
+    let row_of = |m: &indexmap::IndexMap<String, OdinValue>| -> Vec<(String, OdinValue)> {
+        m.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+    };
+    match list {
+        OdinValue::KeyedList(entries) => entries
+            .iter()
+            .filter_map(|(_, v)| match v {
+                OdinValue::Object(m) => Some(row_of(m)),
+                _ => None,
+            })
+            .collect(),
+        OdinValue::Object(m) => vec![row_of(m)],
+        _ => Vec::new(),
+    }
+}
+
+/// An ODIN leaf value → a `C_PRIMITIVE_OBJECT` for a domain attribute. The
+/// attribute name disambiguates integer-vs-real intervals (`precision` is
+/// integral, `magnitude` real).
+fn domain_value_to_primitive(attr: &str, v: &OdinValue) -> Option<CPrimitiveObject> {
+    match v {
+        OdinValue::String(s) => Some(CPrimitiveObject::CString(cstring_values(
+            std::slice::from_ref(s),
+        ))),
+        OdinValue::Integer(i) => Some(CPrimitiveObject::CInteger(cinteger_values(vec![
+            point_int(*i),
+        ]))),
+        OdinValue::Real(r) => Some(CPrimitiveObject::CReal(creal_values(vec![point_real(*r)]))),
+        OdinValue::Interval(iv) => {
+            if attr == "precision" {
+                Some(CPrimitiveObject::CInteger(cinteger_values(vec![
+                    odin_interval_to_int(iv),
+                ])))
+            } else {
+                Some(CPrimitiveObject::CReal(creal_values(vec![
+                    odin_interval_to_real(iv),
+                ])))
+            }
+        }
+        OdinValue::List(items) => {
+            let mut merged: Vec<CPrimitiveObject> = Vec::new();
+            for it in items {
+                if let Some(p) = domain_value_to_primitive(attr, it) {
+                    merged.push(p);
+                }
+            }
+            merge_primitives(merged)
+        }
+        _ => None,
+    }
+}
+
+fn any_primitive(attr: &str) -> CPrimitiveObject {
+    if attr == "units" {
+        CPrimitiveObject::CString(cstring_values(&[]))
+    } else if attr == "precision" {
+        CPrimitiveObject::CInteger(cinteger_values(Vec::new()))
+    } else {
+        CPrimitiveObject::CReal(creal_values(Vec::new()))
+    }
+}
+
+/// Merge same-typed primitive constraints into a single object holding the
+/// union of their value lists.
+fn merge_primitives(mut items: Vec<CPrimitiveObject>) -> Option<CPrimitiveObject> {
+    if items.is_empty() {
+        return None;
+    }
+    if items.len() == 1 {
+        return items.pop();
+    }
+    let mut strings: Vec<String> = Vec::new();
+    let mut reals: Vec<Interval<f64>> = Vec::new();
+    let mut ints: Vec<Interval<i32>> = Vec::new();
+    let mut kind = 0u8;
+    for it in items {
+        match it {
+            CPrimitiveObject::CString(c) => {
+                kind = 1;
+                strings.extend(c.constraint);
+            }
+            CPrimitiveObject::CReal(c) => {
+                kind = 2;
+                reals.extend(c.constraint);
+            }
+            CPrimitiveObject::CInteger(c) => {
+                kind = 3;
+                ints.extend(c.constraint);
+            }
+            other => return Some(other),
+        }
+    }
+    Some(match kind {
+        1 => CPrimitiveObject::CString(cstring_values(&strings)),
+        2 => CPrimitiveObject::CReal(creal_values(reals)),
+        _ => CPrimitiveObject::CInteger(cinteger_values(ints)),
+    })
+}
+
+fn primitive_to_cobject(p: CPrimitiveObject) -> CObject {
+    match p {
+        CPrimitiveObject::CString(c) => CObject::CString(c),
+        CPrimitiveObject::CReal(c) => CObject::CReal(c),
+        CPrimitiveObject::CInteger(c) => CObject::CInteger(c),
+        CPrimitiveObject::CBoolean(c) => CObject::CBoolean(c),
+        CPrimitiveObject::CDate(c) => CObject::CDate(c),
+        CPrimitiveObject::CDateTime(c) => CObject::CDateTime(c),
+        CPrimitiveObject::CDuration(c) => CObject::CDuration(c),
+        CPrimitiveObject::CTerminologyCode(c) => CObject::CTerminologyCode(c),
+        CPrimitiveObject::CTime(c) => CObject::CTime(c),
+    }
+}
+
+fn cattr_single(name: &str, child: CObject) -> CAttribute {
+    CAttribute {
+        parent: None,
+        soc_parent: None,
+        rm_attribute_name: name.to_owned(),
+        existence: None,
+        children: vec![child],
+        differential_path: None,
+        cardinality: None,
+        is_multiple: false,
+    }
+}
+
+fn cattr_empty(name: &str) -> CAttribute {
+    CAttribute {
+        parent: None,
+        soc_parent: None,
+        rm_attribute_name: name.to_owned(),
+        existence: None,
+        children: Vec::new(),
+        differential_path: None,
+        cardinality: None,
+        is_multiple: false,
+    }
+}
+
+fn cstring_values(values: &[String]) -> CString {
+    CString {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "String".to_owned(),
+        occurrences: None,
+        node_id: "Primitive_node_id".to_owned(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint: values.to_vec(),
+    }
+}
+
+fn creal_values(constraint: Vec<Interval<f64>>) -> CReal {
+    CReal {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "Real".to_owned(),
+        occurrences: None,
+        node_id: "Primitive_node_id".to_owned(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint,
+    }
+}
+
+fn cinteger_values(constraint: Vec<Interval<i32>>) -> CInteger {
+    CInteger {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "Integer".to_owned(),
+        occurrences: None,
+        node_id: "Primitive_node_id".to_owned(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint,
+    }
+}
+
+fn point_real(v: f64) -> Interval<f64> {
+    Interval::PointInterval(PointInterval {
+        lower: Some(v),
+        upper: Some(v),
+        lower_unbounded: false,
+        upper_unbounded: false,
+        lower_included: true,
+        upper_included: true,
+    })
+}
+
+fn point_int(v: i64) -> Interval<i32> {
+    // Domain-list integer constraints (precision, counts) are small clinical
+    // values; saturate defensively into `i32` (AOM2 uses `Integer` = `i32`).
+    let v = i32::try_from(v).unwrap_or(if v.is_negative() { i32::MIN } else { i32::MAX });
+    Interval::PointInterval(PointInterval {
+        lower: Some(v),
+        upper: Some(v),
+        lower_unbounded: false,
+        upper_unbounded: false,
+        lower_included: true,
+        upper_included: true,
+    })
+}
+
+fn odin_interval_to_real(iv: &openehr_lang::odin::OdinInterval) -> Interval<f64> {
+    let (lower, li, upper, ui) = odin_range_bounds(iv, odin_as_real);
+    proper_or_point_real(lower, li, upper, ui)
+}
+
+fn odin_interval_to_int(iv: &openehr_lang::odin::OdinInterval) -> Interval<i32> {
+    let (lower, li, upper, ui) = odin_range_bounds(iv, |v| odin_as_real(v).map(real_to_i32));
+    if lower == upper && lower.is_some() {
+        return point_int(i64::from(lower.unwrap_or_default()));
+    }
+    Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
+        lower,
+        upper,
+        lower_unbounded: lower.is_none(),
+        upper_unbounded: upper.is_none(),
+        lower_included: li,
+        upper_included: ui,
+    }))
+}
+
+fn proper_or_point_real(
+    lower: Option<f64>,
+    li: bool,
+    upper: Option<f64>,
+    ui: bool,
+) -> Interval<f64> {
+    if lower == upper && lower.is_some() {
+        return point_real(lower.unwrap_or_default());
+    }
+    Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
+        lower,
+        upper,
+        lower_unbounded: lower.is_none(),
+        upper_unbounded: upper.is_none(),
+        lower_included: li,
+        upper_included: ui,
+    }))
+}
+
+#[allow(clippy::type_complexity)]
+fn odin_range_bounds<T>(
+    iv: &openehr_lang::odin::OdinInterval,
+    conv: impl Fn(&OdinValue) -> Option<T>,
+) -> (Option<T>, bool, Option<T>, bool) {
+    match iv {
+        openehr_lang::odin::OdinInterval::Range {
+            lower,
+            lower_included,
+            upper,
+            upper_included,
+        } => (
+            lower.as_deref().and_then(&conv),
+            *lower_included,
+            upper.as_deref().and_then(&conv),
+            *upper_included,
+        ),
+        openehr_lang::odin::OdinInterval::PlusMinus { centre, .. } => {
+            (conv(centre), true, None, true)
+        }
+    }
+}
+
+#[allow(clippy::cast_precision_loss)] // small domain-constraint magnitudes
+fn odin_as_real(v: &OdinValue) -> Option<f64> {
+    match v {
+        OdinValue::Real(r) => Some(*r),
+        OdinValue::Integer(i) => Some(*i as f64),
+        _ => None,
+    }
+}
+
+#[allow(clippy::cast_possible_truncation)] // small clinical integer bounds
+fn real_to_i32(r: f64) -> i32 {
+    r.clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32
+}
+
 /// Convert a parsed inline primitive [`CObject`] to a [`CPrimitiveObject`].
 fn cobject_to_primitive(o: CObject) -> Option<CPrimitiveObject> {
     Some(match o {
@@ -2452,6 +3128,7 @@ pub(crate) fn parse_inline_primitive_text(raw: &str) -> Result<CPrimitiveObject,
         toks: &toks,
         pos: 0,
         errors: Vec::new(),
+        dialect: Dialect::Adl2,
     };
     let parsed: PResult<CObject> = (|| {
         parser.expect(
