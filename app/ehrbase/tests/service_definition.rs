@@ -16,6 +16,7 @@
 
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::definition::types::TemplateListFilter;
+use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::list::Page;
@@ -453,9 +454,14 @@ fn adl2_source(keyword: &str, hrid: &str, specialize: Option<&str>) -> String {
         .expect("HRID carries an RM entity");
     let root = if specialize.is_some() { "id1.1" } else { "id1" };
     let spec = specialize.map_or(String::new(), |p| format!("\nspecialize\n    {p}\n"));
+    // A `description` section is mandatory (AOM2 master03 §Validity Rules VARD:
+    // "A `description` section containing the main meta-data of the archetype
+    // must exist").
     format!(
         "{keyword} (adl_version=2.0.6; rm_release=1.1.0)\n    {hrid}\n{spec}\n\
          language\n    original_language = <[ISO_639-1::en]>\n\n\
+         description\n    lifecycle_state = <\"published\">\n    details = <\n        \
+         [\"en\"] = <\n            language = <[ISO_639-1::en]>\n        >\n    >\n\n\
          definition\n    {rm_type}[{root}] matches {{ *}}\n\n\
          terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
          [\"{root}\"] = <text = <\"Root\"> description = <\"Root.\">>\n        >\n    >\n"
@@ -824,12 +830,17 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .template_adl2_upload(tmpl.clone())
         .await
         .expect_err("duplicate template id conflicts on the wire surface");
-    assert!(dup.message.contains("already exists"), "got {dup:?}");
+    assert!(
+        matches!(&dup, ServiceError::Conflict(m) if m.contains("already exists")),
+        "got {dup:?}"
+    );
 
     // The SM-native upload still replaces.
     svc.upload_artefact(tmpl).await.expect("native replace");
 
-    // Invalid source → 400-class precondition (STCNT et al.), not 422.
+    // Invalid source → a 422 validation failure carrying the rule codes (an
+    // unparseable source is an invalid artefact, AOM2 master04.6 §Syntax
+    // Validity Rules), not a distinct wire status.
     let bad = svc
         .template_adl2_upload(
             "template (adl_version=2.0.6)\nopenEHR-EHR-COMPOSITION.t_bad.v1\n".to_owned(),
@@ -837,7 +848,7 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .await
         .expect_err("invalid source rejected");
     assert!(
-        matches!(bad.status, CallStatusType::PreconditionViolation),
+        matches!(&bad, ServiceError::ValidationFailed(v) if !v.is_empty()),
         "got {bad:?}"
     );
 }

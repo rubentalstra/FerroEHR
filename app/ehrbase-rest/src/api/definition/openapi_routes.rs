@@ -20,16 +20,18 @@
 //!   store path (the OAS folds that under `400`). The `at_version` query
 //!   parameter is `deprecated: true` and is dropped (spec-permitted); only
 //!   `Prefer` is honoured.
-//! - **ADL 2 get** (`definition_template_adl2_get.yaml`): the OAS lists a `400`
-//!   that is unreachable here (`template_id` is a path segment, always present);
-//!   the build serves only the `text/plain` ADL2 source, so an `Accept` naming
-//!   *only* the not-yet-produced `application/json` (`OperationalTemplateV2`) or
-//!   `application/xml` projections is a `406` (the cADL source parser is
-//!   deferred to the planned full-ADL2 work). ADL2 is OPTIONAL for CNF.
-//! - **ADL 2 example / version get** (`_example_get`, `_version_get`, the latter
-//!   `deprecated: true`): both return `501 Not Implemented` — they need an
-//!   example generator / cADL source parser the tree lacks (deferred,
-//!   the planned full-ADL2 work); the OAS `200/400/404/406` shapes are not produced.
+//! - **ADL 2 get / version get** (`definition_template_adl2_get.yaml`,
+//!   `_version_get.yaml` — the latter `deprecated: true`): the OAS lists a `400`
+//!   that is unreachable here (`template_id`/`version` are path segments, always
+//!   present); the build serves the `text/plain` ADL2 source and the
+//!   `application/json` `OperationalTemplateV2` canonical-JSON projection (the
+//!   OAS declares that schema as an opaque `type: object`, so the AOM2 canonical
+//!   JSON satisfies it). The response declares no `application/xml` body, so an
+//!   `Accept` naming *only* `application/xml` is a `406`.
+//! - **ADL 2 example get** (`_example_get`): returns `501 Not Implemented` — it
+//!   needs an example generator over an `am24`-OPT `WebTemplate` the tree lacks
+//!   (the same generator issue #94 builds); the OAS `200/400/404/406` shapes are
+//!   not produced. ADL2 is OPTIONAL for CNF.
 //! - **ADL 1.4 upload** (`definition_template_adl1.4_upload.yaml`): the OAS
 //!   declares `201/400/409`; our wire additionally returns `422` when the OPT
 //!   parses as XML but is structurally invalid (the OAS folds that under `400`).
@@ -51,6 +53,10 @@ use crate::state::AppState;
 
 /// The Definition API group as a native `utoipa-axum` router (group-relative
 /// paths; nested under the configured base path).
+// `definition_template_adl2_version_get` carries `#[deprecated]` (the OAS marks
+// the operation `deprecated: true`, reflected into the served OpenAPI); the
+// `routes!` macro references it by name, so the deprecation lint is allowed here.
+#[allow(deprecated)]
 pub(crate) fn routes() -> OpenApiRouter<AppState> {
     OpenApiRouter::new()
         .routes(routes!(
@@ -272,8 +278,9 @@ pub(crate) async fn definition_template_adl1_4_example_get(
          description = "Maximum rows to return; absent/`0` returns all matches.")
     ),
     responses(
-        (status = 200, description = "The matching template summaries (canonical \
-                                      JSON; empty when none match).",
+        (status = 200, description = "The matching `TemplateMetadata` rows \
+                                      (`template_id`, `concept`, `archetype_id`, \
+                                      `created_timestamp`; empty when none match).",
          body = serde_json::Value)
     )
 )]
@@ -312,15 +319,16 @@ pub(crate) async fn definition_template_adl2_list(
                                       source; identifier → `{template_id}`; empty \
                                       for minimal).",
          body = serde_json::Value),
-        (status = 400, description = "The source fails the registration \
-                                      validator (a precondition violation).",
+        (status = 400, description = "The request body is not valid UTF-8 text.",
          body = serde_json::Value),
         (status = 409, description = "An ADL2 template with the same HRID is \
                                       already stored.",
          body = serde_json::Value),
-        (status = 422, description = "OUR WIRE — the ADL2/AOM2 artefact is \
-                                      invalid on the store path (the OAS folds \
-                                      this under `400`).",
+        (status = 422, description = "OUR WIRE — the ADL2 source is invalid: \
+                                      unparseable (S-codes) or failing an AOM2 \
+                                      validation phase (V-codes); the `Error` \
+                                      body's `validationErrors` carry the rule \
+                                      codes (the OAS folds this under `400`).",
          body = serde_json::Value)
     )
 )]
@@ -341,30 +349,30 @@ pub(crate) async fn definition_template_adl2_upload(
 /// Retrieve one ADL 2 template by id
 /// (`GET /definition/template/adl2/{template_id}`).
 ///
-/// Served as `text/plain` ADL2 source; see the module doc for the `406` on an
-/// `Accept` naming only the not-yet-produced JSON/XML projections.
+/// Served as `text/plain` ADL2 source or the `application/json`
+/// `OperationalTemplateV2` canonical-JSON projection, per `Accept`.
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}", tag = "ADL2",
     params(
         ("template_id" = String, Path,
          description = "The `template_id`; a partial id resolves to the latest \
-                        major version."),
+                        matching version."),
         ("Accept" = Option<String>, Header,
          description = "`text/plain` (the ADL2 source; also the default for \
-                        absent/`*/*`/`text/*`). `application/json` \
-                        (`OperationalTemplateV2`) and `application/xml` are \
-                        enumerated by the spec but not yet produced → `406`.")
+                        absent/`*/*`/`text/*`) or `application/json` (the \
+                        `OperationalTemplateV2` canonical JSON). \
+                        `application/xml` has no declared response body, so an \
+                        `Accept` naming only it is a `406`.")
     ),
     responses(
-        (status = 200, description = "The ADL2 operational-template source \
-                                      (`text/plain`).",
-         content((String = "text/plain"))),
+        (status = 200, description = "The operational template — `text/plain` \
+                                      ADL2 source or `application/json` \
+                                      `OperationalTemplateV2`.",
+         content((String = "text/plain"), (serde_json::Value = "application/json"))),
         (status = 404, description = "No template with `template_id`.",
          body = serde_json::Value),
-        (status = 406, description = "OUR WIRE — `Accept` names only the \
-                                      `application/json`/`application/xml` \
-                                      projections (a cADL parser is deferred, \
-                                      the planned full-ADL2 work).",
+        (status = 406, description = "`Accept` names only `application/xml`, \
+                                      which has no declared response body.",
          body = serde_json::Value)
     )
 )]
@@ -385,15 +393,15 @@ pub(crate) async fn definition_template_adl2_get(
 /// Generate an example COMPOSITION for an ADL 2 template
 /// (`GET /definition/template/adl2/{template_id}/example`).
 ///
-/// NOT IMPLEMENTED — returns `501`; it needs an example generator over a
-/// cADL/AOM2 source model the tree lacks (deferred to the planned full-ADL2 work; ADL2 is
-/// OPTIONAL for CNF). The OAS `200/400/404/406` shapes are not produced.
+/// NOT IMPLEMENTED — returns `501`; it needs an example generator over an
+/// `am24`-OPT `WebTemplate` the tree lacks (the same generator issue #94 builds).
+/// ADL2 is OPTIONAL for CNF. The OAS `200/400/404/406` shapes are not produced.
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}/example", tag = "ADL2",
     params(
         ("template_id" = String, Path,
          description = "The `template_id`; a partial id resolves to the latest \
-                        major version."),
+                        matching version."),
         ("type" = Option<String>, Query,
          description = "`input` (default) or `output` (accepted but not acted \
                         on; the operation is not implemented)."),
@@ -403,7 +411,7 @@ pub(crate) async fn definition_template_adl2_get(
     ),
     responses(
         (status = 501, description = "OUR WIRE — the ADL2 example generator is \
-                                      not implemented (deferred to the planned full-ADL2 work).",
+                                      not implemented.",
          body = serde_json::Value)
     )
 )]
@@ -424,26 +432,38 @@ pub(crate) async fn definition_template_adl2_example_get(
 /// Retrieve one ADL 2 template at a specific version
 /// (`GET /definition/template/adl2/{template_id}/{version}`).
 ///
-/// DEPRECATED in the OAS, and NOT IMPLEMENTED here — returns `501`; it needs a
-/// cADL source parser for the `OperationalTemplateV2` JSON form (the full
-/// ADL2 implementation is planned work; ADL2 is OPTIONAL for CNF). The OAS
-/// `200/400/404` shapes are not produced.
+/// DEPRECATED in the OAS but served: resolves `template_id` + the SEMVER
+/// `version` (exact or `{major}[.{minor}]` prefix → highest match) and returns
+/// the same representations as `_get` (`text/plain` source / `application/json`
+/// `OperationalTemplateV2`).
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}/{version}", tag = "ADL2",
     params(
         ("template_id" = String, Path,
-         description = "The `template_id`; a partial id resolves to the latest \
-                        major version."),
+         description = "The `template_id`; a partial id resolves within the \
+                        matching version."),
         ("version" = String, Path,
          description = "A SEMVER version (exact, or a `{major}`/`{major}.{minor}` \
-                        prefix resolving to the highest match).")
+                        prefix resolving to the highest match)."),
+        ("Accept" = Option<String>, Header,
+         description = "`text/plain` (the ADL2 source) or `application/json` \
+                        (the `OperationalTemplateV2` canonical JSON); \
+                        `application/xml` only → `406`.")
     ),
     responses(
-        (status = 501, description = "OUR WIRE — the ADL2 versioned get is not \
-                                      implemented (deferred to the planned full-ADL2 work).",
+        (status = 200, description = "The operational template at `version` — \
+                                      `text/plain` ADL2 source or \
+                                      `application/json` `OperationalTemplateV2`.",
+         content((String = "text/plain"), (serde_json::Value = "application/json"))),
+        (status = 404, description = "No template with `template_id` at `version`.",
+         body = serde_json::Value),
+        (status = 406, description = "`Accept` names only `application/xml`, \
+                                      which has no declared response body.",
          body = serde_json::Value)
     )
 )]
+#[deprecated = "ITS-REST marks this operation deprecated \
+                (definition_template_adl2_version_get.yaml); served for compatibility"]
 pub(crate) async fn definition_template_adl2_version_get(
     State(state): State<AppState>,
     request: axum::extract::Request,
