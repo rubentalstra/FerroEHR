@@ -164,7 +164,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         .with_state(state);
 
     // ── System Options and Conformance — `OPTIONS`, above the CORS layer ─────
-    // The manifest advertises the **live** mounted-group set (System API G-1):
+    // The manifest advertises the **live** mounted-group set (System API):
     // the four always-on standardised groups plus `/admin` when its group is
     // enabled. Its identity/conformance fields come from `cfg.server.identity`
     //.
@@ -182,7 +182,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         endpoints,
     ));
 
-    // Mount at the API base-path root (System API G-3) and keep a bare-`/` alias
+    // Mount at the API base-path root (System API) and keep a bare-`/` alias
     // for naive root probes; every other request falls through to the
     // CORS-wrapped application. Both sit above CORS so `OPTIONS` is not eaten as
     // a preflight; real per-resource CORS preflights are on sub-paths and reach

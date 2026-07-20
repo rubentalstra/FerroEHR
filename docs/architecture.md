@@ -128,6 +128,22 @@ binding via `openehr-term`); FLAT/STRUCTURED/Web-Template JSON in
 `openehr-flat` (Better `web-template` semantics; quirks behind a feature
 flag).
 
+## Spec version policy
+
+One pin per openEHR component, always the newest generation we have
+vendored (`docs/VERSIONS.md` is the ladder). openEHR's own release strategy
+guarantees within-major compatibility (minor releases are additive), so the
+newer-generation pin accepts every valid older-minor instance — no version
+negotiation and no parallel generations, with exactly one exception: **AM
+ships both extant majors** (`am14` + `am24`), because the spec itself keeps
+ADL 1.4 and ADL 2 side by side. A future major release triggers a
+per-component decision (dual generation via the `am14`/`am24` codegen
+pattern only if the ecosystem runs both; otherwise cutover). ITS-REST is
+single-version by owner ruling: the CDR implements the latest released REST
+API, nothing else. Upstream spec changes and releases are detected
+automatically by the scheduled watcher workflows and filed as `spec-update`
+issues for triage.
+
 ## PostgreSQL 18
 
 We target **PG 18** (18.4+): `uuidv7()`, temporal `WITHOUT OVERLAPS`

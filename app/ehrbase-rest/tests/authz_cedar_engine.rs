@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! `CedarEngine` tests (`docs/enterprise/access-control.md` §9.4): the shipped
+//! `CedarEngine` tests: the shipped
 //! example policies produce the expected golden decisions, and the Cedar engine
 //! is **behaviourally identical** to the remote PDP over a corpus of requests
 //! (the differential test — same `AuthzRequest`, same `Decision`).

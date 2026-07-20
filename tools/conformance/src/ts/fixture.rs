@@ -1,5 +1,4 @@
-//! A `wiremock`-backed FHIR R4 terminology-server fixture (B4,
-//! `docs/design/terminology-server-integration.md` §5.1): a hermetic FHIR-tx
+//! A `wiremock`-backed FHIR R4 terminology-server fixture: a hermetic FHIR-tx
 //! server the runner spins up with canned `$expand`/`$validate-code`/`$lookup`/
 //! `$subsumes` responses and on-demand fault injection (timeout, `5xx`,
 //! malformed body). No network, no container — a pure in-process

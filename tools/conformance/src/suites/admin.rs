@@ -1,21 +1,21 @@
-//! ADMIN cases — the master12 spine (`docs/design/conformance/09-admin.md`).
+//! ADMIN cases — the master12 spine.
 //!
 //! master12-func_tc_admin.adoc ships **no concrete test case** (all 9
-//! SM-operation subsections are `TBD` stubs — register 09 §2), so every case is
+//! SM-operation subsections are `TBD` stubs), so every case is
 //! [`ScheduleTrace::EccOriginal`], stub-derived: the honest provenance is the SM
 //! operation heading + the ADMIN OAS, never a schedule-conformant claim (owner
 //! ruling 2026-07-13). Admin is wholly OPTIONS (`master03-profiles.adoc`) — its
 //! absence never dents CORE/STANDARD, and for a foreign SUT it is a per-case
-//! fairness decision (register 09 G-5).
+//! fairness decision.
 //!
 //! The implemented ITS-REST admin wire is exactly two routes —
 //! `DELETE /admin/ehr/{ehr_id}` and `DELETE /admin/ehr/all{?ehr_id*}`
 //! (`crates/openehr-its/vendor/rest-oas/admin-codegen.openapi.yaml`), realizing
 //! `physical_ehr_delete`. The other eight SM operations have no ITS-REST route
 //! the HTTP-only ECC can reach: six are native-API-only skip-with-reason cases
-//! citing the `app/ehrbase` integration test that proves them (register 09 G-2,
-//! the Messaging precedent); two act on demographic PARTYs and are
-//! `NoRestBinding` (register 09 G-3). Each skip fn embeds its reason as a
+//! citing the `app/ehrbase` integration test that proves them (the Messaging
+//! precedent); two act on demographic PARTYs and are
+//! `NoRestBinding`. Each skip fn embeds its reason as a
 //! literal — a `CaseRun` is a bare `fn` pointer and cannot close over one.
 
 use uuid::Uuid;
@@ -234,7 +234,7 @@ fn native(
     )
 }
 
-/// A demographic-dependent SM op with no ITS-REST binding (register 09 G-3).
+/// A demographic-dependent SM op with no ITS-REST binding.
 fn no_binding(
     id: &'static str,
     title: &'static str,
@@ -379,7 +379,7 @@ fn run_delete_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 fn run_delete_all_partial<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case_body!({
-        // instrument-encodes-server-behaviour (register 09 G-1): a bulk set with a
+        // instrument-encodes-server-behaviour: a bulk set with a
         // missing id still 204s (the OAS declares no per-id failure).
         let a = support::create_ehr(ctx).await?;
         let missing = Uuid::new_v4();
@@ -399,7 +399,7 @@ fn run_delete_all_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         // instrument-encodes-server-behaviour + globally destructive: an absent
         // ehr_id deletes ALL EHRs. Gated to disposable composed SUTs (SutKind::Ours);
         // never run against a foreign / bring-your-own endpoint whose data must
-        // survive (register 09 G-1).
+        // survive.
         if ctx.sut.kind != SutKind::Ours {
             return Err(CaseError::Skipped(
                 "destructive case runs only against disposable composed SUTs (an empty ehr_id \

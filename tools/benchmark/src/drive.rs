@@ -1,4 +1,4 @@
-//! The open-loop executor (register 00 §1, register 01 §1).
+//! The open-loop executor.
 //!
 //! Takes a [`SutClient`] (the provably-ECC-identical conformance transport —
 //! the fairness guarantee), a built [`Workload`], and a [`Recorder`]; provisions
@@ -6,7 +6,7 @@
 //! offset from the run start. Dispatch is **open loop**: a slow response never
 //! delays the next send (each op runs in its own task), and a late dispatch is
 //! still recorded against the *planned* send time, so a saturated SUT cannot
-//! flatter its tail (register 01 §1 coordinated-omission correction).
+//! flatter its tail.
 //!
 //! Per-patient runtime identifiers (`ehr_id`, per-template composition object
 //! uid + latest/historical version uids, directory + status version uids) are

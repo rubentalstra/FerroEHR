@@ -1,8 +1,7 @@
 //! The `[signing]` section — VERSION signing configuration.
 //!
 //! No openEHR spec governs the configuration surface — our own design. This is
-//! a field of the one config tree ([`crate::config::EhrbaseConfig`],
-//! `docs/design/configuration.md` §3.11); no loader of its own. The modes it
+//! a field of the one config tree ([`crate::config::EhrbaseConfig`]); no loader of its own. The modes it
 //! selects are the spec-blessed ones (RM common
 //! `master06-change_control_package.adoc` §Digital Signature: `OpenPGP`
 //! signature or digest-only integrity check).
@@ -36,7 +35,7 @@ pub enum Mode {
 #[serde(rename_all = "lowercase")]
 pub enum VerifyOnRead {
     /// Serve the stored signature untouched (RM common master06 §Digital
-    /// Signature models it as a stored fact — S-44).
+    /// Signature models it as a stored fact).
     #[default]
     Off,
     /// Log + meter a mismatch (`version_signature_invalid_total`); still serve.

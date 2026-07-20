@@ -179,8 +179,8 @@ fn is_archetype_id_shaped(id: &str) -> bool {
 ///
 /// NOTE: this decides only the *literal id-shape* case; a genuine PERL
 /// regex include/exclude expression is not a decidable identifier at upload
-/// and is deferred to runtime slot admission (the `WebTemplate` instance walk,
-/// blueprint 03-am F-07-10) — that surface is out of scope for the artefact
+/// and is deferred to runtime slot admission (the `WebTemplate` instance walk)
+/// — that surface is out of scope for the artefact
 /// pass here (cADL §Archetype Slots, `ADL1.4/master05-cadl.adoc` L535-601).
 pub(super) fn check_slot(slot: &ArchetypeSlot) -> Result<(), Violation> {
     for assertion in slot.includes.iter().chain(&slot.excludes) {

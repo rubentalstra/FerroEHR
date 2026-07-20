@@ -1,5 +1,5 @@
 //! Attestation: attaching an `ATTESTATION` to an `ORIGINAL_VERSION` at or after
-//! committal (S-24..S-28).
+//! committal.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Attestation + RM
 //! common `master04-generic_package.adoc` §Attestation. An `ATTESTATION` is an

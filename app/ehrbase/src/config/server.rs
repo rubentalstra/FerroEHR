@@ -1,7 +1,6 @@
 //! REST-adapter configuration types.
 //!
-//! No openEHR spec governs configuration mechanics — our own design
-//! (`docs/design/configuration.md`). There is **no loader here**: the whole
+//! No openEHR spec governs configuration mechanics — our own design. There is **no loader here**: the whole
 //! server configuration is one tree ([`ehrbase::config::EhrbaseConfig`]) loaded
 //! once by the binary. This module owns the REST-adapter's slice of it:
 //!
@@ -134,7 +133,7 @@ fn default_base_path() -> String {
 
 const fn default_max_in_flight() -> usize {
     // 256 bounds the worst-case buffered-request memory to a sane envelope
-    // (the W-11 knee ladder OOM-killed the container at 1024 in-flight clinical
+    // (the knee ladder OOM-killed the container at 1024 in-flight clinical
     // commits) while still permitting ~10k req/s at 25 ms latency
     // (throughput = in-flight / latency, Little's law).
     256

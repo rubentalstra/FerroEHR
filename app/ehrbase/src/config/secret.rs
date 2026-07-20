@@ -1,5 +1,4 @@
-//! Shared configuration value types for the whole server configuration tree
-//! (`docs/design/configuration.md` §5.6).
+//! Shared configuration value types for the whole server configuration tree.
 //!
 //! No openEHR spec governs configuration — our own design. These two newtypes
 //! centralise secret handling (principle P-6) so redaction is a property of the

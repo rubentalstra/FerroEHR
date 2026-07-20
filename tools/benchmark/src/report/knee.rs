@@ -1,7 +1,6 @@
-//! The knee/saturation series artefacts (`docs/design/benchmark/01-measurement.md`
-//! §3): the maximum-sustained-throughput probe. The `hour` rate shape is driven
-//! at an ascending load-factor ladder, each step on a short fixed window
-//! (`docs/design/benchmarking.md` §2.2 — open-loop, ramping, fixed duration per
+//! The knee/saturation series artefacts: the maximum-sustained-throughput
+//! probe. The `hour` rate shape is driven at an ascending load-factor ladder,
+//! each step on a short fixed window (open-loop, ramping, fixed duration per
 //! step); the ladder stops at the first step past the SLO (p99 > 1 s) or the
 //! error-rate flag (> 0.1%), and the last sustainable step is the knee.
 //!
@@ -15,13 +14,13 @@ use super::chart;
 use super::json::SutBlock;
 use crate::BenchError;
 
-/// The p99 SLO ceiling (register 01 §3; benchmarking.md §2.2): 1 s.
+/// The p99 SLO ceiling: 1 s.
 pub const P99_SLO_US: u64 = 1_000_000;
-/// The error-rate ceiling (register 01 §3): 0.1%.
+/// The error-rate ceiling: 0.1%.
 pub const ERROR_RATE_SLO: f64 = 0.001;
 
 /// Whether the ladder must stop after a step: p99 past the SLO **or** the error
-/// rate past the flag (register 01 §3 saturation contract). The boundary values
+/// rate past the flag. The boundary values
 /// (exactly 1 s / exactly 0.1%) are still sustainable — the stop is on a strict
 /// breach.
 #[must_use]
@@ -152,8 +151,8 @@ pub fn render_markdown(r: &KneeResults) -> String {
         "> Generated from `knee.json` (never hand-typed). Scale **{}**. The `hour` \
          rate shape is driven at an ascending load-factor ladder on short fixed \
          windows; the ladder stops at the first step past the SLO (p99 > 1 s) or \
-         the 0.1% error-rate flag. Method: `docs/design/benchmark/01-measurement.md` \
-         §3, `docs/design/benchmarking.md` §2.2.\n\n",
+         the 0.1% error-rate flag. Latencies are coordinated-omission-corrected \
+         against planned send times.\n\n",
         r.scale
     ));
 

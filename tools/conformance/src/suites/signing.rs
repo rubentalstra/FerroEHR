@@ -1,15 +1,13 @@
-//! VERSION SIGNING cases — the cross-cutting register
-//! (`docs/design/conformance/11-crosscutting.md` §Signing).
+//! VERSION SIGNING cases — the cross-cutting Signing capability.
 //!
 //! `master03-profiles.adoc` §Non-Functional lists **Signing = STANDARD** but no
 //! prose defines *how*: the openEHR RM provides only the `VERSION.signature`
 //! slot (RM common master06 §Version). The `sha256:` digest algorithm has **no
-//! openEHR spec governing it — it is an ehrbase-rs extension**
-//! (`docs/design/version-signing.md`), so every case is
+//! openEHR spec governing it — it is an ehrbase-rs extension**, so every case is
 //! [`ScheduleTrace::EccOriginal`] (profile-anchored capability, extension
 //! mechanism; owner ruling 2026-07-13). The fairness register already rules
-//! `SIG → extension` (N/A) for any SUT that does not sign versions
-//! (register 11 G-2), so these never dent a foreign SUT's verdict; upstream
+//! `SIG → extension` (N/A) for any SUT that does not sign versions,
+//! so these never dent a foreign SUT's verdict; upstream
 //! ships zero signing material, so this suite is the capability's entire
 //! evidence base.
 //!
@@ -18,10 +16,10 @@
 //! function `openehr_rm::…::version_impl::canonical_form_of_json`, so a mismatch
 //! is a genuine integrity finding.
 //
-// NOTE: register 11 G-3 (canonical-form version ladder) is unmet — the
+// NOTE: the canonical-form version ladder is unmet — the
 // recompute basis is RM 1.2.0-shaped; a SUT signing an RM-1.1.0-era version
 // would fail the recompute even if its digest is internally correct. A
-// per-edition recompute basis belongs to the register-90 wire adapter.
+// per-edition recompute basis belongs to the wire adapter.
 
 use base64::Engine as _;
 use serde_json::Value;
@@ -45,7 +43,7 @@ const JSON: &[Format] = &[Format::Json];
 /// Both canonical formats (digest presence is asserted in JSON + XML).
 const BOTH: &[Format] = &[Format::Json, Format::Xml];
 
-/// Manifest keys (register-80; the rows are appended to MANIFEST.tsv).
+/// Manifest keys (the rows are appended to MANIFEST.tsv).
 const NESTED_OPT: &str = "nested.template.opt";
 const NESTED_JSON: &str = "nested.composition.json";
 const ADMIN_OPT: &str = "minimal-admin.template.opt";
@@ -67,7 +65,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Version signing — digest present",
             BOTH,
             Compare::None,
-            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot); no openEHR spec governs the sha256: digest — ehrbase-rs extension (docs/design/version-signing.md §3.2/§4.4)",
+            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot); no openEHR spec governs the sha256: digest — ehrbase-rs extension",
             sig_stub("digest present on every served VERSION"),
             Binding::Rest(
                 "GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}",
@@ -79,7 +77,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Version signing — digest recomputes",
             JSON,
             Compare::None,
-            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot) + RFC 8785 canonical form; no openEHR spec governs the digest — ehrbase-rs extension (docs/design/version-signing.md §3.1/§6.3)",
+            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot) + RFC 8785 canonical form; no openEHR spec governs the digest — ehrbase-rs extension",
             sig_stub("served digest recomputes from the version's own canonical form"),
             Binding::Rest(
                 "GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}",
@@ -91,7 +89,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Version signing — all kinds",
             JSON,
             Compare::None,
-            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot on every versioned object); ehrbase-rs extension (docs/design/version-signing.md §3.3)",
+            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot on every versioned object); ehrbase-rs extension",
             sig_stub(
                 "EHR_STATUS + multi-version COMPOSITION + FOLDER writes all yield signed versions",
             ),
@@ -105,7 +103,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Version signing — client verbatim",
             JSON,
             Compare::None,
-            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (client-supplied signature stored verbatim, never re-signed); ehrbase-rs extension (docs/design/version-signing.md §3.3)",
+            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (client-supplied signature stored verbatim, never re-signed); ehrbase-rs extension",
             sig_stub("a client-supplied signature is stored + served verbatim"),
             Binding::Rest("POST /ehr/{ehr_id}/contribution"),
             run_client_verbatim,
@@ -115,7 +113,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Version signing — pgp verifies",
             JSON,
             Compare::None,
-            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot); ehrbase-rs extension — pgp mode, RFC 4880 detached signature (docs/design/version-signing.md §3.2)",
+            "profiles master03 §Non-Functional Signing (STANDARD); RM common master06 §Version (signature slot); ehrbase-rs extension — pgp mode, RFC 4880 detached signature",
             sig_stub("a pgp-keyed SUT serves an RFC 4880 detached signature"),
             Binding::Rest(
                 "GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid}",
@@ -251,7 +249,7 @@ fn expected_digest(ov: &Value) -> Result<String, CaseError> {
 fn assert_digest_shape(sig: &str) -> Result<(), CaseError> {
     let b64 = sig.strip_prefix("sha256:").ok_or_else(|| {
         CaseError::Assertion(format!(
-            "VERSION.signature must be a `sha256:` digest (docs/design/version-signing.md §3.2), got {sig:?}"
+            "VERSION.signature must be a `sha256:` digest, got {sig:?}"
         ))
     })?;
     let bytes = base64::engine::general_purpose::STANDARD
@@ -437,7 +435,7 @@ fn run_all_kinds<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         // FOLDER (no ORIGINAL_VERSION wrapper), so the FOLDER version's signature is
         // not API-observable here; the write must be accepted, and the storage-level
         // signing is proven off-wire by app/ehrbase service_signing (a documented
-        // instrument-encodes-server-behaviour boundary, register 11 §2).
+        // instrument-encodes-server-behaviour boundary).
         let folder = fixtures::read_json(FOLDER_FIXTURE).map_err(|e| codec(&e))?;
         let dir = ctx
             .send(negotiate::representation(
@@ -468,11 +466,10 @@ fn run_client_verbatim<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         match ov["signature"].as_str() {
             Some(sig) if sig == CLIENT_SIG => Ok(DataSetReport::SINGLE),
             Some(sig) => Err(CaseError::Assertion(format!(
-                "client-supplied signature must be served verbatim (docs/design/version-signing.md §3.3), got {sig:?}"
+                "client-supplied signature must be served verbatim, got {sig:?}"
             ))),
             None => Err(CaseError::Assertion(
-                "client-supplied signature was dropped (docs/design/version-signing.md §3.3)"
-                    .to_owned(),
+                "client-supplied signature was dropped".to_owned(),
             )),
         }
     })
@@ -483,7 +480,7 @@ fn run_pgp_verifies<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         // Needs a `pgp`-mode SUT with a configured key; the compose dev config boots
         // in `digest` mode and an external SUT's key config is unknown. The four
         // digest cases prove the capability. Reported SKIPPED(SutConfig), never
-        // fabricated (register 11 G-6: a pgp compose profile is a follow-up).
+        // fabricated (a pgp compose profile is a follow-up).
         Err::<DataSetReport, _>(CaseError::Skipped(
             "SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed \
              compose profile is a follow-up — the digest cases prove the Signing capability"

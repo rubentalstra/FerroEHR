@@ -1,8 +1,7 @@
 //! Extension surface — **nothing in this module is governed by ITS-REST**.
 //!
 //! Every module here is re-audited against the vendored openEHR specs and kept
-//! only when a spec in the oracle does *not* in fact govern it (the
-//! classification register is `docs/design/its-rest/extensions.md`). Each keeps
+//! only when a spec in the oracle does *not* in fact govern it. Each keeps
 //! either an explicit "no openEHR spec governs this — our own design/extension"
 //! flag or the precise citation of the spec that governs the *operation
 //! semantics* it wraps (never a bare "extension" shrug).

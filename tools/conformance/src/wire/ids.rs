@@ -1,12 +1,12 @@
 //! openEHR identifier extraction — the ONLY place suites parse wire ids
-//! (register 90 §8.3; replaces the legacy `support::version_uid`,
+//! (replaces the legacy `support::version_uid`,
 //! `contribution.rs::contribution_uid`/`version_uid_at` ad-hoc scrapers).
 //!
 //! Every extraction records the observed edition form on the context's
 //! recorder, so a wire-form change is an explicit finding. There are NO
 //! silent fallbacks: an extraction either yields the id from a declared
 //! source or fails naming every source tried (the `unwrap_or_else(v1)`
-//! class of masking bug — register 06 G-4 — is structurally impossible).
+//! class of masking bug is structurally impossible).
 
 use serde_json::Value;
 

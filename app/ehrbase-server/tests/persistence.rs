@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! P09/P10 integration tests: the greenfield schema applies
+//! Persistence integration tests: the greenfield schema applies
 //! cleanly on a real `PostgreSQL` 18, the `ext` magnitude functions follow
 //! the spec formulas, the temporal versioning model behaves, and the node
 //! codec round-trips through the database.
@@ -42,7 +42,7 @@ async fn migrations_apply_cleanly_and_idempotently() {
         .expect("ehr bookkeeping");
     // Single squashed baseline per schema, plus one file per own-extension
     // table set (pre-production rule: schema changes edit the baseline
-    // directly — ALTER-style additions fold in; the P20 folds brought
+    // directly — ALTER-style additions fold in; the optimization folds brought
     // context_start, the case-insensitive TEMPLATE_ID unique, and
     // ext.openehr_timestamp into the baselines and removed the speculative
     // GIN + magnitude indexes). ext: 0001_openehr_functions (functions incl.

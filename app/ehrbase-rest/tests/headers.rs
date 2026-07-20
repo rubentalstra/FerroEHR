@@ -7,7 +7,7 @@
 //! `ETag` expectations use the weak form (`W/"…"`): the ITS-REST overview
 //! §"`ETag` and Last-Modified" makes the `ETag` weak-type ("should have a
 //! weakness indicator `W/` prefix"); the bare quoted form is deprecated.
-//! End-to-end HTTP tests for the W2-A response-header + `Prefer` handling:
+//! End-to-end HTTP tests for the response-header + `Prefer` handling:
 //! `ETag`/`Location` on the EHR / `EHR_STATUS` / COMPOSITION writes and reads, and
 //! the `return=minimal` (default, header-only) vs `return=representation`
 //! (full body) `Prefer` policy — driven through the assembled router over a

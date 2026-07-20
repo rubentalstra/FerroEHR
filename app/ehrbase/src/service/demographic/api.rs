@@ -401,8 +401,7 @@ impl EhrbaseService {
 
     /// Logically delete a party of the routed [`PartyKind`]
     /// (`delete_party(a_versioned_party_id: UUID)` — our own demographic
-    /// design, register
-    /// `docs/design/platform/04-service-demographic-ehr-index.md`): the path
+    /// design): the path
     /// carries the versioned-party id (bare `HIER_OBJECT_ID` or full
     /// `OBJECT_VERSION_ID`). The preceding trunk version for optimistic
     /// concurrency comes from `If-Match` when supplied, else the path OVID,
@@ -410,7 +409,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse, or a
-    ///   supplied `If-Match` is malformed (W-14 F-12: a malformed header is
+    ///   supplied `If-Match` is malformed (a malformed header is
     ///   rejected, never silently ignored).
     /// - [`SmError`] `version_mismatch` (`412`) — a full-OVID `If-Match` names
     ///   a version other than the current latest.
@@ -429,7 +428,7 @@ impl EhrbaseService {
         let current = self.party_current(kind, vo_id).await?;
         let meta = current.as_ref().map(CurrentParty::resource_meta);
         ensure_full_ovid_if_match(if_match.as_deref(), meta.as_ref())?;
-        // A malformed `If-Match` is rejected, not silently ignored (W-14 F-12);
+        // A malformed `If-Match` is rejected, not silently ignored;
         // an absent header falls back to the path OVID's version.
         let expected = match if_match.as_deref() {
             Some(raw) => expected_from_if_match(raw)?.or(path_version),
@@ -897,7 +896,7 @@ impl EhrbaseService {
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse, or a
-    ///   supplied `If-Match` is malformed (W-14 F-12: rejected, never silently
+    ///   supplied `If-Match` is malformed (rejected, never silently
     ///   ignored).
     /// - [`SmError`] `version_mismatch` (`412`) — a full-OVID `If-Match` names
     ///   a version other than the current latest.
@@ -915,7 +914,7 @@ impl EhrbaseService {
         let current = self.relationship_current(vo_id).await?;
         let meta = current.as_ref().map(CurrentRelationship::resource_meta);
         ensure_full_ovid_if_match(if_match.as_deref(), meta.as_ref())?;
-        // A malformed `If-Match` is rejected, not silently ignored (W-14 F-12);
+        // A malformed `If-Match` is rejected, not silently ignored;
         // an absent header falls back to the path OVID's version.
         let expected = match if_match.as_deref() {
             Some(raw) => expected_from_if_match(raw)?.or(path_version),

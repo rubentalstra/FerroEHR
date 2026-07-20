@@ -28,7 +28,7 @@ use crate::versioning::signature::signer::Signer;
 /// "there will always be at least one commit audit … there may also be further
 /// attestations").
 ///
-/// NOTE (G-12, master04 §Revision History): the `REVISION_HISTORY` is
+/// NOTE (master04 §Revision History): the `REVISION_HISTORY` is
 /// assembled directly as canonical JSON rather than through a typed
 /// `openehr-rm` builder — a spec-silent serialization choice; the wire shape is
 /// spec-correct.

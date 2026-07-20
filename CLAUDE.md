@@ -36,7 +36,7 @@ change.
 - **Hand-written tooling** (edit freely, normal Rust): `openehr-lang` (ODIN + BMM reader), `openehr-codegen` (emitter).
 - **Partly generated:** `openehr-its` — the XML `ToXml`/`FromXml` impls (`emit-xml`) and the ITS-REST contract (`emit-rest`) are generated into `src/xml/generated/` + `src/rest/generated/`; the hand-written parts are the runtimes (`xml/runtime.rs`, `rest/runtime.rs`), the canonical-JSON entry points + validation, and the fidelity gates.
 - **NOT generated** (hand-written): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-query` (AQL lexer/parser/AST), `openehr-flat` (Simplified Formats), and the `ehrbase-*` application crates (idiomatic Rust of our own design on the generated crates).
-- **Pinned spec versions:** RM 1.2.0, BASE 1.3.0, TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md`). These are the latest published spec versions — the conformance target.
+- **Pinned spec versions:** RM 1.2.0, BASE 1.3.0, TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md` — incl. the release ladder and pin-honesty column). **Version policy (owner 2026-07-20):** single pin per component (openEHR minors are compatible supersets within a major); dual generations only across major boundaries — AM's `am14`/`am24` is the one live, spec-mandated case; ITS-REST is single-version, always the latest RELEASED API. Full policy: `docs/VERSIONS.md` §Spec version policy.
 
 ## Issue workflow (the loop)
 
@@ -49,7 +49,7 @@ change.
 5. Commit on a conventional-type branch (`feat/…`, `fix/…`, `chore/…` — see the branch hard rule below) with a descriptive subject; the PR body declares `Closes #<n>` so the merge into develop auto-closes the issue (never close by hand when a PR carries the work).
 6. When the issue's exit criteria are all met, run `/phase-done`: verify, write the dense close narrative into the PR description, post the handoff comment on the issue, and DELETE the implemented plan file in that same PR.
 
-**Taxonomy (industry-standard, nothing invented):** exactly one **type** label per issue, mapped to the conventional-commit types — `bug`↔fix, `enhancement`↔feat, `documentation`↔docs, plus `chore`/`refactor`/`perf`/`ci`. **Priority** = `P0` (critical, drop everything) / `P1` (high, current focus) / `P2` (normal) / `P3` (backlog). **Domain/area** labels: `spec:RM…CNF`, `spec-update`, `spec-impact:*` (triage adds exactly one), `admin-ui` (the console, its own OCI image). **PR-flow labels** (CI escape hatches, on PRs not issues): `no-changelog` (changelog-guard; genuinely invisible changes only) and `no-ui-visual-change` (ui-screenshot-guard; admin-ui source change with zero visual effect — see `.claude/rules/leptos-ui.md` §10). Both guards read labels from the PR event payload: a label added after a guard failed needs a close+reopen of the PR to re-evaluate. A label referenced by CI must exist in the repo (`gh label create`) — a missing label fails silently at apply time, not in the workflow. **Milestones = releases** (vX.Y.Z). Issues + git survive `/clear` and `/compact`; the built-in todo tool is session-scoped, so the tracker is the durable layer.
+**Taxonomy (industry-standard, nothing invented):** exactly one **type** label per issue, mapped to the conventional-commit types — `bug`↔fix, `enhancement`↔feat, `documentation`↔docs, plus `chore`/`refactor`/`perf`/`ci`. **Priority** = `P0` (critical, drop everything) / `P1` (high, current focus) / `P2` (normal) / `P3` (backlog). **Domain/area** labels: `spec:RM…CNF`, `spec-update`, `spec-impact:*` (triage adds exactly one), `admin-ui` (the console, its own OCI image). **Spec-version triage** (on `spec-update` issues): `spec-version:current` = fix inside a pinned line, act immediately; `spec-version:next` = lands in a different upstream release, collected under an on-demand `upstream:<comp>-<ver>` label (adoption per the `docs/VERSIONS.md` §Spec version policy). **PR-flow labels** (CI escape hatches, on PRs not issues): `no-changelog` (changelog-guard; genuinely invisible changes only) and `no-ui-visual-change` (ui-screenshot-guard; admin-ui source change with zero visual effect — see `.claude/rules/leptos-ui.md` §10). Both guards read labels from the PR event payload: a label added after a guard failed needs a close+reopen of the PR to re-evaluate. A label referenced by CI must exist in the repo (`gh label create`) — a missing label fails silently at apply time, not in the workflow. **Milestones = releases** (vX.Y.Z). Issues + git survive `/clear` and `/compact`; the built-in todo tool is session-scoped, so the tracker is the durable layer.
 
 ## Model orchestration (workflows & subagents)
 
@@ -121,7 +121,7 @@ openEHR spec versions are pinned in the "Code generation" section above (RM 1.2.
 ```bash
 cargo build --workspace
 cargo nextest run --workspace
-cargo clippy --workspace --all-targets
+cargo clippy --workspace --all-targets --all-features   # the EXACT CI flags — dropping --all-features misses feature-gated lints
 cargo fmt --all
 cargo audit && cargo deny check
 # conformance runner (the acceptance instrument) — present and green:

@@ -11,14 +11,14 @@
 //! Unprocessable-Entity form prior ITS-REST editions / other CDRs emit for
 //! schema-valid-but-RM-invalid content). CONTRIBUTION is JSON only on the wire
 //! (a version-set + audit wrapper with no canonical-XML shape — master08 §Test
-//! Data Sets; blueprint ch5 F-05-06 tracks version-family XML separately).
+//! Data Sets; version-family XML is tracked separately).
 //!
 //! `list_contributions` (master08 §F) is skip-with-reason: the SM operation has
 //! no ITS-REST binding (`/ehr/{ehr_id}/contribution` is POST-only, no GET
 //! collection resource in the tested development@e8a093e OAS nor Release-1.0.3).
 //! Wire ids come only from [`crate::wire::ids`]; the sole local body reader is
 //! [`version_uid_in`] (a structured `versions[i].id.value` RM field, not an `ETag`
-//! scrape), which errors rather than falling back (register 05 G-4).
+//! scrape), which errors rather than falling back (no silent id fallback).
 
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -251,8 +251,8 @@ pub fn entries() -> Vec<CaseEntry> {
         ),
         // ── has_contribution (master08 §G) — SM boolean realized as GET
         //    /contribution/{uid} (200 has / 404 not); the false/error trichotomy
-        //    collapses to 200/404 by the CNF guide element-2 mapping (register 05
-        // G-7). The native ehrbase-sm surface keeps the distinction; the wire
+        //    collapses to 200/404 by the CNF guide element-2 mapping.
+        //    The native ehrbase-sm surface keeps the distinction; the wire
         //    runner must NOT "fix" a 404 into a 200-false.
         get_case(
             "ctb/has-contribution-existing",
@@ -282,7 +282,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "ctb/has-contribution-empty-ehr",
             "Contribution existence check — empty EHR",
             "I_EHR_CONTRIBUTION.has_contribution-empty_ehr (master08 §has_contribution)",
-            "master08 §has_contribution empty_ehr (→false); realized 404 via ITS-REST contribution_get (element-2 collapse, register 05 G-7)",
+            "master08 §has_contribution empty_ehr (→false); realized 404 via ITS-REST contribution_get (element-2 collapse)",
             Compare::None,
             run_get_empty_ehr,
         ),
@@ -381,7 +381,7 @@ fn get_case(
 }
 
 /// A `list_contributions` case: the SM operation has no ITS-REST binding, so the
-/// case skips-with-reason rather than fabricating a URL (register 05 G-5).
+/// case skips-with-reason rather than fabricating a URL.
 fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> CaseEntry {
     CaseEntry {
         meta: meta(
@@ -427,7 +427,7 @@ async fn commit_req(
 /// The `OBJECT_VERSION_ID` of the version at index `i` in a committed
 /// CONTRIBUTION representation (`versions[i].id.value`) — a structured RM field,
 /// not a wire-header scrape. Errors (never falls back) if absent, so a missing
-/// version id is a case failure (register 05 G-4). The commit's `ETag` is the
+/// version id is a case failure. The commit's `ETag` is the
 /// *CONTRIBUTION* uid, not the version uid, so it cannot serve here.
 fn version_uid_in(body: &Value, i: usize) -> Result<String, CaseError> {
     body["versions"][i]["id"]["value"]
@@ -468,7 +468,7 @@ fn set_preceding(body: &mut Value, i: usize, uid: &str) {
 ///
 // NOTE: the codes 249=creation / 251=modification / 253=deleted are the
 // openEHR Terminology `audit change type` group (master08 §Data Set
-// Considerations) — edition-invariant. Register 05 G-8 wants them sourced from
+// Considerations) — edition-invariant. Ideally they would be sourced from
 // `openehr-term` rather than as literals; `tools/conformance` does not depend on
 // `openehr-term` (it would need a Cargo.toml dependency this file cannot add), so
 // they stay literals here — a fix-pass item, not a spec-facing risk.
@@ -628,7 +628,7 @@ fn run_valid_invalid_compositions<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a>
         // no CONTRIBUTION/VERSION persists. Wire-observable signal — the reject
         // emits no created-resource header (Location/ETag). Full contribution-
         // count verification needs list_contributions, which has no ITS-REST
-        // binding (master08 §F; register 05 G-5), so the created-resource-absence
+        // binding (master08 §F), so the created-resource-absence
         // check is the spec-determined part asserted here.
         if resp.header("location").is_some() || resp.header("etag").is_some() {
             return Err(CaseError::Assertion(
@@ -981,7 +981,7 @@ fn run_minimal_ehr_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// D.2 — the accepted `EHR_STATUS` matrix over a provided full status (scenario 2):
 /// the EHR is created WITH a full `EHR_STATUS`, the distinct precondition master08
-/// draws (register 05 D.2 — the legacy runner reused D.1 verbatim).
+/// draws (scenario D.2 — the legacy runner reused D.1 verbatim).
 fn run_full_ehr_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({ run_status_matrix(ctx, true).await })
 }
@@ -1082,7 +1082,7 @@ fn run_fail_modify_non_existing_directory<'a>(ctx: &'a RunContext<'a>) -> CaseFu
         normalize_modification(&mut body, 0);
         // A syntactically valid but nonexistent preceding OBJECT_VERSION_ID,
         // derived from an observed id (the EHR's own default EHR_STATUS version)
-        // so the SUT's real system id is reused — no literal (register 05 G-4).
+        // so the SUT's real system id is reused — no literal.
         let observed = ids::parse_object_version_id(&ehr_status_uid(ctx, &ehr_id).await?)?;
         set_preceding(&mut body, 0, &support::nonexistent_version_like(&observed));
         let resp = commit_req(ctx, &ehr_id, &body).await?;

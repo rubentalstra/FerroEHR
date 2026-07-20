@@ -5,8 +5,7 @@
 //!
 //! No openEHR spec governs storage columns or their derivation — this is our own
 //! design (`docs/architecture.md` §Storage; the first entry realizes the
-//! patient-dashboard hot path measured in
-//! `docs/plans/phase-20-optimization.md`). openEHR defines the *language*
+//! patient-dashboard hot path). openEHR defines the *language*
 //! (QUERY master03), not how a leaf is physically materialized.
 //!
 //! One registry drives both directions, so the write side and the read side can

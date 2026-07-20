@@ -1,5 +1,5 @@
-//! AST → typed IR lowering (our own engine, P16). Covers the full accepted feature
-//! envelope in `docs/design/aql-engine.md` §Feature envelope; every rejected
+//! AST → typed IR lowering (our own engine). Covers the full accepted feature
+//! envelope; every rejected
 //! construct maps to a precise [`AqlFeatureError`].
 //!
 //! The FROM clause is lowered first (building the [`Source`] list, the

@@ -12,7 +12,7 @@
 //!   The AQL *engine* it drives is [`crate::aql`].
 //! - [`result_set`] — `RESULT_SET` / `RESULT_SET_COLUMN` / `RESULT_SET_ROW`
 //!   assembly (`result_set.adoc`) + parameter substitution, isolated so the
-//!   SM-vs-ITS-REST shape divergences (the `RESULT_SET.id` MUST, G-05-03q)
+//!   SM-vs-ITS-REST shape divergences (the `RESULT_SET.id` MUST)
 //!   live in one spec-cited place.
 //! - [`plan_cache`] — the bounded cache of lowered AQL plans keyed on query
 //!   text (no openEHR spec governs it — our own performance design).

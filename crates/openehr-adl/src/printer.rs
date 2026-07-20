@@ -11,9 +11,9 @@
 //! and the `rules` via the stored expression tree.
 //!
 //! Section order is example-derived (`ADL2/master07.04`; the vendored grammar
-//! has no top-level ordering production — see `docs/plans/adl2.md`
-//! spec-silence register). NOTE: no openEHR spec governs the exact whitespace
-//! layout — our own design/extension, chosen so the output re-lexes 1:1.
+//! has no top-level ordering production). NOTE: no openEHR spec governs the
+//! exact whitespace layout — our own design/extension, chosen so the output
+//! re-lexes 1:1.
 
 use std::collections::BTreeMap;
 use std::fmt::Write;

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# openEHR CNF conformance runner — the acceptance instrument, W-10 multi-SUT.
+# openEHR CNF conformance runner — the acceptance instrument, multi-SUT.
 #
 # The thin wrapper satisfying the /run-conformance skill contract: bring up the
 # selected SUT's compose stack, run the conformance CLI against it, write the

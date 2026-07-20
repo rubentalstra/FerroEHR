@@ -505,7 +505,7 @@ pub fn metric_bar_chart(
     s
 }
 
-/// The knee/saturation curve (register 01 §3): the offered-load ladder plotted
+/// The knee/saturation curve: the offered-load ladder plotted
 /// as sustained req/s (x, linear) against p99 latency (y, **log₁₀ µs** — three-
 /// plus decades), each point directly labelled with its load factor `L`. Points
 /// are `(rps, p99_us, load_factor)` in ladder order; the 1 s p99 SLO ceiling is

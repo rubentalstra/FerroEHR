@@ -40,8 +40,7 @@ impl From<ApiError> for RestError {
     }
 }
 
-/// The single SM → HTTP mapping, owned by the protocol adapter (the crate split,
-/// `docs/design/sm-platform/08-target-architecture.md` §5): a native [`SmError`]
+/// The single SM → HTTP mapping, owned by the protocol adapter: a native [`SmError`]
 /// carries only a `CALL_STATUS_TYPE`, and this adapter turns its status into the
 /// ITS-REST 1.0.3 status code. The wire oracle (ITS-REST) decides each row;
 /// where the SM name and the wire disagree, the wire's status wins here. Living
@@ -68,7 +67,7 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
         | S::VersionedCompositionDoesNotExist => ApiError::NotFound(message),
         S::VersionMismatch => ApiError::PreconditionFailed(message),
         // The specific conflicts plus the storage-classified generic conflict
-        // (integrity/serialization; W-14 F-13) all map to `409`.
+        // (integrity/serialization) all map to `409`.
         S::EhrCreateFailDuplicateId
         | S::CompositionAlreadyExists
         | S::EhrForSubjectAlreadyExists
@@ -81,7 +80,7 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
         | S::DefinitionUnknown
         | S::ContentInvalid => ApiError::Unprocessable(message),
         S::NotImplemented => ApiError::NotImplemented,
-        // Backend resource exhaustion (pool acquire timeout; our W-12 overload
+        // Backend resource exhaustion (pool acquire timeout; our overload
         // contract, spec-silent — RFC 9110 §15.6.4 is the HTTP authority) → 503.
         // `RestError::into_response` adds the `Retry-After` hint for any 503.
         S::ServiceOverloaded => ApiError::ServiceUnavailable(message),
@@ -198,7 +197,7 @@ impl IntoResponse for RestError {
         // Every `503 Service Unavailable` carries a `Retry-After` hint: the
         // condition is transient by definition (RFC 9110 §15.6.4). This covers
         // both the overload-shed path and a storage-classified pool-exhaustion
-        // `503` (W-14 F-13); no openEHR spec governs overload — our own design.
+        // `503`; no openEHR spec governs overload — our own design.
         if status == StatusCode::SERVICE_UNAVAILABLE {
             resp.headers_mut()
                 .insert(header::RETRY_AFTER, HeaderValue::from_static("1"));
@@ -300,7 +299,7 @@ mod tests {
 
     #[tokio::test]
     async fn service_overloaded_maps_to_503_with_retry_after() {
-        // W-14 F-13: a storage-classified pool exhaustion (`ServiceOverloaded`)
+        // A storage-classified pool exhaustion (`ServiceOverloaded`)
         // surfaces as 503 + Retry-After (our overload contract; RFC 9110
         // §15.6.4).
         use ehrbase::service::status::{CallStatusType, SmError};
@@ -317,7 +316,7 @@ mod tests {
 
     #[tokio::test]
     async fn storage_conflict_maps_to_409() {
-        // W-14 F-13: a storage-classified integrity/serialization conflict
+        // A storage-classified integrity/serialization conflict
         // (`Conflict`) surfaces as 409 (ITS-REST overview §HTTP status codes).
         use ehrbase::service::status::{CallStatusType, SmError};
         let sm = SmError::new(CallStatusType::Conflict, "duplicate key");

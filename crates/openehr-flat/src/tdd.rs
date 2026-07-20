@@ -9,8 +9,8 @@
 //! `archetype_node_id`s, no RM `_type`/`xsi:type` on most nodes, and omits the
 //! RM wrapper structure (`HISTORY`/`EVENT`/`ITEM_TREE`/`ELEMENT`) — all of which
 //! come from the operational template. Prior art: archie's `TemplateDataDocument`
-//! reader; the SM design sequences this as step 4 of SM-5
-//! (`docs/design/sm-platform/10-message-integration.md` §2).
+//! reader; the openEHR SM Platform Service Model sequences this under the
+//! message-integration service (`I_TDD_SERVICE`).
 //!
 //! # The matching rule (derived from the vendored corpus + `WebTemplate`)
 //!
@@ -929,7 +929,7 @@ mod multiplicity_tests {
     }
 
     /// The derivation now reaches genuinely multi-valued structural attributes
-    /// beyond the legacy four (the F-10-11 motivation).
+    /// beyond the legacy four.
     #[test]
     fn covers_reachable_multi_valued_attributes() {
         assert!(is_multiple_attr("other_participations"));

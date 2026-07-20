@@ -16,8 +16,7 @@
 //! the settings-subtype passes commit validation (`Scheme_valid`), the adapter
 //! parses them, and the commit invalidated the per-EHR cache.
 //!
-//! The concrete scheme is our own design — no openEHR spec governs it
-//! (`docs/design/ehr-access-scheme.md`).
+//! The concrete scheme is our own design — no openEHR spec governs it.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use ehrbase::service::ehr::access_types::DefaultAccess;

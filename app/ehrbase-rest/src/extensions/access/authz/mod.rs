@@ -1,5 +1,5 @@
-//! Authorization for the ehrbase-rs CDR — the two composable layers of
-//! `docs/enterprise/access-control.md`, folded into the protocol adapter
+//! Authorization for the ehrbase-rs CDR — the two composable layers,
+//! folded into the protocol adapter
 //! (authorization is an adapter concern by design; the former `ehrbase-authz`
 //! crate is dissolved here).
 //!
@@ -187,8 +187,7 @@ impl AuthzHandle {
 }
 
 /// The fine-grained ABAC gate: the PDP engine, the DB-backed attribute
-/// resolvers, and the resolved claim names + directory opt-in
-/// (`docs/enterprise/access-control.md` §5.7/§7). The PEP
+/// resolvers, and the resolved claim names + directory opt-in. The PEP
 /// ([`crate::extensions::access::pep`]) drives it.
 pub(crate) struct AbacGate {
     pub(crate) engine: Arc<dyn PolicyEngine>,

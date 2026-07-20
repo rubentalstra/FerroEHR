@@ -1,8 +1,7 @@
 //! `EHRbase` application library — the platform crate.
 //!
 //! Modern idiomatic Rust on top of the generated `openehr-*` crates. Two
-//! layers of module, mirroring the specification structure (W-3f,
-//! `docs/design/platform/`):
+//! layers of module, mirroring the specification structure:
 //!
 //! **Spec-governed areas** (each maps to its openEHR oracle):
 //! - [`versioning`] — change control + integrity (RM common

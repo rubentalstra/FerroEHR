@@ -13,7 +13,9 @@
 //! folder refs); the write side manages the single directory slot
 //! (= `folders[1]`) only. Additional hierarchies are committed via
 //! CONTRIBUTION — ITS-REST/SM bind only the directory (RM ehr master04
-//! §Folders). Multi-hierarchy write management is owned by WORKLIST W-6.
+//! §Folders).
+//
+// TODO: dedicated multi-hierarchy directory write management.
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::ResourceMeta;

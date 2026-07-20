@@ -20,7 +20,7 @@ Per-surface detail + policy live beside each set:
 - `rest-oas/PROVENANCE.md`
 - `../../openehr-codegen/vendor/bmm/PROVENANCE.md`
 
-## How each surface is consumed (ADR-004 + ADR-005)
+## How each surface is consumed
 
 - **BMM** -> `openehr-codegen emit` generates the RM/BASE/AM/TERM/LANG spec crates.
 - **XSDs** -> `openehr-codegen emit-xml` generates canonical-XML (de)ser onto the

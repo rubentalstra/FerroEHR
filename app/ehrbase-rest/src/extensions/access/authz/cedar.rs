@@ -1,5 +1,4 @@
-//! [`CedarEngine`] — the embedded, default ABAC engine
-//! (`docs/enterprise/access-control.md` §5.6), built on `cedar-policy` 4.x.
+//! [`CedarEngine`] — the embedded, default ABAC engine, built on `cedar-policy` 4.x.
 //!
 //! A typed Cedar **schema** (shipped, built from the [`ResourceKind`] ×
 //! [`AccessMode`] enums so it can never drift from the op classification) is

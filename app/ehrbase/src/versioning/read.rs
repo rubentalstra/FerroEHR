@@ -1,6 +1,5 @@
 //! Version reads: loading stored versions into the versioning value contract
-//! ([`VersionRead`]) — current, by tree id, by storage ordinal, and by instant
-//! (S-08..S-10, S-46, S-47).
+//! ([`VersionRead`]) — current, by tree id, by storage ordinal, and by instant.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Versioned Objects /
 //! §Version and its Subtypes / §Logical Deletion, RM common

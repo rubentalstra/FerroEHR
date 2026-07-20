@@ -14,9 +14,7 @@
 //!
 //! This module owns the manifest's *shape and content*; the wiring layer
 //! (`crate::router::router`) constructs the [`SystemManifest`] from config plus the
-//! live mounted-group set and mounts [`route`] at the API base-path root. The
-//! register the redesign closes is `docs/design/its-rest/system.md` §1
-//! (G-1..G-6).
+//! live mounted-group set and mounts [`route`] at the API base-path root.
 
 use std::sync::Arc;
 
@@ -36,7 +34,7 @@ const ALLOW_METHODS: &str = "GET, POST, PUT, DELETE, OPTIONS";
 /// OAS `Options.endpoints` `example` enumerates
 /// (`system-codegen.openapi.yaml` lines 116-121).
 ///
-/// This is the spec-defined **default** only. G-1 requires the *live* list —
+/// This is the spec-defined **default** only. The manifest requires the *live* list —
 /// exactly the groups the router mounts — so [`crate::router::router`] passes its
 /// actual mounted-group set to [`SystemManifest::new`] rather than relying on
 /// this constant.

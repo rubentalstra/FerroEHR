@@ -1,8 +1,7 @@
 //! FROM-clause + containment lowering (QUERY master03 §Class expressions,
 //! §Containment, §VERSION sources) and the population / scope gates.
 //!
-//! No openEHR spec governs the join mechanics — this is our own design
-//! (`docs/design/aql-engine.md`): the FROM containment tree becomes a **cross
+//! No openEHR spec governs the join mechanics — this is our own design: the FROM containment tree becomes a **cross
 //! join of table aliases + typed WHERE conditions** (the planner folds
 //! cross-join+filter into joins). Each RM source that roots a versioned object
 //! gets a `node` + `vo_version` (+ `audit`) alias; content sources contained
@@ -345,8 +344,8 @@ impl Builder<'_> {
                 self.q.and_where(col(&root, "ehr_id").is_in(ids.clone()));
             }
         }
-        // ABAC patient scope (`docs/enterprise/access-control.md` §6.4 — no
-        // openEHR spec governs this, our own access-control extension): restrict
+        // ABAC patient scope (no openEHR spec governs this, our own
+        // access-control extension): restrict
         // every VO root to the caller's patient EHRs. Rows outside are never
         // fetched — regardless of the query's projection (the v1 defect-#1 fix).
         if let Some(subject) = self.ctx.subject_scope.clone() {
@@ -372,7 +371,7 @@ impl Builder<'_> {
         if !self.ctx.ehr_ids.is_empty() {
             return;
         }
-        // One gate per join-connected component (item 24): a VO root linked to
+        // One gate per join-connected component: a VO root linked to
         // an EHR alias (`node.ehr_id = e.id`) is covered by that alias's gate —
         // gating both would filter the same EHR twice.
         for root in self.group_roots.clone() {
@@ -395,7 +394,7 @@ impl Builder<'_> {
     /// `EHR_STATUS.is_queryable` 1..1 Boolean), promoted onto the `ehr` row and
     /// kept in lockstep by the status write path, so the gate is a boolean-column
     /// filter over a PK join instead of a per-query `EXISTS` that index-scanned
-    /// every current `EHR_STATUS` root (item 33). SM `I_QUERY_SERVICE`: a
+    /// every current `EHR_STATUS` root. SM `I_QUERY_SERVICE`: a
     /// full-population query runs over "all EHRs whose status has the
     /// `is_queryable` flag set to `True`" (`i_query_service.adoc`). No openEHR
     /// spec governs the join mechanics — our own storage design.

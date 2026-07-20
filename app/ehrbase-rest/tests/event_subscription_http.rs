@@ -8,7 +8,7 @@
 //! the config gate (`AppConfig::events_admin_api`), the `200`/`201`/`204`/`404`/
 //! `400`/`409` wire outcomes for the CRUD verbs, and the JSON body shapes —
 //! driven through the assembled router over the **real** `EhrbaseService` on a
-//! real Postgres database (W-14 B+C: the scripted `Mock` is gone; the CRUD
+//! real Postgres database (the scripted `Mock` is gone; the CRUD
 //! persists to the real `event_subscription` table).
 //!
 //! Design: event/subscription semantics are spec-silent; the surface is our own,

@@ -304,7 +304,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     assert_eq!(contribution["audit"]["change_type"]["value"], "creation");
     assert!(!contribution["versions"].as_array().unwrap().is_empty());
 
-    // ── logical delete (F-02-01/05, F-06-04) ─────────────────────────────────
+    // ── logical delete ──────────────────────────────────────────────────────
     // A stale preceding_version_uid (v1, but latest is v2) → 409 Conflict.
     let comp_ovid_v1_id: ObjectVersionId = comp_ovid_v1.parse().expect("ovid");
     let stale_delete = svc.delete_composition(ehr_uuid, &comp_ovid_v1_id).await;
@@ -693,7 +693,7 @@ async fn contribution_commits_a_composition_atomically() {
 
 #[tokio::test]
 async fn contribution_preserves_the_client_change_type_and_rejects_invalid_combos() {
-    // F-06-06 / W2-C: an inbound `250|amendment|` is stored and echoed verbatim
+    // An inbound `250|amendment|` is stored and echoed verbatim
     // (never narrowed to `modification` — RM change_control §"Contributions":
     // a correction is committed with change type 250|amendment|), and
     // spec-invalid combinations are rejected: creation on an existing object
@@ -1322,7 +1322,7 @@ async fn duplicate_subject_ehr_creation_conflicts() {
 
 #[tokio::test]
 async fn version_get_at_time_returns_the_original_version() {
-    // F-01-05 / F-02-04: `versioned_ehr_status_version_get_at_time` and
+    // `versioned_ehr_status_version_get_at_time` and
     // `versioned_composition_version_get_at_time` return the VERSION extant at
     // the given time (or the latest), as an ORIGINAL_VERSION with the
     // `200_VERSION_at_time` ETag/Location metadata.
@@ -1899,7 +1899,7 @@ async fn directory_versioned_and_has_version() {
     );
 }
 
-/// The P20-item-33 write-path fixes must not change the wire: a write response
+/// The write-path fixes must not change the wire: a write response
 /// built from the CONTRIBUTION commit results (never a post-commit re-read) has
 /// to be identical to what a fresh read yields.
 ///

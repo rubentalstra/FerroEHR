@@ -1,8 +1,7 @@
 //! openEHR **ITS-REST 1.0.3** server surface (`axum`) — the protocol adapter
 //! over the SM native API (`ehrbase-sm`).
 //!
-//! The crate is organised **per ITS-REST specification** (the development-edition
-//! register, `docs/design/its-rest/README.md`), one folder per spec area:
+//! The crate is organised **per ITS-REST specification**, one folder per spec area:
 //!
 //! - [`overview`] — the cross-cutting Overview protocol (content negotiation,
 //!   committal headers, resource identification, common params, the HTTP
@@ -25,7 +24,7 @@
 //!
 //! [`router`] assembles these under the configured base path with the
 //! `tower-http` middleware stack. The adapter is generic over the platform
-//! concrete `EhrbaseService` (W-14 B+C: no trait seam, no stub backend) — the
+//! concrete `EhrbaseService` (no trait seam, no stub backend) — the
 //! `ehrbase` crate monomorphizes it over its DB-backed `EhrbaseService` via
 //! [`AppState::with_backend`], and the tests over a mock.
 //!

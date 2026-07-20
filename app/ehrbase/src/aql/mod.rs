@@ -7,7 +7,7 @@
 //! (IR→SQL via `sea-query`, execution via `sqlx`, `RESULT_SET` assembly) is the
 //! next package and is deliberately absent here — the IR carries no SQL.
 //!
-//! Design authority: `docs/design/aql-engine.md`. Spec authority: the vendored
+//! Spec authority: the vendored
 //! QUERY 1.1 text at `docs/specs/openehr/QUERY/docs/AQL/`. The RM typing oracle
 //! is the generated `openehr_rm::model`.
 //!

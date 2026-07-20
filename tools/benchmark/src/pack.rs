@@ -1,4 +1,4 @@
-//! The official openEHR CKM template pack (W-11 B3).
+//! The official openEHR CKM template pack.
 //!
 //! Five templates vendored as CKM's own OPT exports under `templates/ckm/`
 //! (`scripts/vendor-ckm-templates.sh`; see `templates/ckm/PROVENANCE.md`), each
@@ -8,8 +8,8 @@
 //!
 //! Fairness rule: the skeleton is a committed artefact and is **never** fetched
 //! from a SUT at run time — fetching `/example` per-SUT would break the
-//! request-identity guarantee (`docs/design/benchmark/00-workload-model.md`
-//! §4/§6). This module only reads the vendored files and hands the raw OPT XML
+//! request-identity guarantee. This module only reads the vendored files and
+//! hands the raw OPT XML
 //! and the parsed skeleton to [`crate::render`] / [`crate::drive`].
 //!
 //! NOTE: no openEHR spec governs the benchmark template selection. The
@@ -68,8 +68,8 @@ impl CkmTemplate {
     /// The stable `workload.lock` source descriptor for this template
     /// (`ckm:<slug>|<template_id>|<example_file>|sha256:<skeleton-hash>`). The
     /// skeleton **content hash** is part of the descriptor: the payload bytes
-    /// are workload model, so regenerating a skeleton (e.g. the P20 F5
-    /// empty→populated fix) shifts the lock and two runs with different
+    /// are workload model, so regenerating a skeleton (e.g. an
+    /// empty→populated payload fix) shifts the lock and two runs with different
     /// payloads can never be conflated as the same workload. Falls back to
     /// `sha256:unreadable` if the file cannot be read (the run will fail later
     /// with the real I/O error; the lock stays total).

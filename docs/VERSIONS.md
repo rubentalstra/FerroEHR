@@ -59,22 +59,31 @@ the AIO benefit follow.
 
 There is no umbrella "openEHR Release" version; each component versions
 independently. **The spec crates are generated from the vendored BMM
-meta-model (ADR-004), so the BMM version pins below are load-bearing** — they
-are the actual codegen input, not just documentation. Pins bumped to *latest*
-on 2026-07-03 (the versions available as clean `*.bmm.json`).
+meta-model, so the version pins below are load-bearing** — they are the
+actual codegen input, not just documentation. Pins bumped 2026-07-03 (the
+versions available as clean `*.bmm.json`); the release-ladder columns were
+verified against specifications.openehr.org on 2026-07-20.
 
-| Component | Version | Status | Notes |
-|---|---|---|---|
-| BASE (Foundation Types + Base Types) | **1.3.0** | STABLE | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
-| RM (Reference Model) | **1.2.0** | STABLE | generated → `openehr-rm` |
-| AM (Archetype Model) | **1.4.0 + 2.4.0** | STABLE | generated → `openehr-am`, both versions as `am14` (ADL 1.4) + `am24` (ADL 2) |
-| QUERY (AQL) | 1.1.0 | STABLE | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
-| LANG (BMM / ODIN / EL) | 1.0.0 | STABLE (mixed) | `openehr-lang` — the ODIN + BMM reader that feeds codegen |
-| TERM (Terminology) | 3.1.0 | STABLE | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
-| ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL) | STABLE | canonical XML in `openehr-its` (hand-written, `quick-xml`); namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
-| ITS-REST (REST API) | development @ `e8a093e9` | mixed (per API: Overview/System/EHR/Query/Definition/Formats STABLE; Demographic/Admin/SMART DEVELOPMENT) | the identity the B5 conformance instrument derives (`development@e8a093e`); spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** — all 7 API groups (incl. DEMOGRAPHIC/ADMIN/SYSTEM) |
-| ITS-JSON (JSON Schemas) | development | DEVELOPMENT | validation oracle for the fidelity gate; pinned commit `5acae056248e917a4b4c56f7e712f4fcfeb616a6`; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
-| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | STABLE per-schema | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance |
+**Pin honesty:** several pins are development-generation snapshots AHEAD of
+the latest official release — the "Our pin" column says which. That is safe
+by openEHR's own release strategy (see "Spec version policy" below): within
+a major line every release is a compatible superset, so a newer-generation
+pin accepts every valid older-minor instance.
+
+| Component | Our pin | Latest official release | Upstream WIP | Notes |
+|---|---|---|---|---|
+| BASE (Foundation + Base Types) | **1.3.0** (pre-release generation) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
+| RM (Reference Model) | **1.2.0** (development generation) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
+| AM (Archetype Model) | **1.4 + 2.4.0** (1.4 released; 2.4.0 WIP generation) | 2.3.0 (20-Mar-2024) | 2.4.0, **3.0.0** | generated → `openehr-am`, both majors side by side as `am14` (ADL 1.4) + `am24` (ADL 2) — the spec-mandated dual-generation case |
+| QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
+| LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version |
+| TERM (Terminology) | **3.1.0** (WIP generation) | 3.0.0 (26-Jun-2023) | 3.1.0 | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
+| ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL vendored) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`; namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
+| ITS-REST (REST API) | development @ `e8a093e9` (pre-release snapshot — **adoption of the released 1.1.0 is tracked on issue #178**) | **1.1.0 (19-Jul-2026)** | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** — all 7 API groups (incl. DEMOGRAPHIC/ADMIN/SYSTEM) |
+| ITS-JSON (JSON Schemas) | development @ `5acae056` | (1.0.0 itself still WIP) | dev | validation oracle for the fidelity gate; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
+| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | per-schema | — | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance |
+| SM (Service Model) | master snapshot | 1.1.0 | dev | vendored spec text only (the service layer's design authority) |
+| CNF (Conformance) | master snapshot | 1.0.0 | dev | vendored spec text + CNF test schedule (the conformance oracle) |
 
 **Spec text vendored in-repo:** the normative documentation for every
 component above — plus SM (platform service model / SDT) and **CNF (the
@@ -84,14 +93,36 @@ these same versions (exact commits in each component's `PROVENANCE.md` and in
 the script). It is the read/conformance oracle; codegen still consumes only
 `tools/openehr-codegen/vendor/**` and `crates/openehr-its/schemas/**`.
 
-**RM-version divergence note:** these are the *latest* spec versions; stock
-EHRbase/`archie` emits an RM 1.1.0-era wire format. Track this divergence as a
-Stage-1 consideration — the fidelity gate (canonical-JSON corpus round-trip) is
-where it surfaces. (Per **ADR-008** the acceptance instrument is the openEHR CNF
-conformance schedule, **not** an EHRbase parity harness; EHRbase is prior art.)
+## Spec version policy (owner rulings 2026-07-20)
 
-See `docs/ADRs/ADR-004-spec-driven-codegen.md` for how generation works and the
-component scope.
+Grounded in the official openEHR release strategy
+(specifications.openehr.org/governance/release_strategy, read 2026-07-20):
+patch = "error corrections and minor additions that do not change the
+semantics"; minor = "significant additions that do not change the semantics
+of the existing part of the release"; major = "changes to the semantics or
+large changes", incompatible and "most likely requiring software upgrade and
+possibly data migration".
+
+- **Single pin per component.** Within a major line every release is a
+  compatible superset, so the newest-generation pin accepts every valid
+  older-minor instance — no version negotiation, no second generation.
+  Proven in practice: the fidelity gate validates our canonical wire against
+  the 1.1.0-era ITS-JSON schema while the types are RM 1.2.0-generation, and
+  stock-EHRbase's RM 1.1.0-era wire round-trips the corpus.
+- **Dual generations exist ONLY across major boundaries, decided per
+  component when a major actually releases.** The one live case is AM: the
+  BASE Architecture Overview (`master05-package_structure.adoc`) mandates
+  ADL 1.4 and ADL 2 "maintained side by side", and `openehr-am` ships both
+  as `am14`/`am24`. A future major (AM 3.0.0 is in WIP upstream) gets the
+  same treatment only if the ecosystem runs both generations; otherwise
+  cutover.
+- **ITS-REST is single-version: always the latest RELEASED API** — no legacy
+  REST surface. The 1.1.0 adoption is tracked on issue #178; future releases
+  are detected automatically (the spec-update/release watcher workflows).
+- The acceptance instrument is the openEHR CNF conformance schedule, **not**
+  an EHRbase parity harness; EHRbase is prior art. Stock EHRbase/`archie`
+  emits an RM 1.1.0-era wire format — compatible under this policy, and the
+  fidelity gate is where any divergence surfaces.
 
 ## EHRbase reference point
 

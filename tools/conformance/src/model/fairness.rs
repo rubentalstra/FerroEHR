@@ -40,7 +40,7 @@
 //! area = "DEM"                # the ECC area tag (see `catalog::Area::tag`)
 //! disposition = "extension"
 //! reason = "Upstream EHRbase has no demographic REST API."
-//! citation = "docs/plans/x1-comparison.md §2c"
+//! citation = "no openEHR spec governs this fairness call — our own design/extension"
 //!
 //! # A per-case rule (keyed by ECC id) — wins over an area-wide rule.
 //! [[case]]
@@ -315,7 +315,7 @@ description = "test register"
 area = "Dem"
 disposition = "extension"
 reason = "Upstream EHRbase has no demographic REST API."
-citation = "docs/plans/x1-comparison.md §2c"
+citation = "no openEHR spec governs this fairness call — our own design/extension"
 
 [[case]]
 ecc_id = "ECC-QRY-014"
@@ -327,7 +327,7 @@ citation = "docs/VERSIONS.md §RM-version divergence"
 ecc_id = "ECC-SQR-002"
 disposition = "defect"
 reason = "Upstream rejects ALL_VERSIONS."
-citation = "docs/design/aql-engine.md §version-scope"
+citation = "no openEHR spec governs AQL version-scope — our own design/extension"
 "#;
 
     #[test]

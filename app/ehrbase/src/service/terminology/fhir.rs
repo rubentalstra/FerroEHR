@@ -8,9 +8,8 @@
 //! master12-terminology.adoc` models this concrete backend as an external
 //! "terminology query server", so it belongs with the interface realization.
 //!
-//! Design: `docs/terminology-validation.md` §3 (the client) +
-//! `docs/design/terminology-server-integration.md` (the HAPI-FHIR/Snowstorm
-//! server it points at). SM contract:
+//! Design: our own — the client + the HAPI-FHIR/Snowstorm
+//! server it points at. SM contract:
 //! `docs/specs/openehr/SM/docs/UML/classes/i_terminology_service.adoc`.
 //!
 //! # SM call → FHIR operation mapping
@@ -22,7 +21,7 @@
 //! | `subsumes` | `CodeSystem/$subsumes` (outcome `subsumes`) |
 //! | `has_term` / `get_term` | `CodeSystem/$lookup` |
 //!
-//! NOTE (enumerating calls — G-4): `get_terminology_ids`,
+//! NOTE (enumerating calls): `get_terminology_ids`,
 //! `get_terminology_description` and `has_terminology` have no faithful FHIR
 //! operation — a FHIR TS is a validation/expansion backend, not an enumerable
 //! openEHR terminology bundle. The routing layer answers them from the
@@ -30,12 +29,12 @@
 //! terminology; this provider's [`FhirTerminologyProvider::get_terminology_description`]
 //! is an explicit `NotImplemented`.
 //!
-//! NOTE (temporal — G-1): the SM `at_date` (`i_terminology_service.adoc`
+//! NOTE (temporal): the SM `at_date` (`i_terminology_service.adoc`
 //! `has_term`/`get_term`/`value_set_validate`, an `Iso8601_date`) selects the
 //! terminology as it stood on a date. It is forwarded to the server as the
 //! FHIR `date` parameter of `$lookup`/`$validate-code`/`$expand`.
 //!
-//! NOTE (hierarchy — G-2/G-5): a FHIR `ValueSet/$expand` may nest
+//! NOTE (hierarchy): a FHIR `ValueSet/$expand` may nest
 //! members under `contains`. We keep the flat `Terminology_extract._terms_`
 //! (the membership view) **and** preserve the tree in
 //! `Terminology_extract._relationships_` as `Term_relationship`s under the
@@ -312,7 +311,7 @@ impl FhirTerminologyProvider {
 
     /// `get_value_set` → FHIR `ValueSet/$expand`, mapped to a
     /// [`TerminologyExtract`] (flat `terms` for membership; the `contains`
-    /// tree preserved as `relationships` — G-2/G-5). `terminology_id` is
+    /// tree preserved as `relationships`). `terminology_id` is
     /// unused — the value set is identified by its URL (`value_set_code`).
     ///
     /// # Errors
@@ -393,7 +392,7 @@ impl FhirTerminologyProvider {
     /// with no `display` falls back to the code itself). `at_date` → the FHIR
     /// `date` parameter.
     ///
-    /// NOTE (attributes — G-3): the SM `attributes` allow-list filters
+    /// NOTE (attributes): the SM `attributes` allow-list filters
     /// the meta-model attributes returned. `$lookup` returns only the concept
     /// `display` (mapped to the term text), so there is nothing further to
     /// filter; `attributes` is accepted and has no effect on the returned
@@ -455,7 +454,7 @@ impl FhirTerminologyProvider {
     }
 
     /// `get_terminology_description` → not modelled for a FHIR TS (NOTE
-    /// at module head — G-4; the routing layer answers this from the bundle).
+    /// at module head; the routing layer answers this from the bundle).
     ///
     /// # Errors
     ///
@@ -682,7 +681,7 @@ mod tests {
 
     #[test]
     fn expansion_hierarchy_preserved_as_relationships() {
-        // G-2/G-5: the parent→child `contains` tree survives as
+        // The parent→child `contains` tree survives as
         // relationships, with the `child` relation defined by its FHIR
         // property URI.
         let vs: FhirValueSet = serde_json::from_str(

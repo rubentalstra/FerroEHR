@@ -1,5 +1,4 @@
-//! The role model: JWT-claim role extraction and the RBAC gate decision
-//! (§2.4/§5.2 of `docs/enterprise/access-control.md`).
+//! The role model: JWT-claim role extraction and the RBAC gate decision.
 //!
 //! Roles are plain upper-cased strings (`USER`, `ADMIN`, …). They come from a
 //! Bearer token's configured claim paths ([`extract_roles`]) or a Basic user's

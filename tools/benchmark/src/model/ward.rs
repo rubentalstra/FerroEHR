@@ -1,4 +1,4 @@
-//! The simulated ward (`docs/design/benchmark/00-workload-model.md` §1): a set
+//! The simulated ward: a set
 //! of patients, each one EHR, plus an implicit staff pool used to rotate the
 //! composer on written compositions. Membership is deterministic in the
 //! `WorkloadSpec` (subject ids and staff names are stable across runs).
@@ -7,7 +7,7 @@
 
 use crate::model::WorkloadSpec;
 
-/// A patient's role over the simulated day (register 00 §1 admission state
+/// A patient's role over the simulated day (the workload's admission state
 /// machine `admitted → on-ward → discharged`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Role {
@@ -32,7 +32,7 @@ pub struct Patient {
     pub role: Role,
 }
 
-/// The staff pool (composer rotation). Small and fixed; register 00 §1 models
+/// The staff pool (composer rotation). Small and fixed; the workload models
 /// staff only as event *rates*, so the pool exists purely to label composers.
 const STAFF: [&str; 8] = [
     "Dr. A. Bench",

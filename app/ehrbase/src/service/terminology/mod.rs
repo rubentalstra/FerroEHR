@@ -21,7 +21,7 @@
 //! - [`fhir`] — [`FhirTerminologyProvider`], a remote FHIR R4 TS client
 //!   (opt-in via [`ExternalTerminologyConfig`]).
 //! - [`routing`] — the 9 SM calls on `EhrbaseService`, routing between the
-//!   two providers (the G-4 rule below).
+//!   two providers (the routing rule below).
 //! - [`expander`] — the AQL `TERMINOLOGY()` seam
 //!   ([`crate::aql::terminology::TerminologyExpander`] on `EhrbaseService`).
 //! - [`config`] — the `[terminology]` config section (no openEHR spec governs

@@ -12,15 +12,14 @@
 //!
 //! (`Requests_and_responses.md` §Deprecated headers) — implemented new-form-
 //! first with the deprecated forms still accepted/emitted where the spec says
-//! MAY. Status below is *descriptive* of what this layer does today (the gap
-//! register in `docs/design/its-rest/overview.md` §2 tracks the source rows):
+//! MAY. Status below is *descriptive* of what this layer does today:
 //!
-//! - **G-1 `ETag` weakness indicator — DONE.** Every resource-identifier `ETag`
+//! - **`ETag` weakness indicator — DONE.** Every resource-identifier `ETag`
 //!   is emitted as the weak `W/"{uid}"` form ([`negotiate::resource_etag`],
 //!   used by [`negotiate::set_versioning_headers`] and the template path).
 //!   Inbound `If-Match` accepts both the weak and the deprecated bare quoted
 //!   forms ([`version_id::strip_etag`]).
-//! - **G-2/G-3 committal headers — DONE.** The development-edition value forms
+//! - **Committal headers — DONE.** The development-edition value forms
 //!   `openehr-version: lifecycle_state.code_string="…"` and
 //!   `openehr-audit-details: change_type.code_string="…"` / `description.value`
 //!   / `committer.*` / `system_id` are parsed and merged
@@ -29,11 +28,11 @@
 //!   conflict. A client-supplied `system_id` is carried into
 //!   `UpdateAudit.system_id`; when absent "the server MUST set it to its own
 //!   configured system identifier" — asserted at the versioning seam.
-//! - **G-4 Location — DONE.** `Location` is set only on create/update writes
+//! - **Location — DONE.** `Location` is set only on create/update writes
 //!   ([`negotiate::set_resource_headers`]); reads, deletes, and the `409`/`412`
 //!   error path emit versioning headers without `Location`
 //!   ([`negotiate::set_versioning_headers`]).
-//! - **G-5 `return=identifier` — DONE.** [`negotiate::write_rm`] /
+//! - **`return=identifier` — DONE.** [`negotiate::write_rm`] /
 //!   [`negotiate::write_json`] honour `return=identifier` with a
 //!   `{ "uid": … }` body at a `200`/`201` status (never `204`) — exactly the
 //!   overview §"Prefer only identifier" shape ("a single JSON object with a
@@ -44,9 +43,9 @@
 //!   are not `uid`-versioned, so their identifier body is
 //!   `{ "template_id": … }` (`schemas/others/TemplateIdentifier.yaml`), rendered
 //!   in that group's handlers.
-//! - **G-6 `Preference-Applied` — DONE.** Emitted on write responses echoing
+//! - **`Preference-Applied` — DONE.** Emitted on write responses echoing
 //!   the honoured `return=` preference ([`negotiate`], a MAY).
-//! - **G-7 item-tag headers — DONE (EHR group).** The parse/emit helpers
+//! - **Item-tag headers — DONE (EHR group).** The parse/emit helpers
 //!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
 //!   consumed by the EHR/COMPOSITION dispatch:
 //!   [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
@@ -55,15 +54,15 @@
 //!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes the stored tags
 //!   on the response. (The demographic group does not yet emit these — a pending
 //!   service seam.)
-//! - **G-10 method status — DONE.** [`error::method_not_allowed_handler`]
+//! - **Method status — DONE.** [`error::method_not_allowed_handler`]
 //!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
 //!   (`crate::router::router`), so a known path called with a disallowed method renders
 //!   the openEHR `{ error, message }` body; the paired `501` for a
 //!   recognised-but-unimplemented operation rides
 //!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
 //!   dispatch level ([`error::not_implemented_handler`]).
-//! - **G-8 version identity / G-9 `openehr-uri`** are out of this change's
-//!   scope (tracked in the register); `/status` reports the tested
+//! - **Version identity / `openehr-uri`** are out of this change's
+//!   scope; `/status` reports the tested
 //!   development-edition contract identity (shared provenance,
 //!   `crate::extensions::provenance::ITS_REST`) and `openehr-uri` is not emitted.
 //!

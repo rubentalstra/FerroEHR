@@ -1,5 +1,5 @@
 //! Axum handlers over the platform health model
-//! ([`ehrbase::telemetry::health`], W-14 B+C split: model in the platform,
+//! ([`ehrbase::telemetry::health`] — the model lives in the platform,
 //! wire here).
 
 use std::collections::BTreeMap;

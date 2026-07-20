@@ -25,7 +25,7 @@ description = "Upstream fairness adjudication register for EHRbase (Java) 2.34.0
 area = "DEM"
 disposition = "extension"
 reason = "Upstream EHRbase exposes no demographic REST API; the DEM cases exercise ehrbase-rs's own demographic wire."
-citation = "docs/plans/x1-comparison.md §2a/§2c (upstream has no demographic API); docs/architecture.md (RM demographic — own wire design)"
+citation = "no openEHR spec governs this fairness call — upstream has no demographic REST API; the RM demographic wire is our own design/extension"
 
 # Version signing (VERSION.signature; sha256 over the canonical form) is an
 # ehrbase-rs feature, not an ITS-REST 1.0.x contract element. Upstream does not
@@ -34,7 +34,7 @@ citation = "docs/plans/x1-comparison.md §2a/§2c (upstream has no demographic A
 area = "SIG"
 disposition = "extension"
 reason = "Version signing is an ehrbase-rs extension (VERSION.signature); it is not part of the ITS-REST contract upstream implements."
-citation = "docs/plans/x1-comparison.md §2a (Sig — version signing is ours); docs/design/version-signing.md"
+citation = "profiles master03 §Non-Functional Signing; no openEHR spec governs version signing — ehrbase-rs extension"
 
 # NOTE (X1.2): TS openEHR-bundle cases assume our TERMINOLOGY('expand','openehr',…)
 # AQL feature and are candidate `extension` entries, but the TS area also holds

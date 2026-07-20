@@ -1,12 +1,12 @@
 //! DEFINITION / ADL 1.4 — the master04 `I_DEFINITION_ADL14` spine (area
-//! `Tpl`; `docs/design/conformance/01-definitions-adl.md`).
+//! `Tpl`).
 //!
 //! Unlike master05/master11, master04 is a **real, non-stub schedule**: its
 //! test cases carry normative conditions (§`validate_opt/§upload_opt/§get_opt`/
 //! §`get_opts/§delete_opt`), so those 16 cases (the whole `I_DEFINITION_ADL14`
 //! surface) trace [`ScheduleTrace::Schedule`]. The chapter's ADL 2 half
 //! (`I_DEFINITION_ADL2`) defines **no** test cases upstream, so no ADL 2 case
-//! exists (register 01 G-1 — the OPTIONS `Adl2Provisioning` capability stays
+//! exists (the OPTIONS `Adl2Provisioning` capability stays
 //! unevidenceable until the chapter is filled; recorded, not faked).
 //!
 //! One further case is [`ScheduleTrace::EccOriginal`]: `tpl/adl14-example-roundtrip`
@@ -17,26 +17,26 @@
 //! schedule defines no example / example-commit case (the operation is itself
 //! marked non-normative), so this is ECC-derived, spec-silence flagged.
 //!
-//! Register 01 rulings realized here:
+//! Rulings realized here:
 //!
-//! - **G-6 (`template_id` is server-specific, never a literal).** master04
+//! - **`template_id` is server-specific, never a literal.** master04
 //!   §Test Environment note 3: "openEHR not yet defining a format for the
 //!   template IDs". Every case reads the `template_id` from the **uploaded
 //!   OPT's own content** ([`opt_template_id`]), never a hardcoded string.
-//! - **G-3 (round-trip equality).** master04 §get_opt-retrieve_single NOTE:
+//! - **Round-trip equality.** master04 §get_opt-retrieve_single NOTE:
 //!   "the retrieved OPT should be exactly the same as the uploaded one" —
 //!   [`run_get_single`] parses the retrieved OPT and asserts its `template_id`
 //!   equals the uploaded one (semantic identity on the identifying field; full
 //!   byte-equality is server-canonicalisation-sensitive and is documented as a
 //!   boundary). [`run_get_all`] asserts the uploaded id is **in** the list.
-//! - **G-2 (OPT versioning has no ADL 1.4 wire).** master04 admits the version
+//! - **OPT versioning has no ADL 1.4 wire.** master04 admits the version
 //!   parameter is non-standard (§upload_opt-valid_opt_twice NOTE,
 //!   SPECBASE-30/SPECITS-42); ITS-REST ADL 1.4 exposes no version-addressed
 //!   template resource. The three version cases assert only what the wire +
 //!   spec determine and carry a `// NOTE:` that the schedule's
 //!   two-coexisting-versions / latest / specific post-conditions are
 //!   structurally unrealizable on the ADL 1.4 REST binding.
-//! - **G-5 / D2 (`delete_opt` skip).** The SM `I_DEFINITION_ADL14.delete_opt()`
+//! - **`delete_opt` skip.** The SM `I_DEFINITION_ADL14.delete_opt()`
 //!   has no ITS-REST ADL 1.4 DELETE verb — deletion is ADMIN-API-only — so the
 //!   four delete cases carry [`Binding::NoRestBinding`] and skip-with-reason,
 //!   never a fabricated URL. The ADMIN template-deletion path is evidenced in
@@ -82,7 +82,7 @@ const DELETE_CITATION: &str = "CNF master04 §delete_opt — SM I_DEFINITION_ADL
      Release-1.0.3; OPT deletion is ADMIN-API-only)";
 const DELETE_SKIP: &str = "master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — \
      deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a \
-     server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the \
+     server defect. The ADMIN template-deletion path is evidenced in the \
      Admin area.";
 
 /// The owned IPS OPT (REGISTER.md; official openEHR CKM export) that drives the
@@ -368,7 +368,7 @@ fn minimal_opt_xml() -> Result<String, CaseError> {
     fixtures::read_from(MINIMAL_OPT_KEY, MINIMAL_OPT_FILE).map_err(|e| codec(&e))
 }
 
-/// The `template_id` declared inside an OPT's own content (G-6: never a
+/// The `template_id` declared inside an OPT's own content (never a
 /// hardcoded literal — the id is read from the uploaded artefact).
 fn opt_template_id(xml: &str) -> Result<String, CaseError> {
     let opt = openehr_its::opt14::from_xml(xml)
@@ -446,7 +446,7 @@ fn run_validate_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 /// §validate_opt-invalid_opt: every invalid OPT class is rejected (4xx). Drives
-/// the full invalid data-set matrix (register 01 G-3), not a single fixture.
+/// the full invalid data-set matrix, not a single fixture.
 fn run_validate_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({ reject_invalid_set(ctx).await })
 }
@@ -509,7 +509,7 @@ fn run_upload_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         let base = minimal_opt_xml()?;
         let mut opt = openehr_its::opt14::from_xml(&base)
             .map_err(|e| CaseError::Codec(format!("parse minimal OPT: {e}")))?;
-        // Fresh, server-format-agnostic id (G-6: the id is derived from the
+        // Fresh, server-format-agnostic id (the id is derived from the
         // uploaded artefact, not asserted against a fixed server format).
         opt.template_id.value = format!("minimal_evaluation.fresh.{}.v1", uuid::Uuid::new_v4());
         let xml = openehr_its::opt14::to_xml(&opt)
@@ -592,7 +592,7 @@ fn run_upload_twice_conflict<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 // exposes NO version-addressed template resource — `POST /definition/template/
 // adl1.4` takes an OPT body and no version parameter. So the schedule's
 // two-coexisting-versions post-condition is structurally unrealizable on the
-// ADL 1.4 REST binding (register 01 G-2). This case asserts only what the wire
+// ADL 1.4 REST binding. This case asserts only what the wire
 // determines: an idempotent re-upload of the identical OPT neither corrupts
 // state nor errors unexpectedly — 200/204 (idempotent) or 409 (conflict) all
 // satisfy that; the coexistence post-condition cannot be checked here and is
@@ -616,7 +616,7 @@ fn run_upload_twice_no_conflict<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// §get_opt-retrieve_single: an existing `template_id` returns the correct OPT,
 /// semantically identical to the uploaded one. The schedule NOTE ("exactly the
 /// same as the uploaded one") is realized as identity on the identifying
-/// `template_id` field (register 01 G-3).
+/// `template_id` field.
 //
 // NOTE: full byte-for-byte equality of uploaded vs retrieved OPT is
 // server-canonicalisation-sensitive (a conformant server may re-serialise the
@@ -656,7 +656,7 @@ fn run_get_fail<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// §get_opt-retrieve_latest_version: the latest version is returned.
 //
-// NOTE: ITS-REST ADL 1.4 is not version-addressed (register 01 G-2), so
+// NOTE: ITS-REST ADL 1.4 is not version-addressed, so
 // "latest version" collapses to the single stored OPT — this asserts that a
 // provisioned `template_id` retrieves (200) and its identity is preserved; the
 // two-versions-loaded precondition and the which-version-returned post-condition
@@ -679,7 +679,7 @@ fn run_get_latest<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// §get_opt-retrieve_specific_version: a specific, non-latest version returns
 /// that version.
 //
-// NOTE: ITS-REST ADL 1.4 OPTs are not version-addressed (register 01 G-2);
+// NOTE: ITS-REST ADL 1.4 OPTs are not version-addressed;
 // a `/{template_id}/{version}` GET is either aliased to the single stored OPT
 // (200) or unsupported (404) — both conformant. The schedule's specific-version
 // post-condition is structurally unrealizable on this binding and is recorded,
@@ -695,7 +695,7 @@ fn run_get_specific<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 // ── get_opts ────────────────────────────────────────────────────────────────
 
 /// §get_opts-retrieve_all: all loaded OPTs are returned; the uploaded OPT must
-/// be **in** the list (register 01 G-3 — no longer a status-only check).
+/// be **in** the list (no longer a status-only check).
 fn run_get_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         let template_id = provision(ctx).await?;
@@ -718,7 +718,7 @@ fn run_get_all<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// failure.
 //
 // NOTE: the schedule precondition "no OPTs should be loaded" cannot hold on
-// a shared SUT (register 01 G-4; same class as register 03 G-4) — other cases
+// a shared SUT (the same shared-SUT class the EHR suite documents) — other cases
 // provision OPTs. The list endpoint must still succeed (200) with a well-formed
 // (JSON array) body; the empty-set body is not asserted because the precondition
 // is unenforceable here. A clean-SUT/scratch-tenant runner mode would restore

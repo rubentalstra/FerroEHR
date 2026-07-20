@@ -121,7 +121,7 @@ fn every_opt_template_round_trips() {
 }
 
 /// `StringDictionaryItem` groups are XSD ordered sequences; the model must
-/// preserve document order (`IndexMap`, F-09-05). `IndexMap`'s `PartialEq` is
+/// preserve document order (`IndexMap`). `IndexMap`'s `PartialEq` is
 /// order-insensitive, so the round-trip gate above cannot see reordering —
 /// this asserts key *order* survives serialize → re-parse explicitly, on a
 /// fixture whose document order is **non-alphabetical** (`text` before

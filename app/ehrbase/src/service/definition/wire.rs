@@ -240,7 +240,7 @@ impl EhrbaseService {
     /// (`QUERY_DESCRIPTOR.formalism`, default `AQL`, case-insensitive). The
     /// build can only validate + store AQL, so a non-AQL formalism is an
     /// honest *unsupported-formalism* reject (a distinct `400`, not a blanket
-    /// "invalid AQL") — G-05-06. AQL bodies fall through to the store-time AQL
+    /// "invalid AQL"). AQL bodies fall through to the store-time AQL
     /// syntactic check. The effective version is recovered by the dispatcher
     /// through the list seam for the `Location` header; the store itself is
     /// bodyless.

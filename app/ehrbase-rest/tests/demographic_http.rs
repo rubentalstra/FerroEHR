@@ -412,7 +412,7 @@ async fn versioned_party_relationship_is_mounted() {
     let v: Value = serde_json::from_str(&body).expect("json body");
     // The ehr-less relationship version spine serves the base RM `VERSIONED_OBJECT`
     // (owner_id references the relationship's own versioned object) — the
-    // extension route's own design (relationship.rs NOTE G-6).
+    // extension route's own design (the `owner_id` NOTE in relationship.rs).
     assert_eq!(v["_type"], "VERSIONED_OBJECT");
     assert_eq!(v["owner_id"]["type"], "PARTY_RELATIONSHIP");
 }

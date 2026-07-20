@@ -1,8 +1,7 @@
 //! The `[events]` section — contribution-outbox eventing configuration.
 //!
 //! **No openEHR spec governs this — our own design/extension.** A field of the
-//! one config tree ([`crate::config::EhrbaseConfig`],
-//! `docs/design/configuration.md` §3.13); no loader of its own. Publishing is
+//! one config tree ([`crate::config::EhrbaseConfig`]); no loader of its own. Publishing is
 //! **off by default**: with [`EventsConfig::enabled`] `false` the binary never
 //! spawns the publisher.
 //!

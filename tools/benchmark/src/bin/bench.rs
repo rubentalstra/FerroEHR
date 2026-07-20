@@ -1,4 +1,4 @@
-//! `bench` CLI — the hospital-day stress instrument (register 01 §8).
+//! `bench` CLI — the hospital-day stress instrument.
 //!
 //! ```text
 //! bench run    --sut ehrbase-rs|ehrbase-java|byo [--base-url URL] [--auth SPEC]
@@ -21,7 +21,7 @@
 //! 0.1% error-rate flag was breached · `2` runner/SUT failure.
 //!
 //! `knee` provisions + seeds once, then drives the `hour` rate shape at an
-//! ascending load-factor ladder on short fixed windows (register 01 §3), stops
+//! ascending load-factor ladder on short fixed windows, stops
 //! at the first step past the SLO (p99 > 1 s) or the 0.1% error flag, and writes
 //! `knee.json` + `KNEE.md` + `charts/knee.svg`. Exit: `0` ok · `2` failure.
 // Benchmark CLI: progress/diagnostics on the console ARE this tool's user
@@ -51,7 +51,7 @@ use conformance::transport::{Credential, SutClient};
 
 /// A fixed default seed so an unqualified run is reproducible run-to-run.
 const DEFAULT_SEED: u64 = 0x_B0_11_CA_FE;
-/// The 0.1% error-rate flag (register 01 §1).
+/// The 0.1% error-rate flag.
 const ERROR_RATE_FLAG: f64 = 0.001;
 
 #[derive(Debug, Parser)]
@@ -95,7 +95,7 @@ struct CompareArgs {
 
 /// The next knee-refinement probe: the integer midpoint of `(lo, hi)`, or
 /// `None` when no refinement budget remains or the gap admits no distinct
-/// integer step (item 26 — precise knees on a geometric ladder).
+/// integer step (precise knees on a geometric ladder).
 fn bisect_step(lo: f64, hi: f64, budget: u32) -> Option<f64> {
     if budget == 0 {
         return None;
@@ -495,7 +495,7 @@ fn sut_kind_label(kind: SutKind) -> &'static str {
     }
 }
 
-/// The idle-baseline sampling duration (register 01 §2: 30 s, ~3 s for smoke).
+/// The idle-baseline sampling duration (30 s, ~3 s for smoke).
 fn baseline_duration(profile: Profile) -> Duration {
     match profile {
         Profile::Smoke => Duration::from_secs(3),
@@ -751,7 +751,7 @@ fn summarize(
     Some(ContainerSummary::from_series(run_series, idle_series))
 }
 
-/// The exact command that reproduces this run (register 01 §5 reproduce-it).
+/// The exact command that reproduces this run.
 fn reproduce_command(descriptor: &SutDescriptor, spec: &WorkloadSpec, scale: Scale) -> String {
     let sut = match descriptor.kind {
         SutKind::Ours => "ehrbase-rs",
@@ -918,7 +918,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             last_breached = Some(load_factor);
             // Refinement: every planned step above this breach would breach
             // too — replace the remaining ladder with a midpoint probe between
-            // the last sustained step and this breach (item 26).
+            // the last sustained step and this breach.
             queue.clear();
             let lo = knee.as_ref().map_or(0.0, |k| k.load_factor);
             if let Some(mid) = bisect_step(lo, load_factor, bisections_left) {

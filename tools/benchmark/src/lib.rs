@@ -58,7 +58,7 @@ pub enum BenchError {
     Json(#[from] serde_json::Error),
 }
 
-/// The latency-histogram operation classes (register 01 §1). One histogram
+/// The latency-histogram operation classes. One histogram
 /// per class; the class names are the stable keys in `results.json`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum OpClass {
@@ -141,7 +141,7 @@ impl OpClass {
     }
 }
 
-/// A run profile (register 00 §3).
+/// A run profile.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Profile {
     /// CI/self-test: fixed small event count, steady rates, ~2 min.
@@ -164,7 +164,7 @@ impl Profile {
     }
 }
 
-/// A scale-ladder rung (register 00 §5): pre-seeded compositions.
+/// A scale-ladder rung: pre-seeded compositions.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Scale {
     Empty,
@@ -197,7 +197,7 @@ impl Scale {
     }
 }
 
-/// The template a payload is rendered from (register 00 §4). Two packs: the
+/// The template a payload is rendered from. Two packs: the
 /// retained ECC-corpus fixtures ([`Vitals`](TemplateKind::Vitals)/
 /// [`Nested`](TemplateKind::Nested)/[`Persistent`](TemplateKind::Persistent),
 /// keyed to the fixtures the ECC suite provisions) and the official openEHR CKM

@@ -27,8 +27,6 @@
 //! [`party`] (`{kind}` CRUD), [`tags`] (`ITEM_TAG` sub-resources +
 //! `demographic_tags_get`), [`versioned_party`], [`contribution`],
 //! [`relationship`] (extension), and [`dispatch`] as the operation-id match.
-//!
-//! Register (gap rows + target design): `docs/design/its-rest/demographic.md`.
 
 use axum::response::{IntoResponse, Response};
 use http::{HeaderMap, HeaderValue, header};

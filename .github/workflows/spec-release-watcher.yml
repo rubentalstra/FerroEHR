@@ -1,0 +1,35 @@
+# openEHR RELEASE watcher (tracker issue #179) — the companion of
+# spec-update-watcher.yml: that workflow tracks individual completed spec
+# changes; this one guarantees a component RELEASE is never missed (the
+# ITS-REST 1.1.0 release was discovered by hand — never again). Mechanism
+# notes live in scripts/spec-release-watcher.sh.
+name: Spec-release watcher
+
+on:
+  schedule:
+    - cron: "47 6 * * 1,4" # Mon + Thu 06:47 UTC (30 min after the update watcher)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report new releases without creating issues"
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: spec-release-watcher
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Poll upstream release tags, open spec-release issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
+        run: bash scripts/spec-release-watcher.sh

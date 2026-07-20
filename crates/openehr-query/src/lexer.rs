@@ -54,7 +54,7 @@ pub enum CompOp {
 /// `String` lexed from the source.
 #[derive(Logos, Debug, Clone, PartialEq)]
 #[logos(skip r"[ \t\r\n\f]+")] // WS -> skip (AqlLexer.g4 `WS`)
-#[logos(skip "\u{feff}")] // UNICODE_BOM -> skip (F-08-13; AqlLexer.g4 `UNICODE_BOM`)
+#[logos(skip "\u{feff}")] // UNICODE_BOM -> skip (AqlLexer.g4 `UNICODE_BOM`)
 pub enum Token {
     // ── structural keywords (case-insensitive) ──────────────────────────────
     #[token("select", ignore(case))]
@@ -197,7 +197,7 @@ pub enum Token {
     // (optionally namespaced). Detected by the `-x-x.…vN` shape. The version
     // tail admits the grammar's `VERSION_ID` `-rc`/`-alpha` pre-release suffix
     // (`…v1.0.0-rc.2`), and the namespace prefix admits `-` per `NAMESPACE`/
-    // `LABEL` (`NAME_CHAR` includes `-`) — both F-08-07.
+    // `LABEL` (`NAME_CHAR` includes `-`).
     #[regex(
         r"([a-zA-Z][a-zA-Z0-9_.\-]*::)?[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z][a-zA-Z0-9_]*-[a-zA-Z][a-zA-Z0-9_]*\.[a-zA-Z][a-zA-Z0-9_-]*\.v[0-9]+(\.[0-9]+)*((-rc|-alpha)(\.[0-9]+)?)?",
         |lex| lex.slice().to_owned()
@@ -430,7 +430,7 @@ mod tests {
 
     #[test]
     fn subtraction_is_not_a_term_code_regression() {
-        // F-08-01 must not regress plain subtraction: without `::` there is no
+        // Plain subtraction must not regress: without `::` there is no
         // TERM_CODE, so `a-b` and `a - 1` stay separate tokens.
         assert_eq!(
             toks("a-b"),

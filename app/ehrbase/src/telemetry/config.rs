@@ -1,6 +1,5 @@
 //! Telemetry configuration: the `[log]` ([`LogConfig`]) and `[telemetry]`
-//! ([`OtelConfig`]) sections of the one config tree
-//! (`docs/design/configuration.md` §3.3–3.4).
+//! ([`OtelConfig`]) sections of the one config tree.
 //!
 //! No loaders here — both are fields of [`crate::config::EhrbaseConfig`],
 //! assembled once at boot. Everything is off by default: no OTLP endpoint means

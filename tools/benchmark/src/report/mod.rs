@@ -1,4 +1,4 @@
-//! Artefact generation (register 01 §5): the machine record ([`json`]) + the
+//! Artefact generation: the machine record ([`json`]) + the
 //! generated human report ([`markdown`]) + the raw per-class `HdrHistogram`
 //! exports. Every artefact is generated from [`Results`], never hand-typed.
 //!

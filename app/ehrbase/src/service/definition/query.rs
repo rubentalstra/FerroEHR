@@ -36,8 +36,8 @@ impl EhrbaseService {
     /// `has_query` — true if a query with the qualified name `a_query_name` is
     /// registered (the `"misc"` namespace is assumed when none is supplied; a
     /// three-part name's formalism segment is lifted out per `master04`
-    /// §Registered Queries, G-05-04). Identity is case-insensitive (BASE
-    /// master05 §Composite Identifiers and Case, G-05-14).
+    /// §Registered Queries). Identity is case-insensitive (BASE
+    /// master05 §Composite Identifiers and Case).
     ///
     /// # Errors
     ///
@@ -48,7 +48,7 @@ impl EhrbaseService {
 
     /// `valid_query` — `a_query_text` is a valid instance of formalism
     /// `a_type` (a successful `openehr_query` parse; only AQL major-version 1
-    /// is a known formalism, G-05-06). Stateless.
+    /// is a known formalism). Stateless.
     ///
     /// # Errors
     ///
@@ -181,7 +181,7 @@ impl EhrbaseService {
     /// and the name-borne formalism, when present, is the effective formalism —
     /// otherwise `a_type` is (`master04` §Query Formalism).
     ///
-    /// NOTE (G-05-09, spec naming): the SM precondition names
+    /// NOTE (spec naming): the SM precondition names
     /// `is_valid_query` though the function is `valid_query`; we enforce
     /// `valid_query` and reject an invalid query as `invalid_query` (`422`).
     async fn register_query(
@@ -256,7 +256,7 @@ impl EhrbaseService {
     /// referenced artefacts match `artefact_id_pattern` (`None` = match any),
     /// then paged.
     ///
-    /// NOTE (register 05 G-05-05): `artefact_id_pattern` is spec'd against
+    /// NOTE: `artefact_id_pattern` is spec'd against
     /// "archetype / template identifiers referenced in the query". Until the AQL
     /// engine exposes a query's analysed FROM/CONTAINS artefact-id set
     /// (`openehr_query`), we approximate by regex-scanning the stored source
@@ -279,7 +279,7 @@ impl EhrbaseService {
         .fetch_all(&self.pool)
         .await?;
         // Decode every row up front so a decode failure surfaces (500) rather
-        // than silently dropping a query from the match set (W-14 F-29).
+        // than silently dropping a query from the match set.
         let descriptors = rows
             .iter()
             .map(descriptor_from_row)
@@ -376,7 +376,7 @@ impl EhrbaseService {
     ///   query, or updates an existing query"; response set `200/400`).
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
-    /// §Composite Identifiers and Case, G-05-14).
+    /// §Composite Identifiers and Case).
     pub(super) async fn store_query_version(
         &self,
         qualified_name: &str,
@@ -465,7 +465,7 @@ impl EhrbaseService {
 
     /// Retrieve a stored query — an exact `version`, a SEMVER **prefix**
     /// (`{major}` or `{major}.{minor}` → the *highest* matching stored version,
-    /// `parameters/path/version.yaml`, G-05-13), or the latest when no version
+    /// `parameters/path/version.yaml`), or the latest when no version
     /// is given. Identity is case-insensitive.
     pub(in crate::service) async fn get_stored_query(
         &self,
@@ -543,8 +543,7 @@ impl EhrbaseService {
 ///
 /// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
 /// so a decode failure is a genuine server fault, not an empty field:
-/// surface it (`?` → `500`) rather than silently blanking the value
-/// (W-14 F-29).
+/// surface it (`?` → `500`) rather than silently blanking the value.
 fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
     let rdn = row.try_get::<String, _>("reverse_domain_name")?;
     let semantic = row.try_get::<String, _>("semantic_id")?;
@@ -573,7 +572,7 @@ fn stored_query_json(row: &PgRow) -> Result<Value, ServiceError> {
 ///
 /// Every projected column is `NOT NULL` (`0001_baseline.sql` §`stored_query`),
 /// so a decode failure is a genuine server fault: surface it (`?` → `500`)
-/// rather than silently blanking the descriptor field (W-14 F-29).
+/// rather than silently blanking the descriptor field.
 fn descriptor_from_row(row: &PgRow) -> Result<QueryDescriptor, ServiceError> {
     let rdn: String = row.try_get("reverse_domain_name")?;
     let semantic: String = row.try_get("semantic_id")?;
@@ -618,7 +617,7 @@ struct QualifiedName {
 impl QualifiedName {
     /// The canonical two-part `<namespace>::<query-name>` — the form the
     /// stored-query store keys on (so a three-part input round-trips to the
-    /// same row and the formalism is never folded into the name, G-05-04).
+    /// same row and the formalism is never folded into the name).
     fn qualified(&self) -> String {
         format!("{}::{}", self.namespace, self.name)
     }
@@ -628,7 +627,7 @@ impl QualifiedName {
 /// Queries: apply the `"misc"` default namespace, then recognise the two-part
 /// `<ns>::<name>` and three-part `<ns>::<formalism>::<name>` schemes. A
 /// three-part name's middle segment is lifted out as the formalism (never left
-/// folded into the name — G-05-04); a name of four or more segments keeps the
+/// folded into the name); a name of four or more segments keeps the
 /// first segment as the namespace and the remainder as the (`::`-bearing) name.
 fn parse_qualified_name(raw: &str) -> QualifiedName {
     let qualified = qualify(raw);
@@ -677,7 +676,7 @@ fn split_qualified(qualified_name: &str) -> (&str, &str) {
 /// True if `a_query_text` is a valid instance of the formalism `a_type`.
 ///
 /// Only AQL major-version 1 is a known formalism (`valid_query`; `master04`
-/// §Query Formalism); any other formalism → `false` (G-05-06 — the SM sanctions
+/// §Query Formalism); any other formalism → `false` (the SM sanctions
 /// "any other string value", which we reject typed since the store only holds
 /// AQL). AQL validity is a successful `openehr_query` parse.
 fn valid_query_text(text: &str, a_type: &str) -> bool {
@@ -688,7 +687,7 @@ fn valid_query_text(text: &str, a_type: &str) -> bool {
 /// name, optional `::version`, major `"1"` when absent) and report whether it
 /// names AQL major-version 1 — the only formalism the build can validate +
 /// store (`parameters/query/query_type.yaml`; the SM sanctions "any other
-/// string value", which we reject typed — G-05-06). Shared with the wire seam.
+/// string value", which we reject typed). Shared with the wire seam.
 pub(super) fn is_aql_v1(a_type: &str) -> bool {
     let (name, version) = match a_type.split_once("::") {
         Some((n, v)) => (n, Some(v)),
@@ -706,7 +705,7 @@ pub(super) fn is_aql_v1(a_type: &str) -> bool {
 
 /// Whether a `version` path parameter is a SEMVER *prefix* (`{major}` or
 /// `{major}.{minor}`) rather than an exact `{major}.{minor}.{patch}` triple
-/// (`parameters/path/version.yaml`, G-05-13).
+/// (`parameters/path/version.yaml`).
 fn is_partial_semver(version: &str) -> bool {
     let segments: Vec<&str> = version.split('.').collect();
     segments.len() < 3
@@ -787,7 +786,7 @@ mod tests {
 
     #[test]
     fn partial_semver_detection() {
-        // `{major}` / `{major}.{minor}` prefixes (version.yaml, G-05-13).
+        // `{major}` / `{major}.{minor}` prefixes (version.yaml).
         assert!(is_partial_semver("1"));
         assert!(is_partial_semver("1.0"));
         assert!(is_partial_semver("12.34"));

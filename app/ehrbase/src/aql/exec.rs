@@ -1,10 +1,10 @@
-//! AQL execution + `RESULT_SET` assembly (our own engine, P16).
+//! AQL execution + `RESULT_SET` assembly (our own engine).
 //!
 //! [`execute`] plans-to-SQL ([`super::sql::build`]), runs the one statement on
 //! the `sqlx` pool, and assembles a [`QueryResult`] (column metadata + canonical
 //! JSON rows) the service renders as an ITS-REST 1.0.3 `RESULT_SET`. Scalar cells
 //! are read directly as canonical JSON (`jsonb`); whole-object cells reassemble
-//! their node subtree through the P10 codec ([`crate::storage::codec::reassemble`]).
+//! their node subtree through the codec ([`crate::storage::codec::reassemble`]).
 
 use serde_json::Value;
 use sqlx::{PgPool, Row};
@@ -80,7 +80,7 @@ pub async fn execute(
     // Assemble the cells. Scalar cells read their JSON straight off the result
     // row; whole-object cells contribute a subtree anchor that is batch-loaded in
     // ONE round trip after the scan — never one follow-up SELECT per candidate
-    // row (fixes the AQL result-assembly N+1, P20 overhead checklist item 14).
+    // row (fixes the AQL result-assembly N+1).
     let mut out_rows: Vec<Vec<Value>> = Vec::with_capacity(rows.len());
     let mut anchors: Vec<SubtreeAnchor> = Vec::new();
     // The whole-object cells to fill once the batch load resolves, by position.
@@ -130,7 +130,7 @@ pub async fn execute(
 }
 
 /// The distinct EHR ids and template ids an AQL query touches, collected for the
-/// ABAC query post-check (`docs/enterprise/access-control.md` §6.4) —
+/// ABAC query post-check (no openEHR spec governs ABAC — our own access-control extension) —
 /// independent of the query's projection (the v1 defect-#1 fix).
 #[derive(Debug, Clone, Default)]
 pub struct QueryScope {

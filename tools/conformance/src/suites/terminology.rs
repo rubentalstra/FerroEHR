@@ -1,5 +1,5 @@
-//! TERMINOLOGY-server integration cases — the cross-cutting register
-//! (`docs/design/conformance/11-crosscutting.md` §Terminology): the AQL
+//! TERMINOLOGY-server integration cases — the cross-cutting Terminology
+//! capability: the AQL
 //! `TERMINOLOGY('expand', …)` family driven over the QUERY API
 //! (`POST /query/aql`), plus the FHIR-tx provider + fault-injection cases.
 //!
@@ -13,7 +13,7 @@
 //! engine extension** (the spec defines the `service_api` mechanism, not an
 //! in-process `openehr` flavour) — the fairness register rules those `extension`
 //! for a foreign SUT lacking our engine, while the generic FHIR-`service_api`
-//! and fault cases stay generic (register 11 G-2).
+//! and fault cases stay generic.
 //!
 //! Three dispositions: bundle-expansion cases are real passes against any SUT
 //! with our engine; the FHIR-provider case passes when configured else
@@ -354,8 +354,7 @@ fn skip_no_provider(ctx: &RunContext<'_>) -> String {
     format!(
         "SutConfig: no FHIR terminology provider configured on the SUT — a `{FHIR}` expand is \
          rejected as `UnknownTerminologyService`. {tx}. The bundle (`openehr`) expand cases prove \
-         the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server \
-         (docs/design/terminology-server-integration.md §5)."
+         the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server."
     )
 }
 
