@@ -567,10 +567,20 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
      (c) PROVEN OBSOLETE — removed with the reason in the commit.
      Zero unaccounted TODOs at close; the report carries the full
      triage table.
-  2. The whole-corpus coverage gate final run (100% of files claimed).
-  3. Full-workspace gates + the ECC zero-drift run over the complete
+  2. **The §Validation checklist audit (owner 2026-07-20)**: the
+     Simplified Formats spec's 8-point SHOULD-validate list
+     (`ITS-REST/docs/simplified_formats/master04` §Validation L939 — WT
+     mapping, pipe-suffix identification, mandatory ctx language/
+     territory, field-ids-match-WT, data types vs the OPT, cardinality,
+     terminology bindings, underscore-prefixed RM-attribute paths) gets a
+     dedicated audit test in `openehr-flat` asserting each point against
+     the ingest validators point-by-point (one assertion per bullet,
+     citing the bullet) — converting "substantively covered" into pinned
+     proof. Any bullet found unimplemented is implemented, not waived.
+  3. The whole-corpus coverage gate final run (100% of files claimed).
+  4. Full-workspace gates + the ECC zero-drift run over the complete
      2.4+1.4+examples story.
-  4. PROGRESS record, worklist close, DELETE this plan file.
+  5. PROGRESS record, worklist close, DELETE this plan file.
 
 ### Corpus coverage — HARD REQUIREMENT (owner, 2026-07-19)
 
