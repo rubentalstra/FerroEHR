@@ -627,7 +627,13 @@ pub fn validate_phase1(
     repo: Option<&ArchetypeRepository>,
 ) -> Vec<ValidationIssue> {
     let mut issues = Vec::new();
-    phase1::run(&view(archetype), repo, None, &mut issues);
+    phase1::run(
+        &view(archetype),
+        repo,
+        None,
+        crate::cadl::Dialect::Adl2,
+        &mut issues,
+    );
     issues
 }
 
@@ -645,7 +651,57 @@ pub fn validate_source_phase1(
     let source = parse_source(src)?;
     let archetype = crate::assemble::assemble(&source, src)?;
     let mut issues = Vec::new();
-    phase1::run(&view(&archetype), repo, Some((&source, src)), &mut issues);
+    phase1::run(
+        &view(&archetype),
+        repo,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl2,
+        &mut issues,
+    );
+    Ok(issues)
+}
+
+/// Parse an **ADL 1.4** source (the 1.4 dialect) and validate it against the
+/// subset of the AOM2 phase-1 catalogue that corresponds to the ADL 1.4 / AOM
+/// 1.4 standalone validity rules.
+///
+/// A 1.4 upload is judged **as 1.4** (its 1.4-shaped `openehr_am::am24` model),
+/// never post-conversion: converting to ADL 2 changes the artefact, so a 1.4
+/// source is validated against the 1.4 formalism's own (smaller) catalogue. The
+/// checks that correspond to an ADL 1.4 / AOM 1.4 rule run unchanged; the
+/// AOM2-only rules that would false-reject a valid 1.4 archetype are suppressed
+/// at their check sites in [`phase1`] (each spec-cited there):
+/// - **VARAV / VARRV** — AOM 1.4 has no `adl_version`/`rm_release` 3-part rule
+///   (`adl_version` is `1.4`-form metadata; 1.4 carries no `rm_release`).
+/// - **VCOID** — relaxed to the AOM 1.4 `node_id` rule (required only for
+///   children of a container attribute).
+/// - **VATCV** (definition constraint-code form) — 1.4 terminology constraints
+///   are not ADL2 code forms.
+/// - **VCOSU** — AOM 1.4 node ids are only sibling-unique, not archetype-wide.
+///
+/// The corresponding checks that DO run (ADL1.4 master08 §Validity Rules +
+/// AOM1.4 invariants): VARID (id validity), VARDT (definition typename vs id
+/// class), VARCN + VATID (root concept code form + terminology definedness),
+/// STCNT (ontology present, ADL1.4 VARON), VDEOL/VARD/VOLT (original language +
+/// description present), VOTM/VTLC + value-set/binding integrity (translation
+/// completeness), VDSEV/VDSIV (slot include/exclude consistency), VDFAI (slot
+/// archetype-id validity), VACSD/VASID/VALC (specialisation depth/parent/language
+/// where a parent is resolvable), VRANP/VOKU/VRRLP.
+///
+/// # Errors
+/// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
+/// validation runs only on a successful parse.
+pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
+    let source = parse_source(src)?;
+    let archetype = crate::assemble::assemble_adl14(&source, src)?;
+    let mut issues = Vec::new();
+    phase1::run(
+        &view(&archetype),
+        None,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl14,
+        &mut issues,
+    );
     Ok(issues)
 }
 
@@ -751,7 +807,13 @@ pub fn validate_source(
     let source = parse_source(src)?;
     let archetype = crate::assemble::assemble(&source, src)?;
     let mut issues = Vec::new();
-    phase1::run(&view(&archetype), repo, Some((&source, src)), &mut issues);
+    phase1::run(
+        &view(&archetype),
+        repo,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl2,
+        &mut issues,
+    );
     if issues.iter().all(|i| i.severity != Severity::Error) {
         issues.extend(rm::validate_phase2_rm(&archetype, rm));
     }

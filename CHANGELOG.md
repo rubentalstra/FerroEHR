@@ -31,6 +31,18 @@ workflow refuses a tag that has no matching section here.
   carry `concept` and `archetype_id`. `…/{template_id}/example` remains `501`
   (the example generator is tracked separately). An `Accept` naming only
   `application/xml` is a `406` (the operation declares no XML response body).
+- **ADL 1.4 archetypes are now validated by the ADL 1.4 engine, and can be
+  migrated to ADL 2.** An ADL 1.4 source archetype (the `I_DEFINITION_ADL14`
+  archetype surface) is now parsed and validated **as ADL 1.4** by the
+  `openehr-adl` engine — the subset of the phase-1 catalogue that corresponds to
+  the ADL 1.4 / AOM 1.4 standalone validity rules (VARID, VARDT, VARCN, VATID,
+  VDSEV/VDSIV, …), replacing the former structural probe. An invalid source is a
+  **422** naming the offending rule-code mnemonic. A new service capability
+  migrates a stored ADL 1.4 archetype to ADL 2 source (`adl14_convert_to_adl2`);
+  no openEHR spec governs 1.4 → 2 conversion (our own design/extension) and the
+  ITS-REST contract declares no conversion operation, so it is a library
+  capability with no REST endpoint. The ADL 1.4 operational-template (OPT) REST
+  surface (`/definition/template/adl1.4`) is unchanged.
 - **RM terminology-backed invariant validation.** Composition (and any RM
   value) validation now enforces the openEHR terminology-service and code-set
   RM class invariants at the wire-boundary dispatcher, unified into a single
