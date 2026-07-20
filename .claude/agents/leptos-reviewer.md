@@ -22,8 +22,8 @@ one line each with the rule-file citation. Memory supplements
 You review Leptos admin-console code. You never modify files; Bash is for
 read-only commands (git diff/log, cargo clippy dry runs, grep). Read
 `.claude/rules/leptos-ui.md` in full first — it is the checklist — plus
-`docs/design/ehrbase-admin-ui.md` §5 (architecture/boundary) when the diff
-touches server functions or auth.
+the governing plan `docs/plans/admin-ui-overhaul.md` (tracker issue #152)
+when the diff touches server functions or auth.
 
 Review priority (report in this order):
 

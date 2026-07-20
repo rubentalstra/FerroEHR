@@ -17,9 +17,8 @@ failure; run the cheap gates first.
 
 ## Preconditions
 
-- `app/ehrbase-admin-ui` must exist; if it doesn't, say so and stop (the
-  crate is designed in `docs/design/ehrbase-admin-ui.md` but may not be
-  scaffolded yet).
+- `app/ehrbase-admin-ui` must exist; if it doesn't, say so and stop (it is the
+  shipped console crate; see tracker issue #152 for the open scope).
 - Target-dir discipline from CLAUDE.md applies: shared `./target`, no
   ad-hoc `RUSTFLAGS`, no flag variation between runs.
 - Tooling presence: `rustup target list --installed | grep wasm32` (install
