@@ -583,8 +583,17 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
      citing the bullet) — converting "substantively covered" into pinned
      proof. Any bullet found unimplemented is implemented, not waived.
   3. The whole-corpus coverage gate final run (100% of files claimed).
-  4. Full-workspace gates + the ECC zero-drift run over the complete
-     2.4+1.4+examples story.
+  3b. **The ECC Adl2Provisioning area (owner 2026-07-20: "OPTIONS —
+     OBTAINED must now genuinely cover ADL2")**: a new house-numbered
+     conformance area in `tools/conformance` exercising the full
+     implemented ADL2 wire (upload 201/409/422-with-rule-codes incl. the
+     specialised-parent path, list metadata, get text+JSON+406, version
+     get, example get across the four Accept forms), registered in the
+     OPTIONS tier (ADL2 is CNF-optional; no CNF cases exist upstream —
+     our cases cite the operation YAMLs), baseline ratcheted UP.
+  4. Full-workspace gates + the ECC run over the complete
+     2.4+1.4+examples story — the new area green + zero drift on every
+     pre-existing area (the baseline only moves upward).
   5. PROGRESS record, worklist close, DELETE this plan file.
 
 ### Corpus coverage — HARD REQUIREMENT (owner, 2026-07-19)
