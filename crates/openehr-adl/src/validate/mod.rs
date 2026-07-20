@@ -42,6 +42,7 @@ mod phase2;
 mod phase3;
 mod phase_flat;
 pub mod rm;
+pub mod terminology;
 
 use std::collections::HashMap;
 
@@ -159,13 +160,13 @@ pub enum ValidationCode {
     Vtcbk,
     /// VETDF — external term validity (`master03` §Validity Rules): a code bound
     /// to an *external* terminology (SNOMED CT, LOINC, …) must exist in that
-    /// terminology. This is the vocabulary variant; the check needs a live
-    /// terminology-service resolver, which `openehr-adl` (a network-free spec
-    /// engine) cannot hold — it is validated by the application's terminology
-    /// service via a resolver seam.
-    /// TODO: validate external term bindings once a terminology-service resolver
-    /// seam is threaded into the validator (the external-terminology-service
-    /// archetype-binding validation worklist item).
+    /// terminology. `openehr-adl` (a network-free spec engine) cannot hold a
+    /// live terminology-service client, so the check is threaded through the
+    /// [`terminology::TerminologyResolver`] seam: the application injects a
+    /// resolver over its terminology service and [`validate`] / [`validate_source`]
+    /// consult it. Entry points that take no resolver do not raise VETDF
+    /// (`master03` "subject to tool accessibility; … no verification was
+    /// possible").
     Vetdf,
     /// VTVSID — value-set id defined (`master07` §Validity Rules).
     Vtvsid,
@@ -721,11 +722,17 @@ pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, V
 /// being checked first"): the RM pass runs on a structurally-sound archetype
 /// only. Source-level phase-1 checks (VOKU) are not included — use
 /// [`validate_source`] for those.
+///
+/// `resolver` verifies external term bindings (VETDF); pass
+/// [`terminology::NoTerminologyResolver`] when no terminology service is
+/// available (VETDF is then not raised — `master03` §Validity Rules "subject to
+/// tool accessibility").
 #[must_use]
 pub fn validate(
     archetype: &Archetype,
     repo: Option<&ArchetypeRepository>,
     rm: &dyn rm::RmModel,
+    resolver: &dyn terminology::TerminologyResolver,
 ) -> Vec<ValidationIssue> {
     let mut issues = validate_phase1(archetype, repo);
     if issues.iter().all(|i| i.severity != Severity::Error) {
@@ -733,6 +740,7 @@ pub fn validate(
     }
     run_phase2_spec(archetype, repo, rm, &mut issues);
     run_phase3(archetype, repo, &mut issues);
+    terminology::check_external_term_bindings(&view(archetype), resolver, &mut issues);
     issues
 }
 
@@ -811,6 +819,11 @@ fn run_phase3(
 /// checks) and — only if phase 1 is error-free — the phase-2 reference-model
 /// checks against `rm` (`master08` §Overview phase gate).
 ///
+/// `resolver` verifies external term bindings (VETDF); pass
+/// [`terminology::NoTerminologyResolver`] when no terminology service is
+/// available (VETDF is then not raised — `master03` §Validity Rules "subject to
+/// tool accessibility").
+///
 /// # Errors
 /// Returns the parse [`SyntaxError`]s if `src` does not parse into an
 /// [`Archetype`]; validation runs only on a successful parse.
@@ -818,6 +831,7 @@ pub fn validate_source(
     src: &str,
     repo: Option<&ArchetypeRepository>,
     rm: &dyn rm::RmModel,
+    resolver: &dyn terminology::TerminologyResolver,
 ) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
     let source = parse_source(src)?;
     let archetype = crate::assemble::assemble(&source, src)?;
@@ -833,6 +847,7 @@ pub fn validate_source(
         issues.extend(rm::validate_phase2_rm(&archetype, rm));
     }
     run_phase2_spec(&archetype, repo, rm, &mut issues);
+    terminology::check_external_term_bindings(&view(&archetype), resolver, &mut issues);
     Ok(issues)
 }
 
