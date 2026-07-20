@@ -28,6 +28,7 @@ use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::beom::core::assertion::Assertion;
+use openehr_base::prelude::Interval;
 use openehr_base::prelude::MultiplicityInterval;
 use openehr_lang::odin::{OdinKey, OdinValue};
 
@@ -675,12 +676,12 @@ impl Scan<'_> {
     /// (master04.5 §`C_PRIMITIVE_OBJECT`).
     ///
     /// The enumerable primitives (Boolean / String) test list membership; the
-    /// numeric ordered primitives (Integer / Real) test point-in-interval
-    /// containment (`master04.5` §`C_ORDERED` — the value space is a list of
-    /// `Interval`s, `has` = a point falls in some interval). A primitive with an
-    /// empty constraint (`any_allowed`) admits any assumed value. The temporal
-    /// primitives are not evaluated (see the NOTE at the `CString` arm — the
-    /// generated `Iso8601_*` types provide no ordering).
+    /// ordered primitives (Integer / Real and the temporal `Iso8601_*` types)
+    /// test point-in-interval containment (`master04.5` §`C_ORDERED` — the value
+    /// space is a list of `Interval`s, `has` = a point falls in some interval).
+    /// A primitive with an empty constraint (`any_allowed`) admits any assumed
+    /// value. The temporal branches use `Interval::has_definite` so an
+    /// incomparable (undecidable) value never raises a false violation.
     fn check_primitive_assumed(&mut self, path: &str, obj: &CObject) {
         match obj {
             CObject::CBoolean(b) => {
@@ -726,16 +727,58 @@ impl Scan<'_> {
                     );
                 }
             }
-            // NOTE: the temporal primitives (Date/Time/DateTime/Duration) carry
-            // their assumed value + constraint as `Iso8601_*` intervals, but the
-            // `openehr-base` `Iso8601_*` types provide no ordering, so
-            // `Interval::has` (which requires `T: PartialOrd`) is not available for
-            // them — the point-in-interval VOBAV test cannot be evaluated without
-            // ISO 8601 temporal ordering (partial dates, timezone normalisation,
-            // duration comparison — a base-crate spec-behaviour capability).
-            // TODO: evaluate VOBAV assumed-value interval containment for the
-            // temporal primitives once the openehr-base ISO 8601 ordering
-            // capability (tracked in the worklist) lands.
+            // The temporal primitives carry their assumed value + constraint as
+            // `Interval<Iso8601_*>`; `openehr-base` now provides ISO 8601 ordering
+            // (`PartialOrd`), so the same point-in-interval VOBAV test applies.
+            // Temporal values are only partially ordered (partial dates,
+            // timezone normalisation), so use `has_definite`: a violation is
+            // raised only when the assumed value is definitely outside EVERY
+            // interval; an incomparable (undecidable) pairing leaves containment
+            // unknown and never raises.
+            CObject::CDate(d) => {
+                if let Some(av) = &d.assumed_value
+                    && temporal_assumed_violates(&d.constraint, av)
+                {
+                    self.push(
+                        ValidationCode::Vobav,
+                        "date assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CTime(t) => {
+                if let Some(av) = &t.assumed_value
+                    && temporal_assumed_violates(&t.constraint, av)
+                {
+                    self.push(
+                        ValidationCode::Vobav,
+                        "time assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CDateTime(dt) => {
+                if let Some(av) = &dt.assumed_value
+                    && temporal_assumed_violates(&dt.constraint, av)
+                {
+                    self.push(
+                        ValidationCode::Vobav,
+                        "date/time assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            CObject::CDuration(du) => {
+                if let Some(av) = &du.assumed_value
+                    && temporal_assumed_violates(&du.constraint, av)
+                {
+                    self.push(
+                        ValidationCode::Vobav,
+                        "duration assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
             CObject::CString(s) => {
                 if let Some(av) = &s.assumed_value
                     && !s.constraint.is_empty()
@@ -751,6 +794,19 @@ impl Scan<'_> {
             _ => {}
         }
     }
+}
+
+/// VOBAV for an ordered temporal primitive: a non-empty constraint list is
+/// violated only when the assumed value is *definitely* outside every interval
+/// (`Interval::has_definite` returns `Some(false)` for all of them). An
+/// undecidable pairing (`None`, e.g. a partial date whose completions overlap a
+/// bound) leaves containment unknown and never raises — mirroring the numeric
+/// `has`-based check while staying conservative under partial order.
+fn temporal_assumed_violates<T: PartialOrd>(constraint: &[Interval<T>], av: &T) -> bool {
+    !constraint.is_empty()
+        && constraint
+            .iter()
+            .all(|iv| iv.has_definite(av) == Some(false))
 }
 
 // ── terminology checks (gated) ────────────────────────────────────────────
@@ -1565,5 +1621,59 @@ fn collect_usage_at(obj: &CObject, path: &str, usage: &mut CodeUsage) {
             }
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod temporal_vobav_tests {
+    use openehr_base::prelude::{Interval, Iso8601Date, ProperInterval, ProperIntervalData};
+
+    use super::temporal_assumed_violates;
+
+    fn date(v: &str) -> Iso8601Date {
+        Iso8601Date {
+            value: v.to_owned(),
+        }
+    }
+
+    /// A closed date interval `[lo, hi]`.
+    fn date_interval(lo: &str, hi: &str) -> Interval<Iso8601Date> {
+        Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
+            lower: Some(date(lo)),
+            upper: Some(date(hi)),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: true,
+            upper_included: true,
+        }))
+    }
+
+    #[test]
+    fn assumed_date_outside_the_interval_raises() {
+        let constraint = vec![date_interval("2020-01-01", "2020-12-31")];
+        // 2019-06-15 is definitely before the interval ⇒ VOBAV fires.
+        assert!(temporal_assumed_violates(&constraint, &date("2019-06-15")));
+    }
+
+    #[test]
+    fn assumed_date_inside_the_interval_does_not_raise() {
+        let constraint = vec![date_interval("2020-01-01", "2020-12-31")];
+        assert!(!temporal_assumed_violates(&constraint, &date("2020-06-15")));
+    }
+
+    #[test]
+    fn incomparable_assumed_date_does_not_raise() {
+        let constraint = vec![date_interval("2020-01-01", "2020-12-31")];
+        // The partial year 2020 overlaps the interval — containment is
+        // undecidable, so it must NOT raise (honest incomparability).
+        assert!(!temporal_assumed_violates(&constraint, &date("2020")));
+    }
+
+    #[test]
+    fn empty_constraint_admits_any_assumed_value() {
+        assert!(!temporal_assumed_violates::<Iso8601Date>(
+            &[],
+            &date("2019-06-15")
+        ));
     }
 }

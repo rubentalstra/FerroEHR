@@ -6,3 +6,10 @@ pub mod iso8601_duration;
 pub mod iso8601_time;
 pub mod iso8601_timezone;
 pub mod iso8601_type;
+
+// hand-written modules (spec behaviour), auto-declared:
+pub mod iso8601_date_impl;
+pub mod iso8601_date_time_impl;
+pub mod iso8601_duration_impl;
+pub mod iso8601_parse;
+pub mod iso8601_time_impl;
