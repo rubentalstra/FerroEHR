@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- ISO 8601 temporal ordering on the openEHR BASE time types
+  (`Iso8601_date`/`_time`/`_date_time`/`_duration`): comparison with honest
+  incomparability (partial-date range semantics, UTC normalization for
+  zoned values, duration ordering via the spec's own `to_seconds`
+  reduction with the `Time_definitions` average constants). ADL 2
+  archetype validation now enforces assumed-value interval containment for
+  temporal constraint types (previously undecidable and skipped); an
+  incomparable pair never raises a violation.
+
 ## [3.4.0] - 2026-07-20
 
 ### Changed

@@ -73,6 +73,53 @@ impl<T: PartialOrd> BoundaryView<'_, T> {
         }
         true
     }
+
+    /// Three-valued containment for a partially-ordered value space:
+    /// `Some(true)` when `e` is definitely inside (both sides decidably
+    /// satisfied), `Some(false)` when `e` is definitely outside (one side
+    /// decidably violated), and `None` when containment is undecidable — a
+    /// comparison against a bound returned `None` and no side was decidably
+    /// violated.
+    ///
+    /// This is the honest-incomparability companion to [`BoundaryView::has`]
+    /// (which collapses `None` comparisons to "not contained"): for a total
+    /// order it agrees with `has` (`has(e) == (has_definite(e) == Some(true))`),
+    /// but for a partial order (the `Iso8601_*` value spaces) it distinguishes
+    /// "provably outside" from "cannot tell", so a caller can decline to act on
+    /// an undecidable answer instead of treating it as exclusion.
+    pub(crate) fn has_definite(&self, e: &T) -> Option<bool> {
+        let lower_ok: Option<bool> = if self.lower_unbounded {
+            Some(true)
+        } else if let Some(l) = self.lower {
+            match e.partial_cmp(l) {
+                None => None,
+                Some(Ordering::Less) => Some(false),
+                Some(Ordering::Equal) => Some(self.lower_included),
+                Some(Ordering::Greater) => Some(true),
+            }
+        } else {
+            Some(true)
+        };
+        let upper_ok: Option<bool> = if self.upper_unbounded {
+            Some(true)
+        } else if let Some(u) = self.upper {
+            match e.partial_cmp(u) {
+                None => None,
+                Some(Ordering::Greater) => Some(false),
+                Some(Ordering::Equal) => Some(self.upper_included),
+                Some(Ordering::Less) => Some(true),
+            }
+        } else {
+            Some(true)
+        };
+        match (lower_ok, upper_ok) {
+            // A decidably-violated side proves exclusion regardless of the other.
+            (Some(false), _) | (_, Some(false)) => Some(false),
+            (Some(true), Some(true)) => Some(true),
+            // Otherwise an undecidable comparison leaves containment unknown.
+            _ => None,
+        }
+    }
 }
 
 /// True if `x` lies entirely below `y`, i.e. `x`'s upper limit is below `y`'s
@@ -346,6 +393,26 @@ impl<T: PartialOrd> Interval<T> {
         }
     }
 
+    /// Three-valued containment ([`BoundaryView::has_definite`]): `Some(true)`
+    /// definitely inside, `Some(false)` definitely outside, `None` undecidable
+    /// (a comparison against a bound was incomparable). Use this instead of
+    /// [`Interval::has`] over a partially-ordered value space (the `Iso8601_*`
+    /// types) where an undecidable comparison must not be treated as exclusion.
+    ///
+    /// NOTE: the `Multiplicity_interval` variant (an `Interval<Integer>`, see
+    /// [`Interval::lower`]) cannot be evaluated against a `T` value and returns
+    /// `None`; it is unreachable for a genuine clinical `Interval<T>`.
+    #[must_use]
+    pub fn has_definite(&self, e: &T) -> Option<bool> {
+        match self {
+            Interval::PointInterval(_)
+            | Interval::ProperInterval(ProperInterval::ProperInterval(_)) => {
+                self.boundary_view().has_definite(e)
+            }
+            Interval::ProperInterval(ProperInterval::MultiplicityInterval(_)) => None,
+        }
+    }
+
     /// `Interval.intersects` (`org.openehr.base.foundation_types.interval.adoc`).
     #[must_use]
     pub fn intersects(&self, other: &Interval<T>) -> bool {
@@ -414,6 +481,24 @@ mod tests {
         assert!(!iv.has(&1));
         assert!(iv.has(&2));
         assert!(!iv.has(&5));
+    }
+
+    #[test]
+    fn has_definite_is_three_valued_over_a_partial_order() {
+        // f64 is a partial order (NaN is incomparable), so has_definite must
+        // distinguish "provably outside" from "cannot tell".
+        let iv = Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
+            lower: Some(1.0_f64),
+            upper: Some(5.0_f64),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: true,
+            upper_included: true,
+        }));
+        assert_eq!(iv.has_definite(&3.0), Some(true)); // definitely inside
+        assert_eq!(iv.has_definite(&0.0), Some(false)); // definitely below
+        assert_eq!(iv.has_definite(&9.0), Some(false)); // definitely above
+        assert_eq!(iv.has_definite(&f64::NAN), None); // incomparable ⇒ undecidable
     }
 
     #[test]
