@@ -23,13 +23,13 @@
 # shape, or missing amendment path exits non-zero — the run goes RED. Only a
 # successful poll that genuinely matches nothing is green-with-zero.
 #
-# Env: DRY_RUN=1 (report, create nothing) · WINDOW_DAYS (default 3650 — effectively full history; the vendored baseline + issue dedup make wide windows free and gap-proof) ·
+# Env: DRY_RUN=1 (report, create nothing) · WINDOW_DAYS (default 14 — the scheduled cadence; run manually with a wide window, e.g. 365, to catch any backlog: dedup + the vendored baseline make that safe) ·
 #      GH_TOKEN/GITHUB_TOKEN for gh. Requires curl, jq, gh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 JIRA="https://openehr.atlassian.net"
-WINDOW_DAYS="${WINDOW_DAYS:-3650}"
+WINDOW_DAYS="${WINDOW_DAYS:-14}"
 DRY_RUN="${DRY_RUN:-0}"
 [[ "$WINDOW_DAYS" =~ ^[0-9]{1,4}$ ]] ||
   { echo "spec-update-watcher: WINDOW_DAYS must be a number of days, got '$WINDOW_DAYS'" >&2; exit 1; }

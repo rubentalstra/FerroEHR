@@ -24,9 +24,9 @@ on:
         type: boolean
         default: false
       window_days:
-        description: "Jira resolutiondate window in days (default: full history — dedup + the vendored baseline make wide windows free)"
+        description: "Jira resolutiondate window in days (14 = scheduled default; use e.g. 365 for a manual backlog sweep — dedup makes wide windows safe)"
         type: string
-        default: "3650"
+        default: "14"
 
 permissions:
   issues: write
