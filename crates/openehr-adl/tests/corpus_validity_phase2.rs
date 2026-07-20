@@ -52,18 +52,7 @@ const SLOT_FIXTURES: &[&str] = &[
 /// Documented adjudications — files skipped with a spec-cited reason (never a
 /// silent exclusion).
 fn adjudicated(name: &str) -> Option<&'static str> {
-    if name.ends_with("VSONCO_redefine_occurrences.v1.0.0.adls") {
-        // The declared parent `redefine_occurrences.v1` is itself a specialised
-        // archetype (root id1.1), so its deep flat form needs the flattener
-        // (`ADL2/master09.02` §Differential and Flat Forms — only a top-level
-        // parent is its own flat form). VSONCO's collective-occurrences rule
-        // (master04.5 §C_OBJECT VSONCO L359-379) is exercised by the level-0
-        // `new_VSONCO-redef_to_multiple_singles-FAIL` fixture instead.
-        // TODO: flatten a specialised parent, then un-adjudicate this file.
-        Some(
-            "parent is specialised — deep flat form needs the flattener (VSONCO covered by new_VSONCO-…-FAIL)",
-        )
-    } else if name.ends_with("VCORMT_illegal_redef_of_ac_code_node.v1.0.0.adls") {
+    if name.ends_with("VCORMT_illegal_redef_of_ac_code_node.v1.0.0.adls") {
         // The child redefines a terminology-code leaf (`defining_code`) to a
         // C_STRING under the ac-coded node of the flat parent (spec_test_obs2).
         // In our model this reduces to a C_TERMINOLOGY_CODE→C_STRING meta-type

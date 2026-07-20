@@ -29,15 +29,16 @@
 //! are in [`conformance`]. Per `ADL2/master09.02` §Differential and Flat Forms
 //! ("For a top-level archetype, the flat-form is the same as its differential
 //! form") a level-0 parent is used as-is; a parent that is itself specialised
-//! needs the full flattener before its DEEP flat form is available.
-//!
-//! TODO: build the specialisation flattener so [`FlatParent::NeedsFlattener`]
-//! parents (specialised parents) can be flattened for the deep phase-2 checks,
-//! and add the phase-3 flat-form checks (VUNP, VACMCO).
+//! needs the full flattener before its DEEP flat form is available — which
+//! [`crate::flatten::flat_form`] now supplies, so a specialised parent
+//! ([`FlatParent::NeedsFlattener`]) is flattened before the deep phase-2 checks
+//! run. Phase 3 ([`phase3`]) runs on the flattened form (VUNP, VACMCO), per
+//! `master08` §Phase 3 - Validation of Flat Form.
 
 pub mod conformance;
 mod phase1;
 mod phase2;
+mod phase3;
 pub mod rm;
 
 use std::collections::HashMap;
@@ -241,6 +242,10 @@ pub enum ValidationCode {
     /// VACMCU — cardinality/occurrences upper bound validity (`master04.5`
     /// §`C_ATTRIBUTE`).
     Vacmcu,
+    /// VACMCO — cardinality/occurrences orphans: every mandatory child and one
+    /// optional child must fit within the container cardinality (`master04.5`
+    /// §`C_ATTRIBUTE` VACMCO L158-159; a phase-3 flat-form check, [`phase3`]).
+    Vacmco,
     /// VSONIF — object node identification validity in flat siblings (`master04.5`
     /// §`ARCHETYPE_SLOT`; refs undefined VACMI).
     /// TODO: check against the flattened parent siblings (needs the flattener).
@@ -299,6 +304,10 @@ pub enum ValidationCode {
     /// VUNT — `use_node` reference model type validity (`master04.5`
     /// §`C_COMPLEX_OBJECT_PROXY`).
     Vunt,
+    /// VUNP — `use_node` path validity: the proxy target path must resolve to an
+    /// object node in the flat form (`master04.5` §`C_COMPLEX_OBJECT_PROXY`
+    /// VUNP L482-483; a phase-3 flat-form check, [`phase3`]).
+    Vunp,
     /// VDSSID — slot redefinition child node id (`master04.5` §`ARCHETYPE_SLOT`).
     Vdssid,
     /// VDSSM — specialised slot definition match validity (`master04.5`
@@ -397,6 +406,7 @@ impl ValidationCode {
             Self::Vrmvav => "VRMVAV",
             Self::Vacso => "VACSO",
             Self::Vacmcu => "VACMCU",
+            Self::Vacmco => "VACMCO",
             Self::Vsonif => "VSONIF",
             Self::Vrdla => "VRDLA",
             Self::Wacmcl => "WACMCL",
@@ -416,6 +426,7 @@ impl ValidationCode {
             Self::Vsonir => "VSONIR",
             Self::Vsunt => "VSUNT",
             Self::Vunt => "VUNT",
+            Self::Vunp => "VUNP",
             Self::Vdssid => "VDSSID",
             Self::Vdssm => "VDSSM",
             Self::Vdssp => "VDSSP",
@@ -521,9 +532,9 @@ impl ArchetypeRepository {
 /// [`Available`](FlatParent::Available) directly (`ADL2/master09.02`
 /// §Differential and Flat Forms: "For a top-level archetype, the flat-form is
 /// the same as its differential form"). A parent that is itself specialised
-/// needs the deep flat form the flattener is not yet built to produce, and is
-/// reported [`NeedsFlattener`](FlatParent::NeedsFlattener) rather than validated
-/// against a wrong (un-flattened) parent.
+/// needs its deep flat form (produced by [`crate::flatten::flat_form`]), which is
+/// owned rather than borrowable, so it is reported
+/// [`NeedsFlattener`](FlatParent::NeedsFlattener) and flattened by the caller.
 #[derive(Debug, Clone, Copy)]
 pub enum FlatParent<'a> {
     /// The archetype is not specialised — the phase-2 specialisation checks do
@@ -532,7 +543,8 @@ pub enum FlatParent<'a> {
     /// The flat parent is available (a level-0 parent used as-is).
     Available(&'a Archetype),
     /// The declared parent is registered but is itself specialised, so its deep
-    /// flat form needs the flattener.
+    /// flat form is computed (owned) by the caller via
+    /// [`crate::flatten::flat_form`] rather than borrowed here.
     NeedsFlattener,
     /// The declared parent could not be resolved in the repository.
     NotFound,
@@ -555,7 +567,9 @@ pub fn resolve_flat_parent<'a>(child: &Archetype, repo: &'a ArchetypeRepository)
         return FlatParent::NotFound;
     };
     if view(parent).is_specialised() {
-        // TODO: flatten the specialised parent to obtain its deep flat form.
+        // A borrowed level-0 parent is its own flat form; a specialised parent's
+        // deep flat form is owned (computed by [`crate::flatten::flat_form`]) and
+        // cannot be handed back by borrow — [`run_phase2_spec`] flattens it there.
         return FlatParent::NeedsFlattener;
     }
     FlatParent::Available(parent)
@@ -642,6 +656,7 @@ pub fn validate(
         issues.extend(rm::validate_phase2_rm(archetype, rm));
     }
     run_phase2_spec(archetype, repo, rm, &mut issues);
+    run_phase3(archetype, repo, &mut issues);
     issues
 }
 
@@ -662,9 +677,51 @@ fn run_phase2_spec(
     let Some(repo) = repo else {
         return;
     };
-    if let FlatParent::Available(parent) = resolve_flat_parent(archetype, repo) {
-        issues.extend(phase2::validate_phase2_spec(archetype, parent, rm, repo));
+    match resolve_flat_parent(archetype, repo) {
+        FlatParent::Available(parent) => {
+            issues.extend(phase2::validate_phase2_spec(archetype, parent, rm, repo));
+        }
+        FlatParent::NeedsFlattener => {
+            // The declared parent is itself specialised: flatten it to its deep
+            // flat form, then validate against that (`master08` §Flattening:
+            // process each parent in order from the top).
+            if let Some(parent_id) = view(archetype).parent_archetype_id
+                && let Some(parent) = repo.get(parent_id)
+                && let Ok(flat_parent) = crate::flatten::flat_form(parent, repo)
+            {
+                issues.extend(phase2::validate_phase2_spec(
+                    archetype,
+                    &flat_parent,
+                    rm,
+                    repo,
+                ));
+            }
+        }
+        FlatParent::NotSpecialised | FlatParent::NotFound => {}
     }
+}
+
+/// Run the phase-3 flat-form checks (VUNP, VACMCO) on the flattened archetype,
+/// gated on a still-clean issue list (`master08` §Phase 3 — carried out after
+/// successful flat-form generation). A specialised archetype is flattened via
+/// [`crate::flatten::flat_form`] (needs `repo`); a level-0 archetype is its own
+/// flat form. If flattening is impossible (specialised, no resolvable parent) the
+/// checks are skipped rather than run against a wrong (un-flattened) form.
+fn run_phase3(
+    archetype: &Archetype,
+    repo: Option<&ArchetypeRepository>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if issues.iter().any(|i| i.severity == Severity::Error) {
+        return;
+    }
+    let flat = repo.and_then(|r| crate::flatten::flat_form(archetype, r).ok());
+    let flat_ref = match &flat {
+        Some(f) => f,
+        None if view(archetype).parent_archetype_id.is_none() => archetype,
+        None => return,
+    };
+    issues.extend(phase3::validate_phase3(flat_ref));
 }
 
 /// Parse and validate ADL2 `src` against phase 1 (including the source-level
@@ -859,6 +916,7 @@ mod tests {
             ValidationCode::Vrmvav,
             ValidationCode::Vacso,
             ValidationCode::Vacmcu,
+            ValidationCode::Vacmco,
             ValidationCode::Vsonif,
             ValidationCode::Vrdla,
             ValidationCode::Wacmcl,
@@ -878,6 +936,7 @@ mod tests {
             ValidationCode::Vsonir,
             ValidationCode::Vsunt,
             ValidationCode::Vunt,
+            ValidationCode::Vunp,
             ValidationCode::Vdssid,
             ValidationCode::Vdssm,
             ValidationCode::Vdssp,
@@ -899,6 +958,6 @@ mod tests {
             };
             assert_eq!(c.severity(), expected, "{c} severity");
         }
-        assert_eq!(seen.len(), 88);
+        assert_eq!(seen.len(), 90);
     }
 }
