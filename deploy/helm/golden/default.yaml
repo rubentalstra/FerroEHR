@@ -12,7 +12,7 @@ metadata:
     helm.sh/chart: ehrbase-rs-3.2.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "3.2.0"
+    app.kubernetes.io/version: "3.3.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -36,7 +36,7 @@ metadata:
     helm.sh/chart: ehrbase-rs-3.2.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "3.2.0"
+    app.kubernetes.io/version: "3.3.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -55,7 +55,7 @@ metadata:
     helm.sh/chart: ehrbase-rs-3.2.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "3.2.0"
+    app.kubernetes.io/version: "3.3.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 automountServiceAccountToken: false
@@ -69,7 +69,7 @@ metadata:
     helm.sh/chart: ehrbase-rs-3.2.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "3.2.0"
+    app.kubernetes.io/version: "3.3.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 data:
@@ -168,7 +168,7 @@ metadata:
     helm.sh/chart: ehrbase-rs-3.2.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "3.2.0"
+    app.kubernetes.io/version: "3.3.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -191,7 +191,7 @@ metadata:
     helm.sh/chart: ehrbase-rs-3.2.0
     app.kubernetes.io/name: ehrbase-rs
     app.kubernetes.io/instance: ehrbase-rs
-    app.kubernetes.io/version: "3.2.0"
+    app.kubernetes.io/version: "3.3.0"
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/part-of: ehrbase-rs
 spec:
@@ -204,7 +204,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ehrbase.toml changes.
-        checksum/config: 1fcc7fe079c3a5433ba94d20801e3e3c2c83cb253dddba3cd4c29f67d9cf30d0
+        checksum/config: 0b23238ffc89fe327fb7a34c906095fdafde9d40e4f320fd0c10d51d21dbc044
       labels:
         app.kubernetes.io/name: ehrbase-rs
         app.kubernetes.io/instance: ehrbase-rs
@@ -222,7 +222,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: ehrbase
-          image: "ghcr.io/rubentalstra/ehrbase-rs:3.2.0"
+          image: "ghcr.io/rubentalstra/ehrbase-rs:3.3.0"
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
