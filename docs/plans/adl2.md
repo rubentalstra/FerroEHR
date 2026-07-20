@@ -125,6 +125,11 @@ new hand-written spec crate:
   design/extension", with archie's converter as prior art.
 - `operational_template` vs `operational_archetype` keyword inconsistency
   in master07.04 — `operational_template` canonical, accept both.
+- master10's printed operational_template listing keeps a residual
+  `specialize` line, contradicting OPT2 master02/master03 §Artefact Structure
+  ("no specialisation statement"). The normative checklist wins: `create_opt`
+  emits a top-level standalone OPT with no `specialize` section (NOTE in
+  `src/opt.rs`).
 - OPEN ADJUDICATION (A3a, 2026-07-19): corpus
   `features/aom_structures/tuples/openehr-ehr-ACTION.medication_precise…`
   (PASS-expected) uses attribute-tuple members that are COMPLEX objects;
@@ -520,9 +525,22 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
 - [ ] **A7 — flattener + phase-3**: overlay algorithm (cloning, sibling
   anchors, deletions, proxies, differential paths), section-level merge
   semantics, phase-3 checks; spec-example + sibling-order fixtures green.
-- [ ] **A8 — templates + OPT2**: overlay application, slot
+- [x] **A8 — templates + OPT2**: overlay application, slot
   fill/close/inline, component_terminologies, raw + profiled OPT,
-  OPT printer; master10 worked example reproduced end-to-end.
+  OPT printer; master10 worked example reproduced end-to-end. Done:
+  `src/opt.rs` (`create_opt` raw OPT — flat_form + the master03 flattening
+  extras: full-version ref resolution, use_archetype filler inlining as
+  `C_ARCHETYPE_ROOT`-with-body, use_node proxy inlining, closed-slot removal,
+  `existence {0}`/`occurrences {0}` deletion, `component_terminologies`
+  gather; `profile_opt` master04 — annotations removal, language filtering
+  ≥1, binding filtering; node-level substitution → typed
+  `OptError::NodeSubstitutionUnsupported`). Parser extended for the OPT-inlined
+  `TYPE[id, ref] matches {…}` root (cadl14.g4 shape + OPT2 master03); printer
+  emits the inline OPT root form; `validate/fillers.rs` un-defers VTPL + VARXR
+  against resolved fillers. Tests: `tests/opt_spec.rs` (master10-style fixture,
+  every checklist bullet + print/parse round-trip + profiled cases),
+  `tests/templates_corpus.rs` (validity/templates VTPL/VARXR). `openehr-adl`
+  143/143 green, clippy-clean.
 - [ ] **A9 — ADL 1.4 → 2 conversion**: converter core + our OPT14 front
   end + conversion log; corpus: converted 1.4 fixtures validate clean
   under the phase-1..3 catalogue.

@@ -36,6 +36,7 @@
 //! `master08` §Phase 3 - Validation of Flat Form.
 
 pub mod conformance;
+pub mod fillers;
 mod phase1;
 mod phase2;
 mod phase3;
@@ -176,8 +177,9 @@ pub enum ValidationCode {
     Varxnc,
     /// VARXAV — `C_ARCHETYPE_ROOT` archetype-ref validity (`master08` §Phase 1).
     Varxav,
-    /// VARXR — external reference resolution (`master08` §Phase 2).
-    /// TODO: resolve external references against the supplier repository.
+    /// VARXR — external reference resolution (`master08` §Phase 2; checked in
+    /// [`fillers`] by resolving each `use_archetype` reference against the
+    /// supplier repository).
     Varxr,
     /// VARXTV — `C_ARCHETYPE_ROOT` type validity (`master08` §Phase 1).
     Varxtv,
@@ -212,8 +214,8 @@ pub enum ValidationCode {
     /// VALC — archetype language conformance (`master03` §Validity Rules; fires
     /// only when the parent is supplied).
     Valc,
-    /// VTPL — template/filler language consistency (`master03` §Validity Rules).
-    /// TODO: check once template fillers are resolved.
+    /// VTPL — template/filler language consistency (`master03` §Validity Rules;
+    /// checked in [`fillers`] against the resolved, flattened fillers).
     Vtpl,
     /// VRRLP — rule path valid (`master03` §Validity Rules; the RM-extension half
     /// is a reference-model check, [`rm`]).
@@ -499,7 +501,7 @@ impl ValidationIssue {
 /// family and namespace are ignored for lookup), so a child's
 /// `parent_archetype_id` (`…redefine_occurrences.v1`) resolves to the parsed
 /// parent (`…redefine_occurrences.v1.0.0`).
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ArchetypeRepository {
     by_id: HashMap<String, Archetype>,
 }
@@ -576,21 +578,31 @@ pub fn resolve_flat_parent<'a>(child: &Archetype, repo: &'a ArchetypeRepository)
 }
 
 /// The `publisher-package-class.concept` lookup key of an [`ArchetypeHrid`].
+///
+/// Case-folded to ASCII lowercase: openEHR archetype-id matching is
+/// case-insensitive on the RM publisher/package/class (`ADL2/master07.05`
+/// §Physical Archetype Identifier — the RM entity names follow the
+/// case-insensitive type-name matching of `master03` §Lexical Conventions), so
+/// a reference `openehr-task_planning-DECISION_GROUP.x` resolves the archetype
+/// `openehr-TASK_PLANNING-DECISION_GROUP.x`.
 fn hrid_lookup_key(h: &ArchetypeHrid) -> String {
     format!(
         "{}-{}-{}.{}",
         h.rm_publisher, h.rm_package, h.rm_class, h.concept_id
     )
+    .to_ascii_lowercase()
 }
 
 /// The lookup key of a raw archetype-id string (strips an optional `ns::`
-/// namespace prefix and the trailing `.vN…` version).
+/// namespace prefix and the trailing `.vN…` version; case-folded to match
+/// [`hrid_lookup_key`]).
 fn raw_id_lookup_key(raw: &str) -> String {
     let no_ns = raw.rsplit("::").next().unwrap_or(raw);
     match version_marker(no_ns) {
-        Some(idx) => no_ns.get(..idx).unwrap_or(no_ns).to_owned(),
-        None => no_ns.to_owned(),
+        Some(idx) => no_ns.get(..idx).unwrap_or(no_ns),
+        None => no_ns,
     }
+    .to_ascii_lowercase()
 }
 
 /// The byte index of the version marker in an archetype id — the first `.v`

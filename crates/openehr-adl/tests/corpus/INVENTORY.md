@@ -457,6 +457,7 @@ tag in `validity/**` should be a hard coverage-gate error (only the two
 | `features/**/*.adls` | parse-clean + validate-PASS; if `specialise` present, also flatten | `regression` tag (PASS / absent) |
 | `features/**/*.adl` (`intervention_decisions.v0.adl`) | 1.4-tolerant parse | tag |
 | `validity/**/*.adls` (all tagged) | validate-expect-code: PASS→clean; FAIL→any typed error; code→exactly that code; W*→warning | `regression` tag (NOT filename) |
+| `validity/templates/*.adls` | filler validation (`validate_fillers`): VTPL→template/filler language mismatch, VARXR→unresolved external ref; PASS/support→clean (`tests/templates_corpus.rs`) | `regression` tag |
 | `validity/legacy_adl_1.4/*.adls` | parse + validate clean | tag = PASS |
 | `validity/legacy_adl_1.4/*.adl` | 1.4-tolerance parse; `FAIL_c_dv_quantity_minimal.v1.adl`→SDINV | tag |
 | `robustness/**` | parse + validate → assert PASS (never-panic floor) | tag = PASS |

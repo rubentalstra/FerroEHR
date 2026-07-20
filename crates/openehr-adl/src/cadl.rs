@@ -354,6 +354,7 @@ impl Parser<'_> {
     /// A type-headed object: `c_complex_object` or `c_regular_primitive_object`
     /// (`cadl2.g4`). Distinguished by whether the `matches { … }` body (or the
     /// bare, body-less form) holds attribute defs or a single inline primitive.
+    #[allow(clippy::too_many_lines)] // one linear parse: node bracket, optional OPT ref, body
     fn parse_type_object(&mut self) -> PResult<CObject> {
         let type_span = self.cur_span();
         let rm_type = self.parse_rm_type_id()?;
@@ -361,8 +362,29 @@ impl Parser<'_> {
         // is a semantic defect (VCOID, `AOM2/master08`), not a syntax error —
         // the ADL Workbench parses it and flags VCOID in validation. We do the
         // same: an absent `[…]` yields an empty node id that validation flags.
+        // OPT-inlined `C_ARCHETYPE_ROOT` form `TYPE[id, archetype_ref] …`: a
+        // flattened slot-filler / external reference carries the full archetype
+        // id inside the node bracket and an inline body (OPT2 master03
+        // §Artefact Structure + §Flattening; the same `'[' ID_CODE ','
+        // archetype_ref ']'` shape as `cadl14.g4` `c_archetype_root`, kept for
+        // the OPT serialisation the `operational_template` printer round-trips).
+        let mut archetype_ref: Option<String> = None;
         let node_id = if self.eat(|t| matches!(t, Token::LBracket)) {
             let n = self.parse_node_id()?;
+            if self.eat(|t| matches!(t, Token::SymComma)) {
+                match self.peek().cloned() {
+                    Some(Token::ArchetypeId(a)) => {
+                        self.pos += 1;
+                        archetype_ref = Some(a);
+                    }
+                    _ => {
+                        return self.err(
+                            SyntaxErrorCode::Suaid,
+                            "expecting an archetype id after ',' in a node reference",
+                        );
+                    }
+                }
+            }
             self.expect(
                 |t| matches!(t, Token::RBracket),
                 SyntaxErrorCode::Sccog,
@@ -444,6 +466,12 @@ impl Parser<'_> {
             )
         };
 
+        // An `archetype_ref` in the node bracket makes this a `C_ARCHETYPE_ROOT`
+        // (OPT-inlined filler / external reference), carrying the body as its
+        // flattened structure (OPT2 master03 §Flattening).
+        if let Some(archetype_ref) = archetype_ref {
+            obj = into_archetype_root(obj, archetype_ref);
+        }
         if occurrences.is_some() {
             *common_mut(&mut obj).2 = occurrences;
         }
@@ -2323,6 +2351,30 @@ fn complex_object(
         attributes,
         attribute_tuples,
     }))
+}
+
+/// Convert a parsed complex object into a [`CArchetypeRoot`] carrying
+/// `archetype_ref` (the OPT-inlined slot-filler / external-reference form,
+/// OPT2 master03). A non-complex `obj` (a primitive) cannot bear an archetype
+/// ref; it is returned unchanged (validation flags the misuse).
+fn into_archetype_root(obj: CObject, archetype_ref: String) -> CObject {
+    let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = obj else {
+        return obj;
+    };
+    CObject::CComplexObject(CComplexObject::CArchetypeRoot(Box::new(CArchetypeRoot {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: d.rm_type_name,
+        occurrences: d.occurrences,
+        node_id: d.node_id,
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: d.default_value,
+        attributes: d.attributes,
+        attribute_tuples: d.attribute_tuples,
+        archetype_ref,
+    })))
 }
 
 /// A tuple member `C_ATTRIBUTE` (name only; the values live in the tuples).

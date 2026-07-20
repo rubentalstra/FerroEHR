@@ -23,6 +23,7 @@ pub mod codes;
 pub mod error;
 pub mod flatten;
 pub mod lexer;
+pub mod opt;
 pub mod paths;
 pub mod printer;
 pub mod rules;
