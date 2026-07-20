@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# openEHR spec-update watcher (tracker issue #137; design: docs/plans/spec-watch.md
+# openEHR spec-update watcher (tracker issue #137; design dossier: recorded on tracker issue #137
 # — every mechanism live-verified 2026-07-20). Two detection sources, ONE
 # GitHub issue per completed upstream spec change:
 #

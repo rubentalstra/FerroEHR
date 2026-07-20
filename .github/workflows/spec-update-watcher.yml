@@ -1,6 +1,6 @@
-# Scheduled openEHR spec-update watcher (tracker issue #137; design dossier
-# lived at docs/plans/spec-watch.md, deleted at close — the mechanism notes
-# live in scripts/spec-update-watcher.sh itself).
+# Scheduled openEHR spec-update watcher (tracker issue #137; the full
+# live-verified design dossier is recorded on that issue — the mechanism
+# notes live in scripts/spec-update-watcher.sh itself).
 #
 # Twice weekly it polls the public openEHR Jira for newly COMPLETED SPEC*
 # changes and diffs the upstream amendment records against the vendored spec
