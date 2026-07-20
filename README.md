@@ -60,9 +60,10 @@ Conformance Statement and Certificate.
 
 - **Compliance you can verify, not just read.** The built-in conformance
   runner executes the complete catalogue in both wire formats and computes
-  the openEHR profile verdicts — currently **CORE: PASS · STANDARD: PASS ·
-  OPTIONS: OBTAINED**, zero failing cases. The badges above are generated
-  from real runs, never hand-edited.
+  the openEHR profile verdicts. The ECC badges above render straight from
+  the committed run artifacts — generated from real runs, never hand-edited
+  — and the [Conformance Report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
+  carries the full per-case record.
 - **The latest openEHR specifications**, generated from the official
   machine-readable models: REST API 1.0.3, AQL 1.1, RM 1.2.0, Archetype
   Model 1.4 + 2.4, Terminology 3.1. A specification update is a
