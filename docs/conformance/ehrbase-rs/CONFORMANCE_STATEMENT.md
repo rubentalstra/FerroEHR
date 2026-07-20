@@ -12,7 +12,7 @@
 | Base URL | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
 | Edition policy | pinned (release-1.1.0) |
-| Run started | 2026-07-20T20:46:30.858894Z |
+| Run started | 2026-07-20T21:43:47.766557Z |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
 
 ## Supported specification versions
