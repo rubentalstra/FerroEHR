@@ -15,6 +15,29 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+- **Template example generation now produces fully-valid compositions.**
+  `GET /definition/template/adl1.4/{template_id}/example` populated only a
+  skeleton for many templates (issue #94) and could emit out-of-range or
+  wrongly-typed values. The generator now synthesizes spec-valid values for
+  every constrained field — quantities inside their magnitude ranges (with
+  dimensionless empty units preserved), proportions satisfying their kind's
+  invariants inside the archetype's numerator/denominator ranges, durations
+  inside their declared range, coded text from closed value lists, URIs and
+  parsables honouring their pattern constraints, and the archetype-constrained
+  container/event types (`ITEM_LIST`/`ITEM_SINGLE`/`INTERVAL_EVENT`) instead
+  of abstract defaults — and every generated example at the committable detail
+  levels (`required`, `medium`) passes the server's own full composition
+  validation. Generation is byte-deterministic.
+- **Archetype-conformance validation no longer demands `archetype_node_id` on
+  reference-model types that cannot carry one.** `EVENT_CONTEXT` (and any
+  other non-`LOCATABLE` type) inherits `PATHABLE`, which the RM gives no
+  `archetype_node_id`; a template archetyping `/context[at…]` therefore could
+  never be satisfied by canonical data and such compositions were wrongly
+  rejected on commit. Non-`LOCATABLE` nodes now match structurally by their
+  attribute position (per the RM inheritance graph); `LOCATABLE` nodes keep
+  strict node-id matching.
+
 ### Added
 - **ADL2 templates are now compiled and validated by the full ADL2 engine.**
   `POST /definition/template/adl2` runs the complete `openehr-adl` pipeline —

@@ -1079,17 +1079,57 @@ impl Validator {
             .iter()
             .rposition(|s| !s.predicate.is_empty())
             .unwrap_or(segments.len() - 1);
-        let id_seg = &segments[identity_idx];
+        // A node whose RM type does NOT inherit `LOCATABLE` carries no
+        // `archetype_node_id` in canonical JSON: only `LOCATABLE` adds
+        // `archetype_node_id`/`name` (RM common
+        // `UML/classes/org.openehr.rm.common.locatable.adoc`), and e.g.
+        // `EVENT_CONTEXT` inherits `PATHABLE` directly (RM
+        // `UML/classes/org.openehr.rm.composition.event_context.adoc` §Inherit).
+        // A template may still archetype such a node (`/context[at0001]`), but no
+        // conforming instance can bear that at-code — so the walk matches it
+        // STRUCTURALLY by its attribute position (predicate stripped) and never
+        // applies archetype-node-id occurrences to it. This is a correction toward
+        // the RM inheritance graph, not a relaxation: for a `LOCATABLE` node the
+        // node-id match + occurrences apply exactly as before.
+        //
+        // Only the TERMINAL-identity case consults `first.rm_type`: when a trailing
+        // plain-attribute path follows the identity segment (e.g.
+        // `items[at0004]/value`), the identity node is the archetyped intermediate
+        // (`ELEMENT`/`CLUSTER`/…, always `LOCATABLE`) and `first.rm_type` is the
+        // deeper leaf type (`DV_QUANTITY`, a non-`LOCATABLE` `DATA_VALUE`) — which
+        // must NOT strip the intermediate's node id.
+        let raw_id_seg = &segments[identity_idx];
         let trailing = &segments[identity_idx + 1..];
+        let identity_is_locatable = !trailing.is_empty() || is_locatable(&first.rm_type);
+        // `ism_transition` is also non-`LOCATABLE` (PATHABLE), but it is left
+        // UNMATCHED deliberately — the WebTemplate builder models its careflow
+        // steps as separate per-state nodes (a documented builder scope gap, see
+        // the occurrences NOTE below), and structurally matching them would check
+        // the instance's single ISM_TRANSITION against every per-state constraint.
+        // Its presence is an RM invariant, so keeping it unmatched here is sound.
+        let structural_match = !identity_is_locatable
+            && !raw_id_seg.predicate.is_empty()
+            && raw_id_seg.attribute != "ism_transition";
+        let structural_id_seg;
+        let id_seg: &PathSegment = if structural_match {
+            let mut stripped = raw_id_seg.clone();
+            stripped.predicate = openehr_rm::paths::Predicate::default();
+            structural_id_seg = stripped;
+            &structural_id_seg
+        } else {
+            raw_id_seg
+        };
 
         // Navigate the intermediate segments to the container node(s).
         let containers = rmpath::navigate(&[parent], &segments[..identity_idx]);
 
         // Occurrences are an *archetype-node* constraint: only checked when the
         // matched node is identified by an archetype-node predicate (at-code /
-        // archetype id). Plain RM structural attributes (`context`, `value`,
-        // `action_archetype_id`, …) are governed by RM cardinality/invariants,
-        // not archetype occurrences, so they are not occurrence-checked here.
+        // archetype id) on a `LOCATABLE` node that can bear one. Plain RM
+        // structural attributes (`context`, `value`, `action_archetype_id`, …) and
+        // non-`LOCATABLE` nodes (e.g. `EVENT_CONTEXT`, matched structurally above)
+        // are governed by RM cardinality/invariants, not archetype occurrences, so
+        // they are not occurrence-checked here.
         //
         // NOTE: `ism_transition` careflow steps are modelled by the
         // WebTemplate builder as separate per-state nodes (careflow synthesis is
@@ -1097,7 +1137,8 @@ impl Validator {
         // single ISM_TRANSITION — occurrence-checking them would spuriously demand
         // every state, so they are skipped (ISM_TRANSITION presence is an RM
         // invariant). `in_context` nodes are supplied structurally.
-        let occ_applies = id_seg.predicate.archetype_node_id.is_some()
+        let occ_applies = identity_is_locatable
+            && id_seg.predicate.archetype_node_id.is_some()
             && id_seg.attribute != "ism_transition"
             && !members.iter().any(|c| c.in_context == Some(true));
         let group_min = members
@@ -1303,6 +1344,18 @@ fn select_group_children<'a>(
         }
         (_, None) => rmpath::select_children_matched(container, id_seg, true),
     }
+}
+
+/// Whether an RM type inherits `LOCATABLE` and therefore carries an
+/// `archetype_node_id` (and `name`) in canonical JSON (RM common
+/// `UML/classes/org.openehr.rm.common.locatable.adoc`). Backed by the
+/// BMM-generated RM inheritance graph ([`openehr_rm::model::is_a`]). A type the
+/// model does not recognise is treated as `LOCATABLE` (the historic default —
+/// stay strict rather than silently widen matching for an unknown type). Generic
+/// arguments are stripped first.
+fn is_locatable(rm_type: &str) -> bool {
+    let base = rm_type.split('<').next().unwrap_or(rm_type).trim();
+    openehr_rm::model::class(base).is_none() || openehr_rm::model::is_a(base, "LOCATABLE")
 }
 
 /// The instance child objects directly under `attr` (array elements or a single
