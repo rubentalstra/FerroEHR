@@ -10,10 +10,13 @@
 //! `I_DEFINITION_ADL2` is an admin surface — so parse-on-demand is cheap; the
 //! `openehr-adl` phases degrade gracefully when a parent is unresolved).
 
+use std::collections::HashMap;
+
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::meta::{ArtefactSummary, summarize};
 use openehr_adl::opt::create_opt;
 use openehr_adl::validate::rm::{ProductionRmModel, production_model_governs};
+use openehr_adl::validate::terminology::{TerminologyResolver, external_term_bindings};
 use openehr_adl::validate::{
     ArchetypeRepository, Severity, validate_source, validate_source_phase1,
 };
@@ -32,6 +35,35 @@ use crate::service::list::Page;
 use crate::service::status::{CallStatusType, SmError};
 
 use super::{compile_pattern, page_bounds, paginate};
+
+/// A memoised [`TerminologyResolver`] for ADL2 VETDF validation.
+///
+/// `openehr-adl` is a network-free spec engine: its VETDF check consults a
+/// *synchronous* [`TerminologyResolver`] seam, but a terminology lookup is
+/// *asynchronous*. So the service pre-resolves every external term binding of
+/// the uploaded archetype against its terminology service
+/// ([`EhrbaseService::has_term`], routed to the in-process bundle or the
+/// configured FHIR provider) and hands the validator this memoised map.
+///
+/// `code_exists` returns `Some(true)`/`Some(false)` for a binding the service
+/// could answer, and `None` for one it could not (no external provider
+/// configured, an unknown terminology, or a transport fault) — matching the
+/// VETDF "subject to tool accessibility; … no verification was possible"
+/// carve-out (AM ADL2 `master03-archetype_package.adoc` §Validity Rules).
+#[derive(Debug, Default)]
+struct AdlTerminologyResolver {
+    /// `(terminology_id, external target)` → the target's existence, for every
+    /// binding the terminology service could answer.
+    resolved: HashMap<(String, String), bool>,
+}
+
+impl TerminologyResolver for AdlTerminologyResolver {
+    fn code_exists(&self, terminology_id: &str, code: &str) -> Option<bool> {
+        self.resolved
+            .get(&(terminology_id.to_owned(), code.to_owned()))
+            .copied()
+    }
+}
 
 // ── SM Definitions native API (I_DEFINITION_ADL2) — the catalog contract ─────
 
@@ -243,12 +275,18 @@ impl EhrbaseService {
     /// `validationErrors[]` (`schemas/others/Error.yaml`). The openEHR
     /// [`ProductionRmModel`] governs openEHR-published archetypes; a foreign/test
     /// model skips the RM pass (`AOM2/master04.3` §Reference Model Type Matching
-    /// — a model this build does not carry would false-fire VCORM).
+    /// — a model this build does not carry would false-fire VCORM). External
+    /// term bindings are verified through the terminology-service resolver
+    /// (VETDF, `master03` §Validity Rules — see [`Self::adl2_terminology_resolver`]).
     async fn adl2_validate(&self, source: &str) -> Result<ArtefactSummary, ServiceError> {
         let archetype = parse_artefact(source).map_err(syntax_validation_failure)?;
         let repo = self.adl2_repository().await?;
         let issues = if production_model_governs(&archetype) {
-            validate_source(source, Some(&repo), &ProductionRmModel)
+            // VETDF: external term bindings are verified against the terminology
+            // service, pre-resolved here into the synchronous validator seam
+            // (`master03` §Validity Rules; see [`AdlTerminologyResolver`]).
+            let resolver = self.adl2_terminology_resolver(&archetype).await;
+            validate_source(source, Some(&repo), &ProductionRmModel, &resolver)
         } else {
             validate_source_phase1(source, Some(&repo))
         }
@@ -271,6 +309,29 @@ impl EhrbaseService {
             return Err(ServiceError::ValidationFailed(errors));
         }
         Ok(summarize(&archetype))
+    }
+
+    /// Pre-resolve every external term binding of `archetype` against the
+    /// terminology service, building the [`AdlTerminologyResolver`] the VETDF
+    /// check consults (see its docs — the seam is synchronous, a lookup is not).
+    ///
+    /// A binding the service cannot answer — no configured external provider, an
+    /// unknown terminology, or a transport fault — is left unresolved, so VETDF
+    /// is not raised for it (`master03` §Validity Rules "subject to tool
+    /// accessibility"). Only genuinely external terminologies are consulted; the
+    /// archetype-internal `local`/`openehr` ids are excluded by
+    /// [`external_term_bindings`] (their keys are covered by VTTBK/VTCBK).
+    async fn adl2_terminology_resolver(&self, archetype: &Archetype) -> AdlTerminologyResolver {
+        let mut resolved = HashMap::new();
+        for binding in external_term_bindings(archetype) {
+            if let Ok(exists) = self
+                .has_term(&binding.terminology_id, &binding.target, None)
+                .await
+            {
+                resolved.insert((binding.terminology_id, binding.target), exists);
+            }
+        }
+        AdlTerminologyResolver { resolved }
     }
 
     /// Store a validated ADL2 artefact. With `replace`, any case-variant of the
