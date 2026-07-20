@@ -13,14 +13,24 @@ optional:
 - Entries go under the standard subsections: `### Added` / `### Changed` /
   `### Deprecated` / `### Removed` / `### Fixed` / `### Security`. Write for
   the end user (what changed for them), not commit-message prose.
-- **Cutting a release:** rename `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`,
-  re-add an empty `[Unreleased]`, update the link references at the bottom,
-  bump the workspace `version` in the root `Cargo.toml` (+ Helm
-  `appVersion`, golden renders via `deploy/helm/validate.sh --update`), then
-  tag `vX.Y.Z`. The release workflow publishes the GitHub Release from the
-  matching changelog section and **fails if the section or version match is
-  missing**. Releases stay `prerelease: true` until the owner's production
-  sign-off.
+- **Releases are milestone-driven (owner 2026-07-20; milestones =
+  releases):** the `vX.Y.Z` GitHub milestone collects the release's issues;
+  the release is cut when the milestone reaches **zero open issues** (or
+  the owner calls the cut and moves the stragglers to the next milestone).
+- **Cutting a release** (on a `release/vX.Y.Z` branch): rename
+  `[Unreleased]` → `## [X.Y.Z] - YYYY-MM-DD`, re-add an empty
+  `[Unreleased]`, update the link references at the bottom, bump the
+  workspace `version` in the root `Cargo.toml` (+ `Cargo.lock` via a
+  `cargo check`, + Helm `appVersion`, golden renders via
+  `deploy/helm/validate.sh --update`), merge the release PR, then tag
+  `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
+  Release from the matching changelog section and **fails if the section or
+  version match is missing**. Releases stay `prerelease: true` until the
+  owner's production sign-off.
+- **After the tag:** close the `vX.Y.Z` milestone (`gh api … milestones/N
+  -f state=closed`) and make sure the NEXT milestone exists so triage always
+  has a target. The milestone's closed-issue list + the changelog section
+  together are the release's record.
 - **Versioning split:** the product (workspace, `ehrbase-*`, tools,
   `openehr-flat`, codegen tooling) follows the product SemVer (3.x line).
   The `openehr-*` **spec crates** carry the version of the openEHR

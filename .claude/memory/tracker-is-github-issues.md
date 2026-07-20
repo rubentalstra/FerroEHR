@@ -22,10 +22,13 @@ mode. Owner corrections en route: no house `worklist` label, no redundant
 "(conventional type: X)" clutter in label descriptions, NO archive file
 (git history is the archive), priority labels ARE wanted (P0–P3, industry
 standard), `docs/PROGRESS.md` is RETIRED too (the closing PR description +
-issue handoff comment carry the build narrative), and ROADMAP.md is
-themes/direction only — actionable roadmap items live as issues, and any
+issue handoff comment carry the build narrative), ROADMAP.md is
+themes/direction only — actionable roadmap items live as issues, any
 number quoted in a doc or issue body must be re-derived from the committed
-artifacts, never copied forward ("stalled information is very very bad").
+artifacts, never copied forward ("stalled information is very very bad"),
+and RELEASES are milestone-driven: cut when the vX.Y.Z milestone hits zero
+open issues, tag on the merge commit, close the milestone, ensure the next
+exists (procedure: .claude/rules/changelog.md).
 
 **How to apply:** orient with `gh issue list --state open` (the
 SessionStart hook injects it); record work by ticking issue checkboxes /
