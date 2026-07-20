@@ -163,6 +163,9 @@ fn stamp(e: CaseError, step_no: usize, name: &str) -> CaseError {
     match e {
         CaseError::Assertion(m) => CaseError::Assertion(format!("{prefix}{m}")),
         CaseError::Codec(m) => CaseError::Codec(format!("{prefix}{m}")),
-        e @ (CaseError::Transport(_) | CaseError::Skipped(_)) => e,
+        // Transport / Skipped / NotApplicable are verdicts, not step
+        // assertions: left untouched (a not-applicable or skipped case carries
+        // its own cited reason, and a transport fault keeps its typed source).
+        e @ (CaseError::Transport(_) | CaseError::Skipped(_) | CaseError::NotApplicable(_)) => e,
     }
 }

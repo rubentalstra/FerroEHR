@@ -10,14 +10,19 @@
 //! there is no REST route in `ehrbase-rest` that reaches export/import/TDD. The
 //! ECC drives SUTs over HTTP only, so no part of Messaging is wire-exercisable.
 //!
-//! **Disposition: `SKIPPED(NativeApiOnly)`, every case** — each cites the real
-//! `app/ehrbase` testcontainer integration test that proves the operation, so
-//! the capability's evidence is traceable off the wire, never fabricated.
+//! **Disposition: first-class `NotApplicable` (native-API-only), every case**
+//! — Messaging has no ITS-REST wire binding anywhere, so the HTTP-only
+//! instrument cannot exercise it against any SUT; per the owner ruling (a case
+//! passes, fails, errors, or is N/A — never "skipped") each is a cited N/A, not
+//! a skip. Each cites the real `app/ehrbase` testcontainer integration test
+//! that proves the operation, so the capability's evidence is traceable off the
+//! wire, never fabricated.
 //! The `schedule` reproduces the chapter's literal interface
 //! name (`I_EHR_EXTRACT` / `I_TDD`) while the `binding` keeps the SM-trait name
 //! (`I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`) — both correct at their own layer;
-//! the divergence is a schedule authoring quirk. A skip fn
-//! embeds its reason as a literal (a `CaseRun` is a bare `fn` pointer).
+//! the divergence is a schedule authoring quirk. An N/A fn
+//! embeds its evidence pointer as a literal (a `CaseRun` is a bare `fn`
+//! pointer).
 
 use crate::engine::harness::{CaseError, CaseFuture, CaseRun, DataSetReport, RunContext};
 use crate::engine::registry::CaseEntry;
@@ -153,75 +158,78 @@ fn case(
     }
 }
 
-/// Generate a `SKIPPED(NativeApiOnly)` run function embedding its cited evidence
-/// as a literal (a `CaseRun` is a bare `fn` pointer and cannot close over it).
-/// The cited `app/ehrbase` integration-test names must stay in lockstep with
-/// `app/ehrbase/tests/` (a stale citation silently breaks the
-/// off-wire traceability that is the whole evidentiary basis).
-macro_rules! skip_fn {
+/// Generate a first-class `NotApplicable` (native-API-only) run function
+/// embedding its cited evidence as a literal (a `CaseRun` is a bare `fn`
+/// pointer and cannot close over it). The cited `app/ehrbase` integration-test
+/// names must stay in lockstep with `app/ehrbase/tests/` (a stale citation
+/// silently breaks the off-wire traceability that is the whole evidentiary
+/// basis).
+macro_rules! na_fn {
     ($name:ident, $reason:literal) => {
         fn $name<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-            Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped($reason.to_owned())) })
+            Box::pin(async move {
+                Err::<DataSetReport, _>(CaseError::NotApplicable($reason.to_owned()))
+            })
         }
     };
 }
 
-skip_fn!(
+na_fn!(
     skip_export_ehrs,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehrs is exercised by \
      app/ehrbase/tests/service_extract.rs::export_ehrs_carries_every_versioned_object_latest_only \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_export_ehr_extracts,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehr_extracts is exercised by \
      app/ehrbase/tests/service_extract.rs::export_ehr_extracts_honours_item_list_and_all_versions \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_export_unknown_ehr,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehrs (unknown EHR) is exercised by \
      app/ehrbase/tests/service_extract.rs::export_ehrs_unknown_ehr_is_ehr_id_does_not_exist \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_import_ehr_clone,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr is exercised by \
      app/ehrbase/tests/service_import.rs::import_ehr_clone_into_fresh_target_reuses_source_id \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_import_ehr_fixed_id,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr (fixed id) is exercised by \
      app/ehrbase/tests/service_import.rs::import_ehr_into_fixed_fresh_id \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_import_ehr_duplicate,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr (duplicate id) is exercised by \
      app/ehrbase/tests/service_import.rs::import_ehr_duplicate_target_is_rejected \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_import_ehr_extract,
     "NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr_extract is exercised by \
      app/ehrbase/tests/service_import.rs::import_ehr_extract_adds_a_versioned_object_and_rejects_re_import \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_tdd_import_commits,
     "NativeApiOnly: I_TDD_SERVICE.import_tdd is exercised by \
      app/ehrbase/tests/service_tdd.rs::tdd_import_commits_composition \
      — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_tdd_import_rejects,
     "NativeApiOnly: I_TDD_SERVICE.import_tdd (typed rejections) is exercised by \
      app/ehrbase/tests/service_tdd.rs::{tdd_import_rejects_malformed_payload, \
      tdd_import_rejects_non_tdd_xml, tdd_import_rejects_unknown_ehr, \
      tdd_import_rejects_unknown_template} — Messaging has no ITS-REST binding"
 );
-skip_fn!(
+na_fn!(
     skip_tdd_import_tdds_batch,
     "NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by \
      app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, \

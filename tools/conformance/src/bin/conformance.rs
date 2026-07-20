@@ -125,10 +125,31 @@ struct RunArgs {
     /// spin up a hermetic wiremock FHIR-tx fixture (the CI default).
     #[arg(long)]
     tx_server_url: Option<String>,
+    /// Bind the hermetic FHIR-tx fixture to this fixed host port
+    /// (`0.0.0.0:PORT`) and treat the SUT as wired to it — the composed run
+    /// (`scripts/conformance.sh`) points the SUT's `[terminology.external]`
+    /// provider at `host.docker.internal:PORT`, so the FHIR-provider + fault
+    /// cases (`ECC-TS-006…009`) drive the SUT end to end. Unset: a random
+    /// `127.0.0.1` port, not wired to any SUT (the `nextest` default).
+    #[arg(long)]
+    tx_fixture_port: Option<u16>,
     /// The assessor attribution on the Conformance Certificate. Unset: the
     /// default self-assessment-via-ECC line.
     #[arg(long)]
     assessor: Option<String>,
+    /// ITS-REST base URL of a sibling SUT booted in `[signing] mode = "pgp"`,
+    /// for the pgp-signing case (`ECC-SIG-005`). The main SUT signs in `digest`
+    /// mode; the composed run (`scripts/conformance.sh`) stands up a second
+    /// pgp-keyed instance and passes its URL here. Unset: the pgp case reports
+    /// `SKIPPED(SutConfig)`.
+    #[arg(long)]
+    sig_pgp_base_url: Option<String>,
+    /// Path to the armored RFC 4880 secret key the pgp-keyed sibling was booted
+    /// with (the committed TEST-ONLY key). Required with `--sig-pgp-base-url`;
+    /// the pgp case derives the public key from it to verify the served
+    /// detached signature.
+    #[arg(long)]
+    sig_pgp_key: Option<PathBuf>,
 }
 
 #[derive(Debug, Parser)]
@@ -274,6 +295,18 @@ fn build_descriptor(args: &RunArgs) -> Result<SutDescriptor, String> {
     if let Some(edition) = args.edition {
         descriptor.edition_policy = edition.policy();
     }
+    // The pgp-signing sibling (ECC-SIG-005): both the base URL and the key path
+    // are required together — a base URL with no key cannot be verified.
+    match (&args.sig_pgp_base_url, &args.sig_pgp_key) {
+        (Some(url), Some(key)) => {
+            descriptor.sig_pgp_base_url = Some(url.clone());
+            descriptor.sig_pgp_key_path = Some(key.clone());
+        }
+        (Some(_), None) | (None, Some(_)) => {
+            return Err("--sig-pgp-base-url and --sig-pgp-key must be given together".to_owned());
+        }
+        (None, None) => {}
+    }
     Ok(descriptor)
 }
 
@@ -327,13 +360,39 @@ async fn establish_tx(args: &RunArgs) -> (Option<TxServer>, Option<FhirTxFixture
     if !ts_cases_selected(args.filter.as_deref(), profile) {
         return (None, None);
     }
-    let fixture = FhirTxFixture::start_canned().await;
-    let base = fixture.base_url();
+
+    // A fixed port means the composed run bound the SUT's FHIR provider to
+    // host.docker.internal:PORT — bind the fixture there and mark it wired so
+    // the FHIR-provider + fault cases execute against the SUT. No port (or a
+    // bind failure) leaves an unwired random-port fixture (the cases then skip,
+    // never fabricate).
+    let listener = args.tx_fixture_port.and_then(|port| {
+        match std::net::TcpListener::bind(("0.0.0.0", port)) {
+            Ok(listener) => Some((port, listener)),
+            Err(e) => {
+                eprintln!(
+                    "warning: could not bind FHIR-tx fixture to 0.0.0.0:{port} ({e}); \
+                     running with an unwired random-port fixture"
+                );
+                None
+            }
+        }
+    });
+    let (fixture, tx) = if let Some((port, listener)) = listener {
+        let fixture = FhirTxFixture::start_conformance(Some(listener)).await;
+        let sut_visible = format!("http://host.docker.internal:{port}");
+        (fixture, TxServer::fixture(sut_visible).wired())
+    } else {
+        let fixture = FhirTxFixture::start_conformance(None).await;
+        let base = fixture.base_url();
+        (fixture, TxServer::fixture(base))
+    };
+
     if let Err(e) = fixture.self_check().await {
         eprintln!("warning: FHIR-tx fixture self-check failed, running without it: {e}");
         return (None, None);
     }
-    (Some(TxServer::fixture(base)), Some(fixture))
+    (Some(tx), Some(fixture))
 }
 
 /// Resolve the fairness register for a foreign SUT: the explicit flag, else the

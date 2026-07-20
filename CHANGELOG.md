@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- Conformance: zero skipped outcomes. The former 35 skips are eliminated —
+  11 cases now execute against the documented ehrbase-rs extension surfaces
+  (contribution listing, admin template deletion, bare stored-query
+  listing), 6 more execute via new composed-stack wiring (an OpenPGP-signing
+  sibling instance and a hermetic FHIR terminology fixture with fault
+  injection) and loaded-database AQL golden support, and 18 native-API-only
+  service operations are now first-class not-applicable verdicts carrying
+  their SM citation and native-test evidence.
+
 ### Added
 
 - ISO 8601 temporal ordering on the openEHR BASE time types

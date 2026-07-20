@@ -247,8 +247,11 @@ pub(in crate::service) async fn check_versioned_composition_invariants(
 }
 
 /// The OPT `template_id` a COMPOSITION declares
-/// (`archetype_details.template_id.value`), if any.
-pub(super) fn composition_template_id(composition: &Value) -> Option<&str> {
+/// (`archetype_details.template_id.value`), if any. `pub(crate)` because the
+/// CONTRIBUTION commit path stamps `vo_version.template_id` with the same
+/// derivation as the direct composition path (the template-delete 409 guard
+/// counts that column — physical deletes never orphan committed data).
+pub(crate) fn composition_template_id(composition: &Value) -> Option<&str> {
     composition
         .pointer("/archetype_details/template_id/value")
         .and_then(Value::as_str)

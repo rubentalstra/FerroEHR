@@ -51,7 +51,7 @@ pub(in crate::service) mod service;
 mod status;
 mod tags;
 mod uri;
-pub(in crate::service) mod validation;
+pub(crate) mod validation;
 
 pub mod access_types;
 pub mod handle;

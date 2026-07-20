@@ -22,16 +22,19 @@
 // per-edition recompute basis belongs to the wire adapter.
 
 use base64::Engine as _;
+use pgp::composed::{Deserializable as _, DetachedSignature, SignedSecretKey};
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 
 use openehr_rm::common::change_control::version_impl::canonical_form_of_json;
 
+use crate::edition::EditionRecorder;
 use crate::engine::assert;
 use crate::engine::harness::{
     CaseError, CaseFuture, DataSetReport, HttpRequest, HttpResponse, RunContext,
 };
 use crate::engine::registry::CaseEntry;
+use crate::engine::transport::{Credential, SutClient};
 use crate::model::case::{Binding, Capability, CaseMeta, Compare, Format, ScheduleTrace};
 use crate::model::catalog::Area;
 use crate::suites::support;
@@ -475,16 +478,131 @@ fn run_client_verbatim<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-fn run_pgp_verifies<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+fn run_pgp_verifies<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case_body!({
-        // Needs a `pgp`-mode SUT with a configured key; the compose dev config boots
-        // in `digest` mode and an external SUT's key config is unknown. The four
-        // digest cases prove the capability. Reported SKIPPED(SutConfig), never
-        // fabricated (a pgp compose profile is a follow-up).
-        Err::<DataSetReport, _>(CaseError::Skipped(
-            "SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed \
-             compose profile is a follow-up — the digest cases prove the Signing capability"
-                .to_owned(),
-        ))
+        // A single server signs in ONE mode; the four digest cases assert
+        // `sha256:` against the main SUT, so the pgp case runs against a sibling
+        // SUT the composed run boots in `[signing] mode = "pgp"`
+        // (--sig-pgp-base-url / --sig-pgp-key). Without it: SKIPPED(SutConfig).
+        let (Some(base), Some(key_path)) = (
+            ctx.sut.sig_pgp_base_url.as_deref(),
+            ctx.sut.sig_pgp_key_path.as_deref(),
+        ) else {
+            return Err(CaseError::Skipped(
+                "SutConfig: no pgp-keyed sibling SUT configured (--sig-pgp-base-url/--sig-pgp-key); \
+                 the main SUT signs in `digest` mode (the four digest cases prove the Signing \
+                 capability). The composed run stands up a pgp instance so this case verifies an \
+                 RFC 4880 detached signature."
+                    .to_owned(),
+            ));
+        };
+
+        // Load the committed TEST-ONLY key the pgp sibling was booted with and
+        // derive its public key (RM common master06 §Digital Signature: the
+        // signature is an RFC 4880 detached signature over the canonical form).
+        let armored = std::fs::read_to_string(key_path).map_err(|e| {
+            CaseError::Codec(format!("reading pgp key {}: {e}", key_path.display()))
+        })?;
+        let (secret, _) = SignedSecretKey::from_string(&armored)
+            .map_err(|e| CaseError::Codec(format!("parsing armored pgp secret key: {e}")))?;
+        let public = secret.to_public_key();
+
+        // Drive the pgp sibling on its own transport so its pgp-mode signatures
+        // are observed without disturbing the digest-mode main SUT.
+        let regular = ctx
+            .sut
+            .auth
+            .as_deref()
+            .map(Credential::parse)
+            .transpose()
+            .map_err(CaseError::Assertion)?;
+        let admin = ctx
+            .sut
+            .admin_auth
+            .as_deref()
+            .map(Credential::parse)
+            .transpose()
+            .map_err(CaseError::Assertion)?;
+        let client = SutClient::new(base, regular, admin)?;
+        let recorder = EditionRecorder::default();
+        let pgp_ctx = RunContext {
+            transport: &client,
+            format: ctx.format,
+            sut: ctx.sut,
+            edition_policy: ctx.edition_policy,
+            edition: &recorder,
+            tx: None,
+        };
+
+        let (ehr_id, vo_id, ovid) = commit_composition(&pgp_ctx).await?;
+        let ov = get_composition_version(&pgp_ctx, &ehr_id, &vo_id, &ovid)
+            .await?
+            .json()?;
+        let sig = ov["signature"].as_str().ok_or_else(|| {
+            CaseError::Assertion(
+                "pgp-mode ORIGINAL_VERSION carries no `signature` (RM common master06 §Version)"
+                    .to_owned(),
+            )
+        })?;
+        // A pgp-mode SUT serves an RFC 4880 armored detached signature, never a
+        // `sha256:` digest.
+        if !sig.contains("BEGIN PGP SIGNATURE") {
+            return Err(CaseError::Assertion(format!(
+                "expected an RFC 4880 armored detached signature in `pgp` mode, got {sig:?}"
+            )));
+        }
+        let (detached, _) = DetachedSignature::from_string(sig).map_err(|e| {
+            CaseError::Assertion(format!(
+                "served signature is not a parseable RFC 4880 detached signature: {e}"
+            ))
+        })?;
+        // Verify against the version's own canonical form (the signature
+        // attribute is Void during canonicalisation — canonical_form_of_json
+        // strips it), proving the pgp signature is valid for the served object.
+        let canonical = canonical_form_of_json(&ov).map_err(|e| {
+            CaseError::Assertion(format!(
+                "canonical_form of the served ORIGINAL_VERSION: {e}"
+            ))
+        })?;
+        detached.verify(&public, canonical.as_bytes()).map_err(|e| {
+            CaseError::Assertion(format!(
+                "served RFC 4880 signature does not verify against the pgp key over the version's \
+                 canonical form: {e}"
+            ))
+        })?;
+        Ok(DataSetReport::SINGLE)
     })
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+mod tests {
+    use super::*;
+
+    /// The committed TEST-ONLY conformance pgp key
+    /// (`docker/conformance/pgp/signing-key.asc`) parses as an armored RFC 4880
+    /// secret key and yields a public key — the prerequisite of the pgp case's
+    /// verification path (a corrupt/empty committed key would fail here rather
+    /// than only in the composed run).
+    #[test]
+    fn committed_pgp_key_parses_and_derives_a_public_key() {
+        let armored = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../docker/conformance/pgp/signing-key.asc"
+        ))
+        .expect("read committed conformance pgp key");
+        assert!(
+            armored.contains("BEGIN PGP PRIVATE KEY BLOCK"),
+            "the committed conformance key must be an armored secret key"
+        );
+        let (secret, _) = SignedSecretKey::from_string(&armored).expect("parse armored secret key");
+        // Deriving the public key is exactly what run_pgp_verifies does before
+        // verifying the served detached signature.
+        let _public = secret.to_public_key();
+    }
 }

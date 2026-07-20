@@ -42,24 +42,45 @@ pub struct TxServer {
     pub base_url: String,
     /// Fixture or real.
     pub mode: TxMode,
+    /// Whether the **SUT** is configured with a FHIR terminology provider
+    /// pointing at this server (the composed-run wiring: the fixture bound to a
+    /// fixed host port + the SUT's `[terminology.external]` provider aimed at it
+    /// via `host.docker.internal`). When `true`, the FHIR-provider + fault cases
+    /// (`ECC-TS-006…009`) can drive the SUT end to end; when `false` (a bare
+    /// `nextest` run with no SUT wiring, or a `--tx-server-url` the SUT does not
+    /// use) they report `SKIPPED(SutConfig)`.
+    pub wired: bool,
 }
 
 impl TxServer {
-    /// A real-server descriptor (`--tx-server-url`).
+    /// A real-server descriptor (`--tx-server-url`). Not wired to the SUT — a
+    /// real server named on the CLI is a server the *harness* can reach, not one
+    /// the SUT's provider is pointed at.
     #[must_use]
     pub fn real(base_url: impl Into<String>) -> Self {
         Self {
             base_url: base_url.into(),
             mode: TxMode::Real,
+            wired: false,
         }
     }
 
-    /// A fixture descriptor for `base_url` (the spun-up [`FhirTxFixture`]'s URL).
+    /// A fixture descriptor for `base_url` (the spun-up [`FhirTxFixture`]'s URL),
+    /// not wired to any SUT (the in-process `nextest` default).
     #[must_use]
     pub fn fixture(base_url: impl Into<String>) -> Self {
         Self {
             base_url: base_url.into(),
             mode: TxMode::Fixture,
+            wired: false,
         }
+    }
+
+    /// Mark this server as wired into the SUT (the composed conformance run):
+    /// the SUT's FHIR terminology provider is configured to reach it.
+    #[must_use]
+    pub fn wired(mut self) -> Self {
+        self.wired = true;
+        self
     }
 }
