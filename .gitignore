@@ -47,3 +47,4 @@ _check/
 
 # Stray local build artifacts
 *.rlib
+website/book/generated/
