@@ -11,6 +11,7 @@
 - [Generated-model gaps fixed in codegen](generated-model-gaps-fixed-in-codegen.md) — owner hard rule: emitter+regen, never consumer workarounds/shadow types; downstream enum re-opening for cross-component subtypes
 - [Codegen emits the complete model](codegen-emits-complete-model.md) — owner hard rule: never trim/prune/suppress generated output; full closures, source-package mirroring, big diffs welcome; fix generator defects in-change
 - [Conventional branch naming](conventional-branch-naming.md) — owner hard rule 2026-07-19: `<type>/<kebab-slug>` (feat/fix/chore/…); `claude/*` retired, never create one again
+- [Tracker is GitHub Issues](tracker-is-github-issues.md) — owner 2026-07-20: WORKLIST.md + PROGRESS.md retired; open issue list IS the tracker, PR descriptions carry the build narrative; type+P0–P3+domain labels, milestones=releases, `Closes #N` auto-close; ROADMAP = themes only; never copy numbers forward — re-derive from artifacts
 
 Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
 already records (CLAUDE.md, ADR-004/005/008, docs/spec-audit, the blueprint)

@@ -26,6 +26,7 @@
 CLAUDE.local.md
 .claude/settings.local.json
 .claude/.session-start-head
+.claude/.session-start-time
 
 # Coverage / bench artifacts
 /coverage
