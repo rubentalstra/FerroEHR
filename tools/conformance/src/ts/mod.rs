@@ -4,8 +4,7 @@
 //! knows which terminology server the harness has available (the CI fixture or
 //! a real server via `--tx-server-url`).
 //!
-//! Design: `docs/design/terminology-server-integration.md` §5 (two modes:
-//! hermetic `wiremock` by default, real server on demand).
+//! Two modes: hermetic `wiremock` by default, real server on demand.
 
 pub mod fixture;
 

@@ -1,6 +1,6 @@
-//! The machine record: `results.json` (register 01 §6).
+//! The machine record: `results.json`.
 //!
-//! Serde structs mirroring the register-01 §6 schema exactly. The per-class
+//! Serde structs mirroring the `results.json` schema exactly. The per-class
 //! latency block is a local [`ClassRecord`] (independent of the [`measure`]
 //! crate's internal type), so the on-disk schema is owned here and stable across
 //! internal refactors. `results.json` is the source the report + histograms are
@@ -35,14 +35,14 @@ pub struct Results {
     pub resources: ResourcesBlock,
     /// Database on-disk footprint (`None` = unavailable, e.g. a BYO SUT).
     pub storage: Option<StorageBlock>,
-    /// The exact command that reproduces this run (register 01 §5 reproduce-it).
+    /// The exact command that reproduces this run.
     pub reproduce: String,
     /// `template_id`s the SUT refused to provision (fairness/limitations).
     #[serde(default)]
     pub excluded_templates: Vec<String>,
 }
 
-/// The SUT identity (register 01 §6 `sut`).
+/// The SUT identity.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SutBlock {
     /// The output/lookup name (`ehrbase-rs`, `ehrbase-java`, a BYO name).
@@ -61,10 +61,10 @@ pub struct SutBlock {
     pub versions: BTreeMap<String, String>,
 }
 
-/// The frozen workload parameters (register 01 §6 `workload`).
+/// The frozen workload parameters.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct WorkloadBlock {
-    /// The `workload.lock` hash (register 00 §6).
+    /// The `workload.lock` hash.
     pub lock: String,
     /// `smoke` | `hour` | `day`.
     pub profile: String,
@@ -78,7 +78,7 @@ pub struct WorkloadBlock {
     pub seed: u64,
 }
 
-/// The run environment (register 01 §6 `environment`).
+/// The run environment.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EnvironmentBlock {
     /// The load-generator host one-line summary.
@@ -94,7 +94,7 @@ pub struct EnvironmentBlock {
     /// The config-parity knobs the harness applied to the SUT stacks (DB pool
     /// ceiling, in-flight admission cap, signing, log level), captured from
     /// the environment so every published number carries the configuration it
-    /// was measured under. Absent in pre-P20 artefacts.
+    /// was measured under. Absent in older artefacts.
     #[serde(default)]
     pub sut_config: BTreeMap<String, String>,
 }
@@ -175,7 +175,7 @@ fn harness_sha() -> String {
         .unwrap_or_else(|| "unknown".to_owned())
 }
 
-/// A per operation-class latency summary (register 01 §6 `classes.<class>`).
+/// A per operation-class latency summary.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ClassRecord {
     /// Measured (post-warmup) operations.
@@ -219,7 +219,7 @@ impl ClassRecord {
     }
 }
 
-/// Sustained throughput (register 01 §6 `throughput`).
+/// Sustained throughput.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ThroughputBlock {
     /// The measurement window (seconds).
@@ -250,7 +250,7 @@ pub struct EventsBlock {
     pub events_per_min: f64,
 }
 
-/// One event class's business-transaction tally (register 01 §6 `events.<E>`).
+/// One event class's business-transaction tally.
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct EventClassRecord {
     /// The human label ("admission", …).
@@ -263,7 +263,7 @@ pub struct EventClassRecord {
     pub events_per_min: f64,
 }
 
-/// Container resource series + cold start (register 01 §6 `resources`).
+/// Container resource series + cold start.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ResourcesBlock {
     /// The app container summary, when sampled.
@@ -306,7 +306,7 @@ impl ContainerSummary {
     }
 }
 
-/// The database on-disk footprint (register 01 §6 `storage`).
+/// The database on-disk footprint.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct StorageBlock {
     /// Total bytes over ordinary tables/indexes/TOAST/matviews.

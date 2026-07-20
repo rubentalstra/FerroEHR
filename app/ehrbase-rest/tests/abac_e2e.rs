@@ -4,10 +4,9 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! End-to-end ABAC PEP over the real axum app (§9.6 of
-//! `docs/enterprise/access-control.md`): the fine-grained layer through the
+//! End-to-end ABAC PEP over the real axum app: the fine-grained layer through the
 //! assembled router (auth → RBAC → dispatch → ABAC pre/post checks → backend)
-//! over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock` is gone).
+//! over the **real** `EhrbaseService` (the scripted `Mock` is gone).
 //!
 //! Drives the router with `tower`'s `oneshot`, a bearer token carrying the
 //! `patient_id` claim, an in-memory subject resolver, and a permit-all PDP

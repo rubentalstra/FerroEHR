@@ -1,6 +1,6 @@
 //! The 9 SM `I_TERMINOLOGY_SERVICE` calls on
 //! [`EhrbaseService`], routing between the two providers
-//! (`i_terminology_service.adoc`; routing rule G-4 — see the module docs in
+//! (`i_terminology_service.adoc`; the routing rule — see the module docs in
 //! [`super`]).
 //!
 //! Enumeration is always the bundle's; lookup/validation goes to the bundle
@@ -18,7 +18,7 @@ use super::bundle;
 impl EhrbaseService {
     /// `get_terminology_ids` — every terminology id this server knows:
     /// `"openehr"` plus the bundle's external code-set ids (enumeration is
-    /// the bundle's — G-4).
+    /// the bundle's).
     ///
     /// # Errors
     ///
@@ -29,7 +29,7 @@ impl EhrbaseService {
     }
 
     /// `has_terminology` — whether `terminology_id` names a terminology this
-    /// server can enumerate (enumeration is the bundle's — G-4).
+    /// server can enumerate (enumeration is the bundle's).
     ///
     /// # Errors
     ///
@@ -39,7 +39,7 @@ impl EhrbaseService {
     }
 
     /// `get_terminology_description` — the descriptor of one terminology
-    /// (enumeration is the bundle's — G-4).
+    /// (enumeration is the bundle's).
     ///
     /// # Errors
     ///
@@ -60,7 +60,7 @@ impl EhrbaseService {
     ///
     /// - bundle path: `VersionedObjectDoesNotExist` on an unknown terminology
     ///   (`Pre_has_terminology`); `at_date` is a no-op on the single pinned
-    ///   bundle version (G-1 bundle NOTE);
+    ///   bundle version (bundle NOTE);
     /// - FHIR path: exception on a transport fault / non-2xx / malformed
     ///   response.
     pub async fn has_term(
@@ -80,8 +80,7 @@ impl EhrbaseService {
 
     /// `get_term` — a single-term `Terminology_extract`. Routed to the bundle
     /// when it knows the terminology (no meta-model `attributes` exist for
-    /// the openEHR bundle — G-3; `at_date` is a no-op on the pinned version —
-    /// G-1), else to the configured FHIR provider (`CodeSystem/$lookup`).
+    /// the openEHR bundle; `at_date` is a no-op on the pinned version), else to the configured FHIR provider (`CodeSystem/$lookup`).
     ///
     /// # Errors
     ///

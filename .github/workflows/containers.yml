@@ -1,6 +1,6 @@
 # .github/workflows/containers.yml
 #
-# Container images, built for speed (docs/design/container-images.md):
+# Container images, built for speed:
 #
 #   1. The `ehrbase` binary is compiled OUTSIDE Docker, natively per
 #      architecture (amd64 on ubuntu-26.04, arm64 on ubuntu-26.04-arm — no

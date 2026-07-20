@@ -10,8 +10,7 @@ printer, and ADL 1.4→2 conversion. Builds directly into the generated
 - **Spec oracle:** `docs/specs/openehr/AM/docs/{ADL2,AOM2,OPT2}/` +
   `LANG/docs/odin/` (`/spec-lookup`). Every validation rule cites its code
   + spec file/section; the 14 master08-only codes and all other
-  spec-silences carry the explicit `// NOTE:` flag (register in
-  `docs/plans/adl2.md` while the row is open).
+  spec-silences carry the explicit `// NOTE:` flag.
 - **No ANTLR runtime, ever.** The normative `.g4` grammars from
   `openEHR/adl-antlr` are vendored under `vendor/grammar/` (with
   PROVENANCE.md) as reference input only.

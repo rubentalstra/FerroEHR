@@ -1,29 +1,28 @@
-//! DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) cases — the master10 spine
-//! (`docs/design/conformance/08-demographic.md`).
+//! DEMOGRAPHIC (PARTY + `PARTY_RELATIONSHIP`) cases — the master10 spine.
 //!
 //! master10-func_tc_demographic.adoc ships **no concrete test case** (every one
-//! of its 12 SM-operation subsections is a `TBD` `aaaa`/`bbbb` stub — register
-//! 08 §2). So every case here is [`ScheduleTrace::EccOriginal`], stub-derived:
+//! of its 12 SM-operation subsections is a `TBD` `aaaa`/`bbbb` stub). So every
+//! case here is [`ScheduleTrace::EccOriginal`], stub-derived:
 //! the honest provenance is the SM operation heading + the RM Demographic IM,
 //! never a schedule-conformant claim (owner ruling 2026-07-13). The wire is the
 //! ITS-REST DEVELOPMENT demographic API
 //! (`crates/openehr-its/vendor/rest-oas/demographic-codegen.openapi.yaml`), an
 //! OPTIONS-profile surface that for a foreign SUT the fairness register rules
-//! `extension` (register 08 G-7) — its absence never dents CORE/STANDARD.
+//! `extension` — its absence never dents CORE/STANDARD.
 //!
 //! Party bodies are authored inline at the RM 1.2.0 canonical shape.
 //! Negative `If-Match` ids come from [`support::nonexistent_version_like`] over
 //! an OBSERVED id — the `::conformance::99` literal the legacy suite baked in is
-//! gone (register 08 G-1). The `I_PARTY_RELATIONSHIP` family (register 08 G-3)
+//! gone. The `I_PARTY_RELATIONSHIP` family
 //! and `get_party_at_time` are added here; the relationship wire is an
 //! ehrbase-rs extension (the ITS-REST demographic OAS declares **no**
 //! `party_relationship` path — only the schema), so those cases are
 //! `EccOriginal` against the extension route, never presented as ITS-REST-bound.
 //
-// NOTE: register 08 G-4 (RM wire version ladder) is only partially met —
+// NOTE: the RM wire version ladder is only partially met —
 // party/relationship request payloads are authored at RM 1.2.0; a per-edition
 // request-payload provider (RM 1.0.2 minimum, master03-overview §API
-// Conformance) belongs to the register-90 wire adapter, not yet exposed. The
+// Conformance) belongs to the wire adapter, not yet exposed. The
 // DEMOGRAPHIC API is a DEVELOPMENT-only surface (no Release-1.0.3 rung), so the
 // status ladders below are single-rung `[(Development, code)]`.
 
@@ -48,7 +47,8 @@ const CREATED: &[(Edition, u16)] = &[(Edition::Development, 201)];
 const OK: &[(Edition, u16)] = &[(Edition::Development, 200)];
 const ABSENT: &[(Edition, u16)] = &[(Edition::Development, 404)];
 
-/// Every registered DEMOGRAPHIC case (24 carried + 7 new: G-2 + G-3).
+/// Every registered DEMOGRAPHIC case (24 carried + 7 new: get_party_at_time +
+/// the relationship family).
 #[must_use]
 #[expect(
     clippy::too_many_lines,
@@ -119,7 +119,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("GET /demographic/person/{version_uid}"),
             run_person_get_by_version,
         ),
-        // ── I_DEMOGRAPHIC_SERVICE.get_party_at_time (G-2, new) ──────────────
+        // ── I_DEMOGRAPHIC_SERVICE.get_party_at_time (new) ───────────────────
         case(
             "dem/person-get-at-time",
             "Demographic person get at time",
@@ -227,7 +227,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("GET /demographic/person/{uid_based_id}/tags"),
             run_person_tags,
         ),
-        // ── I_PARTY_RELATIONSHIP family (G-3, new; ehrbase-rs extension wire) ─
+        // ── I_PARTY_RELATIONSHIP family (new; ehrbase-rs extension wire) ─────
         case(
             "dem/relationship-create",
             "Demographic relationship create",
@@ -653,7 +653,7 @@ async fn create_party(
 }
 
 /// GET a party of `seg` and assert its served family `name` round-trips
-/// (register 08 G-6: identity, not merely `200`).
+/// (identity, not merely `200`).
 async fn get_and_check(ctx: &RunContext<'_>, seg: &str) -> Result<DataSetReport, CaseError> {
     let name = fresh_name();
     let (vo, _) = create_party(ctx, seg, &name).await?;
@@ -711,7 +711,7 @@ fn run_person_get_by_version<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             ))
             .await?;
         assert::status_ladder(ctx, &resp, OK, "get_party_at_version 200")?;
-        // Register 08 G-6: the served version's uid must equal the requested OVID.
+        // The served version's uid must equal the requested OVID.
         if ids::body_uid(&resp.json()?)? != ovid {
             return Err(CaseError::Assertion(
                 "served party version uid does not match the requested OVID".to_owned(),
@@ -763,7 +763,7 @@ fn run_person_get_deleted<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
             &ovid,
         ))
         .await?;
-        // instrument-encodes-server-behaviour (register 08 §2): a deleted party's
+        // instrument-encodes-server-behaviour: a deleted party's
         // current-version read is 204 (no content) or 404 — the widened set is
         // documented, not a hidden acceptance.
         let resp = ctx
@@ -800,7 +800,7 @@ fn run_person_update<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 fn run_person_bad_if_match<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case_body!({
-        // Register 08 G-1: the stale If-Match is built from an OBSERVED OVID via
+        // The stale If-Match is built from an OBSERVED OVID via
         // support::nonexistent_version_like — the `::conformance::99` literal is gone.
         let (vo, ovid) = create_party(ctx, "person", &fresh_name()).await?;
         let bogus = support::nonexistent_version_like(&ids::parse_object_version_id(&ovid)?);

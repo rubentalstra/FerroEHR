@@ -8,9 +8,9 @@
 //! (master06 §Version Lifecycle). "One basic rule … is that any transition
 //! requires the commit of a _new version_, even if the content is otherwise
 //! unchanged" — realized by the storage layer (a new `vo_version` row per
-//! commit, S-33). This module owns the **legality** of each transition: reading
+//! commit). This module owns the **legality** of each transition: reading
 //! the current state from the preceding version and rejecting a transition the
-//! spec does not sanction (previously any target state was accepted — G-01).
+//! spec does not sanction (previously any target state was accepted).
 
 use crate::service::error::ServiceError;
 use openehr_term::bundle::openehr;

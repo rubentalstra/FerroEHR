@@ -2,7 +2,7 @@
 //!
 //! Every case is one of **our own** ECC cases. The metadata is what the
 //! report, Statement, and Certificate are scoped from — the claim is a
-//! function of the run, never hand-asserted. Two W-10 additions make the
+//! function of the run, never hand-asserted. Two additions make the
 //! derivation square of `CNF/docs/guide/master04-framework.adoc` §From
 //! Specifications to Runnable Tests machine-readable on every case:
 //!
@@ -27,7 +27,7 @@ pub struct CaseMeta {
     /// The registration key: a stable, descriptive slug
     /// `<area-slug>/<case-slug>`, lowercase kebab-case, e.g.
     /// `"ehr/create-default-sets"`. Bound to an ECC number in the committed
-    /// catalogue; keys carried from the pre-W-10 instrument keep their
+    /// catalogue; keys carried from the earlier instrument keep their
     /// numbers so the baseline delta stays per-case explainable.
     pub id: &'static str,
     /// The human title.
@@ -193,8 +193,7 @@ impl Format {
 }
 
 /// The payload comparison mode a case's content assertions use (the
-/// retrieved-equals-committed checks the schedule mandates on every read —
-/// register 04 G-1).
+/// retrieved-equals-committed checks the schedule mandates on every read).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Compare {

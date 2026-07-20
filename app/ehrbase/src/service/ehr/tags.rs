@@ -9,8 +9,8 @@
 //! `target`/`owner_id`, `additionalProperties: false`). `PUT …/tags` "updates
 //! the list of **all** `ITEM_TAG` resources associated with a given target …
 //! an empty list will effectively remove all" — a full-collection replace.
-//! Not an SM-EHR interface. The `item_tag` table SQL is spec-silent (G-10
-//! storage seam — our own design).
+//! Not an SM-EHR interface. The `item_tag` table SQL is spec-silent
+//! (storage seam — our own design).
 
 use crate::ids::{EhrId, VoId};
 use crate::service::status::SmError;

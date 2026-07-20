@@ -323,7 +323,7 @@ pub(crate) fn emit_to_xml(
 
 fn emit_write_field(b: &mut String, f: &XmlField) {
     // `Hash` (RM `Hash<String,String>`, → `BTreeMap`) and `OrderedDict` (the OPT
-    // `StringDictionaryItem` group, → `IndexMap`, F-09-05) share the same
+    // `StringDictionaryItem` group, → `IndexMap`) share the same
     // `<name id="key">value</name>` wire shape; only the map container differs,
     // and both iterate as `(k, v)` here.
     if f.target == "Hash" || f.target == "OrderedDict" {
@@ -390,7 +390,7 @@ pub(crate) fn emit_from_xml(b: &mut String, ty: &XmlType, prelude: &str, xsd: &X
             let is_attr = |f: &XmlField| attrs.contains(&f.wire_name);
             // `Hash<String, String>` / `OrderedDict` are parsed inline
             // (StringDictionaryItem); `Hash<String, ComplexType>` is off-wire and
-            // defaulted. `OrderedDict` (OPT `opt14`, F-09-05) accumulates into an
+            // defaulted. `OrderedDict` (OPT `opt14`) accumulates into an
             // order-preserving `IndexMap`; `Hash` (RM) into a `BTreeMap`.
             let is_str_hash = |f: &XmlField| {
                 (f.target == "Hash" || f.target == "OrderedDict")

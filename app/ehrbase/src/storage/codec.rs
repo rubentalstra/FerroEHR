@@ -89,7 +89,7 @@ fn walk(
     } else {
         citem
     };
-    // Promoted-leaf capture (P20, our own storage design — no openEHR spec
+    // Promoted-leaf capture (our own storage design — no openEHR spec
     // governs it): read the hot leaves off the node's *pre-pruning* JSON (the
     // value may sit inside an about-to-be-split structure child, e.g.
     // `EVENT_CONTEXT`), aligned to `PROMOTED_LEAVES`. Populated only on a

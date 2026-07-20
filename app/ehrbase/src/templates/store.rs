@@ -3,25 +3,25 @@
 //!
 //! # Spec basis
 //!
-//! - S-05/S-06 (`AM/docs/OPT2/master02-overview.adoc` §Purpose of the OPT,
+//! - (`AM/docs/OPT2/master02-overview.adoc` §Purpose of the OPT,
 //!   §Types of OPT): the stored artefact is the compiled OPT; "a production
 //!   EHR … can safely run only using guaranteed *validated* templates" — hence
 //!   the parse + structural + artefact-validity gates before an insert.
-//! - S-07 (`BASE/docs/architecture_overview/master10-archetypes.adoc`
+//! - (`BASE/docs/architecture_overview/master10-archetypes.adoc`
 //!   §Overview): the template/archetype repository is separate from the EHR
 //!   data.
-//! - S-11 (`AM/docs/AOM2/master10-templates.adoc` §Template Identifiers): a
+//! - (`AM/docs/AOM2/master10-templates.adoc` §Template Identifiers): a
 //!   `TEMPLATE_ID` identifies a template; equality follows the §Composite
-//!   Identifiers and Case rule (G-T04, see [`crate::templates::identity`]).
+//!   Identifiers and Case rule (see [`crate::templates::identity`]).
 //!
-//! NOTE (G-T07 — dual identity): the `template_store` row carries **both**
+//! NOTE (dual identity): the `template_store` row carries **both**
 //! a surrogate `UUID` handle (the SM `I_DEFINITION_ADL14` OPT key,
 //! `service/definition/adl14.rs`) and the wire `template_id` string (the
 //! ITS-REST `adl1.4/{template_id}` address). Both are load-bearing; the DB
 //! schema is spec-silent by construction ("no openEHR spec governs SQL").
 //!
 //! NOTE: the `template_store` DDL is owned by the storage layer
-//! (`crate::storage`, register 02). This module only reads/writes rows.
+//! (`crate::storage`). This module only reads/writes rows.
 
 use serde_json::{Value, json};
 use sqlx::Row;
@@ -38,7 +38,7 @@ impl EhrbaseService {
     /// The XML is parsed to validate it is a well-formed OPT and to pull the
     /// `template_id` (the unique key), `concept`, and root archetype id, then
     /// run through the standalone-artefact validity catalogue (the validation
-    /// seam) before any row is written — S-06 (only validated templates are
+    /// seam) before any row is written (only validated templates are
     /// stored).
     ///
     /// Operational templates are **immutable on the `adl1.4` upload endpoint**:
@@ -65,23 +65,23 @@ impl EhrbaseService {
     ///   an OPT 1.4 document, or the decoded OPT has an empty `template_id` or
     ///   `concept`.
     /// - The structural gate
-    ///   (`crate::validation::validate_opt_structure`, S-05) and the
+    ///   (`crate::validation::validate_opt_structure`) and the
     ///   AOM2/08 artefact-validity catalogue
     ///   (`crate::validation::validate_opt_artefact`,
-    ///   `AM/docs/AOM2/master08-validation.adoc`, S-06) propagate their own
+    ///   `AM/docs/AOM2/master08-validation.adoc`) propagate their own
     ///   typed rejections.
     /// - [`ServiceError::Conflict`] (→ `409`) — a template with the same
-    ///   `template_id` (case-insensitively, G-T04/G-T09) already exists.
+    ///   `template_id` (case-insensitively) already exists.
     /// - [`ServiceError::Database`] — the insert itself failed.
     pub(crate) async fn store_template(&self, xml: &str) -> Result<Value, ServiceError> {
         let opt = ingest::parse_opt(xml)?;
         // Structural well-formedness the tolerant codec would otherwise accept
-        // (foreign / duplicated top-level elements) — S-05.
+        // (foreign / duplicated top-level elements).
         crate::validation::validate_opt_structure(xml)?;
 
         // The AOM2/08 standalone-artefact validity catalogue (VCOC/VACMCO,
         // VATID/VTLC, VTTBK/VTCBK, VCORM/VCARM/VCAEX/VCACA/VCAM → `400` carrying
-        // the AOM2 rule code, S-06) is owned by the validation layer
+        // the AOM2 rule code) is owned by the validation layer
         // (`crate::validation::opt`; spec `AM/docs/AOM2/master08-validation.adoc`).
         crate::validation::validate_opt_artefact(&opt)?;
 
@@ -106,7 +106,7 @@ impl EhrbaseService {
 
         // Insert-only: `DO NOTHING` arbitrated on the case-insensitive unique
         // index (`lower(template_id)`) rejects exact and case-variant duplicates
-        // alike (G-T04: a case variant is the *same* id, §Composite Identifiers
+        // alike (a case variant is the *same* id, §Composite Identifiers
         // and Case) — no row returned means the template already exists → 409.
         let row = sqlx::query(
             "INSERT INTO template_store (template_id, concept, root_archetype, content) \
@@ -138,7 +138,7 @@ impl EhrbaseService {
 
     /// The stored OPT 1.4 XML for a template (the canonical retrieval artifact
     /// of `GET /definition/template/adl1.4/{template_id}`), addressed by
-    /// `template_id` (case-insensitive, G-T04).
+    /// `template_id` (case-insensitive).
     ///
     /// # Errors
     ///

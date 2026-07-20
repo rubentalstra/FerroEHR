@@ -2,7 +2,7 @@
 //! lightweight wire observations, run once per SUT before the case sweep.
 //!
 //! The probe never gates a case by itself (capabilities are evidenced by
-//! cases; honesty invariant 3) — it feeds the report's SUT-identity block
+//! cases) — it feeds the report's SUT-identity block
 //! and gives bring-your-own-endpoint runs a starting edition observation.
 
 use serde::Serialize;

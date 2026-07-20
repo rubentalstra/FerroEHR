@@ -95,7 +95,7 @@ impl From<StorageError> for crate::service::status::SmError {
 /// - **40001** (`serialization_failure`) / **40P01** (`deadlock_detected`) →
 ///   [`CallStatusType::Conflict`] (`409`, retryable).
 /// - **[`sqlx::Error::PoolTimedOut`]** (pool exhausted under load) →
-///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the W-12
+///   [`CallStatusType::ServiceOverloaded`] (`503` + `Retry-After`; the
 ///   admission contract).
 /// - anything else → [`CallStatusType::Exception`] (`500`, a genuine fault).
 pub(crate) fn classify_sqlx(e: &sqlx::Error) -> crate::service::status::SmError {
@@ -165,7 +165,7 @@ mod tests {
 
     #[test]
     fn pool_timeout_is_service_overloaded() {
-        // Pool exhaustion under load → 503 semantics (our W-12 admission
+        // Pool exhaustion under load → 503 semantics (our admission
         // contract), never a blanket 500.
         let sm = classify_sqlx(&sqlx::Error::PoolTimedOut);
         assert_eq!(sm.status, CallStatusType::ServiceOverloaded);

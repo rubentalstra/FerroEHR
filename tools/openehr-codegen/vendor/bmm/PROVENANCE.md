@@ -38,7 +38,7 @@ odin/yaml forms as reference: RM 1.0.2/1.0.3/1.0.4/1.1.0; BASE
 1.0.4/1.1.0/1.2.0; AM 2.2.0/2.3.0; LANG 1.0.0; TERM 3.0.0 — plus every version's
 `odin/` and `yaml/` serialization.
 
-These are the deterministic input to `openehr-codegen` (ADR-004). The ODIN
+These are the deterministic input to `openehr-codegen`. The ODIN
 reader in `openehr-lang::odin` is retained for ADL/ODIN *instance* parsing
 (P8/P9), not for BMM ingestion.
 

@@ -448,7 +448,7 @@ fn valid_composition_category_is_clean_of_terminology() {
     );
 }
 
-// ── terminology: code-set slots (ISO / IANA), F-07-03 / F-11-02 ──────────────────
+// ── terminology: code-set slots (ISO / IANA) ─────────────────────────────────────
 
 /// A bare `CODE_PHRASE` node for an external (ISO/IANA) code-set slot.
 fn code_phrase(terminology: &str, code: &str) -> Value {
@@ -535,7 +535,7 @@ fn entry_bad_encoding_reported() {
     );
 }
 
-// ── terminology: openEHR-group slots, F-07-03 / F-11-03 / F-11-04 / F-11-05 ───────
+// ── terminology: openEHR-group slots ──────────────────────────────────────────────
 
 #[test]
 fn ism_transition_bad_transition_reported() {
@@ -1183,12 +1183,12 @@ fn c_string_backreference_is_enforced() {
     assert!(
         kinds(&walk_only(&json!({"_type": "DV_TEXT", "value": "ab"}), &n))
             .contains(&ValidationKind::PatternError),
-        "`ab` fails the backreference pattern (was silently passing before F-07-11)"
+        "`ab` fails the backreference pattern (was silently passing before the backreference fix)"
     );
     assert!(walk_only(&json!({"_type": "DV_TEXT", "value": "aa"}), &n).is_empty());
 }
 
-// ── C_TIME / C_DATE_TIME timezone_validity (F-07 temporal) ───────────────────
+// ── C_TIME / C_DATE_TIME timezone_validity (temporal) ────────────────────────
 
 #[test]
 fn timezone_validity_mandatory_and_disallowed() {
@@ -1494,7 +1494,7 @@ fn unqualified_sibling_admits_a_runtime_named_residual_instance() {
     );
 }
 
-// ── P20 item 15: validation-walk cost measurement (not a gate) ──────────────────
+// ── validation-walk cost measurement (not a gate) ───────────────────────────────
 
 /// Count the `_type`-bearing nodes reachable in `v` (the units both
 /// template-independent passes visit).
@@ -1514,12 +1514,12 @@ fn count_type_nodes(v: &Value) -> usize {
     }
 }
 
-/// P20 overhead checklist item 31 — MEASUREMENT (not a correctness gate):
+/// Validation-walk overhead — MEASUREMENT (not a correctness gate):
 /// quantify the archetype-conformance **walk** (pass 3) over the populated IPS
-/// example against its OPT-built `WebTemplate`. Pass 3 is where item 31's
+/// example against its OPT-built `WebTemplate`. Pass 3 is where the bulk of the
 /// per-node cost lives (per-visit `path::parse` of every constraint path, the
 /// per-visit `groups`/sibling-index rebuild, and the per-node path allocations)
-/// — the item-15 harness above only times the two template-independent passes.
+/// — the harness above only times the two template-independent passes.
 /// Times each pass and the full `validate_composition` so the before/after of
 /// the allocation-discipline rewrite is honest. Ignored by default (timing, not
 /// correctness); run:

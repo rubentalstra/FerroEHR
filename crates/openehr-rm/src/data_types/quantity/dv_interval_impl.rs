@@ -20,8 +20,8 @@
 //! NOTE: archie reports the boundary-flag invariants under the base type
 //! `INTERVAL` (its `DvInterval` composes an inner `Interval`); our `DvInterval`
 //! is flat, so we report the concrete type `DV_INTERVAL`. The indexed SQL
-//! realisation of the same ordering is the P16 `openehr_magnitude` function
-//!; this impl is the in-process authority.
+//! realisation of the same ordering is the AQL engine's `openehr_magnitude`
+//! function; this impl is the in-process authority.
 
 use crate::data_types::quantity::dv_interval::DvInterval;
 use crate::data_types::quantity::dv_ordered_impl::OrderedLimit;

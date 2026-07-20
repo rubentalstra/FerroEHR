@@ -182,7 +182,7 @@ mod tests {
 
     #[test]
     fn respond_result_set_emits_etag_on_json_200() {
-        // Empty Accept → JSON; G-1: the 200 carries the RESULT_SET ETag.
+        // Empty Accept → JSON; the 200 carries the RESULT_SET ETag.
         let rs = serde_json::json!({"rows": []});
         let resp = respond_result_set(&HeaderMap::new(), &rs);
         assert_eq!(resp.status(), StatusCode::OK);

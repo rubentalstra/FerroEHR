@@ -4,11 +4,10 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! End-to-end RBAC gate over the real axum app (§9.6 subset of
-//! `docs/enterprise/access-control.md`).
+//! End-to-end RBAC gate over the real axum app.
 //!
 //! Drives the assembled router (auth + RBAC + dispatch) with `tower`'s
-//! `oneshot`, over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`
+//! `oneshot`, over the **real** `EhrbaseService` (the scripted `Mock`
 //! is gone), and asserts the coarse role gate: an Admin-class operation is 403
 //! for a `USER` and clears the gate for an `ADMIN`; a clinical operation needs a
 //! role; disabling RBAC restores today's behaviour; a deny is attributed to the

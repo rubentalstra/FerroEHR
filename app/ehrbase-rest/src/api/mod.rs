@@ -1,7 +1,6 @@
 //! The ITS-REST **API hub** — the assembly over the generated `ROUTES` tables.
 //!
-//! The crate is laid out per ITS-REST specification (the development-edition
-//! register, `docs/design/its-rest/README.md`): one module per API group under
+//! The crate is laid out per ITS-REST specification: one module per API group under
 //! `api/`, each split along the spec's own resource boundaries and citing its
 //! governing section. This hub is the wiring layer that turns the generated
 //! contract into one axum router.

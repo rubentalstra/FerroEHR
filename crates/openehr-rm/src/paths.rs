@@ -5,7 +5,7 @@
 //! `item_at_path` / `items_at_path` / `path_exists` / `path_unique` /
 //! `path_of_item` / `parent` — over the **canonical-JSON value tree**
 //! (`serde_json::Value`), which is the repo's uniform RM representation (the
-//! node codec, the P15 validator, and the FLAT converters all navigate it).
+//! node codec, the composition validator, and the FLAT converters all navigate it).
 //!
 //! Also carries the [`EhrUri`] structural parser for the `ehr:` URI scheme
 //! (BASE `master11-paths` §"EHR URIs"; RM `data_types/master10-uri_package`
@@ -28,7 +28,7 @@
 //!     (1-based) — "the only guaranteed unique paths are those based on
 //!     positional predicates".
 //!
-//! Design notes (recorded per F-12-02):
+//! Design notes:
 //! - `PATHABLE.parent()` is a back-reference; per the repo convention (no
 //!   owning back-refs) it is realised as a root-anchored lookup
 //!   ([`parent_of`]), not a stored pointer.

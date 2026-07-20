@@ -15,7 +15,7 @@ use super::verify::{self, Verdict};
 /// The self-describing prefix stamped on a digest signature so a bare radix-64
 /// hash is not ambiguous. master06 §Digital Signature: signature "algorithms
 /// are self-describing"; our documented concretization of that self-description
-/// for the digest form (S-42, G-10 NOTE).
+/// for the digest form.
 pub(crate) const DIGEST_PREFIX: &str = "sha256:";
 
 /// A failure constructing a [`Signer`] at boot.

@@ -186,7 +186,7 @@ fn web_template_of(rel: &str) -> openehr_flat::webtemplate::WebTemplate {
     openehr_flat::webtemplate::build_web_template(&opt).expect("build web template")
 }
 
-/// The generated `required` example is committable (passes the P15 validator)
+/// The generated `required` example is committable (passes the validator)
 /// and survives FLAT round-trip + canonical-XML serialization for real
 /// templates. The example is fetched through the generated `DefinitionApi`
 /// exactly as the REST layer calls it; validation/conversion use the same
@@ -220,7 +220,7 @@ async fn required_example_validates_and_converts() {
         );
 
         // Acceptance bar: the required example is committable — it passes the
-        // full P15 validator (RM invariants + terminology + archetype
+        // full validator (RM invariants + terminology + archetype
         // conformance) with no violations.
         let violations = openehr_flat::validation::validate_composition(&comp, &wt);
         assert!(

@@ -1,7 +1,6 @@
 //! The demographic `ITEM_TAG` surface — the RM `common.item_tag` extension
 //! applied to parties (ehr-less: `ehr_id IS NULL`). Our own extension: ITS-REST
-//! 1.0.3 defines no demographic wire contract (register
-//! `docs/design/platform/04-service-demographic-ehr-index.md`). The tag store is
+//! 1.0.3 defines no demographic wire contract. The tag store is
 //! backed by the `item_tag` table via `crate::storage::tag_repo` (storage owns
 //! the SQL — no openEHR spec governs the storage, our own design); the RM
 //! `ITEM_TAG` invariant checks (`Inv_key_valid`/`Inv_value_valid`) and the wire

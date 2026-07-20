@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! Ingress overload-shedding tests, driven through the fully assembled router
-//! over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`/parking
+//! over the **real** `EhrbaseService` (the scripted `Mock`/parking
 //! hook is gone).
 //!
 //! No openEHR spec governs server overload — this is our own design (RFC 9110

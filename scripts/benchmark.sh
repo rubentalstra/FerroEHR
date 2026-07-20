@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The hospital-day benchmark runner (register 00/01) — mirrors
+# The hospital-day benchmark runner — mirrors
 # scripts/conformance.sh: bring up the selected SUT's compose stack, measure its
 # cold-start, drive the workload via `bench run`, write the per-SUT artefact set
 # under $BENCH_OUT/<sut-name>/, tear down.

@@ -14,7 +14,7 @@
 //! the appended lines before committing. Lines are never deleted — a case
 //! removed from the registry flips to `retired`.
 //!
-//! W-10 additions: the derivation square is machine-checked — every case
+//! The derivation square is machine-checked — every case
 //! carries a non-empty spec citation, a schedule trace (or a stated
 //! ECC-original reason), and a binding string; the fixture manifest parses.
 #![allow(clippy::expect_used)]

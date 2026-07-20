@@ -1,4 +1,4 @@
-//! Resource + storage sampling (register 01 §2, §4).
+//! Resource + storage sampling.
 //!
 //! For a compose-managed SUT the harness samples the app and db containers over
 //! the Docker stats CLI (~1 Hz) for CPU% and memory RSS, takes a pre-warmup idle

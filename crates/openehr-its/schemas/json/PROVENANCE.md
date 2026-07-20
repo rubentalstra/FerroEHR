@@ -23,7 +23,7 @@ package (draft-07).
 ## Role
 
 **Validation oracle only** — not a code source. The JSON *model* is the
-BMM-generated RM types (ADR-004) with the `#[derive(OpenEhrType)]` `_type`
+BMM-generated RM types with the native `_type`
 self-tagging; there are no JSON structs to generate. `openehr-its::json` reads
 `openehr_rm_1.1.0_all.json` (via `include_str!`) to validate canonical-JSON
 output in the fidelity gate (`tests/`).

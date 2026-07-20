@@ -1,4 +1,4 @@
-//! The spec-edition/version ladder (owner ruling 2026-07-13; register 90 §4).
+//! The spec-edition/version ladder (owner ruling 2026-07-13).
 //!
 //! Different CDRs speak different editions of the same specifications: our
 //! server implements the ITS-REST *development* edition (weak `W/"…"` `ETags`,

@@ -1,8 +1,8 @@
-//! The cross-SUT comparison matrix (`COMPARISON.md`) — the X1 honest
-//! comparison (`docs/plans/x1-comparison.md`): per capability, one column per
-//! SUT, every cell derived from a committed `results.json`.
+//! The cross-SUT comparison matrix (`COMPARISON.md`) — the honest
+//! comparison: per capability, one column per SUT, every cell derived from a
+//! committed `results.json`.
 //!
-//! Honesty constitution (X1 rules 1/4/8/10, carried into the target design §6):
+//! Honesty constitution:
 //! measured numbers only; the fairness register is applied before a foreign
 //! run is published (its extension routes read *not-applicable*, never
 //! *failure*); no conformance certification is claimed for a foreign run

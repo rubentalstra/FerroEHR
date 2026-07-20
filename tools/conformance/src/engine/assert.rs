@@ -149,7 +149,7 @@ fn truncate(s: &str, max: usize) -> String {
 }
 
 /// Assert the response status against an **edition ladder**: `(rung, code)`
-/// pairs ordered newest→oldest (register 90 §4). The newest matching rung is
+/// pairs ordered newest→oldest. The newest matching rung is
 /// recorded on the context's [`EditionRecorder`] and returned; under a
 /// [`EditionPolicy::Pinned`] policy a lower-rung match is a failure (the
 /// ladder must never mask drift in the pinned SUT). No rung matching is the

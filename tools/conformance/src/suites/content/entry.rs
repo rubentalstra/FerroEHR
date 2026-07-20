@@ -1,5 +1,5 @@
-//! master16 — ENTRY data-validation truth tables (`master16-content_tc_entry.adoc`;
-//! register 12 §2.2–2.5): OBSERVATION, HISTORY, EVENT, and `ITEM_STRUCTURE`.
+//! master16 — ENTRY data-validation truth tables (`master16-content_tc_entry.adoc`):
+//! OBSERVATION, HISTORY, EVENT, and `ITEM_STRUCTURE`.
 //!
 //! All 26 cases author a constraining OPT (or narrow the vendored one) and
 //! commit truth-table data-set instances against it — never a fabricated pass,
@@ -9,7 +9,7 @@
 //!   (`0..1` vs `1..1`). The persistent base carries data but neither
 //!   `state` nor `protocol`, so each case authors the existence constraint
 //!   ([`author::constrain_nested_single_mandatory`] on `OBSERVATION`) and drives
-//!   three genuine rows of the 8-row table (register 12 G-1): the RM/schema
+//!   three genuine rows of the 8-row table: the RM/schema
 //!   `data`-absent reject, the archetype existence-boundary row
 //!   (`data present, state/protocol absent`) that **distinguishes** this case
 //!   from its siblings, and a `state`+`protocol`-present accept row (injected —
@@ -20,7 +20,7 @@
 //!   existence, authored OPT, {0,1,3} events with `summary` absent (the
 //!   summary-absent half of each 6-row table). RM `HISTORY.Events_valid` (≥1
 //!   event OR a summary) overrides the schedule's "no events, absent summary →
-//!   accepted" row (register 12 G-7): the RM invariant is spec-authoritative
+//!   accepted" row: the RM invariant is spec-authoritative
 //!   over the printed schedule table.
 //! - **EVENT (5, ECC-VAL-029..033)** — `state` existence (2, like
 //!   OBSERVATION) + type narrowing (`POINT_EVENT`/`INTERVAL_EVENT`; abstract
@@ -86,7 +86,7 @@ fn events_ok(card: Card, count: usize) -> bool {
 pub fn entries() -> Vec<CaseEntry> {
     let mut all = Vec::new();
 
-    // ── OBSERVATION (4) — state/protocol existence (register 12 G-1) ──────────
+    // ── OBSERVATION (4) — state/protocol existence ────────────────────────────
     let obs: [(&str, &str, &str, crate::engine::harness::CaseRun); 4] = [
         (
             "val/obs-state-ex-opt-protocol-ex-opt",
@@ -285,12 +285,12 @@ pub fn entries() -> Vec<CaseEntry> {
     all
 }
 
-// ── OBSERVATION state/protocol existence (register 12 G-1) ────────────────────
+// ── OBSERVATION state/protocol existence ──────────────────────────────────────
 
 /// Inject an `OBSERVATION.state` (a HISTORY, cloned from the mandatory
 /// `data`) and `OBSERVATION.protocol` (an `ITEM_STRUCTURE`, cloned from the
 /// event's `ITEM_TREE` `data`) — a fabricated `state present, protocol present`
-/// instance the persistent base lacks (register 12 G-1/G-8). RM 1.2.0 ehr
+/// instance the persistent base lacks. RM 1.2.0 ehr
 /// §OBSERVATION: `state` is `HISTORY<ITEM_STRUCTURE>`, `protocol` is
 /// `ITEM_STRUCTURE` — both cloned subtrees are RM-valid.
 fn inject_obs_state_protocol(comp: &mut Value) {
@@ -318,7 +318,7 @@ fn inject_event_state(comp: &mut Value) {
     }
 }
 
-/// Drive one OBSERVATION existence case (register 12 G-1): author the
+/// Drive one OBSERVATION existence case: author the
 /// `state`/`protocol` existence constraint on the persistent OPT, then commit
 /// three genuine rows of the 8-row master16 table — the RM/schema `data`-absent
 /// reject, the archetype existence-boundary row (`data present, state/protocol
@@ -431,7 +431,7 @@ obs!(
     true
 );
 
-// ── EVENT state existence (register 12 G-1) ───────────────────────────────────
+// ── EVENT state existence ─────────────────────────────────────────────────────
 
 /// Drive one EVENT state-existence case: author `EVENT.state` existence on the
 /// persistent OPT, then commit the `data`-absent reject (RM/schema), the
@@ -504,8 +504,8 @@ fn event_state_mand<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 // ── EVENT type narrowing ──────────────────────────────────────────────────────
 
-/// Fabricate a valid `INTERVAL_EVENT` in place of the base `POINT_EVENT`
-/// (register 12 G-8): promote its `_type` and inject the mandatory `width`
+/// Fabricate a valid `INTERVAL_EVENT` in place of the base `POINT_EVENT`:
+/// promote its `_type` and inject the mandatory `width`
 /// (`DV_DURATION` PT1H) + `math_function` (`DV_CODED_TEXT` `openehr::146|mean`|;
 /// RM 1.2.0 `data_structures` §`INTERVAL_EVENT`).
 fn build_interval_event(comp: &mut Value) {
@@ -558,7 +558,7 @@ fn event_type_any<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// Boundary: the reject copy swaps only `_type` (no `width`/`math_function`), so
 /// it is also RM-incomplete — a spec-correct SUT rejects it, but the schedule's
 /// exact "Class not allowed" reason string is not machine-assertable here
-/// (register 12 G-3); only the (edition-laddered) reject verdict is asserted.
+/// only the (edition-laddered) reject verdict is asserted.
 fn event_type_point<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {
         let tid = "cnf_cont_event_point_event";
@@ -655,7 +655,7 @@ fn event_type_interval<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// RM `HISTORY.Events_valid` (≥1 event OR a summary) makes the 0-events +
 /// absent-summary row **reject** regardless of the archetype cardinality — this
 /// overrides the schedule's `CONT-HIST-events_card_any-summary_ex_opt` "no
-/// events, absent summary → accepted" row (register 12 G-7: the RM invariant is
+/// events, absent summary → accepted" row (the RM invariant is
 /// spec-authoritative over the printed table).
 async fn drive_hist(
     ctx: &RunContext<'_>,
@@ -703,7 +703,7 @@ async fn drive_hist(
     }
     let report = drive::drive_authored(ctx, &xml, rows).await?;
     // Schedule table = 6 rows (3 events × 2 summary); the summary-present half is
-    // the declared coverage bound (register 12 G-5).
+    // the declared coverage bound.
     Ok(report.of_schedule_rows(6))
 }
 
@@ -795,8 +795,7 @@ hist!(
 /// OPT slot forbids (rejected, "Class not allowed"). Declared bound: the 4-row
 /// table (one sibling driven per case; the swap leaves the narrowed subtype's
 /// items in place, so a bare `_type` change to a sibling is both class-forbidden
-/// and RM-shape-invalid — the reject verdict, not the exact reason, is asserted,
-/// register 12 G-3).
+/// and RM-shape-invalid — the reject verdict, not the exact reason, is asserted).
 fn drive_item_str<'a>(
     ctx: &'a RunContext<'a>,
     narrowed: &'static str,

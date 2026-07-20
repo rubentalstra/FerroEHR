@@ -41,7 +41,7 @@
 //! explicitly non-normative ("vendors may produce different results"). The value
 //! choices here (fixed instants, first coded value, range-clamped magnitudes) are
 //! ours; only the mandatory-skeleton-is-committable contract of the `required`
-//! level is load-bearing (verified by the P15 validator in the crate tests).
+//! level is load-bearing (verified by the composition validator in the crate tests).
 //! Reachable-in-content `PARTY_*` value leaves are skipped rather than fabricated
 //! (they carry no FLAT round-trip shape); they are almost always optional.
 

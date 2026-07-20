@@ -1,11 +1,10 @@
-//! The ehrbase-rs Conformance Catalogue (ECC) runner — W-10 redesign.
+//! The ehrbase-rs Conformance Catalogue (ECC) runner.
 //!
 //! A spec-first openEHR conformance instrument able to assess **any** ITS-REST
 //! CDR: the case universe derives from the CNF Platform Conformance Test
 //! Schedule (`docs/specs/openehr/CNF/docs/platform_test_schedule/`), profiles
 //! and claims from `CNF/docs/profiles/master03-profiles.adoc`, and the result
-//! artefacts from `CNF/docs/certificate/master03-certificate.adoc`. Design:
-//! `docs/design/conformance/` (registers 01–13, 80 data sets, 90 target).
+//! artefacts from `CNF/docs/certificate/master03-certificate.adoc`.
 //!
 //! Framework law (owner rulings, carried):
 //! - **Own identity**: every case is an ECC case (`ECC-<AREA>-<NNN>`,

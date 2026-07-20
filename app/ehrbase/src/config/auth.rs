@@ -2,7 +2,7 @@
 //!
 //! No openEHR spec governs authentication mechanics (ITS-REST leaves the scheme
 //! open) — our own design. This is the `[auth]` section of the one server
-//! configuration tree (`docs/design/configuration.md` §3.5); it carries **no
+//! configuration tree; it carries **no
 //! loader of its own** — the whole tree is assembled once by `ehrbase::config`
 //! and this struct is deserialized as a field of it.
 //!
@@ -40,7 +40,7 @@ pub struct AuthConfig {
     /// identically-named (upper-cased) role via scope→role extraction, so the
     /// RBAC `admin_role` gate subsumes it. Still consulted by the management
     /// surface's `AdminOnly` access level. Unset by default.
-    // NOTE: `docs/design/configuration.md` §4 retires `admin_scope`; it is
+    // NOTE: the configuration design retires `admin_scope`; it is
     // kept for one transition while the management AdminOnly gate still reads it
     // — retiring it fully is a follow-up that rewires that gate to the RBAC
     // admin role. No openEHR spec governs authorization (SM places it out of

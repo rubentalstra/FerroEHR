@@ -14,7 +14,7 @@
 //! known-committable base compositions via [`super::mutate`], asserting the
 //! ITS-REST validation contract.
 //!
-//! ## Reject-status assertion (register 12 G-3)
+//! ## Reject-status assertion
 //!
 //! The schedule's "rejected" is a negative response with **no** pinned code; the
 //! ITS-REST edition matters. `composition_create` pins **422** for a semantic
@@ -184,7 +184,7 @@ pub fn content_meta(
     }
 }
 
-/// Assert a commit response matches `expected` (register 12 G-3): accept is
+/// Assert a commit response matches `expected`: accept is
 /// `composition_create` 201; reject is the edition ladder `[(Development, 422),
 /// (Release103, 400)]`. The failure message cites the contract so a divergence is
 /// a copy-pasteable finding.

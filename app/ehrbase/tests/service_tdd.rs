@@ -9,8 +9,8 @@
 //! `PostgreSQL` 18 (shared testkit harness).
 //!
 //! Spec: SM `docs/specs/openehr/SM/docs/UML/classes/i_tdd_service.adoc`
-//! (included by `SM/docs/openehr_platform/master09-message_service.adoc`);
-//! design `docs/design/sm-platform/10-message-integration.md` §2. Fixtures are
+//! (included by `SM/docs/openehr_platform/master09-message_service.adoc`).
+//! Fixtures are
 //! the vendored CNF corpus TDD instances
 //! (`docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/compositions/TDD/`)
 //! and their matching OPT

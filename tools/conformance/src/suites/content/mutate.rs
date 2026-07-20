@@ -96,7 +96,7 @@ pub fn set_category(comp: &mut Value, code: &str, value: &str) {
 /// composition §COMPOSITION: `context` is `0..1` with no category↔context
 /// invariant (only `Category_validity`), so a missing context is RM-legal
 /// regardless of category — the authored OPT's `context` existence is the sole
-/// governing constraint (register 12 G-6).
+/// governing constraint.
 pub fn remove_context(comp: &mut Value) {
     if let Value::Object(map) = comp {
         map.remove("context");

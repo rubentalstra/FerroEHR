@@ -8,7 +8,7 @@
 //! `lifecycle_state`, data, `signature`, `attestations` — is preserved verbatim
 //! ("the `ORIGINAL_VERSION` instance is never modified", master06 §Copying).
 //!
-//! NOTE (G-03, master06 §Committal): the greenfield store holds one row per
+//! NOTE (master06 §Committal): the greenfield store holds one row per
 //! version (identity + `commit_audit` + data), not a distinct
 //! `IMPORTED_VERSION` wrapper object; the served form is the `ORIGINAL_VERSION`.
 //! The "import" is expressed as (a) the preserved original `commit_audit` +

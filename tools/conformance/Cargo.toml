@@ -1,7 +1,7 @@
 [package]
 name = "conformance"
 version.workspace = true
-description = "openEHR CNF Platform Conformance Test Schedule runner (the ADR-008 acceptance instrument)"
+description = "openEHR CNF Platform Conformance Test Schedule runner (the acceptance instrument)"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -21,9 +21,9 @@ async-trait = { workspace = true }
 reqwest = { workspace = true }
 # The B4 `TS` area spins up a hermetic FHIR-tx fixture server (canned
 # $expand/$validate-code/$lookup/$subsumes + fault injection) the runner hosts
-# and records the exchange from — a runtime dependency, not just a test tool
-# (docs/design/terminology-server-integration.md §5). tools/conformance is a
-# dev/verification crate (publish = false), not part of the shipped app.
+# and records the exchange from — a runtime dependency, not just a test tool.
+# tools/conformance is a dev/verification crate (publish = false), not part of
+# the shipped app.
 wiremock = { workspace = true }
 clap = { workspace = true }
 # The upstream fairness adjudication register (X1) is a committed TOML file
@@ -34,10 +34,10 @@ toml = { workspace = true }
 jiff = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
-# The SIGN-* capability cases (design §4.6) recompute the version digest from the
+# The SIGN-* capability cases recompute the version digest from the
 # served VERSION's canonical form: `sha256:` + base64(SHA-256(canonical_form)),
-# the exact format `ehrbase-signing` produces (docs/design/version-signing.md
-# §3.2). Recomputed here (not pulled from `ehrbase-signing`) so the lean
+# the exact format `ehrbase-signing` produces.
+# Recomputed here (not pulled from `ehrbase-signing`) so the lean
 # external-SUT CLI build stays free of the crypto stack.
 sha2 = { workspace = true }
 base64 = { workspace = true }

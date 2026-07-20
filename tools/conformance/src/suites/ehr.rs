@@ -1,8 +1,7 @@
-//! EHR + `EHR_STATUS` cases — the master06 spine
-//! (`docs/design/conformance/03-ehr.md`).
+//! EHR + `EHR_STATUS` cases — the master06 spine.
 //!
 //! Every case concretizes a `master06-func_tc_ehr.adoc` test case (its
-//! [`ScheduleTrace`] carries the `<I_*.op-case>` form), plus two register-§3
+//! [`ScheduleTrace`] carries the `<I_*.op-case>` form), plus two
 //! extensions (the invalid-`EHR_STATUS` data-set-class negative and the
 //! non-functional Anonymous-EHRs capability case). The SM `has_ehr` /
 //! `set/clear …` operations have no discrete ITS-REST verb, so they are
@@ -12,15 +11,15 @@
 //!
 //! Wire ids come ONLY from [`crate::wire`]; there are no `::system::`
 //! literals — negative `If-Match` ids are built from an OBSERVED id via
-//! [`support::nonexistent_version_like`] (register 03 G-1). Positive
+//! [`support::nonexistent_version_like`]. Positive
 //! `EHR_STATUS` payloads are authored at the RM 1.2.0 canonical shape (the
 //! pinned development edition).
 //
-// NOTE: register 03 G-3 (RM wire version ladder) is only partially met:
+// NOTE: the RM wire version ladder is only partially met:
 // EHR_STATUS request payloads are authored at RM 1.2.0 (PARTY_SELF subject,
 // RM ehr master04 §EHR Status). A per-edition request-payload provider
 // (RM 1.0.2 minimum, master03-overview §API Conformance) belongs to the
-// register-90 wire adapter, which does not yet expose one; our pinned CI runs
+// wire adapter, which does not yet expose one; our pinned CI runs
 // the development edition, so this is exercised faithfully today.
 
 use serde_json::{Value, json};
@@ -40,8 +39,8 @@ use crate::wire::{ids, negotiate};
 const JSON: &[Format] = &[Format::Json];
 
 /// The subject namespace for authored `EHR_STATUS` identities. Test-data
-/// only — NOT a creating-system-id assumption about the SUT (register 03 G-1
-/// forbids only wire-id literals).
+/// only — NOT a creating-system-id assumption about the SUT (only wire-id
+/// literals are forbidden).
 const SUBJECT_NS: &str = "conformance";
 
 /// Every registered EHR/`EHR_STATUS` case (21 schedule + 2 extensions).
@@ -496,7 +495,7 @@ async fn update_flag(
 /// `ehr_id` must be a negative response. The `If-Match` is a syntactically
 /// valid `OBJECT_VERSION_ID` naming a version the SUT does not hold — built
 /// from an OBSERVED id via [`support::nonexistent_version_like`] so no
-/// `::system::` literal is baked into the instrument (register 03 G-1).
+/// `::system::` literal is baked into the instrument.
 async fn update_flag_bad_ehr(
     ctx: &RunContext<'_>,
     field: &str,
@@ -584,12 +583,12 @@ fn run_create_ehr_main<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         // master06 §Test Data Sets class 1.a: the 16-row valid matrix, the
         // cartesian product of (is_queryable, is_modifiable, other_details,
-        // ehr_id_provided). Authored programmatically (register-80 preferred
+        // ehr_id_provided). Authored programmatically (preferred data-set
         // source: generated > owned > corpus) — this replaces the legacy Rust
-        // literal that masqueraded as corpus data (register 03 G-4). The 8
+        // literal that masqueraded as corpus data. The 8
         // ehr_id-absent rows POST /ehr; the 8 ehr_id-provided rows PUT
         // /ehr/{id}. Each creation is verified against the data set by reading
-        // back EHR_STATUS and asserting the served flags (register 03 G-5).
+        // back EHR_STATUS and asserting the served flags.
         for i in 0u8..16 {
             let is_queryable = i & 0b0001 != 0;
             let is_modifiable = i & 0b0010 != 0;
@@ -699,7 +698,7 @@ fn run_get_ehr_existing_by_ehr_id<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a>
 
 fn run_get_ehr_existing_by_subject_id<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
-        // Register 03 G-5: assert the EHR returned by the subject query is the
+        // Assert the EHR returned by the subject query is the
         // one whose EHR_STATUS subject matches (identity, not just 200).
         let subject = fresh_subject();
         create_ehr_with_status(ctx, &ehr_status(true, true, false, &subject)).await?;
@@ -747,7 +746,7 @@ fn run_get_ehr_invalid_subject_id<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a>
 
 fn run_get_ehr_status_by_ehr_id<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
-        // Register 03 G-5: the served EHR_STATUS must match the create-time
+        // The served EHR_STATUS must match the create-time
         // rules (subject presence + is_queryable + is_modifiable), not just be
         // _type EHR_STATUS.
         let subject = fresh_subject();
@@ -821,7 +820,7 @@ fn run_create_ehr_invalid_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
         // subject, so it must be ACCEPTED (2xx). The exception is detected by
         // the fixture's shape (spec fact), not a filename.
         //
-        // NOTE: register 03 G-2 wants per-fixture expected-outcome to live
+        // NOTE: ideally per-fixture expected-outcome would live
         // in the runner's adjudication register; that seam is not yet exposed
         // to the suites, so the single spec-valid-anonymous exception is
         // encoded here with its spec citation (replacing the legacy hardcoded

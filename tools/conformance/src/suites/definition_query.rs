@@ -1,7 +1,6 @@
-//! DEFINITION / stored-query provisioning — the master05 spine (area `Sqr`;
-//! `docs/design/conformance/02-definitions-query.md`).
+//! DEFINITION / stored-query provisioning — the master05 spine (area `Sqr`).
 //!
-//! **master05 is a schedule stub** (register 02 G-1): its §Test Environment and
+//! **master05 is a schedule stub**: its §Test Environment and
 //! §Test Data Sets are the literal `[.tbd] TBD` and every case Flow is the
 //! placeholder `xx`. There is therefore no normative flow to be faithful to, so
 //! every case here is [`ScheduleTrace::EccOriginal`] — the spine is **derived**
@@ -10,9 +9,9 @@
 //! operation names and case ids. No SQR case is presented as
 //! schedule-conformant.
 //!
-//! Register 02 rulings realized here:
+//! Rulings realized here:
 //!
-//! - **G-2 / D2 (`list_queries` split).** ITS-REST binds the list resource as
+//! - **`list_queries` split.** ITS-REST binds the list resource as
 //!   `GET /definition/query/{qualified_query_name}` (verbs `[get, put]`); a bare
 //!   `GET /definition/query` collection is absent in Release-1.0.3 and
 //!   development@e8a093e. So `list_queries-non_empty` is rebound to the named
@@ -21,15 +20,15 @@
 //!   The bare-list endpoint is an edition-ladder probe: a future/other-CDR
 //!   edition exposing it would make the skipped cases live (recorded, not baked
 //!   shut).
-//! - **G-3 (placeholder id + round-trip).** The schedule's literal `has_query-xxx`
+//! - **Placeholder id + round-trip.** The schedule's literal `has_query-xxx`
 //!   placeholder id is NOT carried as the case id — this case is renamed
 //!   `sqr/has-query-existing` (a new slug; the retired `sqr/has-query-xxx`
 //!   number is recorded in the catalogue), and the stub heading is kept in the
 //!   `schedule` trace. The store cases assert the retrieved AQL **round-trips**
 //!   to what was stored, not merely a status.
-//! - **G-4 (data-set sourcing).** Valid + invalid AQL come from register 80's
-//!   corpus keys (shared with the QUERY area), not hand-picked strings.
-//! - **G-5 (negative status width).** The store-time negatives accept
+//! - **Data-set sourcing.** Valid + invalid AQL come from the shared corpus
+//!   keys (shared with the QUERY area), not hand-picked strings.
+//! - **Negative status width.** The store-time negatives accept
 //!   `[400, 422]`: ITS-REST does not pin `400` (malformed request) vs `422`
 //!   (semantically-invalid AQL) for stored-query create — an implementation
 //!   choice, recorded as a boundary rather than masked.
@@ -52,7 +51,7 @@ const STORE_CITATION: &str = "ITS-REST 1.0.3 DEFINITION QUERY API §store/get st
 const LIST_SKIP: &str = "master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST \
      binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, \
      not a bare GET /definition/query. An edition exposing a bare-list resource would make this case \
-     live (register 02 G-2 edition probe).";
+     live (an edition probe).";
 const LIST_BINDING: Binding = Binding::NoRestBinding(
     "I_DEFINITION_QUERY.list_queries (master05 §list_queries, bare collection)",
 );
@@ -89,13 +88,13 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("PUT /definition/query/{qualified_query_name}/{version}"),
             run_store_bad_formalism,
         ),
-        // ── has_query (renamed from the schedule's `xxx` placeholder — G-3) ────
+        // ── has_query (renamed from the schedule's `xxx` placeholder) ──────────
         rest_case(
             "sqr/has-query-existing",
             "Stored query existence check — existing",
             STORE_CITATION,
             "schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 \
-             — I_DEFINITION_QUERY.has_query-xxx (master05:37, placeholder id; slug descriptivised per G-3)",
+             — I_DEFINITION_QUERY.has_query-xxx (master05:37, placeholder id; slug descriptivised)",
             Binding::Rest("GET /definition/query/{qualified_query_name}/{version}"),
             run_has_query,
         ),
@@ -155,7 +154,7 @@ fn rest_case(
     }
 }
 
-/// A bare-list case: no ITS-REST binding → skip-with-reason (register 02 G-2).
+/// A bare-list case: no ITS-REST binding → skip-with-reason.
 fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
@@ -186,7 +185,7 @@ fn codec(e: &fixtures::FixtureError) -> CaseError {
     CaseError::Codec(e.to_string())
 }
 
-/// A valid AQL query string from register 80's corpus (group A, the
+/// A valid AQL query string from the corpus (group A, the
 /// `get_ehrs` query — a minimal, always-valid AQL 1.1 statement).
 fn valid_aql() -> Result<String, CaseError> {
     let fixtures = fixtures::aql_valid("A").map_err(|e| codec(&e))?;
@@ -198,7 +197,7 @@ fn valid_aql() -> Result<String, CaseError> {
     fixtures::aql_text(fixture).map_err(|e| codec(&e))
 }
 
-/// A malformed AQL string from register 80's invalid corpus (group A).
+/// A malformed AQL string from the invalid corpus (group A).
 fn invalid_aql() -> Result<String, CaseError> {
     let fixtures = fixtures::aql_invalid("A").map_err(|e| codec(&e))?;
     let fixture = fixtures
@@ -230,7 +229,7 @@ async fn store(ctx: &RunContext<'_>, aql: &str) -> Result<(String, String, u16),
 // ── valid_query ──────────────────────────────────────────────────────────────
 
 /// valid_query-valid: a valid AQL query is stored (`[200, 201]`) and its text
-/// round-trips on read (register 02 G-3 — not a status-only check).
+/// round-trips on read (not a status-only check).
 fn run_store_valid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     boxed!({
         let aql = valid_aql()?;
@@ -276,7 +275,7 @@ fn run_store_invalid<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// valid_query-bad_formalism: a non-AQL body (SQL) is rejected at store time.
 //
-// NOTE: no vendored "non-AQL formalism" corpus exists (register 80 owns AQL
+// NOTE: no vendored "non-AQL formalism" corpus exists (the corpus holds AQL
 // classes only), so the bad-formalism data set is an inline SQL literal — the
 // one hand-authored body in this suite, kept because it is a formalism the
 // corpus deliberately does not carry.
@@ -289,7 +288,7 @@ fn run_store_bad_formalism<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 // ── has_query ──────────────────────────────────────────────────────────────
 
-/// `has_query` (renamed from the schedule `xxx` placeholder — G-3): store a query
+/// `has_query` (renamed from the schedule `xxx` placeholder): store a query
 /// then confirm existence via the named GET, asserting the stored AQL
 /// round-trips.
 fn run_has_query<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
@@ -323,7 +322,7 @@ fn run_has_query<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 /// list_queries-non_empty (D2 rebind): after a store, the named list resource
 /// `GET /definition/query/{name}` returns the query versions (200).
 //
-// NOTE (register 02 G-2): this lists a single named query, not "all stored
+// NOTE: this lists a single named query, not "all stored
 // queries" — the SM bare-collection semantics have no ITS-REST binding, so the
 // "list all" / select_items post-conditions are covered only by the skipped
 // bare-list cases.

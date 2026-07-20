@@ -3,7 +3,7 @@
 //! `DV_COUNT` inherits the DV_AMOUNT / DV_QUANTIFIED invariants
 //! (`Accuracy_is_percent_validity`, `Accuracy_valid`, `Magnitude_status_valid`)
 //! plus the DV_ORDERED `Normal_range_and_status_consistency` (via the
-//! ordered-magnitude machinery in `dv_ordered_impl`, F-12-04/06).
+//! ordered-magnitude machinery in `dv_ordered_impl`).
 
 use crate::data_types::quantity::dv_count::DvCount;
 use crate::data_types::quantity::dv_ordered_impl::push_normal_range_consistency;

@@ -27,8 +27,7 @@
 /// one variant here.
 ///
 /// Variants marked *(prose-only)* appear in SM interface `.Errors` blocks but
-/// in no vendored enumeration — a catalogued spec gap
-/// (`docs/design/sm-platform/05-ehr.md`); this enum is their one concrete
+/// in no vendored enumeration — a catalogued spec gap; this enum is their one concrete
 /// home.
 ///
 /// Deliberately **not** `#[non_exhaustive]`: this is an internal,

@@ -1,5 +1,5 @@
 //! Per-class latency recording with coordinated-omission correction
-//! (`docs/design/benchmark/01-measurement.md` §1).
+//! (latencies measured against planned send times, not observed start times).
 //!
 //! One [`hdrhistogram::Histogram`] per [`OpClass`] at µs resolution / 3
 //! significant digits. Latency is measured against the operation's **planned**
@@ -19,7 +19,7 @@ use hdrhistogram::serialization::{Serializer, V2Serializer};
 use crate::OpClass;
 use crate::model::event::{ClinicalEvent, EventInstance};
 
-/// Histogram significant figures (register 01 §1 — 3 sig-digits).
+/// Histogram significant figures (3 sig-digits).
 const SIGFIG: u8 = 3;
 
 /// The recordable ceiling in microseconds (6 h). Samples above are saturated to
@@ -27,7 +27,7 @@ const SIGFIG: u8 = 3;
 const MAX_RECORD_US: u64 = 6 * 3_600 * 1_000_000;
 
 /// Summary statistics for one operation class, as emitted into `results.json`
-/// (`docs/design/benchmark/01-measurement.md` §6 `classes` entry). Latencies
+/// (the `classes` entry). Latencies
 /// are microseconds; `histogram_b64` is the base64 of the `HdrHistogram` V2
 /// serialization (the raw distribution, for offline re-analysis).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -61,7 +61,7 @@ pub struct Recorder {
     hists: BTreeMap<OpClass, Histogram<u64>>,
     /// A merged histogram over every measured sample (all classes), so an
     /// overall percentile is a direct read rather than a max-of-class-p99s
-    /// approximation — the capacity/knee series (register 01 §3) reads its p99
+    /// approximation — the capacity/knee series reads its p99
     /// from here.
     overall: Histogram<u64>,
     errors: BTreeMap<OpClass, u64>,
@@ -196,8 +196,8 @@ impl Recorder {
     }
 
     /// The 99th-percentile latency (µs) across **all** measured classes, read
-    /// from the merged overall histogram — the capacity/knee series' SLO probe
-    /// (register 01 §3). Zero when nothing measured.
+    /// from the merged overall histogram — the capacity/knee series' SLO probe.
+    /// Zero when nothing measured.
     #[must_use]
     pub fn overall_p99_us(&self) -> u64 {
         self.overall.value_at_quantile(0.99)

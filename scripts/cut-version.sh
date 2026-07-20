@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cut a frozen documentation version onto the docs-dist orphan branch.
-# docs/design/docs-website.md §2c — "generate once, never rebuild".
+# "generate once, never rebuild".
 #
 # Usage: scripts/cut-version.sh vX.Y.Z
 #

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate every codegen output and fail if any drifted from the vendored
-# specs (ADR-004 for BMM → spec crates; ADR-005 for the ITS XML/REST surfaces).
+# specs (BMM → spec crates; the ITS XML/REST surfaces).
 #
 # The generated code is a pure function of the vendored specs + the emitter, so
 # a clean checkout must regenerate byte-identically. This guards against someone

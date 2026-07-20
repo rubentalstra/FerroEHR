@@ -5,7 +5,7 @@
 //! (`Magnitude_status_valid`) invariants — see the shared helper.
 //!
 //! Plus the DV_ORDERED `Normal_range_and_status_consistency` invariant, via
-//! the ordered-magnitude machinery in `dv_ordered_impl` (F-12-04/06).
+//! the ordered-magnitude machinery in `dv_ordered_impl`.
 //!
 //! NOTE: the DV_ORDERED `Normal_status_validity` invariant (terminology)
 //! is deferred to the composition validator + `openehr-term` (this crate has

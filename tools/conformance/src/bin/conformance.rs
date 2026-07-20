@@ -1,4 +1,4 @@
-//! The ECC conformance CLI (W-10 redesign).
+//! The ECC conformance CLI.
 //!
 //! ```text
 //! conformance run     --base-url URL [--sut ehrbase-rs|ehrbase-java|byo] [--sut-name NAME]

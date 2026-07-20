@@ -1,6 +1,5 @@
 //! The reserved-namespace allowlist, the section registry, the two permanent
-//! conventional aliases, and the list-typed key registry
-//! (`docs/design/configuration.md` §4/§5.7). No openEHR spec governs
+//! conventional aliases, and the list-typed key registry. No openEHR spec governs
 //! configuration — our own design.
 //!
 //! There is deliberately NO legacy-variable remapping here (greenfield, owner

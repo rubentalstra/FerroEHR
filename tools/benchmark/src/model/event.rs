@@ -1,11 +1,11 @@
-//! The clinical-event catalogue (`docs/design/benchmark/00-workload-model.md`
-//! §2): each event `E1..E10` expands to a fixed sequence of CDR operations, and
+//! The clinical-event catalogue: each event `E1..E10` expands to a fixed
+//! sequence of CDR operations, and
 //! carries a per-patient-day rate. [`schedule`](crate::model::schedule) assigns
 //! arrival times and renders payloads; this module is the catalogue's data.
 //!
 //! NOTE: no openEHR spec governs the benchmark workload; this is our own
-//! pre-registered clinical-day model (register 00). E1's admission sequence is
-//! extended beyond the register's literal "POST /ehr → GET /ehr → admission
+//! pre-defined clinical-day model. E1's admission sequence is
+//! extended beyond the model's literal "POST /ehr → GET /ehr → admission
 //! composition" to also seed an initial vitals composition and establish the
 //! patient DIRECTORY, so that every dependent op (E5 reads, E6 directory reads,
 //! E7 updates) has existing state — the register's E6 assumes a directory
@@ -34,7 +34,7 @@ pub struct EventInstance {
     /// completion denominator (every step must succeed).
     pub steps: u32,
     /// The planned send offset of the occurrence's LAST step. Warmup discard is
-    /// applied to the whole transaction by this final step (register 01 §1),
+    /// applied to the whole transaction by this final step,
     /// symmetric with the per-request warmup floor: an occurrence straddling the
     /// boundary is measured iff its last step lands in the measurement window.
     pub boundary_at: Duration,
@@ -106,7 +106,7 @@ impl Step {
     }
 }
 
-/// A clinical event (register 00 §2, `E1..E10`). The derived `Ord` follows the
+/// A clinical event (`E1..E10`). The derived `Ord` follows the
 /// catalogue declaration order (E1..E10), so a `BTreeMap` keyed on it reports in
 /// catalogue order.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -194,7 +194,7 @@ impl ClinicalEvent {
         }
     }
 
-    /// The per-patient-day rate (register 00 §2). Admission/Discharge are the
+    /// The per-patient-day rate. Admission/Discharge are the
     /// ~10% ward turnover; Provisioning is per-run (returns 0 here).
     #[must_use]
     pub fn rate_per_patient_day(self) -> f64 {
@@ -211,7 +211,7 @@ impl ClinicalEvent {
     }
 
     /// The fixed per-patient occurrence count for the `smoke` profile (a handful
-    /// per class; register 00 §3).
+    /// per class).
     #[must_use]
     pub fn smoke_count(self) -> u32 {
         match self {

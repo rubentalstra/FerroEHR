@@ -8,7 +8,7 @@
 //! the config gate (`AppConfig::tenancy.enabled`), the `200`/`201`/`204`/`404`/
 //! `400`/`409` wire outcomes for the CRUD verbs, and the JSON body shapes —
 //! driven through the assembled router over the **real** `EhrbaseService` on a
-//! real Postgres database (W-14 B+C: the scripted `Mock` is gone; the tenant
+//! real Postgres database (the scripted `Mock` is gone; the tenant
 //! CRUD persists to the real `tenant` table).
 //!
 //! Design: the tenancy model is spec-silent — our own extension; the surface is

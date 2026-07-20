@@ -1,5 +1,4 @@
-//! COMPOSITION cases — the master07 spine
-//! (`docs/design/conformance/04-composition.md`).
+//! COMPOSITION cases — the master07 spine.
 //!
 //! Every case concretizes a `master07-func_tc_ehr_composition.adoc` test case
 //! (its [`ScheduleTrace`] carries the `<I_EHR_COMPOSITION.op-case>` form) over
@@ -22,14 +21,14 @@
 //!
 //! Wire ids come ONLY from [`crate::wire`]; negative ids are built from an
 //! OBSERVED id via [`support::nonexistent_version_like`] — never a
-//! `::system::` literal (register 04 G-3). The SM `has_composition` boolean is
+//! `::system::` literal. The SM `has_composition` boolean is
 //! realized via `GET /composition/{uid}` (200 = TRUE) per the CNF guide's
 //! abstract-call → REST mapping.
 //
-// NOTE: register 04 G-6 (RM wire version ladder) is only partially met —
+// NOTE: the RM wire version ladder is only partially met —
 // positive bodies are the vendored RM-1.2.0-canonical fixtures; a per-edition
 // COMPOSITION payload provider (RM 1.0.2 minimum, master03-overview §API
-// Conformance) belongs to the register-90 wire adapter and is not yet exposed.
+// Conformance) belongs to the wire adapter and is not yet exposed.
 // Our pinned CI runs the development edition, so this is exercised faithfully.
 
 use std::time::Duration;
@@ -370,7 +369,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::Versioning,
             BOTH,
             Compare::Superset,
-            "ITS-REST 1.0.3 COMPOSITION API versioned_composition_get.yaml 200; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT (F-05-06 version-family XML)",
+            "ITS-REST 1.0.3 COMPOSITION API versioned_composition_get.yaml 200; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT (version-family XML)",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.get_versioned_composition (master07 §get_versioned_composition)",
             ),
@@ -719,7 +718,7 @@ fn content_check(ctx: &RunContext<'_>, kind: Kind, retrieved: &Value) -> Result<
 /// GET a composition-read `url` in the run's format: assert 200 + non-empty
 /// body, the version-tree number where `expected_version` is given, and the
 /// content check (over a JSON read, so an XML run is content-checked via a
-/// JSON re-read of the same resource — register 04 G-1).
+/// JSON re-read of the same resource).
 async fn get_and_check(
     ctx: &RunContext<'_>,
     url: String,
@@ -1181,7 +1180,7 @@ fn run_get_versioned<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 "VERSIONED_COMPOSITION body is empty".to_owned(),
             ));
         }
-        // Validate over a JSON read (works for both formats — F-05-06 version-family XML).
+        // Validate over a JSON read (works for both formats — version-family XML).
         let body = match ctx.format {
             Format::Json => resp.json()?,
             Format::Xml => {
@@ -1247,7 +1246,7 @@ fn run_update_persistent<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// Create then update a `kind` composition → 2 VERSIONs; assert version-tree
 /// number 2 and the audit `change_type` postcondition CREATE(249)→MODIFY(251)
-/// read back from the `ORIGINAL_VERSIONs` (master07 §`update_composition`; G-2).
+/// read back from the `ORIGINAL_VERSIONs` (master07 §`update_composition`).
 async fn run_update(ctx: &RunContext<'_>, kind: Kind) -> Result<DataSetReport, CaseError> {
     let (ehr_id, object, uid1, uid2) = setup_two(ctx, kind).await?;
     assert_version_number(&uid2, 2)?;
@@ -1281,7 +1280,7 @@ fn run_update_wrong_template<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
         //
         // Boundary: the schedule wants a template_id-mismatch error; the exact
         // error-body shape is underdetermined here, so only the negative status
-        // is asserted (composition_update.yaml 422; register 04 §2).
+        // is asserted (composition_update.yaml 422).
         let (ehr_id, uid1) = setup(ctx, Kind::Event).await?;
         let object = ids::object_uid(&uid1).to_owned();
         ensure_opt(ctx, Kind::Persistent).await?;
