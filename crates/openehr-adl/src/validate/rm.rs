@@ -469,9 +469,16 @@ impl RmScan<'_> {
             // §C_ATTRIBUTE, VDIFP). Its RM validity is checked at the resolved
             // location by the phase-2 specialisation walk, so VCARM/VCAEX/… do
             // not apply against `rm_type` here.
-            // TODO: check the differential path's RM-path validity (the "valid
-            // with respect to the reference model" half of VDIFP) once the flat
-            // form is built.
+            //
+            // NOTE: the "valid with respect to the reference model" half of VDIFP
+            // (master04.5 §C_ATTRIBUTE) is subsumed by the phase-2 resolution
+            // check: a relocated attribute either resolves to a node in the flat
+            // parent — which was itself reference-model-validated before the child
+            // could specialise it (master08 §Overview phase ordering), so the
+            // resolved node's attribute is RM-valid by construction — or it does
+            // not resolve, in which case [`super::phase2::check_attribute`] raises
+            // VDIFP ("does not exist in the flat parent"). No separate RM-path walk
+            // of the differential path is needed here.
             if attr.differential_path.is_some() {
                 continue;
             }

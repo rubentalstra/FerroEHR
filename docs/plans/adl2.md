@@ -549,7 +549,7 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   utoipa declarations, admin-console touchpoints, book chapter,
   changelog; ECC zero-drift run.
 - [ ] **A11 — close**, in this order:
-  1. **The TODO sweep (owner hard requirement 2026-07-20: "solve all open
+  1. **[DONE]** **The TODO sweep (owner hard requirement 2026-07-20: "solve all open
      TODOs that are left")**: SCOPE = every `// TODO` in
      `crates/openehr-adl` wholesale, PLUS every TODO introduced anywhere
      by this PR's diff vs develop (`openehr-flat` incl. the example/
@@ -572,7 +572,7 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
      (c) PROVEN OBSOLETE — removed with the reason in the commit.
      Zero unaccounted TODOs at close; the report carries the full
      triage table.
-  2. **The §Validation checklist audit (owner 2026-07-20)**: the
+  2. **[DONE]** **The §Validation checklist audit (owner 2026-07-20)**: the
      Simplified Formats spec's 8-point SHOULD-validate list
      (`ITS-REST/docs/simplified_formats/master04` §Validation L939 — WT
      mapping, pipe-suffix identification, mandatory ctx language/
@@ -582,7 +582,9 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
      the ingest validators point-by-point (one assertion per bullet,
      citing the bullet) — converting "substantively covered" into pinned
      proof. Any bullet found unimplemented is implemented, not waived.
-  3. The whole-corpus coverage gate final run (100% of files claimed).
+  3. **[DONE]** The whole-corpus coverage gate final run (100% of files claimed) —
+     `crates/openehr-adl/tests/corpus_coverage.rs`: 340 ADL sources, 12 categories,
+     0 unclaimed.
   3b. **The ECC Adl2Provisioning area (owner 2026-07-20: "OPTIONS —
      OBTAINED must now genuinely cover ADL2")**: a new house-numbered
      conformance area in `tools/conformance` exercising the full

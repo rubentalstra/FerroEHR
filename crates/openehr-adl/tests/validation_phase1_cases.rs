@@ -240,6 +240,56 @@ fn vobav_assumed_value_outside_constraint() {
 }
 
 #[test]
+fn vobav_ordered_assumed_value_outside_interval_constraint() {
+    // master04.5 §C_PRIMITIVE_OBJECT / §C_ORDERED — VOBAV for an ordered
+    // primitive: the assumed value must fall within some constraint interval.
+    // A C_INTEGER constrained to [0..10] with assumed value 20 violates it.
+    use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+    use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
+    use openehr_base::prelude::{Interval, ProperInterval, ProperIntervalData};
+    let interval_0_10 =
+        Interval::ProperInterval(ProperInterval::ProperInterval(ProperIntervalData {
+            lower: Some(0),
+            upper: Some(10),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: true,
+            upper_included: true,
+        }));
+    let mut a = parse(BASE);
+    let el = &mut root_data_mut(&mut a).attributes[0].children[0];
+    if let CObject::CComplexObject(CComplexObject::CComplexObject(elem)) = el {
+        elem.attributes.push(CAttribute {
+            parent: None,
+            soc_parent: None,
+            rm_attribute_name: "value".to_owned(),
+            existence: None,
+            children: vec![CObject::CInteger(CInteger {
+                parent: None,
+                soc_parent: None,
+                rm_type_name: "Integer".to_owned(),
+                occurrences: None,
+                node_id: String::new(),
+                alternative_ids: Vec::new(),
+                is_deprecated: None,
+                sibling_order: None,
+                default_value: None,
+                assumed_value: Some(20.0),
+                is_enumerated_type_constraint: None,
+                constraint: vec![interval_0_10],
+            })],
+            differential_path: None,
+            cardinality: None,
+            is_multiple: false,
+        });
+    } else {
+        panic!("expected a complex ELEMENT child");
+    }
+    let issues = validate_phase1(&a, None);
+    assert_raises(&issues, ValidationCode::Vobav);
+}
+
+#[test]
 fn vrmvp_and_vrmvav_rm_overlay() {
     // master06 §Validity — VRMVP: an rm_visibility path referencing archetype
     // nodes must be valid; VRMVAV: an alias must be a defined at-code.

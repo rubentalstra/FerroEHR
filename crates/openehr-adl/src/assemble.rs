@@ -116,7 +116,7 @@ fn assemble_with(
     let mut errors: Vec<SyntaxError> = Vec::new();
 
     let definition = assemble_definition(art, src, dialect, &mut errors);
-    let rules = match parse_artefact_rules(art, src) {
+    let mut rules = match parse_artefact_rules(art, src) {
         Ok(set) => set.into_iter().collect::<Vec<StatementSet>>(),
         Err(errs) => {
             errors.extend(errs);
@@ -158,6 +158,12 @@ fn assemble_with(
         }
         return Err(errors);
     };
+    // Resolve each rule's `EXPR_ARCHETYPE_REF` proxy against the assembled
+    // definition, replacing the parse-time placeholder with the target node
+    // (`AOM2` master05; `crate::rules::resolve_archetype_refs`).
+    for rule_set in &mut rules {
+        crate::rules::resolve_archetype_refs(rule_set, &definition);
+    }
     // A `template` may carry `template_overlay` blocks; overlays store
     // whole-file byte spans, so they re-assemble against the same `src`.
     let mut overlays = Vec::new();

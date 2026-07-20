@@ -40,6 +40,7 @@ pub mod fillers;
 mod phase1;
 mod phase2;
 mod phase3;
+mod phase_flat;
 pub mod rm;
 
 use std::collections::HashMap;
@@ -105,10 +106,9 @@ pub enum ValidationCode {
     /// VDIFV — differential path only in specialised archetype (`master04.5`
     /// §`C_ATTRIBUTE`).
     Vdifv,
-    /// VDIFP — differential path exists in flat parent (`master04.5` §`C_ATTRIBUTE`).
-    ///
-    /// TODO: needs the specialisation flattener (the flat parent) + the RM path
-    /// walk before it can run.
+    /// VDIFP — differential path exists in flat parent (`master04.5` §`C_ATTRIBUTE`;
+    /// checked in [`phase2`] by resolving the differential path against the flat
+    /// parent, with the RM-path half subsumed by that resolution — see [`rm`]).
     Vdifp,
     /// VCORM — object constraint type name exists in the RM (`master04.5`
     /// §`C_OBJECT`; checked in [`rm`]).
@@ -157,8 +157,15 @@ pub enum ValidationCode {
     Vttbk,
     /// VTCBK — constraint binding key valid (`master07` §Validity Rules).
     Vtcbk,
-    /// VETDF — external term validity (`master03` §Validity Rules).
-    /// TODO: check against an external terminology service.
+    /// VETDF — external term validity (`master03` §Validity Rules): a code bound
+    /// to an *external* terminology (SNOMED CT, LOINC, …) must exist in that
+    /// terminology. This is the vocabulary variant; the check needs a live
+    /// terminology-service resolver, which `openehr-adl` (a network-free spec
+    /// engine) cannot hold — it is validated by the application's terminology
+    /// service via a resolver seam.
+    /// TODO: validate external term bindings once a terminology-service resolver
+    /// seam is threaded into the validator (the external-terminology-service
+    /// archetype-binding validation worklist item).
     Vetdf,
     /// VTVSID — value-set id defined (`master07` §Validity Rules).
     Vtvsid,
@@ -189,9 +196,9 @@ pub enum ValidationCode {
     /// VATCD — archetype code specialisation level validity (`master03` §Validity
     /// Rules).
     Vatcd,
-    /// VATDF — value code (at-code) validity (`master03` §Validity Rules).
-    /// TODO: check the flat-parent half for specialised archetypes (needs the
-    /// flattener).
+    /// VATDF — value code (at-code) validity (`master03` §Validity Rules; a
+    /// non-specialised archetype is checked in [`phase1`], the specialised
+    /// flat-form half against the flattened terminology in [`phase_flat`]).
     Vatdf,
     /// VACDF — constraint code (ac-code) validity (`master03` §Validity Rules).
     Vacdf,
@@ -249,8 +256,9 @@ pub enum ValidationCode {
     /// §`C_ATTRIBUTE` VACMCO L158-159; a phase-3 flat-form check, [`phase3`]).
     Vacmco,
     /// VSONIF — object node identification validity in flat siblings (`master04.5`
-    /// §`ARCHETYPE_SLOT`; refs undefined VACMI).
-    /// TODO: check against the flattened parent siblings (needs the flattener).
+    /// §`C_OBJECT` VSONIF L356-357; refs the spec-undefined VACMI). Checked in
+    /// [`phase2`]: a new object node in a specialised container whose flattened
+    /// siblings are identified must itself be identified.
     Vsonif,
     /// VRDLA — resource-description language-code consistency (archie parity; no
     /// openEHR spec governs this — our own design/extension, NOTE-flagged).
@@ -790,6 +798,13 @@ fn run_phase3(
         None => return,
     };
     issues.extend(phase3::validate_phase3(flat_ref));
+    // The deferred flat-form terminology/structure checks (VATDF / VTVSMD /
+    // VACMCU / WACMCL / VCOSU) run only for a *specialised* archetype: a
+    // non-specialised archetype is its own flat form, so [`phase1`] already ran
+    // their equivalents (never double-firing here).
+    if view(archetype).is_specialised() {
+        issues.extend(phase_flat::validate_flat_form(flat_ref));
+    }
 }
 
 /// Parse and validate ADL2 `src` against phase 1 (including the source-level

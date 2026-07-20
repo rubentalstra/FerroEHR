@@ -188,6 +188,37 @@ pub fn path_exists(root: &CComplexObject, path: &str) -> bool {
     resolve(root, path) == Resolution::Found
 }
 
+/// Locate the object node `path` addresses inside `root`, returning it when the
+/// path resolves to a node within the archetype ([`Resolution::Found`]), else
+/// `None`. Mirrors [`resolve`] but yields the target [`CObject`] (used to resolve
+/// an `EXPR_ARCHETYPE_REF` proxy to its target node — `AOM2` master05).
+#[must_use]
+pub fn locate<'a>(root: &'a CComplexObject, path: &str) -> Option<&'a CObject> {
+    let segments = parse_path(path);
+    if segments.is_empty() {
+        return None;
+    }
+    let mut current: &'a CComplexObject = root;
+    for (idx, seg) in segments.iter().enumerate() {
+        let attr = complex_attributes(current)
+            .iter()
+            .find(|a| a.rm_attribute_name == seg.attribute)?;
+        let child = match &seg.node_id {
+            Some(nid) => attr.children.iter().find(|c| object_node_id(c) == nid),
+            None if attr.children.len() == 1 => attr.children.first(),
+            None => None,
+        }?;
+        if idx + 1 == segments.len() {
+            return Some(child);
+        }
+        match child {
+            CObject::CComplexObject(cco) => current = cco,
+            _ => return None,
+        }
+    }
+    None
+}
+
 /// True if `path` carries at least one node-id predicate (`[idN]`/`[atN]`) — an
 /// archetype-specific path that must resolve within the archetype, as opposed
 /// to a pure reference-model path.

@@ -33,6 +33,8 @@ use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::am24::aom2::constraint_model::primitive::constraint_status::ConstraintStatus;
 use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_base::prelude::MultiplicityInterval;
 
@@ -43,7 +45,7 @@ use super::conformance::{
 };
 use super::rm::{Bounds, RmModel};
 use super::{ArchetypeRepository, ValidationCode, ValidationIssue, view};
-use crate::codes::{codes_conformant, is_new_at_level, specialisation_depth};
+use crate::codes::{codes_conformant, is_ac_code, is_new_at_level, specialisation_depth};
 use crate::paths::{
     PathSegment, complex_attributes, complex_rm_type, object_node_id, object_rm_type, parse_path,
 };
@@ -65,11 +67,29 @@ pub(super) fn validate_phase2_spec<'a>(
         repo,
         child_level: cv.specialisation_level(),
         parent_root: pv.definition,
+        child_value_sets: value_set_members(cv.terminology),
+        parent_value_sets: value_set_members(pv.terminology),
         issues: Vec::new(),
     };
     let parent_rm = complex_rm_type(pv.definition).to_owned();
     scan.walk_attributes(cv.definition, pv.definition, &parent_rm, "");
     scan.issues
+}
+
+/// The value-set membership map (`ac-code` → member codes) of an archetype
+/// terminology, for the VPOV `value_set_expanded` subset check (`master04.5`
+/// §`C_TERMINOLOGY_NODE` L683-690).
+fn value_set_members(
+    term: &openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology,
+) -> std::collections::BTreeMap<String, Vec<String>> {
+    term.value_sets
+        .as_ref()
+        .map(|vs| {
+            vs.values()
+                .map(|set| (set.id.clone(), set.members.clone()))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Mutable state threaded through the specialisation walk. The archetype data is
@@ -80,6 +100,10 @@ struct Phase2<'a> {
     repo: &'a ArchetypeRepository,
     child_level: usize,
     parent_root: &'a CComplexObject,
+    /// The child archetype's value-set membership (`ac-code` → members).
+    child_value_sets: std::collections::BTreeMap<String, Vec<String>>,
+    /// The flat parent's value-set membership (`ac-code` → members).
+    parent_value_sets: std::collections::BTreeMap<String, Vec<String>>,
     issues: Vec<ValidationIssue>,
 }
 
@@ -212,13 +236,35 @@ impl<'a> Phase2<'a> {
         // new node.
         for child in &attr.children {
             let child_path = child_path(&attr_path, object_node_id(child));
-            match find_congruent(parent_attr, child)
+            if let Some(parent_obj) = find_congruent(parent_attr, child)
                 .or_else(|| pair_primitive_leaf(parent_attr, child))
             {
-                Some(parent_obj) => {
-                    self.check_object_pair(child, parent_obj, attr, &owner_rm, &child_path);
+                self.check_object_pair(child, parent_obj, attr, &owner_rm, &child_path);
+            } else {
+                // VSONIF: a new object node added to a container attribute that
+                // already carries identified flattened siblings must itself be
+                // identified, so it is distinguishable from those siblings
+                // (`master04.5` §`C_OBJECT`, VSONIF L356-357).
+                //
+                // NOTE: master04.5 defers VSONIF's detailed rule to VACMI, which
+                // is undefined in the vendored spec text; this implements the
+                // decidable identification requirement (an unidentified new node
+                // among identified flat siblings is invalid) — no openEHR spec
+                // text defines VACMI further.
+                if object_node_id(child).is_empty()
+                    && !aom_type(child).is_primitive()
+                    && parent_attr
+                        .children
+                        .iter()
+                        .any(|p| !object_node_id(p).is_empty())
+                {
+                    self.push(
+                        ValidationCode::Vsonif,
+                        "a new object node in a specialised container must be identified (its flattened siblings are)",
+                        &child_path,
+                    );
                 }
-                None => self.check_new_object(child, &child_path),
+                self.check_new_object(child, &child_path);
             }
         }
     }
@@ -268,6 +314,24 @@ impl<'a> Phase2<'a> {
             return;
         }
 
+        // VCORMT (`master04.5` §`C_OBJECT` L327-328): a `C_TERMINOLOGY_CODE` parent
+        // leaf is a CODE_PHRASE-typed node; it cannot be redefined by a
+        // non-terminology primitive (a C_STRING/C_INTEGER/… constrains a foundation
+        // type that cannot conform to CODE_PHRASE). This is a reference-model type
+        // non-conformance (VCORMT), more fundamental than the meta-type change the
+        // shape would otherwise read as (VSONT), so it is checked first.
+        if matches!(parent, CObject::CTerminologyCode(_))
+            && aom_type(child).is_primitive()
+            && !matches!(child, CObject::CTerminologyCode(_))
+        {
+            self.push(
+                ValidationCode::Vcormt,
+                "a terminology-code (CODE_PHRASE) node cannot be redefined by a non-terminology primitive",
+                path,
+            );
+            return;
+        }
+
         // VSONT: meta-type conformance (`master04.5` §`C_OBJECT`, VSONT L342).
         if !meta_type_conforms(child, parent) {
             self.push(
@@ -303,18 +367,26 @@ impl<'a> Phase2<'a> {
 
         // Leaf value redefinition (VPOV / VUNK) for primitive nodes.
         if aom_type(child).is_primitive() && aom_type(parent).is_primitive() {
-            match conformance::c_value_conforms_to(child, parent) {
-                ValueConformance::Conforms => {}
-                ValueConformance::Violates => self.push(
-                    ValidationCode::Vpov,
-                    "redefined leaf value constraint is not within the parent value constraint",
-                    path,
-                ),
-                ValueConformance::Unknown => self.push(
-                    ValidationCode::Vunk,
-                    "redefined leaf value constraint cannot be verified against the parent",
-                    path,
-                ),
+            // A terminology-code leaf pair is compared with value-set expansion
+            // against the flattened terminologies (`master04.5`
+            // §`C_TERMINOLOGY_NODE` L663-699), which `c_value_conforms_to` cannot
+            // see; other primitive leaves use the terminology-agnostic conformance.
+            if let (CObject::CTerminologyCode(c), CObject::CTerminologyCode(p)) = (child, parent) {
+                self.check_terminology_leaf(c, p, path);
+            } else {
+                match conformance::c_value_conforms_to(child, parent) {
+                    ValueConformance::Conforms => {}
+                    ValueConformance::Violates => self.push(
+                        ValidationCode::Vpov,
+                        "redefined leaf value constraint is not within the parent value constraint",
+                        path,
+                    ),
+                    ValueConformance::Unknown => self.push(
+                        ValidationCode::Vunk,
+                        "redefined leaf value constraint cannot be verified against the parent",
+                        path,
+                    ),
+                }
             }
         }
 
@@ -322,6 +394,87 @@ impl<'a> Phase2<'a> {
         if let (CObject::CComplexObject(cco), CObject::CComplexObject(pco)) = (child, parent) {
             self.walk_attributes(cco, pco, complex_rm_type(pco), path);
         }
+    }
+
+    /// VPOV: `C_TERMINOLOGY_CODE` leaf value conformance with value-set expansion
+    /// against the flattened terminologies (`master04.5` §`C_TERMINOLOGY_NODE`
+    /// `c_value_conforms_to` L663-699):
+    ///
+    /// * parent `any_allowed` (empty constraint) ⇒ conforms;
+    /// * `constraint_status` ordering: child status must be ≤ parent status
+    ///   (required 0 < extensible 1 < preferred 2 < example 3);
+    /// * a non-required parent (status > 0) imposes no real constraint ⇒ conforms;
+    /// * both required: lexical `codes_conformant` AND — when the parent code is a
+    ///   value-set (`ac-code`) with a non-empty expansion — every child value-set
+    ///   member must be a member of the parent value-set (`value_set_expanded`
+    ///   subset). A value-set that adds a member absent from the parent's expansion
+    ///   is a VPOV.
+    fn check_terminology_leaf(
+        &mut self,
+        child: &CTerminologyCode,
+        parent: &CTerminologyCode,
+        path: &str,
+    ) {
+        let child_code = child.constraint.split('@').next().unwrap_or("").trim();
+        let parent_code = parent.constraint.split('@').next().unwrap_or("").trim();
+        // Parent `any_allowed` ⇒ conforms.
+        if parent_code.is_empty() {
+            return;
+        }
+        let child_status = child.constraint_status.map_or(0, ConstraintStatus::value);
+        let parent_status = parent.constraint_status.map_or(0, ConstraintStatus::value);
+        if child_status > parent_status {
+            self.push(
+                ValidationCode::Vpov,
+                "redefined terminology constraint status is weaker than the parent",
+                path,
+            );
+            return;
+        }
+        // A non-required parent imposes no real constraint.
+        if parent_status > 0 {
+            return;
+        }
+        // Both required: lexical code conformance first.
+        if !codes_conformant(child_code, parent_code) {
+            self.push(
+                ValidationCode::Vpov,
+                format!(
+                    "redefined terminology code {child_code:?} does not conform to the parent code {parent_code:?}"
+                ),
+                path,
+            );
+            return;
+        }
+        // Value-set expansion subset (only when the parent constrains a value-set).
+        if is_ac_code(parent_code)
+            && let Some(parent_members) = self.parent_value_sets.get(parent_code)
+            && !parent_members.is_empty()
+        {
+            let child_members = self.expand_child_value_set(child_code);
+            if let Some(missing) = child_members.iter().find(|m| !parent_members.contains(m)) {
+                self.push(
+                    ValidationCode::Vpov,
+                    format!(
+                        "redefined value-set member {missing:?} is not in the parent value-set {parent_code:?}"
+                    ),
+                    path,
+                );
+            }
+        }
+    }
+
+    /// The expanded member set of a child `C_TERMINOLOGY_CODE` constraint: an
+    /// `ac-code` expands to its child value-set members, an `at-code` (or any
+    /// non-value-set constraint) is its own singleton value set (`master04.5`
+    /// §`C_TERMINOLOGY_NODE` `value_set_expanded`).
+    fn expand_child_value_set(&self, code: &str) -> Vec<String> {
+        if is_ac_code(code)
+            && let Some(members) = self.child_value_sets.get(code)
+        {
+            return members.clone();
+        }
+        vec![code.to_owned()]
     }
 
     /// VCORMT / VSONCT: the RM type of a redefined object node.
@@ -504,16 +657,39 @@ impl<'a> Phase2<'a> {
                         path,
                     );
                 }
-                // VDSSM: the narrowed constraint must be a proper subset — an
-                // added include narrows, an equal/empty include does not.
-                // TODO: compare the matched archetype sets for a strict proper
-                // subset (needs the archetype library query).
-                if !child_slot.is_closed && !narrows {
-                    self.push(
-                        ValidationCode::Vdssm,
-                        "a specialised slot must narrow the parent slot or be closed",
-                        path,
-                    );
+                // VDSSM: a specialised slot must narrow the parent slot or be
+                // closed (`master04.5` §`ARCHETYPE_SLOT`). The narrowing must be a
+                // *proper* subset of the parent's admitted-archetype set; full
+                // regex-language subset is undecidable, so the decidable checks are
+                // applied: (a) no `includes`/`excludes` is no narrowing; (b)
+                // `includes`/`excludes` structurally identical to the parent's is a
+                // restatement, not a proper narrowing; and (c) a child `include`
+                // that names a literal archetype id the parent slot does not admit
+                // is a widening (not a subset of the parent's admitted set).
+                if !child_slot.is_closed {
+                    if !narrows {
+                        self.push(
+                            ValidationCode::Vdssm,
+                            "a specialised slot must narrow the parent slot or be closed",
+                            path,
+                        );
+                    } else if slot_assertions_equal(&child_slot.includes, &parent_slot.includes)
+                        && slot_assertions_equal(&child_slot.excludes, &parent_slot.excludes)
+                    {
+                        self.push(
+                            ValidationCode::Vdssm,
+                            "a specialised slot must be a proper narrowing, not a restatement of the parent slot constraints",
+                            path,
+                        );
+                    } else if let Some(widened) = slot_widens_by_literal(child_slot, parent_slot) {
+                        self.push(
+                            ValidationCode::Vdssm,
+                            format!(
+                                "the specialised slot admits archetype {widened:?}, which the parent slot does not — not a proper subset"
+                            ),
+                            path,
+                        );
+                    }
                 }
             }
             _ => {}
@@ -688,7 +864,24 @@ fn pair_primitive_leaf<'a>(parent_attr: &'a CAttribute, child: &CObject) -> Opti
     if !ct.is_primitive() {
         return None;
     }
-    parent_attr.children.iter().find(|p| aom_type(p) == ct)
+    if let Some(same) = parent_attr.children.iter().find(|p| aom_type(p) == ct) {
+        return Some(same);
+    }
+    // No same-type parent leaf: a *type-changing* leaf redefinition (e.g. a
+    // C_STRING replacing a parent C_TERMINOLOGY_CODE). Pair with the parent
+    // attribute's sole primitive leaf (a single-valued primitive attribute holds
+    // exactly one), so the type mismatch is detected (VCORMT / VSONT) rather than
+    // mistaken for a brand-new node.
+    let mut prims = parent_attr
+        .children
+        .iter()
+        .filter(|p| aom_type(p).is_primitive());
+    let first = prims.next()?;
+    if prims.next().is_none() {
+        Some(first)
+    } else {
+        None
+    }
 }
 
 /// True if an occurrences interval is prohibited (`{0}` / `{0..0}`).
@@ -733,6 +926,42 @@ fn bounds_intersect(a: Bounds, b: Bounds) -> bool {
     let a_ok = a.upper.is_none_or(|au| au >= b.lower);
     let b_ok = b.upper.is_none_or(|bu| bu >= a.lower);
     a_ok && b_ok
+}
+
+/// True if two slot-assertion lists are structurally identical (the same set of
+/// `matches {…}` constraint bodies), used by VDSSM to detect a restatement (not a
+/// proper narrowing) of the parent slot.
+fn slot_assertions_equal(a: &[Assertion], b: &[Assertion]) -> bool {
+    let mut as_: Vec<String> = a.iter().filter_map(assertion_regex).collect();
+    let mut bs: Vec<String> = b.iter().filter_map(assertion_regex).collect();
+    as_.sort();
+    bs.sort();
+    as_ == bs
+}
+
+/// VDSSM widening check: if any `include` in the child slot names a **literal**
+/// archetype id (a regex body with no meta-characters) that the parent slot does
+/// not admit, the child admits an archetype outside the parent's set — a
+/// widening, not a subset. Returns the first such literal id.
+fn slot_widens_by_literal(
+    child_slot: &ArchetypeSlot,
+    parent_slot: &ArchetypeSlot,
+) -> Option<String> {
+    for inc in &child_slot.includes {
+        let body = assertion_regex(inc)?;
+        // Unescape the ADL id-regex `\.` dots; a literal id carries no other
+        // regex meta-characters.
+        let literal = body.replace("\\.", ".");
+        if literal.is_empty()
+            || literal.contains(['*', '+', '?', '(', ')', '[', ']', '|', '^', '$'])
+        {
+            continue; // a genuine pattern, not a literal id — undecidable subset
+        }
+        if !slot_admits(parent_slot, &literal) {
+            return Some(literal);
+        }
+    }
+    None
 }
 
 /// True if the parent slot admits the archetype `id` (satisfies an `include`
@@ -987,6 +1216,70 @@ terminology
             "",
             "VDSSM",
         );
+    }
+
+    #[test]
+    fn vdssm_slot_restatement_is_not_a_proper_narrowing() {
+        // Redefining slot id6 with an `include` identical to the parent's is a
+        // restatement, not a proper narrowing (`master04.5` §`ARCHETYPE_SLOT`,
+        // VDSSM).
+        assert_raises(
+            "\t\t/items matches { allow_archetype CLUSTER[id6] matches {\n\
+             \t\t\tinclude\n\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.foo.*\\.v1/}\n\t\t} }",
+            "",
+            "VDSSM",
+        );
+    }
+
+    #[test]
+    fn vdssm_slot_widening_literal_not_admitted_by_parent() {
+        // Redefining slot id6 with an `include` naming a literal archetype id the
+        // parent slot does not admit widens the slot (not a subset) —
+        // (`master04.5` §`ARCHETYPE_SLOT`, VDSSM).
+        assert_raises(
+            "\t\t/items matches { allow_archetype CLUSTER[id6] matches {\n\
+             \t\t\tinclude\n\t\t\t\tarchetype_id/value matches {/openEHR-EHR-CLUSTER\\.bar\\.v1/}\n\t\t} }",
+            "",
+            "VDSSM",
+        );
+    }
+
+    #[test]
+    fn vsonif_unidentified_new_node_among_identified_siblings() {
+        // master04.5 §C_OBJECT VSONIF: a new object node added to a container whose
+        // flattened siblings are identified must itself be identified. An
+        // unidentified new node is only constructible in the AOM model (ADL2 source
+        // requires node ids), so it is built by stripping the id off a parsed node.
+        use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+        let parent = parse_artefact(PARENT).unwrap();
+        let mut child = parse_artefact(&child(
+            "\t\titems matches { ELEMENT[id0.5] }",
+            &term("id0.5"),
+        ))
+        .unwrap();
+        // Strip the new ELEMENT's node id to exercise the unidentified case.
+        if let Archetype::AuthoredArchetype(inner) = &mut child
+            && let AuthoredArchetype::AuthoredArchetype(data) = inner.as_mut()
+            && let CComplexObject::CComplexObject(root) = &mut data.definition
+        {
+            for a in &mut root.attributes {
+                if a.rm_attribute_name == "items" {
+                    for c in &mut a.children {
+                        if let CObject::CComplexObject(CComplexObject::CComplexObject(el)) = c {
+                            el.node_id.clear();
+                        }
+                    }
+                }
+            }
+        }
+        let issues = validate_phase2_spec(
+            &child,
+            &parent,
+            &ProductionRmModel,
+            &ArchetypeRepository::new(),
+        );
+        let raised: Vec<&str> = issues.iter().map(|i| i.code.mnemonic()).collect();
+        assert!(raised.contains(&"VSONIF"), "raised {raised:?}");
     }
 
     #[test]
