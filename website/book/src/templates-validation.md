@@ -48,11 +48,30 @@ rule code (e.g. `VCARM`, `VATID`, `Pattern_validity`) and a human-readable
 detail.
 
 ADL2 artefacts (archetypes, templates, operational templates) are accepted
-as `text/plain` source on `…/definition/template/adl2` and validated at
-registration: mandatory sections, header versions, root type and node-id
-rules, specialisation depth, terminology language consistency, code
-definedness, value-set validity. A duplicate ADL2 template id returns
-**409 Conflict** on this endpoint.
+as `text/plain` source on `…/definition/template/adl2` and validated by the
+full ADL2 engine: the source is parsed, then checked against the AOM2
+validity catalogue (phase 1 basic integrity, reference-model conformance, and
+— for a specialised artefact whose parent is already loaded — specialisation
+conformance). An invalid artefact is rejected with **422 Unprocessable
+Entity** whose error body lists the offending rule codes in `validationErrors`
+(the S-codes for a source that cannot be parsed, the V-codes for a
+validation-phase failure, e.g. `VARD`, `VCORM`, `VACSD`). A duplicate ADL2
+template id returns **409 Conflict** on this endpoint.
+
+A loaded ADL2 template is retrieved in either of two representations, chosen
+by `Accept`: the stored ADL2 **source** (`text/plain`, the default) or the
+**operational template as JSON** (`application/json`). A partial
+`template_id` resolves to the latest matching version:
+
+```shell
+# The ADL2 source, verbatim
+curl -u ehrbase:ehrbase -H 'Accept: text/plain' \
+  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals.v1.0.0
+
+# The operational template as JSON
+curl -u ehrbase:ehrbase -H 'Accept: application/json' \
+  http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl2/openEHR-EHR-COMPOSITION.t_vitals.v1
+```
 
 List and retrieve loaded templates:
 
@@ -95,7 +114,12 @@ version `2.3`), so tooling built for that model works unchanged.
 You can also fetch an **example composition** for a template — a skeleton
 instance you can fill in — from
 `GET /definition/template/adl1.4/{template_id}/example`, choosing the input or
-output form and the level of detail.
+output form and the level of detail. The same example endpoint is available for
+ADL2 templates at `GET /definition/template/adl2/{template_id}/example`: the
+stored operational template is turned into a WebTemplate and walked into an
+example composition, served in any of canonical JSON/XML, FLAT, or STRUCTURED
+(via `Accept`), with the same `type` (`input`/`output`) and `detail_level`
+(`required`/`medium`/`complete`) query parameters.
 
 ## Composition formats
 

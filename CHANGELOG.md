@@ -15,7 +15,62 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+- **Template example generation now produces fully-valid compositions.**
+  `GET /definition/template/adl1.4/{template_id}/example` populated only a
+  skeleton for many templates (issue #94) and could emit out-of-range or
+  wrongly-typed values. The generator now synthesizes spec-valid values for
+  every constrained field — quantities inside their magnitude ranges (with
+  dimensionless empty units preserved), proportions satisfying their kind's
+  invariants inside the archetype's numerator/denominator ranges, durations
+  inside their declared range, coded text from closed value lists, URIs and
+  parsables honouring their pattern constraints, and the archetype-constrained
+  container/event types (`ITEM_LIST`/`ITEM_SINGLE`/`INTERVAL_EVENT`) instead
+  of abstract defaults — and every generated example at the committable detail
+  levels (`required`, `medium`) passes the server's own full composition
+  validation. Generation is byte-deterministic.
+- **Archetype-conformance validation no longer demands `archetype_node_id` on
+  reference-model types that cannot carry one.** `EVENT_CONTEXT` (and any
+  other non-`LOCATABLE` type) inherits `PATHABLE`, which the RM gives no
+  `archetype_node_id`; a template archetyping `/context[at…]` therefore could
+  never be satisfied by canonical data and such compositions were wrongly
+  rejected on commit. Non-`LOCATABLE` nodes now match structurally by their
+  attribute position (per the RM inheritance graph); `LOCATABLE` nodes keep
+  strict node-id matching.
+
 ### Added
+- **ADL2 templates are now compiled and validated by the full ADL2 engine.**
+  `POST /definition/template/adl2` runs the complete `openehr-adl` pipeline —
+  parse, then the AOM2 validity catalogue (phase 1 basic integrity, reference-
+  model conformance, and specialisation conformance against an already-loaded
+  parent) — in place of the former source-subset probe. An invalid artefact is
+  a **422** whose `Error.validationErrors` list the offending rule-code
+  mnemonics (S-codes for an unparseable source, V-codes for a validation-phase
+  failure). `GET /definition/template/adl2/{template_id}` now serves the
+  `application/json` `OperationalTemplateV2` projection alongside the
+  `text/plain` source, and resolves a partial `template_id` to the latest
+  matching version; the previously `501` `…/{template_id}/{version}` (versioned
+  get, marked deprecated in the spec) is implemented, and template list rows now
+  carry `concept` and `archetype_id`. `GET …/{template_id}/example` now generates
+  an example COMPOSITION from the compiled operational template (an ADL2 →
+  Web Template front end feeding the shared example generator), served across the
+  four `Accept_LOCATABLE` representations (canonical JSON/XML, `openehr.wt.flat`,
+  `openehr.wt.structured`) with `type` (`input`/`output`) + `detail_level`
+  (`required`/`medium`/`complete`) query parameters, and `400`/`404`/`406` exactly
+  as the ADL 1.4 example endpoint. An `Accept` naming only `application/xml` on
+  the plain template GET is a `406` (the operation declares no XML response body).
+- **ADL 1.4 archetypes are now validated by the ADL 1.4 engine, and can be
+  migrated to ADL 2.** An ADL 1.4 source archetype (the `I_DEFINITION_ADL14`
+  archetype surface) is now parsed and validated **as ADL 1.4** by the
+  `openehr-adl` engine — the subset of the phase-1 catalogue that corresponds to
+  the ADL 1.4 / AOM 1.4 standalone validity rules (VARID, VARDT, VARCN, VATID,
+  VDSEV/VDSIV, …), replacing the former structural probe. An invalid source is a
+  **422** naming the offending rule-code mnemonic. A new service capability
+  migrates a stored ADL 1.4 archetype to ADL 2 source (`adl14_convert_to_adl2`);
+  no openEHR spec governs 1.4 → 2 conversion (our own design/extension) and the
+  ITS-REST contract declares no conversion operation, so it is a library
+  capability with no REST endpoint. The ADL 1.4 operational-template (OPT) REST
+  surface (`/definition/template/adl1.4`) is unchanged.
 - **RM terminology-backed invariant validation.** Composition (and any RM
   value) validation now enforces the openEHR terminology-service and code-set
   RM class invariants at the wire-boundary dispatcher, unified into a single

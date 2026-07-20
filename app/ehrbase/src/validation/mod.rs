@@ -9,10 +9,12 @@
 //!   an operational template:
 //! - `opt` — OPT 1.4 artefact validity, the AOM2/08 catalogue on a
 //   !     flattened `openehr_its::opt14::OperationalTemplate`;
-//!   - `adl2` (A2) — ADL2 *source* registration validity, the honestly
-//!     enforceable header / ODIN / terminology subset (no cADL compiler);
 //!   - `structure` (A3) — OPT XML well-formedness (a CNF ingestion guard,
 //!     not an AOM constraint kind).
+//!
+//! ADL2 *source* validation is no longer a subset probe here: it is the full
+//! `openehr-adl` engine (parse → AOM2 phases 1–3), invoked directly from
+//! `service::definition::{adl2,wire}`.
 //! - **Surface B — instance `valid_value` cascade (a seam, NOT here).** The
 //!   recursive top-down data-conformance function ("the key function of an
 //!   archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_
@@ -32,7 +34,7 @@
 //!
 //! # Entry surface
 //!
-//! The four functions below are the crate-facing contract
+//! The functions below are the crate-facing contract
 //! (`crate::validation::<fn>`); the machinery behind them is module-private.
 //! They are definitions, not re-exports — every internal import names its
 //! defining module.
@@ -41,9 +43,9 @@
 //!
 //! - **Surface-A callers.** The A entry points are reached here from `service/`:
 //!   `templates::store` calls [`validate_opt_artefact`] +
-//!   [`validate_opt_structure`]; `service::definition::{adl2,wire}`
-//!   call [`validate_adl2_source`] + [`check_specialisation_depth`];
-//!   `service::definition::adl14` calls [`validate_opt_structure`].
+//!   [`validate_opt_structure`]; `service::definition::adl14` calls
+//!   [`validate_opt_structure`]. (ADL2 source validation is the `openehr-adl`
+//!   engine, called from `service::definition::{adl2,wire}` — not this module.)
 //! - **Surface-C dispatch (wired).** `service::ehr`'s `validate_for_commit`
 //!   routes each template-less kind (`EHR_STATUS`/`EHR_ACCESS`/FOLDER/party/
 //!   party-relationship) to its per-kind RM validator, so no commit path
@@ -57,15 +59,12 @@
 //!   unlisted archetype-rooted fillers under slotless attributes — follows the
 //!   AOM2 `c_conforms_to` / VSONCT/VSONCO formalization
 //!   (`AM/docs/AOM2/master08-validation.adoc` §Phase 2, lines 96–101).
-//!   Re-expressing the `openehr-flat` NOTE against those spec sections
-//!   (it presently cites an ADR) is the future work this note records.
 //! - **NOTE — terminology binding resolution.** VTTBK/VTCBK
 //!   here check binding *keys* only; resolving ac-code value sets against the
 //!   live terminology service (`TerminologyService`) at ingestion is unwired,
 //!   to land with the `CONSTRAINT_REF` policy
-//!   (`AM/docs/AOM2/master08-validation.adoc` §Terminology; blueprint 03-am §3).
+//!   (`AM/docs/AOM2/master08-validation.adoc` §Terminology).
 
-pub mod adl2;
 mod opt;
 mod structure;
 
@@ -85,37 +84,6 @@ use crate::service::error::ServiceError;
 /// malformed.
 pub(crate) fn validate_opt_structure(xml: &str) -> Result<(), ServiceError> {
     structure::validate_opt_structure(xml)
-}
-
-/// Validate one uploaded ADL2 source against the registration-enforceable
-/// subset of the AOM2 validity catalogue
-/// (`AM/docs/AOM2/master08-validation.adoc`; rule list in the `adl2` module
-/// doc). Returns the artefact metadata the upload path needs for storage keys
-/// and the VACSD parent check.
-///
-/// # Errors
-///
-/// The first [`adl2::Adl2Violation`] found, carrying the AOM2 rule code
-/// (`STCNT`, `VARAV`/`VARRV`, `VARDT`, `VARCN`, `VOLT`/`VOTM`, `VTLC`,
-/// `VATDF`/`VACDF`, `VTVSID`/`VTVSMD`/`VTVSUQ`, `VATDA`, `VTTBK`, …) and a
-/// human-readable detail.
-pub(crate) fn validate_adl2_source(src: &str) -> Result<adl2::Adl2Meta, adl2::Adl2Violation> {
-    adl2::validate_adl2_source(src)
-}
-
-/// VACSD: the specialisation depth must be exactly one greater than the
-/// parent's (`AM/docs/AOM2/master08-validation.adoc` Phase 1). Callable once
-/// the parent's source has been fetched from the registry.
-///
-/// # Errors
-///
-/// An [`adl2::Adl2Violation`] with code `VACSD` when
-/// `meta.depth != parent_depth + 1`.
-pub(crate) fn check_specialisation_depth(
-    meta: &adl2::Adl2Meta,
-    parent_depth: usize,
-) -> Result<(), adl2::Adl2Violation> {
-    adl2::check_specialisation_depth(meta, parent_depth)
 }
 
 /// Validate an uploaded OPT 1.4 artefact against the AOM2/08

@@ -37,7 +37,7 @@ const CORPUS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/corpus/adl2-ref
 /// raised on its fixture.
 const PHASE2_FIRING: &[&str] = &[
     "VSANCE", "VSANCC", "VSONIN", "VSSM", "VDIFP", "VCORMT", "VARXID", "VARXS", "VARXR", "VDSSID",
-    "VSONCO", // gated phase-1 codes reached through the same pipeline:
+    "VSONCO", "VPOV", // gated phase-1 codes reached through the same pipeline:
     "VACSD", "VTSD",
 ];
 
@@ -48,44 +48,6 @@ const SLOT_FIXTURES: &[&str] = &[
     "validity/slots/openEHR-EHR-SECTION.VARXR_slot_id_match_but_not_found.v1.0.0.adls",
     "validity/slots/openEHR-EHR-SECTION.VDSSID_slot_redefine_bad_id.v1.0.0.adls",
 ];
-
-/// Documented adjudications — files skipped with a spec-cited reason (never a
-/// silent exclusion).
-fn adjudicated(name: &str) -> Option<&'static str> {
-    if name.ends_with("VSONCO_redefine_occurrences.v1.0.0.adls") {
-        // The declared parent `redefine_occurrences.v1` is itself a specialised
-        // archetype (root id1.1), so its deep flat form needs the flattener
-        // (`ADL2/master09.02` §Differential and Flat Forms — only a top-level
-        // parent is its own flat form). VSONCO's collective-occurrences rule
-        // (master04.5 §C_OBJECT VSONCO L359-379) is exercised by the level-0
-        // `new_VSONCO-redef_to_multiple_singles-FAIL` fixture instead.
-        // TODO: flatten a specialised parent, then un-adjudicate this file.
-        Some(
-            "parent is specialised — deep flat form needs the flattener (VSONCO covered by new_VSONCO-…-FAIL)",
-        )
-    } else if name.ends_with("VCORMT_illegal_redef_of_ac_code_node.v1.0.0.adls") {
-        // The child redefines a terminology-code leaf (`defining_code`) to a
-        // C_STRING under the ac-coded node of the flat parent (spec_test_obs2).
-        // In our model this reduces to a C_TERMINOLOGY_CODE→C_STRING meta-type
-        // change (VSONT, master04.5 §C_OBJECT L342), which the corpus tags
-        // VCORMT; resolving the ac-code leaf's RM type (CODE_PHRASE) needs the
-        // deep terminology-code redefinition machinery.
-        // TODO: map primitive-leaf RM types so the ac-code redefinition raises
-        // VCORMT (master04.5 §C_OBJECT VCORMT L327-328).
-        Some(
-            "ac-code-leaf → C_STRING redefinition needs primitive-leaf RM typing (VCORMT vs VSONT)",
-        )
-    } else if name.ends_with("VPOV_redef_ac_code_node_to_local_codes.v1.0.0.adls") {
-        // VPOV here requires comparing the child's ac-code value-set expansion to
-        // the flat parent's (`value_set_expanded`, master04.5 §C_TERMINOLOGY_NODE
-        // L663-699); the flat terminology comes from the flattener.
-        // TODO: value-set-expansion subset once the flattener supplies the flat
-        // terminology.
-        Some("VPOV needs value-set-expansion subset from the flattened terminology")
-    } else {
-        None
-    }
-}
 
 fn normalise_tag(tag: &str) -> String {
     match tag {
@@ -142,7 +104,6 @@ struct Counts {
     exact_code: usize,
     pass_clean: usize,
     parent_not_found: usize,
-    adjudicated: usize,
     non_specialised: usize,
 }
 
@@ -165,11 +126,6 @@ fn corpus_phase2_outcomes() {
             .unwrap_or(path)
             .display()
             .to_string();
-        if let Some(reason) = adjudicated(&name) {
-            counts.adjudicated += 1;
-            eprintln!("adjudicated {name}: {reason}");
-            continue;
-        }
         let Ok(src) = std::fs::read_to_string(path) else {
             violations.push(format!("{name}: unreadable"));
             continue;
@@ -247,11 +203,10 @@ fn corpus_phase2_outcomes() {
     }
 
     eprintln!(
-        "phase-2 corpus: exact={} pass_clean={} parent_not_found={} adjudicated={} non_specialised={} ({} files)",
+        "phase-2 corpus: exact={} pass_clean={} parent_not_found={} non_specialised={} ({} files)",
         counts.exact_code,
         counts.pass_clean,
         counts.parent_not_found,
-        counts.adjudicated,
         counts.non_specialised,
         paths.len(),
     );

@@ -8,13 +8,16 @@
 //! cites the spec file + section that defines it.
 //!
 //! Not run in phase 1 (the variant is present as the catalogue vocabulary):
-//! the reference-model checks live in [`super::rm`]. The rest need machinery
-//! phase 1 does not have —
-//! TODO: run VDIFP (needs the specialisation flattener's flat parent),
-//! VSONIF (needs the flattened parent siblings), the external-reference
-//! resolution half of VARXR (needs the supplier repository), VETDF (needs an
-//! external terminology service), and the pure reference-model path halves of
-//! VRANP/VRRLP/VRMVP (a reference-model path walk, `super::rm`).
+//! the reference-model checks live in [`super::rm`]; VDIFP + VSONIF against the
+//! flat parent in [`super::phase2`]; the flat-form terminology/structure halves
+//! (VATDF/VTVSMD/VACMCU/VCOSU for a specialised archetype) in
+//! [`super::phase_flat`]; the external-reference resolution half of VARXR in
+//! [`super::fillers`] / [`super::phase2`]; and the pure reference-model path
+//! halves of VRANP/VRRLP/VRMVP (a reference-model path walk, `super::rm`).
+//! VETDF (a code bound to an external terminology must exist there) needs a live
+//! terminology-service resolver the network-free spec engine cannot hold — it is
+//! validated by the application's terminology service (see the [`ValidationCode`]
+//! `Vetdf` doc).
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -29,6 +32,7 @@ use openehr_base::prelude::MultiplicityInterval;
 use openehr_lang::odin::{OdinKey, OdinValue};
 
 use super::{ArchetypeRepository, ArchetypeView, ValidationCode, ValidationIssue, view};
+use crate::cadl::Dialect;
 use crate::codes::{
     self, is_ac_code, is_at_code, is_id_code, is_root_code_at_depth, is_valid_code,
 };
@@ -39,16 +43,23 @@ use crate::paths::{
 use crate::source::SourceArtefact;
 
 /// Run the phase-1 catalogue over `v`, appending issues to `issues`.
+///
+/// `dialect` selects the validity catalogue: [`Dialect::Adl2`] runs the full
+/// AOM2 phase-1 catalogue; [`Dialect::Adl14`] runs the subset that corresponds
+/// to the ADL 1.4 / AOM 1.4 standalone validity rules (see
+/// [`super::validate_source_phase1_adl14`] for the correspondence + the
+/// suppressed AOM2-only rules, each spec-cited at its check site below).
 pub(super) fn run(
     v: &ArchetypeView<'_>,
     repo: Option<&ArchetypeRepository>,
     source: Option<(&SourceArtefact, &str)>,
+    dialect: Dialect,
     issues: &mut Vec<ValidationIssue>,
 ) {
     // ── basic identification / meta-data checks (master08 §Basic checks +
     //    §AUTHORED_ARCHETYPE meta-data checks) ──────────────────────────────
     let mut basic = Vec::new();
-    check_identification(v, repo, &mut basic);
+    check_identification(v, repo, dialect, &mut basic);
 
     // ── terminology structure (STCNT / VOLT) — gates the code checks ───────
     let term_status = terminology_structure(v);
@@ -78,7 +89,7 @@ pub(super) fn run(
     }
 
     // ── structural definition walk (always runs; independent rules) ────────
-    check_structure(v, issues);
+    check_structure(v, dialect, issues);
     check_annotations(v, issues);
     check_rm_overlay(v, issues);
     check_resource_description_languages(v, issues); // VRDLA
@@ -92,7 +103,7 @@ pub(super) fn run(
 
     // ── terminology + code checks (gated: basic clean + terminology Ok) ────
     if basic_clean && term_status == TermStructure::Ok {
-        check_terminology(v, issues);
+        check_terminology(v, dialect, issues);
     }
 }
 
@@ -101,6 +112,7 @@ pub(super) fn run(
 fn check_identification(
     v: &ArchetypeView<'_>,
     repo: Option<&ArchetypeRepository>,
+    dialect: Dialect,
     out: &mut Vec<ValidationIssue>,
 ) {
     let h = v.archetype_id;
@@ -152,8 +164,14 @@ fn check_identification(
     }
 
     // VARAV / VARRV: adl_version / rm_release 3-part version formats (master03
-    // §Validity Rules).
-    if !is_overlay {
+    // §Validity Rules). AOM2-only: an ADL 1.4 artefact carries a `1.4`-form
+    // `adl_version` (two-part, optional metadata) and NO `rm_release`, and AOM
+    // 1.4 defines no 3-part-version rule for either (ADL1.4 master08 §Syntax
+    // Specification, `arch_identification` meta-data; AOM1.4 master03 ARCHETYPE
+    // §Invariants — version validity is only `version = archetype_id.version_id`).
+    // So both are suppressed in the 1.4 dialect: applying the AOM2 rule would
+    // reject every valid 1.4 archetype.
+    if !is_overlay && dialect == Dialect::Adl2 {
         match v.adl_version {
             Some(a) if is_three_part_version(a) => {}
             _ => out.push(ValidationIssue::new(
@@ -173,6 +191,8 @@ fn check_identification(
                 ),
             ));
         }
+    }
+    if !is_overlay {
         // VDEOL / VARD: original language + description present (master03
         // §Validity Rules, G2).
         if v.original_language.is_none() {
@@ -255,10 +275,14 @@ fn check_specialisation_depth(
 /// VALC: the languages of a specialised archetype must be the same as or a
 /// subset of the flat parent's (master03 §Validity Rules).
 ///
-/// NOTE: uses the parent's *un-flattened* language set as the reference; a
-/// parent's own languages are a superset of nothing discarded here, so this is
-/// a sound conservative approximation.
-/// TODO: compare against the flattened parent once the flattener exists.
+/// The reference is the **flattened** parent's language set (`ADL2/master09.02`
+/// §Differential and Flat Forms — a specialised archetype conforms to its flat
+/// parent, which accumulates the whole lineage's languages). Using the parent's
+/// own (un-flattened) languages would false-reject a child language inherited by
+/// the parent from further up the lineage; flattening the parent avoids that.
+/// The flat parent is obtained via [`crate::flatten::flat_form`]; if it cannot
+/// be built (a lineage parent is missing), the check falls back to the declared
+/// parent's own languages (never firing on an inherited language it cannot see).
 fn check_language_conformance(
     v: &ArchetypeView<'_>,
     repo: Option<&ArchetypeRepository>,
@@ -267,15 +291,22 @@ fn check_language_conformance(
     let Some(parent_id) = v.parent_archetype_id else {
         return;
     };
-    let Some(parent) = repo.and_then(|r| r.get(parent_id)) else {
+    let Some(repo) = repo else {
         return;
     };
-    let parent_langs = languages(&view(parent));
+    let Some(parent) = repo.get(parent_id) else {
+        return;
+    };
+    let flat_parent = crate::flatten::flat_form(parent, repo).ok();
+    let parent_langs = match flat_parent.as_ref() {
+        Some(flat) => languages(&view(flat)),
+        None => languages(&view(parent)),
+    };
     for lang in languages(v) {
         if !parent_langs.contains(&lang) {
             out.push(ValidationIssue::new(
                 ValidationCode::Valc,
-                format!("language {lang:?} is not present in the parent archetype"),
+                format!("language {lang:?} is not present in the flattened parent archetype"),
             ));
         }
     }
@@ -288,19 +319,24 @@ fn check_language_conformance(
 /// ([`collect_usage`]), so no code sets are accumulated here.
 struct Scan<'a> {
     v: &'a ArchetypeView<'a>,
+    dialect: Dialect,
     issues: Vec<ValidationIssue>,
     /// node id → first path seen (VCOSU uniqueness).
     seen_node_ids: HashMap<String, String>,
 }
 
-fn check_structure(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
+fn check_structure(v: &ArchetypeView<'_>, dialect: Dialect, issues: &mut Vec<ValidationIssue>) {
     let mut scan = Scan {
         v,
+        dialect,
         issues: Vec::new(),
         seen_node_ids: HashMap::new(),
     };
     let root = CObject::CComplexObject(v.definition.clone());
-    scan.walk_object("", &root);
+    // The root object always requires a node id (the concept code, `at0000`/
+    // `id1`); child requirement is decided per owning attribute in
+    // [`Scan::walk_attribute`].
+    scan.walk_object("", &root, true);
     issues.append(&mut scan.issues);
 }
 
@@ -310,7 +346,7 @@ impl Scan<'_> {
             .push(ValidationIssue::new(code, msg).at_path(path.to_owned()));
     }
 
-    fn walk_object(&mut self, path: &str, obj: &CObject) {
+    fn walk_object(&mut self, path: &str, obj: &CObject, require_node_id: bool) {
         let nid = object_node_id(obj);
         let is_identified = !matches!(
             obj,
@@ -326,8 +362,18 @@ impl Scan<'_> {
         );
 
         // VCOID: every (non-primitive) object node must have a node id
-        // (master04.5 §`C_OBJECT`).
-        if is_identified && nid.is_empty() {
+        // (master04.5 §`C_OBJECT`). In the ADL 1.4 dialect this is relaxed to
+        // the AOM 1.4 node_id rule via `require_node_id` (see
+        // [`Scan::walk_attribute`]): AOM1.4 master04 §Node_id and Paths + ADL1.4
+        // master08 §Definition Section ("any leaf or near-leaf node which has no
+        // sibling nodes from the same attribute can safely have no node_id").
+        // A 1.4 `use_node` (a `C_COMPLEX_OBJECT_PROXY` / ARCHETYPE_INTERNAL_REF)
+        // is a *reference* to another node, not a node definition, and carries
+        // no node id of its own in 1.4 (unlike ADL2's `use_node TYPE[id]`), so
+        // it is exempt in the 1.4 dialect (AOM1.4 master04 §Node_id and Paths).
+        let is_proxy_ref =
+            self.dialect == Dialect::Adl14 && matches!(obj, CObject::CComplexObjectProxy(_));
+        if is_identified && nid.is_empty() && require_node_id && !is_proxy_ref {
             self.push(
                 ValidationCode::Vcoid,
                 "object node has no node identifier",
@@ -338,9 +384,17 @@ impl Scan<'_> {
         // §`C_OBJECT`). Synthetic primitive ids are exempt. Deferred for a
         // specialised archetype: a differential legitimately re-references an
         // inherited node id at a redefinition, so uniqueness is a flat-form
-        // property.
-        // TODO: check VCOSU uniqueness on the flattened specialised form.
-        if is_identified && !nid.is_empty() && !self.v.is_specialised() {
+        // property (run on the flattened form in [`super::phase_flat`]). AOM2-only:
+        // AOM 1.4 node ids are only *sibling*-unique (AOM1.4 master04 §Node_id and
+        // Paths — "guarantees sibling node unique identification"), so a valid 1.4
+        // archetype may repeat an at-code at non-sibling paths; the archetype-wide
+        // check is skipped in the 1.4 dialect, which instead gets the
+        // sibling-scoped check in [`Scan::walk_complex`].
+        if is_identified
+            && !nid.is_empty()
+            && !self.v.is_specialised()
+            && self.dialect == Dialect::Adl2
+        {
             if let Some(first) = self.seen_node_ids.get(nid) {
                 let dup = format!("node id {nid:?} is not unique (also at {first})");
                 self.push(ValidationCode::Vcosu, dup, path);
@@ -352,7 +406,17 @@ impl Scan<'_> {
         match obj {
             CObject::CComplexObject(cco) => self.walk_complex(path, cco),
             CObject::ArchetypeSlot(slot) => self.check_slot(path, slot),
-            CObject::CTerminologyCode(tc) => self.check_terminology_code_form(path, &tc.constraint),
+            CObject::CTerminologyCode(tc) => {
+                // VATCV (code form) applies only to ADL2 constraint codes; the
+                // ADL 1.4 dialect preserves 1.4 terminology constraints
+                // verbatim (`local, at0004`, `[openehr::524]`, listed forms) in
+                // the constraint string — these are not ADL2 code forms, and
+                // their validity is ontology-definedness (ADL1.4 master08
+                // §Local Constraint Codes / VATDF/VACDF), not the ADL2 regex.
+                if self.dialect == Dialect::Adl2 {
+                    self.check_terminology_code_form(path, &tc.constraint);
+                }
+            }
             CObject::CBoolean(_)
             | CObject::CInteger(_)
             | CObject::CReal(_)
@@ -361,7 +425,11 @@ impl Scan<'_> {
             | CObject::CTime(_)
             | CObject::CDateTime(_)
             | CObject::CDuration(_) => self.check_primitive_assumed(path, obj),
-            // TODO: run VUNP (`C_COMPLEX_OBJECT_PROXY` target) on the flat form.
+            // NOTE: VUNP (`C_COMPLEX_OBJECT_PROXY` target-path validity) is a
+            // flat-form (phase-3) check — a proxy target may be assembled from
+            // several specialisation levels — so it runs in [`super::phase3`]
+            // against the flattened form (`master08` §Phase 3; `master04.5`
+            // §`C_COMPLEX_OBJECT_PROXY` VUNP L482-483), not in the phase-1 walk.
             CObject::CComplexObjectProxy(_) => {}
         }
     }
@@ -369,8 +437,13 @@ impl Scan<'_> {
     fn walk_complex(&mut self, path: &str, cco: &CComplexObject) {
         // VARXNC / VARXAV / VARXTV: `C_ARCHETYPE_ROOT` validity (master08 §Phase 1
         // §Various Structure Validation).
-        // TODO: run VARXR (external-reference resolution) against the supplier
-        // repository.
+        //
+        // NOTE: VARXR (external-reference *resolution*) is a phase-2 check that
+        // needs the supplier repository, so it is not run in the standalone
+        // phase-1 walk: a `C_ARCHETYPE_ROOT` filling a parent slot is resolved by
+        // the specialisation validator ([`super::phase2::check_slot_filler`],
+        // `master04.5` §`C_ARCHETYPE_ROOT`) and a `use_archetype` filler by
+        // [`super::fillers::validate_fillers`] (`master08` §Phase 2).
         if let CComplexObject::CArchetypeRoot(r) = cco {
             if r.node_id.is_empty() {
                 self.push(
@@ -414,6 +487,29 @@ impl Scan<'_> {
         }
 
         for attr in complex_attributes(cco) {
+            // VCOSU (AOM 1.4 sibling scope): in the 1.4 dialect node ids are only
+            // *sibling*-unique — children under the same container attribute must
+            // have distinct node ids (AOM1.4 master04 §Node_id and Paths —
+            // "guarantees sibling node unique identification"). ADL2 uses the
+            // stronger archetype-wide uniqueness (walk_object above / phase_flat),
+            // so this sibling-scoped pass is 1.4-only.
+            if self.dialect == Dialect::Adl14 {
+                let mut sibling_ids: BTreeSet<&str> = BTreeSet::new();
+                for child in &attr.children {
+                    let cid = object_node_id(child);
+                    if !cid.is_empty()
+                        && (is_id_code(cid) || is_at_code(cid))
+                        && !sibling_ids.insert(cid)
+                    {
+                        let cpath = child_path(&format!("{path}/{}", attr.rm_attribute_name), cid);
+                        self.push(
+                            ValidationCode::Vcosu,
+                            format!("node id {cid:?} is not unique among siblings"),
+                            &cpath,
+                        );
+                    }
+                }
+            }
             self.walk_attribute(path, attr);
         }
     }
@@ -442,15 +538,27 @@ impl Scan<'_> {
         // attribute is `C_ATTRIBUTE._is_multiple_` False, an RM-derived property
         // the parser's `is_multiple = cardinality present` heuristic cannot
         // supply (it misclassifies e.g. `CLUSTER.items`); it runs in
-        // [`super::rm`].
-        // TODO: apply VACMCU/WACMCL on the flattened specialised form.
+        // [`super::rm`]. For a specialised archetype VACMCU/WACMCL run on the
+        // flattened form ([`super::phase_flat`]) — a differential may not restate
+        // the inherited cardinality — so they are gated to the non-specialised
+        // (own-flat-form) case here.
         if !self.v.is_specialised() && attr.is_multiple {
             self.check_container_cardinality(&attr_path, attr);
         }
 
+        // Whether a child object is required to carry a node id. AOM2 requires
+        // one on every non-primitive object (master04.5 §`C_OBJECT`); AOM 1.4
+        // requires one only for children of a container (multiple) attribute —
+        // "any leaf or near-leaf node which has no sibling nodes from the same
+        // attribute can safely have no node_id" (AOM1.4 master04 §Node_id and
+        // Paths; ADL1.4 master08 §Definition Section).
+        let require_child_node_id = match self.dialect {
+            Dialect::Adl2 => true,
+            Dialect::Adl14 => attr.is_multiple,
+        };
         for child in &attr.children {
             let cpath = child_path(&attr_path, object_node_id(child));
-            self.walk_object(&cpath, child);
+            self.walk_object(&cpath, child, require_child_node_id);
         }
     }
 
@@ -564,14 +672,15 @@ impl Scan<'_> {
     }
 
     /// VOBAV: a primitive assumed value must fall within its own constraint
-    /// (master04.5 §`C_PRIMITIVE_OBJECT`). Implemented for the enumerable
-    /// primitives (Boolean / String), whose value space is an explicit list.
+    /// (master04.5 §`C_PRIMITIVE_OBJECT`).
     ///
-    /// NOTE: only the enumerable primitives (Boolean / String) are covered
-    /// here; the ordered primitives cover the standalone phase-1 need.
-    /// TODO: interval containment for the ordered primitives
-    /// (Integer/Real/Date/Time/DateTime/Duration) via the `c_value_conforms_to`
-    /// conformance functions.
+    /// The enumerable primitives (Boolean / String) test list membership; the
+    /// numeric ordered primitives (Integer / Real) test point-in-interval
+    /// containment (`master04.5` §`C_ORDERED` — the value space is a list of
+    /// `Interval`s, `has` = a point falls in some interval). A primitive with an
+    /// empty constraint (`any_allowed`) admits any assumed value. The temporal
+    /// primitives are not evaluated (see the NOTE at the `CString` arm — the
+    /// generated `Iso8601_*` types provide no ordering).
     fn check_primitive_assumed(&mut self, path: &str, obj: &CObject) {
         match obj {
             CObject::CBoolean(b) => {
@@ -586,6 +695,47 @@ impl Scan<'_> {
                     );
                 }
             }
+            CObject::CInteger(i) => {
+                // The generated model types the integer assumed value as `f64`;
+                // a valid integer assumed value is a whole number lying in some
+                // constraint interval.
+                if let Some(av) = i.assumed_value
+                    && !i.constraint.is_empty()
+                {
+                    #[allow(clippy::cast_possible_truncation)] // guarded by `fract() == 0`
+                    let inside =
+                        av.fract() == 0.0 && i.constraint.iter().any(|iv| iv.has(&(av as i32)));
+                    if !inside {
+                        self.push(
+                            ValidationCode::Vobav,
+                            "integer assumed value is not within any constraint interval",
+                            path,
+                        );
+                    }
+                }
+            }
+            CObject::CReal(r) => {
+                if let Some(av) = r.assumed_value
+                    && !r.constraint.is_empty()
+                    && !r.constraint.iter().any(|iv| iv.has(&av))
+                {
+                    self.push(
+                        ValidationCode::Vobav,
+                        "real assumed value is not within any constraint interval",
+                        path,
+                    );
+                }
+            }
+            // NOTE: the temporal primitives (Date/Time/DateTime/Duration) carry
+            // their assumed value + constraint as `Iso8601_*` intervals, but the
+            // `openehr-base` `Iso8601_*` types provide no ordering, so
+            // `Interval::has` (which requires `T: PartialOrd`) is not available for
+            // them — the point-in-interval VOBAV test cannot be evaluated without
+            // ISO 8601 temporal ordering (partial dates, timezone normalisation,
+            // duration comparison — a base-crate spec-behaviour capability).
+            // TODO: evaluate VOBAV assumed-value interval containment for the
+            // temporal primitives once the openehr-base ISO 8601 ordering
+            // capability (tracked in the worklist) lands.
             CObject::CString(s) => {
                 if let Some(av) = &s.assumed_value
                     && !s.constraint.is_empty()
@@ -609,7 +759,7 @@ impl Scan<'_> {
 // individual rules are extracted into helpers below, so the length is inherent
 // to the number of codes checked in sequence.
 #[allow(clippy::too_many_lines)]
-fn check_terminology(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
+fn check_terminology(v: &ArchetypeView<'_>, dialect: Dialect, issues: &mut Vec<ValidationIssue>) {
     let term = v.terminology;
     let level = v.specialisation_level();
 
@@ -646,11 +796,32 @@ fn check_terminology(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
         ));
     }
 
+    // VATDF (ADL 1.4, node-id half): in ADL 1.4 EVERY at-code used as a node
+    // identifier in the definition must be defined in the ontology's
+    // term_definitions (ADL1.4 master08 §Validity Rules VATDF; AOM1.4
+    // `ARCHETYPE.node_ids_valid`). ADL2 defers the interior-node-id definedness
+    // to the RM phase (the master07 single-valued-attribute optionality above),
+    // but the 1.4 formalism has no such optionality for a code that IS present —
+    // "each archetype term used as a node identifier … must be defined". The
+    // 1.4 phase-1 subset runs phase 1 only, so this closes VATDF's interior half
+    // for a 1.4 upload (`used ⇒ defined`; a non-specialised 1.4 archetype is its
+    // own flat form).
+    if dialect == Dialect::Adl14 && !v.is_specialised() {
+        for code in &usage.node_codes {
+            if is_at_code(code) && !defined.contains(code.as_str()) {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Vatdf,
+                    format!("node identifier code {code:?} is not defined in the terminology"),
+                ));
+            }
+        }
+    }
+
     // VATDF: at-codes used in term constraints defined in the terminology of the
     // flattened form (master03 §Validity Rules). For a specialised archetype the
     // flat form is not available here, so this runs only when the archetype
-    // is its own flat form (non-specialised).
-    // TODO: run VATDF against the flattened terminology for specialised archetypes.
+    // is its own flat form (non-specialised); the specialised flat-form half runs
+    // in [`super::phase_flat`].
     // VACDF: ac-codes defined in the current archetype (master03 — "current",
     // not flattened; runs for all). VATCD: code level <= archetype level.
     let flat_self = !v.is_specialised();
@@ -706,9 +877,17 @@ fn check_terminology(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
     // strict differential-equality test.
     for code in &defined {
         if let Some(d) = codes::specialisation_depth(code) {
+            // A 1.4 specialised archetype is a FLAT artefact (its ontology
+            // legitimately carries inherited codes at lower levels alongside
+            // the level-N additions), even though the 1.4-shaped model is
+            // marked `is_differential` for the converter's re-differentiation
+            // pass. So the 1.4 dialect always uses the flat-form rule
+            // (`d <= level`), never the differential `d == level`
+            // (AOM1.4 master07 §Specialisation Depth).
+            let differential = v.is_differential && dialect == Dialect::Adl2;
             let bad = if is_ac_code(code) {
                 d > level
-            } else if v.is_differential {
+            } else if differential {
                 d != level
             } else {
                 d > level
@@ -758,28 +937,34 @@ fn check_terminology(v: &ArchetypeView<'_>, issues: &mut Vec<ValidationIssue>) {
 
     // WOUC: a defined at/ac code that is never used in the definition (archie
     // parity; no openEHR spec governs this — our own design/extension).
-    let mut used_all: BTreeSet<&str> = usage.value_codes.iter().map(String::as_str).collect();
-    used_all.extend(usage.node_codes.iter().map(String::as_str));
-    // value-set membership also counts as "use" of a member at-code.
-    if let Some(vs) = term.value_sets.as_ref() {
-        for set in vs.values() {
-            used_all.insert(set.id.as_str());
-            for m in &set.members {
-                used_all.insert(m.as_str());
+    // Suppressed in the 1.4 dialect: 1.4 value codes are carried inside the
+    // verbatim terminology-constraint strings (not recognised as ADL2 code
+    // usage), so the "unused" heuristic is unreliable on a 1.4-shaped model and
+    // would flag legitimately-used codes.
+    if dialect == Dialect::Adl2 {
+        let mut used_all: BTreeSet<&str> = usage.value_codes.iter().map(String::as_str).collect();
+        used_all.extend(usage.node_codes.iter().map(String::as_str));
+        // value-set membership also counts as "use" of a member at-code.
+        if let Some(vs) = term.value_sets.as_ref() {
+            for set in vs.values() {
+                used_all.insert(set.id.as_str());
+                for m in &set.members {
+                    used_all.insert(m.as_str());
+                }
             }
         }
-    }
-    for code in &defined {
-        // The root concept code and id-code node ids are structural, not
-        // "unused" terms; WOUC targets value at-codes and ac-codes.
-        if (is_at_code(code) || is_ac_code(code))
-            && *code != complex_node_id(v.definition)
-            && !used_all.contains(code)
-        {
-            issues.push(ValidationIssue::new(
-                ValidationCode::Wouc,
-                format!("terminology code {code:?} is defined but unused in the definition"),
-            ));
+        for code in &defined {
+            // The root concept code and id-code node ids are structural, not
+            // "unused" terms; WOUC targets value at-codes and ac-codes.
+            if (is_at_code(code) || is_ac_code(code))
+                && *code != complex_node_id(v.definition)
+                && !used_all.contains(code)
+            {
+                issues.push(ValidationIssue::new(
+                    ValidationCode::Wouc,
+                    format!("terminology code {code:?} is defined but unused in the definition"),
+                ));
+            }
         }
     }
 }
@@ -841,9 +1026,8 @@ fn check_value_sets(
             }
         }
         // VTVSMD: members must be defined in the terminology of the *flattened*
-        // form (master07). Runs only when the archetype is its own flat form.
-        // TODO: check VTVSMD against the flattened terminology for specialised
-        // archetypes.
+        // form (master07). Runs only when the archetype is its own flat form; the
+        // specialised flat-form half runs in [`super::phase_flat`].
         if flat_self {
             for m in &set.members {
                 if !defined.contains(m.as_str()) {
@@ -1163,16 +1347,16 @@ fn is_archetype_id(id: &str) -> bool {
     rest.contains('.') && rest.split('.').next_back().is_some_and(|_| true)
 }
 
-fn occurrences_upper_finite(mi: Option<&MultiplicityInterval>) -> Option<i32> {
+pub(super) fn occurrences_upper_finite(mi: Option<&MultiplicityInterval>) -> Option<i32> {
     let mi = mi?;
     if mi.upper_unbounded { None } else { mi.upper }
 }
 
-fn occurrences_lower(mi: &MultiplicityInterval) -> i32 {
+pub(super) fn occurrences_lower(mi: &MultiplicityInterval) -> i32 {
     mi.lower.unwrap_or(0)
 }
 
-fn object_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
+pub(super) fn object_occurrences(obj: &CObject) -> Option<&MultiplicityInterval> {
     match obj {
         CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
         CObject::CComplexObject(c) => match c {
@@ -1303,13 +1487,13 @@ fn complex_attribute_tuples(cco: &CComplexObject) -> &[CAttributeTuple] {
 // ── code-usage collector (second pass for the terminology checks) ──────────
 
 #[derive(Default)]
-struct CodeUsage {
-    value_codes: BTreeSet<String>,
-    node_codes: BTreeSet<String>,
-    assumed_refs: Vec<(String, String, String)>,
+pub(super) struct CodeUsage {
+    pub(super) value_codes: BTreeSet<String>,
+    pub(super) node_codes: BTreeSet<String>,
+    pub(super) assumed_refs: Vec<(String, String, String)>,
 }
 
-fn collect_usage(obj: &CObject, usage: &mut CodeUsage) {
+pub(super) fn collect_usage(obj: &CObject, usage: &mut CodeUsage) {
     collect_usage_at(obj, "", usage);
 }
 

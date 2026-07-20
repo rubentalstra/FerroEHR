@@ -1,11 +1,11 @@
 //! The ITS-REST wire-shaped DEFINITION extension methods: the rich shapes the
 //! `DEFINITION` API group returns (template summaries, the example
 //! COMPOSITION, `StoredQuery` descriptors, glob filters) that the SM
-//! `I_DEFINITION_*` interfaces do not express. All native
-//! (`serde_json::Value` and `SmError`), so this layer stays protocol-free;
-//! the route wiring is the
-//! ITS-REST layer's concern. The retrieval/store behaviour rides on the SM
-//! logic in the sibling interface files.
+//! `I_DEFINITION_*` interfaces do not express. Native error types only
+//! (`SmError`, or `ServiceError` where a structured per-code validation body is
+//! carried — the ADL2 upload), so this layer stays protocol-free; the route
+//! wiring is the ITS-REST layer's concern. The retrieval/store behaviour rides
+//! on the SM logic in the sibling interface files.
 
 use regex::Regex;
 use serde_json::Value;
@@ -14,8 +14,9 @@ use openehr_flat::example::{DetailLevel, ExampleType};
 
 use crate::service::EhrbaseService;
 use crate::service::definition::types::TemplateListFilter;
+use crate::service::error::ServiceError;
 use crate::service::list::Page;
-use crate::service::status::{CallStatusType, SmError};
+use crate::service::status::SmError;
 
 use super::{paginate, query::is_aql_v1};
 
@@ -91,44 +92,99 @@ impl EhrbaseService {
         Ok(self.template_example(&template_id, level, kind).await?)
     }
 
-    /// `POST /definition/template/adl2` — store ADL2 operational-template
-    /// source (text/plain) and return the stored `ARCHETYPE_HRID`; the
-    /// dispatcher builds `Location` + the `Prefer` body from it
-    /// (`201_Template_adl2_upload`).
-    ///
-    /// NOTE: duplicate handling diverges by surface. The REST
-    /// contract declares `409_template_already_exists` on this endpoint
-    /// (`definition-codegen.openapi.yaml` /definition/template/adl2 POST),
-    /// while the SM native `upload_artefact` says "replace it"
-    /// (`i_definition_adl2.adoc`). This is the REST adapter seam, so an
-    /// existing HRID is a 409 here; native SM callers keep replace.
+    /// `GET /definition/template/adl2/{template_id}/example` — an example
+    /// COMPOSITION built from the ADL2 template's `WebTemplate` (the am24 front
+    /// end feeding the shared example generator). `kind`/`detail_level` are the
+    /// `example_type`/`example_detail_level` query enums.
     ///
     /// # Errors
     ///
-    /// - Source failing the registration validator →
-    ///   `precondition_violation` (`400`) on the pre-check, or
-    ///   `invalid_artefact` (`422`) from the store path.
-    /// - An ADL2 artefact with the same HRID already stored → conflict
+    /// - An out-of-enum `detail_level` or `kind` value → `BadRequest` (`400`).
+    /// - No template with that `template_id` → `NotFound` (`404`).
+    /// - The stored template cannot be compiled/built → `Unprocessable` (`422`).
+    /// - A database failure (`500`).
+    pub async fn template_adl2_example(
+        &self,
+        template_id: String,
+        detail_level: Option<String>,
+        kind: Option<String>,
+    ) -> Result<Value, ServiceError> {
+        let level =
+            DetailLevel::from_query(detail_level.as_deref()).map_err(ServiceError::BadRequest)?;
+        let kind = ExampleType::from_query(kind.as_deref()).map_err(ServiceError::BadRequest)?;
+        self.adl2_example(&template_id, level, kind).await
+    }
+
+    /// `POST /definition/template/adl2` — validate ADL2 operational-template
+    /// source (text/plain) through the `openehr-adl` engine, store it, and
+    /// return the stored `ARCHETYPE_HRID`; the dispatcher builds `Location` +
+    /// the `Prefer` body from it (`201_Template_adl2_upload`).
+    ///
+    /// Returns [`ServiceError`] (not `SmError`) so a semantic-validation failure
+    /// keeps its structured per-code violations for the ITS-REST `Error` body
+    /// (`schemas/others/Error.yaml`), exactly as the composition upload path
+    /// does. Duplicate handling diverges by surface: the REST contract declares
+    /// `409_template_already_exists.yaml`, while the SM native `upload_artefact`
+    /// replaces (`i_definition_adl2.adoc`) — an existing HRID is a `409` here.
+    ///
+    /// # Errors
+    ///
+    /// - Unparseable source → `BadRequest` (`400`,
+    ///   `definition_template_adl2_upload.yaml` → `responses/400.yaml`).
+    /// - AOM2-invalid source → `ValidationFailed` (`422` with the rule-code
+    ///   mnemonics).
+    /// - An ADL2 artefact with the same HRID already stored → `Conflict`
     ///   (`409`).
-    /// - A database failure (`exception` → `500`).
-    pub async fn template_adl2_upload(&self, source: String) -> Result<String, SmError> {
-        let meta = crate::validation::validate_adl2_source(&source)
-            .map_err(|v| SmError::precondition(format!("{}: {}", v.code, v.detail)))?;
-        if self.adl2_exists(&meta.hrid).await? {
-            return Err(SmError::new(
-                CallStatusType::CompositionAlreadyExists,
-                format!("an ADL2 template with id '{}' already exists", meta.hrid),
-            ));
-        }
-        Ok(self.adl2_upload(&source).await?)
+    /// - A database failure (`500`).
+    pub async fn template_adl2_upload(&self, source: String) -> Result<String, ServiceError> {
+        self.adl2_wire_upload(&source).await
+    }
+
+    /// `GET /definition/template/adl2/{template_id}` (and the deprecated
+    /// `…/{template_id}/{version}`) — the stored ADL2 source, resolved from a
+    /// full or partial `template_id` (`+` optional SEMVER `version`). Served as
+    /// `text/plain` (`200_Template_adl2_retrieved.yaml` body `oneOf:
+    /// [OperationalTemplateV2, string]`, example = ADL2 source): the stored
+    /// source is returned verbatim (lossless).
+    ///
+    /// # Errors
+    ///
+    /// - No stored template matches → `NotFound` (`404`).
+    /// - A database failure (`500`).
+    pub async fn template_adl2_source(
+        &self,
+        template_id: String,
+        version: Option<String>,
+    ) -> Result<String, ServiceError> {
+        let hrid = self.adl2_resolve(&template_id, version.as_deref()).await?;
+        self.adl2_get(&hrid).await
+    }
+
+    /// `GET /definition/template/adl2/{template_id}` with `Accept:
+    /// application/json` — the `OperationalTemplateV2` canonical-JSON projection
+    /// of the resolved template (`200_Template_adl2_retrieved.yaml`,
+    /// `application/json` → `OperationalTemplateV2`).
+    ///
+    /// # Errors
+    ///
+    /// - No stored template matches → `NotFound` (`404`).
+    /// - The OPT cannot be compiled → `Unprocessable` (`422`).
+    /// - A database failure (`500`).
+    pub async fn template_adl2_opt_json(
+        &self,
+        template_id: String,
+        version: Option<String>,
+    ) -> Result<String, ServiceError> {
+        let hrid = self.adl2_resolve(&template_id, version.as_deref()).await?;
+        let source = self.adl2_get(&hrid).await?;
+        self.adl2_opt_json(&source).await
     }
 
     /// `GET /definition/template/adl2` — the ADL2 twin of
     /// [`template_adl14_list`](Self::template_adl14_list). The store yields
-    /// `{template_id, created_timestamp}` — `concept` is not extracted (no
-    /// cADL source parser), so the `concept` filter matches nothing when
-    /// supplied; `template_id`/`version` globs + `offset`/`fetch` are honoured
-    /// over the full set here.
+    /// `TemplateMetadata` rows (`template_id`, `concept`, `archetype_id`,
+    /// `created_timestamp`); `template_id`/`concept`/`version` globs +
+    /// `offset`/`fetch` are honoured over the full set here.
     ///
     /// # Errors
     ///

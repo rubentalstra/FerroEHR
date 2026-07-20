@@ -364,16 +364,129 @@ pub fn c_value_conforms_to(child: &CObject, parent: &CObject) -> ValueConformanc
             &o.constraint,
             status_value(o.constraint_status.as_ref()),
         ),
-        // Temporal types: conformance beyond identical constraints needs pattern
-        // algebra not yet built.
-        // TODO: implement `C_TEMPORAL` `pattern_constraint` conformance (`master04.5`
-        // §`C_TEMPORAL` L632-646) for Date/Time/DateTime/Duration.
-        (CObject::CDate(_), CObject::CDate(_))
-        | (CObject::CTime(_), CObject::CTime(_))
-        | (CObject::CDateTime(_), CObject::CDateTime(_))
-        | (CObject::CDuration(_), CObject::CDuration(_)) => ValueConformance::Conforms,
+        // Temporal types (`master04.5` §`C_TEMPORAL` L632-639): `c_value_conforms_to`
+        // = precursor (`C_ORDERED` interval conformance) AND
+        // (`other.pattern_constraint` empty OR
+        // `valid_pattern_constraint_replacement(pattern, other.pattern)`).
+        (CObject::CDate(c), CObject::CDate(o)) => temporal_conforms(
+            c.pattern_constraint.as_deref(),
+            c.constraint.is_empty(),
+            o.pattern_constraint.as_deref(),
+            o.constraint.is_empty(),
+        ),
+        (CObject::CTime(c), CObject::CTime(o)) => temporal_conforms(
+            c.pattern_constraint.as_deref(),
+            c.constraint.is_empty(),
+            o.pattern_constraint.as_deref(),
+            o.constraint.is_empty(),
+        ),
+        (CObject::CDateTime(c), CObject::CDateTime(o)) => temporal_conforms(
+            c.pattern_constraint.as_deref(),
+            c.constraint.is_empty(),
+            o.pattern_constraint.as_deref(),
+            o.constraint.is_empty(),
+        ),
+        (CObject::CDuration(c), CObject::CDuration(o)) => temporal_conforms(
+            c.pattern_constraint.as_deref(),
+            c.constraint.is_empty(),
+            o.pattern_constraint.as_deref(),
+            o.constraint.is_empty(),
+        ),
         // Different primitive types (VSONT territory).
         _ => ValueConformance::Unknown,
+    }
+}
+
+/// `C_TEMPORAL` value conformance (`master04.5` §`C_TEMPORAL` L632-639).
+///
+/// The `precursor` (`C_ORDERED`) interval-containment half is only evaluable
+/// when both nodes carry an empty interval constraint — a pattern-constrained
+/// temporal carries an empty interval list (`master04.5` §`C_DATE` etc.: "For a
+/// pattern constraint or no constraint, use an empty list"), and the generated
+/// `Iso8601_*` types provide no ordering to compare non-empty interval bounds,
+/// so a non-empty interval constraint is reported [`ValueConformance::Unknown`].
+/// The pattern half is: parent pattern empty (`any_allowed`) ⇒ conforms; both
+/// present ⇒ [`valid_pattern_constraint_replacement`].
+fn temporal_conforms(
+    child_pattern: Option<&str>,
+    child_intervals_empty: bool,
+    parent_pattern: Option<&str>,
+    parent_intervals_empty: bool,
+) -> ValueConformance {
+    if !child_intervals_empty || !parent_intervals_empty {
+        // Ordered-interval comparison is not available for the Iso8601 types.
+        return ValueConformance::Unknown;
+    }
+    let parent_pat = parent_pattern.filter(|s| !s.is_empty());
+    let Some(pp) = parent_pat else {
+        // Parent constrains no pattern ⇒ any_allowed ⇒ conforms.
+        return ValueConformance::Conforms;
+    };
+    let Some(cp) = child_pattern.filter(|s| !s.is_empty()) else {
+        // Parent constrains a pattern; child states none ⇒ child is not a strict
+        // subset ⇒ cannot confirm a valid narrowing.
+        return ValueConformance::Unknown;
+    };
+    bool_from(valid_pattern_constraint_replacement(cp, pp))
+}
+
+/// `valid_pattern_constraint_replacement` (`master04.5` §`C_TEMPORAL`): true if
+/// the child ISO 8601 constraint pattern is a valid narrowing of the parent
+/// pattern.
+///
+/// NOTE: the AOM2 spec declares the function signature and the allowed-pattern
+/// lists but not the replacement algorithm body — this is our own design, read
+/// from the ISO 8601 pattern semantics (`master04.5` §`C_TEMPORAL`
+/// definitions): the patterns are position-aligned; a field position is
+/// mandatory (a letter `Y/M/D/H/m/s`), optional (`?`) or excluded (`X`/`x`), and
+/// a valid replacement narrows each position — parent optional (`?`) admits any
+/// child (mandatory, optional, or excluded), parent mandatory admits only a
+/// mandatory child, parent excluded admits only an excluded child; literal
+/// separators must match and the layouts must be the same length.
+fn valid_pattern_constraint_replacement(child: &str, parent: &str) -> bool {
+    let (cb, pb) = (child.as_bytes(), parent.as_bytes());
+    if cb.len() != pb.len() {
+        return false;
+    }
+    cb.iter()
+        .zip(pb.iter())
+        .all(|(&c, &p)| position_narrows(c, p))
+}
+
+/// Field-presence classes of an ISO 8601 temporal-pattern position.
+#[derive(PartialEq, Eq, Clone, Copy)]
+enum PatternField {
+    /// A mandatory field (a letter `Y/M/D/H/m/s`).
+    Mandatory,
+    /// An optional field (`?`).
+    Optional,
+    /// An excluded field (`X`/`x`).
+    Excluded,
+    /// A literal separator (`-`, `:`, `T`, `P`, `W`, `/`, `.`).
+    Separator(u8),
+}
+
+fn classify(byte: u8) -> PatternField {
+    match byte {
+        b'?' => PatternField::Optional,
+        b'X' | b'x' => PatternField::Excluded,
+        b if b.is_ascii_alphabetic() => PatternField::Mandatory,
+        b => PatternField::Separator(b),
+    }
+}
+
+/// True if a child pattern position validly narrows the parent position.
+fn position_narrows(child: u8, parent: u8) -> bool {
+    match (classify(child), classify(parent)) {
+        // Separators must match exactly.
+        (PatternField::Separator(c), PatternField::Separator(p)) => c == p,
+        (PatternField::Separator(_), _) | (_, PatternField::Separator(_)) => false,
+        // Parent optional admits any child field; parent mandatory admits only a
+        // mandatory child; parent excluded admits only an excluded child.
+        (_, PatternField::Optional)
+        | (PatternField::Mandatory, PatternField::Mandatory)
+        | (PatternField::Excluded, PatternField::Excluded) => true,
+        _ => false,
     }
 }
 
@@ -414,11 +527,13 @@ where
 /// constraint" (`master09.05` §Terminology Constraint Redefinition), and code
 /// conformance for the value-set / at-code constraint.
 ///
-/// NOTE: value-set expansion subset (`value_set_expanded` in the spec) needs the
-/// flattened terminology; this checks the constraint-status ordering and the
-/// lexical `codes_conformant` half only.
-/// TODO: value-set-expansion subset once the flattener supplies the flat
-/// terminology.
+/// NOTE: this terminology-agnostic core checks the constraint-status ordering
+/// and the lexical `codes_conformant` half only. The `value_set_expanded` subset
+/// half (`master04.5` §`C_TERMINOLOGY_NODE` L683-690) needs the child + flat
+/// parent terminologies, which this function does not receive; it is applied in
+/// [`super::phase2`] (`check_terminology_leaf`), which has both flattened
+/// terminologies. This lexical core is used for the non-specialisation value
+/// path (`c_value_conforms_to`), where no value-set expansion is required.
 fn terminology_conforms(
     child_code: &str,
     child_status: i32,
@@ -625,6 +740,50 @@ terminology
         assert_eq!(
             terminology_conforms("at0005", 0, "at0004", 0),
             ValueConformance::Violates
+        );
+    }
+
+    #[test]
+    fn temporal_pattern_replacement() {
+        // Parent `yyyy-??-??` (month/day optional): child `yyyy-mm-dd` narrows both
+        // to mandatory → valid replacement (master04.5 §C_TEMPORAL).
+        assert!(valid_pattern_constraint_replacement(
+            "yyyy-mm-dd",
+            "yyyy-??-??"
+        ));
+        // Child may also exclude an optional field.
+        assert!(valid_pattern_constraint_replacement(
+            "yyyy-mm-XX",
+            "yyyy-??-??"
+        ));
+        // Parent mandatory day cannot be loosened to optional.
+        assert!(!valid_pattern_constraint_replacement(
+            "yyyy-mm-??",
+            "yyyy-mm-dd"
+        ));
+        // Separator / layout mismatch is not a valid replacement.
+        assert!(!valid_pattern_constraint_replacement(
+            "yyyy-mm",
+            "yyyy-mm-dd"
+        ));
+
+        // parent pattern empty ⇒ conforms; child interval-constrained ⇒ unknown.
+        assert_eq!(
+            temporal_conforms(Some("yyyy-mm-dd"), true, None, true),
+            ValueConformance::Conforms
+        );
+        assert_eq!(
+            temporal_conforms(Some("yyyy-mm-dd"), true, Some("yyyy-??-??"), true),
+            ValueConformance::Conforms
+        );
+        assert_eq!(
+            temporal_conforms(Some("yyyy-mm-??"), true, Some("yyyy-mm-dd"), true),
+            ValueConformance::Violates
+        );
+        // A non-empty interval constraint is not orderable on the Iso8601 types.
+        assert_eq!(
+            temporal_conforms(Some("yyyy-mm-dd"), false, Some("yyyy-??-??"), true),
+            ValueConformance::Unknown
         );
     }
 }

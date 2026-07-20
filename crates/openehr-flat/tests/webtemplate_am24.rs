@@ -1,0 +1,338 @@
+//! The am24 (ADL2 / OPT2) → Web Template front end
+//! ([`openehr_flat::webtemplate::build_web_template_am24`]).
+//!
+//! Every case compiles a **real** ADL2 corpus source to its operational
+//! template (`openehr_adl::opt::create_opt`) and drives it through the same
+//! WebTemplate model + shared shaping the ADL 1.4 front end uses — the
+//! dialect-neutral seam of `ITS-REST simplified_formats master04 §"Web Template
+//! Metadata"`. The corpus lives in the sibling `openehr-adl` crate
+//! (`tests/corpus/adl2-reference`); `openehr-adl` is a dev-only dependency here
+//! (the production am24 front end takes an already-created OPT as input).
+
+#![allow(
+    clippy::expect_used,
+    clippy::unwrap_used,
+    clippy::panic,
+    clippy::doc_markdown,
+    clippy::items_after_statements
+)]
+
+use std::path::Path;
+
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::opt::create_opt;
+use openehr_adl::validate::ArchetypeRepository;
+use openehr_flat::example::{DetailLevel, ExampleType, example_composition};
+use openehr_flat::validation::validate_rm_and_terminology;
+use openehr_flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template_am24};
+
+const OBS_UPGRADE: &str =
+    "upgrade/upgrade_from_14/openEHR-EHR-OBSERVATION.upgrade_add_use_nodes.v1.0.0.adls";
+const OBS_APGAR: &str = "features/terminology/term_bindings/openEHR-EHR-OBSERVATION.term_bindings_paths_use_refs.v1.0.0.adls";
+const COMP_ANNOTATIONS: &str =
+    "features/description/annotations/openEHR-EHR-COMPOSITION.annotations_rm_path.v1.0.0.adls";
+
+fn corpus_dir() -> String {
+    format!(
+        "{}/../openehr-adl/tests/corpus/adl2-reference",
+        env!("CARGO_MANIFEST_DIR")
+    )
+}
+
+fn read(rel: &str) -> String {
+    let p = format!("{}/{rel}", corpus_dir());
+    std::fs::read_to_string(&p).unwrap_or_else(|e| panic!("read {p}: {e}"))
+}
+
+/// A repository over the whole `adl2-reference` tree so specialisation parents
+/// and `use_archetype` fillers resolve during `create_opt`.
+fn corpus_repo() -> ArchetypeRepository {
+    let mut repo = ArchetypeRepository::new();
+    fn walk(dir: &Path, repo: &mut ArchetypeRepository) {
+        for entry in std::fs::read_dir(dir).unwrap().flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                walk(&p, repo);
+            } else if p.extension().is_some_and(|x| x == "adls")
+                && let Ok(src) = std::fs::read_to_string(&p)
+                && let Ok(a) = parse_artefact(&src)
+            {
+                repo.insert(a);
+            }
+        }
+    }
+    walk(Path::new(&corpus_dir()), &mut repo);
+    repo
+}
+
+/// Compile a corpus source to its WebTemplate through the am24 front end.
+fn web_template(rel: &str) -> WebTemplate {
+    let archetype = parse_artefact(&read(rel)).expect("parse ADL2");
+    let opt = create_opt(&archetype, &corpus_repo()).expect("create_opt");
+    build_web_template_am24(&opt).expect("build am24 web template")
+}
+
+fn rm_types(node: &WebTemplateNode) -> Vec<String> {
+    let mut out = vec![node.rm_type.clone()];
+    for c in &node.children {
+        out.extend(rm_types(c));
+    }
+    out
+}
+
+/// Every node (depth-first) whose RM type equals `rm_type`.
+fn collect_typed<'a>(node: &'a WebTemplateNode, rm_type: &str, out: &mut Vec<&'a WebTemplateNode>) {
+    if node.rm_type == rm_type {
+        out.push(node);
+    }
+    for c in &node.children {
+        collect_typed(c, rm_type, out);
+    }
+}
+
+/// The first node (depth-first) whose json `id` equals `id`.
+fn find<'a>(node: &'a WebTemplateNode, id: &str) -> Option<&'a WebTemplateNode> {
+    if node.id == id {
+        return Some(node);
+    }
+    node.children.iter().find_map(|c| find(c, id))
+}
+
+fn unit_list(node: &WebTemplateNode) -> Vec<String> {
+    node.inputs
+        .iter()
+        .filter(|i| i.suffix.as_deref() == Some("unit"))
+        .flat_map(|i| i.list.iter().map(|c| c.value.clone()))
+        .collect()
+}
+
+fn code_list(node: &WebTemplateNode) -> Vec<String> {
+    node.inputs
+        .iter()
+        .filter(|i| i.suffix.as_deref() == Some("code"))
+        .flat_map(|i| i.list.iter().map(|c| c.value.clone()))
+        .collect()
+}
+
+// ── template identity + root shape ───────────────────────────────────────────
+
+#[test]
+fn carries_template_id_semver_and_interface_root_id() {
+    let wt = web_template(COMP_ANNOTATIONS);
+    assert_eq!(
+        wt.template_id,
+        "openEHR-EHR-COMPOSITION.annotations_rm_path.v1.0.0"
+    );
+    // OPT2 carries a semantic version (master07.05); the WT `version` is the
+    // format version, `semVer` the template release version.
+    assert_eq!(wt.sem_ver.as_deref(), Some("1.0.0"));
+    assert_eq!(wt.version, "2.3");
+    assert_eq!(wt.tree.rm_type, "COMPOSITION");
+    // master04 §"Web Template Metadata": the root nodeId is the archetype id in
+    // interface (major-version) form, not the internal concept code.
+    assert_eq!(
+        wt.tree.node_id.as_deref(),
+        Some("openEHR-EHR-COMPOSITION.annotations_rm_path.v1")
+    );
+    assert_eq!(wt.tree.min, Some(1));
+    assert_eq!(wt.tree.max, 1);
+}
+
+#[test]
+fn synthesizes_the_composition_in_context_children() {
+    // master04 §"Web Template Metadata": the RM-mandatory context children an OPT
+    // leaves unconstrained are synthesized (shared with the OPT-1.4 front end).
+    let wt = web_template(COMP_ANNOTATIONS);
+    let ids: Vec<&str> = wt.tree.children.iter().map(|c| c.id.as_str()).collect();
+    for expected in ["category", "language", "territory", "composer"] {
+        assert!(
+            ids.contains(&expected),
+            "missing in-context child {expected}; got {ids:?}"
+        );
+    }
+    let ctx = wt
+        .tree
+        .children
+        .iter()
+        .find(|c| c.rm_type == "EVENT_CONTEXT");
+    assert!(ctx.is_some(), "the context wrapper is synthesized");
+}
+
+// ── generation + the validation bar (RM invariants + terminology) ────────────
+
+#[test]
+fn example_generation_validates_at_every_level() {
+    // The validation bar for am24 examples: RM class invariants + RM-mandated
+    // terminology, template-independent (module NOTE — no am24 structural
+    // conformance walk). Every detail level must be clean.
+    let wt = web_template(COMP_ANNOTATIONS);
+    for level in [
+        DetailLevel::Required,
+        DetailLevel::Medium,
+        DetailLevel::Complete,
+    ] {
+        let comp = example_composition(&wt, level);
+        let msgs = validate_rm_and_terminology(&comp);
+        assert!(
+            msgs.is_empty(),
+            "example at {level:?} has RM/terminology violations: {msgs:?}"
+        );
+        assert_eq!(
+            comp.get("_type").and_then(|v| v.as_str()),
+            Some("COMPOSITION")
+        );
+    }
+}
+
+#[test]
+fn example_generation_is_deterministic() {
+    let wt = web_template(COMP_ANNOTATIONS);
+    let a = example_composition(&wt, DetailLevel::Medium);
+    let b = example_composition(&wt, DetailLevel::Medium);
+    assert_eq!(a, b, "two calls produce identical JSON");
+    // The output form populates a deterministic uid.
+    let mut out = a.clone();
+    openehr_flat::example::apply_output_uid(&mut out, &wt.template_id);
+    let mut out2 = b;
+    openehr_flat::example::apply_output_uid(&mut out2, &wt.template_id);
+    assert_eq!(out, out2);
+    assert_eq!(
+        ExampleType::from_query(Some("output")),
+        Ok(ExampleType::Output)
+    );
+}
+
+// ── the am24 inputs mapping (C_ATTRIBUTE_TUPLE / C_TERMINOLOGY_CODE) ──────────
+
+#[test]
+fn quantity_units_come_from_the_magnitude_units_tuple() {
+    // AOM2 `DV_QUANTITY` constrains `[magnitude, units]` as a co-varying tuple
+    // (and a plain `magnitude`/`units` form); each unit surfaces as a coded
+    // `unit` value.
+    let wt = web_template(OBS_UPGRADE);
+    let mut quantities: Vec<&WebTemplateNode> = Vec::new();
+    collect_typed(&wt.tree, "DV_QUANTITY", &mut quantities);
+    let all_units: Vec<String> = quantities.iter().flat_map(|n| unit_list(n)).collect();
+    // The `[magnitude, units]` tuple form (blood_glucose: mmol/l, mg/dl) …
+    assert!(
+        all_units.contains(&"mmol/l".to_owned()) && all_units.contains(&"mg/dl".to_owned()),
+        "expected the tuple units, got {all_units:?}"
+    );
+    // … and the plain `units` C_STRING form (dose: gm, U).
+    assert!(
+        all_units.contains(&"gm".to_owned()) && all_units.contains(&"U".to_owned()),
+        "expected the plain-form units, got {all_units:?}"
+    );
+}
+
+#[test]
+fn coded_text_expands_at_codes_and_ac_code_value_sets() {
+    let wt = web_template(OBS_UPGRADE);
+    // A `defining_code` constrained to an explicit at-code list.
+    let status = find(&wt.tree, "test_status").expect("test_status DV_CODED_TEXT");
+    assert!(
+        code_list(status).contains(&"at38".to_owned()),
+        "at-code list: {:?}",
+        code_list(status)
+    );
+    // A `defining_code` constrained to an ac-code resolves to its archetype-local
+    // value-set members (AOM2 §C_TERMINOLOGY_CODE).
+    let intake = find(&wt.tree, "intake").expect("intake DV_CODED_TEXT (ac-code)");
+    let codes = code_list(intake);
+    assert!(
+        codes.iter().all(|c| c.starts_with("at")) && codes.len() >= 2,
+        "value-set members: {codes:?}"
+    );
+    // Rubric labels are resolved (not bare codes) where the archetype defines them.
+    let labelled = intake
+        .inputs
+        .iter()
+        .flat_map(|i| &i.list)
+        .any(|cv| cv.label.as_deref().is_some_and(|l| l != cv.value));
+    assert!(labelled, "coded value labels resolve to archetype rubrics");
+}
+
+#[test]
+fn ordinal_values_carry_ordinal_integers() {
+    // AOM2 `DV_ORDINAL` constrains `[value, symbol]`; the integer value rides on
+    // each coded option's `ordinal`.
+    let wt = web_template(OBS_APGAR);
+    let effort = find(&wt.tree, "respiratory_effort").expect("a DV_ORDINAL leaf");
+    let ordinals: Vec<i32> = effort
+        .inputs
+        .iter()
+        .flat_map(|i| &i.list)
+        .filter_map(|cv| cv.ordinal)
+        .collect();
+    assert_eq!(ordinals, vec![0, 1, 2], "ordinal integers");
+}
+
+// ── level removal (master04 §"Level Removal") ────────────────────────────────
+
+#[test]
+fn history_and_item_structures_are_level_removed() {
+    // The always-collapsed wrapper types carry no node in the compacted tree.
+    let wt = web_template(OBS_UPGRADE);
+    let types = rm_types(&wt.tree);
+    for collapsed in ["HISTORY", "ITEM_TREE", "ITEM_STRUCTURE", "ELEMENT"] {
+        assert!(
+            !types.contains(&collapsed.to_owned()),
+            "{collapsed} should be level-removed, tree types: {types:?}"
+        );
+    }
+}
+
+#[test]
+fn single_event_collapses_but_multiple_events_are_retained() {
+    // Conditional EVENT collapse (master04 §"Conditionally Collapsed Wrapper
+    // Types"): a lone `max=1` event is collapsed; sibling events are retained.
+    let single = web_template(OBS_UPGRADE);
+    assert!(
+        !rm_types(&single.tree).iter().any(|t| t.ends_with("EVENT")),
+        "the lone Any-event is collapsed"
+    );
+    let multiple = web_template(OBS_APGAR);
+    let point_events = rm_types(&multiple.tree)
+        .iter()
+        .filter(|t| t.as_str() == "POINT_EVENT")
+        .count();
+    assert!(
+        point_events >= 2,
+        "the apgar OBSERVATION retains its multiple POINT_EVENTs, got {point_events}"
+    );
+}
+
+// ── node-id generation (master04 §"Node ID Generation Rules") ─────────────────
+
+#[test]
+fn sibling_ids_are_unique() {
+    // The upgrade OBSERVATION has repeated node names (`added_by_post-parse_
+    // processor`) that must get the sibling-uniqueness suffix.
+    let wt = web_template(OBS_UPGRADE);
+    assert!(
+        all_sibling_ids_unique(&wt.tree),
+        "sibling ids must be unique per parent"
+    );
+    // And the dedup actually fired somewhere in this template.
+    let mut ids = Vec::new();
+    collect_ids(&wt.tree, &mut ids);
+    assert!(
+        ids.iter().any(|i| i.ends_with("_1")),
+        "the duplicate-name dedup suffix (_1) is present"
+    );
+}
+
+fn all_sibling_ids_unique(node: &WebTemplateNode) -> bool {
+    let mut seen = std::collections::HashSet::new();
+    if !node.children.iter().all(|c| seen.insert(c.id.clone())) {
+        return false;
+    }
+    node.children.iter().all(all_sibling_ids_unique)
+}
+
+fn collect_ids(node: &WebTemplateNode, out: &mut Vec<String>) {
+    out.push(node.id.clone());
+    for c in &node.children {
+        collect_ids(c, out);
+    }
+}

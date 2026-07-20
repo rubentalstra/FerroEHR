@@ -173,13 +173,38 @@ fn unconstrained_structural_attribute_keeps_the_any_placeholder() {
     );
 }
 
-/// Broad guard: the committable levels (`Required` and `Medium`) of every
-/// vendored template produce no "unexpected node" — the synthesised
-/// RM-mandatory structural attributes conform across the whole corpus at the
-/// mandatory skeleton *and* with every optional branch populated. (`Complete`
-/// is documented as "not necessarily committable", so is not asserted here.)
+/// Vendored corpus OPTs whose OWN constraints are spec-contradictory, so no
+/// committable example can validate clean — the vendored openEHR specs are the
+/// authority and a fixture OPT can itself be defective (owner ruling
+/// 2026-07-20). These are adjudicated (`.claude/rules/testing.md`: genuine corpus
+/// defects go through skip-with-reason, never by weakening a check) and pinned
+/// below (the full-validation bar asserts they STILL fail, so if the underlying
+/// defect is ever resolved this entry must be removed). They are NOT
+/// example-generator gaps — the generator emits the maximal spec-valid structure;
+/// the residual violation is intrinsic to the OPT constraint named:
+///
+/// * `section_cardinality.opt` — `COMPOSITION.content` cardinality is `1..1`
+///   (OPT `C_MULTIPLE_ATTRIBUTE.cardinality`), yet the six name-differentiated
+///   `SECTION` alternatives carry occurrences summing to ≥8 (test #4/#5 are
+///   `3..`). No instance can hold ≥8 members in a 1-member container (AOM 1.4
+///   `master04-constraint_model_package.adoc` §cardinality vs §occurrences).
+///
+/// (`Falls care plan.opt` was here too — an archetyped `EVENT_CONTEXT` the walk
+/// wrongly required an `archetype_node_id` on; that was OUR validator defect, now
+/// fixed by matching non-`LOCATABLE` nodes structurally, so it validates clean.)
+const CONTRADICTORY_FIXTURES: &[&str] = &["section_cardinality.opt"];
+
+/// The full-validation bar: the committable levels (`Required` and `Medium`) of
+/// every vendored template produce a **fully valid** COMPOSITION —
+/// [`validate_composition`] (RM invariants + RM-mandated terminology + archetype
+/// conformance) reports NOTHING — proving the synthesised values and structure
+/// conform across the whole corpus at the mandatory skeleton *and* with every
+/// optional branch populated (issue #94: the generator no longer emits a skeleton
+/// that deep validation rejects). (`Complete` is documented as "not necessarily
+/// committable", so is not asserted here.) The adjudicated
+/// [`CONTRADICTORY_FIXTURES`] are pinned as still-failing.
 #[test]
-fn committable_example_of_every_fixture_has_no_unexpected_node() {
+fn committable_example_of_every_fixture_fully_validates() {
     let mut opts = Vec::new();
     for sub in ["sdk", "better"] {
         collect_opts(&fixtures_dir().join(sub), &mut opts);
@@ -201,17 +226,82 @@ fn committable_example_of_every_fixture_has_no_unexpected_node() {
         let Ok(wt) = build_web_template(&opt) else {
             continue;
         };
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        let contradictory = CONTRADICTORY_FIXTURES.contains(&name);
         for level in [DetailLevel::Required, DetailLevel::Medium] {
             let comp = example_composition(&wt, level);
-            let errs = unexpected(&comp, &wt);
-            assert!(
-                errs.is_empty(),
-                "{path:?} @ {level:?} produced unexpected nodes: {errs:?}"
-            );
+            let msgs = validate_composition(&comp, &wt);
+            if contradictory {
+                assert!(
+                    !msgs.is_empty(),
+                    "{name} @ {level:?} is adjudicated spec-contradictory \
+                     (CONTRADICTORY_FIXTURES) but now validates clean — the OPT/validator \
+                     defect appears resolved, so remove it from the adjudication list"
+                );
+            } else {
+                assert!(
+                    msgs.is_empty(),
+                    "{name} @ {level:?} must fully validate but produced: {msgs:?}"
+                );
+            }
         }
         checked += 1;
     }
     assert!(checked > 40, "checked {checked} templates");
+}
+
+/// Issue #94 regression: the example generator emitted only the mandatory
+/// skeleton, so a **multi-archetype** template's `Medium` example failed deep
+/// validation (a placeholder magnitude/unit here, a wrong structural type there).
+/// A representative multi-archetype template (SECTIONs over several OBSERVATION /
+/// ACTION / CLUSTER archetypes) now fully validates at `Medium` — no synthesis
+/// gaps across archetype boundaries.
+#[test]
+fn issue_94_multi_archetype_medium_validates_fully() {
+    let wt = web_template("better/ZN - Vital Functions Encounter.opt");
+    let comp = example_composition(&wt, DetailLevel::Medium);
+    let msgs = validate_composition(&comp, &wt);
+    assert!(
+        msgs.is_empty(),
+        "the multi-archetype medium example must fully validate (issue #94): {msgs:?}"
+    );
+}
+
+/// The generator is deterministic (no randomness, no wall-clock): two runs of
+/// each level over the whole corpus are byte-identical.
+#[test]
+fn example_generation_is_byte_deterministic() {
+    let mut opts = Vec::new();
+    for sub in ["sdk", "better"] {
+        collect_opts(&fixtures_dir().join(sub), &mut opts);
+    }
+    for path in &opts {
+        let Ok(xml) = std::fs::read_to_string(path) else {
+            continue;
+        };
+        let Ok(opt) = opt14::from_xml(&xml) else {
+            continue;
+        };
+        let Ok(wt) = build_web_template(&opt) else {
+            continue;
+        };
+        for level in [
+            DetailLevel::Required,
+            DetailLevel::Medium,
+            DetailLevel::Complete,
+        ] {
+            let a = serde_json::to_string(&example_composition(&wt, level));
+            let b = serde_json::to_string(&example_composition(&wt, level));
+            assert_eq!(
+                a.ok(),
+                b.ok(),
+                "two runs must be byte-identical: {path:?} @ {level:?}"
+            );
+        }
+    }
 }
 
 fn collect_opts(dir: &Path, out: &mut Vec<PathBuf>) {

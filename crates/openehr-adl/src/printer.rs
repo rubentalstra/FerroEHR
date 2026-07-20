@@ -144,7 +144,16 @@ impl Printer {
     }
 
     fn identification(&mut self, parts: &Parts<'_>) {
-        let keyword = parts.keyword;
+        // A flattened artefact prints with the `flat` keyword prefix
+        // (`ADL2/master07.04` §Artefact declaration: "The flattened form … starts
+        // with the keyword 'flat' followed by the artefact type").
+        let keyword_owned;
+        let keyword: &str = if parts.flat {
+            keyword_owned = format!("flat {}", parts.keyword);
+            &keyword_owned
+        } else {
+            parts.keyword
+        };
         let mut meta = String::new();
         if let Some(adl) = parts.adl_version {
             let _ = write!(meta, "adl_version={adl}");
@@ -594,10 +603,31 @@ impl Printer {
             format!("[{}, {}]", r.node_id, r.archetype_ref)
         };
         let occ = occ_suffix(r.occurrences.as_ref());
+        // An OPT-inlined root carries the flattened filler structure in
+        // `attributes`/`attribute_tuples` (OPT2 master03 §Flattening); it prints
+        // as a plain object head `TYPE[id, ref] occ matches { … }` (no
+        // `use_archetype` keyword), which the cADL parser reads back as a
+        // `C_ARCHETYPE_ROOT`. A source-form external reference / slot filler has
+        // Void children and prints with the `use_archetype` keyword
+        // (`cadl2.g4` c_archetype_root).
+        if r.attributes.is_empty() && r.attribute_tuples.is_empty() {
+            self.line(
+                depth,
+                &format!("{head}use_archetype {}{node}{occ}", r.rm_type_name),
+            );
+            return;
+        }
         self.line(
             depth,
-            &format!("{head}use_archetype {}{node}{occ}", r.rm_type_name),
+            &format!("{head}{}{node}{occ} matches {{", r.rm_type_name),
         );
+        for a in &r.attributes {
+            self.attribute(a, depth + 1);
+        }
+        for t in &r.attribute_tuples {
+            self.attribute_tuple(t, depth + 1);
+        }
+        self.line(depth, "}");
     }
 
     fn proxy(&mut self, head: &str, pr: &CComplexObjectProxy, depth: usize) {
@@ -671,6 +701,10 @@ impl Printer {
 /// [`Archetype`] variants.
 struct Parts<'a> {
     keyword: &'a str,
+    /// True for a flattened artefact (prints the `flat` keyword prefix,
+    /// `ADL2/master07.04` §Artefact declaration): a specialised archetype whose
+    /// `is_differential` flag is cleared by the flattener.
+    flat: bool,
     is_overlay: bool,
     archetype_id: &'a ArchetypeHrid,
     parent_archetype_id: Option<&'a str>,
@@ -712,6 +746,7 @@ impl<'a> Parts<'a> {
         match a {
             Archetype::TemplateOverlay(o) => Parts {
                 keyword: "template_overlay",
+                flat: false,
                 is_overlay: true,
                 archetype_id: &o.archetype_id,
                 parent_archetype_id: o.parent_archetype_id.as_deref(),
@@ -736,6 +771,7 @@ impl<'a> Parts<'a> {
             Archetype::AuthoredArchetype(inner) => match inner.as_ref() {
                 AuthoredArchetype::AuthoredArchetype(d) => Parts {
                     keyword: "archetype",
+                    flat: d.parent_archetype_id.is_some() && !d.is_differential,
                     is_overlay: false,
                     archetype_id: &d.archetype_id,
                     parent_archetype_id: d.parent_archetype_id.as_deref(),
@@ -759,6 +795,7 @@ impl<'a> Parts<'a> {
                 },
                 AuthoredArchetype::Template(t) => Parts {
                     keyword: "template",
+                    flat: t.parent_archetype_id.is_some() && !t.is_differential,
                     is_overlay: false,
                     archetype_id: &t.archetype_id,
                     parent_archetype_id: t.parent_archetype_id.as_deref(),
@@ -782,6 +819,7 @@ impl<'a> Parts<'a> {
                 },
                 AuthoredArchetype::OperationalTemplate(o) => Parts {
                     keyword: "operational_template",
+                    flat: false,
                     is_overlay: false,
                     archetype_id: &o.archetype_id,
                     parent_archetype_id: o.parent_archetype_id.as_deref(),

@@ -1,0 +1,1114 @@
+//! am24 OPT2 → Web Template walk (the ADL2 front end).
+//!
+//! The dialect-neutral seam is the Web Template layer: `ITS-REST
+//! simplified_formats master04-basic_concepts.adoc` §"Web Template Metadata"
+//! defines a Web Template as "a processed representation of an openEHR
+//! Operational Template" — dialect-neutral, and an am24 OPT2
+//! ([`openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate`])
+//! *is* an Operational Template. [`build_web_template_am24`] walks the am24
+//! constraint tree into the **same** [`WebTemplate`] model the OPT-1.4 front end
+//! ([`super::builder`]) produces, then hands it to the shared dialect-neutral
+//! passes ([`super::shape`]: level removal, in-context synthesis, post-process)
+//! and [`super::id`] (node-id generation). The whole downstream — example
+//! generation, FLAT/STRUCTURED, validation — then works unchanged; there is no
+//! parallel pipeline.
+//!
+//! The AOM2 constraint model differs from OPT 1.4:
+//! `openehr_am::am24::aom2` has no `C_DV_QUANTITY`/`C_DV_ORDINAL`/`C_CODE_PHRASE`
+//! classes — a DV leaf is a `C_COMPLEX_OBJECT` whose RM attributes are
+//! constrained by `C_ATTRIBUTE`s and co-varying `C_ATTRIBUTE_TUPLE`s (e.g.
+//! `[magnitude, units]` for `DV_QUANTITY`, `[value, symbol]` for `DV_ORDINAL`),
+//! and coded constraints are `C_TERMINOLOGY_CODE` (an at-code, or an ac-code
+//! resolving to an archetype-local value set). This module carries the
+//! am24-specific `build`/`inputs` half; the tree shaping is shared.
+//!
+//! NOTE: the am24 front end populates the node **shape** + `inputs` the example
+//! generator and FLAT/STRUCTURED codecs consume; it does **not** populate the
+//! validation-only constraint fields (`existence`/`card_all`/`slots`/
+//! `closed_attributes`/`structural_stubs`) the archetype-conformance walk
+//! ([`crate::validation::validate_archetype_conformance`]) reads. No openEHR
+//! spec governs an example's completeness or an am24 instance-conformance walk
+//! against a Web Template — our own design/extension; a generated am24 example
+//! is validated by [`crate::validation::validate_rm_and_terminology`] (RM class
+//! invariants + RM-mandated terminology, template-independent), which is
+//! self-consistent with the tree by construction. The am24 structural
+//! conformance walk is out of scope for this front end (master04 §"Web Template
+//! Metadata" is the seam it fills).
+
+use std::collections::BTreeMap;
+
+use indexmap::IndexMap;
+use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
+use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
+use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::am24::aom2::constraint_model::primitive::c_boolean::CBoolean;
+use openehr_am::am24::aom2::constraint_model::primitive::c_integer::CInteger;
+use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
+use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
+use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
+use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_base::prelude::{Cardinality, Interval, MultiplicityInterval, ProperInterval};
+
+use super::model::{
+    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodedValue,
+    WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
+    WebTemplateValidation,
+};
+use super::shape;
+
+/// Build a [`WebTemplate`] from a parsed am24 operational template (OPT2).
+///
+/// The document shape (`tree`/`children`, `inputs`, `aqlPath`), the node-id
+/// derivation, and the compaction are governed by `ITS-REST simplified_formats
+/// master04-basic_concepts.adoc` (§"Web Template Metadata", §"Node ID Generation
+/// Rules", §"Level Removal"). `version` is the format version string; `semVer`
+/// carries the OPT2 release version (`master07.05` — an ADL2/OPT2 concept the
+/// OPT 1.4 form lacks).
+///
+/// # Errors
+/// [`crate::error::FlatError::InvalidTemplate`] if the template lacks an
+/// archetype id.
+pub fn build_web_template_am24(
+    opt: &OperationalTemplate,
+) -> Result<WebTemplate, crate::error::FlatError> {
+    let template_id = template_id_of(&opt.archetype_id);
+    if template_id.is_empty() {
+        return Err(crate::error::FlatError::InvalidTemplate(
+            "archetype_id is mandatory".to_owned(),
+        ));
+    }
+    let default_language = opt.original_language.code_string.clone();
+    let ctx = Ctx {
+        languages: collect_languages(opt, &default_language),
+        default_language,
+        components: opt.component_terminologies.as_ref(),
+    };
+
+    // The OPT definition root is a plain `C_COMPLEX_OBJECT` (rm type COMPOSITION,
+    // node_id = the concept code); its rubrics come from the OPT's own
+    // terminology (constituents' terminologies live in `component_terminologies`
+    // and are switched in as `C_ARCHETYPE_ROOT`s are entered).
+    let root_co = CObject::CComplexObject(opt.definition.clone());
+    let mut tree = build_node(&ctx, &opt.terminology, None, &root_co, "");
+    // master04 §"Web Template Metadata": the root `nodeId` is the archetype id
+    // (interface form), not the internal concept code.
+    tree.node_id = Some(interface_id_of_hrid(&opt.archetype_id));
+    tree.min = Some(1);
+    tree.max = 1;
+
+    let mut tree = shape::compact(tree, 1).unwrap_or_else(shape::tree_placeholder);
+    shape::synthesize_in_context(&mut tree);
+    super::id::build_ids(&mut tree);
+    // Parse the (empty, for this front end) archetype-conformance walk plan so
+    // the WebTemplate is uniform with the OPT-1.4 form; the am24 example is
+    // validated by RM invariants + terminology, not this walk (module NOTE).
+    crate::validation::prepare_walk(&mut tree);
+
+    Ok(WebTemplate {
+        template_id,
+        // OPT2 carries a semantic version (`master07.05`); the interface form
+        // strips it, so surface the full release version here.
+        sem_ver: Some(opt.archetype_id.release_version.clone()),
+        version: shape::CURRENT_VERSION.to_owned(),
+        default_language: ctx.default_language.clone(),
+        languages: ctx.languages.clone(),
+        tree,
+        other_details: IndexMap::new(),
+    })
+}
+
+/// The template languages: the default language, then every language the OPT's
+/// own terminology or any constituent terminology defines a `term_definitions`
+/// block for, first-seen order.
+fn collect_languages(opt: &OperationalTemplate, default_language: &str) -> Vec<String> {
+    let mut langs = vec![default_language.to_owned()];
+    let mut push = |term: &ArchetypeTerminology| {
+        for lang in term.term_definitions.keys() {
+            if !langs.contains(lang) {
+                langs.push(lang.clone());
+            }
+        }
+    };
+    push(&opt.terminology);
+    if let Some(components) = &opt.component_terminologies {
+        for term in components.values() {
+            push(term);
+        }
+    }
+    langs
+}
+
+/// Build context shared across the am24 walk.
+struct Ctx<'a> {
+    default_language: String,
+    languages: Vec<String>,
+    /// The OPT's constituent (filler) terminologies, keyed by full archetype id
+    /// (OPT2 master03 §Terminology); scope is switched to these as the walk
+    /// enters an inlined `C_ARCHETYPE_ROOT`.
+    components: Option<&'a BTreeMap<String, ArchetypeTerminology>>,
+}
+
+impl Ctx<'_> {
+    /// The constituent terminology for `archetype_ref`, if the OPT inlined one.
+    fn scope(&self, archetype_ref: &str) -> Option<&ArchetypeTerminology> {
+        self.components.and_then(|m| m.get(archetype_ref))
+    }
+
+    /// The localized rubric texts for `code` across every template language.
+    fn localized(&self, term: &ArchetypeTerminology, code: &str) -> IndexMap<String, String> {
+        let mut out = IndexMap::new();
+        for lang in &self.languages {
+            if let Some(t) = rubric_text(term, code, lang) {
+                out.insert(lang.clone(), t);
+            }
+        }
+        out
+    }
+
+    /// The localized `description` rubrics for `code` across every language.
+    fn localized_descriptions(
+        &self,
+        term: &ArchetypeTerminology,
+        code: &str,
+    ) -> IndexMap<String, String> {
+        let mut out = IndexMap::new();
+        for lang in &self.languages {
+            if let Some(d) = term
+                .term_definitions
+                .get(lang)
+                .and_then(|m| m.get(code))
+                .map(|t| t.description.clone())
+                .filter(|s| !s.is_empty())
+            {
+                out.insert(lang.clone(), d);
+            }
+        }
+        out
+    }
+}
+
+/// The `text` rubric for `code` in `term` at `lang`.
+fn rubric_text(term: &ArchetypeTerminology, code: &str, lang: &str) -> Option<String> {
+    term.term_definitions
+        .get(lang)?
+        .get(code)
+        .map(|t| t.text.clone())
+        .filter(|s| !s.is_empty())
+}
+
+/// The external term bindings for `code` in `term` (master04 §"Web Template
+/// Metadata": a `termBindings` map). am24 `term_bindings` maps terminology →
+/// code → target URI (`ARCHETYPE_TERMINOLOGY.term_bindings`); the bound URI is
+/// surfaced as the coded value.
+fn term_bindings_of(
+    term: &ArchetypeTerminology,
+    code: &str,
+) -> IndexMap<String, WebTemplateBindingCodedValue> {
+    let mut out = IndexMap::new();
+    if code.is_empty() {
+        return out;
+    }
+    let Some(bindings) = &term.term_bindings else {
+        return out;
+    };
+    for (terminology, map) in bindings {
+        if let Some(uri) = map.get(code)
+            && !uri.trim().is_empty()
+        {
+            out.insert(
+                terminology.clone(),
+                WebTemplateBindingCodedValue {
+                    value: uri.clone(),
+                    terminology_id: terminology.clone(),
+                },
+            );
+        }
+    }
+    out
+}
+
+// ── node build ───────────────────────────────────────────────────────────────
+
+fn build_node(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    attr_name: Option<&str>,
+    co: &CObject,
+    parent_path: &str,
+) -> WebTemplateNode {
+    // A `C_ARCHETYPE_ROOT` switches the terminology scope to its constituent's
+    // (OPT2 master03 §Terminology); its own name is looked up in the new scope,
+    // falling back to the parent scope for the slot-level rubric.
+    let (child_term, is_root) = match co {
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
+            (ctx.scope(&r.archetype_ref).unwrap_or(term), true)
+        }
+        _ => (term, false),
+    };
+    let name_term = if is_root { child_term } else { term };
+    let mut node = create_node(ctx, name_term, term, attr_name, co, parent_path);
+    build_children(ctx, child_term, co, &mut node);
+    node
+}
+
+fn create_node(
+    ctx: &Ctx,
+    name_term: &ArchetypeTerminology,
+    parent_term: &ArchetypeTerminology,
+    attr_name: Option<&str>,
+    co: &CObject,
+    parent_path: &str,
+) -> WebTemplateNode {
+    let rm_type = object_rm_type(co).to_owned();
+    let arch_node_id = object_archetype_node_id(co);
+    let (min, max) = occurrences(object_occurrences(co));
+
+    let path = build_path(parent_path, attr_name, &arch_node_id);
+    let mut node = WebTemplateNode::new(rm_type, path);
+    node.node_id = if arch_node_id.is_empty() {
+        None
+    } else {
+        Some(arch_node_id)
+    };
+    node.min = min;
+    node.max = max;
+
+    let code = object_node_id(co);
+    if !code.is_empty() {
+        // Resolve the rubric name in the node's own scope, falling back to the
+        // parent scope (a filler root's slot code lives in the parent).
+        node.name = rubric_text(name_term, code, &ctx.default_language)
+            .or_else(|| rubric_text(parent_term, code, &ctx.default_language));
+        node.localized_name.clone_from(&node.name);
+        node.localized_names = ctx.localized(name_term, code);
+        if node.localized_names.is_empty() {
+            node.localized_names = ctx.localized(parent_term, code);
+        }
+        node.localized_descriptions = ctx.localized_descriptions(name_term, code);
+        if node.localized_descriptions.is_empty() {
+            node.localized_descriptions = ctx.localized_descriptions(parent_term, code);
+        }
+        node.name_code = Some(code.to_owned());
+        node.term_bindings = term_bindings_of(name_term, code);
+    }
+    node
+}
+
+fn build_children(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    co: &CObject,
+    node: &mut WebTemplateNode,
+) {
+    let is_data_value = node.rm_type.starts_with("DV_");
+    let recurse_attrs = !is_data_value || node.rm_type.starts_with("DV_INTERVAL");
+
+    let mut children = Vec::new();
+    if recurse_attrs {
+        for attr in co_attributes(co) {
+            if attr.rm_attribute_name == "name" {
+                continue; // The name attribute names the node (master04 §"Field Identifiers").
+            }
+            for child_co in &attr.children {
+                if is_leaf_ignored(child_co) {
+                    continue; // Unfilled slot / proxy: no node.
+                }
+                children.push(build_node(
+                    ctx,
+                    term,
+                    Some(&attr.rm_attribute_name),
+                    child_co,
+                    &node.aql_path,
+                ));
+            }
+        }
+    }
+
+    if children.is_empty() && has_inputs(&node.rm_type) {
+        let (built, ptypes) = build_inputs(ctx, term, &node.rm_type, co);
+        node.inputs = built;
+        node.proportion_types = ptypes;
+    }
+
+    node.cardinalities = cardinalities(co, &node.aql_path);
+    node.children = children;
+    shape::post_process(node);
+}
+
+/// Whether a child `C_OBJECT` yields no web-template node (an unfilled slot or a
+/// residual proxy; OPT2 fillers/proxies are inlined by `create_opt`, so a
+/// surviving one is a runtime extension point).
+fn is_leaf_ignored(co: &CObject) -> bool {
+    matches!(
+        co,
+        CObject::ArchetypeSlot(_) | CObject::CComplexObjectProxy(_)
+    )
+}
+
+fn has_inputs(rm_type: &str) -> bool {
+    rm_type.starts_with("DV_")
+        || rm_type == "PARTY_PROXY"
+        || rm_type == "PARTY_IDENTIFIED"
+        || rm_type == "CODE_PHRASE"
+        || rm_type == "TERMINOLOGY_CODE"
+}
+
+// ── inputs (the am24 RM-type → inputs mapping) ───────────────────────────────
+
+fn build_inputs(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    rm_type: &str,
+    co: &CObject,
+) -> (Vec<WebTemplateInput>, Vec<String>) {
+    let base = rm_type.split('<').next().unwrap_or(rm_type);
+    let mut proportion_types = Vec::new();
+    let inputs = match base {
+        "DV_TEXT" | "DV_PARAGRAPH" | "DV_URI" | "DV_EHR_URI" | "DV_MULTIMEDIA" => {
+            vec![text_input(cstring_under(co, "value"), None)]
+        }
+        "DV_CODED_TEXT" | "DV_STATE" => coded_text_inputs(ctx, term, co),
+        "CODE_PHRASE" | "TERMINOLOGY_CODE" => code_phrase_inputs(ctx, term, co),
+        "DV_QUANTITY" => quantity_inputs(ctx, term, co),
+        "DV_COUNT" => vec![count_input(co)],
+        "DV_PROPORTION" => proportion_inputs(co, &mut proportion_types),
+        "DV_ORDINAL" => vec![ordinal_input(ctx, term, co, false)],
+        "DV_SCALE" => vec![ordinal_input(ctx, term, co, true)],
+        "DV_BOOLEAN" => vec![boolean_input(co)],
+        "DV_DATE" => vec![temporal_input(co, WebTemplateInputType::Date)],
+        "DV_DATE_TIME" => vec![temporal_input(co, WebTemplateInputType::Datetime)],
+        "DV_TIME" => vec![temporal_input(co, WebTemplateInputType::Time)],
+        "DV_DURATION" => vec![duration_input(co)],
+        "DV_IDENTIFIER" => ["id", "type", "issuer", "assigner"]
+            .into_iter()
+            .map(|s| text_input(cstring_under(co, s), Some(s)))
+            .collect(),
+        "DV_PARSABLE" => ["value", "formalism"]
+            .into_iter()
+            .map(|s| text_input(cstring_under(co, s), Some(s)))
+            .collect(),
+        "PARTY_PROXY" | "PARTY_IDENTIFIED" => ["id", "id_scheme", "id_namespace", "name"]
+            .into_iter()
+            .map(|s| text_input(cstring_under(co, s), Some(s)))
+            .collect(),
+        _ => Vec::new(),
+    };
+    (inputs, proportion_types)
+}
+
+fn text_input(cstring: Option<&CString>, suffix: Option<&str>) -> WebTemplateInput {
+    let mut input = WebTemplateInput::new(WebTemplateInputType::Text, suffix);
+    if let Some(cs) = cstring {
+        for entry in &cs.constraint {
+            if let Some(regex) = delimited_regex(entry) {
+                input.validation = Some(WebTemplateValidation {
+                    pattern: Some(regex.to_owned()),
+                    ..Default::default()
+                });
+            } else {
+                input
+                    .list
+                    .push(WebTemplateCodedValue::new(entry, Some(entry.clone())));
+            }
+        }
+        // An `/.../ ` regex or an open list leaves the list open; a closed literal
+        // list (no regex) constrains it.
+        input.list_open = Some(input.list.is_empty());
+    }
+    input
+}
+
+fn coded_text_inputs(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    co: &CObject,
+) -> Vec<WebTemplateInput> {
+    let Some(ctc) = terminology_code_under(co, "defining_code") else {
+        // No `defining_code` constraint: a free coded-text pair (master04
+        // §"Attribute Suffixes": `code`/`value`).
+        return external_coded_inputs();
+    };
+    coded_inputs_from(ctx, term, ctc)
+}
+
+fn code_phrase_inputs(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    co: &CObject,
+) -> Vec<WebTemplateInput> {
+    // A CODE_PHRASE leaf is itself a `C_TERMINOLOGY_CODE`.
+    match co {
+        CObject::CTerminologyCode(ctc) => coded_inputs_from(ctx, term, ctc),
+        _ => external_coded_inputs(),
+    }
+}
+
+/// Build the `code` coded input from a `C_TERMINOLOGY_CODE` (an at-code, or an
+/// ac-code resolving to an archetype-local value set). AOM2
+/// `AM/docs/AOM2/master02` §`C_TERMINOLOGY_CODE`.
+fn coded_inputs_from(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    ctc: &CTerminologyCode,
+) -> Vec<WebTemplateInput> {
+    let codes = expand_codes(term, &ctc.constraint);
+    if codes.is_empty() {
+        return external_coded_inputs();
+    }
+    let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("code"));
+    input.list = codes
+        .iter()
+        .map(|code| coded_value(ctx, term, code))
+        .collect();
+    // Local (archetype-defined) value sets have terminology `local` — left
+    // implicit (the reference form omits `terminology: "local"`).
+    vec![input]
+}
+
+/// The at-codes a `C_TERMINOLOGY_CODE.constraint` admits: an ac-code resolves to
+/// its archetype-local value-set members; an at-code is itself the singleton;
+/// an empty constraint admits nothing enumerable.
+fn expand_codes(term: &ArchetypeTerminology, constraint: &str) -> Vec<String> {
+    let c = constraint.trim();
+    if c.is_empty() {
+        return Vec::new();
+    }
+    if c.starts_with("ac") {
+        return term
+            .value_sets
+            .as_ref()
+            .and_then(|vs| vs.get(c))
+            .map(|vs| vs.members.clone())
+            .unwrap_or_default();
+    }
+    vec![c.to_owned()]
+}
+
+fn coded_value(ctx: &Ctx, term: &ArchetypeTerminology, code: &str) -> WebTemplateCodedValue {
+    let label = rubric_text(term, code, &ctx.default_language).unwrap_or_else(|| code.to_owned());
+    let mut cv = WebTemplateCodedValue::new(code, Some(label));
+    cv.localized_labels = ctx.localized(term, code);
+    cv.term_bindings = term_bindings_of(term, code);
+    cv
+}
+
+/// The `code`/`value` free-text inputs of an unconstrained coded leaf (master04
+/// §"Attribute Suffixes").
+fn external_coded_inputs() -> Vec<WebTemplateInput> {
+    vec![
+        WebTemplateInput::new(WebTemplateInputType::Text, Some("code")),
+        WebTemplateInput::new(WebTemplateInputType::Text, Some("value")),
+    ]
+}
+
+fn quantity_inputs(ctx: &Ctx, term: &ArchetypeTerminology, co: &CObject) -> Vec<WebTemplateInput> {
+    let mut magnitude = WebTemplateInput::new(WebTemplateInputType::Decimal, Some("magnitude"));
+    let mut units = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("unit"));
+
+    // The co-varying `[magnitude, units]` (and optional `precision`) tuple rows
+    // (AOM2 `C_ATTRIBUTE_TUPLE`); each row fixes one unit with its magnitude
+    // range/precision.
+    for tuple in co_attribute_tuples(co) {
+        let names: Vec<&str> = tuple
+            .members
+            .iter()
+            .map(|m| m.rm_attribute_name.as_str())
+            .collect();
+        if !names.contains(&"units") {
+            continue;
+        }
+        for row in &tuple.tuples {
+            let mut unit_value = None;
+            let mut validation = WebTemplateValidation::default();
+            for (i, name) in names.iter().enumerate() {
+                match (*name, row.members.get(i)) {
+                    ("units", Some(CPrimitiveObject::CString(cs))) => {
+                        unit_value = cs.constraint.iter().find(|s| delimited_regex(s).is_none());
+                    }
+                    ("magnitude", Some(CPrimitiveObject::CReal(cr))) => {
+                        validation.range = cr.constraint.first().and_then(real_range);
+                    }
+                    ("precision", Some(CPrimitiveObject::CInteger(ci))) => {
+                        validation.precision = ci.constraint.first().and_then(int_range);
+                    }
+                    _ => {}
+                }
+            }
+            if let Some(unit) = unit_value {
+                let mut cv = WebTemplateCodedValue::new(unit, Some(unit.clone()));
+                cv.localized_labels = ctx.localized(term, unit);
+                if !validation.is_empty() {
+                    cv.validation = Some(validation.clone());
+                }
+                units.list.push(cv);
+            }
+        }
+    }
+
+    // The plain (non-tuple) `units`/`magnitude` attribute forms.
+    for cs in cstrings_under(co, "units") {
+        for unit in cs
+            .constraint
+            .iter()
+            .filter(|s| delimited_regex(s).is_none())
+        {
+            if !units.list.iter().any(|cv| &cv.value == unit) {
+                units
+                    .list
+                    .push(WebTemplateCodedValue::new(unit, Some(unit.clone())));
+            }
+        }
+    }
+    if let Some(cr) = creal_under(co, "magnitude")
+        && let Some(range) = cr.constraint.first().and_then(real_range)
+    {
+        magnitude.validation = Some(WebTemplateValidation {
+            range: Some(range),
+            ..Default::default()
+        });
+    }
+    // A single allowed unit promotes its range onto the magnitude.
+    if units.list.len() == 1 && magnitude.validation.is_none() {
+        magnitude.validation.clone_from(&units.list[0].validation);
+    }
+    vec![magnitude, units]
+}
+
+fn count_input(co: &CObject) -> WebTemplateInput {
+    let mut input = WebTemplateInput::new(WebTemplateInputType::Integer, None);
+    if let Some(ci) = cinteger_under(co, "magnitude")
+        && let Some(range) = ci.constraint.first().and_then(int_range)
+    {
+        input.validation = Some(WebTemplateValidation {
+            range: Some(range),
+            ..Default::default()
+        });
+    }
+    input
+}
+
+fn ordinal_input(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    co: &CObject,
+    scale: bool,
+) -> WebTemplateInput {
+    let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, None);
+    // The `[value, symbol]` tuple: `value` an Integer/Real ordinal, `symbol` a
+    // terminology code (AOM2 `C_ATTRIBUTE_TUPLE`).
+    for tuple in co_attribute_tuples(co) {
+        let names: Vec<&str> = tuple
+            .members
+            .iter()
+            .map(|m| m.rm_attribute_name.as_str())
+            .collect();
+        if !names.contains(&"symbol") {
+            continue;
+        }
+        for row in &tuple.tuples {
+            let mut code = None;
+            // `DV_ORDINAL.value` is an Integer; `DV_SCALE.value` is a Real —
+            // tracked separately so no lossy `f64 as i32` cast is needed.
+            let mut ordinal = 0_i32;
+            let mut scale_value = 0_f64;
+            for (i, name) in names.iter().enumerate() {
+                match (*name, row.members.get(i)) {
+                    ("symbol", Some(CPrimitiveObject::CTerminologyCode(ctc))) => {
+                        code = expand_codes(term, &ctc.constraint).into_iter().next();
+                    }
+                    ("value", Some(CPrimitiveObject::CInteger(ci))) => {
+                        ordinal = ci.constraint.first().and_then(point_i32).unwrap_or(0);
+                        scale_value = f64::from(ordinal);
+                    }
+                    ("value", Some(CPrimitiveObject::CReal(cr))) => {
+                        scale_value = cr.constraint.first().and_then(point_f64).unwrap_or(0.0);
+                    }
+                    _ => {}
+                }
+            }
+            if let Some(code) = code {
+                let mut cv = coded_value(ctx, term, &code);
+                if scale {
+                    cv.scale = Some(scale_value);
+                } else {
+                    cv.ordinal = Some(ordinal);
+                }
+                input.list.push(cv);
+            }
+        }
+    }
+    input
+}
+
+fn boolean_input(co: &CObject) -> WebTemplateInput {
+    let mut input = WebTemplateInput::new(WebTemplateInputType::Boolean, None);
+    if let Some(cb) = cboolean_under(co, "value") {
+        let allows = |v: bool| cb.constraint.contains(&v);
+        if allows(false) && !allows(true) {
+            input.list.push(WebTemplateCodedValue::new(
+                "false",
+                Some("false".to_owned()),
+            ));
+        } else if allows(true) && !allows(false) {
+            input
+                .list
+                .push(WebTemplateCodedValue::new("true", Some("true".to_owned())));
+        }
+    }
+    input
+}
+
+fn temporal_input(co: &CObject, ty: WebTemplateInputType) -> WebTemplateInput {
+    let mut input = WebTemplateInput::new(ty, None);
+    let pattern = match ty {
+        WebTemplateInputType::Date => cdate_pattern(co),
+        WebTemplateInputType::Time => ctime_pattern(co),
+        _ => cdatetime_pattern(co),
+    };
+    if pattern.is_some() {
+        input.validation = Some(WebTemplateValidation {
+            pattern,
+            ..Default::default()
+        });
+    }
+    input
+}
+
+/// The `DV_DURATION` per-field inputs, gated by the `C_DURATION` pattern (a `P…`
+/// string listing the allowed fields). No openEHR spec governs the per-field
+/// split — our own design/extension, matching the OPT-1.4 front end.
+fn duration_input(co: &CObject) -> WebTemplateInput {
+    // The am24 `DV_DURATION` value is a single Duration input; the field split
+    // the OPT-1.4 form uses is not reconstructed here (the example generator
+    // honours `duration_range` when present, which am24 leaves on the leaf's
+    // pattern). A single Duration input keeps the leaf committable.
+    let mut input = WebTemplateInput::new(WebTemplateInputType::Duration, None);
+    if let Some(pattern) = cduration_pattern(co) {
+        input.validation = Some(WebTemplateValidation {
+            pattern: Some(pattern),
+            ..Default::default()
+        });
+    }
+    input
+}
+
+fn proportion_inputs(co: &CObject, proportion_types: &mut Vec<String>) -> Vec<WebTemplateInput> {
+    let type_codes: Vec<i32> = cinteger_under(co, "type")
+        .map(|ci| ci.constraint.iter().filter_map(point_i32).collect())
+        .unwrap_or_default();
+    let is_integral = cboolean_under(co, "is_integral")
+        .is_some_and(|b| b.constraint.contains(&true) && !b.constraint.contains(&false));
+
+    *proportion_types = if type_codes.is_empty() {
+        super::PROPORTION_KINDS
+            .iter()
+            .map(|s| (*s).to_owned())
+            .collect()
+    } else {
+        type_codes
+            .iter()
+            .filter_map(|c| super::PROPORTION_KINDS.get(usize::try_from(*c).unwrap_or(usize::MAX)))
+            .map(|s| (*s).to_owned())
+            .collect()
+    };
+
+    let ty = if is_integral {
+        WebTemplateInputType::Integer
+    } else {
+        WebTemplateInputType::Decimal
+    };
+    ["numerator", "denominator"]
+        .into_iter()
+        .map(|suffix| {
+            let mut input = WebTemplateInput::new(ty, Some(suffix));
+            if let Some(cr) = creal_under(co, suffix)
+                && let Some(range) = cr.constraint.first().and_then(real_range)
+            {
+                input.validation = Some(WebTemplateValidation {
+                    range: Some(range),
+                    ..Default::default()
+                });
+            }
+            input
+        })
+        .collect()
+}
+
+// ── cardinalities ────────────────────────────────────────────────────────────
+
+fn cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
+    let mut out = Vec::new();
+    for attr in co_attributes(co) {
+        if !attr.is_multiple {
+            continue;
+        }
+        let Some(card) = &attr.cardinality else {
+            continue;
+        };
+        if requires_cardinality(card, attr.children.len()) {
+            let (min, max) = occ(&card.interval);
+            out.push(WebTemplateCardinality {
+                min,
+                max,
+                ids: None,
+                path: format!("{node_path}/{}", attr.rm_attribute_name),
+            });
+        }
+    }
+    out
+}
+
+/// Whether a container cardinality genuinely constrains the container beyond
+/// what the child count already implies (mirrors the OPT-1.4 front end).
+fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
+    let (min, max) = occ(&card.interval);
+    let Some(min) = min else {
+        return max != -1;
+    };
+    if min == 0 {
+        return max != -1 && i32::try_from(children_count).unwrap_or(i32::MAX) > max;
+    }
+    let count = i32::try_from(children_count).unwrap_or(i32::MAX);
+    if min == 1 && max == 1 && children_count == 1 {
+        false
+    } else {
+        min > 1 || (max != -1 && max < count)
+    }
+}
+
+// ── am24 C_OBJECT navigation ─────────────────────────────────────────────────
+
+fn co_attributes(co: &CObject) -> &[CAttribute] {
+    match co {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => &d.attributes,
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => &r.attributes,
+        _ => &[],
+    }
+}
+
+fn co_attribute_tuples(co: &CObject) -> &[CAttributeTuple] {
+    match co {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => &d.attribute_tuples,
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => &r.attribute_tuples,
+        _ => &[],
+    }
+}
+
+fn attr_children<'a>(co: &'a CObject, name: &str) -> impl Iterator<Item = &'a CObject> {
+    co_attributes(co)
+        .iter()
+        .filter(move |a| a.rm_attribute_name == name)
+        .flat_map(|a| a.children.iter())
+}
+
+fn cstring_under<'a>(co: &'a CObject, name: &str) -> Option<&'a CString> {
+    attr_children(co, name).find_map(|c| match c {
+        CObject::CString(cs) => Some(cs),
+        _ => None,
+    })
+}
+
+fn cstrings_under<'a>(co: &'a CObject, name: &str) -> impl Iterator<Item = &'a CString> {
+    attr_children(co, name).filter_map(|c| match c {
+        CObject::CString(cs) => Some(cs),
+        _ => None,
+    })
+}
+
+fn creal_under<'a>(co: &'a CObject, name: &str) -> Option<&'a CReal> {
+    attr_children(co, name).find_map(|c| match c {
+        CObject::CReal(cr) => Some(cr),
+        _ => None,
+    })
+}
+
+fn cinteger_under<'a>(co: &'a CObject, name: &str) -> Option<&'a CInteger> {
+    attr_children(co, name).find_map(|c| match c {
+        CObject::CInteger(ci) => Some(ci),
+        _ => None,
+    })
+}
+
+fn cboolean_under<'a>(co: &'a CObject, name: &str) -> Option<&'a CBoolean> {
+    attr_children(co, name).find_map(|c| match c {
+        CObject::CBoolean(cb) => Some(cb),
+        _ => None,
+    })
+}
+
+fn terminology_code_under<'a>(co: &'a CObject, name: &str) -> Option<&'a CTerminologyCode> {
+    attr_children(co, name).find_map(|c| match c {
+        CObject::CTerminologyCode(ctc) => Some(ctc),
+        _ => None,
+    })
+}
+
+fn cdate_pattern(co: &CObject) -> Option<String> {
+    attr_children(co, "value").find_map(|c| match c {
+        CObject::CDate(cd) => cd.pattern_constraint.clone(),
+        _ => None,
+    })
+}
+
+fn ctime_pattern(co: &CObject) -> Option<String> {
+    attr_children(co, "value").find_map(|c| match c {
+        CObject::CTime(ct) => ct.pattern_constraint.clone(),
+        _ => None,
+    })
+}
+
+fn cdatetime_pattern(co: &CObject) -> Option<String> {
+    attr_children(co, "value").find_map(|c| match c {
+        CObject::CDateTime(cdt) => cdt.pattern_constraint.clone(),
+        _ => None,
+    })
+}
+
+fn cduration_pattern(co: &CObject) -> Option<String> {
+    attr_children(co, "value").find_map(|c| match c {
+        CObject::CDuration(cd) => cd.pattern_constraint.clone(),
+        _ => None,
+    })
+}
+
+// ── object metadata ────────────────────────────────────────────────────────
+
+fn object_rm_type(co: &CObject) -> &str {
+    match co {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => &d.rm_type_name,
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => &r.rm_type_name,
+        CObject::CComplexObjectProxy(p) => &p.rm_type_name,
+        CObject::ArchetypeSlot(s) => &s.rm_type_name,
+        CObject::CBoolean(c) => &c.rm_type_name,
+        CObject::CInteger(c) => &c.rm_type_name,
+        CObject::CReal(c) => &c.rm_type_name,
+        CObject::CString(c) => &c.rm_type_name,
+        CObject::CTerminologyCode(c) => &c.rm_type_name,
+        CObject::CDate(c) => &c.rm_type_name,
+        CObject::CTime(c) => &c.rm_type_name,
+        CObject::CDateTime(c) => &c.rm_type_name,
+        CObject::CDuration(c) => &c.rm_type_name,
+    }
+}
+
+fn object_node_id(co: &CObject) -> &str {
+    match co {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => &d.node_id,
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => &r.node_id,
+        CObject::CComplexObjectProxy(p) => &p.node_id,
+        CObject::ArchetypeSlot(s) => &s.node_id,
+        CObject::CBoolean(c) => &c.node_id,
+        CObject::CInteger(c) => &c.node_id,
+        CObject::CReal(c) => &c.node_id,
+        CObject::CString(c) => &c.node_id,
+        CObject::CTerminologyCode(c) => &c.node_id,
+        CObject::CDate(c) => &c.node_id,
+        CObject::CTime(c) => &c.node_id,
+        CObject::CDateTime(c) => &c.node_id,
+        CObject::CDuration(c) => &c.node_id,
+    }
+}
+
+/// The RM `archetype_node_id`: the archetype id (interface form) at an inlined
+/// archetype root, else the constraint node id (at/id-code).
+fn object_archetype_node_id(co: &CObject) -> String {
+    match co {
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
+            interface_id(&r.archetype_ref)
+        }
+        _ => object_node_id(co).to_owned(),
+    }
+}
+
+fn object_occurrences(co: &CObject) -> Option<&MultiplicityInterval> {
+    match co {
+        CObject::CComplexObject(CComplexObject::CComplexObject(d)) => d.occurrences.as_ref(),
+        CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => r.occurrences.as_ref(),
+        CObject::CComplexObjectProxy(p) => p.occurrences.as_ref(),
+        CObject::ArchetypeSlot(s) => s.occurrences.as_ref(),
+        CObject::CBoolean(c) => c.occurrences.as_ref(),
+        CObject::CInteger(c) => c.occurrences.as_ref(),
+        CObject::CReal(c) => c.occurrences.as_ref(),
+        CObject::CString(c) => c.occurrences.as_ref(),
+        CObject::CTerminologyCode(c) => c.occurrences.as_ref(),
+        CObject::CDate(c) => c.occurrences.as_ref(),
+        CObject::CTime(c) => c.occurrences.as_ref(),
+        CObject::CDateTime(c) => c.occurrences.as_ref(),
+        CObject::CDuration(c) => c.occurrences.as_ref(),
+    }
+}
+
+/// `(min, max)` from an object's occurrences; an unset occurrences defaults to
+/// `0..1` (a permitted, single, optional node — the safe default that never
+/// forces a spurious mandatory node into the example skeleton).
+fn occurrences(iv: Option<&MultiplicityInterval>) -> (Option<i32>, i32) {
+    iv.map_or((Some(0), 1), occ)
+}
+
+fn occ(iv: &MultiplicityInterval) -> (Option<i32>, i32) {
+    let min = if iv.lower_unbounded { None } else { iv.lower };
+    let max = if iv.upper_unbounded {
+        -1
+    } else {
+        iv.upper.unwrap_or_else(|| iv.lower.unwrap_or(0))
+    };
+    (min, max)
+}
+
+fn build_path(parent_path: &str, attr_name: Option<&str>, arch_node_id: &str) -> String {
+    let Some(attr) = attr_name else {
+        return String::new(); // root
+    };
+    let predicate = if arch_node_id.is_empty() {
+        String::new()
+    } else {
+        format!("[{arch_node_id}]")
+    };
+    format!("{parent_path}/{attr}{predicate}")
+}
+
+// ── interval → range helpers ──────────────────────────────────────────────
+
+fn json_f64(v: f64) -> serde_json::Value {
+    serde_json::Number::from_f64(v).map_or(serde_json::Value::Null, serde_json::Value::Number)
+}
+
+/// A `WebTemplateRange` from a `C_REAL` interval (bounds + inclusivity ops).
+fn real_range(iv: &Interval<f64>) -> Option<WebTemplateRange> {
+    let (lo, hi, lo_inc, hi_inc, lo_unb, hi_unb) = interval_bounds(iv)?;
+    let min = if lo_unb { None } else { lo };
+    let max = if hi_unb { None } else { hi };
+    if min.is_none() && max.is_none() {
+        return None;
+    }
+    Some(WebTemplateRange {
+        min_op: min.map(|_| if lo_inc { ">=" } else { ">" }.to_owned()),
+        min: min.map(json_f64),
+        max_op: max.map(|_| if hi_inc { "<=" } else { "<" }.to_owned()),
+        max: max.map(json_f64),
+    })
+}
+
+/// A `WebTemplateRange` from a `C_INTEGER` interval (used for count/precision).
+fn int_range(iv: &Interval<i32>) -> Option<WebTemplateRange> {
+    let (lo, hi, lo_inc, hi_inc, lo_unb, hi_unb) = interval_bounds(iv)?;
+    let min = if lo_unb { None } else { lo }.map(|v| if lo_inc { v } else { v + 1 });
+    let max = if hi_unb { None } else { hi }.map(|v| if hi_inc { v } else { v - 1 });
+    if min.is_none() && max.is_none() {
+        return None;
+    }
+    Some(WebTemplateRange {
+        min_op: min.map(|_| ">=".to_owned()),
+        min: min.map(serde_json::Value::from),
+        max_op: max.map(|_| "<=".to_owned()),
+        max: max.map(serde_json::Value::from),
+    })
+}
+
+/// `(lower, upper, lower_included, upper_included, lower_unbounded,
+/// upper_unbounded)` of an `Interval<T>` — both the point and proper forms.
+#[allow(clippy::type_complexity)]
+fn interval_bounds<T: Clone>(
+    iv: &Interval<T>,
+) -> Option<(Option<T>, Option<T>, bool, bool, bool, bool)> {
+    match iv {
+        Interval::PointInterval(p) => Some((
+            p.lower.clone(),
+            p.lower.clone(),
+            true,
+            true,
+            p.lower_unbounded,
+            p.lower_unbounded,
+        )),
+        Interval::ProperInterval(ProperInterval::ProperInterval(p)) => Some((
+            p.lower.clone(),
+            p.upper.clone(),
+            p.lower_included,
+            p.upper_included,
+            p.lower_unbounded,
+            p.upper_unbounded,
+        )),
+        Interval::ProperInterval(ProperInterval::MultiplicityInterval(_)) => None,
+    }
+}
+
+fn point_i32(iv: &Interval<i32>) -> Option<i32> {
+    match iv {
+        Interval::PointInterval(p) => p.lower,
+        Interval::ProperInterval(_) => None,
+    }
+}
+
+fn point_f64(iv: &Interval<f64>) -> Option<f64> {
+    match iv {
+        Interval::PointInterval(p) => p.lower,
+        Interval::ProperInterval(_) => None,
+    }
+}
+
+/// The delimited-regex body of a `C_STRING` constraint entry (`/re/` or `^re^`),
+/// or `None` for a literal value. A value that merely contains `/` (a unit like
+/// `mmol/l`) is a literal, so both delimiters are required.
+fn delimited_regex(s: &str) -> Option<&str> {
+    if s.len() >= 2
+        && ((s.starts_with('/') && s.ends_with('/')) || (s.starts_with('^') && s.ends_with('^')))
+    {
+        Some(s)
+    } else {
+        None
+    }
+}
+
+// ── archetype id helpers ────────────────────────────────────────────────────
+
+/// The `template_id` served for an am24 OPT: the full HRID string
+/// (`master07.05`).
+fn template_id_of(h: &ArchetypeHrid) -> String {
+    let base = format!(
+        "{}-{}-{}.{}.v{}",
+        h.rm_publisher, h.rm_package, h.rm_class, h.concept_id, h.release_version
+    );
+    match &h.namespace {
+        Some(ns) => format!("{ns}::{base}"),
+        None => base,
+    }
+}
+
+/// The interface (major-version) archetype id used as a Web Template `nodeId` /
+/// aqlPath predicate, from a full HRID (namespace dropped — an
+/// `archetype_node_id` carries no namespace).
+fn interface_id_of_hrid(h: &ArchetypeHrid) -> String {
+    let major = h
+        .release_version
+        .split('.')
+        .next()
+        .unwrap_or(&h.release_version);
+    format!(
+        "{}-{}-{}.{}.v{}",
+        h.rm_publisher, h.rm_package, h.rm_class, h.concept_id, major
+    )
+}
+
+/// The interface (major-version) form of a full archetype-ref string
+/// (`…​.vMAJOR.MINOR.PATCH[-status.build]` → `…​.vMAJOR`; namespace dropped).
+fn interface_id(full: &str) -> String {
+    let bare = full.split("::").last().unwrap_or(full);
+    if let Some(vpos) = bare.rfind(".v") {
+        let head = &bare[..vpos + 2];
+        let major: String = bare[vpos + 2..]
+            .chars()
+            .take_while(char::is_ascii_digit)
+            .collect();
+        if major.is_empty() {
+            bare.to_owned()
+        } else {
+            format!("{head}{major}")
+        }
+    } else {
+        bare.to_owned()
+    }
+}

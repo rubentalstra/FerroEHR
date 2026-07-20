@@ -162,8 +162,19 @@ pub(crate) async fn composition_flat_response(
         .web_template(&composition_template_id(comp)?)
         .await
         .map_err(RestError::from)?;
+    composition_flat_response_with(status, comp, &wt)
+}
+
+/// Render a COMPOSITION as a FLAT response using an **already-resolved**
+/// [`WebTemplate`] — the seam for surfaces whose template is not in the ADL 1.4
+/// store (e.g. an ADL2 example, whose Web Template the am24 front end built).
+pub(crate) fn composition_flat_response_with(
+    status: StatusCode,
+    comp: &Value,
+    wt: &openehr_flat::webtemplate::WebTemplate,
+) -> Result<Response, RestError> {
     let flat =
-        openehr_flat::convert::composition_to_flat(comp, &wt).map_err(|e| flat_output_err(&e))?;
+        openehr_flat::convert::composition_to_flat(comp, wt).map_err(|e| flat_output_err(&e))?;
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
     Ok(negotiate::flat_json_body(status, json))
@@ -181,7 +192,17 @@ pub(crate) async fn composition_structured_response(
         .web_template(&composition_template_id(comp)?)
         .await
         .map_err(RestError::from)?;
-    let structured = openehr_flat::convert::composition_to_structured(comp, &wt)
+    composition_structured_response_with(status, comp, &wt)
+}
+
+/// Render a COMPOSITION as a STRUCTURED response using an **already-resolved**
+/// [`WebTemplate`] (the ADL2-example seam; see [`composition_flat_response_with`]).
+pub(crate) fn composition_structured_response_with(
+    status: StatusCode,
+    comp: &Value,
+    wt: &openehr_flat::webtemplate::WebTemplate,
+) -> Result<Response, RestError> {
+    let structured = openehr_flat::convert::composition_to_structured(comp, wt)
         .map_err(|e| flat_output_err(&e))?;
     let json = serde_json::to_string(&structured)
         .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;

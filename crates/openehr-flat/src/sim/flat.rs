@@ -25,7 +25,7 @@ use crate::sim::{SimDocument, SimNode, is_present};
 pub fn parse_flat(map: &Map<String, Value>) -> Result<SimDocument, FlatError> {
     let mut root = SimNode::default();
     for (key, value) in map {
-        if !is_present(value) {
+        if !is_present(value) && !is_empty_unit_datum(key, value) {
             continue;
         }
         let parsed = FlatKey::parse(key)?;
@@ -89,6 +89,25 @@ fn emit_node(node: &SimNode, prefix: &str, out: &mut Map<String, Value>) {
             emit_node(occ, &child_prefix, out);
         }
     }
+}
+
+/// Whether `value` is an explicitly-present **empty** `DV_QUANTITY` `|unit`
+/// datum, which — unlike other empty datum values — must survive the parse.
+///
+/// `DV_QUANTITY.units` is a mandatory RM attribute (RM data_types
+/// `master06-quantity_package.adoc` §DV_QUANTITY — "a real number magnitude,
+/// precision, units and accuracy"), and an empty units string is the legitimate
+/// value of a *dimensionless* quantity. The general absent-value rule
+/// (`master04 §Structured format` rule 6 — empty datum values are omitted) would
+/// otherwise drop the empty `|unit` (master05 §DV_QUANTITY: `units` → the
+/// `|unit` suffix), leaving the rebuilt `DV_QUANTITY` with no `units` field and
+/// violating the RM invariant. Only an empty `|unit` is rescued; every other
+/// empty datum still drops.
+fn is_empty_unit_datum(key: &str, value: &Value) -> bool {
+    matches!(value, Value::String(s) if s.is_empty())
+        && FlatKey::parse(key)
+            .ok()
+            .is_some_and(|k| k.suffixes.last().is_some_and(|s| s.name == "unit"))
 }
 
 /// The printed suffix chain of a parsed key (`""` when the key has none):
