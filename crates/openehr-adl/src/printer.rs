@@ -603,10 +603,31 @@ impl Printer {
             format!("[{}, {}]", r.node_id, r.archetype_ref)
         };
         let occ = occ_suffix(r.occurrences.as_ref());
+        // An OPT-inlined root carries the flattened filler structure in
+        // `attributes`/`attribute_tuples` (OPT2 master03 §Flattening); it prints
+        // as a plain object head `TYPE[id, ref] occ matches { … }` (no
+        // `use_archetype` keyword), which the cADL parser reads back as a
+        // `C_ARCHETYPE_ROOT`. A source-form external reference / slot filler has
+        // Void children and prints with the `use_archetype` keyword
+        // (`cadl2.g4` c_archetype_root).
+        if r.attributes.is_empty() && r.attribute_tuples.is_empty() {
+            self.line(
+                depth,
+                &format!("{head}use_archetype {}{node}{occ}", r.rm_type_name),
+            );
+            return;
+        }
         self.line(
             depth,
-            &format!("{head}use_archetype {}{node}{occ}", r.rm_type_name),
+            &format!("{head}{}{node}{occ} matches {{", r.rm_type_name),
         );
+        for a in &r.attributes {
+            self.attribute(a, depth + 1);
+        }
+        for t in &r.attribute_tuples {
+            self.attribute_tuple(t, depth + 1);
+        }
+        self.line(depth, "}");
     }
 
     fn proxy(&mut self, head: &str, pr: &CComplexObjectProxy, depth: usize) {
