@@ -17,29 +17,6 @@ workflow refuses a tag that has no matching section here.
 
 ## [3.3.0] - 2026-07-20
 
-### Fixed
-- **Template example generation now produces fully-valid compositions.**
-  `GET /definition/template/adl1.4/{template_id}/example` populated only a
-  skeleton for many templates (issue #94) and could emit out-of-range or
-  wrongly-typed values. The generator now synthesizes spec-valid values for
-  every constrained field — quantities inside their magnitude ranges (with
-  dimensionless empty units preserved), proportions satisfying their kind's
-  invariants inside the archetype's numerator/denominator ranges, durations
-  inside their declared range, coded text from closed value lists, URIs and
-  parsables honouring their pattern constraints, and the archetype-constrained
-  container/event types (`ITEM_LIST`/`ITEM_SINGLE`/`INTERVAL_EVENT`) instead
-  of abstract defaults — and every generated example at the committable detail
-  levels (`required`, `medium`) passes the server's own full composition
-  validation. Generation is byte-deterministic.
-- **Archetype-conformance validation no longer demands `archetype_node_id` on
-  reference-model types that cannot carry one.** `EVENT_CONTEXT` (and any
-  other non-`LOCATABLE` type) inherits `PATHABLE`, which the RM gives no
-  `archetype_node_id`; a template archetyping `/context[at…]` therefore could
-  never be satisfied by canonical data and such compositions were wrongly
-  rejected on commit. Non-`LOCATABLE` nodes now match structurally by their
-  attribute position (per the RM inheritance graph); `LOCATABLE` nodes keep
-  strict node-id matching.
-
 ### Added
 - **ADL2 templates are now compiled and validated by the full ADL2 engine.**
   `POST /definition/template/adl2` runs the complete `openehr-adl` pipeline —
@@ -90,6 +67,14 @@ workflow refuses a tag that has no matching section here.
   out-of-vocabulary openEHR code is a `422` naming the violated RM invariant;
   HTTP status codes are unchanged.
 
+- Admin console: the Directory tab is now a complete directory experience —
+  a structured folder-tree editor (add/rename/remove sub-folders, attach and
+  remove composition item references with a picker), version history with
+  read-only views and one-click restore, a `version_at_time` time-travel
+  control, a sub-folder `path` query, and directory deletion with
+  confirmation — on top of the existing create-from-template flow (raw JSON
+  editing stays available as an advanced mode).
+
 ### Changed
 - **RM validation invariant messages now carry the spec's (BMM) invariant
   names.** Three class-invariant violation messages were reconciled from their
@@ -135,16 +120,29 @@ workflow refuses a tag that has no matching section here.
   commit time) alongside the weak `ETag`; PARTY_RELATIONSHIP create/update
   honour `Prefer: return=identifier`.
 
-### Added
-- Admin console: the Directory tab is now a complete directory experience —
-  a structured folder-tree editor (add/rename/remove sub-folders, attach and
-  remove composition item references with a picker), version history with
-  read-only views and one-click restore, a `version_at_time` time-travel
-  control, a sub-folder `path` query, and directory deletion with
-  confirmation — on top of the existing create-from-template flow (raw JSON
-  editing stays available as an advanced mode).
-
 ### Fixed
+- **Template example generation now produces fully-valid compositions.**
+  `GET /definition/template/adl1.4/{template_id}/example` populated only a
+  skeleton for many templates (issue #94) and could emit out-of-range or
+  wrongly-typed values. The generator now synthesizes spec-valid values for
+  every constrained field — quantities inside their magnitude ranges (with
+  dimensionless empty units preserved), proportions satisfying their kind's
+  invariants inside the archetype's numerator/denominator ranges, durations
+  inside their declared range, coded text from closed value lists, URIs and
+  parsables honouring their pattern constraints, and the archetype-constrained
+  container/event types (`ITEM_LIST`/`ITEM_SINGLE`/`INTERVAL_EVENT`) instead
+  of abstract defaults — and every generated example at the committable detail
+  levels (`required`, `medium`) passes the server's own full composition
+  validation. Generation is byte-deterministic.
+- **Archetype-conformance validation no longer demands `archetype_node_id` on
+  reference-model types that cannot carry one.** `EVENT_CONTEXT` (and any
+  other non-`LOCATABLE` type) inherits `PATHABLE`, which the RM gives no
+  `archetype_node_id`; a template archetyping `/context[at…]` therefore could
+  never be satisfied by canonical data and such compositions were wrongly
+  rejected on commit. Non-`LOCATABLE` nodes now match structurally by their
+  attribute position (per the RM inheritance graph); `LOCATABLE` nodes keep
+  strict node-id matching.
+
 - Admin console: text typed into the EHR finder and create-EHR fields before
   the app finished loading is no longer silently wiped (the inputs are now
   hydration-safe, like the login form); success toasts no longer intercept
@@ -162,7 +160,6 @@ workflow refuses a tag that has no matching section here.
 ## [3.2.0] - 2026-07-18
 
 ### Added
-
 - **`GET {base}/admin/config` — the redacted effective configuration** (an
   ehrbase-rs extension; the openEHR admin API defines only EHR deletes).
   Returns the merged effective configuration (file + `EHRBASE_*` env +
@@ -289,7 +286,6 @@ workflow refuses a tag that has no matching section here.
   no-matches filter each render their own first-class state.
 
 ### Changed
-
 - The ITS-REST template list (`GET /definition/template/adl1.4`) now reports
   the optional `version` field of each `TemplateMetadata`, derived from the
   template id's version axis (the spec documents the value as "taken from
@@ -309,7 +305,6 @@ workflow refuses a tag that has no matching section here.
   write succeeds again — no un-audited PHI access.
 
 ### Fixed
-
 - **ATNA audit — IHE/DICOM conformance corrections** (IHE ITI TF-2 ITI-20 /
   DICOM PS3.15 §A.5.1): the syslog `MSGID` is now the mandated
   `IHE+RFC-3881` (was `IHE+DICOM`); AQL query execution uses the dedicated
@@ -330,7 +325,6 @@ workflow refuses a tag that has no matching section here.
 ## [3.1.1] - 2026-07-17
 
 ### Fixed
-
 - The release pipeline attaches the per-architecture server binary tarballs
   again: since the crate consolidation the binary is produced by the
   `ehrbase-server` package (the executable is still named `ehrbase`), but
@@ -340,8 +334,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [3.1.0] - 2026-07-17
 
-### Changed
+### Added
+- External terminology providers cache their FHIR operation results
+  (`$validate-code`/`$expand`/`$subsumes`/`$lookup`) for a configurable TTL
+  (`[terminology.external.providers.<name>] cache_ttl_secs`, default 300 s,
+  `0` disables; `cache_capacity`, default 10000) — a validation burst over
+  the same codes costs one remote round trip per window instead of one per
+  code.
+- A new `atna_audit_serialize_failed_total` metric counts ATNA audit records
+  dropped because the message failed to serialize, so audit loss is always
+  metered.
 
+### Changed
 - The FLAT and STRUCTURED (Simplified Formats) layer was rewritten against
   the official openEHR ITS-REST Simplified Formats specification: exact
   node-id generation, per-type attribute suffixes, the full `ctx/`
@@ -369,15 +373,35 @@ workflow refuses a tag that has no matching section here.
   corrupted-value class of fault becomes a crash-and-restart instead of
   wrong clinical data.
 
-### Removed
 
+- The application is consolidated to two library crates plus a thin binary
+  (`ehrbase` — the platform, `ehrbase-rest` — the ITS-REST adapter,
+  `ehrbase-server` — the binary): the `ehrbase-sm` trait catalog is gone,
+  the REST adapter calls the concrete platform service directly, and the
+  full configuration tree (`[server]`, `[auth]`, `[authz]`, `[smart]`,
+  `[management]`, `[tenancy]`, `[admin]`) is defined in the platform crate.
+  The served wire, the `ehrbase.toml` schema, and the container entrypoint
+  (`ehrbase`) are unchanged.
+- Bundle-backed terminology lookups and template/query validity checks are
+  now synchronous in-process calls (no behaviour change on the wire).
+- Every versioned write now commits through the single folded
+  audit+contribution+version statement even with digest signing enabled
+  (the commit instant is read up front with the placement, so the signature
+  is computed before any insert); version-tree placement is one read instead
+  of three, and contribution commits batch their target pre-reads. Fewer
+  round trips per write, identical wire behaviour and stored semantics.
+- The OpenAPI documents (the composed `openapi.json` and the twelve Swagger
+  spec-selector family documents) and the SMART `.well-known/smart-configuration`
+  discovery document are now built once at server startup instead of being
+  regenerated on every request. No change to the document content.
+
+### Removed
 - The `ehrbase-quirks` cargo feature and its vendor-specific behaviours
   (alternate duplicate-id spelling, the non-standard `|unit_system` /
   `|unit_display_name` quantity suffixes) — the specification-defined
   behaviour is now the only behaviour.
 
 ### Fixed
-
 - A tenant-resolution failure (tenant registry unreachable) now fails the
   request with `503` instead of silently serving it under the default
   tenant; unknown tenant keys keep the documented unscoped behaviour and
@@ -434,45 +458,9 @@ workflow refuses a tag that has no matching section here.
   blank a field when a database column fails to decode; a decode failure now
   surfaces as `500` with a real error instead of an empty value.
 
-### Changed
-
-- The application is consolidated to two library crates plus a thin binary
-  (`ehrbase` — the platform, `ehrbase-rest` — the ITS-REST adapter,
-  `ehrbase-server` — the binary): the `ehrbase-sm` trait catalog is gone,
-  the REST adapter calls the concrete platform service directly, and the
-  full configuration tree (`[server]`, `[auth]`, `[authz]`, `[smart]`,
-  `[management]`, `[tenancy]`, `[admin]`) is defined in the platform crate.
-  The served wire, the `ehrbase.toml` schema, and the container entrypoint
-  (`ehrbase`) are unchanged.
-- Bundle-backed terminology lookups and template/query validity checks are
-  now synchronous in-process calls (no behaviour change on the wire).
-- Every versioned write now commits through the single folded
-  audit+contribution+version statement even with digest signing enabled
-  (the commit instant is read up front with the placement, so the signature
-  is computed before any insert); version-tree placement is one read instead
-  of three, and contribution commits batch their target pre-reads. Fewer
-  round trips per write, identical wire behaviour and stored semantics.
-- The OpenAPI documents (the composed `openapi.json` and the twelve Swagger
-  spec-selector family documents) and the SMART `.well-known/smart-configuration`
-  discovery document are now built once at server startup instead of being
-  regenerated on every request. No change to the document content.
-
-### Added
-
-- External terminology providers cache their FHIR operation results
-  (`$validate-code`/`$expand`/`$subsumes`/`$lookup`) for a configurable TTL
-  (`[terminology.external.providers.<name>] cache_ttl_secs`, default 300 s,
-  `0` disables; `cache_capacity`, default 10000) — a validation burst over
-  the same codes costs one remote round trip per window instead of one per
-  code.
-- A new `atna_audit_serialize_failed_total` metric counts ATNA audit records
-  dropped because the message failed to serialize, so audit loss is always
-  metered.
-
 ## [3.0.3] - 2026-07-16
 
 ### Changed
-
 - The served OpenAPI documents now categorize operations the way the
   official ITS-REST reference documents do: standard-group operations are
   tagged by resource (EHR, EHR_STATUS, COMPOSITION, DIRECTORY, CONTRIBUTION,
@@ -484,7 +472,6 @@ workflow refuses a tag that has no matching section here.
   generated document.
 
 ### Fixed
-
 - Duplicate-template-id fixture resolution in the validation corpus test is
   now deterministic (sorted path order) instead of OS-dependent `read_dir`
   order, fixing a Linux-only CI failure.
@@ -492,7 +479,6 @@ workflow refuses a tag that has no matching section here.
 ## [3.0.2] - 2026-07-15
 
 ### Changed
-
 - The benchmark instrument measures both comparison stacks under a fairer,
   more deterministic protocol: the databases get a 1 GB `/dev/shm` floor
   (Docker's 64 MB default starved PostgreSQL's parallel workers mid-run),
@@ -527,7 +513,6 @@ workflow refuses a tag that has no matching section here.
   they no longer collide with the server's reserved `EHRBASE_` namespace.
 
 ### Removed
-
 - The nine per-subsystem `EHRBASE_*_CONFIG` file pointers
   (`EHRBASE_REST_CONFIG`, `EHRBASE_AUTHZ_CONFIG`, `EHRBASE_ATNA_CONFIG`,
   `EHRBASE_SIGNING_CONFIG`, `EHRBASE_EVENTS_CONFIG`,
@@ -538,7 +523,6 @@ workflow refuses a tag that has no matching section here.
 - `EHRBASE_REST_AUTH__ADMIN_SCOPE`: subsumed by `authz.rbac.admin_role`.
 
 ### Fixed
-
 - Unknown or misspelled configuration is now rejected at boot with a
   did-you-mean suggestion (and the `file:line` for a file key) — previously a
   typo'd TOML key or `EHRBASE_*` variable was silently ignored, so a
@@ -569,7 +553,6 @@ workflow refuses a tag that has no matching section here.
 ## [3.0.1] - 2026-07-14
 
 ### Added
-
 - The server now prints an ASCII-art startup banner to stdout before the
   structured startup logs: the `EHRbase-rs` wordmark, the running version, the
   maintainer credit (Ruben Talstra), the project URL, and the load-bearing
@@ -587,100 +570,6 @@ workflow refuses a tag that has no matching section here.
   bounds how many distinct plans are held, and a new `aql_plan_cache_events_total`
   metric (`event` = `hit`/`miss`) reports cache activity.
 
-### Fixed
-
-- The composition validator no longer falsely rejects templates that use the
-  same archetype more than once under one container, differentiated by name:
-  each instance is now routed to the sibling constraint whose name it
-  satisfies, instead of being checked against the first same-archetype
-  sibling's overlay. Cross-contaminated content (a child from one overlay
-  placed in the other-named instance) is still rejected.
-- Template example generation (`GET …/example`) at `detail_level=medium` and
-  `complete` no longer produces an empty composition for templates whose
-  content is entirely optional: `medium` now returns a fully-populated
-  single-instance committable example (honouring temporal patterns,
-  C_DURATION field patterns, media-type code lists, and container
-  cardinality bounds), and `complete` additionally demonstrates a second
-  occurrence of repeating nodes. `required` (the default) is unchanged.
-- AQL `SELECT c/uid/value` (and `c/uid`) on a COMPOSITION — or any
-  versioned-object root — now returns the server-assigned
-  `OBJECT_VERSION_ID`, version-correct under `LATEST_VERSION` and
-  `ALL_VERSIONS`. It previously returned `null` because the uid was
-  injected only on REST reads, never into stored data. (QUERY master03
-  lists `COMPOSITION.uid.value` as a normative identified path.)
-- Composition commits against an already-seen template no longer re-read the
-  stored OPT from the database on every commit — the built WebTemplate cache
-  is now consulted first (measured: 10,206 redundant reads in a 120 s load
-  window, the #2 database statement by total time). Deleting a template now
-  also evicts it from that cache, so a commit racing a delete gets the
-  correct `422` ("template not known") instead of a foreign-key `500`.
-
-### Changed
-
-- Basic-auth verification no longer re-runs the Argon2 password hash on
-  every request: verified credentials are cached (as a SHA-256 digest,
-  never plaintext) for `EHRBASE_REST_AUTH__VERIFIED_CACHE_TTL_SECONDS`
-  (default 60 s; `0` disables), and cache misses hash on a background
-  thread. At load this removes roughly a full CPU core of per-request
-  hashing.
-- Composition create/update responses are built from the commit result
-  instead of re-reading the just-written document from the database — one
-  connection acquisition and two queries fewer per write; when version
-  signing is disabled the server also no longer rebuilds the full document
-  it would only have signed. Response bodies and headers are unchanged.
-- Storage: the version table's two GiST exclusion constraints and two
-  speculative JSONB indexes on the node table (a GIN over every fragment and
-  a magnitude expression index — no query the engine generates could use
-  either) were removed; version-validity non-overlap is unchanged and held
-  by construction (one open row per lineage via unique indexes, atomic
-  close-then-insert writes, and an overlap audit on archive load). This
-  removes the dominant per-commit index-maintenance and lock-contention
-  costs on the write path.
-- Connection-pool defaults changed: `EHRBASE_DB_MAX_CONNECTIONS` 10 → 20,
-  `EHRBASE_DB_MIN_CONNECTIONS` 0 → 2, and the per-checkout liveness ping is
-  disabled (a broken connection is detected by its first statement).
-  `TCP_NODELAY` is now set on accepted sockets, removing Nagle-induced
-  latency on small responses.
-- Composition commits make fewer database round trips: the audit and
-  contribution rows are written in one statement, and the create-path EHR
-  existence + modifiability gates are one read instead of two. Error
-  behaviour is unchanged (a missing EHR is still `404` before a
-  non-modifiable `409`).
-- The transactional event outbox is no longer written on every commit when no
-  eventing consumer is configured. The per-commit `event_outbox` row (and its
-  envelope serialization) is now written only when the AMQP publisher
-  (`EHRBASE_EVENTS_ENABLED`) or the FHIR outbound emitter
-  (`EHRBASE_FHIR_OUTBOUND_ENABLED`) is enabled. Consequence: the outbox
-  records commits made while a consumer is enabled (at-least-once, even with
-  zero bound subscribers — the gate is the boot-time config, not the current
-  subscriber set); commits made while every consumer was off are not
-  back-filled if eventing is later enabled.
-- IHE ATNA login ("Application Activity") records now mark genuine
-  authentication events rather than every authenticated request. A login
-  record is emitted only when the request actually verified credentials (a
-  Basic verified-credential cache miss); a cache hit continues an established
-  session and a Bearer request authenticated out of band at the OIDC provider,
-  so neither mints a per-request login record. Rejections (401/403) are still
-  always audited, and login records remain off by default
-  (`EHRBASE_ATNA_SUPPRESS_LOGIN_EVENTS`, default `true`).
-- Per-EHR `EHR_ACCESS` access-settings are cached as default-open at EHR
-  creation, so the access gate's first check on a freshly created EHR no
-  longer costs a database lookup (a hospital-day workload creates EHRs
-  constantly). Importing an `EHR_ACCESS` version into an existing EHR now
-  evicts that cache entry, so the access decision reflects the imported
-  policy immediately.
-- Composition validation is substantially faster with identical outcomes:
-  the RM-invariant pass validates each node directly against the
-  spec-generated Reference Model instead of deserializing every node into
-  its typed struct (falling back to the typed path for anything it cannot
-  vouch for), the archetype-constraint walk reuses constraint paths parsed
-  once per cached WebTemplate instead of re-parsing them on every node
-  visit, and validation error messages are byte-for-byte unchanged
-  (equivalence is pinned by tests across the full corpus). Measured
-  end-to-end: a fully populated International Patient Summary validates in
-  well under half its previous time.
-
-### Added
 
 - Storage migration `0008`: a promoted `context_start timestamptz` column on
   COMPOSITION root node rows (backfilled from stored data, partially
@@ -785,6 +674,69 @@ workflow refuses a tag that has no matching section here.
   the spec's global version-identity uniqueness tuple.
 
 ### Changed
+- Basic-auth verification no longer re-runs the Argon2 password hash on
+  every request: verified credentials are cached (as a SHA-256 digest,
+  never plaintext) for `EHRBASE_REST_AUTH__VERIFIED_CACHE_TTL_SECONDS`
+  (default 60 s; `0` disables), and cache misses hash on a background
+  thread. At load this removes roughly a full CPU core of per-request
+  hashing.
+- Composition create/update responses are built from the commit result
+  instead of re-reading the just-written document from the database — one
+  connection acquisition and two queries fewer per write; when version
+  signing is disabled the server also no longer rebuilds the full document
+  it would only have signed. Response bodies and headers are unchanged.
+- Storage: the version table's two GiST exclusion constraints and two
+  speculative JSONB indexes on the node table (a GIN over every fragment and
+  a magnitude expression index — no query the engine generates could use
+  either) were removed; version-validity non-overlap is unchanged and held
+  by construction (one open row per lineage via unique indexes, atomic
+  close-then-insert writes, and an overlap audit on archive load). This
+  removes the dominant per-commit index-maintenance and lock-contention
+  costs on the write path.
+- Connection-pool defaults changed: `EHRBASE_DB_MAX_CONNECTIONS` 10 → 20,
+  `EHRBASE_DB_MIN_CONNECTIONS` 0 → 2, and the per-checkout liveness ping is
+  disabled (a broken connection is detected by its first statement).
+  `TCP_NODELAY` is now set on accepted sockets, removing Nagle-induced
+  latency on small responses.
+- Composition commits make fewer database round trips: the audit and
+  contribution rows are written in one statement, and the create-path EHR
+  existence + modifiability gates are one read instead of two. Error
+  behaviour is unchanged (a missing EHR is still `404` before a
+  non-modifiable `409`).
+- The transactional event outbox is no longer written on every commit when no
+  eventing consumer is configured. The per-commit `event_outbox` row (and its
+  envelope serialization) is now written only when the AMQP publisher
+  (`EHRBASE_EVENTS_ENABLED`) or the FHIR outbound emitter
+  (`EHRBASE_FHIR_OUTBOUND_ENABLED`) is enabled. Consequence: the outbox
+  records commits made while a consumer is enabled (at-least-once, even with
+  zero bound subscribers — the gate is the boot-time config, not the current
+  subscriber set); commits made while every consumer was off are not
+  back-filled if eventing is later enabled.
+- IHE ATNA login ("Application Activity") records now mark genuine
+  authentication events rather than every authenticated request. A login
+  record is emitted only when the request actually verified credentials (a
+  Basic verified-credential cache miss); a cache hit continues an established
+  session and a Bearer request authenticated out of band at the OIDC provider,
+  so neither mints a per-request login record. Rejections (401/403) are still
+  always audited, and login records remain off by default
+  (`EHRBASE_ATNA_SUPPRESS_LOGIN_EVENTS`, default `true`).
+- Per-EHR `EHR_ACCESS` access-settings are cached as default-open at EHR
+  creation, so the access gate's first check on a freshly created EHR no
+  longer costs a database lookup (a hospital-day workload creates EHRs
+  constantly). Importing an `EHR_ACCESS` version into an existing EHR now
+  evicts that cache entry, so the access decision reflects the imported
+  policy immediately.
+- Composition validation is substantially faster with identical outcomes:
+  the RM-invariant pass validates each node directly against the
+  spec-generated Reference Model instead of deserializing every node into
+  its typed struct (falling back to the typed path for anything it cannot
+  vouch for), the archetype-constraint walk reuses constraint paths parsed
+  once per cached WebTemplate instead of re-parsing them on every node
+  visit, and validation error messages are byte-for-byte unchanged
+  (equivalence is pinned by tests across the full corpus). Measured
+  end-to-end: a fully populated International Patient Summary validates in
+  well under half its previous time.
+
 
 - Version lifecycle states are now enforced as a state machine (RM common
   §Version Lifecycle): a commit whose `lifecycle_state` is not a legal
@@ -915,6 +867,32 @@ workflow refuses a tag that has no matching section here.
   link-check and OpenAPI-drift gates.
 
 ### Fixed
+- The composition validator no longer falsely rejects templates that use the
+  same archetype more than once under one container, differentiated by name:
+  each instance is now routed to the sibling constraint whose name it
+  satisfies, instead of being checked against the first same-archetype
+  sibling's overlay. Cross-contaminated content (a child from one overlay
+  placed in the other-named instance) is still rejected.
+- Template example generation (`GET …/example`) at `detail_level=medium` and
+  `complete` no longer produces an empty composition for templates whose
+  content is entirely optional: `medium` now returns a fully-populated
+  single-instance committable example (honouring temporal patterns,
+  C_DURATION field patterns, media-type code lists, and container
+  cardinality bounds), and `complete` additionally demonstrates a second
+  occurrence of repeating nodes. `required` (the default) is unchanged.
+- AQL `SELECT c/uid/value` (and `c/uid`) on a COMPOSITION — or any
+  versioned-object root — now returns the server-assigned
+  `OBJECT_VERSION_ID`, version-correct under `LATEST_VERSION` and
+  `ALL_VERSIONS`. It previously returned `null` because the uid was
+  injected only on REST reads, never into stored data. (QUERY master03
+  lists `COMPOSITION.uid.value` as a normative identified path.)
+- Composition commits against an already-seen template no longer re-read the
+  stored OPT from the database on every commit — the built WebTemplate cache
+  is now consulted first (measured: 10,206 redundant reads in a 120 s load
+  window, the #2 database statement by total time). Deleting a template now
+  also evicts it from that cache, so a commit racing a delete gets the
+  correct `422` ("template not known") instead of a foreign-key `500`.
+
 
 - Template example generation (`GET /definition/template/adl1.4/{id}/example`)
   now honours the template's structural constraints: a missing mandatory
@@ -954,7 +932,6 @@ inherited upstream tags/releases were removed from the fork. Published as a
 but has not yet run in production.
 
 ### Added
-
 #### openEHR platform
 - openEHR REST API (ITS-REST 1.0.3): EHR, EHR_STATUS, COMPOSITION,
   DIRECTORY/FOLDER, CONTRIBUTION, QUERY, DEFINITION (ADL 1.4 + ADL2), admin
@@ -1016,6 +993,7 @@ but has not yet run in production.
   arm64) on GHCR.
 - Helm chart with security-hardened defaults (non-root, read-only rootfs,
   seccomp, default-deny NetworkPolicy) and golden-render validation.
+
 
 [unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.3.0...HEAD
 [3.3.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.2.0...v3.3.0
