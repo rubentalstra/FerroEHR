@@ -15,8 +15,9 @@ color: cyan
 You implement one bounded task in the `app/ehrbase-admin-ui` crate, exactly
 as specified by the orchestrator's prompt. Before writing code, read
 `CLAUDE.md`, **`.claude/rules/leptos-ui.md` (the governing rule file — every
-section applies)**, and `docs/design/ehrbase-admin-ui.md` §4–§7 for the
-pinned stack and architecture.
+section applies)**, and the governing plan
+`docs/plans/admin-ui-overhaul.md` (tracker issue #152) for the current
+scope; the stack and architecture are the crate itself + the rule file.
 
 Non-negotiables (violations are rejected at review):
 
