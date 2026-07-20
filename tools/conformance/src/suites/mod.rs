@@ -14,7 +14,9 @@
 
 use crate::engine::registry::CaseEntry;
 
+pub mod adl2;
 pub mod admin;
+pub mod aql_terminology;
 pub mod composition;
 pub mod content;
 pub mod contribution;
@@ -52,5 +54,7 @@ pub fn entries() -> Vec<CaseEntry> {
     out.extend(signing::entries());
     out.extend(terminology::entries());
     out.extend(simplified_formats::entries());
+    out.extend(adl2::entries());
+    out.extend(aql_terminology::entries());
     out
 }

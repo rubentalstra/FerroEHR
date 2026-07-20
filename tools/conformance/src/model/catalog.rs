@@ -62,11 +62,15 @@ pub enum Area {
     Ts,
     /// Simplified Formats wire surface (FLAT / STRUCTURED / Web Template).
     Sf,
+    /// ADL 2 template provisioning (DEFINITION ADL2 REST surface).
+    Adl2,
+    /// AQL terminology functions (the `TERMINOLOGY()` function family).
+    Aqt,
 }
 
 impl Area {
     /// Every area, in catalogue order.
-    pub const ALL: [Area; 17] = [
+    pub const ALL: [Area; 19] = [
         Area::Ehr,
         Area::Sta,
         Area::Com,
@@ -84,6 +88,8 @@ impl Area {
         Area::Msg,
         Area::Ts,
         Area::Sf,
+        Area::Adl2,
+        Area::Aqt,
     ];
 
     /// The id segment (`EHR`, `STA`, …).
@@ -107,6 +113,8 @@ impl Area {
             Area::Msg => "MSG",
             Area::Ts => "TS",
             Area::Sf => "SF",
+            Area::Adl2 => "ADL2",
+            Area::Aqt => "AQT",
         }
     }
 
@@ -131,6 +139,8 @@ impl Area {
             Area::Msg => "Messaging",
             Area::Ts => "Terminology-server integration",
             Area::Sf => "Simplified Formats (FLAT / STRUCTURED / Web Template)",
+            Area::Adl2 => "ADL2 template provisioning",
+            Area::Aqt => "AQL terminology functions",
         }
     }
 
