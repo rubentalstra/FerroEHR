@@ -94,6 +94,48 @@ repo_for_component() {
   [ -n "$line" ] || return 1
   echo "$line" | awk -F'|' '{print $2}'
 }
+# The numeric version of our pin for a component, empty when the pin has no
+# version number (development/master pins are not comparable).
+pin_version_for_component() {
+  pin_for_component "$1" | grep -oE '^[0-9]+\.[0-9]+\.[0-9]+' || true
+}
+# Map a Jira fixVersion NAME to the pinned component it belongs to:
+# "RM Release 1.1.0" -> RM · "TERM Release 2.3.0" -> TERM · "AM version
+# 2.4.0"/"ADL 2.4.0" -> AM · "Release REST 1.1.0"/"ITS-REST Release …" ->
+# ITS-REST · bare "Release-1.3.0" -> the issue's own project component.
+component_for_fixversion() {
+  local name="$1" fallback="$2"
+  case "$name" in
+    RM\ *) echo "RM" ;; BASE\ *) echo "BASE" ;;
+    AM\ *|ADL\ *|AOM\ *|OPT\ *) echo "AM" ;;
+    LANG\ *) echo "LANG" ;; QUERY\ *|AQL\ *) echo "QUERY" ;;
+    TERM\ *) echo "TERM" ;; SM\ *) echo "SM" ;; CNF\ *) echo "CNF" ;;
+    ITS-REST*|*REST\ *) echo "ITS-REST" ;;
+    *) echo "$fallback" ;;
+  esac
+}
+# True (0) when EVERY fixVersion of the candidate is comparable and STRICTLY
+# older than our pin for its component — the change is already inside the
+# vendored spec text. Equal or unparseable versions keep the candidate
+# (an equal-version target may postdate our vendored commit; triage decides).
+all_fixversions_inside_pin() {
+  local fixv_names="$1" fallback_comp="$2" name comp fv_ver pin_ver any=1
+  [ -n "$fixv_names" ] || return 1
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    any=0
+    comp=$(component_for_fixversion "$name" "$fallback_comp")
+    [ -n "$comp" ] || return 1
+    fv_ver=$(echo "$name" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    [ -n "$fv_ver" ] || return 1
+    pin_ver=$(pin_version_for_component "$comp")
+    [ -n "$pin_ver" ] || return 1
+    [ "$fv_ver" = "$pin_ver" ] && return 1
+    # fv_ver < pin_ver ⟺ the version-sorted max is the pin
+    [ "$(printf '%s\n%s\n' "$fv_ver" "$pin_ver" | sort -V | tail -1)" = "$pin_ver" ] || return 1
+  done <<< "$fixv_names"
+  return $any
+}
 
 # ── shared: candidate sink (key<TAB>component<TAB>summary<TAB>extra) ─────────
 CANDIDATES="$tmp/candidates.tsv"
@@ -160,6 +202,15 @@ while IFS= read -r issue; do
       echo "  $key: resolution '$resolution' — no spec change, skipped"
       continue ;;
   esac
+  component=$(component_for_project "$project")
+  # A change whose fix versions are ALL strictly older than our pins is
+  # already inside the vendored spec text (catches cross-project SPECPR
+  # keys the amendment-record baseline cannot see).
+  fixv_lines=$(echo "$issue" | jq -r '.fields.fixVersions[]?.name')
+  if all_fixversions_inside_pin "$fixv_lines" "$component"; then
+    echo "  $key: fix version(s) [$(echo "$fixv_lines" | paste -sd, -)] predate our pins — already in the vendored text, skipped"
+    continue
+  fi
   summary=$(echo "$issue" | jq -r '.fields.summary')
   status=$(echo "$issue" | jq -r '.fields.status.name // "unknown"')
   itype=$(echo "$issue" | jq -r '.fields.issuetype.name // "unknown"')
@@ -172,7 +223,6 @@ while IFS= read -r issue; do
   # Description arrives as Atlassian Document Format — flatten the text
   # leaves and truncate to a triage-sized excerpt.
   descr=$(echo "$issue" | jq -r '[.fields.description // {} | .. | .text? // empty] | join(" ") | .[0:700]' | tr "$US" ' ' | tr '\n' ' ')
-  component=$(component_for_project "$project")
   printf "%s${US}%s${US}%s${US}jira${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s\n" \
     "$key" "$component" "$summary" "$resolved" "$fixv" "$comps" \
     "$status" "$resolution" "$itype" "$created" "$fixv_plain" "$descr" >> "$CANDIDATES"
