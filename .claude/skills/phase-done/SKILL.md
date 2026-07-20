@@ -1,67 +1,74 @@
 ---
 name: phase-done
 description: >
-  Closes a worklist row: verifies the row's work is genuinely done (gates,
-  docs, changelog), records the close in docs/PROGRESS.md, moves the row to
-  the Closed table with its PR link, and deletes the implemented plan file.
-  Use when the user says a work item is complete or asks to close it out.
-allowed-tools: [Read, Edit, Grep, Glob]
-argument-hint: (none)
+  Closes a tracker issue: verifies the work is genuinely done (exit
+  criteria, gates, docs, changelog), writes the close narrative into the PR
+  description, ensures the PR declares `Closes #N`, posts the handoff
+  comment, and deletes the implemented plan file. Use when the user says a
+  work item is complete or asks to close it out.
+allowed-tools: [Read, Edit, Grep, Glob, Bash]
+argument-hint: "[issue number] (optional)"
 ---
 
 # /phase-done
 
-The closing step of the worklist workflow (`CLAUDE.md`). Only run this once
-the row's work is actually finished — this skill verifies and records, it
+The closing step of the issue workflow (`CLAUDE.md`). Only run this once
+the issue's work is actually finished — this skill verifies and records, it
 does not decide the work is done on your behalf.
 
 ## Steps
 
-1. **Read `docs/plans/WORKLIST.md`** and identify the row being closed (the
-   user names it, or it is the row whose plan file this branch implements).
-   If the row points at a plan file, that file's `## Exit criteria` is the
-   checklist.
-2. **Verify every `## Exit criteria` checkbox is `- [x]`.** If any remain
-   `- [ ]`, stop and list them — do not tick a criterion yourself just to
-   proceed; that must reflect real, verified state (e.g. "workspace builds"
-   means someone actually ran `cargo build --workspace` and it succeeded).
-3. **Spec-adherence check:** for a phase that shipped spec-facing behaviour,
+1. **Identify the issue being closed** (the user names it, or it is the
+   issue this branch's PR declares `Closes #N` for). Read it with
+   `gh issue view <n> --comments`; if it links a plan file
+   (`docs/plans/*.md`), that file's `## Exit criteria` also applies.
+2. **Verify every `## Exit criteria` checkbox is ticked** — in the issue
+   body and in any linked plan file. If any remain `- [ ]`, stop and list
+   them — do not tick a criterion yourself just to proceed; a tick must
+   reflect real, verified state (e.g. "workspace builds" means someone
+   actually ran `cargo build --workspace` and it succeeded). Tick verified
+   boxes in the issue body via `gh issue edit <n> --body-file`.
+3. **Spec-adherence check:** for work that shipped spec-facing behaviour,
    confirm a conformance pass happened (`/spec-audit` findings addressed or
-   filed as tasks). If it never happened, stop and say so — that is an
+   filed as new issues). If it never happened, stop and say so — that is an
    unmet exit criterion in spirit.
 3a. **ECC zero-drift gate:** confirm a full ECC run
    (`/run-conformance`) happened at close and shows zero drift vs the
    committed baseline, and that the ratcheted `docs/conformance/` artifacts
    (results.json + report + badges) are in-branch. No green ECC run → the
-   phase is not closable.
-3b. **User docs + changelog updated?** If this phase changed a user-visible
+   issue is not closable.
+3b. **User docs + changelog updated?** If this work changed a user-visible
    surface (REST, configuration, CLI, deployment artifacts), confirm BOTH:
    the matching `website/book/src` page was updated in-branch (and
    `scripts/assemble-oas.sh` re-run if the REST contract changed —
    `.claude/rules/docs-website.md`), AND a `CHANGELOG.md [Unreleased]` entry
    exists (`.claude/rules/changelog.md`; CI `changelog-guard` enforces it).
-   If not, stop: both are part of the phase's deliverable.
+   If not, stop: both are part of the deliverable.
 3c. **Living-reference-doc maintenance:** confirm the living reference docs
    (`docs/architecture.md`, `docs/endpoint-map.md`, `docs/VERSIONS.md`) were
-   refreshed to verified reality for anything this phase changed, and the
-   phase's close note is recorded. (There is no blueprint/design-doc layer —
-   internal plan/design files are deleted in the PR that implements them; the
-   durable record is `docs/PROGRESS.md`, `CHANGELOG.md`, git history, and
-   these living reference docs.)
-4. **Update `docs/PROGRESS.md`** with one line for this phase: phase number,
-   title, completion date, and a short note (mirroring the phase file's
-   `## Decisions made this phase`, if any). Append; never rewrite prior
-   phase rows.
-5. **Write the phase file's `## Handoff for next session`** paragraph: where
-   things stand at close, and what the next phase should do first. Replace
-   any placeholder text that is there.
-6. **Set the phase file's `Status` header to `done`.**
-7. **Move the row to the WORKLIST `## Closed` table** with the merged-PR
-   link, and **delete the implemented plan file** in the same PR (the
-   delete-on-implementation lifecycle; `docs/plans/README.md`).
+   refreshed to verified reality for anything this work changed. (There is
+   no blueprint/design-doc layer — internal plan/design files are deleted
+   in the PR that implements them; the durable record is the closed
+   issues + PR descriptions, `CHANGELOG.md`, git history, and these living
+   reference docs.)
+4. **Write the close narrative into the PR description**: what shipped,
+   the key decisions with their spec citations, the gate results, and what
+   was deliberately left out (with follow-up issue numbers). The PR
+   description + the issue thread ARE the build record (there is no
+   PROGRESS.md — retired 2026-07-20).
+5. **Post the handoff comment on the issue** (`gh issue comment <n>`):
+   where things stand at close, what was deliberately left out (with the
+   follow-up issue numbers), and what a follow-up session should do first.
+6. **Ensure the PR body declares `Closes #<n>`** (`gh pr view` /
+   `gh pr edit`) so the merge into develop auto-closes the issue — never
+   close the issue by hand when a PR carries the work.
+7. **Delete the implemented plan file** in the same PR (the
+   delete-on-implementation lifecycle; `docs/plans/README.md`) — unless
+   another still-open issue consumes the same plan file; then note that on
+   the issue instead.
 8. **Remind the user to commit** the close on the current
    conventional-type branch (`feat/…` etc., per the CLAUDE.md branch hard
-   rule) — this skill edits files but does not run git commands itself.
+   rule).
 
 ## What this skill does not do
 

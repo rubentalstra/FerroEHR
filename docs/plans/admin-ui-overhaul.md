@@ -1,8 +1,12 @@
-# UI-2 — Admin console: design overhaul + 100% feature completeness
+# Admin console: design overhaul + 100% feature completeness (tracker issues #143 + #144)
 
-Working plan for the UI-2 worklist row (owner directive 2026-07-17: a real
-design, and no missing features). Deleted in the PR that lands it; the
-durable record is `docs/PROGRESS.md` + `CHANGELOG.md` + the book chapter.
+Working plan for tracker issues #143 (re-survey + design system) and #144
+(feature completeness) — owner directive 2026-07-17: a real design, and no
+missing features. NOTE (2026-07-20, at the tracker migration): the screen
+survey below pre-dates the merged directory-experience rewrite, icon sweep,
+and `ehr_detail` per-tab split — #143 starts by re-surveying and refreshing
+this file. Deleted when the LAST consuming issue closes; the durable record
+is the closing PR descriptions + `CHANGELOG.md` + the book chapter.
 No openEHR spec governs an admin UI — our own design/extension; the wire it
 consumes stays ITS-REST-bound. Rules: `.claude/rules/leptos-ui.md` (all
 mandates unchanged: Rust-only, REST-only boundary, server-fn auth,

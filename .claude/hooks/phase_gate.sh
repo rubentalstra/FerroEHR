@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 # .claude/hooks/phase_gate.sh
 #
-# Claude Code Stop hook: blocks ending a session in which the worklist was not
-# touched and no commit was made (CLAUDE.md worklist workflow).
+# Claude Code Stop hook: blocks ending a session in which no commit was made
+# AND no tracker activity happened — the tracker is GitHub Issues (CLAUDE.md
+# issue workflow): an issue created, commented, edited, or closed since the
+# session started counts as recording the work.
 #
-# Uses .claude/.session-start-head written by inject_phase_context.sh at
-# SessionStart. Exit 2 blocks the stop once; a second stop attempt (with
-# stop_hook_active=true) is allowed through so purely informational sessions
-# can still end.
+# Uses .claude/.session-start-head + .claude/.session-start-time written by
+# inject_phase_context.sh at SessionStart. Exit 2 blocks the stop once; a
+# second stop attempt (with stop_hook_active=true) is allowed through so
+# purely informational sessions can still end.
 
 set -uo pipefail
 
@@ -31,11 +33,19 @@ if [ "$(cat "$marker")" != "$head_now" ]; then
   exit 0 # at least one commit was made this session
 fi
 
-# No commit yet: allow the stop only if the worklist/plans were edited in the
-# working tree (a row updated, an item recorded).
-if ! git diff HEAD --quiet -- docs/plans 2>/dev/null; then
-  exit 0
+# No commit yet: allow the stop if any issue activity (create/comment/edit/
+# close) happened since session start. The issues API's `since` filters on
+# last-updated; a non-empty result means the tracker was touched.
+ts_marker=".claude/.session-start-time"
+if [ -f "$ts_marker" ] && command -v gh >/dev/null 2>&1; then
+  since="$(cat "$ts_marker")"
+  touched="$(gh api "repos/{owner}/{repo}/issues?state=all&since=${since}&per_page=1" --jq 'length' 2>/dev/null || echo "")"
+  if [ "${touched:-0}" = "1" ]; then
+    exit 0
+  fi
+  # gh failed (offline/auth): cannot judge — do not nag.
+  [ -n "$touched" ] || exit 0
 fi
 
-echo "worklist gate: no commit was made and docs/plans/WORKLIST.md was not touched this session. Follow the worklist workflow (CLAUDE.md): record/close the worklist row for what you did and commit on a conventional-type branch (feat/, fix/, chore/, ...). If this session was purely informational, stop again to end anyway." >&2
+echo "tracker gate: no commit was made and no GitHub issue was created/commented/updated this session. Follow the issue workflow (CLAUDE.md): record what you did on the tracker — tick the issue's exit-criteria checkboxes ('gh issue edit <n>'), post a status comment ('gh issue comment <n>'), or open an issue for newly-registered work — and commit on a conventional-type branch (feat/, fix/, chore/, ...). If this session was purely informational, stop again to end anyway." >&2
 exit 2
