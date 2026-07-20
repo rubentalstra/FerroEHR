@@ -41,6 +41,8 @@ jobs:
         run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
         run: bash scripts/check-conformance-numbers.sh
+      - name: Render conformance stats (the generated include must exist before lint)
+        run: bash scripts/render-conformance-stats.sh includes
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
