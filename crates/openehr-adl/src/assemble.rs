@@ -95,6 +95,19 @@ pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<Syntax
     assemble_with(art, src, crate::cadl::Dialect::Adl2)
 }
 
+/// Assemble an already-outer-parsed [`SourceArtefact`] into a *1.4-shaped*
+/// [`Archetype`] (the ADL 1.4 dialect — the twin of [`assemble`] that
+/// [`parse_artefact_adl14`] wraps, exposed so a caller that also needs the
+/// [`SourceArtefact`] — e.g. the 1.4 phase-1 validator's source-level checks —
+/// can assemble without re-parsing).
+///
+/// # Errors
+/// Returns every [`SyntaxError`] from the cADL/rules parse and the section
+/// mapping.
+pub fn assemble_adl14(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
+    assemble_with(art, src, crate::cadl::Dialect::Adl14)
+}
+
 fn assemble_with(
     art: &SourceArtefact,
     src: &str,

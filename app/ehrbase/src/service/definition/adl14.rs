@@ -2,17 +2,30 @@
 //! Templates): ADL 1.4 source archetypes keyed by `ARCHETYPE_ID` (on
 //! `archetype_store`) and OPTs keyed by `UUID` (on `template_store`).
 //!
-//! NOTE (G-05-01, no AOM 1.4 source parser): the tree has no ADL 1.4
-//! *source* parser (OPT XML is ingested by the templates seam; ADL2 has its own
-//! registration validator). ADL 1.4 archetype "validity" is therefore a
-//! lightweight *structural* check — the source must open with the `archetype`
-//! keyword line and carry a well-formed `ARCHETYPE_ID`
-//! ([`openehr_base::prelude::ArchetypeId`]) on the next line. Full AOM 1.4
-//! validation lands with the ADL 1.4 source parser (register 10 dependency).
+//! ADL 1.4 archetype validity is the real `openehr-adl` engine, judged **as
+//! 1.4**: an upload parses via [`openehr_adl::assemble::parse_artefact_adl14`]
+//! (the 1.4-shaped `openehr_am::am24` model) and validates against the subset
+//! of the phase-1 catalogue that corresponds to the ADL 1.4 / AOM 1.4 standalone
+//! validity rules ([`openehr_adl::validate::validate_source_phase1_adl14`];
+//! ADL1.4 `master08` §Validity Rules + AOM1.4 class invariants). A 1.4 source is
+//! validated **as 1.4**, never post-conversion — converting the artefact would
+//! change what is being judged.
+//!
+//! An in-CDR 1.4 → ADL 2 migration is offered as a service capability
+//! ([`EhrbaseService::adl14_convert_to_adl2`]) — the stored 1.4 *source* text is
+//! converted through the `openehr_adl::adl14` converter. **NOTE: no openEHR spec
+//! governs 1.4 → 2 conversion — our own design/extension** (verified: the
+//! vendored ITS-REST OAS declares no conversion operation), so it is
+//! service-level only and never exposed on the wire.
 
 use std::str::FromStr;
 
+use openehr_adl::adl14::convert::{ConvertConfig, parse_and_convert};
+use openehr_adl::adl14::log::ConversionLog;
+use openehr_adl::error::SyntaxError;
+use openehr_adl::validate::{Severity, ValidationIssue, validate_source_phase1_adl14};
 use openehr_base::prelude::ArchetypeId;
+use openehr_its::rest::runtime::ValidationError;
 use uuid::Uuid;
 
 use crate::service::EhrbaseService;
@@ -36,21 +49,27 @@ impl EhrbaseService {
         Ok(self.archetype_exists(&an_id).await?)
     }
 
-    /// `valid_archetype` — structural validity of ADL 1.4 source (module PORT
-    /// NOTE G-05-01): the source opens with the `archetype` keyword line and
-    /// carries a well-formed `ARCHETYPE_ID` on the next non-blank line.
-    /// Stateless.
+    /// `valid_archetype` — the ADL 1.4 phase-1 validity of a 1.4 source
+    /// (`openehr-adl` engine, standalone: parse in the 1.4 dialect + the ADL 1.4
+    /// / AOM 1.4 phase-1 subset). Stateless — validity is judged as 1.4, never
+    /// post-conversion.
     ///
     /// # Errors
     ///
     /// Never — the `Result` shape mirrors the SM catalog; validity is reported
     /// in the `Ok` boolean.
     pub fn valid_archetype(&self, adl: &str) -> Result<bool, SmError> {
-        Ok(extract_archetype_id(adl).is_some())
+        Ok(matches!(
+            validate_source_phase1_adl14(adl),
+            Ok(issues) if issues.iter().all(|i| i.severity != Severity::Error)
+        ))
     }
 
-    /// `upload_archetype` (`Post_has_archetype`) — store a valid ADL 1.4
-    /// archetype, replacing any existing one with the same id.
+    /// `upload_archetype` (`Post_has_archetype`) — validate a 1.4 archetype
+    /// through the `openehr-adl` engine (judged as 1.4) and store it, replacing
+    /// any existing one with the same id ("If an archetype with the same id
+    /// already exists, replace it. The archetype must be valid to succeed." —
+    /// `i_definition_adl14.adoc`).
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case): the write removes any case-variant of
@@ -59,15 +78,48 @@ impl EhrbaseService {
     ///
     /// # Errors
     ///
-    /// - Structurally invalid ADL 1.4 source (no `archetype` header or no
-    ///   well-formed `ARCHETYPE_ID`) → `invalid_archetype` (`422`).
+    /// - Source that fails to parse (S-codes) or fails the ADL 1.4 phase-1
+    ///   catalogue (V-codes) → `invalid_archetype` (`422`), the offending
+    ///   rule-code mnemonics carried as the validation detail.
     /// - A database failure (`exception` → `500`).
     pub async fn upload_archetype(&self, adl: String) -> Result<(), SmError> {
+        archetype_validate(&adl)?;
         Ok(self.archetype_upload(&adl).await?)
     }
 
+    /// Convert a stored ADL 1.4 archetype (by `ARCHETYPE_ID`) to ADL 2 source
+    /// text via the `openehr_adl::adl14` converter (the in-CDR 1.4 → 2 migration
+    /// capability). The stored artefact is 1.4 *source* text (on
+    /// `archetype_store`), which the converter consumes directly.
+    ///
+    /// **NOTE: no openEHR spec governs 1.4 → 2 conversion — our own
+    /// design/extension** (the vendored ITS-REST OAS declares no conversion
+    /// operation), so there is no REST endpoint; this is a service capability
+    /// only.
+    ///
+    /// A specialised 1.4 source is base-converted (renumbered against its own
+    /// codes); re-differentialisation against a converted+flattened parent is a
+    /// separate concern of the converter's `differ`.
+    /// TODO: convert stored 1.4 *OPTs* (`template_store`, XML/`opt14` DTOs) once
+    /// the converter has an `opt14` front end — today it takes an assembled
+    /// `am24` archetype, so only the source-archetype store is convertible.
+    ///
+    /// # Errors
+    ///
+    /// - No archetype with that id → `artefact_does_not_exist` (`404`).
+    /// - The stored source no longer converts (parse / unsupported kind) →
+    ///   `content_invalid` (`422`).
+    /// - A database failure (`exception` → `500`).
+    pub async fn adl14_convert_to_adl2(&self, an_id: String) -> Result<String, SmError> {
+        let source = self.archetype_get(&an_id).await?;
+        let mut log = ConversionLog::new();
+        let converted = parse_and_convert(&source, &ConvertConfig::default(), &mut log)
+            .map_err(|e| ServiceError::Unprocessable(format!("1.4 → 2 conversion failed: {e}")))?;
+        Ok(openehr_adl::printer::print(&converted))
+    }
+
     /// `get_archetype` — the ADL 1.4 source of the archetype with id `an_id`
-    /// (interchange form, G-05-03). Identity is case-insensitive.
+    /// (interchange form). Identity is case-insensitive.
     ///
     /// # Errors
     ///
@@ -161,13 +213,13 @@ impl EhrbaseService {
     }
 
     /// `get_opt` — the OPT 1.4 canonical XML of the OPT with `an_opt_id` (a
-    /// `UUID`; interchange form, G-05-03).
+    /// `UUID`; interchange form).
     ///
     /// # Errors
     ///
     /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
     ///   (`400`).
-    /// - No OPT with that id → `template_does_not_exist` (`404`, G-05-15).
+    /// - No OPT with that id → `template_does_not_exist` (`404`).
     /// - A database failure (`exception` → `500`).
     pub async fn get_opt(&self, an_opt_id: String) -> Result<String, SmError> {
         Ok(self.opt_get(&an_opt_id).await?)
@@ -186,7 +238,7 @@ impl EhrbaseService {
     /// `list_matching_opts` — OPTs whose `template_id` matches `id_pattern`
     /// (a regex), cursored by `page`.
     ///
-    /// NOTE (G-05-08, spec defect): the SM types this `List<ARCHETYPE_ID>`
+    /// NOTE (spec defect): the SM types this `List<ARCHETYPE_ID>`
     /// though OPTs are UUID-keyed; we return the OPTs' `template_id` strings
     /// (the meaningful identifier a pattern is useful against).
     ///
@@ -210,7 +262,7 @@ impl EhrbaseService {
     ///
     /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
     ///   (`400`).
-    /// - No OPT with that id → `template_does_not_exist` (`404`, G-05-15).
+    /// - No OPT with that id → `template_does_not_exist` (`404`).
     /// - A database failure (`exception` → `500`).
     pub async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {
         Ok(self.opt_delete(&an_opt_id).await?)
@@ -348,7 +400,7 @@ impl EhrbaseService {
     }
 
     /// The OPT 1.4 canonical XML of the OPT with `an_opt_id` (a `UUID`);
-    /// absent → `template_does_not_exist` (`404`, G-05-15); unparseable UUID
+    /// absent → `template_does_not_exist` (`404`); unparseable UUID
     /// → `400`.
     async fn opt_get(&self, an_opt_id: &str) -> Result<String, ServiceError> {
         let id = parse_opt_uuid(an_opt_id)?;
@@ -465,6 +517,54 @@ impl EhrbaseService {
 }
 
 // ── stateless validity helpers ────────────────────────────────────────────────
+
+/// Validate an ADL 1.4 source through the `openehr-adl` engine, judged **as
+/// 1.4** (`openehr_adl::validate::validate_source_phase1_adl14`). An unparseable
+/// source (S-codes) or a phase-1 catalogue failure (V-codes) is a
+/// [`ServiceError::ValidationFailed`] carrying the rule-code mnemonics — the SM
+/// `upload_archetype` maps it to `invalid_archetype` / `content_invalid`
+/// (`422`, `i_definition_adl14.adoc`; ADL1.4 `master08` §Validity Rules).
+fn archetype_validate(adl: &str) -> Result<(), ServiceError> {
+    let issues = validate_source_phase1_adl14(adl).map_err(archetype_syntax_failure)?;
+    let errors: Vec<ValidationError> = issues
+        .iter()
+        .filter(|i| i.severity == Severity::Error)
+        .map(issue_to_validation_error)
+        .collect();
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(ServiceError::ValidationFailed(errors))
+    }
+}
+
+/// Map an ADL 1.4 parse failure to a [`ServiceError::ValidationFailed`] carrying
+/// the S-code mnemonics — an unparseable source is an invalid archetype
+/// (`422`), not a distinct wire status (`AOM2/master04.6` §Syntax Validity
+/// Rules; SM `i_definition_adl14.adoc` `upload_archetype` `invalid_archetype`).
+fn archetype_syntax_failure(errs: Vec<SyntaxError>) -> ServiceError {
+    ServiceError::ValidationFailed(
+        errs.into_iter()
+            .map(|e| ValidationError {
+                path: e.code.mnemonic().to_owned(),
+                message: format!("{} (line {}, column {})", e.message, e.line, e.column),
+            })
+            .collect(),
+    )
+}
+
+/// Render one [`ValidationIssue`] as a wire [`ValidationError`]: the rule-code
+/// mnemonic is the machine-readable key, the human detail (plus the archetype
+/// path where derivable) is the message.
+fn issue_to_validation_error(i: &ValidationIssue) -> ValidationError {
+    ValidationError {
+        path: i.code.mnemonic().to_owned(),
+        message: match &i.path {
+            Some(p) => format!("{} (at {p})", i.message),
+            None => i.message.clone(),
+        },
+    }
+}
 
 /// `valid_opt` core — the OPT parses (`opt14::from_xml`) and passes the
 /// templates seam's structural check.

@@ -10,9 +10,12 @@
 //! - `upgrade/upgrade_from_14/*.adl` — converts via [`adl14::convert`] without
 //!   error (the structural compare vs the paired `.adls` is in
 //!   `adl14_conversion.rs`).
-//! - `validity/legacy_adl_1.4/*.adl` — parse (1.4 dialect) clean, EXCEPT
-//!   `FAIL_c_dv_quantity_minimal.v1.adl` which rejects with `SDINV` (its
-//!   `regression` tag) — an empty `(C_DV_QUANTITY) <>` inline dADL block.
+//! - `validity/legacy_adl_1.4/*.adl` — parse (1.4 dialect) clean AND validate
+//!   clean under the ADL 1.4 phase-1 subset
+//!   ([`openehr_adl::validate::validate_source_phase1_adl14`]; every file here
+//!   is `regression`-tagged PASS), EXCEPT `FAIL_c_dv_quantity_minimal.v1.adl`
+//!   which rejects at parse with `SDINV` (its `regression` tag) — an empty
+//!   `(C_DV_QUANTITY) <>` inline dADL block.
 //! - `features/**/*.adl` — parse (1.4 dialect) clean.
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::panic)]
 
@@ -22,6 +25,7 @@ use openehr_adl::adl14::convert::{ConvertConfig, parse_and_convert};
 use openehr_adl::adl14::log::ConversionLog;
 use openehr_adl::assemble::parse_artefact_adl14;
 use openehr_adl::error::SyntaxErrorCode;
+use openehr_adl::validate::{Severity, validate_source_phase1_adl14};
 
 fn corpus_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/corpus")
@@ -88,6 +92,20 @@ fn every_adl_file_is_claimed_with_an_outcome() {
             } else {
                 parse_artefact_adl14(&src)
                     .unwrap_or_else(|e| panic!("{r}: 1.4-tolerant parse failed: {e:?}"));
+                // Every legacy_adl_1.4 fixture is `regression`-tagged PASS: it
+                // must validate clean under the ADL 1.4 phase-1 subset (no
+                // AOM2-only rule may false-reject a valid 1.4 archetype).
+                let issues = validate_source_phase1_adl14(&src)
+                    .unwrap_or_else(|e| panic!("{r}: 1.4 validation parse failed: {e:?}"));
+                let errs: Vec<_> = issues
+                    .iter()
+                    .filter(|i| i.severity == Severity::Error)
+                    .map(|i| (i.code.mnemonic(), i.message.clone()))
+                    .collect();
+                assert!(
+                    errs.is_empty(),
+                    "{r}: expected clean 1.4 validation, got errors {errs:?}"
+                );
             }
             claimed += 1;
         } else if r.contains("features/") {
