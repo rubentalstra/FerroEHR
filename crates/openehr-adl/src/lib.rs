@@ -21,6 +21,7 @@ pub mod assemble;
 pub mod cadl;
 pub mod codes;
 pub mod error;
+pub mod flatten;
 pub mod lexer;
 pub mod paths;
 pub mod printer;

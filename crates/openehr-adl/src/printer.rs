@@ -144,7 +144,16 @@ impl Printer {
     }
 
     fn identification(&mut self, parts: &Parts<'_>) {
-        let keyword = parts.keyword;
+        // A flattened artefact prints with the `flat` keyword prefix
+        // (`ADL2/master07.04` §Artefact declaration: "The flattened form … starts
+        // with the keyword 'flat' followed by the artefact type").
+        let keyword_owned;
+        let keyword: &str = if parts.flat {
+            keyword_owned = format!("flat {}", parts.keyword);
+            &keyword_owned
+        } else {
+            parts.keyword
+        };
         let mut meta = String::new();
         if let Some(adl) = parts.adl_version {
             let _ = write!(meta, "adl_version={adl}");
@@ -671,6 +680,10 @@ impl Printer {
 /// [`Archetype`] variants.
 struct Parts<'a> {
     keyword: &'a str,
+    /// True for a flattened artefact (prints the `flat` keyword prefix,
+    /// `ADL2/master07.04` §Artefact declaration): a specialised archetype whose
+    /// `is_differential` flag is cleared by the flattener.
+    flat: bool,
     is_overlay: bool,
     archetype_id: &'a ArchetypeHrid,
     parent_archetype_id: Option<&'a str>,
@@ -712,6 +725,7 @@ impl<'a> Parts<'a> {
         match a {
             Archetype::TemplateOverlay(o) => Parts {
                 keyword: "template_overlay",
+                flat: false,
                 is_overlay: true,
                 archetype_id: &o.archetype_id,
                 parent_archetype_id: o.parent_archetype_id.as_deref(),
@@ -736,6 +750,7 @@ impl<'a> Parts<'a> {
             Archetype::AuthoredArchetype(inner) => match inner.as_ref() {
                 AuthoredArchetype::AuthoredArchetype(d) => Parts {
                     keyword: "archetype",
+                    flat: d.parent_archetype_id.is_some() && !d.is_differential,
                     is_overlay: false,
                     archetype_id: &d.archetype_id,
                     parent_archetype_id: d.parent_archetype_id.as_deref(),
@@ -759,6 +774,7 @@ impl<'a> Parts<'a> {
                 },
                 AuthoredArchetype::Template(t) => Parts {
                     keyword: "template",
+                    flat: t.parent_archetype_id.is_some() && !t.is_differential,
                     is_overlay: false,
                     archetype_id: &t.archetype_id,
                     parent_archetype_id: t.parent_archetype_id.as_deref(),
@@ -782,6 +798,7 @@ impl<'a> Parts<'a> {
                 },
                 AuthoredArchetype::OperationalTemplate(o) => Parts {
                     keyword: "operational_template",
+                    flat: false,
                     is_overlay: false,
                     archetype_id: &o.archetype_id,
                     parent_archetype_id: o.parent_archetype_id.as_deref(),
