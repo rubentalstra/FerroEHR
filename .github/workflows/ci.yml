@@ -61,11 +61,14 @@ jobs:
           if [ -z "$changed" ]; then
             echo "code=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          # Docs-site-only scripts never affect a cargo build — a pure website
-          # PR must not pay for the Rust suite. Everything else under
-          # scripts/ (conformance, drift check, e2e, …) stays build-relevant.
-          code_relevant=$(echo "$changed" | grep -vE '^scripts/(assemble-oas|build-site|render-conformance-stats|check-conformance-numbers|cut-version|vendor-spec-docs)\.sh$' || true)
-          if echo "$code_relevant" | grep -qE '^(app/|crates/|tools/|scripts/|\.cargo/|\.config/|Cargo\.toml$|Cargo\.lock$|rust-toolchain\.toml$|rustfmt\.toml$|clippy\.toml$|deny\.toml$)' ; then
+          # scripts/ is NOT build-relevant by default: the cargo jobs never
+          # execute repo scripts, so a new watcher/site/release script must
+          # not cost a Rust run. Allowlist the ONLY scripts a code-gated CI
+          # job actually executes (the drift check and the e2e harness).
+          code_relevant=$(echo "$changed" | grep -vE '^scripts/' || true)
+          if echo "$changed" | grep -qE '^scripts/(check-codegen-drift|ui-e2e)\.sh$'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          elif echo "$code_relevant" | grep -qE '^(app/|crates/|tools/|\.cargo/|\.config/|Cargo\.toml$|Cargo\.lock$|rust-toolchain\.toml$|rustfmt\.toml$|clippy\.toml$|deny\.toml$)' ; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
             echo "No build-relevant paths touched — cargo jobs will be skipped."
