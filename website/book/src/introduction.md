@@ -19,7 +19,7 @@ standard API, against a shared Reference Model, so the same record is portable
 across every conformant system.
 
 EHRbase-rs implements that standard natively. It speaks the openEHR
-**REST API** (the current development edition of ITS-REST), executes
+**REST API** (ITS-REST Release-1.1.0), executes
 **Archetype Query Language (AQL 1.1)**, and holds data as canonical openEHR
 compositions with full, indelible version history. There is no proprietary data format in the middle: what you commit is
 what you query and what you read back.
@@ -32,7 +32,7 @@ what you query and what you read back.
   result — every number generated from the committed artifacts, never
   hand-typed — is on the [Conformance](conformance.md) page.
 - **The latest openEHR specifications**, generated directly from the official
-  machine-readable models: the REST API development edition, AQL 1.1,
+  machine-readable models: the REST API Release-1.1.0, AQL 1.1,
   Reference Model 1.2.0, Archetype Model 1.4 and 2.4, Terminology 3.1. A
   specification update is a regeneration, not a rewrite.
 - **One static binary.** No JVM and no runtime dependencies — predictable

@@ -6,7 +6,7 @@
 //! REST layer wraps it in [`RestError`] so handlers can use `?` and every error
 //! leaves the server as a structured JSON body.
 //!
-//! Two body shapes, both from the ITS-REST 1.0.3 spec:
+//! Two body shapes, both from the ITS-REST 1.1.0 spec:
 //!
 //! * A semantic-validation failure ([`ApiError::ValidationFailed`], HTTP `422`)
 //!   renders the openEHR `Error` object —
@@ -42,7 +42,7 @@ impl From<ApiError> for RestError {
 
 /// The single SM → HTTP mapping, owned by the protocol adapter: a native [`SmError`]
 /// carries only a `CALL_STATUS_TYPE`, and this adapter turns its status into the
-/// ITS-REST 1.0.3 status code. The wire oracle (ITS-REST) decides each row;
+/// ITS-REST 1.1.0 status code. The wire oracle (ITS-REST) decides each row;
 /// where the SM name and the wire disagree, the wire's status wins here. Living
 /// in `ehrbase-rest` keeps `ehrbase-sm` protocol-free (no `openehr_its::rest`
 /// dependency). (A free function, not `impl From<SmError> for ApiError`, because

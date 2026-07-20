@@ -134,7 +134,7 @@ fn fault_stub() -> ScheduleTrace {
 }
 
 /// The citation shared by every TS case.
-const SVC: &str = "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.0.3 QUERY API execute_ad_hoc_query; profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS)";
+const SVC: &str = "QUERY master03 §Functions/Other functions/TERMINOLOGY (lines 748–767); AQL 1.1; ITS-REST 1.1.0 QUERY API execute_ad_hoc_query; profiles master03 §Functional Querying 'AQL & terminology' (OPTIONS)";
 
 /// Assemble a TS case entry (area [`Area::Ts`], OPTIONS Terminology capability).
 fn case(

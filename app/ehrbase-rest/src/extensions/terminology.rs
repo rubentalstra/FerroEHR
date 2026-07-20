@@ -12,7 +12,7 @@
 //! mapping; the meaning of each is the master12 signature, cited inline.
 //!
 //! **Wire shape — no openEHR spec governs this; our own design/extension.**
-//! Neither the development-edition OAS set nor Release-1.0.3 defines a
+//! Neither the Release-1.1.0 OAS set nor Release-1.0.3 defines a
 //! terminology REST contract (there is no `terminology` group under
 //! `crates/openehr-its/src/rest/generated/`), so this surface is ours: exposed
 //! under the server's extension namespace (`/terminology`), shaped spec-first

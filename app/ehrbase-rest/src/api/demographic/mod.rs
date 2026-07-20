@@ -1,4 +1,5 @@
-//! HTTP dispatch for the ITS-REST **demographic API** (development edition).
+//! HTTP dispatch for the ITS-REST **demographic API** (Release-1.1.0,
+//! DEVELOPMENT status).
 //!
 //! A machine-readable openEHR wire contract for demographics now exists: the
 //! ITS-REST **Demographic API** (`x-status: DEVELOPMENT`), vendored at

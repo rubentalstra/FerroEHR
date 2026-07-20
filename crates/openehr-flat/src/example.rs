@@ -36,8 +36,8 @@
 //!
 //! # NOTE (non-normative)
 //!
-//! The endpoint spec is a **post-1.0.3 dev-OAS** addition (absent from the pinned
-//! ITS-REST 1.0.3 contract) and states the example-generation algorithm is
+//! The endpoint is specified by ITS-REST Release-1.1.0 (a post-1.0.3
+//! addition to the Definition API), which states the example-generation algorithm is
 //! explicitly non-normative ("vendors may produce different results"). The value
 //! choices here (fixed instants, first coded value, range-clamped magnitudes) are
 //! ours; only the mandatory-skeleton-is-committable contract of the `required`

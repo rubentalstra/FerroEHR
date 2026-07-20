@@ -1,4 +1,4 @@
-//! The ITS-REST **admin API** (development edition) —
+//! The ITS-REST **admin API** (Release-1.1.0, DEVELOPMENT status) —
 //! `docs/specs/openehr/ITS-REST/specifications/docs/admin/` + the
 //! `admin-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
 //!

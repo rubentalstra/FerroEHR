@@ -29,7 +29,7 @@
 // positive bodies are the vendored RM-1.2.0-canonical fixtures; a per-edition
 // COMPOSITION payload provider (RM 1.0.2 minimum, master03-overview §API
 // Conformance) belongs to the wire adapter and is not yet exposed.
-// Our pinned CI runs the development edition, so this is exercised faithfully.
+// Our pinned CI runs Release-1.1.0, so this is exercised faithfully.
 
 use std::time::Duration;
 
@@ -61,7 +61,7 @@ const XML_DIR: &str = "composition.canonical-xml";
 const OPT_DIR: &str = "template.valid";
 
 /// A shared citation stem for the COMPOSITION API + RM COMPOSITION type.
-const CIT: &str = "ITS-REST 1.0.3 COMPOSITION API composition_{create,get,update,delete}.yaml + versioned_composition_get.yaml; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT + change_control";
+const CIT: &str = "ITS-REST 1.1.0 COMPOSITION API composition_{create,get,update,delete}.yaml + versioned_composition_get.yaml; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT + change_control";
 
 /// Every registered COMPOSITION case (31 carried + 1 new positive `has_composition`).
 #[must_use]
@@ -369,7 +369,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::Versioning,
             BOTH,
             Compare::Superset,
-            "ITS-REST 1.0.3 COMPOSITION API versioned_composition_get.yaml 200; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT (version-family XML)",
+            "ITS-REST 1.1.0 COMPOSITION API versioned_composition_get.yaml 200; RM 1.2.0 ehr §COMPOSITION, common §VERSIONED_OBJECT (version-family XML)",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.get_versioned_composition (master07 §get_versioned_composition)",
             ),
@@ -382,7 +382,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::Versioning,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API versioned_composition_get.yaml 404; RM 1.2.0 common §VERSIONED_OBJECT",
+            "ITS-REST 1.1.0 COMPOSITION API versioned_composition_get.yaml 404; RM 1.2.0 common §VERSIONED_OBJECT",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.get_versioned_composition-non_existent (master07 §get_versioned_composition)",
             ),
@@ -395,7 +395,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::Versioning,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API versioned_composition_get.yaml 404; RM 1.2.0 common §VERSIONED_OBJECT",
+            "ITS-REST 1.1.0 COMPOSITION API versioned_composition_get.yaml 404; RM 1.2.0 common §VERSIONED_OBJECT",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.get_versioned_composition-bad_ehr (master07 §get_versioned_composition)",
             ),
@@ -409,7 +409,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_update.yaml 200; RM common §Version tree; TERM SupportTerminology audit_change_type 249 creation / 251 modification",
+            "ITS-REST 1.1.0 COMPOSITION API composition_update.yaml 200; RM common §Version tree; TERM SupportTerminology audit_change_type 249 creation / 251 modification",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.update_composition-event (master07 §update_composition)",
             ),
@@ -422,7 +422,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_update.yaml 200; RM common §Version tree; TERM SupportTerminology audit_change_type 249 creation / 251 modification",
+            "ITS-REST 1.1.0 COMPOSITION API composition_update.yaml 200; RM common §Version tree; TERM SupportTerminology audit_change_type 249 creation / 251 modification",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.update_composition-persistent (master07 §update_composition)",
             ),
@@ -435,7 +435,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_update.yaml 400/404/412/422 (non-existent preceding version)",
+            "ITS-REST 1.1.0 COMPOSITION API composition_update.yaml 400/404/412/422 (non-existent preceding version)",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.update_composition-non_existent (master07 §update_composition)",
             ),
@@ -448,7 +448,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_update.yaml 422 (template_id mismatch); RM 1.2.0 ehr §COMPOSITION",
+            "ITS-REST 1.1.0 COMPOSITION API composition_update.yaml 422 (template_id mismatch); RM 1.2.0 ehr §COMPOSITION",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.update_composition-wrong_template (master07 §update_composition)",
             ),
@@ -462,7 +462,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_delete.yaml 204 + composition_get.yaml 204_because_deleted/404; master07 §delete_composition (logical delete: VERSION.lifecycle_state = openehr::523|deleted|)",
+            "ITS-REST 1.1.0 COMPOSITION API composition_delete.yaml 204 + composition_get.yaml 204_because_deleted/404; master07 §delete_composition (logical delete: VERSION.lifecycle_state = openehr::523|deleted|)",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.delete_composition-event (master07 §delete_composition)",
             ),
@@ -475,7 +475,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_delete.yaml 204 + composition_get.yaml 204_because_deleted/404; master07 §delete_composition (logical delete: VERSION.lifecycle_state = openehr::523|deleted|)",
+            "ITS-REST 1.1.0 COMPOSITION API composition_delete.yaml 204 + composition_get.yaml 204_because_deleted/404; master07 §delete_composition (logical delete: VERSION.lifecycle_state = openehr::523|deleted|)",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.delete_composition-persistent (master07 §delete_composition)",
             ),
@@ -488,7 +488,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::CompositionOps,
             JSON,
             Compare::None,
-            "ITS-REST 1.0.3 COMPOSITION API composition_delete.yaml 400/404/409/412 (non-existent COMPOSITION)",
+            "ITS-REST 1.1.0 COMPOSITION API composition_delete.yaml 400/404/409/412 (non-existent COMPOSITION)",
             ScheduleTrace::Schedule(
                 "I_EHR_COMPOSITION.delete_composition-non_existent (master07 §delete_composition)",
             ),

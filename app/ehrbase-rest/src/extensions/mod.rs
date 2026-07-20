@@ -49,18 +49,18 @@ pub mod terminology;
 // must all quote the same versions. Before this consolidation the pins were
 // copied into all three; they now read the constants below.
 //
-// The ITS-REST identity is **not** the released `1.0.3` label but the *tested*
-// development-edition contract: the server implements the contract generated
-// (`emit-rest`) from the vendored `-codegen` OAS pinned in
-// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` — openEHR
-// `specifications-ITS-REST` `master` @ `e8a093e9d6da2ae68d7cfc29cf260a7edb065f47`,
-// whose bundles self-stamp `info.version: latest` (openEHR's unreleased
-// *development* line). This is the same identity the conformance instrument
-// derives (`tools/conformance` `model::provenance::tested_its_rest`, which
-// `include_str!`s that PROVENANCE.md) and the same tree the codegen consumes,
-// so the reported version equals the one the ECC report claims. The released
-// `1.0.3` spec *text* (`docs/specs/openehr/ITS-REST/`) is a separate vendored
-// tree, the source of per-section citations only — not the tested contract.
+// The ITS-REST identity is the released `Release-1.1.0` (19-Jul-2026): the
+// server implements the contract generated (`emit-rest`) from the vendored
+// `-codegen` OAS pinned in `crates/openehr-its/vendor/rest-oas/PROVENANCE.md`
+// — openEHR `specifications-ITS-REST` tag `Release-1.1.0`
+// @ `24058992d5fa96e8dfbd855d9c133f328387fc09` (byte-identical to the earlier
+// pre-release snapshot the contract was first generated against). This is the
+// same tree the conformance instrument derives its identity from
+// (`tools/conformance` `model::provenance`, which `include_str!`s that
+// PROVENANCE.md) and the same tree the codegen consumes, so the reported
+// version equals the one the ECC report claims. The ITS-REST spec *text*
+// (`docs/specs/openehr/ITS-REST/`) is vendored at the same release tag and is
+// the source of per-section citations.
 //
 // All three identity surfaces now read these constants — the former
 // per-endpoint copies are retired: management `/info` ([`management::info`]),

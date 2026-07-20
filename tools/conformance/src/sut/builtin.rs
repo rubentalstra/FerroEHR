@@ -7,7 +7,7 @@ use crate::edition::{Edition, EditionPolicy};
 use crate::sut::descriptor::{SutDescriptor, SutKind};
 
 /// ehrbase-rs behind the root compose stack (`scripts/conformance.sh`). Edition is
-/// PINNED to development: the ladder must never mask a wire regression in
+/// PINNED to Release-1.1.0 (the newest rung): the ladder must never mask a wire regression in
 /// our own server.
 #[must_use]
 pub fn ehrbase_rs(
@@ -22,7 +22,7 @@ pub fn ehrbase_rs(
         admin_base_url: None,
         auth,
         admin_auth,
-        edition_policy: EditionPolicy::Pinned(Edition::Development),
+        edition_policy: EditionPolicy::Pinned(Edition::Release110),
         product_label: format!("ehrbase-rs {}", env!("CARGO_PKG_VERSION")),
     }
 }
@@ -77,8 +77,8 @@ mod tests {
     }
 
     #[test]
-    fn ours_is_pinned_to_development() {
+    fn ours_is_pinned_to_newest_release() {
         let ours = ehrbase_rs("http://x/v1".to_owned(), None, None);
-        assert_eq!(ours.pinned_edition(), Some(Edition::Development));
+        assert_eq!(ours.pinned_edition(), Some(Edition::Release110));
     }
 }

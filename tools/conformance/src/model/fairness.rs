@@ -3,7 +3,7 @@
 //! SUT — never edits a case.
 //!
 //! The ECC catalogue is our own instrument, authored against the pinned specs
-//! (RM 1.2.0, ITS-REST development@e8a093e) with adjudicated skips for *our*
+//! (RM 1.2.0, ITS-REST Release-1.1.0) with adjudicated skips for *our*
 //! server. Running it unmodified against upstream `EHRbase` would unfairly fail
 //! it on version skew and on our own extensions. Before any upstream result is
 //! published, every upstream failure is triaged into a committed, cited

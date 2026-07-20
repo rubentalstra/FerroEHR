@@ -15,7 +15,7 @@
 //!
 //! `list_contributions` (master08 §F) is skip-with-reason: the SM operation has
 //! no ITS-REST binding (`/ehr/{ehr_id}/contribution` is POST-only, no GET
-//! collection resource in the tested development@e8a093e OAS nor Release-1.0.3).
+//! collection resource in the tested Release-1.1.0 OAS nor Release-1.0.3).
 //! Wire ids come only from [`crate::wire::ids`]; the sole local body reader is
 //! [`version_uid_in`] (a structured `versions[i].id.value` RM field, not an `ETag`
 //! scrape), which errors rather than falling back (no silent id fallback).
@@ -52,10 +52,10 @@ const GET_BINDING: &str = "GET /ehr/{ehr_id}/contribution/{contribution_uid}";
 /// `400_CONTRIBUTION` is scoped to parse/syntax/modification-type errors
 /// only, and the spec's prose reserves plain 400 for "when no other 4xx is
 /// appropriate" — so the Release-1.0.3-era plain-400 form is the LOWER rung.
-const INVALID_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 422), (Edition::Release103, 400)];
+const INVALID_RUNGS: &[(Edition, u16)] = &[(Edition::Release110, 422), (Edition::Release103, 400)];
 /// Conflict ladder: `contribution_create` declares `409` for a change-control
 /// conflict.
-const CONFLICT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 409)];
+const CONFLICT_RUNGS: &[(Edition, u16)] = &[(Edition::Release110, 409)];
 /// The contract's declared client-error codes for a commit against an existing
 /// EHR (`404_unknown_ehr_id` excluded — the EHR exists), used where master08
 /// states only "negative" without pinning the cause to one code.
@@ -391,7 +391,7 @@ fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> C
             Binding::NoRestBinding(
                 "I_EHR_CONTRIBUTION.list_contributions (master08 §list_contributions)",
             ),
-            "master08 §list_contributions — SM operation with no ITS-REST binding (/ehr/{ehr_id}/contribution is POST-only; no GET collection resource in development@e8a093e nor Release-1.0.3)",
+            "master08 §list_contributions — SM operation with no ITS-REST binding (/ehr/{ehr_id}/contribution is POST-only; no GET collection resource in Release-1.1.0 nor Release-1.0.3)",
             Compare::None,
         ),
         run: run_skip_list,
@@ -1216,7 +1216,7 @@ fn run_get_bad_contribution<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 const LIST_SKIP: &str = "master08 §list_contributions: the SM operation I_EHR_CONTRIBUTION.list_contributions() \
     has no ITS-REST binding — /ehr/{ehr_id}/contribution is POST-only (no GET collection resource) in the \
-    tested development@e8a093e OAS and in Release-1.0.3; the list is a native-API concern, not wire-exercisable";
+    tested Release-1.1.0 OAS and in Release-1.0.3; the list is a native-API concern, not wire-exercisable";
 
 fn run_skip_list<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped(LIST_SKIP.to_owned())) })

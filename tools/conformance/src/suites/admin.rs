@@ -36,8 +36,8 @@ const JSON: &[Format] = &[Format::Json];
 
 /// Single-rung ladders: the ADMIN API is a DEVELOPMENT-status ITS-REST API
 /// (no Release-1.0.3 rung).
-const DELETED: &[(Edition, u16)] = &[(Edition::Development, 204)];
-const ABSENT: &[(Edition, u16)] = &[(Edition::Development, 404)];
+const DELETED: &[(Edition, u16)] = &[(Edition::Release110, 204)];
+const ABSENT: &[(Edition, u16)] = &[(Edition::Release110, 404)];
 
 /// Every registered ADMIN case (6 physical-delete + 8 missing SM ops).
 #[must_use]

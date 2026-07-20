@@ -53,7 +53,7 @@ use crate::testdata::fixtures;
 
 const JSON: &[Format] = &[Format::Json];
 
-const CORPUS_CITATION: &str = "AQL 1.1 + the vendored golden RESULT_SETs; ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query \
+const CORPUS_CITATION: &str = "AQL 1.1 + the vendored golden RESULT_SETs; ITS-REST 1.1.0 QUERY API §execute_ad_hoc_query \
      200_QUERY.yaml; reference: CNF query corpus expected_results";
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -563,7 +563,7 @@ fn dialect_case(
     let run = dialect_run_for(id);
     let (citation, schedule) = match kind {
         DialectKind::Timewindow => (
-            "AQL 1.1 removed TIMEWINDOW (QUERY master00-amendment_record SPECQUERY-20); ITS-REST 1.0.3 \
+            "AQL 1.1 removed TIMEWINDOW (QUERY master00-amendment_record SPECQUERY-20); ITS-REST 1.1.0 \
              QUERY API §execute_ad_hoc_query 400_QUERY.yaml — invalid AQL must be rejected",
             "schedule stub (master11 is TBD); TIMEWINDOW golden, spec-supersedes-corpus (adjudications/ecc-own.toml)",
         ),

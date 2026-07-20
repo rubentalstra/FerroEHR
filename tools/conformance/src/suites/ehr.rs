@@ -13,14 +13,14 @@
 //! literals — negative `If-Match` ids are built from an OBSERVED id via
 //! [`support::nonexistent_version_like`]. Positive
 //! `EHR_STATUS` payloads are authored at the RM 1.2.0 canonical shape (the
-//! pinned development edition).
+//! pinned Release-1.1.0).
 //
 // NOTE: the RM wire version ladder is only partially met:
 // EHR_STATUS request payloads are authored at RM 1.2.0 (PARTY_SELF subject,
 // RM ehr master04 §EHR Status). A per-edition request-payload provider
 // (RM 1.0.2 minimum, master03-overview §API Conformance) belongs to the
 // wire adapter, which does not yet expose one; our pinned CI runs
-// the development edition, so this is exercised faithfully today.
+// Release-1.1.0, so this is exercised faithfully today.
 
 use serde_json::{Value, json};
 use uuid::Uuid;
@@ -57,7 +57,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "EHR existence check — existing EHR id",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.0.3 EHR API ehr_get.yaml 200; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.1.0 EHR API ehr_get.yaml 200; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule("I_EHR_SERVICE.has_ehr-existing_ehr_id (master06 §has_ehr)"),
             Binding::Rest("PUT /ehr/{ehr_id}; GET /ehr/{ehr_id}"),
             run_has_ehr_existing_ehr_id,
@@ -67,7 +67,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "EHR existence check — existing subject id",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.0.3 EHR API ehr_get_by_subject.yaml 200; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.1.0 EHR API ehr_get_by_subject.yaml 200; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.has_ehr-existing_subject_id (master06 §has_ehr)",
             ),
@@ -79,7 +79,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "EHR existence check — non existing EHR id",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.0.3 EHR API ehr_get.yaml 404; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.1.0 EHR API ehr_get.yaml 404; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.has_ehr-non_existing_ehr_id (master06 §has_ehr)",
             ),
@@ -91,7 +91,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "EHR existence check — non existing subject id",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.0.3 EHR API ehr_get_by_subject.yaml 404; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §has_ehr; ITS-REST 1.1.0 EHR API ehr_get_by_subject.yaml 404; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.has_ehr-non_existing_subject_id (master06 §has_ehr)",
             ),
@@ -104,7 +104,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Create EHR — main (valid data-set matrix)",
             Capability::EhrOperations,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §create_ehr + §Test Data Sets class 1.a; ITS-REST 1.0.3 EHR API ehr_create.yaml/ehr_create_with_id.yaml 201; RM 1.2.0 ehr §EHR_STATUS",
+            "CNF master06-func_tc_ehr §create_ehr + §Test Data Sets class 1.a; ITS-REST 1.1.0 EHR API ehr_create.yaml/ehr_create_with_id.yaml 201; RM 1.2.0 ehr §EHR_STATUS",
             ScheduleTrace::Schedule("I_EHR_SERVICE.create_ehr-main (master06 §create_ehr)"),
             Binding::Rest("POST /ehr; PUT /ehr/{ehr_id}"),
             run_create_ehr_main,
@@ -114,7 +114,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Create EHR — same EHR twice",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §create_ehr; ITS-REST 1.0.3 EHR API ehr_create_with_id.yaml 409; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §create_ehr; ITS-REST 1.1.0 EHR API ehr_create_with_id.yaml 409; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.create_ehr-same_ehr_twice (master06 §create_ehr)",
             ),
@@ -126,7 +126,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Create EHR — two EHRs same patient",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §create_ehr; ITS-REST 1.0.3 EHR API ehr_create.yaml 409; RM 1.2.0 ehr §EHR (one EHR per subject)",
+            "CNF master06-func_tc_ehr §create_ehr; ITS-REST 1.1.0 EHR API ehr_create.yaml 409; RM 1.2.0 ehr §EHR (one EHR per subject)",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.create_ehr-two_ehrs_same_patient (master06 §create_ehr)",
             ),
@@ -139,7 +139,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get EHR — existing EHR by EHR id",
             Capability::EhrOperations,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.0.3 EHR API ehr_get.yaml 200; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.1.0 EHR API ehr_get.yaml 200; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id (master06 §get_ehr)",
             ),
@@ -151,7 +151,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get EHR — existing EHR by subject id",
             Capability::EhrOperations,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.0.3 EHR API ehr_get_by_subject.yaml 200; RM 1.2.0 ehr §EHR_STATUS subject identity",
+            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.1.0 EHR API ehr_get_by_subject.yaml 200; RM 1.2.0 ehr §EHR_STATUS subject identity",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id (master06 §get_ehr)",
             ),
@@ -163,7 +163,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get EHR — get EHR by invalid EHR id",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.0.3 EHR API ehr_get.yaml 404; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.1.0 EHR API ehr_get.yaml 404; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id (master06 §get_ehr)",
             ),
@@ -175,7 +175,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get EHR — get EHR by invalid subject id",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.0.3 EHR API ehr_get_by_subject.yaml 404; RM 1.2.0 ehr §EHR",
+            "CNF master06-func_tc_ehr §get_ehr; ITS-REST 1.1.0 EHR API ehr_get_by_subject.yaml 404; RM 1.2.0 ehr §EHR",
             ScheduleTrace::Schedule(
                 "I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id (master06 §get_ehr)",
             ),
@@ -188,7 +188,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get EHR_STATUS — get by EHR id",
             Capability::EhrStatus,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §get_ehr_status; ITS-REST 1.0.3 EHR_STATUS API ehr_status_get.yaml 200; RM 1.2.0 ehr §EHR_STATUS (subject/is_queryable/is_modifiable)",
+            "CNF master06-func_tc_ehr §get_ehr_status; ITS-REST 1.1.0 EHR_STATUS API ehr_status_get.yaml 200; RM 1.2.0 ehr §EHR_STATUS (subject/is_queryable/is_modifiable)",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.get_ehr_status-get_by_ehr_id (master06 §get_ehr_status)",
             ),
@@ -200,7 +200,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get EHR_STATUS — bad EHR",
             Capability::EhrStatus,
             Compare::None,
-            "CNF master06-func_tc_ehr §get_ehr_status; ITS-REST 1.0.3 EHR_STATUS API ehr_status_get.yaml 404; RM 1.2.0 ehr §EHR_STATUS",
+            "CNF master06-func_tc_ehr §get_ehr_status; ITS-REST 1.1.0 EHR_STATUS API ehr_status_get.yaml 404; RM 1.2.0 ehr §EHR_STATUS",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.get_ehr_status-bad_ehr (master06 §get_ehr_status)",
             ),
@@ -213,7 +213,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Set EHR_STATUS is_queryable — existing EHR",
             Capability::EhrStatus,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §set_ehr_queryable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_queryable",
+            "CNF master06-func_tc_ehr §set_ehr_queryable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_queryable",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.set_ehr_queryable-existing_ehr (master06 §set_ehr_queryable)",
             ),
@@ -225,7 +225,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Set EHR_STATUS is_queryable — bad EHR",
             Capability::EhrStatus,
             Compare::None,
-            "CNF master06-func_tc_ehr §set_ehr_queryable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
+            "CNF master06-func_tc_ehr §set_ehr_queryable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.set_ehr_queryable-bad_ehr (master06 §set_ehr_queryable)",
             ),
@@ -237,7 +237,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Set EHR_STATUS is_modifiable — existing EHR",
             Capability::EhrStatus,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §set_ehr_modifiable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_modifiable",
+            "CNF master06-func_tc_ehr §set_ehr_modifiable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_modifiable",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.set_ehr_modifiable-existing_ehr (master06 §set_ehr_modifiable)",
             ),
@@ -249,7 +249,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Set EHR_STATUS is_modifiable — bad EHR",
             Capability::EhrStatus,
             Compare::None,
-            "CNF master06-func_tc_ehr §set_ehr_modifiable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
+            "CNF master06-func_tc_ehr §set_ehr_modifiable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.set_ehr_modifiable-bad_ehr (master06 §set_ehr_modifiable)",
             ),
@@ -261,7 +261,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Clear EHR_STATUS is_queryable — existing EHR",
             Capability::EhrStatus,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §clear_ehr_queryable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_queryable",
+            "CNF master06-func_tc_ehr §clear_ehr_queryable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_queryable",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.clear_ehr_queryable-existing_ehr (master06 §clear_ehr_queryable)",
             ),
@@ -273,7 +273,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Clear EHR_STATUS is_queryable — bad EHR",
             Capability::EhrStatus,
             Compare::None,
-            "CNF master06-func_tc_ehr §clear_ehr_queryable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
+            "CNF master06-func_tc_ehr §clear_ehr_queryable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.clear_ehr_queryable-bad_ehr (master06 §clear_ehr_queryable)",
             ),
@@ -285,7 +285,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Clear EHR_STATUS is_modifiable — existing EHR",
             Capability::EhrStatus,
             Compare::Superset,
-            "CNF master06-func_tc_ehr §clear_ehr_modifiable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_modifiable",
+            "CNF master06-func_tc_ehr §clear_ehr_modifiable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 200; RM 1.2.0 ehr §EHR_STATUS.is_modifiable",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.clear_ehr_modifiable-existing_ehr (master06 §clear_ehr_modifiable)",
             ),
@@ -297,7 +297,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Clear EHR_STATUS is_modifiable — bad EHR",
             Capability::EhrStatus,
             Compare::None,
-            "CNF master06-func_tc_ehr §clear_ehr_modifiable; ITS-REST 1.0.3 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
+            "CNF master06-func_tc_ehr §clear_ehr_modifiable; ITS-REST 1.1.0 EHR_STATUS API ehr_status_update.yaml 4xx; RM 1.2.0 ehr §EHR_STATUS",
             ScheduleTrace::Schedule(
                 "I_EHR_STATUS.clear_ehr_modifiable-bad_ehr (master06 §clear_ehr_modifiable)",
             ),
@@ -310,7 +310,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Create EHR — reject invalid EHR_STATUS data sets",
             Capability::EhrOperations,
             Compare::None,
-            "CNF master06-func_tc_ehr §Test Data Sets class 2 (invalid EHR_STATUS shapes); ITS-REST 1.0.3 EHR API ehr_create.yaml 400/422; RM ehr master04 §EHR Status + common §PARTY_SELF",
+            "CNF master06-func_tc_ehr §Test Data Sets class 2 (invalid EHR_STATUS shapes); ITS-REST 1.1.0 EHR API ehr_create.yaml 400/422; RM ehr master04 §EHR Status + common §PARTY_SELF",
             ScheduleTrace::EccOriginal(
                 "data-set class 2 (master06 §Test Data Sets, invalid EHR_STATUS shapes); no single master06 test case enumerates class 2",
             ),
@@ -322,7 +322,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Create anonymous (subject-less) EHR",
             Capability::AnonymousEhrs,
             Compare::Superset,
-            "CNF master03-profiles §Non-Functional (Anonymous EHRs — CORE+STANDARD) + master06 §Test Data Sets class 1.b (default EHR_STATUS); ITS-REST 1.0.3 EHR API ehr_create.yaml (no body); RM ehr master04 §EHR Status, common §PARTY_SELF",
+            "CNF master03-profiles §Non-Functional (Anonymous EHRs — CORE+STANDARD) + master06 §Test Data Sets class 1.b (default EHR_STATUS); ITS-REST 1.1.0 EHR API ehr_create.yaml (no body); RM ehr master04 §EHR Status, common §PARTY_SELF",
             ScheduleTrace::EccOriginal(
                 "extension: Anonymous EHRs non-functional capability (master03-profiles §Non-Functional); doubles as class 1.b default-EHR_STATUS coverage; no master06 functional test case",
             ),

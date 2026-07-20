@@ -16,7 +16,7 @@
 //! and coded values outside the value set). Same pairing the `openehr-flat`
 //! validator's own corpus tests use (`openehr-flat/tests/validation.rs`).
 //!
-//! Spec: openEHR ITS-REST 1.0.3 —
+//! Spec: openEHR ITS-REST 1.1.0 —
 //! `docs/specs/openehr/ITS-REST/specifications/responses/422_COMPOSITION.yaml`
 //! ("content could be converted to a COMPOSITION, but there are semantic
 //! validation errors, such as the underlying template is not known or is not

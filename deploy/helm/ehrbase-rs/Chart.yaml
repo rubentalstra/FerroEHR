@@ -1,8 +1,8 @@
 apiVersion: v2
 name: ehrbase-rs
 description: >-
-  Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.0.3 + AQL
-  1.1). A single static binary deployed with the ADR-013 security posture:
+  Pure-Rust, openEHR-conformant clinical data repository (ITS-REST 1.1.0 + AQL
+  1.1). A single static binary deployed with a hardened-by-default security posture:
   runs as a non-root, read-only-rootfs, default-deny-ingress workload that
   connects to an EXTERNAL PostgreSQL 18 as an unprivileged app role (migrations
   are run by a separate migrator role — see docs/enterprise/deployment.md).

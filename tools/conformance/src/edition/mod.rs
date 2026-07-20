@@ -1,7 +1,7 @@
 //! The spec-edition/version ladder (owner ruling 2026-07-13).
 //!
 //! Different CDRs speak different editions of the same specifications: our
-//! server implements the ITS-REST *development* edition (weak `W/"…"` `ETags`,
+//! server implements ITS-REST Release-1.1.0 (weak `W/"…"` `ETags`,
 //! RM 1.2.0 wire); upstream `EHRbase` speaks Release-1.0.3-era forms and an RM
 //! 1.1.0-era wire. A single-edition instrument would fail a foreign SUT on
 //! edition deltas rather than defects. So every assertion separates its
@@ -23,7 +23,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 
 /// A spec edition rung, newest first. `Ord`: a *later* edition compares
-/// greater ([`Edition::Development`] > [`Edition::Release103`]).
+/// greater ([`Edition::Release110`] > [`Edition::Release103`]).
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, serde::Deserialize,
 )]
@@ -32,29 +32,33 @@ pub enum Edition {
     /// ITS-REST Release 1.0.3-era forms (bare `"…"` `ETags`, RM 1.1.0-era
     /// wire shapes) — the older rung.
     Release103,
-    /// The ITS-REST development edition (the vendored `-codegen` OAS line:
-    /// weak `W/"…"` `ETags`, RM 1.2.0 wire) — the newest rung, tried first.
-    Development,
+    /// ITS-REST Release 1.1.0 (released 19-Jul-2026; the vendored `-codegen`
+    /// OAS line: weak `W/"…"` `ETags`, RM 1.2.0 wire) — the newest rung,
+    /// tried first. Formerly labelled `development`: the pre-release
+    /// snapshot this instrument was built against became Release 1.1.0
+    /// verbatim (the generated contract is byte-identical at the tag).
+    Release110,
 }
 
 impl Edition {
     /// All rungs, newest first (the ladder order).
-    pub const LADDER: [Edition; 2] = [Edition::Development, Edition::Release103];
+    pub const LADDER: [Edition; 2] = [Edition::Release110, Edition::Release103];
 
     /// The human label used in reports.
     #[must_use]
     pub const fn label(self) -> &'static str {
         match self {
-            Edition::Development => "development",
+            Edition::Release110 => "release-1.1.0",
             Edition::Release103 => "release-1.0.3",
         }
     }
 
-    /// Parse a CLI/config label.
+    /// Parse a CLI/config label (`development`/`dev` stay accepted as
+    /// aliases for the rung's pre-release identity).
     #[must_use]
     pub fn parse(s: &str) -> Option<Edition> {
         match s {
-            "development" | "dev" => Some(Edition::Development),
+            "release-1.1.0" | "1.1.0" | "development" | "dev" => Some(Edition::Release110),
             "release-1.0.3" | "1.0.3" => Some(Edition::Release103),
             _ => None,
         }
@@ -66,7 +70,7 @@ impl Edition {
 #[serde(rename_all = "kebab-case")]
 pub enum EditionPolicy {
     /// Only the pinned rung is accepted — a lower-rung match is a FAILURE.
-    /// Our own CI runs pin [`Edition::Development`] so the ladder can never
+    /// Our own CI runs pin [`Edition::Release110`] so the ladder can never
     /// mask a regression in ehrbase-rs (the zero-drift gate compares at the
     /// pinned level).
     Pinned(Edition),
@@ -109,10 +113,10 @@ pub struct EditionRecorder {
 
 impl EditionRecorder {
     /// Record an observation at `edition`. Only sub-newest rungs are worth
-    /// noting; recording [`Edition::Development`] is a no-op (the newest
+    /// noting; recording [`Edition::Release110`] is a no-op (the newest
     /// rung is the expected form, not a finding).
     pub fn note(&self, edition: Edition, what: impl Into<String>) {
-        if edition == Edition::Development {
+        if edition == Edition::Release110 {
             return;
         }
         if let Ok(mut findings) = self.findings.lock() {
@@ -154,25 +158,22 @@ mod tests {
 
     #[test]
     fn ladder_orders_newest_first_and_ord_matches() {
-        assert!(Edition::Development > Edition::Release103);
-        assert_eq!(Edition::LADDER[0], Edition::Development);
+        assert!(Edition::Release110 > Edition::Release103);
+        assert_eq!(Edition::LADDER[0], Edition::Release110);
     }
 
     #[test]
     fn pinned_policy_rejects_lower_rungs() {
-        let pinned = EditionPolicy::Pinned(Edition::Development);
-        assert!(pinned.accept(Edition::Development).is_ok());
-        assert_eq!(
-            pinned.accept(Edition::Release103),
-            Err(Edition::Development)
-        );
+        let pinned = EditionPolicy::Pinned(Edition::Release110);
+        assert!(pinned.accept(Edition::Release110).is_ok());
+        assert_eq!(pinned.accept(Edition::Release103), Err(Edition::Release110));
         assert!(EditionPolicy::Auto.accept(Edition::Release103).is_ok());
     }
 
     #[test]
     fn recorder_notes_only_sub_newest_and_reports_floor() {
         let rec = EditionRecorder::default();
-        rec.note(Edition::Development, "expected form");
+        rec.note(Edition::Release110, "expected form");
         rec.note(Edition::Release103, "bare ETag");
         assert_eq!(rec.floor(), Some(Edition::Release103));
         let drained = rec.take();

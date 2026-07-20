@@ -55,7 +55,7 @@ const BASE_OPT_FILE: &str = "minimal/minimal_evaluation.opt";
 /// flips the outcome, so 6 of the 9 are driven).
 const SCHEDULE_ROWS: u32 = 9;
 
-const CIT: &str = "RM 1.2.0 composition §COMPOSITION.content/context (content List 0..1, context 0..1, Category_validity only); AM aom14 §C_ATTRIBUTE cardinality/existence; ITS-REST 1.0.3 composition_create (201 / 422 validation)";
+const CIT: &str = "RM 1.2.0 composition §COMPOSITION.content/context (content List 0..1, context 0..1, Category_validity only); AM aom14 §C_ATTRIBUTE cardinality/existence; ITS-REST 1.1.0 composition_create (201 / 422 validation)";
 
 /// Whether a content count `n` satisfies a cardinality interval.
 fn content_ok(card: Card, count: usize) -> bool {

@@ -1,6 +1,6 @@
 ehrbase-rs {{ .Chart.AppVersion }} has been deployed as release "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
 
-A pure-Rust openEHR CDR (ITS-REST 1.0.3 + AQL 1.1). See docs/enterprise/deployment.md.
+A pure-Rust openEHR CDR (ITS-REST 1.1.0 + AQL 1.1). See docs/enterprise/deployment.md.
 
 Configuration: one ehrbase.toml, rendered from .Values.config into a ConfigMap
 and mounted at /etc/ehrbase/ehrbase.toml. Secrets are injected as EHRBASE_* env.

@@ -2,21 +2,19 @@
 //!
 //! The framework must claim exactly the ITS-REST contract it actually tests.
 //! The SUT implements the contract generated (`emit-rest`) from the
-//! vendored `-codegen` OAS tree at `crates/openehr-its/vendor/rest-oas/`, whose
-//! `PROVENANCE.md` pins openEHR `specifications-ITS-REST` **master**
-//! (`e8a093e…`, whose bundles self-stamp `info.version: latest` — openEHR's
-//! unreleased *development* line). The separately vendored spec **text** at
-//! `docs/specs/openehr/ITS-REST/` is pinned to the last released tag
-//! (`Release-1.0.3`, `4aec22d…`) and is the source of the per-case `§`-section
-//! citations, not the tested contract.
+//! vendored `-codegen` OAS tree at `crates/openehr-its/vendor/rest-oas/`;
+//! the separately vendored spec **text** at `docs/specs/openehr/ITS-REST/`
+//! is the source of the per-case `§`-section citations. Both trees are
+//! pinned to the SAME upstream commit — since 2026-07-20 the released tag
+//! `Release-1.1.0` (published upstream 19-Jul-2026).
 //!
-//! **Owner ruling (D1, `docs/blueprint/07-cnf.md`):** the tested ITS-REST
-//! identity is the vendored `-codegen` tree. So [`tested_its_rest`] derives the
-//! `SpecVersions.its_rest` string from that tree's `PROVENANCE.md` at build time
-//! (`include_str!`) rather than a hand-asserted `"1.0.3"` literal — the report
-//! then states `development@<commit>`, exactly what runs. The reconciliation
-//! guard ([`tests`]) fails with a triage message if the two vendored trees ever
-//! drift from the sanctioned "development OAS + released spec-text" arrangement.
+//! Owner ruling: the tested ITS-REST identity is DERIVED from the vendored
+//! `-codegen` tree's `PROVENANCE.md` at build time (`include_str!`), never a
+//! hand-asserted version literal. A pin at a released `Release-X.Y.Z` tag
+//! yields that tag as the identity; a pre-release pin yields
+//! `development@<commit>`. The reconciliation guard ([`tests`]) fails with a
+//! triage message if the two vendored trees ever drift beyond the sanctioned
+//! "released spec-text lagging a development OAS" arrangement.
 
 use std::sync::LazyLock;
 
@@ -68,13 +66,18 @@ pub fn parse(text: &str) -> Option<Provenance> {
     let repo = text
         .contains("specifications-ITS-REST")
         .then(|| "openEHR/specifications-ITS-REST".to_owned())?;
-    let reference = if text.contains("Release-1.0.3") {
-        Some("Release-1.0.3".to_owned())
-    } else if text.contains("(master)") || text.contains("master") {
-        Some("master".to_owned())
-    } else {
-        None
-    };
+    // A pinned release tag (`Release-X.Y.Z`) wins; otherwise a branch name.
+    let reference = text
+        .split(|c: char| c.is_whitespace() || "()`,;".contains(c))
+        .find(|tok| {
+            tok.strip_prefix("Release-").is_some_and(|v| {
+                v.split('.').count() == 3 && v.split('.').all(|p| p.chars().all(char::is_numeric))
+            })
+        })
+        .map(str::to_owned)
+        .or_else(|| {
+            (text.contains("(master)") || text.contains("master")).then(|| "master".to_owned())
+        });
     Some(Provenance {
         repo,
         commit,
@@ -100,18 +103,20 @@ pub fn docs_its_rest() -> Option<&'static Provenance> {
 }
 
 /// The tested ITS-REST identity string for `SpecVersions.its_rest` and the
-/// report header — derived from the vendored `-codegen` OAS provenance, never a
-/// hand-asserted literal. openEHR publishes `master` as its unreleased
-/// *development* line (the bundles self-stamp `info.version: latest`), so the
-/// identity is `development@<short-commit>`. Falls back to `development@unknown`
-/// only if the vendored provenance is unparseable — a state the guard test fails
-/// on before it can reach a run.
+/// report header — derived from the vendored `-codegen` OAS provenance, never
+/// a hand-asserted literal. A pin at a released tag yields that tag
+/// (`Release-1.1.0`); a pre-release pin yields `development@<short-commit>`.
+/// Falls back to `development@unknown` only if the vendored provenance is
+/// unparseable — a state the guard test fails on before it can reach a run.
 #[must_use]
 pub fn tested_its_rest() -> &'static str {
     static ID: LazyLock<String> = LazyLock::new(|| {
         rest_oas().map_or_else(
             || "development@unknown".to_owned(),
-            |p| format!("development@{}", p.short_commit()),
+            |p| match p.reference.as_deref() {
+                Some(tag) if tag.starts_with("Release-") => tag.to_owned(),
+                _ => format!("development@{}", p.short_commit()),
+            },
         )
     });
     &ID
@@ -140,21 +145,24 @@ mod tests {
 
     #[test]
     fn tested_identity_is_derived_from_provenance_not_a_literal() {
-        // The report must claim exactly the pinned OAS commit. The identity
-        // must be the derived `development@<commit>`, never a bare `1.0.3`.
+        // The report must claim exactly what the vendored pin IS: the release
+        // tag when pinned at one, else `development@<commit>` — never a bare
+        // hand-asserted version number.
         let id = tested_its_rest();
         assert_ne!(id, "1.0.3", "its_rest must not be a hand-asserted literal");
-        assert!(
-            id.starts_with("development@"),
-            "tested identity is the unreleased development line: {id}"
-        );
-        let short = rest_oas()
-            .expect("rest-oas/PROVENANCE.md must parse")
-            .short_commit();
-        assert!(
-            id.ends_with(short),
-            "identity {id} must carry the vendored OAS commit"
-        );
+        assert_ne!(id, "1.1.0", "its_rest must not be a hand-asserted literal");
+        let oas = rest_oas().expect("rest-oas/PROVENANCE.md must parse");
+        match oas.reference.as_deref() {
+            Some(tag) if tag.starts_with("Release-") => {
+                assert_eq!(id, tag, "a release-tag pin yields the tag as identity");
+            }
+            _ => {
+                assert!(
+                    id.starts_with("development@") && id.ends_with(oas.short_commit()),
+                    "a pre-release pin yields development@<commit>: {id}"
+                );
+            }
+        }
     }
 
     /// The reconciliation guard the owner asked for: the two vendored
@@ -175,15 +183,16 @@ mod tests {
         if oas.commit == docs.commit {
             return; // fully reconciled: both trees at one ref (the ideal end state).
         }
-        assert_eq!(
-            docs.reference.as_deref(),
-            Some("Release-1.0.3"),
+        assert!(
+            docs.reference
+                .as_deref()
+                .is_some_and(|r| r.starts_with("Release-")),
             "ITS-REST vendoring drift (triage): the tested -codegen OAS is pinned to \
-             {oas_ref}@{oas_short} (owner ruling D1) but the spec-text tree is at \
-             {docs_ref:?}@{docs_short}, which is NOT a released tag. The only sanctioned \
-             divergence is a released spec-text tree (Release-1.0.3) lagging the \
-             development OAS. Reconcile by re-vendoring both to one ref \
-             (scripts/vendor-spec-docs.sh) or update this guard.",
+             {oas_ref}@{oas_short} (owner ruling: the OAS tree is the tested identity) \
+             but the spec-text tree is at {docs_ref:?}@{docs_short}, which is NOT a \
+             released tag. The only sanctioned divergence is a released spec-text tree \
+             (Release-X.Y.Z) lagging a development OAS. Reconcile by re-vendoring both \
+             to one ref (scripts/vendor-spec-docs.sh) or update this guard.",
             oas_ref = oas.reference.as_deref().unwrap_or("?"),
             oas_short = oas.short_commit(),
             docs_ref = docs.reference,

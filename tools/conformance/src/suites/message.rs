@@ -5,7 +5,7 @@
 //! schedule defect: `I_EHR_EXTRACT.export_ehr()` appears **twice** (an authoring
 //! duplicate). So every case is [`ScheduleTrace::EccOriginal`], stub-derived
 //! (owner ruling 2026-07-13). openEHR Messaging is an OPTIONS-profile capability
-//! with **no ITS-REST 1.0.3 binding**: EHR Extract / TDD are realized on the
+//! with **no ITS-REST 1.1.0 binding**: EHR Extract / TDD are realized on the
 //! `ehrbase-sm` native API only (`I_EHR_EXTRACT_SERVICE` / `I_TDD_SERVICE`), and
 //! there is no REST route in `ehrbase-rest` that reaches export/import/TDD. The
 //! ECC drives SUTs over HTTP only, so no part of Messaging is wire-exercisable.

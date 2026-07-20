@@ -10,9 +10,8 @@
 //! The spec-version fields are **not** local literals: they read the single
 //! [`provenance`](crate::telemetry::provenance) source shared with the System
 //! Options manifest (`OPTIONS /`) and `/status`, so all three identity surfaces
-//! quote one fact. In particular `its_rest` is the tested development-edition
-//! identity (`development@e8a093e`), matching the conformance report — not the
-//! retired `1.0.3` label. See that module for the derivation.
+//! quote one fact. In particular `its_rest` is the released ITS-REST contract
+//! version (`Release-1.1.0`). See that module for the derivation.
 
 use serde::Serialize;
 
@@ -107,9 +106,9 @@ mod tests {
         let info = BuildInfo::current();
         assert_eq!(info.name, "ehrbase");
         assert_eq!(info.spec.rm, "1.2.0");
-        // The tested development-edition identity (matches the ECC report), not
-        // the retired `1.0.3` label — sourced from the shared provenance.
-        assert_eq!(info.spec.its_rest, "development@e8a093e");
+        // The released ITS-REST contract version (matches the ECC report),
+        // sourced from the shared provenance constant.
+        assert_eq!(info.spec.its_rest, "Release-1.1.0");
         assert_eq!(info.spec.its_rest, provenance::ITS_REST);
         assert_eq!(info.postgres_target, "18.4+");
         // build_date parses to a real timestamp (not the "unknown" fallback) in

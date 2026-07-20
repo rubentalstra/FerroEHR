@@ -324,7 +324,7 @@ The six operations share one pipeline behind `rest:api/query/dispatch.rs::run`:
   `tokio::time::timeout`; overrun → tagged `SmError` rendered `408`
   (`responses/408_Query.yaml`). Default off.
 - **assemble** (`app:service/query/result_set.rs`): `result_set_json` builds the
-  ITS-REST 1.0.3 `RESULT_SET` (columns + rows + `meta`); `substitute_params` produces
+  ITS-REST 1.1.0 `RESULT_SET` (columns + rows + `meta`); `substitute_params` produces
   `meta._executed_aql` (the parameter-substituted text). CPU only.
 - **metrics**: `aql_query_duration_seconds{phase=plan|execute}`,
   `aql_queries_total{outcome}` exactly once per call.
@@ -1135,8 +1135,8 @@ identity + the last machine-computed ECC verdict — the manifest must not out-c
 chain: `overview::status::status` (`src/overview/status.rs`)
 sql: 0 round trips
 notes: outside auth/overload; body `{status, server_version, openehr_rest_api_version,
-timestamp}` — the ITS-REST version is the shared provenance identity, not the retired
-1.0.3 label. No openEHR spec governs a status endpoint — our own surface. This is also
+timestamp}` — the ITS-REST version is the shared provenance identity (the released
+Release-1.1.0). No openEHR spec governs a status endpoint — our own surface. This is also
 the URL the container `ehrbase healthcheck` subcommand probes.
 
 ### GET /health · GET /ehrbase/rest/status/health

@@ -1,4 +1,4 @@
-//! **ITS-REST** — the openEHR REST API contract (ITS-REST 1.0.3+).
+//! **ITS-REST** — the openEHR REST API contract (ITS-REST 1.1.0).
 //!
 //! The transport DTOs, a server trait per API group, and a route table are
 //! **generated** by `openehr-codegen`'s `emit-rest` target into [`generated`],

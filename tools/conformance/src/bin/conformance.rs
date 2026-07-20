@@ -76,8 +76,8 @@ struct RunArgs {
     #[arg(long)]
     base_url: Option<String>,
     /// The target class: a built-in first-class target or a bring-your-own
-    /// endpoint. `ehrbase-rs` pins the development edition; the others default
-    /// to the auto ladder.
+    /// endpoint. `ehrbase-rs` pins the newest released edition (Release-1.1.0);
+    /// the others default to the auto ladder.
     #[arg(long, value_enum, default_value_t = SutArg::EhrbaseRs)]
     sut: SutArg,
     /// Override the output/lookup name (defaults: the built-in name, or `byo`).
@@ -98,7 +98,7 @@ struct RunArgs {
     #[arg(long)]
     admin_base_url: Option<String>,
     /// The spec-edition policy: `auto` (ladder), `development`, or `1.0.3`.
-    /// Unset keeps the target's default (pinned development for ehrbase-rs).
+    /// Unset keeps the target's default (pinned to Release-1.1.0 for ehrbase-rs).
     #[arg(long, value_enum)]
     edition: Option<EditionArg>,
     /// Only run cases whose id contains this substring.
@@ -215,7 +215,7 @@ impl EditionArg {
     fn policy(self) -> EditionPolicy {
         match self {
             EditionArg::Auto => EditionPolicy::Auto,
-            EditionArg::Development => EditionPolicy::Pinned(Edition::Development),
+            EditionArg::Development => EditionPolicy::Pinned(Edition::Release110),
             EditionArg::Release103 => EditionPolicy::Pinned(Edition::Release103),
         }
     }

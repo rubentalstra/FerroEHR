@@ -27,7 +27,7 @@
 //!
 //! The schedule also names the *violated constraint* per reject row
 //! (`COMPOSITION.content: cardinality.lower`, "Class not allowed", …). ITS-REST
-//! 1.0.3 does not standardize a machine-readable validation-error body naming the
+//! 1.1.0 does not standardize a machine-readable validation-error body naming the
 //! violated path, so [`check`] asserts only the (edition-laddered) accept/reject
 //! verdict — the spec-determined part — and does not scrape the error body.
 //! Boundary: were the SUT to emit a structured `openEHR-ERROR` body, the
@@ -209,7 +209,7 @@ fn check(
         Expected::Rejected => assert::status_ladder(
             ctx,
             resp,
-            &[(Edition::Development, 422), (Edition::Release103, 400)],
+            &[(Edition::Release110, 422), (Edition::Release103, 400)],
             &format!("{row}: reject (ITS-REST composition_create validation)"),
         )
         .map(|_| ()),
