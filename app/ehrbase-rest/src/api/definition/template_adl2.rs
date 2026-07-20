@@ -26,13 +26,25 @@ use openehr_its::rest::generated::definition::{
     DefinitionTemplateAdl2VersionGetParams,
 };
 use openehr_its::rest::runtime::ApiError;
+use openehr_rm::prelude::Composition;
 
 use crate::api::RequestParts;
+use crate::negotiate::WireFormat;
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
 
 use super::dispatch::list_filter_and_page;
+
+/// The four `Accept_LOCATABLE` representations of a generated example
+/// COMPOSITION: canonical JSON/XML + FLAT/STRUCTURED (`200_Template_example_
+/// retrieved.yaml` + `Accept_LOCATABLE.yaml`).
+const EXAMPLE_FORMATS: &[WireFormat] = &[
+    WireFormat::CanonicalJson,
+    WireFormat::CanonicalXml,
+    WireFormat::Flat,
+    WireFormat::Structured,
+];
 
 /// The representation a `GET …/adl2/{template_id}[/{version}]` request resolves
 /// to, per its `Accept` header (`parameters/header/Accept_Template_adl2.yaml`).
@@ -131,19 +143,61 @@ pub(super) async fn version_get(
     render(state, h, p.template_id, Some(p.version)).await
 }
 
-/// `GET …/definition/template/adl2/{template_id}/example` — `501`.
-///
-/// TODO: generate a spec-valid example instance (COMPOSITION/…) from the ADL2
-/// operational template — the same generator issue #94 builds by walking a
-/// `WebTemplate`; it needs an `am24`-OPT → `WebTemplate` builder the tree does not
-/// have yet, so this is not a bounded add here. ADL2 is OPTIONAL for CNF.
-pub(super) fn example_get(parts: &RequestParts) -> Result<Response, RestError> {
-    params::build::<DefinitionTemplateAdl2ExampleGetParams>(
+/// `GET …/definition/template/adl2/{template_id}/example` — a generated example
+/// COMPOSITION from the ADL2 template, negotiated across the four
+/// `Accept_LOCATABLE` forms (canonical JSON/XML + FLAT/STRUCTURED), exactly as
+/// the ADL 1.4 example endpoint (`200_Template_example_retrieved.yaml` +
+/// `Accept_LOCATABLE.yaml`). `type` ∈ {input, output} (default input),
+/// `detail_level` ∈ {required, medium, complete} (default required).
+pub(super) async fn example_get(
+    state: &AppState,
+    parts: &RequestParts,
+) -> Result<Response, RestError> {
+    let h = &parts.headers;
+    let p = params::build::<DefinitionTemplateAdl2ExampleGetParams>(
         &parts.path,
         parts.query.as_deref(),
-        &parts.headers,
+        h,
     )?;
-    Err(RestError(ApiError::NotImplemented))
+    // The backend compiles the stored ADL2 template to a WebTemplate and
+    // generates the canonical example COMPOSITION (an unknown template → 404; an
+    // invalid `type`/`detail_level` → 400; an uncompilable template → 422).
+    let comp = state
+        .backend()
+        .template_adl2_example(p.template_id.clone(), p.detail_level, p.r#type)
+        .await?;
+    // Negotiate the four representations the dev-OAS `Accept_LOCATABLE`
+    // enumerates (json / xml / wt.flat+json / wt.structured+json). Any other
+    // media type is a `406`.
+    match negotiate::resolve_accept(h, EXAMPLE_FORMATS, WireFormat::CanonicalJson) {
+        Some(WireFormat::Flat) => {
+            // The ADL2 template's WebTemplate is not in the ADL 1.4 store, so it
+            // is resolved via the am24 front end (not the generic resolver).
+            let wt = state.backend().web_template_adl2(&p.template_id).await?;
+            crate::formats::dispatch::composition_flat_response_with(StatusCode::OK, &comp, &wt)
+        }
+        Some(WireFormat::Structured) => {
+            let wt = state.backend().web_template_adl2(&p.template_id).await?;
+            crate::formats::dispatch::composition_structured_response_with(
+                StatusCode::OK,
+                &comp,
+                &wt,
+            )
+        }
+        Some(WireFormat::CanonicalJson | WireFormat::CanonicalXml) => {
+            Ok(negotiate::respond_rm::<Composition>(
+                h,
+                StatusCode::OK,
+                &comp,
+                "composition",
+            ))
+        }
+        _ => Err(RestError(ApiError::NotAcceptable(
+            "the template example is available as application/json, application/xml, \
+             application/openehr.wt.flat+json, or application/openehr.wt.structured+json"
+                .to_owned(),
+        ))),
+    }
 }
 
 /// Resolve + render one ADL2 template in the `Accept`-negotiated representation.

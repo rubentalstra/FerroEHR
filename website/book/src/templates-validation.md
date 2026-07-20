@@ -114,7 +114,12 @@ version `2.3`), so tooling built for that model works unchanged.
 You can also fetch an **example composition** for a template — a skeleton
 instance you can fill in — from
 `GET /definition/template/adl1.4/{template_id}/example`, choosing the input or
-output form and the level of detail.
+output form and the level of detail. The same example endpoint is available for
+ADL2 templates at `GET /definition/template/adl2/{template_id}/example`: the
+stored operational template is turned into a WebTemplate and walked into an
+example composition, served in any of canonical JSON/XML, FLAT, or STRUCTURED
+(via `Accept`), with the same `type` (`input`/`output`) and `detail_level`
+(`required`/`medium`/`complete`) query parameters.
 
 ## Composition formats
 

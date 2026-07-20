@@ -10,7 +10,9 @@
 //! `GET /definition/template/adl2/{template_id}` (text/plain source /
 //! `application/json` `OperationalTemplateV2` / `406` on xml-only),
 //! `GET …/{template_id}/{version}` (the deprecated versioned get),
-//! `GET …/{template_id}/example` (`501`), and `GET /definition/template/adl2`
+//! `GET …/{template_id}/example` (a generated example COMPOSITION across the
+//! four `Accept_LOCATABLE` forms, with `type`/`detail_level` + 400/404/406),
+//! and `GET /definition/template/adl2`
 //! (`TemplateMetadata` list). Driven through the assembled router over a
 //! **real** `EhrbaseService` on a real `PostgreSQL` — the source is a spec-valid
 //! ADL2 operational template validated by the `openehr-adl` engine, uploaded
@@ -323,19 +325,99 @@ async fn version_get_resolves_and_serves_both_representations() {
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
-#[tokio::test]
-async fn example_get_is_501() {
-    let (_pg, app) = app().await;
-    let (status, _h, _b) = send(&app, upload_req(None)).await;
-    assert_eq!(status, StatusCode::CREATED);
+/// Build the example request for `HRID` with an optional `Accept` and query.
+fn example_req(accept: Option<&str>, query: &str) -> Request<Body> {
+    let mut b = Request::builder().method("GET").uri(format!(
+        "{BASE}/definition/template/adl2/{HRID}/example{query}"
+    ));
+    if let Some(a) = accept {
+        b = b.header(header::ACCEPT, a);
+    }
+    b.body(Body::empty()).unwrap()
+}
 
+#[tokio::test]
+async fn example_get_serves_all_four_accept_forms() {
+    let (_pg, app) = app().await;
+    assert_eq!(send(&app, upload_req(None)).await.0, StatusCode::CREATED);
+
+    // Default (no Accept) → canonical JSON COMPOSITION.
+    let (status, headers, body) = send(&app, example_req(None, "")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        headers
+            .get(header::CONTENT_TYPE)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains("json")
+    );
+    let v: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v.get("_type").and_then(Value::as_str), Some("COMPOSITION"));
+
+    // The four `Accept_LOCATABLE` representations all return 200.
+    for accept in [
+        "application/json",
+        "application/xml",
+        "application/openehr.wt.flat+json",
+        "application/openehr.wt.structured+json",
+    ] {
+        let (status, ct, _) = send(&app, example_req(Some(accept), "")).await;
+        assert_eq!(status, StatusCode::OK, "Accept {accept} → 200");
+        assert!(ct.contains_key(header::CONTENT_TYPE));
+    }
+}
+
+#[tokio::test]
+async fn example_get_honours_type_and_detail_level() {
+    let (_pg, app) = app().await;
+    assert_eq!(send(&app, upload_req(None)).await.0, StatusCode::CREATED);
+
+    // `type=output` carries a populated uid; every detail level is served.
+    for query in [
+        "?detail_level=required",
+        "?detail_level=medium",
+        "?detail_level=complete",
+    ] {
+        assert_eq!(send(&app, example_req(None, query)).await.0, StatusCode::OK);
+    }
+    let (_s, _h, body) = send(&app, example_req(None, "?type=output")).await;
+    let v: Value = serde_json::from_str(&body).unwrap();
+    assert!(
+        v.pointer("/uid/value").is_some(),
+        "output form carries a uid"
+    );
+}
+
+#[tokio::test]
+async fn example_get_400_on_bad_enum_404_unknown_406_wrong_accept() {
+    let (_pg, app) = app().await;
+    assert_eq!(send(&app, upload_req(None)).await.0, StatusCode::CREATED);
+
+    // Out-of-enum detail_level → 400.
+    assert_eq!(
+        send(&app, example_req(None, "?detail_level=full")).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    // Out-of-enum type → 400.
+    assert_eq!(
+        send(&app, example_req(None, "?type=bogus")).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    // An Accept outside the four example forms → 406.
+    assert_eq!(
+        send(&app, example_req(Some("text/csv"), "")).await.0,
+        StatusCode::NOT_ACCEPTABLE
+    );
+    // Unknown template_id → 404.
     let req = Request::builder()
         .method("GET")
-        .uri(format!("{BASE}/definition/template/adl2/{HRID}/example"))
+        .uri(format!(
+            "{BASE}/definition/template/adl2/openEHR-EHR-COMPOSITION.nope.v9.9.9/example"
+        ))
         .body(Body::empty())
         .unwrap();
-    let (status, _, _) = send(&app, req).await;
-    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(send(&app, req).await.0, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

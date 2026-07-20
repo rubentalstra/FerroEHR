@@ -28,10 +28,11 @@
 //!   OAS declares that schema as an opaque `type: object`, so the AOM2 canonical
 //!   JSON satisfies it). The response declares no `application/xml` body, so an
 //!   `Accept` naming *only* `application/xml` is a `406`.
-//! - **ADL 2 example get** (`_example_get`): returns `501 Not Implemented` — it
-//!   needs an example generator over an `am24`-OPT `WebTemplate` the tree lacks
-//!   (the same generator issue #94 builds); the OAS `200/400/404/406` shapes are
-//!   not produced. ADL2 is OPTIONAL for CNF.
+//! - **ADL 2 example get** (`_example_get`): the stored ADL2 template is compiled
+//!   to its operational template and turned into a Web Template (the am24 front
+//!   end), which the shared example generator walks into an example COMPOSITION —
+//!   served across the four `Accept_LOCATABLE` forms (`200`), with `400`/`404`/
+//!   `406` exactly as the ADL 1.4 example endpoint.
 //! - **ADL 1.4 upload** (`definition_template_adl1.4_upload.yaml`): the OAS
 //!   declares `201/400/409`; our wire additionally returns `422` when the OPT
 //!   parses as XML but is structurally invalid (the OAS folds that under `400`).
@@ -393,9 +394,10 @@ pub(crate) async fn definition_template_adl2_get(
 /// Generate an example COMPOSITION for an ADL 2 template
 /// (`GET /definition/template/adl2/{template_id}/example`).
 ///
-/// NOT IMPLEMENTED — returns `501`; it needs an example generator over an
-/// `am24`-OPT `WebTemplate` the tree lacks (the same generator issue #94 builds).
-/// ADL2 is OPTIONAL for CNF. The OAS `200/400/404/406` shapes are not produced.
+/// The stored ADL2 template is compiled to its operational template and turned
+/// into a Web Template (the am24 front end), which the shared example generator
+/// walks into a canonical example COMPOSITION — the same generator the ADL 1.4
+/// example endpoint uses.
 #[utoipa::path(
     get, path = "/definition/template/adl2/{template_id}/example", tag = "ADL2",
     params(
@@ -403,15 +405,30 @@ pub(crate) async fn definition_template_adl2_get(
          description = "The `template_id`; a partial id resolves to the latest \
                         matching version."),
         ("type" = Option<String>, Query,
-         description = "`input` (default) or `output` (accepted but not acted \
-                        on; the operation is not implemented)."),
+         description = "`input` (default; ready to commit) or `output` (as it \
+                        would appear when retrieved)."),
         ("detail_level" = Option<String>, Query,
-         description = "`required` (default), `medium`, or `complete` (accepted \
-                        but not acted on; the operation is not implemented).")
+         description = "Example detail: `required` (default), `medium`, or \
+                        `complete`."),
+        ("Accept" = Option<String>, Header,
+         description = "One of `application/json` (default), `application/xml`, \
+                        `application/openehr.wt.flat+json`, or \
+                        `application/openehr.wt.structured+json`.")
     ),
     responses(
-        (status = 501, description = "OUR WIRE — the ADL2 example generator is \
-                                      not implemented.",
+        (
+            status = 200, description = "The generated example COMPOSITION, \
+                                        serialized per `Accept` (canonical \
+                                        JSON/XML or a Simplified Format).",
+            content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
+        ),
+        (status = 400, description = "`type` or `detail_level` is outside its \
+                                      enumerated set.",
+         body = serde_json::Value),
+        (status = 404, description = "No template with `template_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "`Accept` is outside the four supported \
+                                      example representations.",
          body = serde_json::Value)
     )
 )]
