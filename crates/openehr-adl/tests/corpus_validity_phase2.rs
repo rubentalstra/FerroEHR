@@ -27,6 +27,7 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::validate::rm::ProductionRmModel;
+use openehr_adl::validate::terminology::NoTerminologyResolver;
 use openehr_adl::validate::{
     ArchetypeRepository, FlatParent, Severity, resolve_flat_parent, validate_source,
 };
@@ -169,7 +170,7 @@ fn corpus_phase2_outcomes() {
             continue;
         }
 
-        let Ok(issues) = validate_source(&src, Some(&repo), &rm) else {
+        let Ok(issues) = validate_source(&src, Some(&repo), &rm, &NoTerminologyResolver) else {
             violations.push(format!("{name}: validate_source parse error"));
             continue;
         };

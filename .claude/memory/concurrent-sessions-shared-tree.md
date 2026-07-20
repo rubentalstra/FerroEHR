@@ -27,6 +27,16 @@ first session's mid-edit files into its own commit.
 - Scope cargo gates to the crates you touched (`-p`), not `--workspace` — the
   other session may have a broken crate in flight (e.g. `ehrbase-conformance`).
 - For multi-file subagent work, use worktree isolation and merge branches back.
+- **Parallel implementation agents MUST get `isolation: "worktree"` on the
+  Agent call — never two agents in the main tree** (bitten 2026-07-20: two
+  agents told to "create a new branch" in one checkout fought over
+  HEAD/working files; one stashed the other's WIP incl. an untracked module
+  that survived only in `stash@{N}^3`, and the tree ended half-mixed).
+  Worktree agents run NO cargo (the one-./target rule: a worktree build
+  would mint a second tree) — they commit on their branch; the orchestrator
+  runs every gate at convergence. Recovery pattern if it ever happens
+  again: check `git stash list` FIRST (agents stash each other's work),
+  including each stash's `^3` untracked-files parent.
 - Don't "fix" broken files you didn't touch (e.g. a half-edited test file) —
   they're the other session's work in progress.
 
