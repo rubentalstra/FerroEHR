@@ -550,8 +550,13 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   changelog; ECC zero-drift run.
 - [ ] **A11 — close**, in this order:
   1. **The TODO sweep (owner hard requirement 2026-07-20: "solve all open
-     TODOs that are left")**: every `// TODO` in `crates/openehr-adl` +
-     the definition seams (~28 at census) is triaged to exactly one of:
+     TODOs that are left")**: SCOPE = every `// TODO` in
+     `crates/openehr-adl` wholesale, PLUS every TODO introduced anywhere
+     by this PR's diff vs develop (`openehr-flat` incl. the example/
+     builder work, `openehr-lang` odin/bel, the app definition seams,
+     the opt14-front-end seam) — enumerated by grep at sweep start, not
+     from the old census (~28 then; count fresh). Each is triaged to
+     exactly one of:
      (a) RESOLVED — implemented now; this INCLUDES every stale
      "needs the flattener / flat parent" deferral (the flattener EXISTS
      since the flattener phase — un-defer them: flat-form VATDF/VTVSMD/
