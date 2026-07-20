@@ -11,7 +11,7 @@ Every number and every curve on this page is generated at build time from
 the committed run artifacts (`docs/conformance/*/results.json`,
 `docs/benchmarks/*/knee.json`) — nothing here is hand-typed, and the CI
 stale-numbers gate rejects any attempt to hand-type it. To reproduce either
-side yourself, see [Conformance](conformance.md#running-the-suite) and
+side yourself, see [Conformance](conformance.md#running-the-suite-yourself) and
 [Benchmarks](benchmarks.md).
 
 <!-- toc -->
