@@ -13,6 +13,15 @@
 //!    defective golden is skipped, never edited).
 //! 3. **Edition ladder** ([`crate::edition`]) — the case executes under the
 //!    SUT's edition policy; findings are drained into the outcome.
+//!
+//! A case's own run function may also return
+//! [`CaseError::NotApplicable`], the case-level counterpart of the fairness
+//! register's N/A verdict: a native-API-only SM operation with no ITS-REST
+//! wire binding anywhere is a first-class, cited not-applicable outcome (never
+//! a "skip"), for EVERY SUT (the HTTP-only instrument cannot reach it). This
+//! path applies to an ehrbase-rs run too — it is a permanent property of the
+//! operation, not an SUT-specific adjudication, so it does not breach the
+//! zero-drift guarantee.
 
 use std::time::Instant;
 
@@ -206,6 +215,16 @@ pub async fn run(
                         outcome.status = CaseStatus::Skipped;
                         outcome.message = Some(msg);
                     }
+                    Err(CaseError::NotApplicable(msg)) => {
+                        // A case-level N/A: the SM operation has no ITS-REST
+                        // wire binding anywhere (native-API-only), so it is a
+                        // first-class, cited not-applicable verdict — never a
+                        // skip (owner ruling). The case's own `citation` (the
+                        // SM citation) stays; the message carries the native-
+                        // test evidence pointer.
+                        outcome.status = CaseStatus::NotApplicable;
+                        outcome.message = Some(msg);
+                    }
                     Err(e @ (CaseError::Transport(_) | CaseError::Codec(_))) => {
                         outcome.status = CaseStatus::Errored;
                         outcome.message = Some(e.to_string());
@@ -249,4 +268,97 @@ pub async fn run(
         terminology: None,
         cases,
     })
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::expect_used,
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+mod tests {
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    use crate::engine::harness::{HttpRequest, HttpResponse, Transport, TransportError};
+    use crate::model::case::Format;
+    use crate::reporting::results::CaseStatus;
+    use crate::sut::builtin;
+
+    use super::{RunConfig, run};
+
+    /// A transport that fails (and records that it was touched) if a case ever
+    /// issues a request — a native-API-only N/A case must produce its verdict
+    /// with no wire call at all.
+    struct NoWire {
+        touched: AtomicBool,
+    }
+
+    #[async_trait::async_trait]
+    impl Transport for NoWire {
+        async fn send(&self, _request: HttpRequest) -> Result<HttpResponse, TransportError> {
+            self.touched.store(true, Ordering::SeqCst);
+            Err(TransportError::Http(
+                "a native-API-only N/A case must not touch the wire".to_owned(),
+            ))
+        }
+        fn describe(&self) -> String {
+            "no-wire (test)".to_owned()
+        }
+    }
+
+    /// The outcome-model reclassification (issue #146, family B): a
+    /// native-API-only SM operation with no ITS-REST binding anywhere returns
+    /// [`crate::engine::harness::CaseError::NotApplicable`], which the executor
+    /// records as [`CaseStatus::NotApplicable`] — a first-class, cited verdict,
+    /// never a skip — for our own SUT, without issuing any wire request. Driven
+    /// through the whole MESSAGING area (all 10 cases are native-API-only).
+    #[tokio::test]
+    async fn native_api_only_cases_report_not_applicable_without_touching_the_wire() {
+        let transport = NoWire {
+            touched: AtomicBool::new(false),
+        };
+        let sut = builtin::ehrbase_rs(
+            "http://test.invalid/ehrbase/rest/openehr/v1".to_owned(),
+            None,
+            None,
+        );
+        let config = RunConfig {
+            filter: Some("msg/".to_owned()),
+            formats: vec![Format::Json],
+            ..RunConfig::default()
+        };
+        let results = run(&transport, &sut, &config).await.expect("run executes");
+
+        assert_eq!(
+            results.cases.len(),
+            10,
+            "the 10 MESSAGING cases are selected (JSON only)"
+        );
+        for case in &results.cases {
+            assert_eq!(
+                case.status,
+                CaseStatus::NotApplicable,
+                "{}: a native-API-only Messaging case must be N/A, got {:?}",
+                case.id,
+                case.status
+            );
+            assert!(
+                !case.citation.trim().is_empty(),
+                "{}: an N/A verdict must carry its SM citation",
+                case.id
+            );
+            let message = case.message.as_deref().unwrap_or_default();
+            assert!(
+                message.contains("app/ehrbase/tests/"),
+                "{}: an N/A message must carry the native-test evidence pointer, got {message:?}",
+                case.id
+            );
+        }
+        assert!(
+            !transport.touched.load(Ordering::SeqCst),
+            "no native-API-only N/A case may issue a wire request"
+        );
+    }
 }

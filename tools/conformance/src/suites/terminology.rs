@@ -33,7 +33,7 @@ use crate::model::case::{Binding, Capability, CaseMeta, Compare, Format, Schedul
 use crate::model::catalog::Area;
 use crate::suites::support;
 use crate::testdata::fixtures;
-use crate::ts::fixture::SURFACE_VS;
+use crate::ts::fixture::{FAULT_MALFORMED_VS, FAULT_SERVER_ERROR_VS, FAULT_TIMEOUT_VS, SURFACE_VS};
 
 /// The `service_api` for the in-process openEHR terminology bundle (extension).
 const OPENEHR: &str = "openehr";
@@ -360,8 +360,9 @@ fn skip_no_provider(ctx: &RunContext<'_>) -> String {
 
 // ── fault injection (fixture / real-server only) ──────────────────────────────
 
-/// The shared skip for a fault-injection case: the HTTP-only ECC cannot wire a
-/// *fault-injecting* terminology server into an external SUT per case, so the
+/// The shared skip for a fault-injection case when the SUT is **not** wired to
+/// the fault-injecting fixture (a bare run with no composed wiring): the
+/// HTTP-only ECC cannot reconfigure an external SUT's provider per case, so the
 /// fault→`500` mapping is proven off the wire and cited (the MSG/SIG precedent).
 fn fault_skip(ctx: &RunContext<'_>, fault_label: &str, evidence: &str) -> CaseError {
     let tx = ctx.tx.map_or_else(
@@ -370,41 +371,70 @@ fn fault_skip(ctx: &RunContext<'_>, fault_label: &str, evidence: &str) -> CaseEr
     );
     CaseError::Skipped(format!(
         "SutConfig: the {fault_label} fault requires a fault-injecting terminology server wired to \
-         the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot \
-         reconfigure an external SUT's provider per case. Harness tx server: {tx}. The fault→500 \
+         the SUT (the composed run points the SUT's [terminology.external] provider at the fixture \
+         via host.docker.internal); this run is not wired. Harness tx server: {tx}. The fault→500 \
          mapping is proven by {evidence}."
     ))
 }
 
+/// Drive the wired SUT with a `TERMINOLOGY('expand', 'hl7.org/fhir/4.0',
+/// <fault_vs>)` operand whose value set makes the fixture inject a fault, and
+/// assert the SUT maps the upstream fault to a `500` server fault. When the SUT
+/// is not wired to the fixture, report `SKIPPED(SutConfig)` (the off-wire
+/// evidence stands). A terminology-server fault is `ExecError::Terminology` →
+/// `SmError::exception` → HTTP `500`
+/// (`app/ehrbase/src/service/query/execute.rs` `map_exec_error`;
+/// QUERY master03 §TERMINOLOGY distinguishes a bad query (400) from an upstream
+/// server fault (500)).
+async fn run_fault(
+    ctx: &RunContext<'_>,
+    fault_vs: &str,
+    fault_label: &str,
+    evidence: &str,
+) -> Result<DataSetReport, CaseError> {
+    if !ctx.tx.is_some_and(|t| t.wired) {
+        return Err(fault_skip(ctx, fault_label, evidence));
+    }
+    let resp = adhoc(ctx, &category_expand_query(None, FHIR, fault_vs)).await?;
+    assert::status(&resp, 500)?;
+    Ok(DataSetReport::SINGLE)
+}
+
 fn run_fault_timeout<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case_body!({
-        Err::<DataSetReport, _>(fault_skip(
+        run_fault(
             ctx,
+            FAULT_TIMEOUT_VS,
             "timeout",
             "conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline \
              + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception",
-        ))
+        )
+        .await
     })
 }
 
 fn run_fault_server_error<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case_body!({
-        Err::<DataSetReport, _>(fault_skip(
+        run_fault(
             ctx,
+            FAULT_SERVER_ERROR_VS,
             "5xx",
             "conformance ts::fixture::tests::fault_server_error_is_5xx \
              + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception",
-        ))
+        )
+        .await
     })
 }
 
 fn run_fault_malformed<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case_body!({
-        Err::<DataSetReport, _>(fault_skip(
+        run_fault(
             ctx,
+            FAULT_MALFORMED_VS,
             "malformed",
             "conformance ts::fixture::tests::fault_malformed_is_not_json \
              + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception",
-        ))
+        )
+        .await
     })
 }
