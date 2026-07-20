@@ -2,15 +2,24 @@
 //! template / `operational_template`) keyed by `ARCHETYPE_HRID`, on the
 //! `adl2_artefact` store.
 //!
-//! NOTE (G-05-02, registration-subset validity): `valid_artefact` /
-//! `upload_artefact` run the *registration* subset of the AOM2 validation
-//! catalogue that is decidable on an uploaded source; the full AOM2 catalogue
-//! validation is a validation-seam concern (register 09/10). The service seam
-//! records the fact only.
+//! Validation is the real `openehr-adl` engine (parse → AOM2 phase 1 → RM
+//! phase 2 → specialisation phase 2 against the flat parent). The engine needs
+//! an [`ArchetypeRepository`] to resolve specialisation parents +
+//! `use_archetype` fillers; [`EhrbaseService::adl2_repository`] builds one by
+//! parsing every stored ADL2 source (the registry is low-volume — SM
+//! `I_DEFINITION_ADL2` is an admin surface — so parse-on-demand is cheap; the
+//! `openehr-adl` phases degrade gracefully when a parent is unresolved).
 
-use std::str::FromStr;
-
-use openehr_base::prelude::ArchetypeId;
+use openehr_adl::assemble::parse_artefact;
+use openehr_adl::meta::{ArtefactSummary, summarize};
+use openehr_adl::opt::create_opt;
+use openehr_adl::validate::rm::{ProductionRmModel, production_model_governs};
+use openehr_adl::validate::{
+    ArchetypeRepository, Severity, validate_source, validate_source_phase1,
+};
+use openehr_am::am24::aom2::archetype::archetype::Archetype;
+use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+use openehr_its::rest::runtime::ValidationError;
 use sqlx::Row;
 
 use crate::service::EhrbaseService;
@@ -34,36 +43,41 @@ impl EhrbaseService {
         Ok(self.adl2_exists(&an_id).await?)
     }
 
-    /// `valid_artefact` — registration-subset structural validity of ADL2
-    /// source plus a well-formed `ARCHETYPE_HRID` (module NOTE G-05-02).
-    /// Stateless.
+    /// `valid_artefact` — the AOM2 phase-1 basic-integrity validity of ADL2
+    /// source (`openehr-adl` engine, standalone: parse + phase 1 with no
+    /// registry). Parent-dependent checks (VACSD against a stored parent) run at
+    /// `upload_artefact`, where the registry is available. Stateless.
     ///
     /// # Errors
     ///
     /// Never — the `Result` shape mirrors the SM catalog; validity is reported
     /// in the `Ok` boolean.
     pub fn valid_artefact(&self, adl2: &str) -> Result<bool, SmError> {
-        Ok(valid_adl2_source(adl2))
+        Ok(matches!(
+            validate_source_phase1(adl2, None),
+            Ok(issues) if issues.iter().all(|i| i.severity != Severity::Error)
+        ))
     }
 
-    /// `upload_artefact` (Pre `valid_artefact`, Post `has_artefact`) — store a
-    /// valid ADL2 artefact, replacing any existing one with the same
-    /// `ARCHETYPE_HRID` ("If an artefact with the same physical identifier and
-    /// namespace exists, replace it").
+    /// `upload_artefact` (Pre `valid_artefact`, Post `has_artefact`) — validate a
+    /// full ADL2 artefact through the `openehr-adl` engine and store it,
+    /// replacing any existing one with the same `ARCHETYPE_HRID` ("If an
+    /// artefact with the same physical identifier and namespace exists, replace
+    /// it" — `i_definition_adl2.adoc`).
     ///
     /// # Errors
     ///
-    /// - Source failing the registration validator, a malformed
-    ///   `ARCHETYPE_HRID`, or a VACSD specialisation-depth violation →
-    ///   `invalid_artefact` (`422`).
+    /// - Source that fails to parse or fails an AOM2 validation phase →
+    ///   `invalid_artefact` (`422`, via [`ServiceError`]).
     /// - A database failure (`exception` → `500`).
     pub async fn upload_artefact(&self, adl2: String) -> Result<(), SmError> {
-        self.adl2_upload(&adl2).await?;
+        let summary = self.adl2_validate(&adl2).await?;
+        self.adl2_persist(&summary, &adl2, true).await?;
         Ok(())
     }
 
     /// `get_artefact` — the ADL2 source of the artefact with `ARCHETYPE_HRID`
-    /// `an_id` (interchange form, G-05-03). Identity is case-insensitive.
+    /// `an_id` (interchange form). Identity is case-insensitive.
     ///
     /// # Errors
     ///
@@ -191,67 +205,214 @@ impl EhrbaseService {
         .await?)
     }
 
-    /// Store a valid ADL2 artefact, replacing any case-variant of the same
-    /// HRID in the same transaction. Invalid source → `invalid_artefact`
-    /// (`422`). Returns the stored HRID (the wire needs it for `Location` +
-    /// the identifier body).
-    pub(super) async fn adl2_upload(&self, adl2: &str) -> Result<String, ServiceError> {
-        let meta = crate::validation::validate_adl2_source(adl2).map_err(|v| {
-            ServiceError::sm(
-                CallStatusType::InvalidArtefact,
-                format!("{}: {}", v.code, v.detail),
-            )
-        })?;
-        // Validate the header HRID lexically (VARID analogue).
-        if !valid_adl2_hrid(&meta.hrid) {
-            return Err(ServiceError::sm(
-                CallStatusType::InvalidArtefact,
-                format!("'{}' is not a well-formed ARCHETYPE_HRID", meta.hrid),
-            ));
-        }
-        // VACSD (AOM2 master08 Phase 1): when the parent named by `specialize`
-        // is present in the registry, the child's specialisation depth must be
-        // exactly parent depth + 1. Registration order is unconstrained, so an
-        // absent parent skips the check. Parent lookup is case-insensitive
-        // (BASE master05 §Composite Identifiers and Case).
-        if let Some(parent_hrid) = &meta.parent_hrid
-            && let Some(parent_src) = sqlx::query_scalar::<_, String>(
-                "SELECT adl FROM adl2_artefact WHERE lower(hrid) = lower($1)",
-            )
-            .bind(parent_hrid)
-            .fetch_optional(&self.pool)
-            .await?
-            && let Ok(parent) = crate::validation::validate_adl2_source(&parent_src)
-        {
-            crate::validation::check_specialisation_depth(&meta, parent.depth).map_err(|v| {
-                ServiceError::sm(
-                    CallStatusType::InvalidArtefact,
-                    format!("{}: {}", v.code, v.detail),
-                )
-            })?;
-        }
-        let hrid = meta.hrid;
-        let kind = store_kind(meta.kind);
-        // Case-insensitive replace (BASE master05 §Composite Identifiers and
-        // Case): remove any case-variant of this HRID, then insert verbatim.
-        let mut tx = self.pool.begin().await?;
-        sqlx::query("DELETE FROM adl2_artefact WHERE lower(hrid) = lower($1)")
-            .bind(&hrid)
-            .execute(&mut *tx)
+    /// Build an in-memory [`ArchetypeRepository`] from every stored ADL2 source,
+    /// so the `openehr-adl` engine can resolve specialisation parents +
+    /// `use_archetype` fillers when validating an upload or projecting an OPT.
+    ///
+    /// A stored source that no longer parses (should not happen — every source
+    /// was engine-validated at its own upload) is skipped rather than failing
+    /// the whole build.
+    ///
+    /// TODO(perf): cache the parsed archetypes (moka) if the ADL2 registry ever
+    /// grows large enough that re-parsing it per upload/projection matters; the
+    /// registry is an admin surface today, so parse-on-demand is cheap.
+    async fn adl2_repository(&self) -> Result<ArchetypeRepository, ServiceError> {
+        let sources: Vec<String> = sqlx::query_scalar("SELECT adl FROM adl2_artefact")
+            .fetch_all(&self.pool)
             .await?;
+        let mut repo = ArchetypeRepository::new();
+        for src in &sources {
+            if let Ok(archetype) = parse_artefact(src) {
+                repo.insert(archetype);
+            }
+        }
+        Ok(repo)
+    }
+
+    /// Validate one uploaded ADL2 source with the `openehr-adl` engine and return
+    /// its identity [`ArtefactSummary`].
+    ///
+    /// Any invalidity — an unparseable source (S-code syntax errors) or an AOM2
+    /// validation-phase failure (V-codes) — is a `ValidationFailed`: the SM
+    /// `upload_artefact` maps it to `invalid_artefact` (`422`), and the wire
+    /// renders the ITS-REST `Error` object with the rule-code mnemonics as
+    /// `validationErrors[]` (`schemas/others/Error.yaml`). The openEHR
+    /// [`ProductionRmModel`] governs openEHR-published archetypes; a foreign/test
+    /// model skips the RM pass (`AOM2/master04.3` §Reference Model Type Matching
+    /// — a model this build does not carry would false-fire VCORM).
+    async fn adl2_validate(&self, source: &str) -> Result<ArtefactSummary, ServiceError> {
+        let archetype = parse_artefact(source).map_err(syntax_validation_failure)?;
+        let repo = self.adl2_repository().await?;
+        let issues = if production_model_governs(&archetype) {
+            validate_source(source, Some(&repo), &ProductionRmModel)
+        } else {
+            validate_source_phase1(source, Some(&repo))
+        }
+        .map_err(syntax_validation_failure)?;
+
+        let errors: Vec<ValidationError> = issues
+            .iter()
+            .filter(|i| i.severity == Severity::Error)
+            .map(|i| ValidationError {
+                // The rule-code mnemonic is the machine-readable key; the human
+                // detail (and the archetype path where derivable) is the message.
+                path: i.code.mnemonic().to_owned(),
+                message: match &i.path {
+                    Some(p) => format!("{} (at {p})", i.message),
+                    None => i.message.clone(),
+                },
+            })
+            .collect();
+        if !errors.is_empty() {
+            return Err(ServiceError::ValidationFailed(errors));
+        }
+        Ok(summarize(&archetype))
+    }
+
+    /// Store a validated ADL2 artefact. With `replace`, any case-variant of the
+    /// same HRID is removed first (SM `upload_artefact` replace semantics); the
+    /// insert is then verbatim (BASE master05 §Composite Identifiers and Case).
+    async fn adl2_persist(
+        &self,
+        summary: &ArtefactSummary,
+        source: &str,
+        replace: bool,
+    ) -> Result<(), ServiceError> {
+        let kind = store_kind(summary.kind);
+        let mut tx = self.pool.begin().await?;
+        if replace {
+            sqlx::query("DELETE FROM adl2_artefact WHERE lower(hrid) = lower($1)")
+                .bind(&summary.archetype_id)
+                .execute(&mut *tx)
+                .await?;
+        }
         sqlx::query("INSERT INTO adl2_artefact (hrid, kind, adl) VALUES ($1, $2, $3)")
-            .bind(&hrid)
+            .bind(&summary.archetype_id)
             .bind(kind)
-            .bind(adl2)
+            .bind(source)
             .execute(&mut *tx)
             .await?;
         tx.commit().await?;
-        Ok(hrid)
+        Ok(())
+    }
+
+    /// The wire upload path (`POST /definition/template/adl2`): validate through
+    /// the engine, reject a duplicate HRID with a `409` (the REST contract
+    /// declares `409_template_already_exists.yaml`, diverging from the SM native
+    /// replace), then store. Returns the stored `ARCHETYPE_HRID`.
+    ///
+    /// # Errors
+    ///
+    /// - Unparseable source → `BadRequest` (`400`).
+    /// - AOM2-invalid source → `ValidationFailed` (`422` with rule codes).
+    /// - An ADL2 artefact with the same HRID already stored → `Conflict`
+    ///   (`409`).
+    /// - A database failure (`500`).
+    pub(super) async fn adl2_wire_upload(&self, source: &str) -> Result<String, ServiceError> {
+        let summary = self.adl2_validate(source).await?;
+        if self.adl2_exists(&summary.archetype_id).await? {
+            return Err(ServiceError::Conflict(format!(
+                "an ADL2 template with id '{}' already exists",
+                summary.archetype_id
+            )));
+        }
+        self.adl2_persist(&summary, source, false).await?;
+        Ok(summary.archetype_id)
+    }
+
+    /// Resolve a wire `template_id` (`+` optional `version`) to the exact stored
+    /// `ARCHETYPE_HRID`. A full HRID matches case-insensitively; a partial
+    /// `template_id` (`…concept.v1`, or `…concept` + a `version` prefix)
+    /// resolves to the **highest** stored version whose family +
+    /// `{major}[.{minor}[.{patch}]]` prefix match (`template_id_adl2.yaml` — "a
+    /// partial `template_id` will resolve to 'latest' major version";
+    /// `version.yaml` — "a pattern as partial prefix … highest matching").
+    ///
+    /// # Errors
+    ///
+    /// No stored artefact matches → `NotFound` (`404`).
+    pub(super) async fn adl2_resolve(
+        &self,
+        template_id: &str,
+        version: Option<&str>,
+    ) -> Result<String, ServiceError> {
+        // Fast path: an exact HRID (no explicit version filter).
+        if version.is_none()
+            && let Some(hrid) = sqlx::query_scalar::<_, String>(
+                "SELECT hrid FROM adl2_artefact WHERE lower(hrid) = lower($1)",
+            )
+            .bind(template_id)
+            .fetch_optional(&self.pool)
+            .await?
+        {
+            return Ok(hrid);
+        }
+        // Partial resolution over the (small) registry: match the family and the
+        // version prefix, then take the highest release version.
+        let family = family_key(template_id);
+        let want_version = version.map(str::to_owned).or_else(|| {
+            let v = version_of(template_id);
+            (!v.is_empty()).then(|| v.to_owned())
+        });
+        let hrids: Vec<String> = sqlx::query_scalar("SELECT hrid FROM adl2_artefact")
+            .fetch_all(&self.pool)
+            .await?;
+        hrids
+            .into_iter()
+            .filter(|h| family_key(h) == family)
+            .filter(|h| {
+                want_version
+                    .as_deref()
+                    .is_none_or(|want| version_prefix_matches(version_of(h), want))
+            })
+            .max_by(|a, b| cmp_version(version_of(a), version_of(b)))
+            .ok_or_else(|| {
+                ServiceError::NotFound(format!(
+                    "ADL2 template {template_id}{}",
+                    version
+                        .map(|v| format!(" at version {v}"))
+                        .unwrap_or_default()
+                ))
+            })
+    }
+
+    /// Project the stored ADL2 source into its `OperationalTemplateV2` canonical
+    /// JSON (`GET …/adl2/{template_id}` with `Accept: application/json`).
+    ///
+    /// The OAS declares `OperationalTemplateV2` as an opaque `type: object` with
+    /// no properties (`schemas/aom/OperationalTemplateV2.yaml`), so the AOM2
+    /// canonical JSON of the operational template — a JSON object — satisfies it
+    /// honestly. A stored `operational_template` is serialized as-is; any other
+    /// kind is compiled to its OPT via `openehr_adl::opt::create_opt` first.
+    ///
+    /// # Errors
+    ///
+    /// - The stored source no longer parses → `Internal` (`500`; a stored source
+    ///   was engine-valid at upload, so this is a server fault).
+    /// - The OPT cannot be compiled (an unresolved constituent reference) →
+    ///   `Unprocessable` (`422`).
+    pub(super) async fn adl2_opt_json(&self, source: &str) -> Result<String, ServiceError> {
+        let archetype = parse_artefact(source).map_err(|errs| {
+            ServiceError::Internal(format!(
+                "stored ADL2 source no longer parses: {}",
+                join_syntax_errors(&errs)
+            ))
+        })?;
+        if let Archetype::AuthoredArchetype(a) = &archetype
+            && let AuthoredArchetype::OperationalTemplate(opt) = a.as_ref()
+        {
+            return Ok(openehr_its::json::to_canonical_json(opt.as_ref()));
+        }
+        let repo = self.adl2_repository().await?;
+        let opt = create_opt(&archetype, &repo).map_err(|e| {
+            ServiceError::Unprocessable(format!("cannot project OperationalTemplateV2: {e}"))
+        })?;
+        Ok(openehr_its::json::to_canonical_json(&opt))
     }
 
     /// The ADL2 source of the artefact with `ARCHETYPE_HRID` `an_id`; absent
     /// → `artefact_does_not_exist` (`404`).
-    async fn adl2_get(&self, an_id: &str) -> Result<String, ServiceError> {
+    pub(super) async fn adl2_get(&self, an_id: &str) -> Result<String, ServiceError> {
         sqlx::query_scalar::<_, String>(
             "SELECT adl FROM adl2_artefact WHERE lower(hrid) = lower($1)",
         )
@@ -342,14 +503,14 @@ impl EhrbaseService {
         )
     }
 
-    /// The wire list for `GET /definition/template/adl2`: the ADL2 templates
-    /// and OPTs as `{template_id, created_timestamp}` metadata objects.
-    /// Spec-silent wire shape (ITS-REST `TemplateList`), not an SM op.
-    ///
-    /// NOTE: the OAS `TemplateMetadata` also carries `concept`/`archetype_id`
-    /// derived from the cADL body; with no ADL2/cADL source parser yet those are
-    /// omitted and `template_id` is the `ARCHETYPE_HRID`. Lists the `template`
-    /// and `operational_template` kinds (the "templates" under
+    /// The wire list for `GET /definition/template/adl2`: the ADL2 templates and
+    /// OPTs as `TemplateMetadata` objects
+    /// (`schemas/definition/TemplateMetadata.yaml`:
+    /// `{template_id, concept, archetype_id, created_timestamp}`). `archetype_id`
+    /// is the stored `ARCHETYPE_HRID`; `concept` is its concept segment
+    /// (`AOM2/master07.05` §Physical Archetype Identifier — the concept derives
+    /// from the HRID, so no cADL parse is needed for the list). Lists the
+    /// `template` and `operational_template` kinds (the "templates" under
     /// `/definition/template/adl2`), not source archetypes.
     pub(super) async fn adl2_template_list(
         &self,
@@ -374,7 +535,13 @@ impl EhrbaseService {
                     .try_get::<jiff_sqlx::Timestamp, _>("created_at")?
                     .to_jiff()
                     .to_string();
-                Ok(serde_json::json!({ "template_id": hrid, "created_timestamp": created }))
+                let concept = hrid_concept(&hrid);
+                Ok(serde_json::json!({
+                    "template_id": hrid,
+                    "concept": concept,
+                    "archetype_id": hrid,
+                    "created_timestamp": created,
+                }))
             })
             .collect::<Result<Vec<_>, sqlx::Error>>()
             .map_err(ServiceError::from)
@@ -383,19 +550,38 @@ impl EhrbaseService {
 
 // ── stateless helpers ─────────────────────────────────────────────────────────
 
-/// `valid_artefact` core — registration-subset structural validity of ADL2
-/// source plus a well-formed HRID (module NOTE G-05-02).
-fn valid_adl2_source(adl2: &str) -> bool {
-    crate::validation::validate_adl2_source(adl2).is_ok_and(|meta| valid_adl2_hrid(&meta.hrid))
+/// Join a parse failure's typed [`openehr_adl::error::SyntaxError`]s (S-codes)
+/// into one detail string, each rendered `CODE at line L, column C: message`.
+fn join_syntax_errors(errs: &[openehr_adl::error::SyntaxError]) -> String {
+    errs.iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join("; ")
 }
 
-/// Map an artefact `kind` to the value the storage `kind` column accepts
-///. The AOM2 keyword set includes `template_overlay`, but the
-/// storage `kind` domain is `{archetype, template, operational_template}` (our
-/// own design — no openEHR spec governs the schema); an overlay is a
-/// specialising fragment of a template, so it is stored under `template`. This
-/// keeps an ADL2 upload from ever reaching a DB constraint (a malformed upload
-/// is a `422` at validation, never a `500`).
+/// Map an ADL2 parse failure to a [`ServiceError::ValidationFailed`] carrying
+/// the S-code mnemonics as `validationErrors[]` — an unparseable source is an
+/// invalid artefact (`422`), not a distinct wire status (`AOM2/master04.6`
+/// §Syntax Validity Rules; SM `i_definition_adl2.adoc` `upload_artefact`
+/// `invalid_artefact`).
+fn syntax_validation_failure(errs: Vec<openehr_adl::error::SyntaxError>) -> ServiceError {
+    ServiceError::ValidationFailed(
+        errs.into_iter()
+            .map(|e| ValidationError {
+                path: e.code.mnemonic().to_owned(),
+                message: format!("{} (line {}, column {})", e.message, e.line, e.column),
+            })
+            .collect(),
+    )
+}
+
+/// Map an artefact `kind` to the value the storage `kind` column accepts. The
+/// AOM2 keyword set includes `template_overlay`, but the storage `kind` domain
+/// is `{archetype, template, operational_template}` (our own design — no openEHR
+/// spec governs the schema); an overlay is a specialising fragment of a
+/// template, so it is stored under `template`. This keeps an ADL2 upload from
+/// ever reaching a DB constraint (a malformed upload is a `422` at validation,
+/// never a `500`).
 fn store_kind(kind: &str) -> &str {
     match kind {
         "template_overlay" => "template",
@@ -403,17 +589,62 @@ fn store_kind(kind: &str) -> &str {
     }
 }
 
-/// Structural check for an `ARCHETYPE_HRID`: an optional `namespace::` prefix
-/// followed by an openEHR HRID (BASE `master05` §Archetype Identifiers).
-///
-/// NOTE: reuses [`ArchetypeId::from_str`], whose lexical form accepts the
-/// HRID shape (a superset of the ADL 1.4 `ARCHETYPE_ID`, tolerating the full
-/// multi-part `.vN.N.N` version). A stricter AOM2 `ARCHETYPE_HRID` grammar
-/// (`version_status` / `build_count` suffixes) awaits the ADL2 parser
-/// (register 10).
-fn valid_adl2_hrid(hrid: &str) -> bool {
+/// The concept segment of an `ARCHETYPE_HRID` — the token between the model part
+/// (`publisher-package-class`) and the `.vN…` version
+/// (`AOM2/master07.05` §Physical Archetype Identifier). Falls back to the whole
+/// id when the shape is unexpected (never panics on stored input).
+fn hrid_concept(hrid: &str) -> &str {
     let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
-    ArchetypeId::from_str(core).is_ok()
+    let before_version = &core[..version_marker(core).unwrap_or(core.len())];
+    before_version.rsplit_once('.').map_or(core, |(_, c)| c)
+}
+
+/// The case-folded `publisher-package-class.concept` family key of an HRID
+/// (namespace + version stripped) — the identity used to group stored versions
+/// of the same template family (`AOM2/master07.05`).
+fn family_key(hrid: &str) -> String {
+    let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
+    core[..version_marker(core).unwrap_or(core.len())].to_ascii_lowercase()
+}
+
+/// The numeric release-version segment of an HRID (`…concept.v1.2.3-rc.4` →
+/// `1.2.3`); empty when there is no `.vN` marker.
+fn version_of(hrid: &str) -> &str {
+    let core = hrid.rsplit_once("::").map_or(hrid, |(_, rest)| rest);
+    match version_marker(core) {
+        Some(idx) => {
+            // Skip the `.v`; take up to the pre-release status marker (`-`).
+            let tail = &core[idx + 2..];
+            tail.split('-').next().unwrap_or(tail)
+        }
+        None => "",
+    }
+}
+
+/// The byte index of the `.v<digit>` version marker in an archetype id (the
+/// first `.v` immediately followed by a digit, so a concept id containing `.v`
+/// is not mistaken for the version).
+fn version_marker(s: &str) -> Option<usize> {
+    let bytes = s.as_bytes();
+    (0..bytes.len().saturating_sub(2))
+        .find(|&i| bytes[i] == b'.' && bytes[i + 1] == b'v' && bytes[i + 2].is_ascii_digit())
+}
+
+/// Whether `full` (a `major.minor.patch` release) matches the SEMVER `prefix`
+/// (`1`, `1.2`, or `1.2.3` — `version.yaml`: "an exact version … or a pattern
+/// as partial prefix"). Each supplied prefix component must equal the
+/// corresponding `full` component.
+fn version_prefix_matches(full: &str, prefix: &str) -> bool {
+    let mut want = prefix.split('.').filter(|p| !p.is_empty() && *p != "*");
+    let mut have = full.split('.');
+    want.all(|w| have.next() == Some(w))
+}
+
+/// Compare two numeric release versions (`major.minor.patch`) component-wise so
+/// the highest matching version can be selected (`Ordering::Equal` on ties).
+fn cmp_version(a: &str, b: &str) -> std::cmp::Ordering {
+    let parse = |v: &str| -> Vec<u64> { v.split('.').map(|p| p.parse().unwrap_or(0)).collect() };
+    parse(a).cmp(&parse(b))
 }
 
 #[cfg(test)]
@@ -437,13 +668,32 @@ mod tests {
     }
 
     #[test]
-    fn adl2_source_validation_drives_upload_metadata() {
-        // The header keyword + HRID are extracted by the registration validator;
-        // malformed keyword/HRID sources are invalid (SM master04
-        // I_DEFINITION_ADL2 upload_artefact).
-        assert!(!valid_adl2_source(
-            "concept\nopenEHR-EHR-OBSERVATION.bp.v1.0.0"
-        ));
-        assert!(!valid_adl2_source("archetype\nnot-an-hrid"));
+    fn hrid_concept_and_family_extract_from_the_identifier() {
+        let hrid = "org.example::openEHR-EHR-COMPOSITION.vital_signs.v1.2.3";
+        assert_eq!(hrid_concept(hrid), "vital_signs");
+        assert_eq!(family_key(hrid), "openehr-ehr-composition.vital_signs");
+        assert_eq!(version_of(hrid), "1.2.3");
+        // a concept id containing a dotted token is not mistaken for the version
+        let hrid = "openEHR-EHR-OBSERVATION.lab_result.v2.0.0-rc.1";
+        assert_eq!(hrid_concept(hrid), "lab_result");
+        assert_eq!(version_of(hrid), "2.0.0");
+    }
+
+    #[test]
+    fn version_prefix_matches_semver_prefix() {
+        assert!(version_prefix_matches("1.2.3", "1"));
+        assert!(version_prefix_matches("1.2.3", "1.2"));
+        assert!(version_prefix_matches("1.2.3", "1.2.3"));
+        assert!(version_prefix_matches("1.2.3", "*"));
+        assert!(!version_prefix_matches("1.2.3", "2"));
+        assert!(!version_prefix_matches("1.2.3", "1.3"));
+    }
+
+    #[test]
+    fn cmp_version_orders_numerically() {
+        use std::cmp::Ordering;
+        assert_eq!(cmp_version("1.2.10", "1.2.9"), Ordering::Greater);
+        assert_eq!(cmp_version("2.0.0", "1.9.9"), Ordering::Greater);
+        assert_eq!(cmp_version("1.0.0", "1.0.0"), Ordering::Equal);
     }
 }

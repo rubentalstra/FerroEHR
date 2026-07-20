@@ -16,6 +16,21 @@ workflow refuses a tag that has no matching section here.
 ## [Unreleased]
 
 ### Added
+- **ADL2 templates are now compiled and validated by the full ADL2 engine.**
+  `POST /definition/template/adl2` runs the complete `openehr-adl` pipeline —
+  parse, then the AOM2 validity catalogue (phase 1 basic integrity, reference-
+  model conformance, and specialisation conformance against an already-loaded
+  parent) — in place of the former source-subset probe. An invalid artefact is
+  a **422** whose `Error.validationErrors` list the offending rule-code
+  mnemonics (S-codes for an unparseable source, V-codes for a validation-phase
+  failure). `GET /definition/template/adl2/{template_id}` now serves the
+  `application/json` `OperationalTemplateV2` projection alongside the
+  `text/plain` source, and resolves a partial `template_id` to the latest
+  matching version; the previously `501` `…/{template_id}/{version}` (versioned
+  get, marked deprecated in the spec) is implemented, and template list rows now
+  carry `concept` and `archetype_id`. `…/{template_id}/example` remains `501`
+  (the example generator is tracked separately). An `Accept` naming only
+  `application/xml` is a `406` (the operation declares no XML response body).
 - **RM terminology-backed invariant validation.** Composition (and any RM
   value) validation now enforces the openEHR terminology-service and code-set
   RM class invariants at the wire-boundary dispatcher, unified into a single

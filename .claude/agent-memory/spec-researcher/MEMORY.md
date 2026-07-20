@@ -11,4 +11,5 @@
 - [FOLDER / directory model location](folder-directory-model-location.md) — RM FOLDER/VERSIONED_FOLDER/EHR.directory-vs-folders model, invariants, deletion, + generated Rust bindings
 - [AOM2 validation catalogue location](aom2-validation-catalogue-location.md) — where every V-code full text lives (master03/04.5/07/06), master08=phase orchestration only, the 14 spec-silent codes (external adl_syntax_errors.txt), am24 gen tree map
 - [ADL2 specialisation/flattening/templates/OPT2 location](adl2-specialisation-flattening-opt2-location.md) — where ADL2 09.x specialisation, master10 templates, OPT2 raw/profiled, AOM2 master08 phases + master04.5 rule-code definitions (VS*/VD*/VACMC*/VARX*) live
+- [ADL2 REST wire-contract location](adl2-rest-wire-contract-location.md) — paths/params/schemas/responses for the 5 ITS-REST ADL2 template ops + OperationalTemplateV2 is an opaque `type:object` + NO ADL2 CNF Robot suite
 - [ADL2/cADL2/ODIN source-parser spec location](adl2-parser-spec-location.md) — file map for encoding/cADL/paths/identification/rules/terminology + the vendored GRAMMAR GAP (ANTLR .g4 files not vendored) + syntax-error catalogue snapshot

@@ -86,6 +86,7 @@ openehr-rm = { path = "../../crates/openehr-rm" }
 openehr-its = { path = "../../crates/openehr-its" }
 openehr-lang = { path = "../../crates/openehr-lang" }
 openehr-am = { path = "../../crates/openehr-am" }
+openehr-adl = { path = "../../crates/openehr-adl" }
 openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
 
@@ -121,6 +122,5 @@ opentelemetry_sdk = { workspace = true, features = ["rt-tokio", "testing"] }
 workspace = true
 
 [package.metadata.cargo-machete]
-# Wired for later phases, not consumed yet: openehr-am (ADL2),
-# openehr-lang (BMM at runtime).
-ignored = ["openehr-am", "openehr-lang"]
+# Wired for later phases, not consumed yet: openehr-lang (BMM at runtime).
+ignored = ["openehr-lang"]

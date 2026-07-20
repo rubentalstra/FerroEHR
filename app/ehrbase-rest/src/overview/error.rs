@@ -25,6 +25,7 @@ use axum::response::{IntoResponse, Response};
 use http::{HeaderValue, StatusCode, header};
 use serde::Serialize;
 
+use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, QUERY_TIMEOUT_TAG, SmError};
 use openehr_its::rest::generated::ehr::Error as ValidationErrorBody;
 use openehr_its::rest::runtime::ApiError;
@@ -92,6 +93,17 @@ pub(crate) fn sm_api_error(e: SmError) -> ApiError {
 impl From<SmError> for RestError {
     fn from(e: SmError) -> Self {
         Self(sm_api_error(e))
+    }
+}
+
+impl From<ServiceError> for RestError {
+    /// Map a service failure straight onto the wire error, preserving the
+    /// structured per-path/per-code violations of
+    /// [`ServiceError::ValidationFailed`] (the ITS-REST `Error` object) that the
+    /// `SmError` bridge collapses into a flat message. Used by the wire methods
+    /// that surface validation codes directly (the ADL2 upload).
+    fn from(e: ServiceError) -> Self {
+        Self(ApiError::from(e))
     }
 }
 
