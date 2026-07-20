@@ -4,7 +4,7 @@
 
 **A pure-Rust openEHR Clinical Data Repository — spec-compliant, measured, and built for production.**
 
-openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&nbsp; SM Platform Service Model &nbsp;·&nbsp; PostgreSQL 18-native storage
+openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&nbsp; ADL 1.4 + ADL 2.4 templates &nbsp;·&nbsp; SM Platform Service Model &nbsp;·&nbsp; PostgreSQL 18-native storage
 
 [![CI](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/ci.yml)
 [![Docs](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/docs.yml/badge.svg?branch=develop)](https://rubentalstra.github.io/ehrbase-rs/)
@@ -14,7 +14,13 @@ openEHR REST API (ITS-REST 1.0.3) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![Rust](https://img.shields.io/badge/rust-1.96%2B-orange.svg?logo=rust)](rust-toolchain.toml)
 [![Edition](https://img.shields.io/badge/edition-2024-blue.svg?logo=rust)](Cargo.toml)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791.svg?logo=postgresql&logoColor=white)](docs/VERSIONS.md)
-[![openEHR](https://img.shields.io/badge/openEHR-RM_1.2_%C2%B7_ITS--REST_1.0.3_%C2%B7_AQL_1.1_%C2%B7_SM-1F6FEB.svg)](https://specifications.openehr.org/)
+[![openEHR BASE](https://img.shields.io/badge/openEHR_BASE-1.3.0-1F6FEB.svg)](https://specifications.openehr.org/releases/BASE/latest)
+[![openEHR RM](https://img.shields.io/badge/openEHR_RM-1.2.0-1F6FEB.svg)](https://specifications.openehr.org/releases/RM/latest)
+[![openEHR AM](https://img.shields.io/badge/openEHR_AM-1.4_%2B_2.4-1F6FEB.svg)](https://specifications.openehr.org/releases/AM/latest)
+[![openEHR QUERY](https://img.shields.io/badge/openEHR_AQL-1.1.0-1F6FEB.svg)](https://specifications.openehr.org/releases/QUERY/latest)
+[![openEHR ITS-REST](https://img.shields.io/badge/openEHR_ITS--REST-1.0.3-1F6FEB.svg)](https://specifications.openehr.org/releases/ITS-REST/latest)
+[![openEHR TERM](https://img.shields.io/badge/openEHR_TERM-3.1.0-1F6FEB.svg)](https://specifications.openehr.org/releases/TERM/latest)
+[![openEHR SM](https://img.shields.io/badge/openEHR_SM-platform-1F6FEB.svg)](https://specifications.openehr.org/releases/SM/latest)
 [![ECC conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge.json)](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
 [![ECC CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-core.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![ECC STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
@@ -49,15 +55,22 @@ Conformance Statement and Certificate.
 ## Why EHRbase-rs
 
 - **Compliance you can verify, not just read.** The built-in conformance
-  runner executes the complete catalogue (341 cases, JSON and XML) and
-  computes the openEHR profile verdicts — currently **CORE: PASS ·
-  STANDARD: PASS · OPTIONS: OBTAINED**, zero failing cases. The badges above
-  are generated from real runs.
+  runner executes the complete catalogue in both wire formats and computes
+  the openEHR profile verdicts — currently **CORE: PASS · STANDARD: PASS ·
+  OPTIONS: OBTAINED**, zero failing cases. The badges above are generated
+  from real runs, never hand-edited.
 - **The latest openEHR specifications**, generated from the official
   machine-readable models: REST API 1.0.3, AQL 1.1, RM 1.2.0, Archetype
   Model 1.4 + 2.4, Terminology 3.1. A specification update is a
   regeneration, not a rewrite — and a CI drift-check makes silent divergence
   impossible.
+- **Both generations of the archetype language, end to end.** ADL 2.4
+  source templates are parsed, validated against the full AOM2 validity
+  catalogue, specialisation-flattened, and compiled to operational
+  templates; ADL 1.4 OPTs and source archetypes are validated against
+  their own 1.4 rules — and can be migrated to ADL 2 in-CDR. Every
+  template, either dialect, generates spec-valid example compositions
+  that pass the server's own validation.
 - **One static Rust binary.** Predictable memory, fast cold starts, a
   minimal distroless container image, no garbage-collection pauses in the
   write path.
@@ -80,9 +93,18 @@ Conformance Statement and Certificate.
 - **Full versioning semantics** — contribution-atomic commits, indelible
   version history, logical delete, attestations, per-version digital
   signatures, point-in-time reads
-- **Templates & validation** — OPT 1.4 ingestion with artefact validity
-  checking, WebTemplate, FLAT and STRUCTURED formats, deep
-  archetype-constraint validation on every write
+- **Templates & validation, both ADL generations** — ADL 2.4 source
+  templates (full ADL2/cADL/ODIN parser, the AOM2 validity catalogue with
+  typed rule codes on the wire, specialisation flattening, OPT2
+  compilation) and OPT 1.4 ingestion with artefact validity checking;
+  WebTemplate, FLAT and STRUCTURED formats from either dialect; deep
+  archetype-constraint validation plus the RM invariant catalogue
+  (including the terminology-backed invariants) on every write
+- **Example generation** — every stored template, ADL 1.4 or 2.4, serves
+  deterministic example compositions that pass the server's own full
+  validation, in canonical JSON/XML and the simplified formats
+- **ADL 1.4 → ADL 2 migration** — stored 1.4 archetypes convert to ADL 2
+  source in-CDR, with a reproducible conversion log
 - **EHR Extract & messaging** — whole-EHR export/import with preserved
   distributed version identity, EHR cloning across systems, TDD import
 - **Demographics** — a versioned party store (person, organisation, group,
@@ -187,8 +209,8 @@ Three directories, three spec layers, one strict dependency direction
 flowchart TB
     specs["openEHR machine-readable specs<br/>(BMM · XSD · OpenAPI — vendored + pinned)"]
 
-    subgraph crates ["crates/* — the specification layer (generated, never hand-edited)"]
-        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang<br/>openehr-its (canonical JSON/XML + ITS-REST contract)<br/>openehr-query (AQL parser) · openehr-flat (SDT formats)"]
+    subgraph crates ["crates/* — the specification layer (generated where the specs are machine-readable)"]
+        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser) · openehr-flat (WebTemplate · FLAT · STRUCTURED)"]
     end
 
     subgraph app ["app/* — the application (three crates, three roles)"]
@@ -197,9 +219,11 @@ flowchart TB
         bin["ehrbase-server<br/>the wiring-only binary"]
     end
 
-    subgraph tools ["tools/* — verification (not shipped)"]
+    subgraph tools ["tools/* — generation + verification (not shipped)"]
+        codegen["openehr-codegen<br/>(BMM/XSD/OAS → Rust)"]
         conf["conformance<br/>(ECC runner)"]
         bench["benchmark"]
+        testkit["testkit<br/>(shared PG18 harness)"]
     end
 
     specs -- "openehr-codegen (deterministic, drift-checked in CI)" --> crates
@@ -209,11 +233,13 @@ flowchart TB
     tools --> app
 ```
 
-The service layer is the openEHR **SM Platform Service Model, transcribed
-literally**: one Rust trait per platform-service interface, carrying the
-spec's exact call names, parameters, and error vocabulary — the "native API
-behind protocol adapters" architecture the SM itself prescribes. The full
-design, and the decision records behind it, are documented in
+The service layer follows the openEHR **SM Platform Service Model**: one
+service module per SM component, whose concrete methods carry the spec's
+call names and error vocabulary — the "native API behind protocol
+adapters" architecture the SM itself prescribes. The specification layer
+carries no serde: canonical JSON and XML are native codecs generated
+alongside the types, so the wire contract is explicit, tested code. The
+full design is documented in
 [`docs/architecture.md`](docs/architecture.md).
 
 ## Conformance, measured not asserted

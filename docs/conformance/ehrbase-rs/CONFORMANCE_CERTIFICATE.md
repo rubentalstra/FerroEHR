@@ -7,7 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.2.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-19T23:16:28.33549Z
+- **Run date:** 2026-07-20T13:12:05.443491Z
 
 ## System Under Test (SUT)
 
@@ -17,7 +17,7 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-19T23:16:28.33549Z |
+| Date | 2026-07-20T13:12:05.443491Z |
 
 ## Scope of Test
 
@@ -411,6 +411,22 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /ehr/{ehr_id}/directory (Accept flat) + POST /ehr/{ehr_id}/directory (Content-Type flat) | ECC-SF-014 — DIRECTORY (FOLDER) has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 | pass | — |
 | Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /demographic/person/{uid} (Accept flat) + POST /demographic/person (Content-Type flat) | ECC-SF-015 — Demographic PARTY has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415 | pass | — |
 | Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type flat, ctx/time set) → GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept application/json) | ECC-SF-016 — FLAT ctx/time sets EVENT_CONTEXT.start_time; ctx/setting defaults to openehr::238 | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | POST /definition/template/adl2 (Prefer return=minimal|representation|identifier) | ECC-ADL2-001 — Upload a valid ADL2 template → 201 with Location; Prefer selects minimal/representation/identifier bodies | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | POST /definition/template/adl2 (same HRID twice) | ECC-ADL2-002 — Upload the same ADL2 HRID twice → the second is a 409 conflict | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | POST /definition/template/adl2 (unparseable source) | ECC-ADL2-003 — Upload an unparseable ADL2 source → 422 carrying syntax rule codes in validationErrors | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | POST /definition/template/adl2 (AOM2-invalid source) | ECC-ADL2-004 — Upload a semantically invalid ADL2 template (missing description) → 422 with the AOM2 rule code VARD | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | POST /definition/template/adl2 (parent) → POST /definition/template/adl2 (specialised child) | ECC-ADL2-005 — Upload a parent archetype, then a specialised child that validates against the stored parent → 201 | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2/{template_id} (Accept text/plain | application/json | application/xml) | ECC-ADL2-006 — Get an ADL2 template as text/plain source, application/json OperationalTemplateV2, and 406 on xml-only | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2/{template_id} | ECC-ADL2-007 — Get an unknown ADL2 template_id → 404 | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2/{template_id}/{version} | ECC-ADL2-008 — Version get resolves an exact SEMVER and a major prefix (latest match) → 200; an unknown version → 404 | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2/{template_id}/example (Accept json/xml/flat/structured) | ECC-ADL2-009 — Get a template example in each of the four Accept_LOCATABLE forms → 200; the JSON form is a COMPOSITION rooted at the template's archetype | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2/{template_id}/example?type=&detail_level= | ECC-ADL2-010 — Example honours the detail_level enum (required/medium/complete) and rejects a bad type/detail_level with 400 | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2/{template_id}/example | ECC-ADL2-011 — Example for an unknown template_id → 404; an Accept outside the four LOCATABLE forms → 406 | pass | — |
+| ADL2 template provisioning | Adl2Provisioning | GET /definition/template/adl2 | ECC-ADL2-012 — List ADL2 templates → TemplateMetadata carrying template_id, concept, archetype_id, created_timestamp | pass | — |
+| AQL terminology functions | AqlTerminology | POST /ehr/{ehr_id}/composition; POST /query/aql (matches TERMINOLOGY('expand', …)) | ECC-AQT-001 — TERMINOLOGY('expand') as a matches operand filters committed compositions by the value set's codes | pass | — |
+| AQL terminology functions | AqlTerminology | POST /query/aql (matches TERMINOLOGY('lookup'|'map', …)) | ECC-AQT-002 — A non-expand TERMINOLOGY operation as a matches operand (lookup/map) → 400 | pass | — |
+| AQL terminology functions | AqlTerminology | POST /query/aql (SELECT TERMINOLOGY('expand', …)) | ECC-AQT-003 — TERMINOLOGY() in an unsupported position (a SELECT column) → 400 | pass | — |
+| AQL terminology functions | AqlTerminology | POST /query/aql (WHERE TERMINOLOGY('lookup', …) = true) | ECC-AQT-004 — A Boolean TERMINOLOGY assertion with an unsupported operation (lookup) → 400 | pass | — |
 
 ## Profile Report
 
@@ -450,11 +466,11 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 
 | Capability | Required in profile | Result |
 |---|:--:|---|
-| Adl2Provisioning | OPT | no cases |
+| Adl2Provisioning | OPT | pass |
 | PartyOperations | OPT | pass |
 | PartyRelationshipOperations | OPT | pass |
 | AqlAdvanced | OPT | pass |
-| AqlTerminology | OPT | no cases |
+| AqlTerminology | OPT | pass |
 | AdminActivityReport | OPT | not evidenced |
 | AdminPhysicalDeletion | OPT | pass |
 | AdminEhrDumpLoad | OPT | not evidenced |

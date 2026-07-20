@@ -26,8 +26,8 @@ use std::path::{Path, PathBuf};
 
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::validate::rm::{
-    Bounds, ProductionRmModel, RmAttr, RmModel, base_type_name, production_model_governs,
-    validate_phase2_rm,
+    Bounds, EnumUnderlying, ProductionRmModel, RmAttr, RmEnum, RmModel, base_type_name,
+    production_model_governs, validate_phase2_rm,
 };
 use openehr_adl::validate::{Severity, ValidationIssue, validate_source};
 use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
@@ -134,6 +134,13 @@ impl RmModel for BmmRmModel {
             return None;
         }
         self.fallback.attribute(rm_type, attr)
+    }
+
+    fn enumeration(&self, rm_type: &str) -> Option<RmEnum> {
+        // The vendored adltest schema declares no enumeration classes, so enum
+        // resolution defers to the production openEHR RM enumeration table (the
+        // `includes = openehr_rm_data_types` fallback).
+        self.fallback.enumeration(rm_type)
     }
 }
 
@@ -273,19 +280,7 @@ const RM_FIRING: &[&str] = &[
 /// Documented adjudications — files skipped with a spec-cited reason (never a
 /// silent exclusion).
 fn adjudicated(name: &str) -> Option<&'static str> {
-    if name.ends_with("VCORMT_rm_non_conforming_type1.v1.0.0.adls") {
-        // `HISTORY<ITEM_LIST>` … `EVENT<CLUSTER>` … `data { ITEM_LIST }`: the
-        // non-conformance is in the generic-parameter binding (the event's
-        // `data` should be `ITEM_LIST`, not the `CLUSTER` the child rebinds),
-        // not the outer type — `EVENT` conforms to the attribute's declared
-        // `EVENT`. openehr_rm::model resolves generic parameters to their bound
-        // and does not expose the binding, so this substitution cannot be
-        // checked (candidate emit-rm-model gap: generic type parameters).
-        // master04.3 §Reference Model Type Matching.
-        Some(
-            "VCORMT generic-parameter substitution needs RM generic parameters (emit-rm-model gap)",
-        )
-    } else if name.ends_with("ENTRY_WRONG.rm_type_wrong.v1.0.0.adls") {
+    if name.ends_with("ENTRY_WRONG.rm_type_wrong.v1.0.0.adls") {
         // Definition root type `ENTRY` != identifier RM class `ENTRY_WRONG`, so
         // VARDT (master03 §Validity Rules L238: "the typename … must match the
         // type mentioned in the first segment of the archetype id") raises on
@@ -577,4 +572,211 @@ fn test_model_loads_expected_classes() {
     );
     // A data type not defined in adltest resolves via the production fallback.
     assert!(test_model.type_exists("DV_CODED_TEXT"));
+}
+
+// ── VCORMT generic-argument matching (production model) ─────────────────────
+
+/// The re-claimed `VCORMT_rm_non_conforming_type1` scenario, exercised directly
+/// against the production model: `HISTORY<ITEM_LIST>.events` is
+/// `EVENT<ITEM_STRUCTURE>`; a child `EVENT<CLUSTER>` conforms on the base type
+/// (`EVENT`) but its generic argument `CLUSTER` does not conform to
+/// `ITEM_STRUCTURE`, so VCORMT fires on the covariant argument match
+/// (master04.2 §`Rm_type_name` and Reference Model Type Matching).
+#[test]
+fn vcormt_generic_argument_non_conformance() {
+    let production = ProductionRmModel;
+    let src = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+        \topenEHR-EHR-OBSERVATION.vcormt_generic.v1.0.0\n\n\
+        language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+        description\n\tlifecycle_state = <\"draft\">\n\n\
+        definition\n\
+        \tOBSERVATION[id1] matches {\n\
+        \t\tdata matches {\n\
+        \t\t\tHISTORY<ITEM_LIST>[id2] matches {\n\
+        \t\t\t\tevents cardinality matches {1..*} matches {\n\
+        \t\t\t\t\tEVENT<CLUSTER>[id3] occurrences matches {0..*}\n\
+        \t\t\t\t}\n\
+        \t\t\t}\n\
+        \t\t}\n\
+        \t}\n\n\
+        terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\
+        \t\t\t[\"id1\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t\t[\"id3\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t>\n\t>\n";
+    assert_raises(src, &production, "VCORMT");
+
+    // `EVENT<ITEM_LIST>` conforms (ITEM_LIST conforms to ITEM_STRUCTURE) → clean.
+    let ok = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+        \topenEHR-EHR-OBSERVATION.vcormt_generic_ok.v1.0.0\n\n\
+        language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+        description\n\tlifecycle_state = <\"draft\">\n\n\
+        definition\n\
+        \tOBSERVATION[id1] matches {\n\
+        \t\tdata matches {\n\
+        \t\t\tHISTORY<ITEM_LIST>[id2] matches {\n\
+        \t\t\t\tevents cardinality matches {1..*} matches {\n\
+        \t\t\t\t\tEVENT<ITEM_LIST>[id3] occurrences matches {0..*}\n\
+        \t\t\t\t}\n\
+        \t\t\t}\n\
+        \t\t}\n\
+        \t}\n\n\
+        terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\
+        \t\t\t[\"id1\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t\t[\"id3\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t>\n\t>\n";
+    assert_clean(ok, &production);
+}
+
+// ── VCACA on the production model (real BMM cardinality) ────────────────────
+
+/// `CLUSTER.items` has RM cardinality `{1..*}` in the production openEHR RM;
+/// constraining it to `{0..*}` widens the lower bound → VCACA. This exercises
+/// the tight lower-bound half of VCACA now that the generated model carries real
+/// container cardinality (master04.5 §Validity Rules: `C_ATTRIBUTE`, VCACA).
+#[test]
+fn vcaca_production_model_lower_bound() {
+    let production = ProductionRmModel;
+    let bad = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+        \topenEHR-EHR-CLUSTER.vcaca_prod.v1.0.0\n\n\
+        language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+        description\n\tlifecycle_state = <\"draft\">\n\n\
+        definition\n\
+        \tCLUSTER[id1] matches {\n\
+        \t\titems cardinality matches {0..*} matches {\n\
+        \t\t\tELEMENT[id2]\n\
+        \t\t}\n\
+        \t}\n\n\
+        terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\
+        \t\t\t[\"id1\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t\t[\"id2\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t>\n\t>\n";
+    assert_raises(bad, &production, "VCACA");
+
+    // `{1..*}` equals the RM cardinality → conforms (clean).
+    let ok = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+        \topenEHR-EHR-CLUSTER.vcaca_prod_ok.v1.0.0\n\n\
+        language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+        description\n\tlifecycle_state = <\"draft\">\n\n\
+        definition\n\
+        \tCLUSTER[id1] matches {\n\
+        \t\titems cardinality matches {1..*} matches {\n\
+        \t\t\tELEMENT[id2]\n\
+        \t\t}\n\
+        \t}\n\n\
+        terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\
+        \t\t\t[\"id1\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t\t[\"id2\"] = <text = <\"x\"> description = <\"x\">>\n\
+        \t\t>\n\t>\n";
+    assert_clean(ok, &production);
+}
+
+// ── VCORMEN / VCORMENV / VCORMENU (enumeration-literal validity) ────────────
+
+/// A minimal reference model with two enumeration-typed attributes, for the
+/// enumeration-literal checks. The openEHR RM 1.2.0 BMM types every "enum"
+/// property as a plain `Integer`/`String` (only `PROPORTION_KIND` is an
+/// enumeration class, and no property is typed as it), so an enum-typed *slot* —
+/// the precondition these checks need — does not occur in the production model;
+/// this bespoke model supplies one (master04.2 §Constraints on Enumeration
+/// Types).
+struct EnumTestModel;
+
+impl RmModel for EnumTestModel {
+    #[allow(clippy::unnecessary_literal_bound)] // the trait returns `&str`
+    fn name(&self) -> &str {
+        "enum test model"
+    }
+
+    fn type_exists(&self, rm_type: &str) -> bool {
+        base_type_name(rm_type).eq_ignore_ascii_case("KIND_HOLDER")
+    }
+
+    fn conforms(&self, sub: &str, sup: &str) -> Option<bool> {
+        if self.type_exists(sub) && self.type_exists(sup) {
+            Some(base_type_name(sub).eq_ignore_ascii_case(base_type_name(sup)))
+        } else {
+            None
+        }
+    }
+
+    fn attribute(&self, rm_type: &str, attr: &str) -> Option<RmAttr> {
+        if !self.type_exists(rm_type) {
+            return None;
+        }
+        let declared = match attr {
+            "int_kind" => "PROP_KIND",
+            "str_kind" => "STR_KIND",
+            _ => return None,
+        };
+        Some(RmAttr {
+            declared_type: declared.to_owned(),
+            is_multiple: false,
+            existence: Bounds::new(0, Some(1)),
+            cardinality: None,
+        })
+    }
+
+    fn enumeration(&self, rm_type: &str) -> Option<RmEnum> {
+        match base_type_name(rm_type).to_uppercase().as_str() {
+            "PROP_KIND" => Some(RmEnum {
+                underlying: EnumUnderlying::Integer,
+                int_values: vec![0, 1, 2, 3, 4],
+                str_values: Vec::new(),
+            }),
+            "STR_KIND" => Some(RmEnum {
+                underlying: EnumUnderlying::String,
+                int_values: Vec::new(),
+                str_values: vec!["mandatory".to_owned(), "optional".to_owned()],
+            }),
+            _ => None,
+        }
+    }
+}
+
+fn kind_holder(definition: &str) -> String {
+    format!(
+        "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+         \topenEHR-TEST_PKG-KIND_HOLDER.enum_test.v1.0.0\n\n\
+         language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+         description\n\tlifecycle_state = <\"draft\">\n\n\
+         definition\n{definition}\n\n\
+         terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n{}\t\t>\n\t>\n",
+        term("id1")
+    )
+}
+
+#[test]
+fn vcormenv_integer_value_not_a_literal() {
+    // int_kind is PROP_KIND (integer enum, literals {0..4}); {2, 9} includes 9,
+    // which is not a declared literal → VCORMENV (master08 §Phase 2; master04.2
+    // §Constraints on Enumeration Types).
+    let model = EnumTestModel;
+    let def = "\tKIND_HOLDER[id1] matches {\n\t\tint_kind matches {2, 9}\n\t}";
+    assert_raises(&kind_holder(def), &model, "VCORMENV");
+
+    // {2, 3} are both declared literals → clean.
+    let ok = "\tKIND_HOLDER[id1] matches {\n\t\tint_kind matches {2, 3}\n\t}";
+    assert_clean(&kind_holder(ok), &model);
+}
+
+#[test]
+fn vcormenu_string_value_not_a_literal() {
+    // str_kind is STR_KIND (string enum, literals {mandatory, optional});
+    // "bogus" is not a declared literal → VCORMENU.
+    let model = EnumTestModel;
+    let def = "\tKIND_HOLDER[id1] matches {\n\t\tstr_kind matches {\"mandatory\", \"bogus\"}\n\t}";
+    assert_raises(&kind_holder(def), &model, "VCORMENU");
+
+    let ok =
+        "\tKIND_HOLDER[id1] matches {\n\t\tstr_kind matches {\"mandatory\", \"optional\"}\n\t}";
+    assert_clean(&kind_holder(ok), &model);
+}
+
+#[test]
+fn vcormen_primitive_kind_mismatch() {
+    // A string constraint on the integer-based PROP_KIND slot is a
+    // primitive-kind mismatch → VCORMEN.
+    let model = EnumTestModel;
+    let def = "\tKIND_HOLDER[id1] matches {\n\t\tint_kind matches {\"foo\"}\n\t}";
+    assert_raises(&kind_holder(def), &model, "VCORMEN");
 }

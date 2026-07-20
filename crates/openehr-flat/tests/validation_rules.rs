@@ -1560,3 +1560,52 @@ fn measure_ips_validation_full_cost() {
     eprintln!("  pass 3 walk (archetype conf.)  : {t_walk:>8.1} us/op");
     eprintln!("  full validate_composition      : {t_all:>8.1} us/op");
 }
+
+// ── non-LOCATABLE structural matching (EVENT_CONTEXT is PATHABLE) ────────────────
+
+/// The archetype-conformance walk must match a non-`LOCATABLE` node STRUCTURALLY
+/// (by attribute position), never by `archetype_node_id`: `EVENT_CONTEXT`
+/// inherits `PATHABLE` (RM `UML/classes/org.openehr.rm.composition.event_context.adoc`
+/// §Inherit), and only `LOCATABLE` carries `archetype_node_id`/`name` (RM common
+/// `UML/classes/org.openehr.rm.common.locatable.adoc`), so no canonical
+/// `EVENT_CONTEXT` bears the at-code a template archetypes `/context[at0001]`
+/// with. A `LOCATABLE` node (SECTION) still REQUIRES its node id — the correction
+/// is toward the RM inheritance graph, not a blanket relaxation.
+#[test]
+fn non_locatable_context_matches_structurally_locatable_still_needs_node_id() {
+    let mut root = node("COMPOSITION", "");
+    let mut ctx = node("EVENT_CONTEXT", "/context[at0001]");
+    ctx.min = Some(1);
+    ctx.max = 1;
+    let mut section = node("SECTION", "/content[at0005]");
+    section.min = Some(1);
+    section.max = 1;
+    root.children = vec![ctx, section];
+
+    // Canonical instance: the EVENT_CONTEXT carries NO archetype_node_id (PATHABLE);
+    // the SECTION carries its node id (LOCATABLE).
+    let ok = json!({
+        "_type": "COMPOSITION",
+        "context": {"_type": "EVENT_CONTEXT", "start_time": {"_type": "DV_DATE_TIME", "value": "2022-02-03T04:05:06Z"}},
+        "content": [{"_type": "SECTION", "archetype_node_id": "at0005",
+                     "name": {"_type": "DV_TEXT", "value": "S"}}]
+    });
+    assert!(
+        walk_only(&ok, &root).is_empty(),
+        "an archetyped EVENT_CONTEXT conforms without archetype_node_id: {:?}",
+        walk_only(&ok, &root)
+    );
+
+    // The LOCATABLE SECTION with its node id dropped no longer matches at0005 —
+    // still a Required violation (node-id matching intact for LOCATABLE nodes).
+    let bad = json!({
+        "_type": "COMPOSITION",
+        "context": {"_type": "EVENT_CONTEXT"},
+        "content": [{"_type": "SECTION", "name": {"_type": "DV_TEXT", "value": "S"}}]
+    });
+    assert!(
+        kinds(&walk_only(&bad, &root)).contains(&ValidationKind::Required),
+        "a LOCATABLE node still requires its archetype_node_id: {:?}",
+        walk_only(&bad, &root)
+    );
+}

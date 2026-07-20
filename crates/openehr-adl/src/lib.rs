@@ -8,20 +8,27 @@
 //! grammars are vendored under `vendor/grammar/` as reference input for the
 //! hand-written `logos`/`chumsky` implementation — no ANTLR runtime.
 //!
-//! Phases so far: the [`lexer`], the outer artefact parser ([`source`]), the
+//! Components: the [`lexer`], the outer artefact parser ([`source`]), the
 //! shared typed [`error`] catalogue, and the cADL definition-section parser
-//! ([`cadl`], phase A3a) that builds the generated `openehr_am::am24::aom2`
-//! constraint model. ODIN sections are parsed by the `openehr_lang::odin`
-//! reader (ODIN is a LANG-component spec); the `rules` body and slot
-//! assertion expressions are captured as raw text alongside a structured
-//! placeholder.
+//! ([`cadl`]) that builds the generated `openehr_am::am24::aom2` constraint
+//! model; [`codes`]/[`paths`] (code math + ADL paths), [`validate`] (the AOM2
+//! validation catalogue), [`flatten`] + [`opt`] (specialisation flattening +
+//! OPT2), the [`printer`], and [`adl14`] (ADL 1.4→2 conversion — our own
+//! design, no openEHR spec). ODIN sections are parsed by the
+//! `openehr_lang::odin` reader (ODIN is a LANG-component spec); the `rules`
+//! body and slot assertion expressions are captured as raw text alongside a
+//! structured placeholder.
 //! TODO: model rule/slot assertion expressions as full BEL/beom trees.
 
+pub mod adl14;
 pub mod assemble;
 pub mod cadl;
 pub mod codes;
 pub mod error;
+pub mod flatten;
 pub mod lexer;
+pub mod meta;
+pub mod opt;
 pub mod paths;
 pub mod printer;
 pub mod rules;

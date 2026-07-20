@@ -29,15 +29,18 @@
 //! are in [`conformance`]. Per `ADL2/master09.02` §Differential and Flat Forms
 //! ("For a top-level archetype, the flat-form is the same as its differential
 //! form") a level-0 parent is used as-is; a parent that is itself specialised
-//! needs the full flattener before its DEEP flat form is available.
-//!
-//! TODO: build the specialisation flattener so [`FlatParent::NeedsFlattener`]
-//! parents (specialised parents) can be flattened for the deep phase-2 checks,
-//! and add the phase-3 flat-form checks (VUNP, VACMCO).
+//! needs the full flattener before its DEEP flat form is available — which
+//! [`crate::flatten::flat_form`] now supplies, so a specialised parent
+//! ([`FlatParent::NeedsFlattener`]) is flattened before the deep phase-2 checks
+//! run. Phase 3 ([`phase3`]) runs on the flattened form (VUNP, VACMCO), per
+//! `master08` §Phase 3 - Validation of Flat Form.
 
 pub mod conformance;
+pub mod fillers;
 mod phase1;
 mod phase2;
+mod phase3;
+mod phase_flat;
 pub mod rm;
 
 use std::collections::HashMap;
@@ -103,10 +106,9 @@ pub enum ValidationCode {
     /// VDIFV — differential path only in specialised archetype (`master04.5`
     /// §`C_ATTRIBUTE`).
     Vdifv,
-    /// VDIFP — differential path exists in flat parent (`master04.5` §`C_ATTRIBUTE`).
-    ///
-    /// TODO: needs the specialisation flattener (the flat parent) + the RM path
-    /// walk before it can run.
+    /// VDIFP — differential path exists in flat parent (`master04.5` §`C_ATTRIBUTE`;
+    /// checked in [`phase2`] by resolving the differential path against the flat
+    /// parent, with the RM-path half subsumed by that resolution — see [`rm`]).
     Vdifp,
     /// VCORM — object constraint type name exists in the RM (`master04.5`
     /// §`C_OBJECT`; checked in [`rm`]).
@@ -126,6 +128,24 @@ pub enum ValidationCode {
     /// VCAM — attribute single/multiple arity matches the RM (`master04.5`
     /// §`C_ATTRIBUTE`; checked in [`rm`]).
     Vcam,
+    /// VCORMEN — enumeration type constraint kind validity: a primitive
+    /// constraint on an enumeration-typed RM slot must match the enumeration's
+    /// underlying primitive (an integer constraint on a string-based
+    /// enumeration, or vice versa, is invalid). `master08` §Phase 2 lists
+    /// (VCORMENV, VCORMENU, VCORMEN) with no full vendored text; the V/U/EN
+    /// partition below is our reading of that gloss against `master04.2`
+    /// §Constraints on Enumeration Types — NOTE-flagged in [`rm`].
+    Vcormen,
+    /// VCORMENV — enumeration integer-value validity: an integer constraint
+    /// value on an integer-based enumeration slot must be a declared literal
+    /// value (`master08` §Phase 2 + `master04.2` §Constraints on Enumeration
+    /// Types; spec-silent full text — NOTE-flagged in [`rm`]).
+    Vcormenv,
+    /// VCORMENU — enumeration string-value validity: a string constraint value
+    /// on a string-based enumeration slot must be a declared literal value
+    /// (`master08` §Phase 2 + `master04.2` §Constraints on Enumeration Types;
+    /// spec-silent full text — NOTE-flagged in [`rm`]).
+    Vcormenu,
     /// VATCV — terminology code format validity (`master08` §Phase 1; no full
     /// vendored text — NOTE-flagged).
     Vatcv,
@@ -137,8 +157,15 @@ pub enum ValidationCode {
     Vttbk,
     /// VTCBK — constraint binding key valid (`master07` §Validity Rules).
     Vtcbk,
-    /// VETDF — external term validity (`master03` §Validity Rules).
-    /// TODO: check against an external terminology service.
+    /// VETDF — external term validity (`master03` §Validity Rules): a code bound
+    /// to an *external* terminology (SNOMED CT, LOINC, …) must exist in that
+    /// terminology. This is the vocabulary variant; the check needs a live
+    /// terminology-service resolver, which `openehr-adl` (a network-free spec
+    /// engine) cannot hold — it is validated by the application's terminology
+    /// service via a resolver seam.
+    /// TODO: validate external term bindings once a terminology-service resolver
+    /// seam is threaded into the validator (the external-terminology-service
+    /// archetype-binding validation worklist item).
     Vetdf,
     /// VTVSID — value-set id defined (`master07` §Validity Rules).
     Vtvsid,
@@ -157,8 +184,9 @@ pub enum ValidationCode {
     Varxnc,
     /// VARXAV — `C_ARCHETYPE_ROOT` archetype-ref validity (`master08` §Phase 1).
     Varxav,
-    /// VARXR — external reference resolution (`master08` §Phase 2).
-    /// TODO: resolve external references against the supplier repository.
+    /// VARXR — external reference resolution (`master08` §Phase 2; checked in
+    /// [`fillers`] by resolving each `use_archetype` reference against the
+    /// supplier repository).
     Varxr,
     /// VARXTV — `C_ARCHETYPE_ROOT` type validity (`master08` §Phase 1).
     Varxtv,
@@ -168,9 +196,9 @@ pub enum ValidationCode {
     /// VATCD — archetype code specialisation level validity (`master03` §Validity
     /// Rules).
     Vatcd,
-    /// VATDF — value code (at-code) validity (`master03` §Validity Rules).
-    /// TODO: check the flat-parent half for specialised archetypes (needs the
-    /// flattener).
+    /// VATDF — value code (at-code) validity (`master03` §Validity Rules; a
+    /// non-specialised archetype is checked in [`phase1`], the specialised
+    /// flat-form half against the flattened terminology in [`phase_flat`]).
     Vatdf,
     /// VACDF — constraint code (ac-code) validity (`master03` §Validity Rules).
     Vacdf,
@@ -193,8 +221,8 @@ pub enum ValidationCode {
     /// VALC — archetype language conformance (`master03` §Validity Rules; fires
     /// only when the parent is supplied).
     Valc,
-    /// VTPL — template/filler language consistency (`master03` §Validity Rules).
-    /// TODO: check once template fillers are resolved.
+    /// VTPL — template/filler language consistency (`master03` §Validity Rules;
+    /// checked in [`fillers`] against the resolved, flattened fillers).
     Vtpl,
     /// VRRLP — rule path valid (`master03` §Validity Rules; the RM-extension half
     /// is a reference-model check, [`rm`]).
@@ -223,9 +251,14 @@ pub enum ValidationCode {
     /// VACMCU — cardinality/occurrences upper bound validity (`master04.5`
     /// §`C_ATTRIBUTE`).
     Vacmcu,
+    /// VACMCO — cardinality/occurrences orphans: every mandatory child and one
+    /// optional child must fit within the container cardinality (`master04.5`
+    /// §`C_ATTRIBUTE` VACMCO L158-159; a phase-3 flat-form check, [`phase3`]).
+    Vacmco,
     /// VSONIF — object node identification validity in flat siblings (`master04.5`
-    /// §`ARCHETYPE_SLOT`; refs undefined VACMI).
-    /// TODO: check against the flattened parent siblings (needs the flattener).
+    /// §`C_OBJECT` VSONIF L356-357; refs the spec-undefined VACMI). Checked in
+    /// [`phase2`]: a new object node in a specialised container whose flattened
+    /// siblings are identified must itself be identified.
     Vsonif,
     /// VRDLA — resource-description language-code consistency (archie parity; no
     /// openEHR spec governs this — our own design/extension, NOTE-flagged).
@@ -281,6 +314,10 @@ pub enum ValidationCode {
     /// VUNT — `use_node` reference model type validity (`master04.5`
     /// §`C_COMPLEX_OBJECT_PROXY`).
     Vunt,
+    /// VUNP — `use_node` path validity: the proxy target path must resolve to an
+    /// object node in the flat form (`master04.5` §`C_COMPLEX_OBJECT_PROXY`
+    /// VUNP L482-483; a phase-3 flat-form check, [`phase3`]).
+    Vunp,
     /// VDSSID — slot redefinition child node id (`master04.5` §`ARCHETYPE_SLOT`).
     Vdssid,
     /// VDSSM — specialised slot definition match validity (`master04.5`
@@ -336,6 +373,9 @@ impl ValidationCode {
             Self::Vcaex => "VCAEX",
             Self::Vcaca => "VCACA",
             Self::Vcam => "VCAM",
+            Self::Vcormen => "VCORMEN",
+            Self::Vcormenv => "VCORMENV",
+            Self::Vcormenu => "VCORMENU",
             Self::Vatcv => "VATCV",
             Self::Vtsd => "VTSD",
             Self::Vtlc => "VTLC",
@@ -376,6 +416,7 @@ impl ValidationCode {
             Self::Vrmvav => "VRMVAV",
             Self::Vacso => "VACSO",
             Self::Vacmcu => "VACMCU",
+            Self::Vacmco => "VACMCO",
             Self::Vsonif => "VSONIF",
             Self::Vrdla => "VRDLA",
             Self::Wacmcl => "WACMCL",
@@ -395,6 +436,7 @@ impl ValidationCode {
             Self::Vsonir => "VSONIR",
             Self::Vsunt => "VSUNT",
             Self::Vunt => "VUNT",
+            Self::Vunp => "VUNP",
             Self::Vdssid => "VDSSID",
             Self::Vdssm => "VDSSM",
             Self::Vdssp => "VDSSP",
@@ -467,7 +509,7 @@ impl ValidationIssue {
 /// family and namespace are ignored for lookup), so a child's
 /// `parent_archetype_id` (`…redefine_occurrences.v1`) resolves to the parsed
 /// parent (`…redefine_occurrences.v1.0.0`).
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct ArchetypeRepository {
     by_id: HashMap<String, Archetype>,
 }
@@ -500,9 +542,9 @@ impl ArchetypeRepository {
 /// [`Available`](FlatParent::Available) directly (`ADL2/master09.02`
 /// §Differential and Flat Forms: "For a top-level archetype, the flat-form is
 /// the same as its differential form"). A parent that is itself specialised
-/// needs the deep flat form the flattener is not yet built to produce, and is
-/// reported [`NeedsFlattener`](FlatParent::NeedsFlattener) rather than validated
-/// against a wrong (un-flattened) parent.
+/// needs its deep flat form (produced by [`crate::flatten::flat_form`]), which is
+/// owned rather than borrowable, so it is reported
+/// [`NeedsFlattener`](FlatParent::NeedsFlattener) and flattened by the caller.
 #[derive(Debug, Clone, Copy)]
 pub enum FlatParent<'a> {
     /// The archetype is not specialised — the phase-2 specialisation checks do
@@ -511,7 +553,8 @@ pub enum FlatParent<'a> {
     /// The flat parent is available (a level-0 parent used as-is).
     Available(&'a Archetype),
     /// The declared parent is registered but is itself specialised, so its deep
-    /// flat form needs the flattener.
+    /// flat form is computed (owned) by the caller via
+    /// [`crate::flatten::flat_form`] rather than borrowed here.
     NeedsFlattener,
     /// The declared parent could not be resolved in the repository.
     NotFound,
@@ -534,28 +577,40 @@ pub fn resolve_flat_parent<'a>(child: &Archetype, repo: &'a ArchetypeRepository)
         return FlatParent::NotFound;
     };
     if view(parent).is_specialised() {
-        // TODO: flatten the specialised parent to obtain its deep flat form.
+        // A borrowed level-0 parent is its own flat form; a specialised parent's
+        // deep flat form is owned (computed by [`crate::flatten::flat_form`]) and
+        // cannot be handed back by borrow — [`run_phase2_spec`] flattens it there.
         return FlatParent::NeedsFlattener;
     }
     FlatParent::Available(parent)
 }
 
 /// The `publisher-package-class.concept` lookup key of an [`ArchetypeHrid`].
+///
+/// Case-folded to ASCII lowercase: openEHR archetype-id matching is
+/// case-insensitive on the RM publisher/package/class (`ADL2/master07.05`
+/// §Physical Archetype Identifier — the RM entity names follow the
+/// case-insensitive type-name matching of `master03` §Lexical Conventions), so
+/// a reference `openehr-task_planning-DECISION_GROUP.x` resolves the archetype
+/// `openehr-TASK_PLANNING-DECISION_GROUP.x`.
 fn hrid_lookup_key(h: &ArchetypeHrid) -> String {
     format!(
         "{}-{}-{}.{}",
         h.rm_publisher, h.rm_package, h.rm_class, h.concept_id
     )
+    .to_ascii_lowercase()
 }
 
 /// The lookup key of a raw archetype-id string (strips an optional `ns::`
-/// namespace prefix and the trailing `.vN…` version).
+/// namespace prefix and the trailing `.vN…` version; case-folded to match
+/// [`hrid_lookup_key`]).
 fn raw_id_lookup_key(raw: &str) -> String {
     let no_ns = raw.rsplit("::").next().unwrap_or(raw);
     match version_marker(no_ns) {
-        Some(idx) => no_ns.get(..idx).unwrap_or(no_ns).to_owned(),
-        None => no_ns.to_owned(),
+        Some(idx) => no_ns.get(..idx).unwrap_or(no_ns),
+        None => no_ns,
     }
+    .to_ascii_lowercase()
 }
 
 /// The byte index of the version marker in an archetype id — the first `.v`
@@ -580,7 +635,13 @@ pub fn validate_phase1(
     repo: Option<&ArchetypeRepository>,
 ) -> Vec<ValidationIssue> {
     let mut issues = Vec::new();
-    phase1::run(&view(archetype), repo, None, &mut issues);
+    phase1::run(
+        &view(archetype),
+        repo,
+        None,
+        crate::cadl::Dialect::Adl2,
+        &mut issues,
+    );
     issues
 }
 
@@ -598,7 +659,57 @@ pub fn validate_source_phase1(
     let source = parse_source(src)?;
     let archetype = crate::assemble::assemble(&source, src)?;
     let mut issues = Vec::new();
-    phase1::run(&view(&archetype), repo, Some((&source, src)), &mut issues);
+    phase1::run(
+        &view(&archetype),
+        repo,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl2,
+        &mut issues,
+    );
+    Ok(issues)
+}
+
+/// Parse an **ADL 1.4** source (the 1.4 dialect) and validate it against the
+/// subset of the AOM2 phase-1 catalogue that corresponds to the ADL 1.4 / AOM
+/// 1.4 standalone validity rules.
+///
+/// A 1.4 upload is judged **as 1.4** (its 1.4-shaped `openehr_am::am24` model),
+/// never post-conversion: converting to ADL 2 changes the artefact, so a 1.4
+/// source is validated against the 1.4 formalism's own (smaller) catalogue. The
+/// checks that correspond to an ADL 1.4 / AOM 1.4 rule run unchanged; the
+/// AOM2-only rules that would false-reject a valid 1.4 archetype are suppressed
+/// at their check sites in [`phase1`] (each spec-cited there):
+/// - **VARAV / VARRV** — AOM 1.4 has no `adl_version`/`rm_release` 3-part rule
+///   (`adl_version` is `1.4`-form metadata; 1.4 carries no `rm_release`).
+/// - **VCOID** — relaxed to the AOM 1.4 `node_id` rule (required only for
+///   children of a container attribute).
+/// - **VATCV** (definition constraint-code form) — 1.4 terminology constraints
+///   are not ADL2 code forms.
+/// - **VCOSU** — AOM 1.4 node ids are only sibling-unique, not archetype-wide.
+///
+/// The corresponding checks that DO run (ADL1.4 master08 §Validity Rules +
+/// AOM1.4 invariants): VARID (id validity), VARDT (definition typename vs id
+/// class), VARCN + VATID (root concept code form + terminology definedness),
+/// STCNT (ontology present, ADL1.4 VARON), VDEOL/VARD/VOLT (original language +
+/// description present), VOTM/VTLC + value-set/binding integrity (translation
+/// completeness), VDSEV/VDSIV (slot include/exclude consistency), VDFAI (slot
+/// archetype-id validity), VACSD/VASID/VALC (specialisation depth/parent/language
+/// where a parent is resolvable), VRANP/VOKU/VRRLP.
+///
+/// # Errors
+/// Returns the parse [`SyntaxError`]s if `src` does not parse as ADL 1.4;
+/// validation runs only on a successful parse.
+pub fn validate_source_phase1_adl14(src: &str) -> Result<Vec<ValidationIssue>, Vec<SyntaxError>> {
+    let source = parse_source(src)?;
+    let archetype = crate::assemble::assemble_adl14(&source, src)?;
+    let mut issues = Vec::new();
+    phase1::run(
+        &view(&archetype),
+        None,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl14,
+        &mut issues,
+    );
     Ok(issues)
 }
 
@@ -621,6 +732,7 @@ pub fn validate(
         issues.extend(rm::validate_phase2_rm(archetype, rm));
     }
     run_phase2_spec(archetype, repo, rm, &mut issues);
+    run_phase3(archetype, repo, &mut issues);
     issues
 }
 
@@ -641,8 +753,57 @@ fn run_phase2_spec(
     let Some(repo) = repo else {
         return;
     };
-    if let FlatParent::Available(parent) = resolve_flat_parent(archetype, repo) {
-        issues.extend(phase2::validate_phase2_spec(archetype, parent, rm, repo));
+    match resolve_flat_parent(archetype, repo) {
+        FlatParent::Available(parent) => {
+            issues.extend(phase2::validate_phase2_spec(archetype, parent, rm, repo));
+        }
+        FlatParent::NeedsFlattener => {
+            // The declared parent is itself specialised: flatten it to its deep
+            // flat form, then validate against that (`master08` §Flattening:
+            // process each parent in order from the top).
+            if let Some(parent_id) = view(archetype).parent_archetype_id
+                && let Some(parent) = repo.get(parent_id)
+                && let Ok(flat_parent) = crate::flatten::flat_form(parent, repo)
+            {
+                issues.extend(phase2::validate_phase2_spec(
+                    archetype,
+                    &flat_parent,
+                    rm,
+                    repo,
+                ));
+            }
+        }
+        FlatParent::NotSpecialised | FlatParent::NotFound => {}
+    }
+}
+
+/// Run the phase-3 flat-form checks (VUNP, VACMCO) on the flattened archetype,
+/// gated on a still-clean issue list (`master08` §Phase 3 — carried out after
+/// successful flat-form generation). A specialised archetype is flattened via
+/// [`crate::flatten::flat_form`] (needs `repo`); a level-0 archetype is its own
+/// flat form. If flattening is impossible (specialised, no resolvable parent) the
+/// checks are skipped rather than run against a wrong (un-flattened) form.
+fn run_phase3(
+    archetype: &Archetype,
+    repo: Option<&ArchetypeRepository>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    if issues.iter().any(|i| i.severity == Severity::Error) {
+        return;
+    }
+    let flat = repo.and_then(|r| crate::flatten::flat_form(archetype, r).ok());
+    let flat_ref = match &flat {
+        Some(f) => f,
+        None if view(archetype).parent_archetype_id.is_none() => archetype,
+        None => return,
+    };
+    issues.extend(phase3::validate_phase3(flat_ref));
+    // The deferred flat-form terminology/structure checks (VATDF / VTVSMD /
+    // VACMCU / WACMCL / VCOSU) run only for a *specialised* archetype: a
+    // non-specialised archetype is its own flat form, so [`phase1`] already ran
+    // their equivalents (never double-firing here).
+    if view(archetype).is_specialised() {
+        issues.extend(phase_flat::validate_flat_form(flat_ref));
     }
 }
 
@@ -661,7 +822,13 @@ pub fn validate_source(
     let source = parse_source(src)?;
     let archetype = crate::assemble::assemble(&source, src)?;
     let mut issues = Vec::new();
-    phase1::run(&view(&archetype), repo, Some((&source, src)), &mut issues);
+    phase1::run(
+        &view(&archetype),
+        repo,
+        Some((&source, src)),
+        crate::cadl::Dialect::Adl2,
+        &mut issues,
+    );
     if issues.iter().all(|i| i.severity != Severity::Error) {
         issues.extend(rm::validate_phase2_rm(&archetype, rm));
     }
@@ -776,6 +943,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::too_many_lines)] // one line per catalogue code — an exhaustive list, not logic
     fn every_code_has_a_unique_mnemonic_and_severity() {
         let all = [
             ValidationCode::Vardt,
@@ -794,6 +962,9 @@ mod tests {
             ValidationCode::Vcaex,
             ValidationCode::Vcaca,
             ValidationCode::Vcam,
+            ValidationCode::Vcormen,
+            ValidationCode::Vcormenv,
+            ValidationCode::Vcormenu,
             ValidationCode::Vatcv,
             ValidationCode::Vtsd,
             ValidationCode::Vtlc,
@@ -834,6 +1005,7 @@ mod tests {
             ValidationCode::Vrmvav,
             ValidationCode::Vacso,
             ValidationCode::Vacmcu,
+            ValidationCode::Vacmco,
             ValidationCode::Vsonif,
             ValidationCode::Vrdla,
             ValidationCode::Wacmcl,
@@ -853,6 +1025,7 @@ mod tests {
             ValidationCode::Vsonir,
             ValidationCode::Vsunt,
             ValidationCode::Vunt,
+            ValidationCode::Vunp,
             ValidationCode::Vdssid,
             ValidationCode::Vdssm,
             ValidationCode::Vdssp,
@@ -874,6 +1047,6 @@ mod tests {
             };
             assert_eq!(c.severity(), expected, "{c} severity");
         }
-        assert_eq!(seen.len(), 85);
+        assert_eq!(seen.len(), 90);
     }
 }

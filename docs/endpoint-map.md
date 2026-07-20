@@ -403,31 +403,31 @@ notes: example generation is not spec-mandated (a convenience surface); the WebT
 chain: handler `…::definition_template_adl2_list` → `template_adl2.rs::list` → `EhrbaseService::template_adl2_list` (`app:service/definition/wire.rs`) → `adl2_template_list(Page::all())` (`app:service/definition/adl2.rs`) → `filter_templates` in memory
 spine: standard api/** dispatch
 sql: 1 round trip — SELECT hrid, created_at FROM adl2_artefact WHERE kind IN ('template','operational_template') ORDER BY hrid
-notes: the service fetches the full set (`Page::all`) and filters/pages in Rust; `concept` is never extracted (no cADL source parser yet), so a `concept` filter matches nothing — documented in the method doc.
+notes: the service fetches the full set (`Page::all`) and filters/pages in Rust; each row is a `TemplateMetadata` object (`template_id`, `concept` = the HRID concept segment, `archetype_id` = the HRID, `created_timestamp`) — derived from the stored HRID, no cADL parse needed.
 
 ### POST /definition/template/adl2
-chain: handler `…::definition_template_adl2_upload` → `template_adl2.rs::upload` (text/plain body) → `EhrbaseService::template_adl2_upload` (`app:service/definition/wire.rs`): `crate::validation::validate_adl2_source` pre-check (ADL2 header/ODIN parse, `app:validation/adl2/` — CPU) → `adl2_exists` (case-insensitive → 409) → `adl2_upload` (`app:service/definition/adl2.rs`): validate again + HRID lexical check + optional VACSD parent-depth check → transactional case-insensitive replace
+chain: handler `…::definition_template_adl2_upload` → `template_adl2.rs::upload` (text/plain body) → `EhrbaseService::template_adl2_upload` (`app:service/definition/wire.rs`) → `adl2_wire_upload` (`app:service/definition/adl2.rs`): `adl2_validate` (parse + AOM2 phases via the `openehr-adl` engine, against a repository built from the stored ADL2 set) → `adl2_exists` (case-insensitive → 409) → `adl2_persist` (INSERT)
 spine: standard api/** dispatch
-sql: 2–3 probes + 1 tx — SELECT EXISTS (409 probe); optional SELECT adl (parent for VACSD, only when the source `specialize`s); then BEGIN / DELETE case-variant + INSERT INTO adl2_artefact / COMMIT
-notes: `validate_adl2_source` runs twice (the wire 400 pre-check and the store-path 422 gate); duplicate handling deliberately diverges by surface — REST 409 (`definition-codegen.openapi.yaml`) vs SM `upload_artefact` replace (`i_definition_adl2.adoc`), PORT-NOTEd; response is `Prefer`-negotiated (representation = text/plain source, identifier = JSON `{template_id}`) with `Location`.
+sql: 1 fetch + 1 probe + 1 insert — SELECT adl FROM adl2_artefact (build the validation repository); SELECT EXISTS (409 probe); INSERT INTO adl2_artefact. The SM-native `upload_artefact` uses a case-insensitive DELETE+INSERT replace instead of the 409.
+notes: an invalid source is a 422 whose `Error.validationErrors` carry the AOM2/ADL2 rule codes (S-codes for a parse failure, V-codes for a validation-phase failure); a non-UTF-8 body is a 400. Duplicate handling diverges by surface — REST 409 (`definition-codegen.openapi.yaml`) vs SM `upload_artefact` replace (`i_definition_adl2.adoc`). Response is `Prefer`-negotiated (representation = text/plain source, identifier = JSON `{template_id}`) with `Location`.
 
 ### GET /definition/template/adl2/{template_id}
-chain: handler `…::definition_template_adl2_get` → `template_adl2.rs::get`: `accepts_text` first (an Accept naming only the not-yet-produced `application/json`/`xml` projections → 406) → `EhrbaseService::get_artefact` (`app:service/definition/adl2.rs`) → `adl2_get`
+chain: handler `…::definition_template_adl2_get` → `template_adl2.rs::get` → `render` (Accept negotiation: text/plain source | application/json OPT | xml-only → 406) → `EhrbaseService::template_adl2_source` / `template_adl2_opt_json` (`app:service/definition/wire.rs`) → `adl2_resolve` + `adl2_get` (+ `adl2_opt_json` for JSON)
 spine: standard api/** dispatch
-sql: 1 round trip — SELECT adl FROM adl2_artefact WHERE lower(hrid) = lower($1)
-notes: served as `text/plain` source (`200_Template_adl2_retrieved.yaml`); unknown HRID → 404.
+sql: 1–2 round trips — SELECT hrid (exact) or SELECT hrid[] (partial-resolve family), then SELECT adl; the JSON projection also SELECTs the full set to build the OPT repository
+notes: `text/plain` = the stored source verbatim (`200_Template_adl2_retrieved.yaml`); `application/json` = the `OperationalTemplateV2` canonical JSON (opaque `type: object` in the OAS → the AOM2 OPT JSON satisfies it, built via `openehr_adl::opt::create_opt` for non-OPT kinds); `application/xml` has no declared response body → 406. Unknown HRID → 404.
 
 ### GET /definition/template/adl2/{template_id}/example
-chain: handler `…::definition_template_adl2_example_get` → `template_adl2.rs::example_get` → params parse → `ApiError::NotImplemented` (501)
+chain: handler `…::definition_template_adl2_example_get` → `template_adl2.rs::example_get` → `EhrbaseService::template_adl2_example` → `adl2_resolve` (HRID) → `adl2_get` (source) → `openehr_adl::opt::create_opt` → `openehr_flat::webtemplate::build_web_template_am24` (am24 → Web Template) → `openehr_flat::example::example_composition` → `Accept_LOCATABLE` negotiation (canonical JSON/XML + FLAT/STRUCTURED); 400 (bad `type`/`detail_level`), 404 (unknown template), 406 (unsupported Accept)
 spine: standard api/** dispatch
 sql: 0 round trips
-notes: needs an example generator over a cADL/AOM2 source model — deferred to the full-ADL2 work; ADL2 is OPTIONAL for CNF.
+notes: needs an example generator over an `am24`-OPT WebTemplate (the same generator issue #94 builds); ADL2 is OPTIONAL for CNF.
 
 ### GET /definition/template/adl2/{template_id}/{version}
-chain: handler `…::definition_template_adl2_version_get` → `template_adl2.rs::version_get` → params parse → `ApiError::NotImplemented` (501)
+chain: handler `…::definition_template_adl2_version_get` → `template_adl2.rs::version_get` → `render` with the explicit `version` → `template_adl2_source` / `template_adl2_opt_json` → `adl2_resolve(template_id, Some(version))`
 spine: standard api/** dispatch
-sql: 0 round trips
-notes: needs the cADL source parser for the JSON `OperationalTemplateV2` form; the operation is `deprecated: true` in the vendored OAS.
+sql: 1–2 round trips — SELECT hrid[] (resolve family + version prefix → highest match), then SELECT adl (+ full set for the JSON OPT repository)
+notes: `deprecated: true` in the vendored OAS (reflected via `#[deprecated]` on the handler); serves the same `text/plain` / `application/json` representations as `_get`; a missing template/version → 404.
 
 ### GET /definition/query/{qualified_query_name}
 chain: handler `…::definition_query_list` → `stored_query.rs::list` → `EhrbaseService::query_list` (`app:service/definition/wire.rs`) → `list_stored_queries` (`app:service/definition/query.rs`)

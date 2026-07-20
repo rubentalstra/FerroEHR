@@ -1,4 +1,4 @@
-//! AOM artefact assembly (phase A3c): fold the parsed ODIN sections, the cADL
+//! AOM artefact assembly: fold the parsed ODIN sections, the cADL
 //! `definition`, and the `rules` of a [`crate::source::SourceArtefact`] into the
 //! **generated** `openehr_am::am24::aom2` object model, producing a complete
 //! [`Archetype`].
@@ -66,6 +66,24 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
     assemble(&art, src)
 }
 
+/// Parse an **ADL 1.4-dialect** source into an [`Archetype`] (the 1.4→2
+/// converter front end): identical to [`parse_artefact`] except the cADL
+/// `definition` is parsed with [`crate::cadl::parse_definition_body_adl14`],
+/// which tolerates the 1.4-only object forms. The result is a *1.4-shaped*
+/// `Archetype` (at-code node ids, qualified/listed terminology constraints in
+/// the `C_TERMINOLOGY_CODE.constraint` string, domain blocks lowered to
+/// `DV_QUANTITY`/`DV_ORDINAL`) that [`crate::adl14::convert`] rewrites into a
+/// spec-valid ADL2 archetype. No openEHR spec governs 1.4→2 — see
+/// `crate::adl14`.
+///
+/// # Errors
+/// Returns every [`SyntaxError`] found across the outer parse, the cADL
+/// definition, the rules, and the ODIN-section-to-model mapping.
+pub fn parse_artefact_adl14(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
+    let art = parse_source(src)?;
+    assemble_with(&art, src, crate::cadl::Dialect::Adl14)
+}
+
 /// Assemble an already-outer-parsed [`SourceArtefact`] into an [`Archetype`],
 /// given the whole source text (needed to re-lex the `definition`/`rules`
 /// spans).
@@ -74,10 +92,31 @@ pub fn parse_artefact(src: &str) -> Result<Archetype, Vec<SyntaxError>> {
 /// Returns every [`SyntaxError`] from the cADL/rules parse and the section
 /// mapping.
 pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
+    assemble_with(art, src, crate::cadl::Dialect::Adl2)
+}
+
+/// Assemble an already-outer-parsed [`SourceArtefact`] into a *1.4-shaped*
+/// [`Archetype`] (the ADL 1.4 dialect — the twin of [`assemble`] that
+/// [`parse_artefact_adl14`] wraps, exposed so a caller that also needs the
+/// [`SourceArtefact`] — e.g. the 1.4 phase-1 validator's source-level checks —
+/// can assemble without re-parsing).
+///
+/// # Errors
+/// Returns every [`SyntaxError`] from the cADL/rules parse and the section
+/// mapping.
+pub fn assemble_adl14(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<SyntaxError>> {
+    assemble_with(art, src, crate::cadl::Dialect::Adl14)
+}
+
+fn assemble_with(
+    art: &SourceArtefact,
+    src: &str,
+    dialect: crate::cadl::Dialect,
+) -> Result<Archetype, Vec<SyntaxError>> {
     let mut errors: Vec<SyntaxError> = Vec::new();
 
-    let definition = assemble_definition(art, src, &mut errors);
-    let rules = match parse_artefact_rules(art, src) {
+    let definition = assemble_definition(art, src, dialect, &mut errors);
+    let mut rules = match parse_artefact_rules(art, src) {
         Ok(set) => set.into_iter().collect::<Vec<StatementSet>>(),
         Err(errs) => {
             errors.extend(errs);
@@ -119,11 +158,17 @@ pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<Syntax
         }
         return Err(errors);
     };
+    // Resolve each rule's `EXPR_ARCHETYPE_REF` proxy against the assembled
+    // definition, replacing the parse-time placeholder with the target node
+    // (`AOM2` master05; `crate::rules::resolve_archetype_refs`).
+    for rule_set in &mut rules {
+        crate::rules::resolve_archetype_refs(rule_set, &definition);
+    }
     // A `template` may carry `template_overlay` blocks; overlays store
     // whole-file byte spans, so they re-assemble against the same `src`.
     let mut overlays = Vec::new();
     for ov in &art.overlays {
-        match assemble(ov, src) {
+        match assemble_with(ov, src, dialect) {
             Ok(Archetype::TemplateOverlay(b)) => overlays.push(*b),
             Ok(_) => {}
             Err(errs) => errors.extend(errs),
@@ -153,12 +198,17 @@ pub fn assemble(art: &SourceArtefact, src: &str) -> Result<Archetype, Vec<Syntax
 fn assemble_definition(
     art: &SourceArtefact,
     src: &str,
+    dialect: crate::cadl::Dialect,
     errors: &mut Vec<SyntaxError>,
 ) -> Option<CComplexObject> {
     let def = art.definition.as_ref()?;
     let body = src.get(def.bytes.clone()).unwrap_or_default();
     let offset = def.bytes.start;
-    match parse_definition_body(body) {
+    let parsed = match dialect {
+        crate::cadl::Dialect::Adl2 => parse_definition_body(body),
+        crate::cadl::Dialect::Adl14 => crate::cadl::parse_definition_body_adl14(body),
+    };
+    match parsed {
         Ok(cco) => Some(cco),
         Err(errs) => {
             for e in errs {

@@ -213,7 +213,10 @@ fn walk(
             // form of it is accepted by every conforming consumer, and an
             // example exists to be committable everywhere. A MANDATORY one is
             // still emitted in our spec-faithful form.
-            if is_optional(child) && child.name_coded.as_ref().is_some_and(|cn| cn.incoherent) {
+            if is_optional(child)
+                && (child.name_coded.as_ref().is_some_and(|cn| cn.incoherent)
+                    || is_unsatisfiable_leaf(child))
+            {
                 continue;
             }
             let ci = card_idx(child);
@@ -325,15 +328,28 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
         "DV_TEXT" | "DV_PARAGRAPH" => {
             put(out, base, "", json!(example_text(node)));
         }
-        "DV_URI" | "DV_EHR_URI" => {
-            let value = list_value(first_input(node)).unwrap_or_else(|| {
-                if rm == "DV_EHR_URI" {
-                    "ehr://example.org/composition".to_owned()
-                } else {
-                    "http://example.org/resource".to_owned()
-                }
-            });
+        "DV_URI" => {
+            // Honour a C_STRING value pattern (master05 §DV_URI: bare value) and
+            // any closed value list before the type default, so the example
+            // satisfies the leaf's AOM 1.4 `C_STRING.valid_value`.
+            let value = first_input(node)
+                .and_then(|i| i.validation.as_ref())
+                .and_then(|v| v.pattern.as_deref())
+                .and_then(example_for_pattern)
+                .or_else(|| list_value(first_input(node)))
+                .unwrap_or_else(|| "http://example.org/resource".to_owned());
             put(out, base, "", json!(value));
+        }
+        "DV_EHR_URI" => {
+            // A DV_EHR_URI value MUST have scheme `ehr` (RM data_types
+            // `UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc`
+            // §`Scheme_valid`: `scheme.is_equal(Ehr_scheme)`); this is
+            // non-negotiable, so the value is always a valid `ehr:` URI even when a
+            // C_STRING pattern also constrains it — an ehr URI that also matches the
+            // pattern when one exists ([`ehr_uri_example`]), else the default. (A
+            // pattern no ehr URI can match is a defective OPT constraint; the
+            // OPTIONAL leaf carrying it is omitted upstream in [`walk`].)
+            put(out, base, "", json!(ehr_uri_example(node)));
         }
         "DV_CODED_TEXT" | "DV_STATE" => emit_coded_text(node, base, out),
         "CODE_PHRASE" => emit_code_phrase(node, base, out),
@@ -370,8 +386,23 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
             put(out, base, "size", json!(1024));
         }
         "DV_PARSABLE" => {
-            put(out, base, "", json!("example"));
-            put(out, base, "formalism", json!("text"));
+            // master05 §DV_PARSABLE: bare `value` + `|formalism`. The formalism is
+            // an RM-mandatory String the archetype usually constrains to a closed
+            // C_STRING list (e.g. `text/html`); pick its first member so the
+            // example is valid — never the bare `"text"` default when a list
+            // constrains it (AOM 1.4 `C_STRING.valid_value`).
+            let value = input_with_suffix(node, "value")
+                .or_else(|| first_input(node))
+                .and_then(|i| i.validation.as_ref())
+                .and_then(|v| v.pattern.as_deref())
+                .and_then(example_for_pattern)
+                .unwrap_or_else(|| "example".to_owned());
+            let formalism = input_with_suffix(node, "formalism")
+                .filter(|i| i.list_open != Some(true))
+                .and_then(|i| i.list.first())
+                .map_or_else(|| "text".to_owned(), |cv| cv.value.clone());
+            put(out, base, "", json!(value));
+            put(out, base, "formalism", json!(formalism));
         }
         // PARTY_PROXY / PARTY_IDENTIFIED value leaves carry no FLAT round-trip
         // shape (they are rebuilt from `ctx/…`, not tree data); skip rather than
@@ -401,9 +432,104 @@ fn example_text(node: &WebTemplateNode) -> String {
     {
         return cv.value.clone();
     }
+    // Honour a C_STRING value pattern when one constrains the free text
+    // (AOM 1.4 `C_STRING.valid_value`).
+    if let Some(value) = first_input(node)
+        .and_then(|i| i.validation.as_ref())
+        .and_then(|v| v.pattern.as_deref())
+        .and_then(example_for_pattern)
+    {
+        return value;
+    }
     node.name
         .clone()
         .unwrap_or_else(|| "Example text".to_owned())
+}
+
+/// A deterministic string satisfying a leaf's `C_STRING` value pattern, for the
+/// literal-ish patterns the corpus carries (`/abcdef/`, `/xyz/`). Returns `None`
+/// when the pattern uses regex metacharacters (no single canonical instance) —
+/// the caller then falls back to its type default. AOM 1.4 `C_STRING.valid_value`
+/// (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §`C_STRING`): a value
+/// is valid iff it matches the pattern; the ADL regex is `/`-delimited
+/// (`ADL1.4/master05-cadl.adoc` §Regular Expression).
+fn example_for_pattern(pattern: &str) -> Option<String> {
+    const META: &[char] = &[
+        '.', '^', '$', '*', '+', '?', '(', ')', '[', ']', '{', '}', '|', '\\',
+    ];
+    let body = pattern
+        .strip_prefix('/')
+        .and_then(|p| p.strip_suffix('/'))
+        .unwrap_or(pattern);
+    if body.is_empty() || body.chars().any(|c| META.contains(&c)) {
+        return None;
+    }
+    // A literal pattern matches its own text; confirm before committing to it.
+    if pattern_matches(body, body) {
+        Some(body.to_owned())
+    } else {
+        None
+    }
+}
+
+/// Whether `value` satisfies an ADL `C_STRING` regex `pattern` (`/`-delimited,
+/// anchored full-match — mirroring the leaf validator's `matches_pattern`). An
+/// uninterpretable pattern is treated as matching (it cannot be evaluated, so it
+/// does not over-constrain the example).
+fn pattern_matches(pattern: &str, value: &str) -> bool {
+    let body = pattern
+        .strip_prefix('/')
+        .and_then(|p| p.strip_suffix('/'))
+        .unwrap_or(pattern);
+    match regex::Regex::new(&format!("^(?:{body})$")) {
+        Ok(re) => re.is_match(value),
+        Err(_) => true,
+    }
+}
+
+/// The C_STRING value pattern constraining a leaf, if any.
+fn value_pattern(node: &WebTemplateNode) -> Option<&str> {
+    node.inputs
+        .first()
+        .and_then(|i| i.validation.as_ref())
+        .and_then(|v| v.pattern.as_deref())
+}
+
+/// The default DV_EHR_URI value — scheme `ehr` (RM `DV_EHR_URI.Scheme_valid`).
+const EHR_URI_DEFAULT: &str = "ehr://example.org/composition";
+
+/// A deterministic DV_EHR_URI value: always an `ehr:`-scheme URI (RM data_types
+/// `UML/classes/org.openehr.rm.data_types.dv_ehr_uri.adoc` §`Scheme_valid`), and
+/// matching the leaf's C_STRING pattern when the default (or a literal instance
+/// that is itself an ehr URI) satisfies it. When no ehr URI can satisfy the
+/// pattern the default is returned — a valid RM value; the un-committable OPTIONAL
+/// leaf carrying such a defective OPT constraint is omitted in [`walk`].
+fn ehr_uri_example(node: &WebTemplateNode) -> String {
+    let Some(pattern) = value_pattern(node) else {
+        return EHR_URI_DEFAULT.to_owned();
+    };
+    if pattern_matches(pattern, EHR_URI_DEFAULT) {
+        return EHR_URI_DEFAULT.to_owned();
+    }
+    // A literal pattern instance that is itself an `ehr:` URI satisfies both.
+    match example_for_pattern(pattern) {
+        Some(lit) if lit.starts_with("ehr:") => lit,
+        _ => EHR_URI_DEFAULT.to_owned(),
+    }
+}
+
+/// Whether an OPTIONAL leaf has no committable value because its archetype
+/// C_STRING constraint contradicts an RM invariant of the leaf type — currently a
+/// DV_EHR_URI whose value pattern no `ehr:`-scheme URI can match (the OPT's
+/// C_STRING contradicts RM `DV_EHR_URI.Scheme_valid`). Such a leaf is omitted from
+/// the example when optional (the example must be committable — the same posture
+/// as an incoherent coded-name node), never fabricated into an invalid value.
+fn is_unsatisfiable_leaf(node: &WebTemplateNode) -> bool {
+    let rm = node.rm_type.split('<').next().unwrap_or(&node.rm_type);
+    if rm != "DV_EHR_URI" {
+        return false;
+    }
+    value_pattern(node).is_some_and(|p| !pattern_matches(p, &ehr_uri_example(node)))
 }
 
 fn emit_coded_text(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) {
@@ -466,20 +592,84 @@ fn emit_quantity(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value
 
 fn emit_proportion(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) {
     // Choose values satisfying the DV_PROPORTION invariants for the first allowed
-    // kind (unitary → denominator 1; percent → 100; fraction/integer_fraction →
-    // integral). `type` codes: ratio 0, unitary 1, percent 2, fraction 3,
-    // integer_fraction 4.
-    let (numerator, denominator, type_code) =
-        match node.proportion_types.first().map(String::as_str) {
-            Some("unitary") => (1.0, 1.0, 1),
-            Some("percent") => (50.0, 100.0, 2),
-            Some("fraction") => (1.0, 2.0, 3),
-            Some("integer_fraction") => (1.0, 2.0, 4),
-            _ => (1.0, 1.0, 0),
-        };
+    // kind AND the archetype's numerator/denominator ranges (RM data_types
+    // `UML/classes/org.openehr.rm.data_types.dv_proportion.adoc`: `Unitary_validity`
+    // denominator = 1, `Percent_validity` denominator = 100,
+    // `Fraction_validity` fraction/integer_fraction ⇒ integral,
+    // `Valid_denominator` denominator ≠ 0). `type` codes (PROPORTION_KIND): ratio 0,
+    // unitary 1, percent 2, fraction 3, integer_fraction 4. The numerator (and, for
+    // ratio/fraction, the denominator) ranges are carried on the `numerator`/
+    // `denominator` inputs (master05 §DV_PROPORTION), which the leaf validator
+    // range-checks — so the picked values must land inside them.
+    let type_code = match node.proportion_types.first().map(String::as_str) {
+        Some("unitary") => 1,
+        Some("percent") => 2,
+        Some("fraction") => 3,
+        Some("integer_fraction") => 4,
+        _ => 0,
+    };
+    let num_input = input_with_suffix(node, "numerator");
+    let den_input = input_with_suffix(node, "denominator");
+    // Fraction kinds force integral numerator+denominator; the builder also types
+    // the numerator/denominator inputs as `Integer` when the archetype constrains
+    // `is_integral` (RM `Is_integral_validity`).
+    let integral = matches!(type_code, 3 | 4)
+        || num_input.is_some_and(|i| i.input_type == WebTemplateInputType::Integer)
+        || den_input.is_some_and(|i| i.input_type == WebTemplateInputType::Integer);
+    let numerator = pick_proportion_part(num_input.and_then(input_range), integral, false);
+    let denominator = match type_code {
+        1 => 1.0,   // Unitary_validity: denominator = 1
+        2 => 100.0, // Percent_validity: denominator = 100
+        _ => pick_proportion_part(den_input.and_then(input_range), integral, true),
+    };
     put(out, base, "numerator", json!(numerator));
     put(out, base, "denominator", json!(denominator));
     put(out, base, "type", json!(type_code));
+}
+
+/// Pick a DV_PROPORTION numerator/denominator inside `range` (deterministic).
+/// `integral` forces a whole number (fraction kinds / `is_integral`), `avoid_zero`
+/// forbids `0` (a denominator must be non-zero — `Valid_denominator`). Falls back
+/// to the nearest in-range decimal when no in-range integer exists (a contradictory
+/// integral range — none in the corpus).
+fn pick_proportion_part(range: Option<&WebTemplateRange>, integral: bool, avoid_zero: bool) -> f64 {
+    let v = pick_decimal(range);
+    if !integral {
+        return v;
+    }
+    for cand in [v.round(), v.floor(), v.ceil()] {
+        if in_decimal_range(cand, range) && !(avoid_zero && cand == 0.0) {
+            return cand;
+        }
+    }
+    v
+}
+
+/// Whether `v` satisfies a `WebTemplateRange` (honouring `minOp`/`maxOp`; missing
+/// bounds are unbounded) — mirrors the leaf validator's `in_range`.
+fn in_decimal_range(v: f64, range: Option<&WebTemplateRange>) -> bool {
+    let Some(r) = range else { return true };
+    if let Some(min) = r.min.as_ref().and_then(Value::as_f64) {
+        let ok = if r.min_op.as_deref() == Some(">") {
+            v > min
+        } else {
+            v >= min
+        };
+        if !ok {
+            return false;
+        }
+    }
+    if let Some(max) = r.max.as_ref().and_then(Value::as_f64) {
+        let ok = if r.max_op.as_deref() == Some("<") {
+            v < max
+        } else {
+            v <= max
+        };
+        if !ok {
+            return false;
+        }
+    }
+    true
 }
 
 fn emit_ordinal(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>, scale: bool) {
@@ -592,39 +782,125 @@ fn example_temporal(node: &WebTemplateNode, rm: &str) -> String {
 /// the validator) and the ISO duration range: the range minimum when one is
 /// declared, else one unit of the first allowed field, else `PT1H`.
 fn example_duration(node: &WebTemplateNode) -> String {
-    if let Some(range) = node.duration_range.as_ref()
-        && let Some(min) = range.min.as_ref().and_then(Value::as_str)
-    {
-        // An INCLUSIVE minimum is itself a valid pick; an exclusive one
-        // (`> PT0S` — BASE Interval lower_included = false) falls through to
-        // the one-unit-of-first-allowed-field pick, which is strictly above
-        // a zero minimum (the only exclusive-minimum shape in the corpus;
-        // a non-zero exclusive minimum would need min+1 — extend when one
-        // appears rather than guessing).
-        if range.min_op.as_deref() != Some(">") {
-            return min.to_owned();
-        }
-    }
-    let iso = [
-        ("year", "P1Y"),
-        ("month", "P1M"),
-        ("week", "P1W"),
-        ("day", "P1D"),
-        ("hour", "PT1H"),
-        ("minute", "PT1M"),
-        ("second", "PT1S"),
+    // ISO-8601 duration fields, coarsest → finest, with the RM's nominal field
+    // lengths in seconds (matching the leaf validator's `duration_seconds`, so a
+    // picked value agrees with the range check byte-for-byte): year = 365.25 d,
+    // month = 30.4375 d (RM data_types §DV_DURATION magnitude semantics).
+    const ISO: &[(&str, bool, char, f64)] = &[
+        ("year", false, 'Y', 31_557_600.0),
+        ("month", false, 'M', 2_629_800.0),
+        ("week", false, 'W', 604_800.0),
+        ("day", false, 'D', 86_400.0),
+        ("hour", true, 'H', 3_600.0),
+        ("minute", true, 'M', 60.0),
+        ("second", true, 'S', 1.0),
     ];
     let allowed: Vec<&str> = node
         .inputs
         .iter()
         .filter_map(|i| i.suffix.as_deref())
         .collect();
-    if allowed.is_empty() || allowed.len() >= 7 {
-        return EXAMPLE_DURATION.to_owned();
+    // The fields the C_DURATION pattern permits (all when the node lists none or
+    // the full seven), coarsest → finest.
+    let usable: Vec<&(&str, bool, char, f64)> = ISO
+        .iter()
+        .filter(|f| allowed.is_empty() || allowed.len() >= 7 || allowed.contains(&f.0))
+        .collect();
+    // A whole count `n` of `field` (kept as f64 to avoid a lossy float→int cast;
+    // printed with no fractional digits).
+    let fmt = |field: &(&str, bool, char, f64), n: f64| -> String {
+        let (_, is_time, letter, _) = *field;
+        if is_time {
+            format!("PT{n:.0}{letter}")
+        } else {
+            format!("P{n:.0}{letter}")
+        }
+    };
+    // Unconstrained: one unit of the coarsest usable field (the historic default).
+    let Some(range) = node.duration_range.as_ref() else {
+        return usable
+            .first()
+            .map_or_else(|| EXAMPLE_DURATION.to_owned(), |field| fmt(field, 1.0));
+    };
+    // Ranged: express a whole count of the FINEST usable field (maximal
+    // granularity) inside [min, max] honouring the AOM interval inclusivity
+    // (`minOp`/`maxOp` `>`/`<` = excluded bound; BASE foundation_types Interval).
+    let field = usable
+        .last()
+        .copied()
+        .unwrap_or(&("hour", true, 'H', 3_600.0));
+    let unit = field.3;
+    let min_secs = range.min.as_ref().and_then(Value::as_str).map(iso_seconds);
+    let max_secs = range.max.as_ref().and_then(Value::as_str).map(iso_seconds);
+    let min_excl = range.min_op.as_deref() == Some(">");
+    let max_excl = range.max_op.as_deref() == Some("<");
+    // The whole-count bounds (in field units) satisfying the second bounds,
+    // kept in f64 to avoid a lossy float→int cast.
+    let n_lo = match min_secs {
+        Some(m) if min_excl => (m / unit).floor() + 1.0,
+        Some(m) => (m / unit).ceil(),
+        None => 0.0,
     }
-    iso.iter()
-        .find(|(field, _)| allowed.contains(field))
-        .map_or_else(|| EXAMPLE_DURATION.to_owned(), |(_, v)| (*v).to_owned())
+    .max(0.0);
+    let n_hi = match max_secs {
+        Some(m) if max_excl => (m / unit).ceil() - 1.0,
+        Some(m) => (m / unit).floor(),
+        None => f64::INFINITY,
+    };
+    if n_lo > n_hi {
+        // Contradictory bounds for this field — no in-range whole count exists.
+        // Best effort: the literal minimum bound (or one unit).
+        return range
+            .min
+            .as_ref()
+            .and_then(Value::as_str)
+            .map_or_else(|| fmt(field, 1.0), str::to_owned);
+    }
+    // Target: the midpoint when bounded above, else just above the minimum.
+    let target = match max_secs {
+        Some(mx) => f64::midpoint(min_secs.unwrap_or(0.0), mx),
+        None => min_secs.unwrap_or(0.0) + unit,
+    };
+    let n = (target / unit).round().max(n_lo).min(n_hi);
+    fmt(field, n)
+}
+
+/// Total seconds of an ISO-8601 duration string, using the RM's nominal field
+/// lengths (the same constants the leaf validator's `duration_seconds` uses, so a
+/// picked example duration and the range check agree). A part that does not parse
+/// contributes nothing (the RM-invariant pass owns well-formedness).
+fn iso_seconds(value: &str) -> f64 {
+    let rest = value.strip_prefix('-').unwrap_or(value);
+    let Some(rest) = rest.strip_prefix('P') else {
+        return 0.0;
+    };
+    let (date_part, time_part) = rest.split_once('T').unwrap_or((rest, ""));
+    let mut total = 0.0;
+    let mut accumulate = |part: &str, in_time: bool| {
+        let mut num = String::new();
+        for ch in part.chars() {
+            if ch.is_ascii_digit() || ch == '.' || ch == ',' {
+                num.push(if ch == ',' { '.' } else { ch });
+            } else {
+                let n: f64 = num.parse().unwrap_or(0.0);
+                num.clear();
+                let secs = match (ch, in_time) {
+                    ('Y', false) => 31_557_600.0,
+                    ('M', false) => 2_629_800.0,
+                    ('W', false) => 604_800.0,
+                    ('D', false) => 86_400.0,
+                    ('H', true) => 3_600.0,
+                    ('M', true) => 60.0,
+                    ('S', true) => 1.0,
+                    _ => 0.0,
+                };
+                total += n * secs;
+            }
+        }
+    };
+    accumulate(date_part, false);
+    accumulate(time_part, true);
+    total
 }
 
 /// A deterministic boolean example: `false` when the archetype allows only

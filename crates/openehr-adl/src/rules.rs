@@ -23,6 +23,7 @@ use openehr_am::am24::aom2::constraint_model::archetype_constraint::ArchetypeCon
 use openehr_am::am24::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
+use openehr_am::am24::aom2::constraint_model::c_object::CObject;
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::rules::expr_archetype_id_constraint::ExprArchetypeIdConstraint;
 use openehr_am::am24::aom2::rules::expr_archetype_ref::ExprArchetypeRef;
@@ -75,14 +76,15 @@ impl AmBuilder {
 }
 
 /// A parse-time placeholder for `EXPR_ARCHETYPE_REF.item` (the referenced node).
-/// TODO: resolve it against the archetype definition (currently a placeholder).
 ///
 /// NOTE: `EXPR_ARCHETYPE_REF.item : ARCHETYPE_CONSTRAINT` is mandatory in the
 /// generated AOM model but is the *resolved* target of the path, unknown at
 /// parse time (`AOM2` master05 — the path is the runtime-value proxy). We emit
-/// an empty `C_COMPLEX_OBJECT` as the unresolved target; path resolution (a
-/// later ADL2 phase) replaces it. No openEHR spec governs this parse-time
-/// placeholder — our own design/extension.
+/// an empty `C_COMPLEX_OBJECT` as the target during the standalone rules parse;
+/// [`resolve_archetype_refs`] replaces it with the resolved definition node once
+/// the whole archetype is assembled (an unresolvable path keeps this placeholder
+/// and surfaces as a VRRLP validation finding). No openEHR spec governs this
+/// parse-time placeholder shape — our own design/extension.
 fn unresolved_ref_target() -> ArchetypeConstraint {
     ArchetypeConstraint::CComplexObject(Box::new(CComplexObject::CComplexObject(
         CComplexObjectData {
@@ -382,16 +384,21 @@ pub fn parse_artefact_rules(
     }
 }
 
-/// Parse one slot include/exclude assertion (`master04.3` §Archetype Slots) into
-/// a real AM-level [`Assertion`] — `archetype_id_path matches { /regex/ }` →
+/// Parse a slot include/exclude assertion block (`master04.3` §Archetype Slots;
+/// the cADL grammar `c_includes : SYM_INCLUDE assertion+`) into one or more
+/// real AM-level [`Assertion`]s — each `archetype_id_path matches { /regex/ }` →
 /// `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT` (`master05`). The
-/// verbatim `text` is preserved in `string_expression` so the slot stays usable
-/// even for a form that is not structurally modelled.
+/// verbatim block `text` is preserved in every assertion's `string_expression`
+/// so the slot stays usable even for a form that is not structurally modelled.
+///
+/// The grammar admits more than one assertion after a single `include`/`exclude`
+/// keyword, so every parsed [`Statement::Assertion`] in the block is returned in
+/// source order.
 ///
 /// # Errors
 /// Returns the `S*` errors on a malformed slot assertion (regex compile `SCSRE`,
 /// or `SINVS`/`SEXPT` for the expression shape).
-pub fn parse_slot_assertion(text: &str) -> Result<Assertion, Vec<SyntaxError>> {
+pub fn parse_slot_assertions(text: &str) -> Result<Vec<Assertion>, Vec<SyntaxError>> {
     let mut builder = AmBuilder::new(ConstraintMode::Slot);
     let stmts = match parse_statements_with(text, &mut builder) {
         Ok(stmts) if builder.errors.is_empty() => stmts,
@@ -404,14 +411,121 @@ pub fn parse_slot_assertion(text: &str) -> Result<Assertion, Vec<SyntaxError>> {
             });
         }
     };
-    let Some(Statement::Assertion(mut assertion)) = stmts.into_iter().next() else {
+    let raw = text.trim().to_owned();
+    let assertions: Vec<Assertion> = stmts
+        .into_iter()
+        .filter_map(|s| match s {
+            Statement::Assertion(mut a) => {
+                a.string_expression = Some(raw.clone());
+                Some(a)
+            }
+            _ => None,
+        })
+        .collect();
+    if assertions.is_empty() {
         return Err(vec![SyntaxError::at(
             SyntaxErrorCode::Sccog,
             "expecting an assertion after 'include'/'exclude'",
             0..text.len(),
             text,
         )]);
-    };
-    assertion.string_expression = Some(text.trim().to_owned());
-    Ok(assertion)
+    }
+    Ok(assertions)
+}
+
+/// Resolve every `EXPR_ARCHETYPE_REF` proxy in a parsed `rules` [`StatementSet`]
+/// against the assembled archetype `definition`, replacing the parse-time
+/// placeholder `item` (see [`unresolved_ref_target`]) with the target node the
+/// reference path addresses (`AOM2` master05 — the path is the runtime-value
+/// proxy, `item` its resolved `ARCHETYPE_CONSTRAINT` target). A path that does
+/// not resolve within the archetype keeps the placeholder (the unresolved path
+/// is a VRRLP finding in validation, not an assembly error).
+pub fn resolve_archetype_refs(rules: &mut StatementSet, definition: &CComplexObject) {
+    for stmt in &mut rules.statement {
+        match stmt {
+            Statement::Assertion(a) => resolve_in_expr(&mut a.expression, definition),
+            Statement::Assignment(a) => resolve_in_expr_value(&mut a.source, definition),
+            Statement::VariableDeclaration(_) => {}
+        }
+    }
+}
+
+/// Resolve archetype-ref proxies inside an [`Expression`] tree.
+fn resolve_in_expr(expr: &mut Expression, definition: &CComplexObject) {
+    match expr {
+        Expression::ExprBinaryOperator(b) => {
+            resolve_in_expr(&mut b.left_operand, definition);
+            resolve_in_expr(&mut b.right_operand, definition);
+        }
+        Expression::ExprUnaryOperator(u) => resolve_in_expr(&mut u.operand, definition),
+        Expression::ExprForAll(f) => {
+            resolve_in_expr(&mut f.condition.expression, definition);
+            resolve_in_value_ref(&mut f.operand, definition);
+        }
+        Expression::ExprFunctionCall(fc) => {
+            for arg in &mut fc.arguments {
+                resolve_in_expr(arg, definition);
+            }
+        }
+        Expression::ExprValueRef(r) => resolve_in_value_ref(r, definition),
+        Expression::ExprConstraint(_)
+        | Expression::ExprLiteral(_)
+        | Expression::ExprVariableRef(_) => {}
+    }
+}
+
+/// Resolve archetype-ref proxies inside an [`ExprValue`] (an assignment source).
+fn resolve_in_expr_value(value: &mut ExprValue, definition: &CComplexObject) {
+    match value {
+        ExprValue::ExprBinaryOperator(b) => {
+            resolve_in_expr(&mut b.left_operand, definition);
+            resolve_in_expr(&mut b.right_operand, definition);
+        }
+        ExprValue::ExprUnaryOperator(u) => resolve_in_expr(&mut u.operand, definition),
+        ExprValue::ExprForAll(f) => {
+            resolve_in_expr(&mut f.condition.expression, definition);
+            resolve_in_value_ref(&mut f.operand, definition);
+        }
+        ExprValue::ExprFunctionCall(fc) => {
+            for arg in &mut fc.arguments {
+                resolve_in_expr(arg, definition);
+            }
+        }
+        ExprValue::ExprValueRef(r) => resolve_in_value_ref(r, definition),
+        ExprValue::ExprConstraint(_)
+        | ExprValue::ExprLiteral(_)
+        | ExprValue::ExprVariableRef(_)
+        | ExprValue::ExternalQuery(_) => {}
+    }
+}
+
+/// Resolve an [`ExprValueRef`]: if it is an `EXPR_ARCHETYPE_REF` whose path
+/// resolves within the archetype, set its `item` to the resolved target node.
+fn resolve_in_value_ref(value_ref: &mut ExprValueRef, definition: &CComplexObject) {
+    if let ExprValueRef::ExprArchetypeRef(ar) = value_ref
+        && let Some(node) = crate::paths::locate(definition, &ar.path)
+    {
+        ar.item = to_archetype_constraint(node);
+    }
+}
+
+/// Convert a resolved definition [`CObject`] into the `ARCHETYPE_CONSTRAINT`
+/// union used by `EXPR_ARCHETYPE_REF.item` (a total 1:1 variant mapping).
+fn to_archetype_constraint(node: &CObject) -> ArchetypeConstraint {
+    match node {
+        CObject::ArchetypeSlot(x) => ArchetypeConstraint::ArchetypeSlot(Box::new(x.clone())),
+        CObject::CComplexObject(x) => ArchetypeConstraint::CComplexObject(Box::new(x.clone())),
+        CObject::CComplexObjectProxy(x) => {
+            ArchetypeConstraint::CComplexObjectProxy(Box::new(x.clone()))
+        }
+        CObject::CBoolean(x) => ArchetypeConstraint::CBoolean(Box::new(x.clone())),
+        CObject::CInteger(x) => ArchetypeConstraint::CInteger(Box::new(x.clone())),
+        CObject::CReal(x) => ArchetypeConstraint::CReal(Box::new(x.clone())),
+        CObject::CString(x) => ArchetypeConstraint::CString(Box::new(x.clone())),
+        CObject::CTerminologyCode(x) => ArchetypeConstraint::CTerminologyCode(Box::new(x.clone())),
+        CObject::CDate(x) => ArchetypeConstraint::CDate(Box::new(x.clone())),
+        CObject::CTime(x) => ArchetypeConstraint::CTime(Box::new(x.clone())),
+        CObject::CDateTime(x) => ArchetypeConstraint::CDateTime(Box::new(x.clone())),
+        CObject::CDuration(x) => ArchetypeConstraint::CDuration(Box::new(x.clone())),
+    }
 }

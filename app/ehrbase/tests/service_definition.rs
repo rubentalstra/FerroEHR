@@ -16,6 +16,7 @@
 
 use ehrbase::service::EhrbaseService;
 use ehrbase::service::definition::types::TemplateListFilter;
+use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
 
 use ehrbase::service::list::Page;
@@ -168,6 +169,95 @@ async fn archetype_errors() {
             }
         ),
         "got {bad_re:?}"
+    );
+}
+
+#[tokio::test]
+async fn archetype_semantic_validity_runs_the_14_engine() {
+    // The 1.4 upload runs the real `openehr-adl` engine (judged as 1.4), not a
+    // structural probe: a source that PARSES but violates an ADL 1.4 / AOM 1.4
+    // rule is rejected. ADL1.4 master08 §Validity Rules VARDT — the topmost
+    // definition typename must match the RM class of the archetype id.
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+    let adl = fixture(ARCHETYPE_REL);
+
+    // Break VARDT: the id is a COMPOSITION, the definition root now claims
+    // OBSERVATION.
+    let bad = adl.replacen("COMPOSITION[at0000]", "OBSERVATION[at0000]", 1);
+    assert!(
+        !svc.valid_archetype(&bad).unwrap(),
+        "a VARDT-violating 1.4 source must be invalid"
+    );
+    let err = svc
+        .upload_archetype(bad)
+        .await
+        .expect_err("VARDT-violating upload rejected");
+    // The rule-code mnemonic is carried through as the validation detail.
+    assert!(
+        matches!(
+            err,
+            SmError {
+                status: CallStatusType::ContentInvalid,
+                ..
+            }
+        ),
+        "got {err:?}"
+    );
+    assert!(
+        err.message.contains("VARDT"),
+        "the 422 detail must name the offending rule code, got {:?}",
+        err.message
+    );
+    // Nothing was stored (validation gates the write).
+    assert_eq!(svc.archetypes_count_adl14().await.unwrap(), 0);
+}
+
+#[tokio::test]
+async fn adl14_convert_to_adl2_migration_round_trip() {
+    // The in-CDR 1.4 → ADL 2 migration capability: a stored 1.4 archetype
+    // converts to ADL2 source that validates through the full ADL2 pipeline
+    // (the same service path a native ADL2 upload takes). No openEHR spec
+    // governs 1.4 → 2 conversion — our own design/extension.
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+    let adl = fixture(ARCHETYPE_REL);
+
+    svc.upload_archetype(adl)
+        .await
+        .expect("upload 1.4 archetype");
+
+    let adl2 = svc
+        .adl14_convert_to_adl2(ARCHETYPE_ID.to_owned())
+        .await
+        .expect("convert stored 1.4 archetype to ADL2");
+    assert!(
+        adl2.contains("archetype") && adl2.contains("COMPOSITION"),
+        "converted output is ADL2 source, got: {}",
+        &adl2[..adl2.len().min(120)]
+    );
+
+    // The converted artefact validates + stores through the full ADL2 engine
+    // (parse → AOM2 phase 1 → RM conformance) — the migration produces a
+    // spec-valid ADL2 archetype.
+    svc.template_adl2_upload(adl2)
+        .await
+        .expect("the converted ADL2 artefact validates through the ADL2 pipeline");
+
+    // Converting an absent archetype is a 404.
+    let missing = svc
+        .adl14_convert_to_adl2("openEHR-EHR-OBSERVATION.absent.v1".to_owned())
+        .await
+        .expect_err("convert absent archetype");
+    assert!(
+        matches!(
+            missing,
+            SmError {
+                status: CallStatusType::VersionedObjectDoesNotExist,
+                ..
+            }
+        ),
+        "got {missing:?}"
     );
 }
 
@@ -453,9 +543,14 @@ fn adl2_source(keyword: &str, hrid: &str, specialize: Option<&str>) -> String {
         .expect("HRID carries an RM entity");
     let root = if specialize.is_some() { "id1.1" } else { "id1" };
     let spec = specialize.map_or(String::new(), |p| format!("\nspecialize\n    {p}\n"));
+    // A `description` section is mandatory (AOM2 master03 §Validity Rules VARD:
+    // "A `description` section containing the main meta-data of the archetype
+    // must exist").
     format!(
         "{keyword} (adl_version=2.0.6; rm_release=1.1.0)\n    {hrid}\n{spec}\n\
          language\n    original_language = <[ISO_639-1::en]>\n\n\
+         description\n    lifecycle_state = <\"published\">\n    details = <\n        \
+         [\"en\"] = <\n            language = <[ISO_639-1::en]>\n        >\n    >\n\n\
          definition\n    {rm_type}[{root}] matches {{ *}}\n\n\
          terminology\n    term_definitions = <\n        [\"en\"] = <\n            \
          [\"{root}\"] = <text = <\"Root\"> description = <\"Root.\">>\n        >\n    >\n"
@@ -824,12 +919,17 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .template_adl2_upload(tmpl.clone())
         .await
         .expect_err("duplicate template id conflicts on the wire surface");
-    assert!(dup.message.contains("already exists"), "got {dup:?}");
+    assert!(
+        matches!(&dup, ServiceError::Conflict(m) if m.contains("already exists")),
+        "got {dup:?}"
+    );
 
     // The SM-native upload still replaces.
     svc.upload_artefact(tmpl).await.expect("native replace");
 
-    // Invalid source → 400-class precondition (STCNT et al.), not 422.
+    // Invalid source → a 422 validation failure carrying the rule codes (an
+    // unparseable source is an invalid artefact, AOM2 master04.6 §Syntax
+    // Validity Rules), not a distinct wire status.
     let bad = svc
         .template_adl2_upload(
             "template (adl_version=2.0.6)\nopenEHR-EHR-COMPOSITION.t_bad.v1\n".to_owned(),
@@ -837,7 +937,7 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         .await
         .expect_err("invalid source rejected");
     assert!(
-        matches!(bad.status, CallStatusType::PreconditionViolation),
+        matches!(&bad, ServiceError::ValidationFailed(v) if !v.is_empty()),
         "got {bad:?}"
     );
 }

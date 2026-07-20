@@ -32,7 +32,7 @@ use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
-use openehr_base::prelude::MultiplicityInterval;
+use openehr_base::prelude::{Interval, MultiplicityInterval, ProperInterval};
 use openehr_rm::model;
 
 use super::{ArchetypeView, ValidationCode, ValidationIssue, view};
@@ -76,8 +76,14 @@ impl Bounds {
 /// One attribute of an RM type, as reported by a [`RmModel`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RmAttr {
-    /// The declared value type of the attribute (a generic parameter resolved
-    /// to its bound, e.g. `EVENT`, `ITEM_STRUCTURE`, `DV_TEXT`).
+    /// The declared value type of the attribute, as a full RM type name
+    /// **including any generic arguments** (`EVENT<ITEM_STRUCTURE>`,
+    /// `DV_INTERVAL<DV_QUANTITY>`, or a plain `DV_TEXT`). A formal generic
+    /// parameter is resolved to its bound, so `HISTORY.events` reads
+    /// `EVENT<ITEM_STRUCTURE>` rather than `EVENT<T>`. VCORMT matches the
+    /// object's stated type against this covariantly on the generic arguments
+    /// (`master04.2` §`Rm_type_name` and Reference Model Type Matching); an empty
+    /// argument list (a bare type reference) leaves the arguments unconstrained.
     pub declared_type: String,
     /// True if the attribute is a container (multiply-valued) in the RM.
     pub is_multiple: bool,
@@ -90,11 +96,35 @@ pub struct RmAttr {
     pub cardinality: Option<Bounds>,
 }
 
+/// The declared literal set of an RM enumeration type (`master04.2`
+/// §Constraints on Enumeration Types), as reported by a [`RmModel`]. The
+/// underlying primitive determines which of the value sets is populated.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RmEnum {
+    /// The underlying primitive type of the enumeration.
+    pub underlying: EnumUnderlying,
+    /// The declared integer literal values (populated for [`EnumUnderlying::Integer`]).
+    pub int_values: Vec<i64>,
+    /// The declared string literal values (populated for [`EnumUnderlying::String`]).
+    pub str_values: Vec<String>,
+}
+
+/// The underlying primitive of an RM enumeration (`master04.2`: "a distinct type
+/// based on a primitive type, normally Integer or String").
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnumUnderlying {
+    /// Integer-based enumeration (constrained by a `C_INTEGER`).
+    Integer,
+    /// String-based enumeration (constrained by a `C_STRING`).
+    String,
+}
+
 /// A reference model against which an archetype is validated — the pluggable
-/// seam of `master11-rm_adaptation.adoc`. Implementors answer the four
-/// questions the RM checks need: does a type exist, does one type conform to
-/// another, and what are an attribute's declared type / multiplicity /
-/// existence / cardinality.
+/// seam of `master11-rm_adaptation.adoc`. Implementors answer the questions the
+/// RM checks need: does a type exist, does one type conform to another, what are
+/// an attribute's declared type / multiplicity / existence / cardinality, and
+/// (for VCORMEN/VCORMENV/VCORMENU) is a type an enumeration and what are its
+/// declared literal values.
 ///
 /// Type-name arguments may be generic (`HISTORY<ITEM_LIST>`) and are matched
 /// case-insensitively with whitespace ignored (`master04.3` §Reference Model
@@ -115,6 +145,12 @@ pub trait RmModel {
     /// Resolve `attr` on `rm_type` (through inheritance), or `None` if the RM
     /// type has no such attribute (VCARM) or the type is unknown.
     fn attribute(&self, rm_type: &str, attr: &str) -> Option<RmAttr>;
+
+    /// If `rm_type` names an enumeration type in this model, its declared
+    /// literal set; else `None`. Enumeration-typed slots arise where the
+    /// information model types a property directly as an enumeration class
+    /// (`master04.2` §Constraints on Enumeration Types).
+    fn enumeration(&self, rm_type: &str) -> Option<RmEnum>;
 }
 
 /// The base (outer) class name of a possibly-generic RM type name, with
@@ -184,17 +220,62 @@ pub fn normalise_type_name(rm_type: &str) -> String {
         .collect()
 }
 
+/// Whether a stated object type `child` conforms to the attribute's declared RM
+/// type `declared`, covariantly on generic arguments (`master04.2`
+/// §`Rm_type_name` and Reference Model Type Matching: `Interval<Ordered>` matches
+/// `Interval<Quantity>` where `Quantity` conforms to `Ordered`). Both names may
+/// be generic and are compared case-insensitively / whitespace-ignored by the
+/// underlying [`RmModel::conforms`].
+///
+/// Returns `Some(false)` only on a *positive* non-conformance — of the base type
+/// or of a generic argument. `None` when the model cannot decide (an unknown
+/// base type — VCORM reports that separately). A bare declared reference (no
+/// generic arguments emitted) leaves the arguments unconstrained, as does a
+/// child that states no arguments or a differing argument arity — none of those
+/// is a positive non-conformance.
+#[must_use]
+pub fn type_conforms(rm: &dyn RmModel, child: &str, declared: &str) -> Option<bool> {
+    match rm.conforms(child, declared) {
+        Some(true) => {}
+        other => return other,
+    }
+    let declared_args = generic_arguments(declared);
+    if declared_args.is_empty() {
+        return Some(true);
+    }
+    let child_args = generic_arguments(child);
+    if child_args.is_empty() || child_args.len() != declared_args.len() {
+        return Some(true);
+    }
+    for (c, d) in child_args.iter().zip(declared_args.iter()) {
+        if type_conforms(rm, c, d) == Some(false) {
+            return Some(false);
+        }
+    }
+    Some(true)
+}
+
 /// The openEHR RM 1.2.0 reference model — the generated `openehr_rm::model`
 /// static attribute/type table (`crates/openehr-rm/src/model`), the same oracle
 /// the AQL planner types against.
 ///
-/// NOTE: `openehr_rm::model` records an attribute's `is_mandatory` (existence)
-/// and container shape but not its RM container *cardinality* interval, so
-/// [`RmModel::attribute`] reports a permissive `{0..*}` cardinality for
-/// containers here; the tight lower-bound half of VCACA needs the RM cardinality
-/// the generated model does not expose (candidate `emit-rm-model` gap). The
-/// existence (VCAEX) and arity (VCAM) checks are exact from `is_mandatory` /
-/// container shape.
+/// The generated model records an attribute's declared type with its resolved
+/// generic arguments (`type_params`), its container cardinality (`cardinality`),
+/// existence (`is_mandatory`) and container shape, plus the RM enumeration table
+/// (`enumeration`). VCAEX/VCAM/VCACA and the generic-argument half of VCORMT are
+/// therefore exact from the model; the only fallback is a permissive `{0..*}`
+/// container cardinality for the rare attribute the BMM leaves un-cardinalitied
+/// (`cardinality == None` on a container).
+///
+/// NOTE: a formal generic parameter is resolved to its bound in the generated
+/// model (`HISTORY.events` reads `EVENT<ITEM_STRUCTURE>`, not `EVENT<T>`), so
+/// VCORMT matches a stated generic argument against the RM parameter's *bound*
+/// rather than the instantiated binding (e.g. `EVENT<ITEM_LIST>` implied by
+/// `HISTORY<ITEM_LIST>`). This is a sound (never false-firing) approximation —
+/// the instantiated binding is a subtype of the bound, so conformance to it
+/// implies conformance to the bound; the emitter erases the parameter name, so a
+/// tighter check is not derivable (`master04.2` §`Rm_type_name` and Reference
+/// Model Type Matching).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ProductionRmModel;
 
@@ -223,13 +304,75 @@ impl RmModel for ProductionRmModel {
         let a = model::attribute(class.name, attr)?;
         let is_multiple = a.container != model::Container::None;
         Some(RmAttr {
-            declared_type: a.declared_type.to_owned(),
+            declared_type: render_declared_type(a.declared_type, a.type_params),
             is_multiple,
             existence: Bounds::new(i32::from(a.is_mandatory), Some(1)),
-            // See the type NOTE: the generated model has no cardinality; report
-            // the permissive RM container default so VCACA never false-fires.
-            cardinality: is_multiple.then(|| Bounds::new(0, None)),
+            // Real BMM cardinality where the model records it; the documented
+            // permissive `{0..*}` fallback only for a container the BMM leaves
+            // un-cardinalitied (`master04.5` §Validity Rules: `C_ATTRIBUTE`,
+            // VCACA).
+            cardinality: is_multiple.then(|| {
+                a.cardinality
+                    .map_or(Bounds::new(0, None), cardinality_bounds)
+            }),
         })
+    }
+
+    fn enumeration(&self, rm_type: &str) -> Option<RmEnum> {
+        let base = base_type_name(rm_type);
+        let e = model::enumeration(base).or_else(|| model::enumeration(&base.to_uppercase()))?;
+        Some(rm_enum_of(e))
+    }
+}
+
+/// Render a generated attribute's declared type into a full RM type-name string
+/// including generic arguments (`"EVENT"` + `[ITEM_STRUCTURE]` →
+/// `"EVENT<ITEM_STRUCTURE>"`), the form [`RmAttr::declared_type`] carries.
+fn render_declared_type(base: &str, params: &[model::RmTypeRef]) -> String {
+    if params.is_empty() {
+        return base.to_owned();
+    }
+    let inner = params
+        .iter()
+        .map(render_type_ref)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("{base}<{inner}>")
+}
+
+fn render_type_ref(t: &model::RmTypeRef) -> String {
+    render_declared_type(t.name, t.params)
+}
+
+/// A [`Bounds`] from a generated model [`model::Cardinality`], clamping the
+/// (tiny) container bounds into `i32` (a value beyond `i32` widens to the
+/// permissive default rather than panicking — cardinality bounds are small).
+fn cardinality_bounds(c: model::Cardinality) -> Bounds {
+    Bounds::new(
+        i32::try_from(c.lower).unwrap_or(0),
+        c.upper.and_then(|u| i32::try_from(u).ok()),
+    )
+}
+
+/// An [`RmEnum`] from a generated model [`model::RmEnumeration`].
+fn rm_enum_of(e: &model::RmEnumeration) -> RmEnum {
+    let underlying = if e.underlying_type.eq_ignore_ascii_case("STRING") {
+        EnumUnderlying::String
+    } else {
+        EnumUnderlying::Integer
+    };
+    let mut int_values = Vec::new();
+    let mut str_values = Vec::new();
+    for lit in e.literals {
+        match lit.value {
+            model::EnumValue::Int(i) => int_values.push(i),
+            model::EnumValue::Str(s) => str_values.push(s.to_owned()),
+        }
+    }
+    RmEnum {
+        underlying,
+        int_values,
+        str_values,
     }
 }
 
@@ -326,9 +469,16 @@ impl RmScan<'_> {
             // §C_ATTRIBUTE, VDIFP). Its RM validity is checked at the resolved
             // location by the phase-2 specialisation walk, so VCARM/VCAEX/… do
             // not apply against `rm_type` here.
-            // TODO: check the differential path's RM-path validity (the "valid
-            // with respect to the reference model" half of VDIFP) once the flat
-            // form is built.
+            //
+            // NOTE: the "valid with respect to the reference model" half of VDIFP
+            // (master04.5 §C_ATTRIBUTE) is subsumed by the phase-2 resolution
+            // check: a relocated attribute either resolves to a node in the flat
+            // parent — which was itself reference-model-validated before the child
+            // could specialise it (master08 §Overview phase ordering), so the
+            // resolved node's attribute is RM-valid by construction — or it does
+            // not resolve, in which case [`super::phase2::check_attribute`] raises
+            // VDIFP ("does not exist in the flat parent"). No separate RM-path walk
+            // of the differential path is needed here.
             if attr.differential_path.is_some() {
                 continue;
             }
@@ -462,10 +612,13 @@ impl RmScan<'_> {
                         ),
                         &child_path,
                     );
-                } else if self.rm.conforms(child_type, &rm_attr.declared_type) == Some(false) {
+                } else if type_conforms(self.rm, child_type, &rm_attr.declared_type) == Some(false)
+                {
                     // VCORMT: the object type must be the same as, or conform to,
-                    // the type declared for the owning attribute in the RM
-                    // (master04.5 §Validity Rules: `C_OBJECT`, VCORMT).
+                    // the type declared for the owning attribute in the RM,
+                    // covariantly on any generic arguments (master04.5 §Validity
+                    // Rules: `C_OBJECT`, VCORMT; master04.2 §Rm_type_name and
+                    // Reference Model Type Matching).
                     self.push(
                         ValidationCode::Vcormt,
                         format!(
@@ -475,6 +628,14 @@ impl RmScan<'_> {
                         &child_path,
                     );
                 }
+            }
+
+            // VCORMEN / VCORMENV / VCORMENU: a primitive constraint on an
+            // enumeration-typed RM slot must use the enumeration's declared
+            // literal values (master08 §Phase 2; master04.2 §Constraints on
+            // Enumeration Types).
+            if let Some(en) = self.rm.enumeration(&rm_attr.declared_type) {
+                self.check_enumeration(&child_path, child, &en);
             }
 
             // Interior-node VATID: a node under a multiply-valued attribute must
@@ -523,6 +684,126 @@ impl RmScan<'_> {
             }
         }
     }
+
+    /// Validate a primitive constraint `child` against an enumeration-typed RM
+    /// slot (`en`): the primitive kind must match the enumeration's underlying
+    /// type (VCORMEN), and each constrained value must be a declared literal
+    /// value (VCORMENV for an integer-based enumeration, VCORMENU for a
+    /// string-based one).
+    ///
+    /// NOTE: `master08` §Phase 2 lists (VCORMENV, VCORMENU, VCORMEN) with only a
+    /// one-line gloss ("enumeration type constraints use valid literal values")
+    /// and no full vendored text; the split below — VCORMEN for a primitive-kind
+    /// mismatch, VCORMENV/VCORMENU for an out-of-set integer/string value — is
+    /// our reading of that gloss against `master04.2` §Constraints on
+    /// Enumeration Types (no fuller openEHR spec text governs the partition).
+    fn check_enumeration(&mut self, path: &str, child: &CObject, en: &RmEnum) {
+        match child {
+            CObject::CInteger(c) => match en.underlying {
+                EnumUnderlying::Integer => {
+                    for v in integer_point_values(&c.constraint) {
+                        if !en.int_values.contains(&i64::from(v)) {
+                            self.push(
+                                ValidationCode::Vcormenv,
+                                format!(
+                                    "integer value {v} is not a declared literal of the enumeration"
+                                ),
+                                path,
+                            );
+                        }
+                    }
+                }
+                EnumUnderlying::String => self.push(
+                    ValidationCode::Vcormen,
+                    "an integer constraint is stated on a string-based enumeration slot",
+                    path,
+                ),
+            },
+            CObject::CString(c) => match en.underlying {
+                EnumUnderlying::String => {
+                    for v in string_literal_values(&c.constraint) {
+                        if !en.str_values.iter().any(|lit| lit == v) {
+                            self.push(
+                                ValidationCode::Vcormenu,
+                                format!(
+                                    "string value {v:?} is not a declared literal of the enumeration"
+                                ),
+                                path,
+                            );
+                        }
+                    }
+                }
+                EnumUnderlying::Integer => self.push(
+                    ValidationCode::Vcormen,
+                    "a string constraint is stated on an integer-based enumeration slot",
+                    path,
+                ),
+            },
+            // Any other primitive kind cannot constrain an enumeration
+            // (VCORMEN); complex objects / proxies / slots / terminology codes
+            // are not primitive enumeration constraints and are left to the
+            // other RM checks.
+            CObject::CBoolean(_)
+            | CObject::CReal(_)
+            | CObject::CDate(_)
+            | CObject::CTime(_)
+            | CObject::CDateTime(_)
+            | CObject::CDuration(_) => self.push(
+                ValidationCode::Vcormen,
+                "a non-integer/string primitive constraint is stated on an enumeration slot",
+                path,
+            ),
+            CObject::CComplexObject(_)
+            | CObject::CComplexObjectProxy(_)
+            | CObject::ArchetypeSlot(_)
+            | CObject::CTerminologyCode(_) => {}
+        }
+    }
+}
+
+/// The concrete integer values a `C_INTEGER` enumeration constraint admits as
+/// point values (`{2, 3}` → `[2, 3]`; the spec-illustrated enumeration form,
+/// `master04.2` §Constraints on Enumeration Types). A range interval is not
+/// enumerated here (conservative — no false VCORMENV on the "equivalent range"
+/// form the spec also allows).
+fn integer_point_values(constraint: &[Interval<i32>]) -> Vec<i32> {
+    constraint.iter().filter_map(interval_point_i32).collect()
+}
+
+/// The single point value of an integer interval (`{n}` / `{n..n}`), or `None`
+/// for a range or unbounded interval.
+fn interval_point_i32(iv: &Interval<i32>) -> Option<i32> {
+    match iv {
+        Interval::PointInterval(p) if !p.lower_unbounded && !p.upper_unbounded => p.lower,
+        Interval::ProperInterval(ProperInterval::ProperInterval(d))
+            if d.lower_included
+                && d.upper_included
+                && !d.lower_unbounded
+                && !d.upper_unbounded
+                && d.lower == d.upper =>
+        {
+            d.lower
+        }
+        _ => None,
+    }
+}
+
+/// The literal string values of a `C_STRING` enumeration constraint: the plain
+/// entries, excluding regex forms (`/re/` or `^re^`), which cannot be a single
+/// enumeration literal (`master04.2` §Constraints on Enumeration Types).
+fn string_literal_values(constraint: &[String]) -> impl Iterator<Item = &str> {
+    constraint
+        .iter()
+        .map(String::as_str)
+        .filter(|s| !is_regex_entry(s))
+}
+
+/// Whether a `C_STRING` constraint entry is a delimited regex (`/re/` or `^re^`)
+/// rather than a literal string (`master04.5` §`C_STRING`).
+fn is_regex_entry(s: &str) -> bool {
+    let t = s.trim();
+    t.len() >= 2
+        && ((t.starts_with('/') && t.ends_with('/')) || (t.starts_with('^') && t.ends_with('^')))
 }
 
 /// `Bounds` from a [`MultiplicityInterval`] (existence / occurrences).

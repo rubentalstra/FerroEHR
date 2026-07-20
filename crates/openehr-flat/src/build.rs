@@ -82,7 +82,17 @@ pub fn build_composition(
     let explicit_event_context = has_explicit_event_context(merged_ctx.as_ref());
     let defaults = ctx::resolve(merged_ctx.as_ref(), now)?;
 
-    let mut comp = match build(&wt.tree, data_root, root_id)? {
+    // The template's hoisted-wrapper type narrowings (`ITEM_STRUCTURE`/`EVENT`
+    // families the compactor folded away), keyed by absolute archetype path, so
+    // the structural re-materialisation below stamps the *constrained* concrete
+    // type (`ITEM_LIST`/`ITEM_SINGLE`/`INTERVAL_EVENT`) rather than the abstract
+    // family default (AOM 1.4 type conformance; master04 §Level Removal — the
+    // collapsed wrapper's type is not carried on the FLAT wire, so it is resolved
+    // from the template here).
+    let mut slot_types: Vec<(Vec<PathSegment>, String)> = Vec::new();
+    collect_slot_types(&wt.tree, &mut slot_types);
+
+    let mut comp = match build(&wt.tree, data_root, root_id, &slot_types)? {
         Value::Object(m) => m,
         _ => Map::new(),
     };
@@ -168,9 +178,64 @@ fn is_element_level(seg: &str) -> bool {
     )
 }
 
+/// Collect the whole template's hoisted-wrapper type narrowings as
+/// `(parsed absolute archetype path, constrained RM type)` pairs, so the builder
+/// can look a re-materialised structural node's constrained type up by its
+/// absolute path (see [`build_composition`]).
+fn collect_slot_types(node: &WebTemplateNode, out: &mut Vec<(Vec<PathSegment>, String)>) {
+    for slot in &node.slots {
+        out.push((rmpath::parse(&slot.path), slot.rm_type.clone()));
+    }
+    for child in &node.children {
+        collect_slot_types(child, out);
+    }
+}
+
+/// Whether two archetype-path segment slices name the same path (attribute +
+/// archetype node id per step; the runtime `name` conjunct is ignored — the
+/// wrapper identity is its node id).
+fn segments_match(a: &[PathSegment], b: &[PathSegment]) -> bool {
+    a.len() == b.len()
+        && a.iter().zip(b).all(|(x, y)| {
+            x.attribute == y.attribute
+                && x.predicate.archetype_node_id == y.predicate.archetype_node_id
+        })
+}
+
+/// Resolve, per relative segment of `child`, the template-constrained concrete RM
+/// type of the structural wrapper at that absolute path (`None` when the template
+/// records no narrowing there — the caller then falls back to
+/// [`infer_type`]). Index-aligned with the relative segment list.
+fn wrapper_types(
+    child_aql: &str,
+    rel_len: usize,
+    slots: &[(Vec<PathSegment>, String)],
+) -> Vec<Option<String>> {
+    let child_abs = rmpath::parse(child_aql);
+    if child_abs.len() < rel_len {
+        return vec![None; rel_len];
+    }
+    let base = child_abs.len() - rel_len;
+    (0..rel_len)
+        .map(|i| {
+            let abs = &child_abs[..=base + i];
+            slots
+                .iter()
+                .find(|(segs, _)| segments_match(segs, abs))
+                .map(|(_, ty)| ty.clone())
+        })
+        .collect()
+}
+
 /// Build the RM value for `node` from the simplified occurrence `sim`.
-/// `path` is the printed simplified path (diagnostics).
-fn build(node: &WebTemplateNode, sim: &SimNode, path: &str) -> Result<Value, FlatError> {
+/// `path` is the printed simplified path (diagnostics); `slots` is the template's
+/// hoisted-wrapper type map (see [`build_composition`]).
+fn build(
+    node: &WebTemplateNode,
+    sim: &SimNode,
+    path: &str,
+    slots: &[(Vec<PathSegment>, String)],
+) -> Result<Value, FlatError> {
     if node.has_input() {
         let mut dv = map::build_leaf(sim, base_type(&node.rm_type), Some(node), path)?;
         // Value-level `_` attributes (`_normal_range`, `_mapping`,
@@ -233,8 +298,8 @@ fn build(node: &WebTemplateNode, sim: &SimNode, path: &str) -> Result<Value, Fla
                 continue; // a preserved index hole
             }
             let child_path = format!("{path}/{}:{i}", child.id);
-            let child_val = build(child, occ, &child_path)?;
-            place(&mut obj, &rel, child_val, child, occ, &child_path)?;
+            let child_val = build(child, occ, &child_path, slots)?;
+            place(&mut obj, &rel, child_val, child, occ, &child_path, slots)?;
         }
     }
 
@@ -312,15 +377,32 @@ fn place(
     child: &WebTemplateNode,
     occ: &SimNode,
     path: &str,
+    slots: &[(Vec<PathSegment>, String)],
 ) -> Result<(), FlatError> {
     if rel.is_empty() {
         return Ok(());
     }
     let id_idx = rel.iter().rposition(|s| is_multiple(&s.attribute));
-    place_rec(parent, rel, 0, id_idx, child_value, child, occ, path)
+    // Per relative segment, the template-constrained concrete type of the
+    // structural wrapper at that absolute path (empty ⇒ fall back to `infer_type`).
+    let types = wrapper_types(&child.aql_path, rel.len(), slots);
+    place_rec(
+        parent,
+        rel,
+        0,
+        id_idx,
+        child_value,
+        child,
+        occ,
+        path,
+        &types,
+        slots,
+    )
 }
 
-#[allow(clippy::too_many_arguments)] // a recursive placement cursor, not an API
+// a recursive placement cursor, not an API: many arguments thread the cursor
+// state, and the structural-case body runs just over the line limit.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
 fn place_rec(
     cur: &mut Map<String, Value>,
     rel: &[PathSegment],
@@ -330,6 +412,8 @@ fn place_rec(
     child: &WebTemplateNode,
     occ: &SimNode,
     path: &str,
+    types: &[Option<String>],
+    slots: &[(Vec<PathSegment>, String)],
 ) -> Result<(), FlatError> {
     let seg = &rel[i];
     let node_id = seg.predicate.archetype_node_id.as_deref();
@@ -355,9 +439,10 @@ fn place_rec(
                 rel.get(i + 1),
                 child.name.as_deref(),
                 child.name_coded.as_ref(),
+                types.get(i).and_then(Option::as_deref),
             );
             if let Value::Object(m) = &mut el {
-                place(m, &rel[i + 1..], child_value, child, occ, path)?;
+                place(m, &rel[i + 1..], child_value, child, occ, path, slots)?;
                 // The ELEMENT wrapper's own `_` attribute family
                 // (master05 §ELEMENT).
                 apply_element_attrs(m, occ, path)?;
@@ -381,11 +466,28 @@ fn place_rec(
         let idx = if let Some(p) = pos {
             p
         } else {
-            arr.push(new_struct(seg, rel.get(i + 1), None, None));
+            arr.push(new_struct(
+                seg,
+                rel.get(i + 1),
+                None,
+                None,
+                types.get(i).and_then(Option::as_deref),
+            ));
             arr.len() - 1
         };
         if let Some(Value::Object(m)) = arr.get_mut(idx) {
-            place_rec(m, rel, i + 1, id_idx, child_value, child, occ, path)?;
+            place_rec(
+                m,
+                rel,
+                i + 1,
+                id_idx,
+                child_value,
+                child,
+                occ,
+                path,
+                types,
+                slots,
+            )?;
         }
         return Ok(());
     }
@@ -404,11 +506,28 @@ fn place_rec(
     if !cur.contains_key(&seg.attribute) {
         cur.insert(
             seg.attribute.clone(),
-            new_struct(seg, rel.get(i + 1), None, None),
+            new_struct(
+                seg,
+                rel.get(i + 1),
+                None,
+                None,
+                types.get(i).and_then(Option::as_deref),
+            ),
         );
     }
     if let Some(Value::Object(m)) = cur.get_mut(&seg.attribute) {
-        place_rec(m, rel, i + 1, id_idx, child_value, child, occ, path)?;
+        place_rec(
+            m,
+            rel,
+            i + 1,
+            id_idx,
+            child_value,
+            child,
+            occ,
+            path,
+            types,
+            slots,
+        )?;
     }
     Ok(())
 }
@@ -441,6 +560,17 @@ fn is_multiple(attr: &str) -> bool {
 fn concrete_type(rm_type: &str) -> &str {
     match base_type(rm_type) {
         "EVENT" => "POINT_EVENT",
+        other => other,
+    }
+}
+
+/// Concretise an abstract structural narrowing to the default concrete subtype
+/// (`EVENT` → `POINT_EVENT`, `ITEM_STRUCTURE` → `ITEM_TREE`); a concrete type
+/// passes through. A structural `_type` must never be abstract.
+fn concretize_structural(rm_type: &str) -> &str {
+    match rm_type {
+        "EVENT" => "POINT_EVENT",
+        "ITEM_STRUCTURE" => "ITEM_TREE",
         other => other,
     }
 }
@@ -480,16 +610,27 @@ fn name_value(display: &str, coded: Option<&CodedName>) -> Value {
     }
 }
 
-/// Create a collapsed structural RM node for `seg` (its `_type` inferred
-/// from the attribute it sits under and the next step), with mandatory
-/// fields filled.
+/// Create a collapsed structural RM node for `seg`. Its `_type` is the
+/// template-constrained concrete type (`constrained`, when the template narrowed
+/// the hoisted wrapper — `ITEM_LIST`/`ITEM_SINGLE`/`INTERVAL_EVENT` — per AOM 1.4
+/// type conformance), else inferred from the attribute it sits under and the next
+/// step (`master04 §Level Removal`). Mandatory fields are filled per the concrete
+/// type.
 fn new_struct(
     seg: &PathSegment,
     next: Option<&PathSegment>,
     name: Option<&str>,
     coded_name: Option<&CodedName>,
+    constrained: Option<&str>,
 ) -> Value {
-    let rm_type = infer_type(&seg.attribute, next.map(|s| s.attribute.as_str()));
+    // An abstract narrowing (`EVENT`, `ITEM_STRUCTURE`) is concretised to the
+    // default concrete subtype — so it never mis-stamps an abstract `_type` —
+    // while a concrete narrowing (`INTERVAL_EVENT`, `ITEM_LIST`, `ITEM_SINGLE`)
+    // passes through.
+    let rm_type = constrained.map_or_else(
+        || infer_type(&seg.attribute, next.map(|s| s.attribute.as_str())),
+        concretize_structural,
+    );
     let node_id = seg.predicate.archetype_node_id.as_deref();
     let mut o = Map::new();
     o.insert("_type".into(), json!(rm_type));
@@ -506,7 +647,11 @@ fn new_struct(
         "POINT_EVENT" | "EVENT" | "INTERVAL_EVENT" => {
             o.insert("time".into(), dv_date_time(DEFAULT_TIME));
         }
-        "ITEM_TREE" | "ITEM_LIST" | "ITEM_SINGLE" | "ITEM_TABLE" | "CLUSTER" => {
+        // ITEM_SINGLE carries a single `item: ELEMENT` (1..1), ITEM_TABLE a
+        // `rows: List<CLUSTER>`; the other ITEM_STRUCTUREs + CLUSTER carry
+        // `items` (RM data_structures §ITEM_STRUCTURE). The mandatory member is
+        // otherwise filled from content (or by `fill_structural_mandatory`).
+        "ITEM_TREE" | "ITEM_LIST" | "CLUSTER" => {
             o.insert("items".into(), json!([]));
         }
         _ => {}
@@ -520,7 +665,10 @@ fn infer_type(attr: &str, next: Option<&str>) -> &'static str {
     match (attr, next) {
         ("data", Some("events")) => "HISTORY",
         ("events", _) => "POINT_EVENT",
-        ("items", _) => "ELEMENT",
+        // ELEMENT under either the multi-valued `items` (ITEM_TREE/ITEM_LIST/
+        // CLUSTER) or the single `item` (ITEM_SINGLE) attribute — both hold an
+        // ELEMENT (RM data_structures §ITEM_STRUCTURE).
+        ("items" | "item", _) => "ELEMENT",
         ("activities", _) => "ACTIVITY",
         _ => "ITEM_TREE",
     }
@@ -581,6 +729,26 @@ fn finish_identity(
     }
     if rm_type == "EVENT_CONTEXT" {
         return; // PATHABLE, not LOCATABLE; fields come from ctx/
+    }
+    // PARTY_PROXY subtypes are not LOCATABLE (RM common
+    // `master04-generic_package.adoc` §PARTY_PROXY): they carry NO locatable
+    // `name`/`archetype_node_id`/`archetype_details`. `PARTY_IDENTIFIED.name` is
+    // a plain `String` (RM common
+    // `UML/classes/org.openehr.rm.common.party_identified.adoc` §name — "Optional
+    // human-readable name (in String form)"), never a `DV_TEXT`; stamping the
+    // locatable coded/plain name object below would mis-type it. `Basic_validity`
+    // (same class) requires at least one of `name`/`identifiers`/`external_ref`,
+    // and `Name_valid` requires a present `name` to be non-empty — so synthesise a
+    // plain-String `name` when the built party carries none of the three.
+    if matches!(rm_type, "PARTY_SELF" | "PARTY_IDENTIFIED" | "PARTY_RELATED") {
+        if rm_type != "PARTY_SELF"
+            && !obj.contains_key("name")
+            && !obj.contains_key("identifiers")
+            && !obj.contains_key("external_ref")
+        {
+            obj.insert("name".to_owned(), json!("Example party"));
+        }
+        return;
     }
     obj.entry("name".to_owned()).or_insert_with(|| {
         let text = node
@@ -983,8 +1151,26 @@ fn fill_structural_mandatory(obj: &mut Map<String, Value>, rm_type: &str) {
             obj.entry("math_function".to_owned())
                 .or_insert_with(|| dv_coded_text("mean", "openehr", "146"));
         }
-        "ITEM_TREE" | "ITEM_LIST" | "ITEM_SINGLE" | "ITEM_TABLE" | "CLUSTER" => {
+        "ITEM_TREE" | "ITEM_LIST" | "CLUSTER" => {
             obj.entry("items".to_owned()).or_insert_with(|| json!([]));
+        }
+        // ITEM_SINGLE carries one mandatory `item: ELEMENT` (1..1, RM
+        // data_structures §ITEM_SINGLE); when the wrapper carried no content, a
+        // null-flavoured ELEMENT is the minimal conforming filler
+        // (`ELEMENT.Is_null`: value xor null_flavour — openEHR `253` = "unknown").
+        "ITEM_SINGLE" => {
+            obj.entry("item".to_owned()).or_insert_with(|| {
+                json!({
+                    "_type": "ELEMENT",
+                    "archetype_node_id": "at0001",
+                    "name": {"_type": "DV_TEXT", "value": "Element"},
+                    "null_flavour": dv_coded_text("unknown", "openehr", "253"),
+                })
+            });
+        }
+        // ITEM_TABLE carries `rows: List<CLUSTER>` (RM data_structures §ITEM_TABLE).
+        "ITEM_TABLE" => {
+            obj.entry("rows".to_owned()).or_insert_with(|| json!([]));
         }
         "ACTIVITY" => {
             // action_archetype_id defaults to the match-all form
