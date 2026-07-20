@@ -23,6 +23,7 @@ suspected (correctly) that consumer-side workarounds had crept in and
 silently forked the spec model.
 
 **How to apply:** on hitting such a gap, go straight to the emitter; if
-the fix is large, register a worklist row — the workaround is still
-forbidden. On DISCOVERING an existing workaround, register a removal row.
-See [[owner-work-style]] (no quick fixes).
+the fix is large, register a tracker issue (`gh issue create`) — the
+workaround is still forbidden. On DISCOVERING an existing workaround,
+register a removal issue. See [[owner-work-style]] (no quick fixes) and
+[[tracker-is-github-issues]].

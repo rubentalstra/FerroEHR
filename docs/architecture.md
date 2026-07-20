@@ -14,10 +14,11 @@ PostgreSQL-18-native internals. Two layers:
    the openEHR specifications as the authority. EHRbase and other CDRs are
    prior art, not an oracle. This is the remaining Stage-1 work.
 
-Authoritative roadmap: the root **`ROADMAP.md`**, with `docs/plans/`
-(the live pointer + `WORKLIST.md` single tracker) + `docs/PROGRESS.md`
-(per-phase record) under it. The per-endpoint call-chain reference is
-`docs/endpoint-map.md`.
+Authoritative roadmap: the root **`ROADMAP.md`**; the open-items tracker is
+GitHub Issues (root `CLAUDE.md` §Issue workflow), with `docs/plans/` (deep
+working plans) under it; the build record is the closed issues + PR
+descriptions + `CHANGELOG.md` + git history. The per-endpoint call-chain
+reference is `docs/endpoint-map.md`.
 
 Key architectural decisions (described in full in the sections below): the
 spec + ITS layer is generated from the vendored machine-readable specs
@@ -198,8 +199,9 @@ The service layer realizes the openEHR **SM Platform Service Model**
   foundation plus the full application (persistence, greenfield storage,
   REST + auth, the SM service layer, templates, WebTemplate/FLAT/STRUCTURED,
   validation, the AQL engine, conformance, optimization, cutover). Built as
-  compiling, tested increments; the per-phase build record is
-  `docs/PROGRESS.md`.
+  compiling, tested increments; the per-phase build record is the closed
+  issues + PR descriptions (+ the retired `docs/PROGRESS.md` in git
+  history).
 - **Stage 2**: enterprise capabilities — RBAC/attribute authz, plugin system,
   multi-tenancy (`reference/v1` archaeology).
 - **Stage 3**: refinement, performance, new capabilities.

@@ -1,26 +1,29 @@
 ---
 name: next-task
 description: >
-  Reads the worklist, picks the top open row (or the row the user names),
-  and restates it as a concrete in-session work plan naming the files and
-  crates involved. Use when the user asks "what's next" or "what should I
-  work on".
-allowed-tools: [Read, Grep, Glob]
-argument-hint: (none)
+  Reads the tracker (GitHub Issues), picks the pinned/top open issue (or the
+  issue the user names), and restates it as a concrete in-session work plan
+  naming the files and crates involved. Use when the user asks "what's next"
+  or "what should I work on".
+allowed-tools: [Read, Grep, Glob, Bash]
+argument-hint: "[issue number] (optional)"
 ---
 
 # /next-task
 
-Turns the top open worklist row into an actionable plan — the planning step
-of the worklist workflow (`CLAUDE.md`). Does not do the work itself; that
-is a separate step the caller takes after seeing the plan.
+Turns an open tracker issue into an actionable plan — the planning step of
+the issue workflow (`CLAUDE.md`). Does not do the work itself; that is a
+separate step the caller takes after seeing the plan.
 
 ## Steps
 
-1. **Read `docs/plans/WORKLIST.md`** and take the first row of the `## Open`
-   table (or the row the user named). If the row points at an open plan
-   file, read that file too; its unchecked (`- [ ]`) tasks are the queue.
-3. **Turn the task into a plan**, stating:
+1. **Read the tracker**: `gh issue list --state open` — take the pinned
+   issue (current focus) or the issue the user named; then
+   `gh issue view <n> --comments` for the full contract (`## Contract` +
+   `## Exit criteria`) and the running discussion. If the issue links a
+   plan file (`docs/plans/*.md`), read that too; its unchecked (`- [ ]`)
+   tasks are the queue.
+2. **Turn the task into a plan**, stating:
    - **What** the task requires, in one or two sentences.
    - **Which files** are involved — search for them (Grep/Glob under
      `crates/` and `app/`) rather than guessing paths; if the task names a
@@ -41,8 +44,8 @@ is a separate step the caller takes after seeing the plan.
      `docs/specs/openehr/...` files (and CNF test-schedule chapters) the
      implementation must be read against, per `spec-adherence.md` /
      `/spec-lookup`. Doing the work starts by reading those.
-   - **What "done" looks like** for this task specifically, distinct from
-     the phase's overall exit criteria — including which ECC cases, fidelity
-     gates, or corpus tests prove it.
-4. **Do not update the worklist row or commit** — that happens after the
-   work is actually done, not as part of planning it.
+   - **What "done" looks like** for this task specifically — the issue's
+     `## Exit criteria` checklist, plus which ECC cases, fidelity gates, or
+     corpus tests prove it.
+3. **Do not edit the issue or commit** — recording progress happens after
+   the work is actually done, not as part of planning it.

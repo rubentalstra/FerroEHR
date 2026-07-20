@@ -38,10 +38,10 @@ Systematic conformance audit: our code vs the normative text. The output is a
    behaviour > internal), each with the spec citation
    (`docs/specs/openehr/<file>` + heading, or CNF test-case id) and the code
    location. State coverage honestly — list the spec chapters *not* audited.
-5. **Record**: for real divergences, offer to file them in
-   `docs/plans/WORKLIST.md` (the owner-mandated single tracker, plus the
-   owning phase file, if one exists) — never silently fix-and-forget; for
-   spec-silent findings, suggest the `// NOTE:` text.
+5. **Record**: for real divergences, offer to file them as tracker issues
+   (`gh issue create`, typed + `spec:*`-labelled per the CLAUDE.md issue
+   workflow; plus the owning plan file, if one exists) — never silently
+   fix-and-forget; for spec-silent findings, suggest the `// NOTE:` text.
 
 ## Rules
 

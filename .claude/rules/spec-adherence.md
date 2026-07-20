@@ -35,7 +35,7 @@ intuition.
   deleted** (it caused more confusion than value): no file may instruct anyone
   to read, write, or cite an ADR. Internal plan/design markdown is likewise
   never a citable authority — a plan or design file is deleted in the same PR
-  that implements it, and the durable record is `docs/PROGRESS.md`,
+  that implements it, and the durable record is the closed issues + PR descriptions,
   `CHANGELOG.md`, git history, and the living reference docs
   (`docs/architecture.md`, `docs/endpoint-map.md`, `docs/VERSIONS.md`). Where
   the specs are SILENT on a decision (storage mechanics, indexing, infra,

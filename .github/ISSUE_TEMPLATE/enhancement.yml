@@ -1,28 +1,25 @@
 name: Enhancement Request
-description: Enhancement request for a new / extended functionality of EHRbase
+description: Request new or extended functionality in ehrbase-rs
 labels: ["enhancement"]
 body:
   - type: textarea
     attributes:
-      label: Background
-      description: Describe the context and intention for this enhancement, such as the benefits and impacts on the user.
+      label: Contract
+      description: What should exist and why — the context, the benefit, and any governing openEHR spec sections (or the explicit "no openEHR spec governs this" flag for an extension).
     validations:
       required: true
   - type: textarea
     attributes:
-      label: Enhancement
-      description: Provide specific preconditions, steps, requirements or expectations on theproposed enhancement.
+      label: Exit criteria
+      description: The checklist that defines "done" — observable, verifiable outcomes.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
     validations:
       required: true
-  - type: input
-    attributes:
-      label: Discussion
-      description: |
-        If there has been a discussion around the enhancement, provide a link to the discussion.
-        Please also check for ongoing discussions on the [openEHR discourse](https://discourse.openehr.org/tag/ehrbase).
   - type: textarea
     attributes:
       label: Further information
-      description: Add additional information, if needed.
+      description: Discussion links, prior art, related issues.
     validations:
       required: false

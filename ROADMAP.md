@@ -1,96 +1,58 @@
 # EHRbase-rs — product roadmap
 
-*Last revised: 2026-07-14. This is the forward-looking product roadmap; the
-historical build record lives in `docs/PROGRESS.md` and the live work tracker
-in `docs/plans/WORKLIST.md`. Everything under "Shipped" is measured or
-machine-verified — the project's standing rule is **no false claims**.*
+*Last revised: 2026-07-20. This file is **direction and themes only** — it
+carries no item-level state and no quotable numbers, because both go stale.
+The live work tracker is GitHub Issues (`gh issue list --state open`; pinned
+issues = current focus; milestones = releases — root `CLAUDE.md` §Issue
+workflow). The build record is the closed issues + PR descriptions +
+`CHANGELOG.md` + git history. Every measured claim lives in the generated
+artifacts: conformance in `docs/conformance/`, benchmarks in
+`docs/benchmarks/` — always cite those, never this file.*
 
-## Where the product stands (v3.0.x)
+## What the product is
 
-A pure-Rust, headless, API-first openEHR CDR on PostgreSQL 18:
+A pure-Rust, headless, API-first openEHR CDR on PostgreSQL 18: ITS-REST
+1.0.3 at the API, AQL 1.1 as the query language, RM 1.2.0 as the domain
+model — the spec layer generated from the official machine-readable specs,
+the application our own design on top (`docs/architecture.md`). Conformance
+is machine-verified per release by the built-in ECC runner; performance is
+measured against upstream EHRbase (Java) on identical workloads with both
+directions always published. Shipped surface: the full platform (EHR /
+COMPOSITION / DIRECTORY / CONTRIBUTION, versioning, templates + validation,
+WebTemplate + FLAT/STRUCTURED, ADL 1.4 + 2.4, EHR Extract + TDD,
+demographics, terminology, admin), enterprise capabilities (change events,
+FHIR R4 connectors, S3 multimedia, RBAC/ABAC, multi-tenancy, ATNA audit,
+Helm/distroless, observability), and the Leptos admin console as a third
+container image.
 
-- **Spec-compliant, machine-verified** — ITS-REST 1.0.3 + AQL 1.1 + RM 1.2.0;
-  the built-in conformance runner executes the full catalogue per release:
-  **CORE PASS · STANDARD PASS · OPTIONS OBTAINED**, zero failing cases
-  (`docs/conformance/ehrbase-rs/`).
-- **Complete platform surface** — EHR/COMPOSITION/DIRECTORY/CONTRIBUTION,
-  full versioning semantics, templates + deep validation, WebTemplate +
-  FLAT/STRUCTURED, EHR Extract + TDD import, demographics, terminology
-  (bundled + external FHIR TS), demographic + admin APIs.
-- **Enterprise capabilities, shipped** — change events (transactional AMQP
-  outbox), bidirectional FHIR R4 connectors + read façade, S3 multimedia
-  externalization, RBAC/ABAC, integrated multi-tenancy (PostgreSQL RLS),
-  ATNA audit, Helm/distroless deployment, full observability.
-- **Measured against upstream EHRbase (Java)** on an identical clinical
-  workload (v3.0.3 pair, 2026-07-16): **2.0× the max sustained throughput
-  (632 vs 316 req/s at the p99 ≤ 1 s SLO)**, lower p50 and p99 in all 14
-  operation classes, ~50× less idle memory (11 vs 547 MB), smaller storage
-  per composition (`docs/benchmarks/COMPARISON.md`; both directions always
-  published).
+## Direction (durable themes)
 
-## Now — performance
-
-Goal: **hold the best max-sustained-throughput number honestly** on the
-fully-populated clinical workload.
-
-- [x] Write-path folding (~4 statements/commit), plan cache, index diet,
-  admission/pool parity, validation-cost rewrites (items 30/31/32:
-  RM-invariant pass against the generated RM model with typed fallback,
-  pre-parsed constraint paths — full IPS validation 47 → ~6 ms).
-- [x] **The definitive two-SUT knee pair, measured (2026-07-14):
-  ehrbase-rs 262 req/s vs upstream 161 req/s (1.63×) at the p99 ≤ 1 s SLO
-  on fully-populated documents — the max-sustained row is flipped.**
-  Five instrument defects found and fixed en route (both directions).
-- [x] **Re-measured on v3.0.3 (2026-07-16, hot-path items 33–35 landed):
-  ehrbase-rs 632 req/s (L=64, p99 92 ms) vs upstream 316 req/s (L=32,
-  p99 200 ms) — 2.0×; all 14 operation classes lower at p50 and p99;
-  fresh hour pair + knee ladders committed.**
-- [ ] Group-commit A/B (item 22), knee-run bottleneck profiling (item 27).
-
-## Next — publication & compliance depth
-
-1. **v3.0.3 released** (2026-07-16) — the performance wins, the native
-   OpenAPI surface, the configuration redesign, and the honest comparison
-   surfaces.
-2. **X1 — the public comparison page**: the ECC matrix (ours vs upstream
-   2.34.0), the benchmark ladder + overlay curves, per-case upstream failure
-   triage. Measured numbers only.
-3. **W-2 — ECC skip elimination** (owner ruling: a case passes, fails,
-   errors, or is N/A — never "skipped"): wire the remaining native-API-only
-   surfaces or adjudicate N/A with citations; zero skipped outcomes.
-4. **W-4 — full ADL2** (spec-exact, no deviation): ADL2/cADL2/ODIN source
-   parser, the complete AOM2 semantic-validation catalogue, specialisation
-   flattening, OPT2, template semantics.
-5. **W-3d — SM chapter-register gap closure**: the remaining gaps across
-   the platform-service audit, re-derived from the SM spec text
-   (`docs/specs/openehr/SM/`).
-6. **SIM-B/SDF interop audit**: FLAT/STRUCTURED transformation-rule
-   verification against the SDF spec tables; interop quality, not
-   conformance-gated.
-
-## Then — the admin console
-
-**`ehrbase-admin-ui`** — a pure-Rust (Leptos) admin console over the ITS-REST
-API, shipped as a third container image (design approved-in-principle:
-`docs/design/ehrbase-admin-ui.md`; feature target: template manager,
-point-and-click AQL query builder, JSON + XML views, EHR/version browsing;
-the CDR itself stays headless — the console is a client, never a bypass).
-
-## Later — horizon
-
-- **HL7v2 connectors** behind the same integration-frame seam as FHIR
-  (named posture; second priority after the FHIR pair).
-- **Continued performance** — PG18 AIO tuning, pipelined hot reads,
-  `JSON_TABLE` codegen, the deferred speculative indexes — always
-  profile-first, re-laddered per change.
+- **Conformance depth** — the ECC baseline only ratchets upward; skips go
+  to zero (executed or cited-N/A); spec updates are watched continuously,
+  never just at pin bumps; every spec-facing behaviour traces to the
+  vendored spec text.
+- **Honest publication** — the website derives every conformance and
+  benchmark claim from committed runner artifacts (hand-typed numbers are
+  a CI failure, not a style issue); the public comparison against upstream
+  publishes wins and losses alike.
+- **Performance** — profile-first, one change per ladder, re-measured per
+  release; the PG18-native headroom (AIO tuning, pipelined hot reads,
+  `JSON_TABLE` codegen, speculative indexes) is spent only where a profile
+  demands it.
+- **The admin console** — a real design system and 100% feature
+  completeness over strictly ITS-REST; the CDR stays headless, the console
+  stays a client, never a bypass.
+- **Interop** — FHIR first-class today; HL7v2 connectors behind the same
+  integration-frame seam as the named next posture; FLAT/STRUCTURED
+  verified table-by-table against the SDF spec.
 - **Operational maturity** — HA/scale-out guidance, PITR/backup drills,
-  upgrade rehearsals, cache tier re-evaluation (Valkey noted for
-  multi-instance Stage-2 deployments; single-node stays in-process).
-- **Stage-2/3 enterprise archaeology** — remaining items tracked in
-  `docs/plans/WORKLIST.md`; features land only with spec grounding or an
-  explicit our-own-design flag.
+  upgrade rehearsals, cache-tier re-evaluation for multi-instance
+  deployments.
+- **Stage-2/3 enterprise archaeology** — remaining `reference/v1`
+  capabilities land only with spec grounding or an explicit
+  our-own-design flag.
 
-## Standing rules (apply to every row above)
+## Standing rules (apply to everything above)
 
 Vendored specs are the oracle; ECC zero-drift gates every phase; the
 conformance baseline only ratchets upward; comparisons publish both

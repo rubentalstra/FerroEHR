@@ -1,50 +1,45 @@
 name: Bug Report
-description: Report a bug encountered when working with EHRbase
+description: Report a defect in ehrbase-rs (wrong wire behaviour, a crash, a conformance divergence)
 labels: ["bug"]
 body:
   - type: checkboxes
     attributes:
       label: Before reporting an issue
-      description: Please search to see if the issue is already reported, and try to reproduce the issue on the latest release.
       options:
         - label: I have searched existing issues
           required: true
-        - label: I have reproduced the issue with the latest release
+        - label: I have reproduced the issue on the latest release
           required: true
   - type: textarea
     attributes:
-      label: Environment information
-      description: To help reproducing your problem it is mandatory to give some information on the environment. You can get an aggregate of this data by starting EHRbase and performing a GET request on `%ehrbaseBaseUri%/ehrbase/rest/status`
+      label: Environment
+      description: You can get most of this from `GET %baseUri%/ehrbase/rest/status`.
       placeholder: |
-        - EHRbase version:
-        - openEHR_SDK version:
-        - Archie version:
+        - ehrbase-rs version:
         - PostgreSQL version:
-        - Java Runtime version:
-        - Operating System version:
+        - Deployment (compose / Helm / binary):
+        - Operating system:
     validations:
       required: true
   - type: textarea
     attributes:
       label: Steps to reproduce
-      description: Describe the steps that you have taken until the unexpected behavior occurred. Please try to add as many details as possible, and include data and templates as attachments.
+      description: Include requests, payloads, and templates as attachments where possible.
     validations:
       required: true
   - type: textarea
     attributes:
-      label: Expected behavior
-      description: Describe the expected output / behavior.
+      label: Expected behaviour
+      description: For spec-governed behaviour, cite the openEHR spec section (component + document + heading) that defines the expectation.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Actual result
-      description: Describe the wrong output / behavior.
     validations:
       required: true
   - type: textarea
     attributes:
       label: Further information
-      description: Add additional information, if needed.
     validations:
       required: false
