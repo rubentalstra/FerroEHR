@@ -7,11 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.4.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-<<<<<<< HEAD
 - **Run date:** 2026-07-20T22:15:20.205377Z
-=======
-- **Run date:** 2026-07-20T21:43:47.766557Z
->>>>>>> origin/develop
 
 ## System Under Test (SUT)
 
@@ -21,11 +17,7 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-<<<<<<< HEAD
 | Date | 2026-07-20T22:15:20.205377Z |
-=======
-| Date | 2026-07-20T21:43:47.766557Z |
->>>>>>> origin/develop
 
 ## Scope of Test
 
