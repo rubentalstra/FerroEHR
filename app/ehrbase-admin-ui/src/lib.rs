@@ -1,7 +1,7 @@
 //! `EHRbase` admin console — Leptos SSR web app + BFF over the ITS-REST API.
 //!
-//! Governing plan: `docs/design/ehrbase-admin-ui.md` (deleted at close; the
-//! durable record is `docs/architecture.md`). No openEHR spec governs an
+//! Governing work: tracker issue #152 + `docs/plans/admin-ui-overhaul.md`
+//! (the plan dies with the closing PR). No openEHR spec governs an
 //! admin UI — our own design / product extension. The three binding
 //! mandates: Rust only (zero authored JavaScript), the CDR is reached ONLY
 //! over ITS-REST (never `app/ehrbase` / `app/ehrbase-rest` in-process), and

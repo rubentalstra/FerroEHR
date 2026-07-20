@@ -6,9 +6,10 @@ document is authoritative for what. When two docs disagree, the **newer
 decision wins**. *(The former `ADRs/`, `blueprint/`, `enterprise/`, and
 `spec-audit/` layers were deleted 2026-07-16/17 — implemented or stale; the
 vendored specs are the only doc oracle, and live behaviour is documented in
-the code + the user website. `design/` holds ONLY designs not yet
-implemented — currently the admin-console design — and each file there is
-deleted in the PR that implements it.)*
+the code + the user website. The former `design/` folder is gone too —
+2026-07-20, with the admin-console scope consolidation onto tracker issue
+#152: unbuilt design content lives in the governing plan file or the issue,
+never in a parallel design layer.)*
 
 ## Start here
 
