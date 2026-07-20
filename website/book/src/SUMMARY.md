@@ -33,4 +33,5 @@
 - [Operations](operations.md)
 - [Conformance](conformance.md)
 - [Benchmarks](benchmarks.md)
+- [Comparison with upstream](comparison.md)
 - [Contributing](contributing.md)
