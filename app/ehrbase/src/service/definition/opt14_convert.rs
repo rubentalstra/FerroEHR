@@ -64,6 +64,7 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTe
 use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
 use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
     Cardinality, Interval, MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData,
     TerminologyCode, Uuid,
@@ -140,9 +141,36 @@ pub(crate) fn convert_opt_to_adl2(
 ///
 /// # Errors
 /// As [`convert_opt_to_adl2`].
+/// One decomposed source per embedded OPT root, keyed by its archetype id.
+pub(crate) type ConvertedRoots = Vec<(String, Archetype)>;
+
+/// The minimal valid `RESOURCE_DESCRIPTION` for a decomposed OPT root: VARD
+/// (`master03` §Validity Rules) requires a description to be specified; the
+/// lifecycle state uses the 1.4→2 converter's own mapping (`unmanaged`).
+fn minimal_description() -> ResourceDescription {
+    ResourceDescription {
+        title: None,
+        original_author: std::collections::BTreeMap::new(),
+        original_namespace: None,
+        original_publisher: None,
+        other_contributors: Vec::new(),
+        lifecycle_state: "unmanaged".to_owned(),
+        custodian_namespace: None,
+        custodian_organisation: None,
+        copyright: None,
+        licence: None,
+        ip_acknowledgements: None,
+        references: None,
+        resource_package_uri: None,
+        conversion_details: None,
+        details: None,
+        other_details: None,
+    }
+}
+
 pub(crate) fn convert_opt_to_archetypes(
     opt: &opt14::OperationalTemplate,
-) -> Result<(Vec<(String, Archetype)>, Vec<FillEdge>), OptConvertError> {
+) -> Result<(ConvertedRoots, Vec<FillEdge>), OptConvertError> {
     let mut dx = Decomposer {
         language: opt.language.code_string.clone(),
         root_ontology: opt.ontology.as_ref(),
@@ -170,7 +198,12 @@ pub(crate) fn convert_opt_to_archetypes(
             rm_overlay: None,
             uid: None,
             original_language: term_code("ISO_639-1", &dx.language),
-            description: None,
+            // A decomposed OPT root carries no RESOURCE_DESCRIPTION of its own,
+            // but VARD (`master03` §Validity Rules) requires one — synthesize
+            // the minimal valid description with the converter's own lifecycle
+            // mapping (`unmanaged`; see `adl14::convert::transform_description`).
+            // No openEHR spec governs 1.4→2 conversion — our own design.
+            description: Some(Box::new(minimal_description())),
             is_controlled: None,
             annotations: None,
             translations: None,
@@ -492,6 +525,31 @@ impl Decomposer<'_> {
                 }
             }
         }
+
+        // A binding whose key is not a code DEFINED in this root's slice is
+        // unexpressible after decomposition (1.4 OPTs may bind path keys or
+        // codes scoped to another embedded root) and would raise VTTBK
+        // (`master03` §Validity Rules — binding keys must be defined codes).
+        // Drop it, logged: the binding's home is the root that defines the
+        // code, which carries it in its own slice.
+        let defined: std::collections::BTreeSet<&str> = term_definitions
+            .values()
+            .flat_map(|by_code| by_code.keys().map(String::as_str))
+            .collect();
+        for by_key in term_bindings.values_mut() {
+            by_key.retain(|key, _| {
+                let keep = defined.contains(key.as_str());
+                if !keep {
+                    tracing::debug!(
+                        archetype_id,
+                        binding_key = key.as_str(),
+                        "opt14 conversion: dropping term binding outside this root's code scope"
+                    );
+                }
+                keep
+            });
+        }
+        term_bindings.retain(|_, by_key| !by_key.is_empty());
 
         ArchetypeTerminology {
             is_differential: false,
