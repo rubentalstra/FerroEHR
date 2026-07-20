@@ -55,7 +55,7 @@ const V2_NAME: &str = "conformance-dir-v2";
 /// Absent-directory ladder for update/delete: non-existent directory → 404
 /// (`directory_update`/`directory_delete` `404_unknown_ehr_id`); 412 the
 /// precondition-failed form some editions return.
-const ABSENT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 404), (Edition::Release103, 412)];
+const ABSENT_RUNGS: &[(Edition, u16)] = &[(Edition::Release110, 404), (Edition::Release103, 412)];
 
 /// The registered master09 DIRECTORY cases.
 #[must_use]

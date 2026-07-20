@@ -15,6 +15,18 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The implemented openEHR REST API is **ITS-REST Release-1.1.0** (published
+  upstream 19-Jul-2026). The server was already built against the
+  pre-release text of this release — the regenerated REST contract is
+  byte-identical at the release tag — so wire behaviour is unchanged; the
+  advertised API identity moves from 1.0.3/development to 1.1.0 everywhere
+  (documentation, OpenAPI metadata, conformance artifacts), and the
+  `openehr-its` spec crate is now versioned 1.1.0. Conformance reports
+  state the tested edition as `release-1.1.0` (formerly `development`;
+  the old label remains accepted as a CLI/config alias).
+
 ## [3.3.0] - 2026-07-20
 
 ### Added

@@ -2,9 +2,10 @@
 //! factory (`i_demographic_service.adoc`) — the party create / read / update /
 //! delete domain logic, built on the shared [`crate::versioning`]
 //! change-control machinery with `ehr_id = None` (no EHR scope — our own
-//! design; a party has no owning EHR). ITS-REST 1.0.3 defines no demographic
-//! wire contract, so status/`ETag`/`Location`/`If-Match`/deleted-read semantics
-//! follow the EHR group by analogy (module NOTE in [`super`]).
+//! design; a party has no owning EHR). The wire is the Demographic API of
+//! ITS-REST Release-1.1.0 (DEVELOPMENT lifecycle within the released spec):
+//! status/`ETag`/`Location`/`If-Match`/deleted-read semantics mirror the EHR
+//! group by the spec's own design (module NOTE in [`super`]).
 
 use serde_json::Value;
 

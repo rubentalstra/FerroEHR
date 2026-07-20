@@ -19,11 +19,14 @@
 //! - `tags` — the demographic `ITEM_TAG` surface (our extension),
 //! - `api` — the public `EhrbaseService` seam the ITS-REST adapter calls.
 //!
-//! ITS-REST 1.0.3 defines no demographic wire contract (the SM demographic
-//! service is abstract; the CNF demographic schedule — master10 — is all TBD;
-//! CNF profiles list demographic as OPTIONS-profile only). This behaviour is
-//! therefore our own extension **by analogy with the EHR group**: identical
-//! status/`ETag`/`Location`/`Prefer`/`If-Match`/deleted-read semantics.
+//! The demographic wire contract is the **Demographic API of ITS-REST
+//! Release-1.1.0** (DEVELOPMENT lifecycle within the released spec; it first
+//! appeared post-1.0.3). The SM demographic service remains abstract, the
+//! CNF demographic schedule (master10) is all TBD, and CNF profiles list
+//! demographic as OPTIONS-profile only — so conformance weight is light, but
+//! the wire itself is spec-defined: identical
+//! status/`ETag`/`Location`/`Prefer`/`If-Match`/deleted-read semantics to the
+//! EHR group, by the spec's own design.
 //!
 //! Standing NOTEs (deliberate divergences, register §6):
 //! - The `UV_PARTY`/`UV_PARTY_RELATIONSHIP` envelope (`uv_party.adoc`) is

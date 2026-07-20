@@ -24,7 +24,7 @@ const WORDMARK: &str = r"
 const PROJECT_URL: &str = "https://github.com/rubentalstra/ehrbase-rs";
 
 /// The load-bearing spec/platform pins, one per line (wording per
-/// `docs/VERSIONS.md`: RM 1.2.0, ITS-REST 1.0.3, QUERY/AQL 1.1.0,
+/// `docs/VERSIONS.md`: RM 1.2.0, ITS-REST 1.1.0, QUERY/AQL 1.1.0,
 /// `PostgreSQL` 18). `(label, version)` pairs, aligned when rendered.
 const PINS: &[(&str, &str)] = &[
     ("openEHR RM", "1.2.0"),

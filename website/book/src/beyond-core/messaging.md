@@ -10,7 +10,7 @@ import.
 > [!NOTE]
 > These capabilities are provided through the platform's **native service API**
 > (the openEHR SM platform-service catalogue), not as HTTP endpoints. The
-> ITS-REST 1.0.3 contract defines no extract, message, or TDD wire operations,
+> ITS-REST 1.1.0 contract defines no extract, message, or TDD wire operations,
 > so the server exposes none — the conformance suite records the messaging
 > cases as _skipped with a reason_ (native-API-only) for exactly this reason.
 > If you need these operations over HTTP, they are an integration you build on

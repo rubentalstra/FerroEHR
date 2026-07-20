@@ -6,7 +6,7 @@
 //! "`Test Case bbbb`", and all four real flows are `xx`. So the four
 //! `I_QUERY_SERVICE.*` headings are concretized as ECC-original cases (the
 //! `schedule` trace records the stub heading; the assertions derive from
-//! ITS-REST 1.0.3 QUERY + AQL 1.1), and the corpus evidence below the spine is
+//! ITS-REST 1.1.0 QUERY + AQL 1.1), and the corpus evidence below the spine is
 //! openly ECC-original.
 //!
 //! This module owns the **execution** cases (the four master11 headings, the
@@ -47,9 +47,9 @@ const JSON: &[Format] = &[Format::Json];
 /// The A–D corpus groups (used by the invalid-negative sweep).
 const GROUPS: [&str; 4] = ["A", "B", "C", "D"];
 
-const AD_HOC_CITATION: &str = "CNF master11 §I_QUERY_SERVICE (stub, xx flow); ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query \
+const AD_HOC_CITATION: &str = "CNF master11 §I_QUERY_SERVICE (stub, xx flow); ITS-REST 1.1.0 QUERY API §execute_ad_hoc_query \
      (200_QUERY.yaml RESULT_SET); AQL 1.1";
-const STORED_CITATION: &str = "CNF master11 §I_QUERY_SERVICE (stub, xx flow); ITS-REST 1.0.3 QUERY API \
+const STORED_CITATION: &str = "CNF master11 §I_QUERY_SERVICE (stub, xx flow); ITS-REST 1.1.0 QUERY API \
      §execute_stored_query + DEFINITION QUERY §store; AQL 1.1";
 
 /// Every registered QUERY-execution case (4 master11 spine + 1 invalid-negative
@@ -92,7 +92,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "qry/execute-ad-hoc-query-loaded-db",
             "Execute ad-hoc AQL query — loaded db",
             Capability::AqlBasic,
-            "CNF master11 §I_QUERY_SERVICE (stub, xx flow); ITS-REST 1.0.3 QUERY API \
+            "CNF master11 §I_QUERY_SERVICE (stub, xx flow); ITS-REST 1.1.0 QUERY API \
              §execute_ad_hoc_query; AQL 1.1 CONTAINS (master03-syntax §containsExpr)",
             ScheduleTrace::EccOriginal(
                 "I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db (master11:96, A.1.a, stub xx flow)",
@@ -107,7 +107,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Capability::AqlBasic,
             "AQL 1.1 master03-syntax §Identified paths (COMPOSITION.uid.value → /uid/value); \
              RM common master06 §Version identification (OBJECT_VERSION_ID); \
-             ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query 200_QUERY.yaml RESULT_SET",
+             ITS-REST 1.1.0 QUERY API §execute_ad_hoc_query 200_QUERY.yaml RESULT_SET",
             ScheduleTrace::EccOriginal(
                 "schedule stub (master11 is TBD); the loaded-db case asserts only the projected \
                  column path — this case asserts the projected CELL equals the committed \
@@ -121,7 +121,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "qry/corpus-invalid",
             "AQL corpus — invalid queries rejected",
             Capability::AqlBasic,
-            "AQL 1.1 (invalid syntax); ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query 400_QUERY.yaml; \
+            "AQL 1.1 (invalid syntax); ITS-REST 1.1.0 QUERY API §execute_ad_hoc_query 400_QUERY.yaml; \
              reference: CNF query corpus aql_queries_invalid",
             ScheduleTrace::EccOriginal(
                 "schedule stub (master11 is TBD — no invalid-query case); AQL 1.1 negative-rejection evidence",
@@ -135,7 +135,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "AQL advanced — ORDER BY + LIMIT/OFFSET",
             Capability::AqlAdvanced,
             "AQL 1.1 master03-syntax §orderByClause/§limitClause (AqlParser.g4 `orderByClause? limitClause?`); \
-             ITS-REST 1.0.3 QUERY API §execute_ad_hoc_query 200_QUERY.yaml RESULT_SET",
+             ITS-REST 1.1.0 QUERY API §execute_ad_hoc_query 200_QUERY.yaml RESULT_SET",
             ScheduleTrace::EccOriginal(
                 "schedule stub (master11 is TBD); AQL-advanced ORDER BY + LIMIT/OFFSET, profiles §AQL advanced OPTIONS",
             ),
@@ -209,7 +209,7 @@ fn query_text(group: &str, name: &str) -> Result<String, CaseError> {
 
 // ── RESULT_SET wire reads (explicit, cited, no `_schema_version`) ──────────────
 
-/// `RESULT_SET` field reads. ITS-REST 1.0.3 QUERY API `200_QUERY.yaml` `RESULT_SET`:
+/// `RESULT_SET` field reads. ITS-REST 1.1.0 QUERY API `200_QUERY.yaml` `RESULT_SET`:
 /// `{ meta: { _type }, columns: [{ name, path? }], rows: [...] }`. `_schema_version`
 /// is deliberately NOT read/asserted (a dev-OAS/RM-1.2.0 artefact).
 mod result_set {

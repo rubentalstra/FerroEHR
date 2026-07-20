@@ -1,4 +1,4 @@
-//! `RESULT_SET` assembly (`result_set.adoc`; ITS-REST 1.0.3
+//! `RESULT_SET` assembly (`result_set.adoc`; ITS-REST 1.1.0
 //! `schemas/query/ResultSet`) and AQL parameter substitution
 //! (QUERY `master03-syntax.adoc` §Parameters).
 
@@ -13,7 +13,7 @@ use crate::aql::exec::QueryResult;
 use crate::aql::ir::{ParamValue, Params};
 use crate::service::query::request::AqlQueryRequest;
 
-/// The `RESULT_SET` schema version this server emits (ITS-REST 1.0.3).
+/// The `RESULT_SET` schema version this server emits (ITS-REST 1.1.0).
 const RESULT_SET_SCHEMA_VERSION: &str = "1.0.3";
 
 /// Build the typed [`Params`] from the request's `query_parameters` map
@@ -83,7 +83,7 @@ fn render_param(value: &ParamValue) -> String {
     }
 }
 
-/// Assemble the ITS-REST 1.0.3 `RESULT_SET` document
+/// Assemble the ITS-REST 1.1.0 `RESULT_SET` document
 /// (`schemas/query/ResultSet`: `meta` + `q` + `columns[]` + `rows[][]`). `q`
 /// is the query as submitted; `executed` is the parameter-substituted text
 /// for `_executed_aql`; `name` (a stored query's qualified name) is emitted
@@ -93,7 +93,7 @@ fn render_param(value: &ParamValue) -> String {
 /// result set") is emitted additively as a `uuidv7()`-derived id.
 ///
 /// NOTE: the SM `RESULT_SET` makes `id` mandatory, but the
-/// ITS-REST 1.0.3 `ResultSet` schema omits it; we emit it additively so the
+/// ITS-REST 1.1.0 `ResultSet` schema omits it; we emit it additively so the
 /// SM requirement is met without breaking the ITS-REST shape (an extra field
 /// a 1.0.3 client ignores).
 pub(super) fn result_set_json(

@@ -43,10 +43,10 @@ use super::author::{self, Card};
 use super::drive::{self, Base, Constraint, Expected, PERSIST_OPT_FILE};
 use super::mutate;
 
-const OBS_CIT: &str = "RM 1.2.0 ehr §OBSERVATION (data 1..1; state/protocol 0..1); AM aom14 §C_ATTRIBUTE existence; ITS-REST 1.0.3 composition_create (201 / 422 validation)";
-const HIST_CIT: &str = "RM 1.2.0 data_structures §HISTORY (events cardinality; summary existence; Events_valid: ≥1 event OR summary); AM aom14 §C_ATTRIBUTE cardinality/existence; ITS-REST 1.0.3 composition_create (201 / 422)";
-const EVENT_CIT: &str = "RM 1.2.0 data_structures §EVENT/POINT_EVENT/INTERVAL_EVENT (state 0..1; INTERVAL_EVENT.width/math_function mandatory); AM aom14 §type narrowing; ITS-REST 1.0.3 composition_create (201 / 422)";
-const ITEM_CIT: &str = "RM 1.2.0 data_structures §ITEM_STRUCTURE (ITEM_TREE/LIST/TABLE/SINGLE); AM aom14 §type narrowing (Class not allowed); ITS-REST 1.0.3 composition_create (201 / 422)";
+const OBS_CIT: &str = "RM 1.2.0 ehr §OBSERVATION (data 1..1; state/protocol 0..1); AM aom14 §C_ATTRIBUTE existence; ITS-REST 1.1.0 composition_create (201 / 422 validation)";
+const HIST_CIT: &str = "RM 1.2.0 data_structures §HISTORY (events cardinality; summary existence; Events_valid: ≥1 event OR summary); AM aom14 §C_ATTRIBUTE cardinality/existence; ITS-REST 1.1.0 composition_create (201 / 422)";
+const EVENT_CIT: &str = "RM 1.2.0 data_structures §EVENT/POINT_EVENT/INTERVAL_EVENT (state 0..1; INTERVAL_EVENT.width/math_function mandatory); AM aom14 §type narrowing; ITS-REST 1.1.0 composition_create (201 / 422)";
+const ITEM_CIT: &str = "RM 1.2.0 data_structures §ITEM_STRUCTURE (ITEM_TREE/LIST/TABLE/SINGLE); AM aom14 §type narrowing (Class not allowed); ITS-REST 1.1.0 composition_create (201 / 422)";
 
 /// `clinical_content_validation.opt` + its vendored composition (content slots:
 /// `content[1].data`=`ITEM_SINGLE`, `[2]`=`ITEM_TREE`, `[3]`=`ITEM_LIST`,

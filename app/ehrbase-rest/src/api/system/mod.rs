@@ -1,4 +1,4 @@
-//! The ITS-REST **System API** (development edition, STABLE) —
+//! The ITS-REST **System API** (Release-1.1.0, STABLE) —
 //! `docs/specs/openehr/ITS-REST/specifications/docs/system/` + the
 //! `system-*.openapi.yaml` OAS group.
 //!

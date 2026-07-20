@@ -197,7 +197,7 @@ fn aggregate_expr(func: AggFunc, inner: Option<Expr>, distinct: bool) -> Expr {
 }
 
 /// A best-effort AQL path string for a `RESULT_SET` column's `path`
-/// (ITS-REST 1.0.3 `RESULT_SET_COLUMN.path`).
+/// (ITS-REST 1.1.0 `RESULT_SET_COLUMN.path`).
 fn target_path_string(target: &PathTarget) -> Option<String> {
     match target {
         PathTarget::Data(leaf) => Some(leaf_path_string(leaf)),

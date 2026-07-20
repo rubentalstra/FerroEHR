@@ -4,7 +4,7 @@
 |===
 |Issue|Details|Raiser|Completed
 
-4+^h|*ITS_REST Release (unreleased)*
+4+^h|*ITS_REST Release 1.1.0*
 
 |[[latest_issue]]1.1.0
 |Reworded and structurally improved multiple sections of the specification for clarity, consistency, and technical accuracy; introduced a consolidated section for the experimental features.

@@ -1,10 +1,12 @@
 //! Build/spec provenance constants (spec pins from `docs/VERSIONS.md`,
 //! emitted at build time by `build.rs`).
 
-/// The tested openEHR ITS-REST contract identity (development edition — see
-/// the module doc for the derivation). Matches `tools/conformance`
-/// `tested_its_rest()` and the committed conformance statement.
-pub const ITS_REST: &str = "development@e8a093e";
+/// The openEHR ITS-REST contract version this server implements: the released
+/// `Release-1.1.0` (19-Jul-2026). The vendored `-codegen` OAS at
+/// `crates/openehr-its/vendor/rest-oas/PROVENANCE.md` pins that release
+/// (tag `24058992d`), byte-identical to the earlier pre-release snapshot.
+/// Reported by management `/info`, the System Options manifest, and `/status`.
+pub const ITS_REST: &str = "Release-1.1.0";
 /// The AQL (QUERY) specification version (`docs/VERSIONS.md`).
 pub const AQL: &str = "1.1.0";
 /// The openEHR Reference Model version (`docs/VERSIONS.md`).

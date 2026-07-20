@@ -52,8 +52,8 @@ mod tests {
         assert!(!c.cors_permissive);
         assert_eq!(c.swagger_ui_path(), "/ehrbase/rest/swagger-ui");
         assert_eq!(c.openapi_json_path(), "/ehrbase/rest/api-docs/openapi.json");
-        // The System-Options identity carries the tested development-edition
-        // contract identity (shared provenance), not the retired `1.0.3` label.
+        // The System-Options identity carries the released ITS-REST contract
+        // version (shared provenance).
         assert_eq!(
             c.identity.restapi_specs_version,
             ehrbase::telemetry::provenance::ITS_REST

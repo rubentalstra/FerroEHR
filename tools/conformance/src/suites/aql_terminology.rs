@@ -70,7 +70,7 @@ const NESTED_JSON: &str = "nested.composition.json";
 
 /// The citation shared by every AQL-terminology case.
 const CITE: &str = "QUERY master03-syntax §Functions/Other functions/TERMINOLOGY (lines 699–767); AQL 1.1; \
-     ITS-REST 1.0.3 QUERY API execute_ad_hoc_query (200_QUERY / 400_QUERY); profiles master03 \
+     ITS-REST 1.1.0 QUERY API execute_ad_hoc_query (200_QUERY / 400_QUERY); profiles master03 \
      §Functional Querying 'AQL & terminology' (OPTIONS)";
 
 /// The single ECC-original reason: no CNF chapter defines terminology-function

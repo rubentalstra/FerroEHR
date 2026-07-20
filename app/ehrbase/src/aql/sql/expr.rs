@@ -125,7 +125,7 @@ pub(super) fn order_coercion(target: &PathTarget) -> Coercion {
 }
 
 /// A best-effort AQL path string for a `RESULT_SET` column's `path`
-/// (ITS-REST 1.0.3 `RESULT_SET_COLUMN.path` — the RM path "as specified in
+/// (ITS-REST 1.1.0 `RESULT_SET_COLUMN.path` — the RM path "as specified in
 /// query"). `"/"` for a bare variable / whole-object leaf.
 pub(super) fn leaf_path_string(leaf: &LeafPath) -> String {
     let mut s = String::new();

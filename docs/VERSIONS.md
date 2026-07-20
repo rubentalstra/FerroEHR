@@ -20,7 +20,7 @@ pre-releases until production sign-off.
 The `openehr-*` **spec crates** are versioned by the openEHR specification
 they implement (the pins below): `openehr-base` 1.3.0, `openehr-rm` 1.2.0,
 `openehr-am` 2.4.0, `openehr-term` 3.1.0, `openehr-lang` 1.0.0,
-`openehr-query` 1.1.0, `openehr-its` 1.0.3. They bump only on a spec-pin
+`openehr-query` 1.1.0, `openehr-its` 1.1.0. They bump only on a spec-pin
 bump, never with the product version.
 
 ## Language and runtime
@@ -79,7 +79,7 @@ pin accepts every valid older-minor instance.
 | LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version |
 | TERM (Terminology) | **3.1.0** (WIP generation) | 3.0.0 (26-Jun-2023) | 3.1.0 | `openehr-term` — **hand-written** (BMM has only interface classes; bundle/assets/logic are not derivable) |
 | ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL vendored) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`; namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
-| ITS-REST (REST API) | development @ `e8a093e9` (pre-release snapshot — **adoption of the released 1.1.0 is tracked on issue #178**) | **1.1.0 (19-Jul-2026)** | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** — all 7 API groups (incl. DEMOGRAPHIC/ADMIN/SYSTEM) |
+| ITS-REST (REST API) | **Release-1.1.0** @ `24058992d` | 1.1.0 (19-Jul-2026) | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** (tag Release-1.1.0). Per-API lifecycle within the release: Overview/System/EHR/Query/Definition/Formats **STABLE**; Demographic/Admin/SMART **DEVELOPMENT** (the OAS bundle artifacts are marked TRIAL) — all 7 API groups vendored |
 | ITS-JSON (JSON Schemas) | development @ `5acae056` | (1.0.0 itself still WIP) | dev | validation oracle for the fidelity gate; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
 | ITS-BMM (BMM meta-model, JSON) | per-component (see above) | per-schema | — | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance |
 | SM (Service Model) | master snapshot | 1.1.0 | dev | vendored spec text only (the service layer's design authority) |

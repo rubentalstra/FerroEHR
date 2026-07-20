@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Definition API
-  version: 1.0.3
+  version: 1.1.0
   x-status: STABLE
   x-spec: definition
   contact:

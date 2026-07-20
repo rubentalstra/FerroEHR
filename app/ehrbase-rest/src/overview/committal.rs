@@ -11,7 +11,7 @@
 //! >  merged with the default VERSION and VERSION.audit_details attributes on
 //! >  commit runtime."
 //!
-//! The **development edition** moved each attribute path *into the header
+//! **Release-1.1.0** moved each attribute path *into the header
 //! value*. The current header names are lowercase and the value is a
 //! comma-separated list of `attr_path.key="value"` pairs (worked example,
 //! lines 85–91):
@@ -34,7 +34,7 @@
 //! headers" keeps these "available for backward compatibility" (a MAY), so we
 //! still accept them; the new value-carrying form **wins on conflict**.
 //!
-//! `system_id` (development edition): a client MAY supply it here; when it is
+//! `system_id` (Release-1.1.0): a client MAY supply it here; when it is
 //! absent "the server MUST set it to its own configured system identifier"
 //! (line 94). The header layer only carries a client-supplied value into
 //! [`UpdateAudit::system_id`]; the server default is asserted at the versioning
@@ -62,7 +62,7 @@ use openehr_rm::prelude::PartyProxy;
 
 use ehrbase::service::version_update::UpdateVersion;
 
-/// New-form (development edition) header names — the attribute path lives in the
+/// New-form (Release-1.1.0) header names — the attribute path lives in the
 /// value.
 const H_VERSION: &str = "openehr-version";
 const H_AUDIT_DETAILS: &str = "openehr-audit-details";

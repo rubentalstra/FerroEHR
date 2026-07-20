@@ -3,12 +3,12 @@
 //!
 //! Oracle: `docs/specs/openehr/ITS-REST/specifications/docs/overview/`
 //! (`Intro.md`, `Glossary_and_conventions.md`, `Resources.md`,
-//! `Requests_and_responses.md`) at the **development edition** (`e8a093e9`,
+//! `Requests_and_responses.md`) at **Release-1.1.0** (`24058992d`,
 //! the same commit as the vendored OAS — one identity for prose + machine
 //! contract), plus the shared OAS pieces
 //! (`…/specifications/{headers,parameters,responses}/`).
 //!
-//! ## The development-edition protocol deltas vs Release-1.0.3
+//! ## The Release-1.1.0 protocol deltas vs Release-1.0.3
 //!
 //! (`Requests_and_responses.md` §Deprecated headers) — implemented new-form-
 //! first with the deprecated forms still accepted/emitted where the spec says

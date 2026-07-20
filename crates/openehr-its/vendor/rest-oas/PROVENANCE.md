@@ -1,8 +1,8 @@
 # Vendored openEHR ITS-REST OpenAPI (OAS)
 
 Source repo: https://github.com/openEHR/specifications-ITS-REST
-Pinned commit: `e8a093e9d6da2ae68d7cfc29cf260a7edb065f47` (master)
-Upstream path: `computable/OAS/` · Fetched: 2026-07-04.
+Pinned commit: `24058992d5fa96e8dfbd855d9c133f328387fc09` (tag Release-1.1.0, released 19-Jul-2026)
+Upstream path: `computable/OAS/` · Fetched: 2026-07-20.
 
 All **21** OpenAPI 3.0 bundles are vendored verbatim: **7 API groups** ×
 **3 variants**.

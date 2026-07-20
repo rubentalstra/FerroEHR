@@ -1,7 +1,7 @@
 # Architecture
 
 A pure-Rust, **openEHR-spec-conformant** Clinical Data Repository (CDR):
-ITS-REST 1.0.3 at the API, AQL 1.1 as the query language, greenfield
+ITS-REST 1.1.0 at the API, AQL 1.1 as the query language, greenfield
 PostgreSQL-18-native internals. Two layers:
 
 1. **The openEHR foundation (`openehr-*`) — generated from the official
@@ -108,13 +108,13 @@ abstract→concrete descendants — generated, not reflected, not hand-written)
 CONTAINS chains; `jsonb_path_query_first` + jsonpath item methods +
 `openehr_magnitude` for typed leaf extraction/comparison/ordering;
 `JSON_TABLE` for array unnesting; GIN `jsonb_ops` `$.**` equality anchors as
-document pre-filters) → execute (`sqlx`) → `RESULT_SET` (1.0.3). The feature
+document pre-filters) → execute (`sqlx`) → `RESULT_SET` (1.1.0). The feature
 envelope is documented per construct; rejections are explicit typed errors.
 
 ## REST surface + auth (`ehrbase-rest`)
 
 Base path `/ehrbase/rest/openehr/v1`, implementing the generated ITS-REST
-1.0.3 server traits over `axum` with a `tower-http` middleware stack and
+1.1.0 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
 API, `/rest/status`, `/management/*`, item tags, EhrScape compatibility
 (a feature-gated `ehrscape` adapter module in `ehrbase-rest`). **Auth (Stage 1):** Basic + OAuth2/OIDC via

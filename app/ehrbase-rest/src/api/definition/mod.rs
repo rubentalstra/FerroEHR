@@ -1,4 +1,4 @@
-//! The ITS-REST **definition API** (development edition) —
+//! The ITS-REST **definition API** (Release-1.1.0, STABLE) —
 //! `docs/specs/openehr/ITS-REST/specifications/docs/definition/` + the
 //! `definition-*.openapi.yaml` OAS group (generated into `openehr_its::rest`).
 //!

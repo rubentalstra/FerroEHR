@@ -4,7 +4,7 @@
 |===
 |Issue|Details|Raiser|Completed
 
-4+^h|*ITS_REST Release (unreleased)*
+4+^h|*ITS_REST Release 1.1.0*
 
 |[[latest_issue]]1.1.1
 |{spec_tickets}/SPECITS-94[SPECITS-94^]. Clarified Level Removal (attribute elision vs wrapper collapse) and `EVENT` rule; added `\|other` and `\|preferred_term` suffixes on `DV_CODED_TEXT`; fixed `LINK` (`\|target`) and `DV_MULTIMEDIA` (`\|mediatype`) mappings; corrected `EVENT_CONTEXT` table and added `PARTICIPATION` section; corrected PARTY `\|id_namespace` RM path; documented PARTICIPATION `/relationship` for `PARTY_RELATED` performer; expanded `DV_PROPORTION` table (`\|precision`, `\|accuracy`, `\|accuracy_is_percent`; `\|normal_status` RM path); fixed `DV_DATE_TIME` / `DV_TIME` headers and bare-path notes; swept recurring `\|magnitude_status` and `\|normal_status` row corrections across `DV_COUNT` / `DV_DATE` / `DV_DATE_TIME` / `DV_TIME` / `DV_DURATION` / `DV_QUANTITY`; added `\|accuracy` / `\|accuracy_is_percent` to `DV_COUNT`.
