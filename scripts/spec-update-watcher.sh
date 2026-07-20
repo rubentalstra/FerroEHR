@@ -23,13 +23,13 @@
 # shape, or missing amendment path exits non-zero — the run goes RED. Only a
 # successful poll that genuinely matches nothing is green-with-zero.
 #
-# Env: DRY_RUN=1 (report, create nothing) · WINDOW_DAYS (default 14) ·
+# Env: DRY_RUN=1 (report, create nothing) · WINDOW_DAYS (default 3650 — effectively full history; the vendored baseline + issue dedup make wide windows free and gap-proof) ·
 #      GH_TOKEN/GITHUB_TOKEN for gh. Requires curl, jq, gh.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 JIRA="https://openehr.atlassian.net"
-WINDOW_DAYS="${WINDOW_DAYS:-14}"
+WINDOW_DAYS="${WINDOW_DAYS:-3650}"
 DRY_RUN="${DRY_RUN:-0}"
 [[ "$WINDOW_DAYS" =~ ^[0-9]{1,4}$ ]] ||
   { echo "spec-update-watcher: WINDOW_DAYS must be a number of days, got '$WINDOW_DAYS'" >&2; exit 1; }
@@ -117,7 +117,7 @@ jira_fetch() { # $1 = full URL; body on stdout; one bounded retry on 429
 
 jql="project in (${PROJECTS}) AND status in (Resolved, Closed) AND resolutiondate >= -${WINDOW_DAYS}d ORDER BY resolutiondate DESC"
 jql_enc=$(jq -rn --arg s "$jql" '$s|@uri')
-fields="summary,status,resolution,resolutiondate,fixVersions,components"
+fields="summary,status,resolution,resolutiondate,created,issuetype,fixVersions,components,description"
 echo "spec-update-watcher: Jira poll — window ${WINDOW_DAYS}d, projects ${PROJECTS}"
 
 : > "$tmp/jira.jsonl"
@@ -152,12 +152,30 @@ while IFS= read -r issue; do
     echo "  $key: already inside the vendored pin (amendment record carries it) — skipped"
     continue
   fi
+  # A rejected/duplicate resolution means NOTHING changed in the spec — no
+  # triage material. Skip with a note (still deduped later if it ever flips).
+  resolution=$(echo "$issue" | jq -r '.fields.resolution.name // "unresolved"')
+  case "$resolution" in
+    "Won't Do"|"Won't Fix"|"Duplicate"|"Cannot Reproduce"|"Declined"|"Abandoned"|"Not a Bug")
+      echo "  $key: resolution '$resolution' — no spec change, skipped"
+      continue ;;
+  esac
   summary=$(echo "$issue" | jq -r '.fields.summary')
-  resolved=$(echo "$issue" | jq -r '.fields.resolutiondate // "unknown"')
-  fixv=$(echo "$issue" | jq -r '[.fields.fixVersions[]?.name] | join(", ") | if . == "" then "—" else . end')
+  status=$(echo "$issue" | jq -r '.fields.status.name // "unknown"')
+  itype=$(echo "$issue" | jq -r '.fields.issuetype.name // "unknown"')
+  created=$(echo "$issue" | jq -r '.fields.created // "unknown" | split("T")[0]')
+  resolved=$(echo "$issue" | jq -r '.fields.resolutiondate // "unknown" | split("T")[0]')
+  # Fix versions with their release state: "Release-1.3.0 (unreleased)".
+  fixv=$(echo "$issue" | jq -r '[.fields.fixVersions[]? | "\(.name) (\(if .released then "released" else "unreleased" end))"] | join(", ") | if . == "" then "—" else . end')
+  fixv_plain=$(echo "$issue" | jq -r '[.fields.fixVersions[]?.name] | join(", ") | if . == "" then "—" else . end')
   comps=$(echo "$issue" | jq -r '[.fields.components[]?.name] | join(", ") | if . == "" then "—" else . end')
+  # Description arrives as Atlassian Document Format — flatten the text
+  # leaves and truncate to a triage-sized excerpt.
+  descr=$(echo "$issue" | jq -r '[.fields.description // {} | .. | .text? // empty] | join(" ") | .[0:700]' | tr "$US" ' ' | tr '\n' ' ')
   component=$(component_for_project "$project")
-  printf "%s${US}%s${US}%s${US}jira${US}%s${US}%s${US}%s\n" "$key" "$component" "$summary" "$resolved" "$fixv" "$comps" >> "$CANDIDATES"
+  printf "%s${US}%s${US}%s${US}jira${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s\n" \
+    "$key" "$component" "$summary" "$resolved" "$fixv" "$comps" \
+    "$status" "$resolution" "$itype" "$created" "$fixv_plain" "$descr" >> "$CANDIDATES"
 done < "$tmp/jira.jsonl"
 
 # ── B. Amendment-record cross-check ─────────────────────────────────────────
@@ -184,9 +202,11 @@ while IFS= read -r local_path; do
     <(grep -oE 'SPEC[A-Z]*-[0-9]+' "$local_path" | sort -u) || true)
   if [ -n "$new_keys" ]; then
     while IFS= read -r key; do
-      printf "%s${US}%s${US}%s${US}amendment${US}%s${US}%s${US}%s\n" \
+      printf "%s${US}%s${US}%s${US}amendment${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s${US}%s\n" \
         "$key" "$comp" "new amendment-record row in openEHR/$repo/$rel" \
-        "see amendment record" "—" "—" >> "$CANDIDATES"
+        "see amendment record" "—" "—" \
+        "(amendment)" "(amendment)" "amendment row" "—" "—" \
+        "New row referencing $key in the upstream amendment record openEHR/$repo/$rel — not present in our vendored copy." >> "$CANDIDATES"
     done <<< "$new_keys"
   fi
 done <<< "$amendment_files"
@@ -196,7 +216,7 @@ done <<< "$amendment_files"
 sort -t"$US" -k1,1 -k4,4r "$CANDIDATES" | awk -F"$US" '!seen[$1]++' > "$tmp/unique.tsv"
 
 created=0 skipped=0
-while IFS="$US" read -r key component summary source resolved fixv comps; do
+while IFS="$US" read -r key component summary source resolved fixv comps status resolution itype jcreated fixv_plain descr; do
   [ -n "$key" ] || continue
   existing=$(gh issue list --state all --search "\"$key\" in:title" --json number --jq 'length')
   if [ "$existing" -gt 0 ]; then
@@ -205,9 +225,9 @@ while IFS="$US" read -r key component summary source resolved fixv comps; do
   fi
   # Title leads with WHERE THE CHANGE LANDS upstream (the Jira fix version),
   # not with our pin — our vendored baseline is context and lives in the body.
-  case "$fixv" in
+  case "$fixv_plain" in
     ""|"—") target="version unassigned" ;;
-    *) target="$fixv" ;;
+    *) target="$fixv_plain" ;;
   esac
   if [ -n "$component" ]; then
     pin=$(pin_for_component "$component")
@@ -223,16 +243,19 @@ while IFS="$US" read -r key component summary source resolved fixv comps; do
   cat > "$tmp/body.md" <<EOF
 Upstream openEHR spec change completed — conformance-impact triage needed.
 
-- **Jira:** [$key]($JIRA/browse/$key)
-- **Detected via:** $source poll
-- **Completed (resolved):** $resolved
-- **Lands in upstream version:** $target
+- **Jira:** [$key]($JIRA/browse/$key) — $itype
+- **Upstream state:** $status / resolution: $resolution
+- **Created:** $jcreated · **Completed (resolved):** $resolved
+- **Lands in upstream version:** $fixv
 - **Jira component(s):** $comps
+- **Detected via:** $source poll
 - **What we currently have vendored (the baseline this is newer than):** ${component:-n/a} ${pin} (\`docs/VERSIONS.md\` / \`scripts/vendor-spec-docs.sh\`)
 
-### Summary
+### Upstream summary
 
 $summary
+
+$([ -n "$descr" ] && printf '<details><summary>Upstream description (excerpt)</summary>\n\n%s\n\n</details>' "$descr")
 
 ### Triage checklist
 
@@ -246,6 +269,7 @@ EOF
 
   if [ "$DRY_RUN" = "1" ]; then
     echo "DRY-RUN would create: $title  [${label_args[*]}]"
+    sed 's/^/    │ /' "$tmp/body.md"
   else
     gh issue create --title "$title" "${label_args[@]}" --body-file "$tmp/body.md" >/dev/null
     echo "created: $title"
