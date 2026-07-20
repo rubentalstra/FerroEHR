@@ -591,6 +591,13 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
      get, example get across the four Accept forms), registered in the
      OPTIONS tier (ADL2 is CNF-optional; no CNF cases exist upstream —
      our cases cite the operation YAMLs), baseline ratcheted UP.
+     **Plus AqlTerminology (owner 2026-07-20)**: cases pinning BOTH sides
+     of the engine's documented envelope — TERMINOLOGY('expand') in
+     `matches` working end-to-end over committed data, and every
+     unsupported TERMINOLOGY form producing its typed reject (never a
+     500/wrong answer); tier per what the CNF querying chapters actually
+     require (verified in-task); a spec-required-but-rejected form is a
+     reported finding + adjudicated case, never a silent skip.
   4. Full-workspace gates + the ECC run over the complete
      2.4+1.4+examples story — the new area green + zero drift on every
      pre-existing area (the baseline only moves upward).
