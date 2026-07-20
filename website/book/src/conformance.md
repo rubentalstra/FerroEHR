@@ -51,9 +51,10 @@ than silently omitted.
 
 The published run against EHRbase-rs reports:
 
-- **369 case-by-format executions, 334 passed, 0 failed, 35 documented
-  skips.**
-- **Core: PASS. Standard: PASS. Options: OBTAINED.**
+<!-- Generated at build time from docs/conformance/ehrbase-rs/results.json by
+     scripts/render-conformance-stats.sh — never hand-type numbers here (CI:
+     scripts/check-conformance-numbers.sh). -->
+{{#include ../generated/conformance-stats.md}}
 
 The executions that did not pass are documented skips, each with a stated
 reason, not failures. Options is _obtained_ because it aggregates optional

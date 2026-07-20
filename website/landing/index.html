@@ -60,15 +60,19 @@
           <h2>Compliance you can verify, not just read.</h2>
           <p>Every release runs the complete conformance catalogue against the live server, in JSON and XML, and computes the openEHR profile verdicts.</p>
         </div>
+        <!-- Conformance numbers/verdicts are DERIVED AT BUILD TIME from
+             docs/conformance/ehrbase-rs/ by scripts/render-conformance-stats.sh
+             (fill-html). Never hand-type a number here — CI's stale-numbers
+             gate (scripts/check-conformance-numbers.sh) fails the build. -->
         <div class="proof-nums">
-          <div class="proof-num"><span class="n">341</span><span class="l">cases executed</span></div>
-          <div class="proof-num"><span class="n">315</span><span class="l">passed</span></div>
-          <div class="proof-num"><span class="n zero">0</span><span class="l">failed</span></div>
+          <div class="proof-num"><span class="n" data-ecc="executed">—</span><span class="l">cases executed</span></div>
+          <div class="proof-num"><span class="n" data-ecc="passed">—</span><span class="l">passed</span></div>
+          <div class="proof-num"><span class="n zero" data-ecc="failed">—</span><span class="l">failed</span></div>
         </div>
         <div class="proof-pills">
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span>CORE · PASS</a>
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span>STANDARD · PASS</a>
-          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span>OPTIONS · OBTAINED</a>
+          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-ecc="verdict-core">—</span></a>
+          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-ecc="verdict-standard">—</span></a>
+          <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-ecc="verdict-options">—</span></a>
         </div>
       </div>
     </section>
