@@ -13,9 +13,21 @@
 //! (a version-set + audit wrapper with no canonical-XML shape — master08 §Test
 //! Data Sets; version-family XML is tracked separately).
 //!
-//! `list_contributions` (master08 §F) is skip-with-reason: the SM operation has
-//! no ITS-REST binding (`/ehr/{ehr_id}/contribution` is POST-only, no GET
-//! collection resource in the tested Release-1.1.0 OAS nor Release-1.0.3).
+//! `list_contributions` (master08 §F) has **no ITS-REST binding in the released
+//! contract** (`/ehr/{ehr_id}/contribution` is POST-only in Release-1.1.0 and
+//! Release-1.0.3 — verified 2026-07-20 against the released 1.1.0 OAS). We
+//! additionally serve `GET /ehr/{ehr_id}/contribution` as a flagged **our-own
+//! extension** (a paged `{ rows: [{ uid, time_committed, committer,
+//! change_type }], total }` list; the signing suite is the precedent for
+//! extension-backed ECC cases), so the five master08 §`list_contributions`
+//! flows run against that extension: each is [`Binding::Rest`] with the SM
+//! citation + the explicit "no ITS-REST binding — ehrbase-rs extension" flag.
+//! Expected outcomes derive from our documented extension semantics (the
+//! `contribution_list` utoipa declaration: `200 {rows,total}` / `404 unknown
+//! ehr_id`) + the master08 flow. NOTE: a *contribution-empty* EHR is
+//! unreachable — EHR creation commits the initial `EHR_STATUS` within a CONTRIBUTION (RM common
+//! master06 §Contributions), so the empty-list flow is realized via the
+//! beyond-end page of our paging extension.
 //! Wire ids come only from [`crate::wire::ids`]; the sole local body reader is
 //! [`version_uid_in`] (a structured `versions[i].id.value` RM field, not an `ETag`
 //! scrape), which errors rather than falling back (no silent id fallback).
@@ -286,31 +298,41 @@ pub fn entries() -> Vec<CaseEntry> {
             Compare::None,
             run_get_empty_ehr,
         ),
-        // ── list_contributions (master08 §F) — no ITS-REST binding → skip ─
-        skip_case(
+        // ── list_contributions (master08 §F) — our GET-collection extension ─
+        list_case(
             "ctb/list-contributions-empty",
             "List contributions — empty",
             "I_EHR_CONTRIBUTION.list_contributions-empty (master08 §list_contributions)",
+            "master08 §list_contributions-empty (retrieve an empty list); SM I_EHR_CONTRIBUTION.list_contributions; no ITS-REST binding — ehrbase-rs extension (GET /ehr/{ehr_id}/contribution → {rows,total}); RM common master06 §Contributions (initial EHR_STATUS is committed within a CONTRIBUTION → empty-list realized via the beyond-end page)",
+            run_list_empty,
         ),
-        skip_case(
+        list_case(
             "ctb/list-contributions-non-existing-ehr",
             "List contributions — non existing EHR",
             "I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr (master08 §list_contributions)",
+            "master08 §list_contributions-non_existing_ehr (error: EHR with ehr_id doesn't exist); SM I_EHR_CONTRIBUTION.list_contributions; no ITS-REST binding — ehrbase-rs extension (GET /ehr/{ehr_id}/contribution → 404 unknown ehr_id)",
+            run_list_non_existing_ehr,
         ),
-        skip_case(
+        list_case(
             "ctb/list-contributions-post-commit",
             "List contributions — post commit",
             "I_EHR_CONTRIBUTION.list_contributions-post_commit (master08 §list_contributions)",
+            "master08 §list_contributions-post_commit (list reflects a committed VERSION<COMPOSITION>); SM I_EHR_CONTRIBUTION.list_contributions; no ITS-REST binding — ehrbase-rs extension (GET /ehr/{ehr_id}/contribution)",
+            run_list_post_commit,
         ),
-        skip_case(
+        list_case(
             "ctb/list-contributions-ehr-containing-directory",
             "List contributions — EHR containing directory",
             "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory (master08 §list_contributions)",
+            "master08 §list_contributions-ehr_containing_directory (list reflects a committed VERSION<FOLDER>); SM I_EHR_CONTRIBUTION.list_contributions; no ITS-REST binding — ehrbase-rs extension (GET /ehr/{ehr_id}/contribution)",
+            run_list_directory,
         ),
-        skip_case(
+        list_case(
             "ctb/list-contributions-ehr-containing-ehr-status",
             "List contributions — EHR containing EHR status",
             "I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status (master08 §list_contributions)",
+            "master08 §list_contributions-ehr_containing_ehr_status (list reflects a committed VERSION<EHR_STATUS>); SM I_EHR_CONTRIBUTION.list_contributions; no ITS-REST binding — ehrbase-rs extension (GET /ehr/{ehr_id}/contribution)",
+            run_list_ehr_status,
         ),
     ]
 }
@@ -380,21 +402,30 @@ fn get_case(
     }
 }
 
-/// A `list_contributions` case: the SM operation has no ITS-REST binding, so the
-/// case skips-with-reason rather than fabricating a URL.
-fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> CaseEntry {
+/// The ITS-REST binding the `list_contributions` cases drive — OUR extension
+/// (the released contract has no GET collection resource; the by-uid GET is
+/// `GET /ehr/{ehr_id}/contribution/{contribution_uid}`).
+const LIST_BINDING: &str = "GET /ehr/{ehr_id}/contribution";
+
+/// A `list_contributions` case: the SM operation has no ITS-REST binding in the
+/// released contract, so it runs against our flagged GET-collection extension.
+fn list_case(
+    id: &'static str,
+    title: &'static str,
+    schedule: &'static str,
+    citation: &'static str,
+    run: CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: meta(
             id,
             title,
             schedule,
-            Binding::NoRestBinding(
-                "I_EHR_CONTRIBUTION.list_contributions (master08 §list_contributions)",
-            ),
-            "master08 §list_contributions — SM operation with no ITS-REST binding (/ehr/{ehr_id}/contribution is POST-only; no GET collection resource in Release-1.1.0 nor Release-1.0.3)",
+            Binding::Rest(LIST_BINDING),
+            citation,
             Compare::None,
         ),
-        run: run_skip_list,
+        run,
     }
 }
 
@@ -1212,12 +1243,164 @@ fn run_get_bad_contribution<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-// ── list_contributions — skip-with-reason (no ITS-REST binding) ──────────────
+// ── list_contributions — OUR GET-collection extension ───────────────────────
 
-const LIST_SKIP: &str = "master08 §list_contributions: the SM operation I_EHR_CONTRIBUTION.list_contributions() \
-    has no ITS-REST binding — /ehr/{ehr_id}/contribution is POST-only (no GET collection resource) in the \
-    tested Release-1.1.0 OAS and in Release-1.0.3; the list is a native-API concern, not wire-exercisable";
+/// `GET /ehr/{ehr_id}/contribution` — OUR own extension's paged contribution
+/// list. NOTE: no openEHR spec governs this route — the released ITS-REST
+/// contract defines only the by-uid CONTRIBUTION GET; this is an ehrbase-rs
+/// extension serving `{ rows: [{ uid, time_committed, committer, change_type }],
+/// total }`.
+async fn list_contributions(ctx: &RunContext<'_>, ehr_id: &str) -> Result<HttpResponse, CaseError> {
+    ctx.send(negotiate::accept(
+        HttpRequest::get(format!("/ehr/{ehr_id}/contribution")),
+        Format::Json,
+    ))
+    .await
+}
 
-fn run_skip_list<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped(LIST_SKIP.to_owned())) })
+/// Assert the extension list body carries `rows` (an array) whose entries hold
+/// a `uid` equal to `uid` (the committed CONTRIBUTION's uid — our row shape
+/// exposes no version-type field, so presence of the committing contribution is
+/// how a `VERSION<X>` flow is realized; the committing step guarantees the
+/// content type).
+fn assert_list_contains(body: &Value, uid: &str, what: &str) -> Result<(), CaseError> {
+    let rows = body["rows"].as_array().ok_or_else(|| {
+        CaseError::Assertion("contribution list body has no `rows` array".to_owned())
+    })?;
+    if rows.iter().any(|r| r["uid"].as_str() == Some(uid)) {
+        Ok(())
+    } else {
+        Err(CaseError::Assertion(format!(
+            "{what}: committed CONTRIBUTION {uid} is absent from the list ({} row(s))",
+            rows.len()
+        )))
+    }
+}
+
+/// F.2 — an "empty" list. A contribution-EMPTY EHR is unreachable (EHR creation
+/// commits the initial `EHR_STATUS` within a CONTRIBUTION, RM common master06
+/// §Contributions), so the empty-list path is exercised via our paging
+/// extension: a page past the end returns a well-formed envelope with no rows.
+fn run_list_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        // The default page is a well-formed `{rows,total}` envelope.
+        let resp = list_contributions(ctx, &ehr_id).await?;
+        assert::status(&resp, 200)?;
+        let body = resp.json()?;
+        let total = body["total"].as_i64().ok_or_else(|| {
+            CaseError::Assertion("contribution list body has no integer `total`".to_owned())
+        })?;
+        if !body["rows"].is_array() {
+            return Err(CaseError::Assertion(
+                "contribution list body has no `rows` array".to_owned(),
+            ));
+        }
+        // The genuinely-empty result: the beyond-end page yields no rows.
+        let past = ctx
+            .send(negotiate::accept(
+                HttpRequest::get(format!("/ehr/{ehr_id}/contribution?offset={}", total + 100)),
+                Format::Json,
+            ))
+            .await?;
+        assert::status(&past, 200)?;
+        match past.json()?["rows"].as_array() {
+            Some(rows) if rows.is_empty() => Ok(DataSetReport::SINGLE),
+            Some(rows) => Err(CaseError::Assertion(format!(
+                "beyond-end contribution page must be empty, got {} row(s)",
+                rows.len()
+            ))),
+            None => Err(CaseError::Assertion(
+                "contribution list body has no `rows` array".to_owned(),
+            )),
+        }
+    })
+}
+
+/// F.3 — listing the contributions of a non-existing EHR is a `404`
+/// (`Pre_has_ehr`; our extension documents `404` for an unknown `ehr_id`).
+fn run_list_non_existing_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let resp = list_contributions(ctx, &Uuid::new_v4().to_string()).await?;
+        assert::status(&resp, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// F.1 — after committing a CONTRIBUTION<COMPOSITION> the list reflects it.
+fn run_list_post_commit<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        support::ensure_opt(ctx, "template.valid", "minimal/minimal_admin.opt").await?;
+        let ehr_id = support::create_ehr(ctx).await?;
+        let created = commit_req(
+            ctx,
+            &ehr_id,
+            &load(
+                "contribution.valid",
+                "minimal/minimal_admin.contribution.json",
+            )?,
+        )
+        .await?;
+        assert::status(&created, 201)?;
+        let ctb_uid = ids::contribution_uid(ctx, &created)?;
+        let resp = list_contributions(ctx, &ehr_id).await?;
+        assert::status(&resp, 200)?;
+        assert_list_contains(
+            &resp.json()?,
+            &ctb_uid,
+            "F.1 post-commit COMPOSITION contribution",
+        )?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// F.5 — after committing a CONTRIBUTION<FOLDER> the list reflects it.
+fn run_list_directory<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let created = commit_req(
+            ctx,
+            &ehr_id,
+            &load(
+                "contribution.valid",
+                "minimal/folder.contribution.creation.json",
+            )?,
+        )
+        .await?;
+        assert::status(&created, 201)?;
+        let ctb_uid = ids::contribution_uid(ctx, &created)?;
+        let resp = list_contributions(ctx, &ehr_id).await?;
+        assert::status(&resp, 200)?;
+        assert_list_contains(
+            &resp.json()?,
+            &ctb_uid,
+            "F.5 committed FOLDER (directory) contribution",
+        )?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// F.4 — after committing a `CONTRIBUTION<EHR_STATUS>` the list reflects it.
+fn run_list_ehr_status<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    case!({
+        let ehr_id = support::create_ehr(ctx).await?;
+        let current = ehr_status_uid(ctx, &ehr_id).await?;
+        let mut body = load(
+            "contribution.valid",
+            "minimal/status.contribution.modification.json",
+        )?;
+        normalize_modification(&mut body, 0);
+        set_preceding(&mut body, 0, &current);
+        let created = commit_req(ctx, &ehr_id, &body).await?;
+        assert::status(&created, 201)?;
+        let ctb_uid = ids::contribution_uid(ctx, &created)?;
+        let resp = list_contributions(ctx, &ehr_id).await?;
+        assert::status(&resp, 200)?;
+        assert_list_contains(
+            &resp.json()?,
+            &ctb_uid,
+            "F.4 committed EHR_STATUS contribution",
+        )?;
+        Ok(DataSetReport::SINGLE)
+    })
 }

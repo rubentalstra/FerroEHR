@@ -12,11 +12,14 @@
 //! `DELETE /admin/ehr/{ehr_id}` and `DELETE /admin/ehr/all{?ehr_id*}`
 //! (`crates/openehr-its/vendor/rest-oas/admin-codegen.openapi.yaml`), realizing
 //! `physical_ehr_delete`. The other eight SM operations have no ITS-REST route
-//! the HTTP-only ECC can reach: six are native-API-only skip-with-reason cases
-//! citing the `app/ehrbase` integration test that proves them (the Messaging
-//! precedent); two act on demographic PARTYs and are
-//! `NoRestBinding`. Each skip fn embeds its reason as a
-//! literal — a `CaseRun` is a bare `fn` pointer and cannot close over one.
+//! the HTTP-only ECC can reach anywhere, so each is a first-class
+//! **not-applicable** verdict (never a "skip"; owner ruling: a case passes,
+//! fails, errors, or is N/A) — six are native-API-only
+//! ([`Binding::NativeApiOnly`]) and two act on demographic PARTYs
+//! ([`Binding::NoRestBinding`]); every one cites the SM operation heading + the
+//! `app/ehrbase` integration test that proves it off the wire (the Messaging
+//! precedent). Each N/A fn embeds its evidence pointer as a literal — a
+//! `CaseRun` is a bare `fn` pointer and cannot close over one.
 
 use uuid::Uuid;
 
@@ -261,59 +264,64 @@ macro_rules! case_body {
     };
 }
 
-/// Generate a distinct skip run function embedding its reason as a literal (a
-/// `CaseRun` is a bare `fn` pointer and cannot close over the reason).
-macro_rules! skip_fn {
+/// Generate a distinct not-applicable run function embedding its evidence
+/// pointer as a literal (a `CaseRun` is a bare `fn` pointer and cannot close
+/// over the reason). These SM operations have no ITS-REST wire binding
+/// anywhere, so the HTTP-only instrument reports them as first-class N/A (never
+/// a skip; owner ruling), for every SUT.
+macro_rules! na_fn {
     ($name:ident, $reason:literal) => {
         fn $name<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-            Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped($reason.to_owned())) })
+            Box::pin(async move {
+                Err::<DataSetReport, _>(CaseError::NotApplicable($reason.to_owned()))
+            })
         }
     };
 }
 
-skip_fn!(
+na_fn!(
     skip_list_contributions,
     "NativeApiOnly: I_ADMIN_SERVICE.list_contributions is exercised by \
      app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary \
      — no ITS-REST admin route reaches it"
 );
-skip_fn!(
+na_fn!(
     skip_contribution_count,
     "NativeApiOnly: I_ADMIN_SERVICE.contribution_count is exercised by \
      app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary \
      — no ITS-REST admin route reaches it"
 );
-skip_fn!(
+na_fn!(
     skip_versioned_composition_count,
     "NativeApiOnly: I_ADMIN_SERVICE.versioned_composition_count is exercised by \
      app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary \
      — no ITS-REST admin route reaches it"
 );
-skip_fn!(
+na_fn!(
     skip_composition_version_count,
     "NativeApiOnly: I_ADMIN_SERVICE.composition_version_count is exercised by \
      app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary \
      — no ITS-REST admin route reaches it"
 );
-skip_fn!(
+na_fn!(
     skip_export_ehrs,
     "NativeApiOnly: I_ADMIN_DUMP_LOAD.export_ehrs/load_ehrs is exercised by \
      app/ehrbase/tests/service_dump_load.rs::export_then_load_into_fresh_db_round_trips_byte_equal \
      — no ITS-REST admin route reaches it"
 );
-skip_fn!(
+na_fn!(
     skip_archive_ehrs,
     "NativeApiOnly: I_ADMIN_ARCHIVE.archive_ehrs is exercised by \
      app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged \
      — no ITS-REST admin route reaches it"
 );
-skip_fn!(
+na_fn!(
     skip_physical_party_delete,
     "NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the \
      demographic extension; exercised natively by \
      app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner"
 );
-skip_fn!(
+na_fn!(
     skip_archive_parties,
     "NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the \
      demographic extension; the archive path is proven natively by \

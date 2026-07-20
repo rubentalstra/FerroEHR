@@ -36,11 +36,21 @@
 //!   spec determine and carry a `// NOTE:` that the schedule's
 //!   two-coexisting-versions / latest / specific post-conditions are
 //!   structurally unrealizable on the ADL 1.4 REST binding.
-//! - **`delete_opt` skip.** The SM `I_DEFINITION_ADL14.delete_opt()`
-//!   has no ITS-REST ADL 1.4 DELETE verb — deletion is ADMIN-API-only — so the
-//!   four delete cases carry [`Binding::NoRestBinding`] and skip-with-reason,
-//!   never a fabricated URL. The ADMIN template-deletion path is evidenced in
-//!   the Admin area, not here.
+//! - **`delete_opt` via the ADMIN extension.** The released ITS-REST ADL 1.4
+//!   API has **no DELETE verb** on `/definition/template/adl1.4/{id}`
+//!   (Release-1.1.0 + Release-1.0.3, verified 2026-07-20); deletion is served
+//!   by our flagged ADMIN extension `DELETE /admin/template/{template_id}`
+//!   (204 deleted / 404 absent / 409 while referenced), which realizes SM
+//!   `I_DEFINITION_ADL14.delete_opt()`. The four master04 §`delete_opt` flows
+//!   run against that extension ([`Binding::Rest`], ADMIN credential) with the
+//!   SM citation + the explicit "no ITS-REST binding — ehrbase-rs extension"
+//!   flag. The admin route addresses a template by its wire id (no
+//!   version-addressed resource — master04 §upload_opt-valid_opt_twice NOTE:
+//!   OPT versioning is non-standard), so the "latest"/"specific" version flows
+//!   adapt to whole-template semantics; "specific version" is realized as the
+//!   physical-delete-never-orphans guard (a template still referenced by a
+//!   committed version is refused, 409). The 204 flows upload a uniquified
+//!   `template_id` so the template is provably unreferenced.
 //! - **validate-via-upload** is master04 §`validate_opt` NOTE-sanctioned
 //!   (a server without a standalone validate service realizes validation
 //!   through the upload endpoint); recorded as a deliberate binding, not a
@@ -49,7 +59,9 @@
 use serde_json::Value;
 
 use crate::engine::assert;
-use crate::engine::harness::{CaseError, CaseFuture, DataSetReport, HttpRequest, RunContext};
+use crate::engine::harness::{
+    AuthSlot, CaseError, CaseFuture, DataSetReport, HttpRequest, RunContext,
+};
 use crate::engine::registry::CaseEntry;
 use crate::model::case::{Binding, Capability, CaseMeta, Compare, Format, ScheduleTrace};
 use crate::model::catalog::Area;
@@ -73,17 +85,12 @@ const ADL14: &str = "/definition/template/adl1.4";
 const OPT_CITATION: &str = "CNF master04 §I_DEFINITION_ADL14; ITS-REST 1.1.0 DEFINITION ADL 1.4 API (upload/get/validate); \
      AM 1.4 §OPERATIONAL_TEMPLATE";
 
-/// The four master04 `delete_opt` cases: SM operation with no ITS-REST ADL 1.4
-/// binding (deletion is ADMIN-API-only).
-const DELETE_BINDING: Binding =
-    Binding::NoRestBinding("I_DEFINITION_ADL14.delete_opt (master04 §delete_opt)");
-const DELETE_CITATION: &str = "CNF master04 §delete_opt — SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 DELETE \
-     binding (no DELETE verb on /definition/template/adl1.4/{id} in Release-1.1.0 nor \
-     Release-1.0.3; OPT deletion is ADMIN-API-only)";
-const DELETE_SKIP: &str = "master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — \
-     deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a \
-     server defect. The ADMIN template-deletion path is evidenced in the \
-     Admin area.";
+/// The four master04 `delete_opt` cases run against our ADMIN extension
+/// `DELETE /admin/template/{template_id}` (the released ITS-REST ADL 1.4 API
+/// has no DELETE verb; deletion is ADMIN-API-only). The base for the citation +
+/// binding flag, per case.
+const DELETE_BINDING: Binding = Binding::Rest("DELETE /admin/template/{template_id}");
+const ADMIN_TEMPLATE: &str = "/admin/template";
 
 /// The owned IPS OPT (REGISTER.md; official openEHR CKM export) that drives the
 /// example round-trip: its `ACTION.medication` constrains `description` to a
@@ -281,26 +288,34 @@ pub fn entries() -> Vec<CaseEntry> {
             },
             run: run_example_roundtrip,
         },
-        // ── delete_opt — D2 skip-with-reason (no ITS-REST ADL 1.4 DELETE) ──────
+        // ── delete_opt — our ADMIN extension (no ITS-REST ADL 1.4 DELETE) ──────
         delete_case(
             "tpl/delete-opt-delete-existing",
             "Delete OPT — delete existing",
             "I_DEFINITION_ADL14.delete_opt-delete_existing (master04 §delete_opt)",
+            "master04 §delete_opt-delete_existing (delete an existing OPT → 204, an unreferenced uniquified template); SM I_DEFINITION_ADL14.delete_opt(); no ITS-REST ADL 1.4 DELETE binding — ehrbase-rs extension (DELETE /admin/template/{template_id})",
+            run_delete_existing,
         ),
         delete_case(
             "tpl/delete-opt-delete-latest-version",
             "Delete OPT — delete latest version",
             "I_DEFINITION_ADL14.delete_opt-delete_latest_version (master04 §delete_opt)",
+            "master04 §delete_opt-delete_latest_version; the admin route has no version-addressed template resource (§upload_opt-valid_opt_twice NOTE — OPT versioning non-standard), so this is whole-template delete (204) with the physical delete leaving no trace (re-delete 404); SM I_DEFINITION_ADL14.delete_opt(); no ITS-REST ADL 1.4 DELETE binding — ehrbase-rs extension (DELETE /admin/template/{template_id})",
+            run_delete_latest_version,
         ),
         delete_case(
             "tpl/delete-opt-delete-specific-version",
             "Delete OPT — delete specific version",
             "I_DEFINITION_ADL14.delete_opt-delete_specific_version (master04 §delete_opt)",
+            "master04 §delete_opt-delete_specific_version; no version-addressed resource on the admin route, so a template underpinning a specific committed version is refused (409 with a reference count — physical delete never orphans committed data); SM I_DEFINITION_ADL14.delete_opt(); no ITS-REST ADL 1.4 DELETE binding — ehrbase-rs extension (DELETE /admin/template/{template_id})",
+            run_delete_specific_version,
         ),
         delete_case(
             "tpl/delete-opt-delete-non-existing",
             "Delete OPT — delete non existing",
             "I_DEFINITION_ADL14.delete_opt-delete_non_existing (master04 §delete_opt)",
+            "master04 §delete_opt-delete_non_existing (delete an OPT that does not exist → 404); SM I_DEFINITION_ADL14.delete_opt(); no ITS-REST ADL 1.4 DELETE binding — ehrbase-rs extension (DELETE /admin/template/{template_id})",
+            run_delete_non_existing,
         ),
     ]
 }
@@ -332,8 +347,16 @@ fn case(
     }
 }
 
-/// A `delete_opt` case: no ITS-REST binding → skip-with-reason.
-fn delete_case(id: &'static str, title: &'static str, schedule: &'static str) -> CaseEntry {
+/// A `delete_opt` case: realized against our ADMIN template-delete extension
+/// (the released ITS-REST ADL 1.4 API has no DELETE verb). The `citation` is
+/// the full derivation square (the master04 flow + the shared extension flag).
+fn delete_case(
+    id: &'static str,
+    title: &'static str,
+    schedule: &'static str,
+    citation: &'static str,
+    run: crate::engine::harness::CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
@@ -341,12 +364,12 @@ fn delete_case(id: &'static str, title: &'static str, schedule: &'static str) ->
             area: Area::Tpl,
             capability: Capability::Adl14OptProvisioning,
             formats: JSON,
-            citation: DELETE_CITATION,
+            citation,
             schedule: ScheduleTrace::Schedule(schedule),
             binding: DELETE_BINDING,
             compare: Compare::None,
         },
-        run: run_delete_skip,
+        run,
     }
 }
 
@@ -754,10 +777,98 @@ fn list_contains_template(listed: &serde_json::Value, template_id: &str) -> bool
     })
 }
 
-// ── delete_opt (skip) ────────────────────────────────────────────────────────
+// ── delete_opt (our ADMIN template-delete extension) ─────────────────────────
 
-fn run_delete_skip<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped(DELETE_SKIP.to_owned())) })
+/// Upload the minimal OPT with a **uniquified** `template_id` so the stored
+/// template is provably unreferenced (no committed version can target a fresh
+/// id), returning that id. The literal is replaced everywhere it appears so the
+/// OPT stays internally consistent (the COMPOSITION-level `template_id`
+/// reference tracks the header).
+async fn provision_uniquified(ctx: &RunContext<'_>) -> Result<String, CaseError> {
+    let xml = minimal_opt_xml()?;
+    let base = opt_template_id(&xml)?;
+    let unique = format!("{base}.ecc-del-{}", uuid::Uuid::new_v4().simple());
+    let xml = xml.replace(&base, &unique);
+    support::ensure_opt_xml(ctx, &xml).await?;
+    Ok(unique)
+}
+
+/// `DELETE /admin/template/{template_id}` (ADMIN credential), returning the
+/// status. NOTE: no openEHR spec governs OPT deletion over the wire — the
+/// released ITS-REST ADL 1.4 API has no DELETE verb; this is our ADMIN-API
+/// extension realizing SM `I_DEFINITION_ADL14.delete_opt`. The `template_id`
+/// path segment is percent-encoded via `urlencoding` (never hand-rolled).
+async fn admin_delete_template(ctx: &RunContext<'_>, template_id: &str) -> Result<u16, CaseError> {
+    let encoded = urlencoding::encode(template_id);
+    let resp = ctx
+        .send(HttpRequest::delete(format!("{ADMIN_TEMPLATE}/{encoded}")).with_auth(AuthSlot::Admin))
+        .await?;
+    Ok(resp.status)
+}
+
+/// `delete_existing`: an unreferenced (uniquified) template is deleted → 204.
+fn run_delete_existing<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        let template_id = provision_uniquified(ctx).await?;
+        assert_status(admin_delete_template(ctx, &template_id).await?, 204)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// `delete_latest_version`: whole-template delete → 204, then the deleted
+/// template leaves no trace (re-delete → 404). The admin route has no
+/// version-addressed resource (master04 §upload_opt-valid_opt_twice NOTE), so
+/// "latest version" is realized as whole-template semantics.
+fn run_delete_latest_version<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        let template_id = provision_uniquified(ctx).await?;
+        assert_status(admin_delete_template(ctx, &template_id).await?, 204)?;
+        assert_status(admin_delete_template(ctx, &template_id).await?, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// `delete_specific_version`: the admin route addresses by `template_id` with no
+/// version wire, so a template still referenced by a **specific committed
+/// version** is refused (409 with a reference count — physical delete never
+/// orphans committed clinical data). Provisions the known minimal OPT and
+/// commits a COMPOSITION against it, then the delete is refused (so the shared
+/// template survives).
+fn run_delete_specific_version<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        let template_id = provision(ctx).await?;
+        let ehr_id = support::create_ehr(ctx).await?;
+        // A CONTRIBUTION<COMPOSITION> referencing the provisioned OPT — the same
+        // valid commit the CONTRIBUTION suite drives — creates the specific
+        // committed version that must not be orphaned.
+        let contribution: Value = serde_json::from_str(
+            &fixtures::read_from(
+                "contribution.valid",
+                "minimal/minimal_evaluation.contribution.json",
+            )
+            .map_err(|e| codec(&e))?,
+        )
+        .map_err(|e| CaseError::Codec(e.to_string()))?;
+        let commit = ctx
+            .send(negotiate::representation(
+                HttpRequest::post(format!("/ehr/{ehr_id}/contribution"))
+                    .json_body(&contribution)?,
+                Format::Json,
+            ))
+            .await?;
+        assert::status(&commit, 201)?;
+        assert_status(admin_delete_template(ctx, &template_id).await?, 409)?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// `delete_non_existing`: deleting an OPT that does not exist → 404.
+fn run_delete_non_existing<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        let template_id = format!("ecc-absent-{}", uuid::Uuid::new_v4().simple());
+        assert_status(admin_delete_template(ctx, &template_id).await?, 404)?;
+        Ok(DataSetReport::SINGLE)
+    })
 }
 
 // ── status helpers ────────────────────────────────────────────────────────────

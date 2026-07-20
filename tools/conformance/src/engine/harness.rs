@@ -212,6 +212,17 @@ pub enum CaseError {
     /// adjudication).
     #[error("skipped: {0}")]
     Skipped(String),
+    /// The case is **not applicable** to the HTTP-only instrument: the SM
+    /// operation it realizes has no ITS-REST wire binding anywhere
+    /// (native-API-only), so no conformant server can be exercised for it over
+    /// the wire. This is the case-level counterpart of the fairness register's
+    /// N/A verdict ([`crate::model::fairness`]) — a first-class, cited
+    /// adjudication, never a "skip" (owner ruling: a case passes, fails,
+    /// errors, or is N/A). The message carries the SM citation + the named
+    /// `app/ehrbase` native-test evidence pointer that proves the operation
+    /// off the wire.
+    #[error("not applicable: {0}")]
+    NotApplicable(String),
 }
 
 /// The transport a case drives: send a request, get a response.

@@ -7,7 +7,7 @@
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
 - **ECC framework version:** 3.4.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-20T19:25:40.345261Z
+- **Run date:** 2026-07-20T20:46:30.858894Z
 
 ## System Under Test (SUT)
 
@@ -17,7 +17,7 @@
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-20T19:25:40.345261Z |
+| Date | 2026-07-20T20:46:30.858894Z |
 
 ## Scope of Test
 
@@ -26,6 +26,29 @@
 | Functional | Core (PASS), Standard (PASS), Options (OBTAINED) |
 | Sec & Priv | Signing pass, Anonymous EHRs pass |
 | Ext Data Fmt | json, xml |
+
+### Scope exclusions (adjudicated not-applicable)
+
+The following capabilities are excluded from this claim per the committed fairness register (adjudicated extensions / RM-version-sensitive comparisons); the claim is scoped to the applicable capabilities.
+
+- **ECC-ADM-007** Admin list contributions — NativeApiOnly: I_ADMIN_SERVICE.list_contributions is exercised by app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary — no ITS-REST admin route reaches it _(cite: CNF master12 §list_contributions (TBD stub); SM I_ADMIN_SERVICE.list_contributions — no ITS-REST admin route)_
+- **ECC-ADM-008** Admin contribution count — NativeApiOnly: I_ADMIN_SERVICE.contribution_count is exercised by app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary — no ITS-REST admin route reaches it _(cite: CNF master12 §contribution_count (TBD stub); SM I_ADMIN_SERVICE.contribution_count — no ITS-REST admin route)_
+- **ECC-ADM-009** Admin versioned composition count — NativeApiOnly: I_ADMIN_SERVICE.versioned_composition_count is exercised by app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary — no ITS-REST admin route reaches it _(cite: CNF master12 §versioned_composition_count (TBD stub); SM I_ADMIN_SERVICE.versioned_composition_count — no ITS-REST admin route)_
+- **ECC-ADM-010** Admin composition version count — NativeApiOnly: I_ADMIN_SERVICE.composition_version_count is exercised by app/ehrbase/tests/service_contribution.rs::contribution_listing_count_and_ehr_summary — no ITS-REST admin route reaches it _(cite: CNF master12 §composition_version_count (TBD stub); SM I_ADMIN_SERVICE.composition_version_count — no ITS-REST admin route)_
+- **ECC-ADM-011** Admin export EHRs (dump/load) — NativeApiOnly: I_ADMIN_DUMP_LOAD.export_ehrs/load_ehrs is exercised by app/ehrbase/tests/service_dump_load.rs::export_then_load_into_fresh_db_round_trips_byte_equal — no ITS-REST admin route reaches it _(cite: CNF master12 §export_ehrs (TBD stub); SM I_ADMIN_DUMP_LOAD.export_ehrs/load_ehrs — no ITS-REST admin route)_
+- **ECC-ADM-012** Admin archive EHRs — NativeApiOnly: I_ADMIN_ARCHIVE.archive_ehrs is exercised by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged — no ITS-REST admin route reaches it _(cite: CNF master12 §archive_ehrs (TBD stub); SM I_ADMIN_ARCHIVE.archive_ehrs — no ITS-REST admin route)_
+- **ECC-ADM-013** Admin physical party delete — NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the demographic extension; exercised natively by app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner _(cite: CNF master12 §physical_party_delete (TBD stub); SM I_ADMIN_SERVICE.physical_party_delete acts on demographic PARTYs (ehrbase-rs demographic extension) — no ITS-REST admin route)_
+- **ECC-ADM-014** Admin archive parties — NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the demographic extension; the archive path is proven natively by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged _(cite: CNF master12 §archive_parties (TBD stub); SM I_ADMIN_ARCHIVE.archive_parties acts on demographic PARTYs (ehrbase-rs demographic extension) — no ITS-REST admin route)_
+- **ECC-MSG-001** EHR Extract — export whole EHR (export_ehrs) — NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehrs is exercised by app/ehrbase/tests/service_extract.rs::export_ehrs_carries_every_versioned_object_latest_only — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.export_ehrs; RM EHR Extract IM (X_VERSIONED_*); CNF master13 §I_EHR_EXTRACT.export_ehr (TBD stub, listed twice — authoring duplicate))_
+- **ECC-MSG-002** EHR Extract — spec-driven export (export_ehr_extracts) — NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehr_extracts is exercised by app/ehrbase/tests/service_extract.rs::export_ehr_extracts_honours_item_list_and_all_versions — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.export_ehr_extracts (EXTRACT_ENTITY_MANIFEST + EXTRACT_VERSION_SPEC); CNF master13 §I_EHR_EXTRACT.export_ehr_extracts (TBD stub))_
+- **ECC-MSG-003** EHR Extract — export of unknown EHR fails — NativeApiOnly: I_EHR_EXTRACT_SERVICE.export_ehrs (unknown EHR) is exercised by app/ehrbase/tests/service_extract.rs::export_ehrs_unknown_ehr_is_ehr_id_does_not_exist — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.export_ehrs (ehr_id_does_not_exist precondition); CNF master13 §I_EHR_EXTRACT.export_ehr (TBD stub))_
+- **ECC-MSG-004** EHR Extract — import whole-EHR clone reusing source id — NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr is exercised by app/ehrbase/tests/service_import.rs::import_ehr_clone_into_fresh_target_reuses_source_id — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.import_ehr; RM common master06 §Copying Case 1 (reuse source EHR identifier); CNF master13 (import subsection absent — RM-backed))_
+- **ECC-MSG-005** EHR Extract — import whole EHR into a caller-fixed id — NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr (fixed id) is exercised by app/ehrbase/tests/service_import.rs::import_ehr_into_fixed_fresh_id — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.import_ehr (same patient in another EHR service); RM common master06 §Copying; CNF master13 (import subsection absent — RM-backed))_
+- **ECC-MSG-006** EHR Extract — import into a duplicate target id fails — NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr (duplicate id) is exercised by app/ehrbase/tests/service_import.rs::import_ehr_duplicate_target_is_rejected — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.import_ehr (ehr_create_fail_duplicate_id); RM common master06 §Copying; CNF master13 (import subsection absent — RM-backed))_
+- **ECC-MSG-007** EHR Extract — import extract into an existing EHR — NativeApiOnly: I_EHR_EXTRACT_SERVICE.import_ehr_extract is exercised by app/ehrbase/tests/service_import.rs::import_ehr_extract_adds_a_versioned_object_and_rejects_re_import — Messaging has no ITS-REST binding _(cite: SM I_EHR_EXTRACT_SERVICE.import_ehr_extract; RM common master06 §Copying Case 2 (first receipt clones VERSIONED_OBJECT; re-import is a conflict); CNF master13 (import subsection absent — RM-backed))_
+- **ECC-MSG-008** TDD — import a TDD as a committed COMPOSITION — NativeApiOnly: I_TDD_SERVICE.import_tdd is exercised by app/ehrbase/tests/service_tdd.rs::tdd_import_commits_composition — Messaging has no ITS-REST binding _(cite: SM I_TDD_SERVICE.import_tdd; TDD → COMPOSITION over OPT/WebTemplate (openehr_flat::tdd::from_tdd); CNF master13 §I_TDD.import_tdd (TBD stub))_
+- **ECC-MSG-009** TDD — import rejects malformed / non-TDD / unknown EHR / unknown template — NativeApiOnly: I_TDD_SERVICE.import_tdd (typed rejections) is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_rejects_malformed_payload, tdd_import_rejects_non_tdd_xml, tdd_import_rejects_unknown_ehr, tdd_import_rejects_unknown_template} — Messaging has no ITS-REST binding _(cite: SM I_TDD_SERVICE.import_tdd (typed envelope rejections); CNF master13 §I_TDD.import_tdd (TBD stub))_
+- **ECC-MSG-010** TDD — batch import commits all, fail-fast on error — NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding _(cite: SM I_TDD_SERVICE.import_tdds; CNF master13 §I_TDD.import_tdds (TBD stub))_
 
 ## Detailed Test Report
 
@@ -114,11 +137,11 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.has_contribution-bad_contribution (master08 §has_contribution) | ECC-CTB-024 — Contribution existence check — bad contribution | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.has_contribution-bad_ehr (master08 §has_contribution) | ECC-CTB-025 — Contribution existence check — bad EHR | pass | — |
 | CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.has_contribution-empty_ehr (master08 §has_contribution) | ECC-CTB-026 — Contribution existence check — empty EHR | pass | — |
-| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-empty (master08 §list_contributions) | ECC-CTB-027 — List contributions — empty | skipped | — |
-| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr (master08 §list_contributions) | ECC-CTB-028 — List contributions — non existing EHR | skipped | — |
-| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-post_commit (master08 §list_contributions) | ECC-CTB-029 — List contributions — post commit | skipped | — |
-| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory (master08 §list_contributions) | ECC-CTB-030 — List contributions — EHR containing directory | skipped | — |
-| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status (master08 §list_contributions) | ECC-CTB-031 — List contributions — EHR containing EHR status | skipped | — |
+| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-empty (master08 §list_contributions) | ECC-CTB-027 — List contributions — empty | pass | — |
+| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr (master08 §list_contributions) | ECC-CTB-028 — List contributions — non existing EHR | pass | — |
+| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-post_commit (master08 §list_contributions) | ECC-CTB-029 — List contributions — post commit | pass | — |
+| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory (master08 §list_contributions) | ECC-CTB-030 — List contributions — EHR containing directory | pass | — |
+| CONTRIBUTION (change sets) | ChangeSets | I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status (master08 §list_contributions) | ECC-CTB-031 — List contributions — EHR containing EHR status | pass | — |
 | DIRECTORY (FOLDER) | DirectoryOps | I_EHR_DIRECTORY.has_directory-empty_ehr (master09 §has_directory) | ECC-DIR-012 — Directory existence check — empty EHR | pass | — |
 | DIRECTORY (FOLDER) | DirectoryOps | I_EHR_DIRECTORY.has_directory-ehr_with_directory (master09 §has_directory) | ECC-DIR-013 — Directory existence check — EHR with directory | pass | — |
 | DIRECTORY (FOLDER) | DirectoryOps | I_EHR_DIRECTORY.has_directory-bad_ehr (master09 §has_directory) | ECC-DIR-014 — Directory existence check — bad EHR | pass | — |
@@ -169,17 +192,17 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.get_opts-retrieve_all (master04 §get_opts) | ECC-TPL-010 — List OPTs — retrieve all | pass | — |
 | Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts (master04 §get_opts) | ECC-TPL-003 — List OPTs — retrieve all no OPTs | pass | — |
 | Template / OPT provisioning | Adl14OptProvisioning | GET /definition/template/adl1.4/{template_id}/example → POST /ehr/{ehr_id}/composition | ECC-TPL-017 — Example COMPOSITION round-trips (ADL 1.4 example → commit) | pass | — |
-| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_existing (master04 §delete_opt) | ECC-TPL-014 — Delete OPT — delete existing | skipped | — |
-| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_latest_version (master04 §delete_opt) | ECC-TPL-015 — Delete OPT — delete latest version | skipped | — |
-| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_specific_version (master04 §delete_opt) | ECC-TPL-016 — Delete OPT — delete specific version | skipped | — |
-| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_non_existing (master04 §delete_opt) | ECC-TPL-013 — Delete OPT — delete non existing | skipped | — |
+| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_existing (master04 §delete_opt) | ECC-TPL-014 — Delete OPT — delete existing | pass | — |
+| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_latest_version (master04 §delete_opt) | ECC-TPL-015 — Delete OPT — delete latest version | pass | — |
+| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_specific_version (master04 §delete_opt) | ECC-TPL-016 — Delete OPT — delete specific version | pass | — |
+| Template / OPT provisioning | Adl14OptProvisioning | I_DEFINITION_ADL14.delete_opt-delete_non_existing (master04 §delete_opt) | ECC-TPL-013 — Delete OPT — delete non existing | pass | — |
 | Stored-query provisioning | QueryProvisioning | PUT /definition/query/{qualified_query_name}/{version} | ECC-SQR-001 — Store stored query — valid | pass | — |
 | Stored-query provisioning | QueryProvisioning | PUT /definition/query/{qualified_query_name}/{version} | ECC-SQR-007 — Store stored query — invalid | pass | — |
 | Stored-query provisioning | QueryProvisioning | PUT /definition/query/{qualified_query_name}/{version} | ECC-SQR-006 — Store stored query — bad formalism | pass | — |
 | Stored-query provisioning | QueryProvisioning | GET /definition/query/{qualified_query_name}/{version} | ECC-SQR-008 — Stored query existence check — existing | pass | — |
 | Stored-query provisioning | QueryProvisioning | GET /definition/query/{qualified_query_name} | ECC-SQR-002 — List stored queries — non empty | pass | — |
-| Stored-query provisioning | QueryProvisioning | no ITS-REST binding (I_DEFINITION_QUERY.list_queries (master05 §list_queries, bare collection)) | ECC-SQR-004 — List stored queries — empty | skipped | — |
-| Stored-query provisioning | QueryProvisioning | no ITS-REST binding (I_DEFINITION_QUERY.list_queries (master05 §list_queries, bare collection)) | ECC-SQR-005 — List stored queries — select items | skipped | — |
+| Stored-query provisioning | QueryProvisioning | GET /definition/query | ECC-SQR-004 — List stored queries — empty | pass | — |
+| Stored-query provisioning | QueryProvisioning | GET /definition/query | ECC-SQR-005 — List stored queries — select items | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-001 — Query service smoke test | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-002 — Execute ad-hoc AQL query — empty db | pass | — |
 | AQL execution | AqlBasic | PUT /definition/query/{name}/{version}; GET /query/{name} | ECC-QRY-003 — Execute stored AQL query — empty db | pass | — |
@@ -193,7 +216,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-009 — AQL corpus — D empty db | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-010 — AQL corpus — A loaded db | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-011 — AQL corpus — B loaded db | pass | — |
-| AQL execution | AqlBasic | POST /query/aql | ECC-QRY-012 — AQL corpus — C loaded db | skipped | — |
+| AQL execution | AqlBasic | POST /query/aql | ECC-QRY-012 — AQL corpus — C loaded db | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-013 — AQL corpus — D loaded db | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-015 — AQL corpus — dialect-adjudicated query rejected | pass | — |
 | AQL execution | AqlBasic | POST /query/aql | ECC-QRY-016 — AQL corpus — dialect-adjudicated query rejected | pass | — |
@@ -361,40 +384,40 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Admin service | AdminPhysicalDeletion | DELETE /admin/ehr/all?ehr_id* | ECC-ADM-004 — Admin EHR delete all | pass | — |
 | Admin service | AdminPhysicalDeletion | DELETE /admin/ehr/all?ehr_id* | ECC-ADM-005 — Admin EHR delete all partial | pass | — |
 | Admin service | AdminPhysicalDeletion | DELETE /admin/ehr/all | ECC-ADM-006 — Admin EHR delete all (empty selector) | pass | — |
-| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.list_contributions) | ECC-ADM-007 — Admin list contributions | skipped | — |
-| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.contribution_count) | ECC-ADM-008 — Admin contribution count | skipped | — |
-| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.versioned_composition_count) | ECC-ADM-009 — Admin versioned composition count | skipped | — |
-| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.composition_version_count) | ECC-ADM-010 — Admin composition version count | skipped | — |
-| Admin service | AdminEhrDumpLoad | native API only (I_ADMIN_DUMP_LOAD.export_ehrs) | ECC-ADM-011 — Admin export EHRs (dump/load) | skipped | — |
-| Admin service | AdminEhrArchive | native API only (I_ADMIN_ARCHIVE.archive_ehrs) | ECC-ADM-012 — Admin archive EHRs | skipped | — |
-| Admin service | AdminPhysicalDeletion | no ITS-REST binding (I_ADMIN_SERVICE.physical_party_delete) | ECC-ADM-013 — Admin physical party delete | skipped | — |
-| Admin service | AdminDemographicArchive | no ITS-REST binding (I_ADMIN_ARCHIVE.archive_parties) | ECC-ADM-014 — Admin archive parties | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.export_ehrs) | ECC-MSG-001 — EHR Extract — export whole EHR (export_ehrs) | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.export_ehr_extracts) | ECC-MSG-002 — EHR Extract — spec-driven export (export_ehr_extracts) | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.export_ehrs) | ECC-MSG-003 — EHR Extract — export of unknown EHR fails | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr) | ECC-MSG-004 — EHR Extract — import whole-EHR clone reusing source id | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr) | ECC-MSG-005 — EHR Extract — import whole EHR into a caller-fixed id | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr) | ECC-MSG-006 — EHR Extract — import into a duplicate target id fails | skipped | — |
-| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr_extract) | ECC-MSG-007 — EHR Extract — import extract into an existing EHR | skipped | — |
-| Messaging | MessagingTds | native API only (I_TDD_SERVICE.import_tdd) | ECC-MSG-008 — TDD — import a TDD as a committed COMPOSITION | skipped | — |
-| Messaging | MessagingTds | native API only (I_TDD_SERVICE.import_tdd) | ECC-MSG-009 — TDD — import rejects malformed / non-TDD / unknown EHR / unknown template | skipped | — |
-| Messaging | MessagingTds | native API only (I_TDD_SERVICE.import_tdds) | ECC-MSG-010 — TDD — batch import commits all, fail-fast on error | skipped | — |
+| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.list_contributions) | ECC-ADM-007 — Admin list contributions | n/a | — |
+| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.contribution_count) | ECC-ADM-008 — Admin contribution count | n/a | — |
+| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.versioned_composition_count) | ECC-ADM-009 — Admin versioned composition count | n/a | — |
+| Admin service | AdminActivityReport | native API only (I_ADMIN_SERVICE.composition_version_count) | ECC-ADM-010 — Admin composition version count | n/a | — |
+| Admin service | AdminEhrDumpLoad | native API only (I_ADMIN_DUMP_LOAD.export_ehrs) | ECC-ADM-011 — Admin export EHRs (dump/load) | n/a | — |
+| Admin service | AdminEhrArchive | native API only (I_ADMIN_ARCHIVE.archive_ehrs) | ECC-ADM-012 — Admin archive EHRs | n/a | — |
+| Admin service | AdminPhysicalDeletion | no ITS-REST binding (I_ADMIN_SERVICE.physical_party_delete) | ECC-ADM-013 — Admin physical party delete | n/a | — |
+| Admin service | AdminDemographicArchive | no ITS-REST binding (I_ADMIN_ARCHIVE.archive_parties) | ECC-ADM-014 — Admin archive parties | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.export_ehrs) | ECC-MSG-001 — EHR Extract — export whole EHR (export_ehrs) | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.export_ehr_extracts) | ECC-MSG-002 — EHR Extract — spec-driven export (export_ehr_extracts) | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.export_ehrs) | ECC-MSG-003 — EHR Extract — export of unknown EHR fails | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr) | ECC-MSG-004 — EHR Extract — import whole-EHR clone reusing source id | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr) | ECC-MSG-005 — EHR Extract — import whole EHR into a caller-fixed id | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr) | ECC-MSG-006 — EHR Extract — import into a duplicate target id fails | n/a | — |
+| Messaging | MessagingEhrExtract | native API only (I_EHR_EXTRACT_SERVICE.import_ehr_extract) | ECC-MSG-007 — EHR Extract — import extract into an existing EHR | n/a | — |
+| Messaging | MessagingTds | native API only (I_TDD_SERVICE.import_tdd) | ECC-MSG-008 — TDD — import a TDD as a committed COMPOSITION | n/a | — |
+| Messaging | MessagingTds | native API only (I_TDD_SERVICE.import_tdd) | ECC-MSG-009 — TDD — import rejects malformed / non-TDD / unknown EHR / unknown template | n/a | — |
+| Messaging | MessagingTds | native API only (I_TDD_SERVICE.import_tdds) | ECC-MSG-010 — TDD — batch import commits all, fail-fast on error | n/a | — |
 | Security / authorization | Authentication | GET /ehr/{ehr_id} (no Authorization) | ECC-SEC-001 — Unauthenticated request to a protected route is refused (401) | pass | — |
 | Security / authorization | Authentication | DELETE /admin/ehr/{ehr_id} (regular credential) | ECC-SEC-002 — Regular credential on an ADMIN-only route is forbidden (403) | pass | — |
 | Version signing | Signing | GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid} | ECC-SIG-001 — Version signing — digest present | pass | pass |
 | Version signing | Signing | GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid} | ECC-SIG-002 — Version signing — digest recomputes | pass | — |
 | Version signing | Signing | PUT /ehr/{ehr_id}/ehr_status; POST /ehr/{ehr_id}/contribution; POST /ehr/{ehr_id}/directory | ECC-SIG-003 — Version signing — all kinds | pass | — |
 | Version signing | Signing | POST /ehr/{ehr_id}/contribution | ECC-SIG-004 — Version signing — client verbatim | pass | — |
-| Version signing | Signing | GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid} | ECC-SIG-005 — Version signing — pgp verifies | skipped | — |
+| Version signing | Signing | GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}/version/{version_uid} | ECC-SIG-005 — Version signing — pgp verifies | pass | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-001 — TERMINOLOGY expand (bundle) — accepted, well-formed RESULT_SET | pass | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-002 — TERMINOLOGY expand (bundle) — expansion constrains matches to the value set's codes | pass | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-003 — TERMINOLOGY expand (bundle) — explicit code merged with the expansion | pass | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-004 — TERMINOLOGY expand — unknown value set rejected (400) | pass | — |
 | Terminology-server integration | Terminology | POST /query/aql | ECC-TS-005 — TERMINOLOGY expand — unknown service_api rejected (400) | pass | — |
-| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-006 — TERMINOLOGY expand (FHIR service_api) — accepted when a provider is configured | skipped | — |
-| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-007 — TERMINOLOGY expand (FHIR) — terminology-server timeout is a server fault (500) | skipped | — |
-| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-008 — TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500) | skipped | — |
-| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-009 — TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500) | skipped | — |
+| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-006 — TERMINOLOGY expand (FHIR service_api) — accepted when a provider is configured | pass | — |
+| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-007 — TERMINOLOGY expand (FHIR) — terminology-server timeout is a server fault (500) | pass | — |
+| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-008 — TERMINOLOGY expand (FHIR) — terminology-server 5xx is a server fault (500) | pass | — |
+| Terminology-server integration | Terminology | POST /query/aql | ECC-TS-009 — TERMINOLOGY expand (FHIR) — malformed terminology response is a server fault (500) | pass | — |
 | Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type application/openehr.wt.flat+json) → GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept flat/json/structured) | ECC-SF-001 — FLAT commit then read-back as FLAT, canonical JSON, and STRUCTURED | pass | — |
 | Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | POST /ehr/{ehr_id}/composition (Content-Type application/openehr.wt.structured+json) → GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept structured/json/flat) | ECC-SF-002 — STRUCTURED commit then read-back as STRUCTURED, canonical JSON, and FLAT | pass | — |
 | Simplified Formats (FLAT / STRUCTURED / Web Template) | SimplifiedFormats | GET /ehr/{ehr_id}/composition/{uid_based_id} (Accept with q-values) | ECC-SF-003 — Accept q-values select the highest-weight simplified format; every non-204 carries Content-Type | pass | — |

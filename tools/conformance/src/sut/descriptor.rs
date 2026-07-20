@@ -2,6 +2,8 @@
 //! probe. Adding a target is a config entry (CLI flags or a built-in
 //! constant), never new case code — the bring-your-own-endpoint owner ruling.
 
+use std::path::PathBuf;
+
 use serde::Serialize;
 
 use crate::edition::{Edition, EditionPolicy};
@@ -50,6 +52,20 @@ pub struct SutDescriptor {
     /// `"ehrbase-rs <workspace version>"`, `"EHRbase 2.34.0"`, or the BYO
     /// operator's own label).
     pub product_label: String,
+    /// A sibling SUT instance booted in `[signing] mode = "pgp"`, for the
+    /// pgp-signing case (`ECC-SIG-005`). The main SUT signs in `digest` mode
+    /// (the four digest cases assert `sha256:`); a single server cannot serve
+    /// both signature schemes, so the composed run stands up a second,
+    /// pgp-keyed instance and names its ITS-REST base URL here. `None`: the pgp
+    /// case reports `SKIPPED(SutConfig)` (its off-wire evidence stands).
+    #[serde(skip)]
+    pub sig_pgp_base_url: Option<String>,
+    /// The armored RFC 4880 secret key the pgp-keyed sibling was booted with
+    /// (the committed TEST-ONLY key). The pgp case derives the public key from
+    /// it to verify the served detached signature. `None` when
+    /// [`Self::sig_pgp_base_url`] is unset.
+    #[serde(skip)]
+    pub sig_pgp_key_path: Option<PathBuf>,
 }
 
 impl SutDescriptor {
@@ -67,6 +83,8 @@ impl SutDescriptor {
             auth: None,
             admin_auth: None,
             edition_policy: EditionPolicy::Auto,
+            sig_pgp_base_url: None,
+            sig_pgp_key_path: None,
         }
     }
 

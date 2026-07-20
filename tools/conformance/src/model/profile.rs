@@ -105,7 +105,10 @@ pub struct CapabilityVerdict {
     pub failed: u32,
     /// Skipped count (adjudicated or config-gated).
     pub skipped: u32,
-    /// Not-applicable count (fairness register, foreign SUT).
+    /// Not-applicable count (the fairness register for a foreign SUT, or a
+    /// case-level N/A — a native-API-only SM operation with no ITS-REST wire
+    /// binding anywhere). Classified identically to `skipped`: it evidences
+    /// nothing, but is never a failure.
     pub not_applicable: u32,
     /// The evidence classification.
     pub evidence: CapabilityEvidence,

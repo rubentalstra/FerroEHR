@@ -11,15 +11,20 @@
 //!
 //! Rulings realized here:
 //!
-//! - **`list_queries` split.** ITS-REST binds the list resource as
-//!   `GET /definition/query/{qualified_query_name}` (verbs `[get, put]`); a bare
-//!   `GET /definition/query` collection is absent in Release-1.0.3 and
-//!   Release-1.1.0. So `list_queries-non_empty` is rebound to the named
-//!   resource (a live [`Binding::Rest`] case), while `list_queries-empty` /
-//!   `-select_items` carry [`Binding::NoRestBinding`] and skip-with-reason.
-//!   The bare-list endpoint is an edition-ladder probe: a future/other-CDR
-//!   edition exposing it would make the skipped cases live (recorded, not baked
-//!   shut).
+//! - **`list_queries` bare collection — our extension.** ITS-REST binds the
+//!   list resource as `GET /definition/query/{qualified_query_name}` (verbs
+//!   `[get, put]`); a bare `GET /definition/query` collection is absent in
+//!   Release-1.0.3 and Release-1.1.0 (verified 2026-07-20). We additionally
+//!   serve the bare `GET /definition/query` (the empty-prefix of that route's
+//!   documented prefix semantics — "List stored queries") as a flagged
+//!   **our-own extension**, so all three list flows are live [`Binding::Rest`]
+//!   cases: `list_queries-non_empty` on the named resource, and
+//!   `list_queries-empty` / `-select_items` on the bare collection, each with
+//!   the SM citation + the explicit "no ITS-REST binding — ehrbase-rs
+//!   extension" flag. NOTE: the store is shared across cases, so a
+//!   globally-empty store is not assertable on the bare collection; the "empty"
+//!   flow asserts the empty-prefix listing is served (200 + a JSON array, never
+//!   404), and `select_items` asserts a freshly-stored query appears in it.
 //! - **Placeholder id + round-trip.** The schedule's literal `has_query-xxx`
 //!   placeholder id is NOT carried as the case id — this case is renamed
 //!   `sqr/has-query-existing` (a new slug; the retired `sqr/has-query-xxx`
@@ -46,15 +51,13 @@ const JSON: &[Format] = &[Format::Json];
 
 const STORE_CITATION: &str = "ITS-REST 1.1.0 DEFINITION QUERY API §store/get stored query; AQL 1.1 (master05 stub — case id only)";
 
-/// The bare-list endpoint is unbound in ITS-REST (the list resource is the
-/// named-query GET).
-const LIST_SKIP: &str = "master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST \
-     binding — Release-1.0.3 and Release-1.1.0 expose GET /definition/query/{qualified_query_name}, \
-     not a bare GET /definition/query. An edition exposing a bare-list resource would make this case \
-     live (an edition probe).";
-const LIST_BINDING: Binding = Binding::NoRestBinding(
-    "I_DEFINITION_QUERY.list_queries (master05 §list_queries, bare collection)",
-);
+/// The bare-collection list endpoint is unbound in the released ITS-REST (the
+/// list resource is the named-query GET); we serve it as a flagged extension.
+const LIST_CITATION: &str = "schedule stub (master05 is TBD); SM I_DEFINITION_QUERY.list_queries() (bare collection); no \
+     ITS-REST binding — ehrbase-rs extension: Release-1.0.3 and Release-1.1.0 expose \
+     GET /definition/query/{qualified_query_name}, and we additionally serve the bare \
+     GET /definition/query (empty-prefix of that route → 200, a JSON array of every stored query)";
+const LIST_BINDING: Binding = Binding::Rest("GET /definition/query");
 
 /// Every registered master05 `I_DEFINITION_QUERY` case (7).
 #[must_use]
@@ -109,18 +112,20 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("GET /definition/query/{qualified_query_name}"),
             run_list_non_empty,
         ),
-        // ── list_queries: bare collection — no ITS-REST binding → skip ─────────
-        skip_case(
+        // ── list_queries: bare collection — our empty-prefix extension ─────────
+        list_case(
             "sqr/list-queries-empty",
             "List stored queries — empty",
             "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.list_queries-empty (master05:97)",
+            run_list_empty,
         ),
-        skip_case(
+        list_case(
             "sqr/list-queries-select-items",
             "List stored queries — select items",
             "schedule stub (master05 is TBD); derived from ITS-REST 1.1.0 DEFINITION QUERY + AQL 1.1 \
              — I_DEFINITION_QUERY.list_queries-select_items (master05:123)",
+            run_list_select_items,
         ),
     ]
 }
@@ -154,8 +159,14 @@ fn rest_case(
     }
 }
 
-/// A bare-list case: no ITS-REST binding → skip-with-reason.
-fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> CaseEntry {
+/// A bare-collection list case: runs against our flagged `GET /definition/query`
+/// empty-prefix extension.
+fn list_case(
+    id: &'static str,
+    title: &'static str,
+    schedule: &'static str,
+    run: crate::engine::harness::CaseRun,
+) -> CaseEntry {
     CaseEntry {
         meta: CaseMeta {
             id,
@@ -163,12 +174,12 @@ fn skip_case(id: &'static str, title: &'static str, schedule: &'static str) -> C
             area: Area::Sqr,
             capability: Capability::QueryProvisioning,
             formats: JSON,
-            citation: LIST_SKIP,
+            citation: LIST_CITATION,
             schedule: ScheduleTrace::EccOriginal(schedule),
             binding: LIST_BINDING,
             compare: Compare::None,
         },
-        run: run_list_skip,
+        run,
     }
 }
 
@@ -345,8 +356,83 @@ fn run_list_non_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-fn run_list_skip<'a>(_ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
-    Box::pin(async move { Err::<DataSetReport, _>(CaseError::Skipped(LIST_SKIP.to_owned())) })
+/// `GET /definition/query` — OUR bare-collection extension (200 + a JSON array
+/// of every stored query, empty when none). NOTE: no openEHR spec governs the
+/// bare form; the released contract defines only the `{qualified_query_name}`
+/// route.
+async fn list_all(ctx: &RunContext<'_>) -> Result<serde_json::Value, CaseError> {
+    let resp = ctx
+        .send(HttpRequest::get("/definition/query").header("accept", "application/json"))
+        .await?;
+    assert::status(&resp, 200)?;
+    let body = resp.json()?;
+    if body.is_array() {
+        Ok(body)
+    } else {
+        Err(CaseError::Assertion(format!(
+            "bare-collection list must be a JSON array, got {}",
+            body_kind(&body)
+        )))
+    }
+}
+
+/// A short description of a JSON value's kind, for assertion messages.
+fn body_kind(v: &serde_json::Value) -> &'static str {
+    match v {
+        serde_json::Value::Null => "null",
+        serde_json::Value::Bool(_) => "a boolean",
+        serde_json::Value::Number(_) => "a number",
+        serde_json::Value::String(_) => "a string",
+        serde_json::Value::Array(_) => "an array",
+        serde_json::Value::Object(_) => "an object",
+    }
+}
+
+/// list_queries-empty: the bare empty-prefix collection is served (200 + a JSON
+/// array) rather than 404. NOTE: the store is shared across cases, so a
+/// globally-empty store is not assertable here; the empty-CAPABLE listing being
+/// served (vs the released contract's absent bare collection) is the flow.
+fn run_list_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        list_all(ctx).await?;
+        Ok(DataSetReport::SINGLE)
+    })
+}
+
+/// list_queries-select_items: after storing a query, the bare collection lists
+/// it (a "populated select"). The stored query's qualified name appears among
+/// the returned items.
+fn run_list_select_items<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
+    boxed!({
+        let aql = valid_aql()?;
+        let (name, _, status) = store(ctx, &aql).await?;
+        if !matches!(status, 200 | 201) {
+            return Err(CaseError::Assertion(format!(
+                "storing the query expected 200/201, got {status}"
+            )));
+        }
+        let list = list_all(ctx).await?;
+        if list_names(&list).any(|n| n.eq_ignore_ascii_case(&name)) {
+            Ok(DataSetReport::SINGLE)
+        } else {
+            Err(CaseError::Assertion(format!(
+                "the bare stored-query collection does not list the freshly-stored query {name:?} \
+                 ({} item(s))",
+                list.as_array().map_or(0, std::vec::Vec::len)
+            )))
+        }
+    })
+}
+
+/// The qualified name of each stored-query item in a bare-collection listing:
+/// the ITS-REST `StoredQuery` puts it in `name` (with `qualified_query_name` as
+/// the alternate field name some shapes use).
+fn list_names(list: &serde_json::Value) -> impl Iterator<Item = &str> {
+    list.as_array().into_iter().flatten().filter_map(|item| {
+        item.get("name")
+            .or_else(|| item.get("qualified_query_name"))
+            .and_then(serde_json::Value::as_str)
+    })
 }
 
 // ── assertion helpers ─────────────────────────────────────────────────────────
