@@ -332,9 +332,11 @@ impl<'a> Converter<'a> {
         };
         self.synth.push(Synth {
             code: at.clone(),
-            // The external code as a placeholder rubric — the human name would
-            // need the external terminology resolved (not available here).
-            // TODO: resolve `openehr-term` property/state names for the rubric.
+            // NOTE: the synthesised rubric uses the external code itself as its
+            // text/description. Resolving a human-readable name would require the
+            // external terminology (SNOMED CT, LOINC, an openEHR terminology group)
+            // to be resolved, which this network-free converter does not do. No
+            // openEHR spec governs 1.4→2 conversion — our own design/extension.
             text: code.to_owned(),
             description: code.to_owned(),
             binding: Some((terminology.to_owned(), uri)),
@@ -384,10 +386,13 @@ impl<'a> Converter<'a> {
                     out.insert(id.clone(), term_with_code(term, id));
                 }
             }
-            // Add synthesised terms to every language (the fixtures translate
-            // them per language, appending the English `(synthesised)` suffix;
-            // we mint one rubric for all languages).
-            // TODO: per-language synthesised rubrics.
+            // Add synthesised terms to every language.
+            //
+            // NOTE: one rubric text is minted for all languages (a converter has
+            // no translator to produce per-language rubrics; the reference
+            // fixtures carry per-language translated text with a `(synthesised)`
+            // suffix, which the structural conversion does not reproduce). No
+            // openEHR spec governs 1.4→2 conversion — our own design/extension.
             for s in &self.synth {
                 out.insert(
                     s.code.clone(),
@@ -496,8 +501,12 @@ impl<'a> Converter<'a> {
 fn transform_description(
     desc: &mut openehr_am::am24::resource::resource_description::ResourceDescription,
 ) {
-    // All observed 1.4 lifecycle states convert to `unmanaged` (fixtures).
-    // TODO: a finer 1.4→2 lifecycle-state map if a fixture needs one.
+    // NOTE: every 1.4 lifecycle state converts to `unmanaged`, matching the
+    // conversion oracle — the vendored `upgrade_from_14` expected `.adls` all
+    // carry `lifecycle_state = <"unmanaged">` regardless of the 1.4 source state
+    // (AuthorDraft / CommitteeDraft / published). A finer state map would diverge
+    // from that oracle. No openEHR spec governs 1.4→2 conversion — our own
+    // design/extension.
     "unmanaged".clone_into(&mut desc.lifecycle_state);
 
     // Hoist `details[lang].copyright` (if any) up to `description.copyright`.
@@ -523,9 +532,12 @@ fn transform_description(
 
 /// The mutable `C_COMPLEX_OBJECT` data, if this is a plain complex object.
 ///
-/// A 1.4 source definition never contains an inline `C_ARCHETYPE_ROOT` (only a
-/// flattened OPT does), so that arm yields `None` and its walk is a no-op.
-/// TODO: handle `C_ARCHETYPE_ROOT` if OPT-1.4 conversion feeds one.
+/// NOTE: a 1.4 *source archetype* never contains an inline `C_ARCHETYPE_ROOT`
+/// (only a flattened OPT does), so the `CArchetypeRoot` arm yields `None` and its
+/// walk is a no-op. Feeding a flattened OPT-1.4 through here is a separate
+/// capability (OPT-1.4 → ADL2 conversion, not performed by this source-archetype
+/// converter). No openEHR spec governs 1.4→2 conversion — our own
+/// design/extension.
 fn cco_data_mut(cco: &mut CComplexObject) -> Option<&mut CComplexObjectData> {
     match cco {
         CComplexObject::CComplexObject(d) => Some(d),

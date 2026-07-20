@@ -100,9 +100,13 @@ impl EhrbaseService {
     /// A specialised 1.4 source is base-converted (renumbered against its own
     /// codes); re-differentialisation against a converted+flattened parent is a
     /// separate concern of the converter's `differ`.
-    /// TODO: convert stored 1.4 *OPTs* (`template_store`, XML/`opt14` DTOs) once
-    /// the converter has an `opt14` front end — today it takes an assembled
-    /// `am24` archetype, so only the source-archetype store is convertible.
+    ///
+    /// Only stored 1.4 *source archetypes* are convertible: the converter takes an
+    /// assembled `am24` archetype, and no REST surface exposes 1.4→2 OPT
+    /// conversion (this method is a service-only capability with no endpoint).
+    /// TODO: convert stored 1.4 *OPTs* (`template_store`, XML/`opt14` DTOs) when an
+    /// OPT-1.4 → `am24` reader front end for the converter is built (the 1.4-OPT
+    /// conversion capability tracked in the worklist).
     ///
     /// # Errors
     ///

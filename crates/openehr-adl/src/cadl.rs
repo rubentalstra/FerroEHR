@@ -712,9 +712,13 @@ impl Parser<'_> {
             "expecting '{' in cardinality expression",
         )?;
         let interval = self.parse_multiplicity(SyntaxErrorCode::Soccf)?;
-        // NOTE: `ADL2/master04.3` — a container without an explicit ordering
-        // modifier is an ordered list; uniqueness is off unless stated.
-        // TODO: apply full RM-driven ordering/uniqueness defaulting.
+        // NOTE: `ADL2/master04.3` §Cardinality — when a `cardinality` clause omits
+        // the ordering/uniqueness modifier, the constraint defaults to an ordered,
+        // non-unique container (`ordered`, `not unique`). This is the spec default
+        // applied verbatim; the RM container kind (List/Set/Bag) is not consulted
+        // here because the cardinality stated in the archetype is authoritative for
+        // the constraint (no openEHR rule refines a stated cardinality from the RM
+        // container shape at parse time).
         let mut is_ordered = true;
         let mut is_unique = false;
         for _ in 0..2 {
@@ -1335,10 +1339,10 @@ impl Parser<'_> {
                     "expecting '{' after 'matches' in a slot",
                 )?;
                 if self.eat(|t| matches!(t, Token::SymInclude)) {
-                    includes.push(self.parse_slot_assertion()?);
+                    includes.extend(self.parse_slot_assertions()?);
                 }
                 if self.eat(|t| matches!(t, Token::SymExclude)) {
-                    excludes.push(self.parse_slot_assertion()?);
+                    excludes.extend(self.parse_slot_assertions()?);
                 }
                 self.expect(
                     |t| matches!(t, Token::RCurly),
@@ -1363,17 +1367,20 @@ impl Parser<'_> {
         }))
     }
 
-    /// Capture one slot include/exclude assertion as a raw span (`master04.6`).
-    /// TODO: parse the assertion as a BEL expression tree. The raw text is
-    /// preserved in
-    /// `ASSERTION.string_expression`; the common `archetype_id/value matches
-    /// {/regex/}` form is regex-compile checked (`SCSRE`).
+    /// Parse the assertion block after a slot `include`/`exclude` keyword
+    /// (`master04.3` §Archetype Slots; cADL grammar `c_includes : SYM_INCLUDE
+    /// assertion+`).
     ///
-    /// NOTE: multiple assertions in one `include`/`exclude` block are captured
-    /// as a single raw span here (the token run to the next `exclude`/`}` at
-    /// brace-depth 0).
-    /// TODO: split multiple assertions via the BEL expression grammar.
-    fn parse_slot_assertion(&mut self) -> PResult<Assertion> {
+    /// The block is captured as a raw span (the token run to the next
+    /// `exclude`/`}` at brace-depth 0) and handed to
+    /// [`crate::rules::parse_slot_assertions`], which parses it via the BEL
+    /// composition into one or more AOM [`Assertion`] trees
+    /// (`EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`, `master05`);
+    /// the verbatim source is preserved in each `string_expression` and the
+    /// `archetype_id/value matches {/regex/}` regex is compile-checked (`SCSRE`).
+    /// A block may carry more than one assertion (grammar `assertion+`), so every
+    /// parsed assertion is returned.
+    fn parse_slot_assertions(&mut self) -> PResult<Vec<Assertion>> {
         let start = self.pos;
         let start_byte = self.cur_span().start;
         let mut end_byte = start_byte;
@@ -1395,11 +1402,11 @@ impl Parser<'_> {
             );
         }
         let text = self.src.get(start_byte..end_byte).unwrap_or_default();
-        // Parse the real assertion tree (`EXPR_ARCHETYPE_REF matches
+        // Parse the real assertion tree(s) (`EXPR_ARCHETYPE_REF matches
         // EXPR_ARCHETYPE_ID_CONSTRAINT`, `master05` / `master04.3`) via the BEL
         // AOM composition; `string_expression` keeps the verbatim source.
-        match crate::rules::parse_slot_assertion(text) {
-            Ok(assertion) => Ok(assertion),
+        match crate::rules::parse_slot_assertions(text) {
+            Ok(assertions) => Ok(assertions),
             Err(errs) => {
                 for e in errs {
                     self.errors.push(SyntaxError::at(

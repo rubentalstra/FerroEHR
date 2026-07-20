@@ -4,7 +4,7 @@
 
 #![allow(clippy::unwrap_used, clippy::panic)]
 
-use openehr_adl::rules::{parse_rules_body, parse_slot_assertion};
+use openehr_adl::rules::{parse_rules_body, parse_slot_assertions};
 use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::rules::expr_constraint::ExprConstraint;
 use openehr_am::am24::beom::core::expr_value_ref::ExprValueRef;
@@ -116,7 +116,9 @@ fn slot_assertion_is_archetype_ref_matches_id_constraint() {
     // master04.3 §Archetype Slots: `archetype_id/value matches { /regex/ }`
     // parses to EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT.
     let text = "archetype_id/value matches {/openEHR-EHR-OBSERVATION\\..*\\.v1/}";
-    let assertion = parse_slot_assertion(text).unwrap_or_else(|e| panic!("slot parse: {e:?}"));
+    let assertions = parse_slot_assertions(text).unwrap_or_else(|e| panic!("slot parse: {e:?}"));
+    assert_eq!(assertions.len(), 1, "single assertion block");
+    let assertion = &assertions[0];
     assert_eq!(assertion.string_expression.as_deref(), Some(text));
     let (op, lhs, rhs) = binop(&assertion.expression);
     assert_eq!(op, "matches");
@@ -131,8 +133,88 @@ fn slot_assertion_is_archetype_ref_matches_id_constraint() {
 }
 
 #[test]
+fn slot_assertion_block_splits_multiple_assertions() {
+    // master04.3 §Archetype Slots + cADL grammar `c_includes : SYM_INCLUDE
+    // assertion+`: an include/exclude block may carry more than one assertion;
+    // each is parsed to its own EXPR_ARCHETYPE_REF matches
+    // EXPR_ARCHETYPE_ID_CONSTRAINT tree.
+    let text = "archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.a\\.v1/}\n\
+                archetype_id/value matches {/openEHR-EHR-OBSERVATION\\.b\\.v1/}";
+    let assertions = parse_slot_assertions(text).unwrap_or_else(|e| panic!("slot parse: {e:?}"));
+    assert_eq!(assertions.len(), 2, "both assertions retained");
+    for a in &assertions {
+        let (op, lhs, rhs) = binop(&a.expression);
+        assert_eq!(op, "matches");
+        assert_eq!(archetype_ref_path(lhs), "archetype_id/value");
+        assert!(matches!(
+            rhs,
+            Expression::ExprConstraint(ExprConstraint::ExprArchetypeIdConstraint(_))
+        ));
+    }
+}
+
+#[test]
 fn invalid_rule_expression_is_typed_error() {
     // An unparsable rule expression surfaces a typed error, never a panic.
     let err = parse_rules_body("exists").unwrap_err();
     assert!(!err.is_empty());
+}
+
+#[test]
+fn archetype_ref_item_resolves_to_target_node() {
+    // master05 §rules: after assembly, an EXPR_ARCHETYPE_REF's `item` is resolved
+    // to the definition node its path addresses (not the empty parse-time
+    // placeholder) — `openehr_adl::rules::resolve_archetype_refs`, run in assembly.
+    use openehr_adl::assemble::parse_artefact;
+    use openehr_am::am24::aom2::archetype::archetype::Archetype;
+    use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
+    use openehr_am::am24::aom2::constraint_model::archetype_constraint::ArchetypeConstraint;
+    use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
+
+    let src = "archetype (adl_version=2.0.5; rm_release=1.0.2)\n\
+        \topenEHR-EHR-CLUSTER.rule_ref.v1.0.0\n\n\
+        language\n\toriginal_language = <[ISO_639-1::en]>\n\n\
+        description\n\tlifecycle_state = <\"draft\">\n\n\
+        definition\n\tCLUSTER[id1] matches {\n\t\titems matches {\n\t\t\tELEMENT[id2] matches {*}\n\t\t}\n\t}\n\n\
+        rules\n\t\texists /items[id2]\n\n\
+        terminology\n\tterm_definitions = <\n\t\t[\"en\"] = <\n\t\t\t[\"id1\"] = <text=<\"\"> description=<\"\">>\n\t\t\t[\"id2\"] = <text=<\"\"> description=<\"\">>\n\t\t>\n\t>\n";
+    let art = parse_artefact(src).unwrap_or_else(|e| panic!("parse: {e:?}"));
+    let rules = match art {
+        Archetype::AuthoredArchetype(a) => match *a {
+            AuthoredArchetype::AuthoredArchetype(d) => d.rules,
+            other => panic!("expected authored archetype, got {other:?}"),
+        },
+        Archetype::TemplateOverlay(_) => panic!("expected an authored archetype, got an overlay"),
+    };
+    let stmt = rules
+        .into_iter()
+        .next()
+        .expect("a rules statement set")
+        .statement
+        .into_iter()
+        .next()
+        .expect("a rule statement");
+    let Statement::Assertion(a) = stmt else {
+        panic!("expected an assertion, got {stmt:?}");
+    };
+    // `exists /items[id2]` → a unary operator over the EXPR_ARCHETYPE_REF.
+    let Expression::ExprUnaryOperator(u) = *a.expression else {
+        panic!("expected a unary `exists`, got {:?}", a.expression);
+    };
+    let Expression::ExprValueRef(ExprValueRef::ExprArchetypeRef(r)) = *u.operand else {
+        panic!("expected an EXPR_ARCHETYPE_REF operand");
+    };
+    assert_eq!(r.path, "/items[id2]");
+    // The item is resolved to the ELEMENT[id2] node (its rm_type_name is set),
+    // not the empty `unresolved_ref_target` placeholder.
+    match &r.item {
+        ArchetypeConstraint::CComplexObject(cco) => {
+            let rm = match cco.as_ref() {
+                CComplexObject::CComplexObject(d) => &d.rm_type_name,
+                CComplexObject::CArchetypeRoot(rt) => &rt.rm_type_name,
+            };
+            assert_eq!(rm, "ELEMENT", "resolved node RM type");
+        }
+        other => panic!("expected a resolved C_COMPLEX_OBJECT, got {other:?}"),
+    }
 }

@@ -63,14 +63,17 @@ fn adjudicated_skip(name: &str) -> Option<&'static str> {
         Some("spurious ODIN delimiter rejected at parse (SDINV) before VOTM is reachable")
     } else if name.ends_with("SOME_TYPE.code_phrase.v1.0.0.adls") {
         // A legacy ADL 1.4 source (validity/legacy_adl_1.4, INVENTORY §10 "1.4
-        // tolerance") that reuses id-code `id2` for structurally-repeated
-        // CODE_PHRASE nodes. VCOSU archetype-wide node-id uniqueness (master04.5
-        // §C_OBJECT) is a flat-form property not enforced on un-migrated 1.4
-        // sources.
-        //
-        // TODO: enforce VCOSU uniqueness once the in-CDR 1.4→2 migration
-        // allocates fresh node ids for such sources.
-        Some("legacy 1.4 node-id reuse; VCOSU uniqueness is a post-migration flat-form property")
+        // tolerance") that reuses id-code `id2` for the CODE_PHRASE node under
+        // several non-sibling `defining_code` attributes. In AOM 1.4 node ids are
+        // only *sibling*-unique (AOM1.4 master04 §Node_id and Paths), so the reuse
+        // is 1.4-legal; parsed as ADL2 (this `.adls`), the stricter archetype-wide
+        // VCOSU (master04.5 §C_OBJECT) would flag it. NOTE: we do NOT weaken the
+        // ADL2 archetype-wide VCOSU rule to pass a 1.4-legacy fixture — this file
+        // is a documented, spec-cited tolerance adjudication (the 1.4-origin id
+        // reuse is sibling-unique, hence PASS-tagged upstream).
+        Some(
+            "legacy 1.4 sibling-unique node-id reuse (AOM1.4 master04); ADL2 archetype-wide VCOSU not weakened to pass it",
+        )
     } else {
         None
     }
