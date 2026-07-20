@@ -381,3 +381,19 @@ ECC-SF-013	SF	active	sf/non-templated-ehr-status-reject	EHR_STATUS has no Simpli
 ECC-SF-014	SF	active	sf/non-templated-directory-reject	DIRECTORY (FOLDER) has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415
 ECC-SF-015	SF	active	sf/non-templated-demographic-reject	Demographic PARTY has no Simplified-Formats mapping: Accept flat → 406, Content-Type flat → 415
 ECC-SF-016	SF	active	sf/ctx-observability	FLAT ctx/time sets EVENT_CONTEXT.start_time; ctx/setting defaults to openehr::238
+ECC-ADL2-001	ADL2	active	adl2/upload-201-prefer-triad	Upload a valid ADL2 template → 201 with Location; Prefer selects minimal/representation/identifier bodies
+ECC-ADL2-002	ADL2	active	adl2/upload-duplicate-conflict	Upload the same ADL2 HRID twice → the second is a 409 conflict
+ECC-ADL2-003	ADL2	active	adl2/upload-unparseable-422	Upload an unparseable ADL2 source → 422 carrying syntax rule codes in validationErrors
+ECC-ADL2-004	ADL2	active	adl2/upload-invalid-422-vcode	Upload a semantically invalid ADL2 template (missing description) → 422 with the AOM2 rule code VARD
+ECC-ADL2-005	ADL2	active	adl2/upload-specialised-child-resolves-parent	Upload a parent archetype, then a specialised child that validates against the stored parent → 201
+ECC-ADL2-006	ADL2	active	adl2/get-representations	Get an ADL2 template as text/plain source, application/json OperationalTemplateV2, and 406 on xml-only
+ECC-ADL2-007	ADL2	active	adl2/get-unknown-404	Get an unknown ADL2 template_id → 404
+ECC-ADL2-008	ADL2	active	adl2/version-get-exact-prefix-unknown	Version get resolves an exact SEMVER and a major prefix (latest match) → 200; an unknown version → 404
+ECC-ADL2-009	ADL2	active	adl2/example-four-accept-forms	Get a template example in each of the four Accept_LOCATABLE forms → 200; the JSON form is a COMPOSITION rooted at the template's archetype
+ECC-ADL2-010	ADL2	active	adl2/example-detail-levels-and-bad-enum	Example honours the detail_level enum (required/medium/complete) and rejects a bad type/detail_level with 400
+ECC-ADL2-011	ADL2	active	adl2/example-unknown-404-wrong-accept-406	Example for an unknown template_id → 404; an Accept outside the four LOCATABLE forms → 406
+ECC-ADL2-012	ADL2	active	adl2/list-template-metadata	List ADL2 templates → TemplateMetadata carrying template_id, concept, archetype_id, created_timestamp
+ECC-AQT-001	AQT	active	aqt/expand-matches-over-committed-data	TERMINOLOGY('expand') as a matches operand filters committed compositions by the value set's codes
+ECC-AQT-002	AQT	active	aqt/reject-unsupported-operation-in-matches	A non-expand TERMINOLOGY operation as a matches operand (lookup/map) → 400
+ECC-AQT-003	AQT	active	aqt/reject-terminology-in-select	TERMINOLOGY() in an unsupported position (a SELECT column) → 400
+ECC-AQT-004	AQT	active	aqt/reject-boolean-unsupported-operation	A Boolean TERMINOLOGY assertion with an unsupported operation (lookup) → 400
