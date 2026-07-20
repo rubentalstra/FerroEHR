@@ -29,6 +29,7 @@ use openehr_adl::validate::rm::{
     Bounds, EnumUnderlying, ProductionRmModel, RmAttr, RmEnum, RmModel, base_type_name,
     production_model_governs, validate_phase2_rm,
 };
+use openehr_adl::validate::terminology::NoTerminologyResolver;
 use openehr_adl::validate::{Severity, ValidationIssue, validate_source};
 use openehr_lang::odin::{OdinInterval, OdinKey, OdinValue};
 
@@ -393,7 +394,7 @@ fn corpus_rm_outcomes() {
         // Full gated validation (phase 1 → phase 2 RM); if phase 1 is unclean
         // the RM pass is gated off, so fall back to the ungated RM pass to keep
         // the assertion about the RM code meaningful.
-        let Ok(issues) = validate_source(&src, None, rm) else {
+        let Ok(issues) = validate_source(&src, None, rm, &NoTerminologyResolver) else {
             violations.push(format!("{name}: validate_source re-parse error"));
             continue;
         };

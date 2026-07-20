@@ -28,6 +28,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- ADL 2 archetype validation now enforces VETDF (external term-binding
+  validity): a term bound to an external terminology (SNOMED CT, LOINC, …)
+  that the configured terminology service reports as absent is rejected
+  `422` with the `VETDF` rule code. Bindings the service cannot verify (no
+  external provider configured, an unknown terminology, or a transport
+  fault) are not raised, per the spec's "subject to tool accessibility"
+  carve-out; archetype-internal (`local`/`openehr`) bindings are unaffected
+  (covered by VTTBK/VTCBK key validity).
 - ISO 8601 temporal ordering on the openEHR BASE time types
   (`Iso8601_date`/`_time`/`_date_time`/`_duration`): comparison with honest
   incomparability (partial-date range semantics, UTC normalization for
