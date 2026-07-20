@@ -26,11 +26,11 @@ use crate::versioning::wire::build_original_version;
 /// A **client-supplied** signature (from the CONTRIBUTION `UPDATE_VERSION` path)
 /// wins and is stored verbatim — never re-signed, never validated against our
 /// canonical form (the author may use another agreed serialization, master06
-/// §Digital Signature; S-44). Otherwise, when signing is enabled, the
+/// §Digital Signature). Otherwise, when signing is enabled, the
 /// fully-assembled `ORIGINAL_VERSION` — the *exact* value that will later be
 /// served (built by the shared [`build_original_version`] so commit-time and
 /// read-time bytes match) — is signed over its `canonical_form()` (the
-/// signature attribute Void during serialization, S-40).
+/// signature attribute Void during serialization).
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the

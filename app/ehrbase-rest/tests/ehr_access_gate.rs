@@ -11,7 +11,7 @@
 //! and rules in this object" — RM `org.openehr.rm.ehr.ehr_access.adoc`); the
 //! gate runs before dispatch on every EHR-scoped route. These tests drive the
 //! assembled router with `tower`'s `oneshot`, over the **real** `EhrbaseService`
-//! (W-14 B+C: the scripted `Mock`/scheme hook is gone). The per-test scheme is
+//! (the scripted `Mock`/scheme hook is gone). The per-test scheme is
 //! now a **real committed `EHR_ACCESS` version** (the only write path is a
 //! CONTRIBUTION — RM ehr `master04-ehr_package.adoc` §EHR Access), seeded at the
 //! service level before the app is built.
@@ -24,8 +24,7 @@
 //! non-gate-keeper `EHR_ACCESS` commit (403) while admitting the gate-keeper.
 //! `403` follows the ITS-REST 401/403 discipline.
 //!
-//! The concrete scheme is our own design — no openEHR spec governs it
-//! (`docs/design/ehr-access-scheme.md`).
+//! The concrete scheme is our own design — no openEHR spec governs it.
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::sync::Arc;

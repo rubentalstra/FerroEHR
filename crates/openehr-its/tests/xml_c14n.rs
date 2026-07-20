@@ -29,8 +29,8 @@
 //! xsi:type="DV_TEXT">`, where `LOCATABLE.name` is declared `DV_TEXT`). Our
 //! serializer (and stock archie/EHRbase, the Stage-1 parity target) follow the
 //! **minimal** convention: `xsi:type` is emitted only when the concrete type
-//! differs from the declared slot type (verified correct by the F-05 audit and
-//! `emit_xml.rs`). Both are valid canonical XML for the same infoset.
+//! differs from the declared slot type (verified correct by the canonical-XML
+//! audit and `emit_xml.rs`). Both are valid canonical XML for the same infoset.
 //!
 //! This gate therefore byte-compares **strictly** first; on the residual it
 //! classifies a fixture as an `xsi:type`-convention divergence **only if**

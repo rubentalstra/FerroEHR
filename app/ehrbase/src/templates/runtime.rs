@@ -15,7 +15,7 @@
 //!   performance and to guarantee only validated artefacts run. Our derived
 //!   form is the [`WebTemplate`], memoised in a `moka` cache.
 //!
-//! NOTE (G-T06 — `WebTemplate` format is spec-silent): the concrete
+//! NOTE (`WebTemplate` format is spec-silent): the concrete
 //! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
 //! `web-template` SDT format and lives entirely in `openehr-flat` (a
 //! hand-written spec-adjacent crate). This module only *stores, resolves, and
@@ -44,8 +44,8 @@ impl EhrbaseService {
     ///
     /// # Errors
     ///
-    /// - [`ServiceError::Unprocessable`] (→ ITS-REST `422`, **not** `NotFound`
-    ///   — G-T08) when the template is not in the store: on a composition
+    /// - [`ServiceError::Unprocessable`] (→ ITS-REST `422`, **not** `NotFound`)
+    ///   when the template is not in the store: on a composition
     ///   commit an unknown referenced template is a *semantic* error, per
     ///   `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`
     ///   ("semantic validation errors, such as the underlying template is not
@@ -66,7 +66,7 @@ impl EhrbaseService {
         // touching `template_store`. This is the hot commit path: composition
         // validation calls `web_template_for` once per commit, and once a
         // template is warm every subsequent commit is a pure in-memory hit (no
-        // per-commit OPT read). No openEHR spec governs this cache — S-09 blesses
+        // per-commit OPT read). No openEHR spec governs this cache — the spec blesses
         // a compiled near-runtime form; the caching mechanics are our own design.
         if let Some(wt) = self.web_templates.get(&key).await {
             note_cache_event("hit");
@@ -126,7 +126,7 @@ impl EhrbaseService {
         kind: ExampleType,
     ) -> Result<Value, ServiceError> {
         // Resolve existence first so an unknown id is a 404 (not the 422 the
-        // WebTemplate cache maps for a commit-time unknown template, G-T08).
+        // WebTemplate cache maps for a commit-time unknown template).
         let xml = self.get_template_xml(template_id).await?;
         let key = identity::canonical_key(template_id);
         let wt = if let Some(wt) = self.web_templates.get(&key).await {

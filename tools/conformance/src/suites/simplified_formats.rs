@@ -336,7 +336,7 @@ fn ts_opt_xml() -> Result<String, CaseError> {
     fixtures::read(TS_OPT_KEY).map_err(|e| codec(&e))
 }
 
-/// The `template_id` declared inside the `time_series` OPT (G-6: read from the
+/// The `template_id` declared inside the `time_series` OPT (read from the
 /// artefact, never hardcoded).
 fn ts_template_id(xml: &str) -> Result<String, CaseError> {
     openehr_its::opt14::from_xml(xml)

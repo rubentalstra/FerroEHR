@@ -1,4 +1,4 @@
-//! Deterministic scale-ladder seeding (register 00 §5): populate a SUT with a
+//! Deterministic scale-ladder seeding: populate a SUT with a
 //! fixed, reproducible dataset so read/AQL performance is measured against real
 //! stored volume. The same seed produces the same data on every SUT (seeded
 //! **through the API**, no DB backdoor), so a cross-SUT scale comparison is
@@ -16,8 +16,8 @@ use conformance::transport::SutClient;
 use crate::drive::{template_composition, template_opt_xml};
 use crate::{BenchError, Scale, TemplateKind};
 
-/// Distribute the rung's compositions across this many per EHR (register 00 §5:
-/// "distribute over ~ N/50 EHRs").
+/// Distribute the rung's compositions across this many per EHR
+/// (distribute over ~ N/50 EHRs).
 const COMPS_PER_EHR: u64 = 50;
 
 /// The three corpus templates the workload + seeder use.
@@ -44,7 +44,7 @@ pub async fn seed_scale(client: &SutClient, scale: Scale, seed: u64) -> Result<u
     }
 
     // One canonical composition per template, rendered once and reused with only
-    // the timestamp varied per iteration (register 00 §4: variation touches
+    // the timestamp varied per iteration (variation touches
     // values, never structure). Any fixture-carried `uid` is stripped: version
     // identities are server-assigned on commit, and re-committing a fixed
     // OBJECT identity is a `409` (ITS-REST: a resource with the same

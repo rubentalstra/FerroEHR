@@ -13,7 +13,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  # ADR-006 retired the "phases need not compile" gate: every job here is
+  # The "phases need not compile" gate was retired: every job here is
   # REQUIRED. (The historical PORT_STRICT advisory switch is gone.)
 
 jobs:
@@ -162,7 +162,7 @@ jobs:
           components: clippy
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-  # ── Generated code must stay in sync with the vendored specs (ADR-004/005) ──
+  # ── Generated code must stay in sync with the vendored specs ──
   codegen-drift:
     name: codegen drift
     needs: changes
@@ -177,7 +177,7 @@ jobs:
         run: bash scripts/check-codegen-drift.sh
 
   # ── CNF conformance: the enforced-coverage guard (fast, no DB) ───────────────
-  # The W-10 instrument's own test suite: the ECC catalogue guard (every
+  # The conformance instrument's own test suite: the ECC catalogue guard (every
   # registered case has an allocated, never-reused ECC number), the
   # derivation-square guard (every case carries a spec citation, a schedule
   # trace or stated ECC-original reason, and an ITS-REST binding), the fixture

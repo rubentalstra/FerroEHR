@@ -1,6 +1,6 @@
 //! Shared helpers for the suite modules: EHR/OPT setup and cross-chapter
-//! assertion utilities. Wire ids come exclusively from [`crate::wire`]
-//! (register 90 §8.3); per-SUT facts from the descriptor — there are no
+//! assertion utilities. Wire ids come exclusively from [`crate::wire`];
+//! per-SUT facts from the descriptor — there are no
 //! system-id or template-id literals here.
 
 use serde_json::Value;
@@ -100,7 +100,7 @@ pub fn nonexistent_version_like(observed: &ids::ObjectVersionId) -> String {
 /// prose "negative response" concretized as an ITS-REST `4xx`. Used ONLY
 /// where the operation's spec genuinely allows several client-error codes;
 /// where an edition pins distinct codes, use
-/// [`crate::engine::assert::status_ladder`] instead (register 05 G-1).
+/// [`crate::engine::assert::status_ladder`] instead.
 ///
 /// # Errors
 /// [`CaseError::Assertion`] if the status is not in `400..500`.
@@ -118,7 +118,7 @@ pub fn assert_negative(resp: &HttpResponse) -> Result<(), CaseError> {
 /// Assert the retrieved representation equals the committed one under the
 /// case's comparison mode — the content check the schedule mandates on
 /// every `get_*` case (master07 flows: "check the content is the same
-/// committed"; register 04 G-1 restored it from a structural-only check).
+/// committed"; restored from a structural-only check).
 ///
 /// # Errors
 /// [`CaseError::Assertion`] on a content mismatch.

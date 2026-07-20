@@ -14,7 +14,7 @@
 //! ext, public`).
 //!
 //! No openEHR spec governs the execution — openEHR defines the *language*, not
-//! its lowering; the SQL shapes are our own design (`docs/design/aql-engine.md`).
+//! its lowering; the SQL shapes are our own design.
 //! The construct-by-construct mapping to QUERY master03 lives in each submodule:
 //! [`from`] (FROM/containment + scope gates), [`select`] (SELECT/aggregates),
 //! [`predicate`] (WHERE/functions), [`value`] (the path split + coercions), and
@@ -62,8 +62,8 @@ pub struct SqlCtx {
     /// ITS-REST single `ehr_id` parameter is the one-element case. Empty = no
     /// explicit scope (the population gate over `is_queryable` EHRs applies).
     pub ehr_ids: Vec<EhrId>,
-    /// The ABAC patient-scope subject id (`docs/enterprise/access-control.md`
-    /// §6.4 — no openEHR spec governs this, our own extension): when set, every
+    /// The ABAC patient-scope subject id (no openEHR spec governs this, our own
+    /// extension): when set, every
     /// VO root is restricted to EHRs whose `subject_id` equals it, so rows the
     /// caller may not see are never fetched — independent of what the query
     /// projects.
@@ -123,7 +123,7 @@ impl std::fmt::Debug for PreparedQuery {
 
 /// A built scope-collection query: `SELECT DISTINCT` of every bound VO root's
 /// `ehr_id` + `template_id` over the same containment/filter as the main query
-/// (`docs/enterprise/access-control.md` §6.4). Its rows carry the set of EHRs and
+/// (no openEHR spec governs ABAC — our own extension). Its rows carry the set of EHRs and
 /// templates the query touches — across **all** bound variables and
 /// **independent of the projection** (fixes v1 defect #1) — for the ABAC query
 /// post-check.
@@ -184,7 +184,7 @@ struct Builder<'a> {
     /// The subset of `group_roots` whose rows are join-linked to a bound EHR
     /// alias (`node.ehr_id = e.id`) — the population gate on the EHR alias
     /// already covers them, so gating the root again would be a duplicate
-    /// full-population subquery per query (checklist item 24).
+    /// full-population subquery per query.
     roots_linked_to_ehr: std::collections::HashSet<String>,
     /// The `vo_version` alias for each entry in `group_roots` (parallel vec) —
     /// the source of the touched `template_id` for the ABAC scope collection.

@@ -7,8 +7,7 @@
 //! the wire is byte-identical to a non-SMART deployment — the same opt-in
 //! extension-group convention the ADMIN/terminology/FHIR groups follow.
 //!
-//! This is the `[smart]` section of the one server configuration tree
-//! (`docs/design/configuration.md`); it carries **no loader of its own** — the
+//! This is the `[smart]` section of the one server configuration tree; it carries **no loader of its own** — the
 //! whole tree is assembled once by `ehrbase::config` and this struct is
 //! deserialized as a field of it. The discovery router is mounted from it in
 //! [`crate::router`] and the scope gate reads it in
@@ -22,8 +21,7 @@ use serde::{Deserialize, Serialize};
 /// §Glossary): it advertises the external Authorization-Server endpoints, parses
 /// and enforces the master08 resource-scope grammar, and binds the master07/09
 /// launch context to the patient compartment. It never issues tokens, registers
-/// clients, or runs the `OAuth2` endpoints (those are Authorization-Server duties
-/// — recorded as NOTEs in `docs/design/its-rest/smart.md` §6).
+/// clients, or runs the `OAuth2` endpoints (those are Authorization-Server duties).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SmartConfig {

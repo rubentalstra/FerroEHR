@@ -4,7 +4,7 @@
 //! (`testdata/MANIFEST.tsv`, loaded by [`crate::testdata::manifest`]); this
 //! module resolves those keys to bytes. There is **no free-path corpus API** —
 //! the vendored Robot corpus is raw material, reachable only through a manifest
-//! key (register-80 ruling, `docs/design/conformance/80-data-sets.md`). The
+//! key. The
 //! corpus root and the owned-fixture root are private constants; a suite that
 //! wants a file the manifest does not name must add a manifest row.
 //!
@@ -36,7 +36,7 @@ use serde_json::Value;
 use crate::testdata::manifest::{Entry, Manifest, ManifestError, Source};
 
 /// The vendored CNF corpus root, resolved relative to this crate. **Private** —
-/// every corpus access goes through a manifest key (register-80 ruling); there
+/// every corpus access goes through a manifest key; there
 /// is no public free-path seam into `docs/specs/openehr/CNF/tests/`.
 const CORPUS_ROOT: &str = concat!(
     env!("CARGO_MANIFEST_DIR"),

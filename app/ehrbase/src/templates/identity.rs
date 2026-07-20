@@ -12,7 +12,7 @@
 //!   carries only the opaque `value`; we therefore treat a `TEMPLATE_ID` as an
 //!   opaque composite identifier governed by the case rule below, and do **not**
 //!   attempt a multi-axial decomposition the spec has not yet fixed.
-//! - **§Composite Identifiers and Case** — the case law that governs G-T04:
+//! - **§Composite Identifiers and Case** — the case law that governs template-id equality:
 //!   composite identifiers are *case-preserving* ("not change case due to
 //!   persistence, copying, transfer or other computation processes") **and**
 //!   *case-insensitive* ("two identifiers identical apart from case are
@@ -20,7 +20,7 @@
 //!
 //! Coordination note: the SM `I_DEFINITION_ADL14` provisioning surface
 //! (`service/definition/adl14.rs`) enforces the same rule at its SQL boundary
-//! with `lower(<column>) = lower($1)` (its G-05-14). This module is the
+//! with `lower(<column>) = lower($1)`. This module is the
 //! in-process side of the identical law: [`canonical_key`] is the comparison
 //! form used for the derived-runtime cache key, so case variants of one stored
 //! template resolve to a single cache entry — while the persisted `template_id`
@@ -88,7 +88,7 @@ mod tests {
 
     /// Two identifiers denote the *same* id under §Composite Identifiers and
     /// Case iff their canonical keys are equal (the comparison the store SQL
-    /// boundary and the runtime cache key both apply — G-T04).
+    /// boundary and the runtime cache key both apply).
     fn same_id(a: &str, b: &str) -> bool {
         canonical_key(a) == canonical_key(b)
     }

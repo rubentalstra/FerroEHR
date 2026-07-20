@@ -179,7 +179,7 @@ impl Permissions {
 }
 
 /// A `<templateId>`/`<queryName>` glob (master08 §Resource Scopes pattern
-/// table). Matching semantics (`docs/design/its-rest/smart.md` §4.2):
+/// table). Matching semantics:
 /// - a bare `*` (or `**`) matches **all** ids (the table's "All available
 ///   templates or queries" row);
 /// - within a `namespace::name` pattern, `*` matches any run of characters

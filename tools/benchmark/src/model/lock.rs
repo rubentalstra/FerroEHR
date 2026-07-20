@@ -1,6 +1,6 @@
 //! `workload.lock` — a stable hash over the frozen workload model
-//! (`docs/design/benchmark/00-workload-model.md` §1: the event catalogue +
-//! rates + profile params + template set + generator seed). Frozen before the
+//! (the event catalogue + rates + profile params + template set + generator
+//! seed). Frozen before the
 //! first measured run; the same model + seed always hashes identically, and any
 //! change to the model (rates, sequences, template set, seed) changes the lock.
 //!

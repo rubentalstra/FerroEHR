@@ -1,10 +1,9 @@
 //! The case universe, one module per schedule chapter (+ the cross-cutting
-//! profile capabilities), fresh-authored from the W-10 registers
-//! (`docs/design/conformance/01–13`). Every module exposes
+//! profile capabilities). Every module exposes
 //! `entries() -> Vec<CaseEntry>`; [`entries`] aggregates them for the
 //! registry.
 //!
-//! Authoring law (register 90): ids carried from the pre-W-10 instrument
+//! Authoring law: ids carried from the earlier instrument
 //! keep their slugs (the ECC number persists — baseline deltas stay
 //! per-case explainable); wire ids come ONLY from [`crate::wire`]; per-SUT
 //! facts from [`crate::engine::harness::RunContext::sut`]; edition-variant

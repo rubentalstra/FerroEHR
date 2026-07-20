@@ -276,7 +276,7 @@ async fn malformed_if_match_is_rejected_not_bypassed() {
 #[tokio::test]
 async fn malformed_if_match_on_ehr_status_update_is_rejected() {
     // The required-If-Match ehr_status update rejects a malformed precondition
-    // (400) before the backend, never treating it as no-precondition (W-14 F-12).
+    // (400) before the backend, never treating it as no-precondition.
     let (_pg, app) = app().await;
     let req = Request::builder()
         .method("PUT")
@@ -292,7 +292,7 @@ async fn malformed_if_match_on_ehr_status_update_is_rejected() {
 #[tokio::test]
 async fn malformed_if_match_on_directory_update_is_rejected() {
     // The required-If-Match directory update rejects a malformed precondition
-    // (400) at the wire, never a silent bypass (W-14 F-12).
+    // (400) at the wire, never a silent bypass.
     let (_pg, app) = app().await;
     let req = Request::builder()
         .method("PUT")
@@ -305,7 +305,7 @@ async fn malformed_if_match_on_directory_update_is_rejected() {
     assert_eq!(status, StatusCode::BAD_REQUEST);
 }
 
-// ── VERSION-family canonical XML (F-05-06 / ECC-COM-022, ECC-SIG-001) ────────
+// ── VERSION-family canonical XML (ECC-COM-022, ECC-SIG-001) ──────────────────
 
 #[tokio::test]
 async fn versioned_composition_serves_xml() {

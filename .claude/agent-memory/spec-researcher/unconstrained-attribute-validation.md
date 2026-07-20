@@ -34,7 +34,7 @@ rule 2 explicitly EXEMPTS plain RM attributes the template does not constrain
 ("remain open ... never flagged"). So ADR-012 does NOT authorize rejecting
 content under an unconstrained RM-mandatory attribute (e.g. ACTION.description).
 
-ECC design docs: `docs/design/conformance/13-content-data-types.md` (validate_open
+ECC design: the validate_open behaviour is documented in the conformance tool itself (validate_open
 matrix) + `12-content-composition-entry.md`.
 
 No CNF case found for committing a *server-generated example* composition

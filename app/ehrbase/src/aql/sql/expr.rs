@@ -4,8 +4,7 @@
 //! predicate (QUERY master03 §Archetype predicate, re-grounded on BASE/AM
 //! subsumption — see [`archetype_predicate`]).
 //!
-//! No openEHR spec governs the lowering itself — this is our own design
-//! (`docs/design/aql-engine.md`): every reference is a typed [`Expr::col`], every
+//! No openEHR spec governs the lowering itself — this is our own design: every reference is a typed [`Expr::col`], every
 //! literal binds through [`Expr::val`], and the PostgreSQL-specific pieces use
 //! only the sanctioned typed escape hatches ([`Func::cust`] for functions
 //! sea-query does not model; [`BinOper::Custom`] for `#>>` / `->>` which have no

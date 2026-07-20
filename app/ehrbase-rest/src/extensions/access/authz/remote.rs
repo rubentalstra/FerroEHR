@@ -1,5 +1,4 @@
-//! [`RemotePdp`] — the v1-compatible external policy-server client
-//! (`docs/enterprise/access-control.md` §5.5, wire contract §2.1).
+//! [`RemotePdp`] — the v1-compatible external policy-server client.
 //!
 //! Byte-compatible with `EHRbase` v1: `POST {server}{policy-name}` with a **flat**
 //! JSON body carrying only the configured, resolved keys

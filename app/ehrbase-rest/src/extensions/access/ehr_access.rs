@@ -32,15 +32,14 @@
 //!    §EHR Access — settings changes are CONTRIBUTION-wrapped + audited).
 //!
 //! The concrete scheme evaluated here (`ehrbase.access_control.v1`) is our own
-//! design — no openEHR spec governs it (`docs/design/ehr-access-scheme.md`);
+//! design — no openEHR spec governs it;
 //! the parsed [`EhrAccessSettings`] live in `ehrbase-sm`.
 //!
 //! # v1 scope boundary
 //!
 //! AQL result filtering by privacy level is **not** evaluated in v1 (query
 //! execution carries no principal context yet); the per-EHR gate still applies
-//! to the REST query surface where an `ehr_id` is bound. Recorded here and in
-//! `docs/design/ehr-access-scheme.md`.
+//! to the REST query surface where an `ehr_id` is bound.
 //!
 //! The PEP returns `Result<(), Response>` (the deny path is a ready `403`, a
 //! large type) — `result_large_err` is allowed module-wide accordingly.

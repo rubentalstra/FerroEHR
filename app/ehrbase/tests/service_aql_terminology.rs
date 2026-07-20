@@ -307,7 +307,7 @@ async fn terminology_expand_fhir_merges_expansion_codes() {
 }
 
 /// A query whose `matches` operand resolves through the terminology service
-/// (master03 §TERMINOLOGY) is **never** served from the P20 plan cache: the
+/// (master03 §TERMINOLOGY) is **never** served from the plan cache: the
 /// expansion may change between executions, so the plan is not a pure function
 /// of the query text. Running the same terminology query twice therefore never
 /// produces a cache hit — it re-parses and re-expands each time. No openEHR spec

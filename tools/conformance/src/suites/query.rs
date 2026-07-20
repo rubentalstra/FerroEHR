@@ -1,7 +1,7 @@
 //! QUERY / AQL execution — the master11 spine + ECC-original AQL cases
-//! (area `Qry`; `docs/design/conformance/07-querying.md`).
+//! (area `Qry`).
 //!
-//! **master11 is a schedule stub** (register 07 G-1): §Test Environment and
+//! **master11 is a schedule stub**: §Test Environment and
 //! §Test Data Sets are `TBD`, one heading is the literal placeholder
 //! "`Test Case bbbb`", and all four real flows are `xx`. So the four
 //! `I_QUERY_SERVICE.*` headings are concretized as ECC-original cases (the
@@ -13,21 +13,21 @@
 //! invalid-corpus negative, and one AQL-advanced case); the **golden-diff**
 //! corpus cases + the golden normalizer live in [`crate::suites::query_golden`],
 //! and the `TERMINOLOGY()` / `matches {uri}` family lives in the terminology
-//! suite (register 07 keeps them out of `Qry`).
+//! suite (kept out of `Qry`).
 //!
-//! Register 07 rulings realized here:
+//! Rulings realized here:
 //!
-//! - **G-2 (`AqlAdvanced` claimable).** Every master11-spine case is
+//! - **`AqlAdvanced` claimable.** Every master11-spine case is
 //!   [`Capability::AqlBasic`] (STANDARD), but [`run_advanced_order_limit`] is
 //!   [`Capability::AqlAdvanced`] (OPTIONS) — an `ORDER BY … LIMIT`/`OFFSET`
 //!   query per AQL 1.1 (`AqlParser.g4` `orderByClause? limitClause?`), so the
 //!   AQL-advanced OPTIONS capability is earned from a real passing case, not
 //!   left unclaimable.
-//! - **G-4 (no `_schema_version` pinning).** `RESULT_SET` fields are read through
+//! - **No `_schema_version` pinning.** `RESULT_SET` fields are read through
 //!   the local [`result_set`] helpers with explicit ITS-REST `RESULT_SET`
 //!   citations; nothing asserts `meta._schema_version` (a dev-OAS/RM-1.2.0
 //!   artefact). A fully centralized `RESULT_SET` wire adapter with an edition
-//!   ladder (register 90) is not yet exposed — recorded as a boundary.
+//!   ladder is not yet exposed — recorded as a boundary.
 
 use uuid::Uuid;
 
@@ -129,7 +129,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Binding::Rest("POST /query/aql"),
             run_invalid_queries,
         ),
-        // ── G-2: AqlAdvanced (OPTIONS) — earned from a real passing case ───────
+        // ── AqlAdvanced (OPTIONS) — earned from a real passing case ────────────
         case(
             "qry/advanced-order-by-limit",
             "AQL advanced — ORDER BY + LIMIT/OFFSET",
@@ -196,7 +196,7 @@ async fn adhoc(ctx: &RunContext<'_>, aql: &str) -> Result<HttpResponse, CaseErro
     .await
 }
 
-/// The AQL text of a group-A query by golden/fixture name (register 80 corpus,
+/// The AQL text of a group-A query by golden/fixture name (from the corpus,
 /// resolved through the manifest — no free-path access).
 fn query_text(group: &str, name: &str) -> Result<String, CaseError> {
     let fixtures = fixtures::aql_valid(group).map_err(|e| codec(&e))?;
@@ -207,11 +207,11 @@ fn query_text(group: &str, name: &str) -> Result<String, CaseError> {
     fixtures::aql_text(fixture).map_err(|e| codec(&e))
 }
 
-// ── RESULT_SET wire reads (G-4: explicit, cited, no `_schema_version`) ─────────
+// ── RESULT_SET wire reads (explicit, cited, no `_schema_version`) ──────────────
 
 /// `RESULT_SET` field reads. ITS-REST 1.0.3 QUERY API `200_QUERY.yaml` `RESULT_SET`:
 /// `{ meta: { _type }, columns: [{ name, path? }], rows: [...] }`. `_schema_version`
-/// is deliberately NOT read/asserted (a dev-OAS/RM-1.2.0 artefact, register 07 G-4).
+/// is deliberately NOT read/asserted (a dev-OAS/RM-1.2.0 artefact).
 mod result_set {
     use serde_json::Value;
 
@@ -486,7 +486,7 @@ fn diff_golden(
     }
 }
 
-/// A canonical-JSON composition fixture by name (register 80 corpus).
+/// A canonical-JSON composition fixture by name (from the corpus).
 fn compositions_by_name(name: &str) -> Result<serde_json::Value, CaseError> {
     let comps = fixtures::compositions_canonical_json().map_err(|e| codec(&e))?;
     let fixture = comps

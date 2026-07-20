@@ -1,5 +1,5 @@
 //! The `[fhir]` section — the FHIR connector (inbound façade + outbound
-//! emitter, `docs/design/configuration.md` §3.14).
+//! emitter).
 //!
 //! **No openEHR spec governs this — our own design/extension.** Fields of the
 //! one config tree ([`crate::config::EhrbaseConfig`]); no loader of its own.

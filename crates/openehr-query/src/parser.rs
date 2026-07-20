@@ -219,8 +219,7 @@ fn parameter<'a>() -> impl Parser<'a, &'a [Token], String, Err<'a>> + Clone {
 /// Built together because a `pathPredicate` contains an `objectPath` which
 /// contains `pathPart`s that may themselves carry a `pathPredicate`. The bare
 /// `standardPredicate` parser is also handed back so the caller can wire it into
-/// `versionPredicate` (`AqlParser.g4` `versionPredicate` third alternative —
-/// F-08-02).
+/// `versionPredicate` (`AqlParser.g4` `versionPredicate` third alternative).
 #[allow(clippy::type_complexity)]
 fn path_parsers<'a>() -> (
     impl Parser<'a, &'a [Token], IdentifiedPath, Err<'a>> + Clone,
@@ -429,7 +428,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     // The whole path grammar (identified paths, the path predicate, and the
     // bare standard predicate) is built once here and shared by both the
     // SELECT/terminal side (`identified`) and the FROM side (`predicate` on a
-    // class operand, `standard` inside a VERSION predicate) — F-13-51.
+    // class operand, `standard` inside a VERSION predicate).
     let (identified, predicate, standard) = path_parsers();
 
     // terminal : primitive | PARAMETER | identifiedPath | functionCall
@@ -486,7 +485,7 @@ fn query<'a>() -> impl Parser<'a, &'a [Token], SelectQuery, Err<'a>> {
     // ── FROM / containsExpr ──
     // classExprOperand : IDENTIFIER variable? pathPredicate? | VERSION variable? [versionPredicate]?
     // versionPredicate : LATEST_VERSION | ALL_VERSIONS | standardPredicate
-    // The third (standardPredicate) alternative is wired here — F-08-02 — so
+    // The third (standardPredicate) alternative is wired here — so
     // `VERSION v[commit_audit/time_committed > '2020-01-01']` parses.
     let version_predicate = select! {
         Token::LatestVersion => VersionPredicate::Latest,
@@ -813,7 +812,7 @@ mod tests {
         assert!(parse_str("SELECT c FROM COMPOSITION c EXTRA").is_err());
     }
 
-    // ── F-08-02: VERSION standard-predicate form ──────────────────────────
+    // ── VERSION standard-predicate form ───────────────────────────────────
     #[test]
     fn version_latest_and_all_predicates() {
         for (src, want) in [
@@ -876,7 +875,7 @@ mod tests {
         ));
     }
 
-    // ── F-08-03: numeric overflow is a parse error ────────────────────────
+    // ── numeric overflow is a parse error ─────────────────────────────────
     #[test]
     fn integer_overflow_is_a_parse_error() {
         // Was silently coerced to `Integer(0)`; must now fail.
@@ -910,7 +909,7 @@ mod tests {
         assert!(parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1.0e999").is_err());
     }
 
-    // ── F-08-08: recursive unary minus ────────────────────────────────────
+    // ── recursive unary minus ─────────────────────────────────────────────
     #[test]
     fn double_unary_minus_parses() {
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = - - 5").expect("parse");
@@ -935,7 +934,7 @@ mod tests {
         ));
     }
 
-    // ── F-08-09: string unescaping ────────────────────────────────────────
+    // ── string unescaping ─────────────────────────────────────────────────
     #[test]
     fn string_escapes_are_decoded() {
         let q = parse_str(r"SELECT c FROM COMPOSITION c WHERE c/x = 'a\nb\t\\c'").expect("parse");
@@ -962,7 +961,7 @@ mod tests {
         assert_eq!(unquote(r"'\u12'"), r"\u12");
     }
 
-    // ── F-08-10: three-way predicate classification ───────────────────────
+    // ── three-way predicate classification ────────────────────────────────
     #[test]
     fn bare_standard_predicate_classifies_as_standard() {
         // A lone comparison in a predicate is PathPredicate::Standard, not
@@ -998,7 +997,7 @@ mod tests {
         ));
     }
 
-    // ── F-08-11: SCI_INTEGER retains integer-ness ─────────────────────────
+    // ── SCI_INTEGER retains integer-ness ──────────────────────────────────
     #[test]
     fn scientific_integer_stays_integer() {
         let q = parse_str("SELECT c FROM COMPOSITION c WHERE c/x = 1e3").expect("parse");
@@ -1125,7 +1124,7 @@ mod tests {
 
     #[test]
     fn hyphenated_term_code_in_predicate_parses() {
-        // F-08-01 end-to-end: the node-name term-code slot accepts a hyphenated id.
+        // end-to-end: the node-name term-code slot accepts a hyphenated id.
         let q =
             parse_str("SELECT o FROM OBSERVATION o[at0001, SNOMED-CT::1234|x|]").expect("parse");
         assert!(matches!(
@@ -1142,7 +1141,7 @@ mod tests {
 
     #[test]
     fn line_comment_in_query_parses() {
-        // F-08-04 end-to-end.
+        // line-comment handling, end-to-end.
         let q = parse_str("SELECT c -- pick the composition\nFROM COMPOSITION c").expect("parse");
         assert_eq!(q.select.columns.len(), 1);
     }

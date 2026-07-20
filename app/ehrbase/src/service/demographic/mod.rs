@@ -24,7 +24,6 @@
 //! CNF profiles list demographic as OPTIONS-profile only). This behaviour is
 //! therefore our own extension **by analogy with the EHR group**: identical
 //! status/`ETag`/`Location`/`Prefer`/`If-Match`/deleted-read semantics.
-//! (Design register: `docs/design/platform/04-service-demographic-ehr-index.md`.)
 //!
 //! Standing NOTEs (deliberate divergences, register §6):
 //! - The `UV_PARTY`/`UV_PARTY_RELATIONSHIP` envelope (`uv_party.adoc`) is

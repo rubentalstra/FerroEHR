@@ -677,7 +677,7 @@ fn full_scalar_function_set_plans() {
 // ── SQL lowering: the G-row fixes (QUERY master03) ────────────────────────────
 
 /// Anchor-probe `EXISTS` count. The population gate is no longer an `EXISTS`
-/// subquery (item 33: a direct `ehr.is_queryable` column filter over a join),
+/// subquery (a direct `ehr.is_queryable` column filter over a join),
 /// so every remaining `EXISTS` is a containment anchor (OR / NOT CONTAINS).
 fn anchor_exists(sql: &str) -> usize {
     sql.matches("EXISTS(SELECT").count()
@@ -810,11 +810,10 @@ fn min_max_over_numeric_leaf_is_numeric() {
     );
 }
 
-// ── P20: promoted context_start fast path + F6 uid synthesis ─────────────────
+// ── Promoted context_start fast path + uid synthesis ────────────────────────
 
 /// The patient-dashboard shape orders by the promoted `node.context_start`
-/// column, not the correlated `EVENT_CONTEXT` extraction + `::timestamptz` cast
-/// (P20; docs/plans/phase-20-optimization.md).
+/// column, not the correlated `EVENT_CONTEXT` extraction + `::timestamptz` cast.
 #[test]
 fn dashboard_order_by_uses_context_start_column() {
     let sql = build_sql(
@@ -896,7 +895,7 @@ fn projection_of_context_start_time_is_not_promoted() {
     );
 }
 
-/// F6: `c/uid/value` on a COMPOSITION variable synthesizes the `OBJECT_VERSION_ID`
+/// uid synthesis: `c/uid/value` on a COMPOSITION variable synthesizes the `OBJECT_VERSION_ID`
 /// from the joined `vo_version` (RM common master06 §Version Identification) —
 /// it is not stored in the fragment.
 #[test]
@@ -908,7 +907,7 @@ fn composition_uid_value_is_synthesized_from_vo_version() {
     );
 }
 
-/// F6: `c/uid` yields the `OBJECT_VERSION_ID` object cell.
+/// uid synthesis: `c/uid` yields the `OBJECT_VERSION_ID` object cell.
 #[test]
 fn composition_uid_object_is_built() {
     let sql = build_sql("SELECT c/uid FROM EHR e CONTAINS COMPOSITION c");
@@ -922,7 +921,7 @@ fn composition_uid_object_is_built() {
     );
 }
 
-/// F6: a contained object's own `uid` is NOT synthesized — only a
+/// uid synthesis: a contained object's own `uid` is NOT synthesized — only a
 /// versioned-object root gets a server-assigned `OBJECT_VERSION_ID`; the
 /// OBSERVATION's uid falls through to the stored fragment.
 #[test]
@@ -937,7 +936,7 @@ fn contained_object_uid_is_not_synthesized() {
     );
 }
 
-// ── item 24: typed EHR-id predicate + single correlated population gate ─────
+// ── Typed EHR-id predicate + single correlated population gate ──────────────
 
 /// `e/ehr_id/value = '<uuid>'` lowers to a uuid-typed comparison on `ehr.id`
 /// (index-served; value-based equality = the case-insensitive identifier
@@ -991,7 +990,7 @@ fn ehr_id_ordering_stays_textual() {
 
 /// ORDER BY `e/ehr_id/value` sorts by the raw `ehr.id` uuid column (index-served),
 /// not the `CAST(id AS text)` the projection reads — canonical UUID text order
-/// equals uuid binary order, so the sequence is identical (item 33; BASE
+/// equals uuid binary order, so the sequence is identical (BASE
 /// `base_types` master05 §Basic Types — Uuid). The projected cell keeps its
 /// text form.
 #[test]
@@ -1015,7 +1014,7 @@ fn order_by_ehr_id_uses_the_raw_uuid_column() {
 /// The population gate (SM `I_QUERY_SERVICE`: full-population queries run over
 /// `is_queryable = true` EHRs) is emitted ONCE per join-connected component —
 /// a VO root linked to its EHR alias is covered by the alias's gate — and as a
-/// direct `ehr.is_queryable` column filter (item 33), NOT a per-query `EXISTS`
+/// direct `ehr.is_queryable` column filter, NOT a per-query `EXISTS`
 /// probe over every current `EHR_STATUS` root.
 #[test]
 fn population_gate_is_single_and_column_filtered() {

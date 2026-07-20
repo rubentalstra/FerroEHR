@@ -4,8 +4,8 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! `FhirTerminologyProvider` wire-contract tests (B4, `docs/terminology-validation.md`
-//! §5), driven by `wiremock` — a hermetic FHIR R4 terminology server: canned
+//! `FhirTerminologyProvider` wire-contract tests,
+//! driven by `wiremock` — a hermetic FHIR R4 terminology server: canned
 //! `$validate-code`/`$expand`/`$subsumes`/`$lookup` responses + fault injection
 //! (timeout, `5xx`, malformed). No network.
 #![allow(clippy::unwrap_used, clippy::expect_used)]

@@ -37,8 +37,8 @@ pub(super) async fn run(
             let p = params::build::<VersionedEhrStatusGetParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = state.backend().get_versioned_ehr_status(ehr_id).await?;
-            // VERSIONED_OBJECT container — canonical JSON or XML (F-05-06:
-            // ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
+            // VERSIONED_OBJECT container — canonical JSON or XML
+            // (ITS-XML `Version.xsd`/`Common.xsd` define the shape; the generated
             // `ToXml` for the concrete `VERSIONED_*` class serves it).
             Ok(negotiate::respond_rm::<VersionedEhrStatus>(
                 h,

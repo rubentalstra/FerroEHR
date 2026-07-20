@@ -258,7 +258,7 @@ pub struct CaseOutcome {
     pub total_data_sets: u32,
     /// The data-set rows the governing schedule table defines, where the
     /// schedule tabulates one — `total_data_sets < schedule_rows` is a
-    /// logged coverage bound (honesty invariant 3).
+    /// logged coverage bound.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule_rows: Option<u32>,
     /// The failure/skip message, if any.

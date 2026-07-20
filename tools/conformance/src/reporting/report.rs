@@ -5,7 +5,7 @@
 //! come from the recorded [`SutIdentity`], the capability/profile verdicts are
 //! machine-computed ([`crate::model::profile`]), and every coverage bound
 //! (data-set truncation, ECC-original stubs, edition findings) is printed —
-//! honesty invariants 3/4 (`docs/design/conformance/90-target-design.md` §7).
+//! a coverage bound is always logged, never silent.
 //!
 //! This module also hosts the shared capability/profile accounting
 //! ([`capability_verdict`], [`profile_lines`], [`profile_verdict`],
@@ -248,9 +248,8 @@ pub fn write_all(
 
     // The Conformance Statement is emitted for EVERY SUT (the framework
     // certifies any CDR): it is the SUT's declared scope + machine claims, not
-    // a self-assessment badge. (This is the W-10 change from the legacy
-    // instrument, which suppressed the Statement for non-ehrbase-rs SUTs —
-    // §6 of the target design mandates a Statement per SUT.)
+    // a self-assessment badge. (The earlier instrument suppressed the
+    // Statement for non-ehrbase-rs SUTs; a Statement is now emitted per SUT.)
     write_file(
         &out_dir.join("CONFORMANCE_STATEMENT.md"),
         &crate::reporting::statement::render_statement_md(results),
@@ -640,7 +639,7 @@ fn render_coverage_bounds(out: &mut String, results: &RunResults) {
     out.push_str("## 9. Coverage bounds (driven vs schedule data-set rows)\n\n");
     out.push_str(
         "Cases whose driven data-set count is below the governing schedule table's row \
-         count — a bound is logged, never silent (honesty invariant 3; register 13 G-2). \
+         count — a bound is logged, never silent. \
          Widening the driven set is data, not a new case.\n\n",
     );
     if bounded.is_empty() {
@@ -675,7 +674,7 @@ fn render_ecc_original(out: &mut String, results: &RunResults) {
     out.push_str("## 10. ECC-original cases (no direct schedule backing)\n\n");
     out.push_str(
         "Stub-derived / extension cases — labelled here and **never presented as \
-         schedule-conformant** (register 08 G-1). Their result stands, but the claim \
+         schedule-conformant**. Their result stands, but the claim \
          is against our own derivation, not an abstract schedule test case.\n\n",
     );
     if order.is_empty() {

@@ -5,8 +5,8 @@
 //! Spec: arch-overview `master06-design_of_the_ehr.adoc` §The EHR (EHR root,
 //! `system_id`, `EHR_ACCESS`, `EHR_STATUS`, directory, folders,
 //! `time_created`) and RM ehr `master04-ehr_package.adoc` §EHR Creation /
-//! §Folders. The EHR-table and folder-membership SQL is a storage seam (G-10;
-//! no openEHR spec governs the schema — our own design).
+//! §Folders. The EHR-table and folder-membership SQL is a storage seam
+//! (no openEHR spec governs the schema — our own design).
 
 use crate::ids::EhrId;
 use crate::service::ehr::handle::EhrSummary;
@@ -199,7 +199,7 @@ impl EhrbaseService {
     /// `id.value` + `namespace`). Served from the promoted `ehr.subject_*`
     /// columns (unique per subject — `ehr_subject_uq`).
     ///
-    /// NOTE (G-4, `i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
+    /// NOTE (`i_ehr_service.adoc` §`get_ehrs_for_subject`): the DB
     /// constraint narrows the SM `List<EHR_SUMMARY>` to ≤1. CNF
     /// `create_ehr-two_ehrs_same_patient` expects **409** on a second EHR for
     /// the same subject, which supports the one-EHR-per-subject rule (RM ehr
@@ -397,7 +397,7 @@ impl EhrbaseService {
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
     /// the subject already owns an EHR (409-equivalent), or storage fails.
     pub async fn create_ehr(&self, an_ehr_status: Option<Value>) -> Result<EhrId, SmError> {
-        // NOTE (G-5, `i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
+        // NOTE (`i_ehr_service.adoc` §create_ehr `Pre_no_subject`):
         // the SM precondition `an_ehr_status.subject = Void` is NOT enforced on
         // the id-only create paths. `POST /ehr` intentionally accepts a
         // subject-bearing status (the ITS-REST `ehr` schema carries an optional
@@ -479,7 +479,7 @@ impl EhrbaseService {
     }
 
     /// SM `I_EHR_SERVICE.get_ehrs_for_subject` — the `EHR_SUMMARY` list for a
-    /// subject (≤1 under the one-EHR-per-subject rule; see G-4 on
+    /// subject (≤1 under the one-EHR-per-subject rule; see the note on
     /// [`Self::ehr_by_subject`]).
     ///
     /// # Errors

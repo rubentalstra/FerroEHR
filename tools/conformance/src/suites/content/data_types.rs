@@ -1,11 +1,11 @@
 //! master17.1–17.7 — `DATA_VALUE` data-validation truth tables
-//! (`master17.N-content_tc_data_types-*.adoc`), the register-13 spine.
+//! (`master17.N-content_tc_data_types-*.adoc`).
 //!
 //! Every case commits a data instance and asserts the SUT accepts or rejects
 //! it per the constraint the schedule case expresses (capability
 //! [`Capability::ArchetypeValidation`] — CORE + STANDARD, `profiles master03
 //! §Functional`). All 81 ECC ids `ECC-VAL-039`…`ECC-VAL-119` keep their
-//! pre-W-10 slugs (register 13, ID stability); 80 map 1:1 onto the 80 distinct
+//! earlier slugs (ID stability); 80 map 1:1 onto the 80 distinct
 //! schedule case ids, one (`ECC-VAL-119`) is an ECC-original negative guard
 //! (`ScheduleTrace::EccOriginal`, §3).
 //!
@@ -15,7 +15,7 @@
 //! correct outcome — the driver returns the finding, never a masked pass
 //! (`drive::check`).
 //!
-//! **G-2 — coverage bounds are logged, never silent.** The schedule expresses
+//! **Coverage bounds are logged, never silent.** The schedule expresses
 //! each case as a truth table of many data-set rows (~1,130 total); the suite
 //! drives ~2 variants/case (one in-constraint accept + one out-of-constraint
 //! reject), plus the marked boundary rows where the authoring machinery makes
@@ -24,14 +24,14 @@
 //! [`DataSetReport::of_schedule_rows`], so the ~7:1 collapse is a visible,
 //! auditable number in the report.
 //!
-//! **G-1 — `DV_INTERVAL`<T> (`ECC-VAL-068`…`095`, 28 ids).** The schedule's
+//! **`DV_INTERVAL`<T> (`ECC-VAL-068`…`095`, 28 ids).** The schedule's
 //! per-variant *bound* constraints (`C_INTEGER.range`/`.list` on the interval
 //! ends, `C_DV_QUANTITY.list`, temporal bounds, proportion-kind lists) are
 //! **inexpressible** with the carried opt14 authoring machinery
 //! ([`super::author`] constrains a DV_* leaf's primitive value attribute, not a
 //! `DV_INTERVAL`'s `lower`/`upper` bound objects — and the validator has no
 //! `DV_INTERVAL` constraint support). So each case is **bound-declared**
-//! (`of_schedule_rows` + a per-variant boundary comment citing this register),
+//! (`of_schedule_rows` + a per-variant boundary comment),
 //! never a silent generic probe presented as full coverage. What *is* asserted
 //! is the RM-invariant subset that holds for every bound type: the nine
 //! `validate_open` cases drive the three universal `Interval` invariants
@@ -41,7 +41,7 @@
 //! bound-declared** (the machinery cannot express any `DV_INTERVAL` bound
 //! constraint).
 //!
-//! **G-3 — `validate_open`/temporal substitutes.** `data_type_mandatory`
+//! **`validate_open`/temporal substitutes.** `data_type_mandatory`
 //! removes a mandatory RM field only, so the semantic constraint a case targets
 //! (`DV_URI` RFC3986 validity `113`, `DV_EHR_URI` `ehr:` scheme `116`, `DV_PROPORTION`
 //! kind invariants `060`, ISO8601 field-range opens) stands in on the
@@ -49,10 +49,9 @@
 //! dimension. The temporal constraint/range cases (`097`…`108` non-open) assert
 //! what master17.4 states via an authored `C_*` pattern/range; where the
 //! validator still defers temporal enforcement the reject is a **reported
-//! finding**, not a masked pass (register 13 open findings 097–108, 107
-//! partial-value).
+//! finding**, not a masked pass (open findings 097–108, 107 partial-value).
 //!
-//! **G-4 — edition/RM sensitivity.** `DV_SCALE` (`051`/`052`, interval-scale
+//! **Edition/RM sensitivity.** `DV_SCALE` (`051`/`052`, interval-scale
 //! `087`/`088`) needs **RM ≥ 1.1.0** (master17.3 §`DV_SCALE`, SPECRM-19); on an
 //! RM < 1.1.0 SUT these are an edition finding, carried by the runner's
 //! version ladder, not a fail. `C_DV_SCALE` does not exist in AM 1.4
@@ -60,7 +59,7 @@
 //! codes are pinned via [`super::drive`]'s ITS-REST ladder
 //! (`422` semantic / `400` malformed) — never asserted here.
 //!
-//! **G-5 — zero-case types (recorded verbatim, no fabricated cases).** Four
+//! **Zero-case types (recorded verbatim, no fabricated cases).** Four
 //! `DATA_VALUE` types carry **no schedule test case** by explicit chapter NOTE
 //! and therefore no ECC id; they are conformant-by-absence and stay case-free
 //! until a CNF re-vendor adds cases:
@@ -73,7 +72,7 @@
 //! - master17.5 `=== DV_PERIODIC_TIME_SPECIFICATION` — "TBD: this data type
 //!   might not be used or supported by modeling tools".
 //!
-//! **G-6 — schedule defect: `CONT-DV_TEXT-validate_open` duplicated.**
+//! **Schedule defect: `CONT-DV_TEXT-validate_open` duplicated.**
 //! master17.2 carries the heading `==== Test Case CONT-DV_TEXT-validate_open`
 //! **twice** (the second is the `C_STRING.pattern XYZ` table): 81 headings, 80
 //! distinct ids. Per standing rule 2 the defect is recorded, not silently
@@ -81,12 +80,12 @@
 //! second table's `C_STRING.pattern` rows are uncovered (noted on the case's
 //! coverage bound). No 82nd ECC id is minted here.
 //!
-//! **G-7 — `DV_CODED_TEXT-validate_ext_term` binding substitution.**
+//! **`DV_CODED_TEXT-validate_ext_term` binding substitution.**
 //! `ECC-VAL-048` constrains with a direct external `C_CODE_PHRASE` (SNOMED-CT)
 //! rather than the schedule's `CONSTRAINT_REF` → `ac`-code → template
 //! `constraint_binding` path (master17.2 §`validate_ext_term` NOTE); functionally
 //! close, but the binding-resolution surface is untested — a coverage note for
-//! the terminology-binding work (register 11).
+//! the terminology-binding work.
 
 use openehr_its::opt14::{CPrimitive, OperationalTemplate};
 use serde_json::{Value, json};
@@ -107,7 +106,7 @@ use super::mutate;
 /// (`composition_create`).
 const JSON: &[Format] = &[Format::Json];
 
-/// Every master17 case binds the same ITS-REST resource (register 13 meta).
+/// Every master17 case binds the same ITS-REST resource.
 const BINDING: &str = "POST /ehr/{ehr_id}/composition";
 
 /// The `all_types` base OPT (relative to `valid_templates/`) — the authored
@@ -174,7 +173,7 @@ fn value_ptr(idx: usize) -> String {
     format!("/content/0/data/events/0/data/items/{idx}/value")
 }
 
-/// The implemented master17.x cases — the register-13 spine, in schedule order.
+/// The implemented master17.x cases, in schedule order.
 #[must_use]
 pub fn entries() -> Vec<CaseEntry> {
     CASES
@@ -202,7 +201,7 @@ const fn sched(s: &'static str) -> ScheduleTrace {
 }
 
 /// The 81 registered cases (`ECC-VAL-039`…`119`), schedule order. `schedule_rows`
-/// (the register §2 truth-table row count, G-2) is baked into each run fn.
+/// (the truth-table row count) is baked into each run fn.
 const CASES: &[Def] = &[
     // ── 17.1 basic (039–043) ─────────────────────────────────────────────────
     Def {
@@ -246,7 +245,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_TEXT — open",
         citation: "RM 1.2.0 data_types §DV_TEXT; AM 1.4 C_STRING open; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_TEXT.validate_open (master17.2 §DV_TEXT; G-6: heading duplicated, 2nd C_STRING.pattern table folded)",
+            "DV_TEXT.validate_open (master17.2 §DV_TEXT; heading duplicated, 2nd C_STRING.pattern table folded)",
         ),
         run: open_dv_text,
     },
@@ -276,7 +275,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_CODED_TEXT — ext term",
         citation: "RM 1.2.0 data_types §DV_CODED_TEXT; AM 1.4 C_CODE_PHRASE external terminology; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_CODED_TEXT.validate_ext_term (master17.2 §DV_CODED_TEXT; G-7: direct C_CODE_PHRASE substitutes the CONSTRAINT_REF binding path)",
+            "DV_CODED_TEXT.validate_ext_term (master17.2 §DV_CODED_TEXT; direct C_CODE_PHRASE substitutes the CONSTRAINT_REF binding path)",
         ),
         run: run_dv_coded_ext_term,
     },
@@ -299,7 +298,7 @@ const CASES: &[Def] = &[
         id: "val/dv-scale-open",
         title: "Validate DV_SCALE — open",
         citation: "RM 1.2.0 data_types §DV_SCALE (RM ≥ 1.1.0, SPECRM-19); AM 1.4 open; ITS-REST 1.0.3 composition_create (201/422)",
-        schedule: sched("DV_SCALE.validate_open (master17.3 §DV_SCALE; G-4: RM ≥ 1.1.0)"),
+        schedule: sched("DV_SCALE.validate_open (master17.3 §DV_SCALE; RM ≥ 1.1.0)"),
         run: run_dv_scale_open,
     },
     Def {
@@ -307,7 +306,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_SCALE — constraint",
         citation: "RM 1.2.0 data_types §DV_SCALE (RM ≥ 1.1.0); AM 1.4 C_REAL.list on value (no C_DV_SCALE in AM 1.4, SPECPR-381); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_SCALE.validate_constraint (master17.3 §DV_SCALE; G-4: RM ≥ 1.1.0, C_REAL substitute)",
+            "DV_SCALE.validate_constraint (master17.3 §DV_SCALE; RM ≥ 1.1.0, C_REAL substitute)",
         ),
         run: run_dv_scale_constraint,
     },
@@ -365,7 +364,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_PROPORTION — open",
         citation: "RM 1.2.0 data_types §DV_PROPORTION (kind invariants); AM 1.4 open; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_PROPORTION.validate_open (master17.3 §DV_PROPORTION; G-3: 14 kind-invariant rejects untested, RM-mandatory numerator only)",
+            "DV_PROPORTION.validate_open (master17.3 §DV_PROPORTION; 14 kind-invariant rejects untested, RM-mandatory numerator only)",
         ),
         run: open_dv_proportion,
     },
@@ -420,13 +419,13 @@ const CASES: &[Def] = &[
         ),
         run: run_dv_proportion_ratio_range,
     },
-    // ── 17.3 quantity — DV_INTERVAL<T> (068–095, 28 ids; G-1 bound-declared) ──
+    // ── 17.3 quantity — DV_INTERVAL<T> (068–095, 28 ids; bound-declared) ──────
     Def {
         id: "val/dv-interval-dv-count-open",
         title: "Validate DV_INTERVAL<DV_COUNT> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_COUNT.validate_open (master17.3 §DV_INTERVAL<DV_COUNT>; G-1: bound C_INTEGER constraint inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_COUNT.validate_open (master17.3 §DV_INTERVAL<DV_COUNT>; bound C_INTEGER constraint inexpressible → RM Interval invariant triple)",
         ),
         run: ivc_open,
     },
@@ -435,7 +434,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_COUNT> — lower upper",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_COUNT.validate_lower_upper (master17.3; G-1: bound constraint inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_COUNT.validate_lower_upper (master17.3; bound constraint inexpressible → RM lower ≤ upper)",
         ),
         run: ivc_lu,
     },
@@ -444,7 +443,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_COUNT> — lower upper list",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_COUNT>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_COUNT.validate_lower_upper_list (master17.3; G-1: C_INTEGER.list on bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_COUNT.validate_lower_upper_list (master17.3; C_INTEGER.list on bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivc_lul,
     },
@@ -453,7 +452,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_QUANTITY> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_QUANTITY.validate_open (master17.3; G-1: bound C_DV_QUANTITY.list inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_QUANTITY.validate_open (master17.3; bound C_DV_QUANTITY.list inexpressible → RM Interval invariant triple)",
         ),
         run: ivq_open,
     },
@@ -462,7 +461,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_QUANTITY> — upper lower",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_QUANTITY>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_QUANTITY.validate_upper_lower (master17.3; G-1: bound constraint inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_QUANTITY.validate_upper_lower (master17.3; bound constraint inexpressible → RM lower ≤ upper)",
         ),
         run: ivq_ul,
     },
@@ -471,7 +470,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DATE_TIME> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DATE_TIME.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_DATE_TIME.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple)",
         ),
         run: ivdt_open,
     },
@@ -480,7 +479,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_constraint (master17.3, 68-row table; G-1: C_DATE_TIME bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_constraint (master17.3, 68-row table; C_DATE_TIME bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivdt_luc,
     },
@@ -489,7 +488,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE_TIME>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_range (master17.3; G-1: C_DATE_TIME.range bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_range (master17.3; C_DATE_TIME.range bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivdt_lur,
     },
@@ -498,7 +497,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DATE> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DATE.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_DATE.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple)",
         ),
         run: ivd_open,
     },
@@ -507,7 +506,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DATE> — lower upper constraint",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DATE.validate_lower_upper_constraint (master17.3; G-1: C_DATE bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_DATE.validate_lower_upper_constraint (master17.3; C_DATE bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivd_luc,
     },
@@ -516,7 +515,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DATE> — lower upper range",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DATE>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DATE.validate_lower_upper_range (master17.3; G-1: C_DATE.range bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_DATE.validate_lower_upper_range (master17.3; C_DATE.range bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivd_lur,
     },
@@ -525,7 +524,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_TIME> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_TIME.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_TIME.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple)",
         ),
         run: ivt_open,
     },
@@ -534,7 +533,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_TIME> — lower upper constraint",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_TIME.validate_lower_upper_constraint (master17.3; G-1: C_TIME bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_TIME.validate_lower_upper_constraint (master17.3; C_TIME bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivt_luc,
     },
@@ -543,7 +542,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_TIME> — lower upper range",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_TIME>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_TIME.validate_lower_upper_range (master17.3; G-1: C_TIME.range bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_TIME.validate_lower_upper_range (master17.3; C_TIME.range bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivt_lur,
     },
@@ -552,7 +551,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DURATION> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DURATION.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_DURATION.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple)",
         ),
         run: ivdu_open,
     },
@@ -561,7 +560,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DURATION> — constraint",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DURATION.validate_constraint (master17.3, 35-row table; G-1: C_DURATION bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_DURATION.validate_constraint (master17.3, 35-row table; C_DURATION bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivdu_c,
     },
@@ -570,7 +569,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_DURATION> — range",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_DURATION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_DURATION.validate_range (master17.3; G-1: C_DURATION.range bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_DURATION.validate_range (master17.3; C_DURATION.range bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivdu_r,
     },
@@ -579,7 +578,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_ORDINAL> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_ORDINAL.validate_open (master17.3; G-1: bound constraint inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_ORDINAL.validate_open (master17.3; bound constraint inexpressible → RM Interval invariant triple)",
         ),
         run: ivo_open,
     },
@@ -588,7 +587,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_ORDINAL> — constraint",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_ORDINAL>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_ORDINAL.validate_constraint (master17.3; G-1: C_DV_ORDINAL bounds inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_ORDINAL.validate_constraint (master17.3; C_DV_ORDINAL bounds inexpressible → RM lower ≤ upper)",
         ),
         run: ivo_c,
     },
@@ -597,7 +596,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_SCALE> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE> (RM ≥ 1.1.0); BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_SCALE.validate_open (master17.3; G-4: RM ≥ 1.1.0; G-1: bound inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_SCALE.validate_open (master17.3; RM ≥ 1.1.0; bound inexpressible → RM Interval invariant triple)",
         ),
         run: ivs_open,
     },
@@ -606,7 +605,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_SCALE> — constraint",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_SCALE> (RM ≥ 1.1.0); BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_SCALE.validate_constraint (master17.3; G-4: RM ≥ 1.1.0; G-1: bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_SCALE.validate_constraint (master17.3; RM ≥ 1.1.0; bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivs_c,
     },
@@ -615,7 +614,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — open",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval invariants; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_open (master17.3, 18-row table; G-1: bound inexpressible → RM Interval invariant triple)",
+            "DV_INTERVAL_DV_PROPORTION.validate_open (master17.3, 18-row table; bound inexpressible → RM Interval invariant triple)",
         ),
         run: ivp_open,
     },
@@ -624,7 +623,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — ratio",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_ratio (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_PROPORTION.validate_ratio (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivp_ratio,
     },
@@ -633,7 +632,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — unitary",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_unitary (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_PROPORTION.validate_unitary (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivp_unitary,
     },
@@ -642,7 +641,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — percentage",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_percentage (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_PROPORTION.validate_percentage (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivp_percent,
     },
@@ -651,7 +650,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — fraction",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_fraction (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_PROPORTION.validate_fraction (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivp_fraction,
     },
@@ -660,7 +659,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — integer fraction",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_integer_fraction (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_PROPORTION.validate_integer_fraction (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivp_intfrac,
     },
@@ -669,7 +668,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_INTERVAL<DV_PROPORTION> — ratio range",
         citation: "RM 1.2.0 data_types §DV_INTERVAL<DV_PROPORTION>; BASE foundation_types §Interval (lower ≤ upper); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_INTERVAL_DV_PROPORTION.validate_ratio_range (master17.3, 18-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper)",
+            "DV_INTERVAL_DV_PROPORTION.validate_ratio_range (master17.3, 18-row table; proportion-kind bound inexpressible → RM lower ≤ upper)",
         ),
         run: ivp_ratiorange,
     },
@@ -686,7 +685,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DURATION — fields",
         citation: "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_DURATION.pattern (allowed fields); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DURATION.validate_fields (master17.4 §DV_DURATION; G-3 open finding: temporal enforcement — SUT reject reported, never masked)",
+            "DV_DURATION.validate_fields (master17.4 §DV_DURATION; open finding: temporal enforcement — SUT reject reported, never masked)",
         ),
         run: run_dv_duration_fields,
     },
@@ -695,7 +694,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DURATION — range",
         citation: "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_DURATION.range; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DURATION.validate_range (master17.4 §DV_DURATION; G-3 open finding: temporal enforcement)",
+            "DV_DURATION.validate_range (master17.4 §DV_DURATION; open finding: temporal enforcement)",
         ),
         run: run_dv_duration_range,
     },
@@ -704,7 +703,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DURATION — fields range",
         citation: "RM 1.2.0 data_types §DV_DURATION; AM 1.4 C_DURATION.pattern + range; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DURATION.validate_fields_range (master17.4 §DV_DURATION; G-3 open finding: temporal enforcement)",
+            "DV_DURATION.validate_fields_range (master17.4 §DV_DURATION; open finding: temporal enforcement)",
         ),
         run: run_dv_duration_fields_range,
     },
@@ -713,7 +712,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_TIME — open",
         citation: "RM 1.2.0 data_types §DV_TIME; AM 1.4 open; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_TIME.validate_open (master17.4 §DV_TIME; G-3: ISO8601-validity rows not driven, RM-mandatory value only)",
+            "DV_TIME.validate_open (master17.4 §DV_TIME; ISO8601-validity rows not driven, RM-mandatory value only)",
         ),
         run: open_dv_time,
     },
@@ -722,7 +721,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_TIME — constraint",
         citation: "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_TIME.pattern; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_TIME.validate_constraint (master17.4 §DV_TIME, 70-row table; G-3 open finding: temporal enforcement)",
+            "DV_TIME.validate_constraint (master17.4 §DV_TIME, 70-row table; open finding: temporal enforcement)",
         ),
         run: run_dv_time_constraint,
     },
@@ -731,7 +730,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_TIME — range",
         citation: "RM 1.2.0 data_types §DV_TIME; AM 1.4 C_TIME.range; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_TIME.validate_range (master17.4 §DV_TIME, 200-row table — largest; G-2/G-3 open finding: temporal enforcement)",
+            "DV_TIME.validate_range (master17.4 §DV_TIME, 200-row table — largest; open finding: temporal enforcement)",
         ),
         run: run_dv_time_range,
     },
@@ -740,7 +739,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DATE — open",
         citation: "RM 1.2.0 data_types §DV_DATE; AM 1.4 open; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DATE.validate_open (master17.4 §DV_DATE; G-3: ISO8601-validity rows not driven, RM-mandatory value only)",
+            "DV_DATE.validate_open (master17.4 §DV_DATE; ISO8601-validity rows not driven, RM-mandatory value only)",
         ),
         run: open_dv_date,
     },
@@ -749,7 +748,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DATE — constraint",
         citation: "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_DATE.pattern; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DATE.validate_constraint (master17.4 §DV_DATE; G-3 open finding: temporal enforcement)",
+            "DV_DATE.validate_constraint (master17.4 §DV_DATE; open finding: temporal enforcement)",
         ),
         run: run_dv_date_constraint,
     },
@@ -758,7 +757,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DATE — range",
         citation: "RM 1.2.0 data_types §DV_DATE; AM 1.4 C_DATE.range; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DATE.validate_range (master17.4 §DV_DATE; G-3 open finding: temporal enforcement)",
+            "DV_DATE.validate_range (master17.4 §DV_DATE; open finding: temporal enforcement)",
         ),
         run: run_dv_date_range,
     },
@@ -785,7 +784,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DATE_TIME — constraint",
         citation: "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_DATE_TIME.pattern (yyyy-mm-ddTHH:MM:SS); ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DATE_TIME.validate_constraint (master17.4 §DV_DATE_TIME, 176-row table; G-3 explicit open finding: SUT accepts the partial value the table rejects)",
+            "DV_DATE_TIME.validate_constraint (master17.4 §DV_DATE_TIME, 176-row table; explicit open finding: SUT accepts the partial value the table rejects)",
         ),
         run: run_dv_date_time_constraint,
     },
@@ -794,7 +793,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_DATE_TIME — range",
         citation: "RM 1.2.0 data_types §DV_DATE_TIME; AM 1.4 C_DATE_TIME.range; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_DATE_TIME.validate_range (master17.4 §DV_DATE_TIME; G-3 open finding: temporal enforcement)",
+            "DV_DATE_TIME.validate_range (master17.4 §DV_DATE_TIME; open finding: temporal enforcement)",
         ),
         run: run_dv_date_time_range,
     },
@@ -841,7 +840,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_URI — open",
         citation: "RM 1.2.0 data_types §DV_URI (RFC3986 validity); AM 1.4 open; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_URI.validate_open (master17.7 §DV_URI; G-3: headline is RFC3986 validity, ECC drives RM-mandatory value only)",
+            "DV_URI.validate_open (master17.7 §DV_URI; headline is RFC3986 validity, ECC drives RM-mandatory value only)",
         ),
         run: open_dv_uri,
     },
@@ -864,7 +863,7 @@ const CASES: &[Def] = &[
         title: "Validate DV_EHR_URI — open",
         citation: "RM 1.2.0 data_types §DV_EHR_URI (ehr: scheme); AM 1.4 open; ITS-REST 1.0.3 composition_create (201/422)",
         schedule: sched(
-            "DV_EHR_URI.validate_open (master17.7 §DV_EHR_URI; G-3: headline is the ehr: scheme rule, ECC drives RM-mandatory value only)",
+            "DV_EHR_URI.validate_open (master17.7 §DV_EHR_URI; headline is the ehr: scheme rule, ECC drives RM-mandatory value only)",
         ),
         run: run_dv_ehr_uri_open,
     },
@@ -1507,7 +1506,7 @@ fn run_dv_proportion_ratio_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> 
     })
 }
 
-// ── 17.3 DV_SCALE (retyped scratch leaf; G-4 RM ≥ 1.1.0) ──────────────────────
+// ── 17.3 DV_SCALE (retyped scratch leaf; RM ≥ 1.1.0) ──────────────────────────
 
 /// A `DV_SCALE` value with a coded symbol.
 fn dv_scale_value(v: f64, code: &str) -> Value {
@@ -1577,12 +1576,12 @@ fn run_dv_scale_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-// ── 17.3 DV_INTERVAL<T> — G-1 bound-declared RM-invariant probes ──────────────
+// ── 17.3 DV_INTERVAL<T> — bound-declared RM-invariant probes ──────────────────
 //
 // No base composition carries a DV_INTERVAL<T> leaf, so each case slot-retypes the
 // DV_COUNT scratch slot (items[4]) to an open DV_INTERVAL. The per-variant bound
 // constraint is inexpressible with the carried authoring machinery (see the module
-// G-1 note), so the assertion is the RM Interval invariant subset that holds for
+// DV_INTERVAL note), so the assertion is the RM Interval invariant subset that holds for
 // every bound type. `_open` cases drive the three universal Interval invariants;
 // the other cases drive lower ≤ upper. Every case declares its schedule row count.
 
@@ -1726,7 +1725,7 @@ macro_rules! iv_open {
 }
 
 /// Generate an interval non-open run fn (RM Interval `lower ≤ upper`; bound
-/// constraint declared, not asserted — G-1).
+/// constraint declared, not asserted).
 macro_rules! iv_bound {
     ($fn:ident, $tid:literal, $rows:expr, $lo:expr, $hi:expr) => {
         fn $fn<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
@@ -1921,7 +1920,7 @@ iv_bound!(
     dv_proportion(3.0, 2.0)
 );
 
-// ── 17.4 temporal value constraints (G-3 open findings until temporal enforced) ─
+// ── 17.4 temporal value constraints (open findings until temporal enforced) ─────
 //
 // Base leaves: DV_DATE items[5], DV_TIME items[8], DV_DATE_TIME items[6],
 // DV_DURATION items[11]. Each authors a temporal C_* pattern/range and commits the
@@ -2103,7 +2102,7 @@ fn run_dv_date_time_range<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// master17.4 CONT-DV_DATE_TIME-validate_constraint — the vendored `all_types`
 /// `items[6]` `DV_DATE_TIME` is constrained by a `C_DATE_TIME` full-field pattern;
-/// a year-only value violates it. G-3 explicit open finding (the SUT accepts the
+/// a year-only value violates it. Explicit open finding (the SUT accepts the
 /// partial value the 176-row table rejects) — reported, never masked.
 fn run_dv_date_time_constraint<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     Box::pin(async move {

@@ -1,8 +1,7 @@
 //! Path analysis + typing against the generated RM model
 //! (`openehr_rm::model`) — the AQL planner's oracle.
 //!
-//! The central operation is the **path split** (`docs/design/aql-engine.md`
-//! §Core insight): every identified path deterministically splits into
+//! The central operation is the **path split**: every identified path deterministically splits into
 //!
 //! 1. a sequence of **structure hops** — attribute steps whose resolved node is
 //!    a structure root (its own `node` row per [`openehr_rm::model::is_structure_root`],

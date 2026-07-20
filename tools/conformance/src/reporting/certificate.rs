@@ -391,7 +391,8 @@ mod tests {
             CaseStatus::NotApplicable,
         );
         na.message = Some("Upstream has no demographic REST API.".to_owned());
-        na.citation = "docs/plans/x1-comparison.md §2c".to_owned();
+        na.citation =
+            "no openEHR spec governs this fairness call — our own design/extension".to_owned();
         let r = results(SutKind::Foreign, vec![na]);
         let cert = render_certificate_md(&r, &Catalog::default(), Some("ACME Assessors Ltd"));
         assert!(cert.contains("| Assessor | ACME Assessors Ltd |"));

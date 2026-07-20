@@ -1,5 +1,5 @@
 //! `OBJECT_VERSION_ID` / `VERSION_TREE_ID` decoding — the identification law of
-//! the versioning core (S-01..S-06).
+//! the versioning core.
 //!
 //! Spec: `docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
 //! §"Identifying Versions" + §Syntaxes: an `OBJECT_VERSION_ID` is exactly three
@@ -132,7 +132,7 @@ pub(crate) fn object_version_id(vo_id: VoId, creating_system_id: &str, tree: Tre
 /// is the correct fold; the Turkish `I/i` caveat (master05 §Composite
 /// Identifiers and Case) does not apply to an ASCII system id.
 ///
-/// NOTE (G-09, master05 §Composite Identifiers and Case): storage keeps
+/// NOTE (master05 §Composite Identifiers and Case): storage keeps
 /// `creating_system_id` verbatim, and the DB uniqueness that also needs the
 /// case-fold is a storage-boundary concern cross-checked in
 /// `docs/spec-audit/rm-common-change-control`; versioning enforces the
@@ -155,7 +155,7 @@ pub(crate) enum VersionIdError {
         source: openehr_base::base_types::identification::lexical::IdError,
     },
     /// The `object_id` part is not a UUID (this CDR keys versioned objects by
-    /// UUID `vo_id` — S-03).
+    /// UUID `vo_id`).
     #[error("OBJECT_VERSION_ID object_id is not a UUID: {0:?}")]
     NotAUuid(String),
     /// A `version_tree_id` part does not fit the storage columns (`i32`).
@@ -408,7 +408,7 @@ mod tests {
         assert_eq!(expected_from_if_match("*").unwrap(), None);
         // A malformed `If-Match` is REJECTED (400), never silently discarded as
         // "no precondition" — ITS-REST overview §"If-Match and accidental
-        // overwrites" (the lost-update window fix, W-14 F-12).
+        // overwrites" (the lost-update window fix).
         assert!(matches!(
             expected_from_if_match("garbage"),
             Err(VersionIdError::Malformed { .. })

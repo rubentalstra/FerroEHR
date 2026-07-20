@@ -1,16 +1,14 @@
 //! The `[terminology]` section — extension-API toggle + external-server
 //! validation config.
 //!
-//! No openEHR spec governs the transport/config mechanics — our own design,
-//! grounded on `docs/terminology-validation.md` (the client) +
-//! `docs/design/terminology-server-integration.md` (the self-hostable FHIR R4
-//! TS it points at). `BASE/docs/architecture_overview/master12-terminology.adoc`
+//! No openEHR spec governs the transport/config mechanics — our own design
+//! (the client + the self-hostable FHIR R4 TS it points at).
+//! `BASE/docs/architecture_overview/master12-terminology.adoc`
 //! models the concrete backend as an external "terminology query server",
 //! which is why this config lives beside the interface realization in
 //! `service/terminology/`.
 //!
-//! A field of the one config tree ([`crate::config::EhrbaseConfig`],
-//! `docs/design/configuration.md` §3.15); no loader of its own.
+//! A field of the one config tree ([`crate::config::EhrbaseConfig`]); no loader of its own.
 //! [`TerminologyConfig`] groups the extension-API toggle (`api_enabled`) with
 //! the external-server validation config ([`ExternalTerminologyConfig`],
 //! under `[terminology.external]`).
@@ -73,8 +71,7 @@ pub struct ExternalTerminologyConfig {
     pub providers: BTreeMap<String, FhirProviderConfig>,
 }
 
-/// The kind of terminology server. Only FHIR R4 is supported
-/// (`docs/terminology-validation.md` §4).
+/// The kind of terminology server. Only FHIR R4 is supported.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProviderKind {
@@ -119,7 +116,7 @@ pub struct FhirProviderConfig {
     /// to the TS with.
     ///
     /// NOTE: `OAuth2` client-credentials + mutual-TLS to the TS
-    /// (`docs/terminology-validation.md` §3) are a follow-up on top of this
+    /// are a follow-up on top of this
     /// core `$validate-code`/`$expand`/`$subsumes`/`$lookup` provider; the
     /// field is accepted so config written for the full design parses, but no
     /// bearer token is attached yet. A configured value that would silently

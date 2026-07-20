@@ -5,19 +5,19 @@
 - **Assessor:** self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework
 - **This is NOT an official openEHR conformance certification.** No official openEHR certification program exists; this artefact is a self-assessment produced by an independent framework.
 - **Machine-computed:** every verdict below is a pure function of the attached run (`results.json`) — never hand-asserted.
-- **ECC framework version:** 3.2.0 · catalogue `inventory/ecc-catalog.tsv`
+- **ECC framework version:** 3.3.0 · catalogue `inventory/ecc-catalog.tsv`
 - **Machine record:** `results.json` (this directory)
-- **Run date:** 2026-07-20T13:12:05.443491Z
+- **Run date:** 2026-07-20T16:44:05.507018Z
 
 ## System Under Test (SUT)
 
 | | |
 |---|---|
-| Solution | ehrbase-rs ehrbase-rs 3.2.0 @ `http://localhost:8080/ehrbase/rest/openehr/v1` |
+| Solution | ehrbase-rs ehrbase-rs 3.3.0 @ `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Vendor | ehrbase-rs |
 | Assessor | self-assessment via the ehrbase-rs Conformance Catalogue (ECC) framework |
 | Infrastructure | reference corpus openEHR/specifications-CNF@33251d2a; SUT auth mode basic |
-| Date | 2026-07-20T13:12:05.443491Z |
+| Date | 2026-07-20T16:44:05.507018Z |
 
 ## Scope of Test
 
@@ -248,15 +248,15 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Content / archetype validation | ArchetypeValidation | DV_BOOLEAN.only_false_allowed (master17.1 §DV_BOOLEAN) | ECC-VAL-041 — Validate DV_BOOLEAN — only false allowed | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_IDENTIFIER.validate_all_pattern (master17.1 §DV_IDENTIFIER) | ECC-VAL-042 — Validate DV_IDENTIFIER — all pattern | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_IDENTIFIER.validate_all_list (master17.1 §DV_IDENTIFIER) | ECC-VAL-043 — Validate DV_IDENTIFIER — all list | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_TEXT.validate_open (master17.2 §DV_TEXT; G-6: heading duplicated, 2nd C_STRING.pattern table folded) | ECC-VAL-044 — Validate DV_TEXT — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_TEXT.validate_open (master17.2 §DV_TEXT; heading duplicated, 2nd C_STRING.pattern table folded) | ECC-VAL-044 — Validate DV_TEXT — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_TEXT.validate_list (master17.2 §DV_TEXT) | ECC-VAL-045 — Validate DV_TEXT — list | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_CODED_TEXT.validate_open (master17.2 §DV_CODED_TEXT) | ECC-VAL-046 — Validate DV_CODED_TEXT — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_CODED_TEXT.validate_local_codes (master17.2 §DV_CODED_TEXT) | ECC-VAL-047 — Validate DV_CODED_TEXT — local codes | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_CODED_TEXT.validate_ext_term (master17.2 §DV_CODED_TEXT; G-7: direct C_CODE_PHRASE substitutes the CONSTRAINT_REF binding path) | ECC-VAL-048 — Validate DV_CODED_TEXT — ext term | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_CODED_TEXT.validate_ext_term (master17.2 §DV_CODED_TEXT; direct C_CODE_PHRASE substitutes the CONSTRAINT_REF binding path) | ECC-VAL-048 — Validate DV_CODED_TEXT — ext term | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_ORDINAL.validate_open (master17.3 §DV_ORDINAL) | ECC-VAL-049 — Validate DV_ORDINAL — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_ORDINAL.validate_constraint (master17.3 §DV_ORDINAL) | ECC-VAL-050 — Validate DV_ORDINAL — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_SCALE.validate_open (master17.3 §DV_SCALE; G-4: RM ≥ 1.1.0) | ECC-VAL-051 — Validate DV_SCALE — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_SCALE.validate_constraint (master17.3 §DV_SCALE; G-4: RM ≥ 1.1.0, C_REAL substitute) | ECC-VAL-052 — Validate DV_SCALE — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_SCALE.validate_open (master17.3 §DV_SCALE; RM ≥ 1.1.0) | ECC-VAL-051 — Validate DV_SCALE — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_SCALE.validate_constraint (master17.3 §DV_SCALE; RM ≥ 1.1.0, C_REAL substitute) | ECC-VAL-052 — Validate DV_SCALE — constraint | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_COUNT.validate_open (master17.3 §DV_COUNT) | ECC-VAL-053 — Validate DV_COUNT — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_COUNT.validate_range (master17.3 §DV_COUNT) | ECC-VAL-054 — Validate DV_COUNT — range | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_COUNT.validate_list (master17.3 §DV_COUNT) | ECC-VAL-055 — Validate DV_COUNT — list | pass | — |
@@ -264,7 +264,7 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Content / archetype validation | ArchetypeValidation | DV_QUANTITY.validate_property (master17.3 §DV_QUANTITY) | ECC-VAL-057 — Validate DV_QUANTITY — property | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_QUANTITY.validate_property_units (master17.3 §DV_QUANTITY) | ECC-VAL-058 — Validate DV_QUANTITY — property units | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_QUANTITY.validate_property_units_mag (master17.3 §DV_QUANTITY) | ECC-VAL-059 — Validate DV_QUANTITY — property units mag | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_open (master17.3 §DV_PROPORTION; G-3: 14 kind-invariant rejects untested, RM-mandatory numerator only) | ECC-VAL-060 — Validate DV_PROPORTION — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_open (master17.3 §DV_PROPORTION; 14 kind-invariant rejects untested, RM-mandatory numerator only) | ECC-VAL-060 — Validate DV_PROPORTION — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_ratio (master17.3 §DV_PROPORTION) | ECC-VAL-061 — Validate DV_PROPORTION — ratio | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_unitary (master17.3 §DV_PROPORTION) | ECC-VAL-062 — Validate DV_PROPORTION — unitary | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_percent (master17.3 §DV_PROPORTION) | ECC-VAL-063 — Validate DV_PROPORTION — percent | pass | — |
@@ -272,56 +272,56 @@ One row per ECC case. *Conformance point* is the CNF-schedule `<SERVICE>.<operat
 | Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_integer_fraction (master17.3 §DV_PROPORTION) | ECC-VAL-065 — Validate DV_PROPORTION — integer fraction | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_any_fraction (master17.3 §DV_PROPORTION) | ECC-VAL-066 — Validate DV_PROPORTION — any fraction | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PROPORTION.validate_ratio_range (master17.3 §DV_PROPORTION; denominator C_REAL.range table not driven) | ECC-VAL-067 — Validate DV_PROPORTION — ratio range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_COUNT.validate_open (master17.3 §DV_INTERVAL<DV_COUNT>; G-1: bound C_INTEGER constraint inexpressible → RM Interval invariant triple) | ECC-VAL-068 — Validate DV_INTERVAL<DV_COUNT> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_COUNT.validate_lower_upper (master17.3; G-1: bound constraint inexpressible → RM lower ≤ upper) | ECC-VAL-069 — Validate DV_INTERVAL<DV_COUNT> — lower upper | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_COUNT.validate_lower_upper_list (master17.3; G-1: C_INTEGER.list on bounds inexpressible → RM lower ≤ upper) | ECC-VAL-070 — Validate DV_INTERVAL<DV_COUNT> — lower upper list | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_QUANTITY.validate_open (master17.3; G-1: bound C_DV_QUANTITY.list inexpressible → RM Interval invariant triple) | ECC-VAL-071 — Validate DV_INTERVAL<DV_QUANTITY> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_QUANTITY.validate_upper_lower (master17.3; G-1: bound constraint inexpressible → RM lower ≤ upper) | ECC-VAL-072 — Validate DV_INTERVAL<DV_QUANTITY> — upper lower | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE_TIME.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-073 — Validate DV_INTERVAL<DV_DATE_TIME> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_constraint (master17.3, 68-row table; G-1: C_DATE_TIME bounds inexpressible → RM lower ≤ upper) | ECC-VAL-074 — Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_range (master17.3; G-1: C_DATE_TIME.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-075 — Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-076 — Validate DV_INTERVAL<DV_DATE> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE.validate_lower_upper_constraint (master17.3; G-1: C_DATE bounds inexpressible → RM lower ≤ upper) | ECC-VAL-077 — Validate DV_INTERVAL<DV_DATE> — lower upper constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE.validate_lower_upper_range (master17.3; G-1: C_DATE.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-078 — Validate DV_INTERVAL<DV_DATE> — lower upper range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_TIME.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-079 — Validate DV_INTERVAL<DV_TIME> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_TIME.validate_lower_upper_constraint (master17.3; G-1: C_TIME bounds inexpressible → RM lower ≤ upper) | ECC-VAL-080 — Validate DV_INTERVAL<DV_TIME> — lower upper constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_TIME.validate_lower_upper_range (master17.3; G-1: C_TIME.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-081 — Validate DV_INTERVAL<DV_TIME> — lower upper range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DURATION.validate_open (master17.3; G-1: temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-082 — Validate DV_INTERVAL<DV_DURATION> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DURATION.validate_constraint (master17.3, 35-row table; G-1: C_DURATION bounds inexpressible → RM lower ≤ upper) | ECC-VAL-083 — Validate DV_INTERVAL<DV_DURATION> — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DURATION.validate_range (master17.3; G-1: C_DURATION.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-084 — Validate DV_INTERVAL<DV_DURATION> — range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_ORDINAL.validate_open (master17.3; G-1: bound constraint inexpressible → RM Interval invariant triple) | ECC-VAL-085 — Validate DV_INTERVAL<DV_ORDINAL> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_ORDINAL.validate_constraint (master17.3; G-1: C_DV_ORDINAL bounds inexpressible → RM lower ≤ upper) | ECC-VAL-086 — Validate DV_INTERVAL<DV_ORDINAL> — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_SCALE.validate_open (master17.3; G-4: RM ≥ 1.1.0; G-1: bound inexpressible → RM Interval invariant triple) | ECC-VAL-087 — Validate DV_INTERVAL<DV_SCALE> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_SCALE.validate_constraint (master17.3; G-4: RM ≥ 1.1.0; G-1: bound inexpressible → RM lower ≤ upper) | ECC-VAL-088 — Validate DV_INTERVAL<DV_SCALE> — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_open (master17.3, 18-row table; G-1: bound inexpressible → RM Interval invariant triple) | ECC-VAL-089 — Validate DV_INTERVAL<DV_PROPORTION> — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_ratio (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-090 — Validate DV_INTERVAL<DV_PROPORTION> — ratio | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_unitary (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-091 — Validate DV_INTERVAL<DV_PROPORTION> — unitary | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_percentage (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-092 — Validate DV_INTERVAL<DV_PROPORTION> — percentage | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_fraction (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-093 — Validate DV_INTERVAL<DV_PROPORTION> — fraction | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_integer_fraction (master17.3, 12-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-094 — Validate DV_INTERVAL<DV_PROPORTION> — integer fraction | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_ratio_range (master17.3, 18-row table; G-1: proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-095 — Validate DV_INTERVAL<DV_PROPORTION> — ratio range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_COUNT.validate_open (master17.3 §DV_INTERVAL<DV_COUNT>; bound C_INTEGER constraint inexpressible → RM Interval invariant triple) | ECC-VAL-068 — Validate DV_INTERVAL<DV_COUNT> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_COUNT.validate_lower_upper (master17.3; bound constraint inexpressible → RM lower ≤ upper) | ECC-VAL-069 — Validate DV_INTERVAL<DV_COUNT> — lower upper | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_COUNT.validate_lower_upper_list (master17.3; C_INTEGER.list on bounds inexpressible → RM lower ≤ upper) | ECC-VAL-070 — Validate DV_INTERVAL<DV_COUNT> — lower upper list | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_QUANTITY.validate_open (master17.3; bound C_DV_QUANTITY.list inexpressible → RM Interval invariant triple) | ECC-VAL-071 — Validate DV_INTERVAL<DV_QUANTITY> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_QUANTITY.validate_upper_lower (master17.3; bound constraint inexpressible → RM lower ≤ upper) | ECC-VAL-072 — Validate DV_INTERVAL<DV_QUANTITY> — upper lower | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE_TIME.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-073 — Validate DV_INTERVAL<DV_DATE_TIME> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_constraint (master17.3, 68-row table; C_DATE_TIME bounds inexpressible → RM lower ≤ upper) | ECC-VAL-074 — Validate DV_INTERVAL<DV_DATE_TIME> — lower upper constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE_TIME.validate_lower_upper_range (master17.3; C_DATE_TIME.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-075 — Validate DV_INTERVAL<DV_DATE_TIME> — lower upper range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-076 — Validate DV_INTERVAL<DV_DATE> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE.validate_lower_upper_constraint (master17.3; C_DATE bounds inexpressible → RM lower ≤ upper) | ECC-VAL-077 — Validate DV_INTERVAL<DV_DATE> — lower upper constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DATE.validate_lower_upper_range (master17.3; C_DATE.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-078 — Validate DV_INTERVAL<DV_DATE> — lower upper range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_TIME.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-079 — Validate DV_INTERVAL<DV_TIME> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_TIME.validate_lower_upper_constraint (master17.3; C_TIME bounds inexpressible → RM lower ≤ upper) | ECC-VAL-080 — Validate DV_INTERVAL<DV_TIME> — lower upper constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_TIME.validate_lower_upper_range (master17.3; C_TIME.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-081 — Validate DV_INTERVAL<DV_TIME> — lower upper range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DURATION.validate_open (master17.3; temporal bound inexpressible → RM Interval invariant triple) | ECC-VAL-082 — Validate DV_INTERVAL<DV_DURATION> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DURATION.validate_constraint (master17.3, 35-row table; C_DURATION bounds inexpressible → RM lower ≤ upper) | ECC-VAL-083 — Validate DV_INTERVAL<DV_DURATION> — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_DURATION.validate_range (master17.3; C_DURATION.range bounds inexpressible → RM lower ≤ upper) | ECC-VAL-084 — Validate DV_INTERVAL<DV_DURATION> — range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_ORDINAL.validate_open (master17.3; bound constraint inexpressible → RM Interval invariant triple) | ECC-VAL-085 — Validate DV_INTERVAL<DV_ORDINAL> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_ORDINAL.validate_constraint (master17.3; C_DV_ORDINAL bounds inexpressible → RM lower ≤ upper) | ECC-VAL-086 — Validate DV_INTERVAL<DV_ORDINAL> — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_SCALE.validate_open (master17.3; RM ≥ 1.1.0; bound inexpressible → RM Interval invariant triple) | ECC-VAL-087 — Validate DV_INTERVAL<DV_SCALE> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_SCALE.validate_constraint (master17.3; RM ≥ 1.1.0; bound inexpressible → RM lower ≤ upper) | ECC-VAL-088 — Validate DV_INTERVAL<DV_SCALE> — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_open (master17.3, 18-row table; bound inexpressible → RM Interval invariant triple) | ECC-VAL-089 — Validate DV_INTERVAL<DV_PROPORTION> — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_ratio (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-090 — Validate DV_INTERVAL<DV_PROPORTION> — ratio | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_unitary (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-091 — Validate DV_INTERVAL<DV_PROPORTION> — unitary | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_percentage (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-092 — Validate DV_INTERVAL<DV_PROPORTION> — percentage | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_fraction (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-093 — Validate DV_INTERVAL<DV_PROPORTION> — fraction | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_integer_fraction (master17.3, 12-row table; proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-094 — Validate DV_INTERVAL<DV_PROPORTION> — integer fraction | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_INTERVAL_DV_PROPORTION.validate_ratio_range (master17.3, 18-row table; proportion-kind bound inexpressible → RM lower ≤ upper) | ECC-VAL-095 — Validate DV_INTERVAL<DV_PROPORTION> — ratio range | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_open (master17.4 §DV_DURATION) | ECC-VAL-096 — Validate DV_DURATION — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_fields (master17.4 §DV_DURATION; G-3 open finding: temporal enforcement — SUT reject reported, never masked) | ECC-VAL-097 — Validate DV_DURATION — fields | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_range (master17.4 §DV_DURATION; G-3 open finding: temporal enforcement) | ECC-VAL-098 — Validate DV_DURATION — range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_fields_range (master17.4 §DV_DURATION; G-3 open finding: temporal enforcement) | ECC-VAL-099 — Validate DV_DURATION — fields range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_TIME.validate_open (master17.4 §DV_TIME; G-3: ISO8601-validity rows not driven, RM-mandatory value only) | ECC-VAL-100 — Validate DV_TIME — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_TIME.validate_constraint (master17.4 §DV_TIME, 70-row table; G-3 open finding: temporal enforcement) | ECC-VAL-101 — Validate DV_TIME — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_TIME.validate_range (master17.4 §DV_TIME, 200-row table — largest; G-2/G-3 open finding: temporal enforcement) | ECC-VAL-102 — Validate DV_TIME — range | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DATE.validate_open (master17.4 §DV_DATE; G-3: ISO8601-validity rows not driven, RM-mandatory value only) | ECC-VAL-103 — Validate DV_DATE — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DATE.validate_constraint (master17.4 §DV_DATE; G-3 open finding: temporal enforcement) | ECC-VAL-104 — Validate DV_DATE — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DATE.validate_range (master17.4 §DV_DATE; G-3 open finding: temporal enforcement) | ECC-VAL-105 — Validate DV_DATE — range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_fields (master17.4 §DV_DURATION; open finding: temporal enforcement — SUT reject reported, never masked) | ECC-VAL-097 — Validate DV_DURATION — fields | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_range (master17.4 §DV_DURATION; open finding: temporal enforcement) | ECC-VAL-098 — Validate DV_DURATION — range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DURATION.validate_fields_range (master17.4 §DV_DURATION; open finding: temporal enforcement) | ECC-VAL-099 — Validate DV_DURATION — fields range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_TIME.validate_open (master17.4 §DV_TIME; ISO8601-validity rows not driven, RM-mandatory value only) | ECC-VAL-100 — Validate DV_TIME — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_TIME.validate_constraint (master17.4 §DV_TIME, 70-row table; open finding: temporal enforcement) | ECC-VAL-101 — Validate DV_TIME — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_TIME.validate_range (master17.4 §DV_TIME, 200-row table — largest; open finding: temporal enforcement) | ECC-VAL-102 — Validate DV_TIME — range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DATE.validate_open (master17.4 §DV_DATE; ISO8601-validity rows not driven, RM-mandatory value only) | ECC-VAL-103 — Validate DV_DATE — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DATE.validate_constraint (master17.4 §DV_DATE; open finding: temporal enforcement) | ECC-VAL-104 — Validate DV_DATE — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DATE.validate_range (master17.4 §DV_DATE; open finding: temporal enforcement) | ECC-VAL-105 — Validate DV_DATE — range | pass | — |
 | Content / archetype validation | ArchetypeValidation | POST /ehr/{ehr_id}/composition | ECC-VAL-119 — Validate DV_DATE — day disallowed by C_DATE pattern (defective vendored fixture rejected) | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_DATE_TIME.validate_open (master17.4 §DV_DATE_TIME; RM-mandatory value only) | ECC-VAL-106 — Validate DV_DATE_TIME — open | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DATE_TIME.validate_constraint (master17.4 §DV_DATE_TIME, 176-row table; G-3 explicit open finding: SUT accepts the partial value the table rejects) | ECC-VAL-107 — Validate DV_DATE_TIME — constraint | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_DATE_TIME.validate_range (master17.4 §DV_DATE_TIME; G-3 open finding: temporal enforcement) | ECC-VAL-108 — Validate DV_DATE_TIME — range | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DATE_TIME.validate_constraint (master17.4 §DV_DATE_TIME, 176-row table; explicit open finding: SUT accepts the partial value the table rejects) | ECC-VAL-107 — Validate DV_DATE_TIME — constraint | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_DATE_TIME.validate_range (master17.4 §DV_DATE_TIME; open finding: temporal enforcement) | ECC-VAL-108 — Validate DV_DATE_TIME — range | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PARSABLE.validate_open (master17.6 §DV_PARSABLE; formalism-mandatory row not driven) | ECC-VAL-109 — Validate DV_PARSABLE — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_PARSABLE.validate_value_formalism (master17.6 §DV_PARSABLE; value C_STRING rows not driven) | ECC-VAL-110 — Validate DV_PARSABLE — value formalism | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_MULTIMEDIA.validate_open (master17.6 §DV_MULTIMEDIA; size-mandatory + media-type-codeset rows not driven) | ECC-VAL-111 — Validate DV_MULTIMEDIA — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_MULTIMEDIA.validate_media_type (master17.6 §DV_MULTIMEDIA; size C_INTEGER half of the table not driven) | ECC-VAL-112 — Validate DV_MULTIMEDIA — media type | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_URI.validate_open (master17.7 §DV_URI; G-3: headline is RFC3986 validity, ECC drives RM-mandatory value only) | ECC-VAL-113 — Validate DV_URI — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_URI.validate_open (master17.7 §DV_URI; headline is RFC3986 validity, ECC drives RM-mandatory value only) | ECC-VAL-113 — Validate DV_URI — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_URI.validate_pattern (master17.7 §DV_URI) | ECC-VAL-114 — Validate DV_URI — pattern | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_URI.validate_list (master17.7 §DV_URI) | ECC-VAL-115 — Validate DV_URI — list | pass | — |
-| Content / archetype validation | ArchetypeValidation | DV_EHR_URI.validate_open (master17.7 §DV_EHR_URI; G-3: headline is the ehr: scheme rule, ECC drives RM-mandatory value only) | ECC-VAL-116 — Validate DV_EHR_URI — open | pass | — |
+| Content / archetype validation | ArchetypeValidation | DV_EHR_URI.validate_open (master17.7 §DV_EHR_URI; headline is the ehr: scheme rule, ECC drives RM-mandatory value only) | ECC-VAL-116 — Validate DV_EHR_URI — open | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_EHR_URI.validate_pattern (master17.7 §DV_EHR_URI) | ECC-VAL-117 — Validate DV_EHR_URI — pattern | pass | — |
 | Content / archetype validation | ArchetypeValidation | DV_EHR_URI.validate_list (master17.7 §DV_EHR_URI) | ECC-VAL-118 — Validate DV_EHR_URI — list | pass | — |
 | Demographic service | PartyOperations | POST /demographic/person | ECC-DEM-001 — Demographic person create | pass | — |

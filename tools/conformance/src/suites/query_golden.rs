@@ -1,5 +1,5 @@
 //! QUERY / AQL golden-diff corpus cases + the golden-result normalizer
-//! (area `Qry`; `docs/design/conformance/07-querying.md`).
+//! (area `Qry`).
 //!
 //! This module owns two things:
 //!
@@ -12,14 +12,14 @@
 //!    whole-number formatting,
 //!    `meta._schema_version`) carry an edition-rung comment — they suppress a
 //!    *development-edition* wire shape and would be ladder assertions in a full
-//!    `RESULT_SET` wire adapter (register 90, not yet exposed).
+//!    `RESULT_SET` wire adapter (not yet exposed).
 //!
 //! 2. **The golden-diff cases** ([`entries`]) — the eight carried per-group ×
 //!    per-DB-state cases (legacy slugs `qry/corpus-{a-d}-{empty,loaded}-db`),
 //!    plus the ten **dialect** cases broken out so the vendored-data defects can
 //!    be adjudicated per-golden.
 //!
-//! ## Golden-dialect handling — register 07 G-3 (adjudications OUT of code)
+//! ## Golden-dialect handling (adjudications OUT of code)
 //!
 //! The two dialect defects are **NOT** dispositioned in case bodies. They are
 //! committed in `adjudications/ecc-own.toml` and applied by the runner
@@ -62,10 +62,9 @@ const CORPUS_CITATION: &str = "AQL 1.1 + the vendored golden RESULT_SETs; ITS-RE
 
 /// A normalization rule that can suppress a difference between a served
 /// `RESULT_SET` and a vendored golden. Each variant documents exactly one class
-/// of legitimately-ignored difference (design §6). Rules marked
-/// **VERSION-SPECIFIC** suppress a development-edition wire shape (register 07
-/// G-4) and would be edition-ladder assertions in a full `RESULT_SET` wire
-/// adapter.
+/// of legitimately-ignored difference. Rules marked
+/// **VERSION-SPECIFIC** suppress a development-edition wire shape and would be
+/// edition-ladder assertions in a full `RESULT_SET` wire adapter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Rule {
     /// The `meta` envelope (`_type`, `_created`, `_executed_aql`,
@@ -626,7 +625,7 @@ async fn run_golden_group(
             continue; // a golden with no paired query fixture
         };
         // Dialect goldens are asserted by their dedicated cases + committed
-        // adjudications (register 07 G-3); the group routes them out.
+        // adjudications; the group routes them out.
         if is_dialect_routed(&aql) || unrunnable(&aql) {
             skipped += 1;
             continue;

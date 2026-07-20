@@ -1,6 +1,6 @@
-//! The register-00 workload model: a ward of patients driven through a
+//! The workload model: a ward of patients driven through a
 //! simulated clinical day, expanded into a deterministic open-loop arrival
-//! schedule (`docs/design/benchmark/00-workload-model.md`).
+//! schedule.
 //!
 //! [`build`] is the single entry point: given a [`WorkloadSpec`] it produces a
 //! [`Workload`] — the time-sorted [`PlannedOp`]s (payloads pre-rendered), the
@@ -18,7 +18,7 @@ use crate::render;
 use crate::{BenchError, PlannedOp, Profile, TemplateKind};
 use ward::Ward;
 
-/// The inputs that fully determine a workload (register 00 §1/§3).
+/// The inputs that fully determine a workload.
 #[derive(Debug, Clone)]
 pub struct WorkloadSpec {
     /// The time-compression profile.
@@ -85,9 +85,9 @@ pub fn build(spec: &WorkloadSpec) -> Result<Workload, BenchError> {
 }
 
 /// Build a **capacity** workload: the identical clinical mix at `spec`'s load
-/// factor, compressed onto a short measurement window (register 01 §3 — the
-/// knee/saturation series; `docs/design/benchmarking.md` §2.2 open-loop
-/// short-fixed-duration steps). Only the *clock* changes: the per-patient-day
+/// factor, compressed onto a short measurement window (the knee/saturation
+/// series: open-loop, ramping, fixed short duration per step). Only the *clock*
+/// changes: the per-patient-day
 /// rate shape (steady daily-mean rates × `spec.load_factor`) is unchanged, so
 /// the whole simulated day's operation count is packed into `step_window` — a
 /// shorter window (or a higher load factor) raises the offered request rate.
@@ -138,8 +138,8 @@ pub fn build_capacity(
     })
 }
 
-/// The `(window, warmup)` timing for a profile (register 00 §3; the warmup is a
-/// fixed floor inside the window, discarded symmetrically per register 01 §1).
+/// The `(window, warmup)` timing for a profile (the warmup is a
+/// fixed floor inside the window, discarded symmetrically).
 #[must_use]
 pub fn profile_timing(profile: Profile) -> (Duration, Duration) {
     match profile {

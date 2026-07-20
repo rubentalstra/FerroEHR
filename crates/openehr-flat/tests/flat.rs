@@ -224,8 +224,8 @@ fn flat_roundtrip_stable() {
         paired - stable
     );
     // Every paired composition's `from_flat` output must deserialise as a
-    // canonical `openehr-rm` Composition (P14 PR-C closed the INSTRUCTION /
-    // ACTIVITY / INTERVAL_EVENT / DV_MULTIMEDIA / DV_PARSABLE structural gaps).
+    // canonical `openehr-rm` Composition (the INSTRUCTION / ACTIVITY /
+    // INTERVAL_EVENT / DV_MULTIMEDIA / DV_PARSABLE structural gaps are closed).
     assert!(
         valid_rm == paired,
         "{}/{paired} `from_flat` outputs did not deserialise as openehr-rm Composition: {invalid_rm:?}",
@@ -299,7 +299,7 @@ fn demo_vitals_flat_key_shape() {
     );
 }
 
-// ── closed-gap assertions (P14 PR-C) ──────────────────────────────────────────
+// ── closed-gap assertions ─────────────────────────────────────────────────────
 
 fn load(comp_file: &str) -> Value {
     let text = std::fs::read_to_string(composition_dir().join(comp_file))

@@ -47,7 +47,7 @@ pub struct SubjectVariable {
     /// `frame_path [1]` — path within the frame result at which the value
     /// sits. NOTE: the SM leaves the semantics undefined ("Path within
     /// `last_frame` result"); the documented selector grammar lives with the
-    /// extraction engine (`docs/design/sm-platform/10-subject-proxy.md` §2.2).
+    /// extraction engine.
     pub frame_path: String,
     /// `history: List<VARIABLE_SAMPLE> [0..1]` — "Samples constituting the
     /// retrieve history of this variable." Read-model: newest first,

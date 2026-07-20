@@ -1,4 +1,4 @@
-//! CONTRIBUTION classify + commit orchestration + retrieval (S-16..S-19).
+//! CONTRIBUTION classify + commit orchestration + retrieval.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Contributions,
 //! §Committal and Audits + `master08-versioning.adoc` §Managing Changes. A
@@ -191,8 +191,8 @@ struct PlannedVersion {
 /// [`classify`]; the object kind from the payload `_type` (create) or the
 /// stored object (modify/delete).
 ///
-/// G-6 (register 03 — SM `i_ehr_contribution.adoc` §`commit_contribution`
-/// `Pre_has_ehr`): the target EHR must exist before committing, so a create-only
+/// SM `i_ehr_contribution.adoc` §`commit_contribution`
+/// `Pre_has_ehr`: the target EHR must exist before committing, so a create-only
 /// CONTRIBUTION to a missing EHR is a clean `NotFound`, not a storage FK error.
 ///
 /// # Errors

@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! End-to-end tests for version signing (`VERSION.signature`, RM common
-//! §"Digital Signature"; design `docs/design/version-signing.md` §6.3–6.4)
+//! §"Digital Signature")
 //! against a real `PostgreSQL` 18 (shared testkit harness).
 //!
 //! The strongest assertion (§6.3): the digest recomputes from the **served**
@@ -429,7 +429,7 @@ async fn canonical_xml_carries_the_signature() {
 }
 
 /// A service with server-side signing DISABLED — the common high-throughput
-/// config (P20 checklist item 20). With signing off the `audit → sign → version`
+/// config. With signing off the `audit → sign → version`
 /// dependency vanishes, so the commit path folds `audit`, `contribution` and
 /// `vo_version` into one statement; this test proves the folded path preserves
 /// the RM common master06 versioning semantics byte-for-byte and stores no
@@ -523,7 +523,7 @@ async fn signing_disabled_folds_commit_and_preserves_master06_semantics() {
     }
 
     // DELETE → folded path (523|deleted|, no node rows); the current version
-    // then resolves to an empty body (204, F-02-01), never 404.
+    // then resolves to an empty body (204), never 404.
     let ovid_v2_id: ObjectVersionId = ovid_v2.parse().expect("ovid");
     svc.delete_composition(ehr_uuid, &ovid_v2_id)
         .await

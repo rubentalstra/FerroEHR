@@ -325,7 +325,7 @@ async fn opt_upload_has_get_list_match_delete() {
 /// `parameters/query/filter_template_id.yaml` — "supports wildcards `*`";
 /// `master02-overview.adoc` §List Handling). Two OPTs are uploaded through the
 /// wire-shaped `DefinitionAdapter`; the list must honour the `template_id` glob
-/// and the `offset`/`fetch` window (the G-1 gap: previously every param was
+/// and the `offset`/`fetch` window (previously every param was
 /// dropped and the full set returned).
 #[tokio::test]
 async fn template_adl14_list_filters_and_paginates() {

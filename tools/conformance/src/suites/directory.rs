@@ -9,17 +9,17 @@
 //! `GET` whose 200/404 is the boolean; `*_at_time` is `GET
 //! /directory?version_at_time=`; `*_at_version` and `get_versioned_directory`
 //! are `GET /directory/{version_uid}` (the tested OAS exposes no
-//! `versioned_directory` resource — verified against `ehr-codegen.openapi.yaml`;
-//! register 06 G-3). Wire ids come only from [`crate::wire::ids`]; there are no
-//! silent id fallbacks (register 06 G-4). If-Match negatives derive a
+//! `versioned_directory` resource — verified against `ehr-codegen.openapi.yaml`).
+//! Wire ids come only from [`crate::wire::ids`]; there are no
+//! silent id fallbacks. If-Match negatives derive a
 //! syntactically valid but nonexistent `OBJECT_VERSION_ID` from an OBSERVED id
 //! ([`crate::suites::support::nonexistent_version_like`]) — never a system-id
 //! literal.
 //!
-//! `get_directory_at_time` selection (G.5/G.8) is exercised for real: v1 and v2
+//! `get_directory_at_time` selection is exercised for real: v1 and v2
 //! are created with a captured instant strictly between them, and the
 //! between-instant query MUST return v1 (temporal selection is normative-
-//! invariant; the timestamp format is RFC3339 UTC — register 06 G-1).
+//! invariant; the timestamp format is RFC3339 UTC).
 
 use std::time::Duration;
 
@@ -54,7 +54,7 @@ const V2_NAME: &str = "conformance-dir-v2";
 
 /// Absent-directory ladder for update/delete: non-existent directory → 404
 /// (`directory_update`/`directory_delete` `404_unknown_ehr_id`); 412 the
-/// precondition-failed form some editions return (register 06 G-7).
+/// precondition-failed form some editions return.
 const ABSENT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 404), (Edition::Release103, 412)];
 
 /// The registered master09 DIRECTORY cases.
@@ -66,8 +66,8 @@ const ABSENT_RUNGS: &[(Edition, u16)] = &[(Edition::Development, 404), (Edition:
 pub fn entries() -> Vec<CaseEntry> {
     vec![
         // ── has_directory (master09 §C) — 200 has / 404 not; the false/error
-        //    trichotomy collapses to 200/404 by element-2 mapping (register 06
-        // G-5); the native ehrbase-sm surface keeps the distinction.
+        //    trichotomy collapses to 200/404 by element-2 mapping;
+        //    the native ehrbase-sm surface keeps the distinction.
         entry(
             "dir/has-directory-empty-ehr",
             "Directory existence check — empty EHR",
@@ -95,7 +95,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Compare::None,
             run_has_dir_bad,
         ),
-        // ── has_path (master09 §D) — assert BOTH branches (register 06 G-2) ────
+        // ── has_path (master09 §D) — assert BOTH branches ──────────────────────
         entry(
             "dir/has-path-ehr-root-directory",
             "Directory path existence check — EHR root directory",
@@ -184,7 +184,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get directory — directory with structure",
             "I_EHR_DIRECTORY.get_directory-directory_with_structure (master09 §get_directory)",
             B_DIR,
-            "master09 §get_directory directory_with_structure (return the full structure); RM ehr master04 §Folders — body fidelity (register 06 G-6)",
+            "master09 §get_directory directory_with_structure (return the full structure); RM ehr master04 §Folders — body fidelity",
             Compare::Superset,
             run_get_dir_structure,
         ),
@@ -268,7 +268,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Directory version existence check — directory with two versions",
             "I_EHR_DIRECTORY.has_directory_version-directory_with_two_versions (master09 §has_directory_version)",
             B_VER,
-            "master09 §has_directory_version directory_with_two_versions (BOTH versions →true; register 06 G-2)",
+            "master09 §has_directory_version directory_with_two_versions (BOTH versions →true)",
             Compare::None,
             run_has_ver_present,
         ),
@@ -296,7 +296,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get directory at time — EHR with directory versions",
             "I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions (master09 §get_directory_at_time)",
             B_DIR,
-            "master09 §get_directory_at_time ehr_with_directory_versions (before→empty; between v1/v2→v1; current→v2 — register 06 G-1)",
+            "master09 §get_directory_at_time ehr_with_directory_versions (before→empty; between v1/v2→v1; current→v2)",
             Compare::None,
             run_at_time_versions,
         ),
@@ -332,7 +332,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get directory at time — multiple versions first",
             "I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first (master09 §get_directory_at_time)",
             B_DIR,
-            "master09 §get_directory_at_time multiple_versions_first (time AFTER v1 but BEFORE v2 must return v1 — register 06 G-1, highest priority)",
+            "master09 §get_directory_at_time multiple_versions_first (time AFTER v1 but BEFORE v2 must return v1, highest priority)",
             Compare::None,
             run_at_time_first,
         ),
@@ -351,7 +351,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get directory at version — directory with two versions",
             "I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions (master09 §get_directory_at_version)",
             B_VER,
-            "master09 §get_directory_at_version directory_with_two_versions (v1 uid→v1, v2 uid→v2; body fidelity, register 06 G-2/G-6)",
+            "master09 §get_directory_at_version directory_with_two_versions (v1 uid→v1, v2 uid→v2; body fidelity)",
             Compare::Superset,
             run_at_version_two,
         ),
@@ -364,7 +364,7 @@ pub fn entries() -> Vec<CaseEntry> {
             Compare::None,
             run_at_version_empty,
         ),
-        // ── get_versioned_directory (master09 §L) — Versioning (register 06 G-3):
+        // ── get_versioned_directory (master09 §L) — Versioning:
         //    the tested OAS exposes no versioned_directory resource, so this is
         //    rebound to GET /directory/{version_uid}; L.2 approximates the
         //    "references the two versions" container semantics by asserting BOTH
@@ -383,7 +383,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Get versioned directory — directory with two versions",
             "I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions (master09 §get_versioned_directory)",
             B_VER,
-            "master09 §get_versioned_directory directory_with_two_versions (references the two versions → both reachable; register 06 G-3); RM common master06 §VERSIONED_OBJECT",
+            "master09 §get_versioned_directory directory_with_two_versions (references the two versions → both reachable); RM common master06 §VERSIONED_OBJECT",
             Compare::Superset,
             run_versioned_two,
         ),
@@ -402,7 +402,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Update directory — empty EHR",
             "I_EHR_DIRECTORY.update_directory-empty_ehr (master09 §update_directory)",
             B_UPDATE,
-            "master09 §update_directory empty_ehr (no directory → error); ITS-REST directory_update 404 (412 If-Match form; register 06 G-7)",
+            "master09 §update_directory empty_ehr (no directory → error); ITS-REST directory_update 404 (412 If-Match form)",
             Compare::None,
             run_update_empty,
         ),
@@ -411,7 +411,7 @@ pub fn entries() -> Vec<CaseEntry> {
             "Delete directory — empty EHR",
             "I_EHR_DIRECTORY.delete_directory-empty_ehr (master09 §delete_directory)",
             B_DELETE,
-            "master09 §delete_directory empty_ehr (no directory → error); ITS-REST directory_delete 404 (412 If-Match form; register 06 G-7)",
+            "master09 §delete_directory empty_ehr (no directory → error); ITS-REST directory_delete 404 (412 If-Match form)",
             Compare::None,
             run_delete_empty,
         ),
@@ -469,7 +469,7 @@ fn entry(
 }
 
 /// A version-read case tagged [`Capability::Versioning`] (CORE) so the
-/// versioned-directory reads evidence CORE claimability (register 06 §L / D5).
+/// versioned-directory reads evidence CORE claimability.
 fn entry_ver(
     id: &'static str,
     title: &'static str,
@@ -598,7 +598,7 @@ async fn get_dir_version(
 
 /// Create an EHR and its root directory (named [`V1_NAME`]); return
 /// `(ehr_id, v1_version_uid)`. The version uid comes from [`ids::version_uid`]
-/// (`ETag` preferred) with no silent fallback (register 06 G-4).
+/// (`ETag` preferred) with no silent fallback.
 async fn ehr_with_directory(ctx: &RunContext<'_>) -> Result<(String, String), CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
     let resp = create_directory(ctx, &ehr_id, &folder_named(V1_NAME)?).await?;
@@ -618,7 +618,7 @@ async fn two_versions(ctx: &RunContext<'_>) -> Result<(String, String, String), 
 
 /// The two-version directory plus a `t_before` (pre-creation) and a `t_between`
 /// (strictly after v1, strictly before v2) RFC3339-UTC instant — the temporal-
-/// selection fixture (register 06 G-1). The ~1.5s gaps make the instants
+/// selection fixture. The ~1.5s gaps make the instants
 /// unambiguously ordered against the server clock (the SUT is host-colocated).
 struct Timed {
     ehr_id: String,
@@ -650,7 +650,7 @@ async fn two_versions_timed(ctx: &RunContext<'_>) -> Result<Timed, CaseError> {
 
 /// A syntactically valid but nonexistent `OBJECT_VERSION_ID`, derived from an
 /// observed id (a throwaway directory create) so the SUT's own system id + tree
-/// id are reused — no literals (register 06 G-4).
+/// id are reused — no literals.
 async fn fake_version(ctx: &RunContext<'_>) -> Result<String, CaseError> {
     let ehr_id = support::create_ehr(ctx).await?;
     let resp = create_directory(ctx, &ehr_id, &folder_named(V1_NAME)?).await?;
@@ -715,7 +715,7 @@ fn run_has_dir_bad<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-// ── has_path (master09 §D) — both branches (register 06 G-2) ─────────────────
+// ── has_path (master09 §D) — both branches ───────────────────────────────────
 
 fn run_has_path_root<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
@@ -752,7 +752,7 @@ fn run_has_path_folder<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
                 CaseError::Assertion(format!("has_path {p:?} (expected absent): {e}"))
             })?;
         }
-        // 5 of the schedule's 12-row path table driven (register 06 G-2 bound).
+        // 5 of the schedule's 12-row path table driven (coverage bound).
         Ok(DataSetReport {
             passed: 5,
             total: 5,
@@ -828,7 +828,7 @@ fn run_get_root<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// F.3 — the returned tree must carry the committed structure (register 06 G-6):
+/// F.3 — the returned tree must carry the committed structure:
 /// every committed top-level sub-FOLDER name is present in the response.
 fn run_get_dir_structure<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
@@ -877,7 +877,7 @@ fn run_at_time_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 }
 
 /// G.5 — the three-point temporal selection: before creation → empty; between v1
-/// and v2 → v1; current → v2 (register 06 G-1).
+/// and v2 → v1; current → v2.
 fn run_at_time_versions<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let d = two_versions_timed(ctx).await?;
@@ -957,7 +957,7 @@ fn run_at_time_empty_ehr_empty_time<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'
 }
 
 /// G.8 — highest-priority temporal fix: a time AFTER v1 but BEFORE v2 must
-/// return v1 (register 06 G-1).
+/// return v1.
 fn run_at_time_first<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let d = two_versions_timed(ctx).await?;
@@ -984,7 +984,7 @@ fn run_has_ver_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// J.2 — BOTH versions exist → 200 (register 06 G-2).
+/// J.2 — BOTH versions exist → 200.
 fn run_has_ver_present<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let (ehr_id, v1, v2) = two_versions(ctx).await?;
@@ -1021,8 +1021,7 @@ fn run_at_version_bad<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-/// K.2 — v1 uid returns v1 content, v2 uid returns v2 content (register 06
-/// G-2/G-6 body fidelity).
+/// K.2 — v1 uid returns v1 content, v2 uid returns v2 content (body fidelity).
 fn run_at_version_two<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let (ehr_id, v1, v2) = two_versions(ctx).await?;
@@ -1050,7 +1049,7 @@ fn run_at_version_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     })
 }
 
-// ── get_versioned_directory (master09 §L) — rebound (register 06 G-3) ────────
+// ── get_versioned_directory (master09 §L) — rebound ──────────────────────────
 
 fn run_versioned_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
@@ -1064,7 +1063,7 @@ fn run_versioned_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 
 /// L.2 — approximate the `VERSIONED_OBJECT` "references the two versions" semantics
 /// by asserting BOTH versions are reachable and return their own content
-/// (register 06 G-3 — the OAS has no `versioned_directory` resource to drive).
+/// (the OAS has no `versioned_directory` resource to drive).
 fn run_versioned_two<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         let (ehr_id, v1, v2) = two_versions(ctx).await?;
@@ -1114,7 +1113,7 @@ fn run_update_bad_ehr<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
 fn run_update_empty<'a>(ctx: &'a RunContext<'a>) -> CaseFuture<'a> {
     case!({
         // EHR exists but has no directory; the If-Match names a nonexistent
-        // version → non-existent directory (register 06 G-7).
+        // version → non-existent directory.
         let ehr_id = support::create_ehr(ctx).await?;
         let fake = fake_version(ctx).await?;
         let resp = update_directory(ctx, &ehr_id, &folder()?, &fake).await?;

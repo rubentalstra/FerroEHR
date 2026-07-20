@@ -1,5 +1,5 @@
 //! The one server configuration tree — `ehrbase.toml` + `EHRBASE_*` env
-//! overrides (`docs/design/configuration.md`).
+//! overrides.
 //!
 //! No openEHR spec governs configuration — this is entirely our own design.
 //! [`EhrbaseConfig`] is the single serde root; each section is owned by the
@@ -8,8 +8,7 @@
 //! loaders — no figment, no per-subsystem `EHRBASE_*_CONFIG` file pointers.
 //!
 //! Precedence (lowest→highest): built-in `Default` impls, the config file, the
-//! `EHRBASE_*` environment (`__` = nesting, `docs/design/configuration.md`
-//! §P-4), then `--set key=value` overrides. Two conventional aliases sit below
+//! `EHRBASE_*` environment (`__` = nesting), then `--set key=value` overrides. Two conventional aliases sit below
 //! their `EHRBASE_` forms within the env layer: `DATABASE_URL` → `db.url`,
 //! `RUST_LOG` → `log.filter`.
 //!

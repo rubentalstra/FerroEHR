@@ -1,4 +1,4 @@
-//! The generated human report: `REPORT.md` (register 01 §5 layout).
+//! The generated human report: `REPORT.md`.
 //!
 //! environment → per-class latency table → throughput/knee → resource
 //! efficiency → storage → cold start → limitations → reproduce-it. Generated
@@ -28,7 +28,7 @@ pub fn render(results: &Results) -> String {
 fn header(m: &mut String, r: &Results) {
     m.push_str(&format!("# Benchmark report — {}\n\n", r.sut.product_label));
     m.push_str(&format!(
-        "> Generated from `results.json` (never hand-typed). Workload **{}** · scale **{}** · ward **{}** · load factor **{}** · seed `{}`. Latencies are microseconds, coordinated-omission-corrected against planned send times. Methodology: `docs/design/benchmarking.md`; workload: `docs/design/benchmark/00-workload-model.md`.\n\n",
+        "> Generated from `results.json` (never hand-typed). Workload **{}** · scale **{}** · ward **{}** · load factor **{}** · seed `{}`. Latencies are microseconds, coordinated-omission-corrected against planned send times.\n\n",
         r.workload.profile, r.workload.scale, r.workload.ward_size, r.workload.load_factor, r.workload.seed
     ));
 }
@@ -93,7 +93,7 @@ fn throughput(m: &mut String, r: &Results) {
     let t = &r.throughput;
     m.push_str("## 3. Throughput\n\n");
     m.push_str(&format!(
-        "Sustained **{}** over a {:.0} s window ({} measured requests, error rate {:.3}%). The knee/saturation series (register 01 §3) is the multi-run publication step.\n\n",
+        "Sustained **{}** over a {:.0} s window ({} measured requests, error rate {:.3}%). The knee/saturation series is the multi-run publication step.\n\n",
         super::fmt_rate(t.rps), t.window_s, t.requests, t.error_rate * 100.0
     ));
     events_table(m, r);

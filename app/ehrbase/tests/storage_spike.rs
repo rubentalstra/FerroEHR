@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! P10 storage spike: measure the candidate greenfield schema on
+//! Storage spike: measure the candidate greenfield schema on
 //! a real `PostgreSQL` 18 before committing to migrations.
 //!
 //! What it measures (the storage design's open questions):
@@ -101,7 +101,7 @@ BEGIN
         WHEN 'DV_DATE_TIME' THEN
             v := dv->>'value';
             -- deterministic: parse via to_timestamp on a normalized form;
-            -- partial values are padded (spike-grade; spec formula at P10 final)
+            -- partial values are padded (spike-grade)
             IF length(v) = 4 THEN v := v || '-01-01T00:00:00Z'; END IF;
             IF length(v) = 7 THEN v := v || '-01T00:00:00Z'; END IF;
             IF length(v) = 10 THEN v := v || 'T00:00:00Z'; END IF;
@@ -350,7 +350,7 @@ async fn timed_scalar(pool: &PgPool, label: &str, sql: &'static str, report: &mu
 }
 
 #[tokio::test]
-#[ignore = "P10 storage spike — run explicitly with --run-ignored all"]
+#[ignore = "storage spike — run explicitly with --run-ignored all"]
 async fn storage_spike() {
     let scale: usize = std::env::var("SPIKE_SCALE")
         .ok()
@@ -382,7 +382,7 @@ async fn storage_spike() {
     .await
     .expect("coarse table");
 
-    let mut report = String::from("\n===== P10 STORAGE SPIKE =====\n");
+    let mut report = String::from("\n===== STORAGE SPIKE =====\n");
     let corpus = corpus();
     writeln!(
         report,

@@ -175,7 +175,7 @@ pub(crate) struct SigningCtx<'a> {
 /// `EHR_ACCESS` cache invalidation (EHR register), committer default (EHR
 /// register). `crate::service::EhrbaseService` implements it; versioning owns
 /// only the change-set decision logic. `default_committer` is the EHR worker's
-/// `committer()`; `ensure_ehr_exists` closes G-6 (SM `i_ehr_contribution.adoc`
+/// `committer()`; `ensure_ehr_exists` closes the `Pre_has_ehr` check (SM `i_ehr_contribution.adoc`
 /// §`commit_contribution` `Pre_has_ehr`); `ensure_content_writable` is the
 /// `EHR_STATUS` `is_modifiable` guard.
 ///

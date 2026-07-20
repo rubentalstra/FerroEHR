@@ -94,7 +94,7 @@ pub(super) async fn run(
                 .composition_original_version(ehr_id, ovid)
                 .await?;
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML; carries the
-            // version `<signature>` (ECC-SIG-001, version-signing.md §4.4).
+            // version `<signature>` (ECC-SIG-001).
             Ok(negotiate::respond_rm::<OriginalVersion<Composition>>(
                 h,
                 ok,

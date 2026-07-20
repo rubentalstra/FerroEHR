@@ -9,7 +9,7 @@
 //! (`AppConfig::fhir_api_enabled`), the starter-scope `501`, the inbound
 //! `POST /fhir/r4/{resourceType}` outcomes, the `/admin/fhir_mapping` CRUD, and
 //! the FHIR `OperationOutcome` error shape — driven through the assembled router
-//! over the **real** `EhrbaseService` on a real Postgres database (W-14 B+C: the
+//! over the **real** `EhrbaseService` on a real Postgres database (the
 //! scripted `Mock` is gone; the mapping CRUD persists to the real `fhir_mapping`
 //! table, whose `template_id` is a foreign key into the template store).
 //!
@@ -256,7 +256,7 @@ async fn ingest_condition_no_mapping_is_404() {
 scripted a committed COMPOSITION; a real 201 requires an enabled mapping whose \
 entry rules map a raw Observation onto a valid composition end-to-end (template \
 + mapping definition + transform), which is a separate integration fixture. \
-Re-target once such a fixture exists. (W-14 report)"]
+Re-target once such a fixture exists."]
 async fn ingest_success_is_201_with_location() {
     let obs = json!({
         "resourceType": "Observation",
@@ -279,7 +279,7 @@ async fn ingest_success_is_201_with_location() {
 #[ignore = "needs a verified FHIR-mapping→composition transform fixture that \
 produces a validator-rejected composition (422). The Mock scripted the rejection; \
 reproducing it requires a real mapping whose transform yields an invalid \
-composition. Re-target once such a fixture exists. (W-14 report)"]
+composition. Re-target once such a fixture exists."]
 async fn ingest_validation_rejection_is_422_with_validator_message() {
     let obs = json!({
         "resourceType": "Observation",

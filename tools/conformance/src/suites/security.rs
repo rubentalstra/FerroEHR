@@ -1,5 +1,5 @@
-//! SECURITY (authentication) cases — the cross-cutting register
-//! (`docs/design/conformance/11-crosscutting.md` §Authentication).
+//! SECURITY (authentication) cases — the cross-cutting Authentication
+//! capability.
 //!
 //! There is **no CNF schedule chapter** for security, and
 //! `master03-profiles.adoc` has **no Authentication capability row** — openEHR
@@ -7,12 +7,12 @@
 //! are [`ScheduleTrace::EccOriginal`], reproducing the vendored Robot
 //! `SECURITY_TESTS/I_OAuth2_Keycloak` §05/§06 *intent* ("Base URL / API
 //! endpoints are secured") over the ECC transport (Basic instead of Keycloak
-//! OAuth, which the compose SUT does not run — register 11 G-5: the Robot suite
+//! OAuth, which the compose SUT does not run — the Robot suite
 //! is coverage evidence, never id-mapped machinery).
 //!
 //! These cases are **fully generic** — 401/403 is every auth-enforcing CDR's
-//! surface, never an ehrbase-rs extension, and must stay live for foreign SUTs
-//! (register 11 G-2). [`Capability::Authentication`] is deliberately **not**
+//! surface, never an ehrbase-rs extension, and must stay live for foreign SUTs.
+//! [`Capability::Authentication`] is deliberately **not**
 //! profile-gating ([`crate::model::profile`] does not list it): security is
 //! Non-Functional and authorization is out of band, so it is reported per-case
 //! but blocks no profile.

@@ -7,7 +7,7 @@
 //! End-to-end ATNA audit over the real axum app (binding doc §8.5).
 //!
 //! Drives the assembled router (auth + audit + dispatch) with `tower`'s
-//! `oneshot`, over the **real** `EhrbaseService` (W-14 B+C: the scripted `Mock`
+//! `oneshot`, over the **real** `EhrbaseService` (the scripted `Mock`
 //! and its in-memory `AuditSink` are gone). Auditing now runs the real ATNA path: an
 //! [`AuditSender`] ships a DICOM `AuditMessage` (rendered to XML, framed as an
 //! RFC 5424 syslog record) over UDP to a listener the test binds. We assert on

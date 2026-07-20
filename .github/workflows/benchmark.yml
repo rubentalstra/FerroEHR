@@ -1,8 +1,9 @@
 name: Benchmark smoke
 
 # Manual-only: benchmark numbers from shared CI runners are never published
-# (docs/design/benchmarking.md §8); this job only proves the instrument runs
-# end-to-end (smoke profile, empty rung) against the composed server.
+# (shared runners are too noisy for a trustworthy measurement); this job only
+# proves the instrument runs end-to-end (smoke profile, empty rung) against the
+# composed server.
 on:
   workflow_dispatch:
 

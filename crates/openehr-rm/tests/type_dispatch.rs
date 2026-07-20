@@ -5,7 +5,7 @@
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 //! Deserialization dispatch of abstract/polymorphic openEHR slots on the
-//! canonical-JSON `_type` discriminator (audit F-04-01/02/03).
+//! canonical-JSON `_type` discriminator.
 //!
 //! These tests pin the behaviour of the hand-rolled `Deserialize` impls the
 //! `openehr-codegen` emitter now generates for abstract-slot enums (replacing
@@ -19,7 +19,7 @@
 use openehr_base::prelude::Uid;
 use openehr_rm::prelude::{DataValue, DvText, PartySelf};
 
-// ── F-04-01: a `_type`-less *abstract* slot value is rejected, not mis-typed ──
+// ── a `_type`-less *abstract* slot value is rejected, not mis-typed ───────────
 
 #[test]
 fn abstract_slot_missing_type_is_rejected() {
@@ -55,7 +55,7 @@ fn abstract_slot_with_type_routes_to_the_named_variant() {
     );
 }
 
-// ── F-04-01: wrong `_type` is rejected with an error naming it ────────────────
+// ── wrong `_type` is rejected with an error naming it ─────────────────────────
 
 #[test]
 fn abstract_slot_unknown_type_is_rejected_naming_it() {
@@ -70,7 +70,7 @@ fn abstract_slot_unknown_type_is_rejected_naming_it() {
     );
 }
 
-// ── F-04-01: deep-descendant `_type` routes through the intermediate variant ──
+// ── deep-descendant `_type` routes through the intermediate variant ───────────
 
 #[test]
 fn deep_descendant_type_routes_correctly_in_data_value_slot() {
@@ -187,7 +187,7 @@ fn monomorphic_struct_slot_accepts_matching_and_absent_type() {
     );
 }
 
-// ── F-04-02: unknown wire keys are tolerated (documented superset) ────────────
+// ── unknown wire keys are tolerated (documented superset) ─────────────────────
 
 #[test]
 fn unknown_keys_are_tolerated_on_deserialize() {
@@ -201,7 +201,7 @@ fn unknown_keys_are_tolerated_on_deserialize() {
     assert!(matches!(dv, DataValue::DvCount(_)));
 }
 
-// ── F-04-03: the inner variant's precise error survives (not "no variant") ────
+// ── the inner variant's precise error survives (not "no variant") ─────────────
 
 #[test]
 fn malformed_variant_surfaces_the_real_inner_error() {

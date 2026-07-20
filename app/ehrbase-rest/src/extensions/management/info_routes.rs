@@ -1,6 +1,6 @@
 //! `GET /management/info` — the axum handler over the platform
 //! [`BuildInfo`](ehrbase::telemetry::build_info::BuildInfo) model
-//! (W-14 B+C split: model in the platform, wire here).
+//! (the model lives in the platform, wire here).
 
 use axum::response::Json;
 

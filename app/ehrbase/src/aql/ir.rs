@@ -1,5 +1,4 @@
-//! The typed AQL query IR (our own engine, P16; shape per `docs/design/aql-engine.md`
-//! §Typed IR).
+//! The typed AQL query IR (our own engine).
 //!
 //! This is a relational-algebra-flavoured, fully typed intermediate
 //! representation of an AQL `SELECT` query over the greenfield node store. It is

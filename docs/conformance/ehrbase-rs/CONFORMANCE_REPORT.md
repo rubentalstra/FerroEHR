@@ -7,14 +7,14 @@
 
 | Field | Value |
 |---|---|
-| Product | ehrbase-rs ehrbase-rs 3.2.0 |
+| Product | ehrbase-rs ehrbase-rs 3.3.0 |
 | SUT class | ours (ehrbase-rs) |
 | Base URL | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
 | Edition policy | pinned (development) |
 | Spec versions | RM 1.2.0 · ITS-REST development@e8a093e · AQL 1.1.0 · TERM 3.1.0 |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
-| Run started | 2026-07-20T13:12:05.443491Z |
+| Run started | 2026-07-20T16:44:05.507018Z |
 
 **402 case×format executions · 367 passed · 0 failed · 0 errored · 35 skipped · 0 not applicable.**
 
@@ -157,14 +157,14 @@ _No failures in this run._
 | NativeApiOnly: I_TDD_SERVICE.import_tdds is exercised by app/ehrbase/tests/service_tdd.rs::{tdd_import_tdds_batch_commits_all, tdd_import_tdds_batch_fail_fast} — Messaging has no ITS-REST binding | 1 |
 | NoRestBinding: I_ADMIN_ARCHIVE.archive_parties has no ITS-REST route and acts on the demographic extension; the archive path is proven natively by app/ehrbase/tests/service_admin.rs::archive_marks_vos_idempotently_and_reads_stay_unchanged | 1 |
 | NoRestBinding: I_ADMIN_SERVICE.physical_party_delete has no ITS-REST route and acts on the demographic extension; exercised natively by app/ehrbase/tests/service_admin.rs::physical_party_delete_cascades_relationships_and_spares_partner | 1 |
-| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:64859 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server (docs/design/terminology-server-integration.md §5). | 1 |
+| SutConfig: no FHIR terminology provider configured on the SUT — a `hl7.org/fhir/4.0` expand is rejected as `UnknownTerminologyService`. harness terminology server: http://127.0.0.1:58691 (fixture). The bundle (`openehr`) expand cases prove the TERMINOLOGY family; wire this by pointing the SUT at a FHIR server. | 1 |
 | SutConfig: server not in `pgp` mode (needs a configured OpenPGP key); a pgp-keyed compose profile is a follow-up — the digest cases prove the Signing capability | 1 |
-| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64859 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
-| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64859 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
-| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:64859 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
+| SutConfig: the 5xx fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:58691 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_server_error_is_5xx + app/ehrbase/tests/terminology_fhir.rs::server_5xx_is_an_exception. | 1 |
+| SutConfig: the malformed fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:58691 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_malformed_is_not_json + app/ehrbase/tests/terminology_fhir.rs::malformed_body_is_an_exception. | 1 |
+| SutConfig: the timeout fault requires a fault-injecting terminology server wired to the SUT (--tx-server-url + an SUT FHIR provider pointed at it); the HTTP-only ECC cannot reconfigure an external SUT's provider per case. Harness tx server: http://127.0.0.1:58691 (fixture). The fault→500 mapping is proven by conformance ts::fixture::tests::fault_timeout_exceeds_a_short_client_deadline + app/ehrbase/tests/terminology_fhir.rs::timeout_is_an_exception. | 1 |
 | all 11 C/loaded_db goldens are dialect-routed or require id-substitution/binds | 1 |
-| master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a server defect (register 01 G-5 / D2). The ADMIN template-deletion path is evidenced in the Admin area. | 4 |
-| master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query. An edition exposing a bare-list resource would make this case live (register 02 G-2 edition probe). | 2 |
+| master04 §delete_opt: SM I_DEFINITION_ADL14.delete_opt() has no ITS-REST ADL 1.4 binding — deletion lives in the ADMIN API only; a 405 here would be a schedule-vs-ITS-REST gap, not a server defect. The ADMIN template-deletion path is evidenced in the Admin area. | 4 |
+| master05 §list_queries: SM I_DEFINITION_QUERY.list_queries() (bare collection) has no ITS-REST binding — Release-1.0.3 and development@e8a093e expose GET /definition/query/{qualified_query_name}, not a bare GET /definition/query. An edition exposing a bare-list resource would make this case live (an edition probe). | 2 |
 | master08 §list_contributions: the SM operation I_EHR_CONTRIBUTION.list_contributions() has no ITS-REST binding — /ehr/{ehr_id}/contribution is POST-only (no GET collection resource) in the tested development@e8a093e OAS and in Release-1.0.3; the list is a native-API concern, not wire-exercisable | 5 |
 
 ## 7. Not applicable to this SUT (extensions / RM-version-sensitive)
@@ -179,7 +179,7 @@ _None — every laddered assertion matched the newest edition form._
 
 ## 9. Coverage bounds (driven vs schedule data-set rows)
 
-Cases whose driven data-set count is below the governing schedule table's row count — a bound is logged, never silent (honesty invariant 3; register 13 G-2). Widening the driven set is data, not a new case.
+Cases whose driven data-set count is below the governing schedule table's row count — a bound is logged, never silent. Widening the driven set is data, not a new case.
 
 | ECC id | Format | Driven / schedule rows |
 |---|---|--:|
@@ -298,7 +298,7 @@ Cases whose driven data-set count is below the governing schedule table's row co
 
 ## 10. ECC-original cases (no direct schedule backing)
 
-Stub-derived / extension cases — labelled here and **never presented as schedule-conformant** (register 08 G-1). Their result stands, but the claim is against our own derivation, not an abstract schedule test case.
+Stub-derived / extension cases — labelled here and **never presented as schedule-conformant**. Their result stands, but the claim is against our own derivation, not an abstract schedule test case.
 
 - **ECC-EHR-012** Create EHR — reject invalid EHR_STATUS data sets — data-set class 2 (master06 §Test Data Sets, invalid EHR_STATUS shapes); no single master06 test case enumerates class 2
 - **ECC-EHR-013** Create anonymous (subject-less) EHR — extension: Anonymous EHRs non-functional capability (master03-profiles §Non-Functional); doubles as class 1.b default-EHR_STATUS coverage; no master06 functional test case
@@ -306,7 +306,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 - **ECC-SQR-001** Store stored query — valid — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.valid_query-valid (master05:54, A.3.a)
 - **ECC-SQR-007** Store stored query — invalid — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.valid_query-invalid (master05:67, A.3.b)
 - **ECC-SQR-006** Store stored query — bad formalism — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.valid_query-bad_formalism (master05:80, A.3.c)
-- **ECC-SQR-008** Stored query existence check — existing — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.has_query-xxx (master05:37, placeholder id; slug descriptivised per G-3)
+- **ECC-SQR-008** Stored query existence check — existing — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.has_query-xxx (master05:37, placeholder id; slug descriptivised)
 - **ECC-SQR-002** List stored queries — non empty — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY (named list resource, D2 rebind) + AQL 1.1 — I_DEFINITION_QUERY.list_queries-non_empty (master05:110)
 - **ECC-SQR-004** List stored queries — empty — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.list_queries-empty (master05:97)
 - **ECC-SQR-005** List stored queries — select items — schedule stub (master05 is TBD); derived from ITS-REST 1.0.3 DEFINITION QUERY + AQL 1.1 — I_DEFINITION_QUERY.list_queries-select_items (master05:123)
@@ -849,7 +849,7 @@ Stub-derived / extension cases — labelled here and **never presented as schedu
 
 ## 12. Terminology server (TS area)
 
-- Server: `http://127.0.0.1:64859`
+- Server: `http://127.0.0.1:58691`
 - Mode: fixture
 
 Recorded FHIR-tx exchange (4 request(s)):

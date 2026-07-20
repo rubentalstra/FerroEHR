@@ -1,6 +1,6 @@
 # .github/workflows/docs.yml — build + deploy the documentation website.
-# Design: docs/plans/w1-docs-website.md §2f. Rust-only toolchain, vendored
-# static assets, no Node/Python build step for the site render.
+# Rust-only toolchain, vendored static assets, no Node/Python build step for
+# the site render.
 name: Docs
 
 on:

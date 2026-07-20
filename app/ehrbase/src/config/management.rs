@@ -1,7 +1,6 @@
-//! Management-surface configuration (binding doc §3).
+//! Management-surface configuration.
 //!
-//! The `[management]` section of the one server configuration tree
-//! (`docs/design/configuration.md`); it carries **no loader of its own** — the
+//! The `[management]` section of the one server configuration tree; it carries **no loader of its own** — the
 //! whole tree is assembled once by `ehrbase::config` and this struct is
 //! deserialized as a field of it. **Everything is off by default**:
 //! `management.enabled = false`, and every individual endpoint defaults to
@@ -22,7 +21,7 @@ pub enum AccessLevel {
     /// endpoint).
     #[default]
     Off,
-    /// Requires an authenticated principal carrying the admin scope (the P11
+    /// Requires an authenticated principal carrying the admin scope (the
     /// admin-scope gate). `401` unauthenticated, `403` authenticated-but-not-admin.
     AdminOnly,
     /// Requires any authenticated principal. `401` unauthenticated.

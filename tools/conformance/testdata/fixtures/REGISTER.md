@@ -4,7 +4,7 @@ Corrected copies of vendored CNF fixtures that are **internally inconsistent**
 with their own operational template when read against the vendored openEHR spec
 text.
 
-> **The fixture manifest governs access.** Since the W-10 rewrite, every data
+> **The fixture manifest governs access.** Every data
 > set the suites use — owned, corpus-derived, or generated — is named in
 > `tools/conformance/testdata/MANIFEST.tsv`, one row per fixture key, and the
 > loader (`src/testdata/fixtures.rs`) resolves keys through that manifest ONLY

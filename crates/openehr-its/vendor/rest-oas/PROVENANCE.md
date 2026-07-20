@@ -11,7 +11,7 @@ All **21** OpenAPI 3.0 bundles are vendored verbatim: **7 API groups** ×
   `query`, `system`.
 - **Variants:**
   - `-codegen.openapi.yaml` — authored **for code generation** → the `emit-rest`
-    input (ADR-005).
+    input (settled: the vendored OAS is the codegen input, never served).
   - `-html.openapi.yaml` — for documentation rendering (Redocly).
   - `-validation.openapi.yaml` — for request/response validation.
 

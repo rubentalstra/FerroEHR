@@ -1,7 +1,7 @@
 //! Shields.io endpoint-schema badges (`badge.json` + one per profile), written
 //! per SUT under the run's out-dir. Colours and messages come from the machine
 //! verdicts only — a profile badge can never read PASS unless
-//! [`crate::reporting::report::profile_verdict`] does (honesty invariant 4).
+//! [`crate::reporting::report::profile_verdict`] does.
 
 use std::path::Path;
 

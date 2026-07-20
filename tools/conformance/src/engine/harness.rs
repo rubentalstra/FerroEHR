@@ -231,8 +231,8 @@ pub trait Transport: Send + Sync {
 }
 
 /// The data-set accounting of one case execution — including the schedule
-/// coverage bound (register 13 G-2: the report prints `driven/total` against
-/// `schedule_rows`, so a bound is logged, never silent).
+/// coverage bound: the report prints `driven/total` against
+/// `schedule_rows`, so a bound is logged, never silent.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DataSetReport {
     /// Data sets that passed.
@@ -278,7 +278,7 @@ pub struct RunContext<'a> {
     /// The wire format this run is exercising.
     pub format: Format,
     /// The SUT descriptor: per-SUT wire facts (system id, template-id form,
-    /// admin mount) come from here, never from literals (register 90 §8.4).
+    /// admin mount) come from here, never from literals.
     pub sut: &'a SutDescriptor,
     /// The edition policy for this run (pinned for our CI; auto for BYO).
     pub edition_policy: EditionPolicy,

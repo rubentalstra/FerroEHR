@@ -1,5 +1,5 @@
 //! Operation classification: a generated ITS-REST operation id → its coarse
-//! [`OperationClass`] (§5.2 of `docs/enterprise/access-control.md`).
+//! [`OperationClass`].
 //!
 //! Keyed by the ITS-REST operation ids (`openehr-its::rest::generated`). Every
 //! generated operation is **explicitly** classified; a new generated operation

@@ -1,6 +1,5 @@
 //! The change-set unit: [`Change`], the version-tree placement **decision**,
-//! and the shared commit engine `apply_change` (S-12, S-13, S-32, S-33, S-34,
-//! S-35).
+//! and the shared commit engine `apply_change`.
 //!
 //! Spec: RM common `master06-change_control_package.adoc` §Version and its
 //! Subtypes / §Version Lifecycle / §Distributed Versioning / §Logical Deletion.
@@ -145,7 +144,7 @@ impl Change {
 /// commit (532|complete|, server-signed, none).
 #[derive(Debug, Default)]
 pub(crate) struct WriteEnvelope {
-    /// `UPDATE_VERSION.lifecycle_state` (None → 532|complete|, G-01-checked).
+    /// `UPDATE_VERSION.lifecycle_state` (None → 532|complete|).
     pub(crate) lifecycle_state: Option<String>,
     /// A client-supplied `VERSION.signature`, stored verbatim (master06
     /// §Digital Signature).
@@ -219,7 +218,7 @@ struct NextVersion {
 ///   Modifications) — the preceding version stays valid.
 ///
 /// Same-system detection is case-insensitive on `creating_system_id`
-/// (composite-identifier equality, G-09; BASE master05 §Composite Identifiers
+/// (composite-identifier equality; BASE master05 §Composite Identifiers
 /// and Case).
 ///
 /// # Errors
@@ -826,7 +825,7 @@ pub(crate) async fn delete(
 }
 
 /// Commit a set of changes atomically under one CONTRIBUTION (RM common
-/// master06 §Committal and Audits — "similar to nested transactions", S-17).
+/// master06 §Committal and Audits — "similar to nested transactions").
 /// `contribution_audit` is the CONTRIBUTION's own audit; each change carries its
 /// VERSION `commit_audit`. `attests` are `666|attestation|` items — new
 /// `ATTESTATION`s attached to **existing** versions, committed in the

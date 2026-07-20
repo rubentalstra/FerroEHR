@@ -4,7 +4,7 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! Regression test for F-05-01 (canonical-XML audit): `LOCATABLE` subtypes that
+//! Regression test (canonical-XML audit): `LOCATABLE` subtypes that
 //! live *outside* the v1 `ALL/` XSD bundle — `EHR_STATUS` / `EHR_ACCESS` (EHR
 //! package), the demographic `PARTY` hierarchy, and the extract `LOCATABLE`
 //! subtypes — must serialize `archetype_node_id` as the required XML

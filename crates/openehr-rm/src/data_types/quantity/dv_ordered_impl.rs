@@ -25,7 +25,7 @@
 //! are surfaced as `Option::None` rather than a panic (no-`unwrap` rule).
 //!
 //! NOTE: the *indexed* query-path realisation of these ordering
-//! semantics is the P16 `openehr_magnitude` SQL function; this module is the
+//! semantics is the AQL engine's `openehr_magnitude` SQL function; this module is the
 //! in-process RM authority the interval/reference-range invariants use, and the
 //! two must stay semantically aligned.
 
