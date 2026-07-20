@@ -548,8 +548,29 @@ Target (ITS-REST `definition/template/adl2` group, dev-OAS):
   validator, wire upload/get/example/version + JSON/XML projections,
   utoipa declarations, admin-console touchpoints, book chapter,
   changelog; ECC zero-drift run.
-- [ ] **A11 — close**: full-workspace gates, ECC, PROGRESS/worklist close,
-  DELETE this plan file.
+- [ ] **A11 — close**, in this order:
+  1. **The TODO sweep (owner hard requirement 2026-07-20: "solve all open
+     TODOs that are left")**: every `// TODO` in `crates/openehr-adl` +
+     the definition seams (~28 at census) is triaged to exactly one of:
+     (a) RESOLVED — implemented now; this INCLUDES every stale
+     "needs the flattener / flat parent" deferral (the flattener EXISTS
+     since the flattener phase — un-defer them: flat-form VATDF/VTVSMD/
+     VACMCU/WACMCL, VARXR supplier resolution, VDIFP's RM-path half,
+     VSONIF flat siblings, value-set-expansion VPOV + the remaining two
+     phase-2 adjudications, slot-assertion BEL trees for the general
+     forms, C_TEMPORAL pattern conformance, interval containment,
+     EXPR_ARCHETYPE_REF target resolution);
+     (b) POINTS AT A REGISTERED WORKLIST ROW — only where the work is
+     genuinely out of this row's scope (e.g. an external terminology
+     SERVICE hookup; the opt14-model converter front end if unreachable
+     from any wire), and the TODO text names that row's subject;
+     (c) PROVEN OBSOLETE — removed with the reason in the commit.
+     Zero unaccounted TODOs at close; the report carries the full
+     triage table.
+  2. The whole-corpus coverage gate final run (100% of files claimed).
+  3. Full-workspace gates + the ECC zero-drift run over the complete
+     2.4+1.4+examples story.
+  4. PROGRESS record, worklist close, DELETE this plan file.
 
 ### Corpus coverage — HARD REQUIREMENT (owner, 2026-07-19)
 
