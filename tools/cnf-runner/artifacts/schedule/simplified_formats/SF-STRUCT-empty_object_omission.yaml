@@ -1,0 +1,31 @@
+# Structured-format empty-object omission + ctx grouping (simplified_formats
+# master04 §Structured format rules 4 and 6). Context data MUST be grouped under
+# a `ctx` object; empty objects SHOULD be omitted rather than serialised as
+# `{}`; populated leaves are arrays of objects even at single cardinality. This
+# content decision table encodes the output disposition per element state.
+# Vector: the master04 Structured format example (which shows the ctx object and
+# omits every empty node).
+id: SF-STRUCT-empty_object_omission
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: COMPOSITION
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  In Structured output, empty objects are omitted, context is grouped under the
+  ctx property, and populated leaves are arrays of objects.
+description: "Structured empty-object omission and ctx grouping (master04)"
+spec_refs:
+  - "ITS-REST simplified_formats master04 §Structured format"
+  - "ITS-REST simplified_formats master06 §Context Information"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/"
+decision_table:
+  columns: ["element_state", "structured_output"]
+  rows:
+    - ["empty_object", "omitted"]
+    - ["populated_leaf", "array_of_objects"]
+    - ["single_cardinality_leaf", "still_an_array"]
+    - ["context_data", "grouped_under_ctx_object"]

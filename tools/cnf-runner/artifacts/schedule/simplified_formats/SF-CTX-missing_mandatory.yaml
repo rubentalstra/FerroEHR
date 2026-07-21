@@ -1,0 +1,34 @@
+# Mandatory ctx fields (simplified_formats master04 §Validation: "Mandatory
+# context fields (language, territory) are present" + master04 §Context:
+# "Mandatory: language, territory"). A FLAT commit that omits ctx/territory
+# cannot populate the mandatory COMPOSITION.territory and is rejected. Simplified
+# Formats is an OPTIONS capability, so this reject never gates CORE/STANDARD.
+id: SF-CTX-missing_mandatory
+kind: functional
+component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  A FLAT commit omitting the mandatory ctx/territory context field is rejected:
+  COMPOSITION.territory cannot be populated.
+description: "FLAT commit without mandatory ctx/territory is rejected"
+spec_refs:
+  - "ITS-REST simplified_formats master04 §Validation"
+  - "ITS-REST simplified_formats master04 §Context"
+  - "ITS-REST simplified_formats master06 §Language and Territory"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.sf.flat.missing_territory]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.sf.flat.missing_territory}" }
+    expect: validation_failed             # create_composition binding: 422
+    assert:
+      - { assert: message_exemplar, text: "mandatory ctx field territory is required" }

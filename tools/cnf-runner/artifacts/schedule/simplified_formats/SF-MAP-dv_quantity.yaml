@@ -1,0 +1,38 @@
+# Per-RM-type suffix mapping: DV_QUANTITY (simplified_formats master05
+# §DV_QUANTITY + master04 §Attribute Suffixes). The master05 DV_QUANTITY suffix
+# table becomes a content mapping decision table: each row is a FLAT suffix and
+# the RM path it maps to. Vectors: master05 DV_QUANTITY JSON blocks (magnitude
+# + unit; and the full block with status/accuracy/precision/normal_range/
+# other_reference_ranges).
+id: SF-MAP-dv_quantity
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: DV_QUANTITY
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  Each DV_QUANTITY FLAT suffix maps to its documented RM attribute: |magnitude,
+  |unit, |magnitude_status, |normal_status, |accuracy, |accuracy_is_percent,
+  and the /_normal_range and /_other_reference_ranges:i RM-attribute paths.
+description: "DV_QUANTITY suffix -> RM path mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §DV_QUANTITY"
+  - "ITS-REST simplified_formats master04 §Attribute Suffixes"
+  - "RM data_types §DV_QUANTITY"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "master05 DV_QUANTITY table swaps the flat-type cells (|magnitude shown String, |unit shown Real) — an upstream editorial defect; the RM types (magnitude:Real, unit:String) are used here per RM data_types §DV_QUANTITY"
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items/value"
+decision_table:
+  columns: ["suffix", "rm_path", "flat_type", "required"]
+  rows:
+    - ["|magnitude", "magnitude", "Real", "yes"]
+    - ["|unit", "units", "String", "yes"]
+    - ["|magnitude_status", "magnitude_status", "String", "no"]
+    - ["|normal_status", "normal_status.code_string", "String", "no"]
+    - ["|accuracy", "accuracy", "Real", "no"]
+    - ["|accuracy_is_percent", "accuracy_is_percent", "Boolean", "no"]
+    - ["/_normal_range", "normal_range", "DV_INTERVAL<DV_QUANTITY>", "no"]
+    - ["/_other_reference_ranges:i", "_other_reference_ranges", "REFERENCE_RANGE<DV_QUANTITY>", "no"]

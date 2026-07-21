@@ -8,14 +8,14 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 347 |
+| CNF catalogue cases | 387 |
 | active ECC rows | 394 |
 | mapped: covered | 361 |
 | mapped: deferred | 5 |
 | mapped: dropped | 19 |
 | mapped: out_of_scope | 9 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 40 |
+| CNF cases beyond the old catalogue | 80 |
 
 Gate clean: **yes**
 
@@ -460,3 +460,43 @@ Gate clean: **yes**
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
 - `SEC-AUDIT_ACCOUNTABILITY-server_set_commit_audit`
 - `SEC-EHR_DEMOGRAPHIC_SEPARATION-status_subject_opaque`
+- `SF-CTX-composer_name`
+- `SF-CTX-composer_self`
+- `SF-CTX-missing_mandatory`
+- `SF-CTX-participations_forms`
+- `SF-CTX-vocabulary_mapping`
+- `SF-DEPRECATED-media_supported`
+- `SF-DEPRECATED-media_unsupported`
+- `SF-FIELDID-structure`
+- `SF-FLAT-reject_cardinality`
+- `SF-FLAT-reject_datatype_mismatch`
+- `SF-FLAT-reject_other_closed_list`
+- `SF-FLAT-reject_terminology_binding`
+- `SF-INDEX-multi_event_commit`
+- `SF-INDEX-semantics`
+- `SF-LEVELS-collapsed_wrappers`
+- `SF-LEVELS-container_attribute_elision`
+- `SF-LEVELS-lab_panel_example`
+- `SF-MAP-attribute_suffix_table`
+- `SF-MAP-context`
+- `SF-MAP-dv_ordinal_proportion_count`
+- `SF-MAP-dv_quantity`
+- `SF-MAP-dv_text_coded`
+- `SF-MAP-entries`
+- `SF-MAP-events_audit`
+- `SF-MAP-interval_reference_range`
+- `SF-MAP-multimedia_parsable`
+- `SF-MAP-party`
+- `SF-MAP-simple_values`
+- `SF-MAP-structure`
+- `SF-MAP-temporal`
+- `SF-NODEID-generation_rules`
+- `SF-NODEID-web_template_ids`
+- `SF-RAW-embedding`
+- `SF-RAW-missing_type`
+- `SF-RAW-structured_embedding`
+- `SF-RMATTR-normal_range_commit`
+- `SF-RMATTR-underscore_mapping`
+- `SF-STRUCT-arrays_single_cardinality`
+- `SF-STRUCT-empty_object_omission`
+- `SF-STRUCT-style_rules`

@@ -1,0 +1,40 @@
+# Per-RM-type suffix mapping: the structural nodes — ELEMENT, CLUSTER, ACTIVITY
+# (simplified_formats master05 §ELEMENT, §CLUSTER, §ACTIVITY). ELEMENT carries
+# no distinction between the element and its value (the value IS the leaf), plus
+# the null-flavour and RM-attribute paths; CLUSTER carries only RM-attribute
+# paths; ACTIVITY carries /timing and /action_archetype_id. Vectors: the ELEMENT
+# blocks (value; +_uid/_link/_feeder_audit; +_null_flavour/_null_reason), the
+# CLUSTER blocks, and the ACTIVITY blocks (+action_archetype_id).
+id: SF-MAP-structure
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: ELEMENT
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  ELEMENT maps /_null_flavour, /_null_reason and the shared RM-attribute paths;
+  CLUSTER maps the RM-attribute paths; ACTIVITY maps /timing and
+  /action_archetype_id.
+description: "ELEMENT/CLUSTER/ACTIVITY suffix mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §ELEMENT"
+  - "ITS-REST simplified_formats master05 §CLUSTER"
+  - "ITS-REST simplified_formats master05 §ACTIVITY"
+  - "RM data_structures §ELEMENT"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
+  rows:
+    - ["ELEMENT", "/_null_flavour", "null_flavour", "DV_CODED_TEXT", "no"]
+    - ["ELEMENT", "/_null_reason", "null_reason", "DV_TEXT", "no"]
+    - ["ELEMENT", "/_link:i", "links", "LINK", "no"]
+    - ["ELEMENT", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
+    - ["ELEMENT", "/_uid", "uid.value", "STRING", "no"]
+    - ["CLUSTER", "/_link:i", "links", "LINK", "no"]
+    - ["CLUSTER", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
+    - ["CLUSTER", "/_uid", "uid.value", "STRING", "no"]
+    - ["ACTIVITY", "/timing", "timing", "DV_PARSABLE", "no"]
+    - ["ACTIVITY", "/action_archetype_id", "action_archetype_id", "STRING", "no"]

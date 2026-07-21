@@ -1,0 +1,40 @@
+# ctx participations — compact and expanded forms (simplified_formats master06
+# §Participation). ctx/ participations set EVENT_CONTEXT.participations (and
+# ENTRY.other_participations). The performer identifiers may be given in a
+# compact form (one key holding semicolon-separated issuer/assigner/id/type
+# quads) OR an expanded form (one key per identifier component, indexed). This
+# content decision table encodes both forms plus the base participation fields.
+# Vectors: the master06 comprehensive block and the dedicated Participation
+# block (which shows :0 compact and :1 expanded side by side).
+id: SF-CTX-participations_forms
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: PARTICIPATION
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  ctx participation identifiers can be supplied compactly (semicolon-separated
+  quads under one key) or expanded (one component per indexed key), both
+  resolving to EVENT_CONTEXT.participations; the base participation fields map
+  to the performer.
+description: "ctx participations: compact vs expanded identifier forms (master06)"
+spec_refs:
+  - "ITS-REST simplified_formats master06 §Participation"
+  - "ITS-REST simplified_formats master05 §PARTICIPATION"
+  - "RM common §PARTICIPATION"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/context"
+decision_table:
+  columns: ["form", "ctx_key", "meaning"]
+  rows:
+    - ["base", "ctx/participation_name:i", "performer_name"]
+    - ["base", "ctx/participation_function:i", "function_value"]
+    - ["base", "ctx/participation_mode:i", "mode_value"]
+    - ["base", "ctx/participation_id:i", "performer_external_ref_id_value"]
+    - ["compact", "ctx/participation_identifiers:i", "semicolon_separated_quads_issuer_assigner_id_type"]
+    - ["expanded", "ctx/participation_identifiers:i|issuer:j", "one_identifier_component_per_key_indexed_by_j"]
+    - ["expanded", "ctx/participation_identifiers:i|assigner:j", "one_identifier_component_per_key_indexed_by_j"]
+    - ["expanded", "ctx/participation_identifiers:i|id:j", "one_identifier_component_per_key_indexed_by_j"]
+    - ["expanded", "ctx/participation_identifiers:i|type:j", "one_identifier_component_per_key_indexed_by_j"]
