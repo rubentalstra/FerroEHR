@@ -434,6 +434,77 @@ impl Printer {
         }
     }
 
+    /// Emit a `C_DEFINED_OBJECT.default_value` as the `_default` pseudo-attribute
+    /// (`master06-default_values.adoc` §Syntax): `_default = (RM_TYPE) < … >`
+    /// with the canonical-JSON intermediate rendered as ODIN — the inverse of
+    /// the cADL parser's `_default` handling (`odin_to_json`). Scalar and
+    /// object shapes round-trip through print → parse exactly; a JSON array
+    /// of objects re-parses as a keyed object (see the [`Self::odin_json_entry`]
+    /// NOTE) — the ODIN text is the durable form either way.
+    fn default_value(&mut self, v: &serde_json::Value, depth: usize) {
+        match v {
+            serde_json::Value::Object(m) => {
+                let head = match m.get("_type").and_then(serde_json::Value::as_str) {
+                    Some(t) => format!("_default = ({t}) <"),
+                    None => "_default = <".to_owned(),
+                };
+                self.line(depth, &head);
+                for (k, val) in m {
+                    if k == "_type" {
+                        continue;
+                    }
+                    self.odin_json_entry(k, val, depth + 1);
+                }
+                self.line(depth, ">");
+            }
+            other => self.line(depth, &format!("_default = <{}>", odin_scalar(other))),
+        }
+    }
+
+    /// One ODIN attribute line (or block) for a canonical-JSON member.
+    ///
+    /// NOTE: a JSON array of objects has no positional ODIN form — ODIN
+    /// containers are keyed lists — so it renders as `["1"] = <…>` entries;
+    /// re-parsing yields a `"1"`-keyed object rather than an array. The ODIN
+    /// text is the durable ADL2 form; the JSON intermediate carries no
+    /// spec-mandated shape (no openEHR spec governs it — our own design,
+    /// matching the parser's `odin_to_json`).
+    fn odin_json_entry(&mut self, key: &str, v: &serde_json::Value, depth: usize) {
+        match v {
+            serde_json::Value::Null => {}
+            serde_json::Value::Object(m) => {
+                let head = match m.get("_type").and_then(serde_json::Value::as_str) {
+                    Some(t) => format!("{key} = ({t}) <"),
+                    None => format!("{key} = <"),
+                };
+                self.line(depth, &head);
+                for (k, val) in m {
+                    if k == "_type" {
+                        continue;
+                    }
+                    self.odin_json_entry(k, val, depth + 1);
+                }
+                self.line(depth, ">");
+            }
+            serde_json::Value::Array(items) if items.iter().all(is_json_scalar) => {
+                let joined = items.iter().map(odin_scalar).collect::<Vec<_>>().join(", ");
+                self.line(depth, &format!("{key} = <{joined}>"));
+            }
+            serde_json::Value::Array(items) => {
+                self.line(depth, &format!("{key} = <"));
+                for (i, item) in items.iter().enumerate() {
+                    self.odin_json_entry(
+                        &format!("[{}]", quoted(&(i + 1).to_string())),
+                        item,
+                        depth + 1,
+                    );
+                }
+                self.line(depth, ">");
+            }
+            scalar => self.line(depth, &format!("{key} = <{}>", odin_scalar(scalar))),
+        }
+    }
+
     fn odin_string_map(&mut self, depth: usize, key: &str, m: &BTreeMap<String, String>) {
         if m.is_empty() {
             return;
@@ -485,6 +556,9 @@ impl Printer {
                     }
                     for t in &d.attribute_tuples {
                         self.attribute_tuple(t, depth + 1);
+                    }
+                    if let Some(dv) = &d.default_value {
+                        self.default_value(dv, depth + 1);
                     }
                     self.line(depth, "}");
                 } else {
@@ -1059,6 +1133,11 @@ fn primitive_inline(prim: &CPrimitiveObject) -> String {
 }
 
 fn terminology_code_inline(c: &CTerminologyCode) -> String {
+    // A fully unconstrained terminology code renders as nothing — the caller
+    // prints the bare (any-allowed) node instead of an unparseable `{[]}`.
+    if c.constraint.is_empty() && c.assumed_value.is_none() && c.constraint_status.is_none() {
+        return String::new();
+    }
     let mut s = String::new();
     if let Some(status) = &c.constraint_status {
         s.push_str(strength_keyword(*status));
@@ -1184,6 +1263,27 @@ fn real_str(v: f64) -> String {
 }
 
 /// A double-quoted, `master03`-escaped string literal.
+/// Whether a canonical-JSON value renders as one ODIN scalar token.
+fn is_json_scalar(v: &serde_json::Value) -> bool {
+    matches!(
+        v,
+        serde_json::Value::String(_) | serde_json::Value::Number(_) | serde_json::Value::Bool(_)
+    )
+}
+
+/// Render a canonical-JSON scalar as its ODIN literal (the inverse of the
+/// cADL parser's `odin_to_json` scalar arms).
+fn odin_scalar(v: &serde_json::Value) -> String {
+    match v {
+        serde_json::Value::String(s) => quoted(s),
+        serde_json::Value::Bool(b) => if *b { "True" } else { "False" }.to_owned(),
+        serde_json::Value::Number(n) => n.to_string(),
+        // Null/containers never reach here (`is_json_scalar` gates the list
+        // form; containers take the block form).
+        other => other.to_string(),
+    }
+}
+
 fn quoted(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
     out.push('"');

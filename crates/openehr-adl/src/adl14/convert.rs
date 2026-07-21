@@ -16,6 +16,7 @@ use openehr_am::am24::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
 use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
 use openehr_am::am24::aom2::terminology::value_set::ValueSet;
@@ -261,8 +262,19 @@ impl<'a> Converter<'a> {
             Some((b, a)) => (b, Some(a)),
             None => (raw, None),
         };
-        // Not a qualified 1.4 code → already ADL2 (`at5`, `ac1`); pass through.
+        // Not a qualified 1.4 code: a bare ac-code (a 1.4 `CONSTRAINT_REF`
+        // reference or a reference-set ac minted by the OPT front end) is
+        // shifted like every other code so it stays aligned with its shifted
+        // terminology entry (`ac0001`→`ac2`; the `ac0.K` specialisation form
+        // keeps its number — see `shift_code`). Anything else (`at5`) is
+        // already ADL2; pass through.
         let Some((terminology, codes_str)) = body.split_once("::") else {
+            if crate::codes::is_ac_code(body) {
+                return (
+                    shift_code(body, "ac"),
+                    assumed_raw.map(|a| shift_code(a, "at")),
+                );
+            }
             return (body.to_owned(), assumed_raw.map(str::to_owned));
         };
         let codes: Vec<&str> = codes_str
@@ -369,6 +381,16 @@ impl<'a> Converter<'a> {
             let mut out: BTreeMap<String, ArchetypeTerm> = BTreeMap::new();
             for (code, term) in terms {
                 let is_node = self.node_map.contains_key(code);
+                // An ac-code (a merged 1.4 `constraint_definitions` entry —
+                // ADL2 merges that section into `term_definitions`,
+                // `master07.13` §Terminology section) keeps its ac prefix,
+                // shifted like every other code so the converted
+                // `C_TERMINOLOGY_CODE` ac constraints still resolve (VACDF).
+                if crate::codes::is_ac_code(code) {
+                    let ac = shift_code(code, "ac");
+                    out.insert(ac.clone(), term_with_code(term, ac));
+                    continue;
+                }
                 // A 1.4 at-code used as a value (`[local::atX]`) always yields an
                 // at-code term; used as a node id it yields an id-code term. A
                 // code that is both splits into both entries.
@@ -468,6 +490,11 @@ impl<'a> Converter<'a> {
             id.clone()
         } else if crate::codes::is_at_code(key) {
             shift_code(key, "at")
+        } else if crate::codes::is_ac_code(key) {
+            // A merged 1.4 `constraint_bindings` key (ADL2 folds that section
+            // into `term_bindings`, `master07.13` §Terminology section) shifts
+            // with its ac prefix, matching the definitions rebuild (VTCBK).
+            shift_code(key, "ac")
         } else {
             key.to_owned()
         }
@@ -601,6 +628,16 @@ fn walk_constraints(def: &CComplexObject, f: &mut impl FnMut(&str, &str)) {
                     walk_constraints_obj(child, f);
                 }
             }
+            // Tuple ROWS carry the actual primitive constraints (e.g. ordinal
+            // `[value, symbol]` symbol codes) — visit their terminology codes
+            // so value at-codes are planned and converted like attribute ones.
+            for row in &tuple.tuples {
+                for m in &row.members {
+                    if let CPrimitiveObject::CTerminologyCode(tc) = m {
+                        f(&tc.constraint, "");
+                    }
+                }
+            }
         }
     }
 }
@@ -654,6 +691,24 @@ fn convert_constraints_cco(cco: &mut CComplexObject, cx: &mut Converter<'_>, own
         for member in &mut tuple.members {
             for child in &mut member.children {
                 convert_constraints_obj(child, cx, &node_text);
+            }
+        }
+        // Tuple ROWS carry the actual primitive constraints — convert their
+        // terminology codes (ordinal symbols etc.) like attribute ones.
+        for row in &mut tuple.tuples {
+            for m in &mut row.members {
+                if let CPrimitiveObject::CTerminologyCode(tc) = m {
+                    let (constraint, assumed) = cx.convert_constraint(&tc.constraint, &node_text);
+                    tc.constraint = constraint;
+                    if let Some(a) = assumed {
+                        tc.assumed_value = Some(openehr_base::prelude::TerminologyCode {
+                            terminology_id: "local".to_owned(),
+                            terminology_version: None,
+                            code_string: a,
+                            uri: None,
+                        });
+                    }
+                }
             }
         }
     }
