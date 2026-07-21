@@ -8,10 +8,10 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 246 |
+| CNF catalogue cases | 256 |
 | active ECC rows | 394 |
-| mapped: covered | 285 |
-| mapped: pending | 109 |
+| mapped: covered | 296 |
+| mapped: pending | 98 |
 | unmapped (open gap) | 0 |
 | CNF cases beyond the old catalogue | 10 |
 
@@ -383,22 +383,22 @@ Gate clean: **NO**
 | `ECC-ADM-014` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-TPL-017` | pending |  | template-example round-trip ground belongs to the simplified-formats/template-example wave |
 | `ECC-QRY-025` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection` | ground carried 1:1 (reshaped under the CNF 2.0 case model) |
-| `ECC-SF-001` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-002` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-003` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-004` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-005` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-006` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-007` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-008` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-009` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-010` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-011` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-012` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-013` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-014` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-015` | pending |  | simplified-formats chapter wave |
-| `ECC-SF-016` | pending |  | simplified-formats chapter wave |
+| `ECC-SF-001` | covered | `SF-FLAT-commit_roundtrip_ctx_defaults` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
+| `ECC-SF-002` | covered | `SF-STRUCTURED-commit_roundtrip` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
+| `ECC-SF-003` | pending |  | q-value negotiation strictness enters with the simplified-formats deepening (blueprint category 11) — weighting is tech-profile machinery, not a single case |
+| `ECC-SF-004` | pending |  | retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 406 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case |
+| `ECC-SF-005` | pending |  | retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 415 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case |
+| `ECC-SF-006` | covered | `SF-FLAT-missing_template_id` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
+| `ECC-SF-007` | covered | `SF-FLAT-reject_unknown_field` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
+| `ECC-SF-008` | covered | `SF-FLAT-reject_other_with_code` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
+| `ECC-SF-009` | covered | `SF-WT-web_template_get` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31 |
+| `ECC-SF-010` | covered | `SF-EXAMPLE-accept_forms` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31 |
+| `ECC-SF-011` | covered | `SF-EXAMPLE-unsupported_accept` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31 |
+| `ECC-SF-012` | pending |  | CONTRIBUTION with simplified inner data enters with the simplified-formats deepening (blueprint category 14) — requires the commit_contribution binding to declare a simplified-inner-data surface |
+| `ECC-SF-013` | covered | `SF-SCOPE-ehr_status_no_simplified` | scope-negative carried (no simplified mapping for EHR_STATUS; 406 per the overview negotiation rules) |
+| `ECC-SF-014` | covered | `SF-SCOPE-directory_no_simplified` | scope-negative carried (no simplified mapping for DIRECTORY; 406 per the overview negotiation rules) |
+| `ECC-SF-015` | pending |  | no demographic component exists in the catalogue yet — enters with the demographic wave |
+| `ECC-SF-016` | covered | `SF-FLAT-commit_roundtrip_ctx_defaults` | ctx observability carried by the ctx-defaults assertions of the round-trip case |
 | `ECC-ADL2-001` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
 | `ECC-ADL2-002` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
 | `ECC-ADL2-003` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
@@ -426,5 +426,5 @@ Gate clean: **NO**
 - `I_DEFINITION_QUERY.valid_query-invalid`
 - `I_DEFINITION_QUERY.valid_query-valid`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-distinct`
+- `I_QUERY_SERVICE.execute_ad_hoc_query-fetch_with_top`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
-- `SF-FLAT-commit_roundtrip_ctx_defaults`

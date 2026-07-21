@@ -20,4 +20,5 @@ outcomes:
     status: 200                           # 200_FOLDER_retrieved.yaml
     headers: { Content-Type: negotiated }
   ok_empty: { status: 204 }               # logically deleted directory (204_deleted_at_time.yaml)
-  not_found: { status: 404 }              # unknown ehr_id or no directory (404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml)
+  not_found: { status: 404 }
+  not_acceptable: { status: 406 }         # unfulfillable Accept (overview Requests_and_responses negotiation rules; no simplified mapping exists for this resource)              # unknown ehr_id or no directory (404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml)
