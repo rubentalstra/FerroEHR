@@ -7,10 +7,12 @@
 //!              [--seed U64] [--app-container NAME] [--db-container NAME]
 //!              [--db-user U] [--db-name D] [--no-seed] [--out DIR]
 //! bench knee   --sut … --scale … [--ward-size N] [--seed U64]
-//!              [--steps "1,2,4,8,16,32"] [--step-window 120] [--warmup 15]
+//!              [--steps "1,2,4,8,16,32,64,128"] [--max-load 1024]
+//!              [--step-window 120] [--warmup 15]
 //!              [--app-container NAME] [--db-container NAME] [--no-seed] [--out DIR]
 //! bench seed   --sut … --scale … [--seed U64]
 //! bench report --from results.json [--out DIR]
+//! bench knee-report --from knee.json [--out DIR]
 //! bench compare --from a.json --from b.json [--knee-from a-knee.json …] [--out DIR]
 //! ```
 //!
@@ -23,7 +25,10 @@
 //! `knee` provisions + seeds once, then drives the `hour` rate shape at an
 //! ascending load-factor ladder on short fixed windows, stops
 //! at the first step past the SLO (p99 > 1 s) or the 0.1% error flag, and writes
-//! `knee.json` + `KNEE.md` + `charts/knee.svg`. Exit: `0` ok · `2` failure.
+//! `knee.json` + `KNEE.md` + `charts/knee.svg`. A ladder that ends with its top
+//! step still sustained auto-extends (doubling) up to `--max-load`; ending
+//! without a breach flags the result `ladder_capped` (a lower bound, not a
+//! knee). Exit: `0` ok · `2` failure.
 // Benchmark CLI: progress/diagnostics on the console ARE this tool's user
 // interface (.claude/rules/reliability.md §tools).
 #![allow(clippy::print_stdout, clippy::print_stderr)]
@@ -75,6 +80,8 @@ enum Command {
     Seed(SeedArgs),
     /// Re-render the artefact set from an existing results.json.
     Report(ReportArgs),
+    /// Re-render the knee artefact set from an existing knee.json.
+    KneeReport(ReportArgs),
     /// Render the cross-SUT comparison (Markdown + charts) from two runs.
     Compare(CompareArgs),
 }
@@ -157,6 +164,13 @@ struct KneeArgs {
     /// ladder (`0` disables refinement).
     #[arg(long, default_value_t = 3)]
     bisections: u32,
+    /// Auto-extension safety cap: when the configured ladder ends with its
+    /// top step still sustained, the ladder keeps doubling the load factor
+    /// until a breach, a generator-bound step, or this cap — a knee is only
+    /// a knee once a breach bounds it from above. Ending at the cap flags
+    /// the result `ladder_capped` (a lower bound, not a knee).
+    #[arg(long, default_value_t = 1024.0)]
+    max_load: f64,
     /// The fixed per-step measurement window (seconds).
     #[arg(long, default_value_t = 120)]
     step_window: u64,
@@ -310,6 +324,7 @@ async fn main() {
         Command::Knee(args) => cmd_knee(args).await,
         Command::Seed(args) => cmd_seed(args).await,
         Command::Report(args) => cmd_report(&args),
+        Command::KneeReport(args) => cmd_knee_report(&args),
         Command::Compare(args) => cmd_compare(&args),
     };
     std::process::exit(code);
@@ -829,6 +844,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
     let mut steps_out: Vec<KneeStep> = Vec::new();
     let mut knee: Option<KneeStep> = None;
     let mut sut_died = false;
+    let mut ladder_capped = false;
     let mut queue: std::collections::VecDeque<f64> = ladder.into_iter().collect();
     let mut bisections_left = args.bisections;
     let mut last_breached: Option<f64> = None;
@@ -931,7 +947,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
             }
             continue;
         }
-        knee = Some(step);
+        knee = Some(step.clone());
         // A sustained refinement step: probe upward toward the known breach.
         if let Some(hi) = last_breached
             && queue.is_empty()
@@ -942,6 +958,36 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
                 queue.push_back(mid);
             } else {
                 eprintln!("bench: ladder stops");
+                break;
+            }
+        }
+        // The configured ladder is exhausted with NO breach ever observed: a
+        // knee is only a knee once a breach bounds it from above, so keep
+        // doubling until a breach, a generator-bound step (further offered
+        // load would bound the instrument, not the SUT), or the safety cap.
+        if last_breached.is_none() && queue.is_empty() {
+            if step.generator_bound() {
+                ladder_capped = true;
+                eprintln!(
+                    "bench: ladder ends GENERATOR-BOUND at L={load_factor} with no breach observed — \
+                     the result is a LOWER BOUND, not a knee (an isolated load generator would push further)"
+                );
+                break;
+            }
+            if let Some(next) = report::knee::extend_step(load_factor, args.max_load) {
+                eprintln!(
+                    "bench: ladder exhausted while still sustained — auto-extending to L={next} \
+                     (cap {})",
+                    args.max_load
+                );
+                queue.push_back(next);
+            } else {
+                ladder_capped = true;
+                eprintln!(
+                    "bench: ladder capped at --max-load {} with no breach observed — \
+                     the result is a LOWER BOUND, not a knee",
+                    args.max_load
+                );
                 break;
             }
         }
@@ -963,6 +1009,7 @@ async fn cmd_knee(args: KneeArgs) -> i32 {
         steps: steps_out,
         knee,
         sut_died,
+        ladder_capped,
     };
 
     let out_dir = args.out.join(&descriptor.name);
@@ -1019,6 +1066,27 @@ async fn cmd_seed(args: SeedArgs) -> i32 {
             2
         }
     }
+}
+
+fn cmd_knee_report(args: &ReportArgs) -> i32 {
+    let results = match report::knee::from_file(&args.from) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("error reading {}: {e}", args.from.display());
+            return 2;
+        }
+    };
+    let out_dir = args.out.join(&results.sut.name);
+    if let Err(e) = report::knee::write_all(&results, &out_dir) {
+        eprintln!("error writing artefacts: {e}");
+        return 2;
+    }
+    eprintln!(
+        "regenerated knee artefacts in {} from {}",
+        out_dir.display(),
+        args.from.display()
+    );
+    0
 }
 
 fn cmd_report(args: &ReportArgs) -> i32 {
