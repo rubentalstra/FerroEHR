@@ -13,8 +13,11 @@ use crate::aql::exec::QueryResult;
 use crate::aql::ir::{ParamValue, Params};
 use crate::service::query::request::AqlQueryRequest;
 
-/// The `RESULT_SET` schema version this server emits (ITS-REST 1.1.0).
-const RESULT_SET_SCHEMA_VERSION: &str = "1.0.3";
+/// The `RESULT_SET` `_schema_version` this server emits — "the version of the
+/// specification defining the serialized object" (ITS-REST
+/// `schemas/query/ResultSet`), i.e. the implemented ITS-REST release, read
+/// from the `openehr-its` crate version so it can never lag a pin bump.
+const RESULT_SET_SCHEMA_VERSION: &str = openehr_its::SPEC_VERSION;
 
 /// Build the typed [`Params`] from the request's `query_parameters` map
 /// (values arrive as JSON scalars; complex values degrade to their JSON

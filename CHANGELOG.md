@@ -86,6 +86,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- Spec version identity is now derived from the `openehr-*` crate versions
+  instead of hand-typed literals, fixing the stale values those literals had
+  drifted to: the startup banner advertised `ITS-REST 1.0.3` (now `1.1.0`),
+  and the AQL `RESULT_SET` `meta._schema_version` was still emitted as
+  `1.0.3` (now `1.1.0`, the implemented ITS-REST release). Every `openehr-*`
+  spec crate exposes a `SPEC_VERSION` constant (= its crate version; the AM
+  crate also exposes per-generation `am14`/`am24` constants from the BMM
+  schemas), and the shared provenance constants behind the banner,
+  `/status`, `OPTIONS /` (System Options), and `/management/info` read
+  those, so a future pin bump propagates everywhere at compile time. The
+  served `restapi_specs_version`/`openehr_rest_api_version` identity is now
+  the plain version string `1.1.0` (matching the System API OAS example)
+  instead of the tag-styled `Release-1.1.0`.
 - SM call-status fidelity: service-layer "does not exist" failures now carry
   their granular `CALL_STATUS_TYPE` (`ehr_id_does_not_exist`,
   `composition_does_not_exist`, `template_does_not_exist`,
