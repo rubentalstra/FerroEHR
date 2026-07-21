@@ -75,6 +75,18 @@ pub struct StepObservation {
     pub assertion_failures: Vec<String>,
 }
 
+impl StepObservation {
+    /// A transport-class observation with no assertion results — the shape
+    /// every driver-internal failure takes (see `StepDriver::perform`).
+    #[must_use]
+    pub fn transport(message: String) -> Self {
+        Self {
+            observation: Observation::Transport(message),
+            assertion_failures: Vec::new(),
+        }
+    }
+}
+
 /// One step execution seam: the live HTTP driver and the transcript player
 /// both implement this. The driver resolves the step's operation against
 /// the bindings, performs the call on the selected instance, classifies the
