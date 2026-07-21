@@ -1,0 +1,44 @@
+# Re-adjudicated 2026-07-21 from the retired ECC structural battery
+# (ECC-VAL-013..016) against AOM1.4 + RM spec text. The official CNF content
+# chapter master16 (ENTRY) carries no test-case headings, so the OBSERVATION
+# state/protocol existence matrix is grounded in the AOM1.4 C_ATTRIBUTE.existence
+# semantics and the RM OBSERVATION class (data 1..1; state/protocol 0..1).
+# `ecc-` id namespace pending upstream adoption.
+id: ecc-CONT-OBSERVATION-state_protocol_existence
+kind: content
+component: CONTENT
+rm_class: OBSERVATION
+status: active
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed OBSERVATION requires its mandatory RM data attribute (existence
+  1..1) and, per the archetype, its state and/or protocol when their
+  C_ATTRIBUTE.existence is tightened to 1..1. state and protocol are RM-optional
+  (0..1), so an archetype that leaves them optional accepts their absence.
+description: "OBSERVATION data (RM mandatory) + state/protocol against the archetype C_ATTRIBUTE.existence constraints"
+spec_refs:
+  - "AM AOM1.4 §C_ATTRIBUTE (existence) — whether the attribute field must be present"
+  - "RM ehr §OBSERVATION (data: HISTORY, existence 1..1; state: HISTORY, existence 0..1)"
+  - "RM ehr §CARE_ENTRY (protocol: ITEM_STRUCTURE, existence 0..1)"
+  - "CNF platform_test_schedule master16 (content ENTRY chapter — no test-case headings; re-adjudicated to AOM/RM)"
+applies: { rm: ">=1.0.2" }
+constraint_context:
+  # C_ATTRIBUTE.existence on OBSERVATION.state and OBSERVATION.protocol, varied
+  # per row (optional=0..1 = RM default; mandatory=1..1 = archetype-tightened).
+  template: cnf.tpl.ecc_observation_state_protocol_existence
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]"
+decision_table:
+  # state_existence/protocol_existence: the archetype C_ATTRIBUTE.existence tokens.
+  # data_committed/state_committed/protocol_committed: whether each object is committed.
+  columns: [state_existence, protocol_existence, data_committed, state_committed, protocol_committed, expected, violates]
+  rows:
+    - ["optional", "optional", "absent", "absent", "absent", rejected, ["rm_schema: OBSERVATION.data is mandatory (existence 1..1)"]]
+    - ["optional", "optional", "present", "absent", "absent", accepted, []]
+    - ["optional", "optional", "present", "present", "present", accepted, []]
+    - ["optional", "mandatory", "present", "absent", "absent", rejected, ["constraint(C_ATTRIBUTE.existence): protocol is mandated by the archetype (existence 1..1) but absent"]]
+    - ["optional", "mandatory", "present", "present", "present", accepted, []]
+    - ["mandatory", "optional", "present", "absent", "absent", rejected, ["constraint(C_ATTRIBUTE.existence): state is mandated by the archetype (existence 1..1) but absent"]]
+    - ["mandatory", "optional", "present", "present", "present", accepted, []]
+    - ["mandatory", "mandatory", "present", "absent", "absent", rejected, ["constraint(C_ATTRIBUTE.existence): state is mandated by the archetype (existence 1..1) but absent", "constraint(C_ATTRIBUTE.existence): protocol is mandated by the archetype (existence 1..1) but absent"]]
+    - ["mandatory", "mandatory", "present", "present", "present", accepted, []]

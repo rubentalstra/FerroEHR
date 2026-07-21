@@ -698,119 +698,157 @@ ECC-DEM-024:
   disposition: pending
   justification: "demographic chapter wave (CNF master10)"
 ECC-VAL-001:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-002:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-003:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-004:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-005:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-006:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-007:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-008:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-009:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-010:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-011:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-012:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-013:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-014:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-015:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-016:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-017:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-018:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-019:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-020:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-021:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-022:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-023:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-024:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-025:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-026:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-027:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-028:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-029:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-EVENT-state_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-030:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-EVENT-state_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-031:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-EVENT-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-032:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-EVENT-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-033:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-EVENT-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-034:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-035:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-036:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-037:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-038:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-039:
   disposition: covered
   covered_by: [CONT-DV_BOOLEAN-anything_allowed]
