@@ -41,4 +41,28 @@ metadata:
 NULL sort position, cross-type cell number typing (int vs real rendering),
 missing-cell repr (JSON null vs absent), meta-field equivalence. CNF query
 schedule `CNF/docs/platform_test_schedule/master11-func_tc_querying.adoc` is a
-STUB (all "xx"/"TBD", 108 lines) — defines NO result-comparison rules.
+STUB (all "xx"/"TBD", 108 lines) — defines NO result-comparison rules. Every
+test case row (smoke_test §L48, execute_stored/adhoc_query-empty_db/loaded_db,
+placeholder `bbbb`) has Description/Pre/Post/Flow = "xx"; only concrete field is
+the `Test runners` .robot link.
+
+**Extra exact-heading facts (verified 2026-07-21):**
+- AQL headings in master03-syntax.adoc: `=== WHERE` (L989), `=== ORDER BY` (L1094,
+  NOTE L1098), `=== LIMIT` (L1115), `==== DISTINCT` (L1055), `==== TOP` (L1070,
+  deprecated 1.1.0), `== Functions` (L490) → Aggregate/String/Numeric/Date-time/
+  Other subsections, `==== TERMINOLOGY` (L699–769, 3 WHERE usage positions only,
+  ops expand/validate/lookup/map/subsumes non-closed), `==== Containment` (L958,
+  CONTAINS; no literal "containsExpr" heading in prose — grammar token in
+  master07-grammar.adoc), `== Identified Paths` (L251), `== openEHR path syntax` (L36).
+- **TIMEWINDOW removed in Release 1.0.1** (NOT 1.1.0): master00-amendment_record.adoc
+  L88 SPECQUERY-20, completed 15 Jun 2020. Absent from master03 entirely.
+- LIMIT/OFFSET added 1.1.0: amendment L80 SPECQUERY-16.
+- RESULT_SET `meta._type` = "RESULTSET" is EXAMPLE-ONLY (ResultSetMetadata.yaml),
+  schema declares `_type: string` with no enum.
+- SM signatures: `SM/docs/UML/classes/i_query_service.adoc` §`=== I_QUERY_SERVICE
+  Interface` — execute_stored_query(exec_spec: STORED_QUERY_EXECUTE_SPEC, row_offset,
+  rows_to_fetch, ehr_ids: List<UUID>): RESULT_SET (L16); execute_ad_hoc_query(exec_spec:
+  ADHOC_QUERY_EXECUTE_SPEC, ...): RESULT_SET (L39); both 0..1, error ehr_id_does_not_exist.
+- ITS-REST operationIds: `query_execute_adhoc_query` / `query_execute_stored_query`
+  (OAS spells "adhoc"; SM spells "ad_hoc"). 200_Query.yaml (able-to-execute) +
+  400_Query.yaml (invalid input / invalid syntax) + 408 + (stored) 404.
