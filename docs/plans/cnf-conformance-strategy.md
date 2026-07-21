@@ -364,7 +364,7 @@ artifact discipline: **conformance-by-assertion** (functional + content
 cases: typed assertions roll up case → capability → profile) and
 **conformance-by-measurement** (performance cases: measured metrics against
 class thresholds). Capabilities group into **families** — Platform
-(CORE/STANDARD/OPTIONS), Enterprise (D/M/X — a proposed extension, §11.11), Security (§11.9) — all
+(CORE/STANDARD/OPTIONS), Enterprise (D/M/X — a proposed extension, §11.11), Security (SEC-BASIC, §8.15) — all
 assessed by the assertion machinery; the certificate is the matrix
 *machinery × family*: functional profile ratings per tech profile, plus an
 earned performance class per environment. Below the machineries: one
@@ -1667,6 +1667,42 @@ Rules:
   the workload definition and emitting the measurement schema qualifies —
   harness independence holds here too.
 
+### 8.15 The Security & Privacy schedule
+
+Security & Privacy is the third certificate rating of the 2017 schedule,
+realized as an **assertion-machinery capability family** (§8's architecture:
+these are testable functional behaviours — this is explicitly NOT a security
+evaluation scheme in the Common Criteria sense, §11.9). The family's first
+level is **SEC-BASIC** (the 2017 schedule's "BASIC" rung); higher levels are
+future SEC work. SEC-BASIC's conformance points, each an ordinary §8.3 case
+family:
+
+| Point | Conformance behaviour | Anchor |
+|---|---|---|
+| **EHR/demographic separation** | No demographic identifying content is reachable through EHR-side endpoints: `EHR_STATUS.subject` carries only opaque external refs / PARTY_SELF; EHR queries cannot join demographic records without demographic-service authorization. | 2017 schedule Security BASIC (lineage); RM ehr §EHR_STATUS.subject |
+| **Authenticated access enforced** | Every platform route rejects unauthenticated requests (`401`) — a negative sweep over the route table. | ITS-REST overview §HTTP status codes |
+| **Authorization separation** | Admin-family operations reject non-administrative principals (`403`); read-only principals cannot commit. | ITS-REST overview §HTTP status codes |
+| **Audit accountability** | Every change-controlled commit carries `commit_audit` with committer identity and **server-set** `time_committed` (client value ignored — the §8.4 commit-metadata rule as a security assertion); audit-event emission on writes where an audit log is supported (IHE ATNA-shaped). | RM common §change_control; ITS-REST overview §openehr-audit-details |
+| **Anonymous EHRs** | An EHR is creatable and fully operable with no demographic identity attached. | Profiles book §Non-Functional (existing CORE capability) |
+
+Signing remains its own existing capability (Profiles: STANDARD). The
+**statement-declared posture** (never wire verdicts): transport/at-rest
+encryption configuration and id-pseudonymisation-on-export — the 2017
+D-row's "encryption? id pseudonymisation?" aspects — declared in the
+statement's `non_functional` security slots and revisited when the
+Enterprise-D chapter (§11.11) makes export regression testable.
+
+**Certificate rating**: `Security: SEC-BASIC` is earned when every SEC-BASIC
+capability case passes (assertion machinery, per tech profile) — computed
+like every other cell, never declared.
+
+**Capability-matrix entries** (§8.2 family 3 — entry shape, stated here once
+for the whole matrix): `capability → { family: Platform | Enterprise |
+Security, tier: <family-scoped>, required: bool }`, where tiers are scoped
+per family — Platform: CORE/STANDARD/OPTIONS; Security: SEC-BASIC (…);
+Enterprise: D/M/X. The SEC-BASIC points above enter as
+`family: Security, tier: SEC-BASIC, required: true`.
+
 ## 9. Certification governance — the ladder as a conformity-assessment scheme
 
 **Scheme owner: openEHR International** (the CIC that operationally runs the
@@ -1692,9 +1728,9 @@ Cross-cutting rules:
 - **Certificate ratings are the machinery × family matrix** (the 2017
   multi-dimensional certificate, realized cleanly): assertion-machinery
   ratings per capability family — Platform (CORE/STANDARD/OPTIONS), and
-  Enterprise (D/M/X) + Security as their §11 chapters land — each per tech
-  profile, plus the measurement-machinery rating (earned performance class
-  per environment, §8.14). Every cell is computed from `results.json` +
+  Enterprise (D/M/X, §11.11) as its chapter lands and Security (SEC-BASIC,
+  §8.15) — each per tech profile, plus the measurement-machinery rating
+  (earned performance class per environment, §8.14). Every cell is computed from `results.json` +
   the capability matrix, never hand-asserted.
 - **Validity & supersession**: a statement/certificate names the CNF schedule
   release + spec versions + tech profile + exact product version. It never
@@ -1821,13 +1857,13 @@ once §8.3 makes cases enumerable files:
    tests is re-adjudicated to spec-text-only evidence **before** entering the
    normative catalogue. No exceptions; this is a scoped workstream, not an
    assumption.
-9. **Security & privacy conformance points** — currently only Signing +
-   Anonymous EHRs in the Profiles book while the Certificate book advertises
-   BASIC-SEC/BASIC-PRIV with no defining cases. Minimum viable set:
-   authenticated-access enforcement, audit-event emission on writes
-   (IHE ATNA-shaped), signing, and **EHR/demographic information
-   separation** (the 2017 schedule's BASIC point — openEHR's
-   architecture-specific privacy property). Explicitly scoped small; not a security
+9. **Security & privacy conformance points** — the Certificate book
+   advertises BASIC-SEC/BASIC-PRIV with no defining cases; only Signing +
+   Anonymous EHRs exist in the Profiles book. **The SEC-BASIC level is now
+   defined in §8.15** (EHR/demographic separation, authenticated access,
+   authorization separation, audit accountability, anonymous EHRs) — this
+   roadmap item authors its cases. Explicitly scoped small; not a security
+   evaluation scheme. Explicitly scoped small; not a security
    evaluation scheme.
 10. **ADL2 cases (master04)** — OPTIONS-profile depth for the `am24`
    generation.
