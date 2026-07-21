@@ -31,7 +31,7 @@ cites an ADR; the only citable references are the vendored specs and official
 external documentation.** (The current design in brief: the spec + ITS layer is
 generated from the vendored machine-readable specs by `openehr-codegen`; the
 application is idiomatic Rust of our own design on those crates, with its own
-PG18-native storage and typed AQL engine, three app crates with zero
+PG18-native storage and typed AQL engine, four app crates with zero
 re-exports, an SM-aligned service layer, and enterprise capabilities —
 eventing, multi-tenancy, FHIR connectors, multimedia externalization;
 acceptance is the openEHR conformance suite. See `architecture.md`.)
@@ -62,7 +62,7 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
 - `conformance/` — ECC run artifacts, one directory per SUT (`ehrbase-rs/`,
   `ehrbase-java/`, …): `CONFORMANCE_REPORT.md`, `CONFORMANCE_STATEMENT.md`,
   `CONFORMANCE_CERTIFICATE.md`, `results.json`, badges; the SUT-independent
-  `CATALOG.md` at the root. Current (ehrbase-rs): **370 executed · 335
-  passed · 0 failed — CORE PASS / STANDARD PASS**.
+  `CATALOG.md` at the root. Current (ehrbase-rs): **402 executed · 384
+  passed · 0 failed · 18 N/A — CORE PASS / STANDARD PASS**.
 - `benchmarks/` — `REPORT.md` + `results.json` + `COMPARISON.md` from the
   benchmark harness (`tools/benchmark`), regenerated per measured pair.

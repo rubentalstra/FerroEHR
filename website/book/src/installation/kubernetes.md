@@ -24,7 +24,7 @@ kubectl -n ehrbase create secret generic ehrbase-db \
 
 helm install ehrbase-rs deploy/helm/ehrbase-rs -n ehrbase \
   --set database.existingSecret=ehrbase-db \
-  --set image.tag=3.0.0
+  --set image.tag=3.5.0
 ```
 
 Always pin `image.tag` to an immutable version or, better, a `@sha256` digest —
@@ -62,8 +62,8 @@ Some settings do not fit cleanly in environment variables — the Basic-auth use
 store, a full OIDC block, RBAC role-claim lists, ABAC policies, the external
 terminology provider map, ATNA TLS certificates, and the PGP signing key. Supply
 these as files via `config.files`, which the chart mounts read-only from a
-Secret at `/etc/ehrbase/<key>`; point the matching `EHRBASE_*_CONFIG` /
-`*_PATH` variable at the file through `extraEnv`. Secret-bearing scalar values
+Secret at `/etc/ehrbase/<key>`; point the matching in-TOML `*_file` /
+`*_path` key (or its `EHRBASE__…` env override) at the mounted path. Secret-bearing scalar values
 (DB DSN, HMAC secret, broker URLs, S3 keys, PGP passphrase) go into the chart's
 Secret, never the ConfigMap.
 
@@ -133,7 +133,7 @@ config env prefix:
 | FHIR outbound → AMQP | `fhirOutbound.enabled` | ⚠ **Carries PHI** (the mapped FHIR resource). Separate exchange; TLS broker only. |
 | S3 multimedia | `multimedia.enabled` | ⚠ Offloaded blobs are PHI. Private, encrypted, HTTPS bucket. |
 | External terminology | `externalTerminology.enabled` | FHIR terminology server; provider map via a mounted TOML. |
-| ATNA system log | `atna.enabled` | Use `transport: tls` for PHI-adjacent audit. |
+| ATNA system log | `audit.enabled` | Use `audit.syslog.transport: tls` for PHI-adjacent audit. |
 | Version signing | `signing.*` | On by default (`digest`). `pgp` mode fails closed at boot without a usable key. |
 | OTLP telemetry | `telemetry.otel.*` | Unset endpoint ⇒ the OTel layer is not installed (zero overhead). |
 

@@ -219,10 +219,11 @@ flowchart TB
         openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser) · openehr-flat (WebTemplate · FLAT · STRUCTURED)"]
     end
 
-    subgraph app ["app/* — the application (three crates, three roles)"]
+    subgraph app ["app/* — the application (four crates, four roles)"]
         rest["ehrbase-rest<br/>ITS-REST 1.1.0 protocol adapter (axum)<br/>+ access (authn · RBAC/ABAC) + wire mapping"]
         core["ehrbase<br/>the platform library: PG18 node storage · versioning ·<br/>AQL→SQL engine · validation · signing ·<br/>eventing · FHIR · multimedia — one service module<br/>per SM Platform Service Model chapter"]
         bin["ehrbase-server<br/>the wiring-only binary"]
+        adminui["ehrbase-admin-ui<br/>the Leptos SSR admin console (own OCI image,<br/>consumes the CDR strictly over ITS-REST)"]
     end
 
     subgraph tools ["tools/* — generation + verification (not shipped)"]

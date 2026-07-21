@@ -1,16 +1,14 @@
 # Contributing to EHRbase-rs
 
 Thank you for your interest in contributing. This document covers the practical
-rules; the architectural ground rules live in [`docs/ADRs/`](docs/ADRs/) and
-[`docs/architecture.md`](docs/architecture.md).
+rules; the architectural ground rules live in
+[`docs/architecture.md`](docs/architecture.md) and the root `CLAUDE.md`.
 
 ## Before you start
 
-- **Read [ADR-008](docs/ADRs/ADR-008-greenfield-pg18-storage.md) first**, then
-  [ADR-004](docs/ADRs/ADR-004-spec-driven-codegen.md)/[ADR-005](docs/ADRs/ADR-005-its-codegen.md)
-  (the generated spec layer) and
-  [ADR-006](docs/ADRs/ADR-006-application-port-philosophy.md) (the application
-  philosophy). They explain the two-layer split every change must respect.
+- **Read [`docs/architecture.md`](docs/architecture.md) first** — it explains
+  the two-layer split (generated `openehr-*` spec crates, hand-written
+  `ehrbase-*` application) every change must respect.
 - For anything spec-facing (RM semantics, REST wire behaviour, AQL, canonical
   JSON/XML, templates, terminology), **the vendored openEHR specification text at
   [`docs/specs/openehr/`](docs/specs/openehr/) is the authority** — cite the spec
@@ -65,7 +63,7 @@ CI runs the same set; nothing is advisory.
 - Tests accompany behaviour changes. Snapshot changes (`insta`) must be reviewed,
   not blindly accepted.
 - Commit messages describe the change itself (conventional-commit style subjects
-  like `phase-17: …`, `fix: …`, `docs: …` are used throughout the history).
+  like `feat: …`, `fix: …`, `docs: …` are used throughout the history).
 
 ## Reporting issues
 

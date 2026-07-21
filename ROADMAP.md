@@ -12,7 +12,7 @@ artifacts: conformance in `docs/conformance/`, benchmarks in
 ## What the product is
 
 A pure-Rust, headless, API-first openEHR CDR on PostgreSQL 18: ITS-REST
-1.0.3 at the API, AQL 1.1 as the query language, RM 1.2.0 as the domain
+1.1.0 at the API, AQL 1.1 as the query language, RM 1.2.0 as the domain
 model — the spec layer generated from the official machine-readable specs,
 the application our own design on top (`docs/architecture.md`). Conformance
 is machine-verified per release by the built-in ECC runner; performance is

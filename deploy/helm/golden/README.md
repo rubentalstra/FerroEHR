@@ -4,7 +4,7 @@ These are the committed `helm template` outputs the chart is expected to
 produce, used by `deploy/helm/validate.sh` (and CI) to catch unintended drift.
 
 - `default.yaml` — `ci/default-values.yaml` (chart defaults + an external-Secret
-  DB DSN; all optional integrations OFF, the ADR-013 security posture on).
+  DB DSN; all optional integrations OFF, the hardened default security posture on).
 - `all-features.yaml` — `ci/all-features-values.yaml` (every optional
   integration enabled, separate management port, autoscaling, egress policy,
   mounted config files).

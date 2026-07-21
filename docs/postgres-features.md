@@ -33,7 +33,7 @@ we run the latest patch (18.4) for the fixes.
 | Feature | What it enables for EHRbase-RS |
 |---|---|
 | **`uuidv7()` (native)** | Timestamp-ordered UUIDs for `OBJECT_VERSION_ID`/row keys — index-friendly, no `uuid` crate round-trip for DB-generated ids (P09). |
-| **Temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN KEY` `WITHOUT OVERLAPS`** | Enforce non-overlapping validity on the one temporal `vo_version` table (ADR-008 — `sys_period tstzrange`, no current/`_history` pairs) at the DB — a natural fit for openEHR versioning (P09/P10/P12). |
+| **Temporal `PRIMARY KEY`/`UNIQUE`/`FOREIGN KEY` `WITHOUT OVERLAPS`** | Enforce non-overlapping validity on the one temporal `vo_version` table (the greenfield storage design — `sys_period tstzrange`, no current/`_history` pairs; see `docs/architecture.md` §Storage) at the DB — a natural fit for openEHR versioning (P09/P10/P12). |
 | **`RETURNING OLD/NEW`** in INSERT/UPDATE/DELETE/MERGE | One-statement audit capture (write + return prior value) for the `audit`/`contribution` rows on every version write (P12). |
 | **Virtual generated columns** | Cheap read-time derived columns (e.g. a JSONB leaf) without storage — candidate indexes/filters for AQL hot paths (P16/P20). |
 | **B-tree skip scan** | Multicolumn indexes usable when a leading column is unconstrained — fewer indexes for the row-per-locatable + AQL access patterns. |

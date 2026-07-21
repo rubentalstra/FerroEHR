@@ -2,9 +2,9 @@
 
 This directory holds the public documentation site published to
 **https://rubentalstra.github.io/ehrbase-rs/** (GitHub Pages, project sub-path
-`/ehrbase-rs/`). The authoritative specification for the whole site — toolchain
-pins, URL scheme, versioning machinery, design tokens, content map — is the
-phase file [`docs/plans/w1-docs-website.md`](../docs/plans/w1-docs-website.md).
+`/ehrbase-rs/`). The site conventions — toolchain pins, URL scheme,
+versioning machinery, design tokens, content map — are documented in
+`.claude/rules/docs-website.md` and this file.
 
 ## Layout
 
@@ -35,4 +35,4 @@ branch plus `/docs/latest/`, exactly as CI does before deploy.
   run `scripts/assemble-oas.sh` (the served OAS is a byte copy of the vendored
   ITS-REST bundles, drift-gated in CI).
 - Authoring voice is end-user and task-first; never publish internal trees
-  (ADRs, plans, blueprint, spec oracle) — see the phase file §4.
+  (plans, rules, the vendored spec oracle).

@@ -26,7 +26,7 @@ with `EHRBASE__SERVER__BASE_PATH` (see the
 [configuration reference](../installation/configuration.md)).
 
 The public, unauthenticated status probe lives just outside the base path at
-`/ehrbase/rest/status`, and interactive docs at `/ehrbase/swagger-ui` when
+`/ehrbase/rest/status`, and interactive docs at `/ehrbase/rest/swagger-ui` when
 enabled.
 
 An `OPTIONS` request to the API base path (also answered at `/`) returns the
