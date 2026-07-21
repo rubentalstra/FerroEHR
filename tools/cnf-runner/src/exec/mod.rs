@@ -127,6 +127,16 @@ pub trait StepDriver {
 /// Resolve the expected kind for a step in a given row (the per-fixture
 /// `${fixture.expected}` override).
 fn expected_kind(case: &CaseCore, step: &FlowStep, row: usize) -> Option<OutcomeKind> {
+    // The reserved matrix `expected` column is the normative per-row
+    // override; rows without it inherit the flow's expectation.
+    if let Some(matrix) = case.parameters.as_ref().and_then(|p| p.matrix.as_ref())
+        && let Some(col) = matrix.columns.iter().position(|c| c == "expected")
+        && let Some(crate::model::case::MatrixCell::Literal(serde_json::Value::String(s))) =
+            matrix.rows.get(row).and_then(|cells| cells.get(col))
+        && let Some(kind) = OutcomeKind::from_token(s)
+    {
+        return Some(kind);
+    }
     match step.expect {
         crate::model::case::ExpectSpec::Kind(kind) => Some(kind),
         crate::model::case::ExpectSpec::FixtureExpected => case

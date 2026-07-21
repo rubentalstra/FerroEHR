@@ -1184,3 +1184,27 @@ cnf.sf.flat.binding_violation:
     defect: "DV_CODED_TEXT |code (at9999) is outside the bound closed value set"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (terminology bindings are valid)"
   provenance: "authored 2026-07-21 with an out-of-value-set coded value; structural placeholder pending corpus authoring"
+cnf.scale.10k:
+  generated_by: { recipe: scale_ladder, digest: "sha256:pending-scale-ladder-contract" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated scale-class corpus (10k EHRs, ~100 composition versions/EHR per the corpus ladder); recipe contract lands with the sustained-run engine"
+cnf.scale.100k:
+  generated_by: { recipe: scale_ladder, digest: "sha256:pending-scale-ladder-contract" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated scale-class corpus (100k EHRs, ~100 composition versions/EHR per the corpus ladder); recipe contract lands with the sustained-run engine"
+cnf.scale.1m:
+  generated_by: { recipe: scale_ladder, digest: "sha256:pending-scale-ladder-contract" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated scale-class corpus (1m EHRs, ~100 composition versions/EHR per the corpus ladder); recipe contract lands with the sustained-run engine"
+cnf.scale.10m:
+  generated_by: { recipe: scale_ladder, digest: "sha256:pending-scale-ladder-contract" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated scale-class corpus (10m EHRs, ~100 composition versions/EHR per the corpus ladder); recipe contract lands with the sustained-run engine"

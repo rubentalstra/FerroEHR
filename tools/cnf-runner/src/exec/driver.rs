@@ -318,6 +318,43 @@ impl<'a> HttpDriver<'a> {
         Some(value)
     }
 
+    #[allow(clippy::too_many_arguments)] // mirrors the assertion's field set
+    fn eval_field_assertion(
+        &mut self,
+        body: &Value,
+        path: &str,
+        equals: Option<&crate::model::value::TemplatedValue>,
+        not_equals: Option<&crate::model::value::TemplatedValue>,
+        exists: Option<bool>,
+        absent: Option<bool>,
+        matches: Option<&str>,
+        vars: &VarStore,
+    ) -> Result<(), AssertionFailure> {
+        let mut resolve =
+            |tv: Option<&crate::model::value::TemplatedValue>| -> Result<Option<Value>, String> {
+                tv.map(|v| {
+                    self.resolver
+                        .resolve_value(v, vars)
+                        .map_err(|e| e.to_string())
+                })
+                .transpose()
+            };
+        let eq_r = resolve(equals);
+        let neq_r = resolve(not_equals);
+        match (eq_r, neq_r) {
+            (Ok(eq), Ok(neq)) => assertions::eval_field(
+                body,
+                path,
+                eq.as_ref(),
+                neq.as_ref(),
+                exists,
+                absent,
+                matches,
+            ),
+            (Err(e), _) | (_, Err(e)) => Err(AssertionFailure(e)),
+        }
+    }
+
     /// Evaluate the pure-side assertions for a step against the exchange.
     fn eval_assertions(
         &mut self,
@@ -349,27 +386,16 @@ impl<'a> HttpDriver<'a> {
                     exists,
                     absent,
                     matches,
-                } => {
-                    let mut resolve = |tv: &Option<crate::model::value::TemplatedValue>| -> Result<Option<Value>, String> {
-                        tv.as_ref()
-                            .map(|v| self.resolver.resolve_value(v, vars).map_err(|e| e.to_string()))
-                            .transpose()
-                    };
-                    let eq_r = resolve(equals);
-                    let neq_r = resolve(not_equals);
-                    match (eq_r, neq_r) {
-                        (Ok(eq), Ok(neq)) => assertions::eval_field(
-                            body,
-                            path,
-                            eq.as_ref(),
-                            neq.as_ref(),
-                            *exists,
-                            *absent,
-                            matches.as_deref(),
-                        ),
-                        (Err(e), _) | (_, Err(e)) => Err(AssertionFailure(e)),
-                    }
-                }
+                } => self.eval_field_assertion(
+                    body,
+                    path,
+                    equals.as_ref(),
+                    not_equals.as_ref(),
+                    *exists,
+                    *absent,
+                    matches.as_deref(),
+                    vars,
+                ),
                 Assertion::Equivalent { to, ignoring } => {
                     let expected = match to {
                         EquivalentTarget::Committed => self.committed.last().cloned(),
@@ -555,41 +581,108 @@ fn base64_encode(input: &[u8]) -> String {
     out
 }
 
-impl StepDriver for HttpDriver<'_> {
-    fn perform(
+impl HttpDriver<'_> {
+    /// Body per the binding request contract.
+    fn select_body(
+        &mut self,
+        request_spec: &crate::model::binding::RequestSpec,
+        with: &BTreeMap<String, Value>,
+        step: &FlowStep,
+        vars: &VarStore,
+    ) -> Result<Option<Value>, String> {
+        match &request_spec.body {
+            None => Ok(None),
+            Some(RequestBody::Named { name, optional }) => {
+                let found = with
+                    .get(name)
+                    .cloned()
+                    .or_else(|| with.get("composition").cloned())
+                    .or_else(|| with.get("opt").cloned())
+                    .or_else(|| {
+                        // single-payload steps: the one non-path value
+                        with.iter()
+                            .find(|(k, _)| {
+                                !request_spec.path.params().iter().any(|p| p.as_str() == *k)
+                            })
+                            .map(|(_, v)| v.clone())
+                    });
+                match (found, optional) {
+                    (Some(v), _) => Ok(Some(v)),
+                    (None, true) => Ok(None),
+                    (None, false) => {
+                        Err(format!("step {}: body role {name} unresolved", step.step))
+                    }
+                }
+            }
+            Some(RequestBody::Structured(template)) => Ok(Some(
+                self.resolver
+                    .resolve_value(template, vars)
+                    .map_err(|e| e.to_string())?,
+            )),
+        }
+    }
+
+    /// commit: bulk-provision generated sets, binding committed uids.
+    fn provision_commit_sets(
         &mut self,
         case: &CaseCore,
-        step: &FlowStep,
-        _expected: OutcomeKind,
-        row: usize,
         vars: &mut VarStore,
-    ) -> Result<StepObservation, String> {
-        self.resolver.bind_row(case, row);
-        let binding = self.binding_for(case, &step.call)?;
-        if binding.is_unrealized() {
-            // The interpreter surfaces this before perform() normally; the
-            // driver answers with a transport-class observation so law (c)
-            // holds even if reached.
-            return Ok(StepObservation {
-                observation: Observation::Transport("operation unrealized on this ITS".into()),
-                assertion_failures: Vec::new(),
-            });
-        }
-        let instance = self.instance_for(step)?;
-
-        // Resolve the with-payload.
-        let mut with: BTreeMap<String, Value> = BTreeMap::new();
-        for (key, value) in step.with_entries() {
-            let resolved = self.resolver.resolve_value(value, vars);
-            match resolved {
-                Ok(v) => {
-                    with.insert(key.clone(), v);
+    ) -> Result<(), String> {
+        for key in case.requires.commit.clone() {
+            let set = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
+            let Some(items) = set.as_array() else {
+                continue;
+            };
+            let binding = self.binding_for(case, "I_EHR_COMPOSITION.create_composition")?;
+            let instance = self.ixit.default_instance()?;
+            let request_spec = binding
+                .request
+                .as_ref()
+                .ok_or_else(|| "create_composition unrealized".to_owned())?;
+            let ehr_id = vars
+                .scalar(&CaptureName::parse("ehr_id").map_err(|e| e.to_string())?)
+                .ok_or_else(|| "requires.commit without a provisioned ehr".to_owned())?
+                .to_owned();
+            let mut uids = Vec::new();
+            for item in items {
+                let mut headers = BTreeMap::new();
+                headers.insert("Content-Type".to_owned(), "application/json".to_owned());
+                headers.insert("Accept".to_owned(), "application/json".to_owned());
+                headers.insert("Prefer".to_owned(), "return=representation".to_owned());
+                if let Some(auth) = Self::auth_header(&instance.auth)? {
+                    headers.insert("Authorization".to_owned(), auth);
                 }
-                Err(e) => return Err(format!("step {}: with.{key}: {e}", step.step)),
+                let base = instance.base_url.trim_end_matches('/');
+                let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
+                let url = format!("{base}{path}");
+                let exchange = self.send(request_spec.method, &url, &headers, Some(item), true)?;
+                if let Some((_, spec)) = binding
+                    .captures
+                    .as_deref()
+                    .unwrap_or_default()
+                    .iter()
+                    .find(|(n, _)| n.as_str() == "version_uid")
+                    && let Some(uid) = Self::extract_capture(&exchange, spec, vars)
+                {
+                    uids.push(uid);
+                }
             }
+            vars.set(committed_uids_handle(), Captured::List(uids));
         }
+        Ok(())
+    }
+}
 
-        // Headers: binding request headers + format headers + auth.
+impl HttpDriver<'_> {
+    /// Headers: binding request headers + format headers + auth + instance
+    /// extras.
+    fn build_headers(
+        case: &CaseCore,
+        step: &FlowStep,
+        binding: &OperationBinding,
+        instance: &Instance,
+        vars: &VarStore,
+    ) -> Result<BTreeMap<String, String>, String> {
         let request_spec = binding
             .request
             .as_ref()
@@ -646,38 +739,51 @@ impl StepDriver for HttpDriver<'_> {
                 headers.insert(name.clone(), value.clone());
             }
         }
+        Ok(headers)
+    }
+}
 
-        // Body per the binding request contract.
-        let body: Option<Value> = match &request_spec.body {
-            None => None,
-            Some(RequestBody::Named { name, optional }) => {
-                let found = with
-                    .get(name)
-                    .cloned()
-                    .or_else(|| with.get("composition").cloned())
-                    .or_else(|| with.get("opt").cloned())
-                    .or_else(|| {
-                        // single-payload steps: the one non-path value
-                        with.iter()
-                            .find(|(k, _)| {
-                                !request_spec.path.params().iter().any(|p| p.as_str() == *k)
-                            })
-                            .map(|(_, v)| v.clone())
-                    });
-                match (found, optional) {
-                    (Some(v), _) => Some(v),
-                    (None, true) => None,
-                    (None, false) => {
-                        return Err(format!("step {}: body role {name} unresolved", step.step));
-                    }
+impl StepDriver for HttpDriver<'_> {
+    fn perform(
+        &mut self,
+        case: &CaseCore,
+        step: &FlowStep,
+        _expected: OutcomeKind,
+        row: usize,
+        vars: &mut VarStore,
+    ) -> Result<StepObservation, String> {
+        self.resolver.bind_row(case, row);
+        let binding = self.binding_for(case, &step.call)?;
+        if binding.is_unrealized() {
+            // The interpreter surfaces this before perform() normally; the
+            // driver answers with a transport-class observation so law (c)
+            // holds even if reached.
+            return Ok(StepObservation {
+                observation: Observation::Transport("operation unrealized on this ITS".into()),
+                assertion_failures: Vec::new(),
+            });
+        }
+        let instance = self.instance_for(step)?;
+
+        // Resolve the with-payload.
+        let mut with: BTreeMap<String, Value> = BTreeMap::new();
+        for (key, value) in step.with_entries() {
+            let resolved = self.resolver.resolve_value(value, vars);
+            match resolved {
+                Ok(v) => {
+                    with.insert(key.clone(), v);
                 }
+                Err(e) => return Err(format!("step {}: with.{key}: {e}", step.step)),
             }
-            Some(RequestBody::Structured(template)) => Some(
-                self.resolver
-                    .resolve_value(template, vars)
-                    .map_err(|e| e.to_string())?,
-            ),
-        };
+        }
+
+        let request_spec = binding
+            .request
+            .as_ref()
+            .ok_or_else(|| "binding is unrealized".to_owned())?;
+        let headers = Self::build_headers(case, step, binding, instance, vars)?;
+
+        let body = self.select_body(request_spec, &with, step, vars)?;
 
         let base = instance.base_url.trim_end_matches('/');
         let url = Self::build_url(binding, base, &with, vars)?;
@@ -844,48 +950,7 @@ impl StepDriver for HttpDriver<'_> {
                 );
             }
         }
-        // commit: bulk-provision generated sets, binding committed uids.
-        for key in case.requires.commit.clone() {
-            let set = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
-            let Some(items) = set.as_array() else {
-                continue;
-            };
-            let binding = self.binding_for(case, "I_EHR_COMPOSITION.create_composition")?;
-            let instance = self.ixit.default_instance()?;
-            let request_spec = binding
-                .request
-                .as_ref()
-                .ok_or_else(|| "create_composition unrealized".to_owned())?;
-            let ehr_id = vars
-                .scalar(&CaptureName::parse("ehr_id").map_err(|e| e.to_string())?)
-                .ok_or_else(|| "requires.commit without a provisioned ehr".to_owned())?
-                .to_owned();
-            let mut uids = Vec::new();
-            for item in items {
-                let mut headers = BTreeMap::new();
-                headers.insert("Content-Type".to_owned(), "application/json".to_owned());
-                headers.insert("Accept".to_owned(), "application/json".to_owned());
-                headers.insert("Prefer".to_owned(), "return=representation".to_owned());
-                if let Some(auth) = Self::auth_header(&instance.auth)? {
-                    headers.insert("Authorization".to_owned(), auth);
-                }
-                let base = instance.base_url.trim_end_matches('/');
-                let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
-                let url = format!("{base}{path}");
-                let exchange = self.send(request_spec.method, &url, &headers, Some(item), true)?;
-                if let Some((_, spec)) = binding
-                    .captures
-                    .as_deref()
-                    .unwrap_or_default()
-                    .iter()
-                    .find(|(n, _)| n.as_str() == "version_uid")
-                    && let Some(uid) = Self::extract_capture(&exchange, spec, vars)
-                {
-                    uids.push(uid);
-                }
-            }
-            vars.set(committed_uids_handle(), Captured::List(uids));
-        }
+        self.provision_commit_sets(case, vars)?;
         Ok(())
     }
 
@@ -911,35 +976,31 @@ impl StepDriver for HttpDriver<'_> {
                     absent,
                     matches,
                 } => {
-                    let mut resolve = |tv: &Option<crate::model::value::TemplatedValue>| {
-                        tv.as_ref()
-                            .and_then(|v| self.resolver.resolve_value(v, vars).ok())
-                    };
-                    let eq = resolve(equals);
-                    let neq = resolve(not_equals);
-                    if let Err(AssertionFailure(m)) = assertions::eval_field(
+                    if let Err(AssertionFailure(m)) = self.eval_field_assertion(
                         &body,
                         path,
-                        eq.as_ref(),
-                        neq.as_ref(),
+                        equals.as_ref(),
+                        not_equals.as_ref(),
                         *exists,
                         *absent,
                         matches.as_deref(),
+                        vars,
                     ) {
                         failures.push(m);
                     }
                 }
+                // Equivalent/returns/result_set/instance_of postconditions
+                // ride the flow's read step (the verification carrier);
+                // version/signature need versioned-object reads (registered
+                // exceptions in the run report); unique is aggregate (law e);
+                // message_exemplar/state are informative.
                 Assertion::Equivalent { .. }
                 | Assertion::Returns { .. }
                 | Assertion::ResultSet { .. }
-                | Assertion::InstanceOf { .. } => {
-                    // evaluated against the last response like step asserts
-                    // (the flow's read step is the verification carrier)
-                }
-                // version/signature postconditions need versioned-object
-                // reads; recorded as registered exceptions by the run report.
-                Assertion::Version { .. } | Assertion::Signature { .. } => {}
-                Assertion::Unique { .. }
+                | Assertion::InstanceOf { .. }
+                | Assertion::Version { .. }
+                | Assertion::Signature { .. }
+                | Assertion::Unique { .. }
                 | Assertion::MessageExemplar { .. }
                 | Assertion::State { .. } => {}
             }

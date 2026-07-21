@@ -187,6 +187,82 @@ pub fn query_bp(k: usize) -> Result<Value, RecipeError> {
     bp_series(k)
 }
 
+/// `content_instance` — the content-chapter generation recipe: build the
+/// data-value instance for one decision-table row by direct column→attribute
+/// mapping (`null` cells omit the attribute so RM mandatory checks fire;
+/// structured literal cells pass through), inject it at the case's
+/// constrained node in the minimal-event carrier composition, and hand the
+/// result to the ordinary commit flow — one executor serves functional and
+/// content cases alike.
+// TODO: constraint-axis columns (validity flags, baked template bounds)
+// currently map like instance attributes; the spine-first corpus authoring
+// adds the per-table projection metadata that separates the two axes.
+#[must_use]
+pub fn content_instance(rm_class: &str, columns: &[String], cells: &[MatrixCell]) -> Value {
+    let mut dv = serde_json::Map::new();
+    dv.insert("_type".to_owned(), Value::String(rm_class.to_owned()));
+    for (column, cell) in columns.iter().zip(cells) {
+        if column == "expected" || column == "violates" {
+            continue;
+        }
+        match cell {
+            MatrixCell::Null | MatrixCell::Absent => {} // omit: mandatory checks fire
+            MatrixCell::Provided => {
+                dv.insert(column.clone(), Value::String(format!("cnf-{column}")));
+            }
+            MatrixCell::Literal(v) => {
+                dv.insert(column.clone(), v.clone());
+            }
+        }
+    }
+    let mut composition = base_carrier_composition();
+    if let Some(items) = composition
+        .pointer_mut("/content/0/data/events/0/data/items")
+        .and_then(Value::as_array_mut)
+        && let Some(element) = items.first_mut()
+        && let Some(map) = element.as_object_mut()
+    {
+        map.insert("value".to_owned(), Value::Object(dv));
+    }
+    composition
+}
+
+/// The minimal-event carrier the content instances commit inside.
+fn base_carrier_composition() -> Value {
+    json!({
+        "_type": "COMPOSITION",
+        "name": { "_type": "DV_TEXT", "value": "content case carrier" },
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-COMPOSITION.minimal.v1" },
+            "template_id": { "_type": "TEMPLATE_ID", "value": "cnf.minimal_event" },
+            "rm_version": "1.0.2"
+        },
+        "language": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" },
+        "territory": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" }, "code_string": "NL" },
+        "category": { "_type": "DV_CODED_TEXT", "value": "event",
+            "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "433" } },
+        "composer": { "_type": "PARTY_SELF" },
+        "context": { "_type": "EVENT_CONTEXT",
+            "start_time": { "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" },
+            "setting": { "_type": "DV_CODED_TEXT", "value": "other care",
+                "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "238" } } },
+        "content": [{
+            "_type": "OBSERVATION",
+            "name": { "_type": "DV_TEXT", "value": "content observation" },
+            "archetype_node_id": "openEHR-EHR-OBSERVATION.minimal.v1",
+            "language": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" },
+            "encoding": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "IANA_character-sets" }, "code_string": "UTF-8" },
+            "subject": { "_type": "PARTY_SELF" },
+            "data": { "_type": "HISTORY", "name": { "_type": "DV_TEXT", "value": "history" }, "archetype_node_id": "at0001",
+                "origin": { "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" },
+                "events": [{ "_type": "POINT_EVENT", "name": { "_type": "DV_TEXT", "value": "any event" }, "archetype_node_id": "at0002",
+                    "time": { "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" },
+                    "data": { "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "tree" }, "archetype_node_id": "at0003",
+                        "items": [{ "_type": "ELEMENT", "name": { "_type": "DV_TEXT", "value": "value" }, "archetype_node_id": "at0004" }] } }] } }]
+    })
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::panic, clippy::indexing_slicing)] // test fixtures
 mod tests {
