@@ -16,9 +16,15 @@ use super::status::{CallStatusType, SmError};
 /// boundary so the REST layer stays free of persistence concerns.
 #[derive(Debug, thiserror::Error)]
 pub enum ServiceError {
-    /// The requested resource does not exist.
+    /// The requested resource does not exist. Carries the granular SM
+    /// does-not-exist status ([`CallStatusType`] `*_does_not_exist` family,
+    /// `master03-common_package.adoc` §Representing Call Status) so the
+    /// [`SmError`] conversion below restores it losslessly — construct via
+    /// [`ServiceError::sm`] naming the precise status; extension resources the
+    /// SM has no status for (tenants, event subscriptions, FHIR mappings, item
+    /// tags) use the generic `versioned_object_does_not_exist`.
     #[error("{0} not found")]
-    NotFound(String),
+    NotFound(SmError),
     /// The request is malformed at the semantic level (e.g. a stale/invalid
     /// `preceding_version_uid`, or an operation on an already-deleted object) —
     /// ITS-REST `400 Bad Request` (`400_already_deleted.yaml`).
@@ -79,6 +85,9 @@ impl ServiceError {
                 ServiceError::Internal(m)
             }
             S::PreconditionViolation | S::InvalidIdPattern => ServiceError::BadRequest(m),
+            // The does-not-exist family keeps its granular status inside the
+            // variant, so the `SmError` round-trip below is lossless — no
+            // per-method boundary re-raise needed.
             S::ObjectVersionDoesNotExist
             | S::VersionedObjectDoesNotExist
             | S::EhrIdDoesNotExist
@@ -89,7 +98,9 @@ impl ServiceError {
             | S::TemplateDoesNotExist
             | S::VersionDoesNotExist
             | S::SubjectIdDoesNotExist
-            | S::VersionedCompositionDoesNotExist => ServiceError::NotFound(m),
+            | S::VersionedCompositionDoesNotExist => {
+                ServiceError::NotFound(SmError::new(status, m))
+            }
             S::VersionMismatch => ServiceError::VersionConflict(m),
             S::EhrCreateFailDuplicateId
             | S::CompositionAlreadyExists
@@ -128,7 +139,7 @@ impl From<ServiceError> for SmError {
     ///
     /// | `ServiceError`            | `CallStatusType`             | HTTP |
     /// |---------------------------|------------------------------|------|
-    /// | `NotFound`                | `VersionedObjectDoesNotExist`| 404  |
+    /// | `NotFound`                | its carried granular status  | 404  |
     /// | `VersionConflict`         | `VersionMismatch`            | 412  |
     /// | `Conflict`                | `CompositionAlreadyExists`   | 409  |
     /// | `Unprocessable`           | `ContentInvalid`             | 422  |
@@ -137,10 +148,10 @@ impl From<ServiceError> for SmError {
     /// | `Storage`/`Database`      | classified: 409/503/500      |      |
     /// | `Json`/`Signing`/`Internal` | `Exception`                | 500  |
     ///
-    /// `NotFound` cannot recover the concrete resource kind, so it maps to the
-    /// generic `versioned_object_does_not_exist` (all 404s); a chapter that
-    /// knows the precise kind constructs its own `SmError` instead (e.g. the
-    /// EHR-index chapter's `IndexError`). `Conflict` maps to a representative
+    /// `NotFound` carries the granular does-not-exist [`SmError`] it was
+    /// constructed with ([`ServiceError::sm`]), so the round-trip restores the
+    /// precise status — `ehr_id_does_not_exist` stays `ehr_id_does_not_exist`,
+    /// never a resurrected generic. `Conflict` maps to a representative
     /// already-exists status (all 409s).
     ///
     /// NOTE (wire): the structured per-path violations of `ValidationFailed`
@@ -154,7 +165,9 @@ impl From<ServiceError> for SmError {
     fn from(e: ServiceError) -> Self {
         use super::status::CallStatusType as S;
         match e {
-            ServiceError::NotFound(m) => SmError::new(S::VersionedObjectDoesNotExist, m),
+            // Lossless: the granular does-not-exist status travels inside the
+            // variant (see `ServiceError::sm`).
+            ServiceError::NotFound(e) => e,
             ServiceError::VersionConflict(m) => SmError::new(S::VersionMismatch, m),
             ServiceError::Conflict(m) => SmError::new(S::CompositionAlreadyExists, m),
             ServiceError::Unprocessable(m) => SmError::new(S::ContentInvalid, m),
@@ -182,7 +195,9 @@ impl From<ServiceError> for SmError {
 impl From<ServiceError> for ApiError {
     fn from(e: ServiceError) -> Self {
         match e {
-            ServiceError::NotFound(m) => ApiError::NotFound(m),
+            // Every does-not-exist status is a wire 404; the message is the
+            // carried `SmError`'s text (unchanged from construction).
+            ServiceError::NotFound(e) => ApiError::NotFound(e.message),
             ServiceError::BadRequest(m) => ApiError::BadRequest(m),
             ServiceError::Conflict(m) => ApiError::Conflict(m),
             ServiceError::VersionConflict(m) => ApiError::PreconditionFailed(m),
@@ -280,6 +295,46 @@ mod tests {
         for (status, expected) in rows {
             let got = ApiError::from(ServiceError::sm(status, "m")).status();
             assert_eq!(got, expected, "row {} diverged", status.sm_name());
+        }
+    }
+
+    /// Every granular does-not-exist status must survive the
+    /// `ServiceError` round-trip verbatim — `ServiceError::sm(s, m)` back
+    /// through `From<ServiceError> for SmError` yields `s`, never a
+    /// resurrected generic `versioned_object_does_not_exist` (the #141-era
+    /// lossy seam). The SM models these as distinct `CALL_STATUS_TYPE`
+    /// codes (`master03-common_package.adoc` §Representing Call Status).
+    #[test]
+    fn does_not_exist_statuses_round_trip_losslessly() {
+        let granular = [
+            S::ObjectVersionDoesNotExist,
+            S::VersionedObjectDoesNotExist,
+            S::EhrIdDoesNotExist,
+            S::PartyIdDoesNotExist,
+            S::CompositionDoesNotExist,
+            S::ContributionDoesNotExist,
+            S::ArtefactDoesNotExist,
+            S::TemplateDoesNotExist,
+            S::VersionDoesNotExist,
+            S::SubjectIdDoesNotExist,
+            S::VersionedCompositionDoesNotExist,
+        ];
+        for status in granular {
+            let service_err = ServiceError::sm(status, "m");
+            assert!(
+                matches!(service_err, ServiceError::NotFound(_)),
+                "{} must classify as NotFound",
+                status.sm_name()
+            );
+            let restored = crate::service::status::SmError::from(service_err);
+            assert_eq!(
+                restored.status,
+                status,
+                "{} resurrected as {}",
+                status.sm_name(),
+                restored.status.sm_name()
+            );
+            assert_eq!(restored.message, "m", "message must survive unchanged");
         }
     }
 }

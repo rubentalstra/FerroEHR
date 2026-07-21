@@ -432,12 +432,15 @@ impl EhrbaseService {
             })
             .max_by(|a, b| cmp_version(version_of(a), version_of(b)))
             .ok_or_else(|| {
-                ServiceError::NotFound(format!(
-                    "ADL2 template {template_id}{}",
-                    version
-                        .map(|v| format!(" at version {v}"))
-                        .unwrap_or_default()
-                ))
+                ServiceError::sm(
+                    CallStatusType::TemplateDoesNotExist,
+                    format!(
+                        "ADL2 template {template_id}{}",
+                        version
+                            .map(|v| format!(" at version {v}"))
+                            .unwrap_or_default()
+                    ),
+                )
             })
     }
 

@@ -27,6 +27,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
+use crate::service::status::CallStatusType;
 use crate::versioning::Kind;
 use crate::versioning::object_version_id::{TreeId, components};
 use crate::versioning::read::{read_current, read_version};
@@ -48,9 +49,10 @@ impl EhrbaseService {
     pub async fn resolve_ehr_uri(&self, uri: &EhrUri) -> Result<Value, ServiceError> {
         let mut items = self.resolve_ehr_uri_items(uri).await?;
         match items.len() {
-            0 => Err(ServiceError::NotFound(format!(
-                "ehr: URI {uri} resolved to no item"
-            ))),
+            0 => Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("ehr: URI {uri} resolved to no item"),
+            )),
             1 => Ok(items.remove(0)),
             n => Err(ServiceError::BadRequest(format!(
                 "ehr: URI {uri} path is not unique ({n} matches); item_at_path requires \
@@ -74,11 +76,14 @@ impl EhrbaseService {
         if let Some(system) = &uri.system_id
             && !system.eq_ignore_ascii_case(&self.effective_system_id())
         {
-            return Err(ServiceError::NotFound(format!(
-                "ehr: URI names foreign system {system:?}; only the local system \
-                 ({}) is resolvable",
-                self.effective_system_id()
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!(
+                    "ehr: URI names foreign system {system:?}; only the local system \
+                     ({}) is resolvable",
+                    self.effective_system_id()
+                ),
+            ));
         }
         // A relative URI (no ehr_id) carries no EHR context to resolve against.
         let ehr_id = EhrId(uri.ehr_id.ok_or_else(|| {
@@ -128,7 +133,10 @@ impl EhrbaseService {
             let vo_id = match attribute.as_str() {
                 "directory" | "folders" => {
                     self.directory_vo_opt(ehr_id).await?.ok_or_else(|| {
-                        ServiceError::NotFound(format!("{attribute} for EHR {ehr_id}"))
+                        ServiceError::sm(
+                            CallStatusType::VersionedObjectDoesNotExist,
+                            format!("{attribute} for EHR {ehr_id}"),
+                        )
                     })?
                 }
                 "ehr_status" | "ehr_access" => {
@@ -140,7 +148,10 @@ impl EhrbaseService {
                     self.current_vo(ehr_id, kind)
                         .await?
                         .ok_or_else(|| {
-                            ServiceError::NotFound(format!("{attribute} for EHR {ehr_id}"))
+                            ServiceError::sm(
+                                CallStatusType::VersionedObjectDoesNotExist,
+                                format!("{attribute} for EHR {ehr_id}"),
+                            )
                         })?
                         .0
                 }
@@ -163,13 +174,17 @@ impl EhrbaseService {
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
         .ok_or_else(|| {
-            ServiceError::NotFound(format!("versioned object {vo_id} in EHR {ehr_id}"))
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("versioned object {vo_id} in EHR {ehr_id}"),
+            )
         })?;
 
         if read.deleted() {
-            return Err(ServiceError::NotFound(format!(
-                "versioned object {vo_id} is deleted"
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("versioned object {vo_id} is deleted"),
+            ));
         }
         Ok(self.version_response(ehr_id, vo_id, read).body)
     }

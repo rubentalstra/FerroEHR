@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
+use crate::service::status::CallStatusType;
 use crate::versioning::Kind;
 use crate::versioning::audit::{audit_details, change_type};
 use crate::versioning::change::Committed;
@@ -67,10 +68,10 @@ pub(crate) async fn attest(
     )
     .await?;
     let Some(target) = target.filter(|t| t.ehr_id == ehr_id) else {
-        return Err(ServiceError::NotFound(format!(
-            "{} version {vo_id}::{expected}",
-            kind.as_str()
-        )));
+        return Err(ServiceError::sm(
+            CallStatusType::ObjectVersionDoesNotExist,
+            format!("{} version {vo_id}::{expected}", kind.as_str()),
+        ));
     };
     crate::storage::version_repo::attestation::insert_attestation(
         tx,

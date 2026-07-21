@@ -241,14 +241,9 @@ impl EhrbaseService {
     ///   assembling the `ORIGINAL_VERSION`.
     pub async fn get_party_at_version(&self, a_party_version_id: String) -> Result<Value, SmError> {
         let (vo_id, tree) = parse_version_uid(&a_party_version_id)?;
-        match self.party_version(vo_id, tree).await {
-            Ok(v) => Ok(v),
-            // A specific version miss is `object_version_does_not_exist`.
-            Err(ServiceError::NotFound(m)) => {
-                Err(SmError::new(CallStatusType::ObjectVersionDoesNotExist, m))
-            }
-            Err(e) => Err(e.into()),
-        }
+        // The version-addressed read carries `object_version_does_not_exist`
+        // itself (`ServiceError` round-trips the granular status losslessly).
+        Ok(self.party_version(vo_id, tree).await?)
     }
 
     /// `update_party` (`i_party.adoc`): commit a new version of an existing
@@ -392,8 +387,12 @@ impl EhrbaseService {
         let meta = current.as_ref().map(CurrentParty::resource_meta);
         ensure_full_ovid_if_match(Some(&if_match), meta.as_ref())?;
         let expected = expected_from_if_match(&if_match)?;
-        let current =
-            current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
+        let current = current.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {vo_id}", kind.rm_type()),
+            )
+        })?;
         Ok(self
             .commit_party_update(current, body, expected, update_audit.as_ref())
             .await?)
@@ -434,8 +433,12 @@ impl EhrbaseService {
             Some(raw) => expected_from_if_match(raw)?.or(path_version),
             None => path_version,
         };
-        let current =
-            current.ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
+        let current = current.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {vo_id}", kind.rm_type()),
+            )
+        })?;
         Ok(self
             .commit_party_delete(current, expected, update_audit.as_ref())
             .await?)
@@ -749,13 +752,9 @@ impl EhrbaseService {
         a_party_rel_version_id: String,
     ) -> Result<Value, SmError> {
         let (vo_id, tree) = parse_version_uid(&a_party_rel_version_id)?;
-        match self.relationship_version(vo_id, tree).await {
-            Ok(v) => Ok(v),
-            Err(ServiceError::NotFound(m)) => {
-                Err(SmError::new(CallStatusType::ObjectVersionDoesNotExist, m))
-            }
-            Err(e) => Err(e.into()),
-        }
+        // The version-addressed read carries `object_version_does_not_exist`
+        // itself (`ServiceError` round-trips the granular status losslessly).
+        Ok(self.relationship_version(vo_id, tree).await?)
     }
 
     /// `update_party_relationship` (`i_party_relationship.adoc`): commit a new
@@ -881,8 +880,12 @@ impl EhrbaseService {
         let meta = current.as_ref().map(CurrentRelationship::resource_meta);
         ensure_full_ovid_if_match(Some(&if_match), meta.as_ref())?;
         let expected = expected_from_if_match(&if_match)?;
-        let current =
-            current.ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
+        let current = current.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("PARTY_RELATIONSHIP {vo_id}"),
+            )
+        })?;
         Ok(self
             .commit_relationship_update(current, body, expected, update_audit.as_ref())
             .await?)
@@ -920,8 +923,12 @@ impl EhrbaseService {
             Some(raw) => expected_from_if_match(raw)?.or(path_version),
             None => path_version,
         };
-        let current =
-            current.ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
+        let current = current.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("PARTY_RELATIONSHIP {vo_id}"),
+            )
+        })?;
         Ok(self
             .commit_relationship_delete(current, expected, update_audit.as_ref())
             .await?)

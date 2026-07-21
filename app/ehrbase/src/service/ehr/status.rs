@@ -11,7 +11,7 @@
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
 use serde_json::Value;
 use sqlx::PgConnection;
@@ -42,12 +42,22 @@ impl EhrbaseService {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR_STATUS for EHR {ehr_id}"),
+                )
+            })?;
         let read = match at {
             Some(at) => version_at(&self.pool, vo_id, at).await?,
             None => read_current(&self.pool, vo_id).await?,
         }
-        .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR_STATUS for EHR {ehr_id}"),
+            )
+        })?;
         Ok(self.version_response(ehr_id, vo_id, read))
     }
 
@@ -67,7 +77,12 @@ impl EhrbaseService {
         let read = read_version(&self.pool, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("EHR_STATUS {vo_id} v{version}"),
+                )
+            })?;
         Ok(self.version_response(ehr_id, vo_id, read))
     }
 
@@ -153,10 +168,18 @@ impl EhrbaseService {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
-        let read = read_current(&self.pool, vo_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR_STATUS for EHR {ehr_id}"),
+                )
+            })?;
+        let read = read_current(&self.pool, vo_id).await?.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR_STATUS for EHR {ehr_id}"),
+            )
+        })?;
         let current = self.version_response(ehr_id, vo_id, read);
         let preceding = current
             .meta
@@ -187,7 +210,12 @@ impl EhrbaseService {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR_STATUS for EHR {ehr_id}"),
+                )
+            })?;
         versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_EHR_STATUS").await
     }
 
@@ -203,7 +231,12 @@ impl EhrbaseService {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR_STATUS for EHR {ehr_id}"),
+                )
+            })?;
         revision_history(&self.pool, ehr_id, vo_id).await
     }
 
@@ -221,7 +254,12 @@ impl EhrbaseService {
         let read = read_version(&self.pool, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS {vo_id} v{version}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("EHR_STATUS {vo_id} v{version}"),
+                )
+            })?;
         original_version(&read, self.signer())
     }
 
@@ -240,13 +278,21 @@ impl EhrbaseService {
         let (vo_id, _) = self
             .current_vo(ehr_id, Kind::EhrStatus)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR_STATUS for EHR {ehr_id}"),
+                )
+            })?;
         let read = match at {
             Some(at) => version_at(&self.pool, vo_id, at).await?,
             None => read_current(&self.pool, vo_id).await?,
         }
         .ok_or_else(|| {
-            ServiceError::NotFound(format!("EHR_STATUS version at time for EHR {ehr_id}"))
+            ServiceError::sm(
+                CallStatusType::ObjectVersionDoesNotExist,
+                format!("EHR_STATUS version at time for EHR {ehr_id}"),
+            )
         })?;
         let meta = self.version_meta(
             ehr_id,
@@ -631,7 +677,11 @@ impl EhrbaseService {
         // `current_vo`). No current EHR_STATUS ⇒ NotFound (404), the same
         // outcome the prior `current_vo`-inside-the-write path produced.
         let Some((vo_id, latest)) = self.ehr_status_meta_with_vo(an_ehr_id).await? else {
-            return Err(ServiceError::NotFound(format!("EHR_STATUS for EHR {an_ehr_id}")).into());
+            return Err(ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR_STATUS for EHR {an_ehr_id}"),
+            )
+            .into());
         };
         ensure_if_match(a_status.preceding_version_uid.as_ref(), Some(&latest))?;
         let if_match = a_status

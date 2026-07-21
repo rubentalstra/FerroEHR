@@ -16,6 +16,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
 use crate::service::list::Page;
+use crate::service::status::CallStatusType;
 use crate::versioning::attestation::PendingAttest;
 use crate::versioning::audit::{
     AuditInput, audit_details, change_type, change_type_code, validate_commit_audit,
@@ -813,7 +814,12 @@ pub(crate) async fn get_contribution(
         Some(ehr_id),
     )
     .await?
-    .ok_or_else(|| ServiceError::NotFound(format!("CONTRIBUTION {contribution_id}")))?;
+    .ok_or_else(|| {
+        ServiceError::sm(
+            CallStatusType::ContributionDoesNotExist,
+            format!("CONTRIBUTION {contribution_id}"),
+        )
+    })?;
     let time_committed = audit.time_committed;
 
     // CONTRIBUTION.versions lists the affected VERSION objects (master06
@@ -832,7 +838,12 @@ pub(crate) async fn get_contribution(
         if resolve_refs {
             let loaded = read::read_version(pool, vo_id, tree)
                 .await?
-                .ok_or_else(|| ServiceError::NotFound(format!("VERSION {vo_id}::{tree}")))?;
+                .ok_or_else(|| {
+                    ServiceError::sm(
+                        CallStatusType::ObjectVersionDoesNotExist,
+                        format!("VERSION {vo_id}::{tree}"),
+                    )
+                })?;
             versions.push(original_version(&loaded, signer)?);
         } else {
             versions.push(json!({
@@ -914,7 +925,10 @@ async fn ensure_ehr_exists(pool: &sqlx::PgPool, ehr_id: EhrId) -> Result<(), Ser
     if crate::storage::version_repo::meta::ehr_exists(pool, ehr_id).await? {
         Ok(())
     } else {
-        Err(ServiceError::NotFound(format!("EHR {ehr_id}")))
+        Err(ServiceError::sm(
+            CallStatusType::EhrIdDoesNotExist,
+            format!("EHR {ehr_id}"),
+        ))
     }
 }
 

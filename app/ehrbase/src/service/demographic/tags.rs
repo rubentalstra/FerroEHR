@@ -14,6 +14,7 @@ use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
+use crate::service::status::CallStatusType;
 use crate::storage::tag_repo;
 
 impl EhrbaseService {
@@ -98,7 +99,10 @@ impl EhrbaseService {
         key: &str,
     ) -> Result<(), ServiceError> {
         if !tag_repo::delete_tag(&self.pool, None, vo_id, key).await? {
-            return Err(ServiceError::NotFound(format!("item tag {key:?}")));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("item tag {key:?}"),
+            ));
         }
         Ok(())
     }

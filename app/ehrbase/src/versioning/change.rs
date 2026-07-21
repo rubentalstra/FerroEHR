@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
+use crate::service::status::CallStatusType;
 use crate::storage::codec::{decompose, reassemble};
 use crate::storage::row::NodeRow;
 use crate::versioning::attestation::{self, PendingAttest};
@@ -262,19 +263,19 @@ async fn next_version(
                 "expected version {tree}, which does not exist (current is {})",
                 current.tree
             ))),
-            _ => Err(ServiceError::NotFound(format!(
-                "{} {vo_id} in EHR {ehr_id:?}",
-                kind.as_str()
-            ))),
+            _ => Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {vo_id} in EHR {ehr_id:?}", kind.as_str()),
+            )),
         };
     };
     // For an EHR-scoped object the stored owner must match; for a demographic
     // party both stored and expected owner are `None`, which compares equal.
     if tip.ehr_id != ehr_id || tip.kind != kind {
-        return Err(ServiceError::NotFound(format!(
-            "{} {vo_id} in EHR {ehr_id:?}",
-            kind.as_str()
-        )));
+        return Err(ServiceError::sm(
+            CallStatusType::VersionedObjectDoesNotExist,
+            format!("{} {vo_id} in EHR {ehr_id:?}", kind.as_str()),
+        ));
     }
     if !tip.open {
         return Err(ServiceError::VersionConflict(format!(
