@@ -26,7 +26,20 @@ pub fn classify_status(
     binding: &OperationBinding,
     selectors: Option<&SelectorsVocab>,
     status: u16,
+    expected: OutcomeKind,
 ) -> Observation {
+    // Several kinds may map to one wire status on an operation (e.g.
+    // validation_failed and template_not_found both 422; the two version
+    // preconditions both 412 — "kind distinguished by fixture" per the
+    // binding comments). On a tie the EXPECTED kind wins: the wire cannot
+    // distinguish the members, so an expected member's status match
+    // satisfies the expectation, and a non-member match still reports the
+    // first mapped kind (a mismatch).
+    if let Some(expectation) = binding.outcome(expected)
+        && expectation.status.value() == status
+    {
+        return Observation::Kind(expected);
+    }
     // Binding-mapped outcomes first (an operation-specific mapping wins over
     // a universal one for the same status).
     for kind in OutcomeKind::ALL {
@@ -112,21 +125,21 @@ mod tests {
         let b = binding();
         let s = selectors();
         assert_eq!(
-            classify_status(&b, Some(&s), 201),
+            classify_status(&b, Some(&s), 201, OutcomeKind::Created),
             Observation::Kind(OutcomeKind::Created)
         );
         assert_eq!(
-            classify_status(&b, Some(&s), 409),
+            classify_status(&b, Some(&s), 409, OutcomeKind::Created),
             Observation::Kind(OutcomeKind::AlreadyExists)
         );
         // universal outcome reachable on any operation
         assert_eq!(
-            classify_status(&b, Some(&s), 401),
+            classify_status(&b, Some(&s), 401, OutcomeKind::Created),
             Observation::Kind(OutcomeKind::Unauthenticated)
         );
         // unmapped status is inconclusive, never a failure
         assert_eq!(
-            classify_status(&b, Some(&s), 500),
+            classify_status(&b, Some(&s), 500, OutcomeKind::Created),
             Observation::Unmapped { status: 500 }
         );
     }

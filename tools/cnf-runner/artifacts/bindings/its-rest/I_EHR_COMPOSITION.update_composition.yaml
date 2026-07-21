@@ -23,7 +23,12 @@ outcomes:
     headers: { ETag: latest-version-uid }
   precondition_missing: { status: 400 }   # If-Match absent -> SHOULD 400 (Requests_and_responses)
   not_found: { status: 404 }              # unknown ehr_id or uid
-  version_not_found: { status: 404 }      # unknown preceding version — same 404 family
+  version_not_found:
+    status: 412                           # unknown preceding version = the If-Match condition
+                                          # evaluates FALSE => MUST 412 (overview
+                                          # Requests_and_responses §If-Match); the 404 family
+                                          # is for unknown PATH ids only
+    headers: { ETag: latest-version-uid }
   validation_failed: { status: 422, body: error_loose }
   template_mismatch: { status: 422, body: error_loose }   # wrong-template update (master07)
 captures:

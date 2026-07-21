@@ -285,7 +285,17 @@ pub fn operation_binding_schema() -> Value {
                     "method": { "enum": tokens(HttpMethod::ALL) },
                     "path": { "type": "string", "pattern": "^/" },
                     "query": { "type": "object", "additionalProperties": { "type": "string" } },
-                    "body": { "oneOf": [ { "type": "string" }, { "type": "object" } ] },
+                    "body": { "oneOf": [
+                        { "type": "string" },
+                        { "type": "object",
+                          "additionalProperties": false,
+                          "required": ["from_capture", "set"],
+                          "properties": {
+                              "from_capture": { "type": "string", "pattern": IDENT_PATTERN },
+                              "set": { "type": "object", "minProperties": 1 }
+                          } },
+                        { "type": "object", "not": { "required": ["from_capture"] } }
+                    ] },
                     "headers": { "type": "object", "additionalProperties": { "type": "string" } }
                 }
             },

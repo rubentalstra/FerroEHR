@@ -125,7 +125,7 @@ impl StepDriver for TranscriptPlayer<'_> {
         &mut self,
         case: &CaseCore,
         step: &FlowStep,
-        _expected: OutcomeKind,
+        expected: OutcomeKind,
         _row: usize,
         vars: &mut VarStore,
     ) -> Result<StepObservation, String> {
@@ -143,7 +143,8 @@ impl StepDriver for TranscriptPlayer<'_> {
             return Err(format!("no binding declares operation {}", step.call));
         };
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
-        let observation = outcome::classify_status(binding, selectors, recorded.response.status);
+        let observation =
+            outcome::classify_status(binding, selectors, recorded.response.status, expected);
 
         // Bind captures from the recorded response exactly like the live
         // driver (same closed grammar).
