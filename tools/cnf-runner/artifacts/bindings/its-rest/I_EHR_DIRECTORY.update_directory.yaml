@@ -1,0 +1,35 @@
+# Wire realization of I_EHR_DIRECTORY.update_directory for ITS-REST 1.1.0.
+# The SM update_directory(ehr_id, a_dir_struct) replaces the directory with a
+# new complete FOLDER; realized as PUT /ehr/{ehr_id}/directory. The existing
+# latest version_uid (SM preceding_version_uid) is the required `If-Match`
+# header (AMB-3); it is omitted only for the empty-EHR / bad-EHR cases where no
+# directory version exists to match.
+# Sources: specifications/operations/directory_update.yaml (200/204/400/404/412),
+# responses/200_directory_updated.yaml, 204_version_updated.yaml,
+# 404_unknown_ehr_id.yaml, 412_directory.yaml; header If-Match.yaml,
+# ETag_FOLDER.yaml.
+sm_operation: I_EHR_DIRECTORY.update_directory
+its: its-rest
+request:
+  method: PUT
+  path: /ehr/{ehr_id}/directory
+  body: directory
+  headers:
+    If-Match: '"${preceding_version_uid?}"'   # REQUIRED when a directory exists (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  updated:
+    status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
+    headers: { ETag: present }            # ETag_FOLDER.yaml
+    body: prefer_conditional
+  precondition_failed:
+    status: 412                           # 412_directory.yaml (stale If-Match)
+    headers: { ETag: latest-version-uid }
+  precondition_missing: { status: 400 }   # If-Match absent when required -> 400.yaml (overview Requests_and_responses)
+  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to update (404_unknown_ehr_id.yaml); the absent-directory overload is the AMB-26 proposal (schedule/directory/REQUIREMENTS.md)
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [uid]

@@ -1,0 +1,34 @@
+# Wire realization of I_EHR_DIRECTORY.create_directory for ITS-REST 1.1.0.
+# The SM create_directory(ehr_id, a_dir_struct) creates the EHR.directory
+# VERSIONED_FOLDER; realized as POST /ehr/{ehr_id}/directory with the FOLDER
+# in the body.
+# Sources: specifications/operations/directory_create.yaml (201/400/404),
+# responses/201_directory.yaml, 404_unknown_ehr_id.yaml, 400.yaml;
+# headers ETag_FOLDER.yaml, Location_directory.yaml.
+sm_operation: I_EHR_DIRECTORY.create_directory
+its: its-rest
+request:
+  method: POST
+  path: /ehr/{ehr_id}/directory
+  body: directory
+  headers:
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  created:
+    status: 201                           # 201_directory.yaml
+    headers:
+      ETag: present                        # ETag_FOLDER.yaml (weak, W/"<version_uid>")
+      Location: present                    # Location_directory.yaml
+      Content-Type: negotiated
+    body: prefer_conditional
+  validation_failed:
+    status: 400                           # 400.yaml (invalid FOLDER)
+    body: error_loose                     # AMB-1
+  not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
+  already_exists: { status: 409 }         # EHR already has a directory — directory_create.yaml assigns no code (201/400/404); bound to the uniqueness/state-conflict family per the AMB-25 proposal (schedule/directory/REQUIREMENTS.md)
+captures:
+  version_uid:
+    from: header ETag                     # the new directory VERSION uid (201_directory.yaml ETag)
+    strip: weak-quotes
+server_assigned: [uid]

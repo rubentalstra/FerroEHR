@@ -1,0 +1,26 @@
+# update_directory on an EHR with no directory errors: there is no directory to
+# update (SM Pre_has_directory). Realized as a 404 (no directory resource); no
+# preceding version exists so no If-Match is sent.
+id: I_EHR_DIRECTORY.update_directory-empty_ehr
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.update_directory
+capabilities: [DirectoryOps]
+profiles: [STANDARD]
+test_purpose: >-
+  update_directory on an EHR that has no directory is rejected: there is no
+  directory to update.
+description: "Test update_directory on empty EHR"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.update_directory"
+  - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.update_directory-empty_ehr"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR exists, no directory — mints ${ehr_id}
+data_sets: [cnf.directory.root_only]
+flow:
+  - step: 1
+    call: update_directory
+    with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only}" }
+    expect: not_found                     # "non existent directory to update" (SM Pre_has_directory; AMB-26)
