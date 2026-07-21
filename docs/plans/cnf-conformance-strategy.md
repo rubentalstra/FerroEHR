@@ -1701,8 +1701,8 @@ workload:                       # OPEN-LOOP offered load (the donated engine's m
   mix: { composition_commit: 30%, composition_read: 40%, adhoc_query: 25%, ehr_create: 5% }
                                 #   mix = share of scheduled ARRIVALS
 thresholds:                     # ALL must hold in the single measured run
-  - { metric: latency_p99, operation: composition_read, max: 500ms }
-  - { metric: latency_p99, operation: composition_commit, max: 500ms }
+  - { metric: latency_p99, operation: composition_read, max: 1s }    # the standard SLO (table below)
+  - { metric: latency_p99, operation: composition_commit, max: 1s }
   - { metric: error_rate, max: 0 }
   - { metric: offered_load_sustained, min: 40/s }   # class-S provisional default (table below)
 # environment: bound to the mandatory ixit.json environment block (§8.10)
@@ -1713,19 +1713,24 @@ ratification; derivation shown so the numbers are arguable, not arbitrary):
 
 | Class | Corpus | Offered load (sustained) | p99 API budget | Error rate |
 |---|---|---|---|---|
-| POC | 10k EHRs | 2/s | ≤ 500 ms | 0 |
-| S | 100k EHRs | 40/s | ≤ 500 ms | 0 |
-| L | 1M EHRs | 400/s | ≤ 375 ms | 0 |
-| R | 10M EHRs | 4000/s | ≤ 375 ms | 0 |
+| POC | 10k EHRs | 2/s | ≤ 1 s | 0 |
+| S | 100k EHRs | 40/s | ≤ 1 s | 0 |
+| L | 1M EHRs | 400/s | ≤ 1 s | 0 |
+| R | 10M EHRs | 4000/s | ≤ 1 s | 0 |
 
 Derivation (**[legislated]** — stated assumptions, SEC ratifies or replaces):
-the 2017 schedule's user counts and screen-latency budgets (POC 5 / S 100 /
-L 1000 / R 10,000 concurrent users; 2 s screen latency for S — inherited
-by POC, whose budget the 2017 page left unstated — and 1.5 s for L/R),
-converted to open-loop API terms by two explicit assumptions — one
-clinical interaction per active user per 10 s, ~4 API calls per interaction
-— giving offered load = users × 0.4/s and an API p99 budget of screen
-budget ÷ 4. Corpus sizes are the 2017 D-row scale ladder. Feasibility is
+offered load converts the 2017 schedule's user counts (POC 5 / S 100 /
+L 1000 / R 10,000 concurrent users) to open-loop terms by two explicit
+assumptions — one clinical interaction per active user per 10 s, ~4 API
+calls per interaction — giving offered load = users × 0.4/s. The latency
+budget is the **standard per-operation SLO of p99 ≤ 1 s, uniform across
+classes** — the same SLO the committed knee-ladder methodology already
+defines sustainability by (`docs/benchmarks/*/KNEE.md`: "SLO p99 ≤ 1 s,
+error ≤ 0.1%"), preferred over budgets derived from the 2017 page's
+UI-level screen latencies (2 s / 1.5 s — recorded here as lineage): one
+convention, already published, no per-class invention. Procurers who need
+tighter tail latency tighten it per tender via the §10 template parameters.
+Corpus sizes are the 2017 D-row scale ladder. Feasibility is
 evidenced by the committed measurement artifacts (`docs/benchmarks/`,
 regenerated per release, never hand-typed): ehrbase-rs sustains a
 631.5 req/s knee at p99 204.7 ms and upstream EHRbase 475.0 req/s
