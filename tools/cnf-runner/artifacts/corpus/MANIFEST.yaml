@@ -276,3 +276,375 @@ cnf.directory.v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from the CNF master09 data-set descriptions (a modified FOLDER structure that differentiates a second EHR.directory version); structural placeholder pending corpus authoring"
+# Corpus additions for the CNF master17.3 (content, quantity data types)
+# schedule cases. Same entry schema as MANIFEST.yaml; the validate harness
+# concatenates this into MANIFEST.yaml at integration (never edit
+# MANIFEST.yaml directly here).
+#
+# Each entry is the OPT that carries the C_* constraint context under test for
+# a master17.3 content decision table. Constant constraints are baked into the
+# stub's <concept> comment; where the constraint varies per data set the
+# decision table carries it as columns and the stub names the constraint shape.
+# All payloads are structural placeholders modeled on
+# corpus/templates/quantity_property_units_mag.opt, pending the spine-first
+# authored corpus (#202).
+# TODO: replace the structural placeholder OPTs with the spine-first authored
+#       corpus when the catalogue authoring lands (#202).
+cnf.tpl.ordinal_open:
+  source: templates/ordinal_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_ORDINAL matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.ordinal_list:
+  source: templates/ordinal_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_ORDINAL.list = 1|[local::at0005], 2|[local::at0006]); structural placeholder pending corpus authoring"
+cnf.tpl.scale_open:
+  source: templates/scale_open.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_SCALE matches {*}, RM >= 1.1.0); structural placeholder pending corpus authoring"
+cnf.tpl.scale_list:
+  source: templates/scale_list.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_SCALE.list = 1.5|[local::at0005], 2.0|[local::at0006], RM >= 1.1.0); structural placeholder pending corpus authoring"
+cnf.tpl.count_open:
+  source: templates/count_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_COUNT matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.count_range:
+  source: templates/count_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_INTEGER.range = 10..20); structural placeholder pending corpus authoring"
+cnf.tpl.count_list:
+  source: templates/count_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_INTEGER.list = [10,15,20]); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_open:
+  source: templates/quantity_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_QUANTITY matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_property:
+  source: templates/quantity_property.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_QUANTITY property=openehr::122, no units list); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_property_units:
+  source: templates/quantity_property_units.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_QUANTITY property=openehr::122, list=[cm, m]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_open:
+  source: templates/proportion_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_ratio:
+  source: templates/proportion_type_ratio.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[0]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_unitary:
+  source: templates/proportion_type_unitary.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[1]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_percent:
+  source: templates/proportion_type_percent.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[2]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_fraction:
+  source: templates/proportion_type_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[3]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_integer_fraction:
+  source: templates/proportion_type_integer_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[4]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_any_fraction:
+  source: templates/proportion_type_any_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[3,4]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_ratio_range:
+  source: templates/proportion_ratio_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type=[0]; numerator C_REAL.range=5..20; denominator C_REAL.range=200..600); structural placeholder pending corpus authoring"
+cnf.tpl.interval_count_open:
+  source: templates/interval_count_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_COUNT> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_count_range:
+  source: templates/interval_count_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_COUNT>: C_INTEGER.range=0..100 on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_count_list:
+  source: templates/interval_count_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_COUNT>: C_INTEGER.list=[0,5,10,100] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_quantity_open:
+  source: templates/interval_quantity_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_QUANTITY> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_quantity_temp:
+  source: templates/interval_quantity_temp.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_QUANTITY>: C_DV_QUANTITY.list=[Cel 0..100] temperature on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_time_open:
+  source: templates/interval_date_time_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE_TIME> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_time_field_validity:
+  source: templates/interval_date_time_field_validity.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE_TIME>: C_DATE_TIME per-component validity; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_time_range:
+  source: templates/interval_date_time_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE_TIME>: C_DATE_TIME.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_open:
+  source: templates/interval_date_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_field_validity:
+  source: templates/interval_date_field_validity.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE>: C_DATE per-component validity; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_range:
+  source: templates/interval_date_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE>: C_DATE.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_time_open:
+  source: templates/interval_time_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_TIME> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_time_field_validity:
+  source: templates/interval_time_field_validity.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_TIME>: C_TIME per-component validity; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_time_range:
+  source: templates/interval_time_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_TIME>: C_TIME.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_duration_open:
+  source: templates/interval_duration_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DURATION> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_duration_allowed:
+  source: templates/interval_duration_allowed.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DURATION>: C_DURATION per-component allowed flags; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_duration_range:
+  source: templates/interval_duration_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DURATION>: C_DURATION.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_ordinal_open:
+  source: templates/interval_ordinal_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_ORDINAL> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_ordinal_list:
+  source: templates/interval_ordinal_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_ORDINAL>: C_DV_ORDINAL.list on both limits; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_scale_open:
+  source: templates/interval_scale_open.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_SCALE> matches {*}, RM >= 1.1.0); structural placeholder pending corpus authoring"
+cnf.tpl.interval_scale_list:
+  source: templates/interval_scale_list.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_SCALE>: C_DV_ORDINAL.list on both limits, RM >= 1.1.0; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_open:
+  source: templates/interval_proportion_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_ratio:
+  source: templates/interval_proportion_type_ratio.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[0] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_unitary:
+  source: templates/interval_proportion_type_unitary.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[1] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_percent:
+  source: templates/interval_proportion_type_percent.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[2] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_fraction:
+  source: templates/interval_proportion_type_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[3] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_integer_fraction:
+  source: templates/interval_proportion_type_integer_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[4] on both limits; schedule prose says [3] but the data set validates type=4, see REQUIREMENTS); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_ratio_range:
+  source: templates/interval_proportion_ratio_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[0]; numerator/denominator C_REAL.range per limit); structural placeholder pending corpus authoring"
+# Corpus manifest additions for the content data-type cases of CNF
+# master17.1 (basic), .2 (text), .4 (date_time), .6 (encapsulated), .7 (uri).
+# Concatenated into corpus/MANIFEST.yaml at load. Structural placeholder OPTs
+# pending corpus authoring (#202).
+cnf.tpl.dv_boolean_c_boolean:
+  source: templates/dt_boolean_c_boolean.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_identifier_c_string:
+  source: templates/dt_identifier_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_text_c_string:
+  source: templates/dt_text_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_coded_text_c_code_phrase:
+  source: templates/dt_coded_text_c_code_phrase.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_coded_text_constraint_ref:
+  source: templates/dt_coded_text_constraint_ref.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_duration_c_duration:
+  source: templates/dt_duration_c_duration.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_time_c_time:
+  source: templates/dt_time_c_time.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_date_c_date:
+  source: templates/dt_date_c_date.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_date_time_c_date_time:
+  source: templates/dt_date_time_c_date_time.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_parsable_c_string:
+  source: templates/dt_parsable_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_multimedia_constraints:
+  source: templates/dt_multimedia_constraints.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_uri_c_string:
+  source: templates/dt_uri_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_ehr_uri_c_string:
+  source: templates/dt_ehr_uri_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"

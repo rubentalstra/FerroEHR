@@ -812,245 +812,325 @@ ECC-VAL-038:
   disposition: pending
   justification: "content chapters wave (CNF master15-17)"
 ECC-VAL-039:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_BOOLEAN-anything_allowed]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-040:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_BOOLEAN-only_true_allowed]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-041:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_BOOLEAN-only_false_allowed]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-042:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_IDENTIFIER-validate_all_pattern]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-043:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_IDENTIFIER-validate_all_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-044:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_TEXT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-045:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_TEXT-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-046:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_CODED_TEXT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-047:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_CODED_TEXT-validate_local_codes]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-048:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_CODED_TEXT-validate_ext_term]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-049:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_ORDINAL-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-050:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_ORDINAL-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-051:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_SCALE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-052:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_SCALE-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-053:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_COUNT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-054:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_COUNT-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-055:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_COUNT-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-056:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-057:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_property]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-058:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_property_units]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-059:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_property_units_mag]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-060:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-061:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_ratio]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-062:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_unitary]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-063:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_percent]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-064:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-065:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_integer_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-066:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_any_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-067:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_ratio_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-068:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_COUNT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-069:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-070:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-071:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_QUANTITY-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-072:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-073:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-074:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-075:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-076:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-077:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-078:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-079:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-080:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-081:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-082:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DURATION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-083:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DURATION-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-084:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DURATION-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-085:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_ORDINAL-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-086:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-087:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_SCALE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-088:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_SCALE-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-089:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-090:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-091:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-092:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-093:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-094:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-095:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-096:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-097:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_fields]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-098:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-099:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_fields_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-100:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-101:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_TIME-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-102:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_TIME-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-103:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-104:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-105:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-106:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-107:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE_TIME-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-108:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE_TIME-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-109:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PARSABLE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-110:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_PARSABLE-validate_value_formalism]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-111:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_MULTIMEDIA-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-112:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_MULTIMEDIA-validate_media_type]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-113:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_URI-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-114:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_URI-validate_pattern]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-115:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_URI-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-116:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_EHR_URI-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-117:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_EHR_URI-validate_pattern]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-VAL-118:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_EHR_URI-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-SIG-001:
   disposition: pending
   justification: "Signing capability wave (version-signature integrity)"
@@ -1067,8 +1147,9 @@ ECC-SIG-005:
   disposition: pending
   justification: "Signing capability wave (version-signature integrity)"
 ECC-VAL-119:
-  disposition: pending
-  justification: "content chapters wave (CNF master15-17)"
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_constraint]
+  justification: "carried by the day-validity prohibited rows of the official DV_DATE constraint table (reshaped: the ECC row was one cell of that matrix)"
 ECC-MSG-001:
   disposition: pending
   justification: "messaging chapter wave (CNF master13)"

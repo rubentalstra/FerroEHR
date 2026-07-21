@@ -8,12 +8,12 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 147 |
+| CNF catalogue cases | 226 |
 | active ECC rows | 394 |
-| mapped: covered | 137 |
-| mapped: pending | 257 |
+| mapped: covered | 218 |
+| mapped: pending | 176 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 10 |
+| CNF cases beyond the old catalogue | 9 |
 
 Gate clean: **NO**
 
@@ -245,92 +245,92 @@ Gate clean: **NO**
 | `ECC-VAL-036` | pending |  | content chapters wave (CNF master15-17) |
 | `ECC-VAL-037` | pending |  | content chapters wave (CNF master15-17) |
 | `ECC-VAL-038` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-039` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-040` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-041` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-042` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-043` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-044` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-045` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-046` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-047` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-048` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-049` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-050` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-051` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-052` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-053` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-054` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-055` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-056` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-057` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-058` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-059` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-060` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-061` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-062` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-063` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-064` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-065` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-066` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-067` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-068` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-069` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-070` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-071` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-072` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-073` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-074` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-075` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-076` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-077` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-078` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-079` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-080` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-081` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-082` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-083` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-084` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-085` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-086` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-087` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-088` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-089` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-090` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-091` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-092` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-093` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-094` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-095` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-096` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-097` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-098` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-099` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-100` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-101` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-102` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-103` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-104` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-105` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-106` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-107` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-108` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-109` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-110` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-111` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-112` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-113` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-114` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-115` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-116` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-117` | pending |  | content chapters wave (CNF master15-17) |
-| `ECC-VAL-118` | pending |  | content chapters wave (CNF master15-17) |
+| `ECC-VAL-039` | covered | `CONT-DV_BOOLEAN-anything_allowed` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-040` | covered | `CONT-DV_BOOLEAN-only_true_allowed` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-041` | covered | `CONT-DV_BOOLEAN-only_false_allowed` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-042` | covered | `CONT-DV_IDENTIFIER-validate_all_pattern` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-043` | covered | `CONT-DV_IDENTIFIER-validate_all_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-044` | covered | `CONT-DV_TEXT-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-045` | covered | `CONT-DV_TEXT-validate_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-046` | covered | `CONT-DV_CODED_TEXT-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-047` | covered | `CONT-DV_CODED_TEXT-validate_local_codes` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-048` | covered | `CONT-DV_CODED_TEXT-validate_ext_term` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-049` | covered | `CONT-DV_ORDINAL-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-050` | covered | `CONT-DV_ORDINAL-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-051` | covered | `CONT-DV_SCALE-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-052` | covered | `CONT-DV_SCALE-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-053` | covered | `CONT-DV_COUNT-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-054` | covered | `CONT-DV_COUNT-validate_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-055` | covered | `CONT-DV_COUNT-validate_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-056` | covered | `CONT-DV_QUANTITY-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-057` | covered | `CONT-DV_QUANTITY-validate_property` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-058` | covered | `CONT-DV_QUANTITY-validate_property_units` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-059` | covered | `CONT-DV_QUANTITY-validate_property_units_mag` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-060` | covered | `CONT-DV_PROPORTION-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-061` | covered | `CONT-DV_PROPORTION-validate_ratio` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-062` | covered | `CONT-DV_PROPORTION-validate_unitary` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-063` | covered | `CONT-DV_PROPORTION-validate_percent` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-064` | covered | `CONT-DV_PROPORTION-validate_fraction` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-065` | covered | `CONT-DV_PROPORTION-validate_integer_fraction` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-066` | covered | `CONT-DV_PROPORTION-validate_any_fraction` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-067` | covered | `CONT-DV_PROPORTION-validate_ratio_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-068` | covered | `CONT-DV_INTERVAL_DV_COUNT-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-069` | covered | `CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-070` | covered | `CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-071` | covered | `CONT-DV_INTERVAL_DV_QUANTITY-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-072` | covered | `CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-073` | covered | `CONT-DV_INTERVAL_DV_DATE_TIME-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-074` | covered | `CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-075` | covered | `CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-076` | covered | `CONT-DV_INTERVAL_DV_DATE-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-077` | covered | `CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-078` | covered | `CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-079` | covered | `CONT-DV_INTERVAL_DV_TIME-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-080` | covered | `CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-081` | covered | `CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-082` | covered | `CONT-DV_INTERVAL_DV_DURATION-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-083` | covered | `CONT-DV_INTERVAL_DV_DURATION-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-084` | covered | `CONT-DV_INTERVAL_DV_DURATION-validate_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-085` | covered | `CONT-DV_INTERVAL_DV_ORDINAL-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-086` | covered | `CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-087` | covered | `CONT-DV_INTERVAL_DV_SCALE-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-088` | covered | `CONT-DV_INTERVAL_DV_SCALE-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-089` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-090` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-091` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-092` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-093` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-094` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-095` | covered | `CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-096` | covered | `CONT-DV_DURATION-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-097` | covered | `CONT-DV_DURATION-validate_fields` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-098` | covered | `CONT-DV_DURATION-validate_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-099` | covered | `CONT-DV_DURATION-validate_fields_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-100` | covered | `CONT-DV_TIME-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-101` | covered | `CONT-DV_TIME-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-102` | covered | `CONT-DV_TIME-validate_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-103` | covered | `CONT-DV_DATE-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-104` | covered | `CONT-DV_DATE-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-105` | covered | `CONT-DV_DATE-validate_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-106` | covered | `CONT-DV_DATE_TIME-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-107` | covered | `CONT-DV_DATE_TIME-validate_constraint` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-108` | covered | `CONT-DV_DATE_TIME-validate_range` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-109` | covered | `CONT-DV_PARSABLE-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-110` | covered | `CONT-DV_PARSABLE-validate_value_formalism` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-111` | covered | `CONT-DV_MULTIMEDIA-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-112` | covered | `CONT-DV_MULTIMEDIA-validate_media_type` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-113` | covered | `CONT-DV_URI-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-114` | covered | `CONT-DV_URI-validate_pattern` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-115` | covered | `CONT-DV_URI-validate_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-116` | covered | `CONT-DV_EHR_URI-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-117` | covered | `CONT-DV_EHR_URI-validate_pattern` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
+| `ECC-VAL-118` | covered | `CONT-DV_EHR_URI-validate_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
 | `ECC-SIG-001` | pending |  | Signing capability wave (version-signature integrity) |
 | `ECC-SIG-002` | pending |  | Signing capability wave (version-signature integrity) |
 | `ECC-SIG-003` | pending |  | Signing capability wave (version-signature integrity) |
 | `ECC-SIG-004` | pending |  | Signing capability wave (version-signature integrity) |
 | `ECC-SIG-005` | pending |  | Signing capability wave (version-signature integrity) |
-| `ECC-VAL-119` | pending |  | content chapters wave (CNF master15-17) |
+| `ECC-VAL-119` | covered | `CONT-DV_DATE-validate_constraint` | carried by the day-validity prohibited rows of the official DV_DATE constraint table (reshaped: the ECC row was one cell of that matrix) |
 | `ECC-MSG-001` | pending |  | messaging chapter wave (CNF master13) |
 | `ECC-MSG-002` | pending |  | messaging chapter wave (CNF master13) |
 | `ECC-MSG-003` | pending |  | messaging chapter wave (CNF master13) |
@@ -418,7 +418,6 @@ Gate clean: **NO**
 
 ## CNF cases with no old-harness counterpart (new ground)
 
-- `CONT-DV_QUANTITY-validate_property_units_mag`
 - `I_DEFINITION_QUERY.has_query-xxx`
 - `I_DEFINITION_QUERY.list_queries-empty`
 - `I_DEFINITION_QUERY.list_queries-non_empty`

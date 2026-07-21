@@ -1,0 +1,30 @@
+id: CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range
+kind: content
+component: CONTENT
+rm_class: DV_INTERVAL
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed DV_INTERVAL<DV_TIME> is accepted iff both limit DV_TIME values
+  fall within their C_TIME.range constraints; the interval bound flags vary in
+  this table (rows with an unbounded limit) and are retained.
+description: "DV_INTERVAL<DV_TIME> limits against C_TIME.range (with unbounded-limit rows)"
+spec_refs:
+  - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range"
+  - "AM AOM1.4 §C_TIME"
+  - "RM data_types §DV_INTERVAL"
+constraint_context:
+  template: cnf.tpl.interval_time_range
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+decision_table:
+  columns: [lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included, c_time_range_lower, c_time_range_upper, expected, violates]
+  rows:
+    - ["T10", "T11", false, false, true, true, "[T09, T11]", "[T10, T12]", accepted, []]
+    - ["T10:00", "T11:00", false, false, true, true, "[T09:00, T11:00]", "[T10:00, T12:00]", accepted, []]
+    - ["T10:00:00", "T11:00:00", false, false, true, true, "[T09:00:00, T11:00:00]", "[T10:00:00, T12:00:00]", accepted, []]
+    - ["T10:00:00.5", "T11:00:00.5", false, false, true, true, "[T09:00:00.0, T11:00:00.0]", "[T10:00:00.0, T12:00:00.0]", accepted, []]
+    - ["T10:00:00.5Z", "T11:00:00.5Z", false, false, true, true, "[T09:00:00.0, T11:00:00.0Z]", "[T10:00:00.0Z, T12:00:00.0Z]", accepted, []]
+    - ["T10", "T11", false, false, true, true, "[T11, T12]", "[T11, T12]", rejected, ["constraint(C_TIME.range): lower out of range"]]
+    - ["T10", "T12", false, false, true, true, "[T10, T11]", "[T10, T11]", rejected, ["constraint(C_TIME.range): upper out of range"]]
+    - [null, "T11", true, false, false, true, "[T09, T11]", "[T10, T12]", rejected, ["constraint(C_TIME.range): lower out of range"]]
+    - ["T10", null, false, true, true, false, "[T09, T11]", "[T10, T12]", accepted, []]

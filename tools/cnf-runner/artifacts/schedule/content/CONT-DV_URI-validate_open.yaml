@@ -1,0 +1,29 @@
+id: CONT-DV_URI-validate_open
+kind: content
+component: CONTENT
+rm_class: DV_URI
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: "A committed DV_URI is accepted iff value is present and is an RFC 3986-compliant URI."
+description: "DV_URI open: only non-RFC3986 or missing values are rejected"
+spec_refs:
+  - "CNF platform_test_schedule master17.7 \u00a7CONT-DV_URI-validate_open"
+  - "RM data_types \u00a7DV_URI"
+  - "AM AOM1.4 \u00a7C_STRING"
+constraint_context:
+  template: cnf.tpl.dv_uri_c_string
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
+decision_table:
+  columns: ["value", "expected", "violates"]
+  rows:
+    - [null, "rejected", ["rm_schema: value is mandatory"]]
+    - ["xyz", "rejected", ["rm_schema: value is not a valid RFC 3986 URI"]]
+    - ["ftp://ftp.is.co.za/rfc/rfc1808.txt", "accepted", []]
+    - ["http://www.ietf.org/rfc/rfc2396.txt", "accepted", []]
+    - ["ldap://[2001:db8::7]/c=GB?objectClass?one", "accepted", []]
+    - ["mailto:John.Doe@example.com", "accepted", []]
+    - ["news:comp.infosystems.www.servers.unix", "accepted", []]
+    - ["tel:+1-816-555-1212", "accepted", []]
+    - ["telnet://192.0.2.16:80/", "accepted", []]
+    - ["urn:oasis:names:specification:docbook:dtd:xml:4.1.2", "accepted", []]
+    - ["http://www.carestreamserver/um/webapp_services/wado?requestType=WADO&studyUID=1.2.250.1.59.40211.12345678.678910&seriesUID=1.2.250.1.59.40211.789001276.14556172.67789&objectUID=1.2.250.1.59.40211.2678810.87991027.899772.2&contentType=application%2Fdicom", "accepted", []]

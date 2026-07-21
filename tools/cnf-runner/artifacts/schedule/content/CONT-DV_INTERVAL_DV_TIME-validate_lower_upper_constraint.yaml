@@ -1,0 +1,29 @@
+id: CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint
+kind: content
+component: CONTENT
+rm_class: DV_INTERVAL
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed DV_INTERVAL<DV_TIME> is accepted iff both limit DV_TIME values
+  satisfy the C_TIME minute/second/millisecond/timezone component-validity
+  constraints; the four interval bound flags are constant (lower_unbounded=false,
+  upper_unbounded=false, lower_included=true, upper_included=true) and are
+  omitted.
+description: "DV_INTERVAL<DV_TIME> limits against C_TIME minute/second/millisecond/timezone validity"
+spec_refs:
+  - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint"
+  - "AM AOM1.4 §C_TIME"
+  - "RM data_types §DV_INTERVAL"
+constraint_context:
+  template: cnf.tpl.interval_time_field_validity
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+# TODO: schedule marks further validity combinations TBD (CNF master17.3)
+decision_table:
+  columns: [lower, upper, minute_validity_lower, second_validity_lower, millisecond_validity_lower, timezone_validity_lower, minute_validity_upper, second_validity_upper, millisecond_validity_upper, timezone_validity_upper, expected, violates]
+  rows:
+    - ["T10", "T11", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", rejected, ["constraint(minute_validity): minute component required for lower", "constraint(second_validity): second component required for lower", "constraint(millisecond_validity): millisecond component required for lower", "constraint(timezone_validity): timezone component required for lower", "constraint(minute_validity): minute component required for upper", "constraint(second_validity): second component required for upper", "constraint(millisecond_validity): millisecond component required for upper", "constraint(timezone_validity): timezone component required for upper"]]
+    - ["T10:00", "T11:00", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", rejected, ["constraint(second_validity): second component required for lower", "constraint(millisecond_validity): millisecond component required for lower", "constraint(timezone_validity): timezone component required for lower", "constraint(second_validity): second component required for upper", "constraint(millisecond_validity): millisecond component required for upper", "constraint(timezone_validity): timezone component required for upper"]]
+    - ["T10:00:00", "T11:00:00", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", rejected, ["constraint(millisecond_validity): millisecond component required for lower", "constraint(timezone_validity): timezone component required for lower", "constraint(millisecond_validity): millisecond component required for upper", "constraint(timezone_validity): timezone component required for upper"]]
+    - ["T10:00:00.5", "T11:00:00.5", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", rejected, ["constraint(timezone_validity): timezone component required for lower", "constraint(timezone_validity): timezone component required for upper"]]
+    - ["T10:00:00.5Z", "T11:00:00.5Z", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", accepted, []]
