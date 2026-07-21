@@ -42,7 +42,8 @@ model that killed it:
    via BMM and OpenAPI.
 3. **Certification defined with international vocabulary** (§6, §9), with a
    **multi-dimensional certificate**: functional profiles plus measured
-   performance-class ratings (§8.14), Enterprise and Security following: a
+   performance-class ratings (§8.14) and the Security & Privacy rating
+   (SEC-BASIC, §8.15), Enterprise following (§11.11): a
    conformity-assessment scheme per ISO/IEC 17000 — ISO/IEC 17050
    supplier's declarations first, witnessed peer verification next,
    delegated ISO/IEC 17025-lab + 17065-certifier assessment (the only rung
@@ -234,12 +235,17 @@ Conformance under CNF 2.0 attests exactly two ISO/IEC 25010 characteristics
   here, siding with the 2017 schedule's multi-dimensional certificate — an
   explicit SEC decision item. Measures follow ISO/IEC 25023.
 
-Reliability, security (beyond §11.9's conformance points), and
-maintainability remain out of scope, referenced by their ISO names rather
-than redefined (the 2017 review's point). ISO/IEC 25051 (conformity
-evaluation of ready-to-use software products) and ISO/IEC/IEEE 29119-3 (test
-documentation shapes) are the supporting citations for the evaluation
-procedure and report formats.
+The Security & Privacy family (§8.15) sits **inside** functional
+suitability: SEC-BASIC attests the functional *correctness of security
+behaviours* (access rejected, audit written, demographic content separated)
+through the assertion machinery. What stays out of scope is ISO/IEC 25010's
+**security quality characteristic itself** — attack resistance, penetration
+strength, cryptographic assurance — which belongs to security evaluation
+schemes, not conformance testing; likewise reliability and maintainability,
+referenced by their ISO names rather than redefined (the 2017 review's
+point). ISO/IEC 25051 (conformity evaluation of ready-to-use software
+products) and ISO/IEC/IEEE 29119-3 (test documentation shapes) are the
+supporting citations for the evaluation procedure and report formats.
 
 ### 6.4 Legal weight of self-declaration (the phrasing to adopt)
 
@@ -336,10 +342,11 @@ Honest implications:
    it was earned against; within-major supersets follow openEHR's release
    strategy.
 8. **Scope discipline.** Platform (CDR) profile first. Conformance =
-   ISO/IEC 25010 functional suitability **plus performance efficiency** —
-   the two verdict machineries (§6.3, §8.14); reliability, security beyond
-   §11.9's conformance points, and maintainability stay out, declared in the
-   Statement where relevant.
+   ISO/IEC 25010 functional suitability (including the Security & Privacy
+   behaviours, §8.15) **plus performance efficiency** — the two verdict
+   machineries (§6.3, §8.14); reliability, maintainability, and security
+   *strength* (vs behaviour) stay out, declared in the Statement where
+   relevant.
 9. **Adopt international vocabulary** (§6.1) — ATS/ICS/IXIT/attestation
    levels/scheme-owner — instead of coining terms.
 
@@ -1472,7 +1479,7 @@ artifacts in the source standards, combined here as one computable file):
 | `tech_profiles` ∎ | which format/protocol matrices are claimed (e.g. `[its-rest: [canonical-json, canonical-xml, wt-flat]]`) |
 | `options` | declared behaviour for register-listed implementation choices (e.g. AMB-4: conflict vs version-param) |
 | `performance` | the claimed **volumetric class per declared environment** (`POC`/`S`/`L`/`R`, §8.14) — a verdict input for the performance dimension: the claim selects the performance cases to run, and the earned class is computed from measured `results.json` thresholds exactly like functional verdicts |
-| `non_functional` | remaining declaration-only slots (security/privacy postures beyond the §11.9 conformance points) — never verdict inputs |
+| `non_functional` | remaining declaration-only slots (security/privacy *posture* beyond the §8.15 SEC-BASIC behaviours: encryption configuration, pseudonymisation-on-export) — never verdict inputs |
 | `evidence` ∎ | hash links to the `results.json` files backing the claims |
 | `attestation` | rung ≥ 1: signatory name/role/date + the §6.4 responsibility sentence |
 
@@ -1660,7 +1667,7 @@ Rules:
 - **Statement + certificate**: the statement claims a target class per
   environment; the certificate reports the earned class alongside the
   functional profile — the 2017 multi-dimensional certificate
-  (Functional | Performance, with Enterprise and Security following §11).
+  (Functional | Performance | Security per §8.15, with Enterprise following §11.11).
 - **Reference methodology**: seeded workload generators + the knee-finding
   and sustained-run procedure of a published benchmark harness (this repo's
   `tools/benchmark` is the donated working draft); any runner reproducing
@@ -1669,7 +1676,8 @@ Rules:
 
 ### 8.15 The Security & Privacy schedule
 
-Security & Privacy is the third certificate rating of the 2017 schedule,
+Security & Privacy is the fourth certificate rating of the 2017 schedule
+(Functional | Enterprise | Performance | Security),
 realized as an **assertion-machinery capability family** (§8's architecture:
 these are testable functional behaviours — this is explicitly NOT a security
 evaluation scheme in the Common Criteria sense, §11.9). The family's first
@@ -1863,7 +1871,6 @@ once §8.3 makes cases enumerable files:
    defined in §8.15** (EHR/demographic separation, authenticated access,
    authorization separation, audit accountability, anonymous EHRs) — this
    roadmap item authors its cases. Explicitly scoped small; not a security
-   evaluation scheme. Explicitly scoped small; not a security
    evaluation scheme.
 10. **ADL2 cases (master04)** — OPTIONS-profile depth for the `am24`
    generation.
