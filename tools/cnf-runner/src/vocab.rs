@@ -242,6 +242,9 @@ pub enum CorpusFormat {
     /// An ADL 1.4 operational template (OPT XML).
     #[serde(rename = "opt-xml")]
     OptXml,
+    /// AQL query text (stored-query definitions).
+    #[serde(rename = "aql-text")]
+    AqlText,
 }
 
 /// HTTP method of a binding request (the ITS-REST realization layer).
@@ -468,6 +471,7 @@ impl CorpusFormat {
         CorpusFormat::WtFlat,
         CorpusFormat::WtStructured,
         CorpusFormat::OptXml,
+        CorpusFormat::AqlText,
     ];
 }
 
@@ -550,6 +554,6 @@ mod all_consts_tests {
         assert_eq!(Tier::ALL.len(), 7);
         assert_eq!(Disposition::ALL.len(), 6);
         assert_eq!(FormatName::ALL.len(), 5);
-        assert_eq!(CorpusFormat::ALL.len(), 5);
+        assert_eq!(CorpusFormat::ALL.len(), 6);
     }
 }

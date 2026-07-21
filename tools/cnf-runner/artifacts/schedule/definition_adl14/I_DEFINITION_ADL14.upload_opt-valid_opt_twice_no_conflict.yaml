@@ -1,0 +1,39 @@
+# Official master04 case: the duplicate-template_id VERSIONED branch of AMB-4.
+# When a version is supplied (per the master04 NOTE, carried in the template_id
+# or other_details — ITS-REST parameters/path/template_id.yaml resolves a
+# partial id to latest and a full/versioned id to a specific version), two
+# uploads of the same logical template with different versions both succeed.
+# This sibling carries option: adl14-duplicate-versioned; the conflict sibling
+# carries adl14-duplicate-conflict. The ICS options declaration selects which
+# applies.
+id: I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.upload_opt
+capabilities: [Adl14OptProvisioning]
+exercises: [ArchetypeValidation]
+profiles: [CORE]
+option: adl14-duplicate-versioned
+test_purpose: "Uploading the same logical template twice with different versions succeeds both times; two versions are loaded."
+description: "upload valid OPT twice with different versions (no conflict)"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.upload_opt"
+  - "CNF platform_test_schedule master04 §upload_opt-valid_opt_twice_no_conflict"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }              # "No OPTs should be loaded on the system"
+data_sets: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]
+flow:
+  - step: 1
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.versioned.v1}" }   # version parameter = 1
+    expect: created                      # "the result should be positive (the server accepted the OPT)"
+  - step: 2
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.versioned.v2}" }   # version parameter = 2
+    expect: created                      # "the result should be positive (the server accepted the OPT)"
+postconditions:
+  - assert: state
+    text: "Two OPTs with the given template_id and different versions are loaded"
+    verified_by: I_DEFINITION_ADL14.get_opts-retrieve_all
+verified_by: [I_DEFINITION_ADL14.get_opts-retrieve_all]
+ambiguities: [AMB-4]

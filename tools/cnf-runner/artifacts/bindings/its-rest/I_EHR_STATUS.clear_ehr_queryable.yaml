@@ -1,0 +1,36 @@
+# Wire realization of I_EHR_STATUS.clear_ehr_queryable for ITS-REST 1.1.0.
+# ITS-REST has no field-level setter: clearing EHR_STATUS.is_queryable (-> false)
+# is realized as a read-modify-write of the whole EHR_STATUS via
+# PUT /ehr/{ehr_id}/ehr_status, with the current version_uid in If-Match
+# (the SM preceding_version_uid, AMB-3). The runner reads the current
+# EHR_STATUS, flips is_queryable, and PUTs it back (see the schedule/ehr
+# REQUIREMENTS.md — SM setter vs ITS-REST whole-resource-update divergence).
+# Sources: specifications/operations/ehr_status_update.yaml,
+# responses/200_EHR_STATUS_updated.yaml, 204_version_updated.yaml,
+# 412_EHR_STATUS.yaml, 400.yaml, 404_unknown_ehr_id.yaml; If-Match per
+# overview Requests_and_responses.
+sm_operation: I_EHR_STATUS.clear_ehr_queryable
+its: its-rest
+request:
+  method: PUT
+  path: /ehr/{ehr_id}/ehr_status
+  body: ehr_status                          # modified EHR_STATUS (is_queryable set false; runner read-modify-write)
+  headers:
+    If-Match: '"${preceding_version_uid}"'  # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  updated:
+    status: 200                             # 200_EHR_STATUS_updated.yaml (204 when Prefer minimal)
+    headers: { ETag: present, Location: present }
+    body: prefer_conditional
+  precondition_failed:
+    status: 412                             # 412_EHR_STATUS.yaml, stale If-Match
+    headers: { ETag: latest-version-uid }
+  precondition_missing: { status: 400 }     # If-Match absent -> SHOULD 400 (Requests_and_responses)
+  validation_failed: { status: 400, body: error_loose }   # 400.yaml
+  not_found: { status: 404 }                # 404_unknown_ehr_id.yaml
+captures:
+  status_version_uid:
+    from: header ETag
+    strip: weak-quotes

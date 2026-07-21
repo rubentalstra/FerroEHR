@@ -1,0 +1,34 @@
+# Official master04 case: for a versioned OPT, retrieval by the (partial)
+# template_id returns the latest version. ITS-REST 1.1.0 resolves a partial
+# template_id to the latest major version (parameters/path/template_id.yaml).
+# Versioning follows AMB-4 (option: adl14-duplicate-versioned).
+id: I_DEFINITION_ADL14.get_opt-retrieve_latest_version
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.get_opt
+capabilities: [Adl14OptProvisioning]
+profiles: [CORE]
+option: adl14-duplicate-versioned
+test_purpose: "Retrieving a versioned OPT by template_id returns its latest version."
+description: "retrieve last version of versioned OPT"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
+  - "CNF platform_test_schedule master04 §get_opt-retrieve_latest_version"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }              # OPTs with more than one version loaded by the flow below
+data_sets: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]
+flow:
+  - step: 1
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.versioned.v1}" }
+    expect: created
+  - step: 2
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.versioned.v2}" }
+    expect: created
+  - step: 3
+    call: get_opt
+    with: { template_id: "cnf.versioned" }   # partial template_id -> latest major version
+    expect: ok                           # "the correct OPT will be returned, and will be the last version"
+    assert:
+      - { assert: equivalent, to: "${ds:cnf.opt.versioned.v2}" }

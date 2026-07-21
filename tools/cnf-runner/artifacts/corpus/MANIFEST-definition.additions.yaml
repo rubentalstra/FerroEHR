@@ -1,0 +1,39 @@
+# Corpus additions for the master04 (DEFINITION_ADL14) cases. Same entry
+# schema as MANIFEST.yaml; the orchestrator concatenates this into
+# MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
+#
+# All payloads are structural placeholders modeled on
+# corpus/templates/minimal_event.opt, pending the spine-first authored corpus
+# (#202). The invalid-OPT and minimal-event valid sets already live in
+# MANIFEST.yaml and are reused by the cases; only the new valid OPTs are
+# declared here.
+#
+# NOTE (master05 stored-query texts): AQL query text has no representable
+# CorpusFormat variant (canonical-json | canonical-xml | wt-flat |
+# wt-structured | opt-xml), so the master05 cases carry their AQL inline in
+# the flow `with:` payloads rather than as corpus data sets. See the master05
+# REQUIREMENTS.md for the proposed `aql-text` CorpusFormat addition.
+cnf.opt.minimal_all_entries:
+  source: fixtures/opt/valid/minimal_all_entries.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions; structural placeholder pending corpus authoring"
+cnf.opt.maximal:
+  source: fixtures/opt/valid/maximal.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions; structural placeholder pending corpus authoring"
+cnf.opt.versioned.v1:
+  source: fixtures/opt/valid/versioned.v1.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions (minimal valid OPT, two versions); structural placeholder pending corpus authoring"
+cnf.opt.versioned.v2:
+  source: fixtures/opt/valid/versioned.v2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions (minimal valid OPT, two versions); structural placeholder pending corpus authoring"
