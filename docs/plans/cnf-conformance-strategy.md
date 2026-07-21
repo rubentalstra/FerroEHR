@@ -1694,50 +1694,79 @@ class: S                        # POC | S | L | R — the selection key (§8.11 
                                 # performance cases carry no `capabilities` (§8.3)
 corpus: cnf.scale.100k          # synthesized corpus recipe (§11.11 scale classes)
 workload:                       # OPEN-LOOP offered load (the donated engine's model):
-  arrival_rate: 40/s            #   the class-S offered load (table below) — a seeded
+  arrival_rate: 15/s            #   the class-S floor (table below) — a seeded
                                 #   arrival schedule, never closed-loop users,
   warmup: PT5M                  #   so coordinated omission cannot hide stalls
   duration: PT1H
-  mix: { composition_commit: 30%, composition_read: 40%, adhoc_query: 25%, ehr_create: 5% }
-                                #   mix = share of scheduled ARRIVALS
+  mix: { composition_read: 61%, adhoc_query: 30%, composition_commit: 8%, ehr_create: 1% }
+                                #   mix = share of scheduled ARRIVALS; ~9% writes / 91% reads,
+                                #   matching the derived read:write ratio (below)
 thresholds:                     # ALL must hold in the single measured run
   - { metric: latency_p99, operation: composition_read, max: 1s }    # the standard SLO (table below)
   - { metric: latency_p99, operation: composition_commit, max: 1s }
   - { metric: error_rate, max: 0 }
-  - { metric: offered_load_sustained, min: 40/s }   # class-S provisional default (table below)
+  - { metric: offered_load_sustained, min: 15/s }   # class-S floor (table below)
 # environment: bound to the mandatory ixit.json environment block (§8.10)
 ```
 
 **Provisional class parameters** (proposed defaults pending SEC
 ratification; derivation shown so the numbers are arguable, not arbitrary):
 
-| Class | Corpus | Offered load (sustained) | p99 API budget | Error rate |
-|---|---|---|---|---|
-| POC | 10k EHRs | 2/s | ≤ 1 s | 0 |
-| S | 100k EHRs | 40/s | ≤ 1 s | 0 |
-| L | 1M EHRs | 400/s | ≤ 1 s | 0 |
-| R | 10M EHRs | 4000/s | ≤ 1 s | 0 |
+| Class | Population served | Corpus | Offered-load floor (peak API arrivals, sustained) | p99 API budget | Error rate |
+|---|---|---|---|---|---|
+| POC | demo | 10k EHRs | 2/s (demonstration floor, not population-derived) | ≤ 1 s | 0 |
+| S | 100k | 100k EHRs | **15/s** (derived band 13–75/s) | ≤ 1 s | 0 |
+| L | 1M | 1M EHRs | **150/s** (band 130–750/s) | ≤ 1 s | 0 |
+| R | 10M | 10M EHRs | **1,500/s** (band 1,300–7,500/s) | ≤ 1 s | 0 |
 
-Derivation (**[legislated]** — stated assumptions, SEC ratifies or replaces):
-offered load converts the 2017 schedule's user counts (POC 5 / S 100 /
-L 1000 / R 10,000 concurrent users) to open-loop terms by two explicit
-assumptions — one clinical interaction per active user per 10 s, ~4 API
-calls per interaction — giving offered load = users × 0.4/s. The latency
-budget is the **standard per-operation SLO of p99 ≤ 1 s, uniform across
-classes** — the same SLO the committed knee-ladder methodology already
-defines sustainability by (`docs/benchmarks/*/KNEE.md`: "SLO p99 ≤ 1 s,
-error ≤ 0.1%"), preferred over budgets derived from the 2017 page's
-UI-level screen latencies (2 s / 1.5 s — recorded here as lineage): one
-convention, already published, no per-class invention. Procurers who need
-tighter tail latency tighten it per tender via the §10 template parameters.
-Corpus sizes are the 2017 D-row scale ladder. Feasibility is
+Derivation — the **population-anchored utilization model** (**[legislated]**
+composite of cited statistics, each input graded; SEC ratifies or amends;
+replaces the 2017 concurrent-users guess, following the TPC-C/SAP-SD
+precedent of anchoring load to a countable base unit with a per-unit rate):
+
+1. **Clinical documents per capita per year ≈ 46**, from published activity
+   rates × documents per event: doctor consultations 6/capita (OECD Health
+   at a Glance 2023; Eurostat range 4.4–10.1) × 1 doc; inpatient discharges
+   0.128/capita (OECD/Eurostat) × ~10 docs/stay; ED visits 0.3/capita
+   (OECD WP 83; 40-country median) × ~4 docs; laboratory results 15/capita
+   (RCPath — flagged low-confidence); imaging 0.82/capita (NHS Diagnostic
+   Imaging Dataset 2023/24) × 1; prescription items 21.8/capita (NHS BSA
+   PCA 2024/25, accredited statistic) × 1. Sanity: between Denmark/Estonia
+   major-document exchange rates (~8–10/capita/yr) and Finland Kanta's
+   all-inclusive ~130/capita/yr (>2M documents stored/day).
+2. **Average writes/s** = population × 46 ÷ year-seconds → 0.15/s per 100k.
+3. **Peak factor ×8** (band 6–10): weekday concentration ×1.4 · busy-hour
+   ≈17% of daily traffic ×~4 (the Cisco/ITU-T E.500 busy-hour convention) ·
+   intra-hour burstiness ×1.2–1.5; healthcare corroboration: ED arrival
+   rates vary >3× over 24 h, ~88% of arrivals in the 16 non-overnight
+   hours.
+4. **Read multiplier 10:1** (the 90/10 read-heavy OLTP convention,
+   OLTP-Bench/YCSB) as the floor's mix — with audit-log evidence (~597 EHR
+   interactions per encounter, PMC10148376) bounding a read-heavy upper
+   band at ~50:1, which gives each class its band ceiling.
+5. **Result: ≈13 peak API arrivals/s per 100k population** (band 13–75);
+   class floors rounded to 15/150/1,500 per class population. Envelope
+   checks against real systems: NHS Spine peaks at 3,500 coarse
+   messages/s for ~60M people; the Catalonia 13M-patient openEHR CDR
+   (117M compositions) published the lesson that **per-EHR data volume
+   dominates query cost** — honoured by the corpus ladder's per-patient
+   volume assumption (~100 composition versions/EHR, §11.11).
+
+The latency budget is the **standard per-operation SLO of p99 ≤ 1 s,
+uniform across classes** — the same SLO the committed knee-ladder
+methodology already defines sustainability by (`docs/benchmarks/*/KNEE.md`:
+"SLO p99 ≤ 1 s, error ≤ 0.1%"). The 2017 page's user counts and screen
+latencies are recorded as lineage only. Procurers who need tighter tails or
+the read-heavy band ceiling tighten per tender via the §10 template
+parameters. Corpus sizes are the 2017 D-row scale ladder. Feasibility is
 evidenced by the committed measurement artifacts (`docs/benchmarks/`,
 regenerated per release, never hand-typed): ehrbase-rs sustains a
 631.5 req/s knee at p99 204.7 ms and upstream EHRbase 475.0 req/s
 (`ehrbase-rs/KNEE.md`, `ehrbase-java/KNEE.md`) on 8-core consumer hardware —
-class L (400/s) is attainable on
-server-class hardware and class R is a scaled-deployment target, consistent
-with its "Region" intent.
+the class-L floor (150/s) is comfortably attainable — a consumer laptop
+already sustains 4× it — and the class-R floor (1,500/s) is a
+server/scaled-deployment target bracketed by NHS Spine's published peak,
+consistent with its "Region" intent.
 
 Performance case fields (∎ beyond the §8.3 commons — `id`, `kind`,
 `component`, `description`, `test_purpose`, `spec_refs`): `class` ∎,
@@ -2274,6 +2303,36 @@ proposing a format and demonstrating one.
   <https://www.ihe.net/wp-content/uploads/2018/08/IHE_International_Conformity_Assessment_Scheme_Part_1_Rev1-0_2014-06-25.pdf>.
 - OpenID certification — <https://openid.net/certification/>.
 - DICOM (PS3.2 conformance) — <https://www.dicomstandard.org/current>.
+
+**Performance-model sources (§8.14 derivation):**
+- OECD Health at a Glance 2023, consultations —
+  <https://www.oecd.org/en/publications/2023/11/health-at-a-glance-2023_e04f8239/full-report/consultations-with-doctors_159193ce.html>;
+  Eurostat healthcare activities (consultations; hospital discharges) —
+  <https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Healthcare_activities_statistics_-_consultations>,
+  <https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Hospital_discharges_and_length_of_stay_statistics>.
+- NHS Diagnostic Imaging Dataset 2023/24 (47.2M exams) —
+  <https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2024/11/DID-Annual-Statistical-Release-2023-24.pdf>;
+  NHS BSA Prescription Cost Analysis 2024/25 (1.26B items) —
+  <https://www.nhsbsa.nhs.uk/statistical-collections/prescription-cost-analysis-england/prescription-cost-analysis-england-202425>;
+  RCPath pathology volumes (flagged estimate) —
+  <https://www.rcpath.org/discover-pathology/news/fact-sheets/pathology-facts-and-figures-.html>;
+  OECD Emergency Care WP 83 —
+  <https://www.oecd.org/content/dam/oecd/en/publications/reports/2015/08/emergency-care-services_g17a26ec/5jrts344crns-en.pdf>.
+- EHR interaction intensity (~597 audit events/encounter) —
+  <https://pmc.ncbi.nlm.nih.gov/articles/PMC10148376/>; OLTP read/write
+  conventions — <https://www.cs.cmu.edu/~pavlo/papers/oltpbench-vldb.pdf>.
+- Busy-hour conventions — Cisco VoIP traffic analysis
+  <https://www.cisco.com/c/en/us/td/docs/ios/solutions_docs/voip_solutions/TA_ISD.html>;
+  ITU-T E.500 <https://www.itu.int/rec/T-REC-E.500>; ED diurnal
+  distribution <https://pmc.ncbi.nlm.nih.gov/articles/PMC6656946/>.
+- Class-anchoring precedent — TPC-C v5.11 (warehouse-anchored tpmC ceiling)
+  <https://www.tpc.org/tpc_documents_current_versions/pdf/tpc-c_v5.11.0.pdf>;
+  SAP SAPS <https://www.sap.com/about/benchmark/measuring.html>.
+- Real-system envelope — NHS Spine (peak 3,500 msg/s, ~60M)
+  <https://digital.nhs.uk/services/spine>; Finland Kanta (>2M docs/day)
+  <https://www.kanta.fi/en/statistics>; Catalonia 13M-patient openEHR CDR
+  whitepaper (117M compositions; per-EHR volume dominates query cost)
+  <https://hip.vitagroup.ag/wp-content/uploads/2026/04/Whitepaper_EN_Towards_large_scale_openEHR_Clinical_Data_Repositories.pdf>.
 
 **Procurement evidence:**
 - Catalonia CDR award —
