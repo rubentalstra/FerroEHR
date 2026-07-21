@@ -220,8 +220,8 @@ evaluate.
 
 ### 6.3 Scope discipline via ISO/IEC 25010 (answering the 2017 review)
 
-Conformance under CNF 2.0 attests exactly two ISO/IEC 25010 characteristics,
-each with its own schedule and verdict machinery:
+Conformance under CNF 2.0 attests exactly two ISO/IEC 25010 characteristics
+— the two verdict machineries of §8:
 
 - **Functional suitability** (completeness + correctness against the openEHR
   specifications) — the functional + content schedules (§8).
@@ -356,6 +356,27 @@ fragments; and (c) the STABLE Simplified Formats specification
 (`ITS-REST/docs/simplified_formats/master02–06`). Every rule below carries
 its source.
 
+**The architecture in one view.** Two **verdict machineries** over one
+artifact discipline: **conformance-by-assertion** (functional + content
+cases: typed assertions roll up case → capability → profile) and
+**conformance-by-measurement** (performance cases: measured metrics against
+class thresholds). Capabilities group into **families** — Platform
+(CORE/STANDARD/OPTIONS), Enterprise (D/M/X, §11.11), Security (§11.9) — all
+assessed by the assertion machinery; the certificate is the matrix
+*machinery × family*: functional profile ratings per tech profile, plus an
+earned performance class per environment. Below the machineries: one
+schedule (case cores, three kinds), one binding layer (per SM operation per
+ITS), one governed corpus (fixtures, recipes, views, scale classes,
+workloads), one vocabulary layer (outcomes, the machine-readable
+capability→profile matrix, selectors), one party-artifact layer
+(statement/results/ixit — ixit models **named SUT instances + an
+environment**, so single-instance platform cases, dual-instance Enterprise
+cases, and environment-bound performance runs all drive from the same file),
+and one verdict layer (both machineries as pure functions). Content cases
+are not a third machinery: a content case is a template-parameterized
+functional execution (generate row instance → commit → expect verdict) —
+one executor serves both.
+
 **Design law**: everything the official schedule's fleshed chapters express
 today MUST be representable losslessly in the case model, and nothing
 wire-level may appear in a case core. The schedule itself never states an
@@ -436,13 +457,13 @@ Seven normative, versioned-together artifact families in specifications-CNF
 
 | # | Artifact | Path (proposed) | Content |
 |---|---|---|---|
-| 1 | **Case cores** | `schedule/<component>/<CASE_ID>.yaml` | Protocol-neutral test cases (§8.3) — the Abstract Test Suite |
+| 1 | **Case cores** | `schedule/<component>/<CASE_ID>.yaml` | Protocol-neutral test cases, all three kinds (§8.3, §8.14) — the Abstract Test Suite |
 | 2 | **Operation bindings** | `bindings/<its>/<SM_OPERATION>.yaml` | Per-ITS wire realization of each SM operation's outcomes/captures (§8.4) |
-| 3 | **Outcome-kind vocabulary** | `vocab/outcomes.yaml` | The closed taxonomy cases and bindings share (§8.5) |
-| 4 | **Governed corpus + manifest** | `corpus/**` + `corpus/MANIFEST.yaml` | Fixtures, templates, generated-set recipes, adjudicated verdicts (§8.8) |
+| 3 | **Vocabularies & matrices** | `vocab/{outcomes,selectors}.yaml` + `vocab/capability_matrix.yaml` | The closed outcome taxonomy (§8.5), body/header selectors + ignore-sets (§8.4, §8.6), and the **machine-readable capability→family→tier matrix** — the Profiles book's table as data, the input the verdict machinery computes from; the Profiles prose regenerates from it exactly as the schedule prose does from the cases |
+| 4 | **Governed corpus + manifest** | `corpus/**` + `corpus/MANIFEST.yaml` | Fixtures, templates, generated-set recipes, named views, **scale-class corpora** (shared by Enterprise + performance), **workload definitions**, adjudicated verdicts (§8.8) |
 | 5 | **Ambiguity register** | `registers/ambiguities.yaml` | Known spec silences/divergences with normative handling (§8.5) |
-| 6 | **ICS / results / IXIT schemas** | `schemas/{statement,results,ixit}.schema.json` | The conformance-statement, test-report, and SUT-parameter contracts (§8.10) |
-| 7 | **Verdict rules** | `schemas/verdicts.md` (normative prose) + reference impl | Pure-function profile computation (§8.11) |
+| 6 | **Party artifacts** | `schemas/{statement,results,ixit}.schema.json` | The ICS/SDoC, test-report (incl. measurements), and SUT-topology contracts (§8.10) |
+| 7 | **Verdict rules** | `schemas/verdicts.md` (normative prose) + reference impl | Both machineries as pure functions: assertion rollup + measured-class computation (§8.11, §8.14) |
 
 The published spec pages (the human-readable schedule) are **generated** from
 1–5; the derivation-square CI (§8.13) keeps every artifact internally linked.
@@ -519,7 +540,8 @@ compositions: []           # (deprecated alias of commit:)
 
 `server: empty` is realized by runners through isolation (fresh SUT or
 tenant), never by destructive cleanup of a shared system — a runner-layer
-note, not a case concern.
+note, not a case concern. In multi-instance cases (§11.11), `requires` is
+stated per instance (`instances: { source: {...}, target: { server: empty } }`).
 
 **`parameters` block** — the data-set dimension. One mechanism serves the
 functional matrices (master06) and the fixture sets (master04):
@@ -559,6 +581,9 @@ field presence.
 flow:
   - step: 1
     call: create_ehr                     # SM operation (short form resolves against sm_operation's interface)
+    on: sut                              # OPTIONAL instance selector (default `sut`); Enterprise
+                                         #   dual-instance cases address ixit-declared instances
+                                         #   (e.g. `on: source` / `on: target` for dump/load, sync)
     format: wt-flat                      # OPTIONAL per-step format role (intrinsic-format cases only)
     with: { ehr_status: ${recipe:ehr_status(row)} }
     expect: created                      # outcome kind (§8.5); per-row override via the `expected` column
@@ -1399,7 +1424,7 @@ artifacts in the source standards, combined here as one computable file):
 | `product` ∎ | name, **exact version/build**, vendor, unique product identifier |
 | `schedule_release` ∎ | the CNF schedule release the claims are made against |
 | `spec_versions` ∎ | declared RM/AQL/ITS-REST/TERM versions (drives `applies` filtering) |
-| `claims` ∎ | claimed capabilities per the Profiles matrix + claimed profiles |
+| `claims` ∎ | claimed capabilities + profiles, validated against the machine-readable capability matrix (§8.2 family 3) |
 | `tech_profiles` ∎ | which format/protocol matrices are claimed (e.g. `[its-rest: [canonical-json, canonical-xml, wt-flat]]`) |
 | `options` | declared behaviour for register-listed implementation choices (e.g. AMB-4: conflict vs version-param) |
 | `performance` | the claimed **volumetric class per declared environment** (`POC`/`S`/`L`/`R`, §8.14) — a verdict input for the performance dimension: the claim selects the performance cases to run, and the earned class is computed from measured `results.json` thresholds exactly like functional verdicts |
@@ -1430,25 +1455,37 @@ verdicts — they record ICS-driven selection and guard exclusions, each with
 a mandatory citation. Coverage is computable: cases driven / cases selected
 by the ICS, per profile.
 
-**`ixit.json`** (9646 IXIT): base URL, auth mode + credentials reference,
-admin mount, template-id policy, system-id expectations, per-endpoint
-overrides — everything a runner needs to drive a deployed SUT, standardized
-so any runner drives any SUT from the same file. (ECC's `SutDescriptor` is
-the donated draft.)
+**`ixit.json`** (9646 IXIT): the SUT **topology** — one or more **named
+instances** (each: base URL, auth mode + credentials reference, admin mount,
+template-id policy, system-id expectations, per-endpoint overrides) plus the
+**environment block** (hardware class, cores, memory, storage class,
+deployment topology — mandatory for performance runs, §8.14).
+Single-instance platform cases use the default instance `sut`; Enterprise
+dual-instance cases (§11.11) address `source`/`target` via the flow `on:`
+selector (§8.3); performance verdicts bind to the environment. One file
+drives any runner against any SUT topology. (ECC's `SutDescriptor` is the
+donated draft.)
 
 ### 8.11 ICS-driven selection and verdict computation
 
-Mechanical pipeline, normative:
+Mechanical pipeline, normative — a pure function of (statement, results,
+catalogue, **capability matrix**):
 
 1. **Static conformance review** of the statement: claim-set legality
-   (STANDARD ⇒ all CORE capabilities claimed), spec-version consistency,
-   option declarations present for every register entry the claims touch.
+   against the capability matrix (STANDARD ⇒ all CORE capabilities claimed),
+   spec-version consistency, option declarations present for every register
+   entry the claims touch, an environment block present when a performance
+   class is claimed.
 2. **Selection**: cases whose `capabilities` ∩ claimed capabilities ≠ ∅,
    filtered by `applies` × declared spec versions and by `guards`.
    **2b — option deselection**: a case carrying an `option:` tag is selected
    only when the ICS `options` declaration matches it; the sibling
    realizing the undeclared behaviour is recorded `not-applicable` with the
    ICS declaration as citation (AMB-4, AMB-8).
+   **2c — performance selection**: the claimed class per environment selects
+   that class's performance cases; unclaimed classes are not run (a product
+   claims S, it is measured for S — running R unasked is a runner choice,
+   reported but not demanded).
 3. **Execution**: per case × tech-profile format × parameter row, with
    `reset_per_row` honoured.
 4. **Verdicts**: case passes iff every selected row passes. Capability
@@ -1456,9 +1493,12 @@ Mechanical pipeline, normative:
    `NotEvidenced` / `NoCases` (a printed coverage bound). Profile verdicts:
    CORE/STANDARD = all required capabilities `Passed`; OPTIONS = any.
    AMB-5-flagged cases report but do not gate.
-5. Everything above is a pure function of (statement, results, catalogue) —
-   a reference implementation ships with the schemas; any two conformant
-   implementations MUST compute identical verdicts.
+5. **Measured verdicts** (the second machinery): per claimed class, every
+   §8.14 threshold holds in one measured run ⇒ class `earned`, else
+   `not-earned`; bound to the ixit environment.
+6. Everything above is a pure function of (statement, results, catalogue,
+   capability matrix) — a reference implementation ships with the schemas;
+   any two conformant implementations MUST compute identical verdicts.
 
 ### 8.12 Runner verification — the two-part pack
 
@@ -1519,7 +1559,7 @@ thresholds:                     # ALL must hold for the class to be earned
   - { metric: latency_p99, operation: composition_commit, max: 2s }
   - { metric: error_rate, max: 0 }
   - { metric: sustained_throughput, min: <SEC-set per class> }
-environment: declared           # the ixit.json environment block is MANDATORY
+# environment: bound to the mandatory ixit.json environment block (§8.10)
 ```
 
 Rules:
@@ -1568,11 +1608,13 @@ attestation level so no rung can masquerade as a higher one:
 
 Cross-cutting rules:
 
-- **Certificate ratings are multi-dimensional** (the 2017 certificate,
-  realized): Functional (profile per tech profile) + Performance (earned
-  class per environment, §8.14), with Enterprise and Security dimensions
-  following as their §11 chapters land. Every dimension is computed from
-  `results.json`, never hand-asserted.
+- **Certificate ratings are the machinery × family matrix** (the 2017
+  multi-dimensional certificate, realized cleanly): assertion-machinery
+  ratings per capability family — Platform (CORE/STANDARD/OPTIONS), and
+  Enterprise (D/M/X) + Security as their §11 chapters land — each per tech
+  profile, plus the measurement-machinery rating (earned performance class
+  per environment, §8.14). Every cell is computed from `results.json` +
+  the capability matrix, never hand-asserted.
 - **Validity & supersession**: a statement/certificate names the CNF schedule
   release + spec versions + tech profile + exact product version. It never
   expires by clock alone; it is **superseded** when a newer schedule release
@@ -1716,8 +1758,11 @@ once §8.3 makes cases enumerable files:
    versions each, the recipes joining the §8.8 governed corpus);
    **M — EHR management** (merge/split/move of EHRs across instances);
    **X — cross-enterprise synchronisation** (asynchronous update merging —
-   specifications-CNF issue #1 is the 2017 seed). Its own profile family +
-   SM grounding decision; dump/load overlaps §11.7's off-wire boundary.
+   specifications-CNF issue #1 is the 2017 seed). Architecturally supported
+   already: ixit declares named instances and flow steps carry `on:`
+   selectors (§8.3, §8.10), so dual-instance cases are ordinary cases. Its
+   own capability family in the matrix + an SM grounding decision; dump/load
+   overlaps §11.7's off-wire boundary.
 12. **The openEHR→EEHRxF seam (EHDS alignment, later)** — cases verifying that
    priority-category content in a conformant CDR renders faithfully to the
    EEHRxF FHIR models, once the March 2027 implementing acts fix them. Flag:
@@ -1797,7 +1842,7 @@ acceptance gate:
 
 | PR | Content | Acceptance gate |
 |---|---|---|
-| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, outcome vocabulary, corpus manifest, ambiguity register seeded with AMB-1…12) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
+| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, vocabularies incl. the capability matrix, corpus manifest, ambiguity register seeded with AMB-1…12) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
 | U2 | master06 (EHR) converted: all 21 cases as case cores + the its-rest bindings for the EHR operations + corpus manifest over the existing EHR fixtures | Generated prose semantically equivalent to the current chapter (human-reviewed diff); zero information loss against the AsciiDoc tables |
 | U3 | master07/08/09 (COMPOSITION/CONTRIBUTION/DIRECTORY) conversion + bindings | Same gate; the versioning cases (§8.9 pilot 4 shape) round-trip |
 | U4 | Content chapters (master15–17) conversion — decision tables as data + the literal grammar + generation recipes | Every existing table row preserved verbatim; grammar parses 100% of existing literals |
@@ -1818,7 +1863,7 @@ owner-approved), sequenced:
 
 | WS | Workstream | Content | Done-gate |
 |---|---|---|---|
-| W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, outcome vocab, corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
+| W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, vocabularies (outcomes + the capability matrix), corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
 | W2 | **Catalogue conversion** | The 394 ECC cases re-expressed as §8.3 case cores + §8.4 operation bindings. Where an official schedule case exists, the CNF id becomes primary (ECC numbers retire to trace metadata — inverting today's `ScheduleTrace`); ECC-original cases keep an `ecc-` namespace pending upstream adoption. `inventory/ecc-catalog.tsv` becomes a generated view. | Zero-drift: the converted catalogue reproduces the current 402-execution baseline exactly (384 passed · 18 N/A) |
 | W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data (they already nearly do). | ≥90% of cases run through the interpreter; every exception listed in the report; ECC baseline unchanged |
 | W4 | **Statement / results / ixit emission** | `results.json` migrates to the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
