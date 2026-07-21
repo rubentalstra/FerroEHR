@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structural placeholder: maximal valid OPT (all types in the RM). Modeled
+     on corpus/templates/minimal_event.opt; the full RM type coverage is
+     pending corpus authoring (#202). -->
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.maximal</value></template_id>
+  <concept>maximal composition (all RM types)</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

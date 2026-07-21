@@ -27,6 +27,11 @@ const DEFECTS: &[(&str, &str, &str)] = &[
         "load",
     ),
     (
+        "binding-unrealized-and-realized.yaml",
+        "bindings/its-rest/zz-defect.yaml",
+        "load",
+    ),
+    (
         "register-bad-disposition.yaml",
         "registers/ambiguities.yaml",
         "load",

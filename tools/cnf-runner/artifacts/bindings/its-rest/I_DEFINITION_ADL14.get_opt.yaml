@@ -1,0 +1,17 @@
+# Wire realization of I_DEFINITION_ADL14.get_opt for ITS-REST 1.1.0.
+# Sources: specifications/operations/definition_template_adl1.4_get.yaml,
+# responses/200_Template_adl1_4_retrieved.yaml, 404_unknown_template_id.yaml,
+# 406.yaml, parameters/path/template_id.yaml (a partial template_id resolves
+# to the latest major version; a full/versioned template_id addresses a
+# specific version).
+sm_operation: I_DEFINITION_ADL14.get_opt
+its: its-rest
+request:
+  method: GET
+  path: /definition/template/adl1.4/{template_id}   # definition_template_adl1.4_get.yaml
+  headers:
+    Accept: application/xml                          # Accept_Template.yaml (canonical OPT XML)
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }  # 200_Template_adl1_4_retrieved.yaml
+  not_found: { status: 404 }                         # 404_unknown_template_id.yaml
+  not_acceptable: { status: 406 }                    # 406.yaml

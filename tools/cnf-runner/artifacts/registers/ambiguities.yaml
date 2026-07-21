@@ -112,3 +112,80 @@ AMB-13:
     renamed); sm_operation carries the resolvable I_DEFINITION_ADL14.list_opts.
     Upstream editorial-alignment candidate.
   disposition: fixed_handling
+AMB-14:
+  ambiguity: >-
+    CNF<->SM operation-name divergence for subject-based EHR access: master06
+    places the subject-keyed cases under its has_ehr()/get_ehr() headings, but
+    those SM operations take an ehr_id (UUID); the subject flows are the
+    distinct SM operations has_ehr_for_subject and get_ehrs_for_subject.
+  source: "CNF platform_test_schedule master06 (subject-based has_ehr/get_ehr cases) vs SM docs/UML/classes/i_ehr_service.adoc"
+  handling: >-
+    Official case ids unchanged; sm_operation carries the resolvable subject
+    variant (the AMB-13 rule). Upstream editorial-alignment candidate.
+  disposition: fixed_handling
+AMB-15:
+  ambiguity: >-
+    The SM EHR_STATUS field-setters (set/clear_ehr_queryable,
+    set/clear_ehr_modifiable) have no dedicated ITS-REST endpoint — ITS-REST
+    1.1.0 exposes only the whole-resource PUT /ehr/{ehr_id}/ehr_status.
+  source: "SM docs/UML/classes/i_ehr_status.adoc vs ITS-REST specifications/operations/ehr_status_update.yaml"
+  handling: >-
+    Realized as read-modify-write: the cases encode the GET explicitly
+    (capture the status version uid), then PUT the flipped flag with the
+    prior version as the precondition (AMB-3 realizes it as If-Match).
+    SPECPR candidate: add field-setter endpoints or document the
+    read-modify-write realization normatively.
+  disposition: fixed_handling
+AMB-16:
+  ambiguity: >-
+    CNF<->SM operation-name divergence for OPT validation: master04 anchors
+    I_DEFINITION_ADL14.validate_opt() and names its cases validate_opt-*, but
+    the SM interface defines valid_opt (no validate_opt). ITS-REST 1.1.0 also
+    exposes no dedicated validation endpoint.
+  source: "CNF platform_test_schedule master04 (validate_opt cases + NOTE) vs SM docs/UML/classes/i_definition_adl14.adoc; ITS-REST specifications/operations (no validate endpoint)"
+  handling: >-
+    Case ids keep the schedule's validate_opt family; sm_operation carries the
+    resolvable valid_opt; validation is realized via upload per the master04
+    NOTE ("validation might be part of the OPT upload functionality").
+    Upstream editorial-alignment candidate.
+  disposition: fixed_handling
+AMB-17:
+  ambiguity: >-
+    The SM I_DEFINITION_ADL14.delete_opt operation is not surfaced by
+    ITS-REST 1.1.0 — no DELETE exists on any /definition/template/adl1.4*
+    path, so the four official master04 delete_opt cases have no bindable
+    wire realization.
+  source: "SM docs/UML/classes/i_definition_adl14.adoc (delete_opt) vs ITS-REST specifications (definition template operations: no DELETE)"
+  handling: >-
+    The four official cases are in the catalogue, active and SM-anchored; the
+    its-rest binding carries an explicit `unrealized` declaration, so on
+    ITS-REST 1.1.0 they verdict as not-applicable with this citation and
+    activate when a later ITS release adds the endpoint.
+    SPECPR/ITS-REST 1.2.0 candidate.
+  disposition: fixed_handling
+AMB-18:
+  ambiguity: >-
+    The SM I_DEFINITION_QUERY.valid_query operation has no dedicated ITS-REST
+    endpoint.
+  source: "SM docs/UML/classes/i_definition_query.adoc (valid_query; store_query Pre_valid_query) vs ITS-REST specifications/operations definition_query_store.yaml"
+  handling: >-
+    Realized via store_query (its precondition is is_valid_query): a valid
+    text stores, an invalid text or unsupported formalism is rejected.
+  disposition: fixed_handling
+AMB-19:
+  ambiguity: >-
+    The SM I_DEFINITION_QUERY.has_query operation (Boolean) has no dedicated
+    ITS-REST existence endpoint.
+  source: "SM docs/UML/classes/i_definition_query.adoc (has_query) vs ITS-REST specifications/operations definition_query_list.yaml"
+  handling: "Realized via the list-by-name GET: a non-empty result set is the positive return."
+  disposition: fixed_handling
+AMB-20:
+  ambiguity: >-
+    The SM I_DEFINITION_QUERY.list_queries pagination parameters
+    (item_offset, items_to_fetch) are not exposed by ITS-REST 1.1.0.
+  source: "SM docs/UML/classes/i_definition_query.adoc (list_queries) vs ITS-REST specifications/operations definition_query_list.yaml (no offset/fetch parameters)"
+  handling: >-
+    The select-items case lists without pagination while the wire lacks the
+    parameters; pagination asserts enter when an ITS surfaces them.
+    Upstream candidate.
+  disposition: fixed_handling

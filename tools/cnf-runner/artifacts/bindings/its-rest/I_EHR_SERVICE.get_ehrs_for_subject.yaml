@@ -1,0 +1,17 @@
+# Wire realization of I_EHR_SERVICE.get_ehrs_for_subject for ITS-REST 1.1.0.
+# subject_id and subject_namespace are query parameters matched against
+# EHR_STATUS.subject.external_ref (ehr_get_by_subject.yaml).
+# Sources: specifications/operations/ehr_get_by_subject.yaml (200/404),
+# responses/200_EHR.yaml, 404_EHR_subject.yaml.
+sm_operation: I_EHR_SERVICE.get_ehrs_for_subject
+its: its-rest
+request:
+  method: GET
+  path: /ehr                                                   # ?subject_id=…&subject_namespace=… (query params)
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }   # 200_EHR.yaml — EHR retrieved for subject
+  not_found: { status: 404 }                                   # 404_EHR_subject.yaml — no EHR for subject
+captures:
+  ehr_id:
+    from: body "ehr_id.value"

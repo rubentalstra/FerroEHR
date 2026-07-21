@@ -246,11 +246,26 @@ pub fn operation_binding_schema() -> Value {
         "description": "Per-ITS wire realization of one SM operation: request construction, outcome kind → wire expectation, logical capture → wire source. Every mapping cites its OAS source.",
         "type": "object",
         "additionalProperties": false,
-        "required": ["sm_operation", "its", "request", "outcomes"],
+        "required": ["sm_operation", "its"],
+        "oneOf": [
+            { "required": ["request", "outcomes"], "not": { "required": ["unrealized"] } },
+            { "required": ["unrealized"],
+              "not": { "anyOf": [ { "required": ["request"] }, { "required": ["outcomes"] } ] } }
+        ],
         "properties": {
             "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
             "its": { "enum": ["its-rest"] },
             "applies": { "type": "object" },
+            "unrealized": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["reason", "source", "ambiguity"],
+                "properties": {
+                    "reason": { "type": "string", "minLength": 1 },
+                    "source": { "type": "string", "minLength": 1 },
+                    "ambiguity": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN }
+                }
+            },
             "request": {
                 "type": "object",
                 "additionalProperties": false,

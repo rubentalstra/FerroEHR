@@ -134,9 +134,12 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         }
     }
     check_binding_completeness(ctx.set, &mut findings);
-    if let Some(spec_root) = ctx.spec_root {
-        for (path, binding) in &ctx.set.bindings {
-            let who = path.display().to_string();
+    for (path, binding) in &ctx.set.bindings {
+        let who = path.display().to_string();
+        if let Err(message) = binding.check_invariants() {
+            push(&mut findings, CheckId::KindShape, &who, message);
+        }
+        if let Some(spec_root) = ctx.spec_root {
             resolve_sm_operation(&binding.sm_operation, &who, spec_root, &mut findings);
         }
     }
@@ -306,6 +309,7 @@ fn check_assertion_shape(case: &CaseCore, who: &str, findings: &mut Vec<Finding>
         if let Assertion::State { verified_by, .. } = assertion {
             let verified = verified_by.is_some()
                 || !case.verified_by.is_empty()
+                || case.flow.len() > 1
                 || case.flow.iter().any(|s| !s.assertions.is_empty());
             if !verified {
                 push(
@@ -907,6 +911,12 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                     &who,
                     format!("no binding declares operation {op}"),
                 );
+                continue;
+            }
+            // An explicit `unrealized` declaration satisfies completeness:
+            // the gap is machine-readable and the interpreter yields
+            // not-applicable with its citation on that ITS.
+            if bindings.iter().all(|(_, b)| b.is_unrealized()) {
                 continue;
             }
             // Kinds this step may observe: the fixed expectation, or every

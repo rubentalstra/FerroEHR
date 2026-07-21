@@ -8,11 +8,12 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 10 |
+| CNF catalogue cases | 49 |
 | active ECC rows | 394 |
-| mapped: pending | 394 |
+| mapped: covered | 37 |
+| mapped: pending | 357 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 10 |
+| CNF cases beyond the old catalogue | 12 |
 
 Gate clean: **NO**
 
@@ -20,28 +21,28 @@ Gate clean: **NO**
 
 | ECC id | disposition | covered by | justification |
 |---|---|---|---|
-| `ECC-EHR-001` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-002` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-003` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-004` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-005` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-006` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-007` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-008` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-009` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-010` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-EHR-011` | pending |  | EHR chapter wave (CNF master06) |
-| `ECC-STA-001` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-002` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-003` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-004` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-005` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-006` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-007` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-008` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-009` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-STA-010` | pending |  | EHR chapter wave (CNF master06, EHR_STATUS ground) |
-| `ECC-EHR-012` | pending |  | EHR chapter wave (CNF master06) |
+| `ECC-EHR-001` | covered | `I_EHR_SERVICE.has_ehr-existing_ehr_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-002` | covered | `I_EHR_SERVICE.has_ehr-existing_subject_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-003` | covered | `I_EHR_SERVICE.has_ehr-non_existing_ehr_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-004` | covered | `I_EHR_SERVICE.has_ehr-non_existing_subject_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-005` | covered | `I_EHR_SERVICE.create_ehr-main` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-006` | covered | `I_EHR_SERVICE.create_ehr-same_ehr_twice` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-007` | covered | `I_EHR_SERVICE.create_ehr-two_ehrs_same_patient` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-008` | covered | `I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-009` | covered | `I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-010` | covered | `I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-011` | covered | `I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-001` | covered | `I_EHR_STATUS.get_ehr_status-get_by_ehr_id` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-002` | covered | `I_EHR_STATUS.get_ehr_status-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-003` | covered | `I_EHR_STATUS.set_ehr_queryable-existing_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-004` | covered | `I_EHR_STATUS.set_ehr_queryable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-005` | covered | `I_EHR_STATUS.set_ehr_modifiable-existing_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-006` | covered | `I_EHR_STATUS.set_ehr_modifiable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-007` | covered | `I_EHR_STATUS.clear_ehr_queryable-existing_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-008` | covered | `I_EHR_STATUS.clear_ehr_queryable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-009` | covered | `I_EHR_STATUS.clear_ehr_modifiable-existing_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-STA-010` | covered | `I_EHR_STATUS.clear_ehr_modifiable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
+| `ECC-EHR-012` | pending |  | ECC-original gap-filler (master06 lists the INVALID EHR_STATUS data-set class but defines no case heading) — re-adjudication wave, ecc- namespace |
 | `ECC-COM-001` | pending |  | COMPOSITION chapter wave (CNF master07) |
 | `ECC-COM-002` | pending |  | COMPOSITION chapter wave (CNF master07) |
 | `ECC-COM-003` | pending |  | COMPOSITION chapter wave (CNF master07) |
@@ -141,28 +142,28 @@ Gate clean: **NO**
 | `ECC-DIR-035` | pending |  | DIRECTORY chapter wave (CNF master09) |
 | `ECC-DIR-036` | pending |  | DIRECTORY chapter wave (CNF master09) |
 | `ECC-DIR-037` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-TPL-001` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-002` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-003` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-004` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-005` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-006` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-007` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-008` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-009` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-010` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-011` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-012` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-013` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-014` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-015` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-TPL-016` | pending |  | ADL 1.4 definition wave (CNF master04) |
-| `ECC-SQR-001` | pending |  | stored-query definition wave (CNF master05) |
-| `ECC-SQR-002` | pending |  | stored-query definition wave (CNF master05) |
-| `ECC-SQR-004` | pending |  | stored-query definition wave (CNF master05) |
-| `ECC-SQR-005` | pending |  | stored-query definition wave (CNF master05) |
-| `ECC-SQR-006` | pending |  | stored-query definition wave (CNF master05) |
-| `ECC-SQR-007` | pending |  | stored-query definition wave (CNF master05) |
+| `ECC-TPL-001` | covered | `I_DEFINITION_ADL14.upload_opt-valid_opt` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-002` | covered | `I_DEFINITION_ADL14.upload_opt-invalid_opt` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-003` | covered | `I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-004` | covered | `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-005` | covered | `I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-006` | covered | `I_DEFINITION_ADL14.get_opt-retrieve_single` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-007` | covered | `I_DEFINITION_ADL14.get_opt-retrieve_latest_version` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-008` | covered | `I_DEFINITION_ADL14.get_opt-retrieve_specific_version` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-009` | covered | `I_DEFINITION_ADL14.get_opt-retrieve_fail` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-010` | covered | `I_DEFINITION_ADL14.get_opts-retrieve_all` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-011` | covered | `I_DEFINITION_ADL14.validate_opt-valid_opt` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-012` | covered | `I_DEFINITION_ADL14.validate_opt-invalid_opt` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
+| `ECC-TPL-013` | covered | `I_DEFINITION_ADL14.delete_opt-delete_non_existing` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
+| `ECC-TPL-014` | covered | `I_DEFINITION_ADL14.delete_opt-delete_existing` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
+| `ECC-TPL-015` | covered | `I_DEFINITION_ADL14.delete_opt-delete_latest_version` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
+| `ECC-TPL-016` | covered | `I_DEFINITION_ADL14.delete_opt-delete_specific_version` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
+| `ECC-SQR-001` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-002` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-004` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-005` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-006` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-007` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
 | `ECC-QRY-001` | pending |  | AQL chapter wave (new chapter for the empty master11) |
 | `ECC-QRY-002` | pending |  | AQL chapter wave (new chapter for the empty master11) |
 | `ECC-QRY-003` | pending |  | AQL chapter wave (new chapter for the empty master11) |
@@ -349,11 +350,11 @@ Gate clean: **NO**
 | `ECC-TS-007` | pending |  | terminology-service chapter wave |
 | `ECC-TS-008` | pending |  | terminology-service chapter wave |
 | `ECC-TS-009` | pending |  | terminology-service chapter wave |
-| `ECC-EHR-013` | pending |  | EHR chapter wave (CNF master06) |
+| `ECC-EHR-013` | pending |  | anonymous-EHR ground belongs to the Security (SEC-BASIC AnonymousEhrs) chapter wave |
 | `ECC-SEC-001` | pending |  | Security (SEC-BASIC) chapter wave |
 | `ECC-SEC-002` | pending |  | Security (SEC-BASIC) chapter wave |
 | `ECC-COM-032` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-SQR-008` | pending |  | stored-query definition wave (CNF master05) |
+| `ECC-SQR-008` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
 | `ECC-QRY-014` | pending |  | AQL chapter wave (new chapter for the empty master11) |
 | `ECC-QRY-015` | pending |  | AQL chapter wave (new chapter for the empty master11) |
 | `ECC-QRY-016` | pending |  | AQL chapter wave (new chapter for the empty master11) |
@@ -380,7 +381,7 @@ Gate clean: **NO**
 | `ECC-ADM-012` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-013` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-014` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-TPL-017` | pending |  | ADL 1.4 definition wave (CNF master04) |
+| `ECC-TPL-017` | pending |  | template-example round-trip ground belongs to the simplified-formats/template-example wave |
 | `ECC-QRY-025` | pending |  | AQL chapter wave (new chapter for the empty master11) |
 | `ECC-SF-001` | pending |  | simplified-formats chapter wave |
 | `ECC-SF-002` | pending |  | simplified-formats chapter wave |
@@ -420,10 +421,12 @@ Gate clean: **NO**
 - `I_EHR_COMPOSITION.update_composition-event`
 - `CONT-DV_QUANTITY-validate_property_units_mag`
 - `I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions`
-- `I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts`
-- `I_DEFINITION_ADL14.upload_opt-invalid_opt`
-- `I_EHR_SERVICE.create_ehr-main`
-- `I_EHR_SERVICE.create_ehr-same_ehr_twice`
-- `I_EHR_STATUS.get_ehr_status-get_by_ehr_id`
+- `I_DEFINITION_QUERY.has_query-xxx`
+- `I_DEFINITION_QUERY.list_queries-empty`
+- `I_DEFINITION_QUERY.list_queries-non_empty`
+- `I_DEFINITION_QUERY.list_queries-select_items`
+- `I_DEFINITION_QUERY.valid_query-bad_formalism`
+- `I_DEFINITION_QUERY.valid_query-invalid`
+- `I_DEFINITION_QUERY.valid_query-valid`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
 - `SF-FLAT-commit_roundtrip_ctx_defaults`

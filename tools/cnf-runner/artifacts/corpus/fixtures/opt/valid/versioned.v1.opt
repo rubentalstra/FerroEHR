@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structural placeholder: minimal valid OPT, version 1 of a two-version
+     pair. Per AMB-4 the version is carried in the template_id (the ITS-REST
+     template_id resolves partial->latest and a full/versioned id addresses a
+     specific version — parameters/path/template_id.yaml). Modeled on
+     corpus/templates/minimal_event.opt; pending corpus authoring (#202). -->
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.versioned.v1</value></template_id>
+  <concept>versioned OPT (version 1)</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

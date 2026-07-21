@@ -1,0 +1,8 @@
+# Corpus additions for the CNF master06 (EHR) schedule cases.
+# Merged into corpus/MANIFEST.yaml by the validate harness; same entry schema.
+cnf.ehr_status.with_subject:
+  source: fixtures/ehr/ehr_status.with_subject.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master06 data-set descriptions; structural placeholder pending corpus authoring"
