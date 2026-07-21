@@ -966,8 +966,19 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 .unwrap_or_default();
             kinds.extend(expected_column_kinds);
 
+            let universal: Vec<&str> = set
+                .selectors
+                .as_ref()
+                .and_then(|(_, s)| s.universal_outcomes.as_deref())
+                .unwrap_or_default()
+                .iter()
+                .map(|(k, _)| k.as_str())
+                .collect();
             for (path, binding) in bindings {
                 for kind in &kinds {
+                    if universal.contains(&kind.token()) {
+                        continue;
+                    }
                     if binding.outcome(*kind).is_none() {
                         push(
                             findings,

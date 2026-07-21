@@ -371,6 +371,19 @@ pub fn selectors_schema() -> Value {
                     "server_assigned": { "$ref": "#/$defs/ignoreSet" },
                     "ctx_defaults": { "$ref": "#/$defs/ignoreSet" }
                 }
+            },
+            "universal_outcomes": {
+                "type": "object",
+                "propertyNames": { "enum": tokens(OutcomeKind::ALL) },
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["status", "source"],
+                    "properties": {
+                        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+                        "source": { "type": "string", "minLength": 1 }
+                    }
+                }
             }
         },
         "$defs": {

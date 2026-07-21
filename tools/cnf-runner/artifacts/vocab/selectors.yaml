@@ -13,3 +13,10 @@ ignore_sets:
       - context/setting
       - composer
     source: "ITS-REST simplified_formats master06 (ctx defaults: time -> now(), setting -> openehr::238, composer defaults)"
+universal_outcomes:
+  unauthenticated:
+    status: 401
+    source: "ITS-REST overview Requests_and_responses (HTTP status codes: 401 unauthenticated) — route-table-wide, never per binding"
+  forbidden:
+    status: 403
+    source: "ITS-REST overview Requests_and_responses (HTTP status codes: 403 forbidden) — route-table-wide, never per binding"

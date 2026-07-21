@@ -26,7 +26,9 @@
       "not_acceptable",
       "unsupported_media",
       "invalid_query",
-      "timeout"
+      "timeout",
+      "unauthenticated",
+      "forbidden"
     ]
   },
   "required": [
@@ -50,7 +52,9 @@
     "not_acceptable",
     "unsupported_media",
     "invalid_query",
-    "timeout"
+    "timeout",
+    "unauthenticated",
+    "forbidden"
   ],
   "additionalProperties": {
     "type": "object",

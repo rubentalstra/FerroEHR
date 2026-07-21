@@ -47,6 +47,55 @@
           "$ref": "#/$defs/ignoreSet"
         }
       }
+    },
+    "universal_outcomes": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "created",
+          "ok",
+          "ok_empty",
+          "updated",
+          "deleted",
+          "stored",
+          "already_exists",
+          "not_found",
+          "version_not_found",
+          "precondition_failed",
+          "precondition_missing",
+          "validation_failed",
+          "template_not_found",
+          "template_mismatch",
+          "missing_template_id",
+          "already_deleted",
+          "conflict",
+          "not_acceptable",
+          "unsupported_media",
+          "invalid_query",
+          "timeout",
+          "unauthenticated",
+          "forbidden"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "source"
+        ],
+        "properties": {
+          "status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
     }
   },
   "$defs": {

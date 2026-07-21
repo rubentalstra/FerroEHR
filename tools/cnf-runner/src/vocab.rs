@@ -95,6 +95,10 @@ outcome_kinds! {
     (InvalidQuery, "invalid_query", Error),
     /// Server aborted at max execution time.
     (Timeout, "timeout", Error),
+    /// Request lacks valid authentication (the route-table-wide 401 rule).
+    (Unauthenticated, "unauthenticated", Error),
+    /// Authenticated principal lacks authorization for the operation (403).
+    (Forbidden, "forbidden", Error),
 }
 
 /// Which optional case-core blocks are meaningful.
@@ -364,7 +368,7 @@ mod tests {
         for kind in OutcomeKind::ALL {
             assert_eq!(OutcomeKind::from_token(kind.token()), Some(*kind));
         }
-        assert_eq!(OutcomeKind::ALL.len(), 21);
+        assert_eq!(OutcomeKind::ALL.len(), 23);
         assert_eq!(OutcomeKind::Created.class(), OutcomeClass::Success);
         assert_eq!(OutcomeKind::Timeout.class(), OutcomeClass::Error);
     }
