@@ -6,7 +6,7 @@ kind: functional
 status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.list_queries
-capabilities: [StoredQueries]
+capabilities: [QueryProvisioning]
 profiles: [STANDARD]
 test_purpose: "Listing registered queries returns every registered query."
 description: "list_queries on a populated server (schedule cells TBD; draft)"

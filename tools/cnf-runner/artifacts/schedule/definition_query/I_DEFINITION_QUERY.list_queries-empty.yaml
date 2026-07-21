@@ -7,7 +7,7 @@ kind: functional
 status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.list_queries
-capabilities: [StoredQueries]
+capabilities: [QueryProvisioning]
 profiles: [STANDARD]
 test_purpose: "Listing registered queries on an empty server returns an empty set and does not fail."
 description: "list_queries on an empty server (schedule cells TBD; draft)"

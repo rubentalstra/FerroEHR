@@ -8,7 +8,7 @@ id: I_EHR_STATUS.clear_ehr_queryable-existing_ehr
 kind: functional
 component: EHR
 sm_operation: I_EHR_STATUS.clear_ehr_queryable
-capabilities: [EhrOperations]
+capabilities: [EhrStatus]
 profiles: [CORE]
 test_purpose: >-
   clear_ehr_queryable on an existing EHR succeeds and its

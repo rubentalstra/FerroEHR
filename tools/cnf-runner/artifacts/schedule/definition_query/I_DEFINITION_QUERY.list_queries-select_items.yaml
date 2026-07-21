@@ -9,7 +9,7 @@ kind: functional
 status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.list_queries
-capabilities: [StoredQueries]
+capabilities: [QueryProvisioning]
 profiles: [STANDARD]
 test_purpose: "Listing registered queries with item selection (pagination) returns the selected window."
 description: "list_queries with item selection (schedule cells TBD; draft; pagination not wire-exposed in ITS-REST 1.1.0)"

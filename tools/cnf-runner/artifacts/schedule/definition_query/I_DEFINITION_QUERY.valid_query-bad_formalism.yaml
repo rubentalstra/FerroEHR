@@ -7,7 +7,7 @@ kind: functional
 status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.valid_query
-capabilities: [StoredQueries]
+capabilities: [QueryProvisioning]
 exercises: [AqlBasic]
 profiles: [STANDARD]
 test_purpose: "A query declared under an unsupported formalism (a_type) is rejected."

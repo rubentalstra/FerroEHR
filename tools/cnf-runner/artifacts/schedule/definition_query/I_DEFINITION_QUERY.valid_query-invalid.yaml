@@ -7,7 +7,7 @@ kind: functional
 status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.valid_query
-capabilities: [StoredQueries]
+capabilities: [QueryProvisioning]
 exercises: [AqlBasic]
 profiles: [STANDARD]
 test_purpose: "A syntactically invalid AQL query text is rejected (valid_query realized via store_query)."
