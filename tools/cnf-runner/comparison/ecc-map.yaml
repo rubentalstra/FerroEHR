@@ -88,8 +88,9 @@ ECC-STA-010:
   covered_by: [I_EHR_STATUS.clear_ehr_modifiable-bad_ehr]
   justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
 ECC-EHR-012:
-  disposition: pending
-  justification: "ECC-original gap-filler (master06 lists the INVALID EHR_STATUS data-set class but defines no case heading) — re-adjudication wave, ecc- namespace"
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.create_ehr-invalid_status]
+  justification: "framework-added case carrying the master06 INVALID EHR_STATUS data-set class (the chapter lists the class but heads no case; AMB-2 wire rule)"
 ECC-COM-001:
   disposition: covered
   covered_by: [I_EHR_COMPOSITION.create_composition-event]

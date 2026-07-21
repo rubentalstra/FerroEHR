@@ -1,0 +1,37 @@
+# Framework-added case: CNF master06 lists the INVALID EHR_STATUS data-set
+# class (missing/empty flags, invalid subject/other_details) but heads no
+# test case for it — this case carries that ground. AMB-2 binds
+# validation_failed to 400 on EHR create (no 422 enumerated).
+id: I_EHR_SERVICE.create_ehr-invalid_status
+kind: functional
+component: EHR
+sm_operation: I_EHR_SERVICE.create_ehr
+capabilities: [EhrOperations]
+profiles: [CORE]
+test_purpose: >-
+  Creating an EHR with a semantically invalid EHR_STATUS is rejected and no
+  EHR is created.
+description: "Create EHR with invalid EHR_STATUS data sets"
+spec_refs:
+  - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
+  - "CNF platform_test_schedule master06 §create_ehr data sets (INVALID class)"
+  - "RM ehr §EHR_STATUS"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.ehr_status.invalid.missing-is-queryable, expected: validation_failed, defect: "RM/Schema: is_queryable is mandatory" }
+    - { data_set: cnf.ehr_status.invalid.missing-is-modifiable, expected: validation_failed, defect: "RM/Schema: is_modifiable is mandatory" }
+    - { data_set: cnf.ehr_status.invalid.missing-subject, expected: validation_failed, defect: "RM/Schema: subject is mandatory" }
+    - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: validation_failed, defect: "ITEM_TREE without its mandatory name" }
+flow:
+  - step: 1
+    call: create_ehr
+    with: { ehr_status: "${ds:fixture}" }
+    expect: "${fixture.expected}"
+postconditions:
+  - assert: state
+    text: "No EHR was created (the rejected status leaves the server empty)"
+    verified_by: I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+ambiguities: [AMB-2]

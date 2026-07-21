@@ -8,10 +8,10 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 256 |
+| CNF catalogue cases | 257 |
 | active ECC rows | 394 |
-| mapped: covered | 296 |
-| mapped: pending | 98 |
+| mapped: covered | 297 |
+| mapped: pending | 97 |
 | unmapped (open gap) | 0 |
 | CNF cases beyond the old catalogue | 10 |
 
@@ -42,7 +42,7 @@ Gate clean: **NO**
 | `ECC-STA-008` | covered | `I_EHR_STATUS.clear_ehr_queryable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
 | `ECC-STA-009` | covered | `I_EHR_STATUS.clear_ehr_modifiable-existing_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
 | `ECC-STA-010` | covered | `I_EHR_STATUS.clear_ehr_modifiable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
-| `ECC-EHR-012` | pending |  | ECC-original gap-filler (master06 lists the INVALID EHR_STATUS data-set class but defines no case heading) — re-adjudication wave, ecc- namespace |
+| `ECC-EHR-012` | covered | `I_EHR_SERVICE.create_ehr-invalid_status` | framework-added case carrying the master06 INVALID EHR_STATUS data-set class (the chapter lists the class but heads no case; AMB-2 wire rule) |
 | `ECC-COM-001` | covered | `I_EHR_COMPOSITION.create_composition-event` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-COM-002` | covered | `I_EHR_COMPOSITION.create_composition-persistent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-COM-003` | covered | `I_EHR_COMPOSITION.create_composition-same_opt_twice` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
