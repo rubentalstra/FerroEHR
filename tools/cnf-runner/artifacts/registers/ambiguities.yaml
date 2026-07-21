@@ -339,29 +339,6 @@ AMB-32:
     1.1.0 they verdict as not-applicable with this citation. SPECPR/ITS-REST
     candidate.
   disposition: fixed_handling
-AMB-35:
-  ambiguity: >-
-    master10 files its cases under I_DEMOGRAPHIC_SERVICE headings while the
-    SM places the party CRUD on I_PARTY and the relationship CRUD on
-    I_PARTY_RELATIONSHIP (only create_party/create_party_relationship live
-    on the service interface).
-  source: "CNF platform_test_schedule master10 vs SM docs/UML/classes/{i_demographic_service,i_party,i_party_relationship}.adoc"
-  handling: >-
-    Official case ids unchanged; sm_operation carries the resolvable
-    interface operation (the AMB-13 rule). Upstream editorial-alignment
-    candidate.
-  disposition: fixed_handling
-AMB-36:
-  ambiguity: >-
-    master10 is a stub chapter: all 24 cases carry TBD bodies (aaaa/bbbb
-    placeholder variants) — the schedule defines the operation inventory but
-    no behaviour text.
-  source: "CNF platform_test_schedule master10 (all case tables TBD)"
-  handling: >-
-    Cases are authored from the SM operation Meaning and .Errors paths with
-    a per-case disclosure guard; flows/assertions are replaced when the
-    upstream chapter is fleshed. Upstream authoring candidate.
-  disposition: fixed_handling
 AMB-33:
   ambiguity: >-
     The SM ADMIN component is almost entirely unrealized in ITS-REST 1.1.0:
@@ -396,4 +373,27 @@ AMB-34:
     declared unrealized; the cases are not-applicable WITH CITATION on
     ITS-REST 1.1.0 and activate when a later ITS release adds a MESSAGE API.
     Upstream editorial candidate for the master13 interface naming.
+  disposition: fixed_handling
+AMB-35:
+  ambiguity: >-
+    master10 files its cases under I_DEMOGRAPHIC_SERVICE headings while the
+    SM places the party CRUD on I_PARTY and the relationship CRUD on
+    I_PARTY_RELATIONSHIP (only create_party/create_party_relationship live
+    on the service interface).
+  source: "CNF platform_test_schedule master10 vs SM docs/UML/classes/{i_demographic_service,i_party,i_party_relationship}.adoc"
+  handling: >-
+    Official case ids unchanged; sm_operation carries the resolvable
+    interface operation (the AMB-13 rule). Upstream editorial-alignment
+    candidate.
+  disposition: fixed_handling
+AMB-36:
+  ambiguity: >-
+    master10 is a stub chapter: all 24 cases carry TBD bodies (aaaa/bbbb
+    placeholder variants) — the schedule defines the operation inventory but
+    no behaviour text.
+  source: "CNF platform_test_schedule master10 (all case tables TBD)"
+  handling: >-
+    Cases are authored from the SM operation Meaning and .Errors paths with
+    a per-case disclosure guard; flows/assertions are replaced when the
+    upstream chapter is fleshed. Upstream authoring candidate.
   disposition: fixed_handling
