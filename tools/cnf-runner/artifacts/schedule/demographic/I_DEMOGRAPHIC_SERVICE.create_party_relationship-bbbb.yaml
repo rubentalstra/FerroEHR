@@ -1,0 +1,33 @@
+# master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.create_party_relationship() —
+# the schedule entry is TBD; authored as the primary declared-error path from the
+# SM operation semantics (.Errors: definition_unknown, content_invalid). ITS-REST
+# 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so the binding is unrealized
+# (proposed AMB-32) and this case is not-applicable on ITS-REST 1.1.0. (See
+# REQUIREMENTS.md.)
+id: I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb
+kind: functional
+component: DEMOGRAPHIC
+sm_operation: I_DEMOGRAPHIC_SERVICE.create_party_relationship
+capabilities: [PartyRelationshipOperations]
+profiles: [OPTIONS]
+guards:
+  - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
+  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+test_purpose: >-
+  Creating a PARTY_RELATIONSHIP from an invalid data set (no target) is rejected
+  — the create_party_relationship Pre_content_valid precondition fails
+  (content_invalid), and no relationship is created.
+description: "Create a new PARTY_RELATIONSHIP (content_invalid)"
+spec_refs:
+  - "SM openehr_platform §I_DEMOGRAPHIC_SERVICE.create_party_relationship"
+  - "CNF platform_test_schedule master10 §create_party_relationship"
+  - "RM demographic §PARTY_RELATIONSHIP"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+data_sets: [cnf.demographic.party_relationship.invalid]
+flow:
+  - step: 1
+    call: create_party_relationship
+    with: { party_relationship: "${ds:cnf.demographic.party_relationship.invalid}" }
+    expect: validation_failed

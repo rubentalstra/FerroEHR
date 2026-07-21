@@ -8,12 +8,13 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 266 |
+| CNF catalogue cases | 290 |
 | active ECC rows | 394 |
-| mapped: covered | 305 |
-| mapped: pending | 89 |
+| mapped: covered | 321 |
+| mapped: dropped | 15 |
+| mapped: pending | 58 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 12 |
+| CNF cases beyond the old catalogue | 21 |
 
 Gate clean: **NO**
 
@@ -183,30 +184,30 @@ Gate clean: **NO**
 | `ECC-ADM-004` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-005` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-006` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-DEM-001` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-002` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-003` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-004` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-005` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-006` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-007` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-008` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-009` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-010` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-011` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-012` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-013` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-014` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-015` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-016` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-017` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-018` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-019` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-020` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-021` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-022` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-023` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-024` | pending |  | demographic chapter wave (CNF master10) |
+| `ECC-DEM-001` | covered | `I_DEMOGRAPHIC_SERVICE.create_party-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-002` | covered | `I_DEMOGRAPHIC_SERVICE.get_party-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-003` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-004` | covered | `I_DEMOGRAPHIC_SERVICE.update_party-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-005` | covered | `I_DEMOGRAPHIC_SERVICE.delete_party-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-006` | covered | `I_DEMOGRAPHIC_SERVICE.delete_party-aaaa`, `I_DEMOGRAPHIC_SERVICE.get_party-bbbb` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype); read-after-delete reshaped across the two cases |
+| `ECC-DEM-007` | covered | `I_DEMOGRAPHIC_SERVICE.get_party-bbbb` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-008` | covered | `I_DEMOGRAPHIC_SERVICE.update_party-bbbb` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-009` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-010` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-011` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-012` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-013` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-014` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-015` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-016` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-017` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-018` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-019` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-020` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-021` | covered | `I_DEMOGRAPHIC_SERVICE.create_party-bbbb` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-022` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-023` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
+| `ECC-DEM-024` | dropped |  | deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed |
 | `ECC-VAL-001` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
 | `ECC-VAL-002` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
 | `ECC-VAL-003` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
@@ -366,13 +367,13 @@ Gate clean: **NO**
 | `ECC-QRY-022` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
 | `ECC-QRY-023` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
 | `ECC-QRY-024` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
-| `ECC-DEM-025` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-026` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-027` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-028` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-029` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-030` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-DEM-031` | pending |  | demographic chapter wave (CNF master10) |
+| `ECC-DEM-025` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
+| `ECC-DEM-026` | covered | `I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
+| `ECC-DEM-027` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
+| `ECC-DEM-028` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
+| `ECC-DEM-029` | covered | `I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
+| `ECC-DEM-030` | covered | `I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
+| `ECC-DEM-031` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
 | `ECC-ADM-007` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-008` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-009` | pending |  | admin chapter wave (CNF master12) |
@@ -425,6 +426,15 @@ Gate clean: **NO**
 - `I_DEFINITION_QUERY.valid_query-bad_formalism`
 - `I_DEFINITION_QUERY.valid_query-invalid`
 - `I_DEFINITION_QUERY.valid_query-valid`
+- `I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.delete_party-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.get_party_at_time-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.get_party_at_version-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.get_party_relationship-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb`
+- `I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-distinct`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-fetch_with_top`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
