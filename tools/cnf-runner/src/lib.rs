@@ -10,6 +10,7 @@
 
 pub mod artifacts;
 pub mod compare;
+pub mod exec;
 pub mod ids;
 pub mod ixit;
 pub mod literal;
