@@ -1,0 +1,45 @@
+# Wire realization of I_EHR_COMPOSITION.create_composition for ITS-REST 1.1.0.
+# Sources: specifications/operations/composition_create.yaml,
+# responses/201_COMPOSITION.yaml, 404_unknown_ehr_id.yaml, 422.yaml;
+# format headers per Accept_LOCATABLE / ContentType_LOCATABLE.
+sm_operation: I_EHR_COMPOSITION.create_composition
+its: its-rest
+request:
+  method: POST
+  path: /ehr/{ehr_id}/composition
+  body: composition
+  headers:
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
+format_headers:
+  wt-flat:
+    Content-Type: application/openehr.wt.flat+json
+    openehr-template-id: required
+  wt-structured:
+    Content-Type: application/openehr.wt.structured+json
+    openehr-template-id: required
+outcomes:
+  created:
+    status: 201                           # 201_COMPOSITION.yaml
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"'
+      Location: present
+      Content-Type: negotiated
+    body: prefer_conditional
+  not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
+  validation_failed:
+    status: 422                           # 422.yaml
+    body: error_loose                     # AMB-1
+  template_not_found:
+    status: 422                           # same wire code; kind distinguished by fixture
+    body: error_loose
+  missing_template_id: { status: 422 }    # simplified commit without openehr-template-id
+  unsupported_media: { status: 415 }      # overview negotiation rules (AMB-7 layering)
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+  versioned_object_uid:
+    from: capture version_uid
+    transform: root-uid
+server_assigned: [uid, context/_uid, "composer/external_ref", territory/terminology_id]

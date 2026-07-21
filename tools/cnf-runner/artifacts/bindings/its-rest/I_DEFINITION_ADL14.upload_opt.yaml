@@ -1,0 +1,21 @@
+# Wire realization of I_DEFINITION_ADL14.upload_opt for ITS-REST 1.1.0.
+# Sources: specifications/operations/definition_template_adl1.4_upload.yaml,
+# responses/201_Template_adl1_4_upload.yaml, 409_template_already_exists.yaml.
+sm_operation: I_DEFINITION_ADL14.upload_opt
+its: its-rest
+request:
+  method: POST
+  path: /definition/template/adl1.4
+  body: opt_xml
+  headers:
+    Content-Type: application/xml         # the ONLY accepted upload type (operation enum)
+outcomes:
+  created: { status: 201 }                # 201_Template_adl1_4_upload.yaml
+  already_exists: { status: 409 }         # duplicate template_id — AMB-4
+  validation_failed:
+    status: 400
+    body: error_loose                     # AMB-1
+captures:
+  template_id:
+    from: body "template_id"              # implementation latitude (AMB-4 area)
+    fallback: header Location last-segment

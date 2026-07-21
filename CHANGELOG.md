@@ -15,7 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-## [3.6.0] - 2026-07-21
+### Added
+
+- CNF 2.0 reference runner (`tools/cnf-runner`), first increment: the typed
+  schedule-artifact model (case cores, per-ITS operation bindings, outcome +
+  selector vocabularies, the capability→family→tier matrix, corpus manifest,
+  ambiguity register — every closed vocabulary a Rust enum/newtype), a
+  published JSON-Schema set for all seven artifact families (committed under
+  `tools/cnf-runner/schemas/`, drift-guarded, vendorable by any runner), a
+  full cross-artifact validator (id uniqueness, SM-operation and spec-ref
+  resolution against the vendored specs, binding completeness, corpus
+  integrity, reference/sentinel and decision-table grammars, capability-tier
+  consistency), the `cnf-runner` CLI (`emit-schemas`, `validate`), and the
+  eight pilot case encodings as the first schedule artifacts. The existing
+  ECC (`tools/conformance`) is unchanged and remains the acceptance
+  instrument until the comparison gate.
 
 ### Changed
 

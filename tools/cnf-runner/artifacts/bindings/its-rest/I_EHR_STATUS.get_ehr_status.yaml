@@ -1,0 +1,17 @@
+# Wire realization of I_EHR_STATUS.get_ehr_status for ITS-REST 1.1.0.
+# Sources: specifications/operations/ehr_status_get_at_time.yaml (200/400/404).
+sm_operation: I_EHR_STATUS.get_ehr_status
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/ehr_status
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # 200_EHR_STATUS_retrieved.yaml
+    headers: { ETag: present, Content-Type: negotiated }
+  not_found: { status: 404 }
+captures:
+  status_version_uid:
+    from: header ETag
+    strip: weak-quotes
