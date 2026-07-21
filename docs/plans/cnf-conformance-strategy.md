@@ -228,7 +228,9 @@ Conformance under CNF 2.0 attests exactly two ISO/IEC 25010 characteristics
 - **Performance efficiency** — the performance & volumetrics schedule
   (§8.14): measured pass/fail class ratings (POC/S/L/R) under normative
   workloads on declared environments. NOTE: the current Conformance Guide
-  scopes non-functional testing out; CNF 2.0 deliberately extends the scope
+  excludes performance ("Non-functional conformance (performance, etc) is
+  not addressed by this guide" — `guide/master03-overview.adoc`); CNF 2.0
+  deliberately extends the scope
   here, siding with the 2017 schedule's multi-dimensional certificate — an
   explicit SEC decision item. Measures follow ISO/IEC 25023.
 
@@ -334,9 +336,10 @@ Honest implications:
    it was earned against; within-major supersets follow openEHR's release
    strategy.
 8. **Scope discipline.** Platform (CDR) profile first. Conformance =
-   ISO/IEC 25010 functional suitability only (§6.3); other system classes get
-   profile families later; performance/volumetrics stay out (per the Guide)
-   with reserved declaration slots in the Statement.
+   ISO/IEC 25010 functional suitability **plus performance efficiency** —
+   the two verdict machineries (§6.3, §8.14); reliability, security beyond
+   §11.9's conformance points, and maintainability stay out, declared in the
+   Statement where relevant.
 9. **Adopt international vocabulary** (§6.1) — ATS/ICS/IXIT/attestation
    levels/scheme-owner — instead of coining terms.
 
@@ -361,7 +364,7 @@ artifact discipline: **conformance-by-assertion** (functional + content
 cases: typed assertions roll up case → capability → profile) and
 **conformance-by-measurement** (performance cases: measured metrics against
 class thresholds). Capabilities group into **families** — Platform
-(CORE/STANDARD/OPTIONS), Enterprise (D/M/X, §11.11), Security (§11.9) — all
+(CORE/STANDARD/OPTIONS), Enterprise (D/M/X — a proposed extension, §11.11), Security (§11.9) — all
 assessed by the assertion machinery; the certificate is the matrix
 *machinery × family*: functional profile ratings per tech profile, plus an
 earned performance class per environment. Below the machineries: one
@@ -459,7 +462,7 @@ Seven normative, versioned-together artifact families in specifications-CNF
 |---|---|---|---|
 | 1 | **Case cores** | `schedule/<component>/<CASE_ID>.yaml` | Protocol-neutral test cases, all three kinds (§8.3, §8.14) — the Abstract Test Suite |
 | 2 | **Operation bindings** | `bindings/<its>/<SM_OPERATION>.yaml` | Per-ITS wire realization of each SM operation's outcomes/captures (§8.4) |
-| 3 | **Vocabularies & matrices** | `vocab/{outcomes,selectors}.yaml` + `vocab/capability_matrix.yaml` | The closed outcome taxonomy (§8.5), body/header selectors + ignore-sets (§8.4, §8.6), and the **machine-readable capability→family→tier matrix** — the Profiles book's table as data, the input the verdict machinery computes from; the Profiles prose regenerates from it exactly as the schedule prose does from the cases |
+| 3 | **Vocabularies & matrices** | `vocab/{outcomes,selectors}.yaml` + `vocab/capability_matrix.yaml` | The closed outcome taxonomy (§8.5), body/header selectors + ignore-sets (§8.4, §8.6), and the **machine-readable capability→family→tier matrix** — the Profiles book's capability×tier tables as data, the input the verdict machinery computes from; the Profiles book regenerates from the artifact set as a whole (capability tables from this matrix, the verdict-combination rules from family 7, the External Data Format attribute from the §8.7 format axis), with the same semantic-equivalence honesty as the schedule prose |
 | 4 | **Governed corpus + manifest** | `corpus/**` + `corpus/MANIFEST.yaml` | Fixtures, templates, generated-set recipes, named views, **scale-class corpora** (shared by Enterprise + performance), **workload definitions**, adjudicated verdicts (§8.8) |
 | 5 | **Ambiguity register** | `registers/ambiguities.yaml` | Known spec silences/divergences with normative handling (§8.5) |
 | 6 | **Party artifacts** | `schemas/{statement,results,ixit}.schema.json` | The ICS/SDoC, test-report (incl. measurements), and SUT-topology contracts (§8.10) |
@@ -503,15 +506,16 @@ One file per case. Normative fields (∎ = required):
 | `id` ∎ | string | Global CNF id. Families: `<SERVICE_COMPONENT>.<operation>-<variant>` (functional) and `CONT-<TYPE>-<variant>` (content) — both kept unchanged from the 2022 scheme; new chapters register their family with the maintainer group (this proposal registers `SF-<FORM>-<variant>` for the Simplified-Formats chapter). Ids are never reused; retired cases keep the id with `status: retired`. |
 | `kind` ∎ | `functional \| content \| performance` | Selects which optional blocks are meaningful (performance cases: §8.14). |
 | `status` | `active \| retired \| draft` | Default `active`. |
-| `component` ∎ | enum | EHR, EHR_COMPOSITION, EHR_CONTRIBUTION, EHR_DIRECTORY, DEFINITION_ADL14, DEFINITION_ADL2, DEFINITION_QUERY, QUERY, DEMOGRAPHIC, ADMIN, MESSAGING, CONTENT, SIMPLIFIED_FORMATS, … |
+| `component` ∎ | enum | EHR, EHR_COMPOSITION, EHR_CONTRIBUTION, EHR_DIRECTORY, DEFINITION_ADL14, DEFINITION_ADL2, DEFINITION_QUERY, QUERY, DEMOGRAPHIC, ADMIN, MESSAGING, CONTENT, SIMPLIFIED_FORMATS, PERFORMANCE |
 | `sm_operation` | string | Functional cases: the SM anchor (`I_EHR_SERVICE.create_ehr`). CI resolves it against the SM component list. |
 | `rm_class` | string | Content cases: the RM/AM class under test (`DV_QUANTITY`). |
 | `test_purpose` ∎ | string | The ISO/IEC 9646 test purpose — one narrow conformance requirement, prose. |
 | `description` ∎ | string | The schedule's Description row. |
 | `spec_refs` ∎ | string[] | Citations (component + document + section). CI link-checks them. |
-| `applies` | map | Spec-version applicability ranges (`rm: ">=1.0.2"`, `aql: ">=1.1"` …). |
+| `applies` | map | Spec-version applicability ranges (`rm: ">=1.0.2"`, `aql: ">=1.1"` …) — range grammar = Cargo/semver requirement syntax. |
 | `guards` | string[] | Non-version run conditions, each spec-cited (e.g. "modeling tool supports C_DV_QUANTITY list constraints — master17.3 NOTE"). A failed guard ⇒ `not-applicable`, citation mandatory. |
-| `capabilities` ∎ | string[] | The Profiles-book **capability** names this case evidences (`EhrOperations`, `ArchetypeValidation`, `AqlBasic`, `SimplifiedFormats`, …) — the machine-readable ICS-selection key (§8.11). |
+| `capabilities` ∎ (assertion-machinery cases) | string[] | The **verdict-bearing** capability names (§8.2 family 3 matrix) — keep MINIMAL: a case failure marks every listed capability `Failed` (§8.11 step 4). Performance cases carry `class` instead (their selection key, §8.11 step 2c) and omit this field. |
+| `exercises` | string[] | Informative coverage tags: capabilities the case touches without bearing their verdict. |
 | `profiles` | string[] | The profile **tier(s)** (CORE/STANDARD/OPTIONS) the capabilities belong to — derivable from the Profiles matrix, carried for readability; CI checks tier-vs-capability consistency. |
 | `option` | string | For sibling cases realizing an ambiguity-register implementation choice (e.g. AMB-4): the option tag the ICS `options` declaration selects (§8.11 step 2b). |
 | `formats` | string[] | Optional case-level format axis for cases **parameterized over** format: the case runs once per declared format ∩ the run's tech profile. Distinct from per-step `format:` (below) for cases whose formats are **intrinsic fixed roles** (round-trips). |
@@ -803,12 +807,36 @@ Binding-level normative rules (all cited from
 - **error_loose** body selector: see AMB-1 (§8.5) — assert at most that a
   `message` string is present, and only under `Prefer: return=representation`.
 
+**Binding file — field contract** (∎ = required): `sm_operation` ∎,
+`its` ∎, `applies`, `request` ∎ (`method` ∎, `path` ∎ with `{param}`
+placeholders resolved from case variables, `body`, `headers`),
+`formats`, `format_headers`, `outcomes` ∎ (map: outcome kind → wire
+expectation `{status ∎, headers, body}`), `captures` (map: logical name →
+source), `server_assigned` (the operation's ignore-set membership, below).
+
+**Capture-source grammar** (closed): `header <Name>` ·
+`header <Name> last-segment` · `body "<path>"` · `capture <name>` (derive
+from another capture) — with optional modifiers `strip: weak-quotes`,
+`transform: root-uid`, `fallback: <source>`. Nothing else.
+
+**Header-matcher vocabulary** (closed): `present` · `present?` (optional —
+assert only if the schedule row says so) · `absent` · `negotiated` ·
+`latest-version-uid` · `pattern:<regex>` · a literal string.
+
 **Body/header selector vocabulary** (closed, CI-checked like the outcome
 kinds): `prefer_conditional` (full resource | `{uid}` | empty, per `Prefer`),
 `error_loose` (AMB-1), `result_set_body` (the RESULT_SET schema — named
 distinctly from the §8.6 `result_set` assertion), `negotiated` (equals the
 negotiated media type), `present`, `absent`, and `pattern:<regex>` for header
 values.
+
+**Ignore-set membership is owned here**: each binding enumerates its
+operation's `server_assigned` paths (e.g. create/update_composition:
+`uid`, `context/_uid`, audit times, `system_id`-bearing ids); the
+`ctx_defaults` set is enumerated once in the simplified-formats format
+overlay (`context/start_time`, `context/setting`, composer defaults per
+master06). The §8.6 `equivalent` assertion resolves named ignore-sets from
+these lists — never from runner judgment.
 
 ### 8.5 The outcome-kind taxonomy and the ambiguity register
 
@@ -864,6 +892,13 @@ must apply. Seeded from this extraction:
 | AMB-10 | **Deleting a VERSIONED_OBJECT is under-specified** — master08: "needs further specification at the openEHR Service Model". | No normative cases; statement-declared behaviour only. |
 | AMB-11 | **`openehr::523\|deleted\|` as a lifecycle_state code** — the schedule reproduces it (master07), but the code assignment warrants terminology verification. | Cases assert the schedule's value; register flags it for TERM cross-check. |
 | AMB-12 | **master06 mislabels its provided-status table "1.a"** against its own class list (1.a = no EHR_STATUS, line 40 vs line 45 caption). | Pilot 1 encodes both classes; conversion records the caption defect; editorial fix upstream. |
+
+Each entry carries a machine-readable **`disposition`** the pipeline
+branches on (closed enum): `loose_assert` (AMB-1) · `fixed_handling` —
+handling encoded directly in bindings/cases (AMB-2, AMB-3, AMB-6, AMB-7,
+AMB-11) · `option_select` — sibling cases + ICS options (AMB-4, AMB-8) ·
+`report_only` — verdicts reported, never gating (AMB-5, AMB-9) ·
+`statement_declared` (AMB-10) · `editorial` (AMB-12).
 
 The register is normative: a runner that "resolves" an ambiguity privately is
 non-conformant to the schedule.
@@ -980,9 +1015,16 @@ cnf.ehr_status.is_modifiable_missing:
     spec_ref: "RM ehr §EHR_STATUS"
   placeholders: { subject_id: runtime-random }    # the __AUTO-GENERATED__ convention, formalized
   provenance: "openEHR CNF Robot corpus @33251d2a; vendor markers stripped; re-adjudicated 2026-.."
-  views: {}          # named projections/filters referenced as ${ds:<key>#<view>}
-                     #   (e.g. magnitude_ge_140_by_uid on a generated set)
-  recipes: {}        # named row-to-instance synthesis functions, referenced as ${recipe:<name>(row)}
+  views: {}          # named projections referenced as ${ds:<key>#<view>}:
+                     #   each view = { select: <path expression over the set>,
+                     #   where: <predicate>, order_by: <path> } — declarative,
+                     #   evaluated over the corpus data, runner-independent
+  recipes: {}        # named row-to-instance synthesis functions referenced as
+                     #   ${recipe:<name>(row)}: name-resolved against the
+                     #   runner's registered recipe set (committed, seeded,
+                     #   deterministic `row → RM-fragment` functions); the
+                     #   manifest entry records name + content digest so any
+                     #   runner can verify it executes the same recipe version
 ```
 
 Rules (each answering an observed defect in the current corpus):
@@ -1127,7 +1169,8 @@ id: I_DEFINITION_ADL14.upload_opt-invalid_opt
 kind: functional
 component: DEFINITION_ADL14
 sm_operation: I_DEFINITION_ADL14.upload_opt
-capabilities: [Adl14OptProvisioning, ArchetypeValidation]
+capabilities: [Adl14OptProvisioning]
+exercises: [ArchetypeValidation]
 profiles: [CORE]
 test_purpose: "Invalid OPTs are rejected and leave the server state unchanged."
 description: "upload invalid OPTs"
@@ -1165,7 +1208,8 @@ id: I_EHR_COMPOSITION.update_composition-event
 kind: functional
 component: EHR_COMPOSITION
 sm_operation: I_EHR_COMPOSITION.update_composition
-capabilities: [CompositionOps, Versioning, ChangeSets]
+capabilities: [Versioning]
+exercises: [CompositionOps, ChangeSets]
 profiles: [CORE]
 test_purpose: >
   Updating an existing event COMPOSITION with the correct
@@ -1486,13 +1530,28 @@ catalogue, **capability matrix**):
    that class's performance cases; unclaimed classes are not run (a product
    claims S, it is measured for S — running R unasked is a runner choice,
    reported but not demanded).
-3. **Execution**: per case × tech-profile format × parameter row, with
-   `reset_per_row` honoured.
-4. **Verdicts**: case passes iff every selected row passes. Capability
+3. **Execution**: per case × tech-profile format × parameter row, under the
+   interpreter laws: **(a)** `reset_per_row` re-establishes the whole
+   `requires` block around every row — for `server: empty` that means a
+   fresh tenant/scope per row (cases where that cost is disproportionate use
+   `single_pass`, which exists for exactly this reason); **(b)** a step whose
+   observed outcome differs from `expect` fails the row and **aborts its
+   remaining steps and row postconditions**; **(c)** transport/connection
+   faults, timeouts, and responses no binding outcome maps → `errored`
+   (inconclusive) — a *mapped but unexpected* outcome → `failed`;
+   **(d)** `${time:before(t)}` = t − 1 ms, `${time:after(t)}` = t + 1 ms,
+   `${time:between(t1,t2)}` = the midpoint — fixed rules so two runners
+   query identical instants; **(e)** aggregate assertions collect their
+   `over:` capture across all rows and evaluate once after the last row.
+4. **Verdicts — computed per tech profile**: case passes iff every selected
+   row passes in that tech profile. A failed case marks **every**
+   verdict-bearing capability it lists `Failed` (which is why `capabilities`
+   stays minimal and coverage moves to `exercises`, §8.3). Capability
    evidence: `Passed` (≥1 case ran, none failed) / `Failed` /
-   `NotEvidenced` / `NoCases` (a printed coverage bound). Profile verdicts:
-   CORE/STANDARD = all required capabilities `Passed`; OPTIONS = any.
-   AMB-5-flagged cases report but do not gate.
+   `NotEvidenced` / `NoCases` (a printed coverage bound). Profile verdicts
+   per the capability matrix: CORE/STANDARD = all required capabilities
+   `Passed`; OPTIONS = any. `report_only`-disposition cases (AMB-5, AMB-9)
+   report but never gate.
 5. **Measured verdicts** (the second machinery): per claimed class, every
    §8.14 threshold holds in one measured run ⇒ class `earned`, else
    `not-earned`; bound to the ixit environment.
@@ -1504,10 +1563,15 @@ catalogue, **capability matrix**):
 
 A runner claims schedule compliance through:
 
-1. **Verdict conformance** — replay a fixed transcript (canned
-   request/response corpus with adjudicated expected verdicts, including
-   deliberate fail/N-A/skip/guard outcomes and AMB-1 error-body variants) and
-   reproduce the verdicts + emit schema-valid `results.json`. A fixture
+1. **Verdict conformance** — replay a fixed transcript and reproduce the
+   adjudicated verdicts + emit schema-valid `results.json`. The transcript
+   is itself a specified artifact (`transcript.schema.json`): an ordered
+   sequence per case × format × row of `{ step, request: {method, path,
+   headers, body_digest}, response: {status, headers, body},
+   expected_verdict, adjudication_ref }` — replayed by sequence (the fixture
+   server answers the Nth matching request with the Nth response; matching =
+   method + path + negotiated media type), including deliberate
+   fail/N-A/skip/guard outcomes and the AMB-1 error-body variants. A fixture
    server suffices.
 2. **Live-SUT conformance** — drive ≥ 2 independent live SUTs (different
    vendors) from their `ixit.json` and produce results consistent with those
@@ -1544,23 +1608,40 @@ performance case (`kind: performance`) defines:
 id: PERF-mixed_load-class_S
 kind: performance
 component: PERFORMANCE
+description: "Class-S sustained mixed workload"
 test_purpose: >
-  Under the class-S normative workload the platform sustains the class-S
+  Under the class-S normative offered load the platform sustains the class-S
   latency and throughput thresholds.
 spec_refs: ["CNF 2.0 performance schedule §classes (this proposal; 2017 schedule lineage)"]
-class: S                        # POC | S | L | R — the 2017 ladder, made testable
-corpus: cnf.scale.100k          # synthesized corpus recipe (§11.10 scale classes)
-workload:                       # normative operation mix, seeded + deterministic
-  concurrent_users: 100
+class: S                        # POC | S | L | R — the selection key (§8.11 step 2c);
+                                # performance cases carry no `capabilities` (§8.3)
+corpus: cnf.scale.100k          # synthesized corpus recipe (§11.11 scale classes)
+workload:                       # OPEN-LOOP offered load (the donated engine's model):
+  arrival_rate: 20/s            #   seeded arrival schedule — never closed-loop users,
+  warmup: PT5M                  #   so coordinated omission cannot hide stalls
   duration: PT1H
   mix: { composition_commit: 30%, composition_read: 40%, adhoc_query: 25%, ehr_create: 5% }
-thresholds:                     # ALL must hold for the class to be earned
+                                #   mix = share of scheduled ARRIVALS
+thresholds:                     # ALL must hold in the single measured run
   - { metric: latency_p99, operation: composition_read, max: 2s }
   - { metric: latency_p99, operation: composition_commit, max: 2s }
   - { metric: error_rate, max: 0 }
-  - { metric: sustained_throughput, min: <SEC-set per class> }
+  - { metric: offered_load_sustained, min: <SEC-set per class; provisional numbers seeded from the committed benchmark baseline until then> }
 # environment: bound to the mandatory ixit.json environment block (§8.10)
 ```
+
+Performance case fields (∎ beyond the §8.3 commons — `id`, `kind`,
+`component`, `description`, `test_purpose`, `spec_refs`): `class` ∎,
+`corpus` ∎, `workload` ∎ (`arrival_rate` ∎, `warmup` ∎, `duration` ∎,
+`mix` ∎), `thresholds` ∎. The **knee-finding ladder is not a case** — it is
+the exploratory procedure (donated methodology) an implementer uses to pick
+which class to claim; the class case is the single fixed-offered-load
+sustained run that earns it. The measurement record in `results.json`
+carries, per case × operation: request count, error count, p50/p90/p99
+latencies, and the full HDR histogram (encoded) — so thresholds are
+re-checkable from the artifact. Performance `spec_refs` cite the proposal
+lineage and are exempt from vendored-spec link-checking (the admitted scope
+extension, §6.3).
 
 Rules:
 
@@ -1722,7 +1803,7 @@ once §8.3 makes cases enumerable files:
    definitions + the class threshold numbers (the 2017 "XX" rates — SEC
    decision, seeded from the donated benchmark methodology and its published
    measurement artifacts), the synthesized scale corpora shared with
-   §11.10, and the measurement schema. Ships after the functional pilot
+   §11.11, and the measurement schema. Ships after the functional pilot
    proves the artifact discipline; the schedule extension of the Guide's
    scope is flagged for SEC in §6.3.
 5. **Content chapters refresh** — raise the RM floor statement (1.0.2 → an
@@ -1752,7 +1833,10 @@ once §8.3 makes cases enumerable files:
    generation.
 11. **The Enterprise capability family** (the 2017 schedule's D/M/X
    dimension, absent from every later draft): **D — data portability**
-   (full-EHR dump/load in canonical form between independent instances,
+   (full-EHR dump/load in canonical form **between independent instances** —
+   single-instance export/archive already exists as Admin capabilities
+   (master12 `I_ADMIN_DUMP_LOAD`/`I_ADMIN_ARCHIVE`; Profiles "EHR
+   Dump/Load"); the cross-instance portability regression is the new part —
    verified by lossless regression over a random query set, on synthesized
    corpora at declared scales — 1k/10k/100k/1M/10M EHRs, ~100 composition
    versions each, the recipes joining the §8.8 governed corpus);
@@ -1794,7 +1878,7 @@ the difference between "nice idea, same risk" and "resourced program".
 - **Funding**: a recurring program line (registry hosting, CI, maintainer
   coordination, event slots) funded from openEHR International's program
   budget + rung-1 attestation fees — explicitly *not* from one vendor's
-  project budget, because §4.3.2 is how that ends. Gap-fill chapters can be
+  project budget, because §4 stall-cause 2 is how that ends. Gap-fill chapters can be
   vendor-sponsored (bounded, reviewable tasks), but the *program* must not
   be — and a sponsoring vendor is never the sole adjudicator of its own
   sponsored cases: sponsored work is scoped to case authorship reviewed
@@ -1831,8 +1915,8 @@ finally cut — before the March 2027 EHDS implementing acts.
 ## 14. Production implementation plan
 
 Two tracks, both production-grade from day one — no throwaway prototype. The
-in-repo track does not wait for upstream adoption: ECC implements the §8
-artifact set as its own production format immediately, which is
+in-repo track does not wait for upstream adoption: the reference runner
+implements the §8 artifact set as its production format immediately, which is
 simultaneously the proof the upstream proposal ships with.
 
 ### 14.1 Upstream: the specifications-CNF PR series
@@ -1868,10 +1952,10 @@ sequenced:
 
 | WS | Workstream | Content | Done-gate |
 |---|---|---|---|
-| W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, vocabularies (outcomes + the capability matrix), corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
+| W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, vocabularies (outcomes + the capability matrix), corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. Scope: assertion-machinery artifacts; the performance case-core schema lands with W7. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
 | W2 | **Catalogue conversion + convergence** | The 394 ECC cases re-expressed as §8.3 case cores + §8.4 operation bindings, executed by the new runner. Where an official schedule case exists, the CNF id becomes primary (ECC numbers retire to trace metadata — inverting today's `ScheduleTrace`); ECC-original cases keep an `ecc-` namespace pending upstream adoption. `inventory/ecc-catalog.tsv` becomes a generated view. | Zero-drift convergence gate: the new runner reproduces the current 402-execution baseline exactly (384 passed · 18 N/A); cutover + old-harness retirement follow |
-| W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data (they already nearly do). | ≥90% of cases run through the interpreter; every exception listed in the report; ECC baseline unchanged |
-| W4 | **Statement / results / ixit emission** | `results.json` migrates to the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
+| W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data. Hard dependency: the §11.1 result-set equivalence rules must be fixed (U5 prerequisite) before the AQL `result_set` assertions execute. | ≥90% of cases run through the interpreter; every exception listed in the report; baseline convergence holds |
+| W4 | **Statement / results / ixit emission** | `results.json` is emitted in the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
 | W5 | **Simplified-formats deepening** | The §8.7 blueprint's gap categories 2–9 (node-id algorithm, level removal, the 43 suffix tables, `_`-attributes, `\|raw`, full ctx vocabulary, counters, STRUCTURED style) + deepened 1/10 — ~40 new SF cases, all spec-example-driven, all OPTIONS-profile. | Every master04/05/06 spec-example JSON block exercised; ECC baseline ratchets upward only |
 | W6 | **Runner verification pack** | Author the U7 transcripts + adjudications; ECC self-verifies against them in CI; publish the pack so the Robot suite (and any vendor runner) can prove itself. | ECC passes both pack parts; the pack rejects a deliberately-broken runner build |
 | W7 | **Performance schedule implementation** | `tools/benchmark`'s workload generation, knee-finding ladder, and sustained-run procedure re-expressed as §8.14 performance cases + the measurement schema; class verdicts computed into results.json; environment block formalized in ixit.json. | An earned-class run against both SUTs committed; verdicts reproduce the published benchmark artifacts |
@@ -1944,6 +2028,15 @@ the first production implementation of the artifact set. The Robot suite
 remains a first-class *compliant* runner via the verification pack —
 rescuing it is inside the proposal (§8.7, §13); it is simply no longer the
 thing the framework's credibility depends on.
+
+**The convergence gate, operationally** (the W2 done-gate): (a) the ECC↔CNF
+id map is a committed W2 deliverable; (b) "reproduces the baseline" means
+per-case verdict equality **modulo that map**, never byte identity;
+(c) the execution set may legitimately change under the §8.7 format model —
+every added/removed case×format execution is listed and justified in the
+conversion PR, reviewed line-by-line; (d) the 18 N/A outcomes must come out
+N/A **with equivalent citations** under the new guard/option machinery.
+Cutover and old-harness retirement follow a green gate.
 
 What this buys strategically: when U1 reaches the SEC, the schemas arrive
 with a production runner already storing, validating, executing, and
