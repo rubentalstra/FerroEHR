@@ -970,10 +970,13 @@ default the specs are silent on, for SEC ratification with U5):
    ORDER BY that totally orders the expected rows (**[spec]**: absent
    ORDER BY, "default ordering in results is undefined" — QUERY
    `master03-syntax.adoc` §ORDER BY; LIMIT determinism requires unique
-   ordering — §LIMIT). Otherwise `match: set`, which is **bag** equality —
-   duplicate rows are significant, because AQL is bag-semantics unless
-   `DISTINCT` is present (**[spec]**: §DISTINCT). ORDER BY semantics:
-   ASC default, left→right lexicographic tie-break (**[spec]**: §ORDER BY).
+   ordering — §LIMIT). Otherwise `match: set`, which despite its name is
+   **bag (multiset)** equality — duplicate rows are significant, because AQL
+   is bag-semantics unless `DISTINCT` is present (**[spec]**: §DISTINCT).
+   `match: count` compares row count only; `match: contains` requires every
+   expected row to appear (bag-wise) with extra rows permitted. ORDER BY
+   semantics: ASC default, left→right lexicographic tie-break (**[spec]**:
+   §ORDER BY).
 3. **Cell equality** — an RM-object cell (carries `_type`) compares by
    canonical-JSON structural equality (**[spec]**: cells may be full RM
    objects — QUERY `master04-result_structure.adoc`,
@@ -1691,7 +1694,8 @@ class: S                        # POC | S | L | R — the selection key (§8.11 
                                 # performance cases carry no `capabilities` (§8.3)
 corpus: cnf.scale.100k          # synthesized corpus recipe (§11.11 scale classes)
 workload:                       # OPEN-LOOP offered load (the donated engine's model):
-  arrival_rate: 20/s            #   seeded arrival schedule — never closed-loop users,
+  arrival_rate: 40/s            #   the class-S offered load (table below) — a seeded
+                                #   arrival schedule, never closed-loop users,
   warmup: PT5M                  #   so coordinated omission cannot hide stalls
   duration: PT1H
   mix: { composition_commit: 30%, composition_read: 40%, adhoc_query: 25%, ehr_create: 5% }
@@ -1716,14 +1720,17 @@ ratification; derivation shown so the numbers are arguable, not arbitrary):
 
 Derivation (**[legislated]** — stated assumptions, SEC ratifies or replaces):
 the 2017 schedule's user counts and screen-latency budgets (POC 5 / S 100 /
-L 1000 / R 10,000 concurrent users; 2 s screen latency for S, 1.5 s for
-L/R), converted to open-loop API terms by two explicit assumptions — one
+L 1000 / R 10,000 concurrent users; 2 s screen latency for S — inherited
+by POC, whose budget the 2017 page left unstated — and 1.5 s for L/R),
+converted to open-loop API terms by two explicit assumptions — one
 clinical interaction per active user per 10 s, ~4 API calls per interaction
 — giving offered load = users × 0.4/s and an API p99 budget of screen
 budget ÷ 4. Corpus sizes are the 2017 D-row scale ladder. Feasibility is
-evidenced by the committed measurement artifacts (`docs/benchmarks/`):
-ehrbase-rs sustains a 622 req/s knee at p99 91 ms and upstream EHRbase
-434 req/s on 8-core consumer hardware — class L (400/s) is attainable on
+evidenced by the committed measurement artifacts (`docs/benchmarks/`,
+regenerated per release, never hand-typed): ehrbase-rs sustains a
+631.5 req/s knee at p99 204.7 ms and upstream EHRbase 475.0 req/s
+(`ehrbase-rs/KNEE.md`, `ehrbase-java/KNEE.md`) on 8-core consumer hardware —
+class L (400/s) is attainable on
 server-class hardware and class R is a scaled-deployment target, consistent
 with its "Region" intent.
 
@@ -1802,7 +1809,9 @@ for the whole matrix): `capability → { family: Platform | Enterprise |
 Security, tier: <family-scoped>, required: bool }`, where tiers are scoped
 per family — Platform: CORE/STANDARD/OPTIONS; Security: SEC-BASIC (…);
 Enterprise: D/M/X. The SEC-BASIC points above enter as
-`family: Security, tier: SEC-BASIC, required: true`.
+`family: Security, tier: SEC-BASIC, required: true` — except
+version-signature integrity, which enters under the existing Signing
+capability (`family: Platform, tier: STANDARD`) per its own row.
 
 ## 9. Certification governance — the ladder as a conformity-assessment scheme
 
