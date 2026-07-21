@@ -10,8 +10,8 @@
 //! The spec-version fields are **not** local literals: they read the single
 //! [`provenance`](crate::telemetry::provenance) source shared with the System
 //! Options manifest (`OPTIONS /`) and `/status`, so all three identity surfaces
-//! quote one fact. In particular `its_rest` is the released ITS-REST contract
-//! version (`Release-1.1.0`). See that module for the derivation.
+//! quote one fact — and provenance itself derives every pin from the owning
+//! `openehr-*` crate's `SPEC_VERSION`. See that module for the derivation.
 
 use serde::Serialize;
 
@@ -47,8 +47,9 @@ pub struct SpecVersions {
     pub rm: &'static str,
     /// BASE version.
     pub base: &'static str,
-    /// Archetype Model versions.
-    pub am: &'static str,
+    /// Archetype Model versions — both extant generations, rendered as
+    /// `"<am14> + <am24>"`.
+    pub am: String,
     /// Terminology version.
     pub term: &'static str,
 }
@@ -68,7 +69,7 @@ impl BuildInfo {
                 aql: provenance::AQL,
                 rm: provenance::RM,
                 base: provenance::BASE,
-                am: provenance::AM,
+                am: format!("{} + {}", provenance::AM14, provenance::AM24),
                 term: provenance::TERM,
             },
             postgres_target: provenance::PG_TARGET,
@@ -105,11 +106,18 @@ mod tests {
     fn build_info_is_populated() {
         let info = BuildInfo::current();
         assert_eq!(info.name, "ehrbase");
-        assert_eq!(info.spec.rm, "1.2.0");
-        // The released ITS-REST contract version (matches the ECC report),
-        // sourced from the shared provenance constant.
-        assert_eq!(info.spec.its_rest, "Release-1.1.0");
-        assert_eq!(info.spec.its_rest, provenance::ITS_REST);
+        // The pins are the crate versions themselves — no re-typed literals
+        // anywhere in the chain, so a pin bump cannot silently diverge.
+        assert_eq!(info.spec.rm, openehr_rm::SPEC_VERSION);
+        assert_eq!(info.spec.its_rest, openehr_its::SPEC_VERSION);
+        assert_eq!(
+            info.spec.am,
+            format!(
+                "{} + {}",
+                openehr_am::am14::SPEC_VERSION,
+                openehr_am::SPEC_VERSION
+            )
+        );
         assert_eq!(info.postgres_target, "18.4+");
         // build_date parses to a real timestamp (not the "unknown" fallback) in
         // a normal build where build.rs ran.
