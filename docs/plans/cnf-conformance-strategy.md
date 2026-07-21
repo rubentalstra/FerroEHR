@@ -815,7 +815,6 @@ must apply. Seeded from this extraction:
 | AMB-5 | **Persistent-COMPOSITION uniqueness per EHR is under SEC debate** (master07 NOTE). | Affected cases carry the flag; verdicts on them are reported but excluded from profile computation until resolved. |
 | AMB-6 | **`fetch` default is implementation-defined**; `fetch` cannot combine with AQL `TOP` (`query/Request.md`). | Cases always pass `fetch` explicitly; the TOP+fetch rejection is its own case. |
 | AMB-7 | **Additional non-conflicting status codes are permitted** (`Requests_and_responses.md` §HTTP status codes). | Bindings assert the expected code exactly for the expected outcome; they never enumerate-reject other codes for other situations. |
-
 | AMB-8 | **Empty-directory retrieval is empty-vs-error ambiguous** — master09 F.1/G.1/L.1: get_directory on an EHR without one "should return an empty structure … could be an error status instead". | Sibling cases with `option:` tags; ICS declares the behaviour. Upstream clarification candidate. |
 | AMB-9 | **EHR_STATUS `incomplete` lifecycle_state** — master08 references SPECPR-368 (open upstream problem report). | Affected cases report but do not gate until SPECPR-368 resolves. |
 | AMB-10 | **Deleting a VERSIONED_OBJECT is under-specified** — master08: "needs further specification at the openEHR Service Model". | No normative cases; statement-declared behaviour only. |
