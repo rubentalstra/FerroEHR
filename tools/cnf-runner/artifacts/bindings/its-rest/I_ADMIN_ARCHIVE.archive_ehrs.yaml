@@ -1,0 +1,11 @@
+# ITS-REST 1.1.0 surfaces no archive wire — unrealized so the master12
+# archive_ehrs cases are not-applicable with citation (AMB-33).
+sm_operation: I_ADMIN_ARCHIVE.archive_ehrs
+its: its-rest
+unrealized:
+  reason: >-
+    No archive operation exists in ITS-REST 1.1.0. The only admin operations in
+    the OAS are admin_ehr_delete and admin_ehr_delete_all; there is no endpoint
+    that moves EHRs to archival storage.
+  source: "ITS-REST specifications/operations (admin_ehr_delete, admin_ehr_delete_all only) vs SM docs/UML/classes/i_admin_archive.adoc (archive_ehrs)"
+  ambiguity: AMB-33

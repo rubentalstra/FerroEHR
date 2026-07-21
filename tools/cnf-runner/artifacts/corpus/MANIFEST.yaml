@@ -112,3 +112,970 @@ cnf.set.bp-10:
       select: "committed uids of compositions"
       where: "systolic magnitude >= 140"
       order_by: "uid ascending"
+# Corpus additions for the CNF master06 (EHR) schedule cases.
+# Merged into corpus/MANIFEST.yaml by the validate harness; same entry schema.
+cnf.ehr_status.with_subject:
+  source: fixtures/ehr/ehr_status.with_subject.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master06 data-set descriptions; structural placeholder pending corpus authoring"
+# Corpus additions for the master04 (DEFINITION_ADL14) cases. Same entry
+# schema as MANIFEST.yaml; the orchestrator concatenates this into
+# MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
+#
+# All payloads are structural placeholders modeled on
+# corpus/templates/minimal_event.opt, pending the spine-first authored corpus
+# (#202). The invalid-OPT and minimal-event valid sets already live in
+# MANIFEST.yaml and are reused by the cases; only the new valid OPTs are
+# declared here.
+#
+# NOTE (master05 stored-query texts): AQL query text has no representable
+# CorpusFormat variant (canonical-json | canonical-xml | wt-flat |
+# wt-structured | opt-xml), so the master05 cases carry their AQL inline in
+# the flow `with:` payloads rather than as corpus data sets. See the master05
+# REQUIREMENTS.md for the proposed `aql-text` CorpusFormat addition.
+cnf.opt.minimal_all_entries:
+  source: fixtures/opt/valid/minimal_all_entries.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions; structural placeholder pending corpus authoring"
+cnf.opt.maximal:
+  source: fixtures/opt/valid/maximal.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions; structural placeholder pending corpus authoring"
+cnf.opt.versioned.v1:
+  source: fixtures/opt/valid/versioned.v1.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions (minimal valid OPT, two versions); structural placeholder pending corpus authoring"
+cnf.opt.versioned.v2:
+  source: fixtures/opt/valid/versioned.v2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions (minimal valid OPT, two versions); structural placeholder pending corpus authoring"
+# Corpus additions for the master07 (COMPOSITION) schedule cases.
+# Merged into corpus/MANIFEST.yaml at verify time; entries here ONLY.
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored corpus when the catalogue authoring lands (#202).
+cnf.opt.minimal_persistent:
+  source: fixtures/composition/minimal_persistent.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master07 persistent data-set descriptions (minimal persistent OPT); structural placeholder pending corpus authoring"
+cnf.composition.minimal_persistent.v1:
+  source: fixtures/composition/minimal_persistent.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master07 data-set descriptions (minimal persistent COMPOSITION, first content state; category openehr::431|persistent|, no EVENT_CONTEXT); structural placeholder pending corpus authoring"
+cnf.composition.minimal_persistent.v2:
+  source: fixtures/composition/minimal_persistent.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master07 data-set descriptions (minimal persistent COMPOSITION, updated content state); structural placeholder pending corpus authoring"
+cnf.composition.minimal_persistent.invalid_structure:
+  source: fixtures/composition/minimal_persistent.invalid_structure.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "EVALUATION carries no data attribute"
+    spec_ref: "RM ehr (EVALUATION.data is mandatory)"
+  provenance: "authored 2026-07-21 by removing EVALUATION.data from the valid persistent v1 payload"
+cnf.composition.minimal_event.wrong_template:
+  source: fixtures/composition/minimal_event.wrong_template.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (valid event COMPOSITION whose archetype_details.template_id is cnf.vitals, a different OPT than the versioned object's cnf.minimal_event — the update_composition-wrong_template mismatch source); structural placeholder pending corpus authoring"
+# Corpus additions for the master08 (EHR_CONTRIBUTION) schedule cases. Same
+# entry schema as MANIFEST.yaml; the validate harness concatenates this into
+# MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
+#
+# All payloads are structural placeholders modeled on
+# corpus/fixtures/composition/minimal_event.v1.json and corpus/fixtures/ehr/,
+# pending the spine-first authored corpus (#202). The master08 cases also reuse
+# the already-declared valid/invalid COMPOSITION and EHR_STATUS sets
+# (cnf.composition.minimal_event.v1/.v2/.invalid_structure,
+# cnf.ehr_status.with_subject) and the OPT sets (cnf.opt.minimal_event,
+# cnf.opt.maximal) that live in MANIFEST.yaml; only the new sets are declared
+# here.
+cnf.composition.maximal:
+  source: fixtures/contribution/composition.maximal.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master08 data-set descriptions (maximal COMPOSITION: SECTION + OBSERVATION + data types); structural placeholder pending corpus authoring"
+cnf.composition.persistent.v1:
+  source: fixtures/contribution/composition.persistent.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master08 data-set descriptions (persistent-category COMPOSITION, first content state); structural placeholder pending corpus authoring"
+cnf.composition.persistent.v2:
+  source: fixtures/contribution/composition.persistent.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master08 data-set descriptions (persistent-category COMPOSITION, modified content state); structural placeholder pending corpus authoring"
+cnf.ehr_status.minimal:
+  source: fixtures/contribution/ehr_status.minimal.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master08 EHR_STATUS accepted-cases table (is_modifiable=true, is_queryable=true, subject=PARTY_SELF); structural placeholder pending corpus authoring"
+cnf.ehr_status.invalid:
+  source: fixtures/contribution/ehr_status.invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "EHR_STATUS carries no subject"
+    spec_ref: "RM ehr (EHR_STATUS.subject is mandatory 1..1)"
+  provenance: "authored 2026-07-21 by removing the mandatory subject from the minimal EHR_STATUS payload"
+cnf.folder.minimal:
+  source: fixtures/contribution/folder.minimal.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master08 FOLDER data-set combinations (minimal directory); structural placeholder pending corpus authoring"
+cnf.folder.updated:
+  source: fixtures/contribution/folder.updated.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master08 FOLDER data-set combinations (directory with a subfolder); structural placeholder pending corpus authoring"
+# Corpus additions for the CNF master09 (DIRECTORY) schedule cases.
+# FOLDER payloads / provisioned directory trees. Structural placeholders — the
+# spine-first authored corpus lands with the catalogue authoring (#202).
+# TODO: replace the placeholder FOLDER payloads with spec-authored canonical
+#       FOLDER structures when the catalogue authoring lands (#202).
+cnf.directory.root_only:
+  source: fixtures/directory/root_only.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master09 data-set descriptions (Tests of EHR.directory: a single empty root FOLDER); structural placeholder pending corpus authoring"
+cnf.directory.reference_structure:
+  source: fixtures/directory/reference_structure.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master09 reference FOLDER structure (/emergency/episode-x/summary-composition-x, /emergency/episode-y/summary-composition-y, /hospitalization/summary-composition-z); structural placeholder pending corpus authoring"
+cnf.directory.v2:
+  source: fixtures/directory/v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master09 data-set descriptions (a modified FOLDER structure that differentiates a second EHR.directory version); structural placeholder pending corpus authoring"
+# Corpus additions for the CNF master17.3 (content, quantity data types)
+# schedule cases. Same entry schema as MANIFEST.yaml; the validate harness
+# concatenates this into MANIFEST.yaml at integration (never edit
+# MANIFEST.yaml directly here).
+#
+# Each entry is the OPT that carries the C_* constraint context under test for
+# a master17.3 content decision table. Constant constraints are baked into the
+# stub's <concept> comment; where the constraint varies per data set the
+# decision table carries it as columns and the stub names the constraint shape.
+# All payloads are structural placeholders modeled on
+# corpus/templates/quantity_property_units_mag.opt, pending the spine-first
+# authored corpus (#202).
+# TODO: replace the structural placeholder OPTs with the spine-first authored
+#       corpus when the catalogue authoring lands (#202).
+cnf.tpl.ordinal_open:
+  source: templates/ordinal_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_ORDINAL matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.ordinal_list:
+  source: templates/ordinal_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_ORDINAL.list = 1|[local::at0005], 2|[local::at0006]); structural placeholder pending corpus authoring"
+cnf.tpl.scale_open:
+  source: templates/scale_open.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_SCALE matches {*}, RM >= 1.1.0); structural placeholder pending corpus authoring"
+cnf.tpl.scale_list:
+  source: templates/scale_list.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_SCALE.list = 1.5|[local::at0005], 2.0|[local::at0006], RM >= 1.1.0); structural placeholder pending corpus authoring"
+cnf.tpl.count_open:
+  source: templates/count_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_COUNT matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.count_range:
+  source: templates/count_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_INTEGER.range = 10..20); structural placeholder pending corpus authoring"
+cnf.tpl.count_list:
+  source: templates/count_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_INTEGER.list = [10,15,20]); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_open:
+  source: templates/quantity_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_QUANTITY matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_property:
+  source: templates/quantity_property.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_QUANTITY property=openehr::122, no units list); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_property_units:
+  source: templates/quantity_property_units.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (C_DV_QUANTITY property=openehr::122, list=[cm, m]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_open:
+  source: templates/proportion_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_ratio:
+  source: templates/proportion_type_ratio.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[0]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_unitary:
+  source: templates/proportion_type_unitary.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[1]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_percent:
+  source: templates/proportion_type_percent.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[2]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_fraction:
+  source: templates/proportion_type_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[3]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_integer_fraction:
+  source: templates/proportion_type_integer_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[4]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_type_any_fraction:
+  source: templates/proportion_type_any_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type C_INTEGER.list=[3,4]); structural placeholder pending corpus authoring"
+cnf.tpl.proportion_ratio_range:
+  source: templates/proportion_ratio_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_PROPORTION type=[0]; numerator C_REAL.range=5..20; denominator C_REAL.range=200..600); structural placeholder pending corpus authoring"
+cnf.tpl.interval_count_open:
+  source: templates/interval_count_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_COUNT> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_count_range:
+  source: templates/interval_count_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_COUNT>: C_INTEGER.range=0..100 on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_count_list:
+  source: templates/interval_count_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_COUNT>: C_INTEGER.list=[0,5,10,100] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_quantity_open:
+  source: templates/interval_quantity_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_QUANTITY> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_quantity_temp:
+  source: templates/interval_quantity_temp.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_QUANTITY>: C_DV_QUANTITY.list=[Cel 0..100] temperature on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_time_open:
+  source: templates/interval_date_time_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE_TIME> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_time_field_validity:
+  source: templates/interval_date_time_field_validity.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE_TIME>: C_DATE_TIME per-component validity; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_time_range:
+  source: templates/interval_date_time_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE_TIME>: C_DATE_TIME.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_open:
+  source: templates/interval_date_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_field_validity:
+  source: templates/interval_date_field_validity.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE>: C_DATE per-component validity; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_date_range:
+  source: templates/interval_date_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DATE>: C_DATE.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_time_open:
+  source: templates/interval_time_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_TIME> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_time_field_validity:
+  source: templates/interval_time_field_validity.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_TIME>: C_TIME per-component validity; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_time_range:
+  source: templates/interval_time_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_TIME>: C_TIME.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_duration_open:
+  source: templates/interval_duration_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DURATION> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_duration_allowed:
+  source: templates/interval_duration_allowed.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DURATION>: C_DURATION per-component allowed flags; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_duration_range:
+  source: templates/interval_duration_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_DURATION>: C_DURATION.range; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_ordinal_open:
+  source: templates/interval_ordinal_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_ORDINAL> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_ordinal_list:
+  source: templates/interval_ordinal_list.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_ORDINAL>: C_DV_ORDINAL.list on both limits; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_scale_open:
+  source: templates/interval_scale_open.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_SCALE> matches {*}, RM >= 1.1.0); structural placeholder pending corpus authoring"
+cnf.tpl.interval_scale_list:
+  source: templates/interval_scale_list.opt
+  format: opt-xml
+  rm_versions: [">=1.1.0"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_SCALE>: C_DV_ORDINAL.list on both limits, RM >= 1.1.0; constraint varies per row); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_open:
+  source: templates/interval_proportion_open.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION> matches {*}); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_ratio:
+  source: templates/interval_proportion_type_ratio.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[0] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_unitary:
+  source: templates/interval_proportion_type_unitary.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[1] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_percent:
+  source: templates/interval_proportion_type_percent.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[2] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_fraction:
+  source: templates/interval_proportion_type_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[3] on both limits); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_type_integer_fraction:
+  source: templates/interval_proportion_type_integer_fraction.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[4] on both limits; schedule prose says [3] but the data set validates type=4, see REQUIREMENTS); structural placeholder pending corpus authoring"
+cnf.tpl.interval_proportion_ratio_range:
+  source: templates/interval_proportion_ratio_range.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.3 constraint descriptions (DV_INTERVAL<DV_PROPORTION>: type C_INTEGER.list=[0]; numerator/denominator C_REAL.range per limit); structural placeholder pending corpus authoring"
+# Corpus manifest additions for the content data-type cases of CNF
+# master17.1 (basic), .2 (text), .4 (date_time), .6 (encapsulated), .7 (uri).
+# Concatenated into corpus/MANIFEST.yaml at load. Structural placeholder OPTs
+# pending corpus authoring (#202).
+cnf.tpl.dv_boolean_c_boolean:
+  source: templates/dt_boolean_c_boolean.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_identifier_c_string:
+  source: templates/dt_identifier_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_text_c_string:
+  source: templates/dt_text_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_coded_text_c_code_phrase:
+  source: templates/dt_coded_text_c_code_phrase.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_coded_text_constraint_ref:
+  source: templates/dt_coded_text_constraint_ref.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_duration_c_duration:
+  source: templates/dt_duration_c_duration.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_time_c_time:
+  source: templates/dt_time_c_time.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_date_c_date:
+  source: templates/dt_date_c_date.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_date_time_c_date_time:
+  source: templates/dt_date_time_c_date_time.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_parsable_c_string:
+  source: templates/dt_parsable_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_multimedia_constraints:
+  source: templates/dt_multimedia_constraints.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_uri_c_string:
+  source: templates/dt_uri_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+cnf.tpl.dv_ehr_uri_c_string:
+  source: templates/dt_ehr_uri_c_string.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master17.x constraint descriptions; structural placeholder pending corpus authoring"
+# Corpus additions for the re-adjudicated ECC structural content battery
+# (the ecc-CONT-* cases carrying the non-dv ECC-VAL ground). Same entry schema
+# as MANIFEST.yaml; the validate harness concatenates this into MANIFEST.yaml at
+# integration (never edit MANIFEST.yaml directly here).
+#
+# Each entry is the OPT that carries the AOM1.4 C_* constraint context under
+# test for one structural seam. The constraint that VARIES per decision-table
+# row (cardinality interval, existence 0..1 vs 1..1, rm_type_name subtype) is
+# carried by the case's decision-table columns; the stub's <concept> comment
+# names the constraint shape. All payloads are structural placeholders modeled
+# on corpus/templates/quantity_property_units_mag.opt.
+# TODO: replace the structural placeholder OPTs with the spine-first authored
+#       corpus when the catalogue authoring lands (#202).
+cnf.tpl.ecc_composition_content_cardinality:
+  source: templates/cnf.tpl.ecc_composition_content_cardinality.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_composition_context_existence:
+  source: templates/cnf.tpl.ecc_composition_context_existence.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_observation_state_protocol_existence:
+  source: templates/cnf.tpl.ecc_observation_state_protocol_existence.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_history_events_cardinality:
+  source: templates/cnf.tpl.ecc_history_events_cardinality.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_history_summary_existence:
+  source: templates/cnf.tpl.ecc_history_summary_existence.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_event_state_existence:
+  source: templates/cnf.tpl.ecc_event_state_existence.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_event_type_narrowing:
+  source: templates/cnf.tpl.ecc_event_type_narrowing.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+cnf.tpl.ecc_item_structure_type_narrowing:
+  source: templates/cnf.tpl.ecc_item_structure_type_narrowing.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+# Corpus additions for the CNF master11 (QUERY) schedule cases. Same entry
+# schema as MANIFEST.yaml; the validate harness concatenates this into
+# corpus/MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
+#
+# Two families:
+#   - the generated loaded-db set cnf.set.query-bp-10 (recipe query_bp), with the
+#     declarative views the loaded-db cases assert against; and
+#   - the AQL query-text fixtures (format aql-text) the invalid-query,
+#     empty-db-shapes, and terminology-reject fixture_sets iterate over.
+# Provenance for the ecc- ground: re-adjudicated 2026-07-21 from the retired ECC
+# AQL battery against QUERY AQL 1.1 spec text; the AQL texts are re-authored to
+# the AQL 1.1 grammar/semantics (not copied from the RM-1.0.x-era vendored
+# corpus). All fixtures are spine-first authored; the generated set is a
+# digest-pinned recipe contract (corpus/recipes/query_bp.md).
+
+# ── the generated loaded-db corpus ────────────────────────────────────────────
+cnf.set.query-bp-10:
+  generated_by: { recipe: query_bp, digest: "sha256:992a650fc86055cea95cc3f2569cfd272ea4bf29ac74c37467ab8eeff71b4006" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated set: 10 blood-pressure COMPOSITIONs, systolic 100..190, category event (recipe contract corpus/recipes/query_bp.md)"
+  views:
+    all_uids_asc:
+      select: "committed uids of all compositions"
+      order_by: "uid ascending"
+    systolic_ge_140_uids_asc:
+      select: "committed uids of compositions"
+      where: "systolic magnitude >= 140"
+      order_by: "uid ascending"
+    top3_systolic_desc_uids:
+      select: "committed uids of the 3 compositions with the highest systolic magnitude"
+      order_by: "systolic magnitude descending"
+
+# ── AQL query-text fixtures (valid) ───────────────────────────────────────────
+cnf.aql.valid.select_ehr:
+  source: fixtures/query/valid_select_ehr.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 to QUERY AQL 1.1 §SELECT/§FROM (bare EHR id projection)"
+cnf.aql.valid.contains_composition:
+  source: fixtures/query/valid_contains_composition.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 to QUERY AQL 1.1 §CONTAINS (EHR CONTAINS COMPOSITION projection)"
+cnf.aql.valid.where_predicate:
+  source: fixtures/query/valid_where_predicate.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 to QUERY AQL 1.1 §WHERE (CONTAINS chain with an equality predicate)"
+
+# ── AQL query-text fixtures (invalid: grammar/semantics rejections) ───────────
+cnf.aql.invalid.timewindow:
+  source: fixtures/query/invalid_timewindow.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "TIMEWINDOW clause removed from AQL at Release 1.0.1 (SPECQUERY-20); absent from the AQL 1.1 grammar"
+    spec_ref: "QUERY AQL master00-amendment_record (SPECQUERY-20); QUERY AQL master07-grammar"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC dialect goldens (ECC-QRY-015..017) against QUERY AQL 1.1"
+cnf.aql.invalid.limit_before_order_by:
+  source: fixtures/query/invalid_limit_before_order_by.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "LIMIT precedes ORDER BY; the AQL 1.1 grammar orders orderByClause before limitClause"
+    spec_ref: "QUERY AQL master03-syntax §ORDER BY/§LIMIT; QUERY AQL master07-grammar"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC dialect goldens (ECC-QRY-018..024) against QUERY AQL 1.1"
+cnf.aql.invalid.syntax_garbage:
+  source: fixtures/query/invalid_syntax_garbage.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "not a well-formed AQL statement — WHERE with no FROM clause"
+    spec_ref: "QUERY AQL master03-syntax §FROM (mandatory); QUERY AQL master07-grammar"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC invalid-query corpus (ECC-QRY-005) against QUERY AQL 1.1"
+
+# ── AQL query-text fixtures (invalid: unsupported TERMINOLOGY() forms) ─────────
+cnf.aql.invalid.terminology_lookup_matches:
+  source: fixtures/query/reject_terminology_lookup_matches.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "'lookup' operation as a matches operand — only 'expand' has code-list semantics (§TERMINOLOGY usage a/b)"
+    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-002 against QUERY AQL 1.1"
+cnf.aql.invalid.terminology_in_select:
+  source: fixtures/query/reject_terminology_in_select.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "TERMINOLOGY() in a SELECT column — an unsupported position (§TERMINOLOGY defines matches-operand and Boolean-assertion forms only)"
+    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-003 against QUERY AQL 1.1"
+cnf.aql.invalid.terminology_boolean_lookup:
+  source: fixtures/query/reject_terminology_boolean_lookup.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "Boolean TERMINOLOGY('lookup', …) — only 'validate'/'subsumes' have Boolean semantics (§TERMINOLOGY)"
+    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-004 against QUERY AQL 1.1"
+# Corpus additions for the CNF simplified_formats chapter seed. Same entry
+# schema as MANIFEST.yaml; the validate harness concatenates this into
+# MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
+#
+# The FLAT/STRUCTURED payloads mirror the exemplar's cnf.flat.vitals.minimal_ctx
+# (vital-signs body_temperature) so the whole SF seed exercises one template.
+# All payloads are structural placeholders pending the spine-first authored
+# corpus (#202); the invalid sets carry the master04 defect + spec citation.
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored corpus when the catalogue authoring lands (#202).
+cnf.structured.vitals.minimal:
+  source: fixtures/sf/structured.vitals.minimal.json
+  format: wt-structured
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE Simplified Formats spec; structural placeholder pending corpus authoring"
+cnf.flat.vitals.unknown_field:
+  source: fixtures/sf/flat.vitals.unknown_field.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "field identifier resolves to no Web Template node (this_field_is_not_in_the_template)"
+    spec_ref: "ITS-REST simplified_formats master04 §Validation (field identifiers match WT metadata structure)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE Simplified Formats spec; structural placeholder pending corpus authoring"
+cnf.flat.vitals.other_with_code:
+  source: fixtures/sf/flat.vitals.other_with_code.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "|other combined with |code/|value on one coded leaf (mutually exclusive)"
+    spec_ref: "ITS-REST simplified_formats master04 §Open Value-Sets and the |other Suffix (servers MUST reject combinations)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE Simplified Formats spec; structural placeholder pending corpus authoring"
+cnf.ehr_status.invalid.missing-is-queryable:
+  source: fixtures/ehr/invalid/ehr_status.missing_is_queryable.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM/Schema: is_queryable is mandatory"
+    spec_ref: "RM ehr §EHR_STATUS (is_queryable 1..1)"
+  provenance: "authored 2026-07-21 from the CNF master06 INVALID EHR_STATUS data-set descriptions; structural placeholder pending corpus authoring"
+cnf.ehr_status.invalid.missing-is-modifiable:
+  source: fixtures/ehr/invalid/ehr_status.missing_is_modifiable.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM/Schema: is_modifiable is mandatory"
+    spec_ref: "RM ehr §EHR_STATUS (is_modifiable 1..1)"
+  provenance: "authored 2026-07-21 from the CNF master06 INVALID EHR_STATUS data-set descriptions; structural placeholder pending corpus authoring"
+cnf.ehr_status.invalid.missing-subject:
+  source: fixtures/ehr/invalid/ehr_status.missing_subject.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "RM/Schema: subject is mandatory"
+    spec_ref: "RM ehr §EHR_STATUS (subject 1..1)"
+  provenance: "authored 2026-07-21 from the CNF master06 INVALID EHR_STATUS data-set descriptions; structural placeholder pending corpus authoring"
+cnf.ehr_status.invalid.invalid-other-details:
+  source: fixtures/ehr/invalid/ehr_status.invalid_other_details.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "ITEM_TREE without its mandatory name"
+    spec_ref: "RM common §LOCATABLE (name 1..1)"
+  provenance: "authored 2026-07-21 from the CNF master06 INVALID EHR_STATUS data-set descriptions; structural placeholder pending corpus authoring"
+# Corpus additions for the Security / Signing (SEC-BASIC + Signing) schedule
+# cases. Merged into corpus/MANIFEST.yaml by the validate harness; same entry
+# schema as MANIFEST.yaml (never edit MANIFEST.yaml directly here).
+#
+# The Security cases (AuthenticatedAccess / AuthorizationSeparation /
+# AnonymousEhrs / AuditAccountability / EhrDemographicSeparation) reuse existing
+# sets (cnf.opt.minimal_event, cnf.composition.minimal_event.v1/.v2); only the
+# Signing client-verbatim case needs a new set.
+#
+# The payload is a structural placeholder modeled on the existing composition
+# fixtures, pending the spine-first authored corpus (#202).
+cnf.security.signed_version:
+  source: fixtures/security/signed_version.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: >-
+    authored 2026-07-21 — an ORIGINAL_VERSION<COMPOSITION> carrying a
+    client-supplied signature attribute (RM common §change_control:
+    ORIGINAL_VERSION.signature), used by SIG-VERSION-client_supplied_verbatim to
+    exercise verbatim storage of a client signature; structural placeholder
+    pending corpus authoring
+  views:
+    signature:
+      select: "$.signature"
+# DEMOGRAPHIC (master10) corpus additions — concatenated into MANIFEST.yaml by
+# the verify harness. Canonical-JSON PERSON / PARTY_RELATIONSHIP stubs for the
+# I_DEMOGRAPHIC_SERVICE / I_PARTY / I_PARTY_RELATIONSHIP cases. master10 defines
+# no data sets (every case is TBD), so these are authored from the RM demographic
+# class semantics as structural placeholders pending corpus authoring (#202).
+cnf.demographic.person.v1:
+  source: fixtures/demographic/person.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PERSON, first content state); structural placeholder pending corpus authoring"
+cnf.demographic.person.v2:
+  source: fixtures/demographic/person.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PERSON, updated content state); structural placeholder pending corpus authoring"
+cnf.demographic.person.invalid:
+  source: fixtures/demographic/person.invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "identities is empty — PARTY requires at least one PARTY_IDENTITY"
+    spec_ref: "RM demographic §PARTY (identities: List<PARTY_IDENTITY> [1..*])"
+  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (content_invalid PERSON); structural placeholder pending corpus authoring"
+cnf.demographic.party_relationship.v1:
+  source: fixtures/demographic/party_relationship.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PARTY_RELATIONSHIP, first content state); structural placeholder pending corpus authoring"
+cnf.demographic.party_relationship.v2:
+  source: fixtures/demographic/party_relationship.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PARTY_RELATIONSHIP, updated content state); structural placeholder pending corpus authoring"
+cnf.demographic.party_relationship.invalid:
+  source: fixtures/demographic/party_relationship.invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "target is absent — PARTY_RELATIONSHIP requires both source and target"
+    spec_ref: "RM demographic §PARTY_RELATIONSHIP (source, target: PARTY_REF)"
+  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (content_invalid PARTY_RELATIONSHIP); structural placeholder pending corpus authoring"
+# MESSAGING (master13) corpus additions — concatenated into MANIFEST.yaml by
+# the verify harness. Canonical-JSON EXTRACT / EXTRACT_SPEC and TDD (XML)
+# payload stubs for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases. master13
+# defines no data sets (every case is TBD), so these are authored from the RM
+# EHR Extract IM class semantics as structural placeholders pending corpus
+# authoring (#202). The ADMIN (master12) cases need no corpus: they are
+# runner-provisioned (requires: ehr/server) or use literal identifiers.
+cnf.messaging.ehr_extract.v1:
+  source: fixtures/messaging/ehr_extract.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the RM EHR Extract IM (EXTRACT); structural placeholder pending corpus authoring"
+cnf.messaging.ehr_extract.invalid:
+  source: fixtures/messaging/ehr_extract.invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "subject absent — EXTRACT requires a subject PARTY_(IDENTIFIED|REF)"
+    spec_ref: "RM ehr_extract §EXTRACT (subject)"
+  provenance: "authored 2026-07-21 from the RM EHR Extract IM (content_invalid EXTRACT); structural placeholder pending corpus authoring"
+cnf.messaging.extract_spec.v1:
+  source: fixtures/messaging/extract_spec.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the RM EHR Extract IM (EXTRACT_SPEC); structural placeholder pending corpus authoring"
+cnf.messaging.tdd.v1:
+  source: fixtures/messaging/tdd.v1.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 as a Template Data Document (TDD) XML stub for the master13 import_tdd cases; structural placeholder pending corpus authoring"
+cnf.messaging.tdd.invalid:
+  source: fixtures/messaging/tdd.invalid.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "not well-formed XML (unclosed element) — a TDD must be a well-formed Template Data Document"
+    spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd (tdd must be a valid TDD)"
+  provenance: "authored 2026-07-21 as a malformed TDD XML stub for the master13 import_tdd invalid case; structural placeholder pending corpus authoring"
+# Corpus additions for the DEFINITION_ADL2 (I_DEFINITION_ADL2) chapter.
+# Merged into corpus/MANIFEST.yaml at verify time; entries live here ONLY.
+#
+# FORMAT CAVEAT (forcing item, see schedule/definition_adl2/REQUIREMENTS.md):
+# ADL2 operational templates and archetypes are `text/plain` ADL2 SOURCE, not
+# XML. `CorpusFormat` (tools/cnf-runner/src/vocab.rs) has no `adl2-text` /
+# `adl2-opt` variant yet, so these entries carry `format: adl2-text` as the
+# closest existing operational-template role. This misnames the wire encoding
+# (opt-xml = ADL 1.4 OPT XML) and MUST be replaced by a dedicated `adl2-text`
+# (source) / `adl2-opt` (operational template) CorpusFormat once the enum is
+# extended. The same stopgap+propose pattern the master05 chapter used for
+# `aql-text`.
+# TODO: switch these entries to `adl2-text` once CorpusFormat gains the ADL2
+#       source variant, and replace the structural placeholder payloads with
+#       the spine-first authored ADL2 corpus (#202).
+
+cnf.adl2.opt.minimal:
+  source: fixtures/adl2/opt/minimal.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics + the ITS-REST definition_template_adl2_upload example; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.vitals:
+  source: fixtures/adl2/opt/vitals.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics; second valid OPT for list/count coverage; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.unparseable:
+  source: fixtures/adl2/opt/invalid/unparseable.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "unparseable ADL2 source (malformed cADL block)"
+    spec_ref: "AM ADL2 (cADL/ADL2 grammar: a well-formed artefact must parse)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-003 row against AM ADL2 grammar; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.missing_description:
+  source: fixtures/adl2/opt/invalid/missing_description.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "missing mandatory description (RESOURCE_DESCRIPTION) section"
+    spec_ref: "AM AOM2 (AUTHORED_RESOURCE.description is mandatory)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-004 row against AM AOM2 authored-resource validity; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.missing_definition:
+  source: fixtures/adl2/opt/invalid/missing_definition.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "missing mandatory definition (root C_COMPLEX_OBJECT) section"
+    spec_ref: "AM AOM2 (ARCHETYPE.definition is mandatory)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM AOM2 archetype validity; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.empty:
+  source: fixtures/adl2/opt/invalid/empty.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "empty artefact (no ADL2 source)"
+    spec_ref: "AM ADL2 (an artefact must declare artefact type + identifier + definition)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM ADL2 artefact structure; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+# Documentary only: a valid ADL2 ARCHETYPE (not an OPT). ITS-REST 1.1.0
+# surfaces no ADL2 archetype-provisioning wire (only OPTs upload under
+# /definition/template/adl2), so no case references this key today — it stages
+# the eventual Adl2ArchetypeProvisioning coverage (AMB-37; see REQUIREMENTS.md).
+cnf.adl2.archetype.minimal:
+  source: fixtures/adl2/archetype/minimal.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from AM ADL2 archetype structure; documents the ADL2 archetype-provisioning gap (no ITS-REST wire, AMB-37); ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"

@@ -1,0 +1,31 @@
+# Wire realization of I_PARTY.delete_party for ITS-REST 1.1.0.
+# The SM I_PARTY.delete_party(a_versioned_party_id) deletes an existing PARTY;
+# realized as DELETE /demographic/person/{uid_based_id} with the OBJECT_VERSION_ID
+# form — the uid_based_id MUST be the last (most recent) VERSION.uid.value, the
+# preceding_version_uid to be deleted (person_delete.yaml) — the same
+# preceding_version_uid realization pattern as delete_composition (AMB-3). PERSON
+# is the representative concrete PARTY subtype.
+# master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
+# operation is I_PARTY.delete_party (the AMB-13 rule; see REQUIREMENTS.md).
+# Sources: specifications/operations/person_delete.yaml (204/400/404/409),
+# responses/204_version_deleted.yaml, 400_already_deleted.yaml,
+# 409_PERSON_with_uid_based_id.yaml; parameters/path/uid_based_id_as_version_uid.yaml.
+sm_operation: I_PARTY.delete_party
+its: its-rest
+request:
+  method: DELETE
+  path: /demographic/person/{version_uid}
+outcomes:
+  deleted:
+    status: 204                           # 204_version_deleted.yaml — logical delete performed
+    headers: { ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"' }
+  already_deleted: { status: 400 }        # 400_already_deleted.yaml — resource already deleted
+  not_found: { status: 404 }              # 404.yaml — unknown party or version uid (versioned_object_does_not_exist)
+  conflict:
+    status: 409                           # 409_PERSON_with_uid_based_id.yaml — uid_based_id is not the latest version
+    headers: { ETag: latest-version-uid }
+captures:
+  version_uid:
+    from: header ETag                     # the new (deleted) VERSION uid (204_version_deleted.yaml ETag)
+    strip: weak-quotes
+server_assigned: [uid]

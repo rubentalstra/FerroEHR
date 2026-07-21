@@ -1,0 +1,63 @@
+# C.7 — commit a COMPOSITION, then a second CONTRIBUTION deleting it
+# (change_type = deleted). The deletion produces version 2 with lifecycle_state
+# = openehr::523|deleted|; the VERSIONED_OBJECT is logically deleted.
+# NOTE: the effect of a VERSIONED_OBJECT deletion is under-specified in the SM
+# (AMB-10 / master08: "needs further specification at the openEHR Service
+# Model"), so the logical-delete state postcondition reports but does not gate.
+# The lifecycle code is asserted per the schedule and flagged for TERM
+# cross-check (AMB-11). commit 1 commits one VERSION, so ${v1_uids} is the
+# single precedent uid (AMB-3 → If-Match).
+id: I_EHR_CONTRIBUTION.commit_contribution-delete
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+test_purpose: >-
+  A creation then a deletion (change_type = deleted) of a COMPOSITION, committed
+  via two CONTRIBUTIONs, produce two VERSIONs of the same VERSIONED_OBJECT
+  (version 2 = deletion, lifecycle_state deleted); the VERSIONED_OBJECT is
+  logically deleted.
+description: "Commit CONTRIBUTION deleting a COMPOSITION"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-delete"
+  - "RM common §change_control (VERSION.commit_audit.change_type; lifecycle_state)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.minimal_event.v1}", change_type: creation }
+    expect: created
+    capture:
+      v1_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${v1_uids}", change_type: CREATE }
+  - step: 2
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - change_type: deleted
+          preceding_version_uid: "${v1_uids}"   # ITS-REST: If-Match (AMB-3)
+    expect: created
+    capture:
+      v2_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${v2_uids}", change_type: DELETED, lifecycle_state: "523" }
+postconditions:
+  - { assert: version, count: 2 }        # two VERSIONs of the same COMPOSITION
+  - assert: state
+    text: >-
+      The VERSIONED_OBJECT is logically deleted (effect under-specified in the
+      SM — AMB-10; reported, not gating).
+ambiguities: [AMB-3, AMB-10, AMB-11]

@@ -18,6 +18,9 @@ outcomes:
   validation_failed:
     status: 400                           # 400_CONTRIBUTION.yaml — aggregate rejection, nothing committed
     body: error_loose                     # AMB-1
+  template_not_found:
+    status: 400                           # same 400_CONTRIBUTION family — kind distinguished by fixture (the AMB-2 pattern)
+    body: error_loose
   not_found: { status: 404 }
   conflict: { status: 409 }
 captures:

@@ -1,0 +1,36 @@
+# master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.update_party_relationship() —
+# the schedule entry is TBD; authored as the primary versioning-error path from
+# the SM operation semantics (.Errors: object_version_does_not_exist). Resolvable
+# SM operation is I_PARTY_RELATIONSHIP.update_party_relationship (the AMB-13 rule).
+# ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding
+# (proposed AMB-32); not-applicable on ITS-REST 1.1.0. (See REQUIREMENTS.md.)
+id: I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb
+kind: functional
+component: DEMOGRAPHIC
+sm_operation: I_PARTY_RELATIONSHIP.update_party_relationship
+capabilities: [PartyRelationshipOperations]
+profiles: [OPTIONS]
+guards:
+  - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
+  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+test_purpose: >-
+  update_party_relationship with a wrong preceding_version_uid is rejected
+  (object_version_does_not_exist / precondition failed).
+description: "Update an existing PARTY_RELATIONSHIP with a wrong preceding version (rejected)"
+spec_refs:
+  - "SM openehr_platform §I_PARTY_RELATIONSHIP.update_party_relationship"
+  - "CNF platform_test_schedule master10 §update_party_relationship"
+  - "RM common §change_control (VERSION.commit_audit.change_type)"
+  - "RM demographic §PARTY_RELATIONSHIP"
+applies: { rm: ">=1.0.2" }
+requires: { server: any }
+data_sets: [cnf.demographic.party_relationship.v2]
+flow:
+  - step: 1
+    call: update_party_relationship
+    with:
+      versioned_object_uid: "11111111-1111-4111-8111-111111111111"
+      party_relationship: "${ds:cnf.demographic.party_relationship.v2}"
+      preceding_version_uid: "00000000-0000-4000-8000-0000000000ff::openEHRSys.example.com::1"
+    expect: precondition_failed

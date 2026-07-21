@@ -324,6 +324,10 @@ impl<'de> Deserialize<'de> for PathTemplate {
 pub struct RequestSpec {
     pub method: HttpMethod,
     pub path: PathTemplate,
+    /// Query parameters (name → value template; optional refs `${x?}` omit
+    /// the parameter when unresolved).
+    #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
+    pub query: Option<Vec<(String, Template)>>,
     #[serde(default)]
     pub body: Option<RequestBody>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
@@ -350,7 +354,22 @@ impl<'de> Deserialize<'de> for FormatHeaderReq {
     }
 }
 
-/// One binding file.
+/// An explicit unrealized-operation declaration: the ITS surfaces no wire
+/// for this SM operation, so cases anchored to it are `not-applicable` with
+/// this citation on this ITS (machine-readable, never silent absence).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UnrealizedDecl {
+    /// Why the ITS cannot carry the operation.
+    pub reason: String,
+    /// The spec citation for the gap.
+    pub source: String,
+    /// The ambiguity-register entry tracking the gap.
+    pub ambiguity: crate::ids::AmbiguityId,
+}
+
+/// One binding file: either a full wire realization, or an explicit
+/// `unrealized` declaration.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct OperationBinding {
@@ -358,13 +377,16 @@ pub struct OperationBinding {
     pub its: ItsName,
     #[serde(default)]
     pub applies: Option<Applies>,
-    pub request: RequestSpec,
+    #[serde(default)]
+    pub unrealized: Option<UnrealizedDecl>,
+    #[serde(default)]
+    pub request: Option<RequestSpec>,
     #[serde(default)]
     pub formats: Vec<FormatName>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub format_headers: Option<Vec<(FormatKey, FormatHeaderMap)>>,
-    #[serde(deserialize_with = "crate::model::de::ordered_map")]
-    pub outcomes: Vec<(OutcomeKey, WireExpectation)>,
+    #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
+    pub outcomes: Option<Vec<(OutcomeKey, WireExpectation)>>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub captures: Option<Vec<(CaptureName, WireCapture)>>,
     /// The operation's server-assigned ignore-set membership (the paths the
@@ -374,10 +396,32 @@ pub struct OperationBinding {
 }
 
 impl OperationBinding {
+    /// Whether this binding declares the operation unrealized on its ITS.
+    #[must_use]
+    pub fn is_unrealized(&self) -> bool {
+        self.unrealized.is_some()
+    }
+
+    /// Realization-shape invariant: exactly one of `unrealized` or the full
+    /// wire form (`request` + `outcomes`).
+    ///
+    /// # Errors
+    /// Returns a message naming the violated invariant.
+    pub fn check_invariants(&self) -> Result<(), String> {
+        match (&self.unrealized, &self.request, &self.outcomes) {
+            (Some(_), None, None) => Ok(()),
+            (None, Some(_), Some(_)) => Ok(()),
+            (Some(_), _, _) => Err("unrealized binding must carry no request/outcomes".to_owned()),
+            _ => Err("realized binding must carry request and outcomes".to_owned()),
+        }
+    }
+
     /// The wire expectation mapped for an outcome kind, if any.
     #[must_use]
     pub fn outcome(&self, kind: OutcomeKind) -> Option<&WireExpectation> {
         self.outcomes
+            .as_deref()
+            .unwrap_or_default()
             .iter()
             .find(|(k, _)| k.0 == kind)
             .map(|(_, e)| e)
@@ -524,11 +568,13 @@ mod tests {
         assert!(b.outcome(OutcomeKind::Created).is_some());
         assert!(b.outcome(OutcomeKind::NotFound).is_none());
         assert!(b.maps_capture(&CaptureName::parse("ehr_id").unwrap()));
+        assert!(b.check_invariants().is_ok());
+        let request = b.request.clone().unwrap();
         assert!(matches!(
-            b.request.body,
+            request.body,
             Some(RequestBody::Named { optional: true, .. })
         ));
-        assert_eq!(b.request.path.params().len(), 0);
+        assert_eq!(request.path.params().len(), 0);
     }
 
     #[test]

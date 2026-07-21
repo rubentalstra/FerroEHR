@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.proportion_ratio_range</value></template_id>
+  <concept>DV_PROPORTION: type C_INTEGER.list=[0]; numerator C_REAL.range=5..20; denominator C_REAL.range=200..600</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

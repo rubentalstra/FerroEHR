@@ -1,0 +1,39 @@
+# SM I_DEFINITION_ADL2.upload_artefact negative sweep: invalid ADL2 artefacts
+# fail the Pre_valid (valid_artefact) precondition and are rejected (SM Errors:
+# `invalid artefact`), leaving the server state unchanged. One fixture row per
+# defect class, re-adjudicated from the retired ECC-ADL2-003 (unparseable) and
+# ECC-ADL2-004 (AOM2-invalid) rows against AM ADL2 grammar + AM AOM2 validity.
+id: I_DEFINITION_ADL2.upload_artefact-invalid_artefacts
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.upload_artefact
+capabilities: [Adl2OptProvisioning]
+exercises: [ArchetypeValidation]
+profiles: [OPTIONS]
+test_purpose: "Invalid ADL2 artefacts are rejected and leave the server state unchanged."
+description: "upload invalid ADL2 artefacts (one row per defect)"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.upload_artefact"
+  - "AM ADL2 §Syntax (a well-formed artefact must parse)"
+  - "AM AOM2 §Validity (description + definition are mandatory)"
+  - "ITS-REST definition_template_adl2_upload §400 Bad Request"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.adl2.opt.invalid.unparseable, expected: validation_failed, defect: "unparseable ADL2 source" }
+    - { data_set: cnf.adl2.opt.invalid.missing_description, expected: validation_failed, defect: "missing mandatory description section" }
+    - { data_set: cnf.adl2.opt.invalid.missing_definition, expected: validation_failed, defect: "missing mandatory definition section" }
+    - { data_set: cnf.adl2.opt.invalid.empty, expected: validation_failed, defect: "empty artefact" }
+flow:
+  - step: 1
+    call: upload_artefact
+    with: { opt_adl2: "${ds:fixture}" }
+    expect: "${fixture.expected}"
+postconditions:
+  - assert: state
+    text: "No artefacts are loaded on the system (the rejected upload left state unchanged)"
+    verified_by: I_DEFINITION_ADL2.list_opts-empty
+verified_by: [I_DEFINITION_ADL2.list_opts-empty]
+ambiguities: [AMB-1]

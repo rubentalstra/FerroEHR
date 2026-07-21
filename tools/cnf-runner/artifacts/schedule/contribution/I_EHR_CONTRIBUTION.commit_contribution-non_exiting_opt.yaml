@@ -1,0 +1,35 @@
+# C.10 — commit a COMPOSITION that references an OPT not loaded on the server:
+# rejected with an error about the missing OPT; nothing is created.
+# NOTE: the precise outcome is template_not_found ("information about the
+# non-existent OPT"), but the commit_contribution binding (unmodifiable) wires
+# only 201/400/404/409 and does not distinctly map template_not_found, so the
+# missing-OPT reject realizes as validation_failed (400 unprocessable content).
+# See REQUIREMENTS.md (existing-binding extension need).
+id: I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Committing a CONTRIBUTION whose COMPOSITION references an OPT not loaded on the
+  server is rejected; no VERSION is created.
+description: "Commit CONTRIBUTION with COMPOSITION referencing a non existing OPT"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-non_exiting_opt"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any                            # "There are no OPTs loaded on the server" (no templates provisioned)
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.minimal_event.v1}", change_type: creation }
+    expect: template_not_found             # missing-OPT reject (see NOTE / REQUIREMENTS.md)
+postconditions:
+  - { assert: version, count: 0 }

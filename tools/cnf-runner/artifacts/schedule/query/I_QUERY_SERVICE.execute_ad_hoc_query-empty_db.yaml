@@ -1,0 +1,33 @@
+# Official master11 case (id verbatim). master11:83-94 is a stub (Flow "xx"),
+# so the assertion derives from AQL 1.1 + the ITS-REST QUERY contract: on an
+# empty server an ad-hoc query over EHRs returns a well-formed RESULT_SET with
+# zero rows. DB-state-independent (requires.server: empty pins the precondition).
+id: I_QUERY_SERVICE.execute_ad_hoc_query-empty_db
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic]
+profiles: [STANDARD]
+test_purpose: >-
+  An ad-hoc AQL query executed against an empty server returns an empty,
+  spec-shaped RESULT_SET (HTTP 200, zero rows).
+description: "Execute ad-hoc AQL query against an empty database"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "CNF platform_test_schedule master11 §I_QUERY_SERVICE.execute_ad_hoc_query-empty_db"
+  - "QUERY AQL §SELECT, §FROM"
+  - "ITS-REST query §200_Query (RESULT_SET)"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+requires:
+  server: empty
+flow:
+  - step: 1
+    call: execute_ad_hoc_query
+    with:
+      q: "SELECT e/ehr_id/value FROM EHR e"
+      fetch: 100                            # AMB-6: fetch always explicit
+    expect: ok
+    assert:
+      - assert: result_set
+        match: count
+        count: 0

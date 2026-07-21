@@ -1,0 +1,30 @@
+# get_directory_at_time at the current time on an EHR with no directory. The
+# schedule expects an empty structure, "NOTE: ... the result could be an error
+# status instead" (AMB-8). On ITS-REST the realized branch is the error one
+# (option: directory-empty-error -> 404). "Current time" is expressed as
+# version_at_time omitted (latest) — the reference grammar has no absolute now.
+id: I_EHR_DIRECTORY.get_directory_at_time-empty_ehr
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.get_directory_at_time
+capabilities: [DirectoryOps]
+exercises: [Versioning]
+profiles: [STANDARD]
+option: directory-empty-error
+test_purpose: >-
+  get_directory_at_time at the current time on an EHR without a directory yields
+  the empty-directory outcome; on ITS-REST that is the error branch.
+description: "Test get_directory_at_time on empty EHR"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.get_directory_at_time"
+  - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.get_directory_at_time-empty_ehr"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR exists, no directory — mints ${ehr_id}
+flow:
+  - step: 1
+    call: get_directory_at_time
+    with: { ehr_id: "${ehr_id}" }         # current time -> version_at_time omitted (latest)
+    expect: not_found                     # AMB-8 error branch: no directory
+ambiguities: [AMB-8]

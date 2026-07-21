@@ -1,0 +1,39 @@
+# Re-adjudicated 2026-07-21 from the retired ECC structural battery
+# (ECC-VAL-001..012 context-existence axis) against AOM1.4 + RM spec text.
+# The ECC crossed content cardinality with COMPOSITION.context occurrences
+# (_any = RM 0..1, _mand = archetype-tightened 1..1); the context axis is
+# orthogonal to cardinality and is carried here as its own seam.
+# `ecc-` id namespace pending upstream adoption.
+id: CONT-COMPOSITION-context_existence
+kind: content
+component: CONTENT
+rm_class: COMPOSITION
+status: active
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed COMPOSITION with no context is accepted when the archetype leaves
+  COMPOSITION.context at its RM existence (0..1) and rejected when the archetype
+  tightens C_ATTRIBUTE.existence to 1..1. RM COMPOSITION carries no
+  category<->context invariant, so the archetype existence is the sole governing
+  constraint.
+description: "COMPOSITION.context presence against the archetype C_ATTRIBUTE.existence constraint"
+spec_refs:
+  - "AM AOM1.4 §C_ATTRIBUTE (existence) — whether the attribute field must be present"
+  - "RM ehr §COMPOSITION (context: EVENT_CONTEXT, existence 0..1; Category_validity/Territory_valid only, no context invariant)"
+  - "CNF platform_test_schedule master15 (content COMPOSITION chapter — no test-case headings; re-adjudicated to AOM/RM)"
+applies: { rm: ">=1.0.2" }
+constraint_context:
+  # C_ATTRIBUTE.existence on COMPOSITION.context, varied per row
+  # (optional=0..1 = the RM default; mandatory=1..1 = archetype-tightened).
+  template: cnf.tpl.ecc_composition_context_existence
+  path: "/context"
+decision_table:
+  # context_existence: the archetype C_ATTRIBUTE.existence constraint token.
+  # context_committed: whether a COMPOSITION.context object is committed.
+  columns: [context_existence, context_committed, expected, violates]
+  rows:
+    - ["optional", "present", accepted, []]
+    - ["optional", "absent", accepted, []]
+    - ["mandatory", "present", accepted, []]
+    - ["mandatory", "absent", rejected, ["constraint(C_ATTRIBUTE.existence): context is mandated by the archetype (existence 1..1) but absent"]]

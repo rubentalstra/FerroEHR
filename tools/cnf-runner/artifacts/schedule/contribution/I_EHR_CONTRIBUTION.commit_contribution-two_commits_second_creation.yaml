@@ -1,0 +1,52 @@
+# C.9 — commit a persistent COMPOSITION, then a second CONTRIBUTION with
+# change_type = creation against the same COMPOSITION: rejected for the wrong
+# change type (only one create is allowed for a persistent COMPOSITION; further
+# operations must be modification). Only the first VERSION remains.
+# NOTE: the rejected outcome is a versioning-state conflict (409 conflict) — the
+# object already exists, so a second creation is invalid; `already_exists` is not
+# wired distinctly by the commit_contribution binding (see REQUIREMENTS.md).
+# commit 1 commits one VERSION, so ${v1_uids} is the single precedent uid (AMB-3).
+id: I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+test_purpose: >-
+  A second CONTRIBUTION with change_type = creation against an existing
+  persistent COMPOSITION is rejected for the wrong change type; only the first
+  VERSION remains.
+description: "Commit two CONTRIBUTIONs on same COMPOSITION with second creation"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-two_commits_second_creation"
+  - "RM common §change_control (VERSION.commit_audit.change_type)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.persistent.v1, cnf.composition.persistent.v2]
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.composition.persistent.v1}", change_type: creation }
+    expect: created
+    capture:
+      v1_uids: created.version_uids[]
+  - step: 2
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - data: "${ds:cnf.composition.persistent.v2}"
+          change_type: creation                 # wrong: the object already exists
+          preceding_version_uid: "${v1_uids}"   # ITS-REST: If-Match (AMB-3)
+    expect: conflict
+postconditions:
+  - { assert: version, count: 1 }        # only the first VERSION remains
+ambiguities: [AMB-3]

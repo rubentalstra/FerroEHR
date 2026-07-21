@@ -1,0 +1,26 @@
+# Official master13 case (chapter TBD; NATURAL family id). The chapter cites
+# I_EHR_EXTRACT.export_ehr()/export_ehr_extract(), but the vendored SM declares
+# I_EHR_EXTRACT_SERVICE with export_ehrs/export_ehr_extracts/import_ehr/
+# import_ehr_extract — the SM is the operation-resolution oracle, so cases
+# anchor to its real operations (see REQUIREMENTS.md). ITS-REST 1.1.0 exposes NO
+# message/extract API, so the its-rest binding is unrealized (AMB-34) and this
+# case is not-applicable with citation until a MESSAGE API release lands.
+id: I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing
+kind: functional
+component: MESSAGING
+sm_operation: I_EHR_EXTRACT_SERVICE.export_ehrs
+capabilities: [EhrExtract]
+profiles: [OPTIONS]
+test_purpose: "Exporting a whole existing EHR yields its content as a list of EXTRACTs."
+description: "Export a whole existing EHR as EXTRACTs"
+spec_refs:
+  - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.export_ehrs"
+  - "CNF platform_test_schedule master13 §export_ehrs (chapter: export_ehr)"
+applies: { rm: ">=1.0.2" }
+requires: { ehr: { commits: any } }
+flow:
+  - step: 1
+    call: export_ehrs
+    with: { an_ehr_id: "${ehr_id}" }
+    expect: ok
+ambiguities: [AMB-34]

@@ -1,0 +1,23 @@
+{
+  "_type": "EHR_STATUS",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "EHR Status"
+  },
+  "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+  "subject": {
+    "_type": "PARTY_SELF",
+    "external_ref": {
+      "_type": "PARTY_REF",
+      "namespace": "cnf",
+      "type": "PERSON",
+      "id": {
+        "_type": "GENERIC_ID",
+        "value": "cnf-subject-01",
+        "scheme": "cnf"
+      }
+    }
+  },
+  "is_queryable": true,
+  "is_modifiable": true
+}

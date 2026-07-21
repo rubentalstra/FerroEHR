@@ -1,0 +1,1 @@
+SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c WHERE c/category/defining_code/code_string matches TERMINOLOGY('lookup', 'openehr', 'composition_category')

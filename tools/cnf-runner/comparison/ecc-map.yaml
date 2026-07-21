@@ -1,0 +1,1548 @@
+# The hand-adjudicated ECC -> CNF 2.0 coverage map (the comparison gate's
+# input). Every active ECC row is enumerated; `pending` names the
+# authoring wave that will carry its ground; cutover requires zero
+# pending. Generated report: docs/conformance/cnf-comparison.md via
+# `cnf-runner compare-ecc`.
+ECC-EHR-001:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.has_ehr-existing_ehr_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-002:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.has_ehr-existing_subject_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-003:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.has_ehr-non_existing_ehr_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-004:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.has_ehr-non_existing_subject_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-005:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.create_ehr-main]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-006:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.create_ehr-same_ehr_twice]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-007:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.create_ehr-two_ehrs_same_patient]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-008:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-009:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-010:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-011:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_subject_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-001:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.get_ehr_status-get_by_ehr_id]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-002:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.get_ehr_status-bad_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-003:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.set_ehr_queryable-existing_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-004:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.set_ehr_queryable-bad_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-005:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.set_ehr_modifiable-existing_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-006:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.set_ehr_modifiable-bad_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-007:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.clear_ehr_queryable-existing_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-008:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.clear_ehr_queryable-bad_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-009:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.clear_ehr_modifiable-existing_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-STA-010:
+  disposition: covered
+  covered_by: [I_EHR_STATUS.clear_ehr_modifiable-bad_ehr]
+  justification: "ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model)"
+ECC-EHR-012:
+  disposition: covered
+  covered_by: [I_EHR_SERVICE.create_ehr-invalid_status]
+  justification: "framework-added case carrying the master06 INVALID EHR_STATUS data-set class (the chapter lists the class but heads no case; AMB-2 wire rule)"
+ECC-COM-001:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-002:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-003:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-same_opt_twice]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-004:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-invalid_event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-005:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-invalid_persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-006:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-event_bad_opt]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-007:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-event_bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-008:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_latest]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-009:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_latest-bad_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-010:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_latest-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-011:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.has_composition-bad_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-012:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.has_composition-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-013:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-014:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time-no_time_arg]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-015:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time-bad_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-016:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-017:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_times]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-018:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_version]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-019:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_version-bad_version]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-020:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_version-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-021:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_versions]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-022:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_versioned_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-023:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_versioned_composition-non_existent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-024:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_versioned_composition-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-025:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-026:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-027:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-non_existent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-028:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-wrong_template]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-029:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.delete_composition-event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-030:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.delete_composition-persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-COM-031:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.delete_composition-non_existent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-001:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-valid_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-002:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-invalid_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-003:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-empty]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-004:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-005:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-006:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-event_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-007:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-persistent_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-008:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-delete]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-009:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-010:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-011:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-012:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-013:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-014:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-015:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-valid_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-016:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-017:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-018:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-019:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-existing]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-020:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-empty_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-021:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-bad_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-022:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-bad_contribution]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-023:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-existing]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-024:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-bad_contribution]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-025:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-bad_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-026:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-empty_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
+ECC-CTB-027:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-empty]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
+ECC-CTB-028:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
+ECC-CTB-029:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-post_commit]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
+ECC-CTB-030:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
+ECC-CTB-031:
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
+ECC-DIR-001:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.create_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-002:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.create_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-003:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.create_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-004:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-ehr_root_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-005:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-006:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-007:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-008:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.update_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-009:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.update_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-010:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.delete_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-011:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.delete_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-012:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-013:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-014:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-015:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-ehr_root_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-016:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-folder_structure]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-017:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-018:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-019:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory_version-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-020:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory_version-directory_with_two_versions]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-021:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory_version-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-022:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-023:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-directory_with_structure]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-024:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_empty_time]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-025:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-026:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions_empty_time]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-027:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-028:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-029:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-030:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_version-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-031:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-032:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_version-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-033:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_versioned_directory-empty_ehr]
+  justification: "official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24)"
+ECC-DIR-034:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions]
+  justification: "official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24)"
+ECC-DIR-035:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_versioned_directory-bad_ehr]
+  justification: "official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24)"
+ECC-DIR-036:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.update_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-DIR-037:
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.delete_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-001:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.upload_opt-valid_opt]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-002:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.upload_opt-invalid_opt]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-003:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-004:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-005:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-006:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.get_opt-retrieve_single]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-007:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.get_opt-retrieve_latest_version]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-008:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.get_opt-retrieve_specific_version]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-009:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.get_opt-retrieve_fail]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-010:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.get_opts-retrieve_all]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-011:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.validate_opt-valid_opt]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-012:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.validate_opt-invalid_opt]
+  justification: "ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model)"
+ECC-TPL-013:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.delete_opt-delete_non_existing]
+  justification: "official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface"
+ECC-TPL-014:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.delete_opt-delete_existing]
+  justification: "official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface"
+ECC-TPL-015:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.delete_opt-delete_latest_version]
+  justification: "official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface"
+ECC-TPL-016:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL14.delete_opt-delete_specific_version]
+  justification: "official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface"
+ECC-SQR-001:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.valid_query-valid]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
+ECC-SQR-002:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.list_queries-non_empty]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
+ECC-SQR-004:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.list_queries-empty]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
+ECC-SQR-005:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.list_queries-select_items]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
+ECC-SQR-006:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.valid_query-bad_formalism]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
+ECC-SQR-007:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.valid_query-invalid]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
+ECC-QRY-001:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.smoke_test]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
+ECC-QRY-002:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
+ECC-QRY-003:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_stored_query-empty_db]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
+ECC-QRY-004:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
+ECC-QRY-005:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-malformed_queries, I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "invalid-corpus sweep split: unambiguously-malformed ground gates; dialect ground is report_only per AMB-30"
+ECC-QRY-006:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-007:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-008:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-009:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-010:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-011:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-012:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-QRY-013:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
+ECC-ADM-001:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.physical_ehr_delete-delete_existing]
+  justification: "ground carried 1:1 (the one wired admin operation: admin_ehr_delete)"
+ECC-ADM-002:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.physical_ehr_delete-delete_non_existing]
+  justification: "ground carried 1:1 (the one wired admin operation)"
+ECC-ADM-003:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.physical_ehr_delete-delete_existing, I_ADMIN_SERVICE.physical_ehr_delete-delete_non_existing]
+  justification: "idempotency reshaped: the second-delete ground is the non-existing case"
+ECC-ADM-004:
+  disposition: dropped
+  justification: "admin_ehr_delete_all is wire surface without an SM operation anchor (an extension bulk form); the ground re-enters if the SM adds a bulk deletion operation"
+ECC-ADM-005:
+  disposition: dropped
+  justification: "admin_ehr_delete_all bulk-partial ground — same missing SM anchor"
+ECC-ADM-006:
+  disposition: dropped
+  justification: "admin_ehr_delete_all bulk-empty ground — same missing SM anchor"
+ECC-DEM-001:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.create_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-002:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-003:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-004:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.update_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-005:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.delete_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-006:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.delete_party-aaaa, I_DEMOGRAPHIC_SERVICE.get_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype); read-after-delete reshaped across the two cases"
+ECC-DEM-007:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-008:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.update_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-009:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-010:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-011:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-012:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-013:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-014:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-015:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-016:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-017:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-018:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-019:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-020:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-021:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.create_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-022:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-023:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-DEM-024:
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
+ECC-VAL-001:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-002:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-003:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-004:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-005:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-006:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-007:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-008:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-009:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-010:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-011:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-012:
+  disposition: covered
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-013:
+  disposition: covered
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-014:
+  disposition: covered
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-015:
+  disposition: covered
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-016:
+  disposition: covered
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-017:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-018:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-019:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-020:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-021:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-022:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-023:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-024:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-025:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-026:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-027:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-028:
+  disposition: covered
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-029:
+  disposition: covered
+  covered_by: [CONT-EVENT-state_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-030:
+  disposition: covered
+  covered_by: [CONT-EVENT-state_existence]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-031:
+  disposition: covered
+  covered_by: [CONT-EVENT-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-032:
+  disposition: covered
+  covered_by: [CONT-EVENT-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-033:
+  disposition: covered
+  covered_by: [CONT-EVENT-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-034:
+  disposition: covered
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-035:
+  disposition: covered
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-036:
+  disposition: covered
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-037:
+  disposition: covered
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-038:
+  disposition: covered
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
+  justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
+ECC-VAL-039:
+  disposition: covered
+  covered_by: [CONT-DV_BOOLEAN-anything_allowed]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-040:
+  disposition: covered
+  covered_by: [CONT-DV_BOOLEAN-only_true_allowed]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-041:
+  disposition: covered
+  covered_by: [CONT-DV_BOOLEAN-only_false_allowed]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-042:
+  disposition: covered
+  covered_by: [CONT-DV_IDENTIFIER-validate_all_pattern]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-043:
+  disposition: covered
+  covered_by: [CONT-DV_IDENTIFIER-validate_all_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-044:
+  disposition: covered
+  covered_by: [CONT-DV_TEXT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-045:
+  disposition: covered
+  covered_by: [CONT-DV_TEXT-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-046:
+  disposition: covered
+  covered_by: [CONT-DV_CODED_TEXT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-047:
+  disposition: covered
+  covered_by: [CONT-DV_CODED_TEXT-validate_local_codes]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-048:
+  disposition: covered
+  covered_by: [CONT-DV_CODED_TEXT-validate_ext_term]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-049:
+  disposition: covered
+  covered_by: [CONT-DV_ORDINAL-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-050:
+  disposition: covered
+  covered_by: [CONT-DV_ORDINAL-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-051:
+  disposition: covered
+  covered_by: [CONT-DV_SCALE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-052:
+  disposition: covered
+  covered_by: [CONT-DV_SCALE-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-053:
+  disposition: covered
+  covered_by: [CONT-DV_COUNT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-054:
+  disposition: covered
+  covered_by: [CONT-DV_COUNT-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-055:
+  disposition: covered
+  covered_by: [CONT-DV_COUNT-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-056:
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-057:
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_property]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-058:
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_property_units]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-059:
+  disposition: covered
+  covered_by: [CONT-DV_QUANTITY-validate_property_units_mag]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-060:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-061:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_ratio]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-062:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_unitary]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-063:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_percent]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-064:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-065:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_integer_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-066:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_any_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-067:
+  disposition: covered
+  covered_by: [CONT-DV_PROPORTION-validate_ratio_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-068:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_COUNT-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-069:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-070:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-071:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_QUANTITY-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-072:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_QUANTITY-validate_upper_lower]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-073:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-074:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-075:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-076:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-077:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-078:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DATE-validate_lower_upper_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-079:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-080:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-081:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-082:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DURATION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-083:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DURATION-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-084:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_DURATION-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-085:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_ORDINAL-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-086:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-087:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_SCALE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-088:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_SCALE-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-089:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-090:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-091:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_unitary]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-092:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_percentage]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-093:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-094:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_integer_fraction]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-095:
+  disposition: covered
+  covered_by: [CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-096:
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-097:
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_fields]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-098:
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-099:
+  disposition: covered
+  covered_by: [CONT-DV_DURATION-validate_fields_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-100:
+  disposition: covered
+  covered_by: [CONT-DV_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-101:
+  disposition: covered
+  covered_by: [CONT-DV_TIME-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-102:
+  disposition: covered
+  covered_by: [CONT-DV_TIME-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-103:
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-104:
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-105:
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-106:
+  disposition: covered
+  covered_by: [CONT-DV_DATE_TIME-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-107:
+  disposition: covered
+  covered_by: [CONT-DV_DATE_TIME-validate_constraint]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-108:
+  disposition: covered
+  covered_by: [CONT-DV_DATE_TIME-validate_range]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-109:
+  disposition: covered
+  covered_by: [CONT-DV_PARSABLE-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-110:
+  disposition: covered
+  covered_by: [CONT-DV_PARSABLE-validate_value_formalism]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-111:
+  disposition: covered
+  covered_by: [CONT-DV_MULTIMEDIA-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-112:
+  disposition: covered
+  covered_by: [CONT-DV_MULTIMEDIA-validate_media_type]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-113:
+  disposition: covered
+  covered_by: [CONT-DV_URI-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-114:
+  disposition: covered
+  covered_by: [CONT-DV_URI-validate_pattern]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-115:
+  disposition: covered
+  covered_by: [CONT-DV_URI-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-116:
+  disposition: covered
+  covered_by: [CONT-DV_EHR_URI-validate_open]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-117:
+  disposition: covered
+  covered_by: [CONT-DV_EHR_URI-validate_pattern]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-VAL-118:
+  disposition: covered
+  covered_by: [CONT-DV_EHR_URI-validate_list]
+  justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
+ECC-SIG-001:
+  disposition: covered
+  covered_by: [SIG-VERSION-signature_present]
+  justification: "ground carried; the signature fact itself is a registered model-extension candidate (no wire returns ORIGINAL_VERSION.signature)"
+ECC-SIG-002:
+  disposition: covered
+  covered_by: [SIG-VERSION-verifiable]
+  justification: "ground carried; cryptographic verification is a model-extension candidate — the ECC sha256 digest format is an engine extension, not asserted"
+ECC-SIG-003:
+  disposition: covered
+  covered_by: [SIG-VERSION-across_version_kinds]
+  justification: "ground carried across create/update/delete version kinds"
+ECC-SIG-004:
+  disposition: covered
+  covered_by: [SIG-VERSION-client_supplied_verbatim]
+  justification: "ground carried (client-supplied signature stored verbatim)"
+ECC-SIG-005:
+  disposition: covered
+  covered_by: [SIG-VERSION-verifiable]
+  justification: "pgp verification ground folded into the verifiable case; algorithm strength is out of conformance scope (CNF profiles Non-Functional)"
+ECC-VAL-119:
+  disposition: covered
+  covered_by: [CONT-DV_DATE-validate_constraint]
+  justification: "carried by the day-validity prohibited rows of the official DV_DATE constraint table (reshaped: the ECC row was one cell of that matrix)"
+ECC-MSG-001:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-002:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-003:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-004:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.import_ehr-new]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-005:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.import_ehr-with_id]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-006:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.import_ehr-duplicate]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-007:
+  disposition: covered
+  covered_by: [I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-008:
+  disposition: covered
+  covered_by: [I_TDD_SERVICE.import_tdd-valid]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-009:
+  disposition: covered
+  covered_by: [I_TDD_SERVICE.import_tdd-invalid]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-MSG-010:
+  disposition: covered
+  covered_by: [I_TDD_SERVICE.import_tdds-bulk_valid]
+  justification: "ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API)"
+ECC-TS-001:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-002:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-003:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-004:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-005:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-006:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-007:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-008:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-TS-009:
+  disposition: out_of_scope
+  justification: "out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite"
+ECC-EHR-013:
+  disposition: covered
+  covered_by: [SEC-ANONYMOUS_EHRS-anonymous_lifecycle]
+  justification: "ground carried by the SEC-BASIC anonymous-EHR lifecycle case"
+ECC-SEC-001:
+  disposition: covered
+  covered_by: [SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep]
+  justification: "ground carried by the SEC-BASIC unauthenticated sweep (universal 401 rule)"
+ECC-SEC-002:
+  disposition: covered
+  covered_by: [SEC-AUTHORIZATION_SEPARATION-readonly_write_denied]
+  justification: "ground carried by the SEC-BASIC read-only separation case (universal 403 rule)"
+ECC-COM-032:
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.has_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
+ECC-SQR-008:
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.has_query-xxx]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard); the existing-check ground is reshaped into the has_query case"
+ECC-QRY-014:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit]
+  justification: "ground carried (AqlAdvanced/OPTIONS per the Profiles matrix)"
+ECC-QRY-015:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-016:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-017:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-018:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-019:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-020:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-021:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-022:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-023:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-QRY-024:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-DEM-025:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
+ECC-DEM-026:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
+ECC-DEM-027:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
+ECC-DEM-028:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
+ECC-DEM-029:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
+ECC-DEM-030:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
+ECC-DEM-031:
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
+ECC-ADM-007:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.list_contributions-all]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-008:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.contribution_count-all]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-009:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.versioned_composition_count-all]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-010:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.composition_version_count-all]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-011:
+  disposition: covered
+  covered_by: [I_ADMIN_DUMP_LOAD.export_ehrs-export_all]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-012:
+  disposition: covered
+  covered_by: [I_ADMIN_ARCHIVE.archive_ehrs-archive_selected]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-013:
+  disposition: covered
+  covered_by: [I_ADMIN_SERVICE.physical_party_delete-delete_existing]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-ADM-014:
+  disposition: covered
+  covered_by: [I_ADMIN_ARCHIVE.archive_parties-archive_selected]
+  justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
+ECC-TPL-017:
+  disposition: deferred
+  justification: "template-example round-trip ground belongs to the simplified-formats/template-example wave — a settled decision, the deepening workstream is the named carrier"
+ECC-QRY-025:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection]
+  justification: "ground carried 1:1 (reshaped under the CNF 2.0 case model)"
+ECC-SF-001:
+  disposition: covered
+  covered_by: [SF-FLAT-commit_roundtrip_ctx_defaults]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec)"
+ECC-SF-002:
+  disposition: covered
+  covered_by: [SF-STRUCTURED-commit_roundtrip]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec)"
+ECC-SF-003:
+  disposition: deferred
+  justification: "q-value negotiation strictness enters with the simplified-formats deepening (blueprint category 11) — weighting is tech-profile machinery, not a single case — a settled decision, the deepening workstream is the named carrier"
+ECC-SF-004:
+  disposition: deferred
+  justification: "retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 406 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case — a settled decision, the deepening workstream is the named carrier"
+ECC-SF-005:
+  disposition: deferred
+  justification: "retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 415 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case — a settled decision, the deepening workstream is the named carrier"
+ECC-SF-006:
+  disposition: covered
+  covered_by: [SF-FLAT-missing_template_id]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec)"
+ECC-SF-007:
+  disposition: covered
+  covered_by: [SF-FLAT-reject_unknown_field]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec)"
+ECC-SF-008:
+  disposition: covered
+  covered_by: [SF-FLAT-reject_other_with_code]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec)"
+ECC-SF-009:
+  disposition: covered
+  covered_by: [SF-WT-web_template_get]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31"
+ECC-SF-010:
+  disposition: covered
+  covered_by: [SF-EXAMPLE-accept_forms]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31"
+ECC-SF-011:
+  disposition: covered
+  covered_by: [SF-EXAMPLE-unsupported_accept]
+  justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31"
+ECC-SF-012:
+  disposition: deferred
+  justification: "CONTRIBUTION with simplified inner data enters with the simplified-formats deepening (blueprint category 14) — requires the commit_contribution binding to declare a simplified-inner-data surface — a settled decision, the deepening workstream is the named carrier"
+ECC-SF-013:
+  disposition: covered
+  covered_by: [SF-SCOPE-ehr_status_no_simplified]
+  justification: "scope-negative carried (no simplified mapping for EHR_STATUS; 406 per the overview negotiation rules)"
+ECC-SF-014:
+  disposition: covered
+  covered_by: [SF-SCOPE-directory_no_simplified]
+  justification: "scope-negative carried (no simplified mapping for DIRECTORY; 406 per the overview negotiation rules)"
+ECC-SF-015:
+  disposition: covered
+  covered_by: [SF-SCOPE-demographic_no_simplified]
+  justification: "scope-negative carried (no simplified mapping for demographic resources; 406 per the overview negotiation rules)"
+ECC-SF-016:
+  disposition: covered
+  covered_by: [SF-FLAT-commit_roundtrip_ctx_defaults]
+  justification: "ctx observability carried by the ctx-defaults assertions of the round-trip case"
+ECC-ADL2-001:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-valid_opt]
+  justification: "ground carried; the Prefer triad rides the binding (prefer_conditional), not the protocol-neutral case"
+ECC-ADL2-002:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-duplicate_conflict]
+  justification: "ground carried; the SM replace-vs-conflict divergence recorded in AMB-37"
+ECC-ADL2-003:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-invalid_artefacts, I_DEFINITION_ADL2.valid_artefact-invalid]
+  justification: "ground carried as validation_failed (the ADL2 upload OAS enumerates 400, not the old 422; AMB-1 body looseness)"
+ECC-ADL2-004:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-invalid_artefacts, I_DEFINITION_ADL2.valid_artefact-invalid]
+  justification: "ground carried (AOM2 description-mandatory row)"
+ECC-ADL2-005:
+  disposition: dropped
+  justification: "specialised-child-resolves-parent needs ADL2 ARCHETYPE provisioning, which ITS-REST 1.1.0 does not surface (upload is OPT-only, AMB-37); groundable in AM AOM2 §Specialisation — re-enters when an ITS surfaces archetype upload"
+ECC-ADL2-006:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-retrieve]
+  justification: "representation forms ride the binding negotiation; the xml-only-406 assertion is excluded (the ADL2 plain GET enumerates no 406 — AMB-37)"
+ECC-ADL2-007:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-unknown]
+  justification: "ground carried 1:1"
+ECC-ADL2-008:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-version_get]
+  justification: "ground carried (deprecated endpoint, guarded)"
+ECC-ADL2-009:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-example]
+  justification: "ground carried; the four LOCATABLE Accept forms ride the example binding formats"
+ECC-ADL2-010:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-example]
+  justification: "ground carried; detail-level enum + bad-enum 400 ride the binding"
+ECC-ADL2-011:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-example_unknown]
+  justification: "the 404 portion is carried; the wrong-Accept-406 portion is excluded (no groundable 406 on the plain ADL2 GET without a variant-aware completeness seam — AMB-37)"
+ECC-ADL2-012:
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.list_opts-non_empty]
+  justification: "ground carried; TemplateMetadata fields ride the ADL2 list schema"
+ECC-AQT-001:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches]
+  justification: "ground carried (AqlTerminology/OPTIONS); value-set resolution flagged as engine extension — only the AQL TERMINOLOGY() form is spec-grounded"
+ECC-AQT-002:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-AQT-003:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
+ECC-AQT-004:
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"

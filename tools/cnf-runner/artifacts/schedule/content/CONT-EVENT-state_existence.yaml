@@ -1,0 +1,38 @@
+# Re-adjudicated 2026-07-21 from the retired ECC structural battery
+# (ECC-VAL-029..030) against AOM1.4 + RM spec text. master16 (ENTRY) is empty;
+# the EVENT state-existence rows are grounded in AOM1.4 C_ATTRIBUTE.existence
+# and the RM EVENT class (data 1..1; state 0..1).
+# `ecc-` id namespace pending upstream adoption.
+id: CONT-EVENT-state_existence
+kind: content
+component: CONTENT
+rm_class: EVENT
+status: active
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed EVENT requires its mandatory RM data attribute (existence 1..1)
+  and, per the archetype, its state when C_ATTRIBUTE.existence is tightened to
+  1..1. state is RM-optional (0..1), so an archetype that leaves it optional
+  accepts its absence.
+description: "EVENT data (RM mandatory) + state against the archetype C_ATTRIBUTE.existence constraint"
+spec_refs:
+  - "AM AOM1.4 §C_ATTRIBUTE (existence) — whether the attribute field must be present"
+  - "RM data_structures §EVENT (data: T, existence 1..1; state: ITEM_STRUCTURE, existence 0..1)"
+  - "CNF platform_test_schedule master16 (content ENTRY chapter — no test-case headings; re-adjudicated to AOM/RM)"
+applies: { rm: ">=1.0.2" }
+constraint_context:
+  # C_ATTRIBUTE.existence on EVENT.state, varied per row
+  # (optional=0..1 = RM default; mandatory=1..1 = archetype-tightened).
+  template: cnf.tpl.ecc_event_state_existence
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events"
+decision_table:
+  # state_existence: the archetype C_ATTRIBUTE.existence constraint token.
+  # data_committed/state_committed: whether each EVENT object is committed.
+  columns: [state_existence, data_committed, state_committed, expected, violates]
+  rows:
+    - ["optional", "absent", "absent", rejected, ["rm_schema: EVENT.data is mandatory (existence 1..1)"]]
+    - ["optional", "present", "absent", accepted, []]
+    - ["optional", "present", "present", accepted, []]
+    - ["mandatory", "present", "absent", rejected, ["constraint(C_ATTRIBUTE.existence): state is mandated by the archetype (existence 1..1) but absent"]]
+    - ["mandatory", "present", "present", accepted, []]

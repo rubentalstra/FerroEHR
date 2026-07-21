@@ -1,0 +1,48 @@
+# C.1 — commit a CONTRIBUTION carrying one valid VERSION<COMPOSITION>, over the
+# valid COMPOSITION data sets (minimal event, maximal). Each commit is accepted;
+# the created VERSION id matches change_type = creation (version number 1).
+id: I_EHR_CONTRIBUTION.commit_contribution-valid_composition
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+test_purpose: >-
+  Committing a CONTRIBUTION containing a single valid VERSION<COMPOSITION>
+  succeeds and returns the CONTRIBUTION with the created VERSION id (version
+  number 1).
+description: "Successfully commit CONTRIBUTION of COMPOSITION"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-valid_composition"
+  - "RM common §change_control (VERSION.commit_audit.change_type)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event, cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+parameters:
+  iteration: reset_per_row
+  fixture_set:                           # the official valid COMPOSITION data-set rows
+    - { data_set: cnf.composition.minimal_event.v1, expected: created, defect: "minimal event COMPOSITION" }
+    - { data_set: cnf.composition.maximal, expected: created, defect: "maximal COMPOSITION" }
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:fixture}", change_type: creation }
+    expect: "${fixture.expected}"
+    capture:
+      contribution_uid: created.contribution_uid
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: CREATE }
+postconditions:
+  - assert: state
+    text: >-
+      The EHR has a new CONTRIBUTION and the created VERSION id(s) are correct
+      (version number 1 for a creation) and can be used to retrieve a
+      VERSION<COMPOSITION>.

@@ -164,6 +164,11 @@ pub enum Assertion {
         path: String,
         #[serde(default)]
         equals: Option<TemplatedValue>,
+        /// The server-set predicate: the stored value must differ from a
+        /// client-supplied one (ITS-REST overview `Requests_and_responses`:
+        /// `AUDIT_DETAILS.time_committed` is always server-set).
+        #[serde(default)]
+        not_equals: Option<TemplatedValue>,
         #[serde(default)]
         exists: Option<bool>,
         #[serde(default)]
@@ -178,6 +183,28 @@ pub enum Assertion {
         to: EquivalentTarget,
         #[serde(default)]
         ignoring: IgnoreList,
+    },
+    /// `ORIGINAL_VERSION.signature` facts (RM common §change_control,
+    /// Digital Signature: the signature is over the canonical form of the
+    /// version data; verification behaviour is conformance, algorithm
+    /// strength is not). The wire seam is the versioned-object version read
+    /// (the `ORIGINAL_VERSION` envelope), resolved by the interpreter.
+    Signature {
+        #[serde(default)]
+        of: Option<SingleRef>,
+        #[serde(default)]
+        for_each: Option<SingleRef>,
+        /// The version carries a non-empty signature.
+        #[serde(default)]
+        present: Option<bool>,
+        /// The signature verifies over the canonical version form against
+        /// the statement-declared key material.
+        #[serde(default)]
+        verifiable: Option<bool>,
+        /// The stored signature equals a known value (the client-verbatim
+        /// storage rule for imported/committed signed versions).
+        #[serde(default)]
+        equals: Option<TemplatedValue>,
     },
     /// RM versioning facts.
     Version {
@@ -236,12 +263,14 @@ impl Assertion {
         match self {
             Self::Field {
                 equals,
+                not_equals,
                 exists,
                 absent,
                 matches,
                 path,
             } => {
                 let predicates = usize::from(equals.is_some())
+                    + usize::from(not_equals.is_some())
                     + usize::from(exists.is_some())
                     + usize::from(absent.is_some())
                     + usize::from(matches.is_some());
@@ -277,6 +306,25 @@ impl Assertion {
                 if count.is_none() && of.is_none() && for_each.is_none() {
                     return Err(
                         "version assertion needs `of`/`for_each` (only `count` may stand alone)"
+                            .to_owned(),
+                    );
+                }
+            }
+            Self::Signature {
+                of,
+                for_each,
+                present,
+                verifiable,
+                equals,
+            } => {
+                if of.is_some() == for_each.is_some() {
+                    return Err(
+                        "signature assertion needs exactly one of `of` | `for_each`".to_owned()
+                    );
+                }
+                if present.is_none() && verifiable.is_none() && equals.is_none() {
+                    return Err(
+                        "signature assertion carries no fact (present | verifiable | equals)"
                             .to_owned(),
                     );
                 }
@@ -344,8 +392,10 @@ impl Assertion {
 pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
     let mut out: Vec<ValueRef> = Vec::new();
     match assertion {
-        Assertion::Field { equals, .. } => {
-            if let Some(v) = equals {
+        Assertion::Field {
+            equals, not_equals, ..
+        } => {
+            for v in [equals, not_equals].into_iter().flatten() {
                 out.extend(v.refs().into_iter().cloned());
             }
         }
@@ -373,6 +423,22 @@ pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
         Assertion::ResultSet { rows, .. } => {
             if let Some(RowsSpec::From(r)) = rows {
                 out.push(r.clone());
+            }
+        }
+        Assertion::Signature {
+            of,
+            for_each,
+            equals,
+            ..
+        } => {
+            if let Some(SingleRef(r)) = of {
+                out.push(r.clone());
+            }
+            if let Some(SingleRef(r)) = for_each {
+                out.push(r.clone());
+            }
+            if let Some(v) = equals {
+                out.extend(v.refs().into_iter().cloned());
             }
         }
         Assertion::Unique { over, .. } => out.push(over.0.clone()),

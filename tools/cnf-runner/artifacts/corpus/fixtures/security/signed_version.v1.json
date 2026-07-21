@@ -1,0 +1,44 @@
+{
+  "_type": "ORIGINAL_VERSION",
+  "uid": {
+    "_type": "OBJECT_VERSION_ID",
+    "value": "b3e2a1c0-0000-4000-8000-000000000001::client.example.systemid::1"
+  },
+  "commit_audit": {
+    "_type": "AUDIT_DETAILS",
+    "system_id": "client.example.systemid",
+    "committer": {
+      "_type": "PARTY_IDENTIFIED",
+      "name": "Dr Example"
+    },
+    "change_type": {
+      "_type": "DV_CODED_TEXT",
+      "value": "creation",
+      "defining_code": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+        "code_string": "249"
+      }
+    }
+  },
+  "lifecycle_state": {
+    "_type": "DV_CODED_TEXT",
+    "value": "complete",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+      "code_string": "532"
+    }
+  },
+  "signature": "-----BEGIN PGP SIGNATURE-----\nCLIENT-SUPPLIED-PLACEHOLDER-SIGNATURE\n-----END PGP SIGNATURE-----\n",
+  "data": {
+    "_type": "COMPOSITION",
+    "name": { "_type": "DV_TEXT", "value": "minimal event v1 (client-signed)" },
+    "archetype_details": {
+      "_type": "ARCHETYPED",
+      "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-COMPOSITION.minimal.v1" },
+      "template_id": { "_type": "TEMPLATE_ID", "value": "cnf.minimal_event" },
+      "rm_version": "1.0.2"
+    }
+  }
+}

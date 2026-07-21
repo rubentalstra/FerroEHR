@@ -48,6 +48,7 @@
         "MESSAGING",
         "CONTENT",
         "SIMPLIFIED_FORMATS",
+        "SECURITY",
         "PERFORMANCE"
       ]
     },
@@ -306,7 +307,7 @@
           ]
         },
         "directory": {
-          "oneOf": [
+          "anyOf": [
             {
               "const": "none"
             },
@@ -409,7 +410,9 @@
                   "not_acceptable",
                   "unsupported_media",
                   "invalid_query",
-                  "timeout"
+                  "timeout",
+                  "unauthenticated",
+                  "forbidden"
                 ]
               },
               "defect": {
@@ -483,7 +486,9 @@
                 "not_acceptable",
                 "unsupported_media",
                 "invalid_query",
-                "timeout"
+                "timeout",
+                "unauthenticated",
+                "forbidden"
               ]
             },
             {
@@ -520,6 +525,7 @@
             "field",
             "equivalent",
             "version",
+            "signature",
             "result_set",
             "unique",
             "returns",

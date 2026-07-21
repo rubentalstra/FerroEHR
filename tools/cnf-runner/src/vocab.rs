@@ -95,6 +95,10 @@ outcome_kinds! {
     (InvalidQuery, "invalid_query", Error),
     /// Server aborted at max execution time.
     (Timeout, "timeout", Error),
+    /// Request lacks valid authentication (the route-table-wide 401 rule).
+    (Unauthenticated, "unauthenticated", Error),
+    /// Authenticated principal lacks authorization for the operation (403).
+    (Forbidden, "forbidden", Error),
 }
 
 /// Which optional case-core blocks are meaningful.
@@ -146,6 +150,7 @@ pub enum Component {
     Messaging,
     Content,
     SimplifiedFormats,
+    Security,
     Performance,
 }
 
@@ -242,6 +247,12 @@ pub enum CorpusFormat {
     /// An ADL 1.4 operational template (OPT XML).
     #[serde(rename = "opt-xml")]
     OptXml,
+    /// AQL query text (stored-query definitions).
+    #[serde(rename = "aql-text")]
+    AqlText,
+    /// ADL2 artefact source text (archetypes/templates/OPTs in ADL syntax).
+    #[serde(rename = "adl2-text")]
+    Adl2Text,
 }
 
 /// HTTP method of a binding request (the ITS-REST realization layer).
@@ -361,7 +372,7 @@ mod tests {
         for kind in OutcomeKind::ALL {
             assert_eq!(OutcomeKind::from_token(kind.token()), Some(*kind));
         }
-        assert_eq!(OutcomeKind::ALL.len(), 21);
+        assert_eq!(OutcomeKind::ALL.len(), 23);
         assert_eq!(OutcomeKind::Created.class(), OutcomeClass::Success);
         assert_eq!(OutcomeKind::Timeout.class(), OutcomeClass::Error);
     }
@@ -415,6 +426,7 @@ impl Component {
         Component::Messaging,
         Component::Content,
         Component::SimplifiedFormats,
+        Component::Security,
         Component::Performance,
     ];
 }
@@ -468,6 +480,8 @@ impl CorpusFormat {
         CorpusFormat::WtFlat,
         CorpusFormat::WtStructured,
         CorpusFormat::OptXml,
+        CorpusFormat::AqlText,
+        CorpusFormat::Adl2Text,
     ];
 }
 
@@ -546,10 +560,10 @@ mod all_consts_tests {
     #[test]
     fn all_lists_are_exhaustive() {
         assert_eq!(CaseKind::ALL.len(), 2);
-        assert_eq!(Component::ALL.len(), 14);
+        assert_eq!(Component::ALL.len(), 15);
         assert_eq!(Tier::ALL.len(), 7);
         assert_eq!(Disposition::ALL.len(), 6);
         assert_eq!(FormatName::ALL.len(), 5);
-        assert_eq!(CorpusFormat::ALL.len(), 5);
+        assert_eq!(CorpusFormat::ALL.len(), 7);
     }
 }

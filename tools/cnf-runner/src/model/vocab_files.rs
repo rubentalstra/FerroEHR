@@ -109,6 +109,20 @@ pub struct SelectorsVocab {
     /// The named ignore-sets.
     #[serde(deserialize_with = "crate::model::de::ordered_map")]
     pub ignore_sets: Vec<(IgnoreSetKey, IgnoreSetDecl)>,
+    /// Cross-cutting outcome kinds mapped once for the whole route table
+    /// (the overview's global status-code rules), instead of per binding.
+    #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
+    pub universal_outcomes: Option<Vec<(String, UniversalOutcome)>>,
+}
+
+/// One universal outcome mapping (kind token -> wire status + citation).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct UniversalOutcome {
+    /// The wire status realizing the kind on every route.
+    pub status: u16,
+    /// The overview citation making the rule route-table-wide.
+    pub source: String,
 }
 
 /// Key newtype for the ignore-set map.

@@ -1,0 +1,25 @@
+# delete_directory on an EHR with no directory errors: there is no directory to
+# delete (SM Pre_has_directory). Realized as a 404; no preceding version exists
+# so no If-Match is sent.
+id: I_EHR_DIRECTORY.delete_directory-empty_ehr
+kind: functional
+component: EHR_DIRECTORY
+sm_operation: I_EHR_DIRECTORY.delete_directory
+capabilities: [DirectoryOps]
+profiles: [STANDARD]
+test_purpose: >-
+  delete_directory on an EHR that has no directory is rejected: there is no
+  directory to delete.
+description: "Test delete_directory on empty EHR"
+spec_refs:
+  - "SM openehr_platform §I_EHR_DIRECTORY.delete_directory"
+  - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.delete_directory-empty_ehr"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR exists, no directory — mints ${ehr_id}
+flow:
+  - step: 1
+    call: delete_directory
+    with: { ehr_id: "${ehr_id}" }
+    expect: not_found                     # "the non existent directory" (SM Pre_has_directory; AMB-26)

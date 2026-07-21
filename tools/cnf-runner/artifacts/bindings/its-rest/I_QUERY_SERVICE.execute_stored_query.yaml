@@ -1,0 +1,29 @@
+# Wire realization of I_QUERY_SERVICE.execute_stored_query for ITS-REST 1.1.0.
+# Sources: specifications/operations/query_execute_stored_query.yaml
+# (GET /query/{qualified_query_name} — operationId query_execute_stored_query,
+# executed at latest version), responses/200_Query.yaml (RESULT_SET),
+# 400_Query.yaml, 404_Query.yaml, 408_Query.yaml; the request-shaping
+# parameters/query/{ehr_id_Query,offset,fetch,query_parameters}.yaml and
+# parameters/path/qualified_query_name.yaml.
+sm_operation: I_QUERY_SERVICE.execute_stored_query
+its: its-rest
+applies: { its_rest: ">=1.0.0" }
+request:
+  method: GET
+  path: /query/{qualified_query_name}       # query_execute_stored_query.yaml
+  query:
+    ehr_id: "${ehr_id?}"                     # ehr_id_Query.yaml (optional EHR scope)
+    offset: "${offset?}"                     # offset.yaml
+    fetch: "${fetch?}"                       # fetch.yaml
+    query_parameters: "${query_parameters?}" # query_parameters.yaml
+  headers:
+    Accept: application/json                  # Accept_JSON.yaml
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200                              # 200_Query.yaml
+    headers: { ETag: "present?", Content-Type: negotiated }
+    body: result_set_body
+  invalid_query: { status: 400 }             # 400_Query.yaml
+  not_found: { status: 404 }                 # 404_Query.yaml (no such stored query name)
+  timeout: { status: 408 }                   # 408_Query.yaml

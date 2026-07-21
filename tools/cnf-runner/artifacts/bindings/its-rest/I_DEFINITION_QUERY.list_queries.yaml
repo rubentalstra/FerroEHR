@@ -1,0 +1,14 @@
+# Wire realization of I_DEFINITION_QUERY.list_queries for ITS-REST 1.1.0.
+# Sources: specifications/operations/definition_query_list.yaml (200),
+# responses/200_QueryList.yaml. The list-by-pattern GET returns every
+# registered query matched by the qualified name pattern (empty pattern =
+# wildcard), so an empty set is a 200 with no entries.
+sm_operation: I_DEFINITION_QUERY.list_queries
+its: its-rest
+request:
+  method: GET
+  path: /definition/query/{qualified_query_name}      # definition_query_list.yaml
+  headers:
+    Accept: application/json                           # Accept_JSON.yaml
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }  # 200_QueryList.yaml

@@ -1,0 +1,44 @@
+# Re-adjudicated 2026-07-21 from the retired ECC AQL-terminology cases
+# ECC-AQT-002/003/004 against AQL 1.1 spec text. AQL master03 §TERMINOLOGY
+# defines exactly two usage forms: 'expand' as a `matches` operand (usage a/b),
+# and the Boolean assertions 'validate'/'subsumes'. A TERMINOLOGY() outside those
+# forms — a non-expand operation as a matches operand, TERMINOLOGY() in a SELECT
+# column, or a Boolean assertion with an unsupported operation — is not a defined
+# usage form, so rejection is expected — reported per SUT, never gating (AMB-30).
+# NOTE: the spec defines the valid forms but does not explicitly mandate
+# rejection of undefined ones — recorded as an ambiguity candidate in
+# REQUIREMENTS.md.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlTerminology]
+profiles: [OPTIONS]
+test_purpose: >-
+  A TERMINOLOGY() function used outside the master03 §TERMINOLOGY usage forms
+  (unsupported operation in matches, unsupported position in SELECT, unsupported
+  Boolean operation) is rejected as an invalid query.
+description: "Unsupported AQL TERMINOLOGY() forms are rejected (invalid_query)"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "QUERY AQL §TERMINOLOGY"
+  - "ITS-REST query §400_Query"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+guards:
+  - "AqlTerminology (OPTIONS): terminology-backed AQL — QUERY Aql master03 §TERMINOLOGY; not-applicable when the SUT declares no terminology support"
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.aql.invalid.terminology_lookup_matches, expected: invalid_query, defect: "'lookup' operation as a matches operand — only 'expand' has code-list semantics (§TERMINOLOGY usage a/b)" }
+    - { data_set: cnf.aql.invalid.terminology_in_select, expected: invalid_query, defect: "TERMINOLOGY() in a SELECT column — an unsupported position (§TERMINOLOGY defines matches-operand and Boolean-assertion forms only)" }
+    - { data_set: cnf.aql.invalid.terminology_boolean_lookup, expected: invalid_query, defect: "Boolean TERMINOLOGY('lookup', …) — only 'validate'/'subsumes' have Boolean semantics (§TERMINOLOGY)" }
+requires:
+  server: any
+flow:
+  - step: 1
+    call: execute_ad_hoc_query
+    with:
+      q: "${ds:fixture}"
+      fetch: 100                            # AMB-6: fetch always explicit
+    expect: "${fixture.expected}"
+ambiguities: [AMB-30]

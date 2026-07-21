@@ -45,6 +45,12 @@ pub enum Literal {
         lo: f64,
         hi: f64,
     },
+    /// An ISO 8601 endpoint range `2020-01..2030-12` (dates, date-times,
+    /// times, or durations — the master17.4/DV_INTERVAL constraint ranges).
+    Iso8601Range {
+        lo: String,
+        hi: String,
+    },
     /// A list `[x, y, …]` of literals.
     List(Vec<Literal>),
     /// A unit-scoped range `cm 5.0..10.0` (inside `C_DV_QUANTITY` list cells).
@@ -59,9 +65,14 @@ pub enum Literal {
         code: String,
         rubric: Option<String>,
     },
-    /// An ordinal tuple `1|[local::at0005]`.
+    /// An ordinal tuple `1|[local::at0005]` (integer head — DV_ORDINAL).
     Ordinal {
         value: i64,
+        symbol: Box<Literal>,
+    },
+    /// A scale tuple `1.5|[local::at0005]` (real head — DV_SCALE).
+    Scale {
+        value: f64,
         symbol: Box<Literal>,
     },
     /// A quantity literal `100 mg`.
@@ -107,7 +118,8 @@ impl Literal {
             return Self::parse_list(t);
         }
         if let Some((value, symbol)) = t.split_once('|') {
-            // Ordinal tuple `1|[local::at0005]` — only when the head is an integer.
+            // Ordinal tuple `1|[local::at0005]` (integer head — DV_ORDINAL);
+            // scale tuple `1.5|[local::at0005]` (real head — DV_SCALE).
             if let Ok(value) = value.trim().parse::<i64>() {
                 let symbol = Self::from_text(symbol)?;
                 return Ok(Self::Ordinal {
@@ -115,8 +127,21 @@ impl Literal {
                     symbol: Box::new(symbol),
                 });
             }
+            if let Ok(value) = value.trim().parse::<f64>() {
+                let symbol = Self::from_text(symbol)?;
+                return Ok(Self::Scale {
+                    value,
+                    symbol: Box::new(symbol),
+                });
+            }
         }
-        if t.contains("::") {
+        // The term-code production fires only when the head is a term lexeme
+        // (`openehr::…`, `local::…`) — URIs and paths also contain `::` but
+        // their heads carry `/`/`[`/`:` and stay plain text.
+        if let Some((head, _)) = t.split_once("::")
+            && !head.is_empty()
+            && head.trim().chars().all(is_term_lexeme_char)
+        {
             return Self::parse_term_code(t);
         }
         if t.contains("..") {
@@ -150,17 +175,25 @@ impl Literal {
             Some((units, range)) if range.contains("..") => (Some(units.trim()), range.trim()),
             _ => (None, t),
         };
-        let (lo, hi) = range
+        let (lo_raw, hi_raw) = range
             .split_once("..")
             .ok_or_else(|| LiteralError::new(t, "range must be a..b"))?;
-        let lo: f64 = lo
-            .trim()
-            .parse()
-            .map_err(|_| LiteralError::new(t, "range lower bound is not a number"))?;
-        let hi: f64 = hi
-            .trim()
-            .parse()
-            .map_err(|_| LiteralError::new(t, "range upper bound is not a number"))?;
+        let (lo_raw, hi_raw) = (lo_raw.trim(), hi_raw.trim());
+        let (lo, hi) = match (lo_raw.parse::<f64>(), hi_raw.parse::<f64>()) {
+            (Ok(lo), Ok(hi)) => (lo, hi),
+            _ => {
+                if units.is_none() && is_iso8601_lexeme(lo_raw) && is_iso8601_lexeme(hi_raw) {
+                    return Ok(Self::Iso8601Range {
+                        lo: lo_raw.to_owned(),
+                        hi: hi_raw.to_owned(),
+                    });
+                }
+                return Err(LiteralError::new(
+                    t,
+                    "range bounds must both be numbers or both ISO 8601 lexemes",
+                ));
+            }
+        };
         match units {
             Some(units) if !units.is_empty() => Ok(Self::UnitRange {
                 units: units.to_owned(),
@@ -177,7 +210,7 @@ impl Literal {
             LiteralError::new(t, "terminology code must be <terminology>::<code>")
         })?;
         let terminology = terminology.trim();
-        if terminology.is_empty() || terminology.contains(char::is_whitespace) {
+        if terminology.is_empty() || !terminology.chars().all(is_term_lexeme_char) {
             return Err(LiteralError::new(t, "terminology name must be one word"));
         }
         let (code, rubric) = match rest.split_once('(') {
@@ -189,7 +222,7 @@ impl Literal {
             }
             None => (rest.trim(), None),
         };
-        if code.is_empty() || code.contains(char::is_whitespace) {
+        if code.is_empty() || !code.chars().all(is_term_lexeme_char) {
             return Err(LiteralError::new(t, "code must be one word"));
         }
         Ok(Self::TermCode {
@@ -212,6 +245,26 @@ impl Literal {
             units: units.to_owned(),
         })
     }
+}
+
+/// A terminology/code lexeme character (word chars only — `|`/`[`/`]` are
+/// tuple/list structure, never part of a code).
+fn is_term_lexeme_char(c: char) -> bool {
+    c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-')
+}
+
+/// ISO 8601 lexical shapes accepted as range endpoints: date (`2020`,
+/// `2020-01`, `2020-01-31`), date-time (`...T23[:59[:59[.9]]][Z|±hh[:mm]]`),
+/// time (`10:00[:00[.5]]`), duration (`P1Y2M3DT4H5M6.7S`, `PT2H`).
+fn is_iso8601_lexeme(s: &str) -> bool {
+    static ISO: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+        #[allow(clippy::unwrap_used)] // a compile-time-constant pattern
+        regex::Regex::new(
+            r"^(\d{4}(-\d{2}(-\d{2})?)?(T\d{2}(:\d{2}(:\d{2}(\.\d+)?)?)?(Z|[+-]\d{2}(:?\d{2})?)?)?|\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}(:?\d{2})?)?|P(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(\d+H)?(\d+M)?(\d+(\.\d+)?S)?)?)$",
+        )
+        .unwrap()
+    });
+    !s.is_empty() && s != "P" && ISO.is_match(s)
 }
 
 /// Split on top-level commas (not inside nested brackets/parentheses).
@@ -387,6 +440,41 @@ mod tests {
             Literal::from_text("cm").unwrap(),
             Literal::Text(_)
         ));
+    }
+
+    #[test]
+    fn iso8601_ranges_and_scale_tuples_parse() {
+        assert!(matches!(
+            Literal::from_text("2020-01..2030-12").unwrap(),
+            Literal::Iso8601Range { .. }
+        ));
+        assert!(matches!(
+            Literal::from_text("2000-01-01T00:00:00.0..2010-12-31T23:59:59.999999").unwrap(),
+            Literal::Iso8601Range { .. }
+        ));
+        assert!(matches!(
+            Literal::from_text("PT0S..PT2H").unwrap(),
+            Literal::Iso8601Range { .. }
+        ));
+        assert!(matches!(
+            Literal::from_text("10:00..12:00").unwrap(),
+            Literal::Iso8601Range { .. }
+        ));
+        assert!(matches!(
+            Literal::from_text("1900..2030").unwrap(),
+            Literal::Range { .. }
+        ));
+        assert!(matches!(
+            Literal::from_text("1.5|[local::at0005]").unwrap(),
+            Literal::Scale { .. }
+        ));
+        // the pre-fix degenerate parse is now a hard error
+        assert!(Literal::from_text("banana..apple").is_err());
+        let list = Literal::from_text("[1.5|[local::at0005], 2.4|[local::at0006]]").unwrap();
+        let Literal::List(items) = list else {
+            panic!("expected list")
+        };
+        assert!(matches!(items.first(), Some(Literal::Scale { .. })));
     }
 
     #[test]

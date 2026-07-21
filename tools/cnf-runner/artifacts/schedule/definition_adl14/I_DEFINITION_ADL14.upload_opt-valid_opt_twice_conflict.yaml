@@ -1,0 +1,38 @@
+# Official master04 case: the duplicate-template_id CONFLICT branch of AMB-4.
+# ADL 1.4 templates have no formal versioning, so with no version parameter a
+# second upload of the same template_id fails (conflict). This sibling carries
+# option: adl14-duplicate-conflict; the versioned sibling
+# (upload_opt-valid_opt_twice_no_conflict) carries adl14-duplicate-versioned.
+# The ICS options declaration selects which applies.
+id: I_DEFINITION_ADL14.upload_opt-valid_opt_twice_conflict
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.upload_opt
+capabilities: [Adl14OptProvisioning]
+exercises: [ArchetypeValidation]
+profiles: [CORE]
+option: adl14-duplicate-conflict
+test_purpose: "Uploading the same template_id twice without a version fails (conflict); exactly one OPT remains loaded."
+description: "Upload valid OPT twice with conflict"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.upload_opt"
+  - "CNF platform_test_schedule master04 §upload_opt-valid_opt_twice_conflict"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }              # "No OPTs should be loaded on the system"
+data_sets: [cnf.opt.minimal_all_entries]
+flow:
+  - step: 1
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.minimal_all_entries}" }
+    expect: created                      # "the result should be positive (the server accepted the OPT)"
+    capture: { template_id: created.template_id }
+  - step: 2
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.minimal_all_entries}" }   # same OPT as step 1
+    expect: already_exists               # "the result should be negative (the server rejected the OPT)"
+postconditions:
+  - assert: state
+    text: "A new OPT with the given template_id is loaded, and there is only one OPT loaded"
+    verified_by: I_DEFINITION_ADL14.get_opts-retrieve_all
+verified_by: [I_DEFINITION_ADL14.get_opts-retrieve_all]
+ambiguities: [AMB-4]
