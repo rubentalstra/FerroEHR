@@ -1,0 +1,67 @@
+# Per-RM-type suffix mapping: the COMPOSITION + ENTRY types — COMPOSITION,
+# ADMIN_ENTRY, INSTRUCTION, ACTION, EVALUATION, OBSERVATION (simplified_formats
+# master05 §COMPOSITION, §ADMIN_ENTRY, §INSTRUCTION, §ACTION, §EVALUATION,
+# §OBSERVATION). Each type shares the language/territory context leaves and the
+# common RM-attribute paths (_link/_feeder_audit/_uid); the type-distinctive
+# rows (category/composer/context; narrative/_expiry_time; time/ism_transition;
+# history_origin) are the per-table content. Vectors: the minimal + full FLAT
+# blocks of all six sections.
+id: SF-MAP-entries
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: COMPOSITION
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  The COMPOSITION and ENTRY subtypes map their FLAT suffixes to the documented
+  RM paths, covering the mandatory context leaves, the type-distinctive
+  attributes, and the shared _link/_feeder_audit/_uid RM-attribute paths.
+description: "COMPOSITION + ENTRY-type suffix mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §COMPOSITION"
+  - "ITS-REST simplified_formats master05 §ADMIN_ENTRY"
+  - "ITS-REST simplified_formats master05 §INSTRUCTION"
+  - "ITS-REST simplified_formats master05 §ACTION"
+  - "ITS-REST simplified_formats master05 §EVALUATION"
+  - "ITS-REST simplified_formats master05 §OBSERVATION"
+  - "RM ehr §COMPOSITION"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
+  rows:
+    - ["COMPOSITION", "/language", "language", "CODE_PHRASE", "yes"]
+    - ["COMPOSITION", "/territory", "territory", "CODE_PHRASE", "yes"]
+    - ["COMPOSITION", "/category", "category", "DV_CODED_TEXT", "yes"]
+    - ["COMPOSITION", "/composer", "composer", "PARTY_PROXY", "yes"]
+    - ["COMPOSITION", "/context", "context", "EVENT_CONTEXT", "yes"]
+    - ["COMPOSITION", "/_link:i", "links", "LINK", "no"]
+    - ["COMPOSITION", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
+    - ["COMPOSITION", "/_uid", "uid.value", "STRING", "no"]
+    - ["ADMIN_ENTRY", "/language", "language", "CODE_PHRASE", "yes"]
+    - ["ADMIN_ENTRY", "/territory", "territory", "CODE_PHRASE", "yes"]
+    - ["ADMIN_ENTRY", "/subject", "subject", "PARTY_PROXY", "no"]
+    - ["ADMIN_ENTRY", "/_work_flow_id", "workflow_id", "OBJECT_REF", "no"]
+    - ["ADMIN_ENTRY", "/_uid", "uid.value", "STRING", "no"]
+    - ["INSTRUCTION", "/language", "language", "CODE_PHRASE", "yes"]
+    - ["INSTRUCTION", "/territory", "territory", "CODE_PHRASE", "yes"]
+    - ["INSTRUCTION", "/narrative", "narrative", "DV_TEXT", "yes"]
+    - ["INSTRUCTION", "/_expiry_time", "expiry_time", "DV_DATE_TIME", "yes"]
+    - ["INSTRUCTION", "/_wf_definition", "wf_definition", "DV_PARSABLE", "no"]
+    - ["INSTRUCTION", "/_guideline_id", "guideline_id", "OBJECT_REF", "no"]
+    - ["ACTION", "/language", "language", "CODE_PHRASE", "yes"]
+    - ["ACTION", "/territory", "territory", "CODE_PHRASE", "yes"]
+    - ["ACTION", "/time", "time", "DV_DATE_TIME", "yes"]
+    - ["ACTION", "/ism_transition", "ism_transition", "ISM_TRANSITION", "yes"]
+    - ["ACTION", "/_instruction_details", "instruction_details", "INSTRUCTION_DETAILS", "no"]
+    - ["EVALUATION", "/language", "language", "CODE_PHRASE", "yes"]
+    - ["EVALUATION", "/territory", "territory", "CODE_PHRASE", "yes"]
+    - ["EVALUATION", "/subject", "subject", "PARTY_PROXY", "no"]
+    - ["EVALUATION", "/_uid", "uid.value", "STRING", "no"]
+    - ["OBSERVATION", "/language", "language", "CODE_PHRASE", "yes"]
+    - ["OBSERVATION", "/territory", "territory", "CODE_PHRASE", "yes"]
+    - ["OBSERVATION", "/history_origin", "history.origin", "DV_DATE_TIME", "no"]
+    - ["OBSERVATION", "/subject", "subject", "PARTY_PROXY", "no"]
+    - ["OBSERVATION", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]

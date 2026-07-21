@@ -1342,14 +1342,19 @@ name = "cnf-runner"
 version = "3.6.0"
 dependencies = [
  "assert_fs",
+ "base64 0.22.1",
  "clap",
+ "hdrhistogram",
  "jsonschema",
  "regex",
+ "reqwest 0.13.4",
  "semver",
  "serde",
  "serde-saphyr",
  "serde_json",
  "thiserror 2.0.18",
+ "tokio",
+ "urlencoding",
 ]
 
 [[package]]

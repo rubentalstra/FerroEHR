@@ -1,0 +1,34 @@
+# Reject rule: terminology-binding violation (simplified_formats master04
+# §Validation: "Terminology bindings are valid"). A FLAT commit whose coded leaf
+# |code is not a member of the archetype's bound (closed) value set violates the
+# terminology binding and is rejected. Simplified Formats is OPTIONS, so this
+# never gates CORE/STANDARD.
+id: SF-FLAT-reject_terminology_binding
+kind: functional
+component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  A FLAT commit whose DV_CODED_TEXT |code is outside the archetype's bound
+  closed value set is rejected: the terminology binding is not satisfied.
+description: "FLAT commit with an out-of-value-set |code is rejected"
+spec_refs:
+  - "ITS-REST simplified_formats master04 §Validation"
+  - "ITS-REST simplified_formats master05 §DV_CODED_TEXT"
+  - "ITS-REST overview Requests_and_responses §HTTP status codes"
+  - "RM data_types §DV_CODED_TEXT"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.sf.flat.binding_violation]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.sf.flat.binding_violation}" }
+    expect: validation_failed             # create_composition binding: 422
+    assert:
+      - { assert: message_exemplar, text: "coded value is not a member of the bound value set" }

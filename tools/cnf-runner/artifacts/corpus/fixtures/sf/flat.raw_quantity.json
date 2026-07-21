@@ -1,0 +1,10 @@
+{
+  "ctx/language": "en",
+  "ctx/territory": "NL",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|raw": {
+    "_type": "DV_QUANTITY",
+    "magnitude": 37.5,
+    "units": "Cel"
+  }
+}

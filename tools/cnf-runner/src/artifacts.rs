@@ -30,6 +30,9 @@ use crate::schema;
 #[derive(Debug, Default)]
 pub struct ArtifactSet {
     pub cases: Vec<(PathBuf, CaseCore)>,
+    /// `kind: performance` cases (their own schema family; measured, not
+    /// asserted).
+    pub performance: Vec<(PathBuf, crate::perf::PerformanceCase)>,
     pub bindings: Vec<(PathBuf, OperationBinding)>,
     pub outcomes: Option<(PathBuf, OutcomesVocab)>,
     pub selectors: Option<(PathBuf, SelectorsVocab)>,
@@ -67,6 +70,23 @@ fn yaml_files_under(dir: &Path) -> Vec<PathBuf> {
     files
 }
 
+/// Load one `kind: performance` case (its own schema family; the typed
+/// model + invariants are the validation).
+fn load_performance_case(path: &Path) -> Result<crate::perf::PerformanceCase, LoadError> {
+    let value = crate::load::yaml_file_to_value(path)?;
+    let case: crate::perf::PerformanceCase =
+        serde_json::from_value(value).map_err(|e| LoadError::Model {
+            path: path.to_owned(),
+            message: e.to_string(),
+        })?;
+    case.check_invariants()
+        .map_err(|message| LoadError::Model {
+            path: path.to_owned(),
+            message,
+        })?;
+    Ok(case)
+}
+
 /// Load every artifact under `root`.
 ///
 /// # Errors
@@ -96,7 +116,15 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
 
     let mut loaded = Loaded::default();
 
+    let performance_dir = root.join("schedule/performance");
     for path in yaml_files_under(&root.join("schedule")) {
+        if path.starts_with(&performance_dir) {
+            match load_performance_case(&path) {
+                Ok(case) => loaded.set.performance.push((path, case)),
+                Err(e) => loaded.errors.push(e),
+            }
+            continue;
+        }
         match load_artifact::<CaseCore>(&path, &case_schema) {
             Ok(case) => loaded.set.cases.push((path, case)),
             Err(e) => loaded.errors.push(e),

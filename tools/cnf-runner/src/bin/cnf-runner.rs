@@ -8,6 +8,10 @@
 //!                                       --specs enables the SM/spec-ref
 //!                                       resolution checks against the vendored
 //!                                       spec tree (docs/specs/openehr)
+//! cnf-runner verdicts --statement F --results F --root DIR --out DIR
+//!                                       compute the verdicts (pure pipeline)
+//!                                       and write the report/statement/
+//!                                       certificate + verdicts.json
 //! ```
 //!
 //! Exit codes: `0` clean · `1` findings · `2` runner error.
@@ -23,8 +27,12 @@ use clap::{Parser, Subcommand};
 
 use cnf_runner::artifacts::load_root;
 use cnf_runner::compare;
-use cnf_runner::schema::{emit_all, render};
+use cnf_runner::load::compile_schema;
+use cnf_runner::party::{Results, Statement};
+use cnf_runner::render::{render_certificate, render_report, render_statement};
+use cnf_runner::schema::{emit_all, render, results_schema, statement_schema};
 use cnf_runner::validate::{Context, validate};
+use cnf_runner::verdict::compute;
 
 #[derive(Parser)]
 #[command(name = "cnf-runner", about = "CNF 2.0 reference runner", version)]
@@ -67,6 +75,47 @@ enum Command {
         #[arg(long)]
         specs: Option<PathBuf>,
     },
+    /// Compute the verdicts from a statement + results against an artifact
+    /// tree (the pure pipeline) and write the rendered submission documents.
+    Verdicts {
+        /// The party statement (`statement.json`).
+        #[arg(long)]
+        statement: PathBuf,
+        /// The party results (`results.json`).
+        #[arg(long)]
+        results: PathBuf,
+        /// The artifact root (schedule/, vocab/, registers/).
+        #[arg(long)]
+        root: PathBuf,
+        /// Output directory for the rendered documents + verdicts.json.
+        #[arg(long)]
+        out: PathBuf,
+    },
+}
+
+/// Load one JSON party artifact, validating it against its emitted schema
+/// before typed parsing.
+fn load_party_json<T: serde::de::DeserializeOwned>(
+    path: &std::path::Path,
+    schema: &serde_json::Value,
+    schema_name: &str,
+) -> Result<T, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let value: serde_json::Value =
+        serde_json::from_str(&text).map_err(|e| format!("{}: JSON: {e}", path.display()))?;
+    let validator = compile_schema(schema, schema_name).map_err(|e| e.to_string())?;
+    let violations: Vec<String> = validator
+        .iter_errors(&value)
+        .map(|e| format!("{}: {e}", e.instance_path()))
+        .collect();
+    if !violations.is_empty() {
+        return Err(format!(
+            "{}: schema: {}",
+            path.display(),
+            violations.join("; ")
+        ));
+    }
+    serde_json::from_value(value).map_err(|e| format!("{}: model: {e}", path.display()))
 }
 
 fn main() -> ExitCode {
@@ -158,5 +207,119 @@ fn main() -> ExitCode {
                 ExitCode::from(1)
             }
         }
+        Command::Verdicts {
+            statement,
+            results,
+            root,
+            out,
+        } => run_verdicts(&statement, &results, &root, &out),
+    }
+}
+
+fn run_verdicts(
+    statement_path: &std::path::Path,
+    results_path: &std::path::Path,
+    root: &std::path::Path,
+    out: &std::path::Path,
+) -> ExitCode {
+    let statement: Statement =
+        match load_party_json(statement_path, &statement_schema(), "statement.schema.json") {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        };
+    let results: Results =
+        match load_party_json(results_path, &results_schema(), "results.schema.json") {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        };
+    if let Err(errors) = results.check_invariants() {
+        for e in &errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    let Some((_, matrix)) = &loaded.set.matrix else {
+        eprintln!("artifact tree carries no capability matrix");
+        return ExitCode::from(2);
+    };
+    let Some((_, register)) = &loaded.set.register else {
+        eprintln!("artifact tree carries no ambiguity register");
+        return ExitCode::from(2);
+    };
+    let cases: Vec<_> = loaded.set.cases.iter().map(|(_, c)| c.clone()).collect();
+
+    let report = compute(&statement, &results, &cases, matrix, register);
+
+    if let Err(e) = std::fs::create_dir_all(out) {
+        eprintln!("cannot create {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    let artifacts: [(&str, String); 4] = [
+        (
+            "verdicts.json",
+            match serde_json::to_string_pretty(&report) {
+                Ok(mut json) => {
+                    json.push('\n');
+                    json
+                }
+                Err(e) => {
+                    eprintln!("cannot serialize verdicts: {e}");
+                    return ExitCode::from(2);
+                }
+            },
+        ),
+        ("CONFORMANCE_REPORT.md", render_report(&results, &report)),
+        (
+            "CONFORMANCE_STATEMENT.md",
+            render_statement(&statement, &report),
+        ),
+        (
+            "CONFORMANCE_CERTIFICATE.md",
+            render_certificate(&statement, &results, &report, matrix),
+        ),
+    ];
+    for (name, body) in &artifacts {
+        let path = out.join(name);
+        if let Err(e) = std::fs::write(&path, body) {
+            eprintln!("cannot write {}: {e}", path.display());
+            return ExitCode::from(2);
+        }
+        println!("wrote {}", path.display());
+    }
+
+    for finding in &report.review {
+        println!("static-review: {}", finding.message);
+    }
+    println!(
+        "{} capability verdict(s), {} of {} cases driven, {} review finding(s)",
+        report.capabilities.len(),
+        report.coverage.driven,
+        report.coverage.selected,
+        report.review.len(),
+    );
+    if report.review.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
     }
 }

@@ -1,0 +1,45 @@
+# Per-RM-type suffix mapping: DV_MULTIMEDIA and DV_PARSABLE
+# (simplified_formats master05 §DV_MULTIMEDIA, §DV_PARSABLE). Vectors: the
+# DV_MULTIMEDIA blocks (uri/mediatype/size; +compression/alternatetext/
+# integrity_check/_thumbnail/_language/_charset) and the DV_PARSABLE blocks
+# (value/formalism; +_language/_charset). DV_MULTIMEDIA carries a recursive
+# /_thumbnail DV_MULTIMEDIA.
+id: SF-MAP-multimedia_parsable
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: DV_MULTIMEDIA
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  DV_MULTIMEDIA and DV_PARSABLE map their FLAT suffixes to the documented RM
+  paths, including DV_MULTIMEDIA's bare uri value, its recursive /_thumbnail,
+  and DV_PARSABLE's |value/|formalism pair.
+description: "DV_MULTIMEDIA + DV_PARSABLE suffix mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §DV_MULTIMEDIA"
+  - "ITS-REST simplified_formats master05 §DV_PARSABLE"
+  - "RM data_types §DV_MULTIMEDIA"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "master05 DV_MULTIMEDIA table maps |data to RM path \"dta\" — an upstream typo for \"data\" (master05 §DV_MULTIMEDIA); the RM attribute is DV_MULTIMEDIA.data"
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items/value"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
+  rows:
+    - ["DV_MULTIMEDIA", "", "uri.value", "String", "no"]
+    - ["DV_MULTIMEDIA", "|mediatype", "media_type.code_string", "String", "yes"]
+    - ["DV_MULTIMEDIA", "|size", "size", "Integer", "yes"]
+    - ["DV_MULTIMEDIA", "|alternatetext", "alternate_text", "String", "no"]
+    - ["DV_MULTIMEDIA", "|compression_algorithm", "compression_algorithm.code_string", "String", "no"]
+    - ["DV_MULTIMEDIA", "|integrity_check_algorithm", "integrity_check_algorithm", "String", "no"]
+    - ["DV_MULTIMEDIA", "|integrity_check", "integrity_check", "String", "no"]
+    - ["DV_MULTIMEDIA", "|data", "data", "String", "no"]
+    - ["DV_MULTIMEDIA", "/_thumbnail", "thumbnail", "DV_MULTIMEDIA", "no"]
+    - ["DV_MULTIMEDIA", "/_charset", "charset", "CODE_PHRASE", "no"]
+    - ["DV_MULTIMEDIA", "/_language", "language", "CODE_PHRASE", "no"]
+    - ["DV_PARSABLE", "|value", "value", "String", "yes"]
+    - ["DV_PARSABLE", "|formalism", "formalism", "String", "yes"]
+    - ["DV_PARSABLE", "/_charset", "charset", "CODE_PHRASE", "no"]
+    - ["DV_PARSABLE", "/_language", "language", "CODE_PHRASE", "no"]

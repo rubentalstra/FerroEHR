@@ -897,6 +897,33 @@ fn path_contains_token(root: &Path, token: &str) -> bool {
 
 // ── binding completeness ────────────────────────────────────────────────────
 
+/// Kinds a step may observe: the fixed expectation, every fixture-set
+/// `expected` kind when per-fixture, plus any matrix `expected` column kinds.
+fn step_observable_kinds(case: &CaseCore, step: &crate::model::case::FlowStep) -> Vec<OutcomeKind> {
+    let mut kinds: Vec<OutcomeKind> = Vec::new();
+    match step.expect {
+        ExpectSpec::Kind(kind) => kinds.push(kind),
+        ExpectSpec::FixtureExpected => {
+            if let Some(fixtures) = case
+                .parameters
+                .as_ref()
+                .and_then(|p| p.fixture_set.as_ref())
+            {
+                kinds.extend(fixtures.iter().map(|f| f.expected));
+            }
+        }
+    }
+    if let Some(matrix) = case.parameters.as_ref().and_then(|p| p.matrix.as_ref())
+        && let Some(col) = matrix.columns.iter().position(|c| c == "expected")
+    {
+        kinds.extend(matrix.rows.iter().filter_map(|row| match row.get(col) {
+            Some(MatrixCell::Literal(serde_json::Value::String(s))) => OutcomeKind::from_token(s),
+            _ => None,
+        }));
+    }
+    kinds
+}
+
 fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
     for (_, case) in &set.cases {
         let Some(anchor) = &case.sm_operation else {
@@ -932,42 +959,7 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             if bindings.iter().all(|(_, b)| b.is_unrealized()) {
                 continue;
             }
-            // Kinds this step may observe: the fixed expectation, or every
-            // fixture-set `expected` kind when per-fixture.
-            let mut kinds: Vec<OutcomeKind> = Vec::new();
-            match step.expect {
-                ExpectSpec::Kind(kind) => kinds.push(kind),
-                ExpectSpec::FixtureExpected => {
-                    if let Some(fixtures) = case
-                        .parameters
-                        .as_ref()
-                        .and_then(|p| p.fixture_set.as_ref())
-                    {
-                        kinds.extend(fixtures.iter().map(|f| f.expected));
-                    }
-                }
-            }
-            let expected_column_kinds: Vec<OutcomeKind> = case
-                .parameters
-                .as_ref()
-                .and_then(|p| p.matrix.as_ref())
-                .map(|m| {
-                    let col = m.columns.iter().position(|c| c == "expected");
-                    col.map(|col| {
-                        m.rows
-                            .iter()
-                            .filter_map(|row| match row.get(col) {
-                                Some(MatrixCell::Literal(serde_json::Value::String(s))) => {
-                                    OutcomeKind::from_token(s)
-                                }
-                                _ => None,
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_default()
-                })
-                .unwrap_or_default();
-            kinds.extend(expected_column_kinds);
+            let kinds = step_observable_kinds(case, step);
 
             let universal: Vec<&str> = set
                 .selectors

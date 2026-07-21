@@ -1,0 +1,47 @@
+# Per-RM-type suffix mapping: the PARTY_PROXY family — PARTY_SELF,
+# PARTY_IDENTIFIED, PARTY_RELATED (simplified_formats master05 §PARTY_PROXY,
+# §PARTY_SELF, §PARTY_IDENTIFIED, §PARTY_RELATED). PARTY_PROXY itself carries no
+# suffix table (it resolves to a concrete subtype). Vectors: the PARTY_SELF
+# block (ctx/composer_self:true + composer|id), the PARTY_IDENTIFIED blocks
+# (name; +id/_identifier), the PARTY_RELATED blocks (name/relationship; +id/
+# _identifier).
+id: SF-MAP-party
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: PARTY_PROXY
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  The concrete PARTY_PROXY subtypes map their FLAT suffixes to the documented RM
+  paths: PARTY_SELF (external_ref), PARTY_IDENTIFIED (name/external_ref/
+  identifiers), PARTY_RELATED (as PARTY_IDENTIFIED plus /_relationship).
+description: "PARTY_PROXY family (SELF/IDENTIFIED/RELATED) suffix mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §PARTY_IDENTIFIED"
+  - "ITS-REST simplified_formats master05 §PARTY_SELF"
+  - "ITS-REST simplified_formats master05 §PARTY_RELATED"
+  - "ITS-REST simplified_formats master05 §PARTY_PROXY"
+  - "RM common §PARTY_PROXY"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "master05 lists |id_scheme flat-type as Integer for PARTY_SELF/IDENTIFIED/RELATED — an upstream typo; external_ref.id.scheme is a String (master05 §PARTY_IDENTIFIED)"
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/composer"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "required"]
+  rows:
+    - ["PARTY_SELF", "|id", "external_ref.id.value", "no"]
+    - ["PARTY_SELF", "|id_scheme", "external_ref.id.scheme", "no"]
+    - ["PARTY_SELF", "|id_namespace", "external_ref.namespace", "conditional"]
+    - ["PARTY_IDENTIFIED", "|name", "name", "no"]
+    - ["PARTY_IDENTIFIED", "|id", "external_ref.id.value", "no"]
+    - ["PARTY_IDENTIFIED", "|id_scheme", "external_ref.id.scheme", "no"]
+    - ["PARTY_IDENTIFIED", "|id_namespace", "external_ref.namespace", "conditional"]
+    - ["PARTY_IDENTIFIED", "/_identifier:i", "identifiers", "no"]
+    - ["PARTY_RELATED", "|name", "name", "no"]
+    - ["PARTY_RELATED", "|id", "external_ref.id.value", "no"]
+    - ["PARTY_RELATED", "|id_scheme", "external_ref.id.scheme", "no"]
+    - ["PARTY_RELATED", "|id_namespace", "external_ref.namespace", "conditional"]
+    - ["PARTY_RELATED", "/_identifier:i", "identifiers", "no"]
+    - ["PARTY_RELATED", "/_relationship", "relationship", "conditional"]

@@ -1,0 +1,27 @@
+# The class-S sustained mixed-load case — conformance-by-measurement.
+# The offered load is OPEN-LOOP (a seeded arrival schedule, never
+# closed-loop users) so coordinated omission cannot hide stalls; the class
+# floors are the published population-anchored defaults (upstream
+# ratification owns changes); p99 <= 1 s is the standard SLO the committed
+# knee-ladder methodology already publishes.
+id: PERF-mixed_load-class_S
+kind: performance
+component: PERFORMANCE
+description: "Class-S sustained mixed workload"
+test_purpose: >-
+  Under the class-S normative offered load the platform sustains the
+  class-S latency and throughput thresholds.
+spec_refs: ["CNF 2.0 performance schedule §classes (this proposal; 2017 schedule lineage)"]
+class: S
+corpus: cnf.scale.100k
+workload:
+  arrival_rate: 15/s
+  warmup: PT5M
+  duration: PT1H
+  mix: { composition_read: 61%, adhoc_query: 30%, composition_commit: 8%, ehr_create: 1% }
+thresholds:
+  - { metric: latency_p99, operation: composition_read, max: 1000 }
+  - { metric: latency_p99, operation: composition_commit, max: 1000 }
+  - { metric: error_rate, max: 0 }
+  - { metric: offered_load_sustained, min: 15 }
+# environment: bound to the mandatory ixit.json environment block
