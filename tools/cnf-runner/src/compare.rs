@@ -76,6 +76,10 @@ pub enum MapDisposition {
     /// Coverage arrives with a later authoring wave; the justification names
     /// which chapter carries it.
     Pending,
+    /// Adjudicated: the ground deliberately lands with a NAMED later
+    /// workstream (justification names it). Unlike `pending`, a deferred row
+    /// is a settled decision and does not hold the gate open.
+    Deferred,
     /// Deliberately not carried into the CNF catalogue; justification
     /// mandatory.
     Dropped,
@@ -216,6 +220,7 @@ pub fn render_report(cmp: &Comparison, set: &ArtifactSet) -> String {
         let key = match entry.disposition {
             MapDisposition::Covered => "covered",
             MapDisposition::Pending => "pending",
+            MapDisposition::Deferred => "deferred",
             MapDisposition::Dropped => "dropped",
             MapDisposition::OutOfScope => "out_of_scope",
         };
@@ -287,6 +292,7 @@ pub fn render_report(cmp: &Comparison, set: &ArtifactSet) -> String {
         let disposition = match entry.disposition {
             MapDisposition::Covered => "covered",
             MapDisposition::Pending => "pending",
+            MapDisposition::Deferred => "deferred",
             MapDisposition::Dropped => "dropped",
             MapDisposition::OutOfScope => "out_of_scope",
         };

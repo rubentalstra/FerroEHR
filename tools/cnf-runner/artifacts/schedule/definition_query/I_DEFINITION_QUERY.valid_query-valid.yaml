@@ -5,17 +5,18 @@
 # text is accepted and stored.
 id: I_DEFINITION_QUERY.valid_query-valid
 kind: functional
-status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.valid_query
 capabilities: [QueryProvisioning]
 exercises: [AqlBasic]
 profiles: [STANDARD]
 test_purpose: "A valid AQL query text is accepted (valid_query realized via store_query)."
-description: "valid_query for a valid AQL query (schedule cells TBD; draft)"
+description: "valid_query for a valid AQL query (schedule cells TBD; SM-derived)"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.valid_query"
   - "CNF platform_test_schedule master05 §valid_query-valid"
+guards:
+  - "master05 is TBD upstream: flows derived from the SM operation semantics and the stored-query Definitions API — CNF platform_test_schedule master05 (all cells xx/TBD); AMB-38"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:

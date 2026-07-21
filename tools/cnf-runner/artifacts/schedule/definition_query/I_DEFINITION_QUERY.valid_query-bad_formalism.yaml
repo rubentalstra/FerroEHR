@@ -1,20 +1,20 @@
-# Official master05 case. Cells are TBD placeholders ("xx") -> status: draft
-# (REQUIREMENTS.md). valid_query takes a_type (the formalism name/version — SM
+# Official master05 case. Cells are TBD placeholders ("xx") -> # (REQUIREMENTS.md). valid_query takes a_type (the formalism name/version — SM
 # valid_query(a_query_text, a_type)); an unsupported formalism is rejected.
 # Realized via store_query with an unsupported query_type.
 id: I_DEFINITION_QUERY.valid_query-bad_formalism
 kind: functional
-status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.valid_query
 capabilities: [QueryProvisioning]
 exercises: [AqlBasic]
 profiles: [STANDARD]
 test_purpose: "A query declared under an unsupported formalism (a_type) is rejected."
-description: "valid_query for a bad formalism (schedule cells TBD; draft)"
+description: "valid_query for a bad formalism (schedule cells TBD; SM-derived)"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.valid_query"
   - "CNF platform_test_schedule master05 §valid_query-bad_formalism"
+guards:
+  - "master05 is TBD upstream: flows derived from the SM operation semantics and the stored-query Definitions API — CNF platform_test_schedule master05 (all cells xx/TBD); AMB-38"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:

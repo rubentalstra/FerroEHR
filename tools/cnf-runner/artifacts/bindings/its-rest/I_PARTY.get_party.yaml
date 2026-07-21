@@ -18,4 +18,5 @@ outcomes:
   ok:
     status: 200                           # 200_PERSON_retrieved.yaml
     headers: { Content-Type: negotiated }
-  not_found: { status: 404 }              # unknown versioned_object_uid (versioned_object_does_not_exist)
+  not_found: { status: 404 }
+  not_acceptable: { status: 406 }         # unfulfillable Accept (overview negotiation rules; no simplified mapping exists for demographic resources)              # unknown versioned_object_uid (versioned_object_does_not_exist)

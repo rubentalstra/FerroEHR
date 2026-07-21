@@ -8,14 +8,15 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 322 |
+| CNF catalogue cases | 323 |
 | active ECC rows | 394 |
-| mapped: covered | 342 |
+| mapped: covered | 350 |
+| mapped: deferred | 5 |
 | mapped: dropped | 18 |
 | mapped: out_of_scope | 9 |
-| mapped: pending | 25 |
+| mapped: pending | 12 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 33 |
+| CNF cases beyond the old catalogue | 26 |
 
 Gate clean: **NO**
 
@@ -160,12 +161,12 @@ Gate clean: **NO**
 | `ECC-TPL-014` | covered | `I_DEFINITION_ADL14.delete_opt-delete_existing` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
 | `ECC-TPL-015` | covered | `I_DEFINITION_ADL14.delete_opt-delete_latest_version` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
 | `ECC-TPL-016` | covered | `I_DEFINITION_ADL14.delete_opt-delete_specific_version` | official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface |
-| `ECC-SQR-001` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-SQR-002` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-SQR-004` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-SQR-005` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-SQR-006` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-SQR-007` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-001` | covered | `I_DEFINITION_QUERY.valid_query-valid` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard) |
+| `ECC-SQR-002` | covered | `I_DEFINITION_QUERY.list_queries-non_empty` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard) |
+| `ECC-SQR-004` | covered | `I_DEFINITION_QUERY.list_queries-empty` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard) |
+| `ECC-SQR-005` | covered | `I_DEFINITION_QUERY.list_queries-select_items` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard) |
+| `ECC-SQR-006` | covered | `I_DEFINITION_QUERY.valid_query-bad_formalism` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard) |
+| `ECC-SQR-007` | covered | `I_DEFINITION_QUERY.valid_query-invalid` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard) |
 | `ECC-QRY-001` | covered | `I_QUERY_SERVICE.smoke_test` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
 | `ECC-QRY-002` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
 | `ECC-QRY-003` | covered | `I_QUERY_SERVICE.execute_stored_query-empty_db` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
@@ -356,7 +357,7 @@ Gate clean: **NO**
 | `ECC-SEC-001` | covered | `SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep` | ground carried by the SEC-BASIC unauthenticated sweep (universal 401 rule) |
 | `ECC-SEC-002` | covered | `SEC-AUTHORIZATION_SEPARATION-readonly_write_denied` | ground carried by the SEC-BASIC read-only separation case (universal 403 rule) |
 | `ECC-COM-032` | covered | `I_EHR_COMPOSITION.has_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
-| `ECC-SQR-008` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
+| `ECC-SQR-008` | covered | `I_DEFINITION_QUERY.has_query-xxx` | ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard); the existing-check ground is reshaped into the has_query case |
 | `ECC-QRY-014` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit` | ground carried (AqlAdvanced/OPTIONS per the Profiles matrix) |
 | `ECC-QRY-015` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
 | `ECC-QRY-016` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
@@ -383,23 +384,23 @@ Gate clean: **NO**
 | `ECC-ADM-012` | covered | `I_ADMIN_ARCHIVE.archive_ehrs-archive_selected` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
 | `ECC-ADM-013` | covered | `I_ADMIN_SERVICE.physical_party_delete-delete_existing` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
 | `ECC-ADM-014` | covered | `I_ADMIN_ARCHIVE.archive_parties-archive_selected` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
-| `ECC-TPL-017` | pending |  | template-example round-trip ground belongs to the simplified-formats/template-example wave |
+| `ECC-TPL-017` | deferred |  | template-example round-trip ground belongs to the simplified-formats/template-example wave — a settled decision, the deepening workstream is the named carrier |
 | `ECC-QRY-025` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection` | ground carried 1:1 (reshaped under the CNF 2.0 case model) |
 | `ECC-SF-001` | covered | `SF-FLAT-commit_roundtrip_ctx_defaults` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
 | `ECC-SF-002` | covered | `SF-STRUCTURED-commit_roundtrip` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
-| `ECC-SF-003` | pending |  | q-value negotiation strictness enters with the simplified-formats deepening (blueprint category 11) — weighting is tech-profile machinery, not a single case |
-| `ECC-SF-004` | pending |  | retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 406 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case |
-| `ECC-SF-005` | pending |  | retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 415 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case |
+| `ECC-SF-003` | deferred |  | q-value negotiation strictness enters with the simplified-formats deepening (blueprint category 11) — weighting is tech-profile machinery, not a single case — a settled decision, the deepening workstream is the named carrier |
+| `ECC-SF-004` | deferred |  | retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 406 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case — a settled decision, the deepening workstream is the named carrier |
+| `ECC-SF-005` | deferred |  | retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 415 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case — a settled decision, the deepening workstream is the named carrier |
 | `ECC-SF-006` | covered | `SF-FLAT-missing_template_id` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
 | `ECC-SF-007` | covered | `SF-FLAT-reject_unknown_field` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
 | `ECC-SF-008` | covered | `SF-FLAT-reject_other_with_code` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
 | `ECC-SF-009` | covered | `SF-WT-web_template_get` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31 |
 | `ECC-SF-010` | covered | `SF-EXAMPLE-accept_forms` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31 |
 | `ECC-SF-011` | covered | `SF-EXAMPLE-unsupported_accept` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31 |
-| `ECC-SF-012` | pending |  | CONTRIBUTION with simplified inner data enters with the simplified-formats deepening (blueprint category 14) — requires the commit_contribution binding to declare a simplified-inner-data surface |
+| `ECC-SF-012` | deferred |  | CONTRIBUTION with simplified inner data enters with the simplified-formats deepening (blueprint category 14) — requires the commit_contribution binding to declare a simplified-inner-data surface — a settled decision, the deepening workstream is the named carrier |
 | `ECC-SF-013` | covered | `SF-SCOPE-ehr_status_no_simplified` | scope-negative carried (no simplified mapping for EHR_STATUS; 406 per the overview negotiation rules) |
 | `ECC-SF-014` | covered | `SF-SCOPE-directory_no_simplified` | scope-negative carried (no simplified mapping for DIRECTORY; 406 per the overview negotiation rules) |
-| `ECC-SF-015` | pending |  | no demographic component exists in the catalogue yet — enters with the demographic wave |
+| `ECC-SF-015` | covered | `SF-SCOPE-demographic_no_simplified` | scope-negative carried (no simplified mapping for demographic resources; 406 per the overview negotiation rules) |
 | `ECC-SF-016` | covered | `SF-FLAT-commit_roundtrip_ctx_defaults` | ctx observability carried by the ctx-defaults assertions of the round-trip case |
 | `ECC-ADL2-001` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
 | `ECC-ADL2-002` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
@@ -428,13 +429,6 @@ Gate clean: **NO**
 - `I_ADMIN_SERVICE.list_contributions-time_range`
 - `I_ADMIN_SERVICE.physical_party_delete-delete_non_existing`
 - `I_ADMIN_SERVICE.versioned_composition_count-time_range`
-- `I_DEFINITION_QUERY.has_query-xxx`
-- `I_DEFINITION_QUERY.list_queries-empty`
-- `I_DEFINITION_QUERY.list_queries-non_empty`
-- `I_DEFINITION_QUERY.list_queries-select_items`
-- `I_DEFINITION_QUERY.valid_query-bad_formalism`
-- `I_DEFINITION_QUERY.valid_query-invalid`
-- `I_DEFINITION_QUERY.valid_query-valid`
 - `I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb`
 - `I_DEMOGRAPHIC_SERVICE.delete_party-bbbb`
 - `I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb`
