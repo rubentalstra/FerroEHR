@@ -40,7 +40,9 @@ model that killed it:
    (Robot, Rust, Spock, Postman) proves itself; CI replaces the bottleneck
    maintainer. The same machine-readable philosophy openEHR already applies
    via BMM and OpenAPI.
-3. **Certification defined with international vocabulary** (§6, §9): a
+3. **Certification defined with international vocabulary** (§6, §9), with a
+   **multi-dimensional certificate**: functional profiles plus measured
+   performance-class ratings (§8.14), Enterprise and Security following: a
    conformity-assessment scheme per ISO/IEC 17000 — ISO/IEC 17050
    supplier's declarations first, witnessed peer verification next,
    delegated ISO/IEC 17025-lab + 17065-certifier assessment (the only rung
@@ -151,8 +153,8 @@ The 2017 conformance wiki page (T. Beale — Appendix) contributed four ideas
 the 2021–22 era never carried forward, recovered into this design: the
 maximal-coverage end-to-end template test and scenario/lifecycle suites
 (§11.2–3), the Enterprise dimension — data portability, EHR
-merge/split/move, cross-enterprise sync (§11.10), and the declared
-performance/volumetric classes (§8.10). Its functional levels 1/2/3+O were
+merge/split/move, cross-enterprise sync (§11.11), and the performance dimension made testable
+performance/volumetric classes (§8.14). Its functional levels 1/2/3+O were
 superseded by the Profiles book's CORE/STANDARD/OPTIONS.
 
 The 2017 spec review ([SPECCNF-1 comment 22500](https://openehr.atlassian.net/browse/SPECCNF-1?focusedCommentId=22500))
@@ -218,15 +220,24 @@ evaluate.
 
 ### 6.3 Scope discipline via ISO/IEC 25010 (answering the 2017 review)
 
-Conformance under CNF 2.0 attests **functional suitability** — functional
-completeness and correctness against the openEHR specifications — and nothing
-else. Performance efficiency, reliability, security, maintainability are
-distinct ISO/IEC 25010 characteristics: out of conformance scope (per the CNF
-Guide), referenced by their ISO names rather than redefined (the 2017 review's
-point), with the Statement schema reserving fields for products to declare
-them separately. ISO/IEC 25051 (conformity evaluation of ready-to-use software
-products) and ISO/IEC/IEEE 29119-3 (test documentation shapes) are the
-supporting citations for the evaluation procedure and report formats.
+Conformance under CNF 2.0 attests exactly two ISO/IEC 25010 characteristics,
+each with its own schedule and verdict machinery:
+
+- **Functional suitability** (completeness + correctness against the openEHR
+  specifications) — the functional + content schedules (§8).
+- **Performance efficiency** — the performance & volumetrics schedule
+  (§8.14): measured pass/fail class ratings (POC/S/L/R) under normative
+  workloads on declared environments. NOTE: the current Conformance Guide
+  scopes non-functional testing out; CNF 2.0 deliberately extends the scope
+  here, siding with the 2017 schedule's multi-dimensional certificate — an
+  explicit SEC decision item. Measures follow ISO/IEC 25023.
+
+Reliability, security (beyond §11.9's conformance points), and
+maintainability remain out of scope, referenced by their ISO names rather
+than redefined (the 2017 review's point). ISO/IEC 25051 (conformity
+evaluation of ready-to-use software products) and ISO/IEC/IEEE 29119-3 (test
+documentation shapes) are the supporting citations for the evaluation
+procedure and report formats.
 
 ### 6.4 Legal weight of self-declaration (the phrasing to adopt)
 
@@ -469,7 +480,7 @@ One file per case. Normative fields (∎ = required):
 | Field | Type | Semantics |
 |---|---|---|
 | `id` ∎ | string | Global CNF id. Families: `<SERVICE_COMPONENT>.<operation>-<variant>` (functional) and `CONT-<TYPE>-<variant>` (content) — both kept unchanged from the 2022 scheme; new chapters register their family with the maintainer group (this proposal registers `SF-<FORM>-<variant>` for the Simplified-Formats chapter). Ids are never reused; retired cases keep the id with `status: retired`. |
-| `kind` ∎ | `functional \| content` | Selects which optional blocks are meaningful. |
+| `kind` ∎ | `functional \| content \| performance` | Selects which optional blocks are meaningful (performance cases: §8.14). |
 | `status` | `active \| retired \| draft` | Default `active`. |
 | `component` ∎ | enum | EHR, EHR_COMPOSITION, EHR_CONTRIBUTION, EHR_DIRECTORY, DEFINITION_ADL14, DEFINITION_ADL2, DEFINITION_QUERY, QUERY, DEMOGRAPHIC, ADMIN, MESSAGING, CONTENT, SIMPLIFIED_FORMATS, … |
 | `sm_operation` | string | Functional cases: the SM anchor (`I_EHR_SERVICE.create_ehr`). CI resolves it against the SM component list. |
@@ -1391,7 +1402,8 @@ artifacts in the source standards, combined here as one computable file):
 | `claims` ∎ | claimed capabilities per the Profiles matrix + claimed profiles |
 | `tech_profiles` ∎ | which format/protocol matrices are claimed (e.g. `[its-rest: [canonical-json, canonical-xml, wt-flat]]`) |
 | `options` | declared behaviour for register-listed implementation choices (e.g. AMB-4: conflict vs version-param) |
-| `non_functional` | declaration-only slots, never verdict inputs (§6.3): `volumetric_class` — the 2017 schedule's ladder, declared not certified: `POC` (~5 concurrent users, demo) / `S` (small facility, ~100 users, ~100k EHRs) / `L` (large enterprise, ~1000 users, ~1M EHRs) / `R` (regional, ~10k users, ~10M EHRs), each backed by a linked measurement report from a published benchmark methodology (a companion artifact, outside conformance); plus free security/privacy posture declarations |
+| `performance` | the claimed **volumetric class per declared environment** (`POC`/`S`/`L`/`R`, §8.14) — a verdict input for the performance dimension: the claim selects the performance cases to run, and the earned class is computed from measured `results.json` thresholds exactly like functional verdicts |
+| `non_functional` | remaining declaration-only slots (security/privacy postures beyond the §11.9 conformance points) — never verdict inputs |
 | `evidence` ∎ | hash links to the `results.json` files backing the claims |
 | `attestation` | rung ≥ 1: signatory name/role/date + the §6.4 responsibility sentence |
 
@@ -1408,6 +1420,7 @@ unchanged" attestation referencing the prior evidence.
 | `schedule_release` ∎, `tech_profile` ∎ | what was run, under which format matrix |
 | `ixit_digest` ∎ | hash of the ixit.json used (reproducibility) |
 | `outcomes[]` ∎ | per case × format × row: `passed \| failed \| errored \| skipped \| not-applicable`, with **rows_driven/rows_total**, the failing step + assertion on failure, and a mandatory citation on every N/A, skip, and guard exclusion |
+| `measurements` | performance runs: per-case metric values + per-class `earned \| not-earned` verdicts, with the mandatory environment block (§8.14) |
 | `ambiguity_dispositions` | which register options the run exercised |
 
 `errored` (transport/SUT fault) is never a conformance finding. Mapping to
@@ -1480,6 +1493,59 @@ community PRs without a bottleneck maintainer — and it is ECC's
 coverage-guard discipline (`tools/conformance/tests/coverage.rs`),
 generalized.
 
+### 8.14 The performance & volumetrics schedule
+
+Performance conformance is its own dimension with its own machine-readable
+schedule — same artifact discipline, different verdict machinery. A
+performance case (`kind: performance`) defines:
+
+```yaml
+# schedule/performance/PERF-mixed_load-class_S.yaml
+id: PERF-mixed_load-class_S
+kind: performance
+component: PERFORMANCE
+test_purpose: >
+  Under the class-S normative workload the platform sustains the class-S
+  latency and throughput thresholds.
+spec_refs: ["CNF 2.0 performance schedule §classes (this proposal; 2017 schedule lineage)"]
+class: S                        # POC | S | L | R — the 2017 ladder, made testable
+corpus: cnf.scale.100k          # synthesized corpus recipe (§11.10 scale classes)
+workload:                       # normative operation mix, seeded + deterministic
+  concurrent_users: 100
+  duration: PT1H
+  mix: { composition_commit: 30%, composition_read: 40%, adhoc_query: 25%, ehr_create: 5% }
+thresholds:                     # ALL must hold for the class to be earned
+  - { metric: latency_p99, operation: composition_read, max: 2s }
+  - { metric: latency_p99, operation: composition_commit, max: 2s }
+  - { metric: error_rate, max: 0 }
+  - { metric: sustained_throughput, min: <SEC-set per class> }
+environment: declared           # the ixit.json environment block is MANDATORY
+```
+
+Rules:
+
+- **Classes are earned, not declared**: a class rating requires every
+  threshold of that class's case(s) to hold in a single measured run;
+  results land in `results.json` as measurements + a per-class
+  `earned | not-earned` verdict. The 2017 ladder supplies the shape (POC ~5
+  users; S ~100 users/100k EHRs; L ~1000 users/1M; R ~10k users/10M); the
+  concrete threshold numbers (the 2017 page's "XX" transaction rates) are a
+  SEC decision item, seeded from published measurement methodology.
+- **Environment-bound**: performance is meaningless without the deployment
+  described — the `ixit.json` environment block (hardware class, cores,
+  memory, storage class, topology) is mandatory for performance runs, and
+  every earned class is reported *with* its environment. This answers the
+  reason the current Guide excluded performance, without excluding it.
+- **Statement + certificate**: the statement claims a target class per
+  environment; the certificate reports the earned class alongside the
+  functional profile — the 2017 multi-dimensional certificate
+  (Functional | Performance, with Enterprise and Security following §11).
+- **Reference methodology**: seeded workload generators + the knee-finding
+  and sustained-run procedure of a published benchmark harness (this repo's
+  `tools/benchmark` is the donated working draft); any runner reproducing
+  the workload definition and emitting the measurement schema qualifies —
+  harness independence holds here too.
+
 ## 9. Certification governance — the ladder as a conformity-assessment scheme
 
 **Scheme owner: openEHR International** (the CIC that operationally runs the
@@ -1502,6 +1568,11 @@ attestation level so no rung can masquerade as a higher one:
 
 Cross-cutting rules:
 
+- **Certificate ratings are multi-dimensional** (the 2017 certificate,
+  realized): Functional (profile per tech profile) + Performance (earned
+  class per environment, §8.14), with Enterprise and Security dimensions
+  following as their §11 chapters land. Every dimension is computed from
+  `results.json`, never hand-asserted.
 - **Validity & supersession**: a statement/certificate names the CNF schedule
   release + spec versions + tech profile + exact product version. It never
   expires by clock alone; it is **superseded** when a newer schedule release
@@ -1605,22 +1676,29 @@ once §8.3 makes cases enumerable files:
    persistent medication list → event vital signs → update both → retrieve
    all versions in both formats — encoded as ordinary §8.3 flows; these
    catch cross-operation state defects the per-operation cases cannot.
-4. **Content chapters refresh** — raise the RM floor statement (1.0.2 → an
+4. **The performance & volumetrics chapter** (§8.14): normative workload
+   definitions + the class threshold numbers (the 2017 "XX" rates — SEC
+   decision, seeded from the donated benchmark methodology and its published
+   measurement artifacts), the synthesized scale corpora shared with
+   §11.10, and the measurement schema. Ships after the functional pilot
+   proves the artifact discipline; the schedule extension of the Guide's
+   scope is flagged for SEC in §6.3.
+5. **Content chapters refresh** — raise the RM floor statement (1.0.2 → an
    applicability ladder), fill 17.5 or formally adjudicate it out, fix the
    master14 numbering gap and the master13 duplicate heading.
-5. **Demographic (master10)** — schedule cases exist in no form today; ECC's
+6. **Demographic (master10)** — schedule cases exist in no form today; ECC's
    31 DEM cases + the ITS-REST Demographic API (DEVELOPMENT lifecycle) are the
    seed; profile placement stays OPTIONS.
-6. **Admin (master12) + Messaging (master13)** — decide what is
+7. **Admin (master12) + Messaging (master13)** — decide what is
    *wire-testable* (platform API) vs inherently off-wire (dump/load,
    archives); off-wire capabilities move to statement-declared, not
    schedule-tested — the honest boundary.
-7. **N/A re-adjudication of donated material (hard gate)** — every donated
+8. **N/A re-adjudication of donated material (hard gate)** — every donated
    case whose evidence or N/A justification points at ehrbase-rs internal
    tests is re-adjudicated to spec-text-only evidence **before** entering the
    normative catalogue. No exceptions; this is a scoped workstream, not an
    assumption.
-8. **Security & privacy conformance points** — currently only Signing +
+9. **Security & privacy conformance points** — currently only Signing +
    Anonymous EHRs in the Profiles book while the Certificate book advertises
    BASIC-SEC/BASIC-PRIV with no defining cases. Minimum viable set:
    authenticated-access enforcement, audit-event emission on writes
@@ -1628,9 +1706,9 @@ once §8.3 makes cases enumerable files:
    separation** (the 2017 schedule's BASIC point — openEHR's
    architecture-specific privacy property). Explicitly scoped small; not a security
    evaluation scheme.
-9. **ADL2 cases (master04)** — OPTIONS-profile depth for the `am24`
+10. **ADL2 cases (master04)** — OPTIONS-profile depth for the `am24`
    generation.
-10. **The Enterprise capability family** (the 2017 schedule's D/M/X
+11. **The Enterprise capability family** (the 2017 schedule's D/M/X
    dimension, absent from every later draft): **D — data portability**
    (full-EHR dump/load in canonical form between independent instances,
    verified by lossless regression over a random query set, on synthesized
@@ -1639,8 +1717,8 @@ once §8.3 makes cases enumerable files:
    **M — EHR management** (merge/split/move of EHRs across instances);
    **X — cross-enterprise synchronisation** (asynchronous update merging —
    specifications-CNF issue #1 is the 2017 seed). Its own profile family +
-   SM grounding decision; dump/load overlaps §11.6's off-wire boundary.
-11. **The openEHR→EEHRxF seam (EHDS alignment, later)** — cases verifying that
+   SM grounding decision; dump/load overlaps §11.7's off-wire boundary.
+12. **The openEHR→EEHRxF seam (EHDS alignment, later)** — cases verifying that
    priority-category content in a conformant CDR renders faithfully to the
    EEHRxF FHIR models, once the March 2027 implementing acts fix them. Flag:
    this extends conformance scope beyond the platform API; it needs its own
@@ -1728,8 +1806,9 @@ acceptance gate:
 | U7 | statement/results/ixit schemas + verdict rules + the reference verdict implementation + the runner verification pack (transcripts + adjudications) | Two independent runners (ECC + the rescued Robot suite or another vendor's) compute identical verdicts on the pack |
 | U8 | The registry (production, on openehr.org): statement rendering, attestation-level labels, badges, dispute log | First two products listed (ehrbase-rs + upstream EHRbase baselines) |
 
-Demographic (master10) and Admin/Messaging (master12/13) follow as U9+ per
-the §11 roadmap once the pattern is proven on U2–U6.
+The performance & volumetrics chapter (§8.14 + §11.4), Demographic
+(master10), and Admin/Messaging (master12/13) follow as U9+ per the §11
+roadmap once the pattern is proven on U2–U6.
 
 ### 14.2 This codebase: ECC becomes the first production implementation
 
@@ -1745,8 +1824,9 @@ owner-approved), sequenced:
 | W4 | **Statement / results / ixit emission** | `results.json` migrates to the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
 | W5 | **Simplified-formats deepening** | The §8.7 blueprint's gap categories 2–9 (node-id algorithm, level removal, the 43 suffix tables, `_`-attributes, `\|raw`, full ctx vocabulary, counters, STRUCTURED style) + deepened 1/10 — ~40 new SF cases, all spec-example-driven, all OPTIONS-profile. | Every master04/05/06 spec-example JSON block exercised; ECC baseline ratchets upward only |
 | W6 | **Runner verification pack** | Author the U7 transcripts + adjudications; ECC self-verifies against them in CI; publish the pack so the Robot suite (and any vendor runner) can prove itself. | ECC passes both pack parts; the pack rejects a deliberately-broken runner build |
+| W7 | **Performance schedule implementation** | `tools/benchmark`'s workload generation, knee-finding ladder, and sustained-run procedure re-expressed as §8.14 performance cases + the measurement schema; class verdicts computed into results.json; environment block formalized in ixit.json. | An earned-class run against both SUTs committed; verdicts reproduce the published benchmark artifacts |
 
-Sequencing: W1 → W2 → {W3, W4} → {W5, W6}. Standing gates apply throughout:
+Sequencing: W1 → W2 → {W3, W4} → {W5, W6, W7}. Standing gates apply throughout:
 `cargo clippy --workspace --all-targets --all-features`, full nextest, the
 ECC zero-drift rule (the baseline only ratchets upward), and the
 changelog/docs-website rules for any user-visible surface.
