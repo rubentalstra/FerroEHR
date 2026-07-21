@@ -1,0 +1,15 @@
+---
+name: cnf-test-case-format-location
+description: Where the CNF platform test-case format, data-set matrices, content decision-tables, and robot fixtures live in the vendored spec
+metadata:
+  type: reference
+---
+
+CNF Platform Conformance Test Schedule = `docs/specs/openehr/CNF/docs/platform_test_schedule/`.
+
+- **Test-case format definition** (normative): `master03-overview.adoc` §"Test Case <SERVICE_COMPONENT>.<operation>-<test-specific id>" — the 4-row table `Description | Pre-conditions | Post-conditions | Flow` (an implementation adds a 5th `Test runners` row). Key normative sentence: "A 'test' is therefore the execution of a particular test case with a particular data set." Two test aspects: API conformance + Data Validation conformance.
+- **Functional (API) suites**: master06=EHR/EHR_STATUS, master07=EHR_COMPOSITION (incl. versioning: preceding_version_uid, change_type CREATE/MODIFY, lifecycle_state openehr::523|deleted|), master04=Definitions/OPT (I_DEFINITION_ADL14 validate/upload/get/delete + versioning notes), master05=query-def, master08=contribution, master09=directory, master10=demographic, master11=querying, master12=admin, master13=messaging.
+- **Data-set matrices** live inline in the functional chapters as asciidoc `[cols=...]` tables (e.g. master06 §Test Data Sets = the 16-row is_queryable/is_modifiable/subject/other_details/ehr_id table). The 16 rows are duplicated verbatim inside the robot `[Template]` data-driven table.
+- **Content (Data Validation) decision-tables**: master15 (composition), master16 (entry), master17.1–17.7 (data types). master17.3 (quantity) = DV_ORDINAL/DV_SCALE/DV_COUNT/DV_QUANTITY/DV_PROPORTION/DV_INTERVAL<>. Columns = input attrs (magnitude/units/symbol/value…) + constraint columns (C_DV_QUANTITY.list, C_INTEGER.range/list…) + `expected` (accepted/rejected) + `constraints violated`. Each ROW is a data set; case × row = one test.
+- **Robot fixtures**: `docs/specs/openehr/CNF/tests/platform/robot/` — suites under `<INTERFACE>/<operation>/*.robot`; fixtures under `_resources/test_data_sets/` (ehr/{valid,invalid}, compositions/{CANONICAL_JSON,CANONICAL_XML,FLAT,STRUCTURED,TDD}, valid_templates/*, invalid_templates/{empty_file,removed_mandatory_elements,multiple_elements,...}, contributions, query). Fixture naming carries the verdict: `__full.json` = valid, `__invalid_wrong_structure.json` / `__invalid_opt_doesnt_exist.json` = invalid; invalid EHR_STATUS files named by defect (007_ehr_status_is_modifiable_missing.json). Subject id placeholder `__AUTO-GENRATED-BY-TEST__` randomized per run.
+- NOTE per project memory ecc-own-conformance-framework: this repo's ECC does NOT map to these Robot suites; treat as spec-format reference only.
