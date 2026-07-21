@@ -1,0 +1,22 @@
+# SM I_DEFINITION_ADL2.list_artefacts: list every AOM2 artefact (archetypes +
+# templates + OPTs). ITS-REST 1.1.0 surfaces no generic artefact-listing wire
+# (AMB-37), so the its-rest binding declares the operation unrealized and this
+# case is not-applicable WITH CITATION; it activates when a later ITS release
+# adds the endpoint.
+id: I_DEFINITION_ADL2.list_artefacts-unrealized
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.list_artefacts
+capabilities: [Adl2ArchetypeProvisioning, Adl2OptProvisioning]
+profiles: [OPTIONS]
+test_purpose: "Listing all AOM2 artefacts returns the artefact union (archetypes + templates + OPTs)."
+description: "list all ADL2 artefacts"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.list_artefacts"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+flow:
+  - step: 1
+    call: list_artefacts
+    expect: ok
+ambiguities: [AMB-37]

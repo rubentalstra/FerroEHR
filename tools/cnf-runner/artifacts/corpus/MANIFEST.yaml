@@ -1005,3 +1005,77 @@ cnf.messaging.tdd.invalid:
     defect: "not well-formed XML (unclosed element) — a TDD must be a well-formed Template Data Document"
     spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd (tdd must be a valid TDD)"
   provenance: "authored 2026-07-21 as a malformed TDD XML stub for the master13 import_tdd invalid case; structural placeholder pending corpus authoring"
+# Corpus additions for the DEFINITION_ADL2 (I_DEFINITION_ADL2) chapter.
+# Merged into corpus/MANIFEST.yaml at verify time; entries live here ONLY.
+#
+# FORMAT CAVEAT (forcing item, see schedule/definition_adl2/REQUIREMENTS.md):
+# ADL2 operational templates and archetypes are `text/plain` ADL2 SOURCE, not
+# XML. `CorpusFormat` (tools/cnf-runner/src/vocab.rs) has no `adl2-text` /
+# `adl2-opt` variant yet, so these entries carry `format: adl2-text` as the
+# closest existing operational-template role. This misnames the wire encoding
+# (opt-xml = ADL 1.4 OPT XML) and MUST be replaced by a dedicated `adl2-text`
+# (source) / `adl2-opt` (operational template) CorpusFormat once the enum is
+# extended. The same stopgap+propose pattern the master05 chapter used for
+# `aql-text`.
+# TODO: switch these entries to `adl2-text` once CorpusFormat gains the ADL2
+#       source variant, and replace the structural placeholder payloads with
+#       the spine-first authored ADL2 corpus (#202).
+
+cnf.adl2.opt.minimal:
+  source: fixtures/adl2/opt/minimal.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics + the ITS-REST definition_template_adl2_upload example; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.vitals:
+  source: fixtures/adl2/opt/vitals.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics; second valid OPT for list/count coverage; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.unparseable:
+  source: fixtures/adl2/opt/invalid/unparseable.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "unparseable ADL2 source (malformed cADL block)"
+    spec_ref: "AM ADL2 (cADL/ADL2 grammar: a well-formed artefact must parse)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-003 row against AM ADL2 grammar; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.missing_description:
+  source: fixtures/adl2/opt/invalid/missing_description.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "missing mandatory description (RESOURCE_DESCRIPTION) section"
+    spec_ref: "AM AOM2 (AUTHORED_RESOURCE.description is mandatory)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-004 row against AM AOM2 authored-resource validity; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.missing_definition:
+  source: fixtures/adl2/opt/invalid/missing_definition.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "missing mandatory definition (root C_COMPLEX_OBJECT) section"
+    spec_ref: "AM AOM2 (ARCHETYPE.definition is mandatory)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM AOM2 archetype validity; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.invalid.empty:
+  source: fixtures/adl2/opt/invalid/empty.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "empty artefact (no ADL2 source)"
+    spec_ref: "AM ADL2 (an artefact must declare artefact type + identifier + definition)"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM ADL2 artefact structure; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+# Documentary only: a valid ADL2 ARCHETYPE (not an OPT). ITS-REST 1.1.0
+# surfaces no ADL2 archetype-provisioning wire (only OPTs upload under
+# /definition/template/adl2), so no case references this key today — it stages
+# the eventual Adl2ArchetypeProvisioning coverage (AMB-37; see REQUIREMENTS.md).
+cnf.adl2.archetype.minimal:
+  source: fixtures/adl2/archetype/minimal.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from AM ADL2 archetype structure; documents the ADL2 archetype-provisioning gap (no ITS-REST wire, AMB-37); ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"

@@ -1484,41 +1484,52 @@ ECC-SF-016:
   covered_by: [SF-FLAT-commit_roundtrip_ctx_defaults]
   justification: "ctx observability carried by the ctx-defaults assertions of the round-trip case"
 ECC-ADL2-001:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-valid_opt]
+  justification: "ground carried; the Prefer triad rides the binding (prefer_conditional), not the protocol-neutral case"
 ECC-ADL2-002:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-duplicate_conflict]
+  justification: "ground carried; the SM replace-vs-conflict divergence recorded in AMB-37"
 ECC-ADL2-003:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-invalid_artefacts, I_DEFINITION_ADL2.valid_artefact-invalid]
+  justification: "ground carried as validation_failed (the ADL2 upload OAS enumerates 400, not the old 422; AMB-1 body looseness)"
 ECC-ADL2-004:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.upload_artefact-invalid_artefacts, I_DEFINITION_ADL2.valid_artefact-invalid]
+  justification: "ground carried (AOM2 description-mandatory row)"
 ECC-ADL2-005:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: dropped
+  justification: "specialised-child-resolves-parent needs ADL2 ARCHETYPE provisioning, which ITS-REST 1.1.0 does not surface (upload is OPT-only, AMB-37); groundable in AM AOM2 §Specialisation — re-enters when an ITS surfaces archetype upload"
 ECC-ADL2-006:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-retrieve]
+  justification: "representation forms ride the binding negotiation; the xml-only-406 assertion is excluded (the ADL2 plain GET enumerates no 406 — AMB-37)"
 ECC-ADL2-007:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-unknown]
+  justification: "ground carried 1:1"
 ECC-ADL2-008:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-version_get]
+  justification: "ground carried (deprecated endpoint, guarded)"
 ECC-ADL2-009:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-example]
+  justification: "ground carried; the four LOCATABLE Accept forms ride the example binding formats"
 ECC-ADL2-010:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-example]
+  justification: "ground carried; detail-level enum + bad-enum 400 ride the binding"
 ECC-ADL2-011:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.get_artefact-example_unknown]
+  justification: "the 404 portion is carried; the wrong-Accept-406 portion is excluded (no groundable 406 on the plain ADL2 GET without a variant-aware completeness seam — AMB-37)"
 ECC-ADL2-012:
-  disposition: pending
-  justification: "ADL2 definition wave (framework chapter beyond master04)"
+  disposition: covered
+  covered_by: [I_DEFINITION_ADL2.list_opts-non_empty]
+  justification: "ground carried; TemplateMetadata fields ride the ADL2 list schema"
 ECC-AQT-001:
   disposition: covered
   covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches]

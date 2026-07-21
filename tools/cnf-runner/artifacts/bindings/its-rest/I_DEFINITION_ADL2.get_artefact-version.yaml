@@ -1,0 +1,19 @@
+# Wire realization of I_DEFINITION_ADL2.get_artefact for the DEPRECATED ADL2
+# "Get a template at version" endpoint. A THIRD realization of get_artefact
+# (plain OPT GET + example + this version GET), selected by `variant: version`.
+# The endpoint is marked `deprecated: true` in the OAS (SPECITS-87: "Deprecate
+# ADL2 'Get template at version'"); cases guard on that.
+# Sources: specifications/operations/definition_template_adl2_version_get.yaml
+# (operationId definition_template_adl2_version_get, deprecated: true),
+# responses/200_Template_adl2_retrieved.yaml, 404_unknown_template_id_or_version.yaml,
+# parameters/path/template_id.yaml + parameters/path/version.yaml.
+sm_operation: I_DEFINITION_ADL2.get_artefact
+its: its-rest
+request:
+  method: GET
+  path: /definition/template/adl2/{template_id}/{version}  # definition_template_adl2_version_get.yaml (deprecated)
+  headers:
+    Accept: text/plain                            # Accept_Template_adl2.yaml
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }   # 200_Template_adl2_retrieved.yaml
+  not_found: { status: 404 }                       # 404_unknown_template_id_or_version.yaml

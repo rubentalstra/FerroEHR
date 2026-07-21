@@ -1,0 +1,28 @@
+# Wire realization of I_DEFINITION_ADL2.upload_artefact for ITS-REST 1.1.0.
+# ITS-REST 1.1.0 surfaces ADL2 provisioning ONLY for operational templates
+# (OPTs): the SM upload_artefact is artefact-generic ("archetype, template or
+# operational_template") but the only wire is POST /definition/template/adl2,
+# which accepts an OperationalTemplateV2 (text/plain ADL2 source). Bare ADL2
+# archetype upload has no wire (AMB-37); this binding realizes the OPT path.
+# Sources: specifications/operations/definition_template_adl2_upload.yaml
+# (operationId definition_template_adl2_upload; Content-Type enum text/plain),
+# responses/201_Template_adl2_upload.yaml (Location + ETag + TemplateIdentifier
+# body under Prefer), 409_template_already_exists.yaml, 400.yaml.
+sm_operation: I_DEFINITION_ADL2.upload_artefact
+its: its-rest
+request:
+  method: POST
+  path: /definition/template/adl2                # definition_template_adl2_upload.yaml
+  body: opt_adl2
+  headers:
+    Content-Type: text/plain                     # the ONLY accepted upload type (operation Content-Type enum)
+outcomes:
+  created: { status: 201 }                        # 201_Template_adl2_upload.yaml
+  already_exists: { status: 409 }                 # 409_template_already_exists.yaml — duplicate template_id
+  validation_failed:
+    status: 400                                   # 400.yaml — unparseable / AOM2-invalid artefact
+    body: error_loose                             # AMB-1 (error body shape divergence)
+captures:
+  template_id:
+    from: body "template_id"                      # TemplateIdentifier.yaml (Prefer: return=identifier|representation)
+    fallback: header Location last-segment        # Location_Template_adl2.yaml (Prefer: return=minimal)

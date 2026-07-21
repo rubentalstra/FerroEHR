@@ -250,6 +250,9 @@ pub enum CorpusFormat {
     /// AQL query text (stored-query definitions).
     #[serde(rename = "aql-text")]
     AqlText,
+    /// ADL2 artefact source text (archetypes/templates/OPTs in ADL syntax).
+    #[serde(rename = "adl2-text")]
+    Adl2Text,
 }
 
 /// HTTP method of a binding request (the ITS-REST realization layer).
@@ -478,6 +481,7 @@ impl CorpusFormat {
         CorpusFormat::WtStructured,
         CorpusFormat::OptXml,
         CorpusFormat::AqlText,
+        CorpusFormat::Adl2Text,
     ];
 }
 
@@ -560,6 +564,6 @@ mod all_consts_tests {
         assert_eq!(Tier::ALL.len(), 7);
         assert_eq!(Disposition::ALL.len(), 6);
         assert_eq!(FormatName::ALL.len(), 5);
-        assert_eq!(CorpusFormat::ALL.len(), 6);
+        assert_eq!(CorpusFormat::ALL.len(), 7);
     }
 }

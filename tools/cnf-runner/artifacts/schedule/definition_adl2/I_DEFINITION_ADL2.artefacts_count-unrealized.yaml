@@ -1,0 +1,23 @@
+# SM I_DEFINITION_ADL2.artefacts_count: total count of all AOM2 artefacts.
+# ITS-REST 1.1.0 surfaces no count endpoint (AMB-37; a count is only derivable
+# client-side from list length), so the its-rest binding declares the operation
+# unrealized and this case is not-applicable WITH CITATION.
+id: I_DEFINITION_ADL2.artefacts_count-unrealized
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.artefacts_count
+capabilities: [Adl2ArchetypeProvisioning, Adl2OptProvisioning]
+profiles: [OPTIONS]
+test_purpose: "artefacts_count returns the total number of AOM2 artefacts (zero on an empty server)."
+description: "count all ADL2 artefacts"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.artefacts_count"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+flow:
+  - step: 1
+    call: artefacts_count
+    expect: ok
+    assert:
+      - { assert: returns, equals: 0 }   # empty server -> zero artefacts
+ambiguities: [AMB-37]

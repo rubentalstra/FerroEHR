@@ -410,3 +410,28 @@ AMB-38:
     AMB-36 precedent); flows/assertions are replaced when the upstream
     chapter is fleshed.
   disposition: fixed_handling
+AMB-37:
+  ambiguity: >-
+    The SM I_DEFINITION_ADL2 interface is artefact-generic — a single
+    upload_artefact/get_artefact/has_artefact/delete_artefact plus type-specific
+    list_*/*_count over archetypes, templates AND operational templates — but
+    ITS-REST 1.1.0 surfaces ONLY operational-template (OPT) wire under
+    /definition/template/adl2*. There is no ADL2 archetype-provisioning
+    endpoint, no generic all-artefacts listing, no DELETE, no *_count endpoint,
+    no validation-only endpoint, and no regex match-by-pattern (the list filter
+    is a wildcard glob with no invalid-pattern error path). ITS-REST also adds
+    an example-generation surface the SM does not define, and its single ADL2
+    list does not distinguish TEMPLATE from OPERATIONAL_TEMPLATE.
+  source: "SM docs/UML/classes/i_definition_adl2.adoc vs ITS-REST specifications/operations (definition_template_adl2_* — OPT-only)"
+  handling: >-
+    Archetype provisioning, generic listing, delete, and counts are declared
+    unrealized on its-rest (cases not-applicable WITH CITATION, activating on a
+    later ITS release). valid_artefact realizes via upload_artefact; has_artefact
+    and list_matching_artefacts realize via the ADL2 list (filter); list_templates
+    conflates with list_opts on the one list endpoint; example generation and the
+    deprecated version GET anchor to get_artefact (the closest SM op, AMB-13/AMB-31
+    rule). SPECPR candidates: (1) add ADL2 archetype provisioning + delete + count
+    + generic-list + example-generation operations to the SM/ITS alignment;
+    (2) give the runner binding schema a variant discriminator so example can
+    carry its own 406 independently of the plain get_artefact binding.
+  disposition: fixed_handling

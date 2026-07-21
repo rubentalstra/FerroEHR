@@ -68,7 +68,8 @@
           "wt-flat",
           "wt-structured",
           "opt-xml",
-          "aql-text"
+          "aql-text",
+          "adl2-text"
         ]
       },
       "rm_versions": {
