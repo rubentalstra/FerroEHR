@@ -1,0 +1,14 @@
+# ITS-REST 1.1.0 surfaces no wire for I_DEFINITION_ADL2.delete_artefact — no
+# DELETE exists on any /definition/template/adl2* path (the only DELETEs in the
+# OAS are admin_ehr_delete*, composition_delete, directory_delete and the
+# demographic deletes). Declared unrealized so the two delete_artefact cases are
+# not-applicable WITH CITATION and activate when a later ITS release adds the
+# endpoint.
+sm_operation: I_DEFINITION_ADL2.delete_artefact
+its: its-rest
+unrealized:
+  reason: >-
+    No DELETE operation exists on any /definition/template/adl2* path in
+    ITS-REST 1.1.0.
+  source: "SM docs/UML/classes/i_definition_adl2.adoc (delete_artefact) vs ITS-REST specifications/operations (no ADL2 DELETE)"
+  ambiguity: AMB-37

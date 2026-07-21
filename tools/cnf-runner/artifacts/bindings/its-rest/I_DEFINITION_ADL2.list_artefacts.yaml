@@ -1,0 +1,14 @@
+# ITS-REST 1.1.0 surfaces no wire for I_DEFINITION_ADL2.list_artefacts — the
+# only ADL2 list endpoint (GET /definition/template/adl2) is operational-template
+# specific; there is no generic "all AOM2 artefacts" listing (archetypes +
+# templates + OPTs). Declared unrealized so the case is not-applicable WITH
+# CITATION on this ITS and activates when a later ITS release adds the endpoint.
+sm_operation: I_DEFINITION_ADL2.list_artefacts
+its: its-rest
+unrealized:
+  reason: >-
+    No generic artefact-listing operation exists in ITS-REST 1.1.0; the ADL2
+    surface lists only operational templates (definition_template_adl2_list),
+    not archetypes or the artefact union.
+  source: "SM docs/UML/classes/i_definition_adl2.adoc (list_artefacts) vs ITS-REST specifications/operations (only definition_template_adl2_list)"
+  ambiguity: AMB-37

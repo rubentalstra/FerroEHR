@@ -1,0 +1,25 @@
+# ITS-REST ADL2 example-generation negative: an unknown template_id yields
+# not-found. Anchored to get_artefact with `variant: example` (the SM has no
+# example operation, AMB-37). Re-adjudicated from the retired ECC-ADL2-011 row
+# (the 404 portion; the wrong-Accept 406 portion is NOT authorable here — see
+# schedule/definition_adl2/REQUIREMENTS.md).
+id: I_DEFINITION_ADL2.get_artefact-example_unknown
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.get_artefact
+capabilities: [Adl2OptProvisioning]
+profiles: [OPTIONS]
+test_purpose: "Generating an example for an unknown ADL2 template_id is rejected as not-found."
+description: "get example data for an unknown ADL2 template"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.get_artefact"
+  - "ITS-REST definition_template_adl2_example_get §404 Not Found"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+flow:
+  - step: 1
+    call: get_artefact
+    variant: example
+    with: { template_id: "openEHR-EHR-COMPOSITION.cnf_absent.v1.0.0" }
+    expect: not_found
+ambiguities: [AMB-37]

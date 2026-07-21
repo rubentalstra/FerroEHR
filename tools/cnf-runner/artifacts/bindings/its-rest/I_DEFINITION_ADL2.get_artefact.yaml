@@ -1,0 +1,21 @@
+# Wire realization of I_DEFINITION_ADL2.get_artefact for ITS-REST 1.1.0 (plain
+# OPT retrieval). The SM get_artefact returns an AUTHORED_ARCHETYPE by
+# ARCHETYPE_HRID; the only ADL2 read wire is GET
+# /definition/template/adl2/{template_id}, which returns the OperationalTemplateV2
+# (text/plain ADL2 source or application/json). A partial template_id resolves
+# to the latest major version (template_id_adl2.yaml).
+# Sources: specifications/operations/definition_template_adl2_get.yaml,
+# responses/200_Template_adl2_retrieved.yaml, 404_unknown_template_id.yaml.
+# NOTE: the ADL2 get OAS enumerates only 200/400/404 — unlike the ADL 1.4 get,
+# it lists NO 406, so this binding maps no not_acceptable (schedule/definition_adl2/
+# REQUIREMENTS.md records why the example-negotiation 406 cannot be tested here).
+sm_operation: I_DEFINITION_ADL2.get_artefact
+its: its-rest
+request:
+  method: GET
+  path: /definition/template/adl2/{template_id}   # definition_template_adl2_get.yaml
+  headers:
+    Accept: text/plain                            # Accept_Template_adl2.yaml (canonical ADL2 OPT source)
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }   # 200_Template_adl2_retrieved.yaml
+  not_found: { status: 404 }                       # 404_unknown_template_id.yaml

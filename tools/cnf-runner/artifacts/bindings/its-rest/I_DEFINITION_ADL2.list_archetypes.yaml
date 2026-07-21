@@ -1,0 +1,13 @@
+# ITS-REST 1.1.0 surfaces no wire for I_DEFINITION_ADL2.list_archetypes — the
+# ADL2 REST surface provisions only operational templates; there is no
+# archetype-listing (AUTHORED_ARCHETYPE) endpoint. Declared unrealized so the
+# case is not-applicable WITH CITATION and activates when a later ITS release
+# adds ADL2 archetype provisioning.
+sm_operation: I_DEFINITION_ADL2.list_archetypes
+its: its-rest
+unrealized:
+  reason: >-
+    No archetype-listing operation exists in ITS-REST 1.1.0; the ADL2 surface
+    is operational-template only (no /definition/archetype/adl2* paths).
+  source: "SM docs/UML/classes/i_definition_adl2.adoc (list_archetypes) vs ITS-REST specifications/operations (no ADL2 archetype endpoints)"
+  ambiguity: AMB-37

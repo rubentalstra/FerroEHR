@@ -8,17 +8,16 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 323 |
+| CNF catalogue cases | 347 |
 | active ECC rows | 394 |
-| mapped: covered | 350 |
+| mapped: covered | 361 |
 | mapped: deferred | 5 |
-| mapped: dropped | 18 |
+| mapped: dropped | 19 |
 | mapped: out_of_scope | 9 |
-| mapped: pending | 12 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 26 |
+| CNF cases beyond the old catalogue | 40 |
 
-Gate clean: **NO**
+Gate clean: **yes**
 
 ## Mapped rows
 
@@ -402,18 +401,18 @@ Gate clean: **NO**
 | `ECC-SF-014` | covered | `SF-SCOPE-directory_no_simplified` | scope-negative carried (no simplified mapping for DIRECTORY; 406 per the overview negotiation rules) |
 | `ECC-SF-015` | covered | `SF-SCOPE-demographic_no_simplified` | scope-negative carried (no simplified mapping for demographic resources; 406 per the overview negotiation rules) |
 | `ECC-SF-016` | covered | `SF-FLAT-commit_roundtrip_ctx_defaults` | ctx observability carried by the ctx-defaults assertions of the round-trip case |
-| `ECC-ADL2-001` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-002` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-003` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-004` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-005` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-006` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-007` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-008` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-009` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-010` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-011` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-ADL2-012` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
+| `ECC-ADL2-001` | covered | `I_DEFINITION_ADL2.upload_artefact-valid_opt` | ground carried; the Prefer triad rides the binding (prefer_conditional), not the protocol-neutral case |
+| `ECC-ADL2-002` | covered | `I_DEFINITION_ADL2.upload_artefact-duplicate_conflict` | ground carried; the SM replace-vs-conflict divergence recorded in AMB-37 |
+| `ECC-ADL2-003` | covered | `I_DEFINITION_ADL2.upload_artefact-invalid_artefacts`, `I_DEFINITION_ADL2.valid_artefact-invalid` | ground carried as validation_failed (the ADL2 upload OAS enumerates 400, not the old 422; AMB-1 body looseness) |
+| `ECC-ADL2-004` | covered | `I_DEFINITION_ADL2.upload_artefact-invalid_artefacts`, `I_DEFINITION_ADL2.valid_artefact-invalid` | ground carried (AOM2 description-mandatory row) |
+| `ECC-ADL2-005` | dropped |  | specialised-child-resolves-parent needs ADL2 ARCHETYPE provisioning, which ITS-REST 1.1.0 does not surface (upload is OPT-only, AMB-37); groundable in AM AOM2 §Specialisation — re-enters when an ITS surfaces archetype upload |
+| `ECC-ADL2-006` | covered | `I_DEFINITION_ADL2.get_artefact-retrieve` | representation forms ride the binding negotiation; the xml-only-406 assertion is excluded (the ADL2 plain GET enumerates no 406 — AMB-37) |
+| `ECC-ADL2-007` | covered | `I_DEFINITION_ADL2.get_artefact-unknown` | ground carried 1:1 |
+| `ECC-ADL2-008` | covered | `I_DEFINITION_ADL2.get_artefact-version_get` | ground carried (deprecated endpoint, guarded) |
+| `ECC-ADL2-009` | covered | `I_DEFINITION_ADL2.get_artefact-example` | ground carried; the four LOCATABLE Accept forms ride the example binding formats |
+| `ECC-ADL2-010` | covered | `I_DEFINITION_ADL2.get_artefact-example` | ground carried; detail-level enum + bad-enum 400 ride the binding |
+| `ECC-ADL2-011` | covered | `I_DEFINITION_ADL2.get_artefact-example_unknown` | the 404 portion is carried; the wrong-Accept-406 portion is excluded (no groundable 406 on the plain ADL2 GET without a variant-aware completeness seam — AMB-37) |
+| `ECC-ADL2-012` | covered | `I_DEFINITION_ADL2.list_opts-non_empty` | ground carried; TemplateMetadata fields ride the ADL2 list schema |
 | `ECC-AQT-001` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches` | ground carried (AqlTerminology/OPTIONS); value-set resolution flagged as engine extension — only the AQL TERMINOLOGY() form is spec-grounded |
 | `ECC-AQT-002` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
 | `ECC-AQT-003` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
@@ -429,6 +428,20 @@ Gate clean: **NO**
 - `I_ADMIN_SERVICE.list_contributions-time_range`
 - `I_ADMIN_SERVICE.physical_party_delete-delete_non_existing`
 - `I_ADMIN_SERVICE.versioned_composition_count-time_range`
+- `I_DEFINITION_ADL2.archetypes_count-unrealized`
+- `I_DEFINITION_ADL2.artefacts_count-unrealized`
+- `I_DEFINITION_ADL2.delete_artefact-existing`
+- `I_DEFINITION_ADL2.delete_artefact-non_existing`
+- `I_DEFINITION_ADL2.has_artefact-existing`
+- `I_DEFINITION_ADL2.has_artefact-non_existing`
+- `I_DEFINITION_ADL2.list_archetypes-unrealized`
+- `I_DEFINITION_ADL2.list_artefacts-unrealized`
+- `I_DEFINITION_ADL2.list_matching_artefacts-filter`
+- `I_DEFINITION_ADL2.list_opts-empty`
+- `I_DEFINITION_ADL2.list_templates-non_empty`
+- `I_DEFINITION_ADL2.opts_count-unrealized`
+- `I_DEFINITION_ADL2.templates_count-unrealized`
+- `I_DEFINITION_ADL2.valid_artefact-valid`
 - `I_DEMOGRAPHIC_SERVICE.create_party_relationship-bbbb`
 - `I_DEMOGRAPHIC_SERVICE.delete_party-bbbb`
 - `I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb`

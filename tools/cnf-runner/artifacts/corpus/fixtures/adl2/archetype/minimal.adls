@@ -1,0 +1,26 @@
+archetype (adl_version=2.0.6; rm_release=1.0.2)
+    openEHR-EHR-OBSERVATION.cnf_minimal.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"openEHR CNF">
+    >
+
+definition
+    OBSERVATION[id1] matches {    -- CNF minimal observation
+        data matches {
+            HISTORY[id2] matches {*}
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <text = <"CNF minimal observation">; description = <"A minimal observation archetype">>
+            ["id2"] = <text = <"History">; description = <"Event history">>
+        >
+    >
