@@ -46,10 +46,4 @@ flow:
     assert:
       - { assert: version, of: "${version_uid}", change_type: CREATE }
 postconditions:
-  - assert: state
-    text: >-
-      The committed ORIGINAL_VERSION identified by ${version_uid} carries a
-      non-empty signature over its canonical serialisation. The presence check
-      cannot be expressed with the current bindings (no operation returns
-      ORIGINAL_VERSION.signature) or typed assertions — see REQUIREMENTS.md
-      (`signature` assertion family + a version-read binding candidate).
+  - { assert: signature, of: "${version_uid}", present: true }

@@ -46,11 +46,4 @@ flow:
     assert:
       - { assert: version, of: "${version_uid}", change_type: CREATE }
 postconditions:
-  - assert: state
-    text: >-
-      The signature on the committed ORIGINAL_VERSION verifies against the
-      ixit/statement-declared key material over the version's canonical
-      serialisation. Cryptographic verification is not expressible with the
-      current bindings or typed assertions — see REQUIREMENTS.md (`signature`
-      assertion family with a declared-key-material dependency; the ECC digest
-      recompute is an engine extension and is not asserted).
+  - { assert: signature, of: "${version_uid}", present: true, verifiable: true }

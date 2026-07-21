@@ -141,6 +141,11 @@ const DEFECTS: &[(&str, &str, &str)] = &[
         "kind-shape",
     ),
     (
+        "case-signature-no-fact.yaml",
+        "schedule/zz-defect.yaml",
+        "kind-shape",
+    ),
+    (
         "case-undefined-capture-ref.yaml",
         "schedule/zz-defect.yaml",
         "reference-grammar",

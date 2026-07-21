@@ -525,6 +525,7 @@
             "field",
             "equivalent",
             "version",
+            "signature",
             "result_set",
             "unique",
             "returns",
