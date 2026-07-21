@@ -5,8 +5,7 @@ Plan-file lifecycle applies: this document is deleted in the PR that closes
 #197. Every claim was verified 2026-07-21 against the sources in the Appendix
 (source register), through repeated independent audit rounds (openEHR spec
 conformance, ISO, legal/regulatory, internal consistency, implementability).
-Revision history: the PR trail on #197. Before upstream posting: quote EHDS
-Art 105 verbatim from the OJ text (EUR-Lex blocks automated retrieval).*
+Revision history: the PR trail on #197.*
 
 ---
 
@@ -21,8 +20,8 @@ artifact (§3). Procurement names openEHR with nothing verifiable to require —
 Catalonia's ~€8.5M CDR tender had to use latency SLAs as the conformance
 proxy — and in Europe the EHDS regulation is making self-assessed, CE-marked,
 automatically-tested conformity the norm for EHR systems (implementing acts
-due March 2027, EHR-system obligations from 2031), a frame openEHR is
-currently not in (§6.5).
+due March 2027; EHR-system obligations staged 2029/2031 by data category), a
+frame openEHR is currently not in (§6.5).
 
 ## 2. The three pillars
 
@@ -272,21 +271,45 @@ EU declaration of conformity.
 
 ### 6.5 The EHDS clock — honest positioning
 
-Facts (OJ text, [Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng)):
-in force 26 March 2025; general application 26 March 2027. Primary-use
-cross-border exchange of the first priority categories (patient summaries,
-ePrescriptions/eDispensations) and Chapter IV secondary use apply from
-26 March 2029; the second categories (imaging, labs, discharge reports) and
-the **Chapter III EHR-system conformity obligations themselves (harmonised
-components, EU DoC, CE marking, registration) apply from 26 March 2031**
-(Art 105 — quote verbatim from the OJ text before posting; EUR-Lex blocks
-automated retrieval). Every in-scope EHR system must
+Facts, from the verbatim OJ text of
+[Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng)
+(retrieved via the Publications Office machine channel,
+`publications.europa.eu/resource/celex/32025R0327` — Art 105 quoted):
+
+- **Entry into force 25 March 2025** — Art 105: *"This Regulation shall
+  enter into force on the twentieth day following that of its publication
+  in the Official Journal"* (published 5 March 2025).
+- **General application** — Art 105: *"This Regulation shall apply from
+  26 March 2027."*
+- **Staged EHR-system waves** — Art 105 third paragraph: Articles 3–15,
+  23(2)–(6), 25–27 and 47–49 apply *"from 26 March 2029 to priority
+  categories … points (a), (b) and (c) [patient summaries, ePrescriptions,
+  eDispensations], **and to EHR systems intended by the manufacturer to
+  process such categories of data**"*, and from 26 March 2031 for points
+  (d)–(f) (imaging, lab results, discharge reports) — i.e. the
+  harmonised-component obligations (Arts 25–27) reach category-(a)–(c) EHR
+  systems already in **2029**.
+- **Chapter III as a whole** — Art 105: *"Chapter III shall apply to EHR
+  systems put into service in the Union referred to in Article 26(2) from
+  26 March 2031."* Chapter IV (secondary use) applies from 26 March 2029.
+
+Every in-scope EHR system must
 embed two **harmonised software components** (European interoperability
 component; European logging component; Art 25, Annex II), pass an
 **open-source digital testing environment** (Art 40 — Commission-developed
 open-source software, operated as EU and national environments), and ship
-with a manufacturer **self-assessed EU declaration of conformity** (Art 39),
-**CE marking** (Art 41) and public registration (Art 49). Common
+with a manufacturer **self-assessed EU declaration of conformity** —
+Art 39(1) verbatim: *"The EU declaration of conformity … shall state that
+the manufacturer of an EHR system has demonstrated that the essential
+requirements laid down in Annex II have been fulfilled"* — **CE marking**
+(Art 41) and public registration (Art 49). The testing obligation is
+Art 40 ("European digital testing environment") verbatim: *"The Commission
+shall develop a European digital testing environment … The Commission shall
+make the software supporting the European digital testing environment
+available as open-source"* (40(1)); *"Before placing EHR systems on the
+market, manufacturers **shall use** the digital testing environments … The
+elements in relation to which the results of the assessment are positive
+shall be presumed to be in conformity with this Regulation"* (40(3)). Common
 specifications + the EEHRxF exchange format arrive as implementing acts
 adopted by **26 March 2027** (Arts 36, 15), applying on the
 priority-category clock, pre-drafted by the Xt-EHR joint action —
@@ -312,7 +335,7 @@ Honest implications:
   makes openEHR conformance culturally and procedurally compatible with what
   every European vendor will be doing anyway from 2027.
 - **Timing**: the program needs to exist — visibly, with a registry and a
-  running suite — before the March 2027 implementing acts and the 2029→2031
+  running suite — before the March 2027 implementing acts and the 2029/2031
   application waves define "conformity" habits without openEHR in the room.
 
 ## 7. Design principles for CNF 2.0
@@ -925,11 +948,51 @@ evaluated per data-set row):
 | `field` | `path`, `equals \| exists \| absent \| matches` | RM-path-addressed field check; values may reference `${row.*}`/captures — e.g. `path: ehr_status/is_queryable, equals: ${row.is_queryable}`. |
 | `equivalent` | `to: committed \| ${ds:…} \| ${capture}`, `ignoring:` named ignore-sets (`server_assigned`, `ctx_defaults`) and/or explicit `[paths]` | The master07 "content check": retrieved content equals committed content, modulo the declared server-assigned set (`uid`, `system_id`, audit times, …) — the ignore set is normative per operation, not runner-chosen. |
 | `version` | `of: ${<version-uid capture>}` (the target version), `for_each: ${<list capture>}` (per-element over a list capture), `change_type \| lifecycle_state \| count \| uid_pattern` | RM versioning facts: `of: ${v2_uid}, change_type: MODIFY`, `lifecycle_state: "openehr::523\|deleted\|"` (AMB-11), `count: 2`, `uid_pattern: "<root>::<system>::2"`. `count` needs no `of:`. |
-| `result_set` | `match: ordered \| set \| count \| contains`, `rows`, `columns?` | AQL results. `rows` required by the RESULT_SET schema; `columns`/`meta` optional (assert only when the case says so). Equivalence rules (path forms, RM number typing, NULL cells) are schema-level normative text — the §11.1 SEC prerequisite. |
+| `result_set` | `match: ordered \| set \| count \| contains`, `rows`, `columns?` | AQL results, compared under the normative equivalence rules below. |
 | `unique` | `over: ${capture}`, `aggregate: true` | Values captured across rows are pairwise distinct (create_ehr-main's ehr_id uniqueness sub-constraint). Aggregate: evaluated once after all rows; requires `iteration: single_pass`. |
 | `returns` | `equals \| matches` | Scalar service returns (master09 `has_path`/`has_directory` booleans) — asserted directly, no RM body. |
 | `message_exemplar` | `text` | Informative only — the schedule's ``"EHR with <ehr_id> does not exist"`` prose; never a pass/fail criterion (AMB-1). |
 | `state` | `text`, `verified_by?` | A prose postcondition whose machine verification lives in a linked case (the master06 create→get pattern). CI requires either a `verified_by` resolution or an in-case verification step. |
+
+**RESULT_SET equivalence rules** (normative; each rule is either **[spec]**
+— stated by the vendored specs, cited — or **[legislated]** — a proposed
+default the specs are silent on, for SEC ratification with U5):
+
+1. **Comparison scope** — equivalence is over `rows` only; every `meta`
+   field is excluded (**[spec]**: all `ResultSetMetadata` fields optional and
+   "implementation dependent … useful for debugging" —
+   `ITS-REST schemas/query/ResultSetMetadata.yaml`, `docs/query/Response.md`);
+   `columns` are compared only when the case asserts them, since the array
+   itself is optional (**[spec]**: `ResultSet.yaml` `required: [rows]`).
+   Column identity: the `AS` alias, else `#<0-based index>` (**[spec]**:
+   `ResultSetColumn.yaml`).
+2. **Order** — `match: ordered` is legal only when the query carries an
+   ORDER BY that totally orders the expected rows (**[spec]**: absent
+   ORDER BY, "default ordering in results is undefined" — QUERY
+   `master03-syntax.adoc` §ORDER BY; LIMIT determinism requires unique
+   ordering — §LIMIT). Otherwise `match: set`, which is **bag** equality —
+   duplicate rows are significant, because AQL is bag-semantics unless
+   `DISTINCT` is present (**[spec]**: §DISTINCT). ORDER BY semantics:
+   ASC default, left→right lexicographic tie-break (**[spec]**: §ORDER BY).
+3. **Cell equality** — an RM-object cell (carries `_type`) compares by
+   canonical-JSON structural equality (**[spec]**: cells may be full RM
+   objects — QUERY `master04-result_structure.adoc`,
+   `ResultSetRow.yaml`); a scalar numeric cell compares by **numeric
+   value**, not lexeme — `140` = `140.0` (**[legislated]**: no spec rule on
+   projected-scalar number typing); a void cell is encoded as JSON `null`
+   and equals only `null` (**[legislated]**: AQL names the value NULL, the
+   wire encoding is unpinned).
+4. **NULL ordering** — under ORDER BY, null cells sort **last** ascending,
+   **first** descending (**[legislated]**: QUERY is silent on NULL sort
+   position).
+5. **Under-specified orderings are avoided, not legislated** — RM
+   `DV_ORDERED` comparison is itself incompletely specified for partial
+   dates/timezones/durations, so schedule cases MUST NOT order or
+   discriminate on values whose comparison the RM leaves open
+   (**[legislated]** avoidance rule).
+6. **Counts are always determined** — cases pass `fetch`/`LIMIT` explicitly
+   (AMB-6: the default fetch is implementation-defined) and never truncate
+   without a total ordering (**[spec]**: §LIMIT + §ORDER BY).
 
 ### 8.7 Format axes — canonical and simplified, first-class
 
@@ -1634,12 +1697,35 @@ workload:                       # OPEN-LOOP offered load (the donated engine's m
   mix: { composition_commit: 30%, composition_read: 40%, adhoc_query: 25%, ehr_create: 5% }
                                 #   mix = share of scheduled ARRIVALS
 thresholds:                     # ALL must hold in the single measured run
-  - { metric: latency_p99, operation: composition_read, max: 2s }
-  - { metric: latency_p99, operation: composition_commit, max: 2s }
+  - { metric: latency_p99, operation: composition_read, max: 500ms }
+  - { metric: latency_p99, operation: composition_commit, max: 500ms }
   - { metric: error_rate, max: 0 }
-  - { metric: offered_load_sustained, min: <SEC-set per class; provisional numbers seeded from the committed benchmark baseline until then> }
+  - { metric: offered_load_sustained, min: 40/s }   # class-S provisional default (table below)
 # environment: bound to the mandatory ixit.json environment block (§8.10)
 ```
+
+**Provisional class parameters** (proposed defaults pending SEC
+ratification; derivation shown so the numbers are arguable, not arbitrary):
+
+| Class | Corpus | Offered load (sustained) | p99 API budget | Error rate |
+|---|---|---|---|---|
+| POC | 10k EHRs | 2/s | ≤ 500 ms | 0 |
+| S | 100k EHRs | 40/s | ≤ 500 ms | 0 |
+| L | 1M EHRs | 400/s | ≤ 375 ms | 0 |
+| R | 10M EHRs | 4000/s | ≤ 375 ms | 0 |
+
+Derivation (**[legislated]** — stated assumptions, SEC ratifies or replaces):
+the 2017 schedule's user counts and screen-latency budgets (POC 5 / S 100 /
+L 1000 / R 10,000 concurrent users; 2 s screen latency for S, 1.5 s for
+L/R), converted to open-loop API terms by two explicit assumptions — one
+clinical interaction per active user per 10 s, ~4 API calls per interaction
+— giving offered load = users × 0.4/s and an API p99 budget of screen
+budget ÷ 4. Corpus sizes are the 2017 D-row scale ladder. Feasibility is
+evidenced by the committed measurement artifacts (`docs/benchmarks/`):
+ehrbase-rs sustains a 622 req/s knee at p99 91 ms and upstream EHRbase
+434 req/s on 8-core consumer hardware — class L (400/s) is attainable on
+server-class hardware and class R is a scaled-deployment target, consistent
+with its "Region" intent.
 
 Performance case fields (∎ beyond the §8.3 commons — `id`, `kind`,
 `component`, `description`, `test_purpose`, `spec_refs`): `class` ∎,
@@ -1661,8 +1747,9 @@ Rules:
   results land in `results.json` as measurements + a per-class
   `earned | not-earned` verdict. The 2017 ladder supplies the shape (POC ~5
   users; S ~100 users/100k EHRs; L ~1000 users/1M; R ~10k users/10M); the
-  concrete threshold numbers (the 2017 page's "XX" transaction rates) are a
-  SEC decision item, seeded from published measurement methodology.
+  concrete threshold numbers carry the provisional defaults above (the 2017
+  page's "XX" rates made concrete, derivation shown) — SEC ratifies or
+  amends them with the chapter (§11.4).
 - **Environment-bound**: performance is meaningless without the deployment
   described — the `ixit.json` environment block (hardware class, cores,
   memory, storage class, topology) is mandatory for performance runs, and
@@ -1830,11 +1917,12 @@ The deliverable a tendering authority can use the moment rung 0 exists:
 Ordered by procurement value; each item is a bounded, assignable chapter task
 once §8.3 makes cases enumerable files:
 
-1. **Querying / AQL (master11 + master05)** — the flagship gap. **Prerequisite
-   design decision for SEC, resolved before cases ship**: the result-set
-   equivalence rules (the `match:` vocabulary — ordered/set/count/contains —
-   plus canonical path forms, RM number typing, NULL semantics), normative at
-   schema level. Seed material: this repo's 25 QRY + 8 SQR + 4 AQT case
+1. **Querying / AQL (master11 + master05)** — the flagship gap. The
+   result-set equivalence rules are **written, normative, and cited in §8.6**
+   (spec-grounded rules marked [spec]; the four points the specs are silent
+   on carried as [legislated] proposed defaults) — U5's gate is SEC
+   ratification of the [legislated] points, not de-novo design. Seed
+   material: this repo's 25 QRY + 8 SQR + 4 AQT case
    designs (each carrying AQL 1.1 citations) and EHRbase's AQL conformance
    corpus ([ehrbase/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation),
    SELECT/WHERE/ORDER BY/LIMIT/FROM/parameter suites).
@@ -1850,10 +1938,9 @@ once §8.3 makes cases enumerable files:
    all versions in both formats — encoded as ordinary §8.3 flows; these
    catch cross-operation state defects the per-operation cases cannot.
 4. **The performance & volumetrics chapter** (§8.14): normative workload
-   definitions + the class threshold numbers (the 2017 "XX" rates — SEC
-   decision, seeded from the donated benchmark methodology and its published
-   measurement artifacts), the synthesized scale corpora shared with
-   §11.11, and the measurement schema. Ships after the functional pilot
+   definitions + the provisional class parameters now tabled in §8.14
+   (derivation shown; SEC ratifies or amends), the synthesized scale corpora
+   shared with §11.11, and the measurement schema. Ships after the functional pilot
    proves the artifact discipline; the schedule extension of the Guide's
    scope is flagged for SEC in §6.3.
 5. **Content chapters refresh** — raise the RM floor statement (1.0.2 → an
@@ -1979,7 +2066,7 @@ acceptance gate:
 | U2 | master06 (EHR) converted: all 21 cases as case cores + the its-rest bindings for the EHR operations + corpus manifest over the existing EHR fixtures | Generated prose semantically equivalent to the current chapter (human-reviewed diff); zero information loss against the AsciiDoc tables |
 | U3 | master07/08/09 (COMPOSITION/CONTRIBUTION/DIRECTORY) conversion + bindings | Same gate; the versioning cases (§8.9 pilot 4 shape) round-trip |
 | U4 | Content chapters (master15–17) conversion — decision tables as data + the literal grammar + generation recipes | Every existing table row preserved verbatim; grammar parses 100% of existing literals |
-| U5 | **master11/AQL — the first new chapter**: result-set equivalence rules (normative schema text) + ~37 cases seeded from ECC QRY/SQR/AQT (25 QRY + 8 SQR + 4 AQT) + the EHRbase AQL corpus | SEC sign-off on the equivalence rules FIRST; every case spec-cited to AQL 1.1 |
+| U5 | **master11/AQL — the first new chapter**: the §8.6 equivalence rules as normative schema text + ~37 cases seeded from ECC QRY/SQR/AQT (25 QRY + 8 SQR + 4 AQT) + the EHRbase AQL corpus | SEC ratifies the §8.6 [legislated] defaults FIRST; every case spec-cited to AQL 1.1 |
 | U6 | **Simplified-Formats chapter** (new): the §8.7 fifteen categories, ~60 cases driven from the master04/05/06 spec-example blocks | Every case cites its simplified_formats section; OPTIONS-profile placement |
 | U7 | statement/results/ixit schemas + verdict rules + the reference verdict implementation + the runner verification pack (transcripts + adjudications) | Two independent runners (ECC + the rescued Robot suite or another vendor's) compute identical verdicts on the pack |
 | U8 | The registry (production, on openehr.org): statement rendering, attestation-level labels, badges, dispute log | First two products listed (ehrbase-rs + upstream EHRbase baselines) |
@@ -2003,7 +2090,7 @@ sequenced:
 |---|---|---|---|
 | W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, vocabularies (outcomes + the capability matrix), corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. Scope: assertion-machinery artifacts; the performance case-core schema lands with W7. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
 | W2 | **Catalogue conversion + convergence** | The 394 ECC cases re-expressed as §8.3 case cores + §8.4 operation bindings, executed by the new runner. Where an official schedule case exists, the CNF id becomes primary (ECC numbers retire to trace metadata — inverting today's `ScheduleTrace`); ECC-original cases keep an `ecc-` namespace pending upstream adoption. `inventory/ecc-catalog.tsv` becomes a generated view. | Zero-drift convergence gate: the new runner reproduces the current 402-execution baseline exactly (384 passed · 18 N/A); cutover + old-harness retirement follow |
-| W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data. Hard dependency: the §11.1 result-set equivalence rules must be fixed (U5 prerequisite) before the AQL `result_set` assertions execute. | ≥90% of cases run through the interpreter; every exception listed in the report; baseline convergence holds |
+| W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data. The AQL `result_set` assertions execute under the §8.6 equivalence rules (U5 ratifies the [legislated] defaults). | ≥90% of cases run through the interpreter; every exception listed in the report; baseline convergence holds |
 | W4 | **Statement / results / ixit emission** | `results.json` is emitted in the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
 | W5 | **Simplified-formats deepening** | The §8.7 blueprint's gap categories 2–9 (node-id algorithm, level removal, the 43 suffix tables, `_`-attributes, `\|raw`, full ctx vocabulary, counters, STRUCTURED style) + deepened 1/10 — ~40 new SF cases, all spec-example-driven, all OPTIONS-profile. | Every master04/05/06 spec-example JSON block exercised; ECC baseline ratchets upward only |
 | W6 | **Runner verification pack** | Author the U7 transcripts + adjudications; ECC self-verifies against them in CI; publish the pack so the Robot suite (and any vendor runner) can prove itself. | ECC passes both pack parts; the pack rejects a deliberately-broken runner build |
@@ -2065,9 +2152,9 @@ hand-roll what a vetted crate provides, verify versions live at adoption):
 | Artifact model | `serde` + hand-written typed model (enums/newtypes for every closed vocabulary) | The §8 laws become compile-time properties; no framework needed or wanted |
 | Canonical interchange | `serde_json` | statement/results/ixit are JSON; hash-linked artifacts |
 | Schema validation | `jsonschema` | Validates the artifact families + emitted party artifacts against the published schemas |
-| YAML authoring front-end | maintained YAML parser chosen at adoption — **`serde_yaml` is archived upstream**; candidates evaluated live *(verify)* | YAML files parse to the same tree and validate against the same JSON Schema |
+| YAML authoring front-end | **`serde-saphyr`** (1.0.0-rc.1, 2026-07-18) | The only actively-maintained pure-Rust (`unsafe`-forbidden) serde YAML 1.2 front-end with **no RUSTSEC advisories** — `serde_yaml` is archived and both libyaml-fork successors inherit RUSTSEC-2023-0075; deserializes to `serde_json::Value` (the exact shape `jsonschema` validates) and ships a `Budget` cap on nesting/alias expansion, closing billion-laughs on untrusted test files. Pin the rc or its stable line. |
 | Workload engine (measurement machinery) | **own tokio-native engine** — the knee-ladder + sustained-run code of `tools/benchmark`, carried into the rebuild | Already built, published against two CDRs, and methodology-specific; [goose](https://github.com/tag1consulting/goose) evaluated and named as fallback — its Locust user-behaviour model does not fit the ladder |
-| Latency statistics | HDR-histogram crate *(verify at adoption)* | Percentile fidelity at class-R sample volumes |
+| Latency statistics | **`hdrhistogram`** (7.6.0, 2026-07-18) | The canonical Rust HdrHistogram port, no RUSTSEC advisories; the `serialization` feature emits the standard V2/compressed encoding so §8.14 thresholds are re-checkable from the results artifact, and `record_correct` provides the coordinated-omission correction the open-loop model requires. |
 | CLI / errors / telemetry | `clap` / `thiserror` / `tracing` | Workspace standards |
 | Test-definition DSLs | **[cucumber-rs](https://github.com/cucumber-rs/cucumber) and [Hurl](https://hurl.dev): evaluated and declined** | Each would introduce a second test-definition language beside the schedule — the exact three-representations drift CNF 2.0 exists to kill; the schedule is the only DSL |
 
@@ -2146,7 +2233,10 @@ proposing a format and demonstrating one.
 **Regulatory / programs:**
 - Regulation (EU) 2025/327 (EHDS) — OJ text:
   <https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng> (Arts 14–15, 25, 30,
-  36–41, 49, 105; Annexes II–IV).
+  36–41, 49, 105; Annexes II–IV); verbatim text retrieved via the
+  Publications Office machine channel
+  <http://publications.europa.eu/resource/celex/32025R0327> (CELEX
+  32025R0327; Arts 105/40/39 quoted in §6.5).
 - Xt-EHR joint action — <https://www.xt-ehr.eu/> ;
   D8.2 EHR Conformity Assessment Scheme (May 2026)
   <https://www.xt-ehr.eu/wp-content/uploads/2026/05/Xt-EHR-D8.2.pdf> ;
@@ -2177,6 +2267,17 @@ proposing a format and demonstrating one.
 - [ehrbase/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation)
   (AQL suites + fixtures, last push 2025-01-30);
   [CaboLabs openEHR Conformance Framework](https://www.cabolabs.com/blog/article/openehr_conformance_framework-61ef4f513f7c5.html).
+- Rust crates (verified live 2026-07-21): serde-saphyr
+  <https://crates.io/crates/serde-saphyr> (1.0.0-rc.1; RUSTSEC: none) vs the
+  archived serde_yaml and the libyaml forks carrying RUSTSEC-2023-0075
+  <https://rustsec.org/advisories/RUSTSEC-2023-0075.html>; hdrhistogram
+  <https://crates.io/crates/hdrhistogram> (7.6.0;
+  <https://github.com/HdrHistogram/HdrHistogram_rust>).
+- AQL/RESULT_SET equivalence grounding: QUERY
+  `docs/AQL/master03-syntax.adoc` (§SELECT/§DISTINCT/§TOP/§ORDER BY/§LIMIT),
+  `master04-result_structure.adoc`; ITS-REST
+  `schemas/query/{ResultSet,ResultSetColumn,ResultSetRow,ResultSetMetadata}.yaml`,
+  `docs/query/{Request,Response}.md` (all vendored).
 - Our instrument: `tools/conformance/` (ECC), latest committed baseline
   `docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md` (402 case×format
   executions · 384 passed · 0 failed · 18 N/A; CORE PASS / STANDARD PASS /
