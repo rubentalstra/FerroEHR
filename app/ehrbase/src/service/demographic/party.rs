@@ -16,6 +16,7 @@ use crate::service::demographic::types::PartyKind;
 use crate::service::demographic::validate::validate_party_body;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::versioning::CommitEnv;
 use crate::versioning::audit::change_type;
@@ -65,17 +66,28 @@ impl EhrbaseService {
         version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<VersionRead, ServiceError> {
+        // The granular SM status: a version-addressed read that misses is
+        // `object_version_does_not_exist`, a current read is the generic
+        // `versioned_object_does_not_exist` (`i_party.adoc` declares exactly
+        // these per call).
+        let miss = || {
+            ServiceError::sm(
+                if version.is_some() || at.is_some() {
+                    CallStatusType::ObjectVersionDoesNotExist
+                } else {
+                    CallStatusType::VersionedObjectDoesNotExist
+                },
+                format!("{} {vo_id}", kind.rm_type()),
+            )
+        };
         // The stored kind (constant per versioned object) must match the route.
         let stored = object_kind(&self.pool, vo_id).await?;
         if stored != Some(support::kind_of(kind)) {
-            return Err(ServiceError::NotFound(format!(
-                "{} {vo_id}",
-                kind.rm_type()
-            )));
+            return Err(miss());
         }
         support::load_ehrless(&self.pool, vo_id, version, at)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))
+            .ok_or_else(miss)
     }
 
     /// Confirm a live party of the expected kind exists (not deleted) — the
@@ -87,10 +99,10 @@ impl EhrbaseService {
     ) -> Result<(), ServiceError> {
         let read = self.load_party_version(kind, vo_id, None, None).await?;
         if read.deleted() {
-            return Err(ServiceError::NotFound(format!(
-                "{} {vo_id} is deleted",
-                kind.rm_type()
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {vo_id} is deleted", kind.rm_type()),
+            ));
         }
         Ok(())
     }
@@ -103,16 +115,28 @@ impl EhrbaseService {
         object_kind(&self.pool, vo_id)
             .await?
             .and_then(support::party_kind_of)
-            .ok_or_else(|| ServiceError::NotFound(format!("versioned party {vo_id}")))
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::VersionedObjectDoesNotExist,
+                    format!("versioned party {vo_id}"),
+                )
+            })
     }
 
     /// Confirm `vo_id` is some party (any of the five kinds) — the check for the
     /// kind-agnostic `versioned_party` reads. A non-party id (COMPOSITION, …) or
-    /// unknown id is `404` (`versioned_object_does_not_exist`).
-    pub(super) async fn ensure_any_party(&self, vo_id: VoId) -> Result<(), ServiceError> {
+    /// unknown id is `404`, reported with the caller-supplied granular SM
+    /// status (`versioned_object_does_not_exist` for object-addressed reads,
+    /// `object_version_does_not_exist` for version-addressed ones —
+    /// `i_party.adoc` declares exactly those per call).
+    pub(super) async fn ensure_any_party(
+        &self,
+        vo_id: VoId,
+        miss: CallStatusType,
+    ) -> Result<(), ServiceError> {
         match object_kind(&self.pool, vo_id).await? {
             Some(k) if k.is_party() => Ok(()),
-            _ => Err(ServiceError::NotFound(format!("versioned party {vo_id}"))),
+            _ => Err(ServiceError::sm(miss, format!("versioned party {vo_id}"))),
         }
     }
 
@@ -228,10 +252,12 @@ impl EhrbaseService {
         expected: Option<TreeId>,
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let current = self
-            .party_current(kind, vo_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
+        let current = self.party_current(kind, vo_id).await?.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {vo_id}", kind.rm_type()),
+            )
+        })?;
         self.commit_party_update(current, body, expected, update_audit)
             .await
     }
@@ -250,11 +276,10 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let kind = current.kind;
         if current.deleted {
-            return Err(ServiceError::NotFound(format!(
-                "{} {} is deleted",
-                kind.rm_type(),
-                current.vo_id
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {} is deleted", kind.rm_type(), current.vo_id),
+            ));
         }
         validate_party_body(kind, &body)?;
 
@@ -303,10 +328,12 @@ impl EhrbaseService {
         expected: Option<TreeId>,
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let current = self
-            .party_current(kind, vo_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("{} {vo_id}", kind.rm_type())))?;
+        let current = self.party_current(kind, vo_id).await?.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("{} {vo_id}", kind.rm_type()),
+            )
+        })?;
         self.commit_party_delete(current, expected, update_audit)
             .await
     }

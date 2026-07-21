@@ -28,7 +28,7 @@ use uuid::Uuid;
 use crate::extensions::tenant_context::TenantContext;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 
 /// The reserved default tenant: the nil uuid, owner of every row created while
 /// tenancy is off. Matches `ext.current_tenant_id()`'s fallback
@@ -68,9 +68,12 @@ impl EhrbaseService {
             .bind(id)
             .fetch_optional(&self.pool)
             .await?;
-        row.as_ref()
-            .map(Self::tenant_row)
-            .ok_or_else(|| ServiceError::NotFound(format!("tenant {id}")))?
+        row.as_ref().map(Self::tenant_row).ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("tenant {id}"),
+            )
+        })?
     }
 
     /// Create a tenant from `{name, system_id}` (both required, non-empty).
@@ -105,9 +108,12 @@ impl EhrbaseService {
         .await
         .map_err(map_insert_error)?;
         self.invalidate_tenant_cache();
-        row.as_ref()
-            .map(Self::tenant_row)
-            .ok_or_else(|| ServiceError::NotFound(format!("tenant {id}")))?
+        row.as_ref().map(Self::tenant_row).ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("tenant {id}"),
+            )
+        })?
     }
 
     /// Delete a tenant — only when it is not the reserved default and owns no
@@ -149,7 +155,10 @@ impl EhrbaseService {
             .execute(&mut *tx)
             .await?;
         if deleted.rows_affected() == 0 {
-            return Err(ServiceError::NotFound(format!("tenant {id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("tenant {id}"),
+            ));
         }
         tx.commit().await?;
         self.invalidate_tenant_cache();

@@ -15,6 +15,7 @@ use crate::ids::VoId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::response::ServiceResponse;
+use crate::service::status::CallStatusType;
 use crate::versioning::object_version_id::TreeId;
 
 impl EhrbaseService {
@@ -23,7 +24,8 @@ impl EhrbaseService {
     /// (for a locally-created party, v1); the `owner_id` NOTE lives in
     /// `support::versioned_wrapper`.
     pub(super) async fn versioned_party(&self, vo_id: VoId) -> Result<Value, ServiceError> {
-        self.ensure_any_party(vo_id).await?;
+        self.ensure_any_party(vo_id, CallStatusType::VersionedObjectDoesNotExist)
+            .await?;
         self.versioned_wrapper(vo_id, "VERSIONED_PARTY", "PARTY", "versioned party")
             .await
     }
@@ -32,7 +34,8 @@ impl EhrbaseService {
     /// `OBJECT_VERSION_ID` and the change's `AUDIT_DETAILS` (RM common master04
     /// §Revision History). A non-party id is `404`.
     pub(super) async fn party_revision_history(&self, vo_id: VoId) -> Result<Value, ServiceError> {
-        self.ensure_any_party(vo_id).await?;
+        self.ensure_any_party(vo_id, CallStatusType::VersionedObjectDoesNotExist)
+            .await?;
         self.demographic_revision_history(vo_id).await
     }
 
@@ -43,7 +46,10 @@ impl EhrbaseService {
         vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
-        self.ensure_any_party(vo_id).await?;
+        // Version-addressed: `i_party.adoc` `get_party_at_version` declares
+        // `object_version_does_not_exist` as its only does-not-exist code.
+        self.ensure_any_party(vo_id, CallStatusType::ObjectVersionDoesNotExist)
+            .await?;
         self.demographic_original_version(vo_id, version, "party")
             .await
     }
@@ -55,7 +61,8 @@ impl EhrbaseService {
         vo_id: VoId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
-        self.ensure_any_party(vo_id).await?;
+        self.ensure_any_party(vo_id, CallStatusType::VersionedObjectDoesNotExist)
+            .await?;
         self.demographic_original_version_at(vo_id, at, "party")
             .await
     }

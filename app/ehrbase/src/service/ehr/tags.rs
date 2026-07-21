@@ -13,7 +13,7 @@
 //! (storage seam — our own design).
 
 use crate::ids::{EhrId, VoId};
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 use serde_json::{Value, json};
 
 use crate::service::EhrbaseService;
@@ -90,10 +90,13 @@ impl EhrbaseService {
         // here.
         let owner = crate::storage::version_repo::meta::vo_owner(&self.pool, target_vo_id).await?;
         if owner != Some(Some(ehr_id)) {
-            return Err(ServiceError::NotFound(format!(
-                "tag target {target_vo_id} does not exist in EHR {ehr_id} \
-                 (tag targets can only be within the same EHR)"
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!(
+                    "tag target {target_vo_id} does not exist in EHR {ehr_id} \
+                     (tag targets can only be within the same EHR)"
+                ),
+            ));
         }
         // Validate every tag before writing; the `replace_tags` upsert arm
         // covers same-key repetition (last-wins) in the EHR scope.
@@ -147,7 +150,10 @@ impl EhrbaseService {
         if !crate::storage::tag_repo::delete_tag(&self.pool, Some(ehr_id), target_vo_id, key)
             .await?
         {
-            return Err(ServiceError::NotFound(format!("item tag {key:?}")));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("item tag {key:?}"),
+            ));
         }
         Ok(())
     }

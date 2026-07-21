@@ -21,6 +21,7 @@ use uuid::Uuid;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::CallStatusType;
 use crate::storage::version_repo;
 use crate::versioning::audit::audit_details;
 use crate::versioning::contribution::commit_version_set;
@@ -52,7 +53,10 @@ impl EhrbaseService {
             version_repo::contribution::contribution_audit(&self.pool, contribution_id, None)
                 .await?
                 .ok_or_else(|| {
-                    ServiceError::NotFound(format!("demographic CONTRIBUTION {contribution_id}"))
+                    ServiceError::sm(
+                        CallStatusType::ContributionDoesNotExist,
+                        format!("demographic CONTRIBUTION {contribution_id}"),
+                    )
                 })?;
 
         // The refs helper also unions the versions this contribution's

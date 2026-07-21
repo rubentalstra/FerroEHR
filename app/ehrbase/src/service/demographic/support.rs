@@ -19,6 +19,7 @@ use crate::service::EhrbaseService;
 use crate::service::demographic::types::PartyKind;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::storage::version_repo;
 use crate::versioning::audit::{AuditInput, audit_details};
@@ -221,7 +222,12 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let time_created = version_repo::meta::time_created(&self.pool, vo_id)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("{label} {vo_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::VersionedObjectDoesNotExist,
+                    format!("{label} {vo_id}"),
+                )
+            })?;
         Ok(json!({
             "_type": type_name,
             "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },
@@ -271,7 +277,12 @@ impl EhrbaseService {
     ) -> Result<Value, ServiceError> {
         let read = load_ehrless(&self.pool, vo_id, Some(version), None)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("{label} {vo_id} v{version}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("{label} {vo_id} v{version}"),
+                )
+            })?;
         let signer = CommitEnv::signing_ctx(self).signer;
         original_version(&read, signer)
     }
@@ -293,7 +304,12 @@ impl EhrbaseService {
     ) -> Result<ServiceResponse, ServiceError> {
         let read = load_ehrless(&self.pool, vo_id, None, at)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("{label} {vo_id} version at time")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("{label} {vo_id} version at time"),
+                )
+            })?;
         let meta = ResourceMeta::new(
             String::new(),
             object_version_id(vo_id, &read.creating_system_id, read.tree),

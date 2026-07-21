@@ -117,7 +117,12 @@ impl EhrbaseService {
         .bind(id)
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("FHIR mapping {id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("FHIR mapping {id}"),
+            )
+        })?;
         Self::mapping_row(&row)
     }
 
@@ -170,7 +175,12 @@ impl EhrbaseService {
         .fetch_optional(&self.pool)
         .await
         .map_err(map_insert_error)?
-        .ok_or_else(|| ServiceError::NotFound(format!("FHIR mapping {id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("FHIR mapping {id}"),
+            )
+        })?;
         Self::mapping_row(&row)
     }
 
@@ -182,7 +192,10 @@ impl EhrbaseService {
             .await?
             .rows_affected();
         if deleted == 0 {
-            return Err(ServiceError::NotFound(format!("FHIR mapping {id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("FHIR mapping {id}"),
+            ));
         }
         Ok(())
     }

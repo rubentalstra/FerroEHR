@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- SM call-status fidelity: service-layer "does not exist" failures now carry
+  their granular `CALL_STATUS_TYPE` (`ehr_id_does_not_exist`,
+  `composition_does_not_exist`, `template_does_not_exist`,
+  `object_version_does_not_exist`, …) end-to-end instead of resurfacing as
+  the generic `versioned_object_does_not_exist` after crossing the service
+  boundary. HTTP status codes are unchanged (every does-not-exist status was
+  and remains `404`); some `404` body messages are now the precise
+  construction-site text.
+
 ## [3.5.0] - 2026-07-21
 
 ### Changed

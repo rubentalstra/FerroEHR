@@ -425,13 +425,14 @@ async fn contribution_listing_count_and_ehr_summary() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
 
-    // Unknown EHR → NotFound (SM ehr_does_not_exist) for every native call.
+    // Unknown EHR → NotFound (SM `ehr_id_does_not_exist`, carried granularly
+    // through the ServiceError round-trip) for every native call.
     let ghost = "00000000-0000-7000-8000-0000000000ff";
     assert!(matches!(
         svc.list_contributions(ghost.parse().expect("uuid"), None, Page::all())
             .await,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::EhrIdDoesNotExist,
             ..
         })
     ));
@@ -439,14 +440,14 @@ async fn contribution_listing_count_and_ehr_summary() {
         svc.contribution_count(ghost.parse().expect("uuid"), None)
             .await,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::EhrIdDoesNotExist,
             ..
         })
     ));
     assert!(matches!(
         svc.get_ehr(ghost.parse().expect("uuid")).await,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::EhrIdDoesNotExist,
             ..
         })
     ));
@@ -562,13 +563,14 @@ async fn ehr_contribution_list_page_extension() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
 
-    // Unknown EHR → NotFound (404), like the sibling EHR reads.
+    // Unknown EHR → NotFound (404, SM `ehr_id_does_not_exist`), like the
+    // sibling EHR reads.
     let ghost = "00000000-0000-7000-8000-0000000000ee";
     assert!(matches!(
         svc.ehr_contribution_list_page(ghost.parse().expect("uuid"), 0, 20)
             .await,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::EhrIdDoesNotExist,
             ..
         })
     ));
@@ -997,8 +999,8 @@ async fn contribution_supplied_uid() {
 /// The combined EHR-existence + content-writability create gate
 /// (`ensure_ehr_content_writable`) preserves the pre-fold error surface after
 /// the two separate pool reads were collapsed into one `ehr_writability` round
-/// trip: an unknown EHR still maps to `VersionedObjectDoesNotExist` (404, never
-/// a DB error or a conflict), and a deactivated EHR (`EHR_STATUS.is_modifiable =
+/// trip: an unknown EHR still maps to a `NotFound` (404, `ehr_id_does_not_exist`
+/// — never a DB error or a conflict), and a deactivated EHR (`EHR_STATUS.is_modifiable =
 /// false`) still maps to a conflict (409) — RM ehr master04 §EHR Creation /
 /// §EHR Active Status.
 #[tokio::test]
@@ -1006,7 +1008,7 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
 
-    // (1) Unknown EHR → 404 VersionedObjectDoesNotExist (the existence signal of
+    // (1) Unknown EHR → 404 `ehr_id_does_not_exist` (the existence signal of
     // the folded query), never a conflict and never a driver error.
     let ghost = "00000000-0000-7000-8000-0000000000fe"
         .parse::<ehrbase::ids::EhrId>()
