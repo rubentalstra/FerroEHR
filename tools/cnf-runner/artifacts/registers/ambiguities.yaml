@@ -251,3 +251,48 @@ AMB-26:
   source: "ITS-REST specifications/operations/directory_update.yaml + directory_delete.yaml vs CNF platform_test_schedule master09 (update/delete on an EHR without a directory)"
   handling: "Bind not_found -> 404 for the missing-directory precondition; kind distinguished by the case's provisioned state."
   disposition: fixed_handling
+AMB-27:
+  ambiguity: >-
+    master17.3 table editorial defects, enumerated: an accepted row whose
+    violates cell names a violation (the accepted/[] contradiction near the
+    proportion tables); a millisecond-validity column omission in the
+    date/time validity tables; the "different limit types" rows label a
+    type=0 (ratio) proportion with unitary wording; the integer_fraction
+    prose says type [3] while the data column says [4]; several
+    interval-of-date/time/duration rows carry a forum-style "IMO should
+    fail" note instead of a normative verdict.
+  source: "CNF platform_test_schedule master17.3 (quantity decision tables)"
+  handling: >-
+    Rows are encoded verbatim where the verdict is unambiguous; the
+    contradiction rows follow the data column (verdict cell wins over
+    prose); the forum-note rows keep the stated verdict with the note kept
+    as case commentary. Upstream editorial fixes proposed with the chapter
+    conversion.
+  disposition: editorial
+AMB-28:
+  ambiguity: >-
+    master17.1/17.2/17.4 table editorial defects, enumerated: the DV_BOOLEAN
+    only_false_allowed table's first row is internally inconsistent
+    (expected=accepted while naming a violated constraint); master17.2
+    carries a duplicate DV_TEXT validate_open heading (two tables under one
+    id); the DV_DURATION fields_range table carries C_DURATION clause-name
+    typos and a period-vs-comma multi-violation cell.
+  source: "CNF platform_test_schedule master17.1/17.2/17.4 (basic/text/date_time decision tables)"
+  handling: >-
+    Rows encoded verbatim where the verdict is unambiguous; the inconsistent
+    DV_BOOLEAN row follows the verdict cell; the duplicate DV_TEXT heading is
+    one case with the two tables merged (distinguished by the pattern
+    column). Upstream editorial fixes proposed with the chapter conversion.
+  disposition: editorial
+AMB-29:
+  ambiguity: >-
+    Reduced-precision temporal comparability is under-specified (SPECPR-380,
+    open upstream; RM DV_ORDERED comparison for partial dates/times) — the
+    date/time constraint tables mix precisions whose ordering the RM leaves
+    open.
+  source: "CNF platform_test_schedule master17.4 (temporal constraint tables); RM data_types (DV_ORDERED); upstream SPECPR-380"
+  handling: >-
+    Affected rows carry guards quoting the chapter NOTEs; verdicts on
+    mixed-precision comparisons are reported but excluded from profile
+    computation until SPECPR-380 resolves.
+  disposition: report_only

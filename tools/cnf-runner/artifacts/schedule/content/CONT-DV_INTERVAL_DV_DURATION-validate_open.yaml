@@ -1,0 +1,34 @@
+id: CONT-DV_INTERVAL_DV_DURATION-validate_open
+kind: content
+component: CONTENT
+rm_class: DV_INTERVAL
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed DV_INTERVAL<DV_DURATION> against an open constraint ({*}) is
+  accepted iff its own interval invariants hold: a bounded limit must carry a
+  value, and lower must not exceed upper (component-wise, avoiding normalization
+  ambiguity).
+description: "DV_INTERVAL<DV_DURATION> open ({*}): interval invariants"
+spec_refs:
+  - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_DURATION-validate_open"
+  - "AM AOM1.4 §C_COMPLEX_OBJECT"
+  - "RM data_types §DV_INTERVAL"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "duration limit comparison follows the component-wise convention (each lower component <= the corresponding upper component) to avoid normalization ambiguity; any month=30-days assumption is stated in the SUT Conformance Statement — CNF platform_test_schedule master17.3 NOTE"
+constraint_context:
+  template: cnf.tpl.interval_duration_open    # DV_INTERVAL<DV_DURATION> matches {*}
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+decision_table:
+  columns: [lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included, expected, violates]
+  rows:
+    - [null, null, false, false, true, true, rejected, ["rm_schema: value is mandatory for lower and upper when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - [null, "PT2H", false, false, true, true, rejected, ["rm_schema: value is mandatory for lower when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - ["PT1H", null, false, false, true, true, rejected, ["rm_schema: value is mandatory for upper when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - ["PT1H", "PT2H", false, false, true, true, accepted, []]
+    - ["PT1H", "PT2H", false, false, true, true, accepted, []]
+    - ["P1Y7M3D", "P1Y8M3D", false, false, true, true, accepted, []]
+    - ["P1M5DT3H", "P10M", false, false, true, true, accepted, []]
+    - ["P2M", "P1M", false, false, true, true, rejected, ["rm_invariant(limits_consistent): lower must not exceed upper"]]
+    - ["P10M", "P1M5DT3H", false, false, true, true, rejected, ["rm_invariant(limits_consistent): lower must not exceed upper"]]

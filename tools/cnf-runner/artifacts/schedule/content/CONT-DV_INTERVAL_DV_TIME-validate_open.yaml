@@ -1,0 +1,30 @@
+id: CONT-DV_INTERVAL_DV_TIME-validate_open
+kind: content
+component: CONTENT
+rm_class: DV_INTERVAL
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  A committed DV_INTERVAL<DV_TIME> against an open constraint ({*}) is accepted
+  iff its own interval invariants hold: a bounded limit must carry a value, and
+  the limits must be strictly comparable.
+description: "DV_INTERVAL<DV_TIME> open ({*}): interval invariants"
+spec_refs:
+  - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_TIME-validate_open"
+  - "AM AOM1.4 §C_COMPLEX_OBJECT"
+  - "RM data_types §DV_INTERVAL"
+applies: { rm: ">=1.0.2" }
+constraint_context:
+  template: cnf.tpl.interval_time_open    # DV_INTERVAL<DV_TIME> matches {*}
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+decision_table:
+  columns: [lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included, expected, violates]
+  rows:
+    - [null, null, false, false, true, true, rejected, ["rm_schema: value is mandatory for lower and upper when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - [null, "T11:00:00", false, false, true, true, rejected, ["rm_schema: value is mandatory for lower when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - ["T10:00:00", null, false, false, true, true, rejected, ["rm_schema: value is mandatory for upper when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - ["T10", "T11", false, false, true, true, accepted, []]
+    - ["T10:00", "T11:00", false, false, true, true, accepted, []]
+    - ["T10:00:00", "T11:00:00", false, false, true, true, accepted, []]
+    - ["T10", "T10:45:00", false, false, true, true, rejected, ["rm_invariant(limits_comparable): partial times with different precision but common higher-order components are not strictly comparable (schedule cites the partial-date-time comparison discussion)"]]
+    - [null, null, true, true, false, false, accepted, []]

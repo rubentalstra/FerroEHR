@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.dt_date_c_date</value></template_id>
+  <concept>C_DATE constraint context (DV_DATE)</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

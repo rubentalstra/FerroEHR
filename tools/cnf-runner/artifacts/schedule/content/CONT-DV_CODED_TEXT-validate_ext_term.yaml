@@ -1,0 +1,24 @@
+id: CONT-DV_CODED_TEXT-validate_ext_term
+kind: content
+component: CONTENT
+rm_class: DV_CODED_TEXT
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: "A committed DV_CODED_TEXT constrained by a CONSTRAINT_REF (C_CODE_REFERENCE) is accepted iff both fields are present and the terminology_id resolves against a constraint_binding for the acNNNN code."
+description: "DV_CODED_TEXT against a CONSTRAINT_REF with a constraint_binding"
+spec_refs:
+  - "CNF platform_test_schedule master17.2 \u00a7CONT-DV_CODED_TEXT-validate_ext_term"
+  - "RM data_types \u00a7DV_CODED_TEXT"
+  - "AM AOM1.4 \u00a7C_CODE_PHRASE"
+  - "AM AOM1.4 \u00a7CONSTRAINT_REF"
+constraint_context:
+  template: cnf.tpl.dv_coded_text_constraint_ref
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
+decision_table:
+  columns: ["code_string", "terminology_id", "CONSTRAINT_REF.reference", "constraint_bindings", "expected", "violates"]
+  rows:
+    - [null, null, "ac0001", "[SNOMED_CT]", "rejected", ["rm_schema: code_string and terminology_id are both mandatory"]]
+    - ["ABC", null, "ac0001", "[SNOMED_CT]", "rejected", ["rm_schema: terminology_id is mandatory"]]
+    - [null, "local", "ac0001", "[SNOMED_CT]", "rejected", ["rm_schema: code_string is mandatory"]]
+    - ["ABC", "local", "ac0001", "[SNOMED_CT]", "rejected", ["constraint(constraint_binding): no terminology binding matches the terminology_id"]]
+    - ["82272006", "SNOMED-CT", "ac0001", "[SNOMED_CT]", "accepted", []]

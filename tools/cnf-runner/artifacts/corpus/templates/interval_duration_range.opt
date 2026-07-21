@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.interval_duration_range</value></template_id>
+  <concept>DV_INTERVAL<DV_DURATION>: C_DURATION.range on lower and upper; constraint varies per decision-table row</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>
