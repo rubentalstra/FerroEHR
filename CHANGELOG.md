@@ -17,6 +17,24 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- CNF 2.0 reference runner, third increment — the executor and both verdict
+  machineries: the data-driven flow interpreter under the five interpreter
+  laws (per-row re-provisioning, step-mismatch row abort, errored-vs-failed
+  classification, fixed temporal resolution, aggregates-after-last-row) with
+  the live HTTP driver realized purely from the operation bindings, the
+  reference resolver (corpus/recipes/rows/captures with normative sentinel
+  semantics), the normative RESULT_SET equivalence comparator, content-case
+  execution via the synthesized generate→commit→expect flow, the party
+  artifacts (statement/results/ixit with schema validation and mandatory
+  N/A citations), the pure verdict pipeline + deterministic
+  report/statement/certificate renderers, the runner-verification pack
+  (committed transcript + player: adjudicated verdicts reproduced, broken
+  runners rejected), and the performance machinery (class cases with the
+  published population-anchored floors, re-checkable HDR V2 measurement
+  records, the earned/not-earned pure verdict). Nine published JSON-Schema
+  families, drift-guarded. Live-SUT runs (the earned-class measurement and
+  pack part 2) execute against a composed SUT via the new `run`/`verdicts`
+  CLI once cutover lands.
 - CNF 2.0 reference runner, second increment: the complete CNF 2.0 catalogue
   authored from the framework — 347 cases across every schedule chapter
   (EHR, EHR_STATUS, COMPOSITION, CONTRIBUTION, DIRECTORY, ADL 1.4 + ADL2
