@@ -1,0 +1,11 @@
+# Wire realization of I_EHR_SERVICE.get_ehr for ITS-REST 1.1.0.
+# Sources: specifications/operations/ehr_get_by_id.yaml (200/404).
+sm_operation: I_EHR_SERVICE.get_ehr
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }
+  not_found: { status: 404 }              # 404.yaml (unknown ehr_id)

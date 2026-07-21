@@ -1,0 +1,15 @@
+# Wire realization of I_EHR_COMPOSITION.get_composition_at_version for
+# ITS-REST 1.1.0.
+# Sources: specifications/operations/composition_get.yaml (200/204/404).
+sm_operation: I_EHR_COMPOSITION.get_composition_at_version
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/composition/{version_uid}
+formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
+outcomes:
+  ok:
+    status: 200                           # 200_COMPOSITION_retrieved.yaml
+    headers: { Content-Type: negotiated }
+  ok_empty: { status: 204 }               # deleted at requested time (composition_get.yaml)
+  not_found: { status: 404 }

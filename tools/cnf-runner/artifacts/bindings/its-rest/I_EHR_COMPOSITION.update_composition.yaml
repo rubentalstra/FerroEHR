@@ -1,0 +1,33 @@
+# Wire realization of I_EHR_COMPOSITION.update_composition for ITS-REST 1.1.0.
+# Sources: specifications/operations/composition_update.yaml,
+# responses/200_COMPOSITION_updated.yaml / 204_version_updated.yaml,
+# 412_COMPOSITION.yaml; If-Match per overview Requests_and_responses.
+sm_operation: I_EHR_COMPOSITION.update_composition
+its: its-rest
+request:
+  method: PUT
+  path: /ehr/{ehr_id}/composition/{versioned_object_uid}
+  body: composition
+  headers:
+    If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
+outcomes:
+  updated:
+    status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+    body: prefer_conditional
+  precondition_failed:
+    status: 412                           # 412_COMPOSITION.yaml, MUST
+    headers: { ETag: latest-version-uid }
+  precondition_missing: { status: 400 }   # If-Match absent -> SHOULD 400 (Requests_and_responses)
+  not_found: { status: 404 }              # unknown ehr_id or uid
+  version_not_found: { status: 404 }      # unknown preceding version — same 404 family
+  validation_failed: { status: 422, body: error_loose }
+  template_mismatch: { status: 422, body: error_loose }   # wrong-template update (master07)
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [uid, context/_uid]

@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openehr:cnf:schema:ambiguity-register:0.1.0",
+  "title": "CNF 2.0 ambiguity register",
+  "description": "Every entry a real, verified spec divergence or silence with the normative handling a runner must apply. A runner that resolves an ambiguity privately is non-conformant to the schedule.",
+  "type": "object",
+  "minProperties": 1,
+  "propertyNames": {
+    "pattern": "^AMB-[0-9]+$"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "ambiguity",
+      "source",
+      "handling",
+      "disposition"
+    ],
+    "properties": {
+      "ambiguity": {
+        "type": "string",
+        "minLength": 1
+      },
+      "source": {
+        "type": "string",
+        "minLength": 1
+      },
+      "handling": {
+        "type": "string",
+        "minLength": 1
+      },
+      "disposition": {
+        "enum": [
+          "loose_assert",
+          "fixed_handling",
+          "option_select",
+          "report_only",
+          "statement_declared",
+          "editorial"
+        ]
+      },
+      "options": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+$"
+        }
+      }
+    },
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "disposition": {
+              "const": "option_select"
+            }
+          }
+        },
+        "then": {
+          "required": [
+            "ambiguity",
+            "source",
+            "handling",
+            "disposition",
+            "options"
+          ],
+          "properties": {
+            "options": {
+              "minItems": 2
+            }
+          }
+        },
+        "else": {
+          "properties": {
+            "options": {
+              "maxItems": 0
+            }
+          }
+        }
+      }
+    ]
+  }
+}

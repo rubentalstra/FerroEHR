@@ -1,0 +1,114 @@
+# The governed corpus manifest: verdict + defect live HERE, never only in a
+# filename; generated sets are committed deterministic recipe contracts
+# (corpus/recipes/*.md, digest-pinned).
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored corpus when the catalogue authoring lands (#202).
+cnf.opt.invalid.empty_file:
+  source: fixtures/opt/invalid/empty_file.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "empty file"
+    spec_ref: "CNF platform_test_schedule master04 (upload_opt invalid data sets)"
+  provenance: "authored 2026-07-21 from the CNF master04 data-set description; structural placeholder pending corpus authoring"
+cnf.opt.invalid.empty_template_id:
+  source: fixtures/opt/invalid/empty_template_id.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "empty template_id"
+    spec_ref: "CNF platform_test_schedule master04 (upload_opt invalid data sets); AM AOM1.4 (OPERATIONAL_TEMPLATE.template_id)"
+  provenance: "authored 2026-07-21 from the CNF master04 data-set description; structural placeholder pending corpus authoring"
+cnf.opt.invalid.removed_mandatory:
+  source: fixtures/opt/invalid/removed_mandatory.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "removed mandatory elements (no definition)"
+    spec_ref: "CNF platform_test_schedule master04 (upload_opt invalid data sets); AM AOM1.4 (OPERATIONAL_TEMPLATE.definition is mandatory)"
+  provenance: "authored 2026-07-21 from the CNF master04 data-set description; structural placeholder pending corpus authoring"
+cnf.opt.invalid.multiple_elements:
+  source: fixtures/opt/invalid/multiple_elements.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "multiple elements where upper bound is 1 (two template_id)"
+    spec_ref: "CNF platform_test_schedule master04 (upload_opt invalid data sets); AM AOM1.4 (OPERATIONAL_TEMPLATE.template_id 1..1)"
+  provenance: "authored 2026-07-21 from the CNF master04 data-set description; structural placeholder pending corpus authoring"
+cnf.opt.minimal_event:
+  source: templates/minimal_event.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (minimal event OPT); structural placeholder pending corpus authoring"
+cnf.opt.vitals:
+  source: templates/vitals.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (vital-signs OPT); structural placeholder pending corpus authoring"
+cnf.opt.blood_pressure:
+  source: templates/blood_pressure.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (blood-pressure OPT); structural placeholder pending corpus authoring"
+cnf.tpl.quantity_property_units_mag:
+  source: templates/quantity_property_units_mag.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (C_DV_QUANTITY constraint context: property=openehr::122, list=[cm 5.0..10.0, m]); structural placeholder pending corpus authoring"
+cnf.composition.minimal_event.v1:
+  source: fixtures/composition/minimal_event.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (minimal event COMPOSITION, first content state); structural placeholder pending corpus authoring"
+cnf.composition.minimal_event.v2:
+  source: fixtures/composition/minimal_event.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (minimal event COMPOSITION, updated content state); structural placeholder pending corpus authoring"
+cnf.composition.minimal_event.invalid_structure:
+  source: fixtures/composition/minimal_event.invalid_structure.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "OBSERVATION carries no data attribute"
+    spec_ref: "RM ehr (OBSERVATION.data is mandatory)"
+  provenance: "authored 2026-07-21 by removing OBSERVATION.data from the valid v1 payload"
+cnf.flat.vitals.minimal_ctx:
+  source: fixtures/flat/vitals.minimal_ctx.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (FLAT vitals commit with minimal ctx per ITS-REST simplified_formats master06)"
+  views:
+    temperature_magnitude:
+      select: "$['vitals/body_temperature:0/any_event:0/temperature|magnitude']"
+cnf.ehr_status.provided:
+  generated_by: { recipe: ehr_status, digest: "sha256:31bc95b3be8f331997817d1739c65ac865da12a7f23a496d1518db548d44cd50" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated set: EHR_STATUS instances synthesized per matrix row (recipe contract corpus/recipes/ehr_status.md)"
+  recipes:
+    ehr_status: { digest: "sha256:31bc95b3be8f331997817d1739c65ac865da12a7f23a496d1518db548d44cd50" }
+cnf.set.bp-10:
+  generated_by: { recipe: bp_series, digest: "sha256:bb8e67f6471c2f9769fbb4efd1643b20ff4f947daeab01416657d4009107e720" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated set: 10 blood-pressure COMPOSITIONs, systolic 100..190 (recipe contract corpus/recipes/bp_series.md)"
+  views:
+    magnitude_ge_140_by_uid:
+      select: "committed uids of compositions"
+      where: "systolic magnitude >= 140"
+      order_by: "uid ascending"

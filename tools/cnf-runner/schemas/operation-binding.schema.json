@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openehr:cnf:schema:operation-binding:0.1.0",
+  "title": "CNF 2.0 operation binding",
+  "description": "Per-ITS wire realization of one SM operation: request construction, outcome kind → wire expectation, logical capture → wire source. Every mapping cites its OAS source.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sm_operation",
+    "its",
+    "request",
+    "outcomes"
+  ],
+  "properties": {
+    "sm_operation": {
+      "type": "string",
+      "pattern": "^I_[A-Z0-9_]+\\.[a-z][a-z0-9_]*$"
+    },
+    "its": {
+      "enum": [
+        "its-rest"
+      ]
+    },
+    "applies": {
+      "type": "object"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "path"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "HEAD"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "body": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "formats": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "canonical-json",
+          "canonical-xml",
+          "wt-flat",
+          "wt-structured",
+          "wt"
+        ]
+      }
+    },
+    "format_headers": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "canonical-json",
+          "canonical-xml",
+          "wt-flat",
+          "wt-structured",
+          "wt"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "outcomes": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "enum": [
+          "created",
+          "ok",
+          "ok_empty",
+          "updated",
+          "deleted",
+          "stored",
+          "already_exists",
+          "not_found",
+          "version_not_found",
+          "precondition_failed",
+          "precondition_missing",
+          "validation_failed",
+          "template_not_found",
+          "template_mismatch",
+          "missing_template_id",
+          "already_deleted",
+          "conflict",
+          "not_acceptable",
+          "unsupported_media",
+          "invalid_query",
+          "timeout"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status"
+        ],
+        "properties": {
+          "status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "body": {
+            "enum": [
+              "prefer_conditional",
+              "error_loose",
+              "result_set_body",
+              "negotiated",
+              "present",
+              "absent"
+            ]
+          }
+        }
+      }
+    },
+    "captures": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "from"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "strip": {
+            "enum": [
+              "weak-quotes"
+            ]
+          },
+          "transform": {
+            "enum": [
+              "root-uid"
+            ]
+          },
+          "fallback": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "server_assigned": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
