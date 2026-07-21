@@ -143,65 +143,13 @@ fn load_party_json<T: serde::de::DeserializeOwned>(
 
 fn main() -> ExitCode {
     match Cli::parse().command {
-        Command::EmitSchemas { out } => {
-            if let Err(e) = std::fs::create_dir_all(&out) {
-                eprintln!("cannot create {}: {e}", out.display());
-                return ExitCode::from(2);
-            }
-            for (name, schema) in emit_all() {
-                let path = out.join(name);
-                if let Err(e) = std::fs::write(&path, render(&schema)) {
-                    eprintln!("cannot write {}: {e}", path.display());
-                    return ExitCode::from(2);
-                }
-                println!("wrote {}", path.display());
-            }
-            ExitCode::SUCCESS
-        }
+        Command::EmitSchemas { out } => emit_schemas_command(&out),
         Command::CompareEcc {
             root,
             ecc_catalog,
             map,
             out,
-        } => {
-            let loaded = match load_root(&root) {
-                Ok(loaded) => loaded,
-                Err(e) => {
-                    eprintln!("runner defect: {e}");
-                    return ExitCode::from(2);
-                }
-            };
-            if !loaded.errors.is_empty() {
-                for e in &loaded.errors {
-                    eprintln!("{e}");
-                }
-                return ExitCode::from(2);
-            }
-            match compare::run(&ecc_catalog, &map, &loaded.set) {
-                Ok((cmp, report)) => {
-                    if let Err(e) = std::fs::write(&out, report) {
-                        eprintln!("cannot write {}: {e}", out.display());
-                        return ExitCode::from(2);
-                    }
-                    println!(
-                        "wrote {} — mapped {} · unmapped {} · gate {}",
-                        out.display(),
-                        cmp.mapped.len(),
-                        cmp.unmapped.len(),
-                        if cmp.gate_clean() { "clean" } else { "OPEN" }
-                    );
-                    if cmp.gate_clean() {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(1)
-                    }
-                }
-                Err(e) => {
-                    eprintln!("comparison failed: {e}");
-                    ExitCode::from(2)
-                }
-            }
-        }
+        } => compare_ecc_command(&root, &ecc_catalog, &map, &out),
         Command::Run {
             root,
             ixit,
@@ -217,40 +165,103 @@ fn main() -> ExitCode {
             &sut_version,
             filter.as_deref(),
         ),
-        Command::Validate { root, specs } => {
-            let loaded = match load_root(&root) {
-                Ok(loaded) => loaded,
-                Err(e) => {
-                    eprintln!("runner defect: {e}");
-                    return ExitCode::from(2);
-                }
-            };
-            let findings = validate(&Context {
-                set: &loaded.set,
-                load_errors: &loaded.errors,
-                spec_root: specs.as_deref(),
-            });
-            for finding in &findings {
-                println!("{finding}");
-            }
-            println!(
-                "{} case(s), {} binding(s), {} finding(s)",
-                loaded.set.cases.len(),
-                loaded.set.bindings.len(),
-                findings.len()
-            );
-            if findings.is_empty() {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(1)
-            }
-        }
+        Command::Validate { root, specs } => validate_command(&root, specs.as_deref()),
         Command::Verdicts {
             statement,
             results,
             root,
             out,
         } => run_verdicts(&statement, &results, &root, &out),
+    }
+}
+
+fn emit_schemas_command(out: &std::path::Path) -> ExitCode {
+    if let Err(e) = std::fs::create_dir_all(out) {
+        eprintln!("cannot create {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    for (name, schema) in emit_all() {
+        let path = out.join(name);
+        if let Err(e) = std::fs::write(&path, render(&schema)) {
+            eprintln!("cannot write {}: {e}", path.display());
+            return ExitCode::from(2);
+        }
+        println!("wrote {}", path.display());
+    }
+    ExitCode::SUCCESS
+}
+
+fn compare_ecc_command(
+    root: &std::path::Path,
+    ecc_catalog: &std::path::Path,
+    map: &std::path::Path,
+    out: &std::path::Path,
+) -> ExitCode {
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    match compare::run(ecc_catalog, map, &loaded.set) {
+        Ok((cmp, report)) => {
+            if let Err(e) = std::fs::write(out, report) {
+                eprintln!("cannot write {}: {e}", out.display());
+                return ExitCode::from(2);
+            }
+            println!(
+                "wrote {} — mapped {} · unmapped {} · gate {}",
+                out.display(),
+                cmp.mapped.len(),
+                cmp.unmapped.len(),
+                if cmp.gate_clean() { "clean" } else { "OPEN" }
+            );
+            if cmp.gate_clean() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(1)
+            }
+        }
+        Err(e) => {
+            eprintln!("comparison failed: {e}");
+            ExitCode::from(2)
+        }
+    }
+}
+
+fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> ExitCode {
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let findings = validate(&Context {
+        set: &loaded.set,
+        load_errors: &loaded.errors,
+        spec_root: specs,
+    });
+    for finding in &findings {
+        println!("{finding}");
+    }
+    println!(
+        "{} case(s), {} binding(s), {} finding(s)",
+        loaded.set.cases.len(),
+        loaded.set.bindings.len(),
+        findings.len()
+    );
+    if findings.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
     }
 }
 
