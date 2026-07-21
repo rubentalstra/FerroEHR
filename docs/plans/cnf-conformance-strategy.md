@@ -1855,16 +1855,21 @@ The performance & volumetrics chapter (§8.14 + §11.4), Demographic
 (master10), and Admin/Messaging (master12/13) follow as U9+ per the §11
 roadmap once the pattern is proven on U2–U6.
 
-### 14.2 This codebase: ECC becomes the first production implementation
+### 14.2 This codebase: the reference runner, built from scratch
 
-ECC adopts the §8 artifact set as its own storage format — not a shadow
-export. Tracked as dedicated issues (opened when this design is
-owner-approved), sequenced:
+Owner ruling: the conformance + benchmark tooling is **rebuilt from the
+ground up** as one runner implementing the §8 architecture natively — not an
+incremental adaptation of today's ECC. The current ECC and its committed
+baseline (402 case×format executions · 384 passed · 18 N/A) remain running
+untouched as the **convergence oracle**: the new runner must reproduce that
+baseline before cutover (the W2 gate), after which the old harness retires.
+Tracked as dedicated issues (opened when this design is owner-approved),
+sequenced:
 
 | WS | Workstream | Content | Done-gate |
 |---|---|---|---|
 | W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, vocabularies (outcomes + the capability matrix), corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
-| W2 | **Catalogue conversion** | The 394 ECC cases re-expressed as §8.3 case cores + §8.4 operation bindings. Where an official schedule case exists, the CNF id becomes primary (ECC numbers retire to trace metadata — inverting today's `ScheduleTrace`); ECC-original cases keep an `ecc-` namespace pending upstream adoption. `inventory/ecc-catalog.tsv` becomes a generated view. | Zero-drift: the converted catalogue reproduces the current 402-execution baseline exactly (384 passed · 18 N/A) |
+| W2 | **Catalogue conversion** | The 394 ECC cases re-expressed as §8.3 case cores + §8.4 operation bindings. Where an official schedule case exists, the CNF id becomes primary (ECC numbers retire to trace metadata — inverting today's `ScheduleTrace`); ECC-original cases keep an `ecc-` namespace pending upstream adoption. `inventory/ecc-catalog.tsv` becomes a generated view. | Zero-drift convergence gate: the new runner reproduces the current 402-execution baseline exactly (384 passed · 18 N/A); cutover + old-harness retirement follow |
 | W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data (they already nearly do). | ≥90% of cases run through the interpreter; every exception listed in the report; ECC baseline unchanged |
 | W4 | **Statement / results / ixit emission** | `results.json` migrates to the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
 | W5 | **Simplified-formats deepening** | The §8.7 blueprint's gap categories 2–9 (node-id algorithm, level removal, the 43 suffix tables, `_`-attributes, `\|raw`, full ctx vocabulary, counters, STRUCTURED style) + deepened 1/10 — ~40 new SF cases, all spec-example-driven, all OPTIONS-profile. | Every master04/05/06 spec-example JSON block exercised; ECC baseline ratchets upward only |
@@ -1917,11 +1922,28 @@ technology choice, and it is Rust:
   performance runs and parallel case execution against live clinical
   systems.
 
-ECC is that runner today (Rust, `tools/conformance` + `tools/benchmark`);
-W1–W7 turn it into the first production implementation of the artifact set.
-The Robot suite remains a first-class *compliant* runner via the
-verification pack — rescuing it is inside the proposal (§8.7, §13); it is
-simply no longer the thing the framework's credibility depends on.
+**The selected stack** (the ground-up rebuild's dependency decisions —
+following this workspace's discipline: pinned workspace crates, never
+hand-roll what a vetted crate provides, verify versions live at adoption):
+
+| Concern | Selection | Rationale |
+|---|---|---|
+| Async runtime / HTTP | `tokio` + `reqwest` (rustls) | The runner is an interpreter + HTTP driver; both machineries share the client; already pinned + vetted in this workspace |
+| Artifact model | `serde` + hand-written typed model (enums/newtypes for every closed vocabulary) | The §8 laws become compile-time properties; no framework needed or wanted |
+| Canonical interchange | `serde_json` | statement/results/ixit are JSON; hash-linked artifacts |
+| Schema validation | `jsonschema` | Validates the artifact families + emitted party artifacts against the published schemas |
+| YAML authoring front-end | maintained YAML parser chosen at adoption — **`serde_yaml` is archived upstream**; candidates evaluated live *(verify)* | YAML files parse to the same tree and validate against the same JSON Schema |
+| Workload engine (measurement machinery) | **own tokio-native engine** — the knee-ladder + sustained-run code of `tools/benchmark`, carried into the rebuild | Already built, published against two CDRs, and methodology-specific; [goose](https://github.com/tag1consulting/goose) evaluated and named as fallback — its Locust user-behaviour model does not fit the ladder |
+| Latency statistics | HDR-histogram crate *(verify at adoption)* | Percentile fidelity at class-R sample volumes |
+| CLI / errors / telemetry | `clap` / `thiserror` / `tracing` | Workspace standards |
+| Test-definition DSLs | **[cucumber-rs](https://github.com/cucumber-rs/cucumber) and [Hurl](https://hurl.dev): evaluated and declined** | Each would introduce a second test-definition language beside the schedule — the exact three-representations drift CNF 2.0 exists to kill; the schedule is the only DSL |
+
+ECC (`tools/conformance` + `tools/benchmark`) is the prior art and the
+convergence oracle for the rebuild (§14.2); W1–W7 deliver the new runner as
+the first production implementation of the artifact set. The Robot suite
+remains a first-class *compliant* runner via the verification pack —
+rescuing it is inside the proposal (§8.7, §13); it is simply no longer the
+thing the framework's credibility depends on.
 
 What this buys strategically: when U1 reaches the SEC, the schemas arrive
 with a production runner already storing, validating, executing, and
