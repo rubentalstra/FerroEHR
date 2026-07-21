@@ -8,7 +8,7 @@ credential path.
 | Stack | Server port | Image (override with env)                                              |
 |---|---|------------------------------------------------------------------------|
 | ehrbase-rs | `8090` | `EHRBASE_RS_IMAGE` (default `ghcr.io/rubentalstra/ehrbase-rs:develop`) |
-| EHRbase Java | `8091` | `EHRBASE_JAVA_IMAGE` (default `ehrbase/ehrbase:2.33.0`)                |
+| EHRbase Java | `8091` | `EHRBASE_JAVA_IMAGE` (default `ehrbase/ehrbase:2.34.0`)                |
 
 ## Run
 
