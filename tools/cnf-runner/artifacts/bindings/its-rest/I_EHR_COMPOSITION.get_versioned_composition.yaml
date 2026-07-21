@@ -1,0 +1,19 @@
+# Wire realization of I_EHR_COMPOSITION.get_versioned_composition for
+# ITS-REST 1.1.0.
+# The SM get_versioned_composition(ehr_id, versioned_object_uid) returns the
+# VERSIONED_COMPOSITION container; realized as
+# GET /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}.
+# Sources: specifications/operations/versioned_composition_get.yaml (200/404),
+# responses/200_VERSIONED_COMPOSITION.yaml,
+# 404_unknown_ehr_id_or_versioned_object_uid.yaml.
+sm_operation: I_EHR_COMPOSITION.get_versioned_composition
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # 200_VERSIONED_COMPOSITION.yaml
+    headers: { Content-Type: negotiated }
+  not_found: { status: 404 }              # unknown ehr_id or versioned_object_uid (404_unknown_ehr_id_or_versioned_object_uid.yaml)

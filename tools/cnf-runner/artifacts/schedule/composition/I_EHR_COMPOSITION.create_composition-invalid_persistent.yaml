@@ -1,0 +1,30 @@
+# Create an invalid persistent COMPOSITION: rejected with errors about the
+# content; nothing is committed.
+id: I_EHR_COMPOSITION.create_composition-invalid_persistent
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.create_composition
+capabilities: [CompositionOps]
+profiles: [CORE]
+test_purpose: >-
+  create_composition with a semantically invalid persistent COMPOSITION is
+  rejected and returns information about the errors in the content.
+description: "Create new invalid persistent COMPOSITION"
+spec_refs:
+  - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
+  - "CNF platform_test_schedule master07 §create_composition-invalid_persistent"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_persistent]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_persistent.invalid_structure]
+flow:
+  - step: 1
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_persistent.invalid_structure}" }
+    expect: validation_failed             # "information about the errors in the provided COMPOSITION"
+    assert:
+      - { assert: message_exemplar, text: "information about the errors in the provided COMPOSITION" }
+postconditions:
+  - { assert: version, count: 0 }        # nothing committed

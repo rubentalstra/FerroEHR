@@ -159,3 +159,40 @@ cnf.opt.versioned.v2:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from the CNF master04 data-set descriptions (minimal valid OPT, two versions); structural placeholder pending corpus authoring"
+# Corpus additions for the master07 (COMPOSITION) schedule cases.
+# Merged into corpus/MANIFEST.yaml at verify time; entries here ONLY.
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored corpus when the catalogue authoring lands (#202).
+cnf.opt.minimal_persistent:
+  source: fixtures/composition/minimal_persistent.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master07 persistent data-set descriptions (minimal persistent OPT); structural placeholder pending corpus authoring"
+cnf.composition.minimal_persistent.v1:
+  source: fixtures/composition/minimal_persistent.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master07 data-set descriptions (minimal persistent COMPOSITION, first content state; category openehr::431|persistent|, no EVENT_CONTEXT); structural placeholder pending corpus authoring"
+cnf.composition.minimal_persistent.v2:
+  source: fixtures/composition/minimal_persistent.v2.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the CNF master07 data-set descriptions (minimal persistent COMPOSITION, updated content state); structural placeholder pending corpus authoring"
+cnf.composition.minimal_persistent.invalid_structure:
+  source: fixtures/composition/minimal_persistent.invalid_structure.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "EVALUATION carries no data attribute"
+    spec_ref: "RM ehr (EVALUATION.data is mandatory)"
+  provenance: "authored 2026-07-21 by removing EVALUATION.data from the valid persistent v1 payload"
+cnf.composition.minimal_event.wrong_template:
+  source: fixtures/composition/minimal_event.wrong_template.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 (valid event COMPOSITION whose archetype_details.template_id is cnf.vitals, a different OPT than the versioned object's cnf.minimal_event — the update_composition-wrong_template mismatch source); structural placeholder pending corpus authoring"
