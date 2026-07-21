@@ -1,177 +1,62 @@
-# openEHR conformance & certification strategy — the CNF 2.0 upstream proposal (v4)
+# openEHR conformance & certification — the CNF 2.0 framework (v5)
 
-*Tracker: [#197](https://github.com/rubentalstra/ehrbase-rs/issues/197). Plan-file
-lifecycle applies: this document is deleted in the PR that closes #197 (i.e. when
-the proposal has been delivered upstream and the accepted workstreams have their
-own issues). Evidence verified 2026-07-21 against the vendored CNF snapshot
-(`docs/specs/openehr/CNF/`, commit `33251d2a`), the live
-[openEHR/specifications-CNF](https://github.com/openEHR/specifications-CNF)
-repository, the SPECCNF Jira project, the openEHR Discourse archive, the
-OJ text of Regulation (EU) 2025/327, and the ISO/CASCO, IHE, and ONC primary
-sources listed in Appendix D.*
-
-*v2 (2026-07-21): grounded in the ISO conformity-assessment corpus
-(ISO/IEC 17000-series, 17050, 17067, 9646) and the EHDS regulatory clock;
-pitch rebalanced to lead with governance + resourcing; worked examples fixed
-(case-core/binding split, deterministic AQL with an explicit match vocabulary,
-a content decision-table example added); procurement pack and anti-gaming
-registry rules added; effort claims right-sized. All thirteen findings of the
-v1 adversarial review are addressed.*
-
-*v3 (2026-07-21): §8 replaced by the full production design of the CNF 2.0
-normative artifact set — derived from verbatim extractions of the fleshed
-schedule chapters (master03/04/06/07/17.3), the decomposed ITS-REST 1.1.0
-OpenAPI, and the STABLE Simplified Formats spec: case-core field contract,
-per-SM-operation bindings with real status/header mappings, the outcome-kind
-taxonomy, the ambiguity register (AMB-1…7), the typed assertion vocabulary,
-corpus-manifest governance, seven fully-encoded official pilot cases, and
-field-level ICS/results/IXIT schemas. New §15: the production implementation
-plan (upstream PR series U1–U8 + this codebase's ECC adoption W1–W6).*
-
-*v4 (2026-07-21): the four-track cross-validation round (openEHR spec audit,
-ISO audit, legal/regulatory audit, internal-consistency audit) folded in.
-ISO framing corrected (conformity-assessment scheme per ISO/IEC 17000; 17067
-third-party rung only, Type 5 not Type 6; "witnessed peer verification"
-replaces "second-party attestation"; exact 17050-1 quotation; 9646 verdict
-mapping). Legal corrections: the RFP template gains the mandatory
-equivalence clause (Directive 2014/24/EU Arts 42–44); EHDS Chapter III
-EHR-system obligations correctly attributed to 2031; ordinary-trademark
-badge model (not a certification mark); Registry Terms of Use. Spec fixes:
-the master08 CONTRIBUTION version-set construct + pilot 8, class-1.a rows in
-pilot 1, corrected `verified_by` ids, the MIME reject-list reframed to
-spec-cited negotiation behaviour, AMB-8…12. Schema completeness: the
-capabilities/profiles split, per-step format roles, recipes/sentinels/
-fixture-bindings/handles/list-captures/temporal references, the body-selector
-vocabulary, AMB-4 option wiring, aggregate postconditions. Encoding-selection
-rationale added (JSON Schema norm; JSON interchange; YAML authoring; TOML for
-config-shaped registers; TSV for generated indexes/bulk rows). The former
-"What ehrbase-rs contributes" section is removed (owner ruling: it added
-nothing to the design — the IP/licence and commitment content lives in §12
-Governance and §15 Implementation).*
+*Tracker: [#197](https://github.com/rubentalstra/ehrbase-rs/issues/197).
+Plan-file lifecycle applies: this document is deleted in the PR that closes
+#197. Every claim was verified 2026-07-21 against the sources in the Appendix
+(source register), through four validation rounds — openEHR spec conformance,
+ISO, legal/regulatory, internal consistency. Revision history: PRs
+#198/#200/#201/#203 and the issue thread. Before upstream posting: quote EHDS
+Art 105 verbatim from the OJ text (EUR-Lex blocks automated retrieval).*
 
 ---
 
-## 1. Executive summary
+## 1. Summary
 
-openEHR has no working conformance and certification story. The CNF component
-defines the right concepts — a Conformance Guide, a Platform Conformance Test
-Schedule, Profiles, a Certificate — but has been frozen since March 2022, has
-never cut its Release 1.0.0 (planned for December 2018), leaves the entire
-assessment layer `TBD`, has zero official test cases for AQL, and its only
-executable artifact is one vendor's Robot suite that no longer runs out of the
-box. Meanwhile two clocks are running: **procurement** of openEHR CDRs keeps
-accelerating with nothing verifiable to require, and in Europe the **EHDS
-regulation** (in force March 2025) is building a mandatory, self-assessed,
-CE-marked conformity culture for EHR systems around implementing acts due
-**March 2027** — a frame in which openEHR currently does not figure at all.
+The official CNF component defines the right concepts — Conformance Guide,
+Platform Conformance Test Schedule, Profiles, Certificate — and is frozen:
+last content amendment March 2022, Release 1.0.0 (planned December 2018)
+never cut, the entire assessment layer `TBD`, zero AQL test cases, and one
+vendor-specific Robot suite that no longer runs as the only executable
+artifact (§3). Procurement names openEHR with nothing verifiable to require —
+Catalonia's ~€8.5M CDR tender had to use latency SLAs as the conformance
+proxy — and in Europe the EHDS regulation is making self-assessed, CE-marked,
+automatically-tested conformity the norm for EHR systems (implementing acts
+due March 2027, EHR-system obligations from 2031), a frame openEHR is
+currently not in (§6.5).
 
-This document proposes **CNF 2.0** to the openEHR SEC. The 2021–2022 community
-design was right — the Schedule / Profile / Statement / Certificate vocabulary,
-SM-anchored test cases, technology profiles, the global test-case ID scheme,
-the certification maturity ladder. What failed was not the design. It was the
-operating model: one person's spare time, funding tied to one project, no owner
-for the whole, one vendor-specific harness. CNF 2.0 therefore leads with the
-operating model and uses engineering to make it cheap to run:
+## 2. The three pillars
 
-1. **Govern and resource it so it cannot stall again.** A CNF maintainer group
-   chartered under openEHR International (voted decisions, no single-vendor
-   majority, no unilateral veto), the normative repo, trademark and badge owned
-   by openEHR International, a recurring program funding line rather than
-   project money, and ≥2 competing vendors co-authoring the schema **before**
-   any format decision is ratified. We commit named engineering effort to the
-   pilot series; the ask to other vendors is matching co-commitment.
-2. **Make the Test Schedule machine-readable — the mechanism that makes rule 1
-   affordable.** One versioned catalogue (IDs, SM operation anchors, spec
-   citations, bindings, data sets, expected outcomes, profile membership,
-   spec-version applicability) from which the human-readable spec pages are
-   *generated* and against which **any** harness — Robot, Rust, Spock, Postman
-   — can prove itself. In ISO terms (§6): the schedule is the **Abstract Test
-   Suite**; the runners are Executable Test Suites; CI enforcement replaces a
-   bottleneck maintainer. This is the same machine-readable philosophy openEHR
-   already applies everywhere else (BMM for the RM, OpenAPI for REST) —
-   conformance is the one component still written only as prose.
-3. **Define certification with international vocabulary, on the EHDS clock.**
-   The ladder that has been `TBD` since 2017 becomes a **conformity-assessment
-   scheme in the ISO/IEC 17000 sense, owned by openEHR International**, with
-   rungs labelled by attestation level: a published-statement registry and
-   attested **supplier's declaration of conformity** (ISO/IEC 17050) first,
-   witnessed peer verification next, delegated ISO/IEC 17025-lab +
-   17065-certifier assessment (the only rung ISO/IEC 17067 governs) last — the exact architecture IHE and the US ONC program already
-   run, and the exact self-assessment + open-source-testing-environment shape
-   the EHDS regulation mandates for EHR systems in Europe.
+CNF 2.0 keeps the 2021–2022 community design (§4) and fixes the operating
+model that killed it:
 
-ehrbase-rs contributes its ECC framework — a working 394-case,
-both-wire-formats, machine-computed-verdict conformance instrument built on the
-CNF profiles model — as a working draft and one reference implementation.
-Explicitly **not** as "the standard": the standard must be community-owned,
-vendor-neutral, and multi-harness by construction. Our role is to donate
-methodology, case designs, and engineering effort under the community's
-licence, and to be the first SUT assessed by whatever the community ratifies.
+1. **Govern and resource it so it cannot stall again** (§12): a chartered
+   maintainer group under openEHR International (voted decisions, no
+   single-vendor majority), openEHR International owning repo/registry/
+   trademark, recurring program funding, ≥2 competing vendors co-authoring
+   the schema before ratification.
+2. **A machine-readable Test Schedule as the single normative source**
+   (§8): one versioned catalogue — in ISO terms the Abstract Test Suite —
+   from which the spec prose is generated and against which any harness
+   (Robot, Rust, Spock, Postman) proves itself; CI replaces the bottleneck
+   maintainer. The same machine-readable philosophy openEHR already applies
+   via BMM and OpenAPI.
+3. **Certification defined with international vocabulary** (§6, §9): a
+   conformity-assessment scheme per ISO/IEC 17000 — ISO/IEC 17050
+   supplier's declarations first, witnessed peer verification next,
+   delegated ISO/IEC 17025-lab + 17065-certifier assessment (the only rung
+   ISO/IEC 17067 governs) last — the architecture IHE and ONC already run
+   and the shape EHDS Art 40 mandates.
 
-### What is new here versus the 2021–2022 design
-
-Nothing in the *conceptual* model is claimed as new: the four-artifact
-vocabulary, the SM-anchors/ITS-executes split, technology profiles, and the
-global test-case ID scheme are the 2021–2022 community's work
-([Discourse 1616](https://discourse.openehr.org/t/openehr-conformance-conformance-levels-conformance-scopes/1616),
-[1851](https://discourse.openehr.org/t/conformance-roadmap-2021/1851),
-[2358](https://discourse.openehr.org/t/conformance-schedule-progress-data-types/2358)),
-and this proposal completes that direction rather than replacing it. The
-deltas are exactly five: **(a)** the schedule as one-file-per-case *data* with
-generated prose, **(b)** CI enforcement of the derivation chain on the spec
-repo, **(c)** computable Statement/results schemas with mechanically computed
-verdicts, **(d)** the governance/resourcing charter, and **(e)** the ISO/EHDS
-grounding that makes the program legible to procurement and regulators.
-
----
-
-## 2. The problem — and why now
-
-- **Procurement.** Tenders increasingly name openEHR, and there is nothing
-  verifiable to require. The documented proof is Catalonia: the CatSalut CDR
-  platform tender (closed Dec 2022, awarded ~€8.5M to UTE IBM–Viewnext,
-  [Discourse 3910](https://discourse.openehr.org/t/region-of-catalonia-award-of-the-tender-for-the-service-of-cdr-platform/3910))
-  had to define "openEHR conformance" via behavioural latency SLAs (query
-  ≤40 ms p95, write ≤60 ms p95) because no certificate, statement format, or
-  official test result existed to reference. Sweden's Karolinska framework
-  ("Tender Area 1: openEHR-based Software"), Malta's national EHR, Slovenia's
-  national CRPD, and Wales' National Data Resource all name openEHR the same
-  unverifiable way. The 2021 board decision to fund conformance work cited
-  precisely this ([Discourse 1851](https://discourse.openehr.org/t/conformance-roadmap-2021/1851)).
-- **The EHDS clock (Europe).** Regulation (EU) 2025/327 entered into force
-  26 March 2025 and creates a mandatory conformity regime for EHR systems:
-  manufacturer **self-assessment**, an **EU declaration of conformity**
-  (Art 39), **CE marking** (Art 41), a public registration database (Art 49),
-  and an **open-source digital testing environment** (Art 40 —
-  Commission-developed open-source software, operated as EU and national
-  testing environments) whose mandatory pre-market use yields a presumption
-  of conformity on positive results. Common
-  specifications and the EEHRxF exchange-format implementing acts are due
-  **26 March 2027**; primary-use exchange phases in from 2029 and the Chapter III EHR-system conformity regime applies from 2031. openEHR is **not** in
-  that frame today — the EEHRxF deliverables are HL7 FHIR logical models and
-  the Xt-EHR conformity-assessment scheme (D8.2, May 2026) is IHE/FHIR-based —
-  so the realistic positioning is §6.5: openEHR as the conformant
-  persistence layer *behind* the EHDS interoperability component, with a
-  conformance program that speaks the same self-assessment + open-source
-  testing-environment language. Either openEHR has a credible, ISO-legible
-  conformance program before the 2027 acts crystallize the ecosystem's habits,
-  or "conformance" in European health IT becomes a FHIR-only concept by
-  default.
-- **Vendor fairness.** Every vendor today self-declares against a different
-  private checklist. The only shared harness encodes one vendor's behaviour
-  (EHRbase's Robot suite), which biases "conformance" toward one
-  implementation's quirks — the exact failure the CNF Guide warns against.
-- **Spec quality feedback.** A real conformance suite is the best defect
-  detector the specifications themselves can have. The CNF content chapters
-  proved this in 2022; the stub chapters (AQL!) mean the flagship capability
-  has no executable definition of correct behaviour.
-- **Community credibility.** HL7 ships Inferno test kits with regulatory
-  teeth; IHE runs Connectathons and an ISO-based conformity-assessment scheme;
-  OpenID runs self-certification at scale; the EHDS makes automated
-  conformity testing a legal instrument. openEHR's conformance page still
-  says `TBD` where "how do I get certified?" should be — and the HL7–openEHR
-  convergence track (Dublin joint statement, May 2026) plus EHRCON26's heavy
-  EHDS programme make this the political window to fix it.
+Nothing conceptual is claimed as new: the four-artifact vocabulary, the
+SM-anchors/ITS-executes split, tech profiles, and the global ID scheme are
+the 2021–2022 community's work. The deltas are five: one-file-per-case data
+with generated prose; CI enforcement of the derivation chain; computable
+Statement/results schemas with mechanically computed verdicts; the
+governance/resourcing charter; and the ISO/EHDS grounding. ehrbase-rs's ECC
+(394 cases, both wire formats, machine-computed verdicts on the CNF profiles
+model) is the working draft and one reference implementation — explicitly
+not "the standard": the standard is community-owned, vendor-neutral, and
+multi-harness by construction.
 
 ## 3. Evidence base — state of the official CNF component (2026-07-21)
 
@@ -231,88 +116,44 @@ API, content, everything"
 
 ### 3.4 Vital signs
 
-- Jira [SPECCNF](https://openehr.atlassian.net/jira/software/c/projects/SPECCNF/list):
-  **two** visible issues. [SPECCNF-1](https://openehr.atlassian.net/browse/SPECCNF-1)
-  "Create openEHR Conformance Definition specification" — Open since 2017.
-  [SPECCNF-6](https://openehr.atlassian.net/browse/SPECCNF-6) "Create
-  Conformance Guide" — In Progress since **October 2021**, zero comments since.
-- Jira Release-1.0.0: release date 2018-12-28, **never released**.
-- specifications-CNF git: last content work 2022 (the schedule updates);
-  2024 = rendering/link fixes; May 2026 = Antora docs-toolchain migration only.
-- Open repo issues #1/#2 date from 2017.
+Jira SPECCNF: two visible issues (SPECCNF-1 open since 2017; SPECCNF-6 "in
+progress" since October 2021, zero comments); Release-1.0.0 dated 2018-12-28,
+never released. Repo: last content work 2022; 2024 = link fixes; May 2026 =
+Antora toolchain migration only; issues #1/#2 date from 2017.
 
-## 4. How it got here — history and stall post-mortem
+## 4. History distilled — what carries forward, and why it stalled
 
-### 4.1 Timeline
+The 2021–2022 community design era (Discourse threads 1616/1851/2239/2285/
+2358/2373, board-funded 2021 — Appendix) settled the foundations this
+framework keeps **wholesale**:
 
-| When | What |
-|---|---|
-| 2014–2017 | Early conformance framework sketches; the [openEHR Conformance wiki page](https://openehr.atlassian.net/wiki/spaces/spec/pages/73367558/openEHR+Conformance) (2017) proposes functional levels 1/2/3+O, enterprise D/M/X, volumetric POC/S/L/R ratings. |
-| Aug 2017 | [Alkmaar SEC meeting notes](https://openehr.atlassian.net/wiki/spaces/spec/pages/94181296/Conformance+Notes+-+SEC+meeting+Alkmaar+2017): certificate expiry question, vendor/tender profiles, randomizable test data, testing beyond REST. Pablo Pazos posts a full review of the draft spec as [SPECCNF-1 comment 22500](https://openehr.atlassian.net/browse/SPECCNF-1?focusedCommentId=22500) — see §4.4. |
-| Dec 2018 | Release 1.0.0 target passes; nothing cut. |
-| 2019–2021 | EHRbase builds its Robot suite (Vitasystems/HMS, HiGHmed funding); becomes the de-facto answer to "how do I test?" ([Discourse 1335](https://discourse.openehr.org/t/conformance-testing/1335)). |
-| 2021 | Board formally funds a conformance project ([Discourse 1851](https://discourse.openehr.org/t/conformance-roadmap-2021/1851)). The deep design debate happens ([Discourse 1616](https://discourse.openehr.org/t/openehr-conformance-conformance-levels-conformance-scopes/1616)). |
-| Jan–Mar 2022 | High-water mark: framework block diagram ([2239](https://discourse.openehr.org/t/conformance-framework-description/2239)); data-type content tests + global ID scheme land in the official schedule ([2358](https://discourse.openehr.org/t/conformance-schedule-progress-data-types/2358)); CaboLabs publishes its broader framework guide ([2285](https://discourse.openehr.org/t/openehr-conformance-verification-design-document/2285)); Robot suite copied into specifications-CNF. Schedule 0.8.6 (24-Mar-2022) is the **last amendment ever**. |
-| Sep 2022 | Stall on record: implementers ask about de-EHRbase-ifying the Robot suite; the answer is "I don't have a timeline since I'm doing it in my free time. Help is welcome." ([2373](https://discourse.openehr.org/t/conformance-testing-implementation-alternatives/2373)). |
-| 2023–2026 | PR #5 unmerged; rendering fixes; Antora migration. No content. Meanwhile: EHDS adopted (Mar 2025), HL7–openEHR joint statements (Amsterdam Jun 2025, Dublin May 2026), EHRCON26 programmes a heavy EHDS track and one conformance-testing session — and no product-certification launch. |
+- the four-artifact vocabulary: Conformance **Schedule / Profile /
+  Statement / Certificate**;
+- **SM names the capabilities, an ITS executes the tests**;
+- **technology profiles** parameterizing serialization/protocol;
+- the **global test-case ID scheme** spanning API + content tests;
+- the four-stage **certification maturity ladder**;
+- profiles **CORE / STANDARD / OPTIONS** with the capability matrix.
 
-### 4.2 What the 2021–2022 design era settled (keep all of it)
+It then stalled, for four operating-model causes this framework must answer
+(§12 answers 1–3; §8's machine-readable schedule + CI answers 1 and 4):
 
-- **The four-artifact vocabulary**: Conformance **Schedule** (everything
-  testable) / **Profile** (a viable product type's capability set) /
-  **Statement** (what a product claims + which tests pass) / **Certificate**
-  (statement + report + attestation).
-- **SM names the capabilities, an ITS executes the tests**: test *definitions*
-  anchor to Service Model operations (`I_EHR_SERVICE.create_ehr`); test
-  *execution* binds to a concrete ITS (REST + a serialization).
-- **Technology profiles**: serialization formats (and potentially other stack
-  dimensions) parameterize the *implementation* of the suite, so functional
-  results stay comparable across vendors with different stacks.
-- **A global test-case ID scheme** spanning API + content tests.
-- **The four-stage certification maturity ladder**: standardized vendor
-  statements → procurer-run testing → vendor self-certification → trusted
-  third-party certification.
-- **Profiles CORE / STANDARD / OPTIONS** with the capability matrix.
+1. single-person, spare-time ownership;
+2. funding tied to one project, not the program;
+3. a two-track scope split (narrow official CNF vs one company's broader
+   framework) with no owner for the union;
+4. single-harness lock-in — the abstract-spec/any-technology model was
+   chosen but never realized; the only implementation stayed
+   EHRbase-specific and its generalization (specifications-CNF PR #5,
+   open since 2023) had no owner.
 
-### 4.3 Why it stalled (the post-mortem the proposal must answer)
-
-1. **Single-person, spare-time ownership.** The ambitious half lived with one
-   person unpaid; when HiGHmed's project need ended, momentum ended.
-2. **Funding tied to one project, not to the program.** Board support produced
-   a roadmap, not sustained resourcing for maintenance/certification phases.
-3. **Two-track scope split with no owner for the union.** Official CNF stayed
-   deliberately narrow (CDR/REST); the broader CaboLabs framework stayed one
-   company's document; the certification/governance half belonged to neither.
-4. **Single-harness lock-in.** The abstract-spec + any-technology model was
-   *chosen* in principle but never realized: the only implementation stayed
-   EHRbase-specific, and its generalization had no owner (PR #5's fate).
-
-These four causes are what §1's ordering answers: the governance/resourcing
-charter (§12) addresses 1–3 directly; the machine-readable schedule + CI (§8)
-is the mechanism that makes 1 and 4 structurally cheap rather than heroic.
-
-### 4.4 SPECCNF-1 comment 22500 (Pablo Pazos, Aug 2017) — still the best requirements list
-
-Nine years old and almost fully unaddressed; CNF 2.0 answers it point by point:
-
-- The spec should include **guidance + format for writing Conformance
-  Statements** — "the first step before any testing, it actually defines what
-  can be tested" (his model: DICOM PACS conformance statements). → §8.10: the
-  Statement is a normative, computable schema; in ISO terms an ICS proforma
-  with ISO/IEC 17050-1 content.
-- The Certificate section raises unanswered governance questions verbatim:
-  *"what is this? how is it created? who can create it? who can grant it? who
-  verifies it?"* → §9 answers each with ISO/IEC 17000 attestation levels and
-  named roles.
-- Scope discipline: functional vs non-functional conformance points stated up
-  front; don't redefine ISO 9126/25010 quality terms; certify **platforms**
-  explicitly; no assumptions that imply a web UI; avoid manual testing.
-  → §6.3 scopes conformance as ISO/IEC 25010 *functional suitability* and
-  §7.8 keeps non-functional out.
-- Don't hard-code REST as the only access method conceptually. → the §8.3/§8.4
-  case-core/binding split makes that structural.
-- Archetype-validation conformance points need precise definitions. → §11
-  roadmap item 2 + the content decision-table schema (§8.9, pilot 5).
+The 2017 spec review ([SPECCNF-1 comment 22500](https://openehr.atlassian.net/browse/SPECCNF-1?focusedCommentId=22500))
+remains the oldest open requirements list; its asks are answered in the
+design: computable Conformance Statements as the first artifact (§8.10),
+certificate governance — who creates/grants/verifies (§9), scope discipline
+via ISO/IEC 25010 functional suitability with no manual testing (§6.3, §7),
+no conceptual REST hard-coding (the §8.3/§8.4 case-core/binding split), and
+precise archetype-validation conformance points (§8.9 pilot 5, §11).
 
 ## 5. Prior art — how other standards run conformance
 
@@ -325,11 +166,10 @@ Nine years old and almost fully unaddressed; CNF 2.0 answers it point by point:
 | **EHDS Article 40** ([Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng)) | The Commission develops **open-source digital testing software**, operated as EU and national testing environments, for the harmonised EHR components; manufacturers must use these environments pre-market and file the results; positive results = presumption of conformity. Conformity is **manufacturer self-assessment** + EU declaration + CE marking + public registration — no notified bodies. | Regulatory confirmation of the whole shape: automated open-source suite + self-assessment + declaration + public registry is now *the law's own architecture* for EHR conformity in Europe. |
 | **openEHR's own ISO 18308 Conformance Statement** ([PDF](https://specifications.openehr.org/releases/1.0.2/requirements/iso18308_conformance.pdf)) | A requirement-by-requirement statement of openEHR's conformance to ISO 18308, exceptions indexed. | **In-family precedent**: openEHR has already authored a requirement-indexed conformance statement; the computable Statement is its machine-readable evolution. |
 
-Composite lesson: nobody starts with third-party certification. Working
-programs start with an **official, runnable, vendor-neutral suite + a public
-registry of published results**, add legal attestation (OpenID, EHDS DoC),
-then events (IHE), then accreditation (ONC). That is exactly the 2021 ladder —
-the ladder was right; the bottom rung was never built.
+Composite lesson: nobody starts with third-party certification — every
+working program starts with an official runnable suite + a public registry,
+then adds attestation, events, accreditation. The 2021 ladder was right; the
+bottom rung was never built.
 
 ## 6. The international frame — ISO vocabulary, and the regulatory clock
 
@@ -359,17 +199,14 @@ ISO/IEC 17067* rather than home-grown.
 
 ### 6.2 ISO/IEC 9646 — the 35-year-old blueprint for exactly this design
 
-The OSI Conformance Testing Methodology and Framework standardized, in 1991,
-the precise architecture CNF 2.0 proposes: a supplier fills in a published
-**ICS proforma** declaring which capabilities are implemented; the ICS
-**selects** which cases from the **Abstract Test Suite** apply; suppliers also
-provide the **IXIT** (instance parameters needed to actually run the tests);
-runners realize the ATS as Executable Test Suites; outcomes are recorded as
-pass/fail/inconclusive verdicts in a standardized test report. ETSI, Bluetooth
-SIG, and USB-IF still run their programs on ICS/IXIT vocabulary today. Citing
-this lineage matters strategically: the machine-readable-schedule pitch is not
-an invention to evaluate but settled international practice to adopt — the
-2022 global-ID work was already converging on it.
+ISO/IEC 9646 standardized, in 1991, exactly this architecture: a supplier
+fills in a published **ICS proforma**; the ICS **selects** which cases from
+the **Abstract Test Suite** apply; the supplier provides the **IXIT**
+(instance parameters to run the tests); runners realize the ATS as Executable
+Test Suites; outcomes are pass/fail/inconclusive verdicts in a standardized
+report. ETSI, Bluetooth SIG, and USB-IF still run on this vocabulary — the
+machine-readable schedule is settled practice to adopt, not an invention to
+evaluate.
 
 ### 6.3 Scope discipline via ISO/IEC 25010 (answering the 2017 review)
 
@@ -1129,7 +966,7 @@ Rules (each answering an observed defect in the current corpus):
 ### 8.9 The encoded pilot — official cases, fully encoded
 
 These are the *official* schedule cases (and three new-chapter candidates),
-encoded losslessly. They are the proof artifacts Appendix C attaches.
+encoded losslessly — the proof artifacts the upstream proposal ships with.
 
 **Pilot 1 — `I_EHR_SERVICE.create_ehr-main`** (master06 — both VALID
 data-set classes: class 1.a *omitted* EHR_STATUS with server defaults, and
@@ -1809,73 +1646,43 @@ the difference between "nice idea, same risk" and "resourced program".
   be — and a sponsoring vendor is never the sole adjudicator of its own
   sponsored cases: sponsored work is scoped to case authorship reviewed
   against spec text by non-sponsor maintainers.
-- **Commitments in hand**: ehrbase-rs commits the pilot engineering (§15).
-  The Discourse ask (Appendix A) explicitly requests matching co-commitments —
-  a second vendor's engineering time and 2–3 maintainer volunteers — before
-  the SEC agenda item, so the SEC decides on a resourced plan, not a hope.
+- **Commitments in hand**: ehrbase-rs commits the pilot engineering (§14).
+  The upstream ask explicitly requests matching co-commitments — a second
+  vendor's engineering time and 2–3 maintainer volunteers — before the SEC
+  agenda item, so the SEC decides on a resourced plan, not a hope.
 - **Impartiality by structure**: openEHR International is scheme owner and
   registrar only. It never tests, never certifies (rung 3 is delegated to
   accredited bodies; rung 1 is administrative). A spec author grading its own
   ecosystem is the 17065 impartiality failure the IHE/ONC split exists to
   avoid.
 
-## 13. Engagement plan
+## 13. Upstream path
 
-1. **Discourse first** (Conformance category) — the strategy condensed to a
-   discussion post (Appendix A), tagging the 2021–22 participants; goal:
-   temperature check + the §12 co-commitments, 2–3 weeks.
-2. **Jira + repo** — comment on SPECCNF-1/6 linking the thread (Appendix B);
-   new specifications-CNF issue proposing the machine-readable schedule format
-   with the encoded pilot cases (Appendix C).
-3. **SEC agenda item** — deliverables: adopt-the-format decision, the
-   maintainer-group charter, and blessing the AQL chapter as the pilot.
-4. **Pilot PR series** (after SEC nod): JSON Schemas + CI, master06 (the
-   fleshed exemplar) converted to catalogue form with semantically-equivalent
-   regenerated prose (human-reviewed diff), then master11/AQL as the first
-   *new* content — equivalence rules first. The fully sequenced series with
-   acceptance gates is §15.1; the in-repo production track is §15.2.
-5. **Registry MVP**: a static page on openehr.org rendering submitted
-   statements with attestation-level labels — rung 0 exists the moment two
-   products publish (ehrbase-rs volunteers; upstream EHRbase is already
-   assessed by ECC and is the natural second).
-6. **EHRCON26 (Amsterdam, Sep 2026)**: a conformance slot alongside the
-   existing EHDS track and the "Conformance Testing openEHR with FHIR
-   TestScript" session — the natural venue to socialize the proposal and
-   recruit maintainers; a conformance-thon proposal for the following cycle
-   once ≥2 runners + ≥2 SUTs exist.
-7. **EHDS liaison**: track the Art 36/15 implementing acts and the Xt-EHR
-   D8.2 scheme; position the openEHR registry/statement artifacts as
-   *complementary evidence* alongside the EHDS DoC (§6.5); revisit the
-   §11.8 EEHRxF-seam profile when the acts land (2027).
+1. **Discourse** (Conformance category): the proposal condensed for
+   discussion, collecting the §12 co-commitments before any SEC agenda item.
+2. **SPECCNF-1/6 comment + a specifications-CNF issue** carrying the §8
+   artifact set and the eight encoded pilots.
+3. **SEC agenda item**: adopt-the-format decision, the maintainer-group
+   charter, the AQL chapter blessed as the pilot.
+4. **Execution**: the §14.1 PR series; the registry the moment two products
+   publish (ehrbase-rs volunteers; upstream EHRbase, already assessed by ECC,
+   is the natural second); an EHRCON26 conformance slot; EHDS liaison per
+   §6.5 (track the Art 36/15 implementing acts; revisit the EEHRxF-seam
+   profile when they land in 2027).
 
-Success measures: SEC adopts the machine-readable schedule + charter; ≥2
-independent runners pass the §8.12 verification pack; the AQL chapter released
-with normative equivalence rules; ≥3 products on the public registry; CNF
-Release 1.0.0 finally cut — before the March 2027 EHDS implementing acts.
+Success measures: SEC adopts the schedule + charter; ≥2 independent runners
+pass the §8.12 verification pack; the AQL chapter ships with normative
+equivalence rules; ≥3 products on the public registry; CNF Release 1.0.0
+finally cut — before the March 2027 EHDS implementing acts.
 
-## 14. Risks & mitigations
-
-| Risk | Mitigation |
-|---|---|
-| Perceived vendor capture ("ehrbase-rs wants its framework blessed") | Lead with the community's own 2021–22 design (§1 credits it explicitly); donate under spec-repo licence with no retained IP; charter with voted decisions and no single-vendor majority (§12); ≥2 competing vendors co-author the schema before ratification; our numbering stays out; the registry and trademark belong to openEHR International. |
-| Repeat of the single-owner stall | §12: recurring program funding (not project money), charter + CI so contributions merge without a bottleneck person, gap-fill as bounded sponsorable tasks, and co-commitments collected *before* the SEC decision. |
-| SEC bandwidth / spec-process latency | Rung 0 (registry) and the schedule format need no new normative prose to start delivering value; pilot PRs convert existing content before adding new; the EHDS clock (§6.5) is the forcing function for prioritization. |
-| Format bikeshed (YAML vs JSON vs tables) | The normative artifact is the JSON Schema; bring it + the eight encoded pilots + the renderer to the first discussion; decide on evidence. |
-| Robot-suite loyalists read this as suite replacement | It isn't: the catalogue makes the Robot suite *one compliant runner*; rescuing PR #5 is inside the proposal; the verification pack gives it a first-class path. |
-| CaboLabs framework overlap | Invite the 2017 reviewer as co-author from the Discourse post onward; the 2017 review and 2022 framework are cited as requirements sources; the statement schema is that idea made computable with ISO/IEC 17050 shape. |
-| Registry misread as endorsement / gamed by permissive runners | §9 rung-0 gates: runner-verification precondition, runner identity + status on every row, attestation-level labels, dispute path; the §6.4 responsibility sentence on every rung-0/1 artifact. |
-| Overclaiming EHDS relevance | §6.5 states plainly that the EEHRxF/conformity route is FHIR/IHE-based and openEHR is the persistence layer behind it; the EEHRxF seam is a later, SEC-gated profile family (§11.8). |
-| Prose-generation cost underestimated | "Byte-comparable" dropped; semantic equivalence with human-reviewed diff; renderer scoped as a gated deliverable (§15.1 U2). |
-| Registry legal exposure (misstatement, implied endorsement, badge misuse) | Registry Terms of Use (§9): as-is publication, no-validation clause, submitter warranty + duty to update, indemnity + liability cap, takedown labels, revocable ordinary-trademark licence; the RFP template carries the 2014/24/EU equivalence clause (§10). |
-
-## 15. Production implementation plan
+## 14. Production implementation plan
 
 Two tracks, both production-grade from day one — no throwaway prototype. The
 in-repo track does not wait for upstream adoption: ECC implements the §8
 artifact set as its own production format immediately, which is
 simultaneously the proof the upstream proposal ships with.
 
-### 15.1 Upstream: the specifications-CNF PR series
+### 14.1 Upstream: the specifications-CNF PR series
 
 Sequenced, each PR independently reviewable and CI-green, each with an
 acceptance gate:
@@ -1894,7 +1701,7 @@ acceptance gate:
 Demographic (master10) and Admin/Messaging (master12/13) follow as U9+ per
 the §11 roadmap once the pattern is proven on U2–U6.
 
-### 15.2 This codebase: ECC becomes the first production implementation
+### 14.2 This codebase: ECC becomes the first production implementation
 
 ECC adopts the §8 artifact set as its own storage format — not a shadow
 export. Tracked as dedicated issues (opened when this design is
@@ -1921,122 +1728,7 @@ proposing a format and demonstrating one.
 
 ---
 
-## Appendix A — Discourse post draft (Conformance category)
-
-> **Title: Reviving CNF: a resourced proposal — machine-readable conformance schedule, ISO-grounded certification ladder, and the EHDS clock**
->
-> The CNF component defined the right things in 2021–22 — the Schedule /
-> Profile / Statement / Certificate vocabulary, SM-anchored test cases, tech
-> profiles, CORE/STANDARD/OPTIONS, and a certification maturity ladder — and
-> then stalled: the last schedule amendment is 0.8.6 (March 2022), Release
-> 1.0.0 was never cut, the assessment chapter is still `TBD`, the Querying
-> chapter has zero test cases, and the only executable suite is
-> EHRbase-specific and currently doesn't run (specifications-CNF PR #5 has
-> been open since 2023). The stall wasn't the design — it was the operating
-> model: spare-time ownership, project-tied funding, one harness.
->
-> Meanwhile the outside world moved: the EHDS regulation (in force March
-> 2025) is making self-assessed, CE-marked, automatically-tested conformity
-> the norm for EHR systems in Europe, with implementing acts due March 2027 —
-> and openEHR is not in that frame. And procurement keeps naming openEHR with
-> nothing verifiable to require (Catalonia's CDR tender had to use latency
-> SLAs as a proxy for conformance).
->
-> We (ehrbase-rs) have been running a CNF-shaped conformance instrument in
-> production against two CDRs — profile verdicts computed from the Profiles
-> book, both canonical formats, every case citing the spec — and we'd like to
-> bring the useful parts upstream rather than let another parallel framework
-> grow. **We are not proposing our tool as the standard.** We are proposing,
-> for discussion:
->
-> 1. **Govern and resource CNF so it cannot stall again**: a CNF maintainer
->    group chartered under openEHR International (voted decisions, no
->    single-vendor majority), the repo/registry/badge owned by openEHR
->    International, recurring program funding rather than project money — and
->    we're asking here, before any SEC agenda item, for matching
->    co-commitments: a second vendor's engineering time and 2–3 maintainer
->    volunteers.
-> 2. **Make the Test Schedule machine-readable and normative** — one versioned
->    catalogue (protocol-neutral case cores + per-ITS binding overlays, spec
->    citations, data sets, profiles, spec-version applicability) from which
->    the spec's prose pages are generated and against which *any* runner —
->    the Robot suite, ours, Spock, Postman — can prove itself. In ISO terms:
->    the schedule is the Abstract Test Suite (ISO/IEC 9646), completing the
->    global-ID direction the 2022 work already set. This turns the stub
->    chapters (AQL first!) into an enumerable backlog anyone can PR against.
-> 3. **Define the bottom rungs of the 2021 certification ladder with
->    international vocabulary**: a computable Conformance Statement schema
->    (an ICS with ISO/IEC 17050-1 content — the thing SPECCNF-1 asked for in
->    2017), a public registry with attestation-level labels and anti-gaming
->    rules, then OpenID-style attested self-certification. The whole thing
->    framed as a conformity-assessment scheme owned by openEHR International (ISO/IEC 17000; ISO/IEC 17067 governs the third-party rung only);
->    accredited third-party certification (17025 lab + 17065 certifier, the
->    IHE/ONC split) stays the end goal — offered only when surveillance can
->    be funded, and never operated by openEHR itself.
->
-> We're offering: the JSON Schemas and CI as pilot PRs, conversion of an
-> existing fleshed chapter (master06) as proof the format loses nothing
-> (semantic-equivalence, human-reviewed), a drafted AQL chapter seeded from
-> our 37 AQL case designs and EHRbase's AQL corpus — with the result-set
-> equivalence rules resolved first — 394 cited case designs as raw material
-> (re-adjudicated to spec-text-only evidence before anything enters the
-> catalogue), and our runner as one of the ≥2 independent implementations the
-> scheme requires.
->
-> Full strategy document with the evidence base (chapter-by-chapter state,
-> the 2017 SPECCNF-1 review point-by-point, ISO/CASCO mapping, EHDS analysis,
-> prior art from DICOM / OpenID / Inferno / IHE): [link].
-> @pablo @thomas.beale @birger.haarbrandt @sebastian.iancu — you built the
-> 2021–22 foundation; does this direction match where you wanted it to go,
-> and what would you change before this goes to a SEC agenda?
-
-## Appendix B — SPECCNF-1 / SPECCNF-6 Jira comment draft
-
-> We've written up a concrete, resourced proposal to finish what this ticket
-> started, including answers to the questions in [the 2017 review comment]:
-> a normative template + JSON schema for Conformance Statements (your "first
-> step before any testing" — shaped as an ISO/IEC 9646 ICS with ISO/IEC
-> 17050-1 supplier's-declaration content), explicit certificate governance
-> (who creates / grants / verifies, as an ISO/IEC 17067 scheme owned by
-> openEHR International with attestation-level rungs), platform-scope
-> discipline via ISO/IEC 25010 functional suitability, and no manual testing.
-> Discussion thread with the full document: [Discourse link]. Happy to bring
-> it to a SEC call if there's interest.
-
-## Appendix C — specifications-CNF GitHub issue draft
-
-> **Title: Proposal: machine-readable Platform Conformance Test Schedule (single normative source, generated prose, runner-independent)**
->
-> Today the schedule exists as AsciiDoc prose, 2017 pseudo-code under
-> `scripts/`, and the Robot suite under `tests/` — three representations that
-> drifted apart, none machine-checkable, and PR #5 (making the tests runnable)
-> has been open since 2023. Proposal: adopt a catalogue format — one data file
-> per test case holding the protocol-neutral core (global ID, SM operation,
-> test purpose, spec refs, pre/postconditions, logical outcomes, data-set
-> keys, profile membership, spec-version applicability) plus separate per-ITS
-> binding overlays mapping logical outcomes to wire specifics — generate the
-> spec pages from it (semantic equivalence, human-reviewed), validate it in CI
-> (schema, ID uniqueness/no-reuse, spec-ref resolution, binding completeness),
-> and treat every runner — including the Robot suite — as a downstream
-> implementation verified against a shared two-part verification pack
-> (verdict conformance on a fixed transcript + live-SUT conformance against
-> ≥2 independent SUTs). In ISO/IEC 9646 terms: the catalogue is the Abstract
-> Test Suite; runners are Executable Test Suites; the Conformance Statement is
-> the ICS that selects applicable cases. Attached: the full artifact-set design (case-core field contract,
-> per-SM-operation bindings with the real ITS-REST status/header mappings, the
-> outcome-kind taxonomy, an ambiguity register seeded with seven verified spec
-> silences, a typed assertion vocabulary, corpus-manifest governance) and
-> eight fully-encoded pilot cases — six of them existing official schedule
-> cases encoded losslessly (create_ehr-main with both VALID data-set classes
-> incl. the 16-row matrix, create_ehr-same_ehr_twice, upload_opt-invalid_opt,
-> update_composition-event, CONT-DV_QUANTITY-validate_property_units_mag,
-> and the master08 multi-version CONTRIBUTION transaction) plus an AQL case
-> for the empty master11 and a Simplified-Formats case for the missing
-> chapter. We volunteer the JSON Schemas, the CI
-> workflow, the master06 conversion, and a drafted master11/AQL chapter as the
-> pilot PR series. Discussion: [Discourse link].
-
-## Appendix D — source register
+## Appendix — source register
 
 **openEHR:**
 - Vendored CNF snapshot: `docs/specs/openehr/CNF/` @ `33251d2a`
