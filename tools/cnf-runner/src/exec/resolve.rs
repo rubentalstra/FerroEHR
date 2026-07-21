@@ -50,6 +50,8 @@ pub struct Resolver<'a> {
     row: Option<(Vec<String>, Vec<MatrixCell>)>,
     /// The current fixture entry (when the case iterates fixtures).
     fixture: Option<FixtureEntry>,
+    /// The case's `rm_class` (content cases: the generated instance type).
+    rm_class: Option<String>,
     row_index: usize,
 }
 
@@ -71,6 +73,7 @@ impl<'a> Resolver<'a> {
             cache: BTreeMap::new(),
             row: None,
             fixture: None,
+            rm_class: None,
             row_index: 0,
         }
     }
@@ -92,6 +95,7 @@ impl<'a> Resolver<'a> {
             .as_ref()
             .and_then(|p| p.fixture_set.as_ref())
             .and_then(|fs| fs.get(row).cloned());
+        self.rm_class.clone_from(&case.rm_class);
     }
 
     /// The current row's index.
@@ -286,6 +290,17 @@ impl<'a> Resolver<'a> {
                 view: Some(view),
             } => self.view(key, view),
             ValueRef::Recipe(name) => match name.as_str() {
+                "content_instance" => {
+                    let (columns, cells) = self.row.as_ref().ok_or_else(|| {
+                        ResolveError::Row(
+                            "${recipe:content_instance(row)} without a bound row".to_owned(),
+                        )
+                    })?;
+                    let rm_class = self.rm_class.clone().ok_or_else(|| {
+                        ResolveError::Row("content_instance without an rm_class".to_owned())
+                    })?;
+                    Ok(recipes::content_instance(&rm_class, columns, cells))
+                }
                 "ehr_status" => {
                     let (columns, cells) = self.row.as_ref().ok_or_else(|| {
                         ResolveError::Row(

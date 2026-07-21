@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openehr:cnf:schema:ixit:0.1.0",
+  "title": "CNF 2.0 IXIT (implementation extra information for testing)",
+  "description": "The SUT topology a runner drives: named instances (base URL + auth mode, credentials by env-var reference, never inline) plus the environment block. The default instance `sut` is required for every run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "instances"
+  ],
+  "properties": {
+    "instances": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "base_url",
+          "auth"
+        ],
+        "properties": {
+          "base_url": {
+            "type": "string",
+            "minLength": 1
+          },
+          "auth": {
+            "type": "object",
+            "required": [
+              "mode"
+            ],
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "required": [
+                  "mode"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "none"
+                  }
+                }
+              },
+              {
+                "additionalProperties": false,
+                "required": [
+                  "mode",
+                  "user_env",
+                  "password_env"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "basic"
+                  },
+                  "user_env": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "password_env": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              },
+              {
+                "additionalProperties": false,
+                "required": [
+                  "mode",
+                  "token_env"
+                ],
+                "properties": {
+                  "mode": {
+                    "const": "bearer"
+                  },
+                  "token_env": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hardware_class",
+        "cores",
+        "memory_gb",
+        "storage_class",
+        "topology"
+      ],
+      "properties": {
+        "hardware_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cores": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "memory_gb": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "storage_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topology": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -342,11 +342,10 @@ pub fn replay_entry(
     let mut sliced = case.clone();
     if let Some(parameters) = &mut sliced.parameters {
         if let Some(matrix) = &mut parameters.matrix {
-            let row = matrix
-                .rows
-                .get(entry.row)
-                .cloned()
-                .ok_or_else(|| format!("case {} has no matrix row {}", entry.case, entry.row))?;
+            let row =
+                matrix.rows.get(entry.row).cloned().ok_or_else(|| {
+                    format!("case {} has no matrix row {}", entry.case, entry.row)
+                })?;
             matrix.rows = vec![row];
         }
         if let Some(fixtures) = &mut parameters.fixture_set {

@@ -81,18 +81,28 @@ impl<'de> Deserialize<'de> for WorkloadDuration {
 
 impl Serialize for WorkloadDuration {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use std::fmt::Write as _;
         let (h, m, s) = (self.0 / 3600, (self.0 % 3600) / 60, self.0 % 60);
         let mut out = String::from("PT");
         if h > 0 {
-            out.push_str(&format!("{h}H"));
+            let _ = write!(out, "{h}H");
         }
         if m > 0 {
-            out.push_str(&format!("{m}M"));
+            let _ = write!(out, "{m}M");
         }
         if s > 0 || (h == 0 && m == 0) {
-            out.push_str(&format!("{s}S"));
+            let _ = write!(out, "{s}S");
         }
         serializer.serialize_str(&out)
+    }
+}
+
+/// Microseconds → milliseconds (latency values are far below the f64
+/// mantissa bound; the histogram's value range is capped at recording).
+fn us_to_ms(us: u64) -> f64 {
+    #[allow(clippy::cast_precision_loss)] // latencies << 2^52 microseconds
+    {
+        us as f64 / 1_000.0
     }
 }
 
@@ -175,10 +185,10 @@ pub struct Threshold {
     /// The operation the metric is scoped to (absent = run-wide).
     #[serde(default)]
     pub operation: Option<String>,
-    /// Upper bound (latencies: milliseconds; error_rate: fraction).
+    /// Upper bound (latencies: milliseconds; `error_rate`: fraction).
     #[serde(default)]
     pub max: Option<f64>,
-    /// Lower bound (offered_load_sustained: arrivals/s).
+    /// Lower bound (`offered_load_sustained`: arrivals/s).
     #[serde(default)]
     pub min: Option<f64>,
 }
@@ -257,7 +267,7 @@ pub struct OperationMeasurement {
     pub latency_ms_p50: f64,
     pub latency_ms_p90: f64,
     pub latency_ms_p99: f64,
-    /// Standard HdrHistogram V2 encoding, base64 (values in microseconds).
+    /// Standard `HdrHistogram` V2 encoding, base64 (values in microseconds).
     pub hdr_v2_base64: String,
 }
 
@@ -279,9 +289,9 @@ impl OperationMeasurement {
             operation: operation.to_owned(),
             requests: histogram.len(),
             errors,
-            latency_ms_p50: histogram.value_at_quantile(0.50) as f64 / 1_000.0,
-            latency_ms_p90: histogram.value_at_quantile(0.90) as f64 / 1_000.0,
-            latency_ms_p99: histogram.value_at_quantile(0.99) as f64 / 1_000.0,
+            latency_ms_p50: us_to_ms(histogram.value_at_quantile(0.50)),
+            latency_ms_p90: us_to_ms(histogram.value_at_quantile(0.90)),
+            latency_ms_p99: us_to_ms(histogram.value_at_quantile(0.99)),
             hdr_v2_base64: base64::engine::general_purpose::STANDARD.encode(&buffer),
         })
     }
@@ -354,7 +364,10 @@ pub fn class_verdict(
                 let rate = if requests == 0 {
                     1.0
                 } else {
-                    errors as f64 / requests as f64
+                    #[allow(clippy::cast_precision_loss)] // request counts << 2^52
+                    {
+                        errors as f64 / requests as f64
+                    }
                 };
                 if let Some(max) = threshold.max
                     && rate > max
@@ -381,7 +394,7 @@ pub fn class_verdict(
                 };
                 for m in targets {
                     let histogram = m.decode_histogram()?;
-                    let value_ms = histogram.value_at_quantile(quantile) as f64 / 1_000.0;
+                    let value_ms = us_to_ms(histogram.value_at_quantile(quantile));
                     if let Some(max) = threshold.max
                         && value_ms > max
                     {
@@ -438,7 +451,7 @@ mod tests {
         let m = OperationMeasurement::from_histogram("composition_read", &fast, 0).unwrap();
         let decoded = m.decode_histogram().unwrap();
         assert_eq!(decoded.len(), 4);
-        let (verdict, violations) = class_verdict(&c, 15.2, &[m.clone()]).unwrap();
+        let (verdict, violations) = class_verdict(&c, 15.2, std::slice::from_ref(&m)).unwrap();
         assert_eq!(verdict, ClassVerdict::Earned);
         assert!(violations.is_empty());
 
@@ -486,6 +499,6 @@ mod tests {
         assert_eq!(parse_iso_duration_secs("PT1H"), Some(3600));
         assert_eq!(parse_iso_duration_secs("PT1H30M15S"), Some(5415));
         assert_eq!(parse_iso_duration_secs("P1D"), None);
-        assert_eq!(PerfClass::R.arrival_floor_per_s(), 1_500.0);
+        assert!((PerfClass::R.arrival_floor_per_s() - 1_500.0).abs() < f64::EPSILON);
     }
 }

@@ -13,9 +13,10 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::model::vocab_files::{BODY_SELECTOR_TOKENS, HEADER_MATCHER_FORMS};
+use crate::party::{OutcomeStatus, VerificationPackStatus};
 use crate::vocab::{
     CaseKind, CaseStatus, Component, CorpusFormat, Disposition, FormatName, HttpMethod, Iteration,
-    OutcomeKind, PlaceholderPolicy, ServerState, Tier,
+    ItsName, OutcomeKind, PlaceholderPolicy, ServerState, SpecComponent, Tier,
 };
 
 /// The schema version stamped into every `$id` (bumps with the schedule
@@ -38,6 +39,16 @@ fn token<T: Serialize>(v: &T) -> Value {
 /// Serde tokens of a whole vocabulary.
 fn tokens<T: Serialize>(all: &[T]) -> Value {
     Value::Array(all.iter().map(token).collect())
+}
+
+/// The serde token of one enum variant, as an owned `String` (for building
+/// property-name maps). Non-string tokens are a defect surfaced by the
+/// emission tests, never silently emitted.
+fn token_str<T: Serialize>(v: &T) -> String {
+    match serde_json::to_value(v) {
+        Ok(Value::String(s)) => s,
+        _ => String::new(),
+    }
 }
 
 fn urn(name: &str) -> String {
@@ -545,6 +556,354 @@ pub fn ambiguity_register_schema() -> Value {
     })
 }
 
+/// A `{ its, formats }` technology-profile object schema.
+fn tech_profile_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["its"],
+        "properties": {
+            "its": { "enum": tokens(ItsName::ALL) },
+            "formats": { "type": "array", "items": { "enum": tokens(FormatName::ALL) } }
+        }
+    })
+}
+
+/// The declared spec-version object: fixed component keys, each a string.
+fn spec_versions_def() -> Value {
+    let mut props = serde_json::Map::new();
+    for component in SpecComponent::ALL {
+        props.insert(token_str(component), json!({ "type": "string" }));
+    }
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": Value::Object(props)
+    })
+}
+
+/// `statement.json` — the party statement (ICS + `SDoC`).
+#[must_use]
+pub fn statement_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("statement"),
+        "title": "CNF 2.0 party statement (ICS + SDoC)",
+        "description": "The supplier's Implementation Conformance Statement (the verdict-bearing claims) plus the SDoC self-declaration. The canonical JSON interchange artifact the verdict machinery consumes; verdicts are computed from it, never asserted here.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product", "schedule_release", "claims"],
+        "properties": {
+            "product": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "version", "vendor", "identifier"],
+                "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "version": { "type": "string", "minLength": 1 },
+                    "vendor": { "type": "string", "minLength": 1 },
+                    "identifier": { "type": "string", "minLength": 1 }
+                }
+            },
+            "schedule_release": { "type": "string", "minLength": 1 },
+            "spec_versions": spec_versions_def(),
+            "claims": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "capabilities": string_array(Some(IDENT_PATTERN)),
+                    "profiles": { "type": "array", "items": { "enum": tokens(Tier::ALL) } }
+                }
+            },
+            "tech_profiles": { "type": "array", "items": tech_profile_def() },
+            "options": string_array(Some(OPTION_TAG_PATTERN)),
+            "performance": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["class", "environment_ref"],
+                "properties": {
+                    "class": { "type": "string", "minLength": 1 },
+                    "environment_ref": { "type": "string", "minLength": 1 }
+                }
+            },
+            "non_functional": { "type": "object" },
+            "evidence": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["results_path", "sha256"],
+                    "properties": {
+                        "results_path": { "type": "string", "minLength": 1 },
+                        "sha256": { "type": "string", "minLength": 1 }
+                    }
+                }
+            },
+            "attestation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["signatory", "role", "date", "statement"],
+                "properties": {
+                    "signatory": { "type": "string", "minLength": 1 },
+                    "role": { "type": "string", "minLength": 1 },
+                    "date": { "type": "string", "minLength": 1 },
+                    "statement": { "type": "string", "minLength": 1 }
+                }
+            }
+        }
+    })
+}
+
+/// `results.json` — the party results (the campaign outcomes).
+#[must_use]
+pub fn results_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("results"),
+        "title": "CNF 2.0 party results",
+        "description": "The campaign outcomes for one technology profile: per-case×format outcome records (with mandatory citations on skipped/not_applicable), the ambiguity dispositions applied, and provenance (SUT/runner/ixit digest).",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sut", "runner", "schedule_release", "tech_profile", "ixit_digest"],
+        "properties": {
+            "sut": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "version"],
+                "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "version": { "type": "string", "minLength": 1 }
+                }
+            },
+            "runner": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "version", "verification_pack_status"],
+                "properties": {
+                    "name": { "type": "string", "minLength": 1 },
+                    "version": { "type": "string", "minLength": 1 },
+                    "verification_pack_status": { "enum": tokens(VerificationPackStatus::ALL) }
+                }
+            },
+            "schedule_release": { "type": "string", "minLength": 1 },
+            "tech_profile": tech_profile_def(),
+            "ixit_digest": { "type": "string", "minLength": 1 },
+            "outcomes": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["case", "status", "rows_driven", "rows_total"],
+                    "properties": {
+                        "case": { "type": "string", "pattern": CASE_ID_PATTERN },
+                        "format": { "enum": tokens(FormatName::ALL) },
+                        "status": { "enum": tokens(OutcomeStatus::ALL) },
+                        "rows_driven": { "type": "integer", "minimum": 0 },
+                        "rows_total": { "type": "integer", "minimum": 0 },
+                        "failing_step": { "type": "integer", "minimum": 1 },
+                        "reason": { "type": "string" },
+                        "citation": { "type": "string" }
+                    },
+                    "allOf": [
+                        { "if": { "properties": { "status": { "enum": ["skipped", "not_applicable"] } },
+                                  "required": ["status"] },
+                          "then": { "required": ["case", "status", "rows_driven", "rows_total", "citation"],
+                                    "properties": { "citation": { "type": "string", "minLength": 1 } } } }
+                    ]
+                }
+            },
+            "measurements": { "type": "array" },
+            "ambiguity_dispositions": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["ambiguity"],
+                    "properties": {
+                        "ambiguity": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN },
+                        "option": { "type": "string", "pattern": OPTION_TAG_PATTERN }
+                    }
+                }
+            }
+        }
+    })
+}
+
+/// `ixit.json` — the SUT topology the runner drives (ISO/IEC 9646 IXIT).
+/// The schema validates exactly what [`crate::ixit::Ixit`] parses.
+#[must_use]
+pub fn ixit_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("ixit"),
+        "title": "CNF 2.0 IXIT (implementation extra information for testing)",
+        "description": "The SUT topology a runner drives: named instances (base URL + auth mode, credentials by env-var reference, never inline) plus the environment block. The default instance `sut` is required for every run.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["instances"],
+        "properties": {
+            "instances": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": { "pattern": IDENT_PATTERN },
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["base_url", "auth"],
+                    "properties": {
+                        "base_url": { "type": "string", "minLength": 1 },
+                        "auth": {
+                            "type": "object",
+                            "required": ["mode"],
+                            "oneOf": [
+                                { "additionalProperties": false, "required": ["mode"],
+                                  "properties": { "mode": { "const": "none" } } },
+                                { "additionalProperties": false,
+                                  "required": ["mode", "user_env", "password_env"],
+                                  "properties": { "mode": { "const": "basic" },
+                                                  "user_env": { "type": "string", "minLength": 1 },
+                                                  "password_env": { "type": "string", "minLength": 1 } } },
+                                { "additionalProperties": false, "required": ["mode", "token_env"],
+                                  "properties": { "mode": { "const": "bearer" },
+                                                  "token_env": { "type": "string", "minLength": 1 } } }
+                            ]
+                        },
+                        "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+                    }
+                }
+            },
+            "environment": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["hardware_class", "cores", "memory_gb", "storage_class", "topology"],
+                "properties": {
+                    "hardware_class": { "type": "string", "minLength": 1 },
+                    "cores": { "type": "integer", "minimum": 0 },
+                    "memory_gb": { "type": "integer", "minimum": 0 },
+                    "storage_class": { "type": "string", "minLength": 1 },
+                    "topology": { "type": "string", "minLength": 1 }
+                }
+            }
+        }
+    })
+}
+
+/// `schedule/performance/**` performance cases (conformance-by-measurement).
+#[must_use]
+pub fn performance_case_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("performance-case"),
+        "title": "CNF 2.0 performance case",
+        "description": "A kind: performance case — open-loop offered load against class thresholds; verdicts are measured (earned | not-earned), bound to the ixit environment block.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "component", "description", "test_purpose", "spec_refs", "class", "corpus", "workload", "thresholds"],
+        "properties": {
+            "id": { "type": "string", "pattern": CASE_ID_PATTERN },
+            "kind": { "const": "performance" },
+            "component": { "const": "PERFORMANCE" },
+            "description": { "type": "string", "minLength": 1 },
+            "test_purpose": { "type": "string", "minLength": 1 },
+            "spec_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "class": { "enum": ["POC", "S", "L", "R"] },
+            "corpus": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+            "workload": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["arrival_rate", "warmup", "duration", "mix"],
+                "properties": {
+                    "arrival_rate": { "type": "string", "pattern": "^[0-9.]+/s$" },
+                    "warmup": { "type": "string", "pattern": "^PT([0-9]+H)?([0-9]+M)?([0-9]+S)?$" },
+                    "duration": { "type": "string", "pattern": "^PT([0-9]+H)?([0-9]+M)?([0-9]+S)?$" },
+                    "mix": { "type": "object", "minProperties": 1,
+                              "additionalProperties": { "type": "string", "pattern": "^[0-9.]+%$" } }
+                }
+            },
+            "thresholds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["metric"],
+                    "properties": {
+                        "metric": { "enum": ["latency_p50", "latency_p90", "latency_p99", "error_rate", "offered_load_sustained"] },
+                        "operation": { "type": "string" },
+                        "max": { "type": "number" },
+                        "min": { "type": "number" }
+                    }
+                }
+            }
+        }
+    })
+}
+
+/// The runner-verification transcript (pack part 1).
+#[must_use]
+pub fn transcript_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("transcript"),
+        "title": "CNF 2.0 runner-verification transcript",
+        "description": "An ordered sequence per case × format × row of recorded exchanges with adjudicated verdicts; replayed by sequence so a fixture file fully determines what any conformant runner must conclude.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["schedule_release", "entries"],
+        "properties": {
+            "schedule_release": { "type": "string", "minLength": 1 },
+            "entries": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["case", "row", "steps", "expected_verdict", "adjudication_ref"],
+                    "properties": {
+                        "case": { "type": "string", "pattern": CASE_ID_PATTERN },
+                        "format": { "enum": tokens(FormatName::ALL) },
+                        "row": { "type": "integer", "minimum": 0 },
+                        "steps": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["step", "request", "response"],
+                                "properties": {
+                                    "step": { "type": "integer", "minimum": 1 },
+                                    "request": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["method", "path"],
+                                        "properties": {
+                                            "method": { "enum": tokens(HttpMethod::ALL) },
+                                            "path": { "type": "string", "minLength": 1 },
+                                            "body_digest": { "type": "string" }
+                                        }
+                                    },
+                                    "response": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "required": ["status"],
+                                        "properties": {
+                                            "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+                                            "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+                                            "body": {}
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "expected_verdict": { "enum": ["passed", "failed", "errored", "not_applicable", "skipped"] },
+                        "adjudication_ref": { "type": "string", "minLength": 1 }
+                    }
+                }
+            }
+        }
+    })
+}
+
 /// The full published set: (file name, schema document).
 #[must_use]
 pub fn emit_all() -> Vec<(&'static str, Value)> {
@@ -559,6 +918,11 @@ pub fn emit_all() -> Vec<(&'static str, Value)> {
             "ambiguity-register.schema.json",
             ambiguity_register_schema(),
         ),
+        ("statement.schema.json", statement_schema()),
+        ("results.schema.json", results_schema()),
+        ("ixit.schema.json", ixit_schema()),
+        ("performance-case.schema.json", performance_case_schema()),
+        ("transcript.schema.json", transcript_schema()),
     ]
 }
 
