@@ -14,7 +14,7 @@
 | Edition policy | pinned (release-1.1.0) |
 | Spec versions | RM 1.2.0 · ITS-REST Release-1.1.0 · AQL 1.1.0 · TERM 3.1.0 |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
-| Run started | 2026-07-21T08:31:42.09722Z |
+| Run started | 2026-07-21T09:56:11.819529Z |
 
 **402 case×format executions · 384 passed · 0 failed · 0 errored · 0 skipped · 18 not applicable.**
 
