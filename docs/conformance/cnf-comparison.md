@@ -8,12 +8,12 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 257 |
+| CNF catalogue cases | 266 |
 | active ECC rows | 394 |
-| mapped: covered | 297 |
-| mapped: pending | 97 |
+| mapped: covered | 305 |
+| mapped: pending | 89 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 10 |
+| CNF cases beyond the old catalogue | 12 |
 
 Gate clean: **NO**
 
@@ -325,11 +325,11 @@ Gate clean: **NO**
 | `ECC-VAL-116` | covered | `CONT-DV_EHR_URI-validate_open` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
 | `ECC-VAL-117` | covered | `CONT-DV_EHR_URI-validate_pattern` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
 | `ECC-VAL-118` | covered | `CONT-DV_EHR_URI-validate_list` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
-| `ECC-SIG-001` | pending |  | Signing capability wave (version-signature integrity) |
-| `ECC-SIG-002` | pending |  | Signing capability wave (version-signature integrity) |
-| `ECC-SIG-003` | pending |  | Signing capability wave (version-signature integrity) |
-| `ECC-SIG-004` | pending |  | Signing capability wave (version-signature integrity) |
-| `ECC-SIG-005` | pending |  | Signing capability wave (version-signature integrity) |
+| `ECC-SIG-001` | covered | `SIG-VERSION-signature_present` | ground carried; the signature fact itself is a registered model-extension candidate (no wire returns ORIGINAL_VERSION.signature) |
+| `ECC-SIG-002` | covered | `SIG-VERSION-verifiable` | ground carried; cryptographic verification is a model-extension candidate — the ECC sha256 digest format is an engine extension, not asserted |
+| `ECC-SIG-003` | covered | `SIG-VERSION-across_version_kinds` | ground carried across create/update/delete version kinds |
+| `ECC-SIG-004` | covered | `SIG-VERSION-client_supplied_verbatim` | ground carried (client-supplied signature stored verbatim) |
+| `ECC-SIG-005` | covered | `SIG-VERSION-verifiable` | pgp verification ground folded into the verifiable case; algorithm strength is out of conformance scope (CNF profiles Non-Functional) |
 | `ECC-VAL-119` | covered | `CONT-DV_DATE-validate_constraint` | carried by the day-validity prohibited rows of the official DV_DATE constraint table (reshaped: the ECC row was one cell of that matrix) |
 | `ECC-MSG-001` | pending |  | messaging chapter wave (CNF master13) |
 | `ECC-MSG-002` | pending |  | messaging chapter wave (CNF master13) |
@@ -350,9 +350,9 @@ Gate clean: **NO**
 | `ECC-TS-007` | pending |  | terminology-service chapter wave |
 | `ECC-TS-008` | pending |  | terminology-service chapter wave |
 | `ECC-TS-009` | pending |  | terminology-service chapter wave |
-| `ECC-EHR-013` | pending |  | anonymous-EHR ground belongs to the Security (SEC-BASIC AnonymousEhrs) chapter wave |
-| `ECC-SEC-001` | pending |  | Security (SEC-BASIC) chapter wave |
-| `ECC-SEC-002` | pending |  | Security (SEC-BASIC) chapter wave |
+| `ECC-EHR-013` | covered | `SEC-ANONYMOUS_EHRS-anonymous_lifecycle` | ground carried by the SEC-BASIC anonymous-EHR lifecycle case |
+| `ECC-SEC-001` | covered | `SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep` | ground carried by the SEC-BASIC unauthenticated sweep (universal 401 rule) |
+| `ECC-SEC-002` | covered | `SEC-AUTHORIZATION_SEPARATION-readonly_write_denied` | ground carried by the SEC-BASIC read-only separation case (universal 403 rule) |
 | `ECC-COM-032` | covered | `I_EHR_COMPOSITION.has_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-SQR-008` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
 | `ECC-QRY-014` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit` | ground carried (AqlAdvanced/OPTIONS per the Profiles matrix) |
@@ -428,3 +428,5 @@ Gate clean: **NO**
 - `I_QUERY_SERVICE.execute_ad_hoc_query-distinct`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-fetch_with_top`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
+- `SEC-AUDIT_ACCOUNTABILITY-server_set_commit_audit`
+- `SEC-EHR_DEMOGRAPHIC_SEPARATION-status_subject_opaque`

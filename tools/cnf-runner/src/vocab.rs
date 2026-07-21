@@ -150,6 +150,7 @@ pub enum Component {
     Messaging,
     Content,
     SimplifiedFormats,
+    Security,
     Performance,
 }
 
@@ -422,6 +423,7 @@ impl Component {
         Component::Messaging,
         Component::Content,
         Component::SimplifiedFormats,
+        Component::Security,
         Component::Performance,
     ];
 }
@@ -554,7 +556,7 @@ mod all_consts_tests {
     #[test]
     fn all_lists_are_exhaustive() {
         assert_eq!(CaseKind::ALL.len(), 2);
-        assert_eq!(Component::ALL.len(), 14);
+        assert_eq!(Component::ALL.len(), 15);
         assert_eq!(Tier::ALL.len(), 7);
         assert_eq!(Disposition::ALL.len(), 6);
         assert_eq!(FormatName::ALL.len(), 5);

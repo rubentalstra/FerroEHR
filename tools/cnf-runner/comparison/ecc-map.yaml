@@ -1184,20 +1184,25 @@ ECC-VAL-118:
   covered_by: [CONT-DV_EHR_URI-validate_list]
   justification: "ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model)"
 ECC-SIG-001:
-  disposition: pending
-  justification: "Signing capability wave (version-signature integrity)"
+  disposition: covered
+  covered_by: [SIG-VERSION-signature_present]
+  justification: "ground carried; the signature fact itself is a registered model-extension candidate (no wire returns ORIGINAL_VERSION.signature)"
 ECC-SIG-002:
-  disposition: pending
-  justification: "Signing capability wave (version-signature integrity)"
+  disposition: covered
+  covered_by: [SIG-VERSION-verifiable]
+  justification: "ground carried; cryptographic verification is a model-extension candidate — the ECC sha256 digest format is an engine extension, not asserted"
 ECC-SIG-003:
-  disposition: pending
-  justification: "Signing capability wave (version-signature integrity)"
+  disposition: covered
+  covered_by: [SIG-VERSION-across_version_kinds]
+  justification: "ground carried across create/update/delete version kinds"
 ECC-SIG-004:
-  disposition: pending
-  justification: "Signing capability wave (version-signature integrity)"
+  disposition: covered
+  covered_by: [SIG-VERSION-client_supplied_verbatim]
+  justification: "ground carried (client-supplied signature stored verbatim)"
 ECC-SIG-005:
-  disposition: pending
-  justification: "Signing capability wave (version-signature integrity)"
+  disposition: covered
+  covered_by: [SIG-VERSION-verifiable]
+  justification: "pgp verification ground folded into the verifiable case; algorithm strength is out of conformance scope (CNF profiles Non-Functional)"
 ECC-VAL-119:
   disposition: covered
   covered_by: [CONT-DV_DATE-validate_constraint]
@@ -1260,14 +1265,17 @@ ECC-TS-009:
   disposition: pending
   justification: "terminology-service chapter wave"
 ECC-EHR-013:
-  disposition: pending
-  justification: "anonymous-EHR ground belongs to the Security (SEC-BASIC AnonymousEhrs) chapter wave"
+  disposition: covered
+  covered_by: [SEC-ANONYMOUS_EHRS-anonymous_lifecycle]
+  justification: "ground carried by the SEC-BASIC anonymous-EHR lifecycle case"
 ECC-SEC-001:
-  disposition: pending
-  justification: "Security (SEC-BASIC) chapter wave"
+  disposition: covered
+  covered_by: [SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep]
+  justification: "ground carried by the SEC-BASIC unauthenticated sweep (universal 401 rule)"
 ECC-SEC-002:
-  disposition: pending
-  justification: "Security (SEC-BASIC) chapter wave"
+  disposition: covered
+  covered_by: [SEC-AUTHORIZATION_SEPARATION-readonly_write_denied]
+  justification: "ground carried by the SEC-BASIC read-only separation case (universal 403 rule)"
 ECC-COM-032:
   disposition: covered
   covered_by: [I_EHR_COMPOSITION.has_composition]

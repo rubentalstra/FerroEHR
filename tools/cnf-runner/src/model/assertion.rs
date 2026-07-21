@@ -148,6 +148,13 @@ pub struct ColumnSpec {
     pub name: String,
 }
 
+// TODO: `signature` assertion family — the Signing cases can assert version
+// lineage but not ORIGINAL_VERSION.signature facts (no operation returns the
+// signature today); needs a version-read wire seam + a typed verification
+// assertion (RM common §change_control, Digital Signature).
+// TODO: server-set field predicate (a `not_equals`/`server_set` form) — the
+// audit-accountability case cannot yet assert that a client-supplied
+// time_committed was IGNORED (ITS-REST overview §openehr-audit-details).
 /// A typed assertion (tag: the `assert` field).
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[serde(tag = "assert", rename_all = "snake_case", deny_unknown_fields)]
