@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.invalid.removed_mandatory</value></template_id>
+  <!-- mandatory definition element removed -->
+</template>

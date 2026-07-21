@@ -1,0 +1,28 @@
+# Wire realization of I_EHR_CONTRIBUTION.commit_contribution for ITS-REST 1.1.0.
+# Sources: specifications/operations/contribution_create.yaml (201/400/404/409),
+# responses/201_CONTRIBUTION.yaml, 400_CONTRIBUTION.yaml.
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+its: its-rest
+request:
+  method: POST
+  path: /ehr/{ehr_id}/contribution
+  body: contribution                      # CONTRIBUTION envelope: versions[] + audit
+  headers:
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  created:
+    status: 201                           # 201_CONTRIBUTION.yaml — the whole commit is one transaction
+    headers: { ETag: present, Location: present }
+    body: prefer_conditional
+  validation_failed:
+    status: 400                           # 400_CONTRIBUTION.yaml — aggregate rejection, nothing committed
+    body: error_loose                     # AMB-1
+  not_found: { status: 404 }
+  conflict: { status: 409 }
+captures:
+  contribution_uid:
+    from: body "uid.value"
+    fallback: header Location last-segment
+  version_uids:
+    from: body "versions[*].id.value"     # list capture: one element per committed VERSION
