@@ -1,0 +1,19 @@
+# Wire realization of I_EHR_DIRECTORY.get_directory_at_version for ITS-REST 1.1.0.
+# The SM get_directory_at_version(ehr_id, a_version_uid) returns a particular
+# version of the directory FOLDER; realized as
+# GET /ehr/{ehr_id}/directory/{version_uid}.
+# Sources: specifications/operations/directory_get_by_version_id.yaml (200/404),
+# parameters/path/version_uid.yaml, responses/200_FOLDER_retrieved.yaml,
+# 404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml.
+sm_operation: I_EHR_DIRECTORY.get_directory_at_version
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/directory/{version_uid}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # 200_FOLDER_retrieved.yaml
+    headers: { Content-Type: negotiated }
+  version_not_found: { status: 404 }      # unknown version_uid (404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml)
+  not_found: { status: 404 }              # unknown ehr_id — same 404 family

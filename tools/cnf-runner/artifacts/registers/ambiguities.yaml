@@ -223,3 +223,31 @@ AMB-23:
     Realized via the single-CONTRIBUTION GET: 200 is the positive return,
     404 the negative (the has_composition precedent).
   disposition: fixed_handling
+AMB-24:
+  ambiguity: >-
+    The SM I_EHR_DIRECTORY.get_versioned_directory operation is not surfaced
+    by ITS-REST 1.1.0 — there is no versioned_directory resource (unlike
+    versioned_composition and versioned_ehr_status).
+  source: "SM docs/UML/classes/i_ehr_directory.adoc (get_versioned_directory) vs ITS-REST specifications/operations (directory operations: no versioned resource)"
+  handling: >-
+    The three official get_versioned_directory cases are in the catalogue,
+    active and SM-anchored; the its-rest binding carries an explicit
+    unrealized declaration, so on ITS-REST 1.1.0 they verdict as
+    not-applicable with this citation. SPECPR/ITS-REST 1.2.0 candidate.
+  disposition: fixed_handling
+AMB-25:
+  ambiguity: >-
+    Creating a directory on an EHR that already has one carries no assigned
+    status code in the directory_create OAS (the DIRECTORY analogue of the
+    AMB-21 create-side gap).
+  source: "ITS-REST specifications/operations/directory_create.yaml vs CNF platform_test_schedule master09 (create_directory on an EHR with a directory)"
+  handling: "Bind already_exists -> 409 (the uniqueness/state-conflict family); flag for upstream code assignment."
+  disposition: fixed_handling
+AMB-26:
+  ambiguity: >-
+    Updating or deleting the directory of an EHR that has none overloads the
+    unknown-ehr 404 — the OAS assigns no distinct code to the
+    missing-directory precondition.
+  source: "ITS-REST specifications/operations/directory_update.yaml + directory_delete.yaml vs CNF platform_test_schedule master09 (update/delete on an EHR without a directory)"
+  handling: "Bind not_found -> 404 for the missing-directory precondition; kind distinguished by the case's provisioned state."
+  disposition: fixed_handling

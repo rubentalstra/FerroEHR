@@ -8,10 +8,10 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 110 |
+| CNF catalogue cases | 147 |
 | active ECC rows | 394 |
-| mapped: covered | 100 |
-| mapped: pending | 294 |
+| mapped: covered | 137 |
+| mapped: pending | 257 |
 | unmapped (open gap) | 0 |
 | CNF cases beyond the old catalogue | 10 |
 
@@ -105,43 +105,43 @@ Gate clean: **NO**
 | `ECC-CTB-029` | covered | `I_EHR_CONTRIBUTION.list_contributions-post_commit` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
 | `ECC-CTB-030` | covered | `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
 | `ECC-CTB-031` | covered | `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
-| `ECC-DIR-001` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-002` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-003` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-004` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-005` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-006` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-007` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-008` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-009` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-010` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-011` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-012` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-013` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-014` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-015` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-016` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-017` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-018` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-019` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-020` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-021` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-022` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-023` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-024` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-025` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-026` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-027` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-028` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-029` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-030` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-031` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-032` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-033` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-034` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-035` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-036` | pending |  | DIRECTORY chapter wave (CNF master09) |
-| `ECC-DIR-037` | pending |  | DIRECTORY chapter wave (CNF master09) |
+| `ECC-DIR-001` | covered | `I_EHR_DIRECTORY.create_directory-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-002` | covered | `I_EHR_DIRECTORY.create_directory-ehr_with_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-003` | covered | `I_EHR_DIRECTORY.create_directory-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-004` | covered | `I_EHR_DIRECTORY.get_directory-ehr_root_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-005` | covered | `I_EHR_DIRECTORY.get_directory-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-006` | covered | `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-007` | covered | `I_EHR_DIRECTORY.get_directory_at_time-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-008` | covered | `I_EHR_DIRECTORY.update_directory-ehr_with_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-009` | covered | `I_EHR_DIRECTORY.update_directory-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-010` | covered | `I_EHR_DIRECTORY.delete_directory-ehr_with_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-011` | covered | `I_EHR_DIRECTORY.delete_directory-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-012` | covered | `I_EHR_DIRECTORY.has_directory-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-013` | covered | `I_EHR_DIRECTORY.has_directory-ehr_with_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-014` | covered | `I_EHR_DIRECTORY.has_directory-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-015` | covered | `I_EHR_DIRECTORY.has_path-ehr_root_directory` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-016` | covered | `I_EHR_DIRECTORY.has_path-folder_structure` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-017` | covered | `I_EHR_DIRECTORY.has_path-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-018` | covered | `I_EHR_DIRECTORY.has_path-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-019` | covered | `I_EHR_DIRECTORY.has_directory_version-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-020` | covered | `I_EHR_DIRECTORY.has_directory_version-directory_with_two_versions` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-021` | covered | `I_EHR_DIRECTORY.has_directory_version-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-022` | covered | `I_EHR_DIRECTORY.get_directory-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-023` | covered | `I_EHR_DIRECTORY.get_directory-directory_with_structure` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-024` | covered | `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_empty_time` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-025` | covered | `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-026` | covered | `I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions_empty_time` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-027` | covered | `I_EHR_DIRECTORY.get_directory_at_time-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-028` | covered | `I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-029` | covered | `I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-030` | covered | `I_EHR_DIRECTORY.get_directory_at_version-bad_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-031` | covered | `I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-032` | covered | `I_EHR_DIRECTORY.get_directory_at_version-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-033` | covered | `I_EHR_DIRECTORY.get_versioned_directory-empty_ehr` | official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24) |
+| `ECC-DIR-034` | covered | `I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions` | official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24) |
+| `ECC-DIR-035` | covered | `I_EHR_DIRECTORY.get_versioned_directory-bad_ehr` | official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24) |
+| `ECC-DIR-036` | covered | `I_EHR_DIRECTORY.update_directory-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
+| `ECC-DIR-037` | covered | `I_EHR_DIRECTORY.delete_directory-empty_ehr` | ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model) |
 | `ECC-TPL-001` | covered | `I_DEFINITION_ADL14.upload_opt-valid_opt` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
 | `ECC-TPL-002` | covered | `I_DEFINITION_ADL14.upload_opt-invalid_opt` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |
 | `ECC-TPL-003` | covered | `I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts` | ground carried 1:1 by the official master04 case (reshaped under the CNF 2.0 case model) |

@@ -339,116 +339,153 @@ ECC-CTB-031:
   covered_by: [I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status]
   justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
 ECC-DIR-001:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.create_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-002:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.create_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-003:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.create_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-004:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-ehr_root_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-005:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-006:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-007:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-008:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.update_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-009:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.update_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-010:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.delete_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-011:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.delete_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-012:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-013:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory-ehr_with_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-014:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-015:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-ehr_root_directory]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-016:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-folder_structure]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-017:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-018:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_path-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-019:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory_version-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-020:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory_version-directory_with_two_versions]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-021:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.has_directory_version-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-022:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-023:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory-directory_with_structure]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-024:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_empty_time]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-025:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-026:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions_empty_time]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-027:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-028:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-empty_ehr_empty_time]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-029:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_time-multiple_versions_first]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-030:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_version-bad_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-031:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_version-directory_with_two_versions]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-032:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_directory_at_version-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-033:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_versioned_directory-empty_ehr]
+  justification: "official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24)"
 ECC-DIR-034:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_versioned_directory-directory_with_two_versions]
+  justification: "official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24)"
 ECC-DIR-035:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.get_versioned_directory-bad_ehr]
+  justification: "official master09 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized get_versioned_directory binding (AMB-24)"
 ECC-DIR-036:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.update_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-DIR-037:
-  disposition: pending
-  justification: "DIRECTORY chapter wave (CNF master09)"
+  disposition: covered
+  covered_by: [I_EHR_DIRECTORY.delete_directory-empty_ehr]
+  justification: "ground carried 1:1 by the official master09 case (reshaped under the CNF 2.0 case model)"
 ECC-TPL-001:
   disposition: covered
   covered_by: [I_DEFINITION_ADL14.upload_opt-valid_opt]
