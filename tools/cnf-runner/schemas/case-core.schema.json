@@ -306,7 +306,7 @@
           ]
         },
         "directory": {
-          "oneOf": [
+          "anyOf": [
             {
               "const": "none"
             },

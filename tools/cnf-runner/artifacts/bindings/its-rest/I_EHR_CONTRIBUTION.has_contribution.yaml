@@ -1,0 +1,19 @@
+# Wire realization of I_EHR_CONTRIBUTION.has_contribution for ITS-REST 1.1.0.
+# The SM has_contribution(an_ehr_id, a_contrib_id) returns Boolean; ITS-REST
+# 1.1.0 has no dedicated CONTRIBUTION-existence probe (only contribution_create
+# and contribution_get exist under /ehr/{ehr_id}/contribution*), so — mirroring
+# the has_composition binding — the check is realized as
+# GET /ehr/{ehr_id}/contribution/{contribution_uid}:
+# 200 = the CONTRIBUTION exists (TRUE), 404 = it does not exist, or the EHR does
+# not exist (FALSE / error). See REQUIREMENTS.md (ambiguity candidate).
+# Sources: specifications/operations/contribution_get.yaml (200/404),
+# responses/200_CONTRIBUTION.yaml, responses/404_CONTRIBUTION.yaml.
+sm_operation: I_EHR_CONTRIBUTION.has_contribution
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/contribution/{contribution_uid}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok: { status: 200, headers: { Content-Type: negotiated } }   # 200_CONTRIBUTION.yaml — exists (TRUE)
+  not_found: { status: 404 }                                   # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR (FALSE / error)

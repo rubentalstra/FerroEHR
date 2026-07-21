@@ -215,98 +215,129 @@ ECC-COM-031:
   covered_by: [I_EHR_COMPOSITION.delete_composition-non_existent]
   justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-001:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-valid_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-002:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-invalid_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-003:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-empty]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-004:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-005:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-006:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-event_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-007:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-persistent_composition]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-008:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-delete]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-009:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-010:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-011:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-012:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-013:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-014:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-015:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-valid_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-016:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-017:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-018:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-019:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-existing]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-020:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-empty_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-021:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-bad_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-022:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.get_contribution-bad_contribution]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-023:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-existing]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-024:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-bad_contribution]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-025:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-bad_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-026:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.has_contribution-empty_ehr]
+  justification: "ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-027:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-empty]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
 ECC-CTB-028:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
 ECC-CTB-029:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-post_commit]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
 ECC-CTB-030:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
 ECC-CTB-031:
-  disposition: pending
-  justification: "CONTRIBUTION chapter wave (CNF master08)"
+  disposition: covered
+  covered_by: [I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status]
+  justification: "official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22)"
 ECC-DIR-001:
   disposition: pending
   justification: "DIRECTORY chapter wave (CNF master09)"

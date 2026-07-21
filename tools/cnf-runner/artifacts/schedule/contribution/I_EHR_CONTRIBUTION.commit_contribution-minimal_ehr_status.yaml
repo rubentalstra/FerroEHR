@@ -1,0 +1,41 @@
+# D.1 — commit a CONTRIBUTION modifying an EHR's EHR_STATUS (the EHR carries the
+# default EHR_STATUS). For EHR_STATUS the change_type is always modification or
+# amendment; the commit is accepted and a new EHR_STATUS VERSION is created.
+# NOTE: EHR_STATUS modification targets the EHR's current status VERSION; the
+# ITS-REST binding realizes the precedent as If-Match (AMB-3), so no
+# preceding_version_uid capture is stated at the case level.
+id: I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+test_purpose: >-
+  Committing a CONTRIBUTION that modifies the EHR's default EHR_STATUS with a
+  valid EHR_STATUS succeeds and creates a new EHR_STATUS VERSION.
+description: "Commit CONTRIBUTION containing minimal EHR_STATUS"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-minimal_ehr_status"
+  - "RM common §change_control (VERSION.commit_audit.change_type)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR with the default EHR_STATUS; mints ${ehr_id}
+data_sets: [cnf.ehr_status.minimal]
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.ehr_status.minimal}", change_type: modification }
+    expect: created
+    capture:
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: MODIFY }
+postconditions:
+  - { assert: version, count: 2 }        # default EHR_STATUS + the modification
+ambiguities: [AMB-3]
