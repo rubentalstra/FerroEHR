@@ -310,14 +310,23 @@ impl Assertion {
                     );
                 }
             }
-            Self::Signature { of, for_each, present, verifiable, equals } => {
+            Self::Signature {
+                of,
+                for_each,
+                present,
+                verifiable,
+                equals,
+            } => {
                 if of.is_some() == for_each.is_some() {
                     return Err(
                         "signature assertion needs exactly one of `of` | `for_each`".to_owned()
                     );
                 }
                 if present.is_none() && verifiable.is_none() && equals.is_none() {
-                    return Err("signature assertion carries no fact (present | verifiable | equals)".to_owned());
+                    return Err(
+                        "signature assertion carries no fact (present | verifiable | equals)"
+                            .to_owned(),
+                    );
                 }
             }
             Self::ResultSet {
@@ -383,7 +392,9 @@ impl Assertion {
 pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
     let mut out: Vec<ValueRef> = Vec::new();
     match assertion {
-        Assertion::Field { equals, not_equals, .. } => {
+        Assertion::Field {
+            equals, not_equals, ..
+        } => {
             for v in [equals, not_equals].into_iter().flatten() {
                 out.extend(v.refs().into_iter().cloned());
             }
@@ -414,7 +425,12 @@ pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
                 out.push(r.clone());
             }
         }
-        Assertion::Signature { of, for_each, equals, .. } => {
+        Assertion::Signature {
+            of,
+            for_each,
+            equals,
+            ..
+        } => {
             if let Some(SingleRef(r)) = of {
                 out.push(r.clone());
             }

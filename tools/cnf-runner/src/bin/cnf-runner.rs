@@ -86,7 +86,12 @@ fn main() -> ExitCode {
             }
             ExitCode::SUCCESS
         }
-        Command::CompareEcc { root, ecc_catalog, map, out } => {
+        Command::CompareEcc {
+            root,
+            ecc_catalog,
+            map,
+            out,
+        } => {
             let loaded = match load_root(&root) {
                 Ok(loaded) => loaded,
                 Err(e) => {
@@ -113,7 +118,11 @@ fn main() -> ExitCode {
                         cmp.unmapped.len(),
                         if cmp.gate_clean() { "clean" } else { "OPEN" }
                     );
-                    if cmp.gate_clean() { ExitCode::SUCCESS } else { ExitCode::from(1) }
+                    if cmp.gate_clean() {
+                        ExitCode::SUCCESS
+                    } else {
+                        ExitCode::from(1)
+                    }
                 }
                 Err(e) => {
                     eprintln!("comparison failed: {e}");

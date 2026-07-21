@@ -17,6 +17,23 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- CNF 2.0 reference runner, second increment: the complete CNF 2.0 catalogue
+  authored from the framework — 347 cases across every schedule chapter
+  (EHR, EHR_STATUS, COMPOSITION, CONTRIBUTION, DIRECTORY, ADL 1.4 + ADL2
+  definitions, stored queries, demographic, admin, messaging, AQL, content
+  data-type and structural validation, simplified formats, Security
+  SEC-BASIC + Signing) with 84 per-operation ITS-REST bindings (every
+  status/header mapping cited to its OAS source; wire gaps are typed
+  `unrealized` declarations, not silent absences), the ambiguity register
+  grown to 38 adjudicated entries, and the ECC↔CNF comparison gate CLEAN:
+  all 394 active rows of the old harness's catalogue adjudicated
+  (350 covered, 5 deferred to the simplified-formats deepening, 18 dropped
+  with justification, 9 out of scope, 12 ADL2 rows covered) in the committed
+  map with the generated report at `docs/conformance/cnf-comparison.md`
+  (drift-guarded). Old-harness retirement follows the owner's report review
+  with the executor/emission workstreams so an acceptance instrument runs
+  continuously.
+
 - CNF 2.0 reference runner (`tools/cnf-runner`), first increment: the typed
   schedule-artifact model (case cores, per-ITS operation bindings, outcome +
   selector vocabularies, the capability→family→tier matrix, corpus manifest,
