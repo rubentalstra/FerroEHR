@@ -1,0 +1,24 @@
+# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Unrealized on ITS-REST 1.1.0 (AMB-33). SM Errors: party_id_does_not_exist.
+id: I_ADMIN_ARCHIVE.archive_parties-archive_unknown
+kind: functional
+component: ADMIN
+sm_operation: I_ADMIN_ARCHIVE.archive_parties
+capabilities: [DemographicArchive]
+exercises: [AdminApi]
+profiles: [OPTIONS]
+test_purpose: "Archiving a set that names a non-existent Party is rejected as not found."
+description: "Archive a set naming an unknown party"
+spec_refs:
+  - "SM openehr_platform §I_ADMIN_ARCHIVE.archive_parties"
+  - "CNF platform_test_schedule master12 §archive_parties"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "ITS-REST Admin API is DEVELOPMENT-stage — admin.openapi.yaml carries x-status: DEVELOPMENT (not STABLE); guarded until the Admin API stabilises"
+requires: { server: empty }
+flow:
+  - step: 1
+    call: archive_parties
+    with: { party_ids: ["00000000-0000-0000-0000-000000000000"] }
+    expect: not_found
+ambiguities: [AMB-33]

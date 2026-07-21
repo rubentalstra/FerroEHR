@@ -362,3 +362,38 @@ AMB-36:
     a per-case disclosure guard; flows/assertions are replaced when the
     upstream chapter is fleshed. Upstream authoring candidate.
   disposition: fixed_handling
+AMB-33:
+  ambiguity: >-
+    The SM ADMIN component is almost entirely unrealized in ITS-REST 1.1.0:
+    the only admin_* operations in the OAS are admin_ehr_delete and
+    admin_ehr_delete_all (physical EHR deletion). I_ADMIN_SERVICE
+    list_contributions / contribution_count / versioned_composition_count /
+    composition_version_count / physical_party_delete, I_ADMIN_DUMP_LOAD
+    export_ehrs, and I_ADMIN_ARCHIVE archive_ehrs / archive_parties have no
+    wire.
+  source: "ITS-REST specifications/operations (admin_ehr_delete, admin_ehr_delete_all only) vs SM docs/UML/classes/i_admin_service.adoc / i_admin_dump_load.adoc / i_admin_archive.adoc; CNF platform_test_schedule master12"
+  handling: >-
+    The its-rest binding declares each unwired admin operation unrealized;
+    the master12 cases anchored to them are not-applicable WITH CITATION on
+    ITS-REST 1.1.0 and activate when a later ITS release adds the endpoints.
+    The one realized operation (physical_ehr_delete -> admin_ehr_delete)
+    carries a full binding.
+  disposition: fixed_handling
+AMB-34:
+  ambiguity: >-
+    The SM MESSAGE component has NO realization in ITS-REST 1.1.0: there is
+    no MESSAGE / EHR-Extract / TDD API (no message_*/extract_*/tdd_*
+    operations in the OAS). I_EHR_EXTRACT_SERVICE (export_ehrs,
+    export_ehr_extracts, import_ehr, import_ehr_extract) and I_TDD_SERVICE
+    (import_tdd, import_tdds) are entirely unwired. Separately, master13
+    cites the non-existent interface I_EHR_EXTRACT with operations
+    export_ehr()/export_ehr_extract() (and lists export_ehr() twice) — the
+    vendored SM I_EHR_EXTRACT_SERVICE is the resolution oracle.
+  source: "ITS-REST specifications/operations (no message/extract/tdd operations) vs SM docs/UML/classes/i_ehr_extract_service.adoc / i_tdd_service.adoc / i_message_service.adoc; CNF platform_test_schedule master13"
+  handling: >-
+    Every master13 case is anchored to a resolvable SM operation on
+    I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE and its its-rest binding is
+    declared unrealized; the cases are not-applicable WITH CITATION on
+    ITS-REST 1.1.0 and activate when a later ITS release adds a MESSAGE API.
+    Upstream editorial candidate for the master13 interface naming.
+  disposition: fixed_handling

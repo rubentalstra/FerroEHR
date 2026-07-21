@@ -1,0 +1,10 @@
+# ITS-REST 1.1.0 exposes NO TDD API — unrealized so the master13 import_tdd
+# cases are not-applicable with citation (AMB-34).
+sm_operation: I_TDD_SERVICE.import_tdd
+its: its-rest
+unrealized:
+  reason: >-
+    ITS-REST 1.1.0 has no TDD (Template Data Document) API: there are no tdd_*
+    operations in specifications/operations. Importing a single TDD has no wire.
+  source: "ITS-REST specifications/operations (no tdd operations) vs SM docs/UML/classes/i_tdd_service.adoc (import_tdd)"
+  ambiguity: AMB-34

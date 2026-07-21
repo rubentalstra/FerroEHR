@@ -1,0 +1,27 @@
+# Official master13 case (chapter TBD; NATURAL family id). The chapter cites
+# I_EHR_EXTRACT.export_ehr()/export_ehr_extract(), but the vendored SM declares
+# I_EHR_EXTRACT_SERVICE with export_ehrs/export_ehr_extracts/import_ehr/
+# import_ehr_extract — the SM is the operation-resolution oracle, so cases
+# anchor to its real operations (see REQUIREMENTS.md). ITS-REST 1.1.0 exposes NO
+# message/extract API, so the its-rest binding is unrealized (AMB-34) and this
+# case is not-applicable with citation until a MESSAGE API release lands.
+id: I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid
+kind: functional
+component: MESSAGING
+sm_operation: I_EHR_EXTRACT_SERVICE.import_ehr_extract
+capabilities: [EhrExtract]
+profiles: [OPTIONS]
+test_purpose: "Importing a semantically invalid EXTRACT into an existing EHR is rejected as invalid content."
+description: "Import an invalid EXTRACT"
+spec_refs:
+  - "SM openehr_platform §I_EHR_EXTRACT_SERVICE.import_ehr_extract"
+  - "CNF platform_test_schedule master13 §import_ehr_extract (chapter: export_ehr_extract)"
+applies: { rm: ">=1.0.2" }
+requires: { ehr: { commits: any } }
+data_sets: [cnf.messaging.ehr_extract.invalid]
+flow:
+  - step: 1
+    call: import_ehr_extract
+    with: { an_ehr_id: "${ehr_id}", an_extract: "${ds:cnf.messaging.ehr_extract.invalid}" }
+    expect: validation_failed
+ambiguities: [AMB-34]

@@ -8,13 +8,14 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 290 |
+| CNF catalogue cases | 322 |
 | active ECC rows | 394 |
-| mapped: covered | 321 |
-| mapped: dropped | 15 |
-| mapped: pending | 58 |
+| mapped: covered | 342 |
+| mapped: dropped | 18 |
+| mapped: out_of_scope | 9 |
+| mapped: pending | 25 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 21 |
+| CNF cases beyond the old catalogue | 33 |
 
 Gate clean: **NO**
 
@@ -178,12 +179,12 @@ Gate clean: **NO**
 | `ECC-QRY-011` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
 | `ECC-QRY-012` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
 | `ECC-QRY-013` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
-| `ECC-ADM-001` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-002` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-003` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-004` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-005` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-006` | pending |  | admin chapter wave (CNF master12) |
+| `ECC-ADM-001` | covered | `I_ADMIN_SERVICE.physical_ehr_delete-delete_existing` | ground carried 1:1 (the one wired admin operation: admin_ehr_delete) |
+| `ECC-ADM-002` | covered | `I_ADMIN_SERVICE.physical_ehr_delete-delete_non_existing` | ground carried 1:1 (the one wired admin operation) |
+| `ECC-ADM-003` | covered | `I_ADMIN_SERVICE.physical_ehr_delete-delete_existing`, `I_ADMIN_SERVICE.physical_ehr_delete-delete_non_existing` | idempotency reshaped: the second-delete ground is the non-existing case |
+| `ECC-ADM-004` | dropped |  | admin_ehr_delete_all is wire surface without an SM operation anchor (an extension bulk form); the ground re-enters if the SM adds a bulk deletion operation |
+| `ECC-ADM-005` | dropped |  | admin_ehr_delete_all bulk-partial ground — same missing SM anchor |
+| `ECC-ADM-006` | dropped |  | admin_ehr_delete_all bulk-empty ground — same missing SM anchor |
 | `ECC-DEM-001` | covered | `I_DEMOGRAPHIC_SERVICE.create_party-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
 | `ECC-DEM-002` | covered | `I_DEMOGRAPHIC_SERVICE.get_party-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
 | `ECC-DEM-003` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa` | ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype) |
@@ -332,25 +333,25 @@ Gate clean: **NO**
 | `ECC-SIG-004` | covered | `SIG-VERSION-client_supplied_verbatim` | ground carried (client-supplied signature stored verbatim) |
 | `ECC-SIG-005` | covered | `SIG-VERSION-verifiable` | pgp verification ground folded into the verifiable case; algorithm strength is out of conformance scope (CNF profiles Non-Functional) |
 | `ECC-VAL-119` | covered | `CONT-DV_DATE-validate_constraint` | carried by the day-validity prohibited rows of the official DV_DATE constraint table (reshaped: the ECC row was one cell of that matrix) |
-| `ECC-MSG-001` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-002` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-003` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-004` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-005` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-006` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-007` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-008` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-009` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-MSG-010` | pending |  | messaging chapter wave (CNF master13) |
-| `ECC-TS-001` | pending |  | terminology-service chapter wave |
-| `ECC-TS-002` | pending |  | terminology-service chapter wave |
-| `ECC-TS-003` | pending |  | terminology-service chapter wave |
-| `ECC-TS-004` | pending |  | terminology-service chapter wave |
-| `ECC-TS-005` | pending |  | terminology-service chapter wave |
-| `ECC-TS-006` | pending |  | terminology-service chapter wave |
-| `ECC-TS-007` | pending |  | terminology-service chapter wave |
-| `ECC-TS-008` | pending |  | terminology-service chapter wave |
-| `ECC-TS-009` | pending |  | terminology-service chapter wave |
+| `ECC-MSG-001` | covered | `I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-002` | covered | `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-003` | covered | `I_EHR_EXTRACT_SERVICE.export_ehrs-export_unknown` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-004` | covered | `I_EHR_EXTRACT_SERVICE.import_ehr-new` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-005` | covered | `I_EHR_EXTRACT_SERVICE.import_ehr-with_id` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-006` | covered | `I_EHR_EXTRACT_SERVICE.import_ehr-duplicate` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-007` | covered | `I_EHR_EXTRACT_SERVICE.import_ehr_extract-into_existing` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-008` | covered | `I_TDD_SERVICE.import_tdd-valid` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-009` | covered | `I_TDD_SERVICE.import_tdd-invalid` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-MSG-010` | covered | `I_TDD_SERVICE.import_tdds-bulk_valid` | ground carried by the master13 case (SM-anchored per AMB-34; unrealized on ITS-REST 1.1.0 — no MESSAGE API) |
+| `ECC-TS-001` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-002` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-003` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-004` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-005` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-006` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-007` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-008` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
+| `ECC-TS-009` | out_of_scope |  | out of the CNF platform scope: FHIR terminology-integration extension ground — no openEHR spec grounds the expansion/fault contract (SM I_TERMINOLOGY_SERVICE defines boolean value-set membership only, no expand-style operation, no external-service fault contract); the engine extension keeps its verification in the engine's own test suite |
 | `ECC-EHR-013` | covered | `SEC-ANONYMOUS_EHRS-anonymous_lifecycle` | ground carried by the SEC-BASIC anonymous-EHR lifecycle case |
 | `ECC-SEC-001` | covered | `SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep` | ground carried by the SEC-BASIC unauthenticated sweep (universal 401 rule) |
 | `ECC-SEC-002` | covered | `SEC-AUTHORIZATION_SEPARATION-readonly_write_denied` | ground carried by the SEC-BASIC read-only separation case (universal 403 rule) |
@@ -374,14 +375,14 @@ Gate clean: **NO**
 | `ECC-DEM-029` | covered | `I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
 | `ECC-DEM-030` | covered | `I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
 | `ECC-DEM-031` | covered | `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa` | ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32) |
-| `ECC-ADM-007` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-008` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-009` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-010` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-011` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-012` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-013` | pending |  | admin chapter wave (CNF master12) |
-| `ECC-ADM-014` | pending |  | admin chapter wave (CNF master12) |
+| `ECC-ADM-007` | covered | `I_ADMIN_SERVICE.list_contributions-all` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-008` | covered | `I_ADMIN_SERVICE.contribution_count-all` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-009` | covered | `I_ADMIN_SERVICE.versioned_composition_count-all` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-010` | covered | `I_ADMIN_SERVICE.composition_version_count-all` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-011` | covered | `I_ADMIN_DUMP_LOAD.export_ehrs-export_all` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-012` | covered | `I_ADMIN_ARCHIVE.archive_ehrs-archive_selected` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-013` | covered | `I_ADMIN_SERVICE.physical_party_delete-delete_existing` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
+| `ECC-ADM-014` | covered | `I_ADMIN_ARCHIVE.archive_parties-archive_selected` | ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion) |
 | `ECC-TPL-017` | pending |  | template-example round-trip ground belongs to the simplified-formats/template-example wave |
 | `ECC-QRY-025` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection` | ground carried 1:1 (reshaped under the CNF 2.0 case model) |
 | `ECC-SF-001` | covered | `SF-FLAT-commit_roundtrip_ctx_defaults` | ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec) |
@@ -419,6 +420,14 @@ Gate clean: **NO**
 
 ## CNF cases with no old-harness counterpart (new ground)
 
+- `I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown`
+- `I_ADMIN_ARCHIVE.archive_parties-archive_unknown`
+- `I_ADMIN_DUMP_LOAD.export_ehrs-export_formats`
+- `I_ADMIN_SERVICE.composition_version_count-time_range`
+- `I_ADMIN_SERVICE.contribution_count-time_range`
+- `I_ADMIN_SERVICE.list_contributions-time_range`
+- `I_ADMIN_SERVICE.physical_party_delete-delete_non_existing`
+- `I_ADMIN_SERVICE.versioned_composition_count-time_range`
 - `I_DEFINITION_QUERY.has_query-xxx`
 - `I_DEFINITION_QUERY.list_queries-empty`
 - `I_DEFINITION_QUERY.list_queries-non_empty`
@@ -435,6 +444,10 @@ Gate clean: **NO**
 - `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb`
 - `I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-bbbb`
 - `I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb`
+- `I_EHR_EXTRACT_SERVICE.export_ehr_extracts-empty_result`
+- `I_EHR_EXTRACT_SERVICE.import_ehr_extract-invalid`
+- `I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr`
+- `I_TDD_SERVICE.import_tdds-bulk_invalid`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-distinct`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-fetch_with_top`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`

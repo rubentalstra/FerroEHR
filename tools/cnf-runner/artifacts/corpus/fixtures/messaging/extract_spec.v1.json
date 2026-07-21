@@ -1,0 +1,6 @@
+{
+  "_type": "EXTRACT_SPEC",
+  "extract_id": { "_type": "HIER_OBJECT_ID", "value": "cnf.extract.spec.1" },
+  "include_multimedia": false,
+  "priority": 0
+}
