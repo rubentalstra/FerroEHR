@@ -1,0 +1,21 @@
+# Wire realization of I_PARTY.get_party for ITS-REST 1.1.0.
+# The SM I_PARTY.get_party(a_versioned_party_id) returns the current PARTY
+# version; realized as GET /demographic/person/{uid_based_id} with the
+# HIER_OBJECT_ID form (a versioned_object_uid) and no version_at_time — the
+# server returns the latest PERSON version (person_get.yaml). PERSON is the
+# representative concrete PARTY subtype (see REQUIREMENTS.md).
+# master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
+# operation is I_PARTY.get_party (the AMB-13 rule; see REQUIREMENTS.md).
+# Sources: specifications/operations/person_get.yaml (200/204/404),
+# responses/200_PERSON_retrieved.yaml, 404_not_found_or_no_version_at_time.yaml.
+sm_operation: I_PARTY.get_party
+its: its-rest
+request:
+  method: GET
+  path: /demographic/person/{versioned_object_uid}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # 200_PERSON_retrieved.yaml
+    headers: { Content-Type: negotiated }
+  not_found: { status: 404 }              # unknown versioned_object_uid (versioned_object_does_not_exist)

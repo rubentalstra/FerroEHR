@@ -1,0 +1,38 @@
+# Wire realization of I_DEMOGRAPHIC_SERVICE.create_party for ITS-REST 1.1.0.
+# The SM create_party(a_version: UV_PARTY) is polymorphic over the abstract
+# PARTY; ITS-REST 1.1.0 surfaces only per-concrete-subtype create endpoints
+# (person/organisation/role/group/agent). This binding realizes create_party via
+# the PERSON endpoint as the representative concrete subtype — a conformant
+# server exposing any concrete PARTY subtype passes. (See the polymorphism note
+# in schedule/demographic/REQUIREMENTS.md.)
+# Sources: specifications/operations/person_create.yaml,
+# responses/201_PERSON.yaml, 422.yaml; ETag.yaml, Location_PERSON.yaml,
+# ContentType_LOCATABLE.yaml.
+sm_operation: I_DEMOGRAPHIC_SERVICE.create_party
+its: its-rest
+request:
+  method: POST
+  path: /demographic/person
+  body: party
+  headers:
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  created:
+    status: 201                           # 201_PERSON.yaml
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"'
+      Location: present
+      Content-Type: negotiated
+    body: prefer_conditional
+  validation_failed:
+    status: 422                           # 422.yaml — content_invalid / definition_unknown
+    body: error_loose                     # AMB-1
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+  versioned_object_uid:
+    from: capture version_uid
+    transform: root-uid
+server_assigned: [uid]

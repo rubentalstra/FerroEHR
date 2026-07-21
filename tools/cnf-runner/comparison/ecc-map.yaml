@@ -640,77 +640,86 @@ ECC-ADM-006:
   disposition: pending
   justification: "admin chapter wave (CNF master12)"
 ECC-DEM-001:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.create_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-002:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-003:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-004:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.update_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-005:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.delete_party-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-006:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.delete_party-aaaa, I_DEMOGRAPHIC_SERVICE.get_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype); read-after-delete reshaped across the two cases"
 ECC-DEM-007:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-008:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.update_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-009:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-010:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-011:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-012:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-013:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-014:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-015:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-016:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-017:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-018:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-019:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-020:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-021:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.create_party-bbbb]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-022:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-023:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-DEM-024:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: dropped
+  justification: "deliberately not carried: master10 (stub, AMB-36) defines no per-subtype/auxiliary cases — the ground re-enters when the upstream chapter is fleshed"
 ECC-VAL-001:
   disposition: covered
   covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
@@ -1328,26 +1337,33 @@ ECC-QRY-024:
   covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
   justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-DEM-025:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa]
+  justification: "ground carried by the master10 case (stub chapter: flows derived from SM semantics, AMB-36; PERSON is the representative PARTY subtype)"
 ECC-DEM-026:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
 ECC-DEM-027:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
 ECC-DEM-028:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
 ECC-DEM-029:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
 ECC-DEM-030:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
 ECC-DEM-031:
-  disposition: pending
-  justification: "demographic chapter wave (CNF master10)"
+  disposition: covered
+  covered_by: [I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_version-aaaa]
+  justification: "ground carried by the master10 relationship case (unrealized on ITS-REST 1.1.0 per AMB-32)"
 ECC-ADM-007:
   disposition: pending
   justification: "admin chapter wave (CNF master12)"
