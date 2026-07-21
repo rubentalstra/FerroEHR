@@ -48,6 +48,7 @@
         "MESSAGING",
         "CONTENT",
         "SIMPLIFIED_FORMATS",
+        "SECURITY",
         "PERFORMANCE"
       ]
     },

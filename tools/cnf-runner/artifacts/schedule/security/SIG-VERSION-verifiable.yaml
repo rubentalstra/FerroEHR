@@ -1,0 +1,56 @@
+# Signing capability (Platform, STANDARD, required: false).
+# Re-adjudicates the retired ECC ground sig/digest-recomputes + sig/pgp-verifies
+# (ECC-SIG-002, ECC-SIG-005). When the SUT declares Signing, the signature
+# stored on a committed VERSION verifies against the declared key material
+# (RM common: the signature is generated per the openPGP standard from a hash of
+# the canonical Version serialisation).
+# Cryptographic verification (and the ECC digest recompute) is NOT expressible
+# with the current typed-assertion vocabulary, and the verifying key material is
+# an ixit/statement-declared input, not a wire value — so this case is carried as
+# a `state` postcondition with an in-case commit verification step, and the
+# check is recorded in REQUIREMENTS.md as a `signature` assertion-family
+# candidate with an explicit ixit/statement key-material dependency.
+id: SIG-VERSION-verifiable
+kind: functional
+component: SECURITY
+sm_operation: I_EHR_COMPOSITION.create_composition
+capabilities: [Signing]
+exercises: [CompositionOps, Versioning]
+profiles: [STANDARD]
+test_purpose: >-
+  The signature stored on a committed ORIGINAL_VERSION verifies against the
+  declared key material for the canonical serialisation of that version.
+description: "Committed VERSION signature is verifiable against declared keys"
+spec_refs:
+  - "SM openehr_platform §I_EHR_COMPOSITION.create_composition"
+  - "RM common §change_control (Digital Signature: signature generated per openPGP from the hash of the canonical Version serialisation)"
+  - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "not-applicable when the SUT declares no Signing capability — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Signing)"
+  - "requires ixit-declared signing key material — the verifying key is a statement/ixit input, not a wire value (RM common §change_control Digital Signature)"
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1]
+flow:
+  - step: 1
+    call: create_composition
+    with:
+      ehr_id: "${ehr_id}"
+      composition: "${ds:cnf.composition.minimal_event.v1}"
+    expect: created
+    capture:
+      version_uid: created.version_uid
+    assert:
+      - { assert: version, of: "${version_uid}", change_type: CREATE }
+postconditions:
+  - assert: state
+    text: >-
+      The signature on the committed ORIGINAL_VERSION verifies against the
+      ixit/statement-declared key material over the version's canonical
+      serialisation. Cryptographic verification is not expressible with the
+      current bindings or typed assertions — see REQUIREMENTS.md (`signature`
+      assertion family with a declared-key-material dependency; the ECC digest
+      recompute is an engine extension and is not asserted).
