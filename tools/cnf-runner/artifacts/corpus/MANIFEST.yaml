@@ -1079,3 +1079,108 @@ cnf.adl2.archetype.minimal:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from AM ADL2 archetype structure; documents the ADL2 archetype-provisioning gap (no ITS-REST wire, AMB-37); ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+# Corpus additions for the simplified-formats DEEPENING (categories 2-10 of the
+# SF chapter, #202). Same entry schema as MANIFEST.yaml; the validate harness
+# concatenates this into MANIFEST.yaml at integration (never edit MANIFEST.yaml
+# directly here). All payloads are FLAT/STRUCTURED on the vitals template
+# (cnf.opt.vitals — body_temperature), matching the existing SF seed so the
+# whole SF corpus exercises one template. All payloads are structural
+# placeholders pending the spine-first authored corpus (#202); the invalid sets
+# carry the master04/master05 defect + spec citation.
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored corpus when the catalogue authoring lands (#202).
+
+cnf.sf.flat.normal_range:
+  source: fixtures/sf/flat.normal_range.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §RM Attributes prefix _normal_range example (adapted to the vitals body_temperature leaf); structural placeholder pending corpus authoring"
+
+cnf.sf.flat.raw_quantity:
+  source: fixtures/sf/flat.raw_quantity.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §Raw canonical JSON example (|raw DV_QUANTITY, canonical units); structural placeholder pending corpus authoring"
+
+cnf.sf.flat.raw_no_type:
+  source: fixtures/sf/flat.raw_no_type.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "|raw embedded canonical object omits the mandatory _type property"
+    spec_ref: "ITS-REST simplified_formats master04 §Raw canonical JSON (the raw JSON value must include the _type property)"
+  provenance: "authored 2026-07-21 by removing _type from the master04 |raw example; structural placeholder pending corpus authoring"
+
+cnf.sf.structured.raw_quantity:
+  source: fixtures/sf/structured.raw_quantity.json
+  format: wt-structured
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 as the STRUCTURED counterpart of the master04 §Raw canonical JSON example; structural placeholder pending corpus authoring"
+
+cnf.sf.flat.composer_name:
+  source: fixtures/sf/flat.composer_name.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master06 §Composer composer_name example; structural placeholder pending corpus authoring"
+
+cnf.sf.flat.missing_territory:
+  source: fixtures/sf/flat.missing_territory.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "mandatory ctx field territory is absent (COMPOSITION.territory cannot be populated)"
+    spec_ref: "ITS-REST simplified_formats master04 §Validation (mandatory context fields language, territory are present)"
+  provenance: "authored 2026-07-21 by removing ctx/territory from a minimal FLAT commit; structural placeholder pending corpus authoring"
+
+cnf.sf.flat.multi_event:
+  source: fixtures/sf/flat.multi_event.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §Instance Indexing multiple-events example (any_event:0 + any_event:1); structural placeholder pending corpus authoring"
+
+cnf.sf.flat.other_closed_list:
+  source: fixtures/sf/flat.other_closed_list.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "|other applied to a closed-list (listOpen:false) coded leaf"
+    spec_ref: "ITS-REST simplified_formats master04 §Open Value-Sets and the |other Suffix (|other MUST be rejected when the constraint is closed)"
+  provenance: "authored 2026-07-21 by applying |other to a closed-list coded leaf; structural placeholder pending corpus authoring"
+
+cnf.sf.flat.datatype_mismatch:
+  source: fixtures/sf/flat.datatype_mismatch.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "DV_QUANTITY |magnitude carries a non-numeric string, violating the OPT DECIMAL input type"
+    spec_ref: "ITS-REST simplified_formats master04 §Validation (data types match expected types from the OPT)"
+  provenance: "authored 2026-07-21 by setting |magnitude to a string; structural placeholder pending corpus authoring"
+
+cnf.sf.flat.cardinality_violation:
+  source: fixtures/sf/flat.cardinality_violation.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "second indexed instance (:1) supplied for a max=1 node"
+    spec_ref: "ITS-REST simplified_formats master04 §Validation (cardinality constraints are satisfied)"
+  provenance: "authored 2026-07-21 by adding a second body_temperature instance to a max=1 node; structural placeholder pending corpus authoring"
+
+cnf.sf.flat.binding_violation:
+  source: fixtures/sf/flat.binding_violation.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "DV_CODED_TEXT |code (at9999) is outside the bound closed value set"
+    spec_ref: "ITS-REST simplified_formats master04 §Validation (terminology bindings are valid)"
+  provenance: "authored 2026-07-21 with an out-of-value-set coded value; structural placeholder pending corpus authoring"

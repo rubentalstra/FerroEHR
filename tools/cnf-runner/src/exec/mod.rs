@@ -14,7 +14,9 @@
 //! call and reports what it observed, so the same laws run against the live
 //! reqwest driver and the verification-pack transcript player.
 
+pub mod assertions;
 pub mod outcome;
+pub mod recipes;
 pub mod resultset;
 pub mod state;
 

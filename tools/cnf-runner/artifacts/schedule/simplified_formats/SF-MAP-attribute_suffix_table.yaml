@@ -1,0 +1,35 @@
+# Attribute-suffix overview table (simplified_formats master04 §Attribute
+# Suffixes). master04 gives a small cross-type overview of pipe suffixes before
+# the exhaustive per-type tables of master05; this content decision table
+# encodes that overview verbatim (DV_QUANTITY, DV_CODED_TEXT, PARTY_IDENTIFIED),
+# complementing the per-type SF-MAP-* cases. Vector: the master04 §Attribute
+# Suffixes table.
+id: SF-MAP-attribute_suffix_table
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: DATA_VALUE
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  The master04 attribute-suffix overview maps each pipe suffix (|magnitude,
+  |unit, |code, |value, |terminology, |id, |id_namespace) to its RM meaning
+  across DV_QUANTITY, DV_CODED_TEXT and PARTY_IDENTIFIED.
+description: "master04 attribute-suffix overview table"
+spec_refs:
+  - "ITS-REST simplified_formats master04 §Attribute Suffixes"
+  - "ITS-REST simplified_formats master05 §DV_QUANTITY"
+  - "RM data_types §DATA_VALUE"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items/value"
+decision_table:
+  columns: ["rm_type", "suffix", "description"]
+  rows:
+    - ["DV_QUANTITY", "|magnitude", "Numeric value"]
+    - ["DV_QUANTITY", "|unit", "Unit of measure"]
+    - ["DV_CODED_TEXT", "|code", "Terminology code"]
+    - ["DV_CODED_TEXT", "|value", "Display term"]
+    - ["DV_CODED_TEXT", "|terminology", "Terminology identifier"]
+    - ["PARTY_IDENTIFIED", "|id", "The ID value"]
+    - ["PARTY_IDENTIFIED", "|id_namespace", "The namespace of the ID value"]

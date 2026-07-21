@@ -435,3 +435,21 @@ AMB-38:
     AMB-36 precedent); flows/assertions are replaced when the upstream
     chapter is fleshed.
   disposition: fixed_handling
+AMB-39:
+  ambiguity: >-
+    Support for the deprecated pre-1.1.0 "Simplified Data Template (SDT)"-era
+    simplified-format media types is not mandated: ITS-REST simplified_formats
+    master02 defines only the current application/openehr.wt.flat+json and
+    application/openehr.wt.structured+json MIME types, and the master02 NOTE
+    records that "Simplified Data Template (SDT)" was superseded by "Simplified
+    Formats" at Release 1.1.0. Whether a server still accepts the legacy media
+    types is implementation-defined.
+  source: "ITS-REST simplified_formats master02 §MIME Types + §Overview (SDT rename NOTE)"
+  handling: >-
+    Two sibling cases carry option tags; the ICS options declaration selects
+    which applies — the declared behaviour MUST pass, the undeclared sibling is
+    not-applicable. The supported branch (sf-deprecated-types-supported) expects
+    the legacy commit to succeed; the unsupported branch
+    (sf-deprecated-types-unsupported) expects unsupported_media (415).
+  disposition: option_select
+  options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]

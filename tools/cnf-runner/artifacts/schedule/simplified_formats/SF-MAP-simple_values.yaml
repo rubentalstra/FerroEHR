@@ -1,0 +1,35 @@
+# Per-RM-type suffix mapping: bare-value + identifier types — DV_BOOLEAN,
+# DV_URI, DV_EHR_URI, DV_IDENTIFIER (simplified_formats master05 §DV_BOOLEAN,
+# §DV_URI, §DV_EHR_URI, §DV_IDENTIFIER). Vectors: the DV_BOOLEAN/DV_URI/
+# DV_EHR_URI single-value blocks and the DV_IDENTIFIER blocks (id; +issuer/
+# assigner/type). The first three types carry a bare (empty-suffix) value.
+id: SF-MAP-simple_values
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: DV_IDENTIFIER
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  DV_BOOLEAN, DV_URI and DV_EHR_URI carry their value as the bare (empty-suffix)
+  leaf value; DV_IDENTIFIER maps |id/|issuer/|assigner/|type to its RM fields.
+description: "DV_BOOLEAN/DV_URI/DV_EHR_URI/DV_IDENTIFIER suffix mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §DV_IDENTIFIER"
+  - "ITS-REST simplified_formats master05 §DV_BOOLEAN"
+  - "ITS-REST simplified_formats master05 §DV_URI"
+  - "ITS-REST simplified_formats master05 §DV_EHR_URI"
+  - "RM data_types §DV_IDENTIFIER"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items/value"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
+  rows:
+    - ["DV_BOOLEAN", "", "value", "Boolean", "yes"]
+    - ["DV_URI", "", "value", "String", "yes"]
+    - ["DV_EHR_URI", "", "value", "String", "yes"]
+    - ["DV_IDENTIFIER", "|id", "id", "String", "yes"]
+    - ["DV_IDENTIFIER", "|issuer", "issuer", "String", "no"]
+    - ["DV_IDENTIFIER", "|assigner", "assigner", "String", "no"]
+    - ["DV_IDENTIFIER", "|type", "type", "String", "no"]
