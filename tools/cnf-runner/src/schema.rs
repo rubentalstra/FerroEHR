@@ -273,6 +273,7 @@ pub fn operation_binding_schema() -> Value {
                 "properties": {
                     "method": { "enum": tokens(HttpMethod::ALL) },
                     "path": { "type": "string", "pattern": "^/" },
+                    "query": { "type": "object", "additionalProperties": { "type": "string" } },
                     "body": { "oneOf": [ { "type": "string" }, { "type": "object" } ] },
                     "headers": { "type": "object", "additionalProperties": { "type": "string" } }
                 }

@@ -8,12 +8,12 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 49 |
+| CNF catalogue cases | 80 |
 | active ECC rows | 394 |
-| mapped: covered | 37 |
-| mapped: pending | 357 |
+| mapped: covered | 69 |
+| mapped: pending | 325 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 12 |
+| CNF cases beyond the old catalogue | 11 |
 
 Gate clean: **NO**
 
@@ -43,37 +43,37 @@ Gate clean: **NO**
 | `ECC-STA-009` | covered | `I_EHR_STATUS.clear_ehr_modifiable-existing_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
 | `ECC-STA-010` | covered | `I_EHR_STATUS.clear_ehr_modifiable-bad_ehr` | ground carried 1:1 by the official master06 case (reshaped under the CNF 2.0 case model) |
 | `ECC-EHR-012` | pending |  | ECC-original gap-filler (master06 lists the INVALID EHR_STATUS data-set class but defines no case heading) — re-adjudication wave, ecc- namespace |
-| `ECC-COM-001` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-002` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-003` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-004` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-005` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-006` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-007` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-008` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-009` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-010` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-011` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-012` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-013` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-014` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-015` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-016` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-017` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-018` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-019` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-020` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-021` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-022` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-023` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-024` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-025` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-026` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-027` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-028` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-029` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-030` | pending |  | COMPOSITION chapter wave (CNF master07) |
-| `ECC-COM-031` | pending |  | COMPOSITION chapter wave (CNF master07) |
+| `ECC-COM-001` | covered | `I_EHR_COMPOSITION.create_composition-event` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-002` | covered | `I_EHR_COMPOSITION.create_composition-persistent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-003` | covered | `I_EHR_COMPOSITION.create_composition-same_opt_twice` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-004` | covered | `I_EHR_COMPOSITION.create_composition-invalid_event` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-005` | covered | `I_EHR_COMPOSITION.create_composition-invalid_persistent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-006` | covered | `I_EHR_COMPOSITION.create_composition-event_bad_opt` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-007` | covered | `I_EHR_COMPOSITION.create_composition-event_bad_ehr` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-008` | covered | `I_EHR_COMPOSITION.get_composition_latest` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-009` | covered | `I_EHR_COMPOSITION.get_composition_latest-bad_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-010` | covered | `I_EHR_COMPOSITION.get_composition_latest-bad_ehr` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-011` | covered | `I_EHR_COMPOSITION.has_composition-bad_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-012` | covered | `I_EHR_COMPOSITION.has_composition-bad_ehr` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-013` | covered | `I_EHR_COMPOSITION.get_composition_at_time` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-014` | covered | `I_EHR_COMPOSITION.get_composition_at_time-no_time_arg` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-015` | covered | `I_EHR_COMPOSITION.get_composition_at_time-bad_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-016` | covered | `I_EHR_COMPOSITION.get_composition_at_time-bad_ehr` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-017` | covered | `I_EHR_COMPOSITION.get_composition_at_times` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-018` | covered | `I_EHR_COMPOSITION.get_composition_version` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-019` | covered | `I_EHR_COMPOSITION.get_composition_version-bad_version` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-020` | covered | `I_EHR_COMPOSITION.get_composition_version-bad_ehr` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-021` | covered | `I_EHR_COMPOSITION.get_composition_versions` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-022` | covered | `I_EHR_COMPOSITION.get_versioned_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-023` | covered | `I_EHR_COMPOSITION.get_versioned_composition-non_existent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-024` | covered | `I_EHR_COMPOSITION.get_versioned_composition-bad_ehr` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-025` | covered | `I_EHR_COMPOSITION.update_composition-event` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-026` | covered | `I_EHR_COMPOSITION.update_composition-persistent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-027` | covered | `I_EHR_COMPOSITION.update_composition-non_existent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-028` | covered | `I_EHR_COMPOSITION.update_composition-wrong_template` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-029` | covered | `I_EHR_COMPOSITION.delete_composition-event` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-030` | covered | `I_EHR_COMPOSITION.delete_composition-persistent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
+| `ECC-COM-031` | covered | `I_EHR_COMPOSITION.delete_composition-non_existent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-CTB-001` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
 | `ECC-CTB-002` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
 | `ECC-CTB-003` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
@@ -353,7 +353,7 @@ Gate clean: **NO**
 | `ECC-EHR-013` | pending |  | anonymous-EHR ground belongs to the Security (SEC-BASIC AnonymousEhrs) chapter wave |
 | `ECC-SEC-001` | pending |  | Security (SEC-BASIC) chapter wave |
 | `ECC-SEC-002` | pending |  | Security (SEC-BASIC) chapter wave |
-| `ECC-COM-032` | pending |  | COMPOSITION chapter wave (CNF master07) |
+| `ECC-COM-032` | covered | `I_EHR_COMPOSITION.has_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-SQR-008` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
 | `ECC-QRY-014` | pending |  | AQL chapter wave (new chapter for the empty master11) |
 | `ECC-QRY-015` | pending |  | AQL chapter wave (new chapter for the empty master11) |
@@ -418,7 +418,6 @@ Gate clean: **NO**
 
 ## CNF cases with no old-harness counterpart (new ground)
 
-- `I_EHR_COMPOSITION.update_composition-event`
 - `CONT-DV_QUANTITY-validate_property_units_mag`
 - `I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions`
 - `I_DEFINITION_QUERY.has_query-xxx`

@@ -91,98 +91,129 @@ ECC-EHR-012:
   disposition: pending
   justification: "ECC-original gap-filler (master06 lists the INVALID EHR_STATUS data-set class but defines no case heading) — re-adjudication wave, ecc- namespace"
 ECC-COM-001:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-002:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-003:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-same_opt_twice]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-004:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-invalid_event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-005:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-invalid_persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-006:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-event_bad_opt]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-007:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.create_composition-event_bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-008:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_latest]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-009:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_latest-bad_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-010:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_latest-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-011:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.has_composition-bad_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-012:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.has_composition-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-013:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-014:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time-no_time_arg]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-015:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time-bad_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-016:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_time-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-017:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_at_times]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-018:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_version]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-019:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_version-bad_version]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-020:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_version-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-021:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_composition_versions]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-022:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_versioned_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-023:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_versioned_composition-non_existent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-024:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.get_versioned_composition-bad_ehr]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-025:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-026:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-027:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-non_existent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-028:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.update_composition-wrong_template]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-029:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.delete_composition-event]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-030:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.delete_composition-persistent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-COM-031:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.delete_composition-non_existent]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-CTB-001:
   disposition: pending
   justification: "CONTRIBUTION chapter wave (CNF master08)"
@@ -1037,8 +1068,9 @@ ECC-SEC-002:
   disposition: pending
   justification: "Security (SEC-BASIC) chapter wave"
 ECC-COM-032:
-  disposition: pending
-  justification: "COMPOSITION chapter wave (CNF master07)"
+  disposition: covered
+  covered_by: [I_EHR_COMPOSITION.has_composition]
+  justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-SQR-008:
   disposition: pending
   justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"

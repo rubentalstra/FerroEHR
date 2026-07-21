@@ -324,6 +324,10 @@ impl<'de> Deserialize<'de> for PathTemplate {
 pub struct RequestSpec {
     pub method: HttpMethod,
     pub path: PathTemplate,
+    /// Query parameters (name → value template; optional refs `${x?}` omit
+    /// the parameter when unresolved).
+    #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
+    pub query: Option<Vec<(String, Template)>>,
     #[serde(default)]
     pub body: Option<RequestBody>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
@@ -564,11 +568,13 @@ mod tests {
         assert!(b.outcome(OutcomeKind::Created).is_some());
         assert!(b.outcome(OutcomeKind::NotFound).is_none());
         assert!(b.maps_capture(&CaptureName::parse("ehr_id").unwrap()));
+        assert!(b.check_invariants().is_ok());
+        let request = b.request.clone().unwrap();
         assert!(matches!(
-            b.request.body,
+            request.body,
             Some(RequestBody::Named { optional: true, .. })
         ));
-        assert_eq!(b.request.path.params().len(), 0);
+        assert_eq!(request.path.params().len(), 0);
     }
 
     #[test]

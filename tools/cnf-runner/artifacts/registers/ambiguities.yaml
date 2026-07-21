@@ -189,3 +189,16 @@ AMB-20:
     parameters; pagination asserts enter when an ITS surfaces them.
     Upstream candidate.
   disposition: fixed_handling
+AMB-21:
+  ambiguity: >-
+    Persistent-COMPOSITION uniqueness rejection has no assigned status code:
+    the composition_create OAS enumerates 201/400/404/422 and assigns nothing
+    to a second persistent COMPOSITION for the same template in one EHR (the
+    create-side analogue of AMB-2; the uniqueness rule itself is under SEC
+    debate, AMB-5).
+  source: "ITS-REST specifications/operations/composition_create.yaml vs CNF platform_test_schedule master07 (create_composition-same_opt_twice + persistent NOTE)"
+  handling: >-
+    Bind conflict -> 409 on create_composition (the uniqueness/state-conflict
+    family); flag for upstream code assignment. Verdict gating is already
+    suspended by AMB-5 (report_only).
+  disposition: fixed_handling
