@@ -6,7 +6,8 @@
 //! "standard" font and vendored here), so the boot path carries **zero** runtime
 //! dependency and no font-asset load for a fixed piece of art. The version is
 //! substituted from `CARGO_PKG_VERSION` at build time; the load-bearing spec
-//! pins are sourced from `docs/VERSIONS.md`.
+//! pins are read from [`crate::telemetry::provenance`] — the derived
+//! crate-version constants — never re-typed here.
 
 use std::fmt::Write as _;
 
@@ -23,14 +24,15 @@ const WORDMARK: &str = r"
 /// The project's public repository.
 const PROJECT_URL: &str = "https://github.com/rubentalstra/ehrbase-rs";
 
-/// The load-bearing spec/platform pins, one per line (wording per
-/// `docs/VERSIONS.md`: RM 1.2.0, ITS-REST 1.1.0, QUERY/AQL 1.1.0,
-/// `PostgreSQL` 18). `(label, version)` pairs, aligned when rendered.
+/// The load-bearing spec/platform pins, one per line — each version read
+/// from the shared [`crate::telemetry::provenance`] constants (themselves
+/// the `openehr-*` crate versions), so the banner can never drift from the
+/// actual pins. `(label, version)` pairs, aligned when rendered.
 const PINS: &[(&str, &str)] = &[
-    ("openEHR RM", "1.2.0"),
-    ("ITS-REST", "1.0.3"),
-    ("AQL", "1.1"),
-    ("PostgreSQL", "18"),
+    ("openEHR RM", crate::telemetry::provenance::RM),
+    ("ITS-REST", crate::telemetry::provenance::ITS_REST),
+    ("AQL", crate::telemetry::provenance::AQL),
+    ("PostgreSQL", crate::telemetry::provenance::PG_TARGET),
 ];
 
 /// Render the full banner for the given product `version`.
