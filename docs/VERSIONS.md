@@ -19,7 +19,7 @@ pre-releases until production sign-off.
 
 The `openehr-*` **spec crates** are versioned by the openEHR specification
 they implement (the pins below): `openehr-base` 1.3.0, `openehr-rm` 1.2.0,
-`openehr-am` 2.4.0, `openehr-term` 3.1.0, `openehr-lang` 1.0.0,
+`openehr-am` 2.4.0, `openehr-adl` 2.4.0, `openehr-term` 3.1.0, `openehr-lang` 1.0.0,
 `openehr-query` 1.1.0, `openehr-its` 1.1.0. They bump only on a spec-pin
 bump, never with the product version.
 
@@ -136,7 +136,7 @@ This is a fork; its import point is recorded so provenance is unambiguous:
 
 The original design reasoning was authored against v2.31.0. By the time this
 fork's Phase 0 reorganization ran, upstream had advanced to v2.33.0, and that
-is the tree actually imported into the Cargo workspace. (Per **ADR-008** the
+is the tree actually imported into the Cargo workspace. (With the greenfield storage pivot the
 in-tree EHRbase Java was later removed and behaviour-parity was retired for
 openEHR CNF conformance; EHRbase v2.33.0 remains the *prior-art* reference, not
 a parity oracle.)

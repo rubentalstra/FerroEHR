@@ -34,7 +34,7 @@ needed) → **AST → typed query IR** (our own Rust enums) → **IR → SQL** (
 `jsonb_path_query_first` + jsonpath item methods + `openehr_magnitude` for
 typed leaf comparison/ordering, `JSON_TABLE` for array unnesting, GIN
 `jsonb_ops` `$.**` equality anchors as pre-filters) → execute (`sqlx`) →
-assemble `RESULT_SET` (schema 1.0.3). Keep the IR a distinct pass — that is
+assemble `RESULT_SET` (schema 1.1.0). Keep the IR a distinct pass — that is
 what keeps the hard cases tractable — and do **not** collapse it away.
 
 Versioning semantics: `LATEST_VERSION` = the current partial index;

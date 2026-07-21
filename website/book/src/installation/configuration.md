@@ -526,7 +526,7 @@ For production, set at least:
 - **`server.cors_permissive`** stays `false`; **`server.swagger_ui`** per posture.
 - **`management.*`** per posture (a dedicated `port` is recommended so
   `/management` is never reachable on the clinical listener).
-- **TLS everywhere a transport supports it** — `atna.transport = "tls"`,
+- **TLS everywhere a transport supports it** — `audit.syslog.transport = "tls"`,
   `events.tls`, `fhir.outbound.tls`, HTTPS S3.
 - **real secrets via env or `*_file`**, never inline.
 
@@ -575,7 +575,7 @@ below maps every old spelling to its replacement.
 | `EHRBASE_MANAGEMENT_*` | `management.*` (`EHRBASE__MANAGEMENT__*`) | **boot error** — use the new spelling |
 | `EHRBASE_MANAGEMENT_ENDPOINTS_<EP>` | `management.endpoints.<ep>` (`EHRBASE__MANAGEMENT__ENDPOINTS__<EP>`) | **boot error** — use the new spelling |
 | `EHRBASE_AUTHZ_RBAC__*` / `EHRBASE_AUTHZ_ABAC__*` | `authz.rbac.*` / `authz.abac.*` (`EHRBASE__AUTHZ__…`) | **boot error** — use the new spelling |
-| `EHRBASE_ATNA_<KEY>` | `atna.<key>` (`EHRBASE__ATNA__<KEY>`) | **boot error** — use the new spelling |
+| `EHRBASE_ATNA_<KEY>` | `audit.<key>` (`EHRBASE__AUDIT__<KEY>`) | **boot error** — use the new spelling |
 | `EHRBASE_SIGNING_<KEY>` | `signing.<key>` (`EHRBASE__SIGNING__<KEY>`) | **boot error** — use the new spelling |
 | `EHRBASE_EVENTS_<KEY>` | `events.<key>` (`EHRBASE__EVENTS__<KEY>`) | **boot error** — use the new spelling |
 | `EHRBASE_FHIR_OUTBOUND_<KEY>` | `fhir.outbound.<key>` (`EHRBASE__FHIR__OUTBOUND__<KEY>`) | **boot error** — use the new spelling |
