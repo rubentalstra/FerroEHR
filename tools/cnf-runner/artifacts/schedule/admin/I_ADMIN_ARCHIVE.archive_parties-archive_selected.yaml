@@ -1,0 +1,26 @@
+# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# ITS-REST 1.1.0 has no archive wire, so I_ADMIN_ARCHIVE.archive_parties is
+# declared unrealized (AMB-33). Party provisioning has no `requires` vocabulary
+# (a demographic-service concern), so the precondition is a populated system.
+id: I_ADMIN_ARCHIVE.archive_parties-archive_selected
+kind: functional
+component: ADMIN
+sm_operation: I_ADMIN_ARCHIVE.archive_parties
+capabilities: [DemographicArchive]
+exercises: [AdminApi]
+profiles: [OPTIONS]
+test_purpose: "Archiving a selected set of existing Parties moves them and their relationships to archival storage."
+description: "Archive selected parties and their relationships"
+spec_refs:
+  - "SM openehr_platform §I_ADMIN_ARCHIVE.archive_parties"
+  - "CNF platform_test_schedule master12 §archive_parties"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "ITS-REST Admin API is DEVELOPMENT-stage — admin.openapi.yaml carries x-status: DEVELOPMENT (not STABLE); guarded until the Admin API stabilises"
+requires: { server: any }
+flow:
+  - step: 1
+    call: archive_parties
+    with: { party_ids: ["11111111-1111-1111-1111-111111111111"] }
+    expect: ok
+ambiguities: [AMB-33]

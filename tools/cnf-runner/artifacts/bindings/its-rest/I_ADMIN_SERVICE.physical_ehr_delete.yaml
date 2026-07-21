@@ -1,0 +1,18 @@
+# Wire realization of I_ADMIN_SERVICE.physical_ehr_delete for ITS-REST 1.1.0 —
+# the only master12 admin operation the ITS surfaces.
+# Sources: specifications/operations/admin_ehr_delete.yaml (DELETE
+# /admin/ehr/{ehr_id}, 202/204/404), responses/204_deleted_hard.yaml,
+# 202.yaml, 404_unknown_ehr_id.yaml. The Admin API is DEVELOPMENT-stage
+# (admin.openapi.yaml x-status: DEVELOPMENT); every physical_ehr_delete case
+# carries the matching guard.
+# Physical (hard) deletion produces no VERSION, so success is ok_empty (204 No
+# Content synchronous; the async 202 Accepted variant is the same logical
+# kind — fulfilled with no content).
+sm_operation: I_ADMIN_SERVICE.physical_ehr_delete
+its: its-rest
+request:
+  method: DELETE
+  path: /admin/ehr/{ehr_id}
+outcomes:
+  ok_empty: { status: 204 }               # 204_deleted_hard.yaml (async: 202.yaml)
+  not_found: { status: 404 }              # 404_unknown_ehr_id.yaml — ehr_id_does_not_exist

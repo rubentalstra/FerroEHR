@@ -1,0 +1,24 @@
+# Official master13 case (chapter TBD; NATURAL family id). Anchored to the
+# vendored SM I_TDD_SERVICE (i_tdd_service.adoc). ITS-REST 1.1.0 exposes NO TDD
+# API, so the its-rest binding is unrealized (AMB-34) and this case is
+# not-applicable with citation until a MESSAGE/TDD API release lands.
+id: I_TDD_SERVICE.import_tdd-valid
+kind: functional
+component: MESSAGING
+sm_operation: I_TDD_SERVICE.import_tdd
+capabilities: [Tds]
+profiles: [OPTIONS]
+test_purpose: "Importing a well-formed TDD into an existing EHR is accepted and its content is committed."
+description: "Import a valid TDD"
+spec_refs:
+  - "SM openehr_platform §I_TDD_SERVICE.import_tdd"
+  - "CNF platform_test_schedule master13 §import_tdd"
+applies: { rm: ">=1.0.2" }
+requires: { ehr: { commits: none } }
+data_sets: [cnf.messaging.tdd.v1]
+flow:
+  - step: 1
+    call: import_tdd
+    with: { an_ehr_id: "${ehr_id}", tdd: "${ds:cnf.messaging.tdd.v1}" }
+    expect: created
+ambiguities: [AMB-34]

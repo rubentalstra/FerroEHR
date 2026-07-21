@@ -1,0 +1,11 @@
+# ITS-REST 1.1.0 surfaces no dump/load wire — unrealized so the master12
+# export_ehrs cases are not-applicable with citation (AMB-33).
+sm_operation: I_ADMIN_DUMP_LOAD.export_ehrs
+its: its-rest
+unrealized:
+  reason: >-
+    No dump/load operation exists in ITS-REST 1.1.0. The only admin operations
+    in the OAS are admin_ehr_delete and admin_ehr_delete_all; there is no
+    endpoint that exports EHRs to a file-system archive.
+  source: "ITS-REST specifications/operations (admin_ehr_delete, admin_ehr_delete_all only) vs SM docs/UML/classes/i_admin_dump_load.adoc (export_ehrs)"
+  ambiguity: AMB-33

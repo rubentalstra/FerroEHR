@@ -962,3 +962,46 @@ cnf.demographic.party_relationship.invalid:
     defect: "target is absent — PARTY_RELATIONSHIP requires both source and target"
     spec_ref: "RM demographic §PARTY_RELATIONSHIP (source, target: PARTY_REF)"
   provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (content_invalid PARTY_RELATIONSHIP); structural placeholder pending corpus authoring"
+# MESSAGING (master13) corpus additions — concatenated into MANIFEST.yaml by
+# the verify harness. Canonical-JSON EXTRACT / EXTRACT_SPEC and TDD (XML)
+# payload stubs for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases. master13
+# defines no data sets (every case is TBD), so these are authored from the RM
+# EHR Extract IM class semantics as structural placeholders pending corpus
+# authoring (#202). The ADMIN (master12) cases need no corpus: they are
+# runner-provisioned (requires: ehr/server) or use literal identifiers.
+cnf.messaging.ehr_extract.v1:
+  source: fixtures/messaging/ehr_extract.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the RM EHR Extract IM (EXTRACT); structural placeholder pending corpus authoring"
+cnf.messaging.ehr_extract.invalid:
+  source: fixtures/messaging/ehr_extract.invalid.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "subject absent — EXTRACT requires a subject PARTY_(IDENTIFIED|REF)"
+    spec_ref: "RM ehr_extract §EXTRACT (subject)"
+  provenance: "authored 2026-07-21 from the RM EHR Extract IM (content_invalid EXTRACT); structural placeholder pending corpus authoring"
+cnf.messaging.extract_spec.v1:
+  source: fixtures/messaging/extract_spec.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 from the RM EHR Extract IM (EXTRACT_SPEC); structural placeholder pending corpus authoring"
+cnf.messaging.tdd.v1:
+  source: fixtures/messaging/tdd.v1.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 as a Template Data Document (TDD) XML stub for the master13 import_tdd cases; structural placeholder pending corpus authoring"
+cnf.messaging.tdd.invalid:
+  source: fixtures/messaging/tdd.invalid.xml
+  format: canonical-xml
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "not well-formed XML (unclosed element) — a TDD must be a well-formed Template Data Document"
+    spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd (tdd must be a valid TDD)"
+  provenance: "authored 2026-07-21 as a malformed TDD XML stub for the master13 import_tdd invalid case; structural placeholder pending corpus authoring"
