@@ -14,12 +14,14 @@
 //! source archetype per embedded `C_ARCHETYPE_ROOT` (the top root plus each
 //! nested one), each with its own scoped at-code space, and converts each
 //! through the existing converter core. At every embedded-root boundary the
-//! child is replaced in the parent by an open `ARCHETYPE_SLOT` (a fresh
-//! parent-space at-code the converter renumbers), and the parent → child fill
-//! edge is recorded in the returned [`OptConversion::structure`] so the
-//! composition structure the flattening erased is preserved. This is the "one
-//! converted source per embedded root with the structure recorded in the
-//! conversion log" representation.
+//! child is replaced in the parent by an `ARCHETYPE_SLOT` (a fresh
+//! parent-space at-code the converter renumbers) whose `include` assertion
+//! names the archetype that filled it, and the parent → child fill edge is
+//! additionally recorded in the returned [`OptConversion::structure`] so the
+//! composition structure the flattening erased is preserved. Anything a
+//! decomposed root cannot express (out-of-scope bindings, tuple assumed
+//! values, `DV_STATE` machines, unconvertible slot assertions) is reported in
+//! the converted archetype's `RESOURCE_DESCRIPTION.conversion_details`.
 //!
 //! NOTE: no openEHR spec governs 1.4 → 2 conversion — the entire `adl14` design,
 //! including this OPT front end (decomposition strategy, slot substitution, code
@@ -48,11 +50,14 @@ use openehr_am::am24::aom2::archetype::authored_archetype::{
 };
 use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
+use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::{
     CComplexObject, CComplexObjectData,
 };
 use openehr_am::am24::aom2::constraint_model::c_complex_object_proxy::CComplexObjectProxy;
 use openehr_am::am24::aom2::constraint_model::c_object::CObject;
+use openehr_am::am24::aom2::constraint_model::c_primitive_object::CPrimitiveObject;
+use openehr_am::am24::aom2::constraint_model::c_primitive_tuple::CPrimitiveTuple;
 use openehr_am::am24::aom2::constraint_model::primitive::c_boolean::CBoolean;
 use openehr_am::am24::aom2::constraint_model::primitive::c_date::CDate;
 use openehr_am::am24::aom2::constraint_model::primitive::c_date_time::CDateTime;
@@ -64,10 +69,11 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTe
 use openehr_am::am24::aom2::constraint_model::primitive::c_time::CTime;
 use openehr_am::am24::aom2::terminology::archetype_term::ArchetypeTerm;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_am::am24::resource::resource_description::ResourceDescription;
 use openehr_base::prelude::{
-    Cardinality, Interval, MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData,
-    TerminologyCode, Uuid,
+    Cardinality, Interval, Iso8601Date, Iso8601DateTime, Iso8601Duration, Iso8601Time,
+    MultiplicityInterval, PointInterval, ProperInterval, ProperIntervalData, TerminologyCode, Uuid,
 };
 use openehr_its::opt14;
 
@@ -147,7 +153,9 @@ pub(crate) type ConvertedRoots = Vec<(String, Archetype)>;
 /// The minimal valid `RESOURCE_DESCRIPTION` for a decomposed OPT root: VARD
 /// (`master03` §Validity Rules) requires a description to be specified; the
 /// lifecycle state uses the 1.4→2 converter's own mapping (`unmanaged`).
-fn minimal_description() -> ResourceDescription {
+/// The conversion-report entries land in `conversion_details` — the AOM2
+/// `RESOURCE_DESCRIPTION` field for conversion provenance.
+fn minimal_description(conversion_details: BTreeMap<String, String>) -> ResourceDescription {
     ResourceDescription {
         title: None,
         original_author: std::collections::BTreeMap::new(),
@@ -162,7 +170,7 @@ fn minimal_description() -> ResourceDescription {
         ip_acknowledgements: None,
         references: None,
         resource_package_uri: None,
-        conversion_details: None,
+        conversion_details: (!conversion_details.is_empty()).then_some(conversion_details),
         details: None,
         other_details: None,
     }
@@ -201,9 +209,11 @@ pub(crate) fn convert_opt_to_archetypes(
             // A decomposed OPT root carries no RESOURCE_DESCRIPTION of its own,
             // but VARD (`master03` §Validity Rules) requires one — synthesize
             // the minimal valid description with the converter's own lifecycle
-            // mapping (`unmanaged`; see `adl14::convert::transform_description`).
-            // No openEHR spec governs 1.4→2 conversion — our own design.
-            description: Some(Box::new(minimal_description())),
+            // mapping (`unmanaged`; see `adl14::convert::transform_description`)
+            // and this root's conversion-report entries in
+            // `conversion_details`. No openEHR spec governs 1.4→2 conversion —
+            // our own design.
+            description: Some(Box::new(minimal_description(unit.notes))),
             is_controlled: None,
             annotations: None,
             translations: None,
@@ -233,6 +243,40 @@ struct RawUnit {
     archetype_id: String,
     definition: CComplexObject,
     terminology: ArchetypeTerminology,
+    /// Conversion-report entries for this root (dropped bindings, carried-URI
+    /// notes, fallbacks) — landed in the converted archetype's
+    /// `RESOURCE_DESCRIPTION.conversion_details` (the AOM2 home for conversion
+    /// provenance; rendered by the ADL2 printer).
+    notes: BTreeMap<String, String>,
+}
+
+/// Per-root working state threaded through the definition walk: the slot
+/// at-code allocator, the ac-code allocator + the ac codes the root's
+/// flattened ontology defines (for `CONSTRAINT_REF` resolution), the extra
+/// terminology entries minted en route (reference-set ac definitions and
+/// bindings), and the conversion-report notes.
+struct RootCx {
+    slot_num: i64,
+    next_ac: i64,
+    defined_acs: std::collections::BTreeSet<String>,
+    extra_terms: Vec<ArchetypeTerm>,
+    /// `(terminology-key, code, uri)` term-binding entries.
+    extra_bindings: Vec<(String, String, String)>,
+    notes: BTreeMap<String, String>,
+}
+
+impl RootCx {
+    /// Mint a fresh 1.4-space ac code (the converter core shifts it like every
+    /// other code, keeping the constraint and its terminology entry aligned).
+    fn alloc_ac(&mut self) -> String {
+        let code = format!("ac{:04}", self.next_ac);
+        self.next_ac += 1;
+        code
+    }
+
+    fn note(&mut self, key: impl Into<String>, message: impl Into<String>) {
+        self.notes.insert(key.into(), message.into());
+    }
 }
 
 struct Decomposer<'a> {
@@ -253,9 +297,31 @@ impl Decomposer<'_> {
         // Slot at-codes are allocated strictly above every at-code node id used
         // by THIS root's own retained subtree (child roots are excluded — their
         // codes belong to the child's space), so a substituted slot never
-        // collides with a real node in the parent's code space.
-        let mut slot_num = max_at_num(&root.attributes) + 1;
-        let attributes = self.map_attributes(&root.attributes, &archetype_id, path, &mut slot_num);
+        // collides with a real node in the parent's code space. Minted ac codes
+        // likewise allocate above the flattened ontology's constraint
+        // definitions.
+        let ontology = self.ontology_for(&archetype_id, is_top);
+        let defined_acs: std::collections::BTreeSet<String> = ontology
+            .iter()
+            .flat_map(|o| &o.constraint_definitions)
+            .flat_map(|set| &set.items)
+            .map(|t| t.code.clone())
+            .collect();
+        let next_ac = defined_acs
+            .iter()
+            .filter_map(|c| first_ac_num(c))
+            .max()
+            .unwrap_or(0)
+            + 1;
+        let mut cx = RootCx {
+            slot_num: max_at_num(&root.attributes) + 1,
+            next_ac,
+            defined_acs,
+            extra_terms: Vec::new(),
+            extra_bindings: Vec::new(),
+            notes: BTreeMap::new(),
+        };
+        let attributes = self.map_attributes(&root.attributes, &archetype_id, path, &mut cx);
         let definition = CComplexObject::CComplexObject(CComplexObjectData {
             parent: None,
             soc_parent: None,
@@ -270,12 +336,30 @@ impl Decomposer<'_> {
             attributes,
             attribute_tuples: Vec::new(),
         });
-        let terminology = self.build_terminology(&archetype_id, root, is_top);
+        let terminology = self.build_terminology(&archetype_id, root, is_top, &mut cx);
         self.units.push(RawUnit {
             archetype_id,
             definition,
             terminology,
+            notes: cx.notes,
         });
+    }
+
+    /// The flattened ontology slice for one archetype root: the OPT `ontology`
+    /// for the top root, the matching `component_ontologies` entry for an
+    /// embedded one.
+    fn ontology_for(
+        &self,
+        archetype_id: &str,
+        is_top: bool,
+    ) -> Option<&'_ opt14::FlatArchetypeOntology> {
+        if is_top {
+            self.root_ontology
+        } else {
+            self.component_ontologies
+                .iter()
+                .find(|o| o.archetype_id == archetype_id)
+        }
     }
 
     fn map_attributes(
@@ -283,11 +367,11 @@ impl Decomposer<'_> {
         attrs: &[opt14::CAttribute],
         archetype_id: &str,
         path: &str,
-        slot_num: &mut i64,
+        cx: &mut RootCx,
     ) -> Vec<CAttribute> {
         let mut out = Vec::with_capacity(attrs.len());
         for attr in attrs {
-            out.push(self.map_attribute(attr, archetype_id, path, slot_num));
+            out.push(self.map_attribute(attr, archetype_id, path, cx));
         }
         out
     }
@@ -297,7 +381,7 @@ impl Decomposer<'_> {
         attr: &opt14::CAttribute,
         archetype_id: &str,
         path: &str,
-        slot_num: &mut i64,
+        cx: &mut RootCx,
     ) -> CAttribute {
         let (rm_attribute_name, existence, children, cardinality, is_multiple) = match attr {
             opt14::CAttribute::CSingleAttribute(a) => (
@@ -318,7 +402,7 @@ impl Decomposer<'_> {
         let attr_path = format!("{path}/{rm_attribute_name}");
         let mut mapped_children = Vec::with_capacity(children.len());
         for c in children {
-            mapped_children.push(self.map_object(c, archetype_id, &attr_path, slot_num));
+            mapped_children.push(self.map_object(c, archetype_id, &attr_path, cx));
         }
         CAttribute {
             parent: None,
@@ -342,21 +426,28 @@ impl Decomposer<'_> {
         obj: &opt14::CObject,
         archetype_id: &str,
         path: &str,
-        slot_num: &mut i64,
+        cx: &mut RootCx,
     ) -> CObject {
         match obj {
             // An embedded archetype root: decompose it as its own source and
-            // leave an open slot (fresh parent-space code) in this parent.
+            // leave a slot (fresh parent-space code) in this parent whose
+            // `include` assertion names the archetype that filled it — the
+            // canonical `archetype_id/value matches {/…/}` form
+            // (`org.openehr.am.aom2.archetype_slot.adoc`: "an expression of
+            // the form EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT").
+            // The fill edge is additionally recorded in the conversion
+            // structure.
             opt14::CObject::CArchetypeRoot(child) => {
-                let slot_node_id = format!("at{}", *slot_num);
-                *slot_num += 1;
+                let slot_node_id = format!("at{}", cx.slot_num);
+                cx.slot_num += 1;
                 let child_id = child.archetype_id.value.clone();
                 self.edges.push(FillEdge {
                     parent_archetype_id: archetype_id.to_owned(),
                     parent_path: format!("{path}[{slot_node_id}]"),
                     slot_node_id: slot_node_id.clone(),
-                    child_archetype_id: child_id,
+                    child_archetype_id: child_id.clone(),
                 });
+                let includes = archetype_id_include(&child_id);
                 let slot = CObject::ArchetypeSlot(ArchetypeSlot {
                     parent: None,
                     soc_parent: None,
@@ -366,11 +457,7 @@ impl Decomposer<'_> {
                     alternative_ids: Vec::new(),
                     is_deprecated: None,
                     sibling_order: None,
-                    // An open slot: the concrete fill identity is recorded in the
-                    // conversion structure, not re-imposed as an include here.
-                    // TODO: reconstruct include/exclude assertions naming the
-                    // filled archetype id (needs a BEOM assertion builder).
-                    includes: Vec::new(),
+                    includes,
                     excludes: Vec::new(),
                     is_closed: false,
                 });
@@ -378,15 +465,24 @@ impl Decomposer<'_> {
                 slot
             }
             opt14::CObject::CComplexObject(c) => {
-                let attributes = self.map_attributes(&c.attributes, archetype_id, path, slot_num);
+                let attributes = self.map_attributes(&c.attributes, archetype_id, path, cx);
                 complex(&c.rm_type_name, &c.node_id, &c.occurrences, attributes)
             }
             // A `T_COMPLEX_OBJECT` is a template-node complex object; its
-            // `default_value` is an operational-template artefact not carried into
-            // the converted source. TODO: carry OPT `default_value`s.
+            // `default_value` (a DATA_VALUE) is carried into the converted
+            // source as `C_DEFINED_OBJECT.default_value` — legal in any
+            // archetype and serialized by the printer as the `_default`
+            // pseudo-attribute (`master06-default_values.adoc` §Syntax; the
+            // intermediate is the canonical-JSON encoding).
             opt14::CObject::TComplexObject(c) => {
-                let attributes = self.map_attributes(&c.attributes, archetype_id, path, slot_num);
-                complex(&c.rm_type_name, &c.node_id, &c.occurrences, attributes)
+                let attributes = self.map_attributes(&c.attributes, archetype_id, path, cx);
+                let mut obj = complex(&c.rm_type_name, &c.node_id, &c.occurrences, attributes);
+                if let Some(dv) = &c.default_value
+                    && let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &mut obj
+                {
+                    d.default_value = Some(openehr_its::json::to_canonical_value(dv));
+                }
+                obj
             }
             opt14::CObject::CDefinedObject(c) => {
                 complex(&c.rm_type_name, &c.node_id, &c.occurrences, Vec::new())
@@ -404,21 +500,30 @@ impl Decomposer<'_> {
                     target_path: r.target_path.clone(),
                 })
             }
-            opt14::CObject::ArchetypeSlot(s) => CObject::ArchetypeSlot(ArchetypeSlot {
-                parent: None,
-                soc_parent: None,
-                rm_type_name: s.rm_type_name.clone(),
-                occurrences: Some(map_mult(&s.occurrences)),
-                node_id: s.node_id.clone(),
-                alternative_ids: Vec::new(),
-                is_deprecated: None,
-                sibling_order: None,
-                // TODO: map the 1.4 slot include/exclude `ASSERTION`s (BEOM
-                // expression trees) rather than emitting an open slot.
-                includes: Vec::new(),
-                excludes: Vec::new(),
-                is_closed: false,
-            }),
+            // A retained (unfilled) 1.4 slot: its include/exclude ASSERTION
+            // trees (AOM 1.4 `EXPR_BINARY_OPERATOR`/`EXPR_LEAF`,
+            // `AOM1.4/master05-assertion_package.adoc`) map onto the AOM2
+            // `beom` assertion form via the BEL parser — the same
+            // `archetype_id/value matches {/…/}` shape both models share. An
+            // assertion that cannot be rendered/parsed falls back to an open
+            // slot, reported in `conversion_details`.
+            opt14::CObject::ArchetypeSlot(s) => {
+                let includes = map_slot_assertions(&s.includes, &s.node_id, "include", cx);
+                let excludes = map_slot_assertions(&s.excludes, &s.node_id, "exclude", cx);
+                CObject::ArchetypeSlot(ArchetypeSlot {
+                    parent: None,
+                    soc_parent: None,
+                    rm_type_name: s.rm_type_name.clone(),
+                    occurrences: Some(map_mult(&s.occurrences)),
+                    node_id: s.node_id.clone(),
+                    alternative_ids: Vec::new(),
+                    is_deprecated: None,
+                    sibling_order: None,
+                    includes,
+                    excludes,
+                    is_closed: false,
+                })
+            }
             // A coded-value constraint → the 1.4-shaped `C_TERMINOLOGY_CODE` the
             // converter rewrites (`terminology::code[,code…][;assumed]`).
             opt14::CObject::CCodePhrase(c) => terminology_code(
@@ -431,41 +536,46 @@ impl Decomposer<'_> {
                     c.assumed_value.as_ref().map(|a| a.code_string.as_str()),
                 ),
             ),
-            opt14::CObject::CCodeReference(c) => terminology_code(
-                &c.rm_type_name,
-                &c.node_id,
-                &c.occurrences,
-                // TODO: carry `referenceSetUri` as a term binding.
-                code_constraint(
-                    c.terminology_id.as_ref().map(|t| t.value.as_str()),
-                    &c.code_list,
-                    c.assumed_value.as_ref().map(|a| a.code_string.as_str()),
-                ),
-            ),
-            // A `CONSTRAINT_REF` names a (deprecated) constraint-binding code; we
-            // emit an unconstrained terminology-code node rather than a dangling
-            // `ac`-reference that would fail `VACDF`. TODO: resolve the
-            // constraint binding to a value set.
-            opt14::CObject::ConstraintRef(r) => {
-                terminology_code(&r.rm_type_name, &r.node_id, &r.occurrences, String::new())
-            }
-            // The domain constrainer types carry structured value constraints
-            // (ordinal value/symbol tuples, quantity magnitude/unit lists, state
-            // machines) that the 1.4-text converter lowers to attribute-tuple
-            // `C_COMPLEX_OBJECT`s. Reconstructing those tuples from the object
-            // model is not done here; a loose (unconstrained) domain-typed complex
-            // object is emitted, which is a valid ADL2 constraint.
-            // TODO: reconstruct `DV_ORDINAL`/`DV_QUANTITY`/`DV_STATE` value
-            // constraints as attribute tuples.
-            opt14::CObject::CDvOrdinal(c) => {
-                complex(&c.rm_type_name, &c.node_id, &c.occurrences, Vec::new())
-            }
-            opt14::CObject::CDvQuantity(c) => {
-                complex(&c.rm_type_name, &c.node_id, &c.occurrences, Vec::new())
-            }
-            opt14::CObject::CDvState(c) => {
-                complex(&c.rm_type_name, &c.node_id, &c.occurrences, Vec::new())
-            }
+            // A `C_CODE_REFERENCE` names an external reference set by URI. With
+            // no inline code list, that is exactly the AOM2 ac-code
+            // term-binding pattern: an ac-code constraint whose binding URI
+            // "will designate a ref-set or value set"
+            // (`AOM2/master07-terminology_package.adoc` §Overview; keys per
+            // VTCBK). A minted ac-code + definition + binding is emitted; the
+            // converter core shifts all three consistently. When an inline
+            // code list is ALSO present the (more concrete) list constraint
+            // wins and the URI is carried in `conversion_details` — a
+            // dual-constrained node has no single ADL2 form (no openEHR spec
+            // governs 1.4→2 conversion — our own design).
+            opt14::CObject::CCodeReference(c) => map_code_reference(c, cx),
+            // A `CONSTRAINT_REF` names an ac-code whose definition lives in the
+            // flattened ontology's `constraint_definitions` (AOM 1.4
+            // `constraint_ref.adoc`); ADL2 folds those into
+            // `term_definitions`/`term_bindings` (`master07.13` §Terminology
+            // section), so the ac-code constraint resolves (VACDF/VTCBK). An
+            // ac-code the ontology does NOT define would dangle — it stays an
+            // unconstrained node, reported in `conversion_details`.
+            opt14::CObject::ConstraintRef(r) => map_constraint_ref(r, cx),
+            // DV_ORDINAL: the 1.4 domain constrainer becomes the AOM2
+            // `[value, symbol]` attribute tuple (`master04.4-cadl_second_order.adoc`
+            // §Tuple Constraints — "the tuple constraint type replaces all
+            // domain-specific constraint types defined in ADL/AOM 1.4").
+            opt14::CObject::CDvOrdinal(c) => ordinal_tuple(c, cx),
+            // DV_QUANTITY: property → a `property` terminology-code attribute;
+            // the per-unit magnitude (and, where present, precision) lists →
+            // the `[units, magnitude(, precision)]` attribute tuple (the
+            // `master04.4` §Tuple Constraints units/magnitude matrix; the
+            // vendored `C_QUANTITY_ITEM` carries no precision — including it
+            // as a third tuple member uses the generic tuple mechanism, no
+            // vendored spec section shows it: our own design).
+            opt14::CObject::CDvQuantity(c) => quantity_tuple(c, cx),
+            // DV_STATE: the 1.4 constrainer carries a state machine; the
+            // vendored AM defines no ADL2/AOM2 constraint form for it (the
+            // tuple mechanism covers co-varying attribute values, not state
+            // machines) — a loose domain-typed complex object is the honest
+            // valid constraint. No vendored openEHR spec governs DV_STATE
+            // conversion — our own design; recorded in `conversion_details`.
+            opt14::CObject::CDvState(c) => dv_state_loose(c, cx),
             opt14::CObject::CPrimitiveObject(c) => map_primitive_object(c),
         }
     }
@@ -481,6 +591,7 @@ impl Decomposer<'_> {
         archetype_id: &str,
         root: &opt14::CArchetypeRoot,
         is_top: bool,
+        cx: &mut RootCx,
     ) -> ArchetypeTerminology {
         let mut term_definitions: BTreeMap<String, BTreeMap<String, ArchetypeTerm>> =
             BTreeMap::new();
@@ -497,53 +608,93 @@ impl Decomposer<'_> {
         for set in &root.term_bindings {
             let bucket = term_bindings.entry(set.terminology.clone()).or_default();
             for item in &set.items {
-                bucket.insert(item.code.clone(), item.value.code_string.clone());
+                bucket.insert(
+                    item.code.clone(),
+                    binding_uri(&set.terminology, &item.value.code_string),
+                );
             }
         }
 
         // The flattened ontology (per-language) for this archetype: the top
         // root's is the OPT `ontology`; an embedded root matches a
-        // `component_ontologies` entry by archetype id.
-        let ontology = if is_top {
-            self.root_ontology
-        } else {
-            self.component_ontologies
+        // `component_ontologies` entry by archetype id. The 1.4
+        // `constraint_definitions`/`constraint_bindings` sections merge into
+        // `term_definitions`/`term_bindings` — the ADL2 folding
+        // (`ADL2/master07.13-adl_terminology.adoc` §Terminology section).
+        if let Some(ont) = self.ontology_for(archetype_id, is_top) {
+            for set in ont
+                .term_definitions
                 .iter()
-                .find(|o| o.archetype_id == archetype_id)
-        };
-        if let Some(ont) = ontology {
-            for set in &ont.term_definitions {
+                .chain(&ont.constraint_definitions)
+            {
                 let bucket = term_definitions.entry(set.language.clone()).or_default();
                 for t in &set.items {
                     bucket.insert(t.code.clone(), map_term(t));
                 }
             }
+            // AOM2 binding targets are URIs (`term_bindings: Hash<String,
+            // Hash<String, Uri>>`); a 1.4 binding target that is a bare code
+            // (`20081-6`) is wrapped in the converter core's fabricated URN
+            // form so the ODIN target stays parseable.
             for set in &ont.term_bindings {
                 let bucket = term_bindings.entry(set.terminology.clone()).or_default();
                 for item in &set.items {
-                    bucket.insert(item.code.clone(), item.value.code_string.clone());
+                    bucket.insert(
+                        item.code.clone(),
+                        binding_uri(&set.terminology, &item.value.code_string),
+                    );
                 }
             }
+            // 1.4 constraint bindings carry their target as a plain string (a
+            // URI or terminology query) — merged under the same terminology
+            // key, ac-code → target (VTCBK keys).
+            for set in &ont.constraint_bindings {
+                let bucket = term_bindings.entry(set.terminology.clone()).or_default();
+                for item in &set.items {
+                    bucket.insert(
+                        item.code.clone(),
+                        binding_uri(&set.terminology, &item.value),
+                    );
+                }
+            }
+        }
+
+        // Entries minted during the definition walk (reference-set ac codes).
+        {
+            let inline = term_definitions.entry(self.language.clone()).or_default();
+            for t in &cx.extra_terms {
+                inline.insert(t.code.clone(), t.clone());
+            }
+        }
+        for (terminology, code, uri) in &cx.extra_bindings {
+            term_bindings
+                .entry(terminology.clone())
+                .or_default()
+                .insert(code.clone(), uri.clone());
         }
 
         // A binding whose key is not a code DEFINED in this root's slice is
         // unexpressible after decomposition (1.4 OPTs may bind path keys or
         // codes scoped to another embedded root) and would raise VTTBK
         // (`master03` §Validity Rules — binding keys must be defined codes).
-        // Drop it, logged: the binding's home is the root that defines the
-        // code, which carries it in its own slice.
-        let defined: std::collections::BTreeSet<&str> = term_definitions
+        // Drop it, reported in `conversion_details`: the binding's home is the
+        // root that defines the code, which carries it in its own slice.
+        let defined: std::collections::BTreeSet<String> = term_definitions
             .values()
-            .flat_map(|by_code| by_code.keys().map(String::as_str))
+            .flat_map(|by_code| by_code.keys().cloned())
             .collect();
-        for by_key in term_bindings.values_mut() {
+        for (terminology, by_key) in &mut term_bindings {
+            let terminology = terminology.clone();
             by_key.retain(|key, _| {
                 let keep = defined.contains(key.as_str());
                 if !keep {
-                    tracing::debug!(
-                        archetype_id,
-                        binding_key = key.as_str(),
-                        "opt14 conversion: dropping term binding outside this root's code scope"
+                    cx.notes.insert(
+                        format!("dropped_term_binding.{terminology}.{key}"),
+                        format!(
+                            "term binding [{terminology}::{key}] is outside this root's code \
+                             scope; dropped at OPT decomposition (its home is the root that \
+                             defines the code)"
+                        ),
                     );
                 }
                 keep
@@ -740,9 +891,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
                 constraint,
             })
         }
-        // Temporal constraints: carry the ISO8601 `pattern` (the common 1.4
-        // form); the range half is dropped. TODO: carry temporal ranges as
-        // `Interval<Iso8601_*>` once ISO8601 bound parsing is threaded here.
+        // Temporal constraints: carry BOTH the ISO8601 `pattern` and the
+        // range as `Interval<Iso8601_*>` (`C_TEMPORAL.pattern_constraint` +
+        // the inherited `constraint` list; C_DURATION documents the combined
+        // `"PWD/|P0W..P50W|"` form — `org.openehr.am.aom2.c_duration.adoc`;
+        // the class model permits the same combination on
+        // C_DATE/C_TIME/C_DATE_TIME though no vendored ADL2 example shows it:
+        // our own reading), plus the assumed value.
         opt14::CPrimitive::CDate(p) => CObject::CDate(CDate {
             parent: None,
             soc_parent: None,
@@ -753,9 +908,21 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
-            assumed_value: None,
+            assumed_value: p.assumed_value.clone().map(|value| Iso8601Date { value }),
             is_enumerated_type_constraint: None,
-            constraint: Vec::new(),
+            constraint: temporal_interval(
+                p.range.as_ref().map(|r| {
+                    (
+                        r.lower.clone(),
+                        r.upper.clone(),
+                        r.lower_unbounded,
+                        r.upper_unbounded,
+                        r.lower_included,
+                        r.upper_included,
+                    )
+                }),
+                |value| Iso8601Date { value },
+            ),
             pattern_constraint: p.pattern.clone(),
         }),
         opt14::CPrimitive::CDateTime(p) => CObject::CDateTime(CDateTime {
@@ -768,9 +935,24 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
-            assumed_value: None,
+            assumed_value: p
+                .assumed_value
+                .clone()
+                .map(|value| Iso8601DateTime { value }),
             is_enumerated_type_constraint: None,
-            constraint: Vec::new(),
+            constraint: temporal_interval(
+                p.range.as_ref().map(|r| {
+                    (
+                        r.lower.clone(),
+                        r.upper.clone(),
+                        r.lower_unbounded,
+                        r.upper_unbounded,
+                        r.lower_included,
+                        r.upper_included,
+                    )
+                }),
+                |value| Iso8601DateTime { value },
+            ),
             pattern_constraint: p.pattern.clone(),
         }),
         opt14::CPrimitive::CDuration(p) => CObject::CDuration(CDuration {
@@ -783,9 +965,24 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
-            assumed_value: None,
+            assumed_value: p
+                .assumed_value
+                .clone()
+                .map(|value| Iso8601Duration { value }),
             is_enumerated_type_constraint: None,
-            constraint: Vec::new(),
+            constraint: temporal_interval(
+                p.range.as_ref().map(|r| {
+                    (
+                        r.lower.clone(),
+                        r.upper.clone(),
+                        r.lower_unbounded,
+                        r.upper_unbounded,
+                        r.lower_included,
+                        r.upper_included,
+                    )
+                }),
+                |value| Iso8601Duration { value },
+            ),
             pattern_constraint: p.pattern.clone(),
         }),
         opt14::CPrimitive::CTime(p) => CObject::CTime(CTime {
@@ -798,12 +995,66 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
             is_deprecated: None,
             sibling_order: None,
             default_value: None,
-            assumed_value: None,
+            assumed_value: p.assumed_value.clone().map(|value| Iso8601Time { value }),
             is_enumerated_type_constraint: None,
-            constraint: Vec::new(),
+            constraint: temporal_interval(
+                p.range.as_ref().map(|r| {
+                    (
+                        r.lower.clone(),
+                        r.upper.clone(),
+                        r.lower_unbounded,
+                        r.upper_unbounded,
+                        r.lower_included,
+                        r.upper_included,
+                    )
+                }),
+                |value| Iso8601Time { value },
+            ),
             pattern_constraint: p.pattern.clone(),
         }),
     }
+}
+
+/// Build the `Interval<Iso8601_*>` constraint list from a 1.4 temporal range
+/// (string bounds), mirroring [`int_interval`]'s point/proper split.
+#[allow(clippy::type_complexity)] // one tuple threading six 1.4 interval facets
+fn temporal_interval<T>(
+    range: Option<(
+        Option<String>,
+        Option<String>,
+        bool,
+        bool,
+        Option<bool>,
+        Option<bool>,
+    )>,
+    wrap: impl Fn(String) -> T,
+) -> Vec<Interval<T>> {
+    let Some((lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included)) =
+        range
+    else {
+        return Vec::new();
+    };
+    if lower == upper && lower.is_some() {
+        let v = lower.clone().unwrap_or_default();
+        return vec![Interval::PointInterval(PointInterval {
+            lower: lower.map(&wrap),
+            upper: Some(wrap(v)),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: true,
+            upper_included: true,
+        })];
+    }
+    vec![Interval::ProperInterval(ProperInterval::ProperInterval(
+        ProperIntervalData {
+            lower: lower.map(&wrap),
+            upper: upper.map(&wrap),
+            lower_unbounded,
+            upper_unbounded,
+            lower_included: lower_included.unwrap_or(!lower_unbounded),
+            upper_included: upper_included.unwrap_or(!upper_unbounded),
+        },
+    ))]
 }
 
 fn c_string(
@@ -827,6 +1078,544 @@ fn c_string(
         is_enumerated_type_constraint: None,
         constraint,
     })
+}
+
+// ── slot assertions ──────────────────────────────────────────────────────────
+
+/// A `C_CODE_REFERENCE` names an external reference set by URI. With no
+/// inline code list, that is exactly the AOM2 ac-code term-binding pattern:
+/// an ac-code constraint whose binding URI "will designate a ref-set or value
+/// set" (`AOM2/master07-terminology_package.adoc` §Overview; keys per VTCBK) —
+/// a minted ac-code + definition + binding is emitted, and the converter core
+/// shifts all three consistently. When an inline code list is ALSO present
+/// the (more concrete) list constraint wins and the URI is carried in
+/// `conversion_details` — a dual-constrained node has no single ADL2 form (no
+/// openEHR spec governs 1.4→2 conversion — our own design).
+fn map_code_reference(c: &opt14::CCodeReference, cx: &mut RootCx) -> CObject {
+    if c.referenceSetUri.is_empty() || !c.code_list.is_empty() {
+        if !c.referenceSetUri.is_empty() {
+            cx.note(
+                format!("reference_set_uri.{}", c.node_id),
+                format!(
+                    "node {} carries both a code list and referenceSetUri {}; \
+                     the code list was converted, the URI is recorded here",
+                    c.node_id, c.referenceSetUri
+                ),
+            );
+        }
+        return terminology_code(
+            &c.rm_type_name,
+            &c.node_id,
+            &c.occurrences,
+            code_constraint(
+                c.terminology_id.as_ref().map(|t| t.value.as_str()),
+                &c.code_list,
+                c.assumed_value.as_ref().map(|a| a.code_string.as_str()),
+            ),
+        );
+    }
+    let ac = cx.alloc_ac();
+    cx.extra_terms.push(ArchetypeTerm {
+        code: ac.clone(),
+        text: "Reference set".to_owned(),
+        description: format!("External reference set {}", c.referenceSetUri),
+        other_items: None,
+    });
+    // The binding's terminology key: the node's terminology id when declared,
+    // else the generic "external" bucket (the 1.4 referenceSetUri carries no
+    // terminology name — no openEHR spec governs the key choice, our own
+    // design).
+    let term_key = c
+        .terminology_id
+        .as_ref()
+        .map_or_else(|| "external".to_owned(), |t| t.value.clone());
+    cx.extra_bindings
+        .push((term_key, ac.clone(), c.referenceSetUri.clone()));
+    terminology_code(&c.rm_type_name, &c.node_id, &c.occurrences, ac)
+}
+
+/// The `include` assertion naming the archetype that filled a slot: the
+/// canonical `archetype_id/value matches {/…/}` form
+/// (`org.openehr.am.aom2.archetype_slot.adoc`), built through the BEL slot
+/// parser so the tree matches what parsing the printed ADL2 would yield.
+fn archetype_id_include(child_archetype_id: &str) -> Vec<Assertion> {
+    let text = format!(
+        "archetype_id/value matches {{/{}/}}",
+        regex_escape(child_archetype_id)
+    );
+    openehr_adl::rules::parse_slot_assertions(&text).unwrap_or_default()
+}
+
+/// Escape an archetype id for use inside a slot-assertion regex (`.` is the
+/// only regex metacharacter a valid `ARCHETYPE_HRID` contains).
+fn regex_escape(id: &str) -> String {
+    id.replace('.', "\\.")
+}
+
+/// Map the 1.4 slot `ASSERTION`s (`AOM1.4/master05-assertion_package.adoc`
+/// expression trees) onto AOM2 `beom` assertions: the verbatim
+/// `string_expression` is preferred (both generations share the
+/// `archetype_id/value matches {/…/}` surface syntax), else the expression
+/// tree is rendered to that syntax; the result re-parses through the BEL slot
+/// parser. An assertion that cannot be rendered or parsed is dropped —
+/// reported in `conversion_details` so the slot's weakening is visible.
+fn map_slot_assertions(
+    assertions: &[opt14::Assertion],
+    node_id: &str,
+    kind: &str,
+    cx: &mut RootCx,
+) -> Vec<Assertion> {
+    let mut out = Vec::new();
+    for (idx, a) in assertions.iter().enumerate() {
+        let text = a
+            .string_expression
+            .clone()
+            .or_else(|| render_expr(&a.expression));
+        let parsed = text
+            .as_deref()
+            .and_then(|t| openehr_adl::rules::parse_slot_assertions(t).ok());
+        match parsed {
+            Some(mut list) if !list.is_empty() => out.append(&mut list),
+            _ => {
+                cx.note(
+                    format!("slot_assertion.{node_id}.{kind}.{idx}"),
+                    format!(
+                        "slot {node_id} {kind} assertion could not be converted \
+                         (source: {:?}); the slot is emitted without it",
+                        text.unwrap_or_else(|| "unrenderable expression tree".to_owned())
+                    ),
+                );
+            }
+        }
+    }
+    out
+}
+
+/// Render a 1.4 `EXPR_ITEM` tree to the ADL slot-assertion surface syntax.
+/// Returns `None` for a shape outside the supported forms (binary/unary
+/// operators over attribute paths, constants and constraint leaves).
+fn render_expr(e: &opt14::ExprItem) -> Option<String> {
+    match e {
+        opt14::ExprItem::ExprBinaryOperator(b) => {
+            let l = render_expr(&b.left_operand)?;
+            let r = render_expr(&b.right_operand)?;
+            Some(format!("{l} {} {r}", b.operator))
+        }
+        opt14::ExprItem::ExprUnaryOperator(u) => {
+            let inner = render_expr(&u.operand)?;
+            Some(format!("{} ({inner})", u.operator))
+        }
+        opt14::ExprItem::ExprLeaf(leaf) => render_leaf(leaf),
+    }
+}
+
+/// Render a 1.4 `EXPR_LEAF`: an attribute path verbatim, a constant literal,
+/// or a constraint (`C_STRING` pattern/list) as the `{/…/}`/`{"…"}` block.
+fn render_leaf(leaf: &opt14::ExprLeaf) -> Option<String> {
+    let item = &leaf.item;
+    match leaf.reference_type.to_lowercase().as_str() {
+        "attribute" => item.as_str().map(str::to_owned),
+        "constant" => item
+            .as_str()
+            .map(|s| format!("{s:?}"))
+            .or_else(|| item.as_i64().map(|n| n.to_string())),
+        "constraint" => {
+            // The XML leaf item is a C_STRING: a regex `pattern` or a literal
+            // string list.
+            if let Some(p) = item.get("pattern").and_then(serde_json::Value::as_str) {
+                let body = p.trim_matches('/');
+                return Some(format!("{{/{body}/}}"));
+            }
+            let list = item.get("list").and_then(serde_json::Value::as_array)?;
+            let items = list
+                .iter()
+                .map(|v| v.as_str().map(|s| format!("{s:?}")))
+                .collect::<Option<Vec<_>>>()?;
+            Some(format!("{{{}}}", items.join(", ")))
+        }
+        _ => None,
+    }
+}
+
+// ── domain-type attribute tuples ─────────────────────────────────────────────
+
+/// The `C_ATTRIBUTE` definition member of an attribute tuple (empty children —
+/// the constraints live in the tuple rows).
+fn tuple_member(rm_attribute_name: &str) -> CAttribute {
+    CAttribute {
+        parent: None,
+        soc_parent: None,
+        rm_attribute_name: rm_attribute_name.to_owned(),
+        existence: None,
+        children: Vec::new(),
+        differential_path: None,
+        cardinality: None,
+        is_multiple: false,
+    }
+}
+
+/// A tuple-row `C_INTEGER` member (point value, or unconstrained when `None`).
+fn tuple_integer(value: Option<i32>, range: Option<Interval<i32>>) -> CPrimitiveObject {
+    CPrimitiveObject::CInteger(CInteger {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "Integer".to_owned(),
+        occurrences: None,
+        node_id: String::new(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint: value
+            .map(|v| {
+                Interval::PointInterval(PointInterval {
+                    lower: Some(v),
+                    upper: Some(v),
+                    lower_unbounded: false,
+                    upper_unbounded: false,
+                    lower_included: true,
+                    upper_included: true,
+                })
+            })
+            .into_iter()
+            .chain(range)
+            .collect(),
+    })
+}
+
+/// A tuple-row `C_REAL` member (range, or unconstrained when `None`).
+fn tuple_real(range: Option<Interval<f64>>) -> CPrimitiveObject {
+    CPrimitiveObject::CReal(CReal {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "Real".to_owned(),
+        occurrences: None,
+        node_id: String::new(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint: range.into_iter().collect(),
+    })
+}
+
+/// A tuple-row `C_STRING` member (single-value list).
+fn tuple_string(value: &str) -> CPrimitiveObject {
+    CPrimitiveObject::CString(CString {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "String".to_owned(),
+        occurrences: None,
+        node_id: String::new(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint: vec![value.to_owned()],
+    })
+}
+
+/// A tuple-row `C_TERMINOLOGY_CODE` member carrying the 1.4
+/// `terminology::code` encoding the converter core rewrites (shifting local
+/// at-codes, minting external ones).
+fn tuple_code(terminology: Option<&str>, code: &str) -> CPrimitiveObject {
+    CPrimitiveObject::CTerminologyCode(CTerminologyCode {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: "CODE_PHRASE".to_owned(),
+        occurrences: None,
+        node_id: String::new(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        assumed_value: None,
+        is_enumerated_type_constraint: None,
+        constraint: code_constraint(terminology, std::slice::from_ref(&code.to_owned()), None),
+        constraint_status: None,
+    })
+}
+
+/// `DV_STATE`: the 1.4 constrainer carries a state machine; the vendored AM
+/// defines no ADL2/AOM2 constraint form for it (the tuple mechanism covers
+/// co-varying attribute values, not state machines) — a loose domain-typed
+/// complex object is the honest valid constraint. No vendored openEHR spec
+/// governs `DV_STATE` conversion — our own design; recorded in
+/// `conversion_details`.
+fn dv_state_loose(c: &opt14::CDvState, cx: &mut RootCx) -> CObject {
+    cx.note(
+        format!("dv_state.{}", c.node_id),
+        format!(
+            "C_DV_STATE {} state-machine constraint has no ADL2 form; emitted as an \
+             unconstrained DV_STATE node",
+            c.node_id
+        ),
+    );
+    complex(&c.rm_type_name, &c.node_id, &c.occurrences, Vec::new())
+}
+
+/// A `CONSTRAINT_REF` names an ac-code whose definition lives in the
+/// flattened ontology's `constraint_definitions` (AOM 1.4
+/// `constraint_ref.adoc`); ADL2 folds those into
+/// `term_definitions`/`term_bindings` (`master07.13` §Terminology section),
+/// so the ac-code constraint resolves (VACDF/VTCBK). An ac-code the ontology
+/// does NOT define would dangle — it stays an unconstrained node, reported in
+/// `conversion_details`.
+fn map_constraint_ref(r: &opt14::ConstraintRef, cx: &mut RootCx) -> CObject {
+    if cx.defined_acs.contains(&r.reference) {
+        terminology_code(
+            &r.rm_type_name,
+            &r.node_id,
+            &r.occurrences,
+            r.reference.clone(),
+        )
+    } else {
+        cx.note(
+            format!("constraint_ref.{}", r.node_id),
+            format!(
+                "CONSTRAINT_REF {} names {} which the flattened ontology does not define; \
+                 emitted unconstrained",
+                r.node_id, r.reference
+            ),
+        );
+        terminology_code(&r.rm_type_name, &r.node_id, &r.occurrences, String::new())
+    }
+}
+
+/// `C_DV_ORDINAL` → the AOM2 `[value, symbol]` attribute tuple
+/// (`master04.4-cadl_second_order.adoc` §Tuple Constraints). A 1.4
+/// `assumed_value` has no per-tuple AOM2 slot — recorded in
+/// `conversion_details`.
+fn ordinal_tuple(c: &opt14::CDvOrdinal, cx: &mut RootCx) -> CObject {
+    if let Some(a) = &c.assumed_value {
+        cx.note(
+            format!("assumed_value.{}", c.node_id),
+            format!(
+                "C_DV_ORDINAL {} assumed_value (ordinal {}) has no AOM2 tuple representation; \
+                 recorded here",
+                c.node_id, a.value
+            ),
+        );
+    }
+    let tuples = c
+        .list
+        .iter()
+        .map(|o| CPrimitiveTuple {
+            members: vec![
+                tuple_integer(Some(o.value), None),
+                tuple_code(
+                    Some(o.symbol.defining_code.terminology_id.value.as_str()),
+                    &o.symbol.defining_code.code_string,
+                ),
+            ],
+        })
+        .collect::<Vec<_>>();
+    let attribute_tuples = if tuples.is_empty() {
+        Vec::new()
+    } else {
+        vec![CAttributeTuple {
+            members: vec![tuple_member("value"), tuple_member("symbol")],
+            tuples,
+        }]
+    };
+    CObject::CComplexObject(CComplexObject::CComplexObject(CComplexObjectData {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: c.rm_type_name.clone(),
+        occurrences: Some(map_mult(&c.occurrences)),
+        node_id: c.node_id.clone(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        attributes: Vec::new(),
+        attribute_tuples,
+    }))
+}
+
+/// `C_DV_QUANTITY` → a `property` terminology-code attribute plus the
+/// `[units, magnitude(, precision)]` attribute tuple (`master04.4` §Tuple
+/// Constraints). The precision member is included only when some item
+/// constrains it (uniform tuple arity; rows without one carry an
+/// unconstrained `C_INTEGER`). A 1.4 `assumed_value` has no per-tuple AOM2
+/// slot — recorded in `conversion_details`.
+fn quantity_tuple(c: &opt14::CDvQuantity, cx: &mut RootCx) -> CObject {
+    if c.assumed_value.is_some() {
+        cx.note(
+            format!("assumed_value.{}", c.node_id),
+            format!(
+                "C_DV_QUANTITY {} assumed_value has no AOM2 tuple representation; recorded here",
+                c.node_id
+            ),
+        );
+    }
+    let mut attributes = Vec::new();
+    if let Some(p) = &c.property {
+        attributes.push(CAttribute {
+            parent: None,
+            soc_parent: None,
+            rm_attribute_name: "property".to_owned(),
+            existence: None,
+            children: vec![terminology_code(
+                "CODE_PHRASE",
+                "",
+                &unbounded_occurrences(),
+                code_constraint(
+                    Some(p.terminology_id.value.as_str()),
+                    std::slice::from_ref(&p.code_string),
+                    None,
+                ),
+            )],
+            differential_path: None,
+            cardinality: None,
+            is_multiple: false,
+        });
+    }
+    // Tuple members co-vary: a tuple is emitted only when EVERY item
+    // constrains the magnitude (the reference corpus renders a units-only
+    // constraint as a plain `units` attribute, never a tuple with empty
+    // members — `dv_quantity_variations_1` fixture). A mixed set (some items
+    // with a magnitude, some without) widens to the plain units list — the
+    // safe direction (a widened constraint never rejects valid data) — with
+    // the dropped per-unit ranges reported. Precision joins the tuple only
+    // when every item carries one, on the same rule. No openEHR spec governs
+    // 1.4→2 conversion — our own design.
+    let all_magnitude = !c.list.is_empty() && c.list.iter().all(|i| i.magnitude.is_some());
+    let all_precision = !c.list.is_empty() && c.list.iter().all(|i| i.precision.is_some());
+    let some_dropped = c
+        .list
+        .iter()
+        .any(|i| i.magnitude.is_some() || i.precision.is_some());
+    let mut attribute_tuples = Vec::new();
+    if all_magnitude {
+        if !all_precision && c.list.iter().any(|i| i.precision.is_some()) {
+            cx.note(
+                format!("quantity_precision.{}", c.node_id),
+                format!(
+                    "C_DV_QUANTITY {}: precision constrained on only some units; widened \
+                     (dropped) to keep tuple arity uniform",
+                    c.node_id
+                ),
+            );
+        }
+        let tuples = c
+            .list
+            .iter()
+            .map(|item| {
+                let mut members = vec![
+                    tuple_string(&item.units),
+                    tuple_real(item.magnitude.as_ref().map(real_interval)),
+                ];
+                if all_precision {
+                    members.push(tuple_integer(
+                        None,
+                        item.precision.as_ref().map(int_interval),
+                    ));
+                }
+                CPrimitiveTuple { members }
+            })
+            .collect::<Vec<_>>();
+        let mut members = vec![tuple_member("units"), tuple_member("magnitude")];
+        if all_precision {
+            members.push(tuple_member("precision"));
+        }
+        attribute_tuples.push(CAttributeTuple { members, tuples });
+    } else if !c.list.is_empty() {
+        attributes.push(widened_units_attribute(c, some_dropped, cx));
+    }
+    CObject::CComplexObject(CComplexObject::CComplexObject(CComplexObjectData {
+        parent: None,
+        soc_parent: None,
+        rm_type_name: c.rm_type_name.clone(),
+        occurrences: Some(map_mult(&c.occurrences)),
+        node_id: c.node_id.clone(),
+        alternative_ids: Vec::new(),
+        is_deprecated: None,
+        sibling_order: None,
+        default_value: None,
+        attributes,
+        attribute_tuples,
+    }))
+}
+
+/// The plain `units` list attribute a magnitude-less (or mixed) quantity
+/// widens to — the reference-corpus form for units-only constraints; a mixed
+/// set's dropped per-unit ranges are reported.
+fn widened_units_attribute(
+    c: &opt14::CDvQuantity,
+    some_dropped: bool,
+    cx: &mut RootCx,
+) -> CAttribute {
+    if some_dropped {
+        cx.note(
+            format!("quantity_magnitude.{}", c.node_id),
+            format!(
+                "C_DV_QUANTITY {}: magnitude/precision constrained on only some units; widened \
+                 to the plain units list (the dropped per-unit ranges are unrepresentable \
+                 without uniform tuple arity)",
+                c.node_id
+            ),
+        );
+    }
+    CAttribute {
+        parent: None,
+        soc_parent: None,
+        rm_attribute_name: "units".to_owned(),
+        existence: None,
+        children: vec![c_string(
+            "String",
+            "",
+            &unbounded_occurrences(),
+            c.list.iter().map(|i| i.units.clone()).collect(),
+            None,
+        )],
+        differential_path: None,
+        cardinality: None,
+        is_multiple: false,
+    }
+}
+
+/// The `0..*` occurrences a synthesized single-child attribute carries (the
+/// converter core elides RM-default multiplicities).
+fn unbounded_occurrences() -> opt14::Intervalofinteger {
+    opt14::Intervalofinteger {
+        lower_included: Some(true),
+        upper_included: None,
+        lower_unbounded: false,
+        upper_unbounded: true,
+        lower: Some(0),
+        upper: None,
+    }
+}
+
+/// An AOM2 term-binding target must be a `Uri` (`AOM2/master07`
+/// §`term_bindings`)
+/// and the ADL2 ODIN target a URI token; a 1.4 binding value that is a bare
+/// code is wrapped in the converter core's fabricated URN form
+/// (`urn:adl14:<terminology>:<code>` — `adl14::convert::external_at_code`'s
+/// fallback; no openEHR spec governs 1.4→2 conversion, our own design).
+fn binding_uri(terminology: &str, value: &str) -> String {
+    if value.contains("://") || value.starts_with("urn:") {
+        value.to_owned()
+    } else {
+        format!("urn:adl14:{terminology}:{value}")
+    }
+}
+
+/// The first numeric segment of an ac-code (`ac0007` → 7), for allocator
+/// seeding.
+fn first_ac_num(code: &str) -> Option<i64> {
+    code.strip_prefix("ac")?
+        .split('.')
+        .next()?
+        .parse::<i64>()
+        .ok()
 }
 
 // ── value helpers ────────────────────────────────────────────────────────────
@@ -1043,6 +1832,331 @@ mod tests {
             first_edges, second_edges,
             "fill structure is not deterministic"
         );
+    }
+
+    /// EVERY vendored OPT converts phase-1-clean and its printed ADL2
+    /// re-parses — the whole-corpus fidelity gate (exercises default values,
+    /// slot assertions, tuples, bindings across the real template set).
+    #[test]
+    fn whole_opt_corpus_converts_and_reparses() {
+        let dir = format!(
+            "{}/tests/resources/service/knowledge/opt",
+            env!("CARGO_MANIFEST_DIR")
+        );
+        let mut count = 0usize;
+        for entry in std::fs::read_dir(&dir).expect("opt corpus dir") {
+            let path = entry.expect("dir entry").path();
+            if path.extension().and_then(|e| e.to_str()) != Some("opt") {
+                continue;
+            }
+            count += 1;
+            let name = path.display().to_string();
+            let xml = std::fs::read_to_string(&path).expect("read opt");
+            let opt = opt14::from_xml(&xml).unwrap_or_else(|e| panic!("parse {name}: {e:?}"));
+            let (archetypes, _) =
+                convert_opt_to_archetypes(&opt).unwrap_or_else(|e| panic!("convert {name}: {e}"));
+            for (id, art) in &archetypes {
+                let errors: Vec<&str> = validate_phase1(art, None)
+                    .iter()
+                    .filter(|i| i.severity == Severity::Error)
+                    .map(|i| i.code.mnemonic())
+                    .collect();
+                // Two ADJUDICATED pre-existing decomposition limits (the
+                // conversion-hardening tracker issue carries their removal;
+                // anything outside them still fails the gate):
+                // - VACSD: a SPECIALISED embedded root (depth >= 1 root code)
+                //   is inlined in a flattened OPT without its parent, so its
+                //   standalone source cannot declare the lineage.
+                // - VCOSU: 1.4 archetypes legitimately reuse at-codes across
+                //   paths (e.g. ACTION careflow/ism nodes); ADL2 requires
+                //   globally unique ids, which needs a renumbering pass.
+                let adjudicated = ["VACSD", "VCOSU"];
+                let unexpected: Vec<&&str> = errors
+                    .iter()
+                    .filter(|e| !adjudicated.contains(*e))
+                    .collect();
+                assert!(
+                    unexpected.is_empty(),
+                    "{name}/{id}: unadjudicated phase-1 errors: {unexpected:?} (all: {errors:?})"
+                );
+                let printed = openehr_adl::printer::print(art);
+                openehr_adl::assemble::parse_artefact(&printed).unwrap_or_else(|e| {
+                    panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}")
+                });
+            }
+        }
+        assert!(count >= 3, "the OPT corpus went missing ({count} files)");
+    }
+
+    /// Every converted root prints to ADL2 text that re-parses — the printed
+    /// surface (tuples, slot assertions, defaults) is parser-valid, not just
+    /// object-model-valid.
+    #[test]
+    fn printed_adl2_reparses() {
+        for rel in [MINIMAL_OBSERVATION, MINIMAL_EVALUATION, VITAL_SIGNS] {
+            let opt = parse_opt(rel);
+            let conversion = convert_opt_to_adl2(&opt).expect("convert");
+            for root in &conversion.roots {
+                openehr_adl::assemble::parse_artefact(&root.adl2).unwrap_or_else(|e| {
+                    let line = e.first().map_or(0, |err| err.line);
+                    let context = root
+                        .adl2
+                        .lines()
+                        .enumerate()
+                        .skip(line.saturating_sub(4))
+                        .take(7)
+                        .map(|(i, l)| format!("{:>4} | {l}", i + 1))
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    panic!(
+                        "{rel}/{}: printed ADL2 does not re-parse: {e:?}\n{context}",
+                        root.archetype_id
+                    )
+                });
+            }
+        }
+    }
+
+    /// A filled slot carries the canonical include assertion naming the child
+    /// (`archetype_id/value matches {/…/}` —
+    /// `org.openehr.am.aom2.archetype_slot.adoc`), alongside the fill edge.
+    #[test]
+    fn filled_slots_carry_include_assertions() {
+        let opt = parse_opt(MINIMAL_OBSERVATION);
+        let conversion = convert_opt_to_adl2(&opt).expect("convert");
+        let composition = conversion
+            .roots
+            .iter()
+            .find(|r| r.archetype_id == "openEHR-EHR-COMPOSITION.minimal.v1")
+            .expect("composition root");
+        assert!(
+            composition.adl2.contains("include"),
+            "no include assertion in the filled slot:\n{}",
+            composition.adl2
+        );
+        assert!(
+            composition
+                .adl2
+                .contains("openEHR-EHR-OBSERVATION\\.minimal\\.v1"),
+            "the include does not name the filling archetype:\n{}",
+            composition.adl2
+        );
+    }
+
+    /// The `C_DV_ORDINAL` domain constrainer becomes the AOM2
+    /// `[value, symbol]` attribute tuple (`master04.4-cadl_second_order.adoc`
+    /// §Tuple Constraints) — visible on the printed ADL2 surface of the
+    /// Vital Signs conversion. (Its quantities are magnitude-less, so they
+    /// widen to plain `units` lists — the reference-corpus form; the tuple
+    /// path is pinned by [`quantity_tuple_emitted_when_magnitudes_present`].)
+    #[test]
+    fn domain_types_become_attribute_tuples() {
+        let opt = parse_opt(VITAL_SIGNS);
+        let conversion = convert_opt_to_adl2(&opt).expect("convert");
+        let all = conversion
+            .roots
+            .iter()
+            .map(|r| r.adl2.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(
+            all.contains("[value, symbol]"),
+            "no ordinal tuple emitted anywhere in the Vital Signs conversion"
+        );
+        assert!(
+            all.contains("[units, magnitude, precision]"),
+            "the fully-constrained quantities must carry [units, magnitude, precision] tuples"
+        );
+    }
+
+    /// `C_DV_QUANTITY` with per-unit magnitudes → the `[units, magnitude]`
+    /// tuple (`master04.4` §Tuple Constraints); with none → a plain `units`
+    /// attribute (the reference-corpus form for units-only constraints).
+    #[test]
+    fn quantity_tuple_emitted_when_magnitudes_present() {
+        let item = |units: &str, magnitude: Option<(f64, f64)>| opt14::CQuantityItem {
+            magnitude: magnitude.map(|(lo, hi)| opt14::Intervalofreal {
+                lower_included: Some(true),
+                upper_included: Some(true),
+                lower_unbounded: false,
+                upper_unbounded: false,
+                lower: Some(lo),
+                upper: Some(hi),
+            }),
+            precision: None,
+            units: units.to_owned(),
+        };
+        let quantity = |list: Vec<opt14::CQuantityItem>| opt14::CDvQuantity {
+            rm_type_name: "DV_QUANTITY".to_owned(),
+            occurrences: unbounded_occurrences(),
+            node_id: "at0004".to_owned(),
+            assumed_value: None,
+            property: None,
+            list,
+        };
+
+        let mut cx = test_cx();
+        let constrained = quantity_tuple(
+            &quantity(vec![
+                item("deg C", Some((0.0, 100.0))),
+                item("deg F", Some((32.0, 212.0))),
+            ]),
+            &mut cx,
+        );
+        let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &constrained else {
+            panic!("expected a complex object");
+        };
+        assert_eq!(d.attribute_tuples.len(), 1, "one [units, magnitude] tuple");
+        assert_eq!(
+            d.attribute_tuples.first().map(|t| t.tuples.len()),
+            Some(2),
+            "one row per unit"
+        );
+
+        let widened = quantity_tuple(&quantity(vec![item("kg", None), item("mg", None)]), &mut cx);
+        let CObject::CComplexObject(CComplexObject::CComplexObject(d)) = &widened else {
+            panic!("expected a complex object");
+        };
+        assert!(d.attribute_tuples.is_empty(), "no tuple without magnitudes");
+        assert!(
+            d.attributes.iter().any(|a| a.rm_attribute_name == "units"),
+            "a plain units attribute instead"
+        );
+    }
+
+    /// `map_code_reference` with a bare `referenceSetUri` mints the ac-code +
+    /// definition + binding (`AOM2/master07-terminology_package.adoc`
+    /// §Overview: an ac binding designates a ref-set / value set).
+    #[test]
+    fn reference_set_uri_becomes_ac_binding() {
+        let mut cx = test_cx();
+        let node = opt14::CCodeReference {
+            rm_type_name: "CODE_PHRASE".to_owned(),
+            occurrences: unbounded_occurrences(),
+            node_id: "at0005".to_owned(),
+            assumed_value: None,
+            terminology_id: None,
+            code_list: Vec::new(),
+            referenceSetUri: "http://example.org/fhir/ValueSet/units".to_owned(),
+        };
+        let obj = map_code_reference(&node, &mut cx);
+        let CObject::CTerminologyCode(tc) = obj else {
+            panic!("expected a C_TERMINOLOGY_CODE, got {obj:?}");
+        };
+        assert_eq!(tc.constraint, "ac0001", "minted ac constraint");
+        assert_eq!(cx.extra_terms.len(), 1, "one minted ac definition");
+        assert_eq!(
+            cx.extra_terms.first().map(|t| t.code.as_str()),
+            Some("ac0001")
+        );
+        assert_eq!(
+            cx.extra_bindings.first(),
+            Some(&(
+                "external".to_owned(),
+                "ac0001".to_owned(),
+                "http://example.org/fhir/ValueSet/units".to_owned()
+            ))
+        );
+    }
+
+    /// `map_constraint_ref`: a defined ac-code becomes the ac constraint; an
+    /// undefined one stays unconstrained with a `conversion_details` report
+    /// (never a dangling reference that would fail VACDF).
+    #[test]
+    fn constraint_ref_resolves_or_reports() {
+        let mut cx = test_cx();
+        cx.defined_acs.insert("ac0002".to_owned());
+        let defined = opt14::ConstraintRef {
+            rm_type_name: "CODE_PHRASE".to_owned(),
+            occurrences: unbounded_occurrences(),
+            node_id: "at0007".to_owned(),
+            reference: "ac0002".to_owned(),
+        };
+        let CObject::CTerminologyCode(tc) = map_constraint_ref(&defined, &mut cx) else {
+            panic!("expected a C_TERMINOLOGY_CODE");
+        };
+        assert_eq!(tc.constraint, "ac0002");
+        assert!(cx.notes.is_empty(), "a resolved ref reports nothing");
+
+        let dangling = opt14::ConstraintRef {
+            reference: "ac0099".to_owned(),
+            ..defined
+        };
+        let CObject::CTerminologyCode(tc) = map_constraint_ref(&dangling, &mut cx) else {
+            panic!("expected a C_TERMINOLOGY_CODE");
+        };
+        assert!(
+            tc.constraint.is_empty(),
+            "a dangling ref stays unconstrained"
+        );
+        assert!(
+            cx.notes.keys().any(|k| k.starts_with("constraint_ref.")),
+            "the dangling ref must be reported: {:?}",
+            cx.notes
+        );
+    }
+
+    /// Temporal primitives carry BOTH the ISO8601 pattern and the range
+    /// (`org.openehr.am.aom2.c_duration.adoc`: the combined `"PWD/|P0W..P50W|"`
+    /// form), plus the assumed value.
+    #[test]
+    fn temporal_range_and_pattern_both_carried() {
+        let node = opt14::CPrimitiveObject {
+            rm_type_name: "DV_DURATION".to_owned(),
+            occurrences: unbounded_occurrences(),
+            node_id: String::new(),
+            item: Some(Box::new(opt14::CPrimitive::CDuration(opt14::CDuration {
+                pattern: Some("PTH".to_owned()),
+                range: Some(opt14::Intervalofduration {
+                    lower_included: Some(true),
+                    upper_included: Some(true),
+                    lower_unbounded: false,
+                    upper_unbounded: false,
+                    lower: Some("PT0H".to_owned()),
+                    upper: Some("PT12H".to_owned()),
+                }),
+                assumed_value: Some("PT1H".to_owned()),
+            }))),
+        };
+        let CObject::CDuration(d) = map_primitive_object(&node) else {
+            panic!("expected a C_DURATION");
+        };
+        assert_eq!(d.pattern_constraint.as_deref(), Some("PTH"));
+        assert_eq!(d.constraint.len(), 1, "the range must be carried");
+        assert_eq!(d.assumed_value.map(|a| a.value), Some("PT1H".to_owned()));
+    }
+
+    /// Notes recorded during a walk land in the converted archetype's
+    /// `RESOURCE_DESCRIPTION.conversion_details`.
+    #[test]
+    fn notes_land_in_conversion_details() {
+        let mut notes = BTreeMap::new();
+        notes.insert("k".to_owned(), "v".to_owned());
+        let desc = minimal_description(notes);
+        assert_eq!(
+            desc.conversion_details
+                .as_ref()
+                .and_then(|m| m.get("k"))
+                .map(String::as_str),
+            Some("v")
+        );
+        assert!(
+            minimal_description(BTreeMap::new())
+                .conversion_details
+                .is_none(),
+            "an empty report stays absent"
+        );
+    }
+
+    fn test_cx() -> RootCx {
+        RootCx {
+            slot_num: 1,
+            next_ac: 1,
+            defined_acs: std::collections::BTreeSet::new(),
+            extra_terms: Vec::new(),
+            extra_bindings: Vec::new(),
+            notes: BTreeMap::new(),
+        }
     }
 
     /// The embedded OBSERVATION root is decomposed into its own source and the
