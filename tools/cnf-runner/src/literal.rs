@@ -46,7 +46,7 @@ pub enum Literal {
         hi: f64,
     },
     /// An ISO 8601 endpoint range `2020-01..2030-12` (dates, date-times,
-    /// times, or durations — the master17.4/DV_INTERVAL constraint ranges).
+    /// times, or durations — the master17.4/`DV_INTERVAL` constraint ranges).
     Iso8601Range {
         lo: String,
         hi: String,
@@ -65,12 +65,12 @@ pub enum Literal {
         code: String,
         rubric: Option<String>,
     },
-    /// An ordinal tuple `1|[local::at0005]` (integer head — DV_ORDINAL).
+    /// An ordinal tuple `1|[local::at0005]` (integer head — `DV_ORDINAL`).
     Ordinal {
         value: i64,
         symbol: Box<Literal>,
     },
-    /// A scale tuple `1.5|[local::at0005]` (real head — DV_SCALE).
+    /// A scale tuple `1.5|[local::at0005]` (real head — `DV_SCALE`).
     Scale {
         value: f64,
         symbol: Box<Literal>,
@@ -118,8 +118,8 @@ impl Literal {
             return Self::parse_list(t);
         }
         if let Some((value, symbol)) = t.split_once('|') {
-            // Ordinal tuple `1|[local::at0005]` (integer head — DV_ORDINAL);
-            // scale tuple `1.5|[local::at0005]` (real head — DV_SCALE).
+            // Ordinal tuple `1|[local::at0005]` (integer head — `DV_ORDINAL`);
+            // scale tuple `1.5|[local::at0005]` (real head — `DV_SCALE`).
             if let Ok(value) = value.trim().parse::<i64>() {
                 let symbol = Self::from_text(symbol)?;
                 return Ok(Self::Ordinal {
@@ -179,20 +179,17 @@ impl Literal {
             .split_once("..")
             .ok_or_else(|| LiteralError::new(t, "range must be a..b"))?;
         let (lo_raw, hi_raw) = (lo_raw.trim(), hi_raw.trim());
-        let (lo, hi) = match (lo_raw.parse::<f64>(), hi_raw.parse::<f64>()) {
-            (Ok(lo), Ok(hi)) => (lo, hi),
-            _ => {
-                if units.is_none() && is_iso8601_lexeme(lo_raw) && is_iso8601_lexeme(hi_raw) {
-                    return Ok(Self::Iso8601Range {
-                        lo: lo_raw.to_owned(),
-                        hi: hi_raw.to_owned(),
-                    });
-                }
-                return Err(LiteralError::new(
-                    t,
-                    "range bounds must both be numbers or both ISO 8601 lexemes",
-                ));
+        let (Ok(lo), Ok(hi)) = (lo_raw.parse::<f64>(), hi_raw.parse::<f64>()) else {
+            if units.is_none() && is_iso8601_lexeme(lo_raw) && is_iso8601_lexeme(hi_raw) {
+                return Ok(Self::Iso8601Range {
+                    lo: lo_raw.to_owned(),
+                    hi: hi_raw.to_owned(),
+                });
             }
+            return Err(LiteralError::new(
+                t,
+                "range bounds must both be numbers or both ISO 8601 lexemes",
+            ));
         };
         match units {
             Some(units) if !units.is_empty() => Ok(Self::UnitRange {
