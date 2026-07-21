@@ -1,0 +1,5 @@
+cnf.defect.source_missing:
+  source: fixtures/this/file/is/not/there.json
+  format: canonical-json
+  validity: { verdict: valid }
+  provenance: "seeded defect: source path resolves nowhere"

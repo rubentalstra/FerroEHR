@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.invalid.multiple_elements</value></template_id>
+  <template_id><value>cnf.invalid.multiple_elements.second</value></template_id>
+  <concept>two template_id elements where the upper bound is 1</concept>
+</template>

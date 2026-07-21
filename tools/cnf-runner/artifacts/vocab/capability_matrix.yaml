@@ -1,0 +1,19 @@
+# The machine-readable capability -> family -> tier matrix (the Profiles
+# book's capability x tier tables as data; the verdict machinery's input).
+# Seeded with the capabilities the pilot encodings bear verdicts for plus the
+# SEC-BASIC family; the full Profiles-book matrix lands with the catalogue
+# authoring.
+EhrOperations: { family: Platform, tier: CORE, required: true, source: "CNF profiles (Platform profile, EHR capability)" }
+CompositionOps: { family: Platform, tier: CORE, required: true, source: "CNF profiles (Platform profile, COMPOSITION capability)" }
+ChangeSets: { family: Platform, tier: CORE, required: true, source: "CNF profiles (Platform profile, CONTRIBUTION change sets)" }
+Versioning: { family: Platform, tier: CORE, required: true, source: "CNF profiles (Platform profile, version control); RM common (change_control)" }
+Adl14OptProvisioning: { family: Platform, tier: CORE, required: true, source: "CNF profiles (Platform profile, ADL 1.4 template provisioning)" }
+ArchetypeValidation: { family: Platform, tier: CORE, required: true, source: "CNF profiles (Platform profile, archetype-based validation)" }
+AqlBasic: { family: Platform, tier: STANDARD, required: true, source: "CNF profiles (Platform profile, AQL querying); QUERY AQL 1.1" }
+SimplifiedFormats: { family: Platform, tier: OPTIONS, required: false, source: "ITS-REST simplified_formats (SHOULD-level: OPTIONS profile, never gates CORE/STANDARD)" }
+Signing: { family: Platform, tier: STANDARD, required: false, source: "CNF profiles (Non-Functional, Signing); RM common (ORIGINAL_VERSION.signature)" }
+EhrDemographicSeparation: { family: Security, tier: SEC-BASIC, required: true, source: "RM ehr (EHR_STATUS.subject external refs / PARTY_SELF); 2017 schedule Security BASIC lineage" }
+AuthenticatedAccess: { family: Security, tier: SEC-BASIC, required: true, source: "ITS-REST overview Requests_and_responses (HTTP status codes: 401)" }
+AuthorizationSeparation: { family: Security, tier: SEC-BASIC, required: true, source: "ITS-REST overview Requests_and_responses (HTTP status codes: 403)" }
+AuditAccountability: { family: Security, tier: SEC-BASIC, required: true, source: "RM common (change_control commit_audit); ITS-REST overview (openehr-audit-details; time_committed is server-set)" }
+AnonymousEhrs: { family: Security, tier: SEC-BASIC, required: true, source: "CNF profiles (Non-Functional: anonymous EHR capability)" }

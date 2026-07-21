@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openehr:cnf:schema:capability-matrix:0.1.0",
+  "title": "CNF 2.0 capability matrix",
+  "description": "The machine-readable capability→family→tier matrix — the Profiles book's capability×tier tables as data, the input the verdict machinery computes from.",
+  "type": "object",
+  "minProperties": 1,
+  "propertyNames": {
+    "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+  },
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "family",
+      "tier",
+      "required"
+    ],
+    "properties": {
+      "family": {
+        "enum": [
+          "Platform",
+          "Enterprise",
+          "Security"
+        ]
+      },
+      "tier": {
+        "enum": [
+          "CORE",
+          "STANDARD",
+          "OPTIONS",
+          "SEC-BASIC",
+          "D",
+          "M",
+          "X"
+        ]
+      },
+      "required": {
+        "type": "boolean"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "oneOf": [
+      {
+        "properties": {
+          "family": {
+            "const": "Platform"
+          },
+          "tier": {
+            "enum": [
+              "CORE",
+              "STANDARD",
+              "OPTIONS"
+            ]
+          }
+        }
+      },
+      {
+        "properties": {
+          "family": {
+            "const": "Security"
+          },
+          "tier": {
+            "enum": [
+              "SEC-BASIC"
+            ]
+          }
+        }
+      },
+      {
+        "properties": {
+          "family": {
+            "const": "Enterprise"
+          },
+          "tier": {
+            "enum": [
+              "D",
+              "M",
+              "X"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

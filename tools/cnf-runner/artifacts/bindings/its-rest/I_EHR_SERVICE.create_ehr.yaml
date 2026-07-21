@@ -1,0 +1,30 @@
+# Wire realization of I_EHR_SERVICE.create_ehr for ITS-REST 1.1.0.
+# Sources: specifications/operations/ehr_create.yaml (+ ehr_create_with_id),
+# responses/201_EHR.yaml, 409_EHR.yaml; overview Requests_and_responses.
+sm_operation: I_EHR_SERVICE.create_ehr
+its: its-rest
+applies: { its_rest: ">=1.0.0" }
+request:
+  method: POST
+  path: /ehr
+  body: ehr_status?                       # optional EHR_STATUS (ehr_create.yaml)
+  headers:
+    Prefer: "return=representation"       # default is return=minimal (Prefer.yaml); ask for the body
+formats: [canonical-json, canonical-xml]  # EHR resource is canonical-only (Accept_canonical)
+outcomes:
+  created:
+    status: 201                           # 201_EHR.yaml
+    headers: { ETag: present, Location: present }
+    body: prefer_conditional              # oneOf [Ehr | {uid} | empty] per Prefer
+  already_exists:
+    status: 409                           # 409_EHR.yaml (subject/ehr_id conflict)
+  validation_failed:
+    status: 400                           # AMB-2: no 422 enumerated on EHR create
+captures:
+  ehr_id:
+    from: body "ehr_id.value"
+    fallback: header Location last-segment
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [ehr_id, system_id, time_created, ehr_status/uid, ehr_access]

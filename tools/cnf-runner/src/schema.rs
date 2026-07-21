@@ -1,0 +1,576 @@
+//! Deterministic JSON-Schema emission for the five schedule-artifact
+//! families (the set the upstream U1 proposal ships).
+//!
+//! The published schema files are the norm; this module is their single
+//! source. Emission is byte-deterministic: fixed insertion order (via
+//! `serde_json`'s `preserve_order`), two-space pretty printing, trailing
+//! newline. Every closed vocabulary in a schema derives from the compiled
+//! enums in [`crate::vocab`], so schema and reference implementation cannot
+//! drift. Draft: JSON Schema 2020-12. `$id`s are versioned URNs pending the
+//! upstream repository's canonical URLs.
+
+use serde::Serialize;
+use serde_json::{Value, json};
+
+use crate::model::vocab_files::{BODY_SELECTOR_TOKENS, HEADER_MATCHER_FORMS};
+use crate::vocab::{
+    CaseKind, CaseStatus, Component, CorpusFormat, Disposition, FormatName, HttpMethod, Iteration,
+    OutcomeKind, PlaceholderPolicy, ServerState, Tier,
+};
+
+/// The schema version stamped into every `$id` (bumps with the schedule
+/// release, independently of the product version).
+pub const SCHEMA_VERSION: &str = "0.1.0";
+
+const DRAFT: &str = "https://json-schema.org/draft/2020-12/schema";
+
+/// Serde token of one enum variant.
+fn token<T: Serialize>(v: &T) -> Value {
+    match serde_json::to_value(v) {
+        Ok(Value::String(s)) => Value::String(s),
+        // Unreachable for the vocab enums (all serialize to strings); a
+        // non-string token would be a defect in this module, surfaced by the
+        // emission tests, never silently emitted.
+        _ => Value::Null,
+    }
+}
+
+/// Serde tokens of a whole vocabulary.
+fn tokens<T: Serialize>(all: &[T]) -> Value {
+    Value::Array(all.iter().map(token).collect())
+}
+
+fn urn(name: &str) -> String {
+    format!("urn:openehr:cnf:schema:{name}:{SCHEMA_VERSION}")
+}
+
+const CASE_ID_PATTERN: &str = "^\\S+$";
+const SM_OPERATION_PATTERN: &str = "^I_[A-Z0-9_]+\\.[a-z][a-z0-9_]*$";
+const IDENT_PATTERN: &str = "^[A-Za-z_][A-Za-z0-9_]*$";
+const CORPUS_KEY_PATTERN: &str = "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$";
+const AMBIGUITY_ID_PATTERN: &str = "^AMB-[0-9]+$";
+const OPTION_TAG_PATTERN: &str = "^[a-z0-9_-]+$";
+
+fn string_array(item_pattern: Option<&str>) -> Value {
+    match item_pattern {
+        Some(p) => json!({ "type": "array", "items": { "type": "string", "pattern": p } }),
+        None => json!({ "type": "array", "items": { "type": "string" } }),
+    }
+}
+
+fn requires_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "server": { "enum": tokens(ServerState::ALL) },
+            "templates": string_array(Some(CORPUS_KEY_PATTERN)),
+            "ehr": { "oneOf": [
+                { "const": "none" },
+                { "type": "object", "additionalProperties": false,
+                  "required": ["commits"],
+                  "properties": { "commits": { "enum": ["none", "any"] } } }
+            ] },
+            "directory": { "oneOf": [
+                { "const": "none" },
+                { "type": "string", "pattern": CORPUS_KEY_PATTERN }
+            ] },
+            "commit": string_array(Some(CORPUS_KEY_PATTERN)),
+            "instances": { "type": "object",
+                "propertyNames": { "pattern": IDENT_PATTERN },
+                "additionalProperties": { "$ref": "#/$defs/requires" } }
+        }
+    })
+}
+
+fn parameters_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["iteration"],
+        "properties": {
+            "iteration": { "enum": tokens(Iteration::ALL) },
+            "matrix": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["columns"],
+                "properties": {
+                    "columns": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                    "rows": { "type": "array", "items": { "type": "array" } },
+                    "rows_from": { "type": "string" }
+                }
+            },
+            "fixture_set": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["data_set", "expected"],
+                    "properties": {
+                        "data_set": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+                        "expected": { "enum": tokens(OutcomeKind::ALL) },
+                        "defect": { "type": "string" },
+                        "spec_ref": { "type": "string" }
+                    }
+                }
+            }
+        }
+    })
+}
+
+fn flow_step_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step", "call", "expect"],
+        "properties": {
+            "step": { "type": "integer", "minimum": 1 },
+            "call": { "type": "string", "minLength": 1 },
+            "on": { "type": "string", "pattern": IDENT_PATTERN },
+            "variant": { "type": "string" },
+            "format": { "enum": tokens(FormatName::ALL) },
+            "with": { "type": "object" },
+            "expect": { "oneOf": [
+                { "enum": tokens(OutcomeKind::ALL) },
+                { "const": "${fixture.expected}" }
+            ] },
+            "capture": { "type": "object",
+                "propertyNames": { "pattern": IDENT_PATTERN },
+                "additionalProperties": { "type": "string" } },
+            "assert": { "type": "array", "items": { "$ref": "#/$defs/assertion" } }
+        }
+    })
+}
+
+fn assertion_def() -> Value {
+    // The schema pins the closed assertion-form vocabulary; per-form field
+    // shapes are enforced by the typed model (richer than JSON Schema can
+    // express — predicate exclusivity, reference grammar, aggregate rules).
+    json!({
+        "type": "object",
+        "required": ["assert"],
+        "properties": {
+            "assert": { "enum": [
+                "instance_of", "field", "equivalent", "version",
+                "result_set", "unique", "returns", "message_exemplar", "state"
+            ] }
+        }
+    })
+}
+
+/// `schedule/**` case cores (§ case-core contract).
+#[must_use]
+pub fn case_core_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("case-core"),
+        "title": "CNF 2.0 case core",
+        "description": "One protocol-neutral test case (the Abstract Test Suite unit). Wire realization lives in the operation bindings; cases speak SM operations and outcome kinds only.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "component", "test_purpose", "description", "spec_refs", "capabilities"],
+        "properties": {
+            "id": { "type": "string", "pattern": CASE_ID_PATTERN },
+            "kind": { "enum": tokens(CaseKind::ALL) },
+            "status": { "enum": tokens(CaseStatus::ALL), "default": "active" },
+            "component": { "enum": tokens(Component::ALL) },
+            "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
+            "rm_class": { "type": "string" },
+            "test_purpose": { "type": "string", "minLength": 1 },
+            "description": { "type": "string", "minLength": 1 },
+            "spec_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "applies": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "rm": { "type": "string" }, "base": { "type": "string" },
+                    "am": { "type": "string" }, "aql": { "type": "string" },
+                    "its_rest": { "type": "string" }, "term": { "type": "string" }
+                }
+            },
+            "guards": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+            "capabilities": string_array(Some(IDENT_PATTERN)),
+            "exercises": string_array(Some(IDENT_PATTERN)),
+            "profiles": { "type": "array", "items": { "enum": tokens(Tier::ALL) } },
+            "option": { "type": "string", "pattern": OPTION_TAG_PATTERN },
+            "formats": { "type": "array", "items": { "enum": tokens(FormatName::ALL) } },
+            "requires": { "$ref": "#/$defs/requires" },
+            "parameters": { "$ref": "#/$defs/parameters" },
+            "flow": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/flowStep" } },
+            "constraint_context": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["template", "path"],
+                "properties": {
+                    "template": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+                    "path": { "type": "string", "minLength": 1 }
+                }
+            },
+            "decision_table": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["columns", "rows"],
+                "properties": {
+                    "columns": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                    "rows": { "type": "array", "minItems": 1, "items": { "type": "array" } }
+                }
+            },
+            "postconditions": { "type": "array", "items": { "$ref": "#/$defs/assertion" } },
+            "verified_by": string_array(Some(CASE_ID_PATTERN)),
+            "ambiguities": string_array(Some(AMBIGUITY_ID_PATTERN)),
+            "data_sets": string_array(Some(CORPUS_KEY_PATTERN))
+        },
+        "allOf": [
+            { "if": { "properties": { "kind": { "const": "functional" } } },
+              "then": { "required": ["sm_operation", "flow"] } },
+            { "if": { "properties": { "kind": { "const": "content" } } },
+              "then": { "required": ["rm_class", "constraint_context", "decision_table"] } }
+        ],
+        "$defs": {
+            "requires": requires_def(),
+            "parameters": parameters_def(),
+            "flowStep": flow_step_def(),
+            "assertion": assertion_def()
+        }
+    })
+}
+
+/// `bindings/<its>/**` operation bindings (§ wire layer).
+#[must_use]
+pub fn operation_binding_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("operation-binding"),
+        "title": "CNF 2.0 operation binding",
+        "description": "Per-ITS wire realization of one SM operation: request construction, outcome kind → wire expectation, logical capture → wire source. Every mapping cites its OAS source.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sm_operation", "its", "request", "outcomes"],
+        "properties": {
+            "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
+            "its": { "enum": ["its-rest"] },
+            "applies": { "type": "object" },
+            "request": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["method", "path"],
+                "properties": {
+                    "method": { "enum": tokens(HttpMethod::ALL) },
+                    "path": { "type": "string", "pattern": "^/" },
+                    "body": { "oneOf": [ { "type": "string" }, { "type": "object" } ] },
+                    "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+                }
+            },
+            "formats": { "type": "array", "items": { "enum": tokens(FormatName::ALL) } },
+            "format_headers": {
+                "type": "object",
+                "propertyNames": { "enum": tokens(FormatName::ALL) },
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": { "type": "string" }
+                }
+            },
+            "outcomes": {
+                "type": "object",
+                "minProperties": 1,
+                "propertyNames": { "enum": tokens(OutcomeKind::ALL) },
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["status"],
+                    "properties": {
+                        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+                        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+                        "body": { "enum": BODY_SELECTOR_TOKENS }
+                    }
+                }
+            },
+            "captures": {
+                "type": "object",
+                "propertyNames": { "pattern": IDENT_PATTERN },
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["from"],
+                    "properties": {
+                        "from": { "type": "string" },
+                        "strip": { "enum": ["weak-quotes"] },
+                        "transform": { "enum": ["root-uid"] },
+                        "fallback": { "type": "string" }
+                    }
+                }
+            },
+            "server_assigned": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+    })
+}
+
+/// `vocab/outcomes.yaml` — all kinds required, none extra.
+#[must_use]
+pub fn outcomes_schema() -> Value {
+    let required: Vec<Value> = OutcomeKind::ALL
+        .iter()
+        .map(|k| Value::String(k.token().to_owned()))
+        .collect();
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("outcomes"),
+        "title": "CNF 2.0 outcome-kind vocabulary",
+        "description": "The closed outcome taxonomy. Cases speak ONLY these kinds; bindings map each kind to wire per operation. Extension only by schedule release.",
+        "type": "object",
+        "propertyNames": { "enum": tokens(OutcomeKind::ALL) },
+        "required": required,
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["class", "meaning"],
+            "properties": {
+                "class": { "enum": ["success", "error"] },
+                "meaning": { "type": "string", "minLength": 1 }
+            }
+        }
+    })
+}
+
+/// `vocab/selectors.yaml` — selector/matcher vocabularies + ignore-sets.
+#[must_use]
+pub fn selectors_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("selectors"),
+        "title": "CNF 2.0 selector vocabulary",
+        "description": "The closed body-selector and header-matcher vocabularies, plus the named ignore-set registry the `equivalent` assertion resolves (normative, never runner judgment).",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["body_selectors", "header_matchers", "ignore_sets"],
+        "properties": {
+            "body_selectors": { "const": BODY_SELECTOR_TOKENS },
+            "header_matchers": { "const": HEADER_MATCHER_FORMS },
+            "ignore_sets": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["server_assigned", "ctx_defaults"],
+                "properties": {
+                    "server_assigned": { "$ref": "#/$defs/ignoreSet" },
+                    "ctx_defaults": { "$ref": "#/$defs/ignoreSet" }
+                }
+            }
+        },
+        "$defs": {
+            "ignoreSet": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["source"],
+                "properties": {
+                    "paths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                    "per_binding": { "type": "boolean" },
+                    "source": { "type": "string", "minLength": 1 }
+                }
+            }
+        }
+    })
+}
+
+/// `vocab/capability_matrix.yaml` — capability → family/tier/required, with
+/// family-scoped tiers enforced in-schema.
+#[must_use]
+pub fn capability_matrix_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("capability-matrix"),
+        "title": "CNF 2.0 capability matrix",
+        "description": "The machine-readable capability→family→tier matrix — the Profiles book's capability×tier tables as data, the input the verdict machinery computes from.",
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "pattern": IDENT_PATTERN },
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["family", "tier", "required"],
+            "properties": {
+                "family": { "enum": ["Platform", "Enterprise", "Security"] },
+                "tier": { "enum": tokens(Tier::ALL) },
+                "required": { "type": "boolean" },
+                "source": { "type": "string" }
+            },
+            "oneOf": [
+                { "properties": { "family": { "const": "Platform" },
+                                  "tier": { "enum": ["CORE", "STANDARD", "OPTIONS"] } } },
+                { "properties": { "family": { "const": "Security" },
+                                  "tier": { "enum": ["SEC-BASIC"] } } },
+                { "properties": { "family": { "const": "Enterprise" },
+                                  "tier": { "enum": ["D", "M", "X"] } } }
+            ]
+        }
+    })
+}
+
+/// `corpus/MANIFEST.yaml` — governed corpus entries.
+#[must_use]
+pub fn corpus_manifest_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("corpus-manifest"),
+        "title": "CNF 2.0 corpus manifest",
+        "description": "Every fixture and generated set is a manifest entry: adjudicated verdict + defect live here (never only in a filename); generated sets are committed seeded deterministic recipes.",
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "pattern": CORPUS_KEY_PATTERN },
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["format", "validity", "provenance"],
+            "oneOf": [
+                { "required": ["source"], "not": { "required": ["generated_by"] } },
+                { "required": ["generated_by"], "not": { "required": ["source"] } }
+            ],
+            "properties": {
+                "source": { "type": "string", "minLength": 1 },
+                "generated_by": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["recipe", "digest"],
+                    "properties": {
+                        "recipe": { "type": "string", "pattern": IDENT_PATTERN },
+                        "digest": { "type": "string", "minLength": 1 }
+                    }
+                },
+                "format": { "enum": tokens(CorpusFormat::ALL) },
+                "rm_versions": { "type": "array", "items": { "type": "string" } },
+                "validity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["verdict"],
+                    "properties": {
+                        "verdict": { "enum": ["valid", "invalid"] },
+                        "defect": { "type": "string", "minLength": 1 },
+                        "spec_ref": { "type": "string", "minLength": 1 }
+                    },
+                    "if": { "properties": { "verdict": { "const": "invalid" } } },
+                    "then": { "required": ["verdict", "defect", "spec_ref"] }
+                },
+                "placeholders": {
+                    "type": "object",
+                    "additionalProperties": { "enum": tokens(PlaceholderPolicy::ALL) }
+                },
+                "provenance": { "type": "string", "minLength": 1 },
+                "views": {
+                    "type": "object",
+                    "propertyNames": { "pattern": IDENT_PATTERN },
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["select"],
+                        "properties": {
+                            "select": { "type": "string", "minLength": 1 },
+                            "where": { "type": "string" },
+                            "order_by": { "type": "string" }
+                        }
+                    }
+                },
+                "recipes": {
+                    "type": "object",
+                    "propertyNames": { "pattern": IDENT_PATTERN },
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["digest"],
+                        "properties": { "digest": { "type": "string", "minLength": 1 } }
+                    }
+                }
+            }
+        }
+    })
+}
+
+/// `registers/ambiguities.yaml` — the ambiguity register.
+#[must_use]
+pub fn ambiguity_register_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("ambiguity-register"),
+        "title": "CNF 2.0 ambiguity register",
+        "description": "Every entry a real, verified spec divergence or silence with the normative handling a runner must apply. A runner that resolves an ambiguity privately is non-conformant to the schedule.",
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "pattern": AMBIGUITY_ID_PATTERN },
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ambiguity", "source", "handling", "disposition"],
+            "properties": {
+                "ambiguity": { "type": "string", "minLength": 1 },
+                "source": { "type": "string", "minLength": 1 },
+                "handling": { "type": "string", "minLength": 1 },
+                "disposition": { "enum": tokens(Disposition::ALL) },
+                "options": { "type": "array", "items": { "type": "string", "pattern": OPTION_TAG_PATTERN } }
+            },
+            "allOf": [
+                { "if": { "properties": { "disposition": { "const": "option_select" } } },
+                  "then": { "required": ["ambiguity", "source", "handling", "disposition", "options"],
+                            "properties": { "options": { "minItems": 2 } } },
+                  "else": { "properties": { "options": { "maxItems": 0 } } } }
+            ]
+        }
+    })
+}
+
+/// The full published set: (file name, schema document).
+#[must_use]
+pub fn emit_all() -> Vec<(&'static str, Value)> {
+    vec![
+        ("case-core.schema.json", case_core_schema()),
+        ("operation-binding.schema.json", operation_binding_schema()),
+        ("outcomes.schema.json", outcomes_schema()),
+        ("selectors.schema.json", selectors_schema()),
+        ("capability-matrix.schema.json", capability_matrix_schema()),
+        ("corpus-manifest.schema.json", corpus_manifest_schema()),
+        (
+            "ambiguity-register.schema.json",
+            ambiguity_register_schema(),
+        ),
+    ]
+}
+
+/// Render a schema document to its canonical published text
+/// (two-space pretty print + trailing newline).
+#[must_use]
+pub fn render(schema: &Value) -> String {
+    let mut text = serde_json::to_string_pretty(schema).unwrap_or_default();
+    text.push('\n');
+    text
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::panic)] // test assertions
+mod tests {
+    use super::*;
+
+    #[test]
+    fn every_schema_compiles_under_2020_12() {
+        for (name, schema) in emit_all() {
+            jsonschema::validator_for(&schema)
+                .unwrap_or_else(|e| panic!("{name} does not compile: {e}"));
+        }
+    }
+
+    #[test]
+    fn rendering_is_deterministic() {
+        let a = render(&case_core_schema());
+        let b = render(&case_core_schema());
+        assert_eq!(a, b);
+        assert!(a.ends_with('\n'));
+    }
+
+    #[test]
+    fn no_null_tokens_leak() {
+        for (name, schema) in emit_all() {
+            let text = render(&schema);
+            assert!(
+                !text.contains(": null,"),
+                "{name} leaked a null vocabulary token"
+            );
+        }
+    }
+}

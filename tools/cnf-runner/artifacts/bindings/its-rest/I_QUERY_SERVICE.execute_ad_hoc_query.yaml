@@ -1,0 +1,24 @@
+# Wire realization of I_QUERY_SERVICE.execute_ad_hoc_query for ITS-REST 1.1.0.
+# Sources: specifications/operations query_execute (POST /query/aql),
+# responses/200_Query.yaml, 400_Query.yaml, 408_Query.yaml.
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+its: its-rest
+request:
+  method: POST                            # spec-recommended over GET for parameterized queries
+  path: /query/aql
+  body:
+    q: "${q}"
+    query_parameters: "${query_parameters?}"
+    offset: "${offset?}"
+    fetch: "${fetch?}"
+  headers:
+    Content-Type: application/json
+    Accept: application/json
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200                           # 200_Query.yaml
+    headers: { ETag: "present?" }
+    body: result_set_body
+  invalid_query: { status: 400 }          # 400_Query.yaml
+  timeout: { status: 408 }                # 408_Query.yaml

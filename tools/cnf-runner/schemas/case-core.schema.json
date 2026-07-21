@@ -1,0 +1,533 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openehr:cnf:schema:case-core:0.1.0",
+  "title": "CNF 2.0 case core",
+  "description": "One protocol-neutral test case (the Abstract Test Suite unit). Wire realization lives in the operation bindings; cases speak SM operations and outcome kinds only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "kind",
+    "component",
+    "test_purpose",
+    "description",
+    "spec_refs",
+    "capabilities"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^\\S+$"
+    },
+    "kind": {
+      "enum": [
+        "functional",
+        "content"
+      ]
+    },
+    "status": {
+      "enum": [
+        "active",
+        "retired",
+        "draft"
+      ],
+      "default": "active"
+    },
+    "component": {
+      "enum": [
+        "EHR",
+        "EHR_COMPOSITION",
+        "EHR_CONTRIBUTION",
+        "EHR_DIRECTORY",
+        "DEFINITION_ADL14",
+        "DEFINITION_ADL2",
+        "DEFINITION_QUERY",
+        "QUERY",
+        "DEMOGRAPHIC",
+        "ADMIN",
+        "MESSAGING",
+        "CONTENT",
+        "SIMPLIFIED_FORMATS",
+        "PERFORMANCE"
+      ]
+    },
+    "sm_operation": {
+      "type": "string",
+      "pattern": "^I_[A-Z0-9_]+\\.[a-z][a-z0-9_]*$"
+    },
+    "rm_class": {
+      "type": "string"
+    },
+    "test_purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "spec_refs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "applies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rm": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "am": {
+          "type": "string"
+        },
+        "aql": {
+          "type": "string"
+        },
+        "its_rest": {
+          "type": "string"
+        },
+        "term": {
+          "type": "string"
+        }
+      }
+    },
+    "guards": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      }
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "CORE",
+          "STANDARD",
+          "OPTIONS",
+          "SEC-BASIC",
+          "D",
+          "M",
+          "X"
+        ]
+      }
+    },
+    "option": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]+$"
+    },
+    "formats": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "canonical-json",
+          "canonical-xml",
+          "wt-flat",
+          "wt-structured",
+          "wt"
+        ]
+      }
+    },
+    "requires": {
+      "$ref": "#/$defs/requires"
+    },
+    "parameters": {
+      "$ref": "#/$defs/parameters"
+    },
+    "flow": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/flowStep"
+      }
+    },
+    "constraint_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "template",
+        "path"
+      ],
+      "properties": {
+        "template": {
+          "type": "string",
+          "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "decision_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "columns",
+        "rows"
+      ],
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array"
+          }
+        }
+      }
+    },
+    "postconditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/assertion"
+      }
+    },
+    "verified_by": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^\\S+$"
+      }
+    },
+    "ambiguities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^AMB-[0-9]+$"
+      }
+    },
+    "data_sets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "functional"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sm_operation",
+          "flow"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "content"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "rm_class",
+          "constraint_context",
+          "decision_table"
+        ]
+      }
+    }
+  ],
+  "$defs": {
+    "requires": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "server": {
+          "enum": [
+            "empty",
+            "any"
+          ]
+        },
+        "templates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+          }
+        },
+        "ehr": {
+          "oneOf": [
+            {
+              "const": "none"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "commits"
+              ],
+              "properties": {
+                "commits": {
+                  "enum": [
+                    "none",
+                    "any"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "directory": {
+          "oneOf": [
+            {
+              "const": "none"
+            },
+            {
+              "type": "string",
+              "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+            }
+          ]
+        },
+        "commit": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+          }
+        },
+        "instances": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/requires"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iteration"
+      ],
+      "properties": {
+        "iteration": {
+          "enum": [
+            "reset_per_row",
+            "single_pass"
+          ]
+        },
+        "matrix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "columns"
+          ],
+          "properties": {
+            "columns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            },
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "array"
+              }
+            },
+            "rows_from": {
+              "type": "string"
+            }
+          }
+        },
+        "fixture_set": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "data_set",
+              "expected"
+            ],
+            "properties": {
+              "data_set": {
+                "type": "string",
+                "pattern": "^[a-z0-9_-]+(\\.[a-z0-9_-]+)*$"
+              },
+              "expected": {
+                "enum": [
+                  "created",
+                  "ok",
+                  "ok_empty",
+                  "updated",
+                  "deleted",
+                  "stored",
+                  "already_exists",
+                  "not_found",
+                  "version_not_found",
+                  "precondition_failed",
+                  "precondition_missing",
+                  "validation_failed",
+                  "template_not_found",
+                  "template_mismatch",
+                  "missing_template_id",
+                  "already_deleted",
+                  "conflict",
+                  "not_acceptable",
+                  "unsupported_media",
+                  "invalid_query",
+                  "timeout"
+                ]
+              },
+              "defect": {
+                "type": "string"
+              },
+              "spec_ref": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "flowStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step",
+        "call",
+        "expect"
+      ],
+      "properties": {
+        "step": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "call": {
+          "type": "string",
+          "minLength": 1
+        },
+        "on": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "variant": {
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "canonical-json",
+            "canonical-xml",
+            "wt-flat",
+            "wt-structured",
+            "wt"
+          ]
+        },
+        "with": {
+          "type": "object"
+        },
+        "expect": {
+          "oneOf": [
+            {
+              "enum": [
+                "created",
+                "ok",
+                "ok_empty",
+                "updated",
+                "deleted",
+                "stored",
+                "already_exists",
+                "not_found",
+                "version_not_found",
+                "precondition_failed",
+                "precondition_missing",
+                "validation_failed",
+                "template_not_found",
+                "template_mismatch",
+                "missing_template_id",
+                "already_deleted",
+                "conflict",
+                "not_acceptable",
+                "unsupported_media",
+                "invalid_query",
+                "timeout"
+              ]
+            },
+            {
+              "const": "${fixture.expected}"
+            }
+          ]
+        },
+        "capture": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "assert": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/assertion"
+          }
+        }
+      }
+    },
+    "assertion": {
+      "type": "object",
+      "required": [
+        "assert"
+      ],
+      "properties": {
+        "assert": {
+          "enum": [
+            "instance_of",
+            "field",
+            "equivalent",
+            "version",
+            "result_set",
+            "unique",
+            "returns",
+            "message_exemplar",
+            "state"
+          ]
+        }
+      }
+    }
+  }
+}
