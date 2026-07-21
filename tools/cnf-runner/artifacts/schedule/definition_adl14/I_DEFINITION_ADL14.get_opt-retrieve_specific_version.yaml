@@ -1,0 +1,34 @@
+# Official master04 case: retrieve a specific (non-latest) version of a
+# versioned OPT. A full/versioned template_id addresses a specific version
+# (parameters/path/template_id.yaml). Versioning follows AMB-4
+# (option: adl14-duplicate-versioned).
+id: I_DEFINITION_ADL14.get_opt-retrieve_specific_version
+kind: functional
+component: DEFINITION_ADL14
+sm_operation: I_DEFINITION_ADL14.get_opt
+capabilities: [Adl14OptProvisioning]
+profiles: [CORE]
+option: adl14-duplicate-versioned
+test_purpose: "Retrieving a versioned OPT by a specific (non-latest) version returns exactly that version."
+description: "retrieve a specific version (not last) of versioned OPT"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
+  - "CNF platform_test_schedule master04 §get_opt-retrieve_specific_version"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }              # OPTs with more than one version loaded by the flow below
+data_sets: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]
+flow:
+  - step: 1
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.versioned.v1}" }
+    expect: created
+  - step: 2
+    call: upload_opt
+    with: { opt: "${ds:cnf.opt.versioned.v2}" }
+    expect: created
+  - step: 3
+    call: get_opt
+    with: { template_id: "cnf.versioned.v1" }   # full/versioned template_id -> the requested (non-latest) version
+    expect: ok                           # "the correct OPT will be returned, and will be the requested version"
+    assert:
+      - { assert: equivalent, to: "${ds:cnf.opt.versioned.v1}" }

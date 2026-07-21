@@ -71,7 +71,7 @@ fn requires_def() -> Value {
                   "required": ["commits"],
                   "properties": { "commits": { "enum": ["none", "any"] } } }
             ] },
-            "directory": { "oneOf": [
+            "directory": { "anyOf": [
                 { "const": "none" },
                 { "type": "string", "pattern": CORPUS_KEY_PATTERN }
             ] },
@@ -152,7 +152,7 @@ fn assertion_def() -> Value {
         "required": ["assert"],
         "properties": {
             "assert": { "enum": [
-                "instance_of", "field", "equivalent", "version",
+                "instance_of", "field", "equivalent", "version", "signature",
                 "result_set", "unique", "returns", "message_exemplar", "state"
             ] }
         }
@@ -246,11 +246,26 @@ pub fn operation_binding_schema() -> Value {
         "description": "Per-ITS wire realization of one SM operation: request construction, outcome kind → wire expectation, logical capture → wire source. Every mapping cites its OAS source.",
         "type": "object",
         "additionalProperties": false,
-        "required": ["sm_operation", "its", "request", "outcomes"],
+        "required": ["sm_operation", "its"],
+        "oneOf": [
+            { "required": ["request", "outcomes"], "not": { "required": ["unrealized"] } },
+            { "required": ["unrealized"],
+              "not": { "anyOf": [ { "required": ["request"] }, { "required": ["outcomes"] } ] } }
+        ],
         "properties": {
             "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
             "its": { "enum": ["its-rest"] },
             "applies": { "type": "object" },
+            "unrealized": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["reason", "source", "ambiguity"],
+                "properties": {
+                    "reason": { "type": "string", "minLength": 1 },
+                    "source": { "type": "string", "minLength": 1 },
+                    "ambiguity": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN }
+                }
+            },
             "request": {
                 "type": "object",
                 "additionalProperties": false,
@@ -258,6 +273,7 @@ pub fn operation_binding_schema() -> Value {
                 "properties": {
                     "method": { "enum": tokens(HttpMethod::ALL) },
                     "path": { "type": "string", "pattern": "^/" },
+                    "query": { "type": "object", "additionalProperties": { "type": "string" } },
                     "body": { "oneOf": [ { "type": "string" }, { "type": "object" } ] },
                     "headers": { "type": "object", "additionalProperties": { "type": "string" } }
                 }
@@ -354,6 +370,19 @@ pub fn selectors_schema() -> Value {
                 "properties": {
                     "server_assigned": { "$ref": "#/$defs/ignoreSet" },
                     "ctx_defaults": { "$ref": "#/$defs/ignoreSet" }
+                }
+            },
+            "universal_outcomes": {
+                "type": "object",
+                "propertyNames": { "enum": tokens(OutcomeKind::ALL) },
+                "additionalProperties": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["status", "source"],
+                    "properties": {
+                        "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+                        "source": { "type": "string", "minLength": 1 }
+                    }
                 }
             }
         },

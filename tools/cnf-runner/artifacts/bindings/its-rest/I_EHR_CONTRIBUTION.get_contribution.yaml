@@ -1,0 +1,22 @@
+# Wire realization of I_EHR_CONTRIBUTION.get_contribution for ITS-REST 1.1.0.
+# Sources: specifications/operations/contribution_get.yaml (200/404),
+# responses/200_CONTRIBUTION.yaml, responses/404_CONTRIBUTION.yaml
+# ("404 ... when an EHR with ehr_id does not exist, or when a CONTRIBUTION with
+# contribution_uid does not exist").
+sm_operation: I_EHR_CONTRIBUTION.get_contribution
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/contribution/{contribution_uid}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # 200_CONTRIBUTION.yaml — the existing CONTRIBUTION
+    headers: { Content-Type: negotiated }
+    body: present
+  not_found:
+    status: 404                           # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR
+    body: error_loose                     # AMB-1
+# The CONTRIBUTION carries server-assigned identity + the server-set audit time
+# (contribution_create.yaml: "audit.time_committed: server will always set it").
+server_assigned: [uid, "audit.time_committed"]

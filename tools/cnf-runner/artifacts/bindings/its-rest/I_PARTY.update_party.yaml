@@ -1,0 +1,40 @@
+# Wire realization of I_PARTY.update_party for ITS-REST 1.1.0.
+# The SM I_PARTY.update_party(a_versioned_party_id, a_version) creates a new
+# PARTY version; realized as PUT /demographic/person/{uid_based_id} with the
+# HIER_OBJECT_ID form. The existing latest version_uid (the preceding_version_uid)
+# is REQUIRED in the If-Match header (person_update.yaml) — the same
+# preceding_version_uid realization as update_composition (AMB-3). PERSON is the
+# representative concrete PARTY subtype.
+# master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
+# operation is I_PARTY.update_party (the AMB-13 rule; see REQUIREMENTS.md).
+# Sources: specifications/operations/person_update.yaml (200/204/400/404/412/422),
+# responses/200_PERSON_updated.yaml, 204_version_updated.yaml, 412_PERSON.yaml,
+# 422.yaml; parameters/header/If-Match.yaml.
+sm_operation: I_PARTY.update_party
+its: its-rest
+request:
+  method: PUT
+  path: /demographic/person/{versioned_object_uid}
+  body: party
+  headers:
+    If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  updated:
+    status: 200                           # 204 when Prefer minimal (204_version_updated.yaml)
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+    body: prefer_conditional
+  precondition_failed:
+    status: 412                           # 412_PERSON.yaml — If-Match does not match latest
+    headers: { ETag: latest-version-uid }
+  precondition_missing: { status: 400 }   # If-Match absent -> SHOULD 400 (Requests_and_responses)
+  not_found: { status: 404 }              # unknown party (versioned_object_does_not_exist)
+  version_not_found: { status: 404 }      # unknown preceding version — same 404 family
+  validation_failed: { status: 422, body: error_loose }   # content_invalid / definition_unknown
+captures:
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [uid]

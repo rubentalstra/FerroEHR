@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.dt_coded_text_constraint_ref</value></template_id>
+  <concept>CONSTRAINT_REF/C_CODE_REFERENCE constraint context (DV_CODED_TEXT)</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

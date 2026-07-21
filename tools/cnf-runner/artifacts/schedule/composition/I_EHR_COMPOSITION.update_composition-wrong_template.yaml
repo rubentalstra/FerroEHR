@@ -1,0 +1,43 @@
+# Update an existing COMPOSITION with content referencing a DIFFERENT template
+# than the versioned object: negative, template_id mismatch. The update fails,
+# so the VERSIONED_OBJECT keeps its single version.
+id: I_EHR_COMPOSITION.update_composition-wrong_template
+kind: functional
+component: EHR_COMPOSITION
+sm_operation: I_EHR_COMPOSITION.update_composition
+capabilities: [Versioning]
+exercises: [CompositionOps]
+profiles: [CORE]
+test_purpose: >-
+  update_composition whose new content references a different template than the
+  versioned object is rejected with a template_id mismatch, leaving one version.
+description: "Update an existing COMPOSITION, referencing a different template"
+spec_refs:
+  - "SM openehr_platform §I_EHR_COMPOSITION.update_composition"
+  - "CNF platform_test_schedule master07 §update_composition-wrong_template"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event, cnf.opt.vitals]   # both OPTs exist on the server
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_event.wrong_template]
+flow:
+  - step: 1
+    call: create_composition
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    expect: created
+    capture:
+      preceding_version_uid: created.version_uid
+      versioned_object_uid: created.versioned_object_uid
+  - step: 2
+    call: update_composition
+    with:
+      ehr_id: "${ehr_id}"
+      composition: "${ds:cnf.composition.minimal_event.wrong_template}"   # references cnf.vitals, not cnf.minimal_event
+      versioned_object_uid: "${versioned_object_uid}"
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+    expect: template_mismatch             # "error related to the template_id mismatch"
+postconditions:
+  - { assert: version, count: 1 }        # the update failed: one version remains
+  - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
+ambiguities: [AMB-3]

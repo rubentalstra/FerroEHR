@@ -1,0 +1,32 @@
+# F.4 — list CONTRIBUTIONs after committing a CONTRIBUTION containing a
+# VERSION<EHR_STATUS>: the result is a list with one CONTRIBUTION containing an
+# EHR_STATUS.
+# ITS-REST 1.1.0 surfaces no list_contributions wire (unrealized binding,
+# AMB-22) — not-applicable with citation on this ITS.
+id: I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.list_contributions
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Listing CONTRIBUTIONs after an EHR_STATUS commit returns a list with one
+  CONTRIBUTION containing an EHR_STATUS.
+description: "List CONTRIBUTIONs post commit of CONTRIBUTION containing EHR_STATUS"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.list_contributions"
+  - "CNF platform_test_schedule master08 §list_contributions-ehr_containing_ehr_status"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: any }                  # mints ${ehr_id}
+  commit: [cnf.ehr_status.minimal]       # one CONTRIBUTION with a VERSION<EHR_STATUS>
+flow:
+  - step: 1
+    call: list_contributions
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+postconditions:
+  - assert: state
+    text: "The list has one CONTRIBUTION containing an EHR_STATUS."
+    verified_by: I_EHR_CONTRIBUTION.get_contribution-existing

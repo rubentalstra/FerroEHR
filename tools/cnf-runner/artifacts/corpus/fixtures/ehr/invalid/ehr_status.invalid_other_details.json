@@ -1,0 +1,16 @@
+{
+  "_type": "EHR_STATUS",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "ehr status"
+  },
+  "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+  "subject": {
+    "_type": "PARTY_SELF"
+  },
+  "is_queryable": true,
+  "is_modifiable": true,
+  "other_details": {
+    "_type": "ITEM_TREE"
+  }
+}

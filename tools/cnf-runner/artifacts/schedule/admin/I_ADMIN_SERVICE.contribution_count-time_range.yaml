@@ -1,0 +1,25 @@
+# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# The SM contribution_count carries an optional time_interval. Unrealized on
+# ITS-REST 1.1.0 (AMB-33).
+id: I_ADMIN_SERVICE.contribution_count-time_range
+kind: functional
+component: ADMIN
+sm_operation: I_ADMIN_SERVICE.contribution_count
+capabilities: [ActivityReport]
+exercises: [AdminApi]
+profiles: [OPTIONS]
+test_purpose: "Counting Contributions within an explicit time range returns the count for that interval only."
+description: "Count contributions within a time range"
+spec_refs:
+  - "SM openehr_platform §I_ADMIN_SERVICE.contribution_count"
+  - "CNF platform_test_schedule master12 §contribution_count"
+applies: { rm: ">=1.0.2" }
+guards:
+  - "ITS-REST Admin API is DEVELOPMENT-stage — admin.openapi.yaml carries x-status: DEVELOPMENT (not STABLE); guarded until the Admin API stabilises"
+requires: { ehr: { commits: any } }
+flow:
+  - step: 1
+    call: contribution_count
+    with: { a_service: "ehr", time_interval: "2020-01-01T00:00:00Z/2026-12-31T00:00:00Z" }
+    expect: ok
+ambiguities: [AMB-33]

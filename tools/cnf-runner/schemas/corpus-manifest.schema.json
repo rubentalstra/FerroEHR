@@ -67,7 +67,9 @@
           "canonical-xml",
           "wt-flat",
           "wt-structured",
-          "opt-xml"
+          "opt-xml",
+          "aql-text",
+          "adl2-text"
         ]
       },
       "rm_versions": {

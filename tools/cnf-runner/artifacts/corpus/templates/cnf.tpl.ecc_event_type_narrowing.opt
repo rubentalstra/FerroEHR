@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.ecc_event_type_narrowing</value></template_id>
+  <concept>C_OBJECT.rm_type_name on the HISTORY.events slot (EVENT / POINT_EVENT / INTERVAL_EVENT, per row)</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

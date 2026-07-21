@@ -1,0 +1,23 @@
+id: CONT-DV_CODED_TEXT-validate_local_codes
+kind: content
+component: CONTENT
+rm_class: DV_CODED_TEXT
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: "A committed DV_CODED_TEXT is accepted iff code_string and terminology_id are present and the terminology_id matches the C_CODE_PHRASE constraint (local codes)."
+description: "DV_CODED_TEXT against a local-codes C_CODE_PHRASE ([ABC, OPQ] @ local)"
+spec_refs:
+  - "CNF platform_test_schedule master17.2 \u00a7CONT-DV_CODED_TEXT-validate_local_codes"
+  - "RM data_types \u00a7DV_CODED_TEXT"
+  - "AM AOM1.4 \u00a7C_CODE_PHRASE"
+constraint_context:
+  template: cnf.tpl.dv_coded_text_c_code_phrase
+  path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
+decision_table:
+  columns: ["code_string", "terminology_id", "C_CODE_PHRASE.code_list", "C_CODE_PHRASE.terminology_id", "expected", "violates"]
+  rows:
+    - [null, null, "[ABC, OPQ]", "local", "rejected", ["rm_schema: code_string and terminology_id are both mandatory"]]
+    - ["ABC", null, "[ABC, OPQ]", "local", "rejected", ["rm_schema: terminology_id is mandatory"]]
+    - [null, "local", "[ABC, OPQ]", "local", "rejected", ["rm_schema: code_string is mandatory"]]
+    - ["ABC", "local", "[ABC, OPQ]", "local", "accepted", []]
+    - ["82272006", "SNOMED-CT", "[ABC, OPQ]", "local", "rejected", ["constraint(C_CODE_PHRASE.terminology_id): terminology_id does not match the constrained terminology"]]

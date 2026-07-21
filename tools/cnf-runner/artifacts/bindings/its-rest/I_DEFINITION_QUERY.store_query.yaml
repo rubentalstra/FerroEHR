@@ -1,0 +1,18 @@
+# Wire realization of I_DEFINITION_QUERY.store_query for ITS-REST 1.1.0.
+# Sources: specifications/operations/definition_query_store.yaml,
+# responses/200_StoredQuery_stored.yaml, 400.yaml.
+# Stored-query PUT success is the `stored` outcome kind (wire 200, not 201).
+sm_operation: I_DEFINITION_QUERY.store_query
+its: its-rest
+request:
+  method: PUT
+  path: /definition/query/{qualified_query_name}     # definition_query_store.yaml
+  body: aql_text
+  headers:
+    Content-Type: text/plain                          # ContentType_text.yaml (AQL body)
+    Accept: application/json                           # Accept_JSON.yaml
+outcomes:
+  stored: { status: 200 }                             # 200_StoredQuery_stored.yaml
+  validation_failed:
+    status: 400
+    body: error_loose                                 # AMB-1

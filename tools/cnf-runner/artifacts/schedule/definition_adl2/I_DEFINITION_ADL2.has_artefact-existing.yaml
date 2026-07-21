@@ -1,0 +1,30 @@
+# SM I_DEFINITION_ADL2.has_artefact positive: True when the artefact with the
+# given id exists. Realized via the list-by-filter GET (ITS-REST has no
+# dedicated existence endpoint, AMB-37): a non-empty filtered list means present.
+id: I_DEFINITION_ADL2.has_artefact-existing
+kind: functional
+component: DEFINITION_ADL2
+sm_operation: I_DEFINITION_ADL2.has_artefact
+capabilities: [Adl2OptProvisioning]
+profiles: [OPTIONS]
+test_purpose: "has_artefact reports true for a loaded ADL2 OPT."
+description: "has_artefact for an existing ADL2 OPT"
+spec_refs:
+  - "SM openehr_platform §I_DEFINITION_ADL2.has_artefact"
+  - "ITS-REST definition_template_adl2_list §200 OK"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+data_sets: [cnf.adl2.opt.minimal]
+flow:
+  - step: 1
+    call: upload_artefact
+    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal}" }
+    expect: created
+    capture: { template_id: created.template_id }
+  - step: 2
+    call: has_artefact
+    with: { template_id: "${template_id}" }
+    expect: ok
+    assert:
+      - { assert: returns, equals: true }   # has_artefact: Boolean True for a present artefact
+ambiguities: [AMB-37]

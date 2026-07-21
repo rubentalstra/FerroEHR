@@ -7,9 +7,39 @@
   "additionalProperties": false,
   "required": [
     "sm_operation",
-    "its",
-    "request",
-    "outcomes"
+    "its"
+  ],
+  "oneOf": [
+    {
+      "required": [
+        "request",
+        "outcomes"
+      ],
+      "not": {
+        "required": [
+          "unrealized"
+        ]
+      }
+    },
+    {
+      "required": [
+        "unrealized"
+      ],
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "request"
+            ]
+          },
+          {
+            "required": [
+              "outcomes"
+            ]
+          }
+        ]
+      }
+    }
   ],
   "properties": {
     "sm_operation": {
@@ -23,6 +53,29 @@
     },
     "applies": {
       "type": "object"
+    },
+    "unrealized": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reason",
+        "source",
+        "ambiguity"
+      ],
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ambiguity": {
+          "type": "string",
+          "pattern": "^AMB-[0-9]+$"
+        }
+      }
     },
     "request": {
       "type": "object",
@@ -44,6 +97,12 @@
         "path": {
           "type": "string",
           "pattern": "^/"
+        },
+        "query": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         },
         "body": {
           "oneOf": [
@@ -118,7 +177,9 @@
           "not_acceptable",
           "unsupported_media",
           "invalid_query",
-          "timeout"
+          "timeout",
+          "unauthenticated",
+          "forbidden"
         ]
       },
       "additionalProperties": {

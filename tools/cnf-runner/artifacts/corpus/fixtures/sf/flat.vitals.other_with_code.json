@@ -1,0 +1,10 @@
+{
+  "ctx/language": "en",
+  "ctx/territory": "NL",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
+  "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel",
+  "vitals/body_temperature:0/any_event:0/symptom|code": "at0.64",
+  "vitals/body_temperature:0/any_event:0/symptom|value": "Fever",
+  "vitals/body_temperature:0/any_event:0/symptom|other": "custom free text"
+}

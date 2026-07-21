@@ -1,0 +1,11 @@
+# ITS-REST 1.1.0 exposes NO message/extract API — unrealized so the master13
+# import_ehr cases are not-applicable with citation (AMB-34).
+sm_operation: I_EHR_EXTRACT_SERVICE.import_ehr
+its: its-rest
+unrealized:
+  reason: >-
+    ITS-REST 1.1.0 has no MESSAGE/EHR-Extract API: there are no
+    message_*/extract_* operations in specifications/operations. Importing a
+    whole EHR from an EXTRACT has no wire.
+  source: "ITS-REST specifications/operations (no message/extract operations) vs SM docs/UML/classes/i_ehr_extract_service.adoc (import_ehr)"
+  ambiguity: AMB-34

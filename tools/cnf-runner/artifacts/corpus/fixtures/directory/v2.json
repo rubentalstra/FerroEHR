@@ -1,0 +1,18 @@
+{
+  "_type": "FOLDER",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "/"
+  },
+  "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
+  "folders": [
+    {
+      "_type": "FOLDER",
+      "name": {
+        "_type": "DV_TEXT",
+        "value": "episodes"
+      },
+      "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1"
+    }
+  ]
+}

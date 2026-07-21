@@ -34,6 +34,7 @@ outcomes:
     status: 422                           # same wire code; kind distinguished by fixture
     body: error_loose
   missing_template_id: { status: 422 }    # simplified commit without openehr-template-id
+  conflict: { status: 409 }               # persistent-COMPOSITION uniqueness rejection — no code assigned by the OAS; bound per AMB-21
   unsupported_media: { status: 415 }      # overview negotiation rules (AMB-7 layering)
 captures:
   version_uid:

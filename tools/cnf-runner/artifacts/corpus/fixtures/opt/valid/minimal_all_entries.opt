@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structural placeholder: minimal valid OPT covering one of each entry type
+     (OBSERVATION/EVALUATION/INSTRUCTION/ACTION/ADMIN_ENTRY). Modeled on
+     corpus/templates/minimal_event.opt; the full entry set is pending corpus
+     authoring (#202). -->
+<template xmlns="http://schemas.openehr.org/v1">
+  <template_id><value>cnf.minimal_all_entries</value></template_id>
+  <concept>minimal all-entry-types composition</concept>
+  <definition>
+    <rm_type_name>COMPOSITION</rm_type_name>
+    <node_id>at0000</node_id>
+  </definition>
+</template>

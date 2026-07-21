@@ -134,9 +134,25 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         }
     }
     check_binding_completeness(ctx.set, &mut findings);
-    if let Some(spec_root) = ctx.spec_root {
-        for (path, binding) in &ctx.set.bindings {
-            let who = path.display().to_string();
+    for (path, binding) in &ctx.set.bindings {
+        let who = path.display().to_string();
+        if let Err(message) = binding.check_invariants() {
+            push(&mut findings, CheckId::KindShape, &who, message);
+        }
+        if let (Some(decl), Some((_, register))) = (&binding.unrealized, &ctx.set.register)
+            && register.get(&decl.ambiguity).is_none()
+        {
+            push(
+                &mut findings,
+                CheckId::AmbiguityLink,
+                &who,
+                format!(
+                    "unrealized declaration cites {} which is not in the register",
+                    decl.ambiguity
+                ),
+            );
+        }
+        if let Some(spec_root) = ctx.spec_root {
             resolve_sm_operation(&binding.sm_operation, &who, spec_root, &mut findings);
         }
     }
@@ -306,6 +322,7 @@ fn check_assertion_shape(case: &CaseCore, who: &str, findings: &mut Vec<Finding>
         if let Assertion::State { verified_by, .. } = assertion {
             let verified = verified_by.is_some()
                 || !case.verified_by.is_empty()
+                || case.flow.len() > 1
                 || case.flow.iter().any(|s| !s.assertions.is_empty());
             if !verified {
                 push(
@@ -909,6 +926,12 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 );
                 continue;
             }
+            // An explicit `unrealized` declaration satisfies completeness:
+            // the gap is machine-readable and the interpreter yields
+            // not-applicable with its citation on that ITS.
+            if bindings.iter().all(|(_, b)| b.is_unrealized()) {
+                continue;
+            }
             // Kinds this step may observe: the fixed expectation, or every
             // fixture-set `expected` kind when per-fixture.
             let mut kinds: Vec<OutcomeKind> = Vec::new();
@@ -946,8 +969,19 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 .unwrap_or_default();
             kinds.extend(expected_column_kinds);
 
+            let universal: Vec<&str> = set
+                .selectors
+                .as_ref()
+                .and_then(|(_, s)| s.universal_outcomes.as_deref())
+                .unwrap_or_default()
+                .iter()
+                .map(|(k, _)| k.as_str())
+                .collect();
             for (path, binding) in bindings {
                 for kind in &kinds {
+                    if universal.contains(&kind.token()) {
+                        continue;
+                    }
                     if binding.outcome(*kind).is_none() {
                         push(
                             findings,

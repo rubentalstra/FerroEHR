@@ -1,0 +1,17 @@
+{
+  "_type": "PERSON",
+  "name": {
+    "_type": "DV_TEXT",
+    "value": "person invalid (no identities)"
+  },
+  "archetype_node_id": "openEHR-DEMOGRAPHIC-PERSON.person.v1",
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": {
+      "_type": "ARCHETYPE_ID",
+      "value": "openEHR-DEMOGRAPHIC-PERSON.person.v1"
+    },
+    "rm_version": "1.0.2"
+  },
+  "identities": []
+}

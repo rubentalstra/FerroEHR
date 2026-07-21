@@ -1,0 +1,24 @@
+# Wire realization of I_EHR_DIRECTORY.get_directory for ITS-REST 1.1.0.
+# The SM get_directory(ehr_id) returns the current EHR.directory FOLDER, or Void;
+# realized as GET /ehr/{ehr_id}/directory with version_at_time OMITTED (the
+# `latest` case of directory_get_at_time.yaml).
+# Empty-directory retrieval: a never-existed directory is a 404, and a logically
+# deleted one is a 204 — the empty-vs-error question of AMB-8 resolves to the
+# error branch on ITS-REST (no 200 empty-structure body exists for a missing
+# directory).
+# Sources: specifications/operations/directory_get_at_time.yaml (200/204/404),
+# responses/200_FOLDER_retrieved.yaml, 204_deleted_at_time.yaml,
+# 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml.
+sm_operation: I_EHR_DIRECTORY.get_directory
+its: its-rest
+request:
+  method: GET
+  path: /ehr/{ehr_id}/directory
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # 200_FOLDER_retrieved.yaml
+    headers: { Content-Type: negotiated }
+  ok_empty: { status: 204 }               # logically deleted directory (204_deleted_at_time.yaml)
+  not_found: { status: 404 }
+  not_acceptable: { status: 406 }         # unfulfillable Accept (overview Requests_and_responses negotiation rules; no simplified mapping exists for this resource)              # unknown ehr_id or no directory (404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml)

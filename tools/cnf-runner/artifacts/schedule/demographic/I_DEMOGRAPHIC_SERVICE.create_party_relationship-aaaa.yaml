@@ -1,0 +1,34 @@
+# master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.create_party_relationship() —
+# the schedule entry is TBD; authored as the success/happy path from the SM
+# operation semantics. create_party_relationship is genuinely on
+# I_DEMOGRAPHIC_SERVICE. ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource,
+# so the its-rest binding is unrealized (proposed AMB-32) and this case is
+# not-applicable on ITS-REST 1.1.0; it activates when a later ITS release adds
+# the wire. (See REQUIREMENTS.md.)
+id: I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa
+kind: functional
+component: DEMOGRAPHIC
+sm_operation: I_DEMOGRAPHIC_SERVICE.create_party_relationship
+capabilities: [PartyRelationshipOperations]
+profiles: [OPTIONS]
+guards:
+  - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
+  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+test_purpose: >-
+  Creating the first version of a new PARTY_RELATIONSHIP from a valid data set
+  succeeds, causing server-side creation of a new VERSIONED_OBJECT,
+  ORIGINAL_VERSION and CONTRIBUTION.
+description: "Create a new PARTY_RELATIONSHIP (success)"
+spec_refs:
+  - "SM openehr_platform §I_DEMOGRAPHIC_SERVICE.create_party_relationship"
+  - "CNF platform_test_schedule master10 §create_party_relationship"
+  - "RM demographic §PARTY_RELATIONSHIP"
+applies: { rm: ">=1.0.2" }
+requires: { server: empty }
+data_sets: [cnf.demographic.party_relationship.v1]
+flow:
+  - step: 1
+    call: create_party_relationship
+    with: { party_relationship: "${ds:cnf.demographic.party_relationship.v1}" }
+    expect: created
