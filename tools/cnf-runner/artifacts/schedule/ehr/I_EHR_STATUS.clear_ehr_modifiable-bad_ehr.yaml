@@ -5,7 +5,7 @@ id: I_EHR_STATUS.clear_ehr_modifiable-bad_ehr
 kind: functional
 component: EHR
 sm_operation: I_EHR_STATUS.clear_ehr_modifiable
-capabilities: [EhrOperations]
+capabilities: [EhrStatus]
 profiles: [CORE]
 test_purpose: >-
   clear_ehr_modifiable on an ehr_id that does not exist is rejected as not found.

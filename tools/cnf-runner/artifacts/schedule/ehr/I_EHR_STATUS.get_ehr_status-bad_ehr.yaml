@@ -5,7 +5,7 @@ id: I_EHR_STATUS.get_ehr_status-bad_ehr
 kind: functional
 component: EHR
 sm_operation: I_EHR_STATUS.get_ehr_status
-capabilities: [EhrOperations]
+capabilities: [EhrStatus]
 profiles: [CORE]
 test_purpose: >-
   get_ehr_status on an ehr_id that does not exist is rejected as not found.

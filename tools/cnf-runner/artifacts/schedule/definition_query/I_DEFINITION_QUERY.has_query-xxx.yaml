@@ -11,7 +11,7 @@ kind: functional
 status: draft
 component: DEFINITION_QUERY
 sm_operation: I_DEFINITION_QUERY.has_query
-capabilities: [StoredQueries]
+capabilities: [QueryProvisioning]
 profiles: [STANDARD]
 test_purpose: "has_query reports true for a registered stored query."
 description: "has_query for a registered query (schedule cells TBD; draft)"
