@@ -8,12 +8,12 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 80 |
+| CNF catalogue cases | 110 |
 | active ECC rows | 394 |
-| mapped: covered | 69 |
-| mapped: pending | 325 |
+| mapped: covered | 100 |
+| mapped: pending | 294 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 11 |
+| CNF cases beyond the old catalogue | 10 |
 
 Gate clean: **NO**
 
@@ -74,37 +74,37 @@ Gate clean: **NO**
 | `ECC-COM-029` | covered | `I_EHR_COMPOSITION.delete_composition-event` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-COM-030` | covered | `I_EHR_COMPOSITION.delete_composition-persistent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-COM-031` | covered | `I_EHR_COMPOSITION.delete_composition-non_existent` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
-| `ECC-CTB-001` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-002` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-003` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-004` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-005` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-006` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-007` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-008` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-009` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-010` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-011` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-012` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-013` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-014` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-015` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-016` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-017` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-018` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-019` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-020` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-021` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-022` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-023` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-024` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-025` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-026` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-027` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-028` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-029` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-030` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
-| `ECC-CTB-031` | pending |  | CONTRIBUTION chapter wave (CNF master08) |
+| `ECC-CTB-001` | covered | `I_EHR_CONTRIBUTION.commit_contribution-valid_composition` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-002` | covered | `I_EHR_CONTRIBUTION.commit_contribution-invalid_composition` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-003` | covered | `I_EHR_CONTRIBUTION.commit_contribution-empty` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-004` | covered | `I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-005` | covered | `I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-006` | covered | `I_EHR_CONTRIBUTION.commit_contribution-event_composition` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-007` | covered | `I_EHR_CONTRIBUTION.commit_contribution-persistent_composition` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-008` | covered | `I_EHR_CONTRIBUTION.commit_contribution-delete` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-009` | covered | `I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_invalid` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-010` | covered | `I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-011` | covered | `I_EHR_CONTRIBUTION.commit_contribution-minimal_ehr_status` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-012` | covered | `I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-013` | covered | `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-014` | covered | `I_EHR_CONTRIBUTION.commit_contribution-invalid_ehr_status` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-015` | covered | `I_EHR_CONTRIBUTION.commit_contribution-valid_directory` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-016` | covered | `I_EHR_CONTRIBUTION.commit_contribution-fail_create_existing_directory` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-017` | covered | `I_EHR_CONTRIBUTION.commit_contribution-fail_modify_non_existing_directory` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-018` | covered | `I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-019` | covered | `I_EHR_CONTRIBUTION.get_contribution-existing` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-020` | covered | `I_EHR_CONTRIBUTION.get_contribution-empty_ehr` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-021` | covered | `I_EHR_CONTRIBUTION.get_contribution-bad_ehr` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-022` | covered | `I_EHR_CONTRIBUTION.get_contribution-bad_contribution` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-023` | covered | `I_EHR_CONTRIBUTION.has_contribution-existing` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-024` | covered | `I_EHR_CONTRIBUTION.has_contribution-bad_contribution` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-025` | covered | `I_EHR_CONTRIBUTION.has_contribution-bad_ehr` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-026` | covered | `I_EHR_CONTRIBUTION.has_contribution-empty_ehr` | ground carried 1:1 by the official master08 case (reshaped under the CNF 2.0 case model) |
+| `ECC-CTB-027` | covered | `I_EHR_CONTRIBUTION.list_contributions-empty` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
+| `ECC-CTB-028` | covered | `I_EHR_CONTRIBUTION.list_contributions-non_existing_ehr` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
+| `ECC-CTB-029` | covered | `I_EHR_CONTRIBUTION.list_contributions-post_commit` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
+| `ECC-CTB-030` | covered | `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_directory` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
+| `ECC-CTB-031` | covered | `I_EHR_CONTRIBUTION.list_contributions-ehr_containing_ehr_status` | official master08 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized list_contributions binding (AMB-22) |
 | `ECC-DIR-001` | pending |  | DIRECTORY chapter wave (CNF master09) |
 | `ECC-DIR-002` | pending |  | DIRECTORY chapter wave (CNF master09) |
 | `ECC-DIR-003` | pending |  | DIRECTORY chapter wave (CNF master09) |
@@ -419,7 +419,6 @@ Gate clean: **NO**
 ## CNF cases with no old-harness counterpart (new ground)
 
 - `CONT-DV_QUANTITY-validate_property_units_mag`
-- `I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions`
 - `I_DEFINITION_QUERY.has_query-xxx`
 - `I_DEFINITION_QUERY.list_queries-empty`
 - `I_DEFINITION_QUERY.list_queries-non_empty`

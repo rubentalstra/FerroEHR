@@ -202,3 +202,24 @@ AMB-21:
     family); flag for upstream code assignment. Verdict gating is already
     suspended by AMB-5 (report_only).
   disposition: fixed_handling
+AMB-22:
+  ambiguity: >-
+    The SM I_EHR_CONTRIBUTION.list_contributions operation is not surfaced by
+    ITS-REST 1.1.0 — no collection GET exists on /ehr/{ehr_id}/contribution
+    (only the single-CONTRIBUTION GET by uid).
+  source: "SM docs/UML/classes/i_ehr_contribution.adoc (list_contributions) vs ITS-REST specifications/operations (contribution operations: no collection GET)"
+  handling: >-
+    The five official list_contributions cases are in the catalogue, active
+    and SM-anchored; the its-rest binding carries an explicit unrealized
+    declaration, so on ITS-REST 1.1.0 they verdict as not-applicable with
+    this citation. SPECPR/ITS-REST 1.2.0 candidate.
+  disposition: fixed_handling
+AMB-23:
+  ambiguity: >-
+    The SM I_EHR_CONTRIBUTION.has_contribution operation (Boolean) has no
+    dedicated ITS-REST existence endpoint.
+  source: "SM docs/UML/classes/i_ehr_contribution.adoc (has_contribution) vs ITS-REST specifications/operations contribution_get.yaml"
+  handling: >-
+    Realized via the single-CONTRIBUTION GET: 200 is the positive return,
+    404 the negative (the has_composition precedent).
+  disposition: fixed_handling

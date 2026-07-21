@@ -1,0 +1,61 @@
+{
+  "_type": "COMPOSITION",
+  "name": { "_type": "DV_TEXT", "value": "persistent v2" },
+  "archetype_details": {
+    "_type": "ARCHETYPED",
+    "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-COMPOSITION.minimal.v1" },
+    "template_id": { "_type": "TEMPLATE_ID", "value": "cnf.minimal_event" },
+    "rm_version": "1.0.2"
+  },
+  "language": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+    "code_string": "en"
+  },
+  "territory": {
+    "_type": "CODE_PHRASE",
+    "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+    "code_string": "NL"
+  },
+  "category": {
+    "_type": "DV_CODED_TEXT",
+    "value": "persistent",
+    "defining_code": {
+      "_type": "CODE_PHRASE",
+      "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+      "code_string": "431"
+    }
+  },
+  "composer": { "_type": "PARTY_SELF" },
+  "content": [
+    {
+      "_type": "EVALUATION",
+      "name": { "_type": "DV_TEXT", "value": "problem list" },
+      "archetype_node_id": "openEHR-EHR-EVALUATION.minimal.v1",
+      "language": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+        "code_string": "en"
+      },
+      "encoding": {
+        "_type": "CODE_PHRASE",
+        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "IANA_character-sets" },
+        "code_string": "UTF-8"
+      },
+      "subject": { "_type": "PARTY_SELF" },
+      "data": {
+        "_type": "ITEM_TREE",
+        "name": { "_type": "DV_TEXT", "value": "tree" },
+        "archetype_node_id": "at0001",
+        "items": [
+          {
+            "_type": "ELEMENT",
+            "name": { "_type": "DV_TEXT", "value": "value" },
+            "archetype_node_id": "at0002",
+            "value": { "_type": "DV_TEXT", "value": "second" }
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+# D.2 — as D.1 but the committed EHR_STATUS is full (all optional information
+# set, incl. subject.external_ref). The commit is accepted and a new EHR_STATUS
+# VERSION is created.
+# NOTE: EHR_STATUS modification targets the EHR's current status VERSION; the
+# ITS-REST binding realizes the precedent as If-Match (AMB-3).
+id: I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+exercises: [Versioning]
+profiles: [CORE]
+test_purpose: >-
+  Committing a CONTRIBUTION that modifies the EHR_STATUS with a full, valid
+  EHR_STATUS (subject.external_ref set) succeeds and creates a new EHR_STATUS
+  VERSION.
+description: "Commit CONTRIBUTION containing full EHR_STATUS"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-full_ehr_status"
+  - "RM common §change_control (VERSION.commit_audit.change_type)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR with a full EHR_STATUS; mints ${ehr_id}
+data_sets: [cnf.ehr_status.with_subject]
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:
+        - { data: "${ds:cnf.ehr_status.with_subject}", change_type: modification }
+    expect: created
+    capture:
+      version_uids: created.version_uids[]
+    assert:
+      - { assert: version, for_each: "${version_uids}", change_type: MODIFY }
+postconditions:
+  - { assert: version, count: 2 }        # default EHR_STATUS + the modification
+ambiguities: [AMB-3]

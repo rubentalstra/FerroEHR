@@ -71,7 +71,7 @@ fn requires_def() -> Value {
                   "required": ["commits"],
                   "properties": { "commits": { "enum": ["none", "any"] } } }
             ] },
-            "directory": { "oneOf": [
+            "directory": { "anyOf": [
                 { "const": "none" },
                 { "type": "string", "pattern": CORPUS_KEY_PATTERN }
             ] },

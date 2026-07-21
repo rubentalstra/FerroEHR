@@ -139,6 +139,16 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
         if let Err(message) = binding.check_invariants() {
             push(&mut findings, CheckId::KindShape, &who, message);
         }
+        if let (Some(decl), Some((_, register))) = (&binding.unrealized, &ctx.set.register)
+            && register.get(&decl.ambiguity).is_none()
+        {
+            push(
+                &mut findings,
+                CheckId::AmbiguityLink,
+                &who,
+                format!("unrealized declaration cites {} which is not in the register", decl.ambiguity),
+            );
+        }
         if let Some(spec_root) = ctx.spec_root {
             resolve_sm_operation(&binding.sm_operation, &who, spec_root, &mut findings);
         }
