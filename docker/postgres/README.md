@@ -2,7 +2,7 @@
 
 A preconfigured PostgreSQL 18 image for ehrbase-rs, mirroring the official
 `ehrbase/ehrbase-v2-postgres` two-image model built fresh for this stack
-(ADR-008). It is `postgres:18.4` plus one-time init scripts.
+(the greenfield PG18 storage design, `docs/architecture.md` §Storage). It is `postgres:18.4` plus one-time init scripts.
 
 ## What the init scripts create
 

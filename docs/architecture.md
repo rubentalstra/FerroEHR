@@ -12,7 +12,7 @@ PostgreSQL-18-native internals. Two layers:
    on that foundation.** The server, storage, service layer, AQL
    execution engine, validation, and auth — proper crates, our own algorithms,
    the openEHR specifications as the authority. EHRbase and other CDRs are
-   prior art, not an oracle. This is the remaining Stage-1 work.
+   prior art, not an oracle. Shipped as of v3.5.0.
 
 Authoritative roadmap: the root **`ROADMAP.md`**; the open-items tracker is
 GitHub Issues (root `CLAUDE.md` §Issue workflow), with `docs/plans/` (deep
@@ -26,7 +26,7 @@ spec + ITS layer is generated from the vendored machine-readable specs
 own design on those generated crates, with its own PG18-native storage (one
 `node` table + one temporal `vo_version` table) and its own typed AQL engine,
 and acceptance measured by the openEHR conformance suite (EHRbase is prior art,
-not an oracle); the application is three crates with zero re-exports, and its
+not an oracle); the application is four crates with zero re-exports, and its
 service layer follows the openEHR SM Platform Service Model (one module per SM
 chapter, concrete methods).
 
@@ -116,9 +116,10 @@ envelope is documented per construct; rejections are explicit typed errors.
 Base path `/ehrbase/rest/openehr/v1`, implementing the generated ITS-REST
 1.1.0 server traits over `axum` with a `tower-http` middleware stack and
 content negotiation (canonical JSON/XML via `openehr-its`). Extensions: admin
-API, `/rest/status`, `/management/*`, item tags, EhrScape compatibility
-(a feature-gated `ehrscape` adapter module in `ehrbase-rest`). **Auth (Stage 1):** Basic + OAuth2/OIDC via
-`argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; RBAC is Stage 2.
+API, `/rest/status`, `/management/*`, item tags (the EhrScape surface was
+cut, not built). **Auth:** Basic + OAuth2/OIDC via
+`argon2`/`jsonwebtoken`/`oauth2`/`openidconnect`; authorization is the
+shipped RBAC/ABAC `access` module in `ehrbase-rest`.
 
 ## Templates, validation, FLAT
 
@@ -156,8 +157,10 @@ columns for hot extractions. See `docs/postgres-features.md`.
 Three physical directories (consolidated 2026-07-16):
 **`app/*`** holds the application — `ehrbase` (the platform **library**),
 `ehrbase-rest` (the ITS-REST protocol adapter, which calls the concrete
-`EhrbaseService` directly), and `ehrbase-server` (the wiring-only binary; the
-bin is still named `ehrbase`); **`tools/*`** holds the dev/verification
+`EhrbaseService` directly), `ehrbase-server` (the wiring-only binary; the
+bin is still named `ehrbase`), and `ehrbase-admin-ui` (the Leptos SSR admin
+console — its own binary/OCI image, consuming the CDR strictly over
+ITS-REST); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`conformance` — the
 ECC runner, `benchmark`, `testkit` — the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
@@ -200,6 +203,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-lang` | BMM/P_BMM object model | generated |
 | `openehr-its` | Canonical JSON/XML + ITS-REST contract + runtimes + gates | generated + hand-written |
 | `openehr-query` | AQL 1.1 lexer + parser + AST | hand-written |
+| `openehr-adl` | ADL 2.4 engine: ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion | hand-written |
 | `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
 | `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
@@ -218,8 +222,9 @@ The service layer realizes the openEHR **SM Platform Service Model**
   compiling, tested increments; the per-phase build record is the closed
   issues + PR descriptions (+ the retired `docs/PROGRESS.md` in git
   history).
-- **Stage 2**: enterprise capabilities — RBAC/attribute authz, plugin system,
-  multi-tenancy (`reference/v1` archaeology).
+- **Stage 2**: remaining enterprise capabilities — the plugin system and any
+  other unrestored capability (`reference/v1` archaeology; RBAC/ABAC and
+  multi-tenancy already shipped greenfield in Stage 1).
 - **Stage 3**: refinement, performance, new capabilities.
 
 ## Verification
@@ -228,7 +233,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
   round-trip + ITS-JSON schema validation; XML round-trips.
 - **Conformance suite** (`scripts/conformance.sh` — present): the ECC catalogue
   (Docker-composed SUT, both formats) — the acceptance instrument;
-  the standing baseline: 341 executed · 315 passed · 0 failed,
+  the standing baseline: 402 executed · 384 passed · 0 failed · 18 N/A,
   CORE/STANDARD PASS.
 - **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.

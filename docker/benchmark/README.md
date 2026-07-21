@@ -1,6 +1,6 @@
 # Benchmark comparison stack — ehrbase-rs vs. EHRbase (Java)
 
-The dual-stack environment for `docs/design/benchmarking.md`. Two servers, each
+The dual-stack environment for the benchmark harness (`tools/benchmark/` — the pre-registered workload, CO-corrected latency, and config-parity method are documented in the tool itself). Two servers, each
 with its own PostgreSQL, on distinct ports; both configured with HTTP Basic auth
 (`ehrbase` / `ehrbase`) so the harness drives them through the identical
 credential path.
@@ -13,7 +13,7 @@ credential path.
 ## Run
 
 ```shell
-# Full comparison (honest one-at-a-time protocol, §3.1):
+# Full comparison (honest one-at-a-time protocol):
 docker/benchmark/run.sh                 # ≥5 runs per scenario — publishable
 docker/benchmark/run.sh --smoke         # fast, proves the pipeline
 docker/benchmark/run.sh --only rs       # just ehrbase-rs
@@ -27,14 +27,14 @@ the **host machine auto-captured** (a number is not comparable across hardware).
 
 ## Honesty notes (see the design)
 
-- **PG-version confound** (§3.3): ehrbase-rs runs on PG 18, EHRbase Java on the
+- **PG-version confound**: ehrbase-rs runs on PG 18, EHRbase Java on the
   PG 16 its image ships. This is the "recommended" deployment comparison. To
   isolate the engine from the database, add a controlled run with both on PG 16
   (a follow-up; the design describes it).
-- **JVM warmup** (§4.2): the harness discards a warmup phase, applied identically
+- **JVM warmup**: the harness discards a warmup phase, applied identically
   to both — the JVM is warmed, not handicapped. EHRbase Java also needs ~60–90 s
   to *boot* before it is ready; the runner waits for `/rest/status`.
-- **Config parity** (§3.4): Basic auth on both, template-overwrite on both,
+- **Config parity**: Basic auth on both, template-overwrite on both,
   default connection pools. Record any residual asymmetry in the report.
 - Pin and record the exact image **digests** in the environment block before
   publishing any claim.
