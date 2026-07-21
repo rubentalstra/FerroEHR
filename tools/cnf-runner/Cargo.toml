@@ -28,6 +28,8 @@ jsonschema = { workspace = true }
 # `applies` spec-version ranges use the Cargo/semver requirement grammar.
 semver = { workspace = true }
 regex = { workspace = true }
+# Percent-encode path/query segments — never hand-roll a percent codec (owner rule).
+urlencoding = { workspace = true }
 thiserror = { workspace = true }
 clap = { workspace = true }
 
