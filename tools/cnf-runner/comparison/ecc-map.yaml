@@ -1,0 +1,1187 @@
+# The hand-adjudicated ECC -> CNF 2.0 coverage map (the comparison gate's
+# input). Every active ECC row is enumerated; `pending` names the
+# authoring wave that will carry its ground; cutover requires zero
+# pending. Generated report: docs/conformance/cnf-comparison.md via
+# `cnf-runner compare-ecc`.
+ECC-EHR-001:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-002:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-003:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-004:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-005:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-006:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-007:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-008:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-009:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-010:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-EHR-011:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-STA-001:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-002:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-003:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-004:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-005:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-006:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-007:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-008:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-009:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-STA-010:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06, EHR_STATUS ground)"
+ECC-EHR-012:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-COM-001:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-002:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-003:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-004:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-005:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-006:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-007:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-008:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-009:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-010:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-011:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-012:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-013:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-014:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-015:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-016:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-017:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-018:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-019:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-020:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-021:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-022:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-023:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-024:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-025:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-026:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-027:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-028:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-029:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-030:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-COM-031:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-CTB-001:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-002:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-003:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-004:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-005:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-006:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-007:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-008:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-009:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-010:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-011:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-012:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-013:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-014:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-015:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-016:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-017:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-018:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-019:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-020:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-021:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-022:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-023:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-024:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-025:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-026:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-027:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-028:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-029:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-030:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-CTB-031:
+  disposition: pending
+  justification: "CONTRIBUTION chapter wave (CNF master08)"
+ECC-DIR-001:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-002:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-003:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-004:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-005:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-006:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-007:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-008:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-009:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-010:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-011:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-012:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-013:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-014:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-015:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-016:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-017:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-018:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-019:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-020:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-021:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-022:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-023:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-024:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-025:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-026:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-027:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-028:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-029:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-030:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-031:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-032:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-033:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-034:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-035:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-036:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-DIR-037:
+  disposition: pending
+  justification: "DIRECTORY chapter wave (CNF master09)"
+ECC-TPL-001:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-002:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-003:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-004:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-005:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-006:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-007:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-008:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-009:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-010:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-011:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-012:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-013:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-014:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-015:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-TPL-016:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-SQR-001:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-SQR-002:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-SQR-004:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-SQR-005:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-SQR-006:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-SQR-007:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-QRY-001:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-002:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-003:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-004:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-005:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-006:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-007:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-008:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-009:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-010:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-011:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-012:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-013:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-ADM-001:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-002:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-003:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-004:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-005:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-006:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-DEM-001:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-002:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-003:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-004:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-005:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-006:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-007:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-008:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-009:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-010:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-011:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-012:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-013:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-014:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-015:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-016:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-017:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-018:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-019:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-020:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-021:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-022:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-023:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-024:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-VAL-001:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-002:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-003:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-004:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-005:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-006:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-007:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-008:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-009:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-010:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-011:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-012:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-013:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-014:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-015:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-016:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-017:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-018:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-019:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-020:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-021:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-022:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-023:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-024:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-025:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-026:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-027:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-028:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-029:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-030:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-031:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-032:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-033:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-034:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-035:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-036:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-037:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-038:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-039:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-040:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-041:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-042:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-043:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-044:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-045:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-046:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-047:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-048:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-049:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-050:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-051:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-052:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-053:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-054:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-055:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-056:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-057:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-058:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-059:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-060:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-061:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-062:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-063:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-064:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-065:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-066:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-067:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-068:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-069:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-070:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-071:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-072:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-073:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-074:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-075:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-076:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-077:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-078:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-079:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-080:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-081:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-082:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-083:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-084:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-085:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-086:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-087:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-088:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-089:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-090:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-091:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-092:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-093:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-094:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-095:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-096:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-097:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-098:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-099:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-100:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-101:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-102:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-103:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-104:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-105:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-106:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-107:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-108:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-109:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-110:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-111:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-112:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-113:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-114:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-115:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-116:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-117:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-VAL-118:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-SIG-001:
+  disposition: pending
+  justification: "Signing capability wave (version-signature integrity)"
+ECC-SIG-002:
+  disposition: pending
+  justification: "Signing capability wave (version-signature integrity)"
+ECC-SIG-003:
+  disposition: pending
+  justification: "Signing capability wave (version-signature integrity)"
+ECC-SIG-004:
+  disposition: pending
+  justification: "Signing capability wave (version-signature integrity)"
+ECC-SIG-005:
+  disposition: pending
+  justification: "Signing capability wave (version-signature integrity)"
+ECC-VAL-119:
+  disposition: pending
+  justification: "content chapters wave (CNF master15-17)"
+ECC-MSG-001:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-002:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-003:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-004:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-005:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-006:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-007:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-008:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-009:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-MSG-010:
+  disposition: pending
+  justification: "messaging chapter wave (CNF master13)"
+ECC-TS-001:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-002:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-003:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-004:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-005:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-006:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-007:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-008:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-TS-009:
+  disposition: pending
+  justification: "terminology-service chapter wave"
+ECC-EHR-013:
+  disposition: pending
+  justification: "EHR chapter wave (CNF master06)"
+ECC-SEC-001:
+  disposition: pending
+  justification: "Security (SEC-BASIC) chapter wave"
+ECC-SEC-002:
+  disposition: pending
+  justification: "Security (SEC-BASIC) chapter wave"
+ECC-COM-032:
+  disposition: pending
+  justification: "COMPOSITION chapter wave (CNF master07)"
+ECC-SQR-008:
+  disposition: pending
+  justification: "stored-query definition wave (CNF master05)"
+ECC-QRY-014:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-015:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-016:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-017:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-018:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-019:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-020:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-021:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-022:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-023:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-QRY-024:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-DEM-025:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-026:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-027:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-028:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-029:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-030:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-DEM-031:
+  disposition: pending
+  justification: "demographic chapter wave (CNF master10)"
+ECC-ADM-007:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-008:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-009:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-010:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-011:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-012:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-013:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-ADM-014:
+  disposition: pending
+  justification: "admin chapter wave (CNF master12)"
+ECC-TPL-017:
+  disposition: pending
+  justification: "ADL 1.4 definition wave (CNF master04)"
+ECC-QRY-025:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-SF-001:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-002:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-003:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-004:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-005:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-006:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-007:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-008:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-009:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-010:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-011:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-012:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-013:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-014:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-015:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-SF-016:
+  disposition: pending
+  justification: "simplified-formats chapter wave"
+ECC-ADL2-001:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-002:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-003:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-004:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-005:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-006:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-007:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-008:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-009:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-010:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-011:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-ADL2-012:
+  disposition: pending
+  justification: "ADL2 definition wave (framework chapter beyond master04)"
+ECC-AQT-001:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-AQT-002:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-AQT-003:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
+ECC-AQT-004:
+  disposition: pending
+  justification: "AQL chapter wave (new chapter for the empty master11)"
