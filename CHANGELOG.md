@@ -15,6 +15,24 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- OPT-1.4 → ADL2 conversion fidelity: `DV_ORDINAL`/`DV_QUANTITY` constraints
+  now convert to real AOM2 attribute tuples (`[value, symbol]`,
+  `[units, magnitude(, precision)]`) instead of loose unconstrained nodes;
+  slot include/exclude assertions are carried (both retained 1.4 slots and
+  the filled-slot `include` naming the embedded archetype); OPT
+  `default_value`s are carried and serialized as the ADL2 `_default`
+  pseudo-attribute; temporal constraints keep both the ISO8601 pattern and
+  the range plus assumed values; `referenceSetUri` becomes an ac-code term
+  binding; `CONSTRAINT_REF` resolves against the merged 1.4
+  `constraint_definitions`/`constraint_bindings`; and everything a
+  decomposed root cannot express (out-of-scope bindings, tuple assumed
+  values, `DV_STATE` machines, unconvertible assertions) is reported in the
+  converted archetype's `RESOURCE_DESCRIPTION.conversion_details`. The
+  whole vendored OPT corpus now converts, validates and re-parses as the
+  standing test gate.
+
 ### Fixed
 
 - SM call-status fidelity: service-layer "does not exist" failures now carry

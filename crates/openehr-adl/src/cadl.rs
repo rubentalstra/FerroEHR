@@ -768,6 +768,25 @@ impl Parser<'_> {
             SyntaxErrorCode::Sadf,
             "expecting '=' after '_default'",
         )?;
+        // The optional RM-type cast of the typed form
+        // `_default = (DV_CODED_TEXT) < … >` (`master06-default_values.adoc`
+        // §Syntax); it lands as the value's `_type` in the canonical JSON.
+        let mut cast: Option<String> = None;
+        if self.eat(|t| matches!(t, Token::LParen)) {
+            let Some(Token::AlphaUcId(name)) = self.peek() else {
+                return self.err(
+                    SyntaxErrorCode::Sadf,
+                    "expecting an RM type name in the '_default = (TYPE)' cast",
+                );
+            };
+            cast = Some(name.clone());
+            self.pos += 1;
+            self.expect(
+                |t| matches!(t, Token::RParen),
+                SyntaxErrorCode::Sadf,
+                "expecting ')' closing the '_default' type cast",
+            )?;
+        }
         self.expect(
             |t| matches!(t, Token::SymLt),
             SyntaxErrorCode::Sadf,
@@ -794,7 +813,15 @@ impl Parser<'_> {
         let text = self.src.get(start_byte..end_byte).unwrap_or_default();
         let _ = start;
         match openehr_lang::odin::parse(text) {
-            Ok(v) => Ok(odin_to_json(&v)),
+            Ok(v) => {
+                let mut json = odin_to_json(&v);
+                if let Some(t) = cast
+                    && let serde_json::Value::Object(m) = &mut json
+                {
+                    m.insert("_type".to_owned(), serde_json::Value::String(t));
+                }
+                Ok(json)
+            }
             Err(e) => {
                 self.push(
                     SyntaxErrorCode::Sadf,
