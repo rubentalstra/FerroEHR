@@ -709,3 +709,114 @@ cnf.tpl.ecc_item_structure_type_narrowing:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "re-adjudicated 2026-07-21 from the retired ECC structural battery against AOM1.4/RM spec text; structural placeholder pending corpus authoring"
+# Corpus additions for the CNF master11 (QUERY) schedule cases. Same entry
+# schema as MANIFEST.yaml; the validate harness concatenates this into
+# corpus/MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
+#
+# Two families:
+#   - the generated loaded-db set cnf.set.query-bp-10 (recipe query_bp), with the
+#     declarative views the loaded-db cases assert against; and
+#   - the AQL query-text fixtures (format aql-text) the invalid-query,
+#     empty-db-shapes, and terminology-reject fixture_sets iterate over.
+# Provenance for the ecc- ground: re-adjudicated 2026-07-21 from the retired ECC
+# AQL battery against QUERY AQL 1.1 spec text; the AQL texts are re-authored to
+# the AQL 1.1 grammar/semantics (not copied from the RM-1.0.x-era vendored
+# corpus). All fixtures are spine-first authored; the generated set is a
+# digest-pinned recipe contract (corpus/recipes/query_bp.md).
+
+# ── the generated loaded-db corpus ────────────────────────────────────────────
+cnf.set.query-bp-10:
+  generated_by: { recipe: query_bp, digest: "sha256:992a650fc86055cea95cc3f2569cfd272ea4bf29ac74c37467ab8eeff71b4006" }
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "generated set: 10 blood-pressure COMPOSITIONs, systolic 100..190, category event (recipe contract corpus/recipes/query_bp.md)"
+  views:
+    all_uids_asc:
+      select: "committed uids of all compositions"
+      order_by: "uid ascending"
+    systolic_ge_140_uids_asc:
+      select: "committed uids of compositions"
+      where: "systolic magnitude >= 140"
+      order_by: "uid ascending"
+    top3_systolic_desc_uids:
+      select: "committed uids of the 3 compositions with the highest systolic magnitude"
+      order_by: "systolic magnitude descending"
+
+# ── AQL query-text fixtures (valid) ───────────────────────────────────────────
+cnf.aql.valid.select_ehr:
+  source: fixtures/query/valid_select_ehr.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 to QUERY AQL 1.1 §SELECT/§FROM (bare EHR id projection)"
+cnf.aql.valid.contains_composition:
+  source: fixtures/query/valid_contains_composition.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 to QUERY AQL 1.1 §CONTAINS (EHR CONTAINS COMPOSITION projection)"
+cnf.aql.valid.where_predicate:
+  source: fixtures/query/valid_where_predicate.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-21 to QUERY AQL 1.1 §WHERE (CONTAINS chain with an equality predicate)"
+
+# ── AQL query-text fixtures (invalid: grammar/semantics rejections) ───────────
+cnf.aql.invalid.timewindow:
+  source: fixtures/query/invalid_timewindow.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "TIMEWINDOW clause removed from AQL at Release 1.0.1 (SPECQUERY-20); absent from the AQL 1.1 grammar"
+    spec_ref: "QUERY AQL master00-amendment_record (SPECQUERY-20); QUERY AQL master07-grammar"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC dialect goldens (ECC-QRY-015..017) against QUERY AQL 1.1"
+cnf.aql.invalid.limit_before_order_by:
+  source: fixtures/query/invalid_limit_before_order_by.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "LIMIT precedes ORDER BY; the AQL 1.1 grammar orders orderByClause before limitClause"
+    spec_ref: "QUERY AQL master03-syntax §ORDER BY/§LIMIT; QUERY AQL master07-grammar"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC dialect goldens (ECC-QRY-018..024) against QUERY AQL 1.1"
+cnf.aql.invalid.syntax_garbage:
+  source: fixtures/query/invalid_syntax_garbage.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "not a well-formed AQL statement — WHERE with no FROM clause"
+    spec_ref: "QUERY AQL master03-syntax §FROM (mandatory); QUERY AQL master07-grammar"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC invalid-query corpus (ECC-QRY-005) against QUERY AQL 1.1"
+
+# ── AQL query-text fixtures (invalid: unsupported TERMINOLOGY() forms) ─────────
+cnf.aql.invalid.terminology_lookup_matches:
+  source: fixtures/query/reject_terminology_lookup_matches.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "'lookup' operation as a matches operand — only 'expand' has code-list semantics (§TERMINOLOGY usage a/b)"
+    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-002 against QUERY AQL 1.1"
+cnf.aql.invalid.terminology_in_select:
+  source: fixtures/query/reject_terminology_in_select.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "TERMINOLOGY() in a SELECT column — an unsupported position (§TERMINOLOGY defines matches-operand and Boolean-assertion forms only)"
+    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-003 against QUERY AQL 1.1"
+cnf.aql.invalid.terminology_boolean_lookup:
+  source: fixtures/query/reject_terminology_boolean_lookup.aql
+  format: aql-text
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "Boolean TERMINOLOGY('lookup', …) — only 'validate'/'subsumes' have Boolean semantics (§TERMINOLOGY)"
+    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-004 against QUERY AQL 1.1"

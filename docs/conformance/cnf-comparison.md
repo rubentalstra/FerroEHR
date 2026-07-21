@@ -8,12 +8,12 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 234 |
+| CNF catalogue cases | 246 |
 | active ECC rows | 394 |
-| mapped: covered | 256 |
-| mapped: pending | 138 |
+| mapped: covered | 285 |
+| mapped: pending | 109 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 9 |
+| CNF cases beyond the old catalogue | 10 |
 
 Gate clean: **NO**
 
@@ -164,19 +164,19 @@ Gate clean: **NO**
 | `ECC-SQR-005` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
 | `ECC-SQR-006` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
 | `ECC-SQR-007` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-QRY-001` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-002` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-003` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-004` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-005` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-006` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-007` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-008` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-009` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-010` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-011` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-012` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-013` | pending |  | AQL chapter wave (new chapter for the empty master11) |
+| `ECC-QRY-001` | covered | `I_QUERY_SERVICE.smoke_test` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
+| `ECC-QRY-002` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
+| `ECC-QRY-003` | covered | `I_QUERY_SERVICE.execute_stored_query-empty_db` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
+| `ECC-QRY-004` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model) |
+| `ECC-QRY-005` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-malformed_queries`, `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | invalid-corpus sweep split: unambiguously-malformed ground gates; dialect ground is report_only per AMB-30 |
+| `ECC-QRY-006` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-007` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-008` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-009` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-010` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-011` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-012` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
+| `ECC-QRY-013` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection`, `I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db` | query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication) |
 | `ECC-ADM-001` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-002` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-003` | pending |  | admin chapter wave (CNF master12) |
@@ -207,44 +207,44 @@ Gate clean: **NO**
 | `ECC-DEM-022` | pending |  | demographic chapter wave (CNF master10) |
 | `ECC-DEM-023` | pending |  | demographic chapter wave (CNF master10) |
 | `ECC-DEM-024` | pending |  | demographic chapter wave (CNF master10) |
-| `ECC-VAL-001` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-002` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-003` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-004` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-005` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-006` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-007` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-008` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-009` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-010` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-011` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-012` | covered | `ecc-CONT-COMPOSITION-content_cardinality`, `ecc-CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-013` | covered | `ecc-CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-014` | covered | `ecc-CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-015` | covered | `ecc-CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-016` | covered | `ecc-CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-017` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-018` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-019` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-020` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-021` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-022` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-023` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-024` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-025` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-026` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-027` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-028` | covered | `ecc-CONT-HISTORY-events_cardinality`, `ecc-CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-029` | covered | `ecc-CONT-EVENT-state_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-030` | covered | `ecc-CONT-EVENT-state_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-031` | covered | `ecc-CONT-EVENT-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-032` | covered | `ecc-CONT-EVENT-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-033` | covered | `ecc-CONT-EVENT-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-034` | covered | `ecc-CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-035` | covered | `ecc-CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-036` | covered | `ecc-CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-037` | covered | `ecc-CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
-| `ECC-VAL-038` | covered | `ecc-CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-001` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-002` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-003` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-004` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-005` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-006` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-007` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-008` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-009` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-010` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-011` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-012` | covered | `CONT-COMPOSITION-content_cardinality`, `CONT-COMPOSITION-context_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-013` | covered | `CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-014` | covered | `CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-015` | covered | `CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-016` | covered | `CONT-OBSERVATION-state_protocol_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-017` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-018` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-019` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-020` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-021` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-022` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-023` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-024` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-025` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-026` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-027` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-028` | covered | `CONT-HISTORY-events_cardinality`, `CONT-HISTORY-summary_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-029` | covered | `CONT-EVENT-state_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-030` | covered | `CONT-EVENT-state_existence` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-031` | covered | `CONT-EVENT-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-032` | covered | `CONT-EVENT-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-033` | covered | `CONT-EVENT-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-034` | covered | `CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-035` | covered | `CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-036` | covered | `CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-037` | covered | `CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
+| `ECC-VAL-038` | covered | `CONT-ITEM_STRUCTURE-type_narrowing` | re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text |
 | `ECC-VAL-039` | covered | `CONT-DV_BOOLEAN-anything_allowed` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
 | `ECC-VAL-040` | covered | `CONT-DV_BOOLEAN-only_true_allowed` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
 | `ECC-VAL-041` | covered | `CONT-DV_BOOLEAN-only_false_allowed` | ground carried 1:1 by the official master17.x case (reshaped under the CNF 2.0 case model) |
@@ -355,17 +355,17 @@ Gate clean: **NO**
 | `ECC-SEC-002` | pending |  | Security (SEC-BASIC) chapter wave |
 | `ECC-COM-032` | covered | `I_EHR_COMPOSITION.has_composition` | ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model) |
 | `ECC-SQR-008` | pending |  | master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave |
-| `ECC-QRY-014` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-015` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-016` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-017` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-018` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-019` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-020` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-021` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-022` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-023` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-QRY-024` | pending |  | AQL chapter wave (new chapter for the empty master11) |
+| `ECC-QRY-014` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit` | ground carried (AqlAdvanced/OPTIONS per the Profiles matrix) |
+| `ECC-QRY-015` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-016` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-017` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-018` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-019` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-020` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-021` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-022` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-023` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-QRY-024` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
 | `ECC-DEM-025` | pending |  | demographic chapter wave (CNF master10) |
 | `ECC-DEM-026` | pending |  | demographic chapter wave (CNF master10) |
 | `ECC-DEM-027` | pending |  | demographic chapter wave (CNF master10) |
@@ -382,7 +382,7 @@ Gate clean: **NO**
 | `ECC-ADM-013` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-ADM-014` | pending |  | admin chapter wave (CNF master12) |
 | `ECC-TPL-017` | pending |  | template-example round-trip ground belongs to the simplified-formats/template-example wave |
-| `ECC-QRY-025` | pending |  | AQL chapter wave (new chapter for the empty master11) |
+| `ECC-QRY-025` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection` | ground carried 1:1 (reshaped under the CNF 2.0 case model) |
 | `ECC-SF-001` | pending |  | simplified-formats chapter wave |
 | `ECC-SF-002` | pending |  | simplified-formats chapter wave |
 | `ECC-SF-003` | pending |  | simplified-formats chapter wave |
@@ -411,10 +411,10 @@ Gate clean: **NO**
 | `ECC-ADL2-010` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
 | `ECC-ADL2-011` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
 | `ECC-ADL2-012` | pending |  | ADL2 definition wave (framework chapter beyond master04) |
-| `ECC-AQT-001` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-AQT-002` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-AQT-003` | pending |  | AQL chapter wave (new chapter for the empty master11) |
-| `ECC-AQT-004` | pending |  | AQL chapter wave (new chapter for the empty master11) |
+| `ECC-AQT-001` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches` | ground carried (AqlTerminology/OPTIONS); value-set resolution flagged as engine extension — only the AQL TERMINOLOGY() form is spec-grounded |
+| `ECC-AQT-002` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-AQT-003` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
+| `ECC-AQT-004` | covered | `I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms` | dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates) |
 
 ## CNF cases with no old-harness counterpart (new ground)
 
@@ -425,5 +425,6 @@ Gate clean: **NO**
 - `I_DEFINITION_QUERY.valid_query-bad_formalism`
 - `I_DEFINITION_QUERY.valid_query-invalid`
 - `I_DEFINITION_QUERY.valid_query-valid`
+- `I_QUERY_SERVICE.execute_ad_hoc_query-distinct`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
 - `SF-FLAT-commit_roundtrip_ctx_defaults`

@@ -4,7 +4,7 @@
 # state/protocol existence matrix is grounded in the AOM1.4 C_ATTRIBUTE.existence
 # semantics and the RM OBSERVATION class (data 1..1; state/protocol 0..1).
 # `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-OBSERVATION-state_protocol_existence
+id: CONT-OBSERVATION-state_protocol_existence
 kind: content
 component: CONTENT
 rm_class: OBSERVATION

@@ -4,7 +4,7 @@
 # HISTORY.Events_valid is satisfied by the event, never by the summary); the
 # events cardinality axis is carried by ecc-CONT-HISTORY-events_cardinality.
 # `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-HISTORY-summary_existence
+id: CONT-HISTORY-summary_existence
 kind: content
 component: CONTENT
 rm_class: HISTORY

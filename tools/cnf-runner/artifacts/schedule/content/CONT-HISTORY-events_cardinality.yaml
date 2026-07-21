@@ -5,7 +5,7 @@
 # rejects even where the archetype cardinality would permit 0). The summary
 # axis is carried by ecc-CONT-HISTORY-summary_existence.
 # `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-HISTORY-events_cardinality
+id: CONT-HISTORY-events_cardinality
 kind: content
 component: CONTENT
 rm_class: HISTORY

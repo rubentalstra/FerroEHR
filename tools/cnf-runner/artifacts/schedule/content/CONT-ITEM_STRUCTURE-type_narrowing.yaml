@@ -4,7 +4,7 @@
 # C_OBJECT.rm_type_name (the polymorphic-slot type constraint) and the RM
 # ITEM_STRUCTURE hierarchy (abstract ITEM_STRUCTURE; ITEM_TREE/ITEM_LIST/
 # ITEM_TABLE/ITEM_SINGLE subtypes). `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-ITEM_STRUCTURE-type_narrowing
+id: CONT-ITEM_STRUCTURE-type_narrowing
 kind: content
 component: CONTENT
 rm_class: ITEM_STRUCTURE
