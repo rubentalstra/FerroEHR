@@ -7,12 +7,12 @@
 
 | Field | Value |
 |---|---|
-| Product | ehrbase-rs ehrbase-rs 3.4.0 |
+| Product | ehrbase-rs ehrbase-rs 3.5.0 |
 | SUT class | ours (ehrbase-rs) |
 | Base URL | `http://localhost:8080/ehrbase/rest/openehr/v1` |
 | Auth mode | basic |
 | Edition policy | pinned (release-1.1.0) |
-| Run started | 2026-07-20T22:15:20.205377Z |
+| Run started | 2026-07-21T08:31:42.09722Z |
 | Reference corpus | openEHR/specifications-CNF@33251d2a |
 
 ## Supported specification versions
