@@ -11,6 +11,7 @@ outcomes:
     status: 200                           # 200_EHR_STATUS_retrieved.yaml
     headers: { ETag: present, Content-Type: negotiated }
   not_found: { status: 404 }
+  not_acceptable: { status: 406 }         # unfulfillable Accept (overview Requests_and_responses negotiation rules; no simplified mapping exists for this resource)
 captures:
   status_version_uid:
     from: header ETag

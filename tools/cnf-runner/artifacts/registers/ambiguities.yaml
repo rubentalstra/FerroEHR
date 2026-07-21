@@ -312,3 +312,17 @@ AMB-30:
     no possible interpretation (e.g. missing FROM) remain gating. SPECQUERY
     candidate.
   disposition: report_only
+AMB-31:
+  ambiguity: >-
+    The SM defines no template-example-generation or web-template
+    representation operation: ITS-REST 1.1.0 serves GET
+    /definition/template/adl1.4/{template_id}/example and the web-template
+    representation (application/openehr.wt+json), but I_DEFINITION_ADL14
+    only defines get_opt/list_opts et al.
+  source: "SM docs/UML/classes/i_definition_adl14.adoc vs ITS-REST specifications/operations (template example + web template)"
+  handling: >-
+    The example endpoint binds as a variant of the genuine get_opt anchor
+    (the AMB-13 rule: official ground, resolvable SM operation); the
+    web-template representation rides the negotiated get_opt binding.
+    SPECPR candidate: add the example/web-template operations to the SM.
+  disposition: fixed_handling
