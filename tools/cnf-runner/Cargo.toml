@@ -16,6 +16,9 @@ path = "src/bin/cnf-runner.rs"
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+# The executor: async HTTP driver realized from the operation bindings.
+tokio = { workspace = true }
+reqwest = { workspace = true }
 # YAML authoring front-end for the schedule artifacts: pure Rust, no RUSTSEC
 # advisories, alias-expansion Budget against untrusted case files.
 serde-saphyr = { workspace = true }
