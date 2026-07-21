@@ -397,3 +397,16 @@ AMB-36:
     a per-case disclosure guard; flows/assertions are replaced when the
     upstream chapter is fleshed. Upstream authoring candidate.
   disposition: fixed_handling
+AMB-38:
+  ambiguity: >-
+    master05 is a stub chapter: all seven stored-query case tables carry
+    xx/TBD cells — the schedule defines the case inventory but no behaviour
+    text.
+  source: "CNF platform_test_schedule master05 (all case tables xx/TBD)"
+  handling: >-
+    Cases are active with flows derived from the SM I_DEFINITION_QUERY
+    operation semantics and the STABLE stored-query Definitions API, each
+    carrying a disclosure guard (the master10/master12 stub-chapter rule,
+    AMB-36 precedent); flows/assertions are replaced when the upstream
+    chapter is fleshed.
+  disposition: fixed_handling

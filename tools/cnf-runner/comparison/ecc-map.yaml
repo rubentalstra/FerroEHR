@@ -552,23 +552,29 @@ ECC-TPL-016:
   covered_by: [I_DEFINITION_ADL14.delete_opt-delete_specific_version]
   justification: "official master04 case, in-catalogue and SM-anchored; not-applicable with citation on ITS-REST 1.1.0 via the unrealized delete_opt binding (AMB-17) — ECC exercised delete via the admin extension surface"
 ECC-SQR-001:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.valid_query-valid]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
 ECC-SQR-002:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.list_queries-non_empty]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
 ECC-SQR-004:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.list_queries-empty]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
 ECC-SQR-005:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.list_queries-select_items]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
 ECC-SQR-006:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.valid_query-bad_formalism]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
 ECC-SQR-007:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.valid_query-invalid]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard)"
 ECC-QRY-001:
   disposition: covered
   covered_by: [I_QUERY_SERVICE.smoke_test]
@@ -1303,8 +1309,9 @@ ECC-COM-032:
   covered_by: [I_EHR_COMPOSITION.has_composition]
   justification: "ground carried 1:1 by the official master07 case (reshaped under the CNF 2.0 case model)"
 ECC-SQR-008:
-  disposition: pending
-  justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
+  disposition: covered
+  covered_by: [I_DEFINITION_QUERY.has_query-xxx]
+  justification: "ground carried by the official master05 case (stub chapter: SM-derived flows with the AMB-38 disclosure guard); the existing-check ground is reshaped into the has_query case"
 ECC-QRY-014:
   disposition: covered
   covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit]
@@ -1410,8 +1417,8 @@ ECC-ADM-014:
   covered_by: [I_ADMIN_ARCHIVE.archive_parties-archive_selected]
   justification: "ground carried by the master12 case (TBD chapter, SM-derived ids; unrealized on ITS-REST 1.1.0 per AMB-33 except physical EHR deletion)"
 ECC-TPL-017:
-  disposition: pending
-  justification: "template-example round-trip ground belongs to the simplified-formats/template-example wave"
+  disposition: deferred
+  justification: "template-example round-trip ground belongs to the simplified-formats/template-example wave — a settled decision, the deepening workstream is the named carrier"
 ECC-QRY-025:
   disposition: covered
   covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection]
@@ -1425,14 +1432,14 @@ ECC-SF-002:
   covered_by: [SF-STRUCTURED-commit_roundtrip]
   justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec)"
 ECC-SF-003:
-  disposition: pending
-  justification: "q-value negotiation strictness enters with the simplified-formats deepening (blueprint category 11) — weighting is tech-profile machinery, not a single case"
+  disposition: deferred
+  justification: "q-value negotiation strictness enters with the simplified-formats deepening (blueprint category 11) — weighting is tech-profile machinery, not a single case — a settled decision, the deepening workstream is the named carrier"
 ECC-SF-004:
-  disposition: pending
-  justification: "retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 406 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case"
+  disposition: deferred
+  justification: "retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 406 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case — a settled decision, the deepening workstream is the named carrier"
 ECC-SF-005:
-  disposition: pending
-  justification: "retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 415 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case"
+  disposition: deferred
+  justification: "retired/deprecated media types are MAY-supported (mandatory rejection would exceed the spec, AMB-7); the where-unsupported 415 conditional enters with the deepening (blueprint category 11) as an ICS-conditional case — a settled decision, the deepening workstream is the named carrier"
 ECC-SF-006:
   disposition: covered
   covered_by: [SF-FLAT-missing_template_id]
@@ -1458,8 +1465,8 @@ ECC-SF-011:
   covered_by: [SF-EXAMPLE-unsupported_accept]
   justification: "ground carried by the simplified-formats seed case (re-adjudicated to the STABLE Simplified Formats spec); SM example/web-template gap registered as AMB-31"
 ECC-SF-012:
-  disposition: pending
-  justification: "CONTRIBUTION with simplified inner data enters with the simplified-formats deepening (blueprint category 14) — requires the commit_contribution binding to declare a simplified-inner-data surface"
+  disposition: deferred
+  justification: "CONTRIBUTION with simplified inner data enters with the simplified-formats deepening (blueprint category 14) — requires the commit_contribution binding to declare a simplified-inner-data surface — a settled decision, the deepening workstream is the named carrier"
 ECC-SF-013:
   disposition: covered
   covered_by: [SF-SCOPE-ehr_status_no_simplified]
@@ -1469,8 +1476,9 @@ ECC-SF-014:
   covered_by: [SF-SCOPE-directory_no_simplified]
   justification: "scope-negative carried (no simplified mapping for DIRECTORY; 406 per the overview negotiation rules)"
 ECC-SF-015:
-  disposition: pending
-  justification: "no demographic component exists in the catalogue yet — enters with the demographic wave"
+  disposition: covered
+  covered_by: [SF-SCOPE-demographic_no_simplified]
+  justification: "scope-negative carried (no simplified mapping for demographic resources; 406 per the overview negotiation rules)"
 ECC-SF-016:
   disposition: covered
   covered_by: [SF-FLAT-commit_roundtrip_ctx_defaults]
