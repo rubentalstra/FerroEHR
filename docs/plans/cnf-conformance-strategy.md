@@ -1,11 +1,11 @@
-# openEHR conformance & certification — the CNF 2.0 framework (v5)
+# openEHR conformance & certification — the CNF 2.0 framework
 
 *Tracker: [#197](https://github.com/rubentalstra/ehrbase-rs/issues/197).
 Plan-file lifecycle applies: this document is deleted in the PR that closes
 #197. Every claim was verified 2026-07-21 against the sources in the Appendix
-(source register), through four validation rounds — openEHR spec conformance,
-ISO, legal/regulatory, internal consistency. Revision history: PRs
-#198/#200/#201/#203 and the issue thread. Before upstream posting: quote EHDS
+(source register), through repeated independent audit rounds (openEHR spec
+conformance, ISO, legal/regulatory, internal consistency, implementability).
+Revision history: the PR trail on #197. Before upstream posting: quote EHDS
 Art 105 verbatim from the OJ text (EUR-Lex blocks automated retrieval).*
 
 ---
@@ -150,19 +150,20 @@ It then stalled, for four operating-model causes this framework must answer
    EHRbase-specific and its generalization (specifications-CNF PR #5,
    open since 2023) had no owner.
 
-The 2017 conformance wiki page (T. Beale — Appendix) contributed four ideas
+The 2017 conformance wiki page (T. Beale — Appendix) contributed five ideas
 the 2021–22 era never carried forward, recovered into this design: the
 maximal-coverage end-to-end template test and scenario/lifecycle suites
 (§11.2–3), the Enterprise dimension — data portability, EHR
-merge/split/move, cross-enterprise sync (§11.11), and the performance dimension made testable
-performance/volumetric classes (§8.14). Its functional levels 1/2/3+O were
-superseded by the Profiles book's CORE/STANDARD/OPTIONS.
+merge/split/move, cross-enterprise sync (§11.11) — the performance/
+volumetric classes made testable (§8.14), and the Security & Privacy BASIC
+rung (§8.15). Its functional levels 1/2/3+O were superseded by the Profiles
+book's CORE/STANDARD/OPTIONS.
 
 The 2017 spec review ([SPECCNF-1 comment 22500](https://openehr.atlassian.net/browse/SPECCNF-1?focusedCommentId=22500))
 remains the oldest open requirements list; its asks are answered in the
 design: computable Conformance Statements as the first artifact (§8.10),
 certificate governance — who creates/grants/verifies (§9), scope discipline
-via ISO/IEC 25010 functional suitability with no manual testing (§6.3, §7),
+via ISO/IEC 25010 with no manual testing (§6.3, §7),
 no conceptual REST hard-coding (the §8.3/§8.4 case-core/binding split), and
 precise archetype-validation conformance points (§8.9 pilot 5, §11).
 
@@ -206,7 +207,7 @@ ISO/IEC 17067* rather than home-grown.
 | Community verification rung | **Witnessed peer verification** — ISO defines no "second-party attestation"; genuinely second-party only when the witness is a purchaser/user | ISO/IEC 17000 (party definitions) |
 | Accredited assessment rung | **Third-party attestation → certification** by an **ISO/IEC 17065** body using an **ISO/IEC 17025** lab | ISO/IEC 17065; 17025 |
 | The program itself | A **conformity-assessment scheme** (ISO/IEC 17000 §3), openEHR International as **scheme owner**; only the third-party rung is an ISO/IEC 17067 product-certification scheme (Type 1a initially; **Type 5** — type testing + process assessment + surveillance — if ongoing certification ships) | ISO/IEC 17000; ISO/IEC 17067 (third-party rung only) |
-| "Conformance" scope | **Functional suitability** (completeness + correctness) — nothing else | ISO/IEC 25010; software-product evaluation per ISO/IEC 25051 |
+| "Conformance" scope | **Functional suitability** (completeness + correctness, incl. the Security & Privacy behaviours §8.15) **plus performance efficiency** (§8.14) — nothing else | ISO/IEC 25010 (+25023 measures); software-product evaluation per ISO/IEC 25051 |
 
 ### 6.2 ISO/IEC 9646 — the 35-year-old blueprint for exactly this design
 
@@ -238,10 +239,14 @@ Conformance under CNF 2.0 attests exactly two ISO/IEC 25010 characteristics
 The Security & Privacy family (§8.15) sits **inside** functional
 suitability: SEC-BASIC attests the functional *correctness of security
 behaviours* (access rejected, audit written, demographic content separated)
-through the assertion machinery. What stays out of scope is ISO/IEC 25010's
-**security quality characteristic itself** — attack resistance, penetration
-strength, cryptographic assurance — which belongs to security evaluation
-schemes, not conformance testing; likewise reliability and maintainability,
+through the assertion machinery — and so does **signature verification**:
+where the Signing capability is claimed, the presence, verifiability, and
+chain integrity of version signatures are wire-testable behaviours (§8.15).
+What stays out of scope is ISO/IEC 25010's **security quality characteristic
+itself** — attack resistance, penetration strength, cryptographic *strength*
+(algorithm security, key management assurance) — which belongs to security
+evaluation schemes, not conformance testing; likewise reliability and
+maintainability,
 referenced by their ISO names rather than redefined (the 2017 review's
 point). ISO/IEC 25051 (conformity evaluation of ready-to-use software
 products) and ISO/IEC/IEEE 29119-3 (test documentation shapes) are the
@@ -378,7 +383,7 @@ earned performance class per environment. Below the machineries: one
 schedule (case cores, three kinds), one binding layer (per SM operation per
 ITS), one governed corpus (fixtures, recipes, views, scale classes,
 workloads), one vocabulary layer (outcomes, the machine-readable
-capability→profile matrix, selectors), one party-artifact layer
+capability matrix, selectors), one party-artifact layer
 (statement/results/ixit — ixit models **named SUT instances + an
 environment**, so single-instance platform cases, dual-instance Enterprise
 cases, and environment-bound performance runs all drive from the same file),
@@ -546,7 +551,6 @@ requires:
   directory: none          # none | <corpus key>  — a FOLDER tree provisioned in the EHR (master09)
   commit: []               # corpus set keys pre-committed into the EHR by the runner
                            #   (bulk setup is precondition state, never an un-anchored flow call)
-compositions: []           # (deprecated alias of commit:)
 ```
 
 `server: empty` is realized by runners through isolation (fresh SUT or
@@ -809,8 +813,8 @@ Binding-level normative rules (all cited from
   `AUDIT_DETAILS.time_committed` is always server-set (client value ignored)
   — a testable assertion.
 - **Negotiation negatives**: unfulfillable `Accept` ⇒ 406; unsupported
-  `Content-Type` ⇒ 415 — including the deprecated/legacy simplified media
-  types, which are asserted-to-reject (§8.7).
+  `Content-Type` ⇒ 415. The deprecated/legacy simplified media types follow
+  §8.7: correct 406/415 **where unsupported**, never mandatory rejection.
 - **error_loose** body selector: see AMB-1 (§8.5) — assert at most that a
   `message` string is present, and only under `Prefer: return=representation`.
 
@@ -1021,7 +1025,7 @@ cnf.ehr_status.is_modifiable_missing:
     defect: "RM/Schema: is_modifiable is mandatory"
     spec_ref: "RM ehr §EHR_STATUS"
   placeholders: { subject_id: runtime-random }    # the __AUTO-GENERATED__ convention, formalized
-  provenance: "openEHR CNF Robot corpus @33251d2a; vendor markers stripped; re-adjudicated 2026-.."
+  provenance: "openEHR CNF Robot corpus @33251d2a; vendor markers stripped; re-adjudicated <date>"
   views: {}          # named projections referenced as ${ds:<key>#<view>}:
                      #   each view = { select: <path expression over the set>,
                      #   where: <predicate>, order_by: <path> } — declarative,
@@ -1057,7 +1061,7 @@ Rules (each answering an observed defect in the current corpus):
 
 ### 8.9 The encoded pilot — official cases, fully encoded
 
-These are the *official* schedule cases (and three new-chapter candidates),
+These are the *official* schedule cases (plus two new-chapter candidates),
 encoded losslessly — the proof artifacts the upstream proposal ships with.
 
 **Pilot 1 — `I_EHR_SERVICE.create_ehr-main`** (master06 — both VALID
@@ -1692,8 +1696,10 @@ family:
 | **Authorization separation** | Admin-family operations reject non-administrative principals (`403`); read-only principals cannot commit. | ITS-REST overview §HTTP status codes |
 | **Audit accountability** | Every change-controlled commit carries `commit_audit` with committer identity and **server-set** `time_committed` (client value ignored — the §8.4 commit-metadata rule as a security assertion); audit-event emission on writes where an audit log is supported (IHE ATNA-shaped). | RM common §change_control; ITS-REST overview §openehr-audit-details |
 | **Anonymous EHRs** | An EHR is creatable and fully operable with no demographic identity attached. | Profiles book §Non-Functional (existing CORE capability) |
+| **Version-signature integrity** *(applies when the Signing capability is claimed — Profiles: STANDARD, not SEC-BASIC-required)* | Committed VERSIONs carry a verifiable `signature`: produced over the canonical form of the version data, verifiable against the declared key material, with the version lineage (`preceding_version_uid` chain) intact — the digital signing chain. Verification behaviour is conformance; algorithm strength and key management are not (§6.3). | RM common §change_control (`ORIGINAL_VERSION.signature`); Profiles book §Non-Functional (Signing) |
 
-Signing remains its own existing capability (Profiles: STANDARD). The
+Signing thereby gets its concrete conformance point (this repo's SIG case
+area + PGP signing sidecar are the donated seed). The
 **statement-declared posture** (never wire verdicts): transport/at-rest
 encryption configuration and id-pseudonymisation-on-export — the 2017
 D-row's "encryption? id pseudonymisation?" aspects — declared in the
