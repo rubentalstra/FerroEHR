@@ -272,24 +272,23 @@ on official openEHR CKM templates. Both directions always published.
 
 ### Maximum sustained throughput
 
-**622 req/s vs 434 req/s — ehrbase-rs sustains 1.4× upstream's load**, and
-carries **15,420 vs 10,744 completed clinical events per minute** doing it
+**631 req/s vs 475 req/s — ehrbase-rs sustains 1.3× upstream's load**, and
+carries **15,642 vs 11,755 completed clinical events per minute** doing it
 (the knee: the highest load holding p99 ≤ 1 s and errors ≤ 0.1%, measured
-back-to-back on the same host, same payloads, full config parity). And 622
-is a floor, not a ceiling: the ladder's top step still **sustained** for
-ehrbase-rs, while upstream's knee sits at L=44:
+back-to-back on the same host, same payloads, full config parity). Both
+knees are breach-resolved — the ladder auto-extends until a real SLO breach
+bounds every knee from above, so neither figure is a guess:
 
 | | Max sustained | Clinical events/min | p99 at the knee |
 |---|--:|--:|--:|
-| **ehrbase-rs** | **622 req/s** (37,341 req/min) | **15,420** | **91 ms** |
-| EHRbase 2.33.0 (Java) | 434 req/s (26,052 req/min) | 10,744 | 873 ms |
+| **ehrbase-rs** | **631 req/s** (37,890 req/min) | **15,642** | **205 ms** |
+| EHRbase 2.34.0 (Java) | 475 req/s (28,500 req/min) | 11,755 | 575 ms |
 
 ![Max sustained req/s at the SLO](docs/benchmarks/charts/comparison-knee.svg)
 
-One rung past upstream's knee (L=48), ehrbase-rs answers with a **51 ms**
-p99 at 0.005% errors — upstream breaches there with a **20.7-second** p99
-and 0.39% errors. At the ladder's top step (L=64), ehrbase-rs still holds a
-91 ms p99; upstream never reaches it. Full
+At L=64 — a third past upstream's knee — ehrbase-rs still holds a **205 ms**
+p99 at 0.03% errors; upstream starts breaching at L=52 (a **26-second** p99
+at 6.8% errors) and never reaches a rung ehrbase-rs cannot sustain. Full
 ladders: [ehrbase-rs](docs/benchmarks/ehrbase-rs/KNEE.md) ·
 [upstream](docs/benchmarks/ehrbase-java/KNEE.md).
 

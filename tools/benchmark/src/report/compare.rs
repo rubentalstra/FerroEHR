@@ -246,9 +246,16 @@ fn knee_section(md: &mut String, charts: &mut Vec<(String, String)>, knees: &[Kn
     for k in [a, b] {
         match &k.knee {
             Some(step) => md.push_str(&format!(
-                "| **{}** | {} | {:.1} | {:.0} | {:.0} | {} |\n",
+                "| **{}** | {}{} | {:.1} | {:.0} | {:.0} | {} |\n",
                 k.sut.name,
                 step.load_factor,
+                // A capped ladder never observed a breach: the figure is a
+                // lower bound on capacity, not a knee — say so in-table.
+                if k.ladder_capped {
+                    " (≥ — ladder-capped, a lower bound)"
+                } else {
+                    ""
+                },
                 step.rps,
                 step.rps * 60.0,
                 step.events_per_min,
@@ -549,6 +556,7 @@ mod tests {
             steps: vec![step.clone()],
             knee: Some(step),
             sut_died: false,
+            ladder_capped: false,
         }
     }
 

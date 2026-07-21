@@ -18,36 +18,41 @@ text { fill: #c3c2b7; }
 <text x="16" y="22" class="title">Knee — sustained req/s vs p99 latency (log scale)</text>
 <line class="grid" x1="64" y1="210.0" x2="660" y2="210.0"/>
 <text class="muted" x="56.0" y="214.0" text-anchor="end">10.0ms</text>
-<line class="grid" x1="64" y1="161.2" x2="660" y2="161.2"/>
-<text class="muted" x="56.0" y="165.2" text-anchor="end">20.0ms</text>
-<line class="grid" x1="64" y1="96.8" x2="660" y2="96.8"/>
-<text class="muted" x="56.0" y="100.8" text-anchor="end">50.0ms</text>
+<line class="grid" x1="64" y1="185.6" x2="660" y2="185.6"/>
+<text class="muted" x="56.0" y="189.6" text-anchor="end">20.0ms</text>
+<line class="grid" x1="64" y1="153.4" x2="660" y2="153.4"/>
+<text class="muted" x="56.0" y="157.4" text-anchor="end">50.0ms</text>
+<line class="grid" x1="64" y1="129.0" x2="660" y2="129.0"/>
+<text class="muted" x="56.0" y="133.0" text-anchor="end">100.0ms</text>
+<line class="grid" x1="64" y1="104.6" x2="660" y2="104.6"/>
+<text class="muted" x="56.0" y="108.6" text-anchor="end">200.0ms</text>
+<line class="grid" x1="64" y1="72.4" x2="660" y2="72.4"/>
+<text class="muted" x="56.0" y="76.4" text-anchor="end">500.0ms</text>
 <line class="grid" x1="64" y1="48.0" x2="660" y2="48.0"/>
-<text class="muted" x="56.0" y="52.0" text-anchor="end">100.0ms</text>
-<text class="muted" x="660" y="228.0" text-anchor="end">622 req/s</text>
-<polyline class="s1s" fill="none" stroke-width="2" points="73.6,116.0 83.3,126.0 102.4,144.6 141.1,151.4 217.7,178.7 366.8,168.0 523.5,95.6 660.0,54.5"/>
-<circle class="s1" cx="73.6" cy="116.0" r="3.5"/>
-<text x="79.6" y="112.0">L=1</text>
-<text class="muted" x="79.6" y="128.0">38.0ms</text>
-<circle class="s1" cx="83.3" cy="126.0" r="3.5"/>
-<text x="89.3" y="122.0">L=2</text>
-<text class="muted" x="89.3" y="138.0">33.0ms</text>
-<circle class="s1" cx="102.4" cy="144.6" r="3.5"/>
-<text x="108.4" y="140.6">L=4</text>
-<text class="muted" x="108.4" y="156.6">25.3ms</text>
-<circle class="s1" cx="141.1" cy="151.4" r="3.5"/>
-<text x="147.1" y="147.4">L=8</text>
-<text class="muted" x="147.1" y="163.4">23.0ms</text>
-<circle class="s1" cx="217.7" cy="178.7" r="3.5"/>
-<text x="223.7" y="174.7">L=16</text>
-<text class="muted" x="223.7" y="190.7">15.6ms</text>
-<circle class="s1" cx="366.8" cy="168.0" r="3.5"/>
-<text x="372.8" y="164.0">L=32</text>
-<text class="muted" x="372.8" y="180.0">18.2ms</text>
-<circle class="s1" cx="523.5" cy="95.6" r="3.5"/>
-<text x="529.5" y="91.6">L=48</text>
-<text class="muted" x="529.5" y="107.6">50.8ms</text>
-<circle class="s1" cx="660.0" cy="54.5" r="3.5"/>
-<text x="666.0" y="50.5">L=64</text>
-<text class="muted" x="666.0" y="66.5">91.2ms</text>
+<text class="muted" x="56.0" y="52.0" text-anchor="end">1.0s</text>
+<line class="s2s" x1="64" y1="48.0" x2="660" y2="48.0" stroke-dasharray="4 3"/>
+<text class="muted" x="620.0" y="44.0">SLO 1s</text>
+<text class="muted" x="660" y="228.0" text-anchor="end">631 req/s</text>
+<polyline class="s1s" fill="none" stroke-width="2" points="73.5,153.1 83.0,172.5 101.9,175.6 140.0,175.8 215.5,191.7 362.4,152.9 660.0,103.8"/>
+<circle class="s1" cx="73.5" cy="153.1" r="3.5"/>
+<text x="79.5" y="149.1">L=1</text>
+<text class="muted" x="79.5" y="165.1">50.4ms</text>
+<circle class="s1" cx="83.0" cy="172.5" r="3.5"/>
+<text x="89.0" y="168.5">L=2</text>
+<text class="muted" x="89.0" y="184.5">29.0ms</text>
+<circle class="s1" cx="101.9" cy="175.6" r="3.5"/>
+<text x="107.9" y="171.6">L=4</text>
+<text class="muted" x="107.9" y="187.6">26.6ms</text>
+<circle class="s1" cx="140.0" cy="175.8" r="3.5"/>
+<text x="146.0" y="171.8">L=8</text>
+<text class="muted" x="146.0" y="187.8">26.4ms</text>
+<circle class="s1" cx="215.5" cy="191.7" r="3.5"/>
+<text x="221.5" y="187.7">L=16</text>
+<text class="muted" x="221.5" y="203.7">16.8ms</text>
+<circle class="s1" cx="362.4" cy="152.9" r="3.5"/>
+<text x="368.4" y="148.9">L=32</text>
+<text class="muted" x="368.4" y="164.9">50.8ms</text>
+<circle class="s1" cx="660.0" cy="103.8" r="3.5"/>
+<text x="666.0" y="99.8">L=64</text>
+<text class="muted" x="666.0" y="115.8">204.7ms</text>
 </svg>
