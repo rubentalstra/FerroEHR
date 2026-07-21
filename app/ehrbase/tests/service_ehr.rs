@@ -1356,7 +1356,7 @@ async fn version_get_at_time_returns_the_original_version() {
         matches!(
             too_early,
             Err(SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ObjectVersionDoesNotExist,
                 ..
             })
         ),

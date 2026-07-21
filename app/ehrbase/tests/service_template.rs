@@ -132,8 +132,9 @@ async fn get_unknown_template_is_not_found() {
     let svc = EhrbaseService::new(db.pool());
     // NOTE: `get_opt` is UUID-keyed at the SM seam, so an unknown
     // OPT is expressed as an absent (well-formed) uuid → 404
-    // (`versioned_object_does_not_exist`); the template_id → uuid resolution the
-    // old template_id-keyed GET did is now an adapter concern.
+    // (`template_does_not_exist`, `definition_call_status_type.adoc`); the
+    // template_id → uuid resolution the old template_id-keyed GET did is now
+    // an adapter concern.
     let err = svc
         .get_opt(uuid::Uuid::now_v7().to_string())
         .await
@@ -142,7 +143,7 @@ async fn get_unknown_template_is_not_found() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::TemplateDoesNotExist,
                 ..
             }
         ),
@@ -281,7 +282,7 @@ async fn example_for_unknown_template_is_not_found() {
         matches!(
             err,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::TemplateDoesNotExist,
                 ..
             }
         ),

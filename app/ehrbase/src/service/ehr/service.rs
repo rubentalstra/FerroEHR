@@ -12,7 +12,7 @@ use crate::ids::EhrId;
 use crate::service::ehr::handle::EhrSummary;
 use crate::service::ehr_index::types::SubjectRef;
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 use serde_json::{Value, json};
 use uuid::Uuid;
 
@@ -217,7 +217,10 @@ impl EhrbaseService {
         let ehr_id = crate::storage::ehr_repo::ehr_id_by_subject(&self.pool, subject_id, namespace)
             .await?
             .ok_or_else(|| {
-                ServiceError::NotFound(format!("EHR for subject {subject_id}@{namespace}"))
+                ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR for subject {subject_id}@{namespace}"),
+                )
             })?;
         self.ehr_summary(ehr_id).await
     }
@@ -241,12 +244,17 @@ impl EhrbaseService {
         // Identity) — the stored per-EHR value, never the live config.
         let read = crate::storage::ehr_repo::ehr_summary_read(&self.pool, ehr_id)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(CallStatusType::EhrIdDoesNotExist, format!("EHR {ehr_id}"))
+            })?;
         let stored_system_id = read.system_id;
         let time_created = read.time_created;
-        let status = read
-            .status
-            .ok_or_else(|| ServiceError::NotFound(format!("EHR_STATUS for EHR {ehr_id}")))?;
+        let status = read.status.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR_STATUS for EHR {ehr_id}"),
+            )
+        })?;
         let status_version = TreeId::from_columns(
             status.trunk_version,
             status.branch_number,
@@ -323,7 +331,9 @@ impl EhrbaseService {
         let (stored_system_id, time_created) =
             crate::storage::ehr_repo::ehr_header(&self.pool, ehr_id)
                 .await?
-                .ok_or_else(|| ServiceError::NotFound(format!("EHR {ehr_id}")))?;
+                .ok_or_else(|| {
+                    ServiceError::sm(CallStatusType::EhrIdDoesNotExist, format!("EHR {ehr_id}"))
+                })?;
 
         // Copy of EHR.ehr_status: the current EHR_STATUS (bare, with its uid).
         let ehr_status = self.status_at(ehr_id, None).await?.body;

@@ -134,7 +134,7 @@ async fn archetype_errors() {
         matches!(
             missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ArtefactDoesNotExist,
                 ..
             }
         ),
@@ -148,7 +148,7 @@ async fn archetype_errors() {
         matches!(
             del_missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ArtefactDoesNotExist,
                 ..
             }
         ),
@@ -253,7 +253,7 @@ async fn adl14_convert_to_adl2_migration_round_trip() {
         matches!(
             missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ArtefactDoesNotExist,
                 ..
             }
         ),
@@ -509,7 +509,7 @@ async fn opt_errors() {
         matches!(
             get_missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::TemplateDoesNotExist,
                 ..
             }
         ),
@@ -520,7 +520,7 @@ async fn opt_errors() {
         matches!(
             del_missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::TemplateDoesNotExist,
                 ..
             }
         ),
@@ -702,7 +702,7 @@ async fn adl2_errors() {
         matches!(
             missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ArtefactDoesNotExist,
                 ..
             }
         ),
@@ -716,7 +716,7 @@ async fn adl2_errors() {
         matches!(
             del_missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ArtefactDoesNotExist,
                 ..
             }
         ),
@@ -840,7 +840,7 @@ async fn query_valid_store_list_match_delete() {
         matches!(
             del_missing,
             SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::ArtefactDoesNotExist,
                 ..
             }
         ),

@@ -229,7 +229,12 @@ impl EhrbaseService {
         .bind(version)
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("stored query {qualified}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::ArtefactDoesNotExist,
+                format!("stored query {qualified}"),
+            )
+        })?;
         descriptor_from_row(&row)
     }
 
@@ -321,9 +326,10 @@ impl EhrbaseService {
         .await?
         .rows_affected();
         if deleted == 0 {
-            return Err(ServiceError::NotFound(format!(
-                "stored query {qualified_name} at version {version}"
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::ArtefactDoesNotExist,
+                format!("stored query {qualified_name} at version {version}"),
+            ));
         }
         Ok(())
     }
@@ -507,7 +513,12 @@ impl EhrbaseService {
         }
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("stored query {qualified_name}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::ArtefactDoesNotExist,
+                format!("stored query {qualified_name}"),
+            )
+        })?;
 
         stored_query_json(&row)
     }
