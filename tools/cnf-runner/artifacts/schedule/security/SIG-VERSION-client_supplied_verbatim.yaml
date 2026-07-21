@@ -46,9 +46,6 @@ flow:
     assert:
       - { assert: version, for_each: "${version_uids}", change_type: CREATE }
 postconditions:
-  - assert: state
-    text: >-
-      The committed VERSION retains the client-supplied signature byte-for-byte
-      (the server does not overwrite it). Verbatim comparison is not expressible
-      with the current bindings or typed assertions — see REQUIREMENTS.md
-      (`signature` assertion family + a version-read binding candidate).
+  - assert: signature
+    for_each: "${version_uids}"
+    equals: "${ds:cnf.security.signed_version#signature}"   # stored byte-for-byte

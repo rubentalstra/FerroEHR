@@ -63,11 +63,10 @@ flow:
       - { assert: instance_of, rm_type: CONTRIBUTION }
       - { assert: field, path: "audit/committer", exists: true }
       - { assert: field, path: "audit/time_committed", exists: true }
+      - { assert: field, path: "audit/time_committed", not_equals: "1990-01-01T00:00:00Z" }   # the client value MUST be ignored (server-set)
 postconditions:
   - assert: state
     text: >-
       The committed CONTRIBUTION audit carries the committer identity and a
-      server-set time_committed; the client-supplied time_committed is not the
-      recorded committal time (the inequality is not expressible in the current
-      typed-assertion vocabulary — see REQUIREMENTS.md, a `server_set` / audit
-      assertion candidate).
+      server-set time_committed (verified in step 2: the client-supplied
+      instant was not recorded).

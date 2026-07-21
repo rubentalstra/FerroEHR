@@ -64,10 +64,7 @@ flow:
       - { assert: version, of: "${deleted_uid}", change_type: DELETED, lifecycle_state: "openehr::523|deleted|" }
 postconditions:
   - { assert: version, count: 3 }
-  - assert: state
-    text: >-
-      Each of the three committed VERSIONs (creation, modification, deletion)
-      carries a signature over its canonical serialisation. Per-kind signature
-      presence is not expressible with the current bindings or typed assertions
-      — see REQUIREMENTS.md (`signature` assertion family + version-read binding).
+  - { assert: signature, of: "${preceding_version_uid}", present: true }
+  - { assert: signature, of: "${v2_uid}", present: true }
+  - { assert: signature, of: "${deleted_uid}", present: true }
 ambiguities: [AMB-3]

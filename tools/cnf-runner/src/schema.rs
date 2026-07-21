@@ -152,7 +152,7 @@ fn assertion_def() -> Value {
         "required": ["assert"],
         "properties": {
             "assert": { "enum": [
-                "instance_of", "field", "equivalent", "version",
+                "instance_of", "field", "equivalent", "version", "signature",
                 "result_set", "unique", "returns", "message_exemplar", "state"
             ] }
         }
