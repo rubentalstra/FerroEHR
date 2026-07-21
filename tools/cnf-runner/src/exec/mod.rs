@@ -17,6 +17,7 @@
 pub mod assertions;
 pub mod outcome;
 pub mod recipes;
+pub mod resolve;
 pub mod resultset;
 pub mod state;
 
