@@ -147,6 +147,14 @@ It then stalled, for four operating-model causes this framework must answer
    EHRbase-specific and its generalization (specifications-CNF PR #5,
    open since 2023) had no owner.
 
+The 2017 conformance wiki page (T. Beale — Appendix) contributed four ideas
+the 2021–22 era never carried forward, recovered into this design: the
+maximal-coverage end-to-end template test and scenario/lifecycle suites
+(§11.2–3), the Enterprise dimension — data portability, EHR
+merge/split/move, cross-enterprise sync (§11.10), and the declared
+performance/volumetric classes (§8.10). Its functional levels 1/2/3+O were
+superseded by the Profiles book's CORE/STANDARD/OPTIONS.
+
 The 2017 spec review ([SPECCNF-1 comment 22500](https://openehr.atlassian.net/browse/SPECCNF-1?focusedCommentId=22500))
 remains the oldest open requirements list; its asks are answered in the
 design: computable Conformance Statements as the first artifact (§8.10),
@@ -1383,7 +1391,7 @@ artifacts in the source standards, combined here as one computable file):
 | `claims` ∎ | claimed capabilities per the Profiles matrix + claimed profiles |
 | `tech_profiles` ∎ | which format/protocol matrices are claimed (e.g. `[its-rest: [canonical-json, canonical-xml, wt-flat]]`) |
 | `options` | declared behaviour for register-listed implementation choices (e.g. AMB-4: conflict vs version-param) |
-| `non_functional` | reserved declaration slots (performance/security postures) — never verdict inputs (§6.3) |
+| `non_functional` | declaration-only slots, never verdict inputs (§6.3): `volumetric_class` — the 2017 schedule's ladder, declared not certified: `POC` (~5 concurrent users, demo) / `S` (small facility, ~100 users, ~100k EHRs) / `L` (large enterprise, ~1000 users, ~1M EHRs) / `R` (regional, ~10k users, ~10M EHRs), each backed by a linked measurement report from a published benchmark methodology (a companion artifact, outside conformance); plus free security/privacy posture declarations |
 | `evidence` ∎ | hash links to the `results.json` files backing the claims |
 | `attestation` | rung ≥ 1: signatory name/role/date + the §6.4 responsibility sentence |
 
@@ -1586,30 +1594,53 @@ once §8.3 makes cases enumerable files:
    designs (each carrying AQL 1.1 citations) and EHRbase's AQL conformance
    corpus ([ehrbase/conformance-testing-documentation](https://github.com/ehrbase/conformance-testing-documentation),
    SELECT/WHERE/ORDER BY/LIMIT/FROM/parameter suites).
-2. **Content chapters refresh** — raise the RM floor statement (1.0.2 → an
+2. **The maximal-coverage template round-trip** (the 2017 "template
+   injection test"): one template exercising ALL RM types (every DV_* incl.
+   generic derivations like DV_INTERVAL<DV_QUANTITY>) and all compositional
+   hierarchy shapes, driven end-to-end — inject OPT → commit instance →
+   export canonical JSON+XML → regression-compare. Pairs with master04's
+   "maximal valid OPT" data set; one case family, enormous coverage per case.
+3. **Scenario/lifecycle suites** (the 2017 "EHR API lifecycle test"):
+   realistic multi-contribution journeys — admission (admin COMPOSITION) →
+   persistent medication list → event vital signs → update both → retrieve
+   all versions in both formats — encoded as ordinary §8.3 flows; these
+   catch cross-operation state defects the per-operation cases cannot.
+4. **Content chapters refresh** — raise the RM floor statement (1.0.2 → an
    applicability ladder), fill 17.5 or formally adjudicate it out, fix the
    master14 numbering gap and the master13 duplicate heading.
-3. **Demographic (master10)** — schedule cases exist in no form today; ECC's
+5. **Demographic (master10)** — schedule cases exist in no form today; ECC's
    31 DEM cases + the ITS-REST Demographic API (DEVELOPMENT lifecycle) are the
    seed; profile placement stays OPTIONS.
-4. **Admin (master12) + Messaging (master13)** — decide what is
+6. **Admin (master12) + Messaging (master13)** — decide what is
    *wire-testable* (platform API) vs inherently off-wire (dump/load,
    archives); off-wire capabilities move to statement-declared, not
    schedule-tested — the honest boundary.
-5. **N/A re-adjudication of donated material (hard gate)** — every donated
+7. **N/A re-adjudication of donated material (hard gate)** — every donated
    case whose evidence or N/A justification points at ehrbase-rs internal
    tests is re-adjudicated to spec-text-only evidence **before** entering the
    normative catalogue. No exceptions; this is a scoped workstream, not an
    assumption.
-6. **Security & privacy conformance points** — currently only Signing +
+8. **Security & privacy conformance points** — currently only Signing +
    Anonymous EHRs in the Profiles book while the Certificate book advertises
    BASIC-SEC/BASIC-PRIV with no defining cases. Minimum viable set:
    authenticated-access enforcement, audit-event emission on writes
-   (IHE ATNA-shaped), signing. Explicitly scoped small; not a security
+   (IHE ATNA-shaped), signing, and **EHR/demographic information
+   separation** (the 2017 schedule's BASIC point — openEHR's
+   architecture-specific privacy property). Explicitly scoped small; not a security
    evaluation scheme.
-7. **ADL2 cases (master04)** — OPTIONS-profile depth for the `am24`
+9. **ADL2 cases (master04)** — OPTIONS-profile depth for the `am24`
    generation.
-8. **The openEHR→EEHRxF seam (EHDS alignment, later)** — cases verifying that
+10. **The Enterprise capability family** (the 2017 schedule's D/M/X
+   dimension, absent from every later draft): **D — data portability**
+   (full-EHR dump/load in canonical form between independent instances,
+   verified by lossless regression over a random query set, on synthesized
+   corpora at declared scales — 1k/10k/100k/1M/10M EHRs, ~100 composition
+   versions each, the recipes joining the §8.8 governed corpus);
+   **M — EHR management** (merge/split/move of EHRs across instances);
+   **X — cross-enterprise synchronisation** (asynchronous update merging —
+   specifications-CNF issue #1 is the 2017 seed). Its own profile family +
+   SM grounding decision; dump/load overlaps §11.6's off-wire boundary.
+11. **The openEHR→EEHRxF seam (EHDS alignment, later)** — cases verifying that
    priority-category content in a conformant CDR renders faithfully to the
    EEHRxF FHIR models, once the March 2027 implementing acts fix them. Flag:
    this extends conformance scope beyond the platform API; it needs its own
