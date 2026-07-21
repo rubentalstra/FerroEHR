@@ -1345,11 +1345,13 @@ dependencies = [
  "clap",
  "jsonschema",
  "regex",
+ "reqwest 0.13.4",
  "semver",
  "serde",
  "serde-saphyr",
  "serde_json",
  "thiserror 2.0.18",
+ "tokio",
 ]
 
 [[package]]

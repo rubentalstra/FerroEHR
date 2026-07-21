@@ -11,6 +11,7 @@
 pub mod artifacts;
 pub mod compare;
 pub mod ids;
+pub mod ixit;
 pub mod literal;
 pub mod load;
 pub mod model;
