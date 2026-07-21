@@ -15,7 +15,9 @@
 //! reqwest driver and the verification-pack transcript player.
 
 pub mod assertions;
+pub mod driver;
 pub mod outcome;
+pub mod player;
 pub mod recipes;
 pub mod resolve;
 pub mod resultset;

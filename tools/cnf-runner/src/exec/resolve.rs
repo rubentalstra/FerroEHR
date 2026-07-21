@@ -104,7 +104,10 @@ impl<'a> Resolver<'a> {
     #[must_use]
     pub fn row_cell(&self, column: &str) -> Option<&MatrixCell> {
         let (columns, cells) = self.row.as_ref()?;
-        columns.iter().position(|c| c == column).and_then(|i| cells.get(i))
+        columns
+            .iter()
+            .position(|c| c == column)
+            .and_then(|i| cells.get(i))
     }
 
     /// Load a corpus payload (JSON parsed for JSON-family formats; text
@@ -339,8 +342,13 @@ impl<'a> Resolver<'a> {
             return false;
         };
         match single {
-            ValueRef::Row(column) => matches!(self.row_cell(column), Some(MatrixCell::Absent) | None),
-            ValueRef::Capture { name, optional: true } => vars.get(name).is_none(),
+            ValueRef::Row(column) => {
+                matches!(self.row_cell(column), Some(MatrixCell::Absent) | None)
+            }
+            ValueRef::Capture {
+                name,
+                optional: true,
+            } => vars.get(name).is_none(),
             ValueRef::Recipe(name) if name.as_str() == "ehr_status" => {
                 matches!(self.row_cell("ehr_status"), Some(MatrixCell::Absent))
             }
