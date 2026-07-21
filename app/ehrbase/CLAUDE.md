@@ -1,6 +1,6 @@
 # `ehrbase` — the platform library
 
-The application core (three app crates, zero re-exports): storage, the service layer
+The application core (four app crates, zero re-exports): storage, the service layer
 (one module per SM chapter — concrete `EhrbaseService` methods, no trait
 catalog), AQL engine, versioning, the full configuration tree
 (`ehrbase::config`), telemetry, plus the `signing` (VERSION.signature) and

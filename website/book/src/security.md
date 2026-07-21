@@ -12,11 +12,11 @@ described here in terms of the environment variables you actually set.
 
 Configuration follows the same pattern throughout: the server reads defaults,
 then the single `ehrbase.toml` file, then environment variables, with `__`
-separating nested keys. The three security configuration groups live in
-distinct sections of `ehrbase.toml` — `[auth]` (authentication), `[server]`
-(tenancy, under `[server.tenancy]`), `[authz]` (authorization), and `[atna]`
-(audit) — and any key can be overridden with the matching `EHRBASE_*`
-environment variable shown below.
+separating nested keys. The security configuration groups live in
+distinct sections of `ehrbase.toml` — `[auth]` (authentication), `[tenancy]`
+(multi-tenancy), `[authz]` (authorization), and `[audit]`
+(the ATNA audit trail) — and any key can be overridden with the matching
+`EHRBASE_*` environment variable shown below.
 
 ## Authentication
 

@@ -6,7 +6,7 @@ A pure-Rust, **openEHR-spec-conformant** CDR (ITS-REST 1.1.0 + AQL 1.1) in a sin
 
 Single workspace. **Crate naming:** `openehr-*` = the openEHR **specification** (generated from the vendored BMM/XSD/OAS — treat as `// @generated`); `ehrbase-*` = the **application** (idiomatic Rust of our own design consuming the `openehr-*` crates). The formerly in-tree EHRbase Java reference was removed with the greenfield pivot (git history / upstream repos are the prior-art record).
 
-- `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) is the hand-written tooling.
+- `crates/openehr-base`, `openehr-rm`, `openehr-am`, `openehr-term`, `openehr-lang` — **generated** spec crates (`openehr-codegen -- emit`). `openehr-its` — canonical JSON + **generated** XML (`emit-xml`) + **generated** ITS-REST contract (`emit-rest`) + hand-written runtimes. `openehr-query` — hand-written AQL lexer/parser/AST. `openehr-adl` — hand-written ADL 2.4 engine (ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion) over `openehr-am::am24`. `openehr-flat` — FLAT/STRUCTURED (hand-written). `openehr-codegen` (BMM/XSD/OAS→Rust generator) is the hand-written tooling.
 - `app/*` — the application, **four crates**: `ehrbase` (the platform **library**: storage, service layer [one module per SM chapter, concrete `EhrbaseService` methods — no traits], AQL engine, versioning, config tree, telemetry, `signing` + `system_log`), `ehrbase-rest` (ITS-REST protocol adapter + auth + the `access` authz module, calling the concrete service directly — depends on `ehrbase`), `ehrbase-server` (the wiring-only binary; bin name stays `ehrbase`), and `ehrbase-admin-ui` (the Leptos SSR admin console — a standalone binary/OCI image that consumes the CDR STRICTLY over ITS-REST; may depend on `crates/openehr-*`, NEVER on `app/ehrbase`/`app/ehrbase-rest`; gates via `/ui-gates`, rules in `.claude/rules/leptos-ui.md`). **Zero re-exports (owner hard rule 2026-07-16): import every name from its defining module.** `tools/*` — dev/verification tooling, **not part of the app**: `conformance` (the ECC runner), `benchmark`, and `testkit` (the shared test-database harness — one PG18 server + template-database cloning; every DB-backed test uses `testkit::db()`, never a per-test container). Workspace `members = ["crates/*", "app/*", "tools/*"]`. The service layer follows the openEHR **SM Platform Service Model** (SM component map in `docs/architecture.md`, vendored SM spec at `docs/specs/openehr/SM/`).
 - `docs/` — plans (`docs/plans/`: deep working plans, linked from their tracker issues), VERSIONS, architecture, postgres-features, `endpoint-map.md` (every endpoint traced to its SQL), conformance (generated reports), benchmarks; the forward product roadmap is the root `ROADMAP.md`. **`docs/specs/openehr/` — the vendored openEHR spec text + CNF test schedule (the conformance oracle; see its README + `/spec-lookup`).**
 - `.claude/` — rules, skills, hooks, agents, **`memory/`** (the persistent agent memory, moved in-repo 2026-07-12 so it is visible and versioned; the harness memory dir under `~/.claude/projects/` is a symlink to it — never break that link). Agent defs (`spec-researcher`, `spec-conformance-reviewer`, `implementer`, `ui-implementer`, `leptos-reviewer`) are the delegation targets for the Model-orchestration section below; the orchestrator keeps the critical path in-session.
@@ -35,7 +35,7 @@ change.
 - **Hand-written spec behaviour** (invariants, spec functions) lives in sibling `*_impl.rs` files the generator never rewrites.
 - **Hand-written tooling** (edit freely, normal Rust): `openehr-lang` (ODIN + BMM reader), `openehr-codegen` (emitter).
 - **Partly generated:** `openehr-its` — the XML `ToXml`/`FromXml` impls (`emit-xml`) and the ITS-REST contract (`emit-rest`) are generated into `src/xml/generated/` + `src/rest/generated/`; the hand-written parts are the runtimes (`xml/runtime.rs`, `rest/runtime.rs`), the canonical-JSON entry points + validation, and the fidelity gates.
-- **NOT generated** (hand-written): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-query` (AQL lexer/parser/AST), `openehr-flat` (Simplified Formats), and the `ehrbase-*` application crates (idiomatic Rust of our own design on the generated crates).
+- **NOT generated** (hand-written): `openehr-term` (terminology bundle + XML assets + access logic — BMM only has ~6 interface classes), `openehr-query` (AQL lexer/parser/AST), `openehr-adl` (the ADL 2.4 engine), `openehr-flat` (Simplified Formats), and the `ehrbase-*` application crates (idiomatic Rust of our own design on the generated crates).
 - **Pinned spec versions:** RM 1.2.0, BASE 1.3.0, TERM 3.1.0, AM 1.4.0 + 2.4.0 (see `docs/VERSIONS.md` — incl. the release ladder and pin-honesty column). **Version policy (owner 2026-07-20):** single pin per component (openEHR minors are compatible supersets within a major); dual generations only across major boundaries — AM's `am14`/`am24` is the one live, spec-mandated case; ITS-REST is single-version, always the latest RELEASED API. Full policy: `docs/VERSIONS.md` §Spec version policy.
 
 ## Issue workflow (the loop)
@@ -125,7 +125,7 @@ cargo clippy --workspace --all-targets --all-features   # the EXACT CI flags —
 cargo fmt --all
 cargo audit && cargo deny check
 # conformance runner (the acceptance instrument) — present and green:
-bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (341 executed · 315 passed · 0 failed at B6 close)
+bash scripts/conformance.sh   # compose up --build → full ECC → docs/conformance/ (402 executed · 384 passed · 0 failed · 18 N/A · 0 skipped at the v3.5.0 close)
 # admin-console gates: /ui-gates (both-target clippy, nextest, leptosfmt, cargo-leptos build)
 bash scripts/ui-e2e.sh        # the browser journey battery against the composed stack (merge gate in CI)
 ```
@@ -177,11 +177,12 @@ Compile status: the **generated** spec crates `openehr-base`, `openehr-rm`,
 `openehr-codegen` (hand-written tooling), `openehr-term`
 (hand-written), `openehr-query` (AQL parser), and `openehr-its` (canonical
 JSON/XML + generated ITS-REST contract; all fidelity gates green) all compile +
-clippy-clean. The `ehrbase-*` application crates are built compiling per phase:
-the Stage-1 app build P09–P15 is **done** (persistence, greenfield storage,
-REST+auth, service layer, templates, WebTemplate/FLAT/STRUCTURED, validation);
-the remaining work is P16–P20 (+P99) — AQL engine, FLAT/EhrScape wiring,
-integration, conformance, optimization, cutover.
+clippy-clean. The `ehrbase-*` application crates: **the Stage-1 CDR is
+shipped** (v3.5.0 — persistence, greenfield storage, REST + auth incl.
+RBAC/ABAC, the full SM service layer, templates, WebTemplate/FLAT/STRUCTURED,
+validation, the AQL engine, the admin console) with the ECC baseline green
+(402 executed · 384 passed · 0 failed); the EhrScape surface was cut, not
+built. Remaining work is tracked exclusively on GitHub Issues.
 
 ## Conventions
 
@@ -205,10 +206,10 @@ integration, conformance, optimization, cutover.
 - **Keep the changelog** (`CHANGELOG.md`, Keep a Changelog 1.1.0): every PR with user-visible changes adds an `[Unreleased]` entry in the same PR — CI (`changelog-guard`) enforces it; releases are cut from the changelog (see `.claude/rules/changelog.md`). The `openehr-*` spec crates are versioned by the spec they implement; the product/workspace follows its own SemVer (3.x).
 - **User docs track the product.** Any PR that changes the REST surface, configuration (`EHRBASE_*`), the CLI, deployment artifacts (compose/Helm/containers), or other user-visible behaviour must update the matching `website/book/src` page in the same PR (see `.claude/rules/docs-website.md`). Never hand-edit `website/api/spec/**` — run `scripts/assemble-oas.sh` (CI drift gate).
 - **Never weaken, skip, or delete a test** to make a build pass, and never edit a test to route around a bug it exposes.
-- **Reliability hard rules are machine-enforced** (`.claude/rules/reliability.md`, owner 2026-07-17): every safety rule pairs with the lint/CI check that fails on violation — a rule without a failing check is a wish. Register: `docs/plans/design-principles.md`.
+- **Reliability hard rules are machine-enforced** (`.claude/rules/reliability.md`, owner 2026-07-17): every safety rule pairs with the lint/CI check that fails on violation — a rule without a failing check is a wish. The rules + their enforcement register live in `.claude/rules/reliability.md` itself.
 - **Record progress on the tracker (tick issue checkboxes / comment / open issues for new work) and commit before ending a session.** A `Stop` hook enforces this.
 - **Application phases build as compiling, tested increments** on top of the generated `openehr-*` crates — do not defer compilation. (The old "phases need not compile" rule applied only to the retired hand-transcription era.)
-- The v1 enterprise code (RBAC and others) is a Stage 2 concern. Do not build it during Stage 1; it lives only as the read-only `reference/v1` git ref until then.
+- RBAC/ABAC authz (`ehrbase-rest::access`) and multi-tenancy are SHIPPED — they were built greenfield, not restored. The remaining v1 enterprise archaeology (plugin system and any other unrestored capability) stays a Stage 2/3 concern; `reference/v1` remains a read-only git ref consulted only for that work.
 
 ## References
 

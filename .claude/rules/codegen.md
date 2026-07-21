@@ -44,8 +44,8 @@ generated crates exist to guarantee. Cross-component subtype extension
 emitter at the DOWNSTREAM crate boundary (an extender-level enum composing
 the upstream variants + the downstream leaves) — upstream crates never
 gain downstream variants (dependency arrows point one way). If the emitter
-fix is large, register a worklist row; the workaround is still forbidden.
-Existing workarounds get removal rows on discovery.
+fix is large, register a tracker issue; the workaround is still forbidden.
+Existing workarounds get a removal issue on discovery.
 
 **Never hand-edit a `// @generated` file.** To change generated output, edit the
 emitter (`tools/openehr-codegen/src/`, the `load/`→`analyze/`→`plan/`→`render/`
