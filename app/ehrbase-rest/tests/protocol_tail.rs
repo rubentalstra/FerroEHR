@@ -170,9 +170,13 @@ async fn options_root_is_system_options_and_conformance() {
     );
     // The `Options` conformance manifest body.
     let v: Value = serde_json::from_str(&body).expect("options body");
-    // The served identity is the released ITS-REST contract version, shared
-    // from the single provenance constant.
-    assert_eq!(v["restapi_specs_version"], "Release-1.1.0");
+    // The served identity is the released ITS-REST contract version — the
+    // `openehr-its` crate version, via the single provenance constant (a
+    // plain version string, matching the System API OAS example).
+    assert_eq!(
+        v["restapi_specs_version"],
+        ehrbase::telemetry::provenance::ITS_REST
+    );
     assert_eq!(v["conformance_profile"], "STANDARD");
     assert!(v["endpoints"].as_array().is_some_and(|e| !e.is_empty()));
 }

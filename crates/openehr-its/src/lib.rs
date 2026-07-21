@@ -36,3 +36,9 @@ pub mod rest;
 pub mod rm_terminology;
 pub mod rm_validate;
 pub mod xml;
+
+/// The openEHR specification version this crate implements — the crate
+/// version itself: the spec crates are versioned by the specification they
+/// implement (`docs/VERSIONS.md` §Product and crate versioning), so
+/// consumers read the pin from the package, never from a hand-typed literal.
+pub const SPEC_VERSION: &str = env!("CARGO_PKG_VERSION");
