@@ -2,7 +2,12 @@
 //! probe. The `hour` rate shape is driven at an ascending load-factor ladder,
 //! each step on a short fixed window (open-loop, ramping, fixed duration per
 //! step); the ladder stops at the first step past the SLO (p99 > 1 s) or the
-//! error-rate flag (> 0.1%), and the last sustainable step is the knee.
+//! error-rate flag (> 0.1%), and the last sustainable step is the knee. A
+//! ladder that exhausts its configured steps while still sustained
+//! auto-extends (doubling the load factor) until a breach, a generator-bound
+//! step, or the `--max-load` cap — a knee is only a knee once a breach
+//! bounds it from above; anything else is flagged `ladder_capped` (a lower
+//! bound, not a knee).
 //!
 //! `knee.json` is the machine record; `KNEE.md` + `charts/knee.svg` are
 //! generated from it, never hand-typed. Measured only — the honesty limitations
@@ -70,6 +75,17 @@ impl KneeStep {
     }
 }
 
+/// The next auto-extension step after a ladder exhausted its configured steps
+/// with the top step still sustained: double the last sustained load factor,
+/// or `None` once past `max_load` (the safety cap). Doubling continues the
+/// default ladder's geometric shape, and the post-breach bisection refines
+/// the interval it opens.
+#[must_use]
+pub fn extend_step(last_sustained: f64, max_load: f64) -> Option<f64> {
+    let next = last_sustained * 2.0;
+    (next <= max_load).then_some(next)
+}
+
 /// The knee/saturation machine record (`knee.json`).
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct KneeResults {
@@ -88,6 +104,12 @@ pub struct KneeResults {
     /// first-class finding, surfaced loudly in `KNEE.md`.
     #[serde(default)]
     pub sut_died: bool,
+    /// The ladder ended with its top executed step still sustained — no SLO
+    /// breach was ever observed (the auto-extension hit `--max-load` or a
+    /// generator-bound step). The `knee` field is then a **lower bound** on
+    /// capacity, not a knee; surfaced loudly in `KNEE.md`.
+    #[serde(default)]
+    pub ladder_capped: bool,
 }
 
 impl KneeResults {
@@ -130,11 +152,16 @@ pub fn from_file(path: &Path) -> Result<KneeResults, BenchError> {
     Ok(serde_json::from_str(&text)?)
 }
 
-/// The chart points `(rps, p99_us, load_factor)` in ladder order.
+/// The chart points `(rps, p99_us, load_factor)` in ladder order: SUSTAINED
+/// steps only. Breached steps carry multi-second p99s (a saturated SUT
+/// answers in tens of seconds) that stretch the latency axis until the whole
+/// sustained curve flattens into noise — the chart shows the capacity curve,
+/// the table below it still lists every breached probe.
 fn chart_points(results: &KneeResults) -> Vec<(f64, u64, f64)> {
     results
         .steps
         .iter()
+        .filter(|s| !ladder_should_stop(s.p99_us, s.error_rate))
         .map(|s| (s.rps, s.p99_us, s.load_factor))
         .collect()
 }
@@ -158,8 +185,13 @@ pub fn render_markdown(r: &KneeResults) -> String {
 
     match &r.knee {
         Some(step) => m.push_str(&format!(
-            "**Knee: L = {} → {} at p99 {} µs** (the last sustainable step; \
+            "**{}: L = {} → {} at p99 {} µs** (the last sustainable step; \
              SLO p99 ≤ 1 s, error ≤ 0.1%){}.\n\n",
+            if r.ladder_capped {
+                "Top sustained step (ladder-capped — a lower bound, NOT the knee)"
+            } else {
+                "Knee"
+            },
             step.load_factor,
             super::fmt_rate(step.rps),
             step.p99_us,
@@ -186,6 +218,15 @@ pub fn render_markdown(r: &KneeResults) -> String {
              longer answered HTTP at all (a crash, e.g. OOM-killed; not mere saturation). \
              The knee above is where it *stopped surviving*, not where it merely slowed. \
              This is a finding about the SUT's overload behaviour.\n\n",
+        );
+    }
+    if r.ladder_capped {
+        m.push_str(
+            "> [!WARNING]\n> **Ladder-capped — this is a LOWER BOUND, not a knee.** The top \
+             executed step was still sustained; no SLO breach was observed, so the SUT's \
+             real knee lies above the figure reported here (the auto-extension stopped at \
+             the `--max-load` cap or a generator-bound step). Re-run with a higher cap or \
+             an isolated load generator to resolve it.\n\n",
         );
     }
     m.push_str("## Ladder\n\n");
@@ -222,9 +263,9 @@ pub fn render_markdown(r: &KneeResults) -> String {
 
     m.push_str("## Limitations\n\n");
     m.push_str(
-        "- **Single run per step** (no inter-run variance): the ≥5-run protocol \
-         (benchmarking.md §4.4) is the publication step; these numbers are \
-         indicative, not certified.\n",
+        "- **Single run per step** (no inter-run variance): a multi-run protocol \
+         with coefficient of variation is the certification bar; these numbers \
+         are indicative, not certified.\n",
     );
     m.push_str(
         "- **Same-host load generator:** the generator competes for CPU with the \
@@ -282,6 +323,7 @@ mod tests {
             steps: vec![s1, s2.clone(), breach],
             knee: Some(s2),
             sut_died: false,
+            ladder_capped: false,
         }
     }
 
@@ -338,6 +380,52 @@ mod tests {
         );
         // Absent (pre-25b) data stays silent — the base fixture has 0.0.
         assert!(!render_markdown(&results()).contains("clinical events/min"));
+    }
+
+    #[test]
+    fn chart_keeps_only_sustained_steps() {
+        let mut r = results();
+        // Extra deep-past-saturation probes (pre-refinement rungs): 20 s and
+        // 44 s p99s that would wreck the latency axis.
+        r.steps.push(step(6.0, 130.0, 0.08, 20_000_000, 7800));
+        r.steps.push(step(8.0, 110.0, 0.38, 44_000_000, 6600));
+        let pts = chart_points(&r);
+        let ls: Vec<f64> = pts.iter().map(|(_, _, l)| *l).collect();
+        assert_eq!(
+            ls,
+            vec![1.0, 2.0],
+            "the chart is the sustained capacity curve — every breached probe \
+             (incl. the base fixture's L=4 breach) stays table-only"
+        );
+    }
+
+    #[test]
+    fn extension_doubles_until_the_cap() {
+        assert_eq!(extend_step(64.0, 1024.0), Some(128.0));
+        assert_eq!(extend_step(512.0, 1024.0), Some(1024.0), "cap inclusive");
+        assert_eq!(extend_step(1024.0, 1024.0), None, "past the cap stops");
+        assert_eq!(extend_step(600.0, 1024.0), None, "next step would exceed");
+    }
+
+    #[test]
+    fn capped_run_is_flagged_a_lower_bound_not_a_knee() {
+        let mut r = results();
+        // A capped run: every step sustained, no breach row.
+        r.steps.pop();
+        r.ladder_capped = true;
+        let md = render_markdown(&r);
+        assert!(
+            md.contains("ladder-capped — a lower bound, NOT the knee"),
+            "the headline must not call a capped result a knee\n{md}"
+        );
+        assert!(
+            md.contains("Ladder-capped — this is a LOWER BOUND"),
+            "the warning block names the cap\n{md}"
+        );
+        // A breach-resolved run keeps the plain knee headline and no warning.
+        let resolved = render_markdown(&results());
+        assert!(resolved.contains("**Knee: L = 2"));
+        assert!(!resolved.contains("LOWER BOUND"));
     }
 
     #[test]

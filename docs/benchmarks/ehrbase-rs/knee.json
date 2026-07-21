@@ -13,83 +13,111 @@
       "load_factor": 1.0,
       "rps": 10.075,
       "error_rate": 0.0,
-      "p99_us": 38047,
+      "p99_us": 50399,
       "requests": 1209,
       "events_per_min": 250.00000000000003,
-      "max_dispatch_lag_ms": 9
+      "max_dispatch_lag_ms": 11
     },
     {
       "load_factor": 2.0,
       "rps": 20.133333333333333,
       "error_rate": 0.0,
-      "p99_us": 33023,
+      "p99_us": 29039,
       "requests": 2416,
       "events_per_min": 498.5,
-      "max_dispatch_lag_ms": 5
+      "max_dispatch_lag_ms": 11
     },
     {
       "load_factor": 4.0,
       "rps": 40.141666666666666,
       "error_rate": 0.0,
-      "p99_us": 25343,
+      "p99_us": 26575,
       "requests": 4817,
       "events_per_min": 993.0,
-      "max_dispatch_lag_ms": 4
+      "max_dispatch_lag_ms": 45
     },
     {
       "load_factor": 8.0,
       "rps": 80.525,
       "error_rate": 0.0,
-      "p99_us": 22991,
+      "p99_us": 26447,
       "requests": 9663,
       "events_per_min": 1993.0,
-      "max_dispatch_lag_ms": 16
+      "max_dispatch_lag_ms": 15
     },
     {
       "load_factor": 16.0,
-      "rps": 160.525,
-      "error_rate": 0.00005191029900332226,
-      "p99_us": 15599,
-      "requests": 19263,
-      "events_per_min": 3980.9999999999995,
-      "max_dispatch_lag_ms": 30
+      "rps": 160.53333333333333,
+      "error_rate": 0.0,
+      "p99_us": 16831,
+      "requests": 19264,
+      "events_per_min": 3981.5,
+      "max_dispatch_lag_ms": 26
     },
     {
       "load_factor": 32.0,
       "rps": 316.1666666666667,
       "error_rate": 0.0000790659673721108,
-      "p99_us": 18159,
+      "p99_us": 50751,
       "requests": 37940,
       "events_per_min": 7839.5,
-      "max_dispatch_lag_ms": 18
-    },
-    {
-      "load_factor": 48.0,
-      "rps": 479.775,
-      "error_rate": 0.000052105043768236766,
-      "p99_us": 50815,
-      "requests": 57573,
-      "events_per_min": 11883.5,
-      "max_dispatch_lag_ms": 11
+      "max_dispatch_lag_ms": 17
     },
     {
       "load_factor": 64.0,
-      "rps": 622.35,
-      "error_rate": 0.00021419582853623927,
-      "p99_us": 91199,
-      "requests": 74682,
-      "events_per_min": 15419.5,
-      "max_dispatch_lag_ms": 16
+      "rps": 631.4916666666667,
+      "error_rate": 0.0003166101605477356,
+      "p99_us": 204671,
+      "requests": 75779,
+      "events_per_min": 15642.0,
+      "max_dispatch_lag_ms": 12
+    },
+    {
+      "load_factor": 72.0,
+      "rps": 557.125,
+      "error_rate": 0.2250851936852354,
+      "p99_us": 26509311,
+      "requests": 66855,
+      "events_per_min": 13396.0,
+      "max_dispatch_lag_ms": 486
+    },
+    {
+      "load_factor": 80.0,
+      "rps": 620.5333333333333,
+      "error_rate": 0.21770830050322,
+      "p99_us": 28196863,
+      "requests": 74464,
+      "events_per_min": 14928.0,
+      "max_dispatch_lag_ms": 269
+    },
+    {
+      "load_factor": 96.0,
+      "rps": 637.0833333333334,
+      "error_rate": 0.34620680218586714,
+      "p99_us": 28573695,
+      "requests": 76450,
+      "events_per_min": 14698.5,
+      "max_dispatch_lag_ms": 13
+    },
+    {
+      "load_factor": 128.0,
+      "rps": 575.1833333333333,
+      "error_rate": 0.5347667834995956,
+      "p99_us": 28491775,
+      "requests": 69022,
+      "events_per_min": 12500.0,
+      "max_dispatch_lag_ms": 107
     }
   ],
   "knee": {
     "load_factor": 64.0,
-    "rps": 622.35,
-    "error_rate": 0.00021419582853623927,
-    "p99_us": 91199,
-    "requests": 74682,
-    "events_per_min": 15419.5,
-    "max_dispatch_lag_ms": 16
+    "rps": 631.4916666666667,
+    "error_rate": 0.0003166101605477356,
+    "p99_us": 204671,
+    "requests": 75779,
+    "events_per_min": 15642.0,
+    "max_dispatch_lag_ms": 12
   },
-  "sut_died": false
+  "sut_died": false,
+  "ladder_capped": false
 }

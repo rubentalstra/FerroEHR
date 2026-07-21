@@ -13,16 +13,16 @@
       "load_factor": 1.0,
       "rps": 10.075,
       "error_rate": 0.0,
-      "p99_us": 64767,
+      "p99_us": 60575,
       "requests": 1209,
       "events_per_min": 250.00000000000003,
-      "max_dispatch_lag_ms": 11
+      "max_dispatch_lag_ms": 13
     },
     {
       "load_factor": 2.0,
       "rps": 20.133333333333333,
       "error_rate": 0.0,
-      "p99_us": 45119,
+      "p99_us": 39743,
       "requests": 2416,
       "events_per_min": 498.5,
       "max_dispatch_lag_ms": 9
@@ -31,83 +31,84 @@
       "load_factor": 4.0,
       "rps": 40.141666666666666,
       "error_rate": 0.0,
-      "p99_us": 36351,
+      "p99_us": 34335,
       "requests": 4817,
       "events_per_min": 993.0,
-      "max_dispatch_lag_ms": 30
+      "max_dispatch_lag_ms": 14
     },
     {
       "load_factor": 8.0,
       "rps": 80.525,
       "error_rate": 0.0,
-      "p99_us": 26975,
+      "p99_us": 33023,
       "requests": 9663,
       "events_per_min": 1993.0,
-      "max_dispatch_lag_ms": 7
+      "max_dispatch_lag_ms": 24
     },
     {
       "load_factor": 16.0,
       "rps": 160.525,
       "error_rate": 0.00005191029900332226,
-      "p99_us": 18751,
+      "p99_us": 108671,
       "requests": 19263,
       "events_per_min": 3980.9999999999995,
-      "max_dispatch_lag_ms": 12
+      "max_dispatch_lag_ms": 44
     },
     {
       "load_factor": 32.0,
-      "rps": 316.1666666666667,
-      "error_rate": 0.0000790659673721108,
-      "p99_us": 24767,
-      "requests": 37940,
-      "events_per_min": 7839.5,
-      "max_dispatch_lag_ms": 18
-    },
-    {
-      "load_factor": 40.0,
-      "rps": 400.45,
-      "error_rate": 0.0001664516665973118,
-      "p99_us": 68735,
-      "requests": 48054,
-      "events_per_min": 9914.0,
-      "max_dispatch_lag_ms": 45
-    },
-    {
-      "load_factor": 44.0,
-      "rps": 434.19166666666666,
-      "error_rate": 0.0007287930803014902,
-      "p99_us": 872959,
-      "requests": 52103,
-      "events_per_min": 10744.0,
-      "max_dispatch_lag_ms": 14
-    },
-    {
-      "load_factor": 46.0,
-      "rps": 461.5416666666667,
-      "error_rate": 0.0011542137820339411,
-      "p99_us": 949759,
-      "requests": 55385,
-      "events_per_min": 11413.0,
-      "max_dispatch_lag_ms": 36
+      "rps": 316.15833333333336,
+      "error_rate": 0.00010542128982948106,
+      "p99_us": 44607,
+      "requests": 37939,
+      "events_per_min": 7839.0,
+      "max_dispatch_lag_ms": 12
     },
     {
       "load_factor": 48.0,
-      "rps": 477.93333333333334,
-      "error_rate": 0.003890509934695012,
-      "p99_us": 20742143,
-      "requests": 57352,
-      "events_per_min": 11775.5,
-      "max_dispatch_lag_ms": 15
+      "rps": 474.9916666666667,
+      "error_rate": 0.0006136690395202862,
+      "p99_us": 575487,
+      "requests": 56999,
+      "events_per_min": 11755.0,
+      "max_dispatch_lag_ms": 48
+    },
+    {
+      "load_factor": 52.0,
+      "rps": 486.85,
+      "error_rate": 0.06806616790824546,
+      "p99_us": 26361855,
+      "requests": 58422,
+      "events_per_min": 11900.0,
+      "max_dispatch_lag_ms": 10
+    },
+    {
+      "load_factor": 56.0,
+      "rps": 478.31666666666666,
+      "error_rate": 0.1358586010659119,
+      "p99_us": 28426239,
+      "requests": 57398,
+      "events_per_min": 11621.5,
+      "max_dispatch_lag_ms": 11
+    },
+    {
+      "load_factor": 64.0,
+      "rps": 540.6,
+      "error_rate": 0.14420273603947073,
+      "p99_us": 28934143,
+      "requests": 64872,
+      "events_per_min": 13136.0,
+      "max_dispatch_lag_ms": 26
     }
   ],
   "knee": {
-    "load_factor": 44.0,
-    "rps": 434.19166666666666,
-    "error_rate": 0.0007287930803014902,
-    "p99_us": 872959,
-    "requests": 52103,
-    "events_per_min": 10744.0,
-    "max_dispatch_lag_ms": 14
+    "load_factor": 48.0,
+    "rps": 474.9916666666667,
+    "error_rate": 0.0006136690395202862,
+    "p99_us": 575487,
+    "requests": 56999,
+    "events_per_min": 11755.0,
+    "max_dispatch_lag_ms": 48
   },
-  "sut_died": false
+  "sut_died": false,
+  "ladder_capped": false
 }
