@@ -2088,18 +2088,22 @@ roadmap once the pattern is proven on U2–U6.
 
 Owner ruling: the conformance + benchmark tooling is **rebuilt from the
 ground up** as one runner implementing the §8 architecture natively — not an
-incremental adaptation of today's ECC. The current ECC and its committed
-baseline (402 case×format executions · 384 passed · 18 N/A) remain running
-untouched as the **convergence oracle**: the new runner must reproduce that
-baseline before cutover (the W2 gate), after which the old harness retires.
-Tracked as dedicated issues (opened when this design is owner-approved),
-sequenced:
+incremental adaptation of today's ECC, and **not a 1:1 transcription of its
+catalogue**: the new catalogue is authored from the CNF 2.0 framework itself
+(the official schedule cases per the §8.9 pilots, the new chapters, the
+framework's own selection/format/option machinery). The current ECC and its
+committed baseline (402 case×format executions · 384 passed · 18 N/A) remain
+running untouched as the **comparison reference**: differences are expected
+and are enumerated + justified in a comparison report (the W2 gate); the old
+harness retires on a reviewed report, and the new runner establishes the
+new baseline. Tracked as dedicated issues (opened when this design is
+owner-approved), sequenced:
 
 | WS | Workstream | Content | Done-gate |
 |---|---|---|---|
 | W1 | **Artifact schemas in Rust** | `tools/conformance`: typed model + validator for case cores, bindings, vocabularies (outcomes + the capability matrix), corpus manifest, ambiguity register; JSON-Schema emission so the same schemas ship upstream in U1. The §8.13 checks become `cargo nextest` guards alongside the existing coverage guard. Scope: assertion-machinery artifacts; the performance case-core schema lands with W7. | Validator rejects every seeded-defect artifact fixture; schemas byte-identical to the U1 set |
-| W2 | **Catalogue conversion + convergence** | The 394 ECC cases re-expressed as §8.3 case cores + §8.4 operation bindings, executed by the new runner. Where an official schedule case exists, the CNF id becomes primary (ECC numbers retire to trace metadata — inverting today's `ScheduleTrace`); ECC-original cases keep an `ecc-` namespace pending upstream adoption. `inventory/ecc-catalog.tsv` becomes a generated view. | Zero-drift convergence gate: the new runner reproduces the current 402-execution baseline exactly (384 passed · 18 N/A); cutover + old-harness retirement follow |
-| W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data. The AQL `result_set` assertions execute under the §8.6 equivalence rules (U5 ratifies the [legislated] defaults). | ≥90% of cases run through the interpreter; every exception listed in the report; baseline convergence holds |
+| W2 | **Catalogue authoring + comparison** | The CNF 2.0 catalogue authored per the framework: official schedule cases first (the §8.9 pilot encodings generalized across master04–09/15–17), then the ECC-original designs that fill genuine gaps — each re-adjudicated to spec-text-only evidence (§11.8) before entry, keeping an `ecc-` namespace pending upstream adoption. Official CNF ids primary; `inventory/ecc-catalog.tsv` retires with the old harness. | **Comparison gate** (not reproduction): committed ECC↔CNF coverage map + comparison report — every difference from the old baseline enumerated and justified against the framework, verdict regressions on equivalent coverage explained, official-schedule coverage ≥ the old harness; cutover, old-harness retirement, and the new baseline follow a reviewed report |
+| W3 | **Data-driven executor** | The engine executes functional case cores directly from the artifact files (flow interpreter: requires-setup, parameter iteration with reset_per_row, captures, outcome mapping via bindings, typed assertions). Hand-written Rust remains only for generation recipes and genuinely non-mechanizable glue — each such exception is registered. Content decision tables execute from the data. The AQL `result_set` assertions execute under the §8.6 equivalence rules (U5 ratifies the [legislated] defaults). | ≥90% of cases run through the interpreter; every exception listed in the report; the W2 comparison report stays green |
 | W4 | **Statement / results / ixit emission** | `results.json` is emitted in the §8.10 schema (per-row outcomes, ambiguity dispositions, runner verification status); `statement.json` (ICS) + `ixit.json` (formalizing `SutDescriptor`) emitted per SUT; the Certificate/Statement/Comparison artifacts render from them; verdict computation moves to the shared pure function. | All `docs/conformance/**` artifacts regenerate from the new schemas; the honesty blocks survive; badges derive from the new results |
 | W5 | **Simplified-formats deepening** | The §8.7 blueprint's gap categories 2–9 (node-id algorithm, level removal, the 43 suffix tables, `_`-attributes, `\|raw`, full ctx vocabulary, counters, STRUCTURED style) + deepened 1/10 — ~40 new SF cases, all spec-example-driven, all OPTIONS-profile. | Every master04/05/06 spec-example JSON block exercised; ECC baseline ratchets upward only |
 | W6 | **Runner verification pack** | Author the U7 transcripts + adjudications; ECC self-verifies against them in CI; publish the pack so the Robot suite (and any vendor runner) can prove itself. | ECC passes both pack parts; the pack rejects a deliberately-broken runner build |
@@ -2168,20 +2172,25 @@ hand-roll what a vetted crate provides, verify versions live at adoption):
 | Test-definition DSLs | **[cucumber-rs](https://github.com/cucumber-rs/cucumber) and [Hurl](https://hurl.dev): evaluated and declined** | Each would introduce a second test-definition language beside the schedule — the exact three-representations drift CNF 2.0 exists to kill; the schedule is the only DSL |
 
 ECC (`tools/conformance` + `tools/benchmark`) is the prior art and the
-convergence oracle for the rebuild (§14.2); W1–W7 deliver the new runner as
+comparison reference for the rebuild (§14.2); W1–W7 deliver the new runner as
 the first production implementation of the artifact set. The Robot suite
 remains a first-class *compliant* runner via the verification pack —
 rescuing it is inside the proposal (§8.7, §13); it is simply no longer the
 thing the framework's credibility depends on.
 
-**The convergence gate, operationally** (the W2 done-gate): (a) the ECC↔CNF
-id map is a committed W2 deliverable; (b) "reproduces the baseline" means
-per-case verdict equality **modulo that map**, never byte identity;
-(c) the execution set may legitimately change under the §8.7 format model —
-every added/removed case×format execution is listed and justified in the
-conversion PR, reviewed line-by-line; (d) the 18 N/A outcomes must come out
-N/A **with equivalent citations** under the new guard/option machinery.
-Cutover and old-harness retirement follow a green gate.
+**The comparison gate, operationally** (the W2 done-gate): (a) a committed
+ECC↔CNF **coverage map** relating old cases to the ground the new catalogue
+covers; (b) a **comparison report** enumerating every difference from the
+old 402-execution baseline — added/dropped/reshaped cases, execution-set
+changes under the §8.7 format model, N/A rationale changes under the new
+guard/option machinery — each justified against the framework, reviewed
+line-by-line; (c) any verdict **regression on genuinely-equivalent
+coverage** is explained (a real finding vs a deliberate case change — never
+silently absorbed); (d) official-schedule coverage is ≥ the old harness's.
+The framework changes what is tested and how it is counted, so the numbers
+WILL differ — honesty lives in the enumeration, not in reproduction.
+Cutover, old-harness retirement, and the establishment of the new baseline
+(which then ratchets) follow a reviewed report.
 
 What this buys strategically: when U1 reaches the SEC, the schemas arrive
 with a production runner already storing, validating, executing, and
