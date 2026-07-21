@@ -1876,6 +1876,53 @@ Sequencing: W1 → W2 → {W3, W4} → {W5, W6, W7}. Standing gates apply throug
 ECC zero-drift rule (the baseline only ratchets upward), and the
 changelog/docs-website rules for any user-visible surface.
 
+### 14.3 Runner technology — why the reference runner is Rust
+
+No harness is normative (§8.7 discipline: any technology that passes the
+§8.12 verification pack is a compliant runner — the Robot suite, Spock,
+Postman, anything). The **reference** runner, however, is a deliberate
+technology choice, and it is Rust:
+
+- **There is no Robot-equivalent to inherit.** The Rust ecosystem has strong
+  building blocks — [goose](https://github.com/tag1consulting/goose)
+  (Locust-class load-testing framework),
+  [cucumber-rs](https://github.com/cucumber-rs/cucumber) (native BDD
+  runner), [Hurl](https://hurl.dev) (declarative plain-text HTTP testing) —
+  but no keyword-driven acceptance framework like Robot. CNF 2.0 makes one
+  unnecessary: the machine-readable schedule **is** the keyword layer, so
+  the runner is a data-driven interpreter over the artifact files (W3) —
+  precisely the thing worth building once, well.
+- **Type safety enforces the framework's own laws.** The closed
+  vocabularies this design lives by — outcome kinds, body/header selectors,
+  reference grammar, capability matrix — map to Rust enums and newtypes:
+  an outcome kind outside the taxonomy or a malformed `${…}` reference is a
+  *compile-time* error in the reference implementation, not a runtime
+  surprise. The verdict machineries are pure functions over typed data —
+  the property §8.11 demands ("any two conformant implementations MUST
+  compute identical verdicts") is easiest to guarantee in a language where
+  the types make illegal states unrepresentable.
+- **One language serves both machineries.** The measurement machinery
+  (§8.14) needs a workload generator that is never itself the bottleneck at
+  class-R concurrency; Rust's async runtime handles goose-class load
+  generation, and this repo's `tools/benchmark` (knee ladder + sustained
+  runs, already published against two CDRs) is the donated draft. Assertion
+  interpreter + load generator + verdict computation share one toolchain.
+- **A single static binary ends the environment rot that killed the last
+  suite.** The Robot suite's practical death was environmental
+  (specifications-CNF PR #5, unmerged since 2023: Python dependencies,
+  hard-coded vendor images). A vendor or procurer runs the reference runner
+  as one downloaded binary against an `ixit.json` — no interpreter, no
+  package manager, no environment to rot.
+- **Memory safety + fearless concurrency** matter for hour-long sustained
+  performance runs and parallel case execution against live clinical
+  systems.
+
+ECC is that runner today (Rust, `tools/conformance` + `tools/benchmark`);
+W1–W7 turn it into the first production implementation of the artifact set.
+The Robot suite remains a first-class *compliant* runner via the
+verification pack — rescuing it is inside the proposal (§8.7, §13); it is
+simply no longer the thing the framework's credibility depends on.
+
 What this buys strategically: when U1 reaches the SEC, the schemas arrive
 with a production runner already storing, validating, executing, and
 reporting through them against two real CDRs — the difference between
