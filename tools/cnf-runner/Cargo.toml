@@ -32,6 +32,10 @@ regex = { workspace = true }
 urlencoding = { workspace = true }
 thiserror = { workspace = true }
 clap = { workspace = true }
+# The measurement machinery: coordinated-omission-corrected latency with the
+# standard V2 serialization so thresholds are re-checkable from the artifact.
+hdrhistogram = { workspace = true, features = ["serialization"] }
+base64 = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }

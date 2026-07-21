@@ -1342,7 +1342,9 @@ name = "cnf-runner"
 version = "3.6.0"
 dependencies = [
  "assert_fs",
+ "base64 0.22.1",
  "clap",
+ "hdrhistogram",
  "jsonschema",
  "regex",
  "reqwest 0.13.4",
