@@ -436,9 +436,11 @@ impl Printer {
 
     /// Emit a `C_DEFINED_OBJECT.default_value` as the `_default` pseudo-attribute
     /// (`master06-default_values.adoc` §Syntax): `_default = (RM_TYPE) < … >`
-    /// with the canonical-JSON intermediate rendered as ODIN — the exact
-    /// inverse of the cADL parser's `_default` handling (`odin_to_json`), so
-    /// the value round-trips through print → parse.
+    /// with the canonical-JSON intermediate rendered as ODIN — the inverse of
+    /// the cADL parser's `_default` handling (`odin_to_json`). Scalar and
+    /// object shapes round-trip through print → parse exactly; a JSON array
+    /// of objects re-parses as a keyed object (see the [`Self::odin_json_entry`]
+    /// NOTE) — the ODIN text is the durable form either way.
     fn default_value(&mut self, v: &serde_json::Value, depth: usize) {
         match v {
             serde_json::Value::Object(m) => {

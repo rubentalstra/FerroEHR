@@ -447,7 +447,7 @@ impl Decomposer<'_> {
                     slot_node_id: slot_node_id.clone(),
                     child_archetype_id: child_id.clone(),
                 });
-                let includes = archetype_id_include(&child_id);
+                let includes = archetype_id_include(&child_id, &slot_node_id, cx);
                 let slot = CObject::ArchetypeSlot(ArchetypeSlot {
                     parent: None,
                     soc_parent: None,
@@ -576,7 +576,7 @@ impl Decomposer<'_> {
             // valid constraint. No vendored openEHR spec governs DV_STATE
             // conversion — our own design; recorded in `conversion_details`.
             opt14::CObject::CDvState(c) => dv_state_loose(c, cx),
-            opt14::CObject::CPrimitiveObject(c) => map_primitive_object(c),
+            opt14::CObject::CPrimitiveObject(c) => map_primitive_object(c, cx),
         }
     }
 
@@ -815,7 +815,7 @@ fn terminology_code(
 /// untouched; phase-1 (no RM repo) does not validate primitive-constraint
 /// internals, so a faithful-but-minimal mapping is sufficient and safe.
 #[allow(clippy::too_many_lines)] // one arm per primitive C_* struct literal
-fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
+fn map_primitive_object(c: &opt14::CPrimitiveObject, cx: &mut RootCx) -> CObject {
     let rm = c.rm_type_name.as_str();
     let node_id = c.node_id.as_str();
     let occ = &c.occurrences;
@@ -891,13 +891,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
                 constraint,
             })
         }
-        // Temporal constraints: carry BOTH the ISO8601 `pattern` and the
-        // range as `Interval<Iso8601_*>` (`C_TEMPORAL.pattern_constraint` +
-        // the inherited `constraint` list; C_DURATION documents the combined
-        // `"PWD/|P0W..P50W|"` form — `org.openehr.am.aom2.c_duration.adoc`;
-        // the class model permits the same combination on
-        // C_DATE/C_TIME/C_DATE_TIME though no vendored ADL2 example shows it:
-        // our own reading), plus the assumed value.
+        // Temporal constraints: the range converts to `Interval<Iso8601_*>`
+        // and the assumed value is carried. C_DURATION carries pattern AND
+        // range together (the combined `"PWD/|P0W..P50W|"` form —
+        // `org.openehr.am.aom2.c_duration.adoc`); for date/time/date-time the
+        // ADL2 surface defines pattern XOR range (`master04.5` §Mixed Pattern
+        // and Interval is duration-only), so a 1.4 node carrying both keeps
+        // the range and reports the dropped pattern.
         opt14::CPrimitive::CDate(p) => CObject::CDate(CDate {
             parent: None,
             soc_parent: None,
@@ -923,7 +923,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
                 }),
                 |value| Iso8601Date { value },
             ),
-            pattern_constraint: p.pattern.clone(),
+            pattern_constraint: date_time_pattern(
+                p.pattern.clone(),
+                p.range.is_some(),
+                rm,
+                node_id,
+                cx,
+            ),
         }),
         opt14::CPrimitive::CDateTime(p) => CObject::CDateTime(CDateTime {
             parent: None,
@@ -953,7 +959,13 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
                 }),
                 |value| Iso8601DateTime { value },
             ),
-            pattern_constraint: p.pattern.clone(),
+            pattern_constraint: date_time_pattern(
+                p.pattern.clone(),
+                p.range.is_some(),
+                rm,
+                node_id,
+                cx,
+            ),
         }),
         opt14::CPrimitive::CDuration(p) => CObject::CDuration(CDuration {
             parent: None,
@@ -1010,8 +1022,43 @@ fn map_primitive_object(c: &opt14::CPrimitiveObject) -> CObject {
                 }),
                 |value| Iso8601Time { value },
             ),
-            pattern_constraint: p.pattern.clone(),
+            pattern_constraint: date_time_pattern(
+                p.pattern.clone(),
+                p.range.is_some(),
+                rm,
+                node_id,
+                cx,
+            ),
         }),
+    }
+}
+
+/// Date/time/date-time constraints carry a pattern XOR a range on the ADL2
+/// surface — the mixed `pattern/interval` form is defined for durations only
+/// (`ADL2/master04.5-cadl_primitive_types.adoc` §Mixed Pattern and Interval
+/// sits under Duration Constraints). When a 1.4 node carries both, the range
+/// (the value constraint) is kept — the safe, still-narrowing half — and the
+/// dropped format pattern reported in `conversion_details`.
+fn date_time_pattern(
+    pattern: Option<String>,
+    has_range: bool,
+    rm: &str,
+    node_id: &str,
+    cx: &mut RootCx,
+) -> Option<String> {
+    match pattern {
+        Some(p) if has_range => {
+            cx.note(
+                format!("temporal_pattern.{rm}.{node_id}"),
+                format!(
+                    "{rm} node {node_id:?} carries both an ISO8601 pattern ({p}) and a range; \
+                     ADL2 defines the combined form for durations only — the range was kept, \
+                     the pattern is recorded here"
+                ),
+            );
+            None
+        }
+        other => other,
     }
 }
 
@@ -1138,12 +1185,31 @@ fn map_code_reference(c: &opt14::CCodeReference, cx: &mut RootCx) -> CObject {
 /// canonical `archetype_id/value matches {/…/}` form
 /// (`org.openehr.am.aom2.archetype_slot.adoc`), built through the BEL slot
 /// parser so the tree matches what parsing the printed ADL2 would yield.
-fn archetype_id_include(child_archetype_id: &str) -> Vec<Assertion> {
+/// A parse failure (unreachable for a valid `ARCHETYPE_HRID`) degrades to an
+/// open slot, reported — the fill edge in [`OptConversion::structure`] still
+/// carries the identity.
+fn archetype_id_include(
+    child_archetype_id: &str,
+    slot_node_id: &str,
+    cx: &mut RootCx,
+) -> Vec<Assertion> {
     let text = format!(
         "archetype_id/value matches {{/{}/}}",
         regex_escape(child_archetype_id)
     );
-    openehr_adl::rules::parse_slot_assertions(&text).unwrap_or_default()
+    match openehr_adl::rules::parse_slot_assertions(&text) {
+        Ok(list) if !list.is_empty() => list,
+        _ => {
+            cx.note(
+                format!("slot_assertion.{slot_node_id}.include.fill"),
+                format!(
+                    "the include naming filled archetype {child_archetype_id} did not parse; \
+                     the slot is emitted open (the fill edge still records the identity)"
+                ),
+            );
+            Vec::new()
+        }
+    }
 }
 
 /// Escape an archetype id for use inside a slot-assertion regex (`.` is the
@@ -2118,12 +2184,67 @@ mod tests {
                 assumed_value: Some("PT1H".to_owned()),
             }))),
         };
-        let CObject::CDuration(d) = map_primitive_object(&node) else {
+        let mut cx = test_cx();
+        let CObject::CDuration(d) = map_primitive_object(&node, &mut cx) else {
             panic!("expected a C_DURATION");
         };
         assert_eq!(d.pattern_constraint.as_deref(), Some("PTH"));
         assert_eq!(d.constraint.len(), 1, "the range must be carried");
         assert_eq!(d.assumed_value.map(|a| a.value), Some("PT1H".to_owned()));
+        assert!(cx.notes.is_empty(), "durations carry both without a report");
+    }
+
+    /// A date carrying BOTH a pattern and a range keeps the range and drops
+    /// the pattern with a report — the mixed `pattern/interval` ADL2 form is
+    /// duration-only (`master04.5` §Mixed Pattern and Interval), so emitting
+    /// it for a date would not re-parse.
+    #[test]
+    fn date_pattern_plus_range_keeps_range_and_reports() {
+        let node = opt14::CPrimitiveObject {
+            rm_type_name: "DV_DATE".to_owned(),
+            occurrences: unbounded_occurrences(),
+            node_id: String::new(),
+            item: Some(Box::new(opt14::CPrimitive::CDate(opt14::CDate {
+                pattern: Some("yyyy-??-??".to_owned()),
+                timezone_validity: None,
+                range: Some(opt14::Intervalofdate {
+                    lower_included: Some(true),
+                    upper_included: Some(true),
+                    lower_unbounded: false,
+                    upper_unbounded: false,
+                    lower: Some("2004-01-01".to_owned()),
+                    upper: Some("2004-12-31".to_owned()),
+                }),
+                assumed_value: None,
+            }))),
+        };
+        let mut cx = test_cx();
+        let CObject::CDate(d) = map_primitive_object(&node, &mut cx) else {
+            panic!("expected a C_DATE");
+        };
+        assert!(d.pattern_constraint.is_none(), "the pattern must drop");
+        assert_eq!(d.constraint.len(), 1, "the range must be kept");
+        assert!(
+            cx.notes.keys().any(|k| k.starts_with("temporal_pattern.")),
+            "the dropped pattern must be reported: {:?}",
+            cx.notes
+        );
+        // A pattern-only date keeps its pattern unreported.
+        let pattern_only = opt14::CPrimitiveObject {
+            item: Some(Box::new(opt14::CPrimitive::CDate(opt14::CDate {
+                pattern: Some("yyyy-??-??".to_owned()),
+                timezone_validity: None,
+                range: None,
+                assumed_value: None,
+            }))),
+            ..node
+        };
+        let mut cx = test_cx();
+        let CObject::CDate(d) = map_primitive_object(&pattern_only, &mut cx) else {
+            panic!("expected a C_DATE");
+        };
+        assert_eq!(d.pattern_constraint.as_deref(), Some("yyyy-??-??"));
+        assert!(cx.notes.is_empty());
     }
 
     /// Notes recorded during a walk land in the converted archetype's
