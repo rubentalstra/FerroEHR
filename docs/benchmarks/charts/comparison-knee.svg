@@ -18,8 +18,8 @@ text { fill: #c3c2b7; }
 <text x="16" y="22" class="title">Max sustained req/s at the SLO</text>
 <text x="160.0" y="52.0" text-anchor="end">ehrbase-rs</text>
 <rect class="s1" x="170" y="42.0" width="450.0" height="12" rx="4"/>
-<text class="muted" x="626.0" y="52.0">622.4 req/s</text>
+<text class="muted" x="626.0" y="52.0">631.5 req/s</text>
 <text x="160.0" y="78.0" text-anchor="end">ehrbase-java</text>
-<rect class="s2" x="170" y="68.0" width="313.9" height="12" rx="4"/>
-<text class="muted" x="489.9" y="78.0">434.2 req/s</text>
+<rect class="s2" x="170" y="68.0" width="338.5" height="12" rx="4"/>
+<text class="muted" x="514.5" y="78.0">475.0 req/s</text>
 </svg>

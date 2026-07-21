@@ -40,8 +40,8 @@
 
 | | Knee L | Sustained req/s | Sustained req/min | Clinical events/min | p99 at knee |
 |---|--:|--:|--:|--:|--:|
-| **ehrbase-rs** | 64 | 622.4 | 37341 | 15420 | 91.2 ms |
-| **ehrbase-java** | 44 | 434.2 | 26052 | 10744 | 873.0 ms |
+| **ehrbase-rs** | 64 | 631.5 | 37890 | 15642 | 204.7 ms |
+| **ehrbase-java** | 48 | 475.0 | 28500 | 11755 | 575.5 ms |
 
 ![Max sustained req/s at the SLO](charts/comparison-knee.svg)
 
