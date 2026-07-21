@@ -154,7 +154,12 @@ impl EhrbaseService {
         .bind(template_id)
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("template {template_id}")))
+        .ok_or_else(|| {
+            ServiceError::sm(
+                crate::service::status::CallStatusType::TemplateDoesNotExist,
+                format!("template {template_id}"),
+            )
+        })
     }
 
     /// List every stored template's metadata descriptor (by `template_id`) —

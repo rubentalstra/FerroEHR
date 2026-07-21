@@ -11,7 +11,7 @@
 
 use crate::ids::{EhrId, VoId};
 use crate::service::response::{ResourceMeta, ServiceResponse};
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
@@ -109,7 +109,12 @@ impl EhrbaseService {
             None => read_current(&self.pool, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
-        .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::CompositionDoesNotExist,
+                format!("COMPOSITION {vo_id}"),
+            )
+        })?;
 
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
@@ -133,7 +138,12 @@ impl EhrbaseService {
         let read = version_at(&self.pool, vo_id, at)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::CompositionDoesNotExist,
+                    format!("COMPOSITION {vo_id}"),
+                )
+            })?;
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
@@ -156,7 +166,12 @@ impl EhrbaseService {
         crate::storage::version_repo::meta::vo_owner(&self.pool, vo_id)
             .await?
             .filter(|owner| *owner == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::CompositionDoesNotExist,
+                    format!("COMPOSITION {vo_id}"),
+                )
+            })?;
         versioned_object(&self.pool, vo_id, ehr_id, "VERSIONED_COMPOSITION").await
     }
 
@@ -187,7 +202,12 @@ impl EhrbaseService {
         let read = read_version(&self.pool, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} v{version}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::ObjectVersionDoesNotExist,
+                    format!("COMPOSITION {vo_id} v{version}"),
+                )
+            })?;
         original_version(&read, self.signer())
     }
 
@@ -210,7 +230,12 @@ impl EhrbaseService {
             None => read_current(&self.pool, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
-        .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id} version at time")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::ObjectVersionDoesNotExist,
+                format!("COMPOSITION {vo_id} version at time"),
+            )
+        })?;
         let meta = self.version_meta(
             ehr_id,
             vo_id,
@@ -253,7 +278,10 @@ impl EhrbaseService {
                 .await?
                 .filter(|m| m.ehr_id == Some(ehr_id))
         else {
-            return Err(ServiceError::NotFound(format!("COMPOSITION {vo_id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::CompositionDoesNotExist,
+                format!("COMPOSITION {vo_id}"),
+            ));
         };
         // The full-`OBJECT_VERSION_ID` `If-Match` compare, built from
         // the same merged read (ITS-REST overview §Concurrency control).
@@ -286,9 +314,10 @@ impl EhrbaseService {
         // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
         // and the content-write guard are checked from the threaded pre-read.
         if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
-            return Err(ServiceError::NotFound(format!(
-                "COMPOSITION {vo_id} is deleted"
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::CompositionDoesNotExist,
+                format!("COMPOSITION {vo_id} is deleted"),
+            ));
         }
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — folded from the standalone `ensure_content_writable`
@@ -434,7 +463,12 @@ impl EhrbaseService {
             crate::storage::version_repo::meta::current_composition_meta(&self.pool, vo_id)
                 .await?
                 .filter(|m| m.ehr_id == Some(ehr_id))
-                .ok_or_else(|| ServiceError::NotFound(format!("COMPOSITION {vo_id}")))?;
+                .ok_or_else(|| {
+                    ServiceError::sm(
+                        CallStatusType::CompositionDoesNotExist,
+                        format!("COMPOSITION {vo_id}"),
+                    )
+                })?;
         if current.lifecycle_state == crate::versioning::lifecycle::state::DELETED {
             return Err(ServiceError::BadRequest(format!(
                 "COMPOSITION {vo_id} is already deleted"
@@ -495,7 +529,10 @@ impl EhrbaseService {
         if crate::storage::version_repo::meta::ehr_exists(&self.pool, ehr_id).await? {
             Ok(())
         } else {
-            Err(ServiceError::NotFound(format!("EHR {ehr_id}")))
+            Err(ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR {ehr_id}"),
+            ))
         }
     }
 
@@ -519,7 +556,10 @@ impl EhrbaseService {
         let (exists, is_modifiable) =
             crate::storage::ehr_repo::ehr_writability(&self.pool, ehr_id).await?;
         if !exists {
-            return Err(ServiceError::NotFound(format!("EHR {ehr_id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR {ehr_id}"),
+            ));
         }
         // `None` (no current EHR_STATUS) is treated as modifiable, so the guard
         // never spuriously blocks — identical to `ensure_content_writable`.

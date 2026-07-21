@@ -151,15 +151,10 @@ impl EhrbaseService {
         &self,
         an_opt_id: String,
     ) -> Result<Vec<String>, SmError> {
-        // Preserve the granular SM status through the lossy ServiceError
-        // round-trip (the same boundary re-raise the TDD import uses).
-        let xml = match self.opt_get(&an_opt_id).await {
-            Ok(xml) => xml,
-            Err(ServiceError::NotFound(m)) => {
-                return Err(SmError::new(CallStatusType::TemplateDoesNotExist, m));
-            }
-            Err(e) => return Err(e.into()),
-        };
+        // `opt_get` names `template_does_not_exist` at construction and
+        // `ServiceError` round-trips the granular status losslessly — no
+        // boundary re-raise needed.
+        let xml = self.opt_get(&an_opt_id).await?;
         let opt = openehr_its::opt14::from_xml(&xml).map_err(|e| {
             ServiceError::Unprocessable(format!("stored OPT no longer parses: {e:?}"))
         })?;

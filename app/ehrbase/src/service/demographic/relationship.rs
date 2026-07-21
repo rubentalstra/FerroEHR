@@ -27,6 +27,7 @@ use crate::service::demographic::support;
 use crate::service::demographic::validate::validate_relationship_body;
 use crate::service::error::ServiceError;
 use crate::service::response::{ResourceMeta, ServiceResponse};
+use crate::service::status::CallStatusType;
 use crate::service::version_update::UpdateAudit;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::WriteEnvelope;
@@ -72,24 +73,45 @@ impl EhrbaseService {
         version: Option<TreeId>,
         at: Option<jiff::Timestamp>,
     ) -> Result<VersionRead, ServiceError> {
+        // The granular SM status: a version-addressed read that misses is
+        // `object_version_does_not_exist`, a current read the generic
+        // `versioned_object_does_not_exist` (`i_party_relationship.adoc`
+        // mirrors `i_party.adoc` here).
+        let miss = || {
+            ServiceError::sm(
+                if version.is_some() || at.is_some() {
+                    CallStatusType::ObjectVersionDoesNotExist
+                } else {
+                    CallStatusType::VersionedObjectDoesNotExist
+                },
+                format!("PARTY_RELATIONSHIP {vo_id}"),
+            )
+        };
         if object_kind(&self.pool, vo_id).await? != Some(Kind::PartyRelationship) {
-            return Err(ServiceError::NotFound(format!(
-                "PARTY_RELATIONSHIP {vo_id}"
-            )));
+            return Err(miss());
         }
         support::load_ehrless(&self.pool, vo_id, version, at)
             .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))
+            .ok_or_else(miss)
     }
 
     /// Confirm `vo_id` is a relationship (any version) — the check for the
-    /// `versioned_party_relationship` reads. A non-relationship id is `404`.
-    async fn ensure_any_relationship(&self, vo_id: VoId) -> Result<(), ServiceError> {
+    /// `versioned_party_relationship` reads. A non-relationship id is `404`,
+    /// reported with the caller-supplied granular SM status
+    /// (`versioned_object_does_not_exist` for object-addressed reads,
+    /// `object_version_does_not_exist` for version-addressed ones —
+    /// `i_party_relationship.adoc` mirrors `i_party.adoc` here).
+    async fn ensure_any_relationship(
+        &self,
+        vo_id: VoId,
+        miss: CallStatusType,
+    ) -> Result<(), ServiceError> {
         match object_kind(&self.pool, vo_id).await? {
             Some(Kind::PartyRelationship) => Ok(()),
-            _ => Err(ServiceError::NotFound(format!(
-                "versioned party relationship {vo_id}"
-            ))),
+            _ => Err(ServiceError::sm(
+                miss,
+                format!("versioned party relationship {vo_id}"),
+            )),
         }
     }
 
@@ -198,10 +220,12 @@ impl EhrbaseService {
         expected: Option<TreeId>,
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
-        let current = self
-            .relationship_current(vo_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("PARTY_RELATIONSHIP {vo_id}")))?;
+        let current = self.relationship_current(vo_id).await?.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("PARTY_RELATIONSHIP {vo_id}"),
+            )
+        })?;
         self.commit_relationship_update(current, body, expected, update_audit)
             .await
     }
@@ -217,10 +241,10 @@ impl EhrbaseService {
         update_audit: Option<&UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         if current.deleted {
-            return Err(ServiceError::NotFound(format!(
-                "PARTY_RELATIONSHIP {} is deleted",
-                current.vo_id
-            )));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("PARTY_RELATIONSHIP {} is deleted", current.vo_id),
+            ));
         }
         validate_relationship_body(&body)?;
 
@@ -317,7 +341,8 @@ impl EhrbaseService {
     /// analogy with the EHR group (assembly + owner NOTE in
     /// `support::versioned_wrapper`).
     pub(super) async fn versioned_relationship(&self, vo_id: VoId) -> Result<Value, ServiceError> {
-        self.ensure_any_relationship(vo_id).await?;
+        self.ensure_any_relationship(vo_id, CallStatusType::VersionedObjectDoesNotExist)
+            .await?;
         self.versioned_wrapper(
             vo_id,
             "VERSIONED_OBJECT",
@@ -334,7 +359,8 @@ impl EhrbaseService {
         &self,
         vo_id: VoId,
     ) -> Result<Value, ServiceError> {
-        self.ensure_any_relationship(vo_id).await?;
+        self.ensure_any_relationship(vo_id, CallStatusType::VersionedObjectDoesNotExist)
+            .await?;
         self.demographic_revision_history(vo_id).await
     }
 
@@ -345,7 +371,10 @@ impl EhrbaseService {
         vo_id: VoId,
         version: TreeId,
     ) -> Result<Value, ServiceError> {
-        self.ensure_any_relationship(vo_id).await?;
+        // Version-addressed: `object_version_does_not_exist` is the declared
+        // does-not-exist code (`i_party_relationship.adoc`, as `i_party.adoc`).
+        self.ensure_any_relationship(vo_id, CallStatusType::ObjectVersionDoesNotExist)
+            .await?;
         self.demographic_original_version(vo_id, version, "party relationship")
             .await
     }
@@ -357,7 +386,8 @@ impl EhrbaseService {
         vo_id: VoId,
         at: Option<jiff::Timestamp>,
     ) -> Result<ServiceResponse, ServiceError> {
-        self.ensure_any_relationship(vo_id).await?;
+        self.ensure_any_relationship(vo_id, CallStatusType::VersionedObjectDoesNotExist)
+            .await?;
         self.demographic_original_version_at(vo_id, at, "party relationship")
             .await
     }

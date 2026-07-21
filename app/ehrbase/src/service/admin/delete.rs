@@ -15,7 +15,7 @@ use uuid::Uuid;
 use crate::ids::{EhrId, VoId};
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 
 impl EhrbaseService {
     /// SM `physical_ehr_delete`: physically delete one EHR and every trace of
@@ -111,7 +111,10 @@ impl EhrbaseService {
         .fetch_optional(&mut *tx)
         .await?;
         let Some(stored) = stored else {
-            return Err(ServiceError::NotFound(format!("template {template_id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::TemplateDoesNotExist,
+                format!("template {template_id}"),
+            ));
         };
         // Physical deletes never orphan clinical data (docs/architecture.md
         // §Storage — no openEHR spec governs the FK graph, our own design).
@@ -203,7 +206,10 @@ impl EhrbaseService {
         if deleted.rows_affected() == 0 {
             // `has_ehr(ehr_id)` is false → `ehr_id_does_not_exist`. Rolls back
             // (nothing was written), so the audit capture above is discarded.
-            return Err(ServiceError::NotFound(format!("EHR {ehr_id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR {ehr_id}"),
+            ));
         }
 
         // The referencing vo_version/contribution rows are gone, so the audit
@@ -391,7 +397,10 @@ impl EhrbaseService {
                 .await?;
         if !kind.as_deref().is_some_and(super::is_party_kind) {
             // `party_id_does_not_exist` → NotFound (→ 404). Rolls back cleanly.
-            return Err(ServiceError::NotFound(format!("party {party_id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::PartyIdDoesNotExist,
+                format!("party {party_id}"),
+            ));
         }
 
         // Every PARTY_RELATIONSHIP VO referencing the party as source/target, in

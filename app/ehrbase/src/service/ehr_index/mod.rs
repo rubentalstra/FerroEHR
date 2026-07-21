@@ -194,8 +194,13 @@ mod tests {
         let subj_sm: SmError = IndexError::SubjectDoesNotExist(subject).into();
         assert_eq!(subj_sm.status, CallStatusType::SubjectIdDoesNotExist);
 
-        // A generic service fault still routes through the shared table (404).
-        let svc: SmError = IndexError::Service(ServiceError::NotFound("x".into())).into();
+        // A generic service miss still routes through the shared table (404),
+        // carrying the status it was constructed with.
+        let svc: SmError = IndexError::Service(ServiceError::sm(
+            CallStatusType::VersionedObjectDoesNotExist,
+            "x",
+        ))
+        .into();
         assert_eq!(svc.status, CallStatusType::VersionedObjectDoesNotExist);
     }
 

@@ -355,7 +355,10 @@ impl EhrbaseService {
             let read = read_version_by_ordinal(&self.pool, vo_id, *sv)
                 .await?
                 .ok_or_else(|| {
-                    ServiceError::NotFound(format!("version {vo_id}::{sv} for extract"))
+                    ServiceError::sm(
+                        CallStatusType::ObjectVersionDoesNotExist,
+                        format!("version {vo_id}::{sv} for extract"),
+                    )
                 })?;
             let mut version = original_version(&read, self.signer())?;
             if !sel.include_multimedia {

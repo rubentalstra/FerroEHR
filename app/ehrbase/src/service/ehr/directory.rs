@@ -20,7 +20,7 @@
 use crate::ids::{EhrId, VoId};
 use crate::service::response::ResourceMeta;
 use crate::service::response::ServiceResponse;
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
 use openehr_base::prelude::ObjectVersionId;
 use serde_json::Value;
@@ -118,7 +118,12 @@ impl EhrbaseService {
             None => read_current(&self.pool, vo_id).await?,
         }
         .filter(|r| r.ehr_id == Some(ehr_id))
-        .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("directory for EHR {ehr_id}"),
+            )
+        })?;
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
@@ -134,7 +139,12 @@ impl EhrbaseService {
             None => Ok(ServiceResponse::new(folder, meta)),
             Some(path) => select_subfolder(&folder, path)
                 .map(|sub| ServiceResponse::new(sub, meta))
-                .ok_or_else(|| ServiceError::NotFound(format!("folder path {path:?}"))),
+                .ok_or_else(|| {
+                    ServiceError::sm(
+                        CallStatusType::VersionedObjectDoesNotExist,
+                        format!("folder path {path:?}"),
+                    )
+                }),
         }
     }
 
@@ -158,14 +168,23 @@ impl EhrbaseService {
         let read = read_version(&self.pool, vo_id, version)
             .await?
             .filter(|r| r.ehr_id == Some(ehr_id))
-            .ok_or_else(|| ServiceError::NotFound(format!("directory {vo_id} v{version}")))?;
+            .ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::VersionDoesNotExist,
+                    format!("directory {vo_id} v{version}"),
+                )
+            })?;
         if read.deleted() {
             return Ok(ServiceResponse::plain(Value::Null));
         }
         let mut response = self.version_response(ehr_id, vo_id, read);
         if let Some(path) = path.map(str::trim).filter(|p| !p.is_empty() && *p != "/") {
-            response.body = select_subfolder(&response.body, path)
-                .ok_or_else(|| ServiceError::NotFound(format!("folder path {path:?}")))?;
+            response.body = select_subfolder(&response.body, path).ok_or_else(|| {
+                ServiceError::sm(
+                    CallStatusType::VersionedObjectDoesNotExist,
+                    format!("folder path {path:?}"),
+                )
+            })?;
         }
         Ok(response)
     }
@@ -375,9 +394,12 @@ impl EhrbaseService {
 
     /// The EHR's directory versioned-object id, or `NotFound`.
     async fn directory_vo(&self, ehr_id: EhrId) -> Result<VoId, ServiceError> {
-        self.directory_vo_opt(ehr_id)
-            .await?
-            .ok_or_else(|| ServiceError::NotFound(format!("directory for EHR {ehr_id}")))
+        self.directory_vo_opt(ehr_id).await?.ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("directory for EHR {ehr_id}"),
+            )
+        })
     }
 }
 
@@ -483,7 +505,11 @@ impl EhrbaseService {
         // write so neither the slot JOIN nor the writability probe is re-run.
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
         else {
-            return Err(ServiceError::NotFound(format!("directory for EHR {an_ehr_id}")).into());
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("directory for EHR {an_ehr_id}"),
+            )
+            .into());
         };
         ensure_if_match(a_dir_struct.preceding_version_uid.as_ref(), Some(&latest))?;
         let expected = a_dir_struct
@@ -512,7 +538,11 @@ impl EhrbaseService {
     ) -> Result<(), SmError> {
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
         else {
-            return Err(ServiceError::NotFound(format!("directory for EHR {an_ehr_id}")).into());
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("directory for EHR {an_ehr_id}"),
+            )
+            .into());
         };
         ensure_if_match(preceding_version_uid.as_ref(), Some(&latest))?;
         let expected = preceding_version_uid

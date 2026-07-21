@@ -232,18 +232,19 @@ async fn admin_delete_unknown_ehr_is_not_found() {
     let db = testkit::db().await.expect("testkit database");
     let svc = EhrbaseService::new(db.pool());
 
-    // `has_ehr` is false → `ehr_id_does_not_exist` → NotFound (→ HTTP 404).
+    // `has_ehr` is false → `ehr_id_does_not_exist` (→ HTTP 404), preserved
+    // through the ServiceError round-trip.
     let missing = Uuid::now_v7().to_string();
     let res = svc.admin_ehr_delete(missing).await;
     assert!(
         matches!(
             res,
             Err(SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::EhrIdDoesNotExist,
                 ..
             })
         ),
-        "unknown EHR must be NotFound, got {res:?}"
+        "unknown EHR must be ehr_id_does_not_exist, got {res:?}"
     );
 
     // A malformed id is a 400.
@@ -363,14 +364,12 @@ async fn template_rows(pool: &PgPool, template_id: &str) -> i64 {
         .expect("template count")
 }
 
-fn is_not_found(res: &Result<(), SmError>) -> bool {
-    matches!(
-        res,
-        Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
-            ..
-        })
-    )
+/// Whether the call failed with the expected granular does-not-exist status
+/// (a wire `404`; the `ServiceError` round-trip preserves the status the
+/// construction site named — `master03-common_package.adoc` §Representing
+/// Call Status).
+fn is_not_found(res: &Result<(), SmError>, status: CallStatusType) -> bool {
+    matches!(res, Err(SmError { status: got, .. }) if *got == status)
 }
 
 #[tokio::test]
@@ -385,8 +384,8 @@ async fn admin_template_delete_happy_unknown_and_referenced() {
         .admin_template_delete("no-such-template.v9".to_owned())
         .await;
     assert!(
-        is_not_found(&res),
-        "unknown template → NotFound, got {res:?}"
+        is_not_found(&res, CallStatusType::TemplateDoesNotExist),
+        "unknown template → template_does_not_exist, got {res:?}"
     );
 
     // Upload a template; it is deletable while unreferenced, case-insensitively.
@@ -463,8 +462,8 @@ async fn admin_query_delete_exact_version_and_unknown() {
         .admin_query_delete(name.to_owned(), "9.9.9".to_owned())
         .await;
     assert!(
-        is_not_found(&res),
-        "unknown version → NotFound, got {res:?}"
+        is_not_found(&res, CallStatusType::ArtefactDoesNotExist),
+        "unknown version → artefact_does_not_exist, got {res:?}"
     );
 
     // Exact-version delete succeeds (case-insensitive on the name); the row is
@@ -476,8 +475,8 @@ async fn admin_query_delete_exact_version_and_unknown() {
         .admin_query_delete(name.to_owned(), "1.0.0".to_owned())
         .await;
     assert!(
-        is_not_found(&again),
-        "already-deleted version → NotFound, got {again:?}"
+        is_not_found(&again, CallStatusType::ArtefactDoesNotExist),
+        "already-deleted version → artefact_does_not_exist, got {again:?}"
     );
 }
 
@@ -783,17 +782,18 @@ async fn physical_party_delete_cascades_relationships_and_spares_partner() {
     .expect("orphan audits after");
     assert_eq!(orphan_audits_after, 0, "no orphaned audits after cascade");
 
-    // An unknown party id → 404 (party_id_does_not_exist).
+    // An unknown party id → 404 (party_id_does_not_exist), preserved through
+    // the ServiceError round-trip.
     let unknown = svc.physical_party_delete(Uuid::now_v7().to_string()).await;
     assert!(
         matches!(
             unknown,
             Err(SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::PartyIdDoesNotExist,
                 ..
             })
         ),
-        "unknown party must be NotFound, got {unknown:?}"
+        "unknown party must be party_id_does_not_exist, got {unknown:?}"
     );
 
     // A malformed id → 400.
@@ -886,7 +886,7 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         matches!(
             res,
             Err(SmError {
-                status: CallStatusType::VersionedObjectDoesNotExist,
+                status: CallStatusType::EhrIdDoesNotExist,
                 ..
             })
         ),
@@ -898,12 +898,12 @@ async fn archive_marks_vos_idempotently_and_reads_stay_unchanged() {
         .expect("after");
     assert_eq!(before, after, "all-or-nothing: nothing archived on failure");
 
-    // Unknown party → 404.
+    // Unknown party → 404 (`party_id_does_not_exist`).
     let bad_party = svc.archive_parties(vec![Uuid::now_v7().to_string()]).await;
     assert!(matches!(
         bad_party,
         Err(SmError {
-            status: CallStatusType::VersionedObjectDoesNotExist,
+            status: CallStatusType::PartyIdDoesNotExist,
             ..
         })
     ));

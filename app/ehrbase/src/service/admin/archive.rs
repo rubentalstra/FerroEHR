@@ -22,7 +22,7 @@ use uuid::Uuid;
 use crate::ids::EhrId;
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 
 impl EhrbaseService {
     /// SM `archive_ehrs`: mark every versioned object of each EHR as archived
@@ -73,7 +73,10 @@ impl EhrbaseService {
                 .fetch_one(&mut *tx)
                 .await?;
             if !exists {
-                return Err(ServiceError::NotFound(format!("EHR {ehr_id}")));
+                return Err(ServiceError::sm(
+                    CallStatusType::EhrIdDoesNotExist,
+                    format!("EHR {ehr_id}"),
+                ));
             }
         }
         for &ehr_id in ehr_ids {
@@ -104,7 +107,10 @@ impl EhrbaseService {
             .fetch_optional(&mut *tx)
             .await?;
             if !kind.as_deref().is_some_and(super::is_party_kind) {
-                return Err(ServiceError::NotFound(format!("party {party_id}")));
+                return Err(ServiceError::sm(
+                    CallStatusType::PartyIdDoesNotExist,
+                    format!("party {party_id}"),
+                ));
             }
         }
         for &party_id in party_ids {

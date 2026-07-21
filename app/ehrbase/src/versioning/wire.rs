@@ -15,6 +15,7 @@ use uuid::Uuid;
 
 use crate::ids::{EhrId, VoId};
 use crate::service::error::ServiceError;
+use crate::service::status::CallStatusType;
 use crate::versioning::audit::{AuditInput, OPENEHR, audit_details};
 use crate::versioning::integrity;
 use crate::versioning::lifecycle::lifecycle_rubric;
@@ -43,13 +44,17 @@ pub(crate) async fn revision_history(
     vo_id: VoId,
 ) -> Result<Value, ServiceError> {
     let rows = crate::storage::version_repo::meta::all_version_meta(pool, vo_id).await?;
-    let first = rows
-        .first()
-        .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
+    let first = rows.first().ok_or_else(|| {
+        ServiceError::sm(
+            CallStatusType::VersionedObjectDoesNotExist,
+            format!("versioned object {vo_id}"),
+        )
+    })?;
     if first.ehr_id != Some(ehr_id) {
-        return Err(ServiceError::NotFound(format!(
-            "versioned object {vo_id} in EHR {ehr_id}"
-        )));
+        return Err(ServiceError::sm(
+            CallStatusType::VersionedObjectDoesNotExist,
+            format!("versioned object {vo_id} in EHR {ehr_id}"),
+        ));
     }
 
     // Attestations for the object, keyed by version, in commit order.
@@ -115,7 +120,12 @@ pub(crate) async fn versioned_object(
 ) -> Result<Value, ServiceError> {
     let time_created = crate::storage::version_repo::meta::time_created(pool, vo_id)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("versioned object {vo_id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("versioned object {vo_id}"),
+            )
+        })?;
     Ok(json!({
         "_type": rm_type,
         "uid": { "_type": "HIER_OBJECT_ID", "value": vo_id.to_string() },

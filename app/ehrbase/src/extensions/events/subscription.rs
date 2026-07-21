@@ -23,7 +23,7 @@ use uuid::Uuid;
 
 use crate::service::EhrbaseService;
 use crate::service::error::ServiceError;
-use crate::service::status::SmError;
+use crate::service::status::{CallStatusType, SmError};
 
 impl EhrbaseService {
     /// Map an `event_subscription` row to its PHI-free JSON record (NULL
@@ -71,7 +71,12 @@ impl EhrbaseService {
         .bind(id)
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("event subscription {id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("event subscription {id}"),
+            )
+        })?;
         Self::subscription_row(&row)
     }
 
@@ -115,7 +120,12 @@ impl EhrbaseService {
         .bind(enabled_flag(body))
         .fetch_optional(&self.pool)
         .await?
-        .ok_or_else(|| ServiceError::NotFound(format!("event subscription {id}")))?;
+        .ok_or_else(|| {
+            ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("event subscription {id}"),
+            )
+        })?;
         Self::subscription_row(&row)
     }
 
@@ -132,7 +142,10 @@ impl EhrbaseService {
             .await?
             .rows_affected();
         if deleted == 0 {
-            return Err(ServiceError::NotFound(format!("event subscription {id}")));
+            return Err(ServiceError::sm(
+                CallStatusType::VersionedObjectDoesNotExist,
+                format!("event subscription {id}"),
+            ));
         }
         Ok(())
     }
