@@ -1,0 +1,38 @@
+# Instance-index / counter semantics (simplified_formats master04 §Instance
+# Indexing + §Structured format rule 5). Repeating nodes (max>1 or max=-1) are
+# indexed with zero-based colon notation (:0, :1, :2 ...) appended after the
+# node id and before the next separator; the index applies at every level
+# (multiple events in one observation, multiple observations in one
+# composition). The Structured format uses arrays throughout even at 1..1
+# cardinality. PARTICIPATION identifiers use a suffix-embedded index. This
+# content decision table encodes the counter semantics. Vectors: the master04
+# instance-indexing code examples and the Structured-format example.
+id: SF-INDEX-semantics
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: LOCATABLE
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  Instance indices are zero-based and applied per level; Structured arrays are
+  used even at 1..1 cardinality; PARTICIPATION identifiers carry a
+  suffix-embedded index.
+description: "Instance-index/counter semantics (zero-based, multi-level, arrays) (master04)"
+spec_refs:
+  - "ITS-REST simplified_formats master04 §Instance Indexing"
+  - "ITS-REST simplified_formats master04 §Structured format"
+  - "ITS-REST simplified_formats master04 §Field Identifiers"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]"
+decision_table:
+  columns: ["scenario", "flat_path_example", "rm_effect"]
+  rows:
+    - ["first_instance", "body_temperature:0", "index_0_is_first"]
+    - ["second_instance", "body_temperature:1", "index_1_is_second"]
+    - ["third_instance", "body_temperature:2", "index_2_is_third"]
+    - ["multi_event_same_observation", "body_temperature:0/any_event:1", "second_event_in_one_observation"]
+    - ["multi_observation_same_composition", "body_temperature:1/any_event:0", "second_observation_in_one_composition"]
+    - ["structured_array_at_1_1", "temperature", "array_used_even_when_cardinality_1_1"]
+    - ["participation_suffix_index", "participation_identifiers:0", "suffix_embedded_index"]

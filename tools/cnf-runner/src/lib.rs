@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 //! CNF 2.0 reference runner — the typed schedule-artifact model, validator,
 //! and JSON-Schema emission for the openEHR conformance framework.
 //!
@@ -10,11 +11,18 @@
 
 pub mod artifacts;
 pub mod compare;
+pub mod exec;
 pub mod ids;
+pub mod ixit;
 pub mod literal;
 pub mod load;
 pub mod model;
+pub mod party;
+pub mod perf;
 pub mod refgrammar;
+pub mod render;
+pub mod run;
 pub mod schema;
 pub mod validate;
+pub mod verdict;
 pub mod vocab;

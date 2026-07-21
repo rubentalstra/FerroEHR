@@ -409,8 +409,7 @@ impl OperationBinding {
     /// Returns a message naming the violated invariant.
     pub fn check_invariants(&self) -> Result<(), String> {
         match (&self.unrealized, &self.request, &self.outcomes) {
-            (Some(_), None, None) => Ok(()),
-            (None, Some(_), Some(_)) => Ok(()),
+            (Some(_), None, None) | (None, Some(_), Some(_)) => Ok(()),
             (Some(_), _, _) => Err("unrealized binding must carry no request/outcomes".to_owned()),
             _ => Err("realized binding must carry request and outcomes".to_owned()),
         }

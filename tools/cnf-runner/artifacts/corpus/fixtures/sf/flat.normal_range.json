@@ -1,0 +1,11 @@
+{
+  "ctx/language": "en",
+  "ctx/territory": "NL",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.5,
+  "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel",
+  "vitals/body_temperature:0/any_event:0/temperature/_normal_range/lower|magnitude": 36.0,
+  "vitals/body_temperature:0/any_event:0/temperature/_normal_range/lower|unit": "Cel",
+  "vitals/body_temperature:0/any_event:0/temperature/_normal_range/upper|magnitude": 37.8,
+  "vitals/body_temperature:0/any_event:0/temperature/_normal_range/upper|unit": "Cel"
+}

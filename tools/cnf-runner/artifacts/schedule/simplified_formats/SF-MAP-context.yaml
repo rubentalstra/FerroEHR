@@ -1,0 +1,62 @@
+# Per-RM-type suffix mapping: the context/participation types — EVENT_CONTEXT,
+# PARTICIPATION, PARTY_RELATED performer, OBJECT_REF, ISM_TRANSITION,
+# INSTRUCTION_DETAILS (simplified_formats master05 §EVENT_CONTEXT,
+# §PARTICIPATION, §PARTY_RELATED performer, §OBJECT_REF, §ISM_TRANSITION,
+# §INSTRUCTION_DETAILS). PARTICIPATION inlines the performer (PARTY_IDENTIFIED)
+# at the participation level and carries the compact |identifiers_*:i suffix
+# form. Vectors: the EVENT_CONTEXT blocks, the PARTICIPATION block, the
+# PARTY_RELATED-performer relationship block, the OBJECT_REF block, the
+# ISM_TRANSITION blocks, and the INSTRUCTION_DETAILS block.
+id: SF-MAP-context
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: EVENT_CONTEXT
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  EVENT_CONTEXT, PARTICIPATION (with inlined performer + compact identifiers),
+  PARTY_RELATED performer relationship, OBJECT_REF, ISM_TRANSITION and
+  INSTRUCTION_DETAILS map their FLAT suffixes to the documented RM paths.
+description: "EVENT_CONTEXT/PARTICIPATION/OBJECT_REF/ISM_TRANSITION/INSTRUCTION_DETAILS mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §EVENT_CONTEXT"
+  - "ITS-REST simplified_formats master05 §PARTICIPATION"
+  - "ITS-REST simplified_formats master05 §OBJECT_REF"
+  - "ITS-REST simplified_formats master05 §ISM_TRANSITION"
+  - "ITS-REST simplified_formats master05 §INSTRUCTION_DETAILS"
+  - "RM data_structures §EVENT_CONTEXT"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/context"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "required"]
+  rows:
+    - ["EVENT_CONTEXT", "/start_time", "start_time", "yes"]
+    - ["EVENT_CONTEXT", "/setting", "setting", "yes"]
+    - ["EVENT_CONTEXT", "/_end_time", "end_time", "no"]
+    - ["EVENT_CONTEXT", "/_location", "location", "no"]
+    - ["EVENT_CONTEXT", "/_health_care_facility", "health_care_facility", "no"]
+    - ["EVENT_CONTEXT", "/_participation:i", "participations", "no"]
+    - ["PARTICIPATION", "|function", "function.value", "yes"]
+    - ["PARTICIPATION", "|mode", "mode.value", "no"]
+    - ["PARTICIPATION", "|name", "performer.name", "no"]
+    - ["PARTICIPATION", "|id", "performer.external_ref.id.value", "no"]
+    - ["PARTICIPATION", "|id_scheme", "performer.external_ref.id.scheme", "no"]
+    - ["PARTICIPATION", "|id_namespace", "performer.external_ref.namespace", "conditional"]
+    - ["PARTICIPATION", "|identifiers_id:i", "performer.identifiers[i].id", "no"]
+    - ["PARTICIPATION", "|identifiers_issuer:i", "performer.identifiers[i].issuer", "no"]
+    - ["PARTICIPATION", "|identifiers_assigner:i", "performer.identifiers[i].assigner", "no"]
+    - ["PARTICIPATION", "|identifiers_type:i", "performer.identifiers[i].type", "no"]
+    - ["PARTY_RELATED", "/relationship", "relationship", "conditional"]
+    - ["OBJECT_REF", "|type", "type", "yes"]
+    - ["OBJECT_REF", "|id", "id.value", "yes"]
+    - ["OBJECT_REF", "|scheme", "id.scheme", "yes"]
+    - ["OBJECT_REF", "|namespace", "namespace", "yes"]
+    - ["ISM_TRANSITION", "/current_state", "current_state", "yes"]
+    - ["ISM_TRANSITION", "/transition", "transition", "no"]
+    - ["ISM_TRANSITION", "/careflow_step", "careflow_step", "no"]
+    - ["ISM_TRANSITION", "/_reason:i", "reason", "no"]
+    - ["INSTRUCTION_DETAILS", "|path", "instruction_id.path", "yes"]
+    - ["INSTRUCTION_DETAILS", "|composition_uid", "instruction_id.id", "yes"]
+    - ["INSTRUCTION_DETAILS", "|activity_id", "activity_id", "yes"]

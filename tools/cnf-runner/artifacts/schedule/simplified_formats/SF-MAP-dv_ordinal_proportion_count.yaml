@@ -1,0 +1,53 @@
+# Per-RM-type suffix mapping: the numeric-with-ranges family — DV_ORDINAL,
+# DV_PROPORTION, DV_COUNT (simplified_formats master05 §DV_ORDINAL,
+# §DV_PROPORTION, §DV_COUNT). Vectors: the DV_ORDINAL blocks (code/value/ordinal;
+# +normal_range/other_reference_ranges), DV_PROPORTION blocks (numerator/
+# denominator/type; +bare-magnitude/status/accuracy/ranges), DV_COUNT blocks
+# (bare value; +status/accuracy/ranges). Note the bare (empty-suffix) value for
+# DV_PROPORTION/DV_COUNT.
+id: SF-MAP-dv_ordinal_proportion_count
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: DV_ORDINAL
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  The DV_ORDINAL, DV_PROPORTION and DV_COUNT FLAT suffixes map to their
+  documented RM paths, including the bare (empty-suffix) magnitude value for
+  DV_PROPORTION/DV_COUNT and the shared reference-range RM-attribute paths.
+description: "DV_ORDINAL/DV_PROPORTION/DV_COUNT suffix mapping (master05)"
+spec_refs:
+  - "ITS-REST simplified_formats master05 §DV_ORDINAL"
+  - "ITS-REST simplified_formats master05 §DV_PROPORTION"
+  - "ITS-REST simplified_formats master05 §DV_COUNT"
+  - "RM data_types §DV_ORDINAL"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items/value"
+decision_table:
+  columns: ["rm_type", "suffix", "rm_path", "required"]
+  rows:
+    - ["DV_ORDINAL", "|code", "symbol.defining_code.code_string", "yes"]
+    - ["DV_ORDINAL", "|value", "symbol.value", "conditional"]
+    - ["DV_ORDINAL", "|ordinal", "value", "conditional"]
+    - ["DV_ORDINAL", "/_normal_range", "normal_range", "no"]
+    - ["DV_ORDINAL", "/_other_reference_ranges:i", "_other_reference_ranges", "no"]
+    - ["DV_PROPORTION", "|numerator", "numerator", "yes"]
+    - ["DV_PROPORTION", "|denominator", "denominator", "yes"]
+    - ["DV_PROPORTION", "|type", "type", "yes"]
+    - ["DV_PROPORTION", "|precision", "precision", "no"]
+    - ["DV_PROPORTION", "", "magnitude", "no"]
+    - ["DV_PROPORTION", "|magnitude_status", "magnitude_status", "no"]
+    - ["DV_PROPORTION", "|accuracy", "accuracy", "no"]
+    - ["DV_PROPORTION", "|accuracy_is_percent", "accuracy_is_percent", "no"]
+    - ["DV_PROPORTION", "|normal_status", "normal_status.code_string", "no"]
+    - ["DV_PROPORTION", "/_normal_range", "normal_range", "no"]
+    - ["DV_PROPORTION", "/_other_reference_ranges:i", "_other_reference_ranges", "no"]
+    - ["DV_COUNT", "", "magnitude", "yes"]
+    - ["DV_COUNT", "|magnitude_status", "magnitude_status", "no"]
+    - ["DV_COUNT", "|normal_status", "normal_status.code_string", "no"]
+    - ["DV_COUNT", "|accuracy", "accuracy", "no"]
+    - ["DV_COUNT", "|accuracy_is_percent", "accuracy_is_percent", "no"]
+    - ["DV_COUNT", "/_normal_range", "normal_range", "no"]
+    - ["DV_COUNT", "/_other_reference_ranges:i", "_other_reference_ranges", "no"]

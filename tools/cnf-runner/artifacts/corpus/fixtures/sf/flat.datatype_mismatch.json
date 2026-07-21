@@ -1,0 +1,7 @@
+{
+  "ctx/language": "en",
+  "ctx/territory": "NL",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|magnitude": "hot",
+  "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel"
+}

@@ -1,0 +1,49 @@
+# Level removal, part 1 (simplified_formats master04 §Container Attributes
+# Elided from Paths). The container-attribute names of LOCATABLE-to-LOCATABLE
+# relationships are NEVER present as path segments in FLAT/STRUCTURED — the
+# parent connects directly to the child via the child's archetype node-id
+# alias. This content decision table encodes the master04 elision list
+# verbatim: each row names a container attribute and asserts it is elided from
+# simplified paths.
+id: SF-LEVELS-container_attribute_elision
+kind: content
+component: SIMPLIFIED_FORMATS
+rm_class: LOCATABLE
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+test_purpose: >-
+  Every container attribute in the master04 elision list is absent from
+  FLAT/STRUCTURED path segments — the parent connects directly to the child by
+  the child's node-id alias.
+description: "Container-attribute names elided from simplified paths (master04)"
+spec_refs:
+  - "ITS-REST simplified_formats master04 §Container Attributes Elided from Paths"
+  - "ITS-REST simplified_formats master04 §Level Removal"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+constraint_context:
+  template: cnf.opt.vitals
+  path: "/"
+decision_table:
+  columns: ["container_attribute", "owner_rm_type", "elided_from_path"]
+  rows:
+    - ["content", "COMPOSITION", "yes"]
+    - ["items", "SECTION", "yes"]
+    - ["data", "OBSERVATION", "yes"]
+    - ["state", "OBSERVATION", "yes"]
+    - ["protocol", "OBSERVATION", "yes"]
+    - ["data", "EVALUATION", "yes"]
+    - ["protocol", "EVALUATION", "yes"]
+    - ["activities", "INSTRUCTION", "yes"]
+    - ["protocol", "INSTRUCTION", "yes"]
+    - ["description", "ACTION", "yes"]
+    - ["protocol", "ACTION", "yes"]
+    - ["data", "ADMIN_ENTRY", "yes"]
+    - ["description", "ACTIVITY", "yes"]
+    - ["events", "HISTORY", "yes"]
+    - ["data", "EVENT", "yes"]
+    - ["state", "EVENT", "yes"]
+    - ["items", "ITEM_TREE", "yes"]
+    - ["items", "ITEM_LIST", "yes"]
+    - ["item", "ITEM_SINGLE", "yes"]
+    - ["rows", "ITEM_TABLE", "yes"]
+    - ["items", "CLUSTER", "yes"]

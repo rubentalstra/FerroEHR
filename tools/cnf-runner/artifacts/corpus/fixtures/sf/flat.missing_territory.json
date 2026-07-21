@@ -1,0 +1,6 @@
+{
+  "ctx/language": "en",
+  "ctx/composer_self": true,
+  "vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
+  "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel"
+}

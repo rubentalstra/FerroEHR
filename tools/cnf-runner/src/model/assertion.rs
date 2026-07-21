@@ -184,8 +184,8 @@ pub enum Assertion {
         #[serde(default)]
         ignoring: IgnoreList,
     },
-    /// `ORIGINAL_VERSION.signature` facts (RM common §change_control,
-    /// Digital Signature: the signature is over the canonical form of the
+    /// `ORIGINAL_VERSION.signature` facts (RM common §`change_control`,
+    /// `Digital Signature`: the signature is over the canonical form of the
     /// version data; verification behaviour is conformance, algorithm
     /// strength is not). The wire seam is the versioned-object version read
     /// (the `ORIGINAL_VERSION` envelope), resolved by the interpreter.
@@ -261,6 +261,14 @@ impl Assertion {
     /// violated.
     pub fn check_invariants(&self) -> Result<(), String> {
         match self {
+            Self::Field { .. } => self.check_field_invariants(),
+            Self::Version { .. } => self.check_version_invariants(),
+            other => other.check_other_invariants(),
+        }
+    }
+
+    fn check_field_invariants(&self) -> Result<(), String> {
+        match self {
             Self::Field {
                 equals,
                 not_equals,
@@ -282,7 +290,14 @@ impl Assertion {
                 if let Some(re) = matches {
                     regex::Regex::new(re).map_err(|e| format!("field matches regex: {e}"))?;
                 }
+                Ok(())
             }
+            _ => Ok(()),
+        }
+    }
+
+    fn check_version_invariants(&self) -> Result<(), String> {
+        match self {
             Self::Version {
                 of,
                 for_each,
@@ -309,7 +324,14 @@ impl Assertion {
                             .to_owned(),
                     );
                 }
+                Ok(())
             }
+            _ => Ok(()),
+        }
+    }
+
+    fn check_other_invariants(&self) -> Result<(), String> {
+        match self {
             Self::Signature {
                 of,
                 for_each,
@@ -374,7 +396,9 @@ impl Assertion {
             Self::InstanceOf { .. }
             | Self::Equivalent { .. }
             | Self::MessageExemplar { .. }
-            | Self::State { .. } => {}
+            | Self::State { .. }
+            | Self::Field { .. }
+            | Self::Version { .. } => {}
         }
         Ok(())
     }
