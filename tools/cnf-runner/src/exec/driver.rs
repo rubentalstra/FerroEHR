@@ -619,6 +619,20 @@ impl HttpDriver<'_> {
                     .resolve_value(template, vars)
                     .map_err(|e| e.to_string())?,
             )),
+            Some(RequestBody::Patched { from_capture, set }) => {
+                let Some(crate::exec::state::Captured::Body(body)) = vars.get(from_capture) else {
+                    return Err(format!(
+                        "patched body: capture {from_capture} holds no resource body"
+                    ));
+                };
+                let mut patched = body.clone();
+                if let Some(map) = patched.as_object_mut() {
+                    for (field, value) in set {
+                        map.insert(field.clone(), value.clone());
+                    }
+                }
+                Ok(Some(patched))
+            }
         }
     }
 
@@ -743,12 +757,111 @@ impl HttpDriver<'_> {
     }
 }
 
+impl HttpDriver<'_> {
+    /// ehr: mint `${ehr_id}` via `create_ehr`.
+    fn provision_ehr(&mut self, case: &CaseCore, vars: &mut VarStore) -> Result<(), String> {
+        if matches!(case.requires.ehr, Some(EhrRequirement::Exists { .. })) {
+            let binding = self.binding_for(case, "I_EHR_SERVICE.create_ehr")?;
+            let instance = self.ixit.default_instance()?;
+            let request_spec = binding
+                .request
+                .as_ref()
+                .ok_or_else(|| "create_ehr unrealized".to_owned())?;
+            let mut headers = BTreeMap::new();
+            if let Some(hs) = &request_spec.headers {
+                for (name, template) in hs {
+                    if let Ok(v) = assertions::render_template(template, vars) {
+                        headers.insert(name.clone(), v);
+                    }
+                }
+            }
+            headers.insert("Accept".to_owned(), "application/json".to_owned());
+            headers.insert("Content-Type".to_owned(), "application/json".to_owned());
+            if let Some(auth) = Self::auth_header(&instance.auth)? {
+                headers.insert("Authorization".to_owned(), auth);
+            }
+            let base = instance.base_url.trim_end_matches('/');
+            let url = format!("{base}{}", request_spec.path.raw());
+            let exchange = self.send(request_spec.method, &url, &headers, None, true)?;
+            if let Some((_, spec)) = binding
+                .captures
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .find(|(n, _)| n.as_str() == "ehr_id")
+                && let Some(value) = Self::extract_capture(&exchange, spec, vars)
+            {
+                vars.set(
+                    CaptureName::parse("ehr_id").map_err(|e| e.to_string())?,
+                    Captured::Scalar(value),
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// Bind the step's captures from the exchange when the observation
+    /// matched a mapped kind (the closed capture-source grammar).
+    fn bind_step_captures(
+        step: &FlowStep,
+        binding: &OperationBinding,
+        exchange: &Exchange,
+        observation: &Observation,
+        exchange_ordinal: usize,
+        vars: &mut VarStore,
+    ) {
+        let Observation::Kind(kind) = observation else {
+            return;
+        };
+        for (name, source) in step.captures() {
+            if source.outcome != *kind {
+                continue;
+            }
+            match &source.field {
+                CaptureField::Body => {
+                    if let Some(b) = &exchange.body {
+                        vars.set(name.clone(), Captured::Body(b.clone()));
+                    }
+                }
+                CaptureField::CommitTime => {
+                    // The exchange ordinal as a monotonic stand-in
+                    // (deterministic-across-runners applies to ${time:*}
+                    // arithmetic, not live instants).
+                    let ms = i64::try_from(exchange_ordinal).unwrap_or(i64::MAX) * 1_000;
+                    vars.set(name.clone(), Captured::InstantMs(ms));
+                }
+                CaptureField::Field { name: field, list } => {
+                    let Some(spec) = binding
+                        .captures
+                        .as_deref()
+                        .unwrap_or_default()
+                        .iter()
+                        .find(|(n, _)| n == field)
+                        .map(|(_, s)| s)
+                    else {
+                        continue;
+                    };
+                    if *list {
+                        if let (Some(body), WireFrom::Body { path }) = (&exchange.body, &spec.from)
+                        {
+                            let items = extract_list(body, path);
+                            vars.set(name.clone(), Captured::List(items));
+                        }
+                    } else if let Some(value) = Self::extract_capture(exchange, spec, vars) {
+                        vars.set(name.clone(), Captured::Scalar(value));
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl StepDriver for HttpDriver<'_> {
     fn perform(
         &mut self,
         case: &CaseCore,
         step: &FlowStep,
-        _expected: OutcomeKind,
+        expected: OutcomeKind,
         row: usize,
         vars: &mut VarStore,
     ) -> Result<StepObservation, String> {
@@ -765,7 +878,9 @@ impl StepDriver for HttpDriver<'_> {
         }
         let instance = self.instance_for(step)?;
 
-        // Resolve the with-payload.
+        // Resolve the with-payload. A capture the earlier steps never bound
+        // (the SUT did not supply what the binding maps) is an INCONCLUSIVE
+        // observation for this row (law c) — never a run-aborting defect.
         let mut with: BTreeMap<String, Value> = BTreeMap::new();
         for (key, value) in step.with_entries() {
             let resolved = self.resolver.resolve_value(value, vars);
@@ -773,7 +888,15 @@ impl StepDriver for HttpDriver<'_> {
                 Ok(v) => {
                     with.insert(key.clone(), v);
                 }
-                Err(e) => return Err(format!("step {}: with.{key}: {e}", step.step)),
+                Err(e) => {
+                    return Ok(StepObservation {
+                        observation: Observation::Transport(format!(
+                            "step {}: with.{key}: {e}",
+                            step.step
+                        )),
+                        assertion_failures: Vec::new(),
+                    });
+                }
             }
         }
 
@@ -781,12 +904,48 @@ impl StepDriver for HttpDriver<'_> {
             .request
             .as_ref()
             .ok_or_else(|| "binding is unrealized".to_owned())?;
-        let headers = Self::build_headers(case, step, binding, instance, vars)?;
+        // Header templates resolve against captures AND the step's own
+        // resolved `with` values (e.g. update_composition-non_existent
+        // supplies preceding_version_uid inline, not as a capture).
+        let mut header_vars = vars.clone();
+        for (key, value) in &with {
+            if let Value::String(s) = value
+                && let Ok(name) = CaptureName::parse(key)
+                && header_vars.scalar(&name).is_none()
+            {
+                header_vars.set(name, Captured::Scalar(s.clone()));
+            }
+        }
+        let headers = match Self::build_headers(case, step, binding, instance, &header_vars) {
+            Ok(headers) => headers,
+            Err(e) => {
+                return Ok(StepObservation {
+                    observation: Observation::Transport(e),
+                    assertion_failures: Vec::new(),
+                });
+            }
+        };
 
-        let body = self.select_body(request_spec, &with, step, vars)?;
+        let body = match self.select_body(request_spec, &with, step, vars) {
+            Ok(body) => body,
+            Err(e) => {
+                return Ok(StepObservation {
+                    observation: Observation::Transport(e),
+                    assertion_failures: Vec::new(),
+                });
+            }
+        };
 
         let base = instance.base_url.trim_end_matches('/');
-        let url = Self::build_url(binding, base, &with, vars)?;
+        let url = match Self::build_url(binding, base, &with, &header_vars) {
+            Ok(url) => url,
+            Err(e) => {
+                return Ok(StepObservation {
+                    observation: Observation::Transport(e),
+                    assertion_failures: Vec::new(),
+                });
+            }
+        };
         let body_is_json = !matches!(body, Some(Value::String(_)));
         let exchange = match self.send(
             request_spec.method,
@@ -814,52 +973,15 @@ impl StepDriver for HttpDriver<'_> {
 
         // Classify (law c) and bind captures.
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
-        let observation = outcome::classify_status(binding, selectors, exchange.status);
-        if let Observation::Kind(kind) = observation {
-            for (name, source) in step.captures() {
-                if source.outcome != kind {
-                    continue;
-                }
-                match &source.field {
-                    CaptureField::Body => {
-                        if let Some(b) = &exchange.body {
-                            vars.set(name.clone(), Captured::Body(b.clone()));
-                        }
-                    }
-                    CaptureField::CommitTime => {
-                        // Server Date header, else the exchange ordinal as a
-                        // monotonic stand-in (deterministic across runners is
-                        // not required for LIVE instants — only ${time:*}
-                        // arithmetic is fixed).
-                        let ms = i64::try_from(self.exchanges.len()).unwrap_or(i64::MAX) * 1_000;
-                        vars.set(name.clone(), Captured::InstantMs(ms));
-                    }
-                    CaptureField::Field { name: field, list } => {
-                        if let Some(spec) = binding
-                            .captures
-                            .as_deref()
-                            .unwrap_or_default()
-                            .iter()
-                            .find(|(n, _)| n == field)
-                            .map(|(_, s)| s)
-                        {
-                            if *list {
-                                // list capture: body path yields an array
-                                if let Some(body) = &exchange.body
-                                    && let WireFrom::Body { path } = &spec.from
-                                {
-                                    let items = extract_list(body, path);
-                                    vars.set(name.clone(), Captured::List(items));
-                                }
-                            } else if let Some(value) = Self::extract_capture(&exchange, spec, vars)
-                            {
-                                vars.set(name.clone(), Captured::Scalar(value));
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        let observation = outcome::classify_status(binding, selectors, exchange.status, expected);
+        Self::bind_step_captures(
+            step,
+            binding,
+            &exchange,
+            &observation,
+            self.exchanges.len(),
+            vars,
+        );
 
         // Post-step assertions only when the expectation held (the caller
         // aborts otherwise, law b) — evaluate optimistically here.
@@ -912,41 +1034,45 @@ impl StepDriver for HttpDriver<'_> {
             let _uploaded =
                 self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
         }
-        // ehr: mint ${ehr_id} via create_ehr.
-        if matches!(case.requires.ehr, Some(EhrRequirement::Exists { .. })) {
-            let binding = self.binding_for(case, "I_EHR_SERVICE.create_ehr")?;
+        self.provision_ehr(case, vars)?;
+        // directory: provision the FOLDER tree via create_directory.
+        if let Some(crate::model::case::DirectoryRequirement::Tree(key)) =
+            case.requires.directory.clone()
+        {
+            let payload = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
+            let binding = self.binding_for(case, "I_EHR_DIRECTORY.create_directory")?;
             let instance = self.ixit.default_instance()?;
             let request_spec = binding
                 .request
                 .as_ref()
-                .ok_or_else(|| "create_ehr unrealized".to_owned())?;
+                .ok_or_else(|| "create_directory unrealized".to_owned())?;
+            let ehr_id = vars
+                .scalar(&CaptureName::parse("ehr_id").map_err(|e| e.to_string())?)
+                .ok_or_else(|| "requires.directory without a provisioned ehr".to_owned())?
+                .to_owned();
             let mut headers = BTreeMap::new();
-            if let Some(hs) = &request_spec.headers {
-                for (name, template) in hs {
-                    if let Ok(v) = assertions::render_template(template, vars) {
-                        headers.insert(name.clone(), v);
-                    }
-                }
-            }
-            headers.insert("Accept".to_owned(), "application/json".to_owned());
             headers.insert("Content-Type".to_owned(), "application/json".to_owned());
+            headers.insert("Accept".to_owned(), "application/json".to_owned());
+            headers.insert("Prefer".to_owned(), "return=representation".to_owned());
             if let Some(auth) = Self::auth_header(&instance.auth)? {
                 headers.insert("Authorization".to_owned(), auth);
             }
             let base = instance.base_url.trim_end_matches('/');
-            let url = format!("{base}{}", request_spec.path.raw());
-            let exchange = self.send(request_spec.method, &url, &headers, None, true)?;
+            let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
+            let url = format!("{base}{path}");
+            let exchange = self.send(request_spec.method, &url, &headers, Some(&payload), true)?;
+            self.committed.push(payload);
             if let Some((_, spec)) = binding
                 .captures
                 .as_deref()
                 .unwrap_or_default()
                 .iter()
-                .find(|(n, _)| n.as_str() == "ehr_id")
-                && let Some(value) = Self::extract_capture(&exchange, spec, vars)
+                .find(|(n, _)| n.as_str() == "directory_version_uid")
+                && let Some(uid) = Self::extract_capture(&exchange, spec, vars)
             {
                 vars.set(
-                    CaptureName::parse("ehr_id").map_err(|e| e.to_string())?,
-                    Captured::Scalar(value),
+                    CaptureName::parse("directory_version_uid").map_err(|e| e.to_string())?,
+                    Captured::Scalar(uid),
                 );
             }
         }

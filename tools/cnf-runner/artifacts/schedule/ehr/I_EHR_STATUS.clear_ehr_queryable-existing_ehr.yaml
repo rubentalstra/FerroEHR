@@ -26,7 +26,7 @@ flow:
     call: get_ehr_status                 # ITS-REST realization: obtain the If-Match precondition
     with: { ehr_id: "${ehr_id}" }
     expect: ok
-    capture: { status_version_uid: ok.status_version_uid }
+    capture: { status_version_uid: ok.status_version_uid, status_body: ok.body }
   - step: 2
     call: clear_ehr_queryable
     with: { ehr_id: "${ehr_id}", preceding_version_uid: "${status_version_uid}" }

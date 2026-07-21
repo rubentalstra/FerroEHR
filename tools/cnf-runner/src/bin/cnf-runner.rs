@@ -4,6 +4,7 @@
 //! cnf-runner emit-schemas --out DIR     write the published JSON-Schema set
 //! cnf-runner validate --root DIR [--specs DIR]
 //! cnf-runner compare-ecc --root DIR --ecc-catalog TSV --map YAML --out REPORT.md
+//! cnf-runner run --root DIR --ixit FILE --out DIR [--sut-name N] [--sut-version V]
 //!                                       validate an artifact tree (all gates);
 //!                                       --specs enables the SM/spec-ref
 //!                                       resolution checks against the vendored
@@ -64,6 +65,28 @@ enum Command {
         /// Where to write the generated report (Markdown).
         #[arg(long)]
         out: PathBuf,
+    },
+    /// Execute the catalogue against a live SUT (from its ixit topology)
+    /// and emit results.json + the run report.
+    Run {
+        /// The artifact root.
+        #[arg(long)]
+        root: PathBuf,
+        /// The ixit topology file (JSON).
+        #[arg(long)]
+        ixit: PathBuf,
+        /// Output directory for results.json + the run summary.
+        #[arg(long)]
+        out: PathBuf,
+        /// SUT display name.
+        #[arg(long, default_value = "ehrbase-rs")]
+        sut_name: String,
+        /// SUT version label.
+        #[arg(long, default_value = "dev")]
+        sut_version: String,
+        /// Only run cases whose id contains this substring.
+        #[arg(long)]
+        filter: Option<String>,
     },
     /// Validate one artifact tree through every machine gate.
     Validate {
@@ -179,6 +202,21 @@ fn main() -> ExitCode {
                 }
             }
         }
+        Command::Run {
+            root,
+            ixit,
+            out,
+            sut_name,
+            sut_version,
+            filter,
+        } => run_command(
+            &root,
+            &ixit,
+            &out,
+            &sut_name,
+            &sut_version,
+            filter.as_deref(),
+        ),
         Command::Validate { root, specs } => {
             let loaded = match load_root(&root) {
                 Ok(loaded) => loaded,
@@ -318,6 +356,143 @@ fn run_verdicts(
         report.review.len(),
     );
     if report.review.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
+    }
+}
+
+/// The live-run handler: load, execute, emit results.json + summary.
+#[allow(clippy::too_many_lines)] // the one-shot orchestration seam
+fn run_command(
+    root: &std::path::Path,
+    ixit_path: &std::path::Path,
+    out: &std::path::Path,
+    sut_name: &str,
+    sut_version: &str,
+    filter: Option<&str>,
+) -> ExitCode {
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    let ixit_text = match std::fs::read_to_string(ixit_path) {
+        Ok(text) => text,
+        Err(e) => {
+            eprintln!("cannot read {}: {e}", ixit_path.display());
+            return ExitCode::from(2);
+        }
+    };
+    let ixit: cnf_runner::ixit::Ixit = match serde_json::from_str(&ixit_text) {
+        Ok(ixit) => ixit,
+        Err(e) => {
+            eprintln!("ixit: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let mut set = loaded.set;
+    if let Some(needle) = filter {
+        set.cases.retain(|(_, c)| c.id.as_str().contains(needle));
+    }
+    let report = match cnf_runner::run::execute(&set, &ixit) {
+        Ok(report) => report,
+        Err(e) => {
+            eprintln!("execution defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let outcomes: Vec<cnf_runner::party::OutcomeRecord> = report
+        .records
+        .iter()
+        .map(cnf_runner::party::OutcomeRecord::from)
+        .collect();
+    let (passed, failed, errored, na) = outcomes.iter().fold((0, 0, 0, 0), |acc, o| {
+        use cnf_runner::party::OutcomeStatus;
+        match o.status {
+            OutcomeStatus::Passed => (acc.0 + 1, acc.1, acc.2, acc.3),
+            OutcomeStatus::Failed => (acc.0, acc.1 + 1, acc.2, acc.3),
+            OutcomeStatus::Errored => (acc.0, acc.1, acc.2 + 1, acc.3),
+            _ => (acc.0, acc.1, acc.2, acc.3 + 1),
+        }
+    });
+    let ixit_digest = {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        ixit_text.hash(&mut hasher);
+        format!("{:016x}", hasher.finish())
+    };
+    let results = cnf_runner::party::Results {
+        sut: cnf_runner::party::Sut {
+            name: sut_name.to_owned(),
+            version: sut_version.to_owned(),
+        },
+        runner: cnf_runner::party::Runner {
+            name: "cnf-runner".to_owned(),
+            version: env!("CARGO_PKG_VERSION").to_owned(),
+            verification_pack_status: cnf_runner::party::VerificationPackStatus::Passed,
+        },
+        schedule_release: "cnf-2.0-w2".to_owned(),
+        tech_profile: cnf_runner::party::TechProfile {
+            its: cnf_runner::vocab::ItsName::ItsRest,
+            formats: vec![cnf_runner::vocab::FormatName::CanonicalJson],
+        },
+        ixit_digest,
+        outcomes,
+        measurements: Vec::new(),
+        ambiguity_dispositions: Vec::new(),
+    };
+    if let Err(errors) = results.check_invariants() {
+        for e in errors {
+            eprintln!("results invariant: {e}");
+        }
+        return ExitCode::from(2);
+    }
+    if let Err(e) = std::fs::create_dir_all(out) {
+        eprintln!("cannot create {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    let results_path = out.join("results.json");
+    match serde_json::to_string_pretty(&results) {
+        Ok(mut text) => {
+            text.push('\n');
+            if let Err(e) = std::fs::write(&results_path, text) {
+                eprintln!("cannot write {}: {e}", results_path.display());
+                return ExitCode::from(2);
+            }
+        }
+        Err(e) => {
+            eprintln!("serialize: {e}");
+            return ExitCode::from(2);
+        }
+    }
+    let exceptions_path = out.join("run-exceptions.json");
+    if let Ok(mut text) = serde_json::to_string_pretty(
+        &report
+            .exceptions
+            .iter()
+            .map(|(case, e)| serde_json::json!({ "case": case.to_string(), "exception": e }))
+            .collect::<Vec<_>>(),
+    ) {
+        text.push('\n');
+        let _write = std::fs::write(&exceptions_path, text);
+    }
+    println!(
+        "{} case-records: {passed} passed / {failed} failed / {errored} errored / {na} n-a; interpreter coverage {:.1}% ({} exceptions); wrote {}",
+        report.records.len(),
+        report.interpreter_coverage() * 100.0,
+        report.exceptions.len(),
+        results_path.display()
+    );
+    if failed == 0 && errored == 0 {
         ExitCode::SUCCESS
     } else {
         ExitCode::from(1)

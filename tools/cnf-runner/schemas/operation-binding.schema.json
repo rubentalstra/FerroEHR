@@ -110,7 +110,30 @@
               "type": "string"
             },
             {
-              "type": "object"
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "from_capture",
+                "set"
+              ],
+              "properties": {
+                "from_capture": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                },
+                "set": {
+                  "type": "object",
+                  "minProperties": 1
+                }
+              }
+            },
+            {
+              "type": "object",
+              "not": {
+                "required": [
+                  "from_capture"
+                ]
+              }
             }
           ]
         },

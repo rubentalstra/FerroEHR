@@ -245,11 +245,42 @@ pub enum RequestBody {
     /// A structured body template (the query binding's
     /// `{ q: ${q}, offset: ${offset?} … }`).
     Structured(crate::model::value::TemplatedValue),
+    /// The read-modify-write realization of an SM field-setter (AMB-15): the
+    /// body is a captured resource with the named fields overwritten.
+    Patched {
+        /// The case capture holding the current resource body.
+        from_capture: crate::ids::CaptureName,
+        /// Field overwrites (top-level attribute → literal value).
+        set: Vec<(String, serde_json::Value)>,
+    },
 }
 
 impl<'de> Deserialize<'de> for RequestBody {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let value = serde_json::Value::deserialize(deserializer)?;
+        // The patched form: { from_capture: <name>, set: { field: value } }.
+        if let serde_json::Value::Object(map) = &value
+            && map.contains_key("from_capture")
+        {
+            let from = map
+                .get("from_capture")
+                .and_then(serde_json::Value::as_str)
+                .ok_or_else(|| D::Error::custom("from_capture must be a capture name"))?;
+            let from_capture = crate::ids::CaptureName::parse(from).map_err(D::Error::custom)?;
+            let set = map
+                .get("set")
+                .and_then(serde_json::Value::as_object)
+                .ok_or_else(|| D::Error::custom("patched body requires a set mapping"))?
+                .iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect();
+            if map.len() != 2 {
+                return Err(D::Error::custom(
+                    "patched body carries exactly from_capture + set",
+                ));
+            }
+            return Ok(Self::Patched { from_capture, set });
+        }
         match &value {
             serde_json::Value::String(s) => {
                 let (name, optional) = match s.strip_suffix('?') {
