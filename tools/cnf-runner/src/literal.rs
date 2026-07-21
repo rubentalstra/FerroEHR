@@ -460,7 +460,10 @@ mod tests {
             Literal::from_text("10:00..12:00").unwrap(),
             Literal::Iso8601Range { .. }
         ));
-        assert!(matches!(Literal::from_text("1900..2030").unwrap(), Literal::Range { .. }));
+        assert!(matches!(
+            Literal::from_text("1900..2030").unwrap(),
+            Literal::Range { .. }
+        ));
         assert!(matches!(
             Literal::from_text("1.5|[local::at0005]").unwrap(),
             Literal::Scale { .. }

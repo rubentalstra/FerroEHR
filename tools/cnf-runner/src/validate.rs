@@ -146,7 +146,10 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
                 &mut findings,
                 CheckId::AmbiguityLink,
                 &who,
-                format!("unrealized declaration cites {} which is not in the register", decl.ambiguity),
+                format!(
+                    "unrealized declaration cites {} which is not in the register",
+                    decl.ambiguity
+                ),
             );
         }
         if let Some(spec_root) = ctx.spec_root {
