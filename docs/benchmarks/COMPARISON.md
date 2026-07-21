@@ -1,12 +1,12 @@
 # Benchmark comparison (generated)
 
-> **Measured, not asserted.** Every number below is read from a committed `results.json`; both directions are reported. The workload, client, and host are identical by construction (`docs/design/benchmarking.md` §3).
+> **Measured, not asserted.** Every number below is read from a committed `results.json`; both directions are reported. The workload, client, and host are identical by construction.
 
 ## Runs
 
 | | Product | Profile | Scale | Ward | Requests | req/s | req/min | Error rate |
 |---|---|---|---|--:|--:|--:|--:|--:|
-| **ehrbase-rs** | ehrbase-rs 3.0.3 | hour | 10k | 20 | 1209 | 0.3 | 20 | 0.000% |
+| **ehrbase-rs** | ehrbase-rs 3.5.0 | hour | 10k | 20 | 1209 | 0.3 | 20 | 0.000% |
 | **ehrbase-java** | EHRbase upstream | hour | 10k | 20 | 1209 | 0.3 | 20 | 0.000% |
 
 ## Throughput
@@ -31,8 +31,8 @@
 
 | | req/s per CPU-core | req/s per GB peak RSS |
 |---|--:|--:|
-| **ehrbase-rs** | 47.1 | 2.6 |
-| **ehrbase-java** | 11.2 | 0.6 |
+| **ehrbase-rs** | 78.4 | 2.6 |
+| **ehrbase-java** | 21.6 | 0.6 |
 
 ## Maximum sustained throughput (knee)
 
@@ -40,8 +40,8 @@
 
 | | Knee L | Sustained req/s | Sustained req/min | Clinical events/min | p99 at knee |
 |---|--:|--:|--:|--:|--:|
-| **ehrbase-rs** | 64 | 631.6 | 37894 | 15647 | 92.2 ms |
-| **ehrbase-java** | 32 | 316.1 | 18968 | 7838 | 200.4 ms |
+| **ehrbase-rs** | 64 | 622.4 | 37341 | 15420 | 91.2 ms |
+| **ehrbase-java** | 44 | 434.2 | 26052 | 10744 | 873.0 ms |
 
 ![Max sustained req/s at the SLO](charts/comparison-knee.svg)
 
@@ -76,48 +76,47 @@
 
 | Class | ehrbase-rs p50 | ehrbase-java p50 | ehrbase-rs p90 | ehrbase-java p90 | ehrbase-rs p99 | ehrbase-java p99 | ehrbase-rs p99.9 | ehrbase-java p99.9 | ehrbase-rs max | ehrbase-java max | ehrbase-rs err | ehrbase-java err | p99 gap |
 |---|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|--:|---|
-| aql-patient | 28463 | 51551 | 49279 | 103743 | 65247 | 136575 | 112639 | 409343 | 112639 | 409343 | 0 | 0 | 2.1× |
-| aql-ward | 19567 | 30783 | 38975 | 115327 | 39391 | 126591 | 39391 | 126591 | 39391 | 126591 | 0 | 0 | 3.2× |
-| comp-create-large | 79615 | 112639 | 127999 | 249087 | 127999 | 249087 | 127999 | 249087 | 127999 | 249087 | 0 | 0 | 1.9× |
-| comp-create-small | 39935 | 54431 | 67135 | 126591 | 93887 | 162175 | 99647 | 196991 | 99647 | 196991 | 0 | 0 | 1.7× |
-| comp-read-latest | 22015 | 34783 | 49279 | 92607 | 74623 | 132479 | 147583 | 141951 | 147583 | 141951 | 0 | 0 | 1.8× |
-| comp-read-version | 20495 | 32111 | 47903 | 91711 | 61503 | 131583 | 145151 | 146303 | 145151 | 146303 | 0 | 0 | 2.1× |
-| comp-update | 41247 | 56703 | 73343 | 108479 | 81471 | 205439 | 81471 | 205439 | 81471 | 205439 | 0 | 0 | 2.5× |
-| contribution-commit | 33279 | 48031 | 53759 | 108543 | 75327 | 186879 | 75327 | 186879 | 75327 | 186879 | 0 | 0 | 2.5× |
-| dir-read | 18127 | 25583 | 35615 | 82559 | 49023 | 112895 | 49023 | 112895 | 49023 | 112895 | 0 | 0 | 2.3× |
-| dir-update | 31039 | 47135 | 90559 | 166655 | 90559 | 166655 | 90559 | 166655 | 90559 | 166655 | 0 | 0 | 1.8× |
-| ehr-create | 36127 | 72511 | 38591 | 89407 | 38591 | 89407 | 38591 | 89407 | 38591 | 89407 | 0 | 0 | 2.3× |
-| ehr-read | 82431 | 116479 | 91135 | 147327 | 91135 | 147327 | 91135 | 147327 | 91135 | 147327 | 0 | 0 | 1.6× |
-| history-read | 13463 | 32351 | 29119 | 65023 | 33439 | 86463 | 33439 | 86463 | 33439 | 86463 | 0 | 0 | 2.6× |
-| status-update | 29903 | 47999 | 48799 | 86079 | 48799 | 86079 | 48799 | 86079 | 48799 | 86079 | 0 | 0 | 1.8× |
+| aql-patient | 15679 | 27727 | 24223 | 41375 | 35807 | 87423 | 39007 | 382719 | 39007 | 382719 | 0 | 0 | 2.4× |
+| aql-ward | 11719 | 18271 | 14127 | 28303 | 15359 | 41439 | 15359 | 41439 | 15359 | 41439 | 0 | 0 | 2.7× |
+| comp-create-large | 60511 | 100991 | 110399 | 148351 | 110399 | 148351 | 110399 | 148351 | 110399 | 148351 | 0 | 0 | 1.3× |
+| comp-create-small | 26911 | 41023 | 35647 | 53023 | 66303 | 88831 | 73727 | 109439 | 73727 | 109439 | 0 | 0 | 1.3× |
+| comp-read-latest | 13527 | 21183 | 24015 | 37951 | 35775 | 74943 | 43455 | 127743 | 43455 | 127743 | 0 | 0 | 2.1× |
+| comp-read-version | 11511 | 19071 | 22543 | 36607 | 33983 | 73599 | 35231 | 106559 | 35231 | 106559 | 0 | 0 | 2.2× |
+| comp-update | 30767 | 47711 | 40959 | 76351 | 75199 | 135167 | 75199 | 135167 | 75199 | 135167 | 0 | 0 | 1.8× |
+| contribution-commit | 23887 | 36831 | 31231 | 46719 | 45823 | 90303 | 45823 | 90303 | 45823 | 90303 | 0 | 0 | 2.0× |
+| dir-read | 11807 | 18495 | 15239 | 25999 | 25039 | 36255 | 25039 | 36255 | 25039 | 36255 | 0 | 0 | 1.4× |
+| dir-update | 20015 | 37567 | 67199 | 88703 | 67199 | 88703 | 67199 | 88703 | 67199 | 88703 | 0 | 0 | 1.3× |
+| ehr-create | 19711 | 28463 | 20527 | 43775 | 20527 | 43775 | 20527 | 43775 | 20527 | 43775 | 0 | 0 | 2.1× |
+| ehr-read | 60895 | 60863 | 64703 | 62943 | 64703 | 62943 | 64703 | 62943 | 64703 | 62943 | 0 | 0 | 1.0× |
+| history-read | 10423 | 21343 | 14927 | 26463 | 16295 | 51327 | 16295 | 51327 | 16295 | 51327 | 0 | 0 | 3.1× |
+| status-update | 28175 | 37087 | 30447 | 75519 | 30447 | 75519 | 30447 | 75519 | 30447 | 75519 | 0 | 0 | 2.5× |
 
 ## Resources
 
 | | Idle RSS | Peak RSS | Mean CPU | Cold start | Storage bytes/composition |
 |---|--:|--:|--:|--:|--:|
-| **ehrbase-rs** | 11 MB | 132 MB | 0.7% | 11563 ms | 24911 |
-| **ehrbase-java** | 547 MB | 624 MB | 3.0% | 17184 ms | 35894 |
+| **ehrbase-rs** | 16 MB | 134 MB | 0.4% | 11524 ms | 27662 |
+| **ehrbase-java** | 519 MB | 605 MB | 1.6% | 11867 ms | 35884 |
 
 ## Where ehrbase-rs wins (p99, computed)
 
-- `aql-patient`: 65247 µs vs 136575 µs
-- `aql-ward`: 39391 µs vs 126591 µs
-- `comp-create-large`: 127999 µs vs 249087 µs
-- `comp-create-small`: 93887 µs vs 162175 µs
-- `comp-read-latest`: 74623 µs vs 132479 µs
-- `comp-read-version`: 61503 µs vs 131583 µs
-- `comp-update`: 81471 µs vs 205439 µs
-- `contribution-commit`: 75327 µs vs 186879 µs
-- `dir-read`: 49023 µs vs 112895 µs
-- `dir-update`: 90559 µs vs 166655 µs
-- `ehr-create`: 38591 µs vs 89407 µs
-- `ehr-read`: 91135 µs vs 147327 µs
-- `history-read`: 33439 µs vs 86463 µs
-- `status-update`: 48799 µs vs 86079 µs
+- `aql-patient`: 35807 µs vs 87423 µs
+- `aql-ward`: 15359 µs vs 41439 µs
+- `comp-create-large`: 110399 µs vs 148351 µs
+- `comp-create-small`: 66303 µs vs 88831 µs
+- `comp-read-latest`: 35775 µs vs 74943 µs
+- `comp-read-version`: 33983 µs vs 73599 µs
+- `comp-update`: 75199 µs vs 135167 µs
+- `contribution-commit`: 45823 µs vs 90303 µs
+- `dir-read`: 25039 µs vs 36255 µs
+- `dir-update`: 67199 µs vs 88703 µs
+- `ehr-create`: 20527 µs vs 43775 µs
+- `history-read`: 16295 µs vs 51327 µs
+- `status-update`: 30447 µs vs 75519 µs
 
 ## Where ehrbase-java wins (p99, computed)
 
-No class won on p99 in this run pair.
+- `ehr-read`: 62943 µs vs 64703 µs
 
 ## Limitations
 
