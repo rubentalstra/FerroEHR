@@ -1,4 +1,4 @@
-# openEHR conformance & certification strategy — the CNF 2.0 upstream proposal (v2)
+# openEHR conformance & certification strategy — the CNF 2.0 upstream proposal (v4)
 
 *Tracker: [#197](https://github.com/rubentalstra/ehrbase-rs/issues/197). Plan-file
 lifecycle applies: this document is deleted in the PR that closes #197 (i.e. when
@@ -25,8 +25,29 @@ OpenAPI, and the STABLE Simplified Formats spec: case-core field contract,
 per-SM-operation bindings with real status/header mappings, the outcome-kind
 taxonomy, the ambiguity register (AMB-1…7), the typed assertion vocabulary,
 corpus-manifest governance, seven fully-encoded official pilot cases, and
-field-level ICS/results/IXIT schemas. New §16: the production implementation
+field-level ICS/results/IXIT schemas. New §15: the production implementation
 plan (upstream PR series U1–U8 + this codebase's ECC adoption W1–W6).*
+
+*v4 (2026-07-21): the four-track cross-validation round (openEHR spec audit,
+ISO audit, legal/regulatory audit, internal-consistency audit) folded in.
+ISO framing corrected (conformity-assessment scheme per ISO/IEC 17000; 17067
+third-party rung only, Type 5 not Type 6; "witnessed peer verification"
+replaces "second-party attestation"; exact 17050-1 quotation; 9646 verdict
+mapping). Legal corrections: the RFP template gains the mandatory
+equivalence clause (Directive 2014/24/EU Arts 42–44); EHDS Chapter III
+EHR-system obligations correctly attributed to 2031; ordinary-trademark
+badge model (not a certification mark); Registry Terms of Use. Spec fixes:
+the master08 CONTRIBUTION version-set construct + pilot 8, class-1.a rows in
+pilot 1, corrected `verified_by` ids, the MIME reject-list reframed to
+spec-cited negotiation behaviour, AMB-8…12. Schema completeness: the
+capabilities/profiles split, per-step format roles, recipes/sentinels/
+fixture-bindings/handles/list-captures/temporal references, the body-selector
+vocabulary, AMB-4 option wiring, aggregate postconditions. Encoding-selection
+rationale added (JSON Schema norm; JSON interchange; YAML authoring; TOML for
+config-shaped registers; TSV for generated indexes/bulk rows). The former
+"What ehrbase-rs contributes" section is removed (owner ruling: it added
+nothing to the design — the IP/licence and commitment content lives in §12
+Governance and §15 Implementation).*
 
 ---
 
@@ -70,12 +91,12 @@ operating model and uses engineering to make it cheap to run:
    already applies everywhere else (BMM for the RM, OpenAPI for REST) —
    conformance is the one component still written only as prose.
 3. **Define certification with international vocabulary, on the EHDS clock.**
-   The ladder that has been `TBD` since 2017 becomes an **ISO/IEC 17067
-   conformance scheme owned by openEHR International**, with rungs labelled by
-   ISO/IEC 17000 attestation level: a published-statement registry and attested
-   **supplier's declaration of conformity** (ISO/IEC 17050) first, community
-   verification events next, delegated ISO/IEC 17025-lab + 17065-certifier
-   assessment last — the exact architecture IHE and the US ONC program already
+   The ladder that has been `TBD` since 2017 becomes a **conformity-assessment
+   scheme in the ISO/IEC 17000 sense, owned by openEHR International**, with
+   rungs labelled by attestation level: a published-statement registry and
+   attested **supplier's declaration of conformity** (ISO/IEC 17050) first,
+   witnessed peer verification next, delegated ISO/IEC 17025-lab +
+   17065-certifier assessment (the only rung ISO/IEC 17067 governs) last — the exact architecture IHE and the US ONC program already
    run, and the exact self-assessment + open-source-testing-environment shape
    the EHDS regulation mandates for EHR systems in Europe.
 
@@ -121,10 +142,12 @@ grounding that makes the program legible to procurement and regulators.
   26 March 2025 and creates a mandatory conformity regime for EHR systems:
   manufacturer **self-assessment**, an **EU declaration of conformity**
   (Art 39), **CE marking** (Art 41), a public registration database (Art 49),
-  and a Commission-provided **open-source digital testing environment**
-  (Art 40) whose positive results yield a presumption of conformity. Common
+  and an **open-source digital testing environment** (Art 40 —
+  Commission-developed open-source software, operated as EU and national
+  testing environments) whose mandatory pre-market use yields a presumption
+  of conformity on positive results. Common
   specifications and the EEHRxF exchange-format implementing acts are due
-  **26 March 2027**; enforcement waves hit 2029/2031. openEHR is **not** in
+  **26 March 2027**; primary-use exchange phases in from 2029 and the Chapter III EHR-system conformity regime applies from 2031. openEHR is **not** in
   that frame today — the EEHRxF deliverables are HL7 FHIR logical models and
   the Xt-EHR conformity-assessment scheme (D8.2, May 2026) is IHE/FHIR-based —
   so the realistic positioning is §6.5: openEHR as the conformant
@@ -265,7 +288,7 @@ API, content, everything"
    EHRbase-specific, and its generalization had no owner (PR #5's fate).
 
 These four causes are what §1's ordering answers: the governance/resourcing
-charter (§13) addresses 1–3 directly; the machine-readable schedule + CI (§8)
+charter (§12) addresses 1–3 directly; the machine-readable schedule + CI (§8)
 is the mechanism that makes 1 and 4 structurally cheap rather than heroic.
 
 ### 4.4 SPECCNF-1 comment 22500 (Pablo Pazos, Aug 2017) — still the best requirements list
@@ -299,7 +322,7 @@ Nine years old and almost fully unaddressed; CNF 2.0 answers it point by point:
 | **OpenID Foundation certification** ([openid.net/certification](https://openid.net/certification/)) | **Self-certification**: vendor runs the official open-source suite, submits results + a signed legal attestation, pays a small fee, gets listed on the public certified page. Runs at scale since 2015. | The **cheapest credible rung**: official suite + published results + attestation + public registry. |
 | **HL7 FHIR / ONC Inferno** ([inferno.healthit.gov](https://inferno.healthit.gov/), [framework docs](https://inferno-framework.github.io/docs/)) | Open-source test kits per implementation guide; the (g)(10) kit is an approved test method inside a regulatory certification program. Structure: policy (ASTP/ONC, 45 CFR 170) → open-source test method (Inferno) → **ISO/IEC 17025** labs (ONC-ATLs, NVLAP-accredited) → **ISO/IEC 17065** certifiers (ONC-ACBs) → accreditor (ANSI/ANAB), plus surveillance + the public CHPL product list. | **Test kits as maintained open-source products**; machine-readable expectations; and the five-layer separation: the standards body never tests or certifies its own conformity — it owns criteria and approves test methods. |
 | **IHE Connectathons + Conformity Assessment Scheme** ([ihe.net/testing](https://www.ihe.net/testing/)) | Annual supervised peer-testing events (results published) plus a formal scheme **explicitly built on ISO/IEC 17025 + 17067**, with certification bodies under ISO/IEC 17065 evaluating accredited-lab results. | The **community verification event** rung (a conformance-thon at EHRCON fits openEHR's culture) and the canonical lab/certifier split for the eventual top rung. |
-| **EHDS Article 40** ([Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng)) | The Commission must provide an **open-source digital testing environment** for the harmonised EHR components; manufacturers must use it pre-market and file the results; positive results = presumption of conformity. Conformity is **manufacturer self-assessment** + EU declaration + CE marking + public registration — no notified bodies. | Regulatory confirmation of the whole shape: automated open-source suite + self-assessment + declaration + public registry is now *the law's own architecture* for EHR conformity in Europe. |
+| **EHDS Article 40** ([Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng)) | The Commission develops **open-source digital testing software**, operated as EU and national testing environments, for the harmonised EHR components; manufacturers must use these environments pre-market and file the results; positive results = presumption of conformity. Conformity is **manufacturer self-assessment** + EU declaration + CE marking + public registration — no notified bodies. | Regulatory confirmation of the whole shape: automated open-source suite + self-assessment + declaration + public registry is now *the law's own architecture* for EHR conformity in Europe. |
 | **openEHR's own ISO 18308 Conformance Statement** ([PDF](https://specifications.openehr.org/releases/1.0.2/requirements/iso18308_conformance.pdf)) | A requirement-by-requirement statement of openEHR's conformance to ISO 18308, exceptions indexed. | **In-family precedent**: openEHR has already authored a requirement-indexed conformance statement; the computable Statement is its machine-readable evolution. |
 
 Composite lesson: nobody starts with third-party certification. Working
@@ -329,9 +352,9 @@ ISO/IEC 17067* rather than home-grown.
 | The product / the deployed system | **IUT** / **SUT** | ISO/IEC 9646-1 |
 | A run's outcome | **verdicts** (pass / fail / inconclusive) + the **conformance test report** | ISO/IEC 9646-1; report shape per ISO/IEC/IEEE 29119-3 |
 | Registry / self-certification rungs | **First-party attestation** (SDoC) | ISO/IEC 17000; 17050-1/-2 |
-| Community verification rung | **Second-party attestation** | ISO/IEC 17000 |
+| Community verification rung | **Witnessed peer verification** — ISO defines no "second-party attestation"; genuinely second-party only when the witness is a purchaser/user | ISO/IEC 17000 (party definitions) |
 | Accredited assessment rung | **Third-party attestation → certification** by an **ISO/IEC 17065** body using an **ISO/IEC 17025** lab | ISO/IEC 17065; 17025 |
-| The program itself | A **conformance/certification scheme**, openEHR International as **scheme owner** | ISO/IEC 17067 (Type 1a for version-scoped self-declared conformance; Type 6 framing if ongoing accredited certification ever ships) |
+| The program itself | A **conformity-assessment scheme** (ISO/IEC 17000 §3), openEHR International as **scheme owner**; only the third-party rung is an ISO/IEC 17067 product-certification scheme (Type 1a initially; **Type 5** — type testing + process assessment + surveillance — if ongoing certification ships) | ISO/IEC 17000; ISO/IEC 17067 (third-party rung only) |
 | "Conformance" scope | **Functional suitability** (completeness + correctness) — nothing else | ISO/IEC 25010; software-product evaluation per ISO/IEC 25051 |
 
 ### 6.2 ISO/IEC 9646 — the 35-year-old blueprint for exactly this design
@@ -363,9 +386,10 @@ supporting citations for the evaluation procedure and report formats.
 ### 6.4 Legal weight of self-declaration (the phrasing to adopt)
 
 Under ISO/IEC 17050-1 the supplier's declaration is made on the supplier's
-sole responsibility; references to any third-party results "are not to be
-interpreted as reducing the responsibility of the supplier". CNF 2.0's lower
-rungs should carry exactly this framing, verbatim in the Guide:
+sole responsibility; the standard states, verbatim: *"References to
+assessments by first, second or third parties are not to be interpreted as
+reducing the responsibility of the supplier in any way."* CNF 2.0's lower
+rungs should carry exactly this framing in the Guide:
 
 > *A published Conformance Statement is a first-party attestation
 > (ISO/IEC 17000) in the form of a supplier's declaration of conformity
@@ -380,16 +404,23 @@ EU declaration of conformity.
 ### 6.5 The EHDS clock — honest positioning
 
 Facts (OJ text, [Regulation (EU) 2025/327](https://eur-lex.europa.eu/eli/reg/2025/327/oj/eng)):
-in force 26 March 2025; general application 26 March 2027; EHR-system
-obligations phase in 2029 (patient summaries, ePrescriptions/eDispensations)
-and 2031 (imaging, labs, discharge reports). Every in-scope EHR system must
+in force 26 March 2025; general application 26 March 2027. Primary-use
+cross-border exchange of the first priority categories (patient summaries,
+ePrescriptions/eDispensations) and Chapter IV secondary use apply from
+26 March 2029; the second categories (imaging, labs, discharge reports) and
+the **Chapter III EHR-system conformity obligations themselves (harmonised
+components, EU DoC, CE marking, registration) apply from 26 March 2031**
+(Art 105 — quote verbatim from the OJ text before posting; EUR-Lex blocks
+automated retrieval). Every in-scope EHR system must
 embed two **harmonised software components** (European interoperability
-component; European logging component; Art 25, Annex II), pass the
-Commission's **open-source digital testing environment** (Art 40), and ship
+component; European logging component; Art 25, Annex II), pass an
+**open-source digital testing environment** (Art 40 — Commission-developed
+open-source software, operated as EU and national environments), and ship
 with a manufacturer **self-assessed EU declaration of conformity** (Art 39),
 **CE marking** (Art 41) and public registration (Art 49). Common
-specifications + the EEHRxF exchange format arrive as implementing acts by
-**26 March 2027** (Arts 36, 15), pre-drafted by the Xt-EHR joint action —
+specifications + the EEHRxF exchange format arrive as implementing acts
+adopted by **26 March 2027** (Arts 36, 15), applying on the
+priority-category clock, pre-drafted by the Xt-EHR joint action —
 whose deliverables are **HL7 FHIR logical models** and whose
 conformity-assessment scheme (D8.2, May 2026) is **IHE/FHIR-based**. The
 regulation itself names no standard at all.
@@ -412,8 +443,8 @@ Honest implications:
   makes openEHR conformance culturally and procedurally compatible with what
   every European vendor will be doing anyway from 2027.
 - **Timing**: the program needs to exist — visibly, with a registry and a
-  running suite — before the March 2027 implementing acts and the 2027–2029
-  procurement wave define "conformity" habits without openEHR in the room.
+  running suite — before the March 2027 implementing acts and the 2029→2031
+  application waves define "conformity" habits without openEHR in the room.
 
 ## 7. Design principles for CNF 2.0
 
@@ -441,7 +472,7 @@ Honest implications:
    flows, or behavioural quirks in normative artifacts; fixtures carry spec
    citations, not `EhrBase ref:` markers; reference expectations are
    adjudicated against spec text, never against whichever SUT emitted them.
-   CI enforces what it can; the maintainer charter (§13) enforces the rest.
+   CI enforces what it can; the maintainer charter (§12) enforces the rest.
 7. **Versioned like every other component.** Cases pin spec-version
    applicability ranges; a statement names the schedule release + tech profile
    it was earned against; within-major supersets follow openEHR's release
@@ -458,7 +489,8 @@ Honest implications:
 This section is the full design, not a sketch. It is derived from three
 extractions performed against the vendored specs on 2026-07-21: (a) the
 fleshed chapters of the official Test Schedule
-(`platform_test_schedule/master03/04/06/07/17.3` — the real case format, the
+(`platform_test_schedule/master03/04/06/07/17.3`, with master08/09 mined in
+the v4 validation pass — the real case format, the
 16-row create-EHR matrix, the per-row iteration law, the versioning cases,
 the DV_QUANTITY decision tables); (b) the ITS-REST 1.1.0 wire contract, which
 in Release-1.1.0 is a *decomposed OpenAPI* (`specifications/operations/*.yaml`
@@ -532,12 +564,19 @@ below):
     (full | `{uid}` | empty); ETag capture → `If-Match` replay; the
     media-type matrix incl. 406/415 negatives; and a deliberately **loose
     error-body assertion** (§8.5 ambiguity register).
+12. **One commit may carry many versions, judged atomically** — a master08
+    CONTRIBUTION bundles multiple VERSIONs (possibly of mixed RM types), each
+    with its own change_type/lifecycle metadata, and the whole commit
+    succeeds or fails as a transaction → bundled payloads + list captures +
+    `for_each` assertions (§8.3, §8.6, pilot 8). DIRECTORY adds provisioned
+    folder trees, at-time selection between captured commit instants, and
+    scalar service returns → `requires.directory`, temporal references, and
+    the `returns` assertion.
 
 ### 8.2 The artifact set
 
 Seven normative, versioned-together artifact families in specifications-CNF
-(all with published JSON Schemas; YAML/JSON encodings equivalent — the schema
-is the norm):
+(each with a published schema or normative specification; where a JSON Schema exists it is the norm):
 
 | # | Artifact | Path (proposed) | Content |
 |---|---|---|---|
@@ -552,13 +591,39 @@ is the norm):
 The published spec pages (the human-readable schedule) are **generated** from
 1–5; the derivation-square CI (§8.13) keeps every artifact internally linked.
 
+**Encoding selection (pre-answering the bikeshed).** The normative artifact
+is the data model (the published JSON Schema); file syntax is a serialization
+choice, and each candidate gets exactly the job it is best at:
+
+- **JSON** is the canonical interchange encoding — `statement.json`,
+  `results.json`, `ixit.json` are hash-linked machine artifacts, and JSON
+  parsers + JSON Schema validation exist natively in every runner ecosystem
+  (Java, Python/Robot, JS, Groovy, Rust).
+- **YAML** is the permitted authoring surface for case/binding files
+  (comments, readable matrices); it parses to the same tree and is validated
+  against the same schema in CI. If YAML's implicit-typing footguns worry
+  the SEC, the fallback is JSON, not TOML.
+- **TOML** was considered and rejected for case files on three hard grounds:
+  it has **no null** (the official DV_QUANTITY table has `null` cells as
+  first-class values), arrays-of-arrays/deep nesting (matrices, flows) are
+  painful past two levels, and parser reach outside the Rust/Python config
+  world is thin. TOML remains ideal for flat config-shaped *registers* and
+  is used exactly there in the reference implementation.
+- **TSV** serves two roles only: **generated indexes** (the catalogue
+  listing — line-diff-friendly, never hand-edited) and the optional
+  `rows_from:` bulk-row tables for large *generated* matrices (§8.3), which
+  keeps a spreadsheet-authoring door open for content-chapter contributors
+  without making runners implement a TSV join: inline typed rows remain the
+  default, because TSV cells are untyped and cannot distinguish
+  null/empty/absent.
+
 ### 8.3 The case core — full field definitions
 
 One file per case. Normative fields (∎ = required):
 
 | Field | Type | Semantics |
 |---|---|---|
-| `id` ∎ | string | Global CNF id, existing families kept: `<SERVICE_COMPONENT>.<operation>-<variant>` (functional) / `CONT-<TYPE>-<variant>` (content). Never reused; retired cases keep the id with `status: retired`. |
+| `id` ∎ | string | Global CNF id. Families: `<SERVICE_COMPONENT>.<operation>-<variant>` (functional) and `CONT-<TYPE>-<variant>` (content) — both kept unchanged from the 2022 scheme; new chapters register their family with the maintainer group (this proposal registers `SF-<FORM>-<variant>` for the Simplified-Formats chapter). Ids are never reused; retired cases keep the id with `status: retired`. |
 | `kind` ∎ | `functional \| content` | Selects which optional blocks are meaningful. |
 | `status` | `active \| retired \| draft` | Default `active`. |
 | `component` ∎ | enum | EHR, EHR_COMPOSITION, EHR_CONTRIBUTION, EHR_DIRECTORY, DEFINITION_ADL14, DEFINITION_ADL2, DEFINITION_QUERY, QUERY, DEMOGRAPHIC, ADMIN, MESSAGING, CONTENT, SIMPLIFIED_FORMATS, … |
@@ -569,24 +634,31 @@ One file per case. Normative fields (∎ = required):
 | `spec_refs` ∎ | string[] | Citations (component + document + section). CI link-checks them. |
 | `applies` | map | Spec-version applicability ranges (`rm: ">=1.0.2"`, `aql: ">=1.1"` …). |
 | `guards` | string[] | Non-version run conditions, each spec-cited (e.g. "modeling tool supports C_DV_QUANTITY list constraints — master17.3 NOTE"). A failed guard ⇒ `not-applicable`, citation mandatory. |
-| `profiles` ∎ | string[] | Profile-book capability membership (drives ICS selection, §8.11). |
+| `capabilities` ∎ | string[] | The Profiles-book **capability** names this case evidences (`EhrOperations`, `ArchetypeValidation`, `AqlBasic`, `SimplifiedFormats`, …) — the machine-readable ICS-selection key (§8.11). |
+| `profiles` | string[] | The profile **tier(s)** (CORE/STANDARD/OPTIONS) the capabilities belong to — derivable from the Profiles matrix, carried for readability; CI checks tier-vs-capability consistency. |
+| `option` | string | For sibling cases realizing an ambiguity-register implementation choice (e.g. AMB-4): the option tag the ICS `options` declaration selects (§8.11 step 2b). |
+| `formats` | string[] | Optional case-level format axis for cases **parameterized over** format: the case runs once per declared format ∩ the run's tech profile. Distinct from per-step `format:` (below) for cases whose formats are **intrinsic fixed roles** (round-trips). |
 | `requires` | block | Typed prerequisites (below). |
 | `parameters` | block | The data-set dimension (below). |
 | `flow` ∎ (functional) | Step[] | Ordered steps (below). |
 | `decision_table` ∎ (content) | block | Columns + rows (below). |
-| `postconditions` | Assertion[] | Typed assertions (§8.6) evaluated after the flow, per row. |
+| `postconditions` | Assertion[] | Typed assertions (§8.6). Default evaluation is per parameter row; assertions marked `aggregate: true` (e.g. `unique`) evaluate once after all rows. |
 | `verified_by` | string[] | Ids of cases that verify this case's deeper postconditions through separate reads (the master06 create→get pattern). CI checks the links resolve. |
 | `ambiguities` | string[] | Ids into the ambiguity register that this case is subject to. |
 | `data_sets` | string[] | Corpus manifest keys used (in addition to `parameters`). |
 
-**`requires` block** — the schedule's precondition vocabulary, typed:
+**`requires` block** — the schedule's precondition vocabulary, typed. Every
+provisioned object mints a **named handle** usable as a variable in the flow:
 
 ```yaml
 requires:
   server: empty            # empty | any        ("no EHRs, no commits, no OPTs")
-  templates: []            # corpus keys that must be provisioned before the flow
-  ehr: none                # none | { commits: none | any }   (an EHR with known ehr_id)
-  compositions: []         # corpus keys pre-committed (for query/read suites)
+  templates: []            # corpus keys provisioned before the flow
+  ehr: none                # none | { commits: none | any }  — when present, mints ${ehr_id}
+  directory: none          # none | <corpus key>  — a FOLDER tree provisioned in the EHR (master09)
+  commit: []               # corpus set keys pre-committed into the EHR by the runner
+                           #   (bulk setup is precondition state, never an un-anchored flow call)
+compositions: []           # (deprecated alias of commit:)
 ```
 
 `server: empty` is realized by runners through isolation (fresh SUT or
@@ -598,17 +670,32 @@ functional matrices (master06) and the fixture sets (master04):
 
 ```yaml
 parameters:
-  iteration: reset_per_row   # reset_per_row (default, the master04 law) | single_pass
+  iteration: reset_per_row   # reset_per_row (the master04 law) | single_pass
+                             #   single_pass: rows execute against one shared server state —
+                             #   required when an aggregate postcondition spans rows
   matrix:                    # inline value matrix (master06-style)
-    columns: [is_queryable, is_modifiable, subject, other_details, ehr_id]
+    columns: [ehr_status, is_queryable, is_modifiable, subject, other_details, ehr_id]
     rows: [ ... ]            # each row binds ${row.<column>}
+    # rows_from: <path.tsv>  # optional bulk-row external table for large GENERATED matrices
+    #                        #   (produced by a corpus recipe, never hand-edited)
   fixture_set:               # external-fixture iteration (master04-style)
     - { data_set: <corpus key>, expected: <outcome kind>, defect: "<why>", spec_ref: "<citation>" }
+    # each entry binds ${fixture.data_set}, ${fixture.expected}, ${fixture.defect};
+    # the current fixture's payload is referenced as ${ds:fixture}
 ```
 
-Reserved matrix columns: `expected` (per-row outcome override) and
-`violates` (content: the violated-constraint list, §8.8 categories). Rows
-without `expected` inherit the flow's expectations.
+Reserved matrix cell sentinels (normative, so a runner never confuses them
+with literals): `absent` (omit the field entirely), `provided` (synthesize a
+valid value via the case's recipe), `null` (JSON null). Reserved columns:
+`expected` (per-row outcome override) and `violates` (content: the
+violated-constraint list, §8.8 categories). Rows without `expected` inherit
+the flow's expectations.
+
+**Row-to-input synthesis**: where a step input is built *from* a row (not a
+verbatim fixture), the case names a **recipe** declared in the corpus
+manifest (§8.8) — `with: { ehr_status: ${recipe:ehr_status(row)} }`. The
+recipe is committed, seeded, deterministic code; sentinels above govern
+field presence.
 
 **`flow` steps**:
 
@@ -616,19 +703,54 @@ without `expected` inherit the flow's expectations.
 flow:
   - step: 1
     call: create_ehr                     # SM operation (short form resolves against sm_operation's interface)
-    with: { ehr_status: ${row.ehr_status} }   # inputs; ${row.*}, ${<capture>}, ${ds:<corpus key>} references
+    format: wt-flat                      # OPTIONAL per-step format role (intrinsic-format cases only)
+    with: { ehr_status: ${recipe:ehr_status(row)} }
     expect: created                      # outcome kind (§8.5); per-row override via the `expected` column
     capture: { ehr_id: created.ehr_id }  # logical captures; bindings map them to wire locations
     assert: []                           # optional post-step typed assertions (§8.6)
 ```
 
+Variable reference grammar (closed): `${row.<column>}`, `${fixture.<field>}`,
+`${<capture>}`, `${ds:<corpus key>}`, `${ds:<corpus key>#<view>}` (a named
+projection declared in the manifest, §8.8), `${recipe:<name>(row)}`. Binding
+path parameters (`{ehr_id}`, `{versioned_object_uid}`) resolve from the
+case's variables — captures and `requires` handles. **There is no `${stepN}`
+form**: a later step that needs an earlier response captures it explicitly
+(`capture: { readback: ok.body }`).
+
+Capture sources (closed): `<outcome>.<logical field>` as mapped by the
+binding (e.g. `created.ehr_id`, `created.version_uid`), `<outcome>.body`
+(the full response representation), `<outcome>.commit_time` (the committed
+audit time — the anchor for temporal at-time cases). **List captures**: an
+operation returning multiple values captures a list —
+`capture: { version_uids: created.version_uids[] }` — asserted per-element
+with `for_each` (§8.6).
+
+**Bundled payloads (version sets)** — the master08 CONTRIBUTION construct: a
+single call whose payload carries multiple members, each with its own
+metadata, and ONE aggregate outcome (the commit is transactional):
+
+```yaml
+    with:
+      versions:
+        - { data: ${ds:<key>}, change_type: creation }
+        - { data: ${ds:<key>}, change_type: modification, preceding_version_uid: ${v1} }
+    expect: created            # or validation_failed — the AGGREGATE verdict; atomicity
+    capture: { version_uids: created.version_uids[] }
+```
+
+**Temporal references** — for at-time/at-version selection (master07
+`get_composition_at_times`, master09 `get_directory_at_time`): commit times
+are captured (`t1: created.commit_time`) and at-time inputs use the closed
+expressions `${time:before(<t>)}`, `${time:between(<t1>,<t2>)}`,
+`${time:after(<t>)}` — resolved by the runner against the captured instants.
+
 Rules: captures are case-scoped names; a step may reference any earlier
 step's captures; `expect` names exactly one outcome kind — a case that needs
-"either A or B" is two cases (the schedule never disjuncts outcomes; where
-the *spec* allows alternatives, that is an ambiguity-register entry, not a
-loose expectation). Substeps (the schedule's `1.1`, `3.2`) are encoded as
-separate steps with a `variant:` tag when they iterate different sources
-(see pilot case 2).
+"either A or B" is two sibling cases carrying `option:` tags tied to an
+ambiguity-register entry (§8.5, §8.11 step 2b). Substeps (the schedule's
+`1.1`, `3.2`) are encoded as separate steps with a `variant:` tag when they
+iterate different sources (see pilot 2).
 
 **Content `decision_table`** (master15–17 shape, §8.8 literal grammar):
 
@@ -697,11 +819,11 @@ outcomes:
                         headers: { ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::1"',
                                    Location: present, Content-Type: negotiated },
                         body: prefer_conditional }                  # 201_COMPOSITION.yaml
-  ehr_not_found:      { status: 404 }                               # 404_unknown_ehr_id.yaml
+  not_found:          { status: 404 }                               # unknown ehr_id (404_unknown_ehr_id.yaml)
   validation_failed:  { status: 422, body: error_loose }            # 422.yaml; AMB-1 error body
   template_not_found: { status: 422, body: error_loose }            # same wire code; kind distinguished by fixture
   missing_template_id:{ status: 422 }                               # simplified commit without openehr-template-id
-  unsupported_media:  { status: 415 }                               # Resources.md negotiation rules
+  unsupported_media:  { status: 415 }     # layered from the overview negotiation rules — not in the operation's enumerated set (AMB-7)
 captures:
   version_uid: { from: header ETag, strip: weak-quotes }            # OBJECT_VERSION_ID …::…::1
   versioned_object_uid: { from: capture version_uid, transform: root-uid }
@@ -725,6 +847,7 @@ outcomes:
   precondition_failed:  { status: 412, headers: { ETag: latest-version-uid } }  # 412_COMPOSITION.yaml, MUST
   precondition_missing: { status: 400 }       # If-Match absent → SHOULD 400 (Requests_and_responses.md §If-Match)
   not_found:            { status: 404 }       # unknown ehr_id or uid (404_unknown_ehr_id_or_uid_based_id.yaml)
+  version_not_found:    { status: 404 }       # unknown preceding version — same 404 response family
   validation_failed:    { status: 422, body: error_loose }
   template_mismatch:    { status: 422, body: error_loose }          # wrong-template update (master07)
 captures:
@@ -770,7 +893,7 @@ request:
   body: { q: ${q}, query_parameters: ${query_parameters}, offset: ${offset?}, fetch: ${fetch?} }
   headers: { Content-Type: application/json, Accept: application/json }
 outcomes:
-  ok:            { status: 200, headers: { ETag: present? }, body: result_set }  # 200_Query.yaml
+  ok:            { status: 200, headers: { ETag: present? }, body: result_set_body }  # 200_Query.yaml
   invalid_query: { status: 400 }              # 400_Query.yaml
   timeout:       { status: 408 }              # 408_Query.yaml
 ```
@@ -798,6 +921,13 @@ Binding-level normative rules (all cited from
   types, which are asserted-to-reject (§8.7).
 - **error_loose** body selector: see AMB-1 (§8.5) — assert at most that a
   `message` string is present, and only under `Prefer: return=representation`.
+
+**Body/header selector vocabulary** (closed, CI-checked like the outcome
+kinds): `prefer_conditional` (full resource | `{uid}` | empty, per `Prefer`),
+`error_loose` (AMB-1), `result_set_body` (the RESULT_SET schema — named
+distinctly from the §8.6 `result_set` assertion), `negotiated` (equals the
+negotiated media type), `present`, `absent`, and `pattern:<regex>` for header
+values.
 
 ### 8.5 The outcome-kind taxonomy and the ambiguity register
 
@@ -828,7 +958,9 @@ schedule release):
 | `invalid_query` | error | Malformed/unprocessable AQL |
 | `timeout` | error | Server aborted at max execution time |
 
-Cases speak ONLY these kinds. Bindings map each kind to wire per operation
+(`ok_empty` and `stored` are forward-provisioned for the COMPOSITION
+at-time-deleted and stored-query chapters; the closed-enum CI error bites
+only *used* kinds.) Cases speak ONLY these kinds. Bindings map each kind to wire per operation
 (the same kind may map to different codes on different operations — e.g.
 `validation_failed` is 422 on composition ops but 400 on EHR create, per the
 OAS). A kind a binding cannot map is a CI error.
@@ -842,10 +974,16 @@ must apply. Seeded from this extraction:
 | AMB-1 | **Error body shape diverges inside ITS-REST 1.1.0**: prose says `{message, code, errors[DV_CODED_TEXT]}` under `Prefer: return=representation` (`Requests_and_responses.md` §Error handling); the OAS `Error.yaml` says `{message, validationErrors[string]}` and is wired only into 400. Most 4xx bodies are undefined. | `error_loose`: assert only `message` present (when Prefer representation); never assert either full shape. SEC decision item: pick one shape in ITS-REST 1.2.0. |
 | AMB-2 | **EHR create enumerates no 422** — EHR_STATUS validation failure has no assigned code (`ehr_create.yaml` responses = 201/400/409). | Bind `validation_failed` → 400 on EHR create; flag for upstream clarification. |
 | AMB-3 | **SM does not say where `preceding_version_uid` lives for update** (`master07` preamble, verbatim spec-ambiguity note). | Case speaks `preceding_version_uid` abstractly; ITS-REST binding realizes it as `If-Match`. SPECPR candidate. |
-| AMB-4 | **ADL 1.4 templates have no formal versioning** — duplicate `template_id` handling is implementation-defined: conflict vs version-parameter (master04 NOTE). | Two cases exist (`…-valid_opt_twice_conflict` / `…_no_conflict`); ICS declares which behaviour the product implements; exactly one MUST pass. |
+| AMB-4 | **ADL 1.4 templates have no formal versioning** — duplicate `template_id` handling is implementation-defined: conflict vs version-parameter (master04 NOTE). | The two sibling cases carry `option:` tags; the ICS `options` declaration selects which applies (§8.11 step 2b) — at least the declared behaviour MUST pass; the undeclared sibling is `not-applicable`. |
 | AMB-5 | **Persistent-COMPOSITION uniqueness per EHR is under SEC debate** (master07 NOTE). | Affected cases carry the flag; verdicts on them are reported but excluded from profile computation until resolved. |
 | AMB-6 | **`fetch` default is implementation-defined**; `fetch` cannot combine with AQL `TOP` (`query/Request.md`). | Cases always pass `fetch` explicitly; the TOP+fetch rejection is its own case. |
 | AMB-7 | **Additional non-conflicting status codes are permitted** (`Requests_and_responses.md` §HTTP status codes). | Bindings assert the expected code exactly for the expected outcome; they never enumerate-reject other codes for other situations. |
+
+| AMB-8 | **Empty-directory retrieval is empty-vs-error ambiguous** — master09 F.1/G.1/L.1: get_directory on an EHR without one "should return an empty structure … could be an error status instead". | Sibling cases with `option:` tags; ICS declares the behaviour. Upstream clarification candidate. |
+| AMB-9 | **EHR_STATUS `incomplete` lifecycle_state** — master08 references SPECPR-368 (open upstream problem report). | Affected cases report but do not gate until SPECPR-368 resolves. |
+| AMB-10 | **Deleting a VERSIONED_OBJECT is under-specified** — master08: "needs further specification at the openEHR Service Model". | No normative cases; statement-declared behaviour only. |
+| AMB-11 | **`openehr::523\|deleted\|` as a lifecycle_state code** — the schedule reproduces it (master07), but the code assignment warrants terminology verification. | Cases assert the schedule's value; register flags it for TERM cross-check. |
+| AMB-12 | **master06 mislabels its provided-status table "1.a"** against its own class list (1.a = no EHR_STATUS, line 40 vs line 45 caption). | Pilot 1 encodes both classes; conversion records the caption defect; editorial fix upstream. |
 
 The register is normative: a runner that "resolves" an ambiguity privately is
 non-conformant to the schedule.
@@ -859,10 +997,11 @@ evaluated per data-set row):
 |---|---|---|
 | `instance_of` | `rm_type`, `format?` | Body parses as the named RM type and validates against the ITS schema for the active format (canonical JSON ⇒ ITS-JSON; XML ⇒ XSD). |
 | `field` | `path`, `equals \| exists \| absent \| matches` | RM-path-addressed field check; values may reference `${row.*}`/captures — e.g. `path: ehr_status/is_queryable, equals: ${row.is_queryable}`. |
-| `equivalent` | `to: committed \| ${ds:…} \| ${capture}`, `ignoring: server_assigned \| [paths]` | The master07 "content check": retrieved content equals committed content, modulo the declared server-assigned set (`uid`, `system_id`, audit times, …) — the ignore set is normative per operation, not runner-chosen. |
-| `version` | `change_type \| lifecycle_state \| count \| uid_pattern` | RM versioning facts: `change_type: MODIFY`, `lifecycle_state: "openehr::523\|deleted\|"`, `count: 2`, `uid_pattern: "<root>::<system>::2"`. |
+| `equivalent` | `to: committed \| ${ds:…} \| ${capture}`, `ignoring:` named ignore-sets (`server_assigned`, `ctx_defaults`) and/or explicit `[paths]` | The master07 "content check": retrieved content equals committed content, modulo the declared server-assigned set (`uid`, `system_id`, audit times, …) — the ignore set is normative per operation, not runner-chosen. |
+| `version` | `of: ${<version-uid capture>}` (the target version), `for_each: ${<list capture>}` (per-element over a list capture), `change_type \| lifecycle_state \| count \| uid_pattern` | RM versioning facts: `of: ${v2_uid}, change_type: MODIFY`, `lifecycle_state: "openehr::523\|deleted\|"` (AMB-11), `count: 2`, `uid_pattern: "<root>::<system>::2"`. `count` needs no `of:`. |
 | `result_set` | `match: ordered \| set \| count \| contains`, `rows`, `columns?` | AQL results. `rows` required by the RESULT_SET schema; `columns`/`meta` optional (assert only when the case says so). Equivalence rules (path forms, RM number typing, NULL cells) are schema-level normative text — the §11.1 SEC prerequisite. |
-| `unique` | `over: ${capture}` | Values captured across rows are pairwise distinct (create_ehr-main's ehr_id uniqueness sub-constraint). |
+| `unique` | `over: ${capture}`, `aggregate: true` | Values captured across rows are pairwise distinct (create_ehr-main's ehr_id uniqueness sub-constraint). Aggregate: evaluated once after all rows; requires `iteration: single_pass`. |
+| `returns` | `equals \| matches` | Scalar service returns (master09 `has_path`/`has_directory` booleans) — asserted directly, no RM body. |
 | `message_exemplar` | `text` | Informative only — the schedule's ``"EHR with <ehr_id> does not exist"`` prose; never a pass/fail criterion (AMB-1). |
 | `state` | `text`, `verified_by?` | A prose postcondition whose machine verification lives in a linked case (the master06 create→get pattern). CI requires either a `verified_by` resolution or an in-case verification step. |
 
@@ -881,13 +1020,23 @@ which formats are legal where):
 
 Media types (normative): `application/json`, `application/xml`,
 `application/openehr.wt.flat+json`, `application/openehr.wt.structured+json`,
-`application/openehr.wt+json`. Deprecated (assert-reject):
-`…wt.flat.schema+json`, `…wt.structured.schema+json`; legacy (assert-reject):
-`application/openehr.nc.flat+json`, `application/openehr.tds2+xml`.
+`application/openehr.wt+json`. The deprecated aliases
+(`…wt.flat.schema+json`, `…wt.structured.schema+json`) and legacy types
+(`application/openehr.nc.flat+json`, `application/openehr.tds2+xml`) are
+listed in the ITS-REST overview (`Resources.md`) as deprecated/MAY-supported:
+a server MAY still accept them, so cases assert only **correct negotiation
+behaviour** — a type the server does not support yields 406 (Accept) / 415
+(Content-Type) — never mandatory rejection, which would both exceed the spec
+and contradict AMB-7.
 
-A case declares `formats:` sensitivity; the tech profile (§8.10 statement)
-selects which the run exercises; verdicts are per tech profile. The ✘ cells
-are themselves conformance cases (the 406/415 negatives).
+Two distinct format models (both defined in §8.3): a case **parameterized
+over** format declares a case-level `formats:` axis and runs once per
+declared format ∩ the run's tech profile; a case whose formats are
+**intrinsic fixed roles** (round-trips like pilot 6) pins `format:` per step
+and is selected only when its required formats ⊆ the tech profile —
+otherwise `not-applicable` with the tech profile as citation. Verdicts are
+per tech profile either way. The ✘ cells are themselves conformance cases
+(the 406/415 negatives).
 
 **The Simplified-Formats chapter blueprint.** The current schedule has NO
 simplified-formats chapter — every existing test anywhere is
@@ -921,7 +1070,7 @@ STABLE spec (`ITS-REST/docs/simplified_formats/`), in fifteen categories:
     `openehr-template-id`; missing mandatory ctx; datatype/cardinality/
     binding violations).
 11. Negotiation strictness (q-values; Content-Type presence/match;
-    deprecated + legacy media types → 406/415 both directions).
+    deprecated + legacy media types → correct 406/415 where unsupported).
 12. Web-Template retrieval shape (`templateId` + `tree` + node-id rules +
     aqlPath present; the Better-dialect extras are NOT normative).
 13. Template example generation (four `Accept_LOCATABLE` forms; `wt+json` on
@@ -951,6 +1100,9 @@ cnf.ehr_status.is_modifiable_missing:
     spec_ref: "RM ehr §EHR_STATUS"
   placeholders: { subject_id: runtime-random }    # the __AUTO-GENERATED__ convention, formalized
   provenance: "openEHR CNF Robot corpus @33251d2a; vendor markers stripped; re-adjudicated 2026-.."
+  views: {}          # named projections/filters referenced as ${ds:<key>#<view>}
+                     #   (e.g. magnitude_ge_140_by_uid on a generated set)
+  recipes: {}        # named row-to-instance synthesis functions, referenced as ${recipe:<name>(row)}
 ```
 
 Rules (each answering an observed defect in the current corpus):
@@ -976,79 +1128,92 @@ Rules (each answering an observed defect in the current corpus):
 
 ### 8.9 The encoded pilot — official cases, fully encoded
 
-These are the *official* schedule cases (and two new-chapter candidates),
+These are the *official* schedule cases (and three new-chapter candidates),
 encoded losslessly. They are the proof artifacts Appendix C attaches.
 
-**Pilot 1 — `I_EHR_SERVICE.create_ehr-main`** (master06, verbatim content —
-the 16-row matrix, the uniqueness sub-constraint, the cross-case
-verification):
+**Pilot 1 — `I_EHR_SERVICE.create_ehr-main`** (master06 — both VALID
+data-set classes: class 1.a *omitted* EHR_STATUS with server defaults, and
+the official 16-row *provided*-status matrix; the schedule's own table
+caption mislabels the provided-status table "1.a" against its own class
+list — registered as AMB-12):
 
 ```yaml
 id: I_EHR_SERVICE.create_ehr-main
 kind: functional
 component: EHR
 sm_operation: I_EHR_SERVICE.create_ehr
+capabilities: [EhrOperations]
+profiles: [CORE]
 test_purpose: >
-  Creating an EHR with each valid EHR_STATUS variant succeeds; server
-  defaults apply when the status is omitted (is_queryable=true,
+  Creating an EHR succeeds for every valid EHR_STATUS variant, and for an
+  omitted EHR_STATUS the server creates the defaults (is_queryable=true,
   is_modifiable=true, subject=PARTY_SELF).
 description: "Create new EHR"
 spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
   - "CNF platform_test_schedule master06 §create_ehr data sets"
 applies: { rm: ">=1.0.2" }
-profiles: [CORE]
 requires: { server: empty }
 parameters:
-  iteration: reset_per_row
+  iteration: single_pass     # all EHRs coexist — the cross-row uniqueness
+                             # postcondition is only meaningful on shared state
   matrix:
-    columns: [is_queryable, is_modifiable, subject, other_details, ehr_id]
-    rows:   # the official 16-row VALID data-set matrix, verbatim
-      - [true,  true,  provided, absent,   absent]
-      - [true,  false, provided, absent,   absent]
-      - [false, true,  provided, absent,   absent]
-      - [false, false, provided, absent,   absent]
-      - [true,  true,  provided, provided, absent]
-      - [true,  false, provided, provided, absent]
-      - [false, true,  provided, provided, absent]
-      - [false, false, provided, provided, absent]
-      - [true,  true,  provided, absent,   provided]
-      - [true,  false, provided, absent,   provided]
-      - [false, true,  provided, absent,   provided]
-      - [false, false, provided, absent,   provided]
-      - [true,  true,  provided, provided, provided]
-      - [true,  false, provided, provided, provided]
-      - [false, true,  provided, provided, provided]
-      - [false, false, provided, provided, provided]
+    columns: [ehr_status, is_queryable, is_modifiable, subject, other_details, ehr_id]
+    rows:
+      # class 1.a — EHR_STATUS omitted (server defaults); with and without client ehr_id
+      - [absent, -,     -,     -,        -,        absent]
+      - [absent, -,     -,     -,        -,        provided]
+      # class 1.b — the official 16-row provided-status matrix, verbatim
+      - [provided, true,  true,  provided, absent,   absent]
+      - [provided, true,  false, provided, absent,   absent]
+      - [provided, false, true,  provided, absent,   absent]
+      - [provided, false, false, provided, absent,   absent]
+      - [provided, true,  true,  provided, provided, absent]
+      - [provided, true,  false, provided, provided, absent]
+      - [provided, false, true,  provided, provided, absent]
+      - [provided, false, false, provided, provided, absent]
+      - [provided, true,  true,  provided, absent,   provided]
+      - [provided, true,  false, provided, absent,   provided]
+      - [provided, false, true,  provided, absent,   provided]
+      - [provided, false, false, provided, absent,   provided]
+      - [provided, true,  true,  provided, provided, provided]
+      - [provided, true,  false, provided, provided, provided]
+      - [provided, false, true,  provided, provided, provided]
+      - [provided, false, false, provided, provided, provided]
 flow:
   - step: 1
     call: create_ehr
-    with: { ehr_status: "generate(row)", ehr_id: ${row.ehr_id} }
+    with: { ehr_status: ${recipe:ehr_status(row)}, ehr_id: ${row.ehr_id} }
     expect: created
-    capture: { ehr_id: created.ehr_id }
+    capture: { new_ehr_id: created.ehr_id }
 postconditions:
-  - { assert: unique, over: ${ehr_id} }        # "ehr_id … should be unique for each invocation"
-  - { assert: state, text: "EHR exists and is consistent with the data set used",
+  - { assert: unique, over: ${new_ehr_id}, aggregate: true }   # "ehr_id … should be unique"
+  - { assert: state, text: "EHR exists and is consistent with the data set used
+      (class 1.a rows: server defaults applied)",
       verified_by: I_EHR_STATUS.get_ehr_status-get_by_ehr_id }
 verified_by: [I_EHR_STATUS.get_ehr_status-get_by_ehr_id]
+ambiguities: [AMB-12]
 ```
 
 **Pilot 2 — `I_EHR_SERVICE.create_ehr-same_ehr_twice`** (master06 — the
-state-carrying failure case; note the two ehr_id sources the schedule
-distinguishes: "read from the response" vs "read from the test data sets"):
+state-carrying failure case; the two ehr_id sources the schedule
+distinguishes — "read from the response" vs "read from the test data sets" —
+are the two matrix rows; the exactly-one-EHR postcondition is verified
+in-case):
 
 ```yaml
 id: I_EHR_SERVICE.create_ehr-same_ehr_twice
 kind: functional
 component: EHR
 sm_operation: I_EHR_SERVICE.create_ehr
+capabilities: [EhrOperations]
+profiles: [CORE]
 test_purpose: "ehr_id values are unique: re-creating an existing EHR is rejected."
 description: "Attempt to create same EHR twice"
 spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
   - "CNF platform_test_schedule master06 §create_ehr-same_ehr_twice"
 applies: { rm: ">=1.0.2" }
-profiles: [CORE]
 requires: { server: empty }
 parameters: { iteration: reset_per_row,
               matrix: { columns: [ehr_id], rows: [[absent], [provided]] } }
@@ -1057,13 +1222,20 @@ flow:
     call: create_ehr
     with: { ehr_id: ${row.ehr_id} }
     expect: created
-    capture: { first_ehr_id: created.ehr_id }   # server-assigned OR data-set value — both variants covered
+    capture: { first_ehr_id: created.ehr_id }   # server-assigned OR data-set value — both rows covered
   - step: 2
     call: create_ehr
     with: { ehr_id: ${first_ehr_id} }           # "should be read from the response" / "from the test data sets"
     expect: already_exists
+  - step: 3                                     # in-case verification of the postcondition
+    call: get_ehr
+    with: { ehr_id: ${first_ehr_id} }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: EHR }
 postconditions:
-  - { assert: state, text: "Exactly one EHR exists — the one created in step 1" }
+  - { assert: state, text: "Exactly one EHR exists — the one created in step 1
+      (verified by step 3 retrieving it unchanged)" }
 ```
 
 **Pilot 3 — `I_DEFINITION_ADL14.upload_opt-invalid_opt`** (master04 — the
@@ -1075,13 +1247,14 @@ id: I_DEFINITION_ADL14.upload_opt-invalid_opt
 kind: functional
 component: DEFINITION_ADL14
 sm_operation: I_DEFINITION_ADL14.upload_opt
+capabilities: [Adl14OptProvisioning, ArchetypeValidation]
+profiles: [CORE]
 test_purpose: "Invalid OPTs are rejected and leave the server state unchanged."
 description: "upload invalid OPTs"
 spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.upload_opt"
   - "CNF platform_test_schedule master04 §upload_opt data sets"
 applies: { rm: ">=1.0.2" }
-profiles: [CORE]              # OPT provisioning is CORE per the Profiles book
 requires: { server: empty }
 parameters:
   iteration: reset_per_row
@@ -1093,11 +1266,12 @@ parameters:
 flow:
   - step: 1
     call: upload_opt
-    with: { opt: ${ds:row} }
-    expect: ${row.expected}
+    with: { opt: ${ds:fixture} }
+    expect: ${fixture.expected}
 postconditions:
   - { assert: state, text: "No OPTs are loaded on the system",
-      verified_by: I_DEFINITION_ADL14.get_opts-empty_server }
+      verified_by: I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts }
+verified_by: [I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts]
 ambiguities: [AMB-4]
 ```
 
@@ -1111,6 +1285,8 @@ id: I_EHR_COMPOSITION.update_composition-event
 kind: functional
 component: EHR_COMPOSITION
 sm_operation: I_EHR_COMPOSITION.update_composition
+capabilities: [CompositionOps, Versioning, ChangeSets]
+profiles: [CORE]
 test_purpose: >
   Updating an existing event COMPOSITION with the correct
   preceding_version_uid creates a second VERSION with change_type MODIFY.
@@ -1120,51 +1296,56 @@ spec_refs:
   - "CNF platform_test_schedule master07 §update_composition-event"
   - "RM common §change_control (VERSION.commit_audit.change_type)"
 applies: { rm: ">=1.0.2" }
-profiles: [CORE]              # ChangeSets/Versioning capabilities
 requires:
   server: any
   templates: [cnf.opt.minimal_event]
-  ehr: { commits: none }
+  ehr: { commits: none }                 # mints ${ehr_id}
 data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_event.v2]
 flow:
   - step: 1
     call: create_composition
-    with: { composition: ${ds:cnf.composition.minimal_event.v1} }
+    with: { ehr_id: ${ehr_id}, composition: ${ds:cnf.composition.minimal_event.v1} }
     expect: created
     capture: { preceding_version_uid: created.version_uid,
                versioned_object_uid: created.versioned_object_uid }
   - step: 2
     call: update_composition
-    with: { composition: ${ds:cnf.composition.minimal_event.v2},
+    with: { ehr_id: ${ehr_id},
+            composition: ${ds:cnf.composition.minimal_event.v2},
             versioned_object_uid: ${versioned_object_uid},
             preceding_version_uid: ${preceding_version_uid} }   # ITS-REST: If-Match (AMB-3)
     expect: updated
     capture: { v2_uid: updated.version_uid }
     assert:
-      - { assert: version, uid_pattern: "${versioned_object_uid}::<system>::2" }
+      - { assert: version, of: ${v2_uid}, uid_pattern: "${versioned_object_uid}::<system>::2" }
 postconditions:
   - { assert: version, count: 2 }
   - { assert: version, of: ${preceding_version_uid}, change_type: CREATE }
   - { assert: version, of: ${v2_uid},                change_type: MODIFY }
-  - { assert: equivalent, to: committed, ignoring: server_assigned }   # the master07 "content check"
+  # NOTE: a strengthening addition — master07 places the "content check" in the
+  # get_composition cases, not in update_composition; kept here as extra rigor.
+  - { assert: equivalent, to: committed, ignoring: server_assigned }
 ambiguities: [AMB-3]
 ```
 
-(The stale-precondition negative is the official sibling
-`update_composition-non_existent`: same shape, step 2 `with:
-preceding_version_uid: random`, `expect: version_not_found`; its REST binding
-distinguishes the stale-latest case, `expect: precondition_failed` → 412 with
-latest ETag.)
+(The negative siblings: the official `update_composition-non_existent` —
+step 2 `with: preceding_version_uid: random`, `expect: version_not_found` —
+and the REST-specific stale-latest variant, `expect: precondition_failed`
+→ 412 with the latest ETag. Both outcome kinds are mapped by the
+update_composition binding, §8.4.)
 
 **Pilot 5 — `CONT-DV_QUANTITY-validate_property_units_mag`** (master17.3,
 the richest official decision table, verbatim rows — structured constraint
-literals and multi-category violations):
+literals; this table carries one violation per row, and the `violates` list
+form also covers the multi-violation rows used elsewhere in master17):
 
 ```yaml
 id: CONT-DV_QUANTITY-validate_property_units_mag
 kind: content
 component: CONTENT
 rm_class: DV_QUANTITY
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
 test_purpose: >
   A committed DV_QUANTITY is accepted iff it satisfies the C_DV_QUANTITY
   property + units-list + per-unit magnitude-range constraints.
@@ -1174,7 +1355,6 @@ spec_refs:
   - "AM aom14 §C_DV_QUANTITY"
   - "RM data_types §DV_QUANTITY"
 applies: { rm: ">=1.0.2" }
-profiles: [CORE]              # ArchetypeValidation
 constraint_context:
   template: cnf.tpl.quantity_property_units_mag    # C_DV_QUANTITY: property=openehr::122, list=[cm 5.0..10.0, m]
   path: "/content[...]/value"
@@ -1199,13 +1379,17 @@ template with the row's DV_QUANTITY, commits it via
 in the corpus, §8.8.)
 
 **Pilot 6 — `SF-FLAT-commit_roundtrip_ctx_defaults`** (new-chapter candidate,
-category 1+7 — every rule cited to the STABLE Simplified Formats spec):
+categories 1+7 — every rule cited to the STABLE Simplified Formats spec; an
+*intrinsic-format* case: the formats are fixed roles per step, and the case
+is selected only when its required formats ⊆ the run's tech profile, §8.7):
 
 ```yaml
 id: SF-FLAT-commit_roundtrip_ctx_defaults
 kind: functional
 component: SIMPLIFIED_FORMATS
 sm_operation: I_EHR_COMPOSITION.create_composition
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >
   A FLAT composition committed with minimal ctx round-trips to canonical
   JSON and STRUCTURED with equal clinical leaves, and the ctx defaults
@@ -1217,48 +1401,57 @@ spec_refs:
   - "ITS-REST simplified_formats master06 §ctx defaults"
   - "ITS-REST overview Requests_and_responses §openehr-template-id"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-profiles: [OPTIONS]           # SimplifiedFormats capability — SHOULD-level, never gates CORE/STANDARD
-requires: { server: any, templates: [cnf.opt.vitals], ehr: { commits: none } }
-data_sets: [cnf.flat.vitals.minimal_ctx]     # FLAT map: ctx/language, ctx/territory, ctx/composer_name,
-                                             # vitals/body_temperature:0/any_event:0/temperature|magnitude, |unit
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.vitals.minimal_ctx]
 flow:
   - step: 1
     call: create_composition
-    with: { composition: ${ds:cnf.flat.vitals.minimal_ctx}, format: wt-flat }
-    expect: created                          # binding adds openehr-template-id (required for simplified commits)
+    format: wt-flat                      # intrinsic role; binding adds openehr-template-id
+    with: { ehr_id: ${ehr_id}, composition: ${ds:cnf.flat.vitals.minimal_ctx} }
+    expect: created
     capture: { version_uid: created.version_uid }
   - step: 2
     call: get_composition
-    with: { version_uid: ${version_uid}, format: canonical-json }
+    format: canonical-json
+    with: { ehr_id: ${ehr_id}, version_uid: ${version_uid} }
     expect: ok
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }
       - { assert: field, path: "context/setting", equals: "openehr::238|other care|" }   # master06 default
       - { assert: field, path: "context/start_time", exists: true }                      # ctx/time → now()
       - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/magnitude",
-          equals: ${ds:cnf.flat.vitals.minimal_ctx#temperature.magnitude} }
+          equals: ${ds:cnf.flat.vitals.minimal_ctx#temperature_magnitude} }              # named view (§8.8)
   - step: 3
     call: get_composition
-    with: { version_uid: ${version_uid}, format: wt-flat }
+    format: wt-flat
+    with: { ehr_id: ${ehr_id}, version_uid: ${version_uid} }
     expect: ok
+    capture: { flat_readback: ok.body }
     assert:
-      - { assert: equivalent, to: committed, ignoring: [ctx-defaults, server_assigned] }
+      - { assert: equivalent, to: committed, ignoring: [ctx_defaults, server_assigned] }
   - step: 4
     call: get_composition
-    with: { version_uid: ${version_uid}, format: wt-structured }
+    format: wt-structured
+    with: { ehr_id: ${ehr_id}, version_uid: ${version_uid} }
     expect: ok
     assert:
-      - { assert: equivalent, to: ${step3}, ignoring: [] }   # FLAT↔STRUCTURED value-equality (master04 algorithms)
+      - { assert: equivalent, to: ${flat_readback}, ignoring: [] }   # FLAT↔STRUCTURED value-equality (master04)
 ```
 
 **Pilot 7 — `I_QUERY_SERVICE.execute_adhoc-where_magnitude`** (new-chapter
-candidate for the empty master11 — deterministic, RESULT_SET-shape-aware):
+candidate for the empty master11 — deterministic, RESULT_SET-shape-aware;
+bulk data load is precondition state via `requires.commit`, not a flow call):
 
 ```yaml
 id: I_QUERY_SERVICE.execute_adhoc-where_magnitude
 kind: functional
 component: QUERY
 sm_operation: I_QUERY_SERVICE.execute_adhoc_query
+capabilities: [AqlBasic]
+profiles: [STANDARD]
 test_purpose: >
   An ad-hoc AQL query with a WHERE predicate on DV_QUANTITY.magnitude
   returns exactly the matching compositions, as a spec-shaped RESULT_SET.
@@ -1267,15 +1460,13 @@ spec_refs:
   - "QUERY AQL 1.1 §WHERE, §ORDER BY"
   - "ITS-REST query §Response (RESULT_SET: rows required; columns, meta optional)"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
-profiles: [STANDARD]          # AqlBasic
-requires: { server: any, templates: [cnf.opt.blood_pressure], ehr: { commits: none } }
-data_sets: [cnf.set.bp-10]    # generated: 10 BP compositions, magnitudes 100..190 step 10 (recipe in corpus)
+requires:
+  server: any
+  templates: [cnf.opt.blood_pressure]
+  ehr: { commits: none }                 # mints ${ehr_id}
+  commit: [cnf.set.bp-10]                # generated: 10 BP compositions, magnitudes 100..190 (recipe in corpus)
 flow:
   - step: 1
-    call: commit_data_set
-    with: { set: ${ds:cnf.set.bp-10} }
-    expect: created
-  - step: 2
     call: execute_adhoc_query
     with:
       q: >
@@ -1288,15 +1479,65 @@ flow:
     expect: ok
     assert:
       - { assert: result_set, match: ordered,
-          rows: { from_data_set: "cnf.set.bp-10#magnitude>=140, sorted by uid" },
+          rows: { from: "${ds:cnf.set.bp-10#magnitude_ge_140_by_uid}" },   # named view (§8.8)
           columns: [{ name: uid }] }
 ```
+
+**Pilot 8 — `I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions`**
+(master08 — the construct v3 could not express: one CONTRIBUTION carrying
+multiple VERSIONs, judged as a single atomic transaction; master08's note:
+"the whole commit should behave like a transaction and fail"):
+
+```yaml
+id: I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >
+  A CONTRIBUTION containing one valid and one invalid COMPOSITION is
+  rejected atomically — no VERSION of either is created.
+description: "One commit, multiple versions, one invalid — transactional rejection"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §commit_contribution-valid_invalid_compositions (+ transaction note)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  templates: [cnf.opt.minimal_event]
+  ehr: { commits: none }                 # mints ${ehr_id}
+flow:
+  - step: 1
+    call: commit_contribution
+    with:
+      ehr_id: ${ehr_id}
+      versions:                          # the bundled-payload construct (§8.3)
+        - { data: ${ds:cnf.composition.minimal_event.v1},               change_type: creation }
+        - { data: ${ds:cnf.composition.minimal_event.invalid_structure}, change_type: creation }
+    expect: validation_failed            # ONE aggregate outcome — the commit is a transaction
+postconditions:
+  - { assert: version, count: 0 }        # atomicity: nothing was committed
+```
+
+(The positive sibling, `commit_contribution-valid_compositions`, commits two
+valid versions in one CONTRIBUTION, `expect: created`, captures
+`version_uids: created.version_uids[]`, and asserts
+`{ assert: version, for_each: ${version_uids}, change_type: CREATE }` +
+`{ assert: version, count: 2 }` — exercising the list-capture and
+per-element assertion machinery. Mixed-RM-type sets — COMPOSITION +
+EHR_STATUS + FOLDER in one CONTRIBUTION — use the same `versions[]`
+construct with per-member `data`.)
 
 ### 8.10 The ICS (statement), results, and IXIT schemas
 
 Field-level contracts (JSON Schemas published with the schedule):
 
-**`statement.json` — the ICS** (ISO/IEC 17050-1 content, §6.1):
+**`statement.json` — the ICS + SDoC** — one artifact deliberately carrying
+two distinct standard roles: the **ISO/IEC 9646 ICS** (the capability
+proforma that drives test selection) *and* the **ISO/IEC 17050-1**
+supplier's-declaration content that makes it a legal SDoC (distinct
+artifacts in the source standards, combined here as one computable file):
 
 | Field | Semantics |
 |---|---|
@@ -1325,8 +1566,12 @@ unchanged" attestation referencing the prior evidence.
 | `outcomes[]` ∎ | per case × format × row: `passed \| failed \| errored \| skipped \| not-applicable`, with **rows_driven/rows_total**, the failing step + assertion on failure, and a mandatory citation on every N/A, skip, and guard exclusion |
 | `ambiguity_dispositions` | which register options the run exercised |
 
-`errored` (transport/SUT fault) is never a conformance finding. Coverage is
-computable: cases driven / cases selected by the ICS, per profile.
+`errored` (transport/SUT fault) is never a conformance finding. Mapping to
+the ISO/IEC 9646 verdicts: `passed`→pass, `failed`→fail,
+`errored`→**inconclusive**; `not-applicable` and `skipped` are **not** 9646
+verdicts — they record ICS-driven selection and guard exclusions, each with
+a mandatory citation. Coverage is computable: cases driven / cases selected
+by the ICS, per profile.
 
 **`ixit.json`** (9646 IXIT): base URL, auth mode + credentials reference,
 admin mount, template-id policy, system-id expectations, per-endpoint
@@ -1341,8 +1586,12 @@ Mechanical pipeline, normative:
 1. **Static conformance review** of the statement: claim-set legality
    (STANDARD ⇒ all CORE capabilities claimed), spec-version consistency,
    option declarations present for every register entry the claims touch.
-2. **Selection**: cases whose `profiles` ∩ claimed capabilities ≠ ∅, filtered
-   by `applies` × declared spec versions and by `guards`.
+2. **Selection**: cases whose `capabilities` ∩ claimed capabilities ≠ ∅,
+   filtered by `applies` × declared spec versions and by `guards`.
+   **2b — option deselection**: a case carrying an `option:` tag is selected
+   only when the ICS `options` declaration matches it; the sibling
+   realizing the undeclared behaviour is recorded `not-applicable` with the
+   ICS declaration as citation (AMB-4, AMB-8).
 3. **Execution**: per case × tech-profile format × parameter row, with
    `reset_per_row` honoured.
 4. **Verdicts**: case passes iff every selected row passes. Capability
@@ -1378,27 +1627,33 @@ binding completeness (every outcome kind a case uses is mapped by every
 declared ITS binding of its operation; every capture a case uses has a wire
 source); `verified_by` resolution; corpus-manifest integrity (every
 referenced key exists; every fixture has a verdict + provenance); ambiguity
-links resolve; decision-table literals parse against the published grammar;
+links resolve; `option:` tags resolve to register entries;
+capability-vs-tier consistency against the Profiles matrix; reference and
+sentinel grammar checks (`${…}` forms, `absent`/`provided`/`null`);
+decision-table literals parse against the published grammar;
 prose regeneration succeeds. This is the mechanism that lets the repo accept
 community PRs without a bottleneck maintainer — and it is ECC's
 coverage-guard discipline (`tools/conformance/tests/coverage.rs`),
 generalized.
 
-## 9. Certification governance — the ladder as an ISO/IEC 17067 scheme
+## 9. Certification governance — the ladder as a conformity-assessment scheme
 
 **Scheme owner: openEHR International** (the CIC that operationally runs the
 specification program — the body the Conformance Guide already names as the
-Platform Specifier). The scheme is 17067 **Type 1a** at the self-declaration
-rungs (a specific product version is type-tested and declared); a future
-accredited rung is framed toward **Type 6** (ongoing process assurance across
-releases) only if surveillance is funded. Rungs are labelled by ISO/IEC 17000
+Platform Specifier). The program is a **conformity-assessment scheme** in the
+ISO/IEC 17000 sense. Its self-declaration rungs are governed by
+**ISO/IEC 17050** — not by 17067, which is by definition third-party product
+certification; only the top rung is an ISO/IEC 17067 scheme: **Type 1a**
+initially (type testing of a specific product version, no surveillance),
+maturing to **Type 5** (type testing + process/QMS assessment + ongoing
+surveillance of both) if surveillance is funded. Rungs are labelled by
 attestation level so no rung can masquerade as a higher one:
 
 | Rung | Name | ISO frame | Mechanism | Who grants |
 |---|---|---|---|---|
 | 0 | **Published statement** | First-party attestation, registered | Vendor publishes `statement.json` + `results.json`. **Listing preconditions**: the results come from a runner that has passed the §8.12 verification pack, and the statement passes static conformance review. Registry rows display runner identity + verification status and are visually labelled **self-published**. | Nobody — registration only |
-| 1 | **Self-certified** | First-party attestation with signed SDoC (ISO/IEC 17050-1/-2) | Rung 0 + a signed legal attestation of result accuracy by an authorized officer (+ modest fee funding the program). The §6.4 responsibility sentence appears on the certificate. | openEHR International (administrative + static review only) |
-| 2 | **Community-verified** | Second-party attestation | Results reproduced at a supervised conformance-thon (EHRCON slot) or by a named community witness re-running the suite from the vendor's `ixit.json` against a vendor-provided deployment. Witness identity on the registry row. | Event organizers / named witnesses |
+| 1 | **Self-declared (signed SDoC)** | First-party attestation with signed SDoC (ISO/IEC 17050-1/-2) — "self-certification" in industry usage (OpenID); ISO reserves "certification" for third-party attestation, which is rung 3 alone | Rung 0 + a signed legal attestation of result accuracy by an authorized officer (+ modest fee funding the program). The §6.4 responsibility sentence appears on the certificate. | openEHR International (administrative + static review only) |
+| 2 | **Community-verified** | Witnessed peer verification (genuinely second-party only when the witness is a procurer/user of the product) | Results reproduced at a supervised conformance-thon (EHRCON slot) or by a named community witness re-running the suite from the vendor's `ixit.json` against a vendor-provided deployment. Witness identity on the registry row. | Event organizers / named witnesses |
 | 3 | **Certified** | Third-party attestation → certification | An **ISO/IEC 17025**-accredited lab runs the suite; an **ISO/IEC 17065**-accredited certification body reviews and certifies, with surveillance obligations. Both roles **delegated to independent accredited bodies** (the IHE/ONC model) — openEHR International remains scheme owner only, because a spec author certifying its own ecosystem fails 17065 impartiality. **This rung is not offered until surveillance is funded**; advertising it earlier would be dishonest. | Accredited certification bodies |
 
 Cross-cutting rules:
@@ -1418,8 +1673,28 @@ Cross-cutting rules:
   roadmap did.
 - **Badges** derive from registry state (rung + profile + schedule release +
   tech profile), machine-served by the registry, never self-hosted claims.
-  The badge/trademark is owned by openEHR International with published
-  grant/withdraw criteria tied to registry state and an appeals path (§13).
+  **The badge is a licensed ordinary trademark, not a registered
+  certification mark**: an EU certification mark legally asserts that the
+  proprietor *certifies* (EUTMR (EU) 2017/1001 Art 83) — incompatible with
+  self-declared rungs — and its owner may not carry on business involving
+  the certified goods (Art 83(2)). The OpenID model applies instead:
+  revocable, royalty-free trademark licence with prescribed per-rung usage
+  statements, goodwill to openEHR International, mandatory removal on
+  supersession or withdrawal; wording implying certification is licensed at
+  rung 3 only. A rung-0/1 badge signifies a self-declaration *registered by*
+  openEHR International, never certification *by* it.
+- **Registry Terms of Use** (binding every submitter; drafting precedent:
+  the OpenID Certification Terms & Conditions): the registry publishes
+  **"as is," without warranty**; openEHR International has **no obligation
+  to validate** any claim and may reject or remove entries; the submitter
+  **represents and warrants** accuracy and must promptly update or withdraw
+  on material change; the submitter **indemnifies** openEHR International
+  and liability is capped; entries are removed or labelled
+  **Withdrawn / Superseded / Disputed** (the takedown mechanic the dispute
+  path feeds); the badge licence terminates with the listing. Privacy: the
+  17050-1 signatory name/role is personal data — openEHR International acts
+  as controller under a registry privacy notice (legitimate
+  interest/contract; retention tied to statement currency).
 - **Access**: schedule, schemas, corpus, and runners are public and free
   (Inferno/OpenID lesson: adoption dies behind paywalls). Rungs 1–3 may carry
   fees; the 2021 members-only idea applies to *services* (attestation
@@ -1432,14 +1707,26 @@ The deliverable a tendering authority can use the moment rung 0 exists:
 - **A normative RFP requirement template** (new short section of the Guide,
   answering the framework's "RFI/RFP guides: future" TODO):
 
-  > *The offered product must hold a published openEHR Conformance Statement
-  > (CNF schedule release ≥ R, profile ≥ STANDARD, technology profile
-  > including canonical JSON) at registry rung ≥ 1, for the product version
-  > offered. The awarding authority reserves the right to require a witnessed
-  > re-run (rung 2) of the published results prior to acceptance.*
+  > *The offered product must demonstrate openEHR conformance to [CNF
+  > schedule release ≥ R, profile ≥ STANDARD, technology profile including
+  > canonical JSON], evidenced by a published openEHR Conformance Statement
+  > at registry rung ≥ 1 for the product version offered, **or by equivalent
+  > means of proof** (including a manufacturer's technical dossier or an
+  > equivalent conformance report) demonstrating conformity to the same test
+  > cases. The awarding authority will accept any evidence that objectively
+  > establishes equivalent conformance, and reserves the right to require a
+  > witnessed re-run (rung 2) of the published or submitted results prior to
+  > acceptance.*
 
   Tender authors fill four parameters (release, profile, tech profile, rung).
-  This replaces the Catalonia-style behavioural-SLA workaround with a
+  **The equivalence clause is not optional**: Directive 2014/24/EU Arts 42–44
+  oblige contracting authorities to accept equivalent labels and equivalent
+  means of proof (and a technical dossier where the operator demonstrably
+  could not obtain the label in time) — a template naming one scheme's
+  certificate exclusively is challengeable as discriminatory. The scheme's
+  openness (public artifacts, open governance) satisfies the Art 43(1)
+  label conditions; the equivalence duty applies regardless. This replaces
+  the Catalonia-style behavioural-SLA workaround with a lawful,
   referenceable requirement.
 - **Comparability**: the registry renders statements side-by-side per profile
   and tech profile (mechanically comparable because the statements are
@@ -1453,7 +1740,7 @@ The deliverable a tendering authority can use the moment rung 0 exists:
 ## 11. Gap-fill roadmap (content plan for the schedule itself)
 
 Ordered by procurement value; each item is a bounded, assignable chapter task
-once §8.1 makes cases enumerable files:
+once §8.3 makes cases enumerable files:
 
 1. **Querying / AQL (master11 + master05)** — the flagship gap. **Prerequisite
    design decision for SEC, resolved before cases ship**: the result-set
@@ -1492,45 +1779,7 @@ once §8.1 makes cases enumerable files:
    this extends conformance scope beyond the platform API; it needs its own
    profile family and SEC decision.
 
-## 12. What ehrbase-rs contributes — and what must stay community-owned
-
-Offered (donated under the spec repo's licence, with an explicit statement
-that no ehrbase-rs copyright or patent claim is retained in normative
-artifacts):
-
-- **Methodology + schemas as the working draft**: the catalogue entry model,
-  the statement/results/ixit schema shapes, the computed-verdict rules
-  implementing the Profiles book, the coverage-guard CI design, the
-  adjudication-register and fairness-register patterns, the edition ladder.
-  All running code today (`tools/conformance/`), not paper.
-- **394 active case designs** with spec citations as raw material for the stub
-  chapters — QRY/SQR/AQT for master11/05, DEM for master10, VAL's 119 content
-  cases cross-checked against master15–17 — **subject to the §11.5
-  re-adjudication gate**, plus the honest off-wire treatment for
-  Admin/Messaging.
-- **Engineering effort**: drafting the JSON Schemas, the specifications-CNF
-  CI, the schedule-to-prose renderer (a costed deliverable, §8.1), and the
-  AQL chapter — as PRs under SEC review.
-- **A second harness + first registry entries**: ECC adopts CNF 2.0 IDs as
-  primary the day they exist upstream (they are our `ScheduleTrace` today) and
-  ehrbase-rs volunteers as a rung-0/rung-1 guinea pig, alongside upstream
-  EHRbase which we already assess.
-
-Explicitly **not** claimed, and neutrality deltas we accept:
-
-- ECC's private numbering (`ECC-<AREA>-<NNN>`) is ours, not a proposal; the
-  global `<SERVICE_COMPONENT>.<operation>-<case>` / `CONT-*` scheme wins.
-- Our latest-versions-only pins, self-assessment defaults, and
-  internal-test-backed N/A pointers are self-assessment ergonomics; the
-  community scheme must support older release lines and third-party-verifiable
-  evidence only (hence §11.5).
-- **The schema is co-authored or it is nothing**: ≥2 competing vendors are
-  invited as schema co-authors *before* the format decision is ratified, so
-  the data model is not shaped by one implementation's convenience. If the
-  community prefers rescuing the Robot suite as the reference runner, we
-  support that; our value is the machine-readable spine, not the runner.
-
-## 13. Governance & resourcing — the section that answers the post-mortem
+## 12. Governance & resourcing — the section that answers the post-mortem
 
 The 2021–22 effort had board sponsorship and still stalled; this section is
 the difference between "nice idea, same risk" and "resourced program".
@@ -1546,7 +1795,7 @@ the difference between "nice idea, same risk" and "resourced program".
   International's own staff. Charter published in the repo before the first
   normative merge.
 - **Change control**: RFC process for schema/scheme changes; schedule releases
-  cut like spec releases (versioned, changelogged); CI (§8.8) makes
+  cut like spec releases (versioned, changelogged); CI (§8.13) makes
   community PRs safe to accept, which is what actually de-bottlenecks a
   volunteer group.
 - **IP**: donated cases/schemas/corpus items enter under the spec repo's
@@ -1556,8 +1805,11 @@ the difference between "nice idea, same risk" and "resourced program".
   coordination, event slots) funded from openEHR International's program
   budget + rung-1 attestation fees — explicitly *not* from one vendor's
   project budget, because §4.3.2 is how that ends. Gap-fill chapters can be
-  vendor-sponsored (bounded, reviewable tasks), but the *program* must not be.
-- **Commitments in hand**: ehrbase-rs commits the pilot engineering (§12).
+  vendor-sponsored (bounded, reviewable tasks), but the *program* must not
+  be — and a sponsoring vendor is never the sole adjudicator of its own
+  sponsored cases: sponsored work is scoped to case authorship reviewed
+  against spec text by non-sponsor maintainers.
+- **Commitments in hand**: ehrbase-rs commits the pilot engineering (§15).
   The Discourse ask (Appendix A) explicitly requests matching co-commitments —
   a second vendor's engineering time and 2–3 maintainer volunteers — before
   the SEC agenda item, so the SEC decides on a resourced plan, not a hope.
@@ -1567,21 +1819,21 @@ the difference between "nice idea, same risk" and "resourced program".
   ecosystem is the 17065 impartiality failure the IHE/ONC split exists to
   avoid.
 
-## 14. Engagement plan
+## 13. Engagement plan
 
 1. **Discourse first** (Conformance category) — the strategy condensed to a
    discussion post (Appendix A), tagging the 2021–22 participants; goal:
-   temperature check + the §13 co-commitments, 2–3 weeks.
+   temperature check + the §12 co-commitments, 2–3 weeks.
 2. **Jira + repo** — comment on SPECCNF-1/6 linking the thread (Appendix B);
    new specifications-CNF issue proposing the machine-readable schedule format
-   with the three example cases (Appendix C).
+   with the encoded pilot cases (Appendix C).
 3. **SEC agenda item** — deliverables: adopt-the-format decision, the
    maintainer-group charter, and blessing the AQL chapter as the pilot.
 4. **Pilot PR series** (after SEC nod): JSON Schemas + CI, master06 (the
    fleshed exemplar) converted to catalogue form with semantically-equivalent
    regenerated prose (human-reviewed diff), then master11/AQL as the first
    *new* content — equivalence rules first. The fully sequenced series with
-   acceptance gates is §16.1; the in-repo production track is §16.2.
+   acceptance gates is §15.1; the in-repo production track is §15.2.
 5. **Registry MVP**: a static page on openehr.org rendering submitted
    statements with attestation-level labels — rung 0 exists the moment two
    products publish (ehrbase-rs volunteers; upstream EHRbase is already
@@ -1601,39 +1853,40 @@ independent runners pass the §8.12 verification pack; the AQL chapter released
 with normative equivalence rules; ≥3 products on the public registry; CNF
 Release 1.0.0 finally cut — before the March 2027 EHDS implementing acts.
 
-## 15. Risks & mitigations
+## 14. Risks & mitigations
 
 | Risk | Mitigation |
 |---|---|
-| Perceived vendor capture ("ehrbase-rs wants its framework blessed") | Lead with the community's own 2021–22 design (§1 credits it explicitly); donate under spec-repo licence with no retained IP; charter with voted decisions and no single-vendor majority (§13); ≥2 competing vendors co-author the schema before ratification; our numbering stays out; the registry and trademark belong to openEHR International. |
-| Repeat of the single-owner stall | §13: recurring program funding (not project money), charter + CI so contributions merge without a bottleneck person, gap-fill as bounded sponsorable tasks, and co-commitments collected *before* the SEC decision. |
+| Perceived vendor capture ("ehrbase-rs wants its framework blessed") | Lead with the community's own 2021–22 design (§1 credits it explicitly); donate under spec-repo licence with no retained IP; charter with voted decisions and no single-vendor majority (§12); ≥2 competing vendors co-author the schema before ratification; our numbering stays out; the registry and trademark belong to openEHR International. |
+| Repeat of the single-owner stall | §12: recurring program funding (not project money), charter + CI so contributions merge without a bottleneck person, gap-fill as bounded sponsorable tasks, and co-commitments collected *before* the SEC decision. |
 | SEC bandwidth / spec-process latency | Rung 0 (registry) and the schedule format need no new normative prose to start delivering value; pilot PRs convert existing content before adding new; the EHDS clock (§6.5) is the forcing function for prioritization. |
-| Format bikeshed (YAML vs JSON vs tables) | The normative artifact is the JSON Schema; bring it + three worked examples + the renderer to the first discussion; decide on evidence. |
+| Format bikeshed (YAML vs JSON vs tables) | The normative artifact is the JSON Schema; bring it + the eight encoded pilots + the renderer to the first discussion; decide on evidence. |
 | Robot-suite loyalists read this as suite replacement | It isn't: the catalogue makes the Robot suite *one compliant runner*; rescuing PR #5 is inside the proposal; the verification pack gives it a first-class path. |
 | CaboLabs framework overlap | Invite the 2017 reviewer as co-author from the Discourse post onward; the 2017 review and 2022 framework are cited as requirements sources; the statement schema is that idea made computable with ISO/IEC 17050 shape. |
 | Registry misread as endorsement / gamed by permissive runners | §9 rung-0 gates: runner-verification precondition, runner identity + status on every row, attestation-level labels, dispute path; the §6.4 responsibility sentence on every rung-0/1 artifact. |
 | Overclaiming EHDS relevance | §6.5 states plainly that the EEHRxF/conformity route is FHIR/IHE-based and openEHR is the persistence layer behind it; the EEHRxF seam is a later, SEC-gated profile family (§11.8). |
-| Prose-generation cost underestimated | "Byte-comparable" dropped; semantic equivalence with human-reviewed diff; renderer scoped as a gated deliverable (§16.1 U2). |
+| Prose-generation cost underestimated | "Byte-comparable" dropped; semantic equivalence with human-reviewed diff; renderer scoped as a gated deliverable (§15.1 U2). |
+| Registry legal exposure (misstatement, implied endorsement, badge misuse) | Registry Terms of Use (§9): as-is publication, no-validation clause, submitter warranty + duty to update, indemnity + liability cap, takedown labels, revocable ordinary-trademark licence; the RFP template carries the 2014/24/EU equivalence clause (§10). |
 
-## 16. Production implementation plan
+## 15. Production implementation plan
 
 Two tracks, both production-grade from day one — no throwaway prototype. The
 in-repo track does not wait for upstream adoption: ECC implements the §8
 artifact set as its own production format immediately, which is
 simultaneously the proof the upstream proposal ships with.
 
-### 16.1 Upstream: the specifications-CNF PR series
+### 15.1 Upstream: the specifications-CNF PR series
 
 Sequenced, each PR independently reviewable and CI-green, each with an
 acceptance gate:
 
 | PR | Content | Acceptance gate |
 |---|---|---|
-| U1 | The seven artifact schemas (§8.2) + the outcome vocabulary + the ambiguity register (seeded with AMB-1…7) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
+| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, outcome vocabulary, corpus manifest, ambiguity register seeded with AMB-1…12) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
 | U2 | master06 (EHR) converted: all 21 cases as case cores + the its-rest bindings for the EHR operations + corpus manifest over the existing EHR fixtures | Generated prose semantically equivalent to the current chapter (human-reviewed diff); zero information loss against the AsciiDoc tables |
 | U3 | master07/08/09 (COMPOSITION/CONTRIBUTION/DIRECTORY) conversion + bindings | Same gate; the versioning cases (§8.9 pilot 4 shape) round-trip |
 | U4 | Content chapters (master15–17) conversion — decision tables as data + the literal grammar + generation recipes | Every existing table row preserved verbatim; grammar parses 100% of existing literals |
-| U5 | **master11/AQL — the first new chapter**: result-set equivalence rules (normative schema text) + ~30 cases seeded from ECC QRY/SQR/AQT + the EHRbase AQL corpus | SEC sign-off on the equivalence rules FIRST; every case spec-cited to AQL 1.1 |
+| U5 | **master11/AQL — the first new chapter**: result-set equivalence rules (normative schema text) + ~37 cases seeded from ECC QRY/SQR/AQT (25 QRY + 8 SQR + 4 AQT) + the EHRbase AQL corpus | SEC sign-off on the equivalence rules FIRST; every case spec-cited to AQL 1.1 |
 | U6 | **Simplified-Formats chapter** (new): the §8.7 fifteen categories, ~60 cases driven from the master04/05/06 spec-example blocks | Every case cites its simplified_formats section; OPTIONS-profile placement |
 | U7 | statement/results/ixit schemas + verdict rules + the reference verdict implementation + the runner verification pack (transcripts + adjudications) | Two independent runners (ECC + the rescued Robot suite or another vendor's) compute identical verdicts on the pack |
 | U8 | The registry (production, on openehr.org): statement rendering, attestation-level labels, badges, dispute log | First two products listed (ehrbase-rs + upstream EHRbase baselines) |
@@ -1641,7 +1894,7 @@ acceptance gate:
 Demographic (master10) and Admin/Messaging (master12/13) follow as U9+ per
 the §11 roadmap once the pattern is proven on U2–U6.
 
-### 16.2 This codebase: ECC becomes the first production implementation
+### 15.2 This codebase: ECC becomes the first production implementation
 
 ECC adopts the §8 artifact set as its own storage format — not a shadow
 export. Tracked as dedicated issues (opened when this design is
@@ -1716,7 +1969,7 @@ proposing a format and demonstrating one.
 >    (an ICS with ISO/IEC 17050-1 content — the thing SPECCNF-1 asked for in
 >    2017), a public registry with attestation-level labels and anti-gaming
 >    rules, then OpenID-style attested self-certification. The whole thing
->    framed as an ISO/IEC 17067 scheme owned by openEHR International;
+>    framed as a conformity-assessment scheme owned by openEHR International (ISO/IEC 17000; ISO/IEC 17067 governs the third-party rung only);
 >    accredited third-party certification (17025 lab + 17065 certifier, the
 >    IHE/ONC split) stays the end goal — offered only when surveillance can
 >    be funded, and never operated by openEHR itself.
@@ -1724,7 +1977,7 @@ proposing a format and demonstrating one.
 > We're offering: the JSON Schemas and CI as pilot PRs, conversion of an
 > existing fleshed chapter (master06) as proof the format loses nothing
 > (semantic-equivalence, human-reviewed), a drafted AQL chapter seeded from
-> our 30+ AQL case designs and EHRbase's AQL corpus — with the result-set
+> our 37 AQL case designs and EHRbase's AQL corpus — with the result-set
 > equivalence rules resolved first — 394 cited case designs as raw material
 > (re-adjudicated to spec-text-only evidence before anything enters the
 > catalogue), and our runner as one of the ≥2 independent implementations the
@@ -1773,12 +2026,13 @@ proposing a format and demonstrating one.
 > per-SM-operation bindings with the real ITS-REST status/header mappings, the
 > outcome-kind taxonomy, an ambiguity register seeded with seven verified spec
 > silences, a typed assertion vocabulary, corpus-manifest governance) and
-> seven fully-encoded pilot cases — five of them existing official schedule
-> cases encoded losslessly (create_ehr-main with its 16-row matrix,
-> create_ehr-same_ehr_twice, upload_opt-invalid_opt,
-> update_composition-event, CONT-DV_QUANTITY-validate_property_units_mag)
-> plus an AQL case for the empty master11 and a Simplified-Formats case for
-> the missing chapter. We volunteer the JSON Schemas, the CI
+> eight fully-encoded pilot cases — six of them existing official schedule
+> cases encoded losslessly (create_ehr-main with both VALID data-set classes
+> incl. the 16-row matrix, create_ehr-same_ehr_twice, upload_opt-invalid_opt,
+> update_composition-event, CONT-DV_QUANTITY-validate_property_units_mag,
+> and the master08 multi-version CONTRIBUTION transaction) plus an AQL case
+> for the empty master11 and a Simplified-Formats case for the missing
+> chapter. We volunteer the JSON Schemas, the CI
 > workflow, the master06 conversion, and a drafted master11/AQL chapter as the
 > pilot PR series. Discussion: [Discourse link].
 
