@@ -1,0 +1,43 @@
+# Official master11 case (id verbatim). master11:61-72 is a stub (Flow "xx").
+# execute_stored_query has no stored query to run without one being provisioned
+# first, so the flow stores a valid AQL text (I_DEFINITION_QUERY.store_query,
+# cross-interface call; SM Pre_valid_query holds), then executes it by name on
+# the empty server — a well-formed RESULT_SET with zero rows. The stored-query
+# PUT is the `stored` outcome kind (wire 200, not 201; see the store_query
+# binding).
+id: I_QUERY_SERVICE.execute_stored_query-empty_db
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_stored_query
+capabilities: [AqlBasic]
+profiles: [STANDARD]
+test_purpose: >-
+  A stored AQL query, executed by qualified name against an empty server,
+  returns an empty, spec-shaped RESULT_SET (HTTP 200, zero rows).
+description: "Store and execute an AQL query against an empty database"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_stored_query"
+  - "SM openehr_platform §I_DEFINITION_QUERY.store_query"
+  - "CNF platform_test_schedule master11 §I_QUERY_SERVICE.execute_stored_query-empty_db"
+  - "QUERY AQL §SELECT, §FROM, §CONTAINS"
+  - "ITS-REST query §200_Query (RESULT_SET)"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+requires:
+  server: empty
+flow:
+  - step: 1
+    call: I_DEFINITION_QUERY.store_query
+    with:
+      qualified_query_name: "org.openehr.cnf::stored_empty_db"
+      query: "SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c"
+    expect: stored
+  - step: 2
+    call: execute_stored_query
+    with:
+      qualified_query_name: "org.openehr.cnf::stored_empty_db"
+      fetch: 100                            # AMB-6: fetch always explicit
+    expect: ok
+    assert:
+      - assert: result_set
+        match: count
+        count: 0

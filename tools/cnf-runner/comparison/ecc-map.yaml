@@ -569,44 +569,57 @@ ECC-SQR-007:
   disposition: pending
   justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
 ECC-QRY-001:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.smoke_test]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
 ECC-QRY-002:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
 ECC-QRY-003:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_stored_query-empty_db]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
 ECC-QRY-004:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "ground carried 1:1 by the official master11 case (reshaped under the CNF 2.0 case model)"
 ECC-QRY-005:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-malformed_queries, I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "invalid-corpus sweep split: unambiguously-malformed ground gates; dialect ground is report_only per AMB-30"
 ECC-QRY-006:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-007:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-008:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-009:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-010:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-011:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-012:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-QRY-013:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection, I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db]
+  justification: "query-shape and execution ground carried; the ECC RM-1.0.x golden result sets are excluded (not derivable from AQL 1.1 spec text — spine-first re-adjudication)"
 ECC-ADM-001:
   disposition: pending
   justification: "admin chapter wave (CNF master12)"
@@ -699,155 +712,155 @@ ECC-DEM-024:
   justification: "demographic chapter wave (CNF master10)"
 ECC-VAL-001:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-002:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-003:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-004:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-005:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-006:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-007:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-008:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-009:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-010:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-011:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-012:
   disposition: covered
-  covered_by: [ecc-CONT-COMPOSITION-content_cardinality, ecc-CONT-COMPOSITION-context_existence]
+  covered_by: [CONT-COMPOSITION-content_cardinality, CONT-COMPOSITION-context_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-013:
   disposition: covered
-  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-014:
   disposition: covered
-  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-015:
   disposition: covered
-  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-016:
   disposition: covered
-  covered_by: [ecc-CONT-OBSERVATION-state_protocol_existence]
+  covered_by: [CONT-OBSERVATION-state_protocol_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-017:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-018:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-019:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-020:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-021:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-022:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-023:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-024:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-025:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-026:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-027:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-028:
   disposition: covered
-  covered_by: [ecc-CONT-HISTORY-events_cardinality, ecc-CONT-HISTORY-summary_existence]
+  covered_by: [CONT-HISTORY-events_cardinality, CONT-HISTORY-summary_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-029:
   disposition: covered
-  covered_by: [ecc-CONT-EVENT-state_existence]
+  covered_by: [CONT-EVENT-state_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-030:
   disposition: covered
-  covered_by: [ecc-CONT-EVENT-state_existence]
+  covered_by: [CONT-EVENT-state_existence]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-031:
   disposition: covered
-  covered_by: [ecc-CONT-EVENT-type_narrowing]
+  covered_by: [CONT-EVENT-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-032:
   disposition: covered
-  covered_by: [ecc-CONT-EVENT-type_narrowing]
+  covered_by: [CONT-EVENT-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-033:
   disposition: covered
-  covered_by: [ecc-CONT-EVENT-type_narrowing]
+  covered_by: [CONT-EVENT-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-034:
   disposition: covered
-  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-035:
   disposition: covered
-  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-036:
   disposition: covered
-  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-037:
   disposition: covered
-  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-038:
   disposition: covered
-  covered_by: [ecc-CONT-ITEM_STRUCTURE-type_narrowing]
+  covered_by: [CONT-ITEM_STRUCTURE-type_narrowing]
   justification: "re-adjudicated ECC-original ground (empty master15/16): the ECC per-cell row is carried as decision-table rows of the reshaped ecc- case(s), grounded in AOM1.4/RM spec text"
 ECC-VAL-039:
   disposition: covered
@@ -1262,38 +1275,49 @@ ECC-SQR-008:
   disposition: pending
   justification: "master05 is entirely TBD upstream (draft cases hold the official ids); the executable stored-query ground enters via the ECC re-adjudication wave"
 ECC-QRY-014:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit]
+  justification: "ground carried (AqlAdvanced/OPTIONS per the Profiles matrix)"
 ECC-QRY-015:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-016:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-017:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-018:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-019:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-020:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-021:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-022:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-023:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-QRY-024:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-dialect_extensions]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-DEM-025:
   disposition: pending
   justification: "demographic chapter wave (CNF master10)"
@@ -1343,8 +1367,9 @@ ECC-TPL-017:
   disposition: pending
   justification: "template-example round-trip ground belongs to the simplified-formats/template-example wave"
 ECC-QRY-025:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection]
+  justification: "ground carried 1:1 (reshaped under the CNF 2.0 case model)"
 ECC-SF-001:
   disposition: pending
   justification: "simplified-formats chapter wave"
@@ -1430,14 +1455,18 @@ ECC-ADL2-012:
   disposition: pending
   justification: "ADL2 definition wave (framework chapter beyond master04)"
 ECC-AQT-001:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_expand_matches]
+  justification: "ground carried (AqlTerminology/OPTIONS); value-set resolution flagged as engine extension — only the AQL TERMINOLOGY() form is spec-grounded"
 ECC-AQT-002:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-AQT-003:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"
 ECC-AQT-004:
-  disposition: pending
-  justification: "AQL chapter wave (new chapter for the empty master11)"
+  disposition: covered
+  covered_by: [I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms]
+  justification: "dialect-rejection ground carried report_only per AMB-30 (rejection of AQL supersets is spec-silent; the verdict reports, never gates)"

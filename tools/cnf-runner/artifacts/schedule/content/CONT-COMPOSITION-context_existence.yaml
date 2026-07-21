@@ -4,7 +4,7 @@
 # (_any = RM 0..1, _mand = archetype-tightened 1..1); the context axis is
 # orthogonal to cardinality and is carried here as its own seam.
 # `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-COMPOSITION-context_existence
+id: CONT-COMPOSITION-context_existence
 kind: content
 component: CONTENT
 rm_class: COMPOSITION

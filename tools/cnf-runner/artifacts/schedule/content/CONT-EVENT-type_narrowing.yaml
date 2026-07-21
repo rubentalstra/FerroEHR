@@ -4,7 +4,7 @@
 # (the polymorphic-slot type constraint) and the RM EVENT hierarchy
 # (abstract EVENT; POINT_EVENT/INTERVAL_EVENT subtypes; INTERVAL_EVENT.width and
 # .math_function are RM-mandatory). `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-EVENT-type_narrowing
+id: CONT-EVENT-type_narrowing
 kind: content
 component: CONTENT
 rm_class: EVENT

@@ -1,0 +1,42 @@
+# Re-adjudicated 2026-07-21 from the retired ECC AQL empty-db golden battery
+# (ECC-QRY-006..009, corpus groups A-D against an empty server). The vendored
+# goldens are RM-1.0.x-era wire and are NOT derivable from AQL 1.1 spec text, so
+# the exact-row goldens are excluded (recorded in REQUIREMENTS.md); the
+# spec-groundable core is carried here: representative valid AQL query shapes are
+# accepted by the grammar and, on an empty server, return zero rows. `ecc-` id
+# namespace pending upstream adoption.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_shapes
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic]
+profiles: [STANDARD]
+test_purpose: >-
+  Representative well-formed AQL query shapes (bare EHR projection, CONTAINS
+  chain, WHERE predicate) are accepted and return an empty RESULT_SET against an
+  empty server.
+description: "Valid AQL query shapes against an empty database return zero rows"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "QUERY AQL §SELECT, §FROM, §CONTAINS, §WHERE"
+  - "ITS-REST query §200_Query (RESULT_SET)"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+parameters:
+  iteration: reset_per_row
+  fixture_set:
+    - { data_set: cnf.aql.valid.select_ehr, expected: ok, defect: "bare EHR id projection" }
+    - { data_set: cnf.aql.valid.contains_composition, expected: ok, defect: "EHR CONTAINS COMPOSITION projection" }
+    - { data_set: cnf.aql.valid.where_predicate, expected: ok, defect: "CONTAINS chain with a WHERE predicate" }
+requires:
+  server: empty
+flow:
+  - step: 1
+    call: execute_ad_hoc_query
+    with:
+      q: "${ds:fixture}"
+      fetch: 100                            # AMB-6: fetch always explicit
+    expect: "${fixture.expected}"
+    assert:
+      - assert: result_set
+        match: count
+        count: 0

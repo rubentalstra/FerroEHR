@@ -1,0 +1,1 @@
+SELECT TERMINOLOGY('expand', 'openehr', 'composition_category') FROM EHR e

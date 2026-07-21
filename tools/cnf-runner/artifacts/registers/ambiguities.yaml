@@ -296,3 +296,19 @@ AMB-29:
     mixed-precision comparisons are reported but excluded from profile
     computation until SPECPR-380 resolves.
   disposition: report_only
+AMB-30:
+  ambiguity: >-
+    Rejection of AQL constructs outside the defined language is spec-silent:
+    QUERY AQL defines the grammar and the TERMINOLOGY() usage forms, but no
+    clause forbids a server from accepting a dialect superset (a removed
+    construct such as TIMEWINDOW, a non-grammar clause order, or an undefined
+    TERMINOLOGY() form). Interoperability argues for rejection; the spec does
+    not mandate it.
+  source: "QUERY AQL (grammar; §TERMINOLOGY; Amendment Record SPECQUERY-20) vs ITS-REST query 400_Query (defined only for invalid AQL)"
+  handling: >-
+    Dialect-extension rejection cases carry this entry and are report_only:
+    verdicts are reported per SUT but never gate profile computation, until
+    upstream rules on superset acceptance. Genuinely malformed queries with
+    no possible interpretation (e.g. missing FROM) remain gating. SPECQUERY
+    candidate.
+  disposition: report_only

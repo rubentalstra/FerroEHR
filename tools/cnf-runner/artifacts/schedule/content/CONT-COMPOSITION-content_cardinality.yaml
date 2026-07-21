@@ -4,7 +4,7 @@
 # the cardinality-constraint x committed-instance-count matrix is grounded
 # ENTIRELY in the AOM1.4 C_MULTIPLE_ATTRIBUTE.cardinality semantics and the RM
 # COMPOSITION.content definition. `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-COMPOSITION-content_cardinality
+id: CONT-COMPOSITION-content_cardinality
 kind: content
 component: CONTENT
 rm_class: COMPOSITION

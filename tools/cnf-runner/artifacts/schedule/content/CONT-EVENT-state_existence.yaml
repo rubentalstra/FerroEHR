@@ -3,7 +3,7 @@
 # the EVENT state-existence rows are grounded in AOM1.4 C_ATTRIBUTE.existence
 # and the RM EVENT class (data 1..1; state 0..1).
 # `ecc-` id namespace pending upstream adoption.
-id: ecc-CONT-EVENT-state_existence
+id: CONT-EVENT-state_existence
 kind: content
 component: CONTENT
 rm_class: EVENT
