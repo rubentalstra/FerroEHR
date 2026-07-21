@@ -158,6 +158,19 @@ args=(run --sut "$SUT" --base-url "$BASE_URL" --auth "$AUTH" --admin-auth "$ADMI
 [ -n "${CONF_EDITION:-}" ] && args+=(--edition "$CONF_EDITION")
 [ -n "${CONF_SUT_NAME:-}" ] && args+=(--sut-name "$CONF_SUT_NAME")
 
+# Foreign-SUT provenance: derive the upstream version from the compose-resolved
+# image tag (honours EHRBASE_JAVA_IMAGE), so the artifacts record the version
+# actually run — never a hand-typed label that can drift from the pin.
+if [ "$SUT" = "ehrbase-java" ]; then
+  SUT_VERSION="${CONF_SUT_VERSION:-}"
+  if [ -z "$SUT_VERSION" ]; then
+    img=$(compose config --format json 2>/dev/null \
+      | jq -r '.services["ehrbase-java"].image // empty' || true)
+    SUT_VERSION="${img##*:}"
+  fi
+  [ -n "$SUT_VERSION" ] && args+=(--sut-version "$SUT_VERSION")
+fi
+
 # ehrbase-rs only: wire the host-run FHIR-tx fixture into the composed SUT
 # (ECC-TS-006…009) and point the pgp-signing case at the pgp sibling
 # (ECC-SIG-005). These SUT-config surfaces do not exist for a foreign/BYO SUT.
