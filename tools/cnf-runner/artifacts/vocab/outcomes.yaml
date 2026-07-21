@@ -23,3 +23,5 @@ not_acceptable: { class: error, meaning: "No representation satisfies Accept" }
 unsupported_media: { class: error, meaning: "Payload media type unsupported" }
 invalid_query: { class: error, meaning: "Malformed/unprocessable AQL" }
 timeout: { class: error, meaning: "Server aborted at max execution time" }
+unauthenticated: { class: error, meaning: "Request lacks valid authentication (route-table-wide 401 rule)" }
+forbidden: { class: error, meaning: "Authenticated principal lacks authorization for the operation (403)" }

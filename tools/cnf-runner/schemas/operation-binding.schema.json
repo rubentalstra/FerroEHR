@@ -177,7 +177,9 @@
           "not_acceptable",
           "unsupported_media",
           "invalid_query",
-          "timeout"
+          "timeout",
+          "unauthenticated",
+          "forbidden"
         ]
       },
       "additionalProperties": {
