@@ -130,12 +130,9 @@ impl StepDriver for TranscriptPlayer<'_> {
         vars: &mut VarStore,
     ) -> Result<StepObservation, String> {
         let Some(recorded) = self.entry.steps.get(self.cursor) else {
-            return Ok(StepObservation {
-                observation: outcome::Observation::Transport(
-                    "transcript exhausted before the flow ended".to_owned(),
-                ),
-                assertion_failures: Vec::new(),
-            });
+            return Ok(StepObservation::transport(
+                "transcript exhausted before the flow ended".to_owned(),
+            ));
         };
         self.cursor += 1;
 
