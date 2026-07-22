@@ -3,7 +3,7 @@
 //! `errored` (ISO/IEC 9646 *inconclusive*, never a conformance finding); a
 //! *mapped but unexpected* outcome → `failed`.
 
-use crate::model::binding::OperationBinding;
+use crate::model::binding::{OperationBinding, WireExpectation};
 use crate::model::vocab_files::SelectorsVocab;
 use crate::vocab::OutcomeKind;
 
@@ -36,7 +36,7 @@ pub fn classify_status(
     // satisfies the expectation, and a non-member match still reports the
     // first mapped kind (a mismatch).
     if let Some(expectation) = binding.outcome(expected)
-        && expectation.status.value() == status
+        && expectation_matches(expectation, status)
     {
         return Observation::Kind(expected);
     }
@@ -44,7 +44,7 @@ pub fn classify_status(
     // a universal one for the same status).
     for kind in OutcomeKind::ALL {
         if let Some(expectation) = binding.outcome(*kind)
-            && expectation.status.value() == status
+            && expectation_matches(expectation, status)
         {
             return Observation::Kind(*kind);
         }
@@ -59,6 +59,19 @@ pub fn classify_status(
         }
     }
     Observation::Unmapped { status }
+}
+
+/// A wire expectation matches its primary status or any registered
+/// `alt_status` (overview-permitted additional codes — ITS-REST
+/// `Requests_and_responses.md` §HTTP status codes).
+fn expectation_matches(expectation: &WireExpectation, status: u16) -> bool {
+    if expectation.status.value() == status {
+        return true;
+    }
+    expectation
+        .alt_status
+        .as_deref()
+        .is_some_and(|alts| alts.iter().any(|alt| alt.value() == status))
 }
 
 /// The row verdict a step observation produces against its expectation —

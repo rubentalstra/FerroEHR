@@ -1,146 +1,150 @@
 {
-  "_type": "COMPOSITION",
-  "name": {
-    "_type": "DV_TEXT",
-    "value": "minimal event v1"
-  },
-  "archetype_details": {
-    "_type": "ARCHETYPED",
-    "archetype_id": {
-      "_type": "ARCHETYPE_ID",
-      "value": "openEHR-EHR-COMPOSITION.minimal.v1"
-    },
-    "template_id": {
-      "_type": "TEMPLATE_ID",
-      "value": "cnf.minimal_event"
-    },
-    "rm_version": "1.0.2"
-  },
-  "language": {
-    "_type": "CODE_PHRASE",
-    "terminology_id": {
-      "_type": "TERMINOLOGY_ID",
-      "value": "ISO_639-1"
-    },
-    "code_string": "en"
-  },
-  "territory": {
-    "_type": "CODE_PHRASE",
-    "terminology_id": {
-      "_type": "TERMINOLOGY_ID",
-      "value": "ISO_3166-1"
-    },
-    "code_string": "NL"
-  },
-  "category": {
-    "_type": "DV_CODED_TEXT",
-    "value": "event",
-    "defining_code": {
-      "_type": "CODE_PHRASE",
-      "terminology_id": {
-        "_type": "TERMINOLOGY_ID",
-        "value": "openehr"
-      },
-      "code_string": "433"
-    }
-  },
-  "composer": {
-    "_type": "PARTY_SELF"
-  },
-  "context": {
-    "_type": "EVENT_CONTEXT",
-    "start_time": {
-      "_type": "DV_DATE_TIME",
-      "value": "2026-01-01T00:00:00Z"
-    },
-    "setting": {
-      "_type": "DV_CODED_TEXT",
-      "value": "other care",
-      "defining_code": {
-        "_type": "CODE_PHRASE",
-        "terminology_id": {
-          "_type": "TERMINOLOGY_ID",
-          "value": "openehr"
-        },
-        "code_string": "238"
-      }
-    }
-  },
-  "content": [
-    {
-      "_type": "OBSERVATION",
-      "name": {
+    "_type": "COMPOSITION",
+    "name": {
         "_type": "DV_TEXT",
-        "value": "minimal observation"
-      },
-      "archetype_node_id": "openEHR-EHR-OBSERVATION.minimal.v1",
-      "language": {
-        "_type": "CODE_PHRASE",
+        "value": "Minimal"
+    },
+    "archetype_details": {
+        "archetype_id": {
+            "value": "openEHR-EHR-COMPOSITION.minimal.v1"
+        },
+        "template_id": {
+            "value": "minimal_evaluation.en.v1"
+        },
+        "rm_version": "1.0.2"
+    },
+    "archetype_node_id": "openEHR-EHR-COMPOSITION.minimal.v1",
+    "language": {
         "terminology_id": {
-          "_type": "TERMINOLOGY_ID",
-          "value": "ISO_639-1"
+            "value": "ISO_639-1"
         },
         "code_string": "en"
-      },
-      "encoding": {
-        "_type": "CODE_PHRASE",
+    },
+    "territory": {
         "terminology_id": {
-          "_type": "TERMINOLOGY_ID",
-          "value": "IANA_character-sets"
+            "value": "ISO_3166-1"
         },
-        "code_string": "UTF-8"
-      },
-      "subject": {
-        "_type": "PARTY_SELF"
-      },
-      "data": {
-        "_type": "HISTORY",
-        "name": {
-          "_type": "DV_TEXT",
-          "value": "history"
-        },
-        "archetype_node_id": "at0001",
-        "origin": {
-          "_type": "DV_DATE_TIME",
-          "value": "2026-01-01T00:00:00Z"
-        },
-        "events": [
-          {
-            "_type": "POINT_EVENT",
-            "name": {
-              "_type": "DV_TEXT",
-              "value": "any event"
+        "code_string": "UY"
+    },
+    "category": {
+        "value": "event",
+        "defining_code": {
+            "terminology_id": {
+                "value": "openehr"
             },
-            "archetype_node_id": "at0002",
-            "time": {
-              "_type": "DV_DATE_TIME",
-              "value": "2026-01-01T00:00:00Z"
+            "code_string": "433"
+        }
+    },
+    "composer": {
+        "_type": "PARTY_IDENTIFIED",
+        "external_ref": {
+            "id": {
+                "_type": "HIER_OBJECT_ID",
+                "value": "fc376c46-29c1-4090-bc01-5cc046af7f26"
+            },
+            "namespace": "DEMOGRAPHIC",
+            "type": "PERSON"
+        },
+        "name": "Dr. House"
+    },
+    "context": {
+        "start_time": {
+            "value": "2021-09-21T21:52:31.927-03:00"
+        },
+        "setting": {
+            "value": "primary medical care",
+            "defining_code": {
+                "terminology_id": {
+                    "value": "openehr"
+                },
+                "code_string": "228"
+            }
+        },
+        "participations": [
+            {
+                "function": {
+                    "value": "legal guardian consent author"
+                },
+                "performer": {
+                    "_type": "PARTY_RELATED",
+                    "name": "Alexandra Alamo",
+                    "relationship": {
+                        "value": "mother",
+                        "defining_code": {
+                            "terminology_id": {
+                                "value": "openehr"
+                            },
+                            "code_string": "10"
+                        }
+                    }
+                },
+                "mode": {
+                    "value": "not specified",
+                    "defining_code": {
+                        "terminology_id": {
+                            "value": "openehr"
+                        },
+                        "code_string": "193"
+                    }
+                }
+            }
+        ]
+    },
+    "content": [
+        {
+            "_type": "EVALUATION",
+            "name": {
+                "_type": "DV_TEXT",
+                "value": "Minimal"
+            },
+            "archetype_details": {
+                "archetype_id": {
+                    "value": "openEHR-EHR-EVALUATION.minimal.v1"
+                },
+                "template_id": {
+                    "value": "minimal_evaluation.en.v1"
+                },
+                "rm_version": "1.0.2"
+            },
+            "archetype_node_id": "openEHR-EHR-EVALUATION.minimal.v1",
+            "language": {
+                "terminology_id": {
+                    "value": "ISO_639-1"
+                },
+                "code_string": "en"
+            },
+            "encoding": {
+                "terminology_id": {
+                    "value": "IANA_character-sets"
+                },
+                "code_string": "UTF-8"
+            },
+            "subject": {
+                "_type": "PARTY_SELF"
             },
             "data": {
-              "_type": "ITEM_TREE",
-              "name": {
-                "_type": "DV_TEXT",
-                "value": "tree"
-              },
-              "archetype_node_id": "at0003",
-              "items": [
-                {
-                  "_type": "ELEMENT",
-                  "name": {
+                "_type": "ITEM_TREE",
+                "name": {
                     "_type": "DV_TEXT",
-                    "value": "value"
-                  },
-                  "archetype_node_id": "at0004",
-                  "value": {
-                    "_type": "DV_TEXT",
-                    "value": "first"
-                  }
-                }
-              ]
+                    "value": "Arbol"
+                },
+                "archetype_node_id": "at0001",
+                "items": [
+                    {
+                        "_type": "ELEMENT",
+                        "name": {
+                            "_type": "DV_TEXT",
+                            "value": "quantity"
+                        },
+                        "archetype_node_id": "at0002",
+                        "value": {
+                            "_type": "DV_QUANTITY",
+                            "magnitude": 78.5,
+                            "units": "kg"
+                        }
+                    }
+                ]
             }
-          }
-        ]
-      }
-    }
-  ]
+        }
+    ]
 }

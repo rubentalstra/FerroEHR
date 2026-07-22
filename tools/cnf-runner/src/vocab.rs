@@ -284,6 +284,11 @@ pub enum Iteration {
 #[serde(rename_all = "lowercase")]
 pub enum ServerState {
     Empty,
+    /// The case's ground depends on GLOBAL server state (an empty template
+    /// list, a globally-absent artefact) that only an exclusively-owned SUT
+    /// can establish — on a shared instance the case is not-applicable
+    /// (the ixit environment declares exclusivity).
+    Exclusive,
     Any,
 }
 
@@ -503,7 +508,8 @@ impl Iteration {
 
 impl ServerState {
     /// All variants, in vocabulary order (schema emission derives from this).
-    pub const ALL: &'static [ServerState] = &[ServerState::Empty, ServerState::Any];
+    pub const ALL: &'static [ServerState] =
+        &[ServerState::Empty, ServerState::Exclusive, ServerState::Any];
 }
 
 impl FixtureVerdict {

@@ -1129,3 +1129,51 @@ async fn version_validity_never_overlaps_without_the_exclusion_constraints() {
     .expect("overlap audit");
     assert!(!overlap, "no lineage carries overlapping validity periods");
 }
+
+/// A contribution delete member targeting the `EHR_STATUS` is refused: the
+/// status is mandatory on the EHR (RM ehr, EHR class: `ehr_status` 1..1), so
+/// deleting the only one would break the EHR's own invariant.
+#[tokio::test]
+async fn contribution_cannot_delete_the_ehr_status() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let status_uid = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status read")["uid"]["value"]
+        .as_str()
+        .expect("status version uid")
+        .to_owned();
+
+    let err = svc
+        .create_ehr_contribution(
+            ehr_uuid,
+            serde_json::json!({
+                "versions": [{
+                    "commit_audit": {
+                        "change_type": change_type("523", "deleted"),
+                        "committer": committer("author")
+                    },
+                    "preceding_version_uid": { "value": status_uid }
+                }],
+                "audit": { "committer": committer("author") }
+            }),
+        )
+        .await
+        .expect_err("EHR_STATUS delete member refused");
+    assert!(
+        err.message.contains("EHR_STATUS cannot be deleted"),
+        "message names the mandatory-status ground, got {err:?}"
+    );
+
+    // the status is still there
+    let still = svc
+        .get_ehr_status_at_time(ehr_uuid, None)
+        .await
+        .expect("status still present");
+    assert_eq!(still["_type"].as_str(), Some("EHR_STATUS"));
+}

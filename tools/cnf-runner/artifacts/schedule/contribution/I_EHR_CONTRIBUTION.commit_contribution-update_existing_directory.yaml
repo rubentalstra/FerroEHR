@@ -29,7 +29,9 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - { data: "${ds:cnf.folder.updated}", change_type: modification }
+        - data: "${ds:cnf.folder.updated}"
+          change_type: modification
+          preceding_version_uid: "${directory_version_uid}"   # bound by the requires.directory provisioning
     expect: created
     capture:
       version_uids: created.version_uids[]

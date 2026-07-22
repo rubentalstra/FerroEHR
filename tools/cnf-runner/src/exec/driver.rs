@@ -89,6 +89,20 @@ impl<'a> HttpDriver<'a> {
     }
 
     fn binding_for(&self, case: &CaseCore, call: &str) -> Result<&'a OperationBinding, String> {
+        self.binding_for_variant(case, call, None)
+    }
+
+    /// Select the operation binding, honoring the flow step's `variant`
+    /// discriminator: a step's variant selects the binding declaring that
+    /// variant; a variant-less step (or a variant with no dedicated binding —
+    /// e.g. header-mutation variants) falls back to the variant-less binding
+    /// for the operation.
+    fn binding_for_variant(
+        &self,
+        case: &CaseCore,
+        call: &str,
+        variant: Option<&str>,
+    ) -> Result<&'a OperationBinding, String> {
         let op = if call.contains('.') {
             SmOperationRef::parse(call).map_err(|e| e.to_string())?
         } else {
@@ -97,11 +111,16 @@ impl<'a> HttpDriver<'a> {
                 .ok_or_else(|| format!("case {} has no sm_operation anchor", case.id))?
                 .sibling(call)
         };
-        self.set
-            .bindings
-            .iter()
-            .map(|(_, b)| b)
-            .find(|b| b.sm_operation == op)
+        let mut bindings = self.set.bindings.iter().map(|(_, b)| b);
+        if let Some(v) = variant
+            && let Some(exact) = bindings
+                .clone()
+                .find(|b| b.sm_operation == op && b.variant.as_deref() == Some(v))
+        {
+            return Ok(exact);
+        }
+        bindings
+            .find(|b| b.sm_operation == op && b.variant.is_none())
             .ok_or_else(|| format!("no binding declares operation {op}"))
     }
 
@@ -273,11 +292,34 @@ impl<'a> HttpDriver<'a> {
             headers: response_headers,
             body,
         };
+        // CNF_DEBUG_EXCHANGES=1: dump every wire exchange to stderr (live
+        // triage aid; the transcript seam is the durable record).
+        if std::env::var_os("CNF_DEBUG_EXCHANGES").is_some() {
+            #[allow(clippy::print_stderr)] // env-gated triage output in the dev tool
+            {
+                eprintln!(
+                    "[exchange] {} {} -> {} | {}",
+                    exchange.method,
+                    exchange.path,
+                    exchange.status,
+                    exchange
+                        .body
+                        .as_ref()
+                        .map(|b| b.to_string().chars().take(120).collect::<String>())
+                        .unwrap_or_default()
+                );
+            }
+        }
         self.exchanges.push(exchange.clone());
         Ok(exchange)
     }
 
-    fn extract_capture(exchange: &Exchange, spec: &WireCapture, vars: &VarStore) -> Option<String> {
+    fn extract_capture(
+        exchange: &Exchange,
+        binding: &OperationBinding,
+        spec: &WireCapture,
+        vars: &VarStore,
+    ) -> Option<String> {
         let from_source = |source: &WireFrom| -> Option<String> {
             match source {
                 WireFrom::Header { name, last_segment } => {
@@ -304,7 +346,26 @@ impl<'a> HttpDriver<'a> {
                         other => Some(other.to_string()),
                     }
                 }
-                WireFrom::Capture(name) => vars.scalar(name).map(ToOwned::to_owned),
+                // A capture-typed source reads a case-bound variable when one
+                // exists; otherwise it derives the referenced BINDING capture
+                // from this same exchange (a case need not name every
+                // intermediate — `versioned_object_uid: from capture
+                // version_uid` works without the case capturing version_uid).
+                WireFrom::Capture(name) => vars.scalar(name).map(ToOwned::to_owned).or_else(|| {
+                    let referenced = binding
+                        .captures
+                        .as_deref()
+                        .unwrap_or_default()
+                        .iter()
+                        .find(|(n, _)| n == name)
+                        .map(|(_, s)| s)?;
+                    // one referencing level only — a chained reference would
+                    // recurse here; the artifact gates keep chains shallow
+                    if matches!(referenced.from, WireFrom::Capture(_)) {
+                        return None;
+                    }
+                    Self::extract_capture(exchange, binding, referenced, vars)
+                }),
             }
         };
         let mut value =
@@ -352,6 +413,32 @@ impl<'a> HttpDriver<'a> {
                 matches,
             ),
             (Err(e), _) | (_, Err(e)) => Err(AssertionFailure(e)),
+        }
+    }
+
+    /// A Boolean SM return (`has_directory`, `has_path`, `has_query`) is
+    /// realized on the wire as presence: 2xx = TRUE, the mapped not-found =
+    /// FALSE — the response body is the resource (or empty per `Prefer`),
+    /// never a boolean literal (SM `openehr_platform` `I_EHR_DIRECTORY` /
+    /// `I_DEFINITION_QUERY` `has_*`: Boolean; ITS-REST realizes them as GET).
+    fn eval_returns_assertion(
+        exchange: &Exchange,
+        body: &Value,
+        equals: Option<&Value>,
+        matches: Option<&str>,
+    ) -> Result<(), AssertionFailure> {
+        if let Some(Value::Bool(want)) = equals {
+            let observed = (200..300).contains(&exchange.status);
+            if observed == *want {
+                Ok(())
+            } else {
+                Err(AssertionFailure(format!(
+                    "returns: wire presence {observed} != expected {want} (status {})",
+                    exchange.status
+                )))
+            }
+        } else {
+            assertions::eval_returns(body, equals, matches)
         }
     }
 
@@ -412,16 +499,17 @@ impl<'a> HttpDriver<'a> {
                             if assertions::equivalent(body, &expected, &ignored) {
                                 Ok(())
                             } else {
-                                Err(AssertionFailure(
-                                    "equivalent: retrieved content differs from committed (modulo the normative ignore-set)".into(),
-                                ))
+                                Err(equivalence_mismatch(body, &expected))
                             }
                         }
                     }
                 }
-                Assertion::Returns { equals, matches } => {
-                    assertions::eval_returns(body, equals.as_ref(), matches.as_deref())
-                }
+                Assertion::Returns { equals, matches } => Self::eval_returns_assertion(
+                    exchange,
+                    body,
+                    equals.as_ref(),
+                    matches.as_deref(),
+                ),
                 Assertion::ResultSet {
                     match_mode,
                     rows,
@@ -520,7 +608,15 @@ impl<'a> HttpDriver<'a> {
                         (systolic >= min).then(|| (uid.clone(), systolic))
                     })
                     .collect();
-                selected.sort_by(|(a, _), (b, _)| a.cmp(b));
+                match spec.get("order").and_then(Value::as_str) {
+                    Some("systolic_desc") => {
+                        selected.sort_by(|(ua, sa), (ub, sb)| sb.cmp(sa).then(ua.cmp(ub)));
+                    }
+                    _ => selected.sort_by(|(a, _), (b, _)| a.cmp(b)),
+                }
+                if let Some(limit) = spec.get("limit").and_then(Value::as_u64) {
+                    selected.truncate(usize::try_from(limit).unwrap_or(usize::MAX));
+                }
                 Some(
                     selected
                         .into_iter()
@@ -559,6 +655,70 @@ fn template_is_optional(template: &Template) -> bool {
 
 /// Minimal base64 (standard alphabet, padding) — avoids a crypto dep for
 /// one Basic-auth header.
+/// The equivalence-failure diagnostic (80-char previews of both sides).
+fn equivalence_mismatch(body: &Value, expected: &Value) -> AssertionFailure {
+    let brief = |v: &Value| v.to_string().chars().take(80).collect::<String>();
+    AssertionFailure(format!(
+        "equivalent: retrieved content differs from committed (modulo the normative ignore-set); got {} … want {} …",
+        brief(body),
+        brief(expected)
+    ))
+}
+
+/// Parse an IMF-fixdate `Date` header ("Sun, 06 Nov 1994 08:49:37 GMT") to
+/// epoch milliseconds (RFC 9110 §5.6.7); `None` on any other form.
+fn parse_http_date_ms(value: &str) -> Option<i64> {
+    let parts: Vec<&str> = value.split_whitespace().collect();
+    let [_, day, month, year, time, zone] = parts.as_slice() else {
+        return None;
+    };
+    if !zone.eq_ignore_ascii_case("GMT") {
+        return None;
+    }
+    let month = match *month {
+        "Jan" => 1,
+        "Feb" => 2,
+        "Mar" => 3,
+        "Apr" => 4,
+        "May" => 5,
+        "Jun" => 6,
+        "Jul" => 7,
+        "Aug" => 8,
+        "Sep" => 9,
+        "Oct" => 10,
+        "Nov" => 11,
+        "Dec" => 12,
+        _ => return None,
+    };
+    let day: i64 = day.parse().ok()?;
+    let year: i64 = year.parse().ok()?;
+    let mut hms = time.split(':');
+    let h: i64 = hms.next()?.parse().ok()?;
+    let m: i64 = hms.next()?.parse().ok()?;
+    let s: i64 = hms.next()?.parse().ok()?;
+    // days since the epoch (civil-from-days inverse; Howard Hinnant's
+    // published algorithm — pure integer arithmetic)
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = (month + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    let days = era * 146_097 + doe - 719_468;
+    Some((days * 86_400 + h * 3_600 + m * 60 + s) * 1_000)
+}
+
+/// Runner-clock milliseconds since the Unix epoch.
+fn now_ms() -> i64 {
+    i64::try_from(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or_default(),
+    )
+    .unwrap_or(i64::MAX)
+}
+
 fn base64_encode(input: &[u8]) -> String {
     const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
@@ -582,6 +742,105 @@ fn base64_encode(input: &[u8]) -> String {
 }
 
 impl HttpDriver<'_> {
+    /// Build the canonical CONTRIBUTION envelope from the case model's
+    /// bundled `versions:` construct (ITS contribution schema:
+    /// `ORIGINAL_VERSION` members carrying `data` + `commit_audit` +
+    /// `lifecycle_state`; `change_type` tokens map to the openEHR audit
+    /// change-type codes — RM common `§change_control`).
+    fn contribution_envelope(versions: &[Value]) -> Value {
+        let members: Vec<Value> = versions
+            .iter()
+            .map(|member| {
+                // A pre-built ORIGINAL_VERSION member (e.g. the signed-version
+                // fixture carrying a client-supplied VERSION.signature — RM
+                // common §change_control) passes through verbatim: it already
+                // IS the wire shape.
+                if member
+                    .get("data")
+                    .and_then(|d| d.get("_type"))
+                    .and_then(Value::as_str)
+                    == Some("ORIGINAL_VERSION")
+                {
+                    return member.get("data").cloned().unwrap_or(Value::Null);
+                }
+                let change = member
+                    .get("change_type")
+                    .and_then(Value::as_str)
+                    .unwrap_or("creation");
+                let (code, label) = match change {
+                    "modification" => ("251", "modification"),
+                    "deletion" | "deleted" => ("523", "deleted"),
+                    "amendment" => ("250", "amendment"),
+                    _ => ("249", "creation"),
+                };
+                // a deleted member carries NO data and the `deleted`
+                // lifecycle (RM common §change_control: version lifecycle
+                // 523|deleted|); other members carry 532|complete|
+                let (life_code, life_label) = if change == "deleted" || change == "deletion" {
+                    ("523", "deleted")
+                } else {
+                    ("532", "complete")
+                };
+                let mut version = serde_json::json!({
+                    "_type": "ORIGINAL_VERSION",
+                    "lifecycle_state": {
+                        "_type": "DV_CODED_TEXT",
+                        "value": life_label,
+                        "defining_code": { "_type": "CODE_PHRASE",
+                            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                            "code_string": life_code }
+                    },
+                    "commit_audit": {
+                        "_type": "AUDIT_DETAILS",
+                        "system_id": "cnf-runner",
+                        "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
+                        "change_type": { "_type": "DV_CODED_TEXT", "value": label,
+                            "defining_code": { "_type": "CODE_PHRASE",
+                                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                                "code_string": code } }
+                    }
+                });
+                if let Some(data) = member.get("data")
+                    && !data.is_null()
+                    && let Some(map) = version.as_object_mut()
+                {
+                    map.insert("data".to_owned(), data.clone());
+                }
+                // a list-valued capture (created.version_uids[]) addresses
+                // its single member on a one-version commit set
+                let preceding = match member.get("preceding_version_uid") {
+                    Some(Value::Array(items)) => items.first().cloned(),
+                    Some(Value::Null) | None => None,
+                    Some(other) => Some(other.clone()),
+                };
+                if let Some(preceding) = preceding
+                    && let Some(map) = version.as_object_mut()
+                {
+                    map.insert(
+                        "preceding_version_uid".to_owned(),
+                        serde_json::json!({
+                            "_type": "OBJECT_VERSION_ID", "value": preceding
+                        }),
+                    );
+                }
+                version
+            })
+            .collect();
+        serde_json::json!({
+            "_type": "CONTRIBUTION",
+            "versions": members,
+            "audit": {
+                "_type": "AUDIT_DETAILS",
+                "system_id": "cnf-runner",
+                "committer": { "_type": "PARTY_IDENTIFIED", "name": "cnf runner" },
+                "change_type": { "_type": "DV_CODED_TEXT", "value": "creation",
+                    "defining_code": { "_type": "CODE_PHRASE",
+                        "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                        "code_string": "249" } }
+            }
+        })
+    }
+
     /// Body per the binding request contract.
     fn select_body(
         &mut self,
@@ -593,39 +852,91 @@ impl HttpDriver<'_> {
         match &request_spec.body {
             None => Ok(None),
             Some(RequestBody::Named { name, optional }) => {
+                // The bundled version-set construct: `versions:` becomes a
+                // canonical CONTRIBUTION envelope (ORIGINAL_VERSION members
+                // with commit_audit, per the ITS contribution schema).
+                if name == "contribution"
+                    && let Some(versions) = with.get("versions").and_then(Value::as_array)
+                {
+                    return Ok(Some(Self::contribution_envelope(versions)));
+                }
                 let found = with
                     .get(name)
                     .cloned()
                     .or_else(|| with.get("composition").cloned())
                     .or_else(|| with.get("opt").cloned())
                     .or_else(|| {
-                        // single-payload steps: the one non-path value
+                        // single-payload steps: the one non-path value.
+                        // Objects/arrays always qualify; a STRING qualifies
+                        // only for a text-format role (`aql_text`, `*_text`)
+                        // — any other scalar is a header/path realization,
+                        // never a resource body.
+                        let text_role = name.ends_with("_text");
                         with.iter()
-                            .find(|(k, _)| {
-                                !request_spec.path.params().iter().any(|p| p.as_str() == *k)
+                            .find(|(k, v)| {
+                                (v.is_object() || v.is_array() || (text_role && v.is_string()))
+                                    && !request_spec.path.params().iter().any(|p| p.as_str() == *k)
                             })
                             .map(|(_, v)| v.clone())
                     });
                 match (found, optional) {
+                    // a resolved `null` means ABSENT (the recipe's omitted
+                    // payload — e.g. `ehr_status: absent` rows): send no body
+                    (Some(Value::Null) | None, true) => Ok(None),
                     (Some(v), _) => Ok(Some(v)),
-                    (None, true) => Ok(None),
                     (None, false) => {
                         Err(format!("step {}: body role {name} unresolved", step.step))
                     }
                 }
             }
-            Some(RequestBody::Structured(template)) => Ok(Some(
-                self.resolver
-                    .resolve_value(template, vars)
-                    .map_err(|e| e.to_string())?,
-            )),
+            Some(RequestBody::Structured(template)) => {
+                // Structured templates reference the step's own with-values
+                // (`${q}`, `${fetch?}`) as well as captures.
+                let mut merged = vars.clone();
+                for (key, value) in with {
+                    if let Ok(name) = CaptureName::parse(key)
+                        && merged.get(&name).is_none()
+                    {
+                        match value {
+                            Value::String(s) => {
+                                merged.set(name, Captured::Scalar(s.clone()));
+                            }
+                            other => {
+                                merged.set(name, Captured::Body(other.clone()));
+                            }
+                        }
+                    }
+                }
+                Ok(Some(
+                    self.resolver
+                        .resolve_value(template, &merged)
+                        .map_err(|e| e.to_string())?,
+                ))
+            }
             Some(RequestBody::Patched { from_capture, set }) => {
-                let Some(crate::exec::state::Captured::Body(body)) = vars.get(from_capture) else {
-                    return Err(format!(
-                        "patched body: capture {from_capture} holds no resource body"
-                    ));
+                // Negatives against a non-existent resource have no captured
+                // base body (nothing to GET) — the wire still needs a valid
+                // resource payload, so fall back to the minimal canonical
+                // EHR_STATUS the recipes commit (the SUT rejects on the
+                // unknown id, not the body).
+                let mut patched = match vars.get(from_capture) {
+                    Some(crate::exec::state::Captured::Body(body)) => body.clone(),
+                    _ if matches!(from_capture.as_str(), "status_body" | "ehr_status") => {
+                        serde_json::json!({
+                            "_type": "EHR_STATUS",
+                            "name": { "_type": "DV_TEXT", "value": "ehr status" },
+                            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                            "subject": { "_type": "PARTY_SELF" },
+                            "is_queryable": true,
+                            "is_modifiable": true
+                        })
+                    }
+                    _ => {
+                        return Err(format!(
+                            "patched body: capture {from_capture} holds no resource body"
+                        ));
+                    }
                 };
-                let mut patched = body.clone();
                 if let Some(map) = patched.as_object_mut() {
                     for (field, value) in set {
                         map.insert(field.clone(), value.clone());
@@ -676,7 +987,7 @@ impl HttpDriver<'_> {
                     .unwrap_or_default()
                     .iter()
                     .find(|(n, _)| n.as_str() == "version_uid")
-                    && let Some(uid) = Self::extract_capture(&exchange, spec, vars)
+                    && let Some(uid) = Self::extract_capture(&exchange, binding, spec, vars)
                 {
                     uids.push(uid);
                 }
@@ -691,6 +1002,7 @@ impl HttpDriver<'_> {
     /// Headers: binding request headers + format headers + auth + instance
     /// extras.
     fn build_headers(
+        set: &ArtifactSet,
         case: &CaseCore,
         step: &FlowStep,
         binding: &OperationBinding,
@@ -717,10 +1029,36 @@ impl HttpDriver<'_> {
         let format = step.format.or_else(|| case.formats.first().copied());
         if let Some(format) = format {
             let media = Self::media_type(format);
-            headers
-                .entry("Content-Type".to_owned())
-                .or_insert_with(|| media.to_owned());
-            headers.insert("Accept".to_owned(), media.to_owned());
+            // The step's format has two distinct roles by request shape: on a
+            // body-carrying request (POST/PUT commit) it names the REQUEST
+            // body representation (a simplified INPUT format), so it sets
+            // Content-Type only and the response is negotiated canonical —
+            // the version-id headers the commit capture reads (ETag,
+            // Location) are representation-independent and RFC 7231 §6.3.2
+            // requires Location on a 201 regardless of the request body
+            // format. On a bodyless request (GET read-back) it names the
+            // desired RESPONSE representation and sets Accept.
+            if request_spec.body.is_some() {
+                headers
+                    .entry("Content-Type".to_owned())
+                    .or_insert_with(|| media.to_owned());
+                headers
+                    .entry("Accept".to_owned())
+                    .or_insert_with(|| "application/json".to_owned());
+            } else if step.format.is_some() {
+                // An EXPLICIT step-level format names the desired RESPONSE
+                // representation and overrides any binding-pinned Accept
+                // (e.g. get_opt pins application/xml, but `format: wt`
+                // requests the Web Template JSON representation).
+                headers.insert("Accept".to_owned(), media.to_owned());
+            } else {
+                // The case-level default format is only a fallback — a
+                // binding-pinned Accept (the canonical OPT XML / ADL2 text
+                // representations) wins over it.
+                headers
+                    .entry("Accept".to_owned())
+                    .or_insert_with(|| media.to_owned());
+            }
             if let Some(format_headers) = &binding.format_headers
                 && let Some((_, map)) = format_headers.iter().find(|(k, _)| k.0 == format)
             {
@@ -732,11 +1070,18 @@ impl HttpDriver<'_> {
                             }
                         }
                         crate::model::binding::FormatHeaderReq::Required => {
-                            // openehr-template-id: the corpus key IS the
-                            // declared template identity for placeholder
-                            // corpora (the spine-first corpus refines this).
+                            // openehr-template-id: the manifest's declared
+                            // template identity for the case's template
+                            // (falling back to the corpus key for entries
+                            // that predate the metadata).
                             if let Some(key) = case.requires.templates.first() {
-                                headers.insert(name.clone(), key.to_string());
+                                let template_id = set
+                                    .corpus
+                                    .as_ref()
+                                    .and_then(|(_, m)| m.get(key))
+                                    .and_then(|e| e.template_id.clone())
+                                    .unwrap_or_else(|| key.to_string());
+                                headers.insert(name.clone(), template_id);
                             }
                         }
                     }
@@ -789,7 +1134,7 @@ impl HttpDriver<'_> {
                 .unwrap_or_default()
                 .iter()
                 .find(|(n, _)| n.as_str() == "ehr_id")
-                && let Some(value) = Self::extract_capture(&exchange, spec, vars)
+                && let Some(value) = Self::extract_capture(&exchange, binding, spec, vars)
             {
                 vars.set(
                     CaptureName::parse("ehr_id").map_err(|e| e.to_string())?,
@@ -807,7 +1152,7 @@ impl HttpDriver<'_> {
         binding: &OperationBinding,
         exchange: &Exchange,
         observation: &Observation,
-        exchange_ordinal: usize,
+        sent_ms: i64,
         vars: &mut VarStore,
     ) {
         let Observation::Kind(kind) = observation else {
@@ -824,11 +1169,28 @@ impl HttpDriver<'_> {
                     }
                 }
                 CaptureField::CommitTime => {
-                    // The exchange ordinal as a monotonic stand-in
-                    // (deterministic-across-runners applies to ${time:*}
-                    // arithmetic, not live instants).
-                    let ms = i64::try_from(exchange_ordinal).unwrap_or(i64::MAX) * 1_000;
-                    vars.set(name.clone(), Captured::InstantMs(ms));
+                    // The live commit WINDOW: [request send, response
+                    // receipt] in runner-clock milliseconds, WIDENED by the
+                    // SUT's own second-resolution `Date` header — the SUT
+                    // stamped the version inside it even when its clock is
+                    // skewed from the runner's (containerized SUTs drift),
+                    // so `before` resolves from the lower bound and `after`
+                    // from the upper, both sound on the wire. Determinism
+                    // law (d) governs the ${time:*} ARITHMETIC over this
+                    // window, not the window itself; the transcript player
+                    // binds its own recorded point ordinals.
+                    let mut lo = sent_ms;
+                    let mut hi = now_ms();
+                    if let Some(date_ms) = exchange
+                        .headers
+                        .iter()
+                        .find(|(k, _)| k.eq_ignore_ascii_case("date"))
+                        .and_then(|(_, v)| parse_http_date_ms(v))
+                    {
+                        lo = lo.min(date_ms);
+                        hi = hi.max(date_ms.saturating_add(999));
+                    }
+                    vars.set(name.clone(), Captured::InstantMs { lo, hi });
                 }
                 CaptureField::Field { name: field, list } => {
                     let Some(spec) = binding
@@ -847,11 +1209,99 @@ impl HttpDriver<'_> {
                             let items = extract_list(body, path);
                             vars.set(name.clone(), Captured::List(items));
                         }
-                    } else if let Some(value) = Self::extract_capture(exchange, spec, vars) {
+                    } else if let Some(value) = Self::extract_capture(exchange, binding, spec, vars)
+                    {
                         vars.set(name.clone(), Captured::Scalar(value));
                     }
                 }
             }
+        }
+    }
+}
+
+impl HttpDriver<'_> {
+    /// Resolve the step's `with` map; an unresolvable reference is reported
+    /// as the error string the caller turns into a transport-class
+    /// (inconclusive) observation.
+    fn resolve_with(
+        &mut self,
+        step: &FlowStep,
+        vars: &VarStore,
+    ) -> Result<BTreeMap<String, Value>, String> {
+        let mut with: BTreeMap<String, Value> = BTreeMap::new();
+        for (key, value) in step.with_entries() {
+            let v = self
+                .resolver
+                .resolve_value(value, vars)
+                .map_err(|e| format!("step {}: with.{key}: {e}", step.step))?;
+            with.insert(key.clone(), v);
+        }
+        Ok(with)
+    }
+
+    /// Captures plus the step's own scalar `with` values (the header/query
+    /// template resolution scope).
+    fn merge_with_vars(vars: &VarStore, with: &BTreeMap<String, Value>) -> VarStore {
+        let mut merged = vars.clone();
+        for (key, value) in with {
+            if let Value::String(s) = value
+                && let Ok(name) = CaptureName::parse(key)
+                && merged.scalar(&name).is_none()
+            {
+                merged.set(name, Captured::Scalar(s.clone()));
+            }
+        }
+        merged
+    }
+}
+
+impl<'a> HttpDriver<'a> {
+    /// A binding variant named `with_<p>` realizes the SM operation's
+    /// optional-argument form (e.g. `create_ehr(ehr_id?)` -> PUT
+    /// `/ehr/{ehr_id}`): auto-selected when the step binds `<p>` non-null
+    /// and names no explicit variant.
+    fn auto_variant(
+        &self,
+        binding: &'a OperationBinding,
+        step: &FlowStep,
+        with: &BTreeMap<String, Value>,
+    ) -> &'a OperationBinding {
+        if step.variant.is_some() {
+            return binding;
+        }
+        self.set
+            .bindings
+            .iter()
+            .map(|(_, b)| b)
+            .find(|b| {
+                b.sm_operation == binding.sm_operation
+                    && b.variant.as_deref().is_some_and(|v| {
+                        v.strip_prefix("with_").is_some_and(|param| {
+                            with.get(param).is_some_and(|value| !value.is_null())
+                        })
+                    })
+            })
+            .unwrap_or(binding)
+    }
+}
+
+/// Temporal separability: when a step CAPTURES a commit instant and an
+/// earlier one is already bound, space the commits so their
+/// second-resolution windows cannot overlap — `version_at_time` grounds
+/// (before/between/after) need distinguishable instants even against a
+/// clock-skewed containerized SUT.
+fn pace_commit_capture(step: &FlowStep, vars: &VarStore) {
+    if step
+        .captures()
+        .iter()
+        .any(|(_, s)| matches!(s.field, CaptureField::CommitTime))
+        && let Some(prev_hi) = vars.latest_instant_hi()
+    {
+        let wait = prev_hi.saturating_add(1_100).saturating_sub(now_ms());
+        if (1..=5_000).contains(&wait) {
+            std::thread::sleep(std::time::Duration::from_millis(
+                u64::try_from(wait).unwrap_or(0),
+            ));
         }
     }
 }
@@ -866,7 +1316,7 @@ impl StepDriver for HttpDriver<'_> {
         vars: &mut VarStore,
     ) -> Result<StepObservation, String> {
         self.resolver.bind_row(case, row);
-        let binding = self.binding_for(case, &step.call)?;
+        let binding = self.binding_for_variant(case, &step.call, step.variant.as_deref())?;
         if binding.is_unrealized() {
             // The interpreter surfaces this before perform() normally; the
             // driver answers with a transport-class observation so law (c)
@@ -881,43 +1331,8 @@ impl StepDriver for HttpDriver<'_> {
         // Resolve the with-payload. A capture the earlier steps never bound
         // (the SUT did not supply what the binding maps) is an INCONCLUSIVE
         // observation for this row (law c) — never a run-aborting defect.
-        let mut with: BTreeMap<String, Value> = BTreeMap::new();
-        for (key, value) in step.with_entries() {
-            let resolved = self.resolver.resolve_value(value, vars);
-            match resolved {
-                Ok(v) => {
-                    with.insert(key.clone(), v);
-                }
-                Err(e) => {
-                    return Ok(StepObservation {
-                        observation: Observation::Transport(format!(
-                            "step {}: with.{key}: {e}",
-                            step.step
-                        )),
-                        assertion_failures: Vec::new(),
-                    });
-                }
-            }
-        }
-
-        let request_spec = binding
-            .request
-            .as_ref()
-            .ok_or_else(|| "binding is unrealized".to_owned())?;
-        // Header templates resolve against captures AND the step's own
-        // resolved `with` values (e.g. update_composition-non_existent
-        // supplies preceding_version_uid inline, not as a capture).
-        let mut header_vars = vars.clone();
-        for (key, value) in &with {
-            if let Value::String(s) = value
-                && let Ok(name) = CaptureName::parse(key)
-                && header_vars.scalar(&name).is_none()
-            {
-                header_vars.set(name, Captured::Scalar(s.clone()));
-            }
-        }
-        let headers = match Self::build_headers(case, step, binding, instance, &header_vars) {
-            Ok(headers) => headers,
+        let with = match self.resolve_with(step, vars) {
+            Ok(with) => with,
             Err(e) => {
                 return Ok(StepObservation {
                     observation: Observation::Transport(e),
@@ -925,6 +1340,26 @@ impl StepDriver for HttpDriver<'_> {
                 });
             }
         };
+
+        let binding = self.auto_variant(binding, step, &with);
+        let request_spec = binding
+            .request
+            .as_ref()
+            .ok_or_else(|| "binding is unrealized".to_owned())?;
+        // Header templates resolve against captures AND the step's own
+        // resolved `with` values (e.g. update_composition-non_existent
+        // supplies preceding_version_uid inline, not as a capture).
+        let header_vars = Self::merge_with_vars(vars, &with);
+        let headers =
+            match Self::build_headers(self.set, case, step, binding, instance, &header_vars) {
+                Ok(headers) => headers,
+                Err(e) => {
+                    return Ok(StepObservation {
+                        observation: Observation::Transport(e),
+                        assertion_failures: Vec::new(),
+                    });
+                }
+            };
 
         let body = match self.select_body(request_spec, &with, step, vars) {
             Ok(body) => body,
@@ -947,6 +1382,8 @@ impl StepDriver for HttpDriver<'_> {
             }
         };
         let body_is_json = !matches!(body, Some(Value::String(_)));
+        pace_commit_capture(step, vars);
+        let sent_ms = now_ms();
         let exchange = match self.send(
             request_spec.method,
             &url,
@@ -974,14 +1411,7 @@ impl StepDriver for HttpDriver<'_> {
         // Classify (law c) and bind captures.
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
         let observation = outcome::classify_status(binding, selectors, exchange.status, expected);
-        Self::bind_step_captures(
-            step,
-            binding,
-            &exchange,
-            &observation,
-            self.exchanges.len(),
-            vars,
-        );
+        Self::bind_step_captures(step, binding, &exchange, &observation, sent_ms, vars);
 
         // Post-step assertions only when the expectation held (the caller
         // aborts otherwise, law b) — evaluate optimistically here.
@@ -1007,8 +1437,19 @@ impl StepDriver for HttpDriver<'_> {
         // templates: upload each via the upload_opt binding.
         for key in case.requires.templates.clone() {
             let payload = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
-            // direct send through the binding (409 tolerated: already provisioned)
-            let binding = self.binding_for(case, "I_DEFINITION_ADL14.upload_opt")?;
+            // direct send through the upload binding matching the corpus
+            // format (409 tolerated: already provisioned): OPT 1.4 XML goes
+            // to the ADL 1.4 endpoint, ADL2 text to the ADL2 one
+            let is_adl2 = self
+                .resolver
+                .corpus_format(&key)
+                .is_some_and(|f| matches!(f, crate::vocab::CorpusFormat::Adl2Text));
+            let upload_op = if is_adl2 {
+                "I_DEFINITION_ADL2.upload_artefact"
+            } else {
+                "I_DEFINITION_ADL14.upload_opt"
+            };
+            let binding = self.binding_for(case, upload_op)?;
             let instance = self.ixit.default_instance()?;
             let request_spec = binding
                 .request
@@ -1022,9 +1463,13 @@ impl StepDriver for HttpDriver<'_> {
                     }
                 }
             }
-            headers
-                .entry("Content-Type".to_owned())
-                .or_insert_with(|| "application/xml".to_owned());
+            headers.entry("Content-Type".to_owned()).or_insert_with(|| {
+                if is_adl2 {
+                    "text/plain".to_owned()
+                } else {
+                    "application/xml".to_owned()
+                }
+            });
             if let Some(auth) = Self::auth_header(&instance.auth)? {
                 headers.insert("Authorization".to_owned(), auth);
             }
@@ -1062,13 +1507,15 @@ impl StepDriver for HttpDriver<'_> {
             let url = format!("{base}{path}");
             let exchange = self.send(request_spec.method, &url, &headers, Some(&payload), true)?;
             self.committed.push(payload);
+            // the binding names its ETag capture `version_uid`; provisioning
+            // publishes it as `directory_version_uid` for the case flows
             if let Some((_, spec)) = binding
                 .captures
                 .as_deref()
                 .unwrap_or_default()
                 .iter()
-                .find(|(n, _)| n.as_str() == "directory_version_uid")
-                && let Some(uid) = Self::extract_capture(&exchange, spec, vars)
+                .find(|(n, _)| matches!(n.as_str(), "directory_version_uid" | "version_uid"))
+                && let Some(uid) = Self::extract_capture(&exchange, binding, spec, vars)
             {
                 vars.set(
                     CaptureName::parse("directory_version_uid").map_err(|e| e.to_string())?,
@@ -1194,6 +1641,19 @@ fn extract_list(body: &Value, path: &str) -> Vec<String> {
 mod tests {
     use super::*;
 
+    fn test_binding() -> OperationBinding {
+        serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "its": "its-rest",
+            "request": { "method": "POST", "path": "/ehr" },
+            "outcomes": { "created": { "status": 201 } },
+            "captures": {
+                "version_uid": { "from": "header ETag", "strip": "weak-quotes" }
+            }
+        }))
+        .unwrap()
+    }
+
     #[test]
     fn base64_and_list_extraction() {
         assert_eq!(base64_encode(b"user:pass"), "dXNlcjpwYXNz");
@@ -1223,7 +1683,7 @@ mod tests {
         }))
         .unwrap();
         let vars = VarStore::default();
-        let uid = HttpDriver::extract_capture(&exchange, &spec, &vars).unwrap();
+        let uid = HttpDriver::extract_capture(&exchange, &test_binding(), &spec, &vars).unwrap();
         assert_eq!(
             uid,
             "8849182c-82ad-4088-a07f-48ead4180515::openEHRSys.example.com::1"
@@ -1238,7 +1698,7 @@ mod tests {
             CaptureName::parse("version_uid").unwrap(),
             Captured::Scalar(uid),
         );
-        let root = HttpDriver::extract_capture(&exchange, &spec2, &vars2).unwrap();
+        let root = HttpDriver::extract_capture(&exchange, &test_binding(), &spec2, &vars2).unwrap();
         assert_eq!(root, "8849182c-82ad-4088-a07f-48ead4180515");
     }
 }

@@ -23,14 +23,21 @@ applies: { rm: ">=1.0.2" }
 requires:
   server: any
   ehr: { commits: none }                 # EHR with a full EHR_STATUS; mints ${ehr_id}
-data_sets: [cnf.ehr_status.with_subject]
+data_sets: [cnf.ehr_status.with_subject.alt]
 flow:
   - step: 1
+    call: I_EHR_STATUS.get_ehr_status
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    capture: { status_version_uid: ok.status_version_uid }
+  - step: 2
     call: commit_contribution
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - { data: "${ds:cnf.ehr_status.with_subject}", change_type: modification }
+        - data: "${ds:cnf.ehr_status.with_subject.alt}"
+          change_type: modification
+          preceding_version_uid: "${status_version_uid}"   # RM common §change_control: a modification member names its preceding version
     expect: created
     capture:
       version_uids: created.version_uids[]

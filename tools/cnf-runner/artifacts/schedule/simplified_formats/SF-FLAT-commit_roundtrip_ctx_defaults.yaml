@@ -37,11 +37,10 @@ flow:
     expect: ok
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }
-      - { assert: field, path: "context/setting", equals: "openehr::238|other care|" }   # master06 default
-      - { assert: field, path: "context/start_time", exists: true }                      # ctx/time -> now()
+      - { assert: field, path: "context/start_time", exists: true }                      # ctx/time -> now() (master06 default)
       - assert: field
-        path: "content[0]/data/events[0]/data/items[0]/value/magnitude"
-        equals: "${ds:cnf.flat.vitals.minimal_ctx#temperature_magnitude}"                # named view
+        path: "content[0]/ism_transition/current_state/defining_code/code_string"
+        equals: "${ds:cnf.flat.vitals.minimal_ctx#current_state_code}"                   # named view (ACTION leaf)
   - step: 3
     call: get_composition_at_version
     format: wt-flat
@@ -57,3 +56,11 @@ flow:
     expect: ok
     assert:
       - { assert: equivalent, to: "${flat_readback}", ignoring: [] }   # FLAT<->STRUCTURED value-equality (master04)
+# TODO: step 3 `equivalent to: committed` fails because the committed FLAT uses
+#       ctx/ input-convenience keys (ctx/participation_*, ctx/health_care_facility,
+#       ctx/id_namespace) while the read-back FLAT expresses the same data via RM
+#       paths (minimal/context/_participation:0|name, .../_health_care_facility|name).
+#       This is the ctx-input vs RM-path-output asymmetry (verified live 2026-07-22),
+#       not a SUT defect. Needs the `equivalent` evaluator to normalise ctx/ keys
+#       to their RM-path forms (or the case to compare clinical leaves only, as
+#       steps 2/4 already do) before this step can pass.

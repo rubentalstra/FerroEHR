@@ -11,3 +11,7 @@ Deterministic generated-set contract for `cnf.set.bp-10`.
 - Views over the set are declarative projections evaluated on these values
   (e.g. `magnitude_ge_140_by_uid`: the committed uids of the compositions
   with systolic magnitude >= 140, ordered by uid ascending).
+
+Every node whose `archetype_node_id` is an archetype id carries a matching
+`archetype_details` (RM common LOCATABLE/ENTRY `Is_archetype_root`), and the
+root carries `archetype_node_id` = its archetype id.

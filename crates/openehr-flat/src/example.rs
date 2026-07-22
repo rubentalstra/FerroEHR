@@ -576,7 +576,23 @@ fn emit_quantity(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value
     let unit_input = input_with_suffix(node, "unit");
     let unit = unit_input
         .and_then(|i| i.list.first())
-        .map_or_else(|| "1".to_owned(), |cv| cv.value.clone());
+        .map(|cv| cv.value.clone())
+        .or_else(|| {
+            // No enumerated C_QUANTITY_ITEM unit list: if the constraint fixes a
+            // measurement `property`, emit a valid unit for it (the primary/base
+            // unit, else the first) so the generated example satisfies the
+            // property→units check (openEHR `PropertyUnitData.xml` table). A
+            // property with no table entry falls through to the "1" default.
+            node.quantity_property.as_deref().and_then(|p| {
+                let units = openehr_term::bundle::openehr().units_for_property(p);
+                units
+                    .iter()
+                    .find(|u| u.primary)
+                    .or_else(|| units.first())
+                    .map(|u| u.text.clone())
+            })
+        })
+        .unwrap_or_else(|| "1".to_owned());
     // Prefer the magnitude input's own range, else the range scoped to the unit.
     let range = input_with_suffix(node, "magnitude")
         .and_then(input_range)

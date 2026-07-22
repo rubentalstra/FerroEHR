@@ -1,0 +1,35 @@
+# Split 2026-07-22 from empty_db_shapes: under the single-EHR execution
+# scope (Request.md ehr_id — the shared-SUT realization of the empty ground)
+# a bare `FROM EHR e` projection returns exactly the ONE scoped EHR row, so
+# its zero-rows ground becomes a one-row ground; the CONTAINS shapes keep
+# the zero-row ground in the parent case.
+id: I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr
+kind: functional
+component: QUERY
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+capabilities: [AqlBasic]
+profiles: [STANDARD]
+test_purpose: >-
+  A bare EHR-id projection is accepted by the grammar and, scoped to a single
+  fresh EHR, returns exactly that EHR's row.
+description: "Valid bare-EHR AQL shape under the single-EHR scope"
+spec_refs:
+  - "SM openehr_platform §I_QUERY_SERVICE.execute_ad_hoc_query"
+  - "QUERY AQL §SELECT, §FROM"
+  - "ITS-REST query Request.md §Common Headers and Query Parameters (ehr_id scope)"
+applies: { rm: ">=1.0.2", aql: ">=1.1" }
+requires:
+  server: any
+  ehr: { commits: none }                   # mints ${ehr_id} with zero commits
+flow:
+  - step: 1
+    call: execute_ad_hoc_query
+    with:
+      ehr_id: "${ehr_id}"                  # single-EHR execution context
+      q: "${ds:cnf.aql.valid.select_ehr}"
+      fetch: 100                            # AMB-6: fetch always explicit
+    expect: ok
+    assert:
+      - assert: result_set
+        match: count
+        count: 1                            # the scoped EHR itself

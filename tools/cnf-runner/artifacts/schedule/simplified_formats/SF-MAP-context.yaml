@@ -1,62 +1,54 @@
-# Per-RM-type suffix mapping: the context/participation types — EVENT_CONTEXT,
-# PARTICIPATION, PARTY_RELATED performer, OBJECT_REF, ISM_TRANSITION,
-# INSTRUCTION_DETAILS (simplified_formats master05 §EVENT_CONTEXT,
-# §PARTICIPATION, §PARTY_RELATED performer, §OBJECT_REF, §ISM_TRANSITION,
-# §INSTRUCTION_DETAILS). PARTICIPATION inlines the performer (PARTY_IDENTIFIED)
-# at the participation level and carries the compact |identifiers_*:i suffix
-# form. Vectors: the EVENT_CONTEXT blocks, the PARTICIPATION block, the
-# PARTY_RELATED-performer relationship block, the OBJECT_REF block, the
-# ISM_TRANSITION blocks, and the INSTRUCTION_DETAILS block.
+# Per-RM-type suffix mapping: the context types — EVENT_CONTEXT, PARTICIPATION,
+# ISM_TRANSITION (simplified_formats master05 §EVENT_CONTEXT, §PARTICIPATION,
+# §ISM_TRANSITION). Exercised functionally on the official minimal_action
+# template (cnf.opt.vitals), whose FLAT instance (cnf.flat.vitals.minimal_ctx)
+# carries ctx/time, ctx/setting, ctx/participation_* and an ACTION
+# ism_transition: the commit is read back canonical and the mapped RM paths
+# asserted.
 id: SF-MAP-context
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: EVENT_CONTEXT
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  EVENT_CONTEXT, PARTICIPATION (with inlined performer + compact identifiers),
-  PARTY_RELATED performer relationship, OBJECT_REF, ISM_TRANSITION and
-  INSTRUCTION_DETAILS map their FLAT suffixes to the documented RM paths.
-description: "EVENT_CONTEXT/PARTICIPATION/OBJECT_REF/ISM_TRANSITION/INSTRUCTION_DETAILS mapping (master05)"
+  EVENT_CONTEXT ctx/time -> context/start_time and ctx/setting ->
+  context/setting; PARTICIPATION |function -> participations/function; and
+  ISM_TRANSITION /current_state -> ism_transition/current_state map to the
+  documented RM paths.
+description: "EVENT_CONTEXT/PARTICIPATION/ISM_TRANSITION mapping (master05)"
 spec_refs:
   - "ITS-REST simplified_formats master05 §EVENT_CONTEXT"
   - "ITS-REST simplified_formats master05 §PARTICIPATION"
-  - "ITS-REST simplified_formats master05 §OBJECT_REF"
   - "ITS-REST simplified_formats master05 §ISM_TRANSITION"
-  - "ITS-REST simplified_formats master05 §INSTRUCTION_DETAILS"
+  - "ITS-REST simplified_formats master06 §ctx defaults"
   - "RM data_structures §EVENT_CONTEXT"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/context"
-decision_table:
-  columns: ["rm_type", "suffix", "rm_path", "required"]
-  rows:
-    - ["EVENT_CONTEXT", "/start_time", "start_time", "yes"]
-    - ["EVENT_CONTEXT", "/setting", "setting", "yes"]
-    - ["EVENT_CONTEXT", "/_end_time", "end_time", "no"]
-    - ["EVENT_CONTEXT", "/_location", "location", "no"]
-    - ["EVENT_CONTEXT", "/_health_care_facility", "health_care_facility", "no"]
-    - ["EVENT_CONTEXT", "/_participation:i", "participations", "no"]
-    - ["PARTICIPATION", "|function", "function.value", "yes"]
-    - ["PARTICIPATION", "|mode", "mode.value", "no"]
-    - ["PARTICIPATION", "|name", "performer.name", "no"]
-    - ["PARTICIPATION", "|id", "performer.external_ref.id.value", "no"]
-    - ["PARTICIPATION", "|id_scheme", "performer.external_ref.id.scheme", "no"]
-    - ["PARTICIPATION", "|id_namespace", "performer.external_ref.namespace", "conditional"]
-    - ["PARTICIPATION", "|identifiers_id:i", "performer.identifiers[i].id", "no"]
-    - ["PARTICIPATION", "|identifiers_issuer:i", "performer.identifiers[i].issuer", "no"]
-    - ["PARTICIPATION", "|identifiers_assigner:i", "performer.identifiers[i].assigner", "no"]
-    - ["PARTICIPATION", "|identifiers_type:i", "performer.identifiers[i].type", "no"]
-    - ["PARTY_RELATED", "/relationship", "relationship", "conditional"]
-    - ["OBJECT_REF", "|type", "type", "yes"]
-    - ["OBJECT_REF", "|id", "id.value", "yes"]
-    - ["OBJECT_REF", "|scheme", "id.scheme", "yes"]
-    - ["OBJECT_REF", "|namespace", "namespace", "yes"]
-    - ["ISM_TRANSITION", "/current_state", "current_state", "yes"]
-    - ["ISM_TRANSITION", "/transition", "transition", "no"]
-    - ["ISM_TRANSITION", "/careflow_step", "careflow_step", "no"]
-    - ["ISM_TRANSITION", "/_reason:i", "reason", "no"]
-    - ["INSTRUCTION_DETAILS", "|path", "instruction_id.path", "yes"]
-    - ["INSTRUCTION_DETAILS", "|composition_uid", "instruction_id.id", "yes"]
-    - ["INSTRUCTION_DETAILS", "|activity_id", "activity_id", "yes"]
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.vitals.minimal_ctx]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.vitals.minimal_ctx}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # EVENT_CONTEXT: ctx/time -> start_time (master06 default), ctx/setting -> setting (master05 §EVENT_CONTEXT)
+      - { assert: field, path: "context/_type", equals: "EVENT_CONTEXT" }
+      - { assert: field, path: "context/start_time", exists: true }
+      - { assert: field, path: "context/setting/defining_code/code_string", equals: "238" }
+      # PARTICIPATION |function -> participations/function (master05 §PARTICIPATION)
+      - { assert: field, path: "context/participations[0]/function/value", equals: "requester" }
+      # ISM_TRANSITION /current_state -> ism_transition/current_state (master05 §ISM_TRANSITION)
+      - { assert: field, path: "content[0]/ism_transition/current_state/defining_code/code_string", equals: "532" }

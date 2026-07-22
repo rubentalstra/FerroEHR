@@ -668,6 +668,10 @@ pub struct QueryIr {
     pub distinct: bool,
     /// The row limit (from `LIMIT` or a mapped `TOP`).
     pub limit: Option<i64>,
+    /// Whether [`Self::limit`] came from the deprecated `TOP` modifier — the
+    /// one construct the REST `fetch` parameter may not combine with
+    /// (ITS-REST query `Request.md` §Common Headers and Query Parameters).
+    pub limit_is_top: bool,
     /// The row offset (`OFFSET`).
     pub offset: Option<i64>,
     /// Every `$parameter` name referenced by the query (validated present in

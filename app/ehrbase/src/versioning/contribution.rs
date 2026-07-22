@@ -474,6 +474,17 @@ pub(crate) async fn commit_version_set(
                 };
                 let kind = require_kind(vo_id)?;
                 check_kind_scope(kind, party_only)?;
+                // EHR.ehr_status is mandatory (RM ehr, EHR class:
+                // ehr_status 1..1) — deleting the only EHR_STATUS would
+                // leave the EHR violating its own invariant, so a delete
+                // member targeting it is refused as a version conflict.
+                if kind == Kind::EhrStatus {
+                    return Err(ServiceError::Conflict(
+                        "the EHR_STATUS cannot be deleted — EHR.ehr_status is mandatory \
+                         (RM ehr, EHR class, ehr_status: 1..1)"
+                            .to_owned(),
+                    ));
+                }
                 Change::Delete {
                     vo_id,
                     kind,

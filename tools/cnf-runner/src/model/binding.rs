@@ -207,6 +207,14 @@ pub enum BodySelector {
 #[serde(deny_unknown_fields)]
 pub struct WireExpectation {
     pub status: StatusCode,
+    /// Additional non-conflicting status codes the overview permits beyond
+    /// the operation's OAS enumeration (ITS-REST `Requests_and_responses.md`
+    /// §HTTP status codes: "Additional status codes MAY be used as long as
+    /// they do not conflict with the predefined codes"). Each entry's YAML
+    /// carries the citation; an observed alt status classifies as this kind
+    /// exactly like the primary.
+    #[serde(default)]
+    pub alt_status: Option<Vec<StatusCode>>,
     #[serde(default, deserialize_with = "crate::model::de::optional_ordered_map")]
     pub headers: Option<Vec<(String, HeaderMatcher)>>,
     #[serde(default)]
@@ -406,6 +414,13 @@ pub struct UnrealizedDecl {
 pub struct OperationBinding {
     pub sm_operation: SmOperationRef,
     pub its: ItsName,
+    /// Realization discriminator when several bindings share one
+    /// `sm_operation` (e.g. the plain `get_opt` OPT GET vs the `example`
+    /// data-generation realization): a flow step's `variant` selects the
+    /// matching binding; a variant-less step selects the variant-less
+    /// binding. Absent for the sole realization of an operation.
+    #[serde(default)]
+    pub variant: Option<String>,
     #[serde(default)]
     pub applies: Option<Applies>,
     #[serde(default)]

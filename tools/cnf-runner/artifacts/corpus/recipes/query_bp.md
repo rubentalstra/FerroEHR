@@ -19,3 +19,7 @@ chapter's loaded-db corpus).
   - `top3_systolic_desc_uids`: the committed uids of the 3 compositions with the
     highest systolic magnitude (190, 180, 170), ordered by systolic magnitude
     descending.
+
+Every node whose `archetype_node_id` is an archetype id carries a matching
+`archetype_details` (RM common LOCATABLE/ENTRY `Is_archetype_root`), and the
+root carries `archetype_node_id` = its archetype id.

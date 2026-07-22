@@ -182,6 +182,86 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
             }
         }
     }
+    emit_direct_rm_paths(node, rm, out);
+}
+
+/// Emit the direct RM-attribute paths the master05 per-type mapping tables
+/// declare on this node but that the OPT left unconstrained (so the compacted
+/// web-template carries no child for them) — the mirror of
+/// [`crate::build`]'s direct-path handling, keeping the RM⇄FLAT round-trip
+/// lossless. Each attribute is emitted only when the datum-driven walk above
+/// did not already surface it as a template child (`out` lacks the segment).
+///
+/// `master05-rm_mapping.adoc` §§ACTION (`/time`, `/ism_transition`),
+/// INSTRUCTION (`/narrative`), OBSERVATION (`/history_origin`), ACTIVITY
+/// (`/timing`, `/action_archetype_id`), POINT_EVENT/INTERVAL_EVENT (`/time`),
+/// INTERVAL_EVENT (`/width`, `/math_function`). EVENT_CONTEXT `start_time`/
+/// `setting` are NOT emitted here — they surface through the `ctx/` vocabulary
+/// (master06; [`crate::ctx`]) to avoid a duplicate encoding of the same datum.
+fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
+    let mut leaf = |name: &str, rm_type: &str, value: Option<&Value>| {
+        if out.children.contains_key(name) {
+            return;
+        }
+        if let Some(v) = value.filter(|v| !v.is_null()) {
+            map::emit_leaf(v, rm_type, None, out.occurrence_mut(name, None));
+        }
+    };
+    match base_type(&node.rm_type) {
+        "ACTION" => {
+            leaf("time", "DV_DATE_TIME", rm.get("time"));
+            if !out.children.contains_key("ism_transition")
+                && let Some(ism) = rm.get("ism_transition").filter(|v| !v.is_null())
+            {
+                emit_ism_transition(ism, out.occurrence_mut("ism_transition", None));
+            }
+        }
+        "INSTRUCTION" => leaf("narrative", "DV_TEXT", rm.get("narrative")),
+        "OBSERVATION" => {
+            if !out.children.contains_key("history_origin")
+                && let Some(origin) = rm.pointer("/data/origin/value")
+            {
+                out.occurrence_mut("history_origin", None)
+                    .attrs
+                    .insert(String::new(), origin.clone());
+            }
+        }
+        "ACTIVITY" => {
+            leaf("timing", "DV_PARSABLE", rm.get("timing"));
+            // `action_archetype_id` is the match-all `/.*/` when unset
+            // (master05 §ACTIVITY: "Will be set to /.*/ if not set explicit.");
+            // that default is re-synthesised on build, so emitting it would
+            // desync the round-trip — emit only an explicit non-default value.
+            if !out.children.contains_key("action_archetype_id")
+                && let Some(aid) = rm.get("action_archetype_id").and_then(Value::as_str)
+                && aid != "/.*/"
+            {
+                out.occurrence_mut("action_archetype_id", None)
+                    .attrs
+                    .insert(String::new(), Value::String(aid.to_owned()));
+            }
+        }
+        "POINT_EVENT" | "EVENT" => leaf("time", "DV_DATE_TIME", rm.get("time")),
+        "INTERVAL_EVENT" => {
+            leaf("time", "DV_DATE_TIME", rm.get("time"));
+            leaf("width", "DV_DURATION", rm.get("width"));
+            leaf("math_function", "DV_CODED_TEXT", rm.get("math_function"));
+        }
+        _ => {}
+    }
+}
+
+/// Emit an ISM_TRANSITION as its master05 sub-paths — `/current_state`,
+/// `/transition`, `/careflow_step` (DV_CODED_TEXT) and the `/_reason:i`
+/// DV_TEXT list (master05 §ISM_TRANSITION). The mirror of
+/// [`crate::build`]'s `build_ism_transition`.
+fn emit_ism_transition(ism: &Value, out: &mut SimNode) {
+    for attr in ["current_state", "transition", "careflow_step"] {
+        if let Some(cs) = ism.get(attr).filter(|v| !v.is_null()) {
+            map::emit_leaf(cs, "DV_CODED_TEXT", None, out.occurrence_mut(attr, None));
+        }
+    }
+    map::emit_rm_attrs(ism, "ISM_TRANSITION", out);
 }
 
 /// The ELEMENT wrapper that owns the `i`-th leaf value reached by `rel`

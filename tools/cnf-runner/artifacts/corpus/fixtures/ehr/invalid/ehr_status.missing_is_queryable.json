@@ -1,12 +1,19 @@
 {
   "_type": "EHR_STATUS",
-  "name": {
-    "_type": "DV_TEXT",
-    "value": "ehr status"
-  },
   "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+  "name": {
+    "value": "EHR Status"
+  },
   "subject": {
-    "_type": "PARTY_SELF"
+    "external_ref": {
+      "id": {
+        "_type": "GENERIC_ID",
+        "value": "__AUTO-GENRATED-BY-TEST__",
+        "scheme": "id_scheme"
+      },
+      "namespace": "examples",
+      "type": "PERSON"
+    }
   },
   "is_modifiable": true
 }

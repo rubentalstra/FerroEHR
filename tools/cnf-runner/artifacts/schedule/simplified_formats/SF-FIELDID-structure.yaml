@@ -1,33 +1,50 @@
 # Field-identifier structure (simplified_formats master04 §Field Identifiers).
-# Simplified-format field identifiers compose six ingredients: generated node
-# ids, forward-slash path separators, colon instance indicators, pipe attribute
-# suffixes, the underscore RM-attribute prefix, and the |raw canonical-JSON
-# embedding. This content decision table encodes each ingredient and its marker.
-# Vector: the master04 §Field Identifiers example identifier-structure block.
+# Simplified-format field identifiers compose generated node ids, forward-slash
+# path separators, colon instance indicators, pipe attribute suffixes, and the
+# underscore RM-attribute prefix. Exercised functionally on the official
+# Test_all_types template (cnf.opt.maximal): the FLAT key
+# `test_all_types/test_all_types:0/quantity|magnitude` (+ the /_normal_range
+# underscore prefix) is committed and the canonical read-back proves each field-
+# identifier ingredient resolved to its RM location. The sixth ingredient, the
+# |raw canonical-embedding marker, is exercised by SF-RAW-embedding.
 id: SF-FIELDID-structure
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: LOCATABLE
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
   A simplified-format field identifier composes generated node ids, `/` path
-  separators, `:N` instance indicators, `|suffix` attribute suffixes, the `_`
-  RM-attribute prefix, and the `|raw` canonical-embedding marker.
-description: "Field-identifier structure ingredients and markers (master04)"
+  separators, `:N` instance indicators, `|suffix` attribute suffixes and the `_`
+  RM-attribute prefix, each resolving to its RM location on canonical read-back.
+description: "Field-identifier structure ingredients (master04)"
 spec_refs:
   - "ITS-REST simplified_formats master04 §Field Identifiers"
   - "ITS-REST simplified_formats master04 §Path Construction"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/"
-decision_table:
-  columns: ["ingredient", "role", "marker"]
-  rows:
-    - ["node_ids", "generated_from_archetype_node_names", "identifier"]
-    - ["path_separator", "between_hierarchy_levels", "/"]
-    - ["instance_indicator", "repeating_elements", ":0"]
-    - ["attribute_suffix", "rm_attribute_of_leaf", "|magnitude"]
-    - ["rm_attribute_prefix", "optional_rm_attributes_not_in_template", "_attributeName"]
-    - ["raw_canonical_json", "embed_canonical_json", "|raw"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # node-id alias + `/` separators + `:0` instance indicator resolve the path to the RM leaf
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/_type", equals: "DV_QUANTITY" }
+      # `|magnitude` attribute suffix -> the leaf RM attribute
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/magnitude", equals: 68.07 }
+      # `_normal_range` RM-attribute prefix -> an optional RM attribute not surfaced as a template field
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/normal_range/lower/magnitude", exists: true }

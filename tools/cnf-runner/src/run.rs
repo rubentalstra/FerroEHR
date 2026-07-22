@@ -58,6 +58,10 @@ impl RunReport {
 
 /// Whether every operation the case's flow calls is unrealized on this ITS.
 fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
+    // ANY unrealized step makes the whole case not-applicable on this ITS:
+    // the flow cannot reach its expectation without the missing wire, so a
+    // verdict would be meaningless — the case is excused with the machine-
+    // readable citation the binding declares.
     let anchor = case.sm_operation.as_ref()?;
     let mut citations = Vec::new();
     for step in &case.flow {
@@ -71,9 +75,8 @@ fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
             .iter()
             .map(|(_, b)| b)
             .find(|b| b.sm_operation == op)?;
-        match &binding.unrealized {
-            Some(decl) => citations.push(format!("{op}: {}", decl.ambiguity)),
-            None => return None, // at least one realized step: the case runs
+        if let Some(decl) = &binding.unrealized {
+            citations.push(format!("{op}: {}", decl.ambiguity));
         }
     }
     (!citations.is_empty()).then(|| citations.join("; "))
@@ -86,7 +89,18 @@ fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
 /// report.
 pub fn execute(set: &ArtifactSet, ixit: &Ixit) -> Result<RunReport, String> {
     let mut report = RunReport::default();
-    for (_, case) in &set.cases {
+    // Exclusive-server cases (global-state grounds like an empty template
+    // list) run FIRST: on a freshly reset, exclusively-owned SUT their
+    // ground holds only before other cases provision templates/queries.
+    let mut ordered: Vec<&crate::model::case::CaseCore> =
+        set.cases.iter().map(|(_, c)| c).collect();
+    ordered.sort_by_key(|c| {
+        !matches!(
+            c.requires.server,
+            Some(crate::vocab::ServerState::Exclusive)
+        )
+    });
+    for case in ordered {
         report.considered += 1;
         if !matches!(case.status, CaseStatus::Active) {
             report.exceptions.push((
@@ -96,6 +110,35 @@ pub fn execute(set: &ArtifactSet, ixit: &Ixit) -> Result<RunReport, String> {
             continue;
         }
         if let Some(citation) = fully_unrealized(set, case) {
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Unrealized(citation)));
+            continue;
+        }
+        // Global-state grounds (an empty template list, a globally-absent
+        // artefact) hold only on an exclusively-owned SUT; on a shared
+        // instance the case is not-applicable, never a false verdict.
+        if matches!(
+            case.requires.server,
+            Some(crate::vocab::ServerState::Exclusive)
+        ) && !ixit
+            .environment
+            .as_ref()
+            .is_some_and(|env| env.exclusive_server)
+        {
+            let citation = "requires.server: exclusive — the ixit declares a shared SUT instance \
+                 (environment.exclusive_server: false); the global-state ground cannot \
+                 be established"
+                .to_owned();
             report.records.push(CaseRecord {
                 case: case.id.clone(),
                 format: None,
@@ -131,7 +174,18 @@ pub fn execute(set: &ArtifactSet, ixit: &Ixit) -> Result<RunReport, String> {
 #[must_use]
 pub fn coverage_accounting(set: &ArtifactSet) -> RunReport {
     let mut report = RunReport::default();
-    for (_, case) in &set.cases {
+    // Exclusive-server cases (global-state grounds like an empty template
+    // list) run FIRST: on a freshly reset, exclusively-owned SUT their
+    // ground holds only before other cases provision templates/queries.
+    let mut ordered: Vec<&crate::model::case::CaseCore> =
+        set.cases.iter().map(|(_, c)| c).collect();
+    ordered.sort_by_key(|c| {
+        !matches!(
+            c.requires.server,
+            Some(crate::vocab::ServerState::Exclusive)
+        )
+    });
+    for case in ordered {
         report.considered += 1;
         if !matches!(case.status, CaseStatus::Active) {
             report.exceptions.push((

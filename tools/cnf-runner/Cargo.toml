@@ -36,6 +36,8 @@ clap = { workspace = true }
 # standard V2 serialization so thresholds are re-checkable from the artifact.
 hdrhistogram = { workspace = true, features = ["serialization"] }
 base64 = { workspace = true }
+# Deterministic case-scoped ids (UUIDv5) for the recipe machinery.
+uuid = { workspace = true, features = ["v5"] }
 
 [dev-dependencies]
 assert_fs = { workspace = true }

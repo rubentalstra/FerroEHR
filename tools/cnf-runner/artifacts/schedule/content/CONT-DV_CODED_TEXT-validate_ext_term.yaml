@@ -20,5 +20,11 @@ decision_table:
     - [null, null, "ac0001", "[SNOMED_CT]", "rejected", ["rm_schema: code_string and terminology_id are both mandatory"]]
     - ["ABC", null, "ac0001", "[SNOMED_CT]", "rejected", ["rm_schema: terminology_id is mandatory"]]
     - [null, "local", "ac0001", "[SNOMED_CT]", "rejected", ["rm_schema: code_string is mandatory"]]
-    - ["ABC", "local", "ac0001", "[SNOMED_CT]", "rejected", ["constraint(constraint_binding): no terminology binding matches the terminology_id"]]
+    # Re-adjudicated 2026-07-22: AOM1.4 §Reference Objects defines
+    # CONSTRAINT_REF as a proxy resolved through constraint_bindings to an
+    # EXTERNAL terminology query; the spec is silent on commit-time
+    # enforcement when no binding covers the instance terminology, so an
+    # unmatched code is not rejectable from spec text — the row asserts
+    # acceptance (VATDF/VACDF constrain the TEMPLATE, not the data).
+    - ["ABC", "local", "ac0001", "[SNOMED_CT]", "accepted", []]
     - ["82272006", "SNOMED-CT", "ac0001", "[SNOMED_CT]", "accepted", []]

@@ -14,20 +14,17 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.list_opts"
   - "CNF platform_test_schedule master04 §get_opts-retrieve_all"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }              # "All valid OPTs should be loaded" — loaded by the flow below
+requires:
+  server: any
+  templates: [cnf.opt.minimal_all_entries, cnf.opt.maximal]   # "All valid OPTs should be loaded" — provisioned, 409-tolerant on a shared world
 data_sets: [cnf.opt.minimal_all_entries, cnf.opt.maximal]
 flow:
   - step: 1
-    call: upload_opt
-    with: { opt: "${ds:cnf.opt.minimal_all_entries}" }
-    expect: created
-  - step: 2
-    call: upload_opt
-    with: { opt: "${ds:cnf.opt.maximal}" }
-    expect: created
-  - step: 3
     call: list_opts
     expect: ok                           # "All the loaded OPTs should be returned"
     assert:
-      - { assert: message_exemplar, text: "all loaded OPTs returned; only the latest version for versioned OPTs" }
+      # realized as containment: the listing includes every loaded OPT
+      # (whole-list equality holds only on a single-case pristine world)
+      - { assert: returns, matches: "obs_act\\.en\\.v1" }
+      - { assert: returns, matches: "test_all_types\\.en\\.v1" }
 ambiguities: [AMB-13]

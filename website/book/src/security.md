@@ -145,6 +145,7 @@ defaults are `USER` (the baseline clinical role) and `ADMIN`.
 | `EHRBASE__AUTHZ__RBAC__ENABLED` | `true` | the coarse role gate (active only when auth is enabled) |
 | `EHRBASE__AUTHZ__RBAC__ADMIN_ROLE` | `ADMIN` | role required for admin operations |
 | `EHRBASE__AUTHZ__RBAC__USER_ROLE` | `USER` | the baseline clinical role |
+| `EHRBASE__AUTHZ__RBAC__READONLY_ROLE` | `READONLY` | role marking a principal read-only: refused on every write |
 | `EHRBASE__AUTHZ__RBAC__ROLE_CLAIMS` | `["realm_access.roles","scope"]` | JWT claim paths mined for roles |
 | `EHRBASE__AUTHZ__RBAC__MANAGEMENT_ACCESS` | `admin_only` | management-surface access: `admin_only`, `private`, or `public` |
 
@@ -153,6 +154,14 @@ Keycloak `realm_access.roles` array plus the space-separated `scope` claim —
 or from a Basic user's configured roles. A clinical operation needs at least one
 role; an admin operation needs the admin role; the management surface follows
 its tri-state setting. Disabling RBAC restores authentication-only behaviour.
+
+A principal carrying the `readonly_role` (default `READONLY`) is refused on
+every write operation — creating an EHR, committing a composition, uploading a
+template, and any update/delete — even when it also holds granting roles such
+as `ADMIN` (a restriction always overrides a grant). Reads and AQL queries stay
+permitted, so a `READONLY` account is an authenticated, view-only principal. The
+dev compose stack ships one such account (`ehrbase-readonly`, password
+`ehrbase`) for evaluation.
 
 ### ABAC (attribute-based, fine-grained)
 

@@ -17,3 +17,4 @@ outcomes:
     headers: { Content-Type: negotiated }
   version_not_found: { status: 404 }      # unknown version_uid (404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml)
   not_found: { status: 404 }              # unknown ehr_id — same 404 family
+server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks

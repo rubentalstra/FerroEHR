@@ -21,5 +21,6 @@ requires: { server: empty }
 flow:
   - step: 1
     call: physical_ehr_delete
+    on: admin                              # ADMIN-role principal (ixit)
     with: { ehr_id: "00000000-0000-0000-0000-000000000000" }
     expect: not_found

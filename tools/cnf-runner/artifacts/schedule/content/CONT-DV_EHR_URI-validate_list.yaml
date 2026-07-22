@@ -11,7 +11,7 @@ spec_refs:
   - "RM data_types \u00a7DV_EHR_URI"
   - "AM AOM1.4 \u00a7C_STRING"
 constraint_context:
-  template: cnf.tpl.dv_ehr_uri_c_string
+  template: cnf.tpl.dv_ehr_uri_list
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
 decision_table:
   columns: ["value", "C_STRING.list", "expected", "violates"]

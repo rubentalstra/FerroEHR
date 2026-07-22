@@ -6,6 +6,13 @@
 # INTERVAL_EVENT blocks (+sample_count), the POINT_EVENT block, the FEEDER_AUDIT
 # minimal+full blocks, the FEEDER_AUDIT_DETAILS minimal+full blocks, and the
 # LINK block.
+# TODO: convert to a functional FLAT commit + read-back — POINT_EVENT/time is
+#       assertable on cnf.opt.maximal (content[0]/data/events[0]), but
+#       INTERVAL_EVENT (needs a repeating/interval-event template), FEEDER_AUDIT/
+#       FEEDER_AUDIT_DETAILS (no FLAT ctx vector) and LINK have no vector in the
+#       maximal template; needs a dedicated corpus template/fixture. The current
+#       content decision-table commits against the removed body_temperature
+#       carrier and 422s.
 id: SF-MAP-events_audit
 kind: content
 component: SIMPLIFIED_FORMATS

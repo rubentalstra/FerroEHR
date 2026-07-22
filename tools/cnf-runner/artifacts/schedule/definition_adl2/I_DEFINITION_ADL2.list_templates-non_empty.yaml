@@ -15,14 +15,12 @@ spec_refs:
   - "AM AOM2 §Templates (TEMPLATE vs OPERATIONAL_TEMPLATE)"
   - "ITS-REST definition_template_adl2_list §200 OK"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }
+requires:
+  server: any
+  templates: [cnf.adl2.opt.minimal]   # the upload ground — provisioned, 409-tolerant on a shared world
 data_sets: [cnf.adl2.opt.minimal]
 flow:
   - step: 1
-    call: upload_artefact
-    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal}" }
-    expect: created
-  - step: 2
     call: list_templates
     expect: ok
 postconditions:

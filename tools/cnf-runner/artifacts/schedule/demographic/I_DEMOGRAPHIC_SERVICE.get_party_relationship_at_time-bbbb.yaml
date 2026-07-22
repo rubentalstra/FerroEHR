@@ -30,5 +30,5 @@ flow:
     call: get_party_relationship_at_time
     with:
       versioned_object_uid: "00000000-0000-4000-8000-0000000000ff"
-      version_at_time: "2026-07-21T00:00:00Z"
+      version_at_time: "2026-07-21T00:00:00Z"   # any instant — the negative is the unknown uid
     expect: not_found
