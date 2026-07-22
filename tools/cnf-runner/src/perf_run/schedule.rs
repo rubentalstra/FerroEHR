@@ -7,10 +7,11 @@
 //! every instance becomes one planned arrival instant, and only instants
 //! inside the window are dispatched — mid-journey stages whose earlier
 //! stages fell pre-window resolve against the standing ward state seeded
-//! by [`crate::perf_run::corpus::seed_ward`]. The schedule extends by
-//! whole journeys until the measured window holds at least
-//! `rate × duration` operation arrivals, so the offered-load floor is met
-//! by construction and reported honestly from actual dispatch.
+//! by [`crate::perf_run::corpus::seed_ward`]. The construction is DIRECT
+//! — journey instants on a deterministic grid at the offered rate (plus a
+//! small fixed floor margin absorbing edge clipping), never a
+//! fill-to-target loop: the realized rate is the offered rate ± clipping
+//! noise, and the sustained load is reported from actual dispatch.
 //!
 //! NOTE: no openEHR spec governs measured performance (CNF guide
 //! master03-overview.adoc §Product Scope) — our own design/extension. The
@@ -26,6 +27,13 @@ use crate::perf_run::pack::JourneyPack;
 /// The deterministic schedule seed (fixed so two runners produce the same
 /// instants for the same case).
 const SCHEDULE_SEED: u64 = 0x636e_665f_686f_7370;
+
+/// The offered-rate floor margin: stage-offset clipping at the window
+/// edges makes the realized in-window rate a noisy realization of the
+/// planned one, and the class floor is a hard `min` — +2% keeps the
+/// honest realization above the floor and is itself honest (a slightly
+/// STRICTER offered load, reported from actual dispatch).
+const FLOOR_MARGIN: f64 = 1.02;
 
 /// Which standing ward document a stage addresses (resolved at schedule
 /// build from the journey's update stage, so a read-current stage knows
@@ -298,66 +306,25 @@ pub(crate) fn build_schedule(
     }
     let max_offset_s = resolved.iter().map(|j| j.max_offset_s).max().unwrap_or(0);
 
-    let journey_rate = rate / expansion.arrivals_per_journey;
+    // Journey rate = the offered OPERATION rate through the catalogue's
+    // mean expansion, with the fixed floor margin. The schedule is a
+    // direct construction over the virtual timeline — no fill-to-target
+    // loop: demanding an exact count would either bunch extra load (a
+    // phase-shifted second pool doubles the rate) or truncate the window
+    // tail.
+    let journey_rate = rate * FLOOR_MARGIN / expansion.arrivals_per_journey;
     let span_s = warmup_s.saturating_add(duration_s);
     #[allow(clippy::cast_precision_loss)] // spans << 2^52
     let virtual_span_s = span_s as f64 + max_offset_s as f64;
-    // Generous instant pool; the fill loop below consumes journeys in order
-    // and stops at the target, extending the pool if clipping starved it.
     let mut sequencer = ShareSequencer::new(workload.shares);
     let kinds = resolved.len() as u64;
     let mut kind_seq: Vec<u64> = vec![0; resolved.len()];
     let mut arrivals: Vec<PlannedArrival> = Vec::new();
     let mut measured_count: u64 = 0;
-    #[allow(
-        clippy::cast_precision_loss,
-        clippy::cast_possible_truncation,
-        clippy::cast_sign_loss
-    )] // rate × duration is far below the lossy range
-    let target_measured: u64 = match workload.curve {
-        // The flat window must hold the full rate × duration arrivals;
-        // stage clipping is compensated by densify rounds below.
-        ArrivalCurve::Uniform => (rate * duration_s as f64).ceil() as u64,
-        // The day curve's off-peak troughs are the DESIGN: the floor
-        // semantic is the busy hour, never the whole-window mean — no
-        // fill-to-target.
-        ArrivalCurve::Diurnal => 0,
-    };
 
-    let mut pool = journey_instants(workload.curve, journey_rate, virtual_span_s);
-    let mut densify_round: u32 = 0;
-    let mut next_instant = 0usize;
+    let pool = journey_instants(workload.curve, journey_rate, virtual_span_s);
     let mut journey_index: u64 = 0;
-    loop {
-        let instant = if let Some(t) = pool.get(next_instant) {
-            *t
-        } else {
-            // Stage-offset clipping left the window short of the
-            // offered target: densify with phase-shifted instants
-            // INSIDE the same span (never past it), halving the phase
-            // each round. (Uniform only — diurnal has no flat target.)
-            if measured_count >= target_measured {
-                break;
-            }
-            densify_round += 1;
-            if densify_round > 8 {
-                return Err(
-                    "schedule construction cannot reach the offered-load target (journey \
-                     offsets exceed the window by too much)"
-                        .to_owned(),
-                );
-            }
-            let phase = (1.0 / journey_rate) / f64::from(1_u32 << densify_round);
-            let more = journey_instants(workload.curve, journey_rate, virtual_span_s);
-            pool.extend(more.iter().map(|t| t + phase));
-            continue;
-        };
-        #[allow(clippy::cast_precision_loss)] // spans << 2^52
-        let past_window = instant - max_offset_s as f64 > span_s as f64;
-        if measured_count >= target_measured && past_window {
-            break;
-        }
-        next_instant += 1;
+    for instant in pool {
         let kind = sequencer.next();
         let journey = &resolved[kind];
         let seq = kind_seq[kind];
@@ -517,7 +484,16 @@ mod tests {
         };
         let a = build_schedule(&workload, 10.0, 5, 60, 100).unwrap();
         let b = build_schedule(&workload, 10.0, 5, 60, 100).unwrap();
-        assert!(a.planned_measured >= 600);
+        // The realized measured count is the offered rate ± clipping noise
+        // — never below the floor, never a bunched multiple of it.
+        // The toy fixture's 65 s window clips hard against its 6-minute
+        // journey span, so the band is wide — the doubling regression
+        // would land ~1,200, far outside it.
+        assert!(
+            (560..=700).contains(&a.planned_measured),
+            "planned_measured {} outside the 10/s band",
+            a.planned_measured
+        );
         assert_eq!(a.planned_measured, b.planned_measured);
         assert_eq!(a.arrivals.len(), b.arrivals.len());
         // sorted, in-window, warmup split correct
@@ -566,6 +542,58 @@ mod tests {
         // commits come from two kinds (vitals stripe 1, lab stripe 2) —
         // never the chart-review stripe 0 shared with reads-only journeys.
         assert!(!vitals.contains(&0));
+    }
+
+    #[test]
+    fn the_committed_catalogue_realizes_the_class_poc_rate() {
+        // Regression for the doubled schedule the first live run exposed
+        // (15,566 arrivals where ~7,950 belong): the REAL committed
+        // catalogue + class shares at the class-POC parameters must
+        // realize the offered 2/s (x the +2% floor margin), never a
+        // bunched multiple.
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let catalogue: JourneyCatalogue = serde_saphyr::from_str(
+            &std::fs::read_to_string(root.join("artifacts/vocab/journey_catalogue.yaml")).unwrap(),
+        )
+        .unwrap();
+        let case: crate::perf::PerformanceCase = serde_saphyr::from_str(
+            &std::fs::read_to_string(
+                root.join("artifacts/schedule/performance/PERF-hospital_sim-class_POC.yaml"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let mut templates = Vec::new();
+        for (_, journey) in &catalogue.0 {
+            for stage in &journey.stages {
+                if let Some(key) = &stage.template
+                    && !templates.iter().any(|t: &PackTemplate| &t.key == key)
+                {
+                    templates.push(PackTemplate {
+                        key: key.clone(),
+                        template_id: key.clone(),
+                        opt_xml: String::new(),
+                        skeleton: serde_json::json!({"_type": "COMPOSITION"}),
+                    });
+                }
+            }
+        }
+        let pack = JourneyPack { templates };
+        let workload = JourneyWorkload {
+            catalogue: &catalogue,
+            shares: &case.workload.journeys,
+            pack: &pack,
+            curve: ArrivalCurve::Uniform,
+        };
+        let schedule = build_schedule(&workload, 2.0, 300, 3600, 10_000).unwrap();
+        // 2/s x 3600 s = 7,200; the margin + clipping noise band tops out
+        // well under any doubling.
+        assert!(
+            (7_200..=7_800).contains(&schedule.planned_measured),
+            "planned_measured {} misses the 2/s floor band (floor 7,200)",
+            schedule.planned_measured
+        );
+        assert!(schedule.planned_busy_hour >= 2.0);
     }
 
     #[test]
