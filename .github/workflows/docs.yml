@@ -41,10 +41,13 @@ jobs:
         run: bash scripts/assemble-oas.sh --check       # regenerate + git diff --exit-code
       - name: Stale-numbers gate (no hand-typed conformance claims in site sources)
         run: bash scripts/check-conformance-numbers.sh
-      - name: Render conformance stats + comparison (the generated includes must exist before lint)
+      - name: Render conformance stats + comparison + perf assets (the generated includes must exist before lint)
         run: |
           bash scripts/render-conformance-stats.sh includes
           bash scripts/render-comparison.sh
+          bash scripts/render-perf-assets.sh
+      - name: Perf-assets drift gate (regenerated SVGs match the committed assets)
+        run: git diff --exit-code website/book/src/perf-assets
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
