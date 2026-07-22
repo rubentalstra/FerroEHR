@@ -242,7 +242,7 @@ value_if_missing = "UNKNOWN"
 suppress_login_events = true
 fail_mode = "open"           # open | closed (closed: un-auditable ops answer 503)
 resolve_subject = true
-queue_capacity = 1024
+queue_capacity = 8192
 #? server_host = "cdr-01.example"
 
 # The local Audit Record Repository (the durability anchor).
