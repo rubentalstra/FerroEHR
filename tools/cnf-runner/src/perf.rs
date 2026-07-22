@@ -359,6 +359,48 @@ impl PerfOp {
             PerfOp::CompositionCommit | PerfOp::CompositionUpdate | PerfOp::ContributionCommit
         )
     }
+
+    /// The claimed capabilities (capability-matrix keys) one measured
+    /// arrival of this operation exercises — the certificate's workload
+    /// coverage joins this against the ICS claims: a claimed capability no
+    /// journey touches is a catalogue gap, listed explicitly.
+    #[must_use]
+    pub fn capabilities(self) -> &'static [&'static str] {
+        match self {
+            PerfOp::EhrCreate | PerfOp::EhrRead => &["EhrOperations", "EhrApi"],
+            PerfOp::EhrStatusRead => &["EhrStatus", "EhrApi"],
+            PerfOp::EhrStatusUpdate => &["EhrStatus", "Versioning", "EhrApi"],
+            // Every commit/update is validated against its template on the
+            // way in (the walker over the WebTemplate + RM invariants).
+            PerfOp::CompositionCommit => &["CompositionOps", "ArchetypeValidation", "EhrApi"],
+            PerfOp::CompositionRead | PerfOp::CompositionReadCurrent => {
+                &["CompositionOps", "EhrApi"]
+            }
+            PerfOp::CompositionRevisionHistory | PerfOp::CompositionDelete => {
+                &["CompositionOps", "Versioning", "EhrApi"]
+            }
+            PerfOp::CompositionUpdate => &[
+                "CompositionOps",
+                "Versioning",
+                "ArchetypeValidation",
+                "EhrApi",
+            ],
+            PerfOp::DirectoryCreate | PerfOp::DirectoryRead | PerfOp::DirectoryUpdate => {
+                &["DirectoryOps", "EhrApi"]
+            }
+            PerfOp::ContributionCommit => {
+                &["ChangeSets", "ArchetypeValidation", "Versioning", "EhrApi"]
+            }
+            PerfOp::ContributionRead => &["ChangeSets", "EhrApi"],
+            PerfOp::AdhocQuery | PerfOp::WardQuery => &["AqlBasic", "QueryApi"],
+            PerfOp::StoredQueryExecute => &["QueryProvisioning", "AqlBasic", "QueryApi"],
+            PerfOp::TemplateList | PerfOp::TemplateGet => {
+                &["Adl14OptProvisioning", "DefinitionApi"]
+            }
+            // ITEM_TAG rides the EHR API's tag resources.
+            PerfOp::TagsPut | PerfOp::TagsRead => &["EhrApi"],
+        }
+    }
 }
 
 /// A journey stage's planned offset from the journey's arrival instant.
@@ -1064,6 +1106,11 @@ mod tests {
         assert!(!PerfOp::CompositionRead.is_write());
         assert!(PerfOp::ContributionCommit.needs_template());
         assert!(!PerfOp::DirectoryRead.needs_template());
+        // Every operation exercises at least one claimed capability (the
+        // certificate's workload-coverage join has no unmapped labels).
+        for op in PerfOp::ALL {
+            assert!(!op.capabilities().is_empty(), "{} unmapped", op.as_str());
+        }
     }
 
     #[test]

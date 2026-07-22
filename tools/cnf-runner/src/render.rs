@@ -364,6 +364,75 @@ pub fn render_certificate(
     }
     let _ = writeln!(out);
 
+    // ── workload coverage (claimed vs exercised by the hospital simulation) ─
+    if !results.measurements.is_empty() {
+        let _ = writeln!(out, "## Workload Coverage\n");
+        let _ = writeln!(
+            out,
+            "The exercised-capability set of the measured hospital-simulation workload \
+             against the claimed matrix — a claimed capability the simulation never \
+             touches is a gap in the journey catalogue, listed explicitly."
+        );
+        // Exercised = the union of every measured operation label's
+        // capability set (labels come from the committed measurement
+        // records, so this reflects what actually ran, not the plan).
+        let mut exercised: Vec<&'static str> = Vec::new();
+        for m in &results.measurements {
+            for op in &m.operations {
+                if op.requests == 0 {
+                    continue;
+                }
+                if let Ok(parsed) = crate::perf::PerfOp::parse(&op.operation) {
+                    for capability in parsed.capabilities() {
+                        if !exercised.contains(capability) {
+                            exercised.push(capability);
+                        }
+                    }
+                }
+            }
+        }
+        let _ = writeln!(out, "\n| Capability | Claimed | Exercised by workload |");
+        let _ = writeln!(out, "| --- | --- | --- |");
+        let mut gaps: Vec<&str> = Vec::new();
+        for (name, _) in matrix.entries() {
+            let claimed = statement.claims.capabilities.iter().any(|c| c == name);
+            if !claimed {
+                continue;
+            }
+            let touched = exercised.contains(&name.as_str());
+            if !touched {
+                gaps.push(name.as_str());
+            }
+            let _ = writeln!(
+                out,
+                "| {} | yes | {} |",
+                name,
+                if touched {
+                    "yes"
+                } else {
+                    "NO — catalogue gap"
+                },
+            );
+        }
+        if gaps.is_empty() {
+            let _ = writeln!(
+                out,
+                "\nEvery workload-reachable claimed capability is exercised."
+            );
+        } else {
+            let _ = writeln!(
+                out,
+                "\nClaimed capabilities the simulation never touches ({}): {}. Each is \
+                 either a journey-catalogue gap to close or a capability outside the \
+                 measured-load surface (admin, demographics, messaging, security posture \
+                 — exercised by the functional schedule, not the load instrument).",
+                gaps.len(),
+                gaps.join(", "),
+            );
+        }
+        let _ = writeln!(out);
+    }
+
     // ── performance rating ──────────────────────────────────────────────────
     if !verdicts.performance.is_empty() {
         let _ = writeln!(out, "## Performance Rating\n");
