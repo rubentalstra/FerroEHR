@@ -16,9 +16,10 @@ applies to every crate — generated and hand-written alike.
   `// TODO:` — do not touch the test to make it green.
 - Conformance/corpus tests assert the **openEHR specifications**:
   cite the spec clause a test encodes; never adjust an expectation to match
-  an implementation bug. ECC corpus/golden defects go through the
-  adjudication registers (skip-with-reason), never through editing the case
-  (`tools/conformance/CLAUDE.md`).
+  an implementation bug. Corpus/fixture defects are ADJUDICATED with a
+  first-hand spec/schema citation (an expected-rejection entry in the owning
+  gate, or an `artifacts/registers/ambiguities.yaml` entry for spec silence
+  — `.claude/rules/cnf-triage.md`), never routed around by editing the case.
 
 ## Tooling
 

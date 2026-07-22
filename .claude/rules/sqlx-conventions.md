@@ -14,7 +14,7 @@ use it). **Not sea-orm.** Target PostgreSQL 18.4+.
 - The schema is **our own PG18-native design** (re-authored
   enterprise-grade): the unified `node` table, the temporal
   `vo_version` table, supporting tables, and our `ext` helper functions. It
-  is live and ECC-verified — schema changes are migrations on top, never a
+  is live and CNF-pipeline-verified — schema changes are migrations on top, never a
   rewrite of shipped history.
 - Create migrations with the official CLI only:
   `sqlx migrate add --source app/ehrbase/migrations/<schema> --sequential <desc>`,
