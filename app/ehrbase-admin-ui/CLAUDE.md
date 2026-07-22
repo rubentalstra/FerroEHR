@@ -24,13 +24,15 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 - Business logic (query-builder AST lowering, criteria validation) lives in
   component-free plain-Rust modules with ordinary unit tests; components
   stay thin.
-- Pins: leptos 0.8.20 / thaw **git rev of main** (the crates.io
-  `0.5.0-beta` lacks `#![recursion_limit = "256"]` and fails plain-cargo
-  codegen; re-pin at 0.5 stable) / struct-table 0.19 / chartistry 0.2.3 —
-  all in the root `[workspace.dependencies]`.
-- **Views are built in `.into_any()`-erased sections** (rules §1): plain
-  cargo builds have no `erase_components`, and monolithic thaw view trees
-  blow rustc's layout recursion depth in `cargo test` codegen.
+- Pins (root `[workspace.dependencies]`): `leptos`/`leptos_axum`/`leptos_meta`/
+  `leptos_router` 0.8.x · `thaw` at a pinned **git rev of main** (the crates.io
+  `0.5.0-beta` lacks `#![recursion_limit = "256"]` and fails plain,
+  non-`erase_components` codegen on rustc 1.96; re-pin to crates.io at 0.5
+  stable) · `leptos-use` 0.19 · `leptos-struct-table` 0.19 · `leptos-chartistry`
+  0.2.3 · `leptos_icons` 0.7.1.
+- **Views are built in `.into_any()`-erased sections** (rules §1): plain cargo
+  builds have no `erase_components`, and monolithic thaw view trees blow rustc's
+  layout-recursion depth in `cargo test` codegen.
 
 ## Gates
 
