@@ -15,27 +15,6 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-### Changed
-
-- The conformance acceptance instrument is now the CNF 2.0 reference runner
-  (`tools/cnf-runner`) end to end: `scripts/conformance.sh` composes the SUT
-  on fresh volumes, executes the committed machine-readable catalogue,
-  computes verdicts through the pure pipeline, and writes
-  results/verdicts/report/statement/certificate + badges per SUT. The ECC
-  harness (`tools/conformance`) is retired — its final inventory is
-  preserved at `tools/cnf-runner/comparison/ecc-catalog.tsv` and the
-  reviewed cutover record is `docs/conformance/cnf-comparison.md`; the
-  previous ehrbase-java comparison artifacts are frozen as historical data.
-  Committed per-SUT party sets (ixit + statement) live under
-  `tools/cnf-runner/party/`.
-- Verdict semantics: a REQUIRED capability whose every selected case is
-  excluded by a schedule-registered ambiguity (an unrealized wire on the
-  technology profile, e.g. ADL 1.4 archetype provisioning under ITS-REST
-  1.1.0 — AMB-41) is now recorded as an explicit `unrealized` scope
-  exclusion on the certificate instead of silently failing the tier; the
-  API-presence capabilities (EHR/DEFINITION/QUERY API) are evidenced by
-  chapter exemplar cases.
-
 ### Added
 
 - The conformance pipeline assesses **upstream EHRbase (Java)** as a second
@@ -57,6 +36,102 @@ workflow refuses a tag that has no matching section here.
   `PASS 10/10 capabilities`, the overall badge `CORE+STANDARD PASS ·
   323/323 cases` — derived from `verdicts.json` + the capability matrix,
   never hand-typed.
+
+
+- Read-only role support in RBAC: a principal carrying the configured
+  `authz.rbac.readonly_role` (default `READONLY`) is refused with `403` on
+  every write operation — creating an EHR, committing a composition,
+  uploading a template, and any update/delete — even when it also holds
+  granting roles such as `ADMIN`. Reads and AQL queries stay permitted, so a
+  `READONLY` account is an authenticated, view-only principal. The dev compose
+  stack ships an `ehrbase-readonly` account (password `ehrbase`) for
+  evaluation.
+- CNF 2.0 reference runner, third increment — the executor and both verdict
+  machineries: the data-driven flow interpreter under the five interpreter
+  laws (per-row re-provisioning, step-mismatch row abort, errored-vs-failed
+  classification, fixed temporal resolution, aggregates-after-last-row) with
+  the live HTTP driver realized purely from the operation bindings, the
+  reference resolver (corpus/recipes/rows/captures with normative sentinel
+  semantics), the normative RESULT_SET equivalence comparator, content-case
+  execution via the synthesized generate→commit→expect flow, the party
+  artifacts (statement/results/ixit with schema validation and mandatory
+  N/A citations), the pure verdict pipeline + deterministic
+  report/statement/certificate renderers, the runner-verification pack
+  (committed transcript + player: adjudicated verdicts reproduced, broken
+  runners rejected), and the performance machinery (class cases with the
+  published population-anchored floors, re-checkable HDR V2 measurement
+  records, the earned/not-earned pure verdict). Nine published JSON-Schema
+  families, drift-guarded. Live-SUT runs (the earned-class measurement and
+  pack part 2) execute against a composed SUT via the new `run`/`verdicts`
+  CLI once cutover lands.
+- CNF 2.0 reference runner, second increment: the complete CNF 2.0 catalogue
+  authored from the framework — 347 cases across every schedule chapter
+  (EHR, EHR_STATUS, COMPOSITION, CONTRIBUTION, DIRECTORY, ADL 1.4 + ADL2
+  definitions, stored queries, demographic, admin, messaging, AQL, content
+  data-type and structural validation, simplified formats, Security
+  SEC-BASIC + Signing) with 84 per-operation ITS-REST bindings (every
+  status/header mapping cited to its OAS source; wire gaps are typed
+  `unrealized` declarations, not silent absences), the ambiguity register
+  grown to 38 adjudicated entries, and the ECC↔CNF comparison gate CLEAN:
+  all 394 active rows of the old harness's catalogue adjudicated
+  (350 covered, 5 deferred to the simplified-formats deepening, 18 dropped
+  with justification, 9 out of scope, 12 ADL2 rows covered) in the committed
+  map with the generated report at `docs/conformance/cnf-comparison.md`
+  (drift-guarded). Old-harness retirement follows the owner's report review
+  with the executor/emission workstreams so an acceptance instrument runs
+  continuously.
+
+- CNF 2.0 reference runner (`tools/cnf-runner`), first increment: the typed
+  schedule-artifact model (case cores, per-ITS operation bindings, outcome +
+  selector vocabularies, the capability→family→tier matrix, corpus manifest,
+  ambiguity register — every closed vocabulary a Rust enum/newtype), a
+  published JSON-Schema set for all seven artifact families (committed under
+  `tools/cnf-runner/schemas/`, drift-guarded, vendorable by any runner), a
+  full cross-artifact validator (id uniqueness, SM-operation and spec-ref
+  resolution against the vendored specs, binding completeness, corpus
+  integrity, reference/sentinel and decision-table grammars, capability-tier
+  consistency), the `cnf-runner` CLI (`emit-schemas`, `validate`), and the
+  eight pilot case encodings as the first schedule artifacts. The existing
+  ECC (`tools/conformance`) is unchanged and remains the acceptance
+  instrument until the comparison gate.
+
+### Changed
+
+- The conformance acceptance instrument is now the CNF 2.0 reference runner
+  (`tools/cnf-runner`) end to end: `scripts/conformance.sh` composes the SUT
+  on fresh volumes, executes the committed machine-readable catalogue,
+  computes verdicts through the pure pipeline, and writes
+  results/verdicts/report/statement/certificate + badges per SUT. The ECC
+  harness (`tools/conformance`) is retired — its final inventory is
+  preserved at `tools/cnf-runner/comparison/ecc-catalog.tsv` and the
+  reviewed cutover record is `docs/conformance/cnf-comparison.md`; the
+  previous ehrbase-java comparison artifacts are frozen as historical data.
+  Committed per-SUT party sets (ixit + statement) live under
+  `tools/cnf-runner/party/`.
+- Verdict semantics: a REQUIRED capability whose every selected case is
+  excluded by a schedule-registered ambiguity (an unrealized wire on the
+  technology profile, e.g. ADL 1.4 archetype provisioning under ITS-REST
+  1.1.0 — AMB-41) is now recorded as an explicit `unrealized` scope
+  exclusion on the certificate instead of silently failing the tier; the
+  API-presence capabilities (EHR/DEFINITION/QUERY API) are evidenced by
+  chapter exemplar cases.
+
+
+- OPT-1.4 → ADL2 conversion fidelity: `DV_ORDINAL`/`DV_QUANTITY` constraints
+  now convert to real AOM2 attribute tuples (`[value, symbol]`,
+  `[units, magnitude(, precision)]`) instead of loose unconstrained nodes;
+  slot include/exclude assertions are carried (both retained 1.4 slots and
+  the filled-slot `include` naming the embedded archetype); OPT
+  `default_value`s are carried and serialized as the ADL2 `_default`
+  pseudo-attribute; temporal constraints keep both the ISO8601 pattern and
+  the range plus assumed values; `referenceSetUri` becomes an ac-code term
+  binding; `CONSTRAINT_REF` resolves against the merged 1.4
+  `constraint_definitions`/`constraint_bindings`; and everything a
+  decomposed root cannot express (out-of-scope bindings, tuple assumed
+  values, `DV_STATE` machines, unconvertible assertions) is reported in the
+  converted archetype's `RESOURCE_DESCRIPTION.conversion_details`. The
+  whole vendored OPT corpus now converts, validates and re-parses as the
+  standing test gate.
 
 ### Fixed
 
@@ -130,84 +205,6 @@ workflow refuses a tag that has no matching section here.
   with the deprecated AQL `TOP` modifier is prohibited — that rejection
   remains. Negative `fetch`/`offset` values are now rejected explicitly.
 
-### Added
-
-- Read-only role support in RBAC: a principal carrying the configured
-  `authz.rbac.readonly_role` (default `READONLY`) is refused with `403` on
-  every write operation — creating an EHR, committing a composition,
-  uploading a template, and any update/delete — even when it also holds
-  granting roles such as `ADMIN`. Reads and AQL queries stay permitted, so a
-  `READONLY` account is an authenticated, view-only principal. The dev compose
-  stack ships an `ehrbase-readonly` account (password `ehrbase`) for
-  evaluation.
-- CNF 2.0 reference runner, third increment — the executor and both verdict
-  machineries: the data-driven flow interpreter under the five interpreter
-  laws (per-row re-provisioning, step-mismatch row abort, errored-vs-failed
-  classification, fixed temporal resolution, aggregates-after-last-row) with
-  the live HTTP driver realized purely from the operation bindings, the
-  reference resolver (corpus/recipes/rows/captures with normative sentinel
-  semantics), the normative RESULT_SET equivalence comparator, content-case
-  execution via the synthesized generate→commit→expect flow, the party
-  artifacts (statement/results/ixit with schema validation and mandatory
-  N/A citations), the pure verdict pipeline + deterministic
-  report/statement/certificate renderers, the runner-verification pack
-  (committed transcript + player: adjudicated verdicts reproduced, broken
-  runners rejected), and the performance machinery (class cases with the
-  published population-anchored floors, re-checkable HDR V2 measurement
-  records, the earned/not-earned pure verdict). Nine published JSON-Schema
-  families, drift-guarded. Live-SUT runs (the earned-class measurement and
-  pack part 2) execute against a composed SUT via the new `run`/`verdicts`
-  CLI once cutover lands.
-- CNF 2.0 reference runner, second increment: the complete CNF 2.0 catalogue
-  authored from the framework — 347 cases across every schedule chapter
-  (EHR, EHR_STATUS, COMPOSITION, CONTRIBUTION, DIRECTORY, ADL 1.4 + ADL2
-  definitions, stored queries, demographic, admin, messaging, AQL, content
-  data-type and structural validation, simplified formats, Security
-  SEC-BASIC + Signing) with 84 per-operation ITS-REST bindings (every
-  status/header mapping cited to its OAS source; wire gaps are typed
-  `unrealized` declarations, not silent absences), the ambiguity register
-  grown to 38 adjudicated entries, and the ECC↔CNF comparison gate CLEAN:
-  all 394 active rows of the old harness's catalogue adjudicated
-  (350 covered, 5 deferred to the simplified-formats deepening, 18 dropped
-  with justification, 9 out of scope, 12 ADL2 rows covered) in the committed
-  map with the generated report at `docs/conformance/cnf-comparison.md`
-  (drift-guarded). Old-harness retirement follows the owner's report review
-  with the executor/emission workstreams so an acceptance instrument runs
-  continuously.
-
-- CNF 2.0 reference runner (`tools/cnf-runner`), first increment: the typed
-  schedule-artifact model (case cores, per-ITS operation bindings, outcome +
-  selector vocabularies, the capability→family→tier matrix, corpus manifest,
-  ambiguity register — every closed vocabulary a Rust enum/newtype), a
-  published JSON-Schema set for all seven artifact families (committed under
-  `tools/cnf-runner/schemas/`, drift-guarded, vendorable by any runner), a
-  full cross-artifact validator (id uniqueness, SM-operation and spec-ref
-  resolution against the vendored specs, binding completeness, corpus
-  integrity, reference/sentinel and decision-table grammars, capability-tier
-  consistency), the `cnf-runner` CLI (`emit-schemas`, `validate`), and the
-  eight pilot case encodings as the first schedule artifacts. The existing
-  ECC (`tools/conformance`) is unchanged and remains the acceptance
-  instrument until the comparison gate.
-
-### Changed
-
-- OPT-1.4 → ADL2 conversion fidelity: `DV_ORDINAL`/`DV_QUANTITY` constraints
-  now convert to real AOM2 attribute tuples (`[value, symbol]`,
-  `[units, magnitude(, precision)]`) instead of loose unconstrained nodes;
-  slot include/exclude assertions are carried (both retained 1.4 slots and
-  the filled-slot `include` naming the embedded archetype); OPT
-  `default_value`s are carried and serialized as the ADL2 `_default`
-  pseudo-attribute; temporal constraints keep both the ISO8601 pattern and
-  the range plus assumed values; `referenceSetUri` becomes an ac-code term
-  binding; `CONSTRAINT_REF` resolves against the merged 1.4
-  `constraint_definitions`/`constraint_bindings`; and everything a
-  decomposed root cannot express (out-of-scope bindings, tuple assumed
-  values, `DV_STATE` machines, unconvertible assertions) is reported in the
-  converted archetype's `RESOURCE_DESCRIPTION.conversion_details`. The
-  whole vendored OPT corpus now converts, validates and re-parses as the
-  standing test gate.
-
-### Fixed
 
 - Spec version identity is now derived from the `openehr-*` crate versions
   instead of hand-typed literals, fixing the stale values those literals had
