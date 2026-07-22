@@ -22,3 +22,4 @@ is not repeated here.
 - [No task IDs in code](no-task-ids-in-code.md) — F-nn/S-nn/G-nn/W-nn tracker markers banned from all code/doc comments; only docs/specs/openehr citations
 - [Served OpenAPI is native](served-openapi-is-native.md) — ehrbase-rest serves ONLY its own utoipa-generated document; vendored ITS-REST OAS = codegen input + behavioural oracle, never imported/served; update our #[utoipa::path] in the same PR as any wire change
 - [TODO-only markers](todo-only-markers.md) — pending work uses ONLY official TODO(...); PORT NOTE/TODO(port)/PERF(port) deleted+banned+CI-guarded; design notes are plain NOTE: with spec citation
+- [CNF strategy doc kept permanently](cnf-strategy-doc-kept-permanently.md) — owner ruling 2026-07-22: docs/plans/cnf-conformance-strategy.md exempt from delete-on-implementation; §8.14 perf-class model lives there, study before #233/W7
