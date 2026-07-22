@@ -35,6 +35,37 @@ Its measurement records live in the conformance artifacts
 (`docs/conformance/<sut>/results.json`, the `measurements` block); the method
 and reproduction steps are the website's Performance chapter.
 
+## The step-load stress instrument (exploration)
+
+`cnf-runner stress` climbs short, intense load steps (geometric doubling
+with bisection refinement) to the **maximum sustainable throughput** inside
+a latency budget — the knee of the latency-throughput curve. It is
+exploration, never conformance: its report
+(`docs/conformance/<sut>/stress.json`, schema-published, environment-bound,
+per-step re-checkable histograms) earns no class and never touches the
+conformance results; the class floors appear in it as context only.
+
+## The canonical commands
+
+```bash
+# the conformance pipeline (compose fresh → catalogue → verdicts → badges)
+bash scripts/conformance.sh
+
+# + the measured class stage (hour-plus, exclusive SUT; extended holds)
+CONF_PERF_CLASS=POC CONF_PERF_HOURS=1 bash scripts/conformance.sh
+
+# the step-load stress ladder (exploration only)
+cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
+  --ixit tools/cnf-runner/party/<sut>/ixit.json \
+  --out docs/conformance/<sut>/stress.json --skip-seed
+
+# regenerate every published perf/stress visual FROM committed artifacts
+bash scripts/render-perf-assets.sh
+
+# the benchmark lab (hospital-day profile + cross-SUT compare)
+bash scripts/benchmark.sh
+```
+
 ## One pipeline, one payload provenance
 
 Both instruments seed strictly through the public write path (create EHR,

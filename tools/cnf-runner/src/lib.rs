@@ -25,6 +25,7 @@ pub mod refgrammar;
 pub mod render;
 pub mod run;
 pub mod schema;
+pub mod stress;
 pub mod validate;
 pub mod verdict;
 pub mod vocab;

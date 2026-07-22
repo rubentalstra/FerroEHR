@@ -190,7 +190,15 @@ pub(crate) fn convert_opt_to_archetypes(
     // as they are discovered.
     dx.process_root(&opt.definition, "", true);
 
-    let cfg = ConvertConfig::default();
+    let cfg = ConvertConfig {
+        // A flattened OPT inlines `-`-specialised roots standalone, where
+        // the differential lineage is unresolvable — emit them UNSPECIALISED
+        // with every dotted code collapsed into the flat space (VARCN/VACSD
+        // at depth 0; see the flag's contract). No openEHR spec governs
+        // 1.4→2 conversion — our own design.
+        collapse_specialised_codes: true,
+        ..ConvertConfig::default()
+    };
     let mut archetypes = Vec::with_capacity(dx.units.len());
     for unit in dx.units {
         let mut log = ConversionLog::new();
@@ -1927,24 +1935,11 @@ mod tests {
                     .filter(|i| i.severity == Severity::Error)
                     .map(|i| i.code.mnemonic())
                     .collect();
-                // Two ADJUDICATED pre-existing decomposition limits (the
-                // conversion-hardening tracker issue carries their removal;
-                // anything outside them still fails the gate):
-                // - VACSD: a SPECIALISED embedded root (depth >= 1 root code)
-                //   is inlined in a flattened OPT without its parent, so its
-                //   standalone source cannot declare the lineage.
-                // - VCOSU: 1.4 archetypes legitimately reuse at-codes across
-                //   paths (e.g. ACTION careflow/ism nodes); ADL2 requires
-                //   globally unique ids, which needs a renumbering pass.
-                let adjudicated = ["VACSD", "VCOSU"];
-                let unexpected: Vec<&&str> = errors
-                    .iter()
-                    .filter(|e| !adjudicated.contains(*e))
-                    .collect();
-                assert!(
-                    unexpected.is_empty(),
-                    "{name}/{id}: unadjudicated phase-1 errors: {unexpected:?} (all: {errors:?})"
-                );
+                // No adjudicated exceptions: every decomposed source is
+                // phase-1 clean — specialised embedded roots collapse to
+                // depth-0 emission and reused 1.4 node codes re-mint
+                // archetype-wide-unique ids in the converter core.
+                assert!(errors.is_empty(), "{name}/{id}: phase-1 errors: {errors:?}");
                 let printed = openehr_adl::printer::print(art);
                 openehr_adl::assemble::parse_artefact(&printed).unwrap_or_else(|e| {
                     panic!("{name}/{id}: printed ADL2 does not re-parse: {e:?}\n{printed}")

@@ -106,12 +106,47 @@ The runner subcommand can also be driven directly against a running SUT — the
 cnf-runner perf --root tools/cnf-runner/artifacts \
                 --ixit <ixit.json> --results <results.json> --class POC
 
-# an exploratory smoke run — tiny corpus, seconds-long window, NEVER
-# persisted (the record would not realize the case's workload)
+# an officially EXTENDED sustained window (the hours ladder: one hour is
+# the case's normative window and the default; two, four, six, eight, or
+# twelve hours hold the same offered load for longer — a stricter
+# demonstration of the same class). The seeded corpus is reusable across
+# runs via the sidecar index written by the first seeding.
 cnf-runner perf --root tools/cnf-runner/artifacts \
                 --ixit <ixit.json> --results <results.json> \
-                --class POC --smoke
+                --class POC --skip-seed --hours 8
 ```
+
+There is deliberately no shortened run: the measurement record always covers
+at least the case's normative window, so nothing sub-normative can ever be
+mistaken for a measured result. The record carries the actual warmup and
+window it held, and the verdict machinery re-derives everything from the
+embedded histograms.
+
+## Stress testing — the second instrument
+
+Beside the class runs sits a deliberately different instrument: a
+**step-load stress test**. Where a class run holds a real-life,
+population-anchored rate for at least an hour, the stress test climbs a
+geometric ladder of short, intense load steps (about two minutes each,
+doubling the offered rate every step) until the system leaves the stress
+envelope — the point performance engineering calls the knee of the
+latency-throughput curve. The headline it finds is the **maximum sustainable
+throughput**: the highest offered rate held inside the latency budget
+(the same idea TPC benchmarks report as maximum qualified throughput).
+
+```bash
+# the step-load stress ladder over the seeded corpus (exploration only)
+cnf-runner stress --root tools/cnf-runner/artifacts \
+                  --ixit <ixit.json> --out <stress.json> \
+                  --corpus-class POC --skip-seed
+```
+
+The two instruments never blur: a stress report earns no class, never
+touches `results.json`, and names the class floors only as context so you
+can see the headroom at a glance. Every load step embeds its own
+re-checkable histograms, a breached step is reported with the exact
+envelope violation, and a run where the load *generator* tops out before
+the server is flagged as such rather than counted against the system.
 
 The published assets are rendered from the committed `results.json` by
 `cnf-runner perf-assets` (wrapped by `scripts/render-perf-assets.sh`); the

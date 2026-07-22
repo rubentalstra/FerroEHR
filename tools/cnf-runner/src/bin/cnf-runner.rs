@@ -13,6 +13,24 @@
 //!                                       compute the verdicts (pure pipeline)
 //!                                       and write the report/statement/
 //!                                       certificate + verdicts.json
+//! cnf-runner perf --root DIR --ixit FILE --results FILE --class POC|S|L|R
+//!                 [--hours 1|2|4|6|8|12] [--skip-seed] [--seed-workers N]
+//!                                       the measured class run (conformance-
+//!                                       by-measurement): seed the scale
+//!                                       corpus, hold the class's offered
+//!                                       load for the sustained window, merge
+//!                                       the record into results.json
+//! cnf-runner stress --root DIR --ixit FILE --out FILE
+//!                   [--corpus-class POC|S|L|R] [--skip-seed]
+//!                   [--step-secs N] [--bisections N] [--max-rate R]
+//!                                       the step-load stress ladder to the
+//!                                       maximum sustainable throughput
+//!                                       (exploration only — writes
+//!                                       stress.json, never results.json)
+//! cnf-runner perf-assets --root DIR --results FILE --out DIR
+//!                        [--summary FILE] [--stress FILE]
+//!                                       render the published SVGs + summary
+//!                                       FROM committed artifacts
 //! ```
 //!
 //! Exit codes: `0` clean · `1` findings · `2` runner error.
@@ -128,11 +146,49 @@ enum Command {
         /// Parallel seeding workers.
         #[arg(long, default_value_t = 16)]
         seed_workers: usize,
-        /// Exploratory smoke run: a tiny corpus and a seconds-long window to
-        /// prove the wiring; NEVER persisted (the record would not realize
-        /// the case's workload).
+        /// The sustained-window ladder: hours to hold the offered load —
+        /// 1 (default, the case's normative window) | 2 | 4 | 6 | 8 | 12.
+        /// A longer window is a STRICTER demonstration and persists like
+        /// any measured run; nothing shorter than the case exists.
+        #[arg(long, default_value_t = 1)]
+        hours: u64,
+    },
+    /// Run the step-load STRESS instrument: geometric load steps to the
+    /// maximum sustainable throughput (exploration — never a conformance
+    /// record; classes are earned exclusively by the hour-long class runs).
+    Stress {
+        /// The artifact root.
         #[arg(long)]
-        smoke: bool,
+        root: PathBuf,
+        /// The ixit topology file (JSON) — its environment block is
+        /// mandatory (a throughput number without the deployment described
+        /// is meaningless).
+        #[arg(long)]
+        ixit: PathBuf,
+        /// Where to write the stress report (stress.json).
+        #[arg(long)]
+        out: PathBuf,
+        /// The class whose corpus + workload mix the stress runs on
+        /// (POC | S | L | R) — data volume context only, no class claim.
+        #[arg(long, default_value = "POC")]
+        corpus_class: String,
+        /// Skip corpus seeding and load the sidecar corpus index written by
+        /// a prior seeding pass (shared with `perf`).
+        #[arg(long)]
+        skip_seed: bool,
+        /// Parallel seeding workers.
+        #[arg(long, default_value_t = 16)]
+        seed_workers: usize,
+        /// Each load step's recorded hold, seconds (short + intense by
+        /// design).
+        #[arg(long, default_value_t = 120)]
+        step_secs: u64,
+        /// Post-breach bisection refinements.
+        #[arg(long, default_value_t = 3)]
+        bisections: u32,
+        /// The climb cap (arrivals/s).
+        #[arg(long, default_value_t = 4096.0)]
+        max_rate: f64,
     },
     /// Render the published performance SVG assets FROM a committed
     /// results.json (deterministic; CI regenerates and diffs — hand-drawn
@@ -151,6 +207,10 @@ enum Command {
         /// measured detail) to this path — the book's build-time include.
         #[arg(long)]
         summary: Option<PathBuf>,
+        /// A committed stress report (stress.json) to render the
+        /// latency-throughput curve from, when one exists.
+        #[arg(long)]
+        stress: Option<PathBuf>,
     },
     /// Compute the verdicts from a statement + results against an artifact
     /// tree (the pure pipeline) and write the rendered submission documents.
@@ -229,7 +289,7 @@ fn main() -> ExitCode {
             class,
             skip_seed,
             seed_workers,
-            smoke,
+            hours,
         } => perf_command(
             &root,
             &ixit,
@@ -237,14 +297,36 @@ fn main() -> ExitCode {
             &class,
             skip_seed,
             seed_workers,
-            smoke,
+            hours,
+        ),
+        Command::Stress {
+            root,
+            ixit,
+            out,
+            corpus_class,
+            skip_seed,
+            seed_workers,
+            step_secs,
+            bisections,
+            max_rate,
+        } => stress_command(
+            &root,
+            &ixit,
+            &out,
+            &corpus_class,
+            skip_seed,
+            seed_workers,
+            step_secs,
+            bisections,
+            max_rate,
         ),
         Command::PerfAssets {
             root,
             results,
             out,
             summary,
-        } => perf_assets_command(&root, &results, &out, summary.as_deref()),
+            stress,
+        } => perf_assets_command(&root, &results, &out, summary.as_deref(), stress.as_deref()),
         Command::Verdicts {
             statement,
             results,
@@ -466,6 +548,7 @@ fn perf_assets_command(
     results_path: &std::path::Path,
     out: &std::path::Path,
     summary: Option<&std::path::Path>,
+    stress: Option<&std::path::Path>,
 ) -> ExitCode {
     let loaded = match load_root(root) {
         Ok(loaded) => loaded,
@@ -502,6 +585,26 @@ fn perf_assets_command(
         "perf-class-ladder.svg".to_owned(),
         cnf_runner::perf_assets::class_ladder_svg(&perf_cases, &results.measurements),
     )];
+    if let Some(stress_path) = stress {
+        let report: cnf_runner::stress::StressReport = match std::fs::read_to_string(stress_path)
+            .map_err(|e| format!("cannot read {}: {e}", stress_path.display()))
+            .and_then(|text| {
+                serde_json::from_str(&text).map_err(|e| format!("{}: {e}", stress_path.display()))
+            }) {
+            Ok(report) => report,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        };
+        match cnf_runner::perf_assets::stress_curve_svg(&report) {
+            Ok(svg) => files.push(("perf-stress-curve.svg".to_owned(), svg)),
+            Err(e) => {
+                eprintln!("stress curve: {e}");
+                return ExitCode::from(2);
+            }
+        }
+    }
     for measurement in &results.measurements {
         match cnf_runner::perf_assets::latency_percentiles_svg(measurement) {
             Ok(svg) => files.push((
@@ -546,9 +649,213 @@ fn perf_assets_command(
     ExitCode::SUCCESS
 }
 
+/// Resolve the blood-pressure OPT the scale corpora commit against.
+fn scale_opt_xml(loaded: &cnf_runner::artifacts::Loaded) -> Result<String, String> {
+    let corpus_dir = loaded
+        .set
+        .corpus_dir
+        .as_deref()
+        .ok_or_else(|| "artifact set has no corpus directory".to_owned())?;
+    let key =
+        cnf_runner::ids::CorpusKey::parse("cnf.opt.blood_pressure").map_err(|e| e.to_string())?;
+    let source = loaded
+        .set
+        .corpus
+        .as_ref()
+        .and_then(|(_, m)| m.get(&key))
+        .and_then(|entry| entry.source.clone())
+        .ok_or_else(|| "corpus manifest has no cnf.opt.blood_pressure fixture".to_owned())?;
+    std::fs::read_to_string(corpus_dir.join(&source))
+        .map_err(|e| format!("cannot read OPT fixture {source}: {e}"))
+}
+
+/// Seed the scale corpus (or load the sidecar index a prior seeding wrote —
+/// the index lives beside `artifact_path` so `perf` and `stress` share it).
+#[allow(clippy::too_many_arguments)] // the one-shot seeding seam both handlers share
+fn seed_or_load_corpus(
+    client: &cnf_runner::perf_run::PerfClient,
+    corpus_key: &str,
+    opt_xml: &str,
+    artifact_path: &std::path::Path,
+    skip_seed: bool,
+    seed_workers: usize,
+    progress: &(dyn Fn(String) + Sync),
+) -> Result<cnf_runner::perf_run::SeededCorpus, String> {
+    use cnf_runner::perf_run;
+    let index_path =
+        artifact_path.with_file_name(format!("perf-corpus-{}.json", corpus_key.replace('.', "-")));
+    if skip_seed {
+        return std::fs::read_to_string(&index_path)
+            .map_err(|e| format!("cannot read corpus index {}: {e}", index_path.display()))
+            .and_then(|text| {
+                serde_json::from_str::<perf_run::SeededCorpus>(&text)
+                    .map_err(|e| format!("corpus index: {e}"))
+            });
+    }
+    let (ehrs, versions) = perf_run::scale_shape(corpus_key)?;
+    let corpus = perf_run::seed_scale_ladder(
+        client,
+        corpus_key,
+        opt_xml,
+        ehrs,
+        versions,
+        seed_workers,
+        progress,
+    )
+    .map_err(|e| format!("seeding failed: {e}"))?;
+    let text =
+        serde_json::to_string(&corpus).map_err(|e| format!("serialize corpus index: {e}"))?;
+    std::fs::write(&index_path, text)
+        .map_err(|e| format!("cannot write corpus index {}: {e}", index_path.display()))?;
+    Ok(corpus)
+}
+
+/// The stress handler: the step-load ladder to the maximum sustainable
+/// throughput (exploration only — writes stress.json, never results.json).
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)] // one-shot orchestration seam
+fn stress_command(
+    root: &std::path::Path,
+    ixit_path: &std::path::Path,
+    out: &std::path::Path,
+    corpus_class: &str,
+    skip_seed: bool,
+    seed_workers: usize,
+    step_secs: u64,
+    bisections: u32,
+    max_rate: f64,
+) -> ExitCode {
+    use cnf_runner::perf::PerfClass;
+    use cnf_runner::perf_run;
+
+    let class = match PerfClass::parse(corpus_class) {
+        Ok(class) => class,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    let ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
+        .map_err(|e| format!("cannot read {}: {e}", ixit_path.display()))
+        .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("ixit: {e}")))
+    {
+        Ok(ixit) => ixit,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let (instance, environment) = match perf_run::measured_run_context(&ixit) {
+        Ok(context) => context,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let client = match perf_run::PerfClient::from_instance(instance) {
+        Ok(client) => client,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    // The class supplies corpus + workload mix (data-volume context only).
+    let Some((_, case)) = loaded
+        .set
+        .performance
+        .iter()
+        .find(|(_, c)| c.class == class)
+    else {
+        eprintln!("no performance case of class {corpus_class} in the catalogue");
+        return ExitCode::from(2);
+    };
+    let opt_xml = match scale_opt_xml(&loaded) {
+        Ok(xml) => xml,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let progress = |message: String| eprintln!("[stress] {message}");
+    let corpus = match seed_or_load_corpus(
+        &client,
+        case.corpus.as_str(),
+        &opt_xml,
+        out,
+        skip_seed,
+        seed_workers,
+        &progress,
+    ) {
+        Ok(corpus) => corpus,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let options = cnf_runner::stress::StressOptions {
+        step_hold_s: step_secs.max(10),
+        bisections,
+        max_rate,
+        ..cnf_runner::stress::StressOptions::default()
+    };
+    let report = match cnf_runner::stress::run_stress(
+        &client,
+        &corpus,
+        &case.workload.mix,
+        environment,
+        &options,
+        &progress,
+    ) {
+        Ok(report) => report,
+        Err(e) => {
+            eprintln!("stress run failed: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    match serde_json::to_string_pretty(&report) {
+        Ok(mut text) => {
+            text.push('\n');
+            if let Some(parent) = out.parent()
+                && let Err(e) = std::fs::create_dir_all(parent)
+            {
+                eprintln!("cannot create {}: {e}", parent.display());
+                return ExitCode::from(2);
+            }
+            if let Err(e) = std::fs::write(out, text) {
+                eprintln!("cannot write {}: {e}", out.display());
+                return ExitCode::from(2);
+            }
+        }
+        Err(e) => {
+            eprintln!("serialize: {e}");
+            return ExitCode::from(2);
+        }
+    }
+    println!("{}", report.remark);
+    println!(
+        "wrote {} ({} steps, max sustainable {:.1}/s)",
+        out.display(),
+        report.steps.len(),
+        report.max_sustainable_throughput_per_s
+    );
+    ExitCode::SUCCESS
+}
+
 /// The measured-run handler (`perf`): seed the scale corpus, drive the
 /// open-loop workload, merge the measurement record into results.json.
-#[allow(clippy::too_many_lines, clippy::fn_params_excessive_bools)] // one-shot orchestration seam
+#[allow(clippy::too_many_lines)] // one-shot orchestration seam
 fn perf_command(
     root: &std::path::Path,
     ixit_path: &std::path::Path,
@@ -556,10 +863,17 @@ fn perf_command(
     class_token: &str,
     skip_seed: bool,
     seed_workers: usize,
-    smoke: bool,
+    hours: u64,
 ) -> ExitCode {
     use cnf_runner::perf::PerfClass;
     use cnf_runner::perf_run;
+
+    // The sustained-window ladder: the case's normative window (1 h) or an
+    // officially extended one — never anything shorter.
+    if ![1, 2, 4, 6, 8, 12].contains(&hours) {
+        eprintln!("--hours must be one of 1 | 2 | 4 | 6 | 8 | 12 (got {hours})");
+        return ExitCode::from(2);
+    }
 
     let class = match PerfClass::parse(class_token) {
         Ok(class) => class,
@@ -616,34 +930,11 @@ fn perf_command(
         return ExitCode::from(2);
     }
     // The blood-pressure OPT the scale corpus commits against.
-    let opt_xml = {
-        let Some(corpus_dir) = loaded.set.corpus_dir.as_deref() else {
-            eprintln!("artifact set has no corpus directory");
+    let opt_xml = match scale_opt_xml(&loaded) {
+        Ok(xml) => xml,
+        Err(e) => {
+            eprintln!("{e}");
             return ExitCode::from(2);
-        };
-        let key = match cnf_runner::ids::CorpusKey::parse("cnf.opt.blood_pressure") {
-            Ok(key) => key,
-            Err(e) => {
-                eprintln!("{e}");
-                return ExitCode::from(2);
-            }
-        };
-        let source = loaded
-            .set
-            .corpus
-            .as_ref()
-            .and_then(|(_, m)| m.get(&key))
-            .and_then(|entry| entry.source.clone());
-        let Some(source) = source else {
-            eprintln!("corpus manifest has no cnf.opt.blood_pressure fixture");
-            return ExitCode::from(2);
-        };
-        match std::fs::read_to_string(corpus_dir.join(&source)) {
-            Ok(xml) => xml,
-            Err(e) => {
-                eprintln!("cannot read OPT fixture {source}: {e}");
-                return ExitCode::from(2);
-            }
         }
     };
     let progress = |message: String| eprintln!("[perf] {message}");
@@ -655,70 +946,26 @@ fn perf_command(
             case.id,
             path.display()
         );
-        let (ehrs, versions) = if smoke {
-            (25, 4)
-        } else {
-            match perf_run::scale_shape(case.corpus.as_str()) {
-                Ok(shape) => shape,
-                Err(e) => {
-                    eprintln!("{e}");
-                    return ExitCode::from(2);
-                }
+        let corpus = match seed_or_load_corpus(
+            &client,
+            case.corpus.as_str(),
+            &opt_xml,
+            results_path,
+            skip_seed,
+            seed_workers,
+            &progress,
+        ) {
+            Ok(corpus) => corpus,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
             }
         };
-        let index_path = results_path.with_file_name(format!(
-            "perf-corpus-{}.json",
-            case.corpus.as_str().replace('.', "-")
-        ));
-        let corpus = if skip_seed && !smoke {
-            match std::fs::read_to_string(&index_path)
-                .map_err(|e| format!("cannot read corpus index {}: {e}", index_path.display()))
-                .and_then(|text| {
-                    serde_json::from_str::<perf_run::SeededCorpus>(&text)
-                        .map_err(|e| format!("corpus index: {e}"))
-                }) {
-                Ok(corpus) => corpus,
-                Err(e) => {
-                    eprintln!("{e}");
-                    return ExitCode::from(2);
-                }
-            }
-        } else {
-            match perf_run::seed_scale_ladder(
-                &client,
-                case.corpus.as_str(),
-                &opt_xml,
-                ehrs,
-                versions,
-                seed_workers,
-                &progress,
-            ) {
-                Ok(corpus) => corpus,
-                Err(e) => {
-                    eprintln!("seeding failed: {e}");
-                    return ExitCode::from(2);
-                }
-            }
-        };
-        if !smoke && !skip_seed {
-            match serde_json::to_string(&corpus) {
-                Ok(text) => {
-                    if let Err(e) = std::fs::write(&index_path, text) {
-                        eprintln!("cannot write corpus index {}: {e}", index_path.display());
-                        return ExitCode::from(2);
-                    }
-                }
-                Err(e) => {
-                    eprintln!("serialize corpus index: {e}");
-                    return ExitCode::from(2);
-                }
-            }
-        }
-        let (warmup_s, duration_s) = if smoke {
-            (2, 20)
-        } else {
-            (case.workload.warmup.0, case.workload.duration.0)
-        };
+        // The case's normative warmup; the sustained window extends by the
+        // hours ladder (a longer hold of the same offered load is a stricter
+        // demonstration of the same class).
+        let warmup_s = case.workload.warmup.0;
+        let duration_s = case.workload.duration.0.max(hours.saturating_mul(3600));
         let measurement = match perf_run::drive_case(
             case,
             &client,
@@ -757,10 +1004,6 @@ fn perf_command(
         );
         if measurement.verdict != cnf_runner::perf::ClassVerdict::Earned {
             earned_all = false;
-        }
-        if smoke {
-            println!("  smoke run — record NOT persisted (workload not realized as specified)");
-            continue;
         }
         // Merge into results.json (replace any prior record for the case).
         let mut results: Results =

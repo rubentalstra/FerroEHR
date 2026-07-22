@@ -762,22 +762,7 @@ pub fn results_schema() -> Value {
                         "operations": {
                             "type": "array",
                             "minItems": 1,
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": false,
-                                "required": ["operation", "requests", "errors",
-                                              "latency_ms_p50", "latency_ms_p90",
-                                              "latency_ms_p99", "hdr_v2_base64"],
-                                "properties": {
-                                    "operation": { "type": "string", "minLength": 1 },
-                                    "requests": { "type": "integer", "minimum": 0 },
-                                    "errors": { "type": "integer", "minimum": 0 },
-                                    "latency_ms_p50": { "type": "number", "minimum": 0.0 },
-                                    "latency_ms_p90": { "type": "number", "minimum": 0.0 },
-                                    "latency_ms_p99": { "type": "number", "minimum": 0.0 },
-                                    "hdr_v2_base64": { "type": "string", "minLength": 1 }
-                                }
-                            }
+                            "items": operation_measurement_def()
                         },
                         "verdict": { "enum": ["earned", "not-earned"] },
                         "violations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
@@ -862,6 +847,93 @@ fn environment_def() -> Value {
             "memory_gb": { "type": "integer", "minimum": 0 },
             "storage_class": { "type": "string", "minLength": 1 },
             "topology": { "type": "string", "minLength": 1 }
+        }
+    })
+}
+
+/// One per-operation measurement record (shared by the results.json
+/// `measurements` block and the stress report's steps): counts, summary
+/// percentiles, and the re-checkable base64 HDR V2 histogram.
+fn operation_measurement_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["operation", "requests", "errors",
+                      "latency_ms_p50", "latency_ms_p90",
+                      "latency_ms_p99", "hdr_v2_base64"],
+        "properties": {
+            "operation": { "type": "string", "minLength": 1 },
+            "requests": { "type": "integer", "minimum": 0 },
+            "errors": { "type": "integer", "minimum": 0 },
+            "latency_ms_p50": { "type": "number", "minimum": 0.0 },
+            "latency_ms_p90": { "type": "number", "minimum": 0.0 },
+            "latency_ms_p99": { "type": "number", "minimum": 0.0 },
+            "hdr_v2_base64": { "type": "string", "minLength": 1 }
+        }
+    })
+}
+
+/// `stress.json` — the step-load stress report (exploration only: the
+/// maximum sustainable throughput, never a conformance record).
+#[must_use]
+pub fn stress_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("stress"),
+        "title": "CNF 2.0 stress report",
+        "description": "The step-load stress instrument's exploration artifact: geometric load steps (each with re-checkable HDR V2 records) to the maximum sustainable throughput, environment-bound, with the class floors as context only — classes are earned exclusively by the hour-long class runs.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["corpus", "environment", "step_warmup_s", "step_hold_s",
+                      "p99_budget_ms", "error_budget", "steps",
+                      "max_sustainable_throughput_per_s", "ladder_capped",
+                      "generator_bound", "floors_context", "remark"],
+        "properties": {
+            "corpus": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+            "environment": environment_def(),
+            "step_warmup_s": { "type": "integer", "minimum": 0 },
+            "step_hold_s": { "type": "integer", "minimum": 1 },
+            "p99_budget_ms": { "type": "number", "exclusiveMinimum": 0.0 },
+            "error_budget": { "type": "number", "minimum": 0.0 },
+            "steps": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["rate", "offered_load_sustained", "operations",
+                                  "stable", "generator_bound"],
+                    "properties": {
+                        "rate": { "type": "number", "exclusiveMinimum": 0.0 },
+                        "offered_load_sustained": { "type": "number", "minimum": 0.0 },
+                        "operations": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": operation_measurement_def()
+                        },
+                        "stable": { "type": "boolean" },
+                        "breaches": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                        "generator_bound": { "type": "boolean" }
+                    }
+                }
+            },
+            "max_sustainable_throughput_per_s": { "type": "number", "minimum": 0.0 },
+            "ladder_capped": { "type": "boolean" },
+            "generator_bound": { "type": "boolean" },
+            "floors_context": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["class", "floor_per_s", "cleared"],
+                    "properties": {
+                        "class": { "enum": perf_class_tokens() },
+                        "floor_per_s": { "type": "number", "exclusiveMinimum": 0.0 },
+                        "cleared": { "type": "boolean" }
+                    }
+                }
+            },
+            "remark": { "type": "string", "minLength": 1 }
         }
     })
 }
@@ -1008,6 +1080,7 @@ pub fn emit_all() -> Vec<(&'static str, Value)> {
         ("results.schema.json", results_schema()),
         ("ixit.schema.json", ixit_schema()),
         ("performance-case.schema.json", performance_case_schema()),
+        ("stress.schema.json", stress_schema()),
         ("transcript.schema.json", transcript_schema()),
     ]
 }

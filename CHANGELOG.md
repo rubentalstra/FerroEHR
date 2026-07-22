@@ -108,6 +108,21 @@ workflow refuses a tag that has no matching section here.
   documentation website explains the class ladder, the floors' derivation
   from official activity statistics, how a coordinated-omission-free run
   works, and how to reproduce it.
+- The sustained-window ladder: `cnf-runner perf --hours 1|2|4|6|8|12`
+  (pipeline: `CONF_PERF_HOURS`) extends a class run's measured window beyond
+  the normative hour — a longer hold of the same offered load is a stricter
+  demonstration and persists like any measured run. There is deliberately no
+  shortened run.
+- A step-load **stress instrument**, distinct from conformance:
+  `cnf-runner stress` climbs short intense load steps (geometric doubling,
+  ~two-minute holds, bisection refinement) to the **maximum sustainable
+  throughput** inside a latency budget, over the same seeded corpus and
+  workload mix as the class runs. The report (`stress.json`,
+  schema-published, environment-bound, per-step re-checkable histograms)
+  earns no class and never touches the conformance results; the class floors
+  appear as context only. A latency-throughput curve SVG renders from the
+  committed report through the same drift-guarded asset pipeline, and the
+  documentation's Performance chapter tells the two-instrument story.
 
 ### Changed
 
@@ -155,6 +170,15 @@ workflow refuses a tag that has no matching section here.
   standing test gate.
 
 ### Fixed
+
+- OPT 1.4→2 decomposition now emits phase-1-clean ADL2 sources for every
+  template in the corpus: a `-`-specialised embedded root (whose
+  differential lineage a flattened OPT cannot resolve) is emitted as an
+  unspecialised depth-0 archetype with every dotted code renumbered into
+  the flat code space, and 1.4 node codes legitimately reused across
+  sibling subtrees re-mint archetype-wide-unique ADL2 ids — terminology
+  definitions and bindings follow in both cases, and every remap is
+  recorded in the converted archetype's `conversion_details` provenance.
 
 - The ATNA Audit Record Repository no longer loses records under a sustained
   write load: the audit drain now takes queued events in batches and
