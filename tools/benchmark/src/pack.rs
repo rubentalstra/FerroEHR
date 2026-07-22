@@ -23,7 +23,7 @@ use crate::{BenchError, TemplateKind};
 
 /// The pack directory, anchored to the crate manifest so the path is absolute
 /// at compile time and never resolves against the process CWD (mirrors how the
-/// conformance fixtures are anchored).
+/// vendored CNF corpus is anchored in [`crate::sutclient::fixtures`]).
 const PACK_DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/templates/ckm");
 
 /// One CKM template: its workload [`TemplateKind`], the CKM slug, the
@@ -152,8 +152,8 @@ pub fn all() -> &'static [CkmTemplate] {
     &PACK
 }
 
-/// The CKM template for a kind, or `None` for the ECC-corpus kinds (which are
-/// sourced from the conformance fixtures, not this pack).
+/// The CKM template for a kind, or `None` for the CNF-corpus kinds (which are
+/// sourced from the vendored CNF fixtures, not this pack).
 #[must_use]
 pub fn get(kind: TemplateKind) -> Option<CkmTemplate> {
     PACK.iter().copied().find(|t| t.kind == kind)

@@ -15,8 +15,35 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The conformance acceptance instrument is now the CNF 2.0 reference runner
+  (`tools/cnf-runner`) end to end: `scripts/conformance.sh` composes the SUT
+  on fresh volumes, executes the committed machine-readable catalogue,
+  computes verdicts through the pure pipeline, and writes
+  results/verdicts/report/statement/certificate + badges per SUT. The ECC
+  harness (`tools/conformance`) is retired — its final inventory is
+  preserved at `tools/cnf-runner/comparison/ecc-catalog.tsv` and the
+  reviewed cutover record is `docs/conformance/cnf-comparison.md`; the
+  previous ehrbase-java comparison artifacts are frozen as historical data.
+  Committed per-SUT party sets (ixit + statement) live under
+  `tools/cnf-runner/party/`.
+- Verdict semantics: a REQUIRED capability whose every selected case is
+  excluded by a schedule-registered ambiguity (an unrealized wire on the
+  technology profile, e.g. ADL 1.4 archetype provisioning under ITS-REST
+  1.1.0 — AMB-41) is now recorded as an explicit `unrealized` scope
+  exclusion on the certificate instead of silently failing the tier; the
+  API-presence capabilities (EHR/DEFINITION/QUERY API) are evidenced by
+  chapter exemplar cases.
+
 ### Fixed
 
+- A COMPOSITION create (`201`) or update (`200`) whose response is negotiated
+  as a Simplified Format (`Accept: application/openehr.wt.flat+json` or
+  `…wt.structured+json`) now returns the `ETag` and `Location` headers, matching
+  the canonical (`application/json`/`application/xml`) response. Previously a
+  FLAT/STRUCTURED commit body omitted both version-id headers, so clients could
+  not read the new version uid or resource URL from a simplified-format commit.
 - Composition validation now rejects a `DV_DURATION` whose value carries a
   decimal fraction on any component other than seconds (e.g. `P1Y3M4DT2.5H` or
   `PT2H14.5M`). openEHR permits a fraction only on the seconds component

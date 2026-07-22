@@ -1,0 +1,14 @@
+# ITS-REST 1.1.0 surfaces no wire for I_DEFINITION_ADL14.list_archetypes —
+# the ADL 1.4 REST surface provisions only operational templates; there is no
+# archetype endpoint. Declared unrealized so the case is not-applicable WITH
+# CITATION and activates when a later ITS release adds ADL 1.4 archetype
+# provisioning.
+sm_operation: I_DEFINITION_ADL14.list_archetypes
+its: its-rest
+unrealized:
+  reason: >-
+    No ADL 1.4 archetype operation exists in ITS-REST 1.1.0; the surface is
+    operational-template only (/definition/template/adl1.4* — no archetype
+    paths).
+  source: "SM docs/UML/classes/i_definition_adl14.adoc (archetype provisioning) vs ITS-REST specifications/operations (definition_template_adl1.4_* — OPT-only)"
+  ambiguity: AMB-41

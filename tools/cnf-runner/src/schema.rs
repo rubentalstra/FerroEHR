@@ -215,7 +215,8 @@ pub fn case_core_schema() -> Value {
                 "required": ["template", "path"],
                 "properties": {
                     "template": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
-                    "path": { "type": "string", "minLength": 1 }
+                    "path": { "type": "string", "minLength": 1 },
+                    "constraint_columns": string_array(None)
                 }
             },
             "decision_table": {

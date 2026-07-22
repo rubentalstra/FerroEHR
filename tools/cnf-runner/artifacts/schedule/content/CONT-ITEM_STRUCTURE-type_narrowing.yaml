@@ -28,6 +28,7 @@ constraint_context:
   # committed object is a well-formed instance of its RM subtype.
   template: cnf.tpl.ecc_item_structure_type_narrowing
   path: "/content[openEHR-EHR-EVALUATION.minimal.v1]/data"
+  constraint_columns: ["slot_type"]
 decision_table:
   # slot_type: the archetype C_OBJECT.rm_type_name for the data slot.
   # committed_type: the RM type of the committed ITEM_STRUCTURE object.

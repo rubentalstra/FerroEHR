@@ -1,0 +1,42 @@
+{
+  "instances": {
+    "sut": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "basic",
+        "user_env": "SUT_USER",
+        "password_env": "SUT_PASS"
+      }
+    },
+    "admin": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "basic",
+        "user_env": "SUT_ADMIN_USER",
+        "password_env": "SUT_ADMIN_PASS"
+      }
+    },
+    "readonly": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "basic",
+        "user_env": "SUT_RO_USER",
+        "password_env": "SUT_RO_PASS"
+      }
+    },
+    "unauthenticated": {
+      "base_url": "http://localhost:8080/ehrbase/rest/openehr/v1",
+      "auth": {
+        "mode": "none"
+      }
+    }
+  },
+  "environment": {
+    "exclusive_server": true,
+    "hardware_class": "ci-runner",
+    "cores": 4,
+    "memory_gb": 16,
+    "storage_class": "ssd",
+    "topology": "single-node docker compose"
+  }
+}

@@ -27,7 +27,9 @@ for f in "$RS/results.json" "$JV/results.json" "$BRS/knee.json" "$BJV/knee.json"
 done
 mkdir -p "$OUT" website/book/src/comparison-assets
 
-count() { jq "[.cases[] | select(.status == \"$2\")] | length" "$1/results.json"; }
+# Both schemas: the CNF runner's `outcomes` (ehrbase-rs, current) and the
+# frozen ECC `cases` (ehrbase-java, historical until the re-based run).
+count() { jq "[(.cases // .outcomes)[] | select(.status == \"$2\")] | length" "$1/results.json"; }
 # Badge messages differ by verdict: "PASS (9/9 capabilities)" vs the
 # no-verdict "3/9 capabilities" form a failing profile gets — render the
 # latter as "not met (3/9)".
@@ -41,15 +43,20 @@ verdict() {
 }
 
 # ── conformance side ─────────────────────────────────────────────────────────
-rs_date=$(jq -r '.started' "$RS/results.json" | cut -dT -f1)
+# The CNF results artifact is clock-free; date = the artifact's commit date.
+rs_date=$(git log -1 --format=%cs -- "$RS/results.json" 2>/dev/null || true)
+[ -n "$rs_date" ] || rs_date=$(date -r "$RS/results.json" +%Y-%m-%d)
 jv_date=$(jq -r '.started' "$JV/results.json" | cut -dT -f1)
 jv_version=$(jq -r '.sut.product.version // .sut.product.name' "$JV/results.json")
-rs_total=$(jq '.cases | length' "$RS/results.json")
+rs_total=$(jq '(.cases // .outcomes) | length' "$RS/results.json")
 jv_total=$(jq '.cases | length' "$JV/results.json")
 
-# Shared-catalogue outcomes: the upstream run predates the newest catalogue
-# additions, so the honest comparison runs over the intersection of
-# (case id, format) keys; jq joins via INDEX.
+# Shared-catalogue outcomes: only renderable while BOTH runs carry the same
+# (retired ECC) schema — the rs side moved to the CNF runner 2026-07-22, so
+# the per-case join is frozen until the re-based upstream run lands (#232).
+both_old_schema=$([ "$(jq 'has("cases")' "$RS/results.json")" = "true" ] && \
+  [ "$(jq 'has("cases")' "$JV/results.json")" = "true" ] && echo 1 || echo 0)
+if [ "$both_old_schema" = "1" ]; then
 shared=$(jq -n --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json" '
   (INDEX($a[0].cases[]; "\(.id)|\(.format)")) as $rs
   | [$b[0].cases[] | select($rs["\(.id)|\(.format)"] != null)
@@ -67,6 +74,12 @@ fail_rows=$(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.j
   | [$b[0].cases[] | select(.status=="failed")]
   | sort_by(.ecc_id, .format)[]
   | "| \(.ecc_id) | \(.title | gsub("\\|"; "\\\\|")) | \(.format) | \($rs["\(.id)|\(.format)"].status // "not in shared set") |"')
+else
+  shared='[]'
+  shared_n=0
+  fail_by_cap='[]'
+  fail_rows="| _frozen_ | The per-case join is frozen until the upstream run re-bases on the CNF pipeline (#232) | — | — |"
+fi
 
 {
   cat <<EOF

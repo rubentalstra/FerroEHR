@@ -44,6 +44,11 @@ pub enum Evidence {
     /// Cases exist in the catalogue but none produced a gating pass/fail
     /// (all not-applicable / skipped / not driven / errored).
     NotEvidenced,
+    /// Every selected case for the capability is excluded by a
+    /// schedule-registered ambiguity (an unrealized wire on this technology
+    /// profile) — an explicit scope exclusion the certificate reports; it
+    /// excuses a required capability instead of failing its tier.
+    Unrealized,
     /// The catalogue declares no verdict-bearing case for the capability.
     NoCases,
 }
@@ -110,6 +115,11 @@ enum Effective {
     Failed,
     Errored,
     NotApplicable,
+    /// Every record is not-applicable AND every citation references a
+    /// registered ambiguity (`AMB-n`) — a schedule-registered technology-
+    /// profile exclusion (e.g. an unrealized wire), never an environmental
+    /// one. Excuses a required capability instead of failing its tier.
+    ExcusedByRegister,
     Skipped,
     /// Selected but no results record drove it.
     NotDriven,
@@ -384,6 +394,16 @@ fn rollup_results(
         return Effective::NotDriven;
     }
     let has = |s: OutcomeStatus| relevant.iter().any(|o| o.status == s);
+    let all_na = relevant
+        .iter()
+        .all(|o| o.status == OutcomeStatus::NotApplicable);
+    if all_na
+        && relevant
+            .iter()
+            .all(|o| o.citation.as_deref().is_some_and(|c| c.contains("AMB-")))
+    {
+        return Effective::ExcusedByRegister;
+    }
     if has(OutcomeStatus::Failed) {
         Effective::Failed
     } else if has(OutcomeStatus::Errored) {
@@ -426,6 +446,13 @@ fn capability_evidence(
     if relevant.iter().any(|s| s.effective == Effective::Passed) {
         return Evidence::Passed;
     }
+    if !relevant.is_empty()
+        && relevant
+            .iter()
+            .all(|s| s.effective == Effective::ExcusedByRegister)
+    {
+        return Evidence::Unrealized;
+    }
     let catalogue_has = cases
         .iter()
         .any(|c| c.status == CaseStatus::Active && c.capabilities.contains(cap));
@@ -450,7 +477,15 @@ fn required_all_passed(
         .entries()
         .iter()
         .filter(|(_, e)| e.required && tiers.contains(&e.tier))
-        .all(|(name, _)| evidence_of(caps, name) == Some(Evidence::Passed))
+        .all(|(name, _)| {
+            // `Unrealized` excuses: the wire does not exist on this
+            // technology profile (schedule-registered, certificate-visible)
+            // — a tier must not be unattainable for every server of an ITS.
+            matches!(
+                evidence_of(caps, name),
+                Some(Evidence::Passed | Evidence::Unrealized)
+            )
+        })
 }
 
 fn platform_profiles(

@@ -1,5 +1,10 @@
 # openEHR CDR conformance comparison (generated)
 
+> **FROZEN (2026-07-22):** this document and `ehrbase-java/` are the final
+> artifacts of the retired ECC harness (#202 cutover). They remain the
+> honest historical record; the public comparison re-bases on the CNF 2.0
+> pipeline in a future measured run.
+
 > **Measured, not asserted.** Every cell below is derived from a committed `results.json`; nothing here is hand-entered.
 >
 > - Foreign SUTs are triaged through a committed fairness register before publication: an ehrbase-rs *extension* route (a capability the SUT does not implement) reads `not-applicable`, never `fail`; a genuine spec gap reads `fail`.

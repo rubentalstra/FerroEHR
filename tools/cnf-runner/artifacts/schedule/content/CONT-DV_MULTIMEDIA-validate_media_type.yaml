@@ -14,6 +14,7 @@ spec_refs:
 constraint_context:
   template: cnf.tpl.dv_multimedia_constraints
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
+  constraint_columns: ["C_CODE_PHRASE", "C_INTEGER.list", "C_INTEGER.range"]
 decision_table:
   columns: ["media_type", "size", "C_CODE_PHRASE", "C_INTEGER.list", "C_INTEGER.range", "expected", "violates"]
   rows:

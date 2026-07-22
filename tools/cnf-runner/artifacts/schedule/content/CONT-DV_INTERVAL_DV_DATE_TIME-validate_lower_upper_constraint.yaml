@@ -22,6 +22,7 @@ guards:
 constraint_context:
   template: cnf.tpl.interval_date_time_field_validity
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["month_validity_lower", "day_validity_lower", "month_validity_upper", "day_validity_upper", "hour_validity_lower", "minute_validity_lower", "second_validity_lower", "millisecond_validity_lower", "timezone_validity_lower", "hour_validity_upper", "minute_validity_upper", "second_validity_upper", "millisecond_validity_upper", "timezone_validity_upper"]
 decision_table:
   columns: [lower, upper, month_validity_lower, day_validity_lower, month_validity_upper, day_validity_upper, hour_validity_lower, minute_validity_lower, second_validity_lower, millisecond_validity_lower, timezone_validity_lower, hour_validity_upper, minute_validity_upper, second_validity_upper, millisecond_validity_upper, timezone_validity_upper, expected, violates]
   rows:

@@ -49,3 +49,4 @@ _check/
 *.rlib
 website/book/generated/
 website/book/src/comparison-assets/
+__pycache__/

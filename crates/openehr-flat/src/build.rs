@@ -457,6 +457,14 @@ fn direct_rm_path(host: &str, seg: &str) -> Option<DirectPath> {
 /// Build and place a direct RM-attribute path onto `obj` (see [`direct_rm_path`]).
 /// Returns `true` when `seg` was a recognised direct RM path (built or captured),
 /// `false` when it is not — the caller then rejects it as an unknown path.
+///
+/// The direct fallback NEVER clobbers a value the template-child walk already
+/// produced (`entry().or_insert`): when the web template realizes the RM
+/// attribute — possibly under a node-id-specialized child whose id is not the
+/// attribute name, e.g. the CKM careflow-state `ism_transition[at0109,…]` —
+/// that WT-child realization (which carries the constrained node identity/name)
+/// wins entirely; the direct path only fills an attribute the template left
+/// unmodeled (master05 per-type mapping tables).
 fn place_direct_rm_path(
     obj: &mut Map<String, Value>,
     host_rm_type: &str,
@@ -472,24 +480,25 @@ fn place_direct_rm_path(
     let sub_path = format!("{path}/{seg}");
     match dp {
         DirectPath::Leaf { attr, rm_type } => {
-            if let Some(node) = occ {
-                obj.insert(
-                    attr.to_owned(),
-                    map::build_leaf(node, rm_type, None, &sub_path)?,
-                );
+            if let Some(node) = occ
+                && !obj.contains_key(attr)
+            {
+                let value = map::build_leaf(node, rm_type, None, &sub_path)?;
+                obj.insert(attr.to_owned(), value);
             }
         }
         DirectPath::Ism => {
-            if let Some(node) = occ {
-                obj.insert(
-                    "ism_transition".to_owned(),
-                    build_ism_transition(node, &sub_path)?,
-                );
+            if let Some(node) = occ
+                && !obj.contains_key("ism_transition")
+            {
+                let value = build_ism_transition(node, &sub_path)?;
+                obj.insert("ism_transition".to_owned(), value);
             }
         }
         DirectPath::ActionArchetypeId => {
             if let Some(v) = occ.and_then(SimNode::bare) {
-                obj.insert("action_archetype_id".to_owned(), v.clone());
+                obj.entry("action_archetype_id".to_owned())
+                    .or_insert_with(|| v.clone());
             }
         }
         DirectPath::HistoryOrigin => {

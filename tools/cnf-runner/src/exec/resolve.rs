@@ -88,12 +88,25 @@ impl<'a> Resolver<'a> {
     /// Bind the resolver to a case row (matrix or fixture iteration).
     pub fn bind_row(&mut self, case: &CaseCore, row: usize) {
         self.case_id = case.id.to_string();
-        self.content_template_id = case.requires.templates.first().map(|key| {
-            self.manifest
-                .get(key)
-                .and_then(|entry| entry.template_id.clone())
-                .unwrap_or_else(|| key.to_string())
-        });
+        // A content case whose constraint_context declares constraint-axis
+        // columns is committed against a PER-ROW synthesized OPT (issue #228):
+        // the carrier stamps the deterministic per-row template id, matching the
+        // OPT the driver synthesizes+uploads for this row. Otherwise the carrier
+        // uses the single baked template from `requires.templates`.
+        self.content_template_id = if case
+            .constraint_context
+            .as_ref()
+            .is_some_and(|ctx| !ctx.constraint_columns.is_empty())
+        {
+            Some(recipes::synth_template_id(&self.case_id, row))
+        } else {
+            case.requires.templates.first().map(|key| {
+                self.manifest
+                    .get(key)
+                    .and_then(|entry| entry.template_id.clone())
+                    .unwrap_or_else(|| key.to_string())
+            })
+        };
         self.row_index = row;
         self.row = case
             .parameters

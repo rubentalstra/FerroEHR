@@ -182,10 +182,12 @@ jobs:
   # derivation-square guard (every case carries a spec citation, a schedule
   # trace or stated ECC-original reason, and an ITS-REST binding), the fixture
   # manifest + adjudication-register validation, and the wire/edition/model
-  # unit tests. The e2e ECC run goes through the Docker compose stack
-  # (scripts/conformance.sh, multi-SUT: ehrbase-rs default / ehrbase-java /
-  # bring-your-own-endpoint) at phase gates; this job is the fast always-on
-  # signal.
+  # unit tests. The e2e CNF run goes through the Docker compose stack
+  # (scripts/conformance.sh — the CNF 2.0 pipeline over tools/cnf-runner) at
+  # phase gates; this job is the fast always-on signal: the runner's own
+  # test suite (schema drift, artifact gates, interpreter laws, defect
+  # rejection, verification pack, comparison gate) plus the full artifact
+  # validation.
   conformance:
     name: cnf coverage guard
     needs: changes
@@ -197,7 +199,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
-      - run: cargo nextest run -p conformance
+      - run: cargo nextest run -p cnf-runner
+      - run: cargo run -q -p cnf-runner --bin cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr
 
   # ── Build + tests against PostgreSQL 18.4 ────────────────────────────────────
   test:

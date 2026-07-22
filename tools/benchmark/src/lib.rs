@@ -2,7 +2,8 @@
 //!
 //! Implements a pre-registered clinical workload and a fixed measurement set
 //! under a fairness methodology: an identical client for both SUTs (via the
-//! conformance transport), coordinated-omission correction, symmetric warmup,
+//! self-contained [`sutclient`] transport), coordinated-omission correction,
+//! symmetric warmup,
 //! published raw data, and an explicit "where the other side wins" account.
 //! No openEHR spec governs this — it is our own design.
 //!
@@ -10,8 +11,9 @@
 //! a clinical day into an **open-loop arrival schedule** of [`PlannedOp`]s;
 //! [`render`] produces seeded instance payloads over the vendored fixture
 //! skeletons; the driver ([`drive`]) dispatches at planned times against any
-//! SUT (the conformance `SutClient` — the provably-ECC-identical client),
-//! resolving per-patient runtime ids; [`measure`] records per-class
+//! SUT (the self-contained [`sutclient::transport::SutClient`] — the same
+//! client for both targets), resolving per-patient runtime ids; [`measure`]
+//! records per-class
 //! `HdrHistogram`s against *planned* send times so a stalled SUT cannot hide
 //! its tail; [`sample`] captures container CPU/RSS, cold start, and storage
 //! footprint; [`report`] emits `results.json` + `REPORT.md` — generated,
@@ -35,6 +37,7 @@ pub mod render;
 pub mod report;
 pub mod sample;
 pub mod seed;
+pub mod sutclient;
 
 use std::time::Duration;
 
@@ -43,7 +46,7 @@ use std::time::Duration;
 pub enum BenchError {
     /// A transport-level failure reaching the SUT.
     #[error("transport: {0}")]
-    Transport(#[from] conformance::harness::TransportError),
+    Transport(#[from] crate::sutclient::harness::TransportError),
     /// A fixture could not be read.
     #[error("fixture: {0}")]
     Fixture(String),

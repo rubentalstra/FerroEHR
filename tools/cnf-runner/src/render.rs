@@ -419,6 +419,7 @@ fn evidence_token(evidence: Evidence) -> &'static str {
         Evidence::Passed => "pass",
         Evidence::Failed => "FAIL",
         Evidence::NotEvidenced => "not evidenced",
+        Evidence::Unrealized => "excused (unrealized on this technology profile)",
         Evidence::NoCases => "no cases",
     }
 }
@@ -454,7 +455,7 @@ mod tests {
     fn statement() -> Statement {
         serde_json::from_value(serde_json::json!({
             "product": { "name": "EHRbase-rs", "version": "3.5.0",
-                          "vendor": "openHospi", "identifier": "urn:x" },
+                          "vendor": "Ruben Talstra", "identifier": "urn:x" },
             "schedule_release": "CNF-2.0",
             "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
             "claims": { "capabilities": ["EhrOperations"], "profiles": ["CORE"] },

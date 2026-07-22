@@ -16,6 +16,7 @@ guards:
 constraint_context:
   template: cnf.tpl.dv_duration_c_duration
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
+  constraint_columns: ["years_allowed", "months_allowed", "weeks_allowed", "days_allowed", "hours_allowed", "minutes_allowed", "seconds_allowed", "fractional_seconds_allowed", "range.lower", "range.upper"]
 decision_table:
   columns: ["value", "years_allowed", "months_allowed", "weeks_allowed", "days_allowed", "hours_allowed", "minutes_allowed", "seconds_allowed", "fractional_seconds_allowed", "range.lower", "range.upper", "expected", "violates"]
   rows:

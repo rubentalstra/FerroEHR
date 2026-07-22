@@ -531,7 +531,7 @@ mod tests {
     fn statement_round_trips() {
         let json = serde_json::json!({
             "product": { "name": "EHRbase-rs", "version": "3.5.0",
-                          "vendor": "openHospi", "identifier": "urn:x:ehrbase-rs" },
+                          "vendor": "Ruben Talstra", "identifier": "urn:rubentalstra:ehrbase-rs" },
             "schedule_release": "CNF-2.0",
             "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
             "claims": { "capabilities": ["EhrOperations"], "profiles": ["CORE"] },

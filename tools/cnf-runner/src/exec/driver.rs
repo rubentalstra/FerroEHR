@@ -1306,6 +1306,68 @@ fn pace_commit_capture(step: &FlowStep, vars: &VarStore) {
     }
 }
 
+impl HttpDriver<'_> {
+    /// Per-row synthesized OPT (issue #228): a content case whose
+    /// `constraint_context` declares constraint-axis columns commits each row
+    /// against a freshly synthesized OPT baking THAT row's constraint. Build it
+    /// from the row's cells and upload it (409 tolerated) under the deterministic
+    /// per-row template id the carrier stamps (`recipes::synth_template_id`).
+    fn provision_synthesized_opt(&mut self, case: &CaseCore, row: usize) -> Result<(), String> {
+        let Some(ctx) = &case.constraint_context else {
+            return Ok(());
+        };
+        if ctx.constraint_columns.is_empty() {
+            return Ok(());
+        }
+        let Some(matrix) = case.parameters.as_ref().and_then(|p| p.matrix.as_ref()) else {
+            return Ok(());
+        };
+        let Some(cells) = matrix.rows.get(row) else {
+            return Ok(());
+        };
+        let rm_class = case
+            .rm_class
+            .as_deref()
+            .ok_or_else(|| "content constraint case without rm_class".to_owned())?;
+        let case_id = case.id.to_string();
+        let template_id = crate::exec::recipes::synth_template_id(&case_id, row);
+        let xml = crate::exec::content_synth::synthesize_opt(
+            &case_id,
+            rm_class,
+            &template_id,
+            &matrix.columns,
+            cells,
+        )
+        .map_err(|e| e.to_string())?;
+        let payload = Value::String(xml);
+        let binding = self.binding_for(case, "I_DEFINITION_ADL14.upload_opt")?;
+        let instance = self.ixit.default_instance()?;
+        let request_spec = binding
+            .request
+            .as_ref()
+            .ok_or_else(|| "upload_opt unrealized".to_owned())?;
+        let mut headers = BTreeMap::new();
+        if let Some(hs) = &request_spec.headers {
+            for (name, template) in hs {
+                if let Ok(v) = assertions::render_template(template, &VarStore::default()) {
+                    headers.insert(name.clone(), v);
+                }
+            }
+        }
+        headers
+            .entry("Content-Type".to_owned())
+            .or_insert_with(|| "application/xml".to_owned());
+        if let Some(auth) = Self::auth_header(&instance.auth)? {
+            headers.insert("Authorization".to_owned(), auth);
+        }
+        let base = instance.base_url.trim_end_matches('/');
+        let url = format!("{base}{}", request_spec.path.raw());
+        // 409 tolerated: a re-run row re-uploads the same deterministic OPT.
+        let _uploaded = self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
+        Ok(())
+    }
+}
+
 impl StepDriver for HttpDriver<'_> {
     fn perform(
         &mut self,
@@ -1463,6 +1525,7 @@ impl StepDriver for HttpDriver<'_> {
             let _uploaded =
                 self.send(request_spec.method, &url, &headers, Some(&payload), false)?;
         }
+        self.provision_synthesized_opt(case, row)?;
         self.provision_ehr(case, vars)?;
         // directory: provision the FOLDER tree via create_directory.
         if let Some(crate::model::case::DirectoryRequirement::Tree(key)) =

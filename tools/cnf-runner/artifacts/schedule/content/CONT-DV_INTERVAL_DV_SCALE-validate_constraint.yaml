@@ -20,6 +20,7 @@ guards:
 constraint_context:
   template: cnf.tpl.interval_scale_list    # C_DV_ORDINAL.list on both limits; real-valued tuples vary per row
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["lower_c_dv_ordinal_list", "upper_c_dv_ordinal_list"]
 decision_table:
   columns: [lower_symbol, lower_value, upper_symbol, upper_value, lower_unbounded, upper_unbounded, lower_included, upper_included, lower_c_dv_ordinal_list, upper_c_dv_ordinal_list, expected, violates]
   rows:

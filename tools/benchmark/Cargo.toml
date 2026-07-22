@@ -14,10 +14,6 @@ name = "bench"
 path = "src/bin/bench.rs"
 
 [dependencies]
-# The SUT client is REUSED from the conformance crate so the request path is
-# provably identical for both targets (design §5) — the core fairness guarantee.
-conformance = { path = "../conformance" }
-
 # Constraint-aware payload variation is done in FLAT space against each
 # template's WebTemplate (OPT → WebTemplate via `openehr-its`, then
 # `openehr-flat::to_flat`/`from_flat`), so every jittered leaf stays inside its
@@ -41,6 +37,11 @@ dashmap = { workspace = true }
 rand = { workspace = true }
 base64 = { workspace = true }
 sha2 = { workspace = true }
+# The self-contained SUT client (`sutclient` module, absorbed from the retired
+# conformance harness): a reqwest API client behind an async `Transport` trait,
+# so both benchmark targets share one provably-identical request path.
+reqwest = { workspace = true }
+async-trait = { workspace = true }
 
 [lints]
 workspace = true

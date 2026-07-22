@@ -9,7 +9,7 @@ id: I_QUERY_SERVICE.execute_ad_hoc_query-loaded_db
 kind: functional
 component: QUERY
 sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
-capabilities: [AqlBasic]
+capabilities: [AqlBasic, QueryApi]   # the API-presence capability is evidenced by this chapter exemplar (CNF profiles master03 §Functional REST APIs)
 profiles: [STANDARD]
 test_purpose: >-
   An ad-hoc EHR-scoped CONTAINS COMPOSITION query over a loaded server returns
