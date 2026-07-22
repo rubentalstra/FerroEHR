@@ -26,7 +26,7 @@ Non-negotiables (violations are rejected at review):
   listeners only. No JS-wrapping crates.
 - **REST boundary:** CDR access only via `#[server]` fns → `reqwest` →
   ITS-REST. The crate may depend on `crates/openehr-*`; it must NEVER
-  depend on `app/ehrbase`, `app/ehrbase-sm`, or `app/ehrbase-rest`.
+  depend on `app/ehrbase` or `app/ehrbase-rest`.
 - **Server fns are public endpoints:** every one that touches the CDR or
   session state enforces the console auth; CDR credentials never reach
   client-visible state (signals, props, serialized resources).
@@ -54,7 +54,8 @@ Non-negotiables (violations are rejected at review):
   (lib), `cargo nextest run -p ehrbase-admin-ui` green, `leptosfmt` +
   `cargo fmt` clean, and `cargo leptos build` completing when the task
   touches the build surface. When the change touches an E2E-covered journey
-  (design doc §8d) and Docker is available, run `scripts/ui-e2e.sh` too;
+  (`.claude/rules/leptos-ui.md` §10) and Docker is available, run
+  `scripts/ui-e2e.sh` too;
   if you cannot run it, say so explicitly — CI's `ui-e2e` job gates the
   merge regardless. Report actual command output; never claim green you
   didn't see.

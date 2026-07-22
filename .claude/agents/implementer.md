@@ -30,8 +30,10 @@ Non-negotiables (violations are rejected at review):
   true`); never hand-roll what axum/sqlx/sea-query/oauth2/etc. provide.
 - `thiserror` in libs, `anyhow` only in the binary; no `unwrap`/`expect`
   outside tests; `std::sync::LazyLock`, edition-2024 idioms.
-- **Never weaken, skip, or delete a test**; DB tests use testcontainers
-  PG 18 and must not leak containers.
+- **Never weaken, skip, or delete a test**; every DB-backed test takes its
+  database from the shared harness `testkit::db()` (`tools/testkit`) — never
+  a per-test PostgreSQL container, never migrations in a test
+  (`.claude/rules/testing.md`).
 - Done = `cargo build` + `cargo clippy --all-targets` + `cargo nextest run`
   green for every crate you touched, `cargo fmt` clean. Report actual
   command results; never claim green you didn't see.
