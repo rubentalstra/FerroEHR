@@ -1,20 +1,21 @@
 # Per-RM-type suffix mapping: the temporal family — DV_DATE, DV_DATE_TIME,
 # DV_TIME, DV_DURATION (simplified_formats master05 §DV_DATE, §DV_DATE_TIME,
-# §DV_TIME, §DV_DURATION). Vectors: the bare-value blocks and the full blocks
-# (status/_accuracy/normal_range/other_reference_ranges) for each type. The bare
-# (empty-suffix) value carries the ISO 8601 lexical form; DV_DATE/DATE_TIME/TIME
-# carry /_accuracy as a DV_DURATION.
+# §DV_TIME, §DV_DURATION). Exercised functionally on the official Test_all_types
+# template (cnf.opt.maximal): a FLAT commit carrying the date/datetime/time/
+# duration_any leaves (bare ISO 8601 lexical values) is read back canonical and
+# the bare value -> RM `value` mapping is asserted per type. Leaves: content[0]
+# OBSERVATION items[5] DV_DATE (at0009), items[6] DV_DATE_TIME (at0010), items[8]
+# DV_TIME (at0012), items[11] DV_DURATION (at0018).
 id: SF-MAP-temporal
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: DV_DATE_TIME
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  The DV_DATE, DV_DATE_TIME, DV_TIME and DV_DURATION FLAT suffixes map to their
-  documented RM paths: the bare value (ISO 8601), the /_accuracy DV_DURATION on
-  the date/time types, DV_DURATION's numeric accuracy, and the shared range
-  attributes.
+  The DV_DATE, DV_DATE_TIME, DV_TIME and DV_DURATION FLAT bare (empty-suffix)
+  values map to the RM `value` attribute carrying the ISO 8601 lexical form.
 description: "Temporal-family (DV_DATE/DATE_TIME/TIME/DURATION) suffix mapping (master05)"
 spec_refs:
   - "ITS-REST simplified_formats master05 §DV_DATE_TIME"
@@ -23,34 +24,34 @@ spec_refs:
   - "ITS-REST simplified_formats master05 §DV_DURATION"
   - "RM data_types §DV_DATE_TIME"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/time"
-decision_table:
-  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
-  rows:
-    - ["DV_DATE", "", "value", "String", "yes"]
-    - ["DV_DATE", "/_accuracy", "accuracy", "DV_DURATION", "no"]
-    - ["DV_DATE", "|magnitude_status", "magnitude_status", "String", "no"]
-    - ["DV_DATE", "|normal_status", "normal_status.code_string", "String", "no"]
-    - ["DV_DATE", "/_normal_range", "normal_range", "DV_INTERVAL<DV_DATE>", "no"]
-    - ["DV_DATE", "/_other_reference_ranges:i", "_other_reference_ranges", "REFERENCE_RANGE<DV_DATE>", "no"]
-    - ["DV_DATE_TIME", "", "value", "String", "yes"]
-    - ["DV_DATE_TIME", "/_accuracy", "accuracy", "DV_DURATION", "no"]
-    - ["DV_DATE_TIME", "|magnitude_status", "magnitude_status", "String", "no"]
-    - ["DV_DATE_TIME", "|normal_status", "normal_status.code_string", "String", "no"]
-    - ["DV_DATE_TIME", "/_normal_range", "normal_range", "DV_INTERVAL<DV_DATE_TIME>", "no"]
-    - ["DV_DATE_TIME", "/_other_reference_ranges:i", "_other_reference_ranges", "REFERENCE_RANGE<DV_DATE_TIME>", "no"]
-    - ["DV_TIME", "", "value", "String", "yes"]
-    - ["DV_TIME", "/_accuracy", "accuracy", "DV_DURATION", "no"]
-    - ["DV_TIME", "|magnitude_status", "magnitude_status", "String", "no"]
-    - ["DV_TIME", "|normal_status", "normal_status.code_string", "String", "no"]
-    - ["DV_TIME", "/_normal_range", "normal_range", "DV_INTERVAL<DV_TIME>", "no"]
-    - ["DV_TIME", "/_other_reference_ranges:i", "_other_reference_ranges", "REFERENCE_RANGE<DV_TIME>", "no"]
-    - ["DV_DURATION", "", "value", "String", "yes"]
-    - ["DV_DURATION", "|accuracy", "accuracy", "Real", "no"]
-    - ["DV_DURATION", "|accuracy_is_percent", "accuracy_is_percent", "Boolean", "no"]
-    - ["DV_DURATION", "|magnitude_status", "magnitude_status", "String", "no"]
-    - ["DV_DURATION", "|normal_status", "normal_status.code_string", "String", "no"]
-    - ["DV_DURATION", "/_normal_range", "normal_range", "DV_INTERVAL<DV_DURATION>", "no"]
-    - ["DV_DURATION", "/_other_reference_ranges:i", "_other_reference_ranges", "REFERENCE_RANGE<DV_DURATION>", "no"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # DV_DATE bare value -> value (master05 §DV_DATE)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[5]/value/_type", equals: "DV_DATE" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[5]/value/value", equals: "2019-03-22" }
+      # DV_DATE_TIME bare value -> value (master05 §DV_DATE_TIME)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[6]/value/_type", equals: "DV_DATE_TIME" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[6]/value/value", equals: "2019-03-22T22:36:25.23+01:00" }
+      # DV_TIME bare value -> value (master05 §DV_TIME)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[8]/value/_type", equals: "DV_TIME" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[8]/value/value", equals: "22:36:25.23" }
+      # DV_DURATION bare value -> value (master05 §DV_DURATION)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[11]/value/_type", equals: "DV_DURATION" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[11]/value/value", equals: "P2DT7H16M" }

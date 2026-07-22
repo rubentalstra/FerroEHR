@@ -32,22 +32,22 @@ flow:
     assert: [ { assert: returns, equals: true } ]
   - step: 3
     call: has_path
-    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode-x" }
+    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode_x" }
     expect: ok
     assert: [ { assert: returns, equals: true } ]
   - step: 4
     call: has_path
-    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode-x/summary-composition-x" }
+    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode_x/summary_compo_x" }
     expect: ok
     assert: [ { assert: returns, equals: true } ]
   - step: 5
     call: has_path
-    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode-y" }
+    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode_y" }
     expect: ok
     assert: [ { assert: returns, equals: true } ]
   - step: 6
     call: has_path
-    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode-y/summary-composition-y" }
+    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode_y/summary_compo_y" }
     expect: ok
     assert: [ { assert: returns, equals: true } ]
   - step: 7
@@ -57,7 +57,7 @@ flow:
     assert: [ { assert: returns, equals: true } ]
   - step: 8
     call: has_path
-    with: { ehr_id: "${ehr_id}", a_path: "/hospitalization/summary-composition-z" }
+    with: { ehr_id: "${ehr_id}", a_path: "/hospitalization/summary_compo_z" }
     expect: ok
     assert: [ { assert: returns, equals: true } ]
   - step: 9
@@ -70,7 +70,7 @@ flow:
     expect: not_found
   - step: 11
     call: has_path
-    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode-x/random-c3" }   # '/emergency/episode-x/' + random() -> false
+    with: { ehr_id: "${ehr_id}", a_path: "/emergency/episode_x/random-c3" }   # '/emergency/episode-x/' + random() -> false
     expect: not_found
   - step: 12
     call: has_path

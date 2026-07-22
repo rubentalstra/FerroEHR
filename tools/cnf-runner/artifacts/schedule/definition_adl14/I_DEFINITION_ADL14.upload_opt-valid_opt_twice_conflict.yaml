@@ -19,16 +19,16 @@ spec_refs:
   - "CNF platform_test_schedule master04 §upload_opt-valid_opt_twice_conflict"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }              # "No OPTs should be loaded on the system"
-data_sets: [cnf.opt.minimal_all_entries]
+data_sets: [cnf.opt.minimal_admin]
 flow:
   - step: 1
     call: upload_opt
-    with: { opt: "${ds:cnf.opt.minimal_all_entries}" }
+    with: { opt: "${ds:cnf.opt.minimal_admin}" }
     expect: created                      # "the result should be positive (the server accepted the OPT)"
     capture: { template_id: created.template_id }
   - step: 2
     call: upload_opt
-    with: { opt: "${ds:cnf.opt.minimal_all_entries}" }   # same OPT as step 1
+    with: { opt: "${ds:cnf.opt.minimal_admin}" }   # same OPT as step 1
     expect: already_exists               # "the result should be negative (the server rejected the OPT)"
 postconditions:
   - assert: state

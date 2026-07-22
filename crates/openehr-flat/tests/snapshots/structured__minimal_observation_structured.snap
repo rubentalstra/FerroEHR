@@ -1,6 +1,5 @@
 ---
 source: crates/openehr-flat/tests/structured.rs
-assertion_line: 319
 expression: structured
 ---
 {
@@ -39,6 +38,9 @@ expression: structured
       {
         "text": [
           "original value"
+        ],
+        "history_origin": [
+          "2019-01-28T21:22:19,552+00:00"
         ]
       }
     ],

@@ -7,7 +7,10 @@ sm_operation: I_EHR_SERVICE.get_ehrs_for_subject
 its: its-rest
 request:
   method: GET
-  path: /ehr                                                   # ?subject_id=…&subject_namespace=… (query params)
+  path: /ehr
+  query:
+    subject_id: "${subject_id}"                                # ehr_get_by_subject.yaml (required)
+    subject_namespace: "${subject_namespace}"
 formats: [canonical-json, canonical-xml]
 outcomes:
   ok: { status: 200, headers: { Content-Type: negotiated } }   # 200_EHR.yaml — EHR retrieved for subject

@@ -1,55 +1,49 @@
 # Underscore-prefixed RM attributes (simplified_formats master04 §RM Attributes
-# prefix + the per-type _-prefixed rows throughout master05). Optional RM
-# attributes not constrained in the template are accessed with an underscore
-# prefix (`_attributeName`). This content decision table encodes the six
-# task-named RM-attribute paths (_uid, _link:i, _feeder_audit, _normal_range,
-# _participation:i, _mapping:i) plus the wider master05 set, each with its RM
-# target and owning type. Vectors: the master04 _uid, _link and _normal_range
-# JSON blocks and the master05 _-prefixed occurrences.
+# prefix). Optional RM attributes not constrained in the template are accessed
+# with an underscore prefix (`_attributeName`), reaching RM structure the web
+# template does not surface as a field. Exercised functionally on the official
+# Test_all_types template (cnf.opt.maximal): the FLAT key
+# `test_all_types/test_all_types:0/quantity/_normal_range/...` supplies the
+# optional DV_ORDERED.normal_range (a DV_INTERVAL<DV_QUANTITY>) that the template
+# does not constrain, and canonical read-back proves the underscore prefix
+# reached DV_QUANTITY.normal_range.lower/upper.
 id: SF-RMATTR-underscore_mapping
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: LOCATABLE
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  Each underscore-prefixed FLAT path maps to the optional RM attribute it names
-  (uid, links, feeder_audit, normal_range/other_reference_ranges, participations,
-  mappings, identifiers, and the further optional RM leaves) on its owning type.
-description: "Underscore-prefixed RM-attribute path mapping (master04 + master05)"
+  An underscore-prefixed FLAT path (`_normal_range`) maps to the optional RM
+  attribute it names (DV_ORDERED.normal_range) on its owning DV_QUANTITY leaf,
+  reaching RM structure not surfaced as a template field.
+description: "Underscore-prefixed RM-attribute path mapping (master04 §RM Attributes prefix)"
 spec_refs:
   - "ITS-REST simplified_formats master04 §RM Attributes prefix"
   - "ITS-REST simplified_formats master04 §Field Identifiers"
   - "ITS-REST simplified_formats master05 §DV_QUANTITY"
   - "RM common §LOCATABLE"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items"
-decision_table:
-  columns: ["underscore_attribute", "rm_target", "owning_type"]
-  rows:
-    - ["_uid", "uid.value", "LOCATABLE"]
-    - ["_link:i", "links", "LOCATABLE"]
-    - ["_feeder_audit", "feeder_audit", "LOCATABLE"]
-    - ["_normal_range", "normal_range", "DV_ORDERED"]
-    - ["_other_reference_ranges:i", "other_reference_ranges", "DV_ORDERED"]
-    - ["_participation:i", "participations", "EVENT_CONTEXT"]
-    - ["_other_participation:i", "other_participations", "ENTRY"]
-    - ["_mapping:i", "mappings", "DV_TEXT"]
-    - ["_identifier:i", "identifiers", "PARTY_IDENTIFIED"]
-    - ["_language", "language", "DV_TEXT"]
-    - ["_encoding", "encoding", "DV_TEXT"]
-    - ["_charset", "charset", "DV_PARSABLE"]
-    - ["_thumbnail", "thumbnail", "DV_MULTIMEDIA"]
-    - ["_accuracy", "accuracy", "DV_DATE_TIME"]
-    - ["_null_flavour", "null_flavour", "ELEMENT"]
-    - ["_null_reason", "null_reason", "ELEMENT"]
-    - ["_work_flow_id", "workflow_id", "ENTRY"]
-    - ["_guideline_id", "guideline_id", "CARE_ENTRY"]
-    - ["_instruction_details", "instruction_details", "ACTION"]
-    - ["_expiry_time", "expiry_time", "INSTRUCTION"]
-    - ["_reason:i", "reason", "ISM_TRANSITION"]
-    - ["_health_care_facility", "health_care_facility", "EVENT_CONTEXT"]
-    - ["_end_time", "end_time", "EVENT_CONTEXT"]
-    - ["_location", "location", "EVENT_CONTEXT"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # _normal_range underscore prefix -> DV_QUANTITY.normal_range (an optional RM attribute)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/normal_range/lower/magnitude", equals: 60.0 }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/normal_range/upper/magnitude", equals: 80.0 }

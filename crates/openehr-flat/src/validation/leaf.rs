@@ -211,8 +211,18 @@ fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
 /// the archetype-`local` terminology when the input names none, or the exact
 /// external terminology the `C_CODE_PHRASE` names (AOM 1.4 §`C_CODE_PHRASE`: an
 /// enumerated external code list constrains membership just like a local one —
-/// master17.2 `CONT-DV_CODED_TEXT-validate_ext_term`). A code from a *different*
-/// terminology than the constraint's is left to the terminology pass
+/// master17.2 `CONT-DV_CODED_TEXT-validate_ext_term`).
+///
+/// When the instance code's terminology *differs* from the constraint's, the
+/// behaviour depends on how the constraint is scoped: a constraint that
+/// **explicitly** binds to the archetype-`local` terminology
+/// ([`WebTemplateNode::coded_terminology_local`]) admits ONLY local codes in its
+/// closed list, so a code from any other terminology is a violation — the
+/// C_CODE_PHRASE `code_list` is "a list of codes FROM the terminology"
+/// (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc` §C_CODED_TEXT,
+/// the AOM1.4 form of C_CODE_PHRASE), scoped to that one terminology. For a
+/// constraint that does NOT name a terminology (or names an external one), a
+/// differently-scoped instance code is left to the terminology pass
 /// (confident-violations bias).
 fn check_code_membership(
     v: &mut Validator,
@@ -224,14 +234,29 @@ fn check_code_membership(
     if input.list.is_empty() || input.list_open == Some(true) {
         return;
     }
-    if !terminology_matches(input.terminology.as_deref(), terminology) {
+    let Some(code) = code else { return };
+    if terminology_matches(input.terminology.as_deref(), terminology) {
+        if !input.list.iter().any(|cv| cv.value == code) {
+            v.push(
+                &wt.aql_path,
+                format!("coded value '{code}' is not in the constrained value set"),
+                ValidationKind::CodedValue,
+            );
+        }
         return;
     }
-    let Some(code) = code else { return };
-    if !input.list.iter().any(|cv| cv.value == code) {
+    // Terminology mismatch: reject only when the constraint EXPLICITLY declared
+    // the archetype-`local` terminology with a closed list (the builder strips
+    // the implicit/default `local` from `input.terminology`, so an unset
+    // terminology cannot be distinguished there — the explicit-local signal is
+    // carried separately on the node).
+    if wt.coded_terminology_local {
         v.push(
             &wt.aql_path,
-            format!("coded value '{code}' is not in the constrained value set"),
+            format!(
+                "coded value '{code}' (terminology '{}') is not in the constrained local value set",
+                terminology.unwrap_or("")
+            ),
             ValidationKind::CodedValue,
         );
     }
@@ -243,10 +268,11 @@ fn check_quantity(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
     let unit = instance.get("units").and_then(Value::as_str);
     let unit_input = input_with_suffix(wt, "unit");
 
-    // Unit membership.
+    // Unit membership against an enumerated C_QUANTITY_ITEM unit list.
+    let has_unit_list =
+        unit_input.is_some_and(|ui| !ui.list.is_empty() && ui.list_open != Some(true));
     if let (Some(ui), Some(u)) = (unit_input, unit)
-        && !ui.list.is_empty()
-        && ui.list_open != Some(true)
+        && has_unit_list
         && !ui.list.iter().any(|cv| cv.value == u)
     {
         v.push(
@@ -254,6 +280,45 @@ fn check_quantity(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
             format!("unit '{u}' is not among the constrained units"),
             ValidationKind::CodedValue,
         );
+    }
+
+    // C_QUANTITY.property membership: when the constraint carries a `property`
+    // but no enumerated unit list, the instance's units are constrained by that
+    // physical property. AOM 1.4 defines `property` only as "Name of physical
+    // property for Quantities being constrained"
+    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY)
+    // and gives no formal valid_value — the normative constraint semantics live
+    // in the openEHR Archetype Profile, which is not vendored. We ground the
+    // check on the openEHR-published property↔unit table (`PropertyUnitData.xml`
+    // via `openehr_term::bundle`), biasing toward CONFIDENT violations: a unit
+    // is rejected only when it belongs to a DIFFERENT property's unit set (e.g.
+    // `mg` is a Mass unit committed against a `length` constraint) — a confident
+    // dimensional mismatch. A unit that is not in the table at all is tolerated
+    // (the curated table is not exhaustive, and the formal property→units
+    // semantics are spec-silent). NOTE: this is our own design/extension on the
+    // openEHR terminology asset — AOM 1.4 defines no property→units mapping.
+    if let (Some(property), Some(u)) = (&wt.quantity_property, unit)
+        && !has_unit_list
+    {
+        let bundle = openehr_term::bundle::openehr();
+        let unit_matches =
+            |pu: &&openehr_term::bundle::Unit| pu.text == u || pu.ucum.as_deref() == Some(u);
+        // Only enforce when the constrained property is known to the table
+        // (otherwise we cannot say what its units are — tolerate).
+        let allowed = bundle.units_for_property(property);
+        let in_property = allowed.iter().any(unit_matches);
+        let known_elsewhere = bundle
+            .property_units()
+            .units
+            .iter()
+            .any(|pu| unit_matches(&pu));
+        if !allowed.is_empty() && !in_property && known_elsewhere {
+            v.push(
+                &wt.aql_path,
+                format!("unit '{u}' is not a valid unit for the constrained property '{property}'"),
+                ValidationKind::CodedValue,
+            );
+        }
     }
 
     // Magnitude range: prefer the magnitude input's own range, else the range on

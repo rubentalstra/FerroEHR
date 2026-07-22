@@ -18,11 +18,11 @@ applies: { rm: ">=1.0.2" }
 requires:
   server: any
   ehr: { commits: none }                 # EHR exists, but NO OPT is provisioned — mints ${ehr_id}
-data_sets: [cnf.composition.minimal_event.v1]
+data_sets: [cnf.composition.unknown_template]
 flow:
   - step: 1
     call: create_composition
-    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.minimal_event.v1}" }
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.composition.unknown_template}" }
     expect: template_not_found            # "information about the non-existent OPT"
     assert:
       - { assert: message_exemplar, text: "information about the non-existent OPT" }

@@ -15,21 +15,18 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.delete_artefact"
   - "ITS-REST definition_template_adl2_get §404 Not Found"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }
+requires:
+  server: any
+  templates: [cnf.adl2.opt.minimal]   # the upload ground — provisioned, 409-tolerant on a shared world
 data_sets: [cnf.adl2.opt.minimal]
 flow:
   - step: 1
-    call: upload_artefact
-    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal}" }
-    expect: created
-    capture: { template_id: created.template_id }
-  - step: 2
     call: delete_artefact
-    with: { template_id: "${template_id}" }
+    with: { template_id: "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0" }
     expect: deleted
-  - step: 3
+  - step: 2
     call: get_artefact
-    with: { template_id: "${template_id}" }
+    with: { template_id: "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0" }
     expect: not_found
 postconditions:
   - assert: state

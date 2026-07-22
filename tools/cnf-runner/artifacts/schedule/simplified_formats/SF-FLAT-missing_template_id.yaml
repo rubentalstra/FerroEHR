@@ -34,5 +34,8 @@ flow:
     expect: missing_template_id          # create_composition binding: 422 (openehr-template-id §)
     assert:
       - { assert: message_exemplar, text: "openehr-template-id required to resolve the template for a simplified COMPOSITION commit" }
-# TODO: the flow-step `variant` is not yet consumed by the interpreter; header
-#       omission for this negative depends on interpreter support for `variant`.
+# TODO: `variant` now selects the binding, but a HEADER-MUTATION variant
+#       (no_template_id = omit the otherwise-required openehr-template-id header)
+#       is not yet implemented in the driver; without it the runner sends the
+#       normal FLAT commit (header present) and the SUT correctly creates. Needs
+#       a driver mechanism to omit/override headers per step variant.

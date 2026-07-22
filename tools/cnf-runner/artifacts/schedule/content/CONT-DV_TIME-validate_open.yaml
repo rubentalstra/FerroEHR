@@ -12,7 +12,7 @@ spec_refs:
   - "AM AOM1.4 \u00a7C_TIME"
 applies: { rm: ">=1.0.2" }
 constraint_context:
-  template: cnf.tpl.dv_time_c_time
+  template: cnf.tpl.dv_time_open
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
 decision_table:
   columns: ["value", "expected", "violates"]

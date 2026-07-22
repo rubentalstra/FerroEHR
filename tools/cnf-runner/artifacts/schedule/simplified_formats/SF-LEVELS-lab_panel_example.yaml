@@ -1,39 +1,53 @@
-# Level removal, worked example (simplified_formats master04 §Example — the
-# laboratory-result-panel measurement). The master04 example maps a full
-# canonical RM path to its FLAT form; this content decision table encodes that
-# path decomposition segment-by-segment: container attributes elided, the
-# HISTORY and ITEM_TREE wrappers collapsed, the EVENT conditionally collapsed
-# (max=1), the OBSERVATION and two CLUSTER nodes retained under their
-# archetype-id aliases (the inner CLUSTER repeating -> `:0`), and ELEMENT.value
-# replaced by the `|magnitude` attribute suffix.
+# Level removal, worked example (simplified_formats master04 §Level Removal +
+# §Example). The master04 worked example maps a full canonical RM path to its
+# FLAT form, applying container-attribute elision, wrapper collapse, node
+# retention under archetype-id aliases, and value->suffix replacement. Exercised
+# functionally on the nested-CLUSTER chain of the official Test_all_types
+# template (cnf.opt.maximal) — the exemplar type is the EVALUATION cluster_1 ->
+# cluster_2 -> cluster_3 -> text_2 chain rather than the master04 lab-panel
+# archetype (not vendored), the same Level-Removal principle: the FLAT key
+# `test_all_types/test_all_types_1:0/cluster_1/cluster_2/cluster_3/text_2`
+# reconstitutes to the full canonical container chain on read-back.
 id: SF-LEVELS-lab_panel_example
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
-rm_class: OBSERVATION
+sm_operation: I_EHR_COMPOSITION.create_composition
+rm_class: CLUSTER
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  The master04 laboratory-panel canonical path flattens to
-  laboratory_test_report/laboratory_test/laboratory_test_panel/laboratory_result:0/result_value|magnitude,
-  applying container-attribute elision, wrapper collapse, conditional EVENT
-  collapse, node retention under aliases, and the value->suffix replacement.
-description: "Level-removal worked example: canonical path -> FLAT path (master04)"
+  A nested-CLUSTER FLAT path (cluster_1/cluster_2/cluster_3/text_2, all
+  container attributes elided and node ids retained as aliases) reconstitutes on
+  canonical read-back to the full EVALUATION -> CLUSTER -> CLUSTER -> CLUSTER ->
+  ELEMENT container chain carrying the leaf value.
+description: "Level-removal worked example: nested-CLUSTER FLAT path -> canonical chain (master04)"
 spec_refs:
   - "ITS-REST simplified_formats master04 §Level Removal"
   - "ITS-REST simplified_formats master04 §Container Attributes Elided from Paths"
-  - "ITS-REST simplified_formats master04 §Conditionally Collapsed Wrapper Types"
+  - "ITS-REST simplified_formats master05 §CLUSTER"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/content[openEHR-EHR-OBSERVATION.laboratory_test_result.v1]"
-decision_table:
-  columns: ["canonical_segment", "rm_type", "disposition", "flat_result"]
-  rows:
-    - ["/content[openEHR-EHR-OBSERVATION.laboratory_test_result.v1]", "OBSERVATION", "container_elided_node_retained", "laboratory_test"]
-    - ["/data[at0001]", "HISTORY", "wrapper_collapsed", "(dropped)"]
-    - ["/events[at0002]", "EVENT", "conditionally_collapsed_max_1", "(dropped)"]
-    - ["/data[at0003]", "ITEM_TREE", "wrapper_collapsed", "(dropped)"]
-    - ["/items[openEHR-EHR-CLUSTER.laboratory_test_panel.v1]", "CLUSTER", "container_elided_node_retained", "laboratory_test_panel"]
-    - ["/items[openEHR-EHR-CLUSTER.laboratory_test_analyte.v1]", "CLUSTER", "container_elided_node_retained_repeats", "laboratory_result:0"]
-    - ["/items[at0001]", "ELEMENT", "container_elided_element_is_value", "result_value"]
-    - ["/value", "DV_QUANTITY", "value_replaced_by_suffix", "result_value|magnitude"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # Nested-CLUSTER chain reconstituted: EVALUATION items[5] -> CLUSTER -> CLUSTER -> CLUSTER -> ELEMENT
+      - { assert: field, path: "content[1]/data/items[5]/_type", equals: "CLUSTER" }
+      - { assert: field, path: "content[1]/data/items[5]/items[0]/_type", equals: "CLUSTER" }
+      - { assert: field, path: "content[1]/data/items[5]/items[0]/items[0]/_type", equals: "CLUSTER" }
+      - { assert: field, path: "content[1]/data/items[5]/items[0]/items[0]/items[0]/_type", equals: "ELEMENT" }
+      - { assert: field, path: "content[1]/data/items[5]/items[0]/items[0]/items[0]/value/value", equals: "text 2 3" }

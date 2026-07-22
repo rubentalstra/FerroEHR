@@ -48,6 +48,12 @@ pub struct Instance {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Environment {
+    /// Whether the SUT instance is exclusively owned by this run — the
+    /// precondition for `requires.server: exclusive` cases (global-state
+    /// grounds like an empty template list). Defaults to `false`: a shared
+    /// instance N/As those cases.
+    #[serde(default)]
+    pub exclusive_server: bool,
     pub hardware_class: String,
     pub cores: u32,
     pub memory_gb: u32,

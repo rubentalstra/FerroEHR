@@ -23,9 +23,9 @@ requires: { server: empty }              # "The server should be empty (no EHRs,
 parameters:
   iteration: reset_per_row               # "the pre-conditions and post-conditions apply to the run for X"
   fixture_set:                           # the master04 valid-OPT data sets
-    - { data_set: cnf.opt.minimal_all_entries, expected: created }
-    - { data_set: cnf.opt.versioned.v1, expected: created }
-    - { data_set: cnf.opt.maximal, expected: created }
+    - { data_set: cnf.opt.obs_admin, expected: created }
+    - { data_set: cnf.opt.obs_eva, expected: created }
+    - { data_set: cnf.opt.minimal_instruction, expected: created }
 flow:
   - step: 1
     call: upload_opt

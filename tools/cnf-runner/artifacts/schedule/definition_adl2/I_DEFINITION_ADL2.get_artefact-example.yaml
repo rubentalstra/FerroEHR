@@ -17,19 +17,16 @@ spec_refs:
   - "AM AOM2 §Templates (an OPT constrains a COMPOSITION instance)"
   - "ITS-REST definition_template_adl2_example_get §200 OK"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }
+requires:
+  server: any
+  templates: [cnf.adl2.opt.minimal]   # the upload ground — provisioned, 409-tolerant on a shared world
 data_sets: [cnf.adl2.opt.minimal]
 formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
 flow:
   - step: 1
-    call: upload_artefact
-    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal}" }
-    expect: created
-    capture: { template_id: created.template_id }
-  - step: 2
     call: get_artefact
     variant: example
-    with: { template_id: "${template_id}" }
+    with: { template_id: "openEHR-EHR-COMPOSITION.cnf_minimal.v1.0.0" }
     expect: ok
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }   # the example is a COMPOSITION rooted at the OPT

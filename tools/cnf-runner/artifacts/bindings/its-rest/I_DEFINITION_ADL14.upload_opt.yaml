@@ -14,6 +14,7 @@ outcomes:
   already_exists: { status: 409 }         # duplicate template_id — AMB-4
   validation_failed:
     status: 400
+    alt_status: [422]                     # AMB-40: semantic OPT rejection — overview-permitted non-conflicting 422
     body: error_loose                     # AMB-1
 captures:
   template_id:

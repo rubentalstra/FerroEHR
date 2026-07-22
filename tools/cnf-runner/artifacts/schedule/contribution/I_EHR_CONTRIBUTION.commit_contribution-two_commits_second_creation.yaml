@@ -46,7 +46,7 @@ flow:
         - data: "${ds:cnf.composition.persistent.v2}"
           change_type: creation                 # wrong: the object already exists
           preceding_version_uid: "${v1_uids}"   # ITS-REST: If-Match (AMB-3)
-    expect: conflict
+    expect: validation_failed             # 400_CONTRIBUTION verbatim: "the modification type does not match the operation - i.e. first version of a MODIFICATION" (a creation member naming a preceding version is that mismatch)
 postconditions:
   - { assert: version, count: 1 }        # only the first VERSION remains
 ambiguities: [AMB-3]

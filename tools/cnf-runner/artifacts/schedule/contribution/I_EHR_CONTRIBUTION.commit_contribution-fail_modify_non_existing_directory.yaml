@@ -30,4 +30,4 @@ flow:
         - data: "${ds:cnf.folder.minimal}"
           change_type: modification
           preceding_version_uid: "00000000-0000-4000-8000-000000000000::cnf.example.org::1"
-    expect: conflict                      # nothing to modify — wrong change_type
+    expect: validation_failed             # 400_CONTRIBUTION verbatim: "the modification type does not match the operation - i.e. first version of a MODIFICATION"

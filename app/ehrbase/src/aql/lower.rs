@@ -50,7 +50,7 @@ pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
         .map(|o| planner.lower_order_by(o))
         .collect::<Result<Vec<_>, _>>()?;
 
-    let (limit, offset) = lower_limit(query)?;
+    let (limit, offset, limit_is_top) = lower_limit(query)?;
 
     Ok(QueryIr {
         sources: planner.sources,
@@ -60,6 +60,7 @@ pub(crate) fn lower(query: &SelectQuery) -> Result<QueryIr, AqlError> {
         order_by,
         distinct: query.select.distinct,
         limit,
+        limit_is_top,
         offset,
         params: Vec::new(), // filled by `plan`
     })
@@ -432,12 +433,12 @@ impl Planner {
 
 /// LIMIT / TOP resolution: `TOP n` maps to `LIMIT n`; combining the two is
 /// rejected (QUERY §Query structure/LIMIT).
-fn lower_limit(query: &SelectQuery) -> Result<(Option<i64>, Option<i64>), AqlError> {
-    let (limit, offset) = match (&query.select.top, &query.limit) {
+fn lower_limit(query: &SelectQuery) -> Result<(Option<i64>, Option<i64>, bool), AqlError> {
+    let (limit, offset, limit_is_top) = match (&query.select.top, &query.limit) {
         (Some(_), Some(_)) => return Err(AqlFeatureError::TopWithLimit.into()),
-        (Some(top), None) => (Some(top.count), None),
-        (None, Some(limit)) => (Some(limit.limit), limit.offset),
-        (None, None) => (None, None),
+        (Some(top), None) => (Some(top.count), None, true),
+        (None, Some(limit)) => (Some(limit.limit), limit.offset, false),
+        (None, None) => (None, None, false),
     };
     // `row_count` minimum is 1; `offset` minimum is 0 (QUERY master03
     // §LIMIT/Syntax).
@@ -461,7 +462,7 @@ fn lower_limit(query: &SelectQuery) -> Result<(Option<i64>, Option<i64>), AqlErr
         }
         .into());
     }
-    Ok((limit, offset))
+    Ok((limit, offset, limit_is_top))
 }
 
 /// The human label of a leaf type SUM/AVG cannot aggregate, or `None` when

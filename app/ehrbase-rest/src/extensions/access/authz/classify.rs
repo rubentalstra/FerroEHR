@@ -171,6 +171,56 @@ pub fn kind_of(op: &str) -> Option<ResourceKind> {
     Some(kind)
 }
 
+/// Whether a generated ITS-REST operation id is a **write** (mutating) op.
+///
+/// Total over the same universe [`class_of`] covers (every generated route op
+/// across all groups). AQL execution (`query_execute_*`) is a **read** even
+/// though its wire verb is POST — a read-only principal must keep it. Every
+/// other GET-semantics op (get / list / `revision_history` — covering `*_get`,
+/// `*_get_by_*`, `*_get_at_time`, `*_version_get`, `*_example_get`, `*_tags_get`,
+/// `*_list`) is a read; everything else (create / update / delete / upload /
+/// store, `*_tags_update` / `*_tags_delete`, and the whole `admin_*` API) is a
+/// write.
+///
+/// The classification is derived from the op-id verb ([`write_verb`]); an op-id
+/// with no recognized verb is treated as a **write** (fail-safe: the read-only
+/// restriction can never be bypassed by an unclassified future op). The
+/// total-coverage guard test turns any such fall-through into a build failure,
+/// so it never silently mis-reads a real op.
+///
+/// No openEHR spec governs role semantics — our own design/extension (the SM
+/// places authorization out of band; §General Assumptions).
+#[must_use]
+pub fn is_write(op: &str) -> bool {
+    write_verb(op).unwrap_or(true)
+}
+
+/// Classify an op-id by its verb: `Some(true)` = write, `Some(false)` = read,
+/// `None` = no recognized verb (the coverage guard fails on any generated op
+/// that lands here; [`is_write`] treats it as a write at runtime).
+fn write_verb(op: &str) -> Option<bool> {
+    // AQL execution is a read despite the POST wire verb (Query API).
+    if op.starts_with("query_execute_") {
+        return Some(false);
+    }
+    // Write markers: the mutating verbs across every family, plus the whole
+    // admin API (all admin ops physically delete).
+    if op.starts_with("admin_")
+        || op.contains("_create")
+        || op.contains("_update")
+        || op.contains("_delete")
+        || op.contains("_upload")
+        || op.contains("_store")
+    {
+        return Some(true);
+    }
+    // Read markers: the GET-semantics verbs.
+    if op.contains("_get") || op.contains("_list") || op.contains("_revision_history") {
+        return Some(false);
+    }
+    None
+}
+
 /// The ABAC [`AccessMode`] of a generated operation (the Cedar action axis,
 /// §5.6). Returns `None` for operations without a [`ResourceKind`]; for a
 /// clinical op it is always `Some`. Derived from the op-id verb.
@@ -328,6 +378,69 @@ mod tests {
                 assert!(access_of(op).is_none());
             }
         }
+    }
+
+    /// Every generated operation id classifies write/read via a positive verb
+    /// rule — no op falls through to [`is_write`]'s fail-safe default. A new,
+    /// unrecognized generated op fails this test until [`write_verb`] handles it.
+    #[test]
+    fn every_operation_has_a_write_class() {
+        let mut unclassified = Vec::new();
+        for op in all_route_ops() {
+            if write_verb(op).is_none() {
+                unclassified.push(op);
+            }
+        }
+        assert!(
+            unclassified.is_empty(),
+            "ops with no write/read verb rule (add to write_verb in app/ehrbase-rest/src/extensions/access/authz/classify.rs): {unclassified:?}"
+        );
+    }
+
+    #[test]
+    fn write_classification_exemplars() {
+        // Writes: create / update / delete / upload / store, tag mutations, admin.
+        assert!(is_write("ehr_create"));
+        assert!(is_write("ehr_create_with_id"));
+        assert!(is_write("composition_create"));
+        assert!(is_write("composition_update"));
+        assert!(is_write("composition_delete"));
+        assert!(is_write("ehr_status_update"));
+        assert!(is_write("contribution_create"));
+        assert!(is_write("directory_create"));
+        assert!(is_write("definition_template_adl1.4_upload"));
+        assert!(is_write("definition_template_adl2_upload"));
+        assert!(is_write("definition_query_store.yaml"));
+        assert!(is_write("definition_query_version_store.yaml"));
+        assert!(is_write("composition_tags_update"));
+        assert!(is_write("composition_tags_delete"));
+        assert!(is_write("ehr_status_tags_update"));
+        assert!(is_write("person_create"));
+        assert!(is_write("agent_tags_delete"));
+        assert!(is_write("admin_ehr_delete"));
+        assert!(is_write("admin_ehr_delete_all"));
+        // Reads: GET-semantics ops, plus AQL execution (POST-but-read).
+        assert!(!is_write("ehr_get_by_id"));
+        assert!(!is_write("ehr_get_by_subject"));
+        assert!(!is_write("composition_get"));
+        assert!(!is_write("versioned_composition_get"));
+        assert!(!is_write("versioned_composition_revision_history"));
+        assert!(!is_write("versioned_composition_version_get_at_time"));
+        assert!(!is_write("ehr_status_get_at_time"));
+        assert!(!is_write("directory_get_by_version_id"));
+        assert!(!is_write("contribution_get"));
+        assert!(!is_write("ehr_tags_get"));
+        assert!(!is_write("composition_tags_get"));
+        assert!(!is_write("definition_template_adl1.4_list"));
+        assert!(!is_write("definition_template_adl2_version_get"));
+        assert!(!is_write("definition_query_list"));
+        assert!(!is_write("query_execute_adhoc_query"));
+        assert!(!is_write("query_execute_adhoc_query_body"));
+        assert!(!is_write("query_execute_stored_query_version_body"));
+        assert!(!is_write("person_get"));
+        assert!(!is_write("versioned_party_revision_history"));
+        // Fail-safe: an unrecognized op is treated as a write.
+        assert!(is_write("no_such_operation"));
     }
 
     /// The demographic-API op families (RBAC-only; ABAC never covered them).

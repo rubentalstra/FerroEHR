@@ -158,7 +158,7 @@ impl StepDriver for TranscriptPlayer<'_> {
                     }
                     crate::refgrammar::CaptureField::CommitTime => {
                         let ms = i64::try_from(self.cursor).unwrap_or(i64::MAX) * 1_000;
-                        vars.set(name.clone(), Captured::InstantMs(ms));
+                        vars.set(name.clone(), Captured::InstantMs { lo: ms, hi: ms });
                     }
                     crate::refgrammar::CaptureField::Field { name: field, list } => {
                         let Some(spec) = binding

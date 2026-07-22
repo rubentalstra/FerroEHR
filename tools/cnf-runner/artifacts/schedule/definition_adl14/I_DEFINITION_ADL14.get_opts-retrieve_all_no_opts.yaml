@@ -13,7 +13,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.list_opts"
   - "CNF platform_test_schedule master04 §get_opts-retrieve_all_no_opts"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }              # "No OPTs should be loaded on the system"
+requires: { server: exclusive }    # global-state ground — shared instances N/A
 flow:
   - step: 1
     call: list_opts

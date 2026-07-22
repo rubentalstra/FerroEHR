@@ -9,6 +9,7 @@
 # parameters/path/template_id.yaml + parameters/path/version.yaml.
 sm_operation: I_DEFINITION_ADL2.get_artefact
 its: its-rest
+variant: version
 request:
   method: GET
   path: /definition/template/adl2/{template_id}/{version}  # definition_template_adl2_version_get.yaml (deprecated)

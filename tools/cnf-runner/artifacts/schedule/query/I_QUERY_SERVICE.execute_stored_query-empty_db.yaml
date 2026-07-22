@@ -23,7 +23,8 @@ spec_refs:
   - "ITS-REST query §200_Query (RESULT_SET)"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
 requires:
-  server: empty
+  server: any                              # emptiness scoped to a fresh EHR (Request.md ehr_id scope)
+  ehr: { commits: none }                   # mints ${ehr_id} with zero commits
 flow:
   - step: 1
     call: I_DEFINITION_QUERY.store_query
@@ -35,6 +36,7 @@ flow:
     call: execute_stored_query
     with:
       qualified_query_name: "org.openehr.cnf::stored_empty_db"
+      ehr_id: "${ehr_id}"                   # single-EHR execution context
       fetch: 100                            # AMB-6: fetch always explicit
     expect: ok
     assert:

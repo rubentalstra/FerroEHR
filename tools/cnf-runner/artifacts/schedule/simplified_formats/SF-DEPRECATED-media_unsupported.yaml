@@ -7,9 +7,12 @@
 # option_select candidate): this is the sf-deprecated-types-unsupported branch.
 # ECC-SF-004/005 ground.
 #
-# TODO: the flow-step `variant` (deprecated_media_type) is not yet consumed by
-#       the interpreter; the deprecated Content-Type override for this case
-#       depends on interpreter support for `variant`.
+# TODO: `variant` now selects the binding, but a HEADER-MUTATION variant
+#       (deprecated_media_type = send a pre-1.1.0 SDT-era simplified-format
+#       Content-Type) is not yet implemented in the driver; without it the runner
+#       sends the current wt.flat Content-Type and the SUT correctly creates.
+#       Needs a driver mechanism to override the request Content-Type per step
+#       variant.
 id: SF-DEPRECATED-media_unsupported
 kind: functional
 component: SIMPLIFIED_FORMATS

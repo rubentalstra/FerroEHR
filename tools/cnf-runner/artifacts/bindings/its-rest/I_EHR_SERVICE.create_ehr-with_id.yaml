@@ -1,0 +1,34 @@
+# Wire realization of I_EHR_SERVICE.create_ehr WITH a client-supplied ehr_id
+# for ITS-REST 1.1.0: PUT /ehr/{ehr_id} (operation ehr_create_with_id).
+# Auto-selected when the step binds a non-null `ehr_id` (the SM optional
+# argument chooses the wire form; a step may also select it explicitly via
+# `variant: with_ehr_id`).
+# Sources: specifications/operations/ehr_create_with_id.yaml (201/400/409),
+# responses/201_EHR.yaml, 404_unknown_ehr_id.yaml.
+sm_operation: I_EHR_SERVICE.create_ehr
+its: its-rest
+variant: with_ehr_id
+request:
+  method: PUT
+  path: /ehr/{ehr_id}
+  body: ehr_status?                        # optional EHR_STATUS (server defaults otherwise)
+  headers:
+    Prefer: "return=representation"
+formats: [canonical-json, canonical-xml]
+outcomes:
+  created:
+    status: 201                            # 201_EHR.yaml
+    headers: { ETag: "present?", Location: "present?" }
+    body: prefer_conditional
+  validation_failed:
+    status: 400                            # AMB-2: no 422 enumerated on EHR create
+    alt_status: [422]                      # AMB-40: semantic EHR_STATUS rejection — overview-permitted non-conflicting 422
+  already_exists: { status: 409 }          # an EHR with the id exists
+captures:
+  ehr_id:
+    from: body "ehr_id.value"
+    fallback: header Location last-segment
+  version_uid:
+    from: header ETag
+    strip: weak-quotes
+server_assigned: [ehr_id, system_id, time_created, ehr_status/uid, ehr_access]

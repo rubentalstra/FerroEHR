@@ -7,6 +7,11 @@
 # cardinality. PARTICIPATION identifiers use a suffix-embedded index. This
 # content decision table encodes the counter semantics. Vectors: the master04
 # instance-indexing code examples and the Structured-format example.
+# TODO: convert to a functional FLAT commit + read-back asserting :i expands to
+#       distinct RM instances at each level — needs a template with a repeating
+#       node (max>1); cnf.opt.maximal exposes only :0 single instances and the
+#       current content decision-table commits against the removed
+#       body_temperature carrier and 422s.
 id: SF-INDEX-semantics
 kind: content
 component: SIMPLIFIED_FORMATS

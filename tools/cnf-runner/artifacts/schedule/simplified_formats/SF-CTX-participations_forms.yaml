@@ -6,6 +6,13 @@
 # content decision table encodes both forms plus the base participation fields.
 # Vectors: the master06 comprehensive block and the dedicated Participation
 # block (which shows :0 compact and :1 expanded side by side).
+# TODO: convert to a functional FLAT commit + read-back — the base participation
+#       form is assertable on cnf.flat.vitals.minimal_ctx (context/participations),
+#       but the compact (ctx/participation_identifiers:i semicolon quads) and
+#       expanded (…|issuer:j etc.) identifier sub-forms need a dedicated FLAT
+#       fixture (SUT support for the identifier sub-forms to be verified live
+#       first). The current content decision-table commits against the removed
+#       body_temperature carrier and 422s.
 id: SF-CTX-participations_forms
 kind: content
 component: SIMPLIFIED_FORMATS

@@ -1,6 +1,5 @@
 ---
 source: crates/openehr-flat/tests/flat.rs
-assertion_line: 250
 expression: map
 ---
 {
@@ -21,5 +20,6 @@ expression: map
   "minimal/context/_participation:0|function": "legal guardian",
   "minimal/context/_participation:0|mode": "not specified",
   "minimal/context/_participation:0|name": "Martha Stewart",
+  "minimal/minimal:0/history_origin": "2019-01-28T21:22:19,552+00:00",
   "minimal/minimal:0/text": "original value"
 }

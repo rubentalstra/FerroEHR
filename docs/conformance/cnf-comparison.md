@@ -8,14 +8,14 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 387 |
+| CNF catalogue cases | 389 |
 | active ECC rows | 394 |
 | mapped: covered | 361 |
 | mapped: deferred | 5 |
 | mapped: dropped | 19 |
 | mapped: out_of_scope | 9 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 80 |
+| CNF cases beyond the old catalogue | 82 |
 
 Gate clean: **yes**
 
@@ -428,6 +428,7 @@ Gate clean: **yes**
 - `I_ADMIN_SERVICE.list_contributions-time_range`
 - `I_ADMIN_SERVICE.physical_party_delete-delete_non_existing`
 - `I_ADMIN_SERVICE.versioned_composition_count-time_range`
+- `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type_deleted`
 - `I_DEFINITION_ADL2.archetypes_count-unrealized`
 - `I_DEFINITION_ADL2.artefacts_count-unrealized`
 - `I_DEFINITION_ADL2.delete_artefact-existing`
@@ -456,6 +457,7 @@ Gate clean: **yes**
 - `I_EHR_EXTRACT_SERVICE.import_ehr_extract-unknown_ehr`
 - `I_TDD_SERVICE.import_tdds-bulk_invalid`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-distinct`
+- `I_QUERY_SERVICE.execute_ad_hoc_query-empty_db_bare_ehr`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-fetch_with_top`
 - `I_QUERY_SERVICE.execute_ad_hoc_query-where_magnitude`
 - `SEC-AUDIT_ACCOUNTABILITY-server_set_commit_audit`

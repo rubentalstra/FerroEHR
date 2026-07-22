@@ -24,19 +24,15 @@ spec_refs:
   - "ITS-REST specifications §definition_template_adl1.4_example_get"
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-requires: { server: empty }              # the OPT is loaded by the upload flow below
-data_sets: [cnf.opt.vitals]
+requires:
+  server: any
+  templates: [cnf.opt.vitals]            # provisioned as precondition (idempotent; 409 tolerated)
 flow:
   - step: 1
-    call: upload_opt                      # SM I_DEFINITION_ADL14.upload_opt — provisions the template
-    with: { opt: "${ds:cnf.opt.vitals}" }
-    expect: created
-    capture: { template_id: created.template_id }
-  - step: 2
     call: get_opt
     variant: example                      # selects the example-generation realization of get_opt
     format: wt                            # application/openehr.wt+json — not a LOCATABLE instance form
-    with: { template_id: "${template_id}" }
+    with: { template_id: "minimal_action.en.v1" }   # the template_id of cnf.opt.vitals
     expect: not_acceptable                # example binding: 406
     assert:
       - { assert: message_exemplar, text: "the Web Template media type is not a LOCATABLE example representation" }

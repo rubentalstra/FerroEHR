@@ -31,11 +31,12 @@ flow:
     call: execute_ad_hoc_query
     with:
       q: >-
-        SELECT DISTINCT c/name/value AS name
+        SELECT DISTINCT o/name/value AS name
         FROM EHR e[ehr_id/value='${ehr_id}'] CONTAINS COMPOSITION c
+        CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2]
       fetch: 100                            # AMB-6: fetch always explicit
     expect: ok
     assert:
       - assert: result_set
-        match: count                        # ten identical names collapse to one distinct row
+        match: count                        # the ten identical OBSERVATION names ("Blood pressure", the bp_series contract) collapse to one distinct row
         count: 1

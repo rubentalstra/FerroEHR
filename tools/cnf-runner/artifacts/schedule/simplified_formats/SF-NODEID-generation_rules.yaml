@@ -8,6 +8,13 @@
 # a real corpus template so the row set is anchored to a WT the runner can
 # build). This is a mapping/derivation decision table (no accepted/rejected
 # verdict): each row asserts the generated id for the given name.
+# TODO: convert to a functional get_opt (format: wt) + web-template tree
+#       assertions of generated node ids — needs a vendored/authored template
+#       whose archetype node NAMES exercise the 7-step algorithm edge cases
+#       (digit-prefix "1st visit" -> a1st_visit, empty-fallback "((()))" -> id,
+#       sibling-uniqueness _N); cnf.opt.maximal's names already normalise cleanly
+#       and the current content decision-table commits against the removed
+#       body_temperature carrier and 422s.
 id: SF-NODEID-generation_rules
 kind: content
 component: SIMPLIFIED_FORMATS

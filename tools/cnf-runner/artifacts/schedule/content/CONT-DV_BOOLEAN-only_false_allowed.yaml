@@ -11,10 +11,10 @@ spec_refs:
   - "RM data_types \u00a7DV_BOOLEAN"
   - "AM AOM1.4 \u00a7C_BOOLEAN"
 constraint_context:
-  template: cnf.tpl.dv_boolean_c_boolean
+  template: cnf.tpl.dv_boolean_only_false
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
 decision_table:
   columns: ["value", "C_BOOLEAN.true_valid", "C_BOOLEAN.false_valid", "expected", "violates"]
   rows:
-    - [true, false, true, "accepted", ["constraint(C_BOOLEAN.true_valid): true is not an allowed value"]]
+    - [true, false, true, "rejected", ["constraint(C_BOOLEAN.true_valid): true is not an allowed value"]]   # expected corrected 2026-07-22: the row contradicted its own violates ground (AOM1.4 C_BOOLEAN)
     - [false, false, true, "accepted", []]
