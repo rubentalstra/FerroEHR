@@ -2,8 +2,9 @@
 
 One PostgreSQL 18 server + one migrated **template database** per migration
 fingerprint + one `CREATE DATABASE … TEMPLATE` clone per test. Every
-DB-backed test in the workspace gets its database from `testkit::db()` —
-never by starting its own container or running its own migrations.
+DB-backed test in the workspace gets its database from `testkit::db()`
+(migrated clone) or `testkit::empty_db()` (bare clone) — never by starting its
+own container or running its own migrations.
 
 - **Server resolution:** `EHRBASE_TEST_PG_URL` (CI, local dev server) →
   else the reusable named container `ehrbase-testkit-pg18` (testcontainers
