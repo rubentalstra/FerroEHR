@@ -239,15 +239,19 @@ pub(crate) fn ehr_status_body(offset_s: u64) -> Vec<u8> {
 
 /// A directory FOLDER body: the per-episode tree (`episodes` open on
 /// admission; a `closed` marker folder appended by the discharge
-/// close-out).
+/// close-out). `archetype_node_id` on EVERY node — RM common
+/// `LOCATABLE.Archetype_node_id_valid` (mandatory on each LOCATABLE, the
+/// subfolders included).
 pub(crate) fn folder_body(closed: bool) -> Vec<u8> {
     let mut folders = vec![serde_json::json!({
         "_type": "FOLDER",
+        "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
         "name": { "_type": "DV_TEXT", "value": "episodes" }
     })];
     if closed {
         folders.push(serde_json::json!({
             "_type": "FOLDER",
+            "archetype_node_id": "openEHR-EHR-FOLDER.generic.v1",
             "name": { "_type": "DV_TEXT", "value": "closed" }
         }));
     }
@@ -330,6 +334,11 @@ mod tests {
         assert_eq!(status["subject"]["_type"], "PARTY_SELF");
         let folder: Value = serde_json::from_slice(&folder_body(true)).unwrap();
         assert_eq!(folder["folders"].as_array().unwrap().len(), 2);
+        // RM common LOCATABLE.Archetype_node_id_valid on every node.
+        assert!(folder["archetype_node_id"].is_string());
+        for sub in folder["folders"].as_array().unwrap() {
+            assert!(sub["archetype_node_id"].is_string(), "subfolder without archetype_node_id");
+        }
         let tags: Value = serde_json::from_slice(&tags_body(0)).unwrap();
         assert_eq!(tags.as_array().unwrap().len(), 2);
         assert!(sim_time(90_061).starts_with("2024-06-02T01:01:01"));
