@@ -134,6 +134,24 @@ enum Command {
         #[arg(long)]
         smoke: bool,
     },
+    /// Render the published performance SVG assets FROM a committed
+    /// results.json (deterministic; CI regenerates and diffs — hand-drawn
+    /// numbers are a build failure).
+    PerfAssets {
+        /// The artifact root (for the class-ladder floors).
+        #[arg(long)]
+        root: PathBuf,
+        /// The committed results.json carrying the measurement records.
+        #[arg(long)]
+        results: PathBuf,
+        /// Output directory for the SVG files.
+        #[arg(long)]
+        out: PathBuf,
+        /// Also write the generated Markdown summary (class ladder +
+        /// measured detail) to this path — the book's build-time include.
+        #[arg(long)]
+        summary: Option<PathBuf>,
+    },
     /// Compute the verdicts from a statement + results against an artifact
     /// tree (the pure pipeline) and write the rendered submission documents.
     Verdicts {
@@ -221,6 +239,12 @@ fn main() -> ExitCode {
             seed_workers,
             smoke,
         ),
+        Command::PerfAssets {
+            root,
+            results,
+            out,
+            summary,
+        } => perf_assets_command(&root, &results, &out, summary.as_deref()),
         Command::Verdicts {
             statement,
             results,
@@ -433,6 +457,93 @@ fn run_verdicts(
     } else {
         ExitCode::from(1)
     }
+}
+
+/// The asset renderer (`perf-assets`): deterministic SVGs FROM the committed
+/// measurement records (regenerate-and-diff guarded in CI).
+fn perf_assets_command(
+    root: &std::path::Path,
+    results_path: &std::path::Path,
+    out: &std::path::Path,
+    summary: Option<&std::path::Path>,
+) -> ExitCode {
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    let results: Results =
+        match load_party_json(results_path, &results_schema(), "results.schema.json") {
+            Ok(results) => results,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        };
+    if let Err(e) = std::fs::create_dir_all(out) {
+        eprintln!("cannot create {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    let perf_cases: Vec<_> = loaded
+        .set
+        .performance
+        .iter()
+        .map(|(_, c)| c.clone())
+        .collect();
+    let mut files: Vec<(String, String)> = vec![(
+        "perf-class-ladder.svg".to_owned(),
+        cnf_runner::perf_assets::class_ladder_svg(&perf_cases, &results.measurements),
+    )];
+    for measurement in &results.measurements {
+        match cnf_runner::perf_assets::latency_percentiles_svg(measurement) {
+            Ok(svg) => files.push((
+                format!("perf-latency-class-{}.svg", measurement.class.token()),
+                svg,
+            )),
+            Err(e) => {
+                eprintln!("{}: {e}", measurement.case);
+                return ExitCode::from(2);
+            }
+        }
+    }
+    for (name, body) in &files {
+        let path = out.join(name);
+        if let Err(e) = std::fs::write(&path, body) {
+            eprintln!("cannot write {}: {e}", path.display());
+            return ExitCode::from(2);
+        }
+        println!("wrote {}", path.display());
+    }
+    if let Some(summary_path) = summary {
+        let body =
+            match cnf_runner::perf_assets::summary_markdown(&perf_cases, &results.measurements) {
+                Ok(body) => body,
+                Err(e) => {
+                    eprintln!("summary: {e}");
+                    return ExitCode::from(2);
+                }
+            };
+        if let Some(parent) = summary_path.parent()
+            && let Err(e) = std::fs::create_dir_all(parent)
+        {
+            eprintln!("cannot create {}: {e}", parent.display());
+            return ExitCode::from(2);
+        }
+        if let Err(e) = std::fs::write(summary_path, body) {
+            eprintln!("cannot write {}: {e}", summary_path.display());
+            return ExitCode::from(2);
+        }
+        println!("wrote {}", summary_path.display());
+    }
+    ExitCode::SUCCESS
 }
 
 /// The measured-run handler (`perf`): seed the scale corpus, drive the

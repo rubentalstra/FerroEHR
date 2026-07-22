@@ -152,6 +152,26 @@ if [ "$run_rc" -ge 2 ]; then
   exit "$run_rc"
 fi
 
+# Optional measured performance run (§8.14, conformance-by-measurement):
+# CONF_PERF_CLASS=POC|S|L|R seeds the scale corpus (unless
+# CONF_PERF_SKIP_SEED is set — reuse a prior seeding's sidecar index) and
+# drives the class's open-loop sustained case, merging the measurement
+# records into results.json BEFORE the verdict pipeline runs. This is an
+# hour-plus act (5 min warmup + 1 h sustained window, after corpus seeding)
+# and needs the exclusive composed SUT — never on by default.
+if [ -n "${CONF_PERF_CLASS:-}" ]; then
+  echo "==> Measured performance run (class $CONF_PERF_CLASS)"
+  perf_args=(perf --root "$ROOT" --ixit "$IXIT" --results "$OUT/results.json"
+             --class "$CONF_PERF_CLASS")
+  [ -n "${CONF_PERF_SKIP_SEED:-}" ] && perf_args+=(--skip-seed)
+  perf_rc=0
+  "$REPO_ROOT/target/debug/cnf-runner" "${perf_args[@]}" || perf_rc=$?
+  if [ "$perf_rc" -ge 2 ]; then
+    echo "conformance: perf run defect (exit $perf_rc)" >&2
+    exit "$perf_rc"
+  fi
+fi
+
 echo "==> Computing the verdicts (pure pipeline)"
 verdict_rc=0
 "$REPO_ROOT/target/debug/cnf-runner" verdicts \
@@ -217,6 +237,25 @@ for tier, verdict in tiers.items():
     }
     path = out / f"badge-{slug.get(tier, tier.lower())}.json"
     path.write_text(json.dumps(badge, indent=2) + "\n")
+
+# Performance badge — from the measured class verdicts (§8.14): the highest
+# earned class, or "not earned" when a measurement exists but failed. No
+# badge file when nothing was measured (the dimension is absent, not failed).
+perf = verdicts.get("performance") or []
+if perf:
+    ladder = {"POC": 0, "S": 1, "L": 2, "R": 3}
+    earned = [p["class"] for p in perf if p["verdict"] == "earned"]
+    if earned:
+        best = max(earned, key=lambda c: ladder.get(c, -1))
+        message, color = f"class {best} earned", "brightgreen"
+    else:
+        message, color = "not earned", "red"
+    (out / "badge-performance.json").write_text(json.dumps({
+        "schemaVersion": 1,
+        "label": "openEHR CNF performance",
+        "message": message,
+        "color": color,
+    }, indent=2) + "\n")
 
 by_status = {}
 for o in results.get("outcomes", []):
