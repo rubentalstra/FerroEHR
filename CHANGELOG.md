@@ -156,6 +156,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- The ATNA Audit Record Repository no longer loses records under a sustained
+  write load: the audit drain now takes queued events in batches and
+  persists each batch in one multi-row `INSERT` (the previous per-event
+  round trips saturated far below write-path rates, filling the bounded
+  queue and fail-open dropping the tail). Drop warnings are rate-limited to
+  one per interval carrying the count since the previous warning instead of
+  one log line per dropped record (the exact count stays on the
+  `atna_audit_dropped_total` metric), and the default
+  `audit.queue_capacity` rises from `1024` to `8192` for burst headroom.
+
 - Composition validation closes eight archetype-constraint enforcement gaps
   the CNF content chapter exposed: `C_STRING` list/pattern constraints on
   `DV_IDENTIFIER.issuer`/`assigner`/`type` (only `id` was checked);

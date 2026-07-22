@@ -169,6 +169,9 @@ pub struct AuditConfig {
     /// need the subject; the lookup runs only on the background drain.
     pub resolve_subject: bool,
     /// Bounded audit queue capacity (`EHRBASE__AUDIT__QUEUE_CAPACITY`).
+    /// Sized for write-path bursts: the drain persists in multi-row batches,
+    /// so the queue only needs to ride out sink latency spikes, but a loaded
+    /// write path can enqueue thousands per second.
     pub queue_capacity: usize,
     /// This node's advertised network address → the destination
     /// network-access-point (`EHRBASE__AUDIT__SERVER_HOST`); the
@@ -192,7 +195,7 @@ impl Default for AuditConfig {
             suppress_login_events: true,
             fail_mode: FailMode::default(),
             resolve_subject: true,
-            queue_capacity: 1024,
+            queue_capacity: 8192,
             server_host: None,
             store: StoreConfig::default(),
             syslog: SyslogConfig::default(),
