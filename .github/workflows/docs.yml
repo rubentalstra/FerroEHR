@@ -46,8 +46,14 @@ jobs:
           bash scripts/render-conformance-stats.sh includes
           bash scripts/render-comparison.sh
           bash scripts/render-perf-assets.sh
+          bash scripts/render-conformance-assets.sh
+          CONF_SUT=ehrbase-java bash scripts/render-conformance-assets.sh
       - name: Perf-assets drift gate (regenerated SVGs match the committed assets)
         run: git diff --exit-code website/book/src/perf-assets
+      - name: Conformance-assets drift gate (regenerated SVGs match the committed assets)
+        # comparison-assets/ is gitignored build output (regenerated above);
+        # the committed, drift-guarded copies are the product's own.
+        run: git diff --exit-code website/book/src/conformance-assets website/landing/assets/conformance-heat-grid.svg
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)

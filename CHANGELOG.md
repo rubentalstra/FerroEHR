@@ -45,6 +45,14 @@ workflow refuses a tag that has no matching section here.
   example payload skeletons from a running SUT's example endpoint;
   `scripts/vendor-ckm-templates.sh` now vendors the runner's journey
   template pack.
+- **Conformance visuals**: the capability-matrix heat grid (one cell per
+  claimed capability, grouped by profile tier, evidence encoded as a
+  CVD-safe color AND a glyph) and per-chapter outcome bars, rendered
+  deterministically from the committed verdicts/results by the new
+  `cnf-runner conformance-assets` subcommand
+  (`scripts/render-conformance-assets.sh`, CI regenerate-and-diff
+  guarded) and embedded on the book's conformance and comparison pages
+  (both SUTs) and the landing page.
 
 ## [3.7.0] - 2026-07-22
 

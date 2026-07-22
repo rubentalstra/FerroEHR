@@ -11,6 +11,7 @@
 
 pub mod artifacts;
 pub mod compare;
+pub mod conf_assets;
 pub mod exec;
 pub mod ids;
 pub mod ixit;

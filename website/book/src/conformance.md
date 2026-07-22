@@ -54,6 +54,19 @@ rather than silently omitted.
 
 ## The current result
 
+The whole conformance story in one picture — every capability of the
+claims matrix, grouped by profile tier, colored AND glyph-marked by the
+evidence its cases produced (both charts are generated from the committed
+runner artifacts and regenerate-and-diff guarded in CI; no number on them
+is hand-typed):
+
+![Capability conformance heat grid](conformance-assets/conformance-heat-grid.svg)
+
+The same run broken down by schedule chapter — passed, failed, errored and
+cited-N/A per chapter:
+
+![Schedule outcomes by chapter](conformance-assets/conformance-chapter-bars.svg)
+
 The published run against EHRbase-rs reports:
 
 <!-- Generated at build time from docs/conformance/ehrbase-rs/results.json by

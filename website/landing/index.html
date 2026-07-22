@@ -69,6 +69,11 @@
           <div class="proof-num"><span class="n" data-cnf="passed">—</span><span class="l">passed</span></div>
           <div class="proof-num"><span class="n zero" data-cnf="failed">—</span><span class="l">failed</span></div>
         </div>
+        <!-- The heat grid is GENERATED output (scripts/render-conformance-assets.sh,
+             regenerate-and-diff guarded) — its labels are rendered, never hand-typed. -->
+        <a class="proof-grid" href="./docs/latest/conformance.html">
+          <img src="./assets/conformance-heat-grid.svg" alt="Capability conformance heat grid: every claimed capability grouped by profile tier, marked passed, failed, not evidenced, excused or no-cases" loading="lazy">
+        </a>
         <div class="proof-pills">
           <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-core">—</span></a>
           <a class="pill" href="https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md" rel="noopener"><span class="dot"></span><span data-cnf="verdict-standard">—</span></a>

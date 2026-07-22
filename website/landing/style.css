@@ -183,6 +183,12 @@ section { padding: clamp(3rem, 7vw, 5rem) 0; }
   flex-wrap: wrap;
   margin-bottom: 1.75rem;
 }
+.proof-grid {
+  display: block;
+  max-width: 1024px;
+  margin: 0 auto 1.75rem;
+}
+.proof-grid img { width: 100%; height: auto; display: block; }
 .proof-num { text-align: center; }
 .proof-num .n {
   font-size: clamp(2rem, 5vw, 3rem);

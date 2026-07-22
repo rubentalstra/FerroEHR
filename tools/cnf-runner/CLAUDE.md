@@ -16,6 +16,7 @@ language, ever.
 | `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12] [--skip-seed]` | the measured class run (conformance-by-measurement; merges into results.json) |
 | `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit F --out stress.json [--corpus-class POC] [--skip-seed] [--step-secs 120] [--bisections 3] [--max-rate 4096]` | the step-load stress ladder → maximum sustainable throughput (exploration only; NEVER touches results.json) |
 | `bash scripts/render-perf-assets.sh` (env `CONF_SUT`) | regenerate the published SVGs + summary FROM committed artifacts (CI diffs them) |
+| `bash scripts/render-conformance-assets.sh` (env `CONF_SUT`) | regenerate the conformance visuals (capability heat grid + per-chapter outcome bars) FROM committed verdicts/results (CI diffs them) |
 | `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas` | regenerate the published JSON Schemas after a schema.rs change (drift-tested) |
 
 Credentials for direct `run`/`perf`/`stress` invocations come from the env

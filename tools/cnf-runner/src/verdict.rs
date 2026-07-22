@@ -34,7 +34,9 @@ pub struct ReviewFinding {
 }
 
 /// The evidence a capability accumulated across its selected, gating cases.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+/// (`Deserialize` because the committed verdicts.json is the render input
+/// of the conformance assets.)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Evidence {
     /// A selected gating case for the capability passed and none failed.
