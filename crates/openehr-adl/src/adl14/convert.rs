@@ -1,9 +1,11 @@
 //! The ADL 1.4 → ADL 2 converter core.
 //!
 //! NOTE: no openEHR spec governs 1.4→2 conversion — the whole `adl14` module is
-//! our own design (see the [`crate::adl14`] flag). Every heuristic below is
-//! pinned by the paired `upgrade_from_14` corpus fixtures, never by a spec
-//! clause; the comments cite the fixture behaviour, not an openEHR section.
+//! our own design (see the [`crate::adl14`] flag). The conversion HEURISTICS
+//! are pinned by the paired `upgrade_from_14` corpus fixtures, never by a
+//! spec clause; where a comment cites an AOM2/ADL2 section, it pins the
+//! validity of the ADL2 OUTPUT form (which is spec-governed), not the
+//! conversion procedure.
 
 use std::collections::BTreeMap;
 
