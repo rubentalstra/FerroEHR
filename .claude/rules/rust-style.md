@@ -5,7 +5,8 @@ paths: ["crates/**/*.rs", "app/**/*.rs", "tools/**/*.rs"]
 # Rust style — idiomatic application code
 
 Applies to hand-written `.rs`: the application (`ehrbase`, `ehrbase-rest`,
-`ehrbase-sm`), the tools (`conformance`, `benchmark`), the hand-written spec
+`ehrbase-server`, `ehrbase-admin-ui`), the tools (`cnf-runner`, `benchmark`,
+`testkit`, `openehr-codegen`), the hand-written spec
 crates (`openehr-its`, `openehr-flat`, `openehr-term`, `openehr-query`, the
 tooling crates), and `*_impl.rs` behaviour files. **The application is modern idiomatic Rust of our own design, built on the
 generated `openehr-*` crates**. The openEHR specifications are

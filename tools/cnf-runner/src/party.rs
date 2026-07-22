@@ -466,11 +466,11 @@ pub struct Results {
     /// The per-case×format outcomes.
     #[serde(default)]
     pub outcomes: Vec<OutcomeRecord>,
-    /// Performance measurements.
-    // TODO: replace `serde_json::Value` with a typed `Measurement` when the
-    // performance workstream lands the §8.14 workload/measurement model.
+    /// Performance measurements — the second (measured) verdict machinery's
+    /// evidence records; each embeds its encoded HDR histograms and the ixit
+    /// environment block it was taken in.
     #[serde(default)]
-    pub measurements: Vec<serde_json::Value>,
+    pub measurements: Vec<crate::perf::Measurement>,
     /// The ambiguity dispositions the run applied.
     #[serde(default)]
     pub ambiguity_dispositions: Vec<AmbiguityDisposition>,

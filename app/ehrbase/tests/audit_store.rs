@@ -122,6 +122,65 @@ async fn insert_persists_promoted_columns_and_fhir_payload() {
 }
 
 #[tokio::test]
+async fn insert_batch_persists_every_record_with_identical_shape() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let store = AuditStore::new(pool.clone());
+
+    // A drained batch: distinct events, one with a subject, one without.
+    let first = read_event("2026-07-10T09:00:00Z".parse().unwrap());
+    let mut second = read_event("2026-07-10T09:00:01Z".parse().unwrap());
+    "bob".clone_into(&mut second.user_id);
+    second.object_id = Some("9bb2::ehrbase::1".to_owned());
+    let records = vec![
+        (
+            first.clone(),
+            Some("patient-42".to_owned()),
+            fhir::to_fhir(&first, &ctx(), Some("patient-42")),
+        ),
+        (second.clone(), None, fhir::to_fhir(&second, &ctx(), None)),
+    ];
+    store.insert_batch(&records).await.expect("batch insert");
+
+    let rows = sqlx::query(
+        "SELECT principal, patient_id, resource_id, fhir \
+         FROM audit.audit_event ORDER BY recorded_at",
+    )
+    .fetch_all(&pool)
+    .await
+    .expect("rows");
+    assert_eq!(rows.len(), 2, "the whole batch landed");
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("principal").as_deref(),
+        Some("alice")
+    );
+    assert_eq!(
+        rows[0].get::<Option<String>, _>("patient_id").as_deref(),
+        Some("patient-42")
+    );
+    assert_eq!(
+        rows[1].get::<Option<String>, _>("principal").as_deref(),
+        Some("bob")
+    );
+    assert_eq!(rows[1].get::<Option<String>, _>("patient_id"), None);
+    assert_eq!(
+        rows[1].get::<Option<String>, _>("resource_id").as_deref(),
+        Some("9bb2::ehrbase::1")
+    );
+    // The batch path stores the exact same canonical payload as the
+    // per-event path.
+    let stored: serde_json::Value = rows[0].get("fhir");
+    assert_eq!(
+        stored,
+        serde_json::to_value(&records[0].2).expect("value"),
+        "batch-stored FHIR document differs from the rendered one"
+    );
+
+    // An empty batch is a no-op, never an error.
+    store.insert_batch(&[]).await.expect("empty batch");
+}
+
+#[tokio::test]
 async fn reap_deletes_only_rows_past_the_horizon() {
     let db = testkit::db().await.expect("testkit database");
     let pool = db.pool();

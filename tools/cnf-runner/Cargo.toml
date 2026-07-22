@@ -1,7 +1,7 @@
 [package]
 name = "cnf-runner"
 version.workspace = true
-description = "CNF 2.0 reference runner: typed schedule-artifact model, validator, and JSON-Schema emission (later: flow interpreter, party-artifact emission, performance machinery)"
+description = "CNF 2.0 reference runner: typed schedule-artifact model, validator, JSON-Schema emission, the data-driven flow interpreter, party-artifact emission + pure verdicts, and the open-loop performance measurement machinery"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

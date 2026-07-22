@@ -23,7 +23,7 @@ in the root `[workspace.dependencies]`: Leptos 0.8 SSR/full-stack,
   bindings etc.) are banned; charts are `leptos-chartistry` (pure Rust+SVG).
 - **REST boundary:** the console reaches the CDR only over ITS-REST from the
   BFF (server functions → `reqwest`). It may depend on `crates/openehr-*`;
-  it must NEVER depend on `app/ehrbase`, `app/ehrbase-sm`, or
+  it must NEVER depend on `app/ehrbase` or
   `app/ehrbase-rest` (the REST-only boundary in the crate CLAUDE.md).
 - **Server functions are a public HTTP API** (`server/25_server_functions`
   security warning). Every `#[server]` fn that touches the CDR or session

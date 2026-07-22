@@ -82,6 +82,79 @@ impl AuditStore {
         .map_err(|e| AuditError::Store(e.to_string()))
     }
 
+    /// Persist a whole drained batch in ONE multi-row `INSERT` (UNNEST over
+    /// parallel column arrays) — the throughput path for the default
+    /// store-only posture, where per-event round trips cannot keep up with a
+    /// loaded write path. No row ids are returned: the batch path is used
+    /// only when no per-row delivery stamping is needed (the syslog sink
+    /// keeps the per-event [`Self::insert`]).
+    ///
+    /// # Errors
+    /// [`AuditError::Store`] when serialization of a FHIR document or the
+    /// INSERT fails (the whole batch fails together; the caller retries).
+    pub async fn insert_batch(
+        &self,
+        records: &[(AuditEvent, Option<String>, FhirAuditEvent)],
+    ) -> Result<(), AuditError> {
+        if records.is_empty() {
+            return Ok(());
+        }
+        let mut recorded_at: Vec<Timestamp> = Vec::with_capacity(records.len());
+        let mut actions: Vec<String> = Vec::with_capacity(records.len());
+        let mut outcomes: Vec<i16> = Vec::with_capacity(records.len());
+        let mut event_codes: Vec<&str> = Vec::with_capacity(records.len());
+        let mut operations: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut principals: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut patient_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut resource_classes: Vec<&str> = Vec::with_capacity(records.len());
+        let mut resource_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut client_ips: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut token_ids: Vec<Option<&str>> = Vec::with_capacity(records.len());
+        let mut tenant_ids: Vec<Option<Uuid>> = Vec::with_capacity(records.len());
+        let mut fhir_docs: Vec<serde_json::Value> = Vec::with_capacity(records.len());
+        for (event, subject, fhir) in records {
+            recorded_at.push(Timestamp::from(event.timestamp));
+            actions.push(action_str(event));
+            outcomes.push(outcome_smallint(event));
+            event_codes.push(event_code(event));
+            operations.push(operation(event));
+            principals.push(nonempty_opt(&event.user_id));
+            patient_ids.push(subject.as_deref());
+            resource_classes.push(resource_class(event.object));
+            resource_ids.push(event.object_id.as_deref());
+            client_ips.push(event.client_ip.as_deref());
+            token_ids.push(event.token_id.as_deref());
+            tenant_ids.push(event.tenant_id);
+            fhir_docs
+                .push(serde_json::to_value(fhir).map_err(|e| AuditError::Store(e.to_string()))?);
+        }
+        sqlx::query(
+            "INSERT INTO audit.audit_event (recorded_at, action, outcome, event_code, \
+             operation, principal, patient_id, resource_class, resource_id, client_ip, \
+             token_id, tenant_id, fhir) \
+             SELECT * FROM UNNEST($1::timestamptz[], $2::text[], $3::smallint[], $4::text[], \
+             $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::text[], \
+             $11::text[], $12::uuid[], $13::jsonb[])",
+        )
+        .bind(recorded_at)
+        .bind(actions)
+        .bind(outcomes)
+        .bind(event_codes)
+        .bind(operations)
+        .bind(principals)
+        .bind(patient_ids)
+        .bind(resource_classes)
+        .bind(resource_ids)
+        .bind(client_ips)
+        .bind(token_ids)
+        .bind(tenant_ids)
+        .bind(fhir_docs)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| AuditError::Store(e.to_string()))?;
+        Ok(())
+    }
+
     /// Stamp a row as delivered by the syslog sink. Delivery stamps are
     /// best-effort bookkeeping: a failure is logged, never propagated (the
     /// record itself is already durable).

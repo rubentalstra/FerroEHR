@@ -76,6 +76,10 @@
     "directory-empty-error",
     "sf-deprecated-types-unsupported"
   ],
+  "performance": {
+    "class": "POC",
+    "environment_ref": "ixit.json#/environment"
+  },
   "attestation": {
     "signatory": "Ruben Talstra",
     "role": "Owner",

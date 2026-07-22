@@ -161,8 +161,12 @@ Three physical directories (consolidated 2026-07-16):
 bin is still named `ehrbase`), and `ehrbase-admin-ui` (the Leptos SSR admin
 console — its own binary/OCI image, consuming the CDR strictly over
 ITS-REST); **`tools/*`** holds the dev/verification
-tooling that is *not* part of the shipped application (`conformance` — the
-CNF 2.0 conformance runner, `benchmark`, `testkit` — the shared test-database harness, and
+tooling that is *not* part of the shipped application (`cnf-runner` — the
+CNF 2.0 conformance runner incl. the measured-performance and step-load
+stress instruments, `benchmark` — the transitional profile-first lab, kept
+running but condemned: its unique features migrate into `cnf-runner` and the
+crate then deletes; nothing consumes `cnf-runner` as a library, `testkit` —
+the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
@@ -209,8 +213,8 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
 | `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
 | `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |
-| `cnf-runner` | CNF 2.0 conformance runner (`tools/*`) | tooling |
-| `benchmark` | Benchmark harness (`tools/*`) | tooling |
+| `cnf-runner` | CNF 2.0 conformance runner + measured-performance and step-load stress instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
+| `benchmark` | Transitional profile-first benchmark lab (`tools/*`; condemned — features migrate into `cnf-runner`, then deleted) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
 ## Build sequence & stages
@@ -238,5 +242,14 @@ The service layer realizes the openEHR **SM Platform Service Model**
   all under `docs/conformance/<sut>/` (the baseline lives ONLY in those
   committed artifacts; the ECC harness retired 2026-07-22 with the reviewed
   `docs/conformance/cnf-comparison.md`).
+- **Measured performance** (the same runner): `cnf-runner perf` earns the
+  volumetric deployment classes (POC/S/L/R) by open-loop,
+  coordinated-omission-free sustained runs (normative hour, extendable
+  2–12 h — never shorter) whose re-checkable HDR-V2 records land in
+  `results.json` `measurements`, environment-bound; `cnf-runner stress` is
+  the separate step-load exploration instrument (maximum sustainable
+  throughput, `stress.json`, never a conformance record). Published SVGs +
+  summaries regenerate FROM the committed artifacts
+  (`scripts/render-perf-assets.sh`, CI diff-guarded).
 - **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.
