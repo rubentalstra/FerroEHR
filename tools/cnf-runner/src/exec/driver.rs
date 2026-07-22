@@ -1321,10 +1321,9 @@ impl StepDriver for HttpDriver<'_> {
             // The interpreter surfaces this before perform() normally; the
             // driver answers with a transport-class observation so law (c)
             // holds even if reached.
-            return Ok(StepObservation {
-                observation: Observation::Transport("operation unrealized on this ITS".into()),
-                assertion_failures: Vec::new(),
-            });
+            return Ok(StepObservation::transport(
+                "operation unrealized on this ITS".into(),
+            ));
         }
         let instance = self.instance_for(step)?;
 
@@ -1363,23 +1362,13 @@ impl StepDriver for HttpDriver<'_> {
 
         let body = match self.select_body(request_spec, &with, step, vars) {
             Ok(body) => body,
-            Err(e) => {
-                return Ok(StepObservation {
-                    observation: Observation::Transport(e),
-                    assertion_failures: Vec::new(),
-                });
-            }
+            Err(e) => return Ok(StepObservation::transport(e)),
         };
 
         let base = instance.base_url.trim_end_matches('/');
         let url = match Self::build_url(binding, base, &with, &header_vars) {
             Ok(url) => url,
-            Err(e) => {
-                return Ok(StepObservation {
-                    observation: Observation::Transport(e),
-                    assertion_failures: Vec::new(),
-                });
-            }
+            Err(e) => return Ok(StepObservation::transport(e)),
         };
         let body_is_json = !matches!(body, Some(Value::String(_)));
         pace_commit_capture(step, vars);
@@ -1392,12 +1381,7 @@ impl StepDriver for HttpDriver<'_> {
             body_is_json,
         ) {
             Ok(exchange) => exchange,
-            Err(fault) => {
-                return Ok(StepObservation {
-                    observation: Observation::Transport(fault),
-                    assertion_failures: Vec::new(),
-                });
-            }
+            Err(fault) => return Ok(StepObservation::transport(fault)),
         };
 
         // Track committed payloads for the equivalent comparison.

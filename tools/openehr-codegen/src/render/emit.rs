@@ -147,6 +147,22 @@ fn emit_version(model: &Model, schema: &BmmSchema, prefix: &str, external: &Exte
         format!("{prefix}/prelude.rs")
     };
     files.extend(emit_module_tree(&tree_chains));
+    // A prefixed version module carries its own spec-version constant, sourced
+    // from the vendored BMM schema's `rm_release` (the crate-level constant in
+    // `lib.rs` covers only the crate's primary generation).
+    if !prefix.is_empty() {
+        let mod_path = format!("{prefix}/mod.rs");
+        for f in &mut files {
+            if f.path == mod_path {
+                f.body.push_str(&format!(
+                    "\n/// The openEHR specification version this generation implements —\n\
+                     /// the vendored BMM schema's `rm_release`.\n\
+                     pub const SPEC_VERSION: &str = \"{}\";\n",
+                    schema.rm_release
+                ));
+            }
+        }
+    }
     files.push(emit_prelude(&emitted, &prelude_path));
 
     // Top modules: the prefix itself if prefixed, else the type roots.
@@ -251,6 +267,13 @@ fn emit_lib(top: &BTreeSet<String>, include_prelude: bool, crate_doc: &str) -> G
     if include_prelude {
         b.push_str("pub mod prelude;\n");
     }
+    b.push_str(
+        "\n/// The openEHR specification version this crate implements — the crate\n\
+         /// version itself: the spec crates are versioned by the specification they\n\
+         /// implement (`docs/VERSIONS.md` §Product and crate versioning), so\n\
+         /// consumers read the pin from the package, never from a hand-typed literal.\n\
+         pub const SPEC_VERSION: &str = env!(\"CARGO_PKG_VERSION\");\n",
+    );
     GenFile {
         path: "lib.rs".to_string(),
         body: b,
