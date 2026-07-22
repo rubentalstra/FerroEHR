@@ -28,3 +28,12 @@ language, ever.
 - Gates: `cargo clippy -p cnf-runner --all-targets` +
   `cargo nextest run -p cnf-runner` (schema drift, pilot acceptance,
   seeded-defect rejection, the §8.13-derived cross-artifact guards).
+- **Red-run triage follows the attribution law**
+  (`.claude/rules/cnf-triage.md`; delegate to the `cnf-triage` agent): the
+  vendored spec text is ALWAYS right and never a suspect — every red row is
+  attributed to exactly one of {application, runner machinery, catalogue
+  artifact} by three-way comparison (spec-required vs catalogue-expected vs
+  SUT-observed), each attribution carrying the spec citation + the actual
+  wire exchange. Never adjust an expectation to match observed SUT
+  behaviour; never change app code without a reproduced exchange; spec
+  silence goes through `artifacts/registers/ambiguities.yaml`.
