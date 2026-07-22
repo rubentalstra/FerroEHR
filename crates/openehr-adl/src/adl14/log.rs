@@ -55,12 +55,12 @@ impl ConversionLog {
         self.value_sets.get(signature).map(String::as_str)
     }
 
-    /// Record the ac-code minted for a value-set signature.
     /// Record a provenance note.
     pub fn note(&mut self, message: String) {
         self.notes.push(message);
     }
 
+    /// Record the ac-code minted for a value-set signature.
     pub fn record_value_set(&mut self, signature: &str, ac_code: &str) {
         self.value_sets
             .insert(signature.to_owned(), ac_code.to_owned());
