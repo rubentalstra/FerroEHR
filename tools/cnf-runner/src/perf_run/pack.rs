@@ -337,7 +337,10 @@ mod tests {
         // RM common LOCATABLE.Archetype_node_id_valid on every node.
         assert!(folder["archetype_node_id"].is_string());
         for sub in folder["folders"].as_array().unwrap() {
-            assert!(sub["archetype_node_id"].is_string(), "subfolder without archetype_node_id");
+            assert!(
+                sub["archetype_node_id"].is_string(),
+                "subfolder without archetype_node_id"
+            );
         }
         let tags: Value = serde_json::from_slice(&tags_body(0)).unwrap();
         assert_eq!(tags.as_array().unwrap().len(), 2);
