@@ -29,6 +29,10 @@ pub enum PerfClass {
 }
 
 impl PerfClass {
+    /// All classes, ladder order (schema emission derives from this).
+    pub const ALL: &'static [PerfClass] =
+        &[PerfClass::Poc, PerfClass::S, PerfClass::L, PerfClass::R];
+
     /// The class's offered-load floor (peak API arrivals/s, sustained) —
     /// the published [legislated] defaults.
     #[must_use]
@@ -38,6 +42,31 @@ impl PerfClass {
             PerfClass::S => 15.0,
             PerfClass::L => 150.0,
             PerfClass::R => 1_500.0,
+        }
+    }
+
+    /// The published class token (the serialized form).
+    #[must_use]
+    pub fn token(self) -> &'static str {
+        match self {
+            PerfClass::Poc => "POC",
+            PerfClass::S => "S",
+            PerfClass::L => "L",
+            PerfClass::R => "R",
+        }
+    }
+
+    /// Parse a class token.
+    ///
+    /// # Errors
+    /// The unknown token (the ladder is closed).
+    pub fn parse(token: &str) -> Result<Self, String> {
+        match token {
+            "POC" => Ok(PerfClass::Poc),
+            "S" => Ok(PerfClass::S),
+            "L" => Ok(PerfClass::L),
+            "R" => Ok(PerfClass::R),
+            other => Err(format!("unknown performance class {other:?}")),
         }
     }
 }
@@ -317,11 +346,24 @@ impl OperationMeasurement {
 pub struct Measurement {
     pub case: CaseId,
     pub class: PerfClass,
+    /// The ixit environment block the run was measured in — mandatory:
+    /// performance is meaningless without the deployment described, and an
+    /// earned class is always reported WITH its environment.
+    pub environment: crate::ixit::Environment,
     /// The offered load the schedule actually sustained (arrivals/s).
     pub offered_load_sustained: f64,
+    /// The warmup the run honoured before recording (seconds).
+    pub warmup_s: u64,
+    /// The recorded (post-warmup) measurement window (seconds).
+    pub duration_s: u64,
     pub operations: Vec<OperationMeasurement>,
-    /// The verdict — computed, never asserted.
+    /// The verdict — computed, never asserted; any consumer re-derives it
+    /// from the decoded histograms + the case thresholds.
     pub verdict: ClassVerdict,
+    /// The named threshold violations behind a `not-earned` verdict (empty
+    /// when earned).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub violations: Vec<String>,
 }
 
 /// Class verdicts (the second machinery's output).

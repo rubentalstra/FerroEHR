@@ -17,13 +17,16 @@ files — that is what this regenerates.
 
 ## Steps
 
-1. **Regenerate all targets** (order matters — spec crates first):
+1. **Regenerate all targets, in this order** (the exact sequence
+   `scripts/check-codegen-drift.sh` runs — spec crates first):
    ```
    cargo run -p openehr-codegen -- emit           # openehr-base/rm/am/term/lang (rm incl. src/model)
    cargo run -p openehr-codegen -- emit-xml        # openehr-its XML ToXml/FromXml
+   cargo run -p openehr-codegen -- emit-json       # openehr-its canonical-JSON ToJson/FromJson codec
    cargo run -p openehr-codegen -- emit-rest       # openehr-its ITS-REST contract
-   cargo run -p openehr-codegen -- emit-opt         # openehr-its opt14 (OPT 1.4 model + XML codec)
-   cargo run -p openehr-codegen -- emit-rm-model    # openehr-rm src/model (static RM attribute/type model)
+   cargo run -p openehr-codegen -- emit-opt        # openehr-its opt14 (OPT 1.4 model + XML codec)
+   cargo run -p openehr-codegen -- emit-rm-model   # openehr-rm src/model (static RM attribute/type model)
+   cargo run -p openehr-codegen -- emit-validate   # openehr-rm src/validate/generated.rs (RM invariant cores)
    ```
    (`emit` already emits `openehr-rm/src/model`; `emit-rm-model` refreshes just
    that subtree and is byte-identical, so run order does not matter.)

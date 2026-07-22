@@ -47,8 +47,8 @@ cargo nextest run -p ehrbase-admin-ui
 #    otherwise report it as skipped-with-reason
 cargo leptos build
 
-# 5. E2E journeys (merge-gating in CI; local requires Docker) — the
-#    composed stack + headless browser, design doc §8d
+# 5. E2E journeys (merge-gating in CI; local requires Docker) — Rust-native
+#    thirtyfour/WebDriver over the composed stack (.claude/rules/leptos-ui.md §10)
 bash scripts/ui-e2e.sh
 ```
 

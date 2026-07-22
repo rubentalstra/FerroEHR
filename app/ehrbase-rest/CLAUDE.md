@@ -1,26 +1,38 @@
 # `ehrbase-rest` — the ITS-REST protocol adapter
 
 Implements the **generated** ITS-REST contract (server traits + DTOs from
-`openehr-its`) over axum 0.8, plus auth, the `access` authz module
-(RBAC/ABAC PEP), the `smart` module (SMART App Launch resource-server
-role), and ATNA audit middleware.
+`openehr-its`) over axum 0.8, calling the concrete `EhrbaseService` directly.
+Modules (`src/`): `api` (one impl group per API area —
+ehr/definition/demographic/query/admin/system), `router`, `state`, `formats`
+(content negotiation), `overview`, `overload` (shed), `config`, `system_log`
+(ATNA audit middleware), `smart` (SMART App Launch resource-server role), and
+`extensions` (`access` = the RBAC/ABAC authn+authz PEP, plus fhir /
+terminology / management / tenant / event-subscription surfaces). Entry point:
+`serve_full`.
 
 - **The wire is the spec:** status codes, headers (`ETag`, `Location`,
-  `Last-Modified`, `openEHR-VERSION.*` committal merge, `Prefer`), and
-  content negotiation (canonical JSON + XML) come from
+  `Last-Modified`, `Prefer`, committal merge), and content negotiation
+  (canonical JSON + XML via `openehr-its`) come from
   `docs/specs/openehr/ITS-REST/` + the vendored OAS — never invented.
-  Cross-check the CNF schedule; the ECC suite is the acceptance instrument.
-- **Implement the generated traits; never fork the contract.** If the
-  contract is wrong, fix `openehr-codegen -- emit-rest` and regenerate —
-  never hand-edit `src/rest/generated/` in `openehr-its`.
-- Auth: Basic + OAuth2/OIDC via the pinned crates (`jsonwebtoken`,
-  `oauth2`, `openidconnect`, `argon2`) — never hand-rolled. SMART scope
-  enforcement AND-composes onto the ABAC PEP and is config-gated off by
-  default (zero wire drift when disabled); spec:
-  `docs/specs/openehr/ITS-REST/docs/smart_app_launch/`.
+  Cross-check the CNF schedule; the CNF pipeline is the acceptance instrument.
+- **Implement the generated traits; never fork the contract.** If the contract
+  is wrong, fix `openehr-codegen -- emit-rest` and regenerate — never hand-edit
+  `src/rest/generated/` in `openehr-its`.
+- **Authz/authn** live in `extensions::access` (`authn/` = Basic + JWT;
+  `authz/` = the RBAC/ABAC engine, incl. a `cedar` policy path; `pep.rs` = the
+  policy-enforcement point; `ehr_access.rs`, `tenant.rs`). Use the pinned crates
+  (`jsonwebtoken`, `oauth2`, `openidconnect`, `argon2`) — never hand-rolled.
+  401 (unauthenticated) vs 403 (unauthorized) per ITS-REST. Rules:
+  `.claude/rules/auth.md`.
+- **SMART** (`smart/`): master08 scope grammar; enforcement AND-composes onto
+  the ABAC PEP and is config-gated off by default (zero wire drift when
+  disabled). Spec: `docs/specs/openehr/ITS-REST/docs/smart_app_launch/`.
+- **OpenAPI:** serve ONLY our own `utoipa`-generated document
+  (`extensions::openapi`); the vendored OAS is the `emit-rest` codegen input +
+  behavioural oracle, never served.
 - URL/percent encoding ONLY via the `urlencoding` crate (owner hard rule).
 - Rules: `.claude/rules/rest-axum.md`, `.claude/rules/auth.md`,
   `.claude/rules/serialization.md`.
 - Gates: `cargo clippy -p ehrbase-rest --all-targets` +
-  `cargo nextest run -p ehrbase-rest` green; wire changes re-verified by an
-  ECC run (`scripts/conformance.sh`) with zero drift.
+  `cargo nextest run -p ehrbase-rest` green; wire changes re-verified by a CNF
+  pipeline run (`bash scripts/conformance.sh`) with zero drift.

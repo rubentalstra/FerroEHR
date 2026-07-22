@@ -45,6 +45,16 @@ exclusive-server ground) → the committed catalogue → pure-function verdicts
    Foreign/BYO SUT: `CONF_SUT=byo CONF_BASE_URL=<url>` (supply
    `CONF_IXIT`/`CONF_STATEMENT` for a non-default party set; credentials via
    the `SUT_*` env variables the ixit references).
+   Measured performance stage (hour-plus; exclusive SUT):
+   `CONF_PERF_CLASS=POC|S|L|R` (+ `CONF_PERF_HOURS=1|2|4|6|8|12` for an
+   extended sustained hold, `CONF_PERF_SKIP_SEED=1` to reuse a prior
+   seeding's sidecar corpus index). The step-load STRESS ladder is a
+   separate, non-conformance instrument:
+   `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts
+   --ixit <party>/ixit.json --out docs/conformance/<sut>/stress.json
+   [--corpus-class POC] [--skip-seed]` — it writes stress.json only, never
+   results.json. The full canonical CLI table lives in
+   `tools/cnf-runner/CLAUDE.md`.
 3. **Compare against the committed baseline**
    (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`): the only
    permitted delta is newly-green cases — **zero drift**. Report:

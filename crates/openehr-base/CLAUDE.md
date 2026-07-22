@@ -15,6 +15,6 @@ Foundation + base types, **generated from the vendored BMM** by
 - Interval/`Multiplicity_interval`/`Cardinality` math and ISO 8601
   validation live here as `*_impl.rs` — they are constraint-evaluation
   primitives for the validator; behaviour changes need spec citations and
-  ECC verification.
+  re-verification through the CNF pipeline.
 - Gates: crate must stay lib-clippy-clean; fix the emitter, never the
   output.

@@ -146,7 +146,7 @@ asserted — the manifest never out-claims the last conformance verdict.
 | `solution_version` | string | build version | Product version. |
 | `vendor` | string | `EHRbase-RS project` | Providing organisation. |
 | `restapi_specs_version` | string | tested-contract identity | openEHR REST API edition the build is tested against. |
-| `conformance_profile` | string | last ECC verdict | Advertised conformance profile. |
+| `conformance_profile` | string | last CNF verdict | Advertised conformance profile. |
 
 ## `[db]`
 
@@ -444,7 +444,7 @@ did-you-mean guidance.)
 | `suppress_login_events` | bool | `true` | Skip successful-login records (rejections are always recorded). |
 | `fail_mode` | enum{open,closed} | `open` | On undeliverable audit: succeed and meter (`open`) or reject auditable operations with 503 (`closed` — includes an unhealthy local store). |
 | `resolve_subject` | bool | `true` | Enrich the patient participant via a background subject lookup. |
-| `queue_capacity` | int | `1024` | Bounded audit queue capacity. |
+| `queue_capacity` | int | `8192` | Bounded audit queue capacity (sized for write-path bursts; the drain persists in multi-row batches). |
 | `server_host` | string | unset | This node's advertised address (`NetworkAccessPointID`). |
 
 ### `[audit.store]` — the local Audit Record Repository

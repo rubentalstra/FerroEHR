@@ -14,4 +14,9 @@ vendored BMM** by `openehr-codegen -- emit`.
 - Keep `am14` and `am24` strictly parallel — never blend the two models or
   "share" a type across them outside what the BMM defines.
 - Template/OPT ingestion and WebTemplate building live in the application
-  (`app/ehrbase`), not here; this crate is the model only.
+  (`app/ehrbase`), not here; this crate is the model only. The ADL2/AOM2 text
+  engine (parser, validation, flattening, OPT2, 1.4→2 conversion) is
+  `crates/openehr-adl`.
+- Versioned by the spec (AM 1.4 + 2.4.0); bumps only on a spec-pin bump. Gates:
+  the crate stays lib-clippy-clean by construction — fix the emitter, never the
+  output.

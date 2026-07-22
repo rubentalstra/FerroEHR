@@ -20,6 +20,7 @@ use crate::vocab::{Family, FormatName, Tier};
 /// summary, a per-chapter table, and the honesty block (coverage bound +
 /// every not-executed verdict's citation).
 #[must_use]
+#[allow(clippy::too_many_lines)] // one linear document renderer per published artifact
 pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "# Conformance Report\n");
@@ -87,6 +88,60 @@ pub fn render_report(results: &Results, verdicts: &VerdictReport) -> String {
         );
     }
     let _ = writeln!(out);
+
+    // ── performance measurements ────────────────────────────────────────────
+    if !results.measurements.is_empty() {
+        let _ = writeln!(out, "## Performance measurements\n");
+        for m in &results.measurements {
+            let _ = writeln!(
+                out,
+                "### {} — class {} · {}\n",
+                m.case,
+                m.class.token(),
+                verdict_token(m.verdict),
+            );
+            let _ = writeln!(
+                out,
+                "Offered load sustained: {:.2}/s over {} s (after {} s warmup) · environment: {} ({} cores, {} GB, {}, {})\n",
+                m.offered_load_sustained,
+                m.duration_s,
+                m.warmup_s,
+                m.environment.hardware_class,
+                m.environment.cores,
+                m.environment.memory_gb,
+                m.environment.storage_class,
+                m.environment.topology,
+            );
+            let _ = writeln!(
+                out,
+                "| Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |"
+            );
+            let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- |");
+            for op in &m.operations {
+                let _ = writeln!(
+                    out,
+                    "| {} | {} | {} | {:.1} | {:.1} | {:.1} |",
+                    op.operation,
+                    op.requests,
+                    op.errors,
+                    op.latency_ms_p50,
+                    op.latency_ms_p90,
+                    op.latency_ms_p99,
+                );
+            }
+            if !m.violations.is_empty() {
+                let _ = writeln!(out, "\nViolations:\n");
+                for v in &m.violations {
+                    let _ = writeln!(out, "- {v}");
+                }
+            }
+            let _ = writeln!(out);
+        }
+        let _ = writeln!(
+            out,
+            "Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.\n"
+        );
+    }
 
     // ── honesty block ───────────────────────────────────────────────────────
     let _ = writeln!(out, "## Honesty\n");
@@ -174,6 +229,15 @@ pub fn render_statement(statement: &Statement, verdicts: &VerdictReport) -> Stri
     if let Some(security) = verdicts.security {
         let _ = writeln!(out, "| SEC-BASIC | {} |", sec_token(security));
     }
+    for perf in &verdicts.performance {
+        let _ = writeln!(
+            out,
+            "| Performance class {}{} | {} |",
+            perf.class.token(),
+            if perf.claimed { " (claimed)" } else { "" },
+            verdict_token(perf.verdict),
+        );
+    }
     let _ = writeln!(out);
     if !verdicts.review.is_empty() {
         let _ = writeln!(out, "### Static-review findings\n");
@@ -209,6 +273,7 @@ pub fn render_statement(statement: &Statement, verdicts: &VerdictReport) -> Stri
 /// need it). A single [`Results`] covers one technology profile, so the
 /// result column is that profile's ITS.
 #[must_use]
+#[allow(clippy::too_many_lines)] // one linear document renderer per published artifact
 pub fn render_certificate(
     statement: &Statement,
     results: &Results,
@@ -260,6 +325,11 @@ pub fn render_certificate(
     );
     let _ = writeln!(
         out,
+        "| Performance | {} |",
+        performance_scope_cell(verdicts)
+    );
+    let _ = writeln!(
+        out,
         "| Ext Data Fmt | {} |",
         join_formats(&results.tech_profile.formats)
     );
@@ -293,6 +363,40 @@ pub fn render_certificate(
         );
     }
     let _ = writeln!(out);
+
+    // ── performance rating ──────────────────────────────────────────────────
+    if !verdicts.performance.is_empty() {
+        let _ = writeln!(out, "## Performance Rating\n");
+        let _ = writeln!(
+            out,
+            "Classes are EARNED by measurement (never declared); every earned class is bound to the measured environment recorded in the results."
+        );
+        let _ = writeln!(out, "\n| Class | Case | Claimed | Verdict |");
+        let _ = writeln!(out, "| --- | --- | --- | --- |");
+        for perf in &verdicts.performance {
+            let _ = writeln!(
+                out,
+                "| {} | {} | {} | {} |",
+                perf.class.token(),
+                perf.case,
+                if perf.claimed { "yes" } else { "no" },
+                verdict_token(perf.verdict),
+            );
+        }
+        for m in &results.measurements {
+            let _ = writeln!(
+                out,
+                "\nEnvironment ({}): {} · {} cores · {} GB · {} · {}",
+                m.case,
+                m.environment.hardware_class,
+                m.environment.cores,
+                m.environment.memory_gb,
+                m.environment.storage_class,
+                m.environment.topology,
+            );
+        }
+        let _ = writeln!(out);
+    }
 
     out
 }
@@ -439,6 +543,29 @@ fn sec_token(verdict: SecBasicVerdict) -> &'static str {
     }
 }
 
+fn verdict_token(verdict: crate::perf::ClassVerdict) -> &'static str {
+    match verdict {
+        crate::perf::ClassVerdict::Earned => "EARNED",
+        crate::perf::ClassVerdict::NotEarned => "not earned",
+    }
+}
+
+/// The certificate's Scope-of-Test performance cell: the earned classes, or
+/// an explicit dash when nothing was measured.
+fn performance_scope_cell(verdicts: &VerdictReport) -> String {
+    let earned: Vec<&'static str> = verdicts
+        .performance
+        .iter()
+        .filter(|p| p.verdict == crate::perf::ClassVerdict::Earned)
+        .map(|p| p.class.token())
+        .collect();
+    if earned.is_empty() {
+        "—".to_owned()
+    } else {
+        format!("class {} (earned)", earned.join(", "))
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::panic)] // test assertions/fixtures
 mod tests {
@@ -502,7 +629,7 @@ mod tests {
                             "disposition": "loose_assert" }
             }))
             .unwrap();
-        crate::verdict::compute(&statement(), &results(), &cases, &matrix(), &register)
+        crate::verdict::compute(&statement(), &results(), &cases, &[], &matrix(), &register)
     }
 
     use crate::model::case::CaseCore;

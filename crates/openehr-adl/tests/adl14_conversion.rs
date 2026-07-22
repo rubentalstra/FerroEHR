@@ -286,3 +286,184 @@ fn upgrade_add_use_nodes_converts() {
         Some("openEHR-EHR-OBSERVATION.upgrade_parent.v1.adl"),
     );
 }
+
+/// A 1.4 source that reuses one at-code across two sibling subtrees (legal in
+/// 1.4 — node ids are only sibling-unique) converts with archetype-wide
+/// unique node ids (`AOM2/master04.5` §Validity Rules: `C_OBJECT`, VCOSU): the
+/// second occurrence is re-minted and its terminology cloned from the shared
+/// 1.4 term.
+#[test]
+fn reused_node_codes_re_mint_archetype_wide_unique_ids() {
+    let src = r#"archetype (adl_version=1.4)
+    openEHR-EHR-CLUSTER.reused_codes.v1
+
+concept
+    [at0000]
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    original_author = <
+        ["name"] = <"t">
+    >
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"t">
+        >
+    >
+    lifecycle_state = <"AuthorDraft">
+
+definition
+    CLUSTER[at0000] matches {
+        items cardinality matches {0..*; unordered} matches {
+            CLUSTER[at0001] matches {
+                items cardinality matches {0..*; unordered} matches {
+                    ELEMENT[at0004] matches {*}
+                }
+            }
+            CLUSTER[at0002] matches {
+                items cardinality matches {0..*; unordered} matches {
+                    ELEMENT[at0004] matches {*}
+                }
+            }
+        }
+    }
+
+ontology
+    term_definitions = <
+        ["en"] = <
+            items = <
+                ["at0000"] = <text = <"root">; description = <"root">>
+                ["at0001"] = <text = <"left">; description = <"left">>
+                ["at0002"] = <text = <"right">; description = <"right">>
+                ["at0004"] = <text = <"shared">; description = <"shared">>
+            >
+        >
+    >
+"#;
+    let cfg = ConvertConfig::default();
+    let mut log = ConversionLog::new();
+    let got = parse_and_convert(src, &cfg, &mut log).expect("convert");
+    let issues = openehr_adl::validate::validate_phase1(&got, None);
+    let errors: Vec<&str> = issues
+        .iter()
+        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .map(|i| i.code.mnemonic())
+        .collect();
+    assert!(errors.is_empty(), "phase-1 errors: {errors:?}");
+
+    // Both occurrences exist as DISTINCT node ids, each defined with the
+    // shared rubric.
+    let (_, terminology) = data(&got);
+    let en = terminology
+        .term_definitions
+        .get("en")
+        .expect("en definitions");
+    let shared: Vec<&String> = en
+        .iter()
+        .filter(|(_, t)| t.text == "shared")
+        .map(|(code, _)| code)
+        .collect();
+    assert_eq!(
+        shared.len(),
+        2,
+        "the reused code re-mints a second defined node id: {en:?}"
+    );
+    assert!(!log.notes.is_empty(), "the re-mint is logged as provenance");
+}
+
+/// A specialised source emitted STANDALONE (no resolvable parent — the
+/// flattened-OPT decomposition case) collapses to depth 0 under
+/// `collapse_specialised_codes`: no dotted code survives anywhere, the root
+/// is `id1` (VARCN), and phase 1 is clean — no VACSD/VASID (the archetype is
+/// unspecialised) and no VATCD (all codes at level 0).
+#[test]
+fn standalone_specialised_source_collapses_to_depth_zero() {
+    let src = r#"archetype (adl_version=1.4)
+    openEHR-EHR-CLUSTER.collapse-parent.v1
+
+concept
+    [at0000.1]
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    original_author = <
+        ["name"] = <"t">
+    >
+    details = <
+        ["en"] = <
+            language = <[ISO_639-1::en]>
+            purpose = <"t">
+        >
+    >
+    lifecycle_state = <"AuthorDraft">
+
+definition
+    CLUSTER[at0000.1] matches {
+        items cardinality matches {0..*; unordered} matches {
+            ELEMENT[at0001] matches {
+                value matches {
+                    DV_CODED_TEXT matches {
+                        defining_code matches {[local::at0.32, at0.33]}
+                    }
+                }
+            }
+            ELEMENT[at0002.1] matches {*}
+        }
+    }
+
+ontology
+    term_definitions = <
+        ["en"] = <
+            items = <
+                ["at0000.1"] = <text = <"root">; description = <"root">>
+                ["at0001"] = <text = <"coded">; description = <"coded">>
+                ["at0002.1"] = <text = <"added">; description = <"added">>
+                ["at0.32"] = <text = <"a">; description = <"a">>
+                ["at0.33"] = <text = <"b">; description = <"b">>
+            >
+        >
+    >
+"#;
+    let cfg = ConvertConfig {
+        collapse_specialised_codes: true,
+        ..ConvertConfig::default()
+    };
+    let mut log = ConversionLog::new();
+    let got = parse_and_convert(src, &cfg, &mut log).expect("convert");
+    let issues = openehr_adl::validate::validate_phase1(&got, None);
+    let errors: Vec<&str> = issues
+        .iter()
+        .filter(|i| i.severity == openehr_adl::validate::Severity::Error)
+        .map(|i| i.code.mnemonic())
+        .collect();
+    assert!(errors.is_empty(), "phase-1 errors: {errors:?}");
+
+    // Depth 0 everywhere: no dotted code remains in USE — as a bracketed
+    // node id/constraint (`[at0.32]`) or a terminology key (`["at0.32"]`).
+    // The conversion_details provenance deliberately NAMES the original
+    // dotted codes, so a bare-substring scan would false-positive there.
+    let printed = openehr_adl::printer::print(&got);
+    for token in [
+        "[id1.", "[id3.", "[at0.", "[\"at0.", "[\"id1.", ".1]", ".1\"]",
+    ] {
+        assert!(
+            !printed.contains(token),
+            "dotted code survived the collapse ({token:?}):\n{printed}"
+        );
+    }
+    let (_, terminology) = data(&got);
+    assert_eq!(terminology.concept_code, "id1", "root collapses to id1");
+    assert!(
+        log.notes.iter().any(|n| n.contains("collapsed")),
+        "collapse remaps are logged as provenance: {:?}",
+        log.notes
+    );
+    // The printed ADL2 re-parses (the standalone artefact is well-formed).
+    openehr_adl::assemble::parse_artefact(&printed)
+        .unwrap_or_else(|e| panic!("printed ADL2 does not re-parse: {e:?}\n{printed}"));
+}

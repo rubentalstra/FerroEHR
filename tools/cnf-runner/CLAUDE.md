@@ -5,6 +5,23 @@ data-driven interpreter over the CNF 2.0 machine-readable schedule. The
 schedule is the ONLY DSL — no cucumber, no Hurl, no second test-definition
 language, ever.
 
+## The canonical CLI (use EXACTLY these forms — never improvise flags)
+
+| Command | Purpose |
+|---|---|
+| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_PERF_SKIP_SEED=1`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
+| `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
+| `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
+| `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
+| `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12] [--skip-seed]` | the measured class run (conformance-by-measurement; merges into results.json) |
+| `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit F --out stress.json [--corpus-class POC] [--skip-seed] [--step-secs 120] [--bisections 3] [--max-rate 4096]` | the step-load stress ladder → maximum sustainable throughput (exploration only; NEVER touches results.json) |
+| `bash scripts/render-perf-assets.sh` (env `CONF_SUT`) | regenerate the published SVGs + summary FROM committed artifacts (CI diffs them) |
+| `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas` | regenerate the published JSON Schemas after a schema.rs change (drift-tested) |
+
+Credentials for direct `run`/`perf`/`stress` invocations come from the env
+the ixit references: `SUT_USER/SUT_PASS` (+ `SUT_ADMIN_*`, `SUT_RO_*`) —
+the dev-compose defaults are exported by `scripts/conformance.sh`.
+
 - **Artifact families are the contract** (case cores, operation bindings,
   vocabularies incl. the capability→family→tier matrix, corpus manifest,
   ambiguity register, party artifacts statement/results/ixit). The committed
@@ -25,6 +42,21 @@ language, ever.
   with a typed `disposition`, never private resolution.
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
+- **The measurement machinery is conformance-by-measurement** (`perf.rs`,
+  `perf_run.rs`, `perf_assets.rs`, the `perf`/`perf-assets` subcommands):
+  OPEN-LOOP offered load only (a deterministic seeded arrival schedule;
+  latency from the PLANNED arrival instant so coordinated omission cannot
+  hide stalls); every measurement embeds its base64 HDR V2 histograms + the
+  ixit environment block; class verdicts (earned | not-earned) re-derive
+  from the DECODED histograms in the verdict pipeline — the stored verdict
+  and summary percentiles are tamper-checked, never trusted. The scale
+  corpora seed strictly through the public API per
+  `artifacts/corpus/recipes/scale_ladder.md`; published SVGs/summary tables
+  render FROM committed results.json (`scripts/render-perf-assets.sh`,
+  CI regenerate-and-diff guarded). The sustained window only extends
+  (`--hours 1|2|4|6|8|12`; the case's normative hour is the floor) — no
+  shortened run exists, so nothing sub-normative can ever look like a
+  measured record.
 - Gates: `cargo clippy -p cnf-runner --all-targets` +
   `cargo nextest run -p cnf-runner` (schema drift, pilot acceptance,
   seeded-defect rejection, the §8.13-derived cross-artifact guards).

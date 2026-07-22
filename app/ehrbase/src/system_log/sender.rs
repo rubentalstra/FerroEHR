@@ -28,8 +28,8 @@
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 use backon::{ExponentialBuilder, Retryable};
 use sqlx::PgPool;
@@ -74,6 +74,16 @@ pub const METRIC_REAPED: &str = "atna_audit_reaped_total";
 /// How often the retention reaper runs.
 const REAP_INTERVAL: Duration = Duration::from_hours(1);
 
+/// The drain's batch bound: how many queued events one `recv_many` takes at
+/// once (the store sink writes the whole batch in one multi-row INSERT).
+const DRAIN_BATCH: usize = 256;
+
+/// Drop warnings are rate-limited to one per this interval, carrying the
+/// count of records dropped since the previous warning (per-record WARNs at
+/// a loaded write rate flood the log and perturb the very load being
+/// measured; `atna_audit_dropped_total` still counts every drop exactly).
+const DROP_WARN_INTERVAL: Duration = Duration::from_secs(5);
+
 /// The cheaply-cloneable handle the REST layer emits through.
 #[derive(Debug, Clone)]
 pub struct AuditSender {
@@ -90,6 +100,38 @@ struct SenderInner {
     /// store is disabled — health then rides on the queue alone). Written by
     /// the drain, read by [`AuditSender::emit`] under `fail_mode = closed`.
     store_healthy: Arc<AtomicBool>,
+    /// Drops since the last rate-limited warning (drained by the warner).
+    dropped_since_warn: AtomicU64,
+    /// Milliseconds since `warn_epoch` of the last emitted drop warning.
+    last_drop_warn_ms: AtomicU64,
+    /// The process-local time anchor for `last_drop_warn_ms`.
+    warn_epoch: Instant,
+}
+
+impl SenderInner {
+    /// Count one drop and emit at most one warning per
+    /// [`DROP_WARN_INTERVAL`], carrying the accumulated count.
+    fn warn_dropped(&self) {
+        let pending = self.dropped_since_warn.fetch_add(1, Ordering::Relaxed) + 1;
+        let now_ms = u64::try_from(self.warn_epoch.elapsed().as_millis()).unwrap_or(u64::MAX);
+        let last = self.last_drop_warn_ms.load(Ordering::Relaxed);
+        let interval_ms = u64::try_from(DROP_WARN_INTERVAL.as_millis()).unwrap_or(u64::MAX);
+        let due = last == 0 || now_ms.saturating_sub(last) >= interval_ms;
+        if due
+            && self
+                .last_drop_warn_ms
+                .compare_exchange(last, now_ms.max(1), Ordering::Relaxed, Ordering::Relaxed)
+                .is_ok()
+        {
+            let count = self.dropped_since_warn.swap(0, Ordering::Relaxed);
+            tracing::warn!(
+                dropped = count.max(pending.min(1)),
+                "ATNA audit records dropped (queue full or drain stopped); fail_mode={:?} — \
+                 count since the previous warning; atna_audit_dropped_total is exact",
+                self.fail_mode
+            );
+        }
+    }
 }
 
 impl AuditSender {
@@ -119,10 +161,7 @@ impl AuditSender {
         let enqueued = self.inner.tx.try_send(event).is_ok();
         if !enqueued {
             metrics::counter!(METRIC_DROPPED).increment(1);
-            tracing::warn!(
-                "ATNA audit record dropped (queue full or drain stopped); fail_mode={:?}",
-                self.inner.fail_mode
-            );
+            self.inner.warn_dropped();
         }
         match self.inner.fail_mode {
             FailMode::Open => {
@@ -334,11 +373,15 @@ pub async fn start(
             suppress_login_events: config.suppress_login_events,
             fail_mode: config.fail_mode,
             store_healthy,
+            dropped_since_warn: AtomicU64::new(0),
+            last_drop_warn_ms: AtomicU64::new(0),
+            warn_epoch: Instant::now(),
         }),
     };
     Ok((sender, AuditHandle { join, workers }))
 }
 
+#[allow(clippy::too_many_lines)] // one linear fan-out: batch → store → syslog → feed
 async fn drain(
     mut rx: mpsc::Receiver<AuditEvent>,
     mut sinks: Sinks,
@@ -347,67 +390,153 @@ async fn drain(
     resolve_subject: bool,
     store_healthy: Arc<AtomicBool>,
 ) {
-    while let Some(event) = rx.recv().await {
-        // Optional subject enrichment — background only, never on the request path.
-        let subject = match (resolve_subject, &resolver, &event.ehr_id) {
-            (true, Some(resolve), Some(ehr_id)) => resolve(ehr_id.clone()).await,
-            _ => None,
-        };
+    // Batched receive: under load one loop turn takes up to DRAIN_BATCH
+    // queued events at once, so the store sink can persist them in one
+    // multi-row INSERT instead of per-event round trips (the throughput
+    // defect behind a full queue at write-path rates).
+    let mut batch: Vec<AuditEvent> = Vec::with_capacity(DRAIN_BATCH);
+    // The subject lookup memo: an EHR's subject id is immutable for audit
+    // purposes at write-path rates, and one awaited per-event lookup was the
+    // remaining drain bottleneck (a saturated queue at seeding-grade load).
+    // Distinct uncached ids of a batch resolve CONCURRENTLY, then memoize.
+    let subject_cache: moka::future::Cache<String, Option<String>> = moka::future::Cache::builder()
+        .max_capacity(100_000)
+        .time_to_live(Duration::from_hours(1))
+        .build();
+    loop {
+        batch.clear();
+        if rx.recv_many(&mut batch, DRAIN_BATCH).await == 0 {
+            break; // channel closed and drained
+        }
 
-        // Render once; both the store and the FHIR feed consume this document.
-        let rendered = fhir::to_fhir(&event, &ctx, subject.as_deref());
-
-        // 1) The store — the durability anchor, written first.
-        let mut row_id = None;
-        if let Some(store) = &sinks.store {
-            let insert = || async { store.insert(&event, subject.as_deref(), &rendered).await };
-            match insert
-                .retry(
-                    ExponentialBuilder::default()
-                        .with_jitter()
-                        .with_max_times(2),
-                )
-                .await
-            {
-                Ok(id) => {
-                    row_id = Some(id);
-                    store_healthy.store(true, Ordering::Relaxed);
-                    metrics::counter!(METRIC_SENT, "sink" => "store").increment(1);
-                    if let Some(notify) = &sinks.feed_notify {
-                        notify.notify_one();
-                    }
-                }
-                Err(e) => {
-                    store_healthy.store(false, Ordering::Relaxed);
-                    metrics::counter!(METRIC_SEND_FAILED, "sink" => "store").increment(1);
-                    tracing::warn!("ATNA audit store write failed: {e}");
+        // Optional subject enrichment — background only, never on the
+        // request path: dedupe the batch's EHR ids, resolve the uncached
+        // ones concurrently, memoize.
+        if resolve_subject && let Some(resolve) = &resolver {
+            let mut pending: Vec<String> = batch
+                .iter()
+                .filter_map(|event| event.ehr_id.clone())
+                .filter(|ehr_id| !subject_cache.contains_key(ehr_id))
+                .collect();
+            pending.sort_unstable();
+            pending.dedup();
+            let mut lookups = tokio::task::JoinSet::new();
+            for ehr_id in pending {
+                let lookup = resolve(ehr_id.clone());
+                lookups.spawn(async move { (ehr_id, lookup.await) });
+            }
+            while let Some(joined) = lookups.join_next().await {
+                if let Ok((ehr_id, subject)) = joined {
+                    subject_cache.insert(ehr_id, subject).await;
                 }
             }
         }
 
-        // 2) The classic syslog feed (DICOM PS3.15 §A.5 XML per ITI-20).
-        if let Some(transport) = &mut sinks.syslog {
-            let message = AuditMessage::build(&event, &ctx, subject.as_deref());
-            match message.to_xml() {
-                Ok(xml) => {
-                    let syslog =
-                        assemble_syslog(&ctx.server_ip, &ctx.source_id, &event.timestamp, &xml);
-                    match transport.send(&syslog).await {
-                        Ok(()) => {
-                            metrics::counter!(METRIC_SENT, "sink" => "syslog").increment(1);
-                            if let (Some(store), Some(id)) = (&sinks.store, row_id) {
-                                store.mark_syslog_delivered(id).await;
+        // Render once per event; both the store and the FHIR feed consume
+        // the rendered document.
+        let mut records: Vec<(AuditEvent, Option<String>, fhir::FhirAuditEvent)> =
+            Vec::with_capacity(batch.len());
+        for event in batch.drain(..) {
+            let subject = match (resolve_subject, &event.ehr_id) {
+                (true, Some(ehr_id)) => subject_cache.get(ehr_id).await.flatten(),
+                _ => None,
+            };
+            let rendered = fhir::to_fhir(&event, &ctx, subject.as_deref());
+            records.push((event, subject, rendered));
+        }
+
+        // 1) The store — the durability anchor, written first. Without the
+        //    syslog sink no per-row delivery stamp is needed, so the whole
+        //    batch lands in ONE multi-row INSERT; with syslog on, the
+        //    per-event path keeps the row id for `delivered_syslog_at`.
+        let mut row_ids: Vec<Option<uuid::Uuid>> = vec![None; records.len()];
+        if let Some(store) = &sinks.store {
+            if sinks.syslog.is_none() {
+                let insert = || async { store.insert_batch(&records).await };
+                match insert
+                    .retry(
+                        ExponentialBuilder::default()
+                            .with_jitter()
+                            .with_max_times(2),
+                    )
+                    .await
+                {
+                    Ok(()) => {
+                        store_healthy.store(true, Ordering::Relaxed);
+                        metrics::counter!(METRIC_SENT, "sink" => "store")
+                            .increment(records.len() as u64);
+                        if let Some(notify) = &sinks.feed_notify {
+                            notify.notify_one();
+                        }
+                    }
+                    Err(e) => {
+                        store_healthy.store(false, Ordering::Relaxed);
+                        metrics::counter!(METRIC_SEND_FAILED, "sink" => "store")
+                            .increment(records.len() as u64);
+                        tracing::warn!("ATNA audit store batch write failed: {e}");
+                    }
+                }
+            } else {
+                for (index, (event, subject, rendered)) in records.iter().enumerate() {
+                    let insert =
+                        || async { store.insert(event, subject.as_deref(), rendered).await };
+                    match insert
+                        .retry(
+                            ExponentialBuilder::default()
+                                .with_jitter()
+                                .with_max_times(2),
+                        )
+                        .await
+                    {
+                        Ok(id) => {
+                            if let Some(slot) = row_ids.get_mut(index) {
+                                *slot = Some(id);
+                            }
+                            store_healthy.store(true, Ordering::Relaxed);
+                            metrics::counter!(METRIC_SENT, "sink" => "store").increment(1);
+                            if let Some(notify) = &sinks.feed_notify {
+                                notify.notify_one();
                             }
                         }
                         Err(e) => {
-                            metrics::counter!(METRIC_SEND_FAILED, "sink" => "syslog").increment(1);
-                            tracing::warn!("ATNA audit syslog send failed: {e}");
+                            store_healthy.store(false, Ordering::Relaxed);
+                            metrics::counter!(METRIC_SEND_FAILED, "sink" => "store").increment(1);
+                            tracing::warn!("ATNA audit store write failed: {e}");
                         }
                     }
                 }
-                Err(e) => {
-                    metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
-                    tracing::warn!("ATNA audit message serialization failed: {e}");
+            }
+        }
+
+        // 2) The classic syslog feed (DICOM PS3.15 §A.5 XML per ITI-20) —
+        //    inherently sequential (one datagram/frame per record).
+        if let Some(transport) = &mut sinks.syslog {
+            for (index, (event, subject, _)) in records.iter().enumerate() {
+                let message = AuditMessage::build(event, &ctx, subject.as_deref());
+                match message.to_xml() {
+                    Ok(xml) => {
+                        let syslog =
+                            assemble_syslog(&ctx.server_ip, &ctx.source_id, &event.timestamp, &xml);
+                        match transport.send(&syslog).await {
+                            Ok(()) => {
+                                metrics::counter!(METRIC_SENT, "sink" => "syslog").increment(1);
+                                if let (Some(store), Some(Some(id))) =
+                                    (&sinks.store, row_ids.get(index))
+                                {
+                                    store.mark_syslog_delivered(*id).await;
+                                }
+                            }
+                            Err(e) => {
+                                metrics::counter!(METRIC_SEND_FAILED, "sink" => "syslog")
+                                    .increment(1);
+                                tracing::warn!("ATNA audit syslog send failed: {e}");
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
+                        tracing::warn!("ATNA audit message serialization failed: {e}");
+                    }
                 }
             }
         }
@@ -415,19 +544,22 @@ async fn drain(
         // 3) The FHIR feed, in-drain only when the store is off (otherwise the
         //    outbox worker owns delivery).
         if let Some(feed) = &sinks.direct_feed {
-            match serde_json::to_value(&rendered) {
-                Ok(body) => match feed.post(&body).await {
-                    Ok(()) => {
-                        metrics::counter!(METRIC_SENT, "sink" => "fhir_feed").increment(1);
-                    }
+            for (_, _, rendered) in &records {
+                match serde_json::to_value(rendered) {
+                    Ok(body) => match feed.post(&body).await {
+                        Ok(()) => {
+                            metrics::counter!(METRIC_SENT, "sink" => "fhir_feed").increment(1);
+                        }
+                        Err(e) => {
+                            metrics::counter!(METRIC_SEND_FAILED, "sink" => "fhir_feed")
+                                .increment(1);
+                            tracing::warn!("ATNA audit FHIR feed send failed: {e}");
+                        }
+                    },
                     Err(e) => {
-                        metrics::counter!(METRIC_SEND_FAILED, "sink" => "fhir_feed").increment(1);
-                        tracing::warn!("ATNA audit FHIR feed send failed: {e}");
+                        metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
+                        tracing::warn!("ATNA audit FHIR serialization failed: {e}");
                     }
-                },
-                Err(e) => {
-                    metrics::counter!(METRIC_SERIALIZE_FAILED).increment(1);
-                    tracing::warn!("ATNA audit FHIR serialization failed: {e}");
                 }
             }
         }
@@ -547,6 +679,9 @@ mod tests {
                 suppress_login_events: true,
                 fail_mode,
                 store_healthy: Arc::new(AtomicBool::new(store_healthy)),
+                dropped_since_warn: AtomicU64::new(0),
+                last_drop_warn_ms: AtomicU64::new(0),
+                warn_epoch: Instant::now(),
             }),
         }
     }

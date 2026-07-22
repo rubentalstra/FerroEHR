@@ -17,6 +17,6 @@ BMM** by `openehr-codegen -- emit`. Versioned by the spec
   types); flattened concrete structs.
 - The BMM-generated RM *model* (attribute→types, multiplicity,
   descendants) feeds the AQL planner and the validator — treat model-shape
-  changes as engine-facing and re-run ECC.
+  changes as engine-facing and re-run the CNF pipeline.
 - Downstream crates consume these types directly; never add
   application-specific helpers here.

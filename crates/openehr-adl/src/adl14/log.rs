@@ -22,6 +22,10 @@ pub struct ConversionLog {
     /// Value-set signature (the joined, converted member code list) → the
     /// synthesised ac-code (e.g. `ac1`).
     pub value_sets: BTreeMap<String, String>,
+    /// Human-readable provenance notes for the non-mechanical decisions a
+    /// conversion took (specialised-code collapse, VCOSU re-mints) — surfaced
+    /// by callers into `RESOURCE_DESCRIPTION.conversion_details`.
+    pub notes: Vec<String>,
 }
 
 impl ConversionLog {
@@ -49,6 +53,11 @@ impl ConversionLog {
     #[must_use]
     pub fn value_set(&self, signature: &str) -> Option<&str> {
         self.value_sets.get(signature).map(String::as_str)
+    }
+
+    /// Record a provenance note.
+    pub fn note(&mut self, message: String) {
+        self.notes.push(message);
     }
 
     /// Record the ac-code minted for a value-set signature.

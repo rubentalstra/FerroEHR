@@ -45,7 +45,8 @@ separate step the caller takes after seeing the plan.
      implementation must be read against, per `spec-adherence.md` /
      `/spec-lookup`. Doing the work starts by reading those.
    - **What "done" looks like** for this task specifically — the issue's
-     `## Exit criteria` checklist, plus which ECC cases, fidelity gates, or
-     corpus tests prove it.
+     `## Exit criteria` checklist, plus what proves it: the CNF pipeline's
+     zero-drift gate (`docs/conformance/ehrbase-rs/results.json` +
+     `verdicts.json`), the `openehr-its` fidelity gates, or corpus tests.
 3. **Do not edit the issue or commit** — recording progress happens after
    the work is actually done, not as part of planning it.

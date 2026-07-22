@@ -23,6 +23,7 @@ use crate::model::capability::CapabilityMatrix;
 use crate::model::case::CaseCore;
 use crate::model::register::AmbiguityRegister;
 use crate::party::{OutcomeStatus, Results, Statement};
+use crate::perf::{ClassVerdict, PerfClass, PerformanceCase, class_verdict};
 use crate::vocab::{CaseStatus, Disposition, Family, FormatName, SpecComponent, Tier};
 
 /// One static-review problem with the claim (never a per-case verdict).
@@ -76,6 +77,23 @@ pub enum SecBasicVerdict {
     Fail,
 }
 
+/// One measured performance-class verdict (the second machinery, §8.11
+/// step 5): re-derived from the measurement's decoded histograms against the
+/// catalogue case's thresholds — the stored verdict is never trusted.
+#[derive(Debug, Clone, Serialize)]
+pub struct PerformanceVerdict {
+    /// The performance case measured.
+    pub case: CaseId,
+    /// The volumetric class the case belongs to.
+    pub class: PerfClass,
+    /// Whether the statement claims this class.
+    pub claimed: bool,
+    /// The re-derived verdict.
+    pub verdict: ClassVerdict,
+    /// The named threshold violations behind a `not-earned` verdict.
+    pub violations: Vec<String>,
+}
+
 /// The coverage bound: how many in-scope cases were selected and how many
 /// were actually driven (executed to a pass/fail/errored result).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -103,6 +121,9 @@ pub struct VerdictReport {
     pub profiles: Vec<(Tier, ProfileVerdict)>,
     /// The SEC-BASIC verdict when the Security profile is claimed.
     pub security: Option<SecBasicVerdict>,
+    /// The measured performance-class verdicts (one per measurement in the
+    /// results; empty when the campaign carried no measured runs).
+    pub performance: Vec<PerformanceVerdict>,
     /// The coverage bound.
     pub coverage: Coverage,
 }
@@ -155,10 +176,12 @@ pub fn compute(
     statement: &Statement,
     results: &Results,
     cases: &[CaseCore],
+    perf_cases: &[PerformanceCase],
     matrix: &CapabilityMatrix,
     register: &AmbiguityRegister,
 ) -> VerdictReport {
-    let review = static_review(statement, cases, matrix, register);
+    let mut review = static_review(statement, cases, matrix, register);
+    let performance = measured_verdicts(statement, results, perf_cases, &mut review);
     let selected = select(statement, results, cases, register);
 
     let capabilities: Vec<(CapabilityName, Evidence)> = matrix
@@ -180,8 +203,88 @@ pub fn compute(
         capabilities,
         profiles,
         security,
+        performance,
         coverage,
     }
+}
+
+// ── step 5: measured verdicts (the second machinery) ────────────────────────
+
+/// Re-derive every measured class verdict from the measurement records
+/// (decoded histograms, never the summary fields) against the catalogue's
+/// performance cases, and statically review the performance claim: a claimed
+/// class needs measured evidence, a measurement needs its catalogue case,
+/// and a stored verdict that does not re-derive is flagged (tamper check).
+fn measured_verdicts(
+    statement: &Statement,
+    results: &Results,
+    perf_cases: &[PerformanceCase],
+    review: &mut Vec<ReviewFinding>,
+) -> Vec<PerformanceVerdict> {
+    let claimed_class: Option<PerfClass> = match &statement.performance {
+        None => None,
+        Some(claim) => match PerfClass::parse(&claim.class) {
+            Ok(class) => Some(class),
+            Err(e) => {
+                review.push(ReviewFinding {
+                    message: format!("performance claim: {e}"),
+                });
+                None
+            }
+        },
+    };
+
+    let mut verdicts = Vec::new();
+    for measurement in &results.measurements {
+        let Some(case) = perf_cases.iter().find(|c| c.id == measurement.case) else {
+            review.push(ReviewFinding {
+                message: format!(
+                    "measurement references performance case {} not in the catalogue",
+                    measurement.case
+                ),
+            });
+            continue;
+        };
+        match class_verdict(
+            case,
+            measurement.offered_load_sustained,
+            &measurement.operations,
+        ) {
+            Ok((verdict, violations)) => {
+                if verdict != measurement.verdict {
+                    review.push(ReviewFinding {
+                        message: format!(
+                            "measurement {}: stored verdict does not re-derive from the \
+                             embedded histograms (stored {:?}, derived {verdict:?})",
+                            measurement.case, measurement.verdict
+                        ),
+                    });
+                }
+                verdicts.push(PerformanceVerdict {
+                    case: measurement.case.clone(),
+                    class: case.class,
+                    claimed: claimed_class == Some(case.class),
+                    verdict,
+                    violations,
+                });
+            }
+            Err(e) => review.push(ReviewFinding {
+                message: format!("measurement {}: {e}", measurement.case),
+            }),
+        }
+    }
+
+    if let Some(class) = claimed_class
+        && !verdicts.iter().any(|v| v.class == class)
+    {
+        review.push(ReviewFinding {
+            message: format!(
+                "performance class {} is claimed but the results carry no measurement for it",
+                class.token()
+            ),
+        });
+    }
+    verdicts
 }
 
 // ── step 1: static review ────────────────────────────────────────────────────
@@ -633,7 +736,7 @@ mod tests {
             { "case": "I_EHR_SERVICE.create_ehr-main", "format": "canonical-json",
               "status": "passed", "rows_driven": 1, "rows_total": 1 }
         ]));
-        let report = compute(&st, &rs, &cases, &matrix(), &register());
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
         assert!(report.review.is_empty(), "{:?}", report.review);
         assert_eq!(
             evidence_of(
@@ -666,7 +769,7 @@ mod tests {
             { "case": "I_EHR_SERVICE.create_ehr-main", "format": "canonical-json",
               "status": "failed", "rows_driven": 1, "rows_total": 1, "failing_step": 1 }
         ]));
-        let report = compute(&st, &rs, &cases, &matrix(), &register());
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
         assert_eq!(
             evidence_of(
                 &report.capabilities,
@@ -706,7 +809,7 @@ mod tests {
             { "case": "SF-FLAT-deprecated_unsupported", "format": "canonical-json",
               "status": "passed", "rows_driven": 1, "rows_total": 1 }
         ]));
-        let report = compute(&st, &rs, &cases, &matrix(), &register());
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
         // Deselected: the result is ignored, so no gating pass exists.
         assert_eq!(
             evidence_of(
@@ -734,7 +837,7 @@ mod tests {
             { "case": "I_EHR_COMPOSITION.persistent-uniqueness", "format": "canonical-json",
               "status": "failed", "rows_driven": 1, "rows_total": 1, "failing_step": 1 }
         ]));
-        let report = compute(&st, &rs, &cases, &matrix(), &register());
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
         // No gating case, catalogue has one -> NotEvidenced, not Failed.
         assert_eq!(
             evidence_of(
@@ -751,7 +854,7 @@ mod tests {
         let cases: Vec<CaseCore> = Vec::new();
         let st = statement(&["AqlBasic"], &[], &[]);
         let rs = results(serde_json::json!([]));
-        let report = compute(&st, &rs, &cases, &matrix(), &register());
+        let report = compute(&st, &rs, &cases, &[], &matrix(), &register());
         assert_eq!(
             evidence_of(
                 &report.capabilities,
@@ -773,7 +876,7 @@ mod tests {
         let unclaimed = statement(&["EhrOperations"], &["CORE"], &[]);
         let rs = results(serde_json::json!([]));
         assert!(
-            compute(&unclaimed, &rs, &cases, &matrix(), &register())
+            compute(&unclaimed, &rs, &cases, &[], &matrix(), &register())
                 .security
                 .is_none()
         );
@@ -784,7 +887,7 @@ mod tests {
               "status": "passed", "rows_driven": 1, "rows_total": 1 }
         ]));
         assert_eq!(
-            compute(&claimed, &rs, &cases, &matrix(), &register()).security,
+            compute(&claimed, &rs, &cases, &[], &matrix(), &register()).security,
             Some(SecBasicVerdict::Pass)
         );
     }
@@ -797,6 +900,7 @@ mod tests {
             &st,
             &results(serde_json::json!([])),
             &cases,
+            &[],
             &matrix(),
             &register(),
         );
