@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-07-22
+
 ### Added
 
 - The conformance pipeline assesses **upstream EHRbase (Java)** as a second
@@ -1309,7 +1311,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.6.0...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.6.0...v3.7.0
 [3.6.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.3.0...v3.4.0
