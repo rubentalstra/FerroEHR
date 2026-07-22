@@ -73,6 +73,80 @@ fn every_opt_template_parses() {
     assert_eq!(parsed, files.len());
 }
 
+/// The official CNF Robot template corpus, VALID half
+/// (`…/test_data_sets/valid_templates`): every `.opt` in it must parse —
+/// the vendored corpus is fully exercised, and a template the official
+/// suite uploads must never be rejected by the XML front end. (The
+/// `invalid_templates` siblings are negative fixtures whose rejection is
+/// the app's job — structural ones legitimately fail right here.)
+#[test]
+fn every_official_cnf_robot_template_parses() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join(
+        "../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/valid_templates",
+    );
+    let files = opt_files(&dir);
+    assert!(
+        files.len() >= 30,
+        "expected the full valid robot template corpus (~32 files), found {}",
+        files.len()
+    );
+    // Adjudicated corpus defects: fixtures in valid_templates that are
+    // XSD-INVALID first-hand, so their rejection is the parser being right
+    // (the robot suite is reference material, never an oracle). Each entry
+    // cites the violated schema requirement; anything else failing is a
+    // genuine parser defect and fails the gate.
+    let adjudicated_invalid = [
+        (
+            // Omits the OPERATIONAL_TEMPLATE's mandatory <language>
+            // (its-xml-1.0.2-nsv1 Template.xsd: <xs:element name="language"
+            // type="CODE_PHRASE"/> — no minOccurs="0").
+            "minimal_action_removed_language.opt",
+            "Template.xsd OPERATIONAL_TEMPLATE.language is mandatory",
+        ),
+        (
+            // Its T_COMPLEX_OBJECT default_value DV_PROPORTION carries only
+            // numerator/denominator (its-xml-1.0.2-nsv1 BaseTypes.xsd:
+            // <xs:element name="type" type="PROPORTION_KIND"/> — mandatory).
+            "ehrn_vital_signs.v2.opt",
+            "BaseTypes.xsd DV_PROPORTION.type is mandatory",
+        ),
+    ];
+    let mut failures = Vec::new();
+    let mut adjudicated_seen = 0usize;
+    for path in &files {
+        let name = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
+        let xml = std::fs::read_to_string(path).expect("read opt file");
+        let outcome = openehr_its::opt14::from_xml(&xml);
+        if let Some((_, citation)) = adjudicated_invalid.iter().find(|(f, _)| *f == name) {
+            assert!(
+                outcome.is_err(),
+                "{name} is adjudicated XSD-invalid ({citation}) but now parses — \
+                 re-adjudicate or drop the entry"
+            );
+            adjudicated_seen += 1;
+            continue;
+        }
+        if let Err(e) = outcome {
+            failures.push((path.clone(), e.to_string()));
+        }
+    }
+    assert_eq!(
+        adjudicated_seen,
+        adjudicated_invalid.len(),
+        "an adjudicated fixture went missing from the corpus"
+    );
+    if !failures.is_empty() {
+        let mut msg = format!("{} robot corpus OPT(s) failed to parse:\n", failures.len());
+        for (p, e) in &failures {
+            let _ = writeln!(msg, "  - {}: {}", p.display(), e);
+        }
+        panic!("{msg}");
+    }
+}
+
 /// Model-level losslessness gate: parse → `ToXml` → re-parse must be
 /// structurally stable over the whole corpus. This is what actually exercises
 /// the generated `ToXml` impls (storage/GET serve verbatim XML, so nothing else
