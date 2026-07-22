@@ -33,10 +33,10 @@
   },
   "environment": {
     "exclusive_server": true,
-    "hardware_class": "ci-runner",
-    "cores": 4,
+    "hardware_class": "consumer-laptop",
+    "cores": 8,
     "memory_gb": 16,
-    "storage_class": "ssd",
-    "topology": "single-node docker compose"
+    "storage_class": "nvme",
+    "topology": "single-node docker compose (8-CPU/8GB Docker VM) on Apple M2"
   }
 }

@@ -25,6 +25,19 @@ language, ever.
   with a typed `disposition`, never private resolution.
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
+- **The measurement machinery is conformance-by-measurement** (`perf.rs`,
+  `perf_run.rs`, `perf_assets.rs`, the `perf`/`perf-assets` subcommands):
+  OPEN-LOOP offered load only (a deterministic seeded arrival schedule;
+  latency from the PLANNED arrival instant so coordinated omission cannot
+  hide stalls); every measurement embeds its base64 HDR V2 histograms + the
+  ixit environment block; class verdicts (earned | not-earned) re-derive
+  from the DECODED histograms in the verdict pipeline — the stored verdict
+  and summary percentiles are tamper-checked, never trusted. The scale
+  corpora seed strictly through the public API per
+  `artifacts/corpus/recipes/scale_ladder.md`; published SVGs/summary tables
+  render FROM committed results.json (`scripts/render-perf-assets.sh`,
+  CI regenerate-and-diff guarded). A `--smoke` run is exploratory wiring
+  proof and is NEVER persisted.
 - Gates: `cargo clippy -p cnf-runner --all-targets` +
   `cargo nextest run -p cnf-runner` (schema drift, pilot acceptance,
   seeded-defect rejection, the §8.13-derived cross-artifact guards).
