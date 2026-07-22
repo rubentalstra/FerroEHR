@@ -6,7 +6,7 @@
 # mode is impossible by construction.
 #
 #   render-conformance-stats.sh includes          write website/book/generated/*.md
-#   render-conformance-stats.sh fill-html FILE    fill data-ecc markers in FILE in place
+#   render-conformance-stats.sh fill-html FILE    fill data-cnf markers in FILE in place
 #
 # Consumed by scripts/build-site.sh; runnable standalone for local previews.
 set -euo pipefail
@@ -82,17 +82,17 @@ EOF
   fill-html)
     file="${2:?fill-html needs a file argument}"
     perl -pi -e "
-      s/(data-ecc=\"executed\"[^>]*>)[^<]*/\${1}${driven}/g;
-      s/(data-ecc=\"passed\"[^>]*>)[^<]*/\${1}${passed}/g;
-      s/(data-ecc=\"failed\"[^>]*>)[^<]*/\${1}$((failed + errored))/g;
-      s/(data-ecc=\"verdict-core\"[^>]*>)[^<]*/\${1}CORE · $(upper "$core")/g;
-      s/(data-ecc=\"verdict-standard\"[^>]*>)[^<]*/\${1}STANDARD · $(upper "$standard")/g;
-      s/(data-ecc=\"verdict-options\"[^>]*>)[^<]*/\${1}OPTIONS · $(upper "$options")/g;
-      s/(data-ecc=\"verdict-sec\"[^>]*>)[^<]*/\${1}SEC-BASIC · $(upper "$sec")/g;
+      s/(data-cnf=\"executed\"[^>]*>)[^<]*/\${1}${driven}/g;
+      s/(data-cnf=\"passed\"[^>]*>)[^<]*/\${1}${passed}/g;
+      s/(data-cnf=\"failed\"[^>]*>)[^<]*/\${1}$((failed + errored))/g;
+      s/(data-cnf=\"verdict-core\"[^>]*>)[^<]*/\${1}CORE · $(upper "$core")/g;
+      s/(data-cnf=\"verdict-standard\"[^>]*>)[^<]*/\${1}STANDARD · $(upper "$standard")/g;
+      s/(data-cnf=\"verdict-options\"[^>]*>)[^<]*/\${1}OPTIONS · $(upper "$options")/g;
+      s/(data-cnf=\"verdict-sec\"[^>]*>)[^<]*/\${1}SEC-BASIC · $(upper "$sec")/g;
     " "$file"
     # A marker that survived filling means the HTML and this script drifted.
-    if grep -qE 'data-ecc="[^"]*"[^>]*>—<' "$file"; then
-      echo "render-conformance-stats: unfilled data-ecc marker left in $file" >&2
+    if grep -qE 'data-cnf="[^"]*"[^>]*>—<' "$file"; then
+      echo "render-conformance-stats: unfilled data-cnf marker left in $file" >&2
       exit 1
     fi
     echo "render-conformance-stats: filled $file"
