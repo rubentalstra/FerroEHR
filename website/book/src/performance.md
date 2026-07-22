@@ -61,6 +61,77 @@ The floors that fall out of this chain are the published defaults the runner
 enforces; the concrete rates per class are carried in the class ladder above
 and the summary table below, never re-typed into this prose.
 
+## The hospital simulation
+
+The measured workload is not a flat operation mix: it **simulates a
+hospital, end to end**. Load arrives as *clinical journeys* — ordered,
+time-offset operation sequences drawn from a committed journey catalogue
+(`vocab/journey_catalogue.yaml` in the runner's artifacts):
+
+- **ADT flow** — an admission creates the EHR, sets its status, commits the
+  admission problem list and summary, and opens the per-episode directory
+  folder tree; a discharge writes the discharge summary and closes the
+  episode out.
+- **Monitoring** — nursing observation rounds commit vital-signs documents
+  at ward cadence.
+- **The medication loop** — an order is followed by scheduled
+  administration commits at the drug-round interval; medicines
+  reconciliation reads the standing medicines list and amends it as a new
+  version.
+- **Order → result pipelines, asynchronous** — a laboratory or imaging
+  request is committed at one instant and its result lands as its *own*
+  arrival after a realistic turnaround drawn from the catalogue; the
+  ordering clinician's chart review follows later still. Nothing ever
+  blocks on anything else.
+- **Clinical review** — ward-round chart reads (at version, current, and
+  the revision history), per-patient AQL trends, cross-EHR ward worklists,
+  and a registered stored query executed continuously.
+- **Governance** — versioned amendments, the occasional logical delete,
+  contribution inspection (the audit trail's read side), and workflow
+  tagging of hot documents.
+- **The platform surface** — template listing and retrieval (the
+  integration-engine poll), specialist synoptic reports, registry
+  submissions, and statutory public-health notifications.
+
+Every stage of every journey instance is its **own planned arrival
+instant** on the global open-loop schedule — an order at *t*, its
+administrations at *t + k·interval*, the result at *t + Δ* — so many
+patients' journeys interleave exactly as wards do, and cross-operation
+state effects (status transitions during active commits, folder consistency
+under parallel writes, version chains under interleaved amendments, AQL
+against a mutating corpus) are exercised under load, which a flat
+four-operation mix can never reach. A dependent stage whose prerequisite
+has not landed when its instant fires (a stalled server) records honestly
+as an error — that *is* the measurement.
+
+The journey payloads commit against **published openEHR CKM templates**
+(vital signs, laboratory results, ePrescription, medicines list, problem
+list, the International Patient Summary, imaging and cancer synoptic
+reports, registry and public-health forms), vendored with provenance and
+committed as byte-identical example skeletons so every measured server
+receives exactly the same bytes.
+
+**The envelope stays population-anchored.** The derivation above still
+fixes the aggregate operation arrival rate (the class floor) and the
+read:write ratio; the journey catalogue only *decomposes* those totals into
+many more operation kinds. Each journey cites the activity statistic that
+grounds its shape — the same register the floors derive from — and the
+runner's artifact validator recomputes the expansion on every load: the
+catalogue-expanded write share must reconcile to the derivation's
+read-heavy band (between the 10:1 floor convention and the ~50:1
+audit-log-evidenced ceiling), so the mix stays arguable, never arbitrary.
+
+For the extended eight- and twelve-hour holds, the schedule can follow a
+**diurnal day curve** — morning and afternoon peaks, shift-change bumps, a
+night-time trough — applying the same ITU-T E.500 busy-hour convention the
+peak factor cites: the class floor is then the busy-hour rate, and the
+off-peak troughs are the design, not a shortfall.
+
+Finally, the conformance certificate prints the **workload coverage**: the
+set of claimed capabilities the simulation actually exercised, joined
+against the claims matrix — a claimed capability the hospital never touches
+is listed explicitly as a catalogue gap.
+
 ## How a measured run works
 
 A performance run is deliberately **open-loop**: the runner plays a seeded
