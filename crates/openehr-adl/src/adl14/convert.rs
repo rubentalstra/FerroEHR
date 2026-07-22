@@ -35,6 +35,20 @@ pub struct ConvertConfig {
     /// replaced by the external code. A terminology with no template gets a
     /// flagged fabricated fallback (`urn:adl14:<terminology>:<code>`).
     pub binding_uri_templates: BTreeMap<String, String>,
+    /// Collapse specialised (dotted) codes to top level, producing a depth-0
+    /// archetype. For a `-`-specialised root inlined standalone by a
+    /// flattened OPT the differential lineage is unresolvable — the spec
+    /// defines differential-form semantics only relative to a resolvable
+    /// parent (`ADL2/master09.02` §Specialisation concepts), a specialised
+    /// archetype must declare that parent (`AOM2/master03` §Validity Rules
+    /// VASID/VACSD), and deriving the parent id from the 1.4 `-` naming is
+    /// endorsed nowhere — so the standalone source is emitted UNSPECIALISED:
+    /// every dotted node/value/constraint code is renumbered into the flat
+    /// code space (terminology keys follow), satisfying VARCN/VATCD at depth
+    /// 0. Off for plain ADL-source conversion, where the `specialise` clause
+    /// carries the lineage. No openEHR spec governs 1.4→2 conversion — our
+    /// own design/extension.
+    pub collapse_specialised_codes: bool,
 }
 
 impl Default for ConvertConfig {
@@ -50,6 +64,7 @@ impl Default for ConvertConfig {
             adl_version: "2.0.6".to_owned(),
             rm_release: "1.0.3".to_owned(),
             binding_uri_templates,
+            collapse_specialised_codes: false,
         }
     }
 }
@@ -132,6 +147,18 @@ struct Converter<'a> {
     /// term entry even when the same code is also a node id — a 1.4 at-code
     /// used as both an id and a value splits into an id-code + an at-code).
     value_at_codes: std::collections::BTreeSet<String>,
+    /// Collapsed-value remapping (dotted `local` value at-codes → fresh flat
+    /// at-codes) — populated only under `collapse_specialised_codes`.
+    value_map: BTreeMap<String, String>,
+    /// New node ids already claimed by an occurrence — the VCOSU ground:
+    /// ADL2 node ids are unique archetype-wide (`AOM2/master04.5` §Validity
+    /// Rules: C_OBJECT), while 1.4 at-codes are only sibling-unique, so a
+    /// reused code's second occurrence mints a fresh id.
+    assigned_node_ids: std::collections::BTreeSet<String>,
+    /// `(first-occurrence new id, freshly minted id)` per VCOSU re-mint — the
+    /// terminology rebuild clones the definition/bindings of the first id
+    /// under each minted one (VATDF: every used code must be defined).
+    dup_mints: Vec<(String, String)>,
     /// Next free id-number for synthesised object nodes (top-level id space).
     next_id: i64,
     /// Next free at-number for synthesised external at-codes.
@@ -151,6 +178,9 @@ impl<'a> Converter<'a> {
             log,
             node_map: BTreeMap::new(),
             value_at_codes: std::collections::BTreeSet::new(),
+            value_map: BTreeMap::new(),
+            assigned_node_ids: std::collections::BTreeSet::new(),
+            dup_mints: Vec::new(),
             next_id: 1,
             next_at: 1,
             next_ac: 1,
@@ -180,11 +210,30 @@ impl<'a> Converter<'a> {
     // ── code planning ──────────────────────────────────────────────────────
 
     fn plan_codes(&mut self, data: &AuthoredArchetypeData) {
+        let collapse = self.cfg.collapse_specialised_codes;
+        let root_code = match &data.definition {
+            CComplexObject::CComplexObject(d) => d.node_id.clone(),
+            CComplexObject::CArchetypeRoot(_) => String::new(),
+        };
         // Existing node at-codes → shifted id-codes; track max id-number.
+        // Under collapse, dotted (specialised) codes are deferred: they get
+        // fresh flat ids above the max, in document order (the root always
+        // takes `id1` — VARCN's depth-0 root form).
         let mut max_id = 1i64;
         let mut max_at = 0i64;
+        let mut deferred_nodes: Vec<String> = Vec::new();
         collect_node_codes(&data.definition, &mut |code| {
             if code.is_empty() {
+                return;
+            }
+            if collapse && code.contains('.') {
+                if code == root_code {
+                    self.node_map.insert(code.to_owned(), "id1".to_owned());
+                } else if !self.node_map.contains_key(code)
+                    && !deferred_nodes.iter().any(|c| c == code)
+                {
+                    deferred_nodes.push(code.to_owned());
+                }
                 return;
             }
             let new = shift_code(code, "id");
@@ -194,9 +243,18 @@ impl<'a> Converter<'a> {
             self.node_map.insert(code.to_owned(), new);
         });
         // Value at-codes referenced in constraints (local single/list) →
-        // shifted at-codes; track max at-number.
+        // shifted at-codes; track max at-number. Dotted values collapse to
+        // fresh flat at-codes likewise.
         let mut value_at_codes = std::collections::BTreeSet::new();
+        let mut deferred_values: Vec<String> = Vec::new();
         collect_local_value_codes(&data.definition, &mut |code| {
+            if collapse && code.contains('.') {
+                if !deferred_values.iter().any(|c| c == code) {
+                    deferred_values.push(code.to_owned());
+                }
+                value_at_codes.insert(code.to_owned());
+                return;
+            }
             let new = shift_code(code, "at");
             if let Some(n) = first_num(&new) {
                 max_at = max_at.max(n);
@@ -206,6 +264,20 @@ impl<'a> Converter<'a> {
         self.value_at_codes = value_at_codes;
         self.next_id = max_id + 1;
         self.next_at = max_at + 1;
+        for code in deferred_nodes {
+            let fresh = self.alloc_id();
+            self.log.note(format!(
+                "specialised node code {code} collapsed to {fresh} (standalone depth-0 emission)"
+            ));
+            self.node_map.insert(code, fresh);
+        }
+        for code in deferred_values {
+            let fresh = self.alloc_at();
+            self.log.note(format!(
+                "specialised value code {code} collapsed to {fresh} (standalone depth-0 emission)"
+            ));
+            self.value_map.insert(code, fresh);
+        }
     }
 
     fn alloc_id(&mut self) -> String {
@@ -237,12 +309,38 @@ impl<'a> Converter<'a> {
 
     fn new_node_id(&mut self, old: &str) -> String {
         if old.is_empty() {
-            return self.alloc_id();
+            let fresh = self.alloc_id();
+            self.assigned_node_ids.insert(fresh.clone());
+            return fresh;
         }
-        self.node_map
+        let mapped = self
+            .node_map
             .get(old)
             .cloned()
-            .unwrap_or_else(|| shift_code(old, "id"))
+            .unwrap_or_else(|| shift_code(old, "id"));
+        if self.assigned_node_ids.insert(mapped.clone()) {
+            return mapped;
+        }
+        // A second occurrence of a reused 1.4 code: 1.4 node ids are only
+        // sibling-unique, ADL2 requires archetype-wide uniqueness (VCOSU,
+        // `AOM2/master04.5` §Validity Rules: C_OBJECT) — mint a fresh id and
+        // clone the first id's terminology in the rebuild.
+        let fresh = self.alloc_id();
+        self.assigned_node_ids.insert(fresh.clone());
+        self.log.note(format!(
+            "reused 1.4 node code {old} re-minted as {fresh} (archetype-wide id uniqueness)"
+        ));
+        self.dup_mints.push((mapped, fresh.clone()));
+        fresh
+    }
+
+    /// The ADL2 at-code of a `local` value code: the collapse remap when one
+    /// exists, else the ordinary shift.
+    fn value_at(&self, code: &str) -> String {
+        self.value_map
+            .get(code)
+            .cloned()
+            .unwrap_or_else(|| shift_code(code, "at"))
     }
 
     // ── terminology-constraint conversion ────────────────────────────────────
@@ -289,7 +387,7 @@ impl<'a> Converter<'a> {
         let mut at_codes: Vec<String> = Vec::new();
         for code in &codes {
             let at = if is_local {
-                shift_code(code, "at")
+                self.value_at(code)
             } else {
                 self.external_at_code(terminology, code)
             };
@@ -298,7 +396,7 @@ impl<'a> Converter<'a> {
 
         let assumed = assumed_raw.map(|a| {
             if is_local {
-                shift_code(a, "at")
+                self.value_at(a)
             } else {
                 self.external_at_code(terminology, a)
             }
@@ -395,7 +493,7 @@ impl<'a> Converter<'a> {
                 // at-code term; used as a node id it yields an id-code term. A
                 // code that is both splits into both entries.
                 if self.value_at_codes.contains(code) || !is_node {
-                    let at = shift_code(code, "at");
+                    let at = self.value_at(code);
                     out.insert(at.clone(), term_with_code(term, at));
                 }
                 if is_node {
@@ -406,6 +504,14 @@ impl<'a> Converter<'a> {
                     }
                     let id = shift_code(code, "id");
                     out.insert(id.clone(), term_with_code(term, id));
+                }
+            }
+            // VCOSU re-mints: each freshly minted node id reuses the first
+            // occurrence's rubric (the 1.4 source defined ONE term for the
+            // shared code; both ADL2 nodes must be defined — VATDF).
+            for (first, fresh) in &self.dup_mints {
+                if let Some(term) = out.get(first) {
+                    out.insert(fresh.clone(), term_with_code(term, fresh.clone()));
                 }
             }
             // Add synthesised terms to every language.
@@ -451,6 +557,14 @@ impl<'a> Converter<'a> {
                     .insert(s.code.clone(), uri.clone());
             }
         }
+        // VCOSU re-mints inherit the first occurrence's binding, if any.
+        for bindings in term_bindings.values_mut() {
+            for (first, fresh) in &self.dup_mints {
+                if let Some(uri) = bindings.get(first).cloned() {
+                    bindings.insert(fresh.clone(), uri);
+                }
+            }
+        }
 
         let mut value_sets: BTreeMap<String, ValueSet> = old.value_sets.clone().unwrap_or_default();
         for s in &self.synth {
@@ -489,7 +603,7 @@ impl<'a> Converter<'a> {
         if let Some(id) = self.node_map.get(key) {
             id.clone()
         } else if crate::codes::is_at_code(key) {
-            shift_code(key, "at")
+            self.value_at(key)
         } else if crate::codes::is_ac_code(key) {
             // A merged 1.4 `constraint_bindings` key (ADL2 folds that section
             // into `term_bindings`, `master07.13` §Terminology section) shifts
@@ -519,6 +633,15 @@ impl<'a> Converter<'a> {
 
         if let Some(desc) = data.description.as_mut() {
             transform_description(desc);
+            // Surface the conversion's non-mechanical decisions (collapse
+            // remaps, VCOSU re-mints) as conversion provenance — the AOM2
+            // home for it (`RESOURCE_DESCRIPTION.conversion_details`).
+            if !self.log.notes.is_empty() {
+                let details = desc.conversion_details.get_or_insert_with(BTreeMap::new);
+                for (index, note) in self.log.notes.iter().enumerate() {
+                    details.insert(format!("code_remap_{index:03}"), note.clone());
+                }
+            }
         }
     }
 }

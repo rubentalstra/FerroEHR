@@ -578,14 +578,15 @@ fn perform(
 /// re-checkable measurement record (verdict computed by
 /// [`crate::perf::class_verdict`] from the encoded histograms).
 ///
-/// `warmup_s`/`duration_s` default to the case workload; a smoke run may
-/// shorten them, in which case the caller must treat the record as
-/// exploratory and never persist it.
+/// `warmup_s` is the case's normative warmup; `duration_s` is the case's
+/// sustained window or an officially EXTENDED one (the hours ladder — a
+/// longer hold of the same offered load is a stricter demonstration).
+/// The CLI never passes a window shorter than the case's; only the offline
+/// test harness drives synthetic second-scale windows.
 ///
 /// # Errors
 /// A message on schedule construction or aggregation failure (individual
 /// arrival faults are error observations, not run failures).
-#[allow(clippy::too_many_lines)] // one measured-run procedure: schedule → collect → aggregate
 pub fn drive_case(
     case: &PerformanceCase,
     client: &PerfClient,
@@ -596,7 +597,61 @@ pub fn drive_case(
     progress: &(dyn Fn(String) + Sync),
 ) -> Result<Measurement, String> {
     case.check_invariants()?;
-    let rate = case.workload.arrival_rate.0;
+    let window = run_window(
+        client,
+        corpus,
+        &case.workload.mix,
+        case.workload.arrival_rate.0,
+        warmup_s,
+        duration_s,
+        progress,
+    )?;
+    let (verdict, violations) =
+        class_verdict(case, window.offered_load_sustained, &window.operations)?;
+    Ok(Measurement {
+        case: case.id.clone(),
+        class: case.class,
+        environment: environment.clone(),
+        offered_load_sustained: window.offered_load_sustained,
+        warmup_s,
+        duration_s,
+        operations: window.operations,
+        verdict,
+        violations,
+    })
+}
+
+/// One executed open-loop window's raw outcome — the shared core the class
+/// runs (conformance) and the knee stress ladder (exploration) both drive.
+#[derive(Debug)]
+pub struct WindowOutcome {
+    /// Measured arrivals over the actual measured span (arrivals/s).
+    pub offered_load_sustained: f64,
+    /// Per-operation records (encoded HDR histograms, re-checkable).
+    pub operations: Vec<OperationMeasurement>,
+    /// Whether the GENERATOR failed to hold the schedule (dispatch lagged
+    /// more than 2% past the planned span) — the honest stop signal for a
+    /// stress climb: beyond this point the instrument, not the SUT, is the
+    /// bottleneck.
+    pub generator_bound: bool,
+}
+
+/// Execute one open-loop window: `rate` arrivals/s of `mix` for
+/// `warmup_s + duration_s`, recording only the post-warmup span.
+///
+/// # Errors
+/// A message on schedule construction or aggregation failure (individual
+/// arrival faults are error observations, not run failures).
+#[allow(clippy::too_many_lines)] // one measured-window procedure: schedule → collect → aggregate
+pub fn run_window(
+    client: &PerfClient,
+    corpus: &SeededCorpus,
+    mix: &[(String, crate::perf::Percent)],
+    rate: f64,
+    warmup_s: u64,
+    duration_s: u64,
+    progress: &(dyn Fn(String) + Sync),
+) -> Result<WindowOutcome, String> {
     if !(rate.is_finite() && rate > 0.0) {
         return Err("arrival rate must be positive".to_owned());
     }
@@ -616,7 +671,7 @@ pub fn drive_case(
         return Err("measurement window schedules zero arrivals".to_owned());
     }
 
-    let mut sequencer = MixSequencer::new(&case.workload.mix)?;
+    let mut sequencer = MixSequencer::new(mix)?;
     let commit_bodies: Vec<Vec<u8>> = (0..10)
         .map(|k| {
             crate::exec::recipes::bp_series(k)
@@ -729,14 +784,16 @@ pub fn drive_case(
     // honestly deflates the sustained rate).
     let planned_span_s = warmup_s.saturating_add(duration_s);
     #[allow(clippy::cast_precision_loss)] // spans/counts << 2^52
-    let offered_load_sustained = {
+    let (offered_load_sustained, generator_bound) = {
         let actual_span = dispatch_span.as_secs_f64().max(planned_span_s as f64);
         let measured_span = actual_span - warmup_s as f64;
-        if measured_span > 0.0 {
+        let offered = if measured_span > 0.0 {
             dispatched_measured.load(Ordering::Relaxed) as f64 / measured_span
         } else {
             0.0
-        }
+        };
+        let lagged = dispatch_span.as_secs_f64() > planned_span_s as f64 * 1.02;
+        (offered, lagged)
     };
 
     let mut operations: Vec<OperationMeasurement> = Vec::new();
@@ -749,17 +806,10 @@ pub fn drive_case(
     }
     operations.sort_by(|a, b| a.operation.cmp(&b.operation));
 
-    let (verdict, violations) = class_verdict(case, offered_load_sustained, &operations)?;
-    Ok(Measurement {
-        case: case.id.clone(),
-        class: case.class,
-        environment: environment.clone(),
+    Ok(WindowOutcome {
         offered_load_sustained,
-        warmup_s,
-        duration_s,
         operations,
-        verdict,
-        violations,
+        generator_bound,
     })
 }
 

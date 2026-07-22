@@ -255,6 +255,150 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
     Ok(out)
 }
 
+/// The latency-throughput curve from a committed stress report: offered rate
+/// (x, log) vs the worst per-operation p99 (y, log, re-derived from the
+/// decoded histograms), stable and breached steps distinguished by mark AND
+/// color, the p99 budget line, the class floors as context verticals, and
+/// the maximum-sustainable-throughput marker.
+///
+/// # Errors
+/// A message when a histogram fails to decode.
+#[allow(clippy::too_many_lines)] // one linear chart emitter
+pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, String> {
+    let (width, height) = (760.0, 400.0);
+    let (x0, x1) = (90.0, 700.0);
+    let (y_top, y_bottom) = (64.0, 330.0);
+    let (min_rate, max_rate) = (1.0, 6000.0);
+    let (min_ms, max_ms) = (1.0, 6000.0);
+
+    let mut out = String::new();
+    svg_open(&mut out, width, height);
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" class=\"title\">Latency-throughput curve — step-load stress to the maximum sustainable throughput</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"44\" class=\"muted\">Short intense load steps ({} s hold) on the {} corpus · exploration only — classes are earned exclusively by the hour-long class runs</text>",
+        report.step_hold_s, report.corpus,
+    );
+
+    let x_of = |rate: f64| log_pos(rate, min_rate, max_rate, x0, x1);
+    let y_of = |ms: f64| {
+        let clamped = ms.clamp(min_ms, max_ms);
+        y_bottom
+            - (clamped.log10() - min_ms.log10()) / (max_ms.log10() - min_ms.log10())
+                * (y_bottom - y_top)
+    };
+
+    // Grid: rate decades + latency decades.
+    for rate in [1.0, 10.0, 100.0, 1000.0] {
+        let x = x_of(rate);
+        let _ = writeln!(
+            out,
+            "<line x1=\"{x:.1}\" y1=\"{y_top}\" x2=\"{x:.1}\" y2=\"{y_bottom}\" class=\"grid\"/>\
+             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{rate}/s</text>",
+            y_bottom + 16.0,
+        );
+    }
+    for ms in [1.0, 10.0, 100.0, 1000.0] {
+        let y = y_of(ms);
+        let _ = writeln!(
+            out,
+            "<line x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1}\" y2=\"{y:.1}\" class=\"grid\"/>\
+             <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"end\">{ms} ms</text>",
+            x0 - 8.0,
+            y + 4.0,
+        );
+    }
+    // The p99 budget line.
+    let budget_y = y_of(report.p99_budget_ms);
+    let _ = writeln!(
+        out,
+        "<line x1=\"{x0}\" y1=\"{budget_y:.1}\" x2=\"{x1}\" y2=\"{budget_y:.1}\" class=\"slo\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"slotext\" text-anchor=\"end\">p99 budget</text>",
+        x1 - 4.0,
+        budget_y - 6.0,
+    );
+    // Class floors as CONTEXT verticals.
+    for floor in &report.floors_context {
+        let x = x_of(floor.floor_per_s);
+        let _ = writeln!(
+            out,
+            "<line x1=\"{x:.1}\" y1=\"{y_top}\" x2=\"{x:.1}\" y2=\"{y_bottom}\" class=\"floor\"/>\
+             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{}</text>",
+            y_top - 6.0,
+            floor.class.token(),
+        );
+    }
+
+    // Steps, in rate order: worst per-operation p99 per step (re-derived).
+    let mut points: Vec<(f64, f64, bool)> = Vec::new();
+    for step in &report.steps {
+        let mut worst_ms: f64 = 0.0;
+        for op in &step.operations {
+            let histogram = op.decode_histogram()?;
+            #[allow(clippy::cast_precision_loss)] // latencies << 2^52 µs
+            let ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
+            worst_ms = worst_ms.max(ms);
+        }
+        points.push((step.rate, worst_ms, step.stable));
+    }
+    points.sort_by(|a, b| a.0.total_cmp(&b.0));
+    let path: Vec<String> = points
+        .iter()
+        .enumerate()
+        .map(|(i, (rate, ms, _))| {
+            format!(
+                "{}{:.1},{:.1}",
+                if i == 0 { "M" } else { "L" },
+                x_of(*rate),
+                y_of(*ms)
+            )
+        })
+        .collect();
+    let _ = writeln!(
+        out,
+        "<path d=\"{}\" fill=\"none\" class=\"s1s\" stroke-width=\"2\"/>",
+        path.join(" ")
+    );
+    for (rate, ms, stable) in &points {
+        let (x, y) = (x_of(*rate), y_of(*ms));
+        if *stable {
+            let _ = writeln!(
+                out,
+                "<circle cx=\"{x:.1}\" cy=\"{y:.1}\" r=\"5\" class=\"measured\"/>"
+            );
+        } else {
+            // A breached step: a distinct MARK (cross), not color alone.
+            let _ = writeln!(
+                out,
+                "<path d=\"M{:.1},{:.1} L{:.1},{:.1} M{:.1},{:.1} L{:.1},{:.1}\" class=\"slo\" stroke-width=\"2\"/>",
+                x - 5.0,
+                y - 5.0,
+                x + 5.0,
+                y + 5.0,
+                x - 5.0,
+                y + 5.0,
+                x + 5.0,
+                y - 5.0,
+            );
+        }
+    }
+    // The maximum-sustainable-throughput marker.
+    let mst_x = x_of(report.max_sustainable_throughput_per_s.max(min_rate));
+    let _ = writeln!(
+        out,
+        "<line x1=\"{mst_x:.1}\" y1=\"{y_top}\" x2=\"{mst_x:.1}\" y2=\"{y_bottom}\" class=\"s2s\" stroke-width=\"2\" stroke-dasharray=\"2 3\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"earned\">max sustainable {:.0}/s</text>",
+        mst_x + 6.0,
+        y_top + 14.0,
+        report.max_sustainable_throughput_per_s,
+    );
+    out.push_str("</svg>\n");
+    Ok(out)
+}
+
 /// Fixed-precision label: sub-10 ms values keep one decimal, larger values
 /// round to whole milliseconds.
 fn format_ms(ms: f64) -> String {
