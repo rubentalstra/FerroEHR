@@ -19,6 +19,7 @@ pub mod load;
 pub mod model;
 pub mod party;
 pub mod perf;
+pub mod perf_run;
 pub mod refgrammar;
 pub mod render;
 pub mod run;

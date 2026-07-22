@@ -641,7 +641,7 @@ pub fn statement_schema() -> Value {
                 "additionalProperties": false,
                 "required": ["class", "environment_ref"],
                 "properties": {
-                    "class": { "type": "string", "minLength": 1 },
+                    "class": { "enum": perf_class_tokens() },
                     "environment_ref": { "type": "string", "minLength": 1 }
                 }
             },
@@ -675,6 +675,7 @@ pub fn statement_schema() -> Value {
 
 /// `results.json` — the party results (the campaign outcomes).
 #[must_use]
+#[allow(clippy::too_many_lines)] // one literal JSON-Schema document
 pub fn results_schema() -> Value {
     json!({
         "$schema": DRAFT,
@@ -744,7 +745,45 @@ pub fn results_schema() -> Value {
                     ]
                 }
             },
-            "measurements": { "type": "array" },
+            "measurements": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["case", "class", "environment", "offered_load_sustained",
+                                  "warmup_s", "duration_s", "operations", "verdict"],
+                    "properties": {
+                        "case": { "type": "string", "pattern": CASE_ID_PATTERN },
+                        "class": { "enum": perf_class_tokens() },
+                        "environment": environment_def(),
+                        "offered_load_sustained": { "type": "number", "minimum": 0.0 },
+                        "warmup_s": { "type": "integer", "minimum": 0 },
+                        "duration_s": { "type": "integer", "minimum": 1 },
+                        "operations": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["operation", "requests", "errors",
+                                              "latency_ms_p50", "latency_ms_p90",
+                                              "latency_ms_p99", "hdr_v2_base64"],
+                                "properties": {
+                                    "operation": { "type": "string", "minLength": 1 },
+                                    "requests": { "type": "integer", "minimum": 0 },
+                                    "errors": { "type": "integer", "minimum": 0 },
+                                    "latency_ms_p50": { "type": "number", "minimum": 0.0 },
+                                    "latency_ms_p90": { "type": "number", "minimum": 0.0 },
+                                    "latency_ms_p99": { "type": "number", "minimum": 0.0 },
+                                    "hdr_v2_base64": { "type": "string", "minLength": 1 }
+                                }
+                            }
+                        },
+                        "verdict": { "enum": ["earned", "not-earned"] },
+                        "violations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+                    }
+                }
+            },
             "ambiguity_dispositions": {
                 "type": "array",
                 "items": {
@@ -804,20 +843,35 @@ pub fn ixit_schema() -> Value {
                     }
                 }
             },
-            "environment": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": ["hardware_class", "cores", "memory_gb", "storage_class", "topology"],
-                "properties": {
-                    "hardware_class": { "type": "string", "minLength": 1 },
-                    "cores": { "type": "integer", "minimum": 0 },
-                    "memory_gb": { "type": "integer", "minimum": 0 },
-                    "storage_class": { "type": "string", "minLength": 1 },
-                    "topology": { "type": "string", "minLength": 1 }
-                }
-            }
+            "environment": environment_def()
         }
     })
+}
+
+/// The ixit environment block (shared by the ixit schema and every
+/// measurement record — an earned class is reported WITH its environment).
+fn environment_def() -> Value {
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["hardware_class", "cores", "memory_gb", "storage_class", "topology"],
+        "properties": {
+            "exclusive_server": { "type": "boolean" },
+            "hardware_class": { "type": "string", "minLength": 1 },
+            "cores": { "type": "integer", "minimum": 0 },
+            "memory_gb": { "type": "integer", "minimum": 0 },
+            "storage_class": { "type": "string", "minLength": 1 },
+            "topology": { "type": "string", "minLength": 1 }
+        }
+    })
+}
+
+/// The published performance-class tokens, ladder order.
+fn perf_class_tokens() -> Vec<&'static str> {
+    crate::perf::PerfClass::ALL
+        .iter()
+        .map(|c| c.token())
+        .collect()
 }
 
 /// `schedule/performance/**` performance cases (conformance-by-measurement).

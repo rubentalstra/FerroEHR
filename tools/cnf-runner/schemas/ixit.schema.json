@@ -103,6 +103,9 @@
         "topology"
       ],
       "properties": {
+        "exclusive_server": {
+          "type": "boolean"
+        },
         "hardware_class": {
           "type": "string",
           "minLength": 1

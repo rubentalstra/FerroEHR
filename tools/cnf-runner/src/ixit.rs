@@ -8,7 +8,7 @@
 //! multi-instance cases and the security principals address ixit-declared
 //! instances via the flow `on:` selector.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::ids::InstanceName;
 
@@ -43,9 +43,10 @@ pub struct Instance {
 }
 
 /// The environment block — mandatory for performance runs, informative
-/// otherwise. Kept structural here; the performance workstream binds
-/// verdicts to it.
-#[derive(Debug, Clone, Deserialize)]
+/// otherwise. `Serialize` because every measurement record embeds the
+/// environment it was taken in (an earned class is reported WITH its
+/// environment, never bare).
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Environment {
     /// Whether the SUT instance is exclusively owned by this run — the

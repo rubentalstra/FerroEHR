@@ -139,8 +139,12 @@
       ],
       "properties": {
         "class": {
-          "type": "string",
-          "minLength": 1
+          "enum": [
+            "POC",
+            "S",
+            "L",
+            "R"
+          ]
         },
         "environment_ref": {
           "type": "string",
