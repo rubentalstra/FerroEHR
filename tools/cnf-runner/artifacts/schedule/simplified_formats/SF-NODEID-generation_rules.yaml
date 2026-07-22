@@ -1,48 +1,58 @@
-# Node-ID generation deepening (simplified_formats master04 §Node ID
-# Generation Rules). The master04 worked-examples table becomes a content
-# decision table: each row is one archetype node name and the node id the
-# 7-step algorithm (normalisation -> underscore consolidation -> lowercase ->
-# trim -> empty-id fallback -> digit-prefix `a` -> sibling-uniqueness `_N`)
-# produces. Grounded on the vitals template as the representative COMPOSITION
-# context (the algorithm is template-independent; the constraint_context names
-# a real corpus template so the row set is anchored to a WT the runner can
-# build). This is a mapping/derivation decision table (no accepted/rejected
-# verdict): each row asserts the generated id for the given name.
-# TODO: convert to a functional get_opt (format: wt) + web-template tree
-#       assertions of generated node ids — needs a vendored/authored template
-#       whose archetype node NAMES exercise the 7-step algorithm edge cases
-#       (digit-prefix "1st visit" -> a1st_visit, empty-fallback "((()))" -> id,
-#       sibling-uniqueness _N); cnf.opt.maximal's names already normalise cleanly
-#       and the current content decision-table commits against the removed
-#       body_temperature carrier and 422s.
+# Node-ID generation rules (simplified_formats master04 §Node ID Generation
+# Rules). The 7-step algorithm maps each archetype node NAME to a generated id.
+# This functional case GETs the Web Template document for the vitals template
+# (Accept application/openehr.wt+json — the same wt+json get_opt as
+# SF-NODEID-web_template_ids) and asserts, per generated node id in the served
+# tree, the rules the vitals node names actually witness:
+#   * step 3 Case normalisation (lowercase): "Vitals"->vitals, "Temperature"->
+#     temperature, "Symptom"->symptom
+#   * step 1 Character normalisation (non-[alnum_.-] -> "_"; here the space):
+#     "Body temperature"->body_temperature, "Any event"->any_event,
+#     "Body exposure"->body_exposure  (each also lowercased, step 3)
+# The remaining algorithm rows the placeholder decision-table carried are DROPPED
+# because this template's node names cannot witness them: step 2 underscore
+# consolidation (no doubled separators in any name), step 4 trim (no leading/
+# trailing specials), step 5 empty-id fallback (no all-non-word name), step 6
+# digit-prefix (no digit-leading name), step 7 sibling uniqueness (all sibling
+# names are already distinct). Those edge cases belong to a template whose node
+# names exercise them, not to the vitals carrier.
 id: SF-NODEID-generation_rules
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
-rm_class: WEB_TEMPLATE_NODE
+sm_operation: I_DEFINITION_ADL14.get_opt
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-31]         # web-template representation has no dedicated SM operation
 test_purpose: >-
-  The node-id generation algorithm maps each archetype node name to the
-  documented generated id: character normalisation, underscore consolidation,
-  lowercasing, trimming, empty-id fallback, digit-prefix `a`, and sibling
-  uniqueness suffixing.
-description: "Node-id generation worked examples (master04 7-step algorithm)"
+  The served Web Template tree for the vitals template carries node ids the
+  master04 node-id algorithm produces from the archetype node names: lowercased
+  (vitals, temperature, symptom) and with non-word characters normalised to an
+  underscore (body_temperature, any_event, body_exposure).
+description: "Generated node ids in the served vitals Web Template tree"
 spec_refs:
   - "ITS-REST simplified_formats master04 §Node ID Generation Rules"
   - "ITS-REST simplified_formats master04 §Web Template Metadata"
+  - "ITS-REST overview Resources.md §Simplified Formats"
+  - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-guards:
-  - "Step 5 (empty result -> \"id\") has no worked example in the master04 table — the empty-id-fallback row below is synthesised from the algorithm text (master04 §Node ID Generation Rules)"
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/"                             # the WT root: node ids are generated per node under the template tree
-decision_table:
-  columns: ["original_name", "generated_id", "algorithm_step"]
-  rows:
-    - ["Body temperature", "body_temperature", "normalise_lowercase_trim"]
-    - ["Problem/diagnosis", "problem_diagnosis", "normalise_nonword_to_underscore"]
-    - ["Tests (1, 2, 3)", "tests_1_2_3", "normalise_consolidate_underscores"]
-    - ["1st visit", "a1st_visit", "digit_prefix_prepend_a"]
-    - ["Blood Pressure", "blood_pressure", "normalise_lowercase"]
-    - ["Blood Pressure", "blood_pressure_1", "sibling_uniqueness_suffix"]
-    - ["((()))", "id", "empty_id_fallback"]
+requires:
+  server: any
+  templates: [cnf.opt.vitals]            # provisioned as precondition (idempotent; 409 tolerated)
+flow:
+  - step: 1
+    call: get_opt
+    format: wt                            # Accept application/openehr.wt+json (Web Template document)
+    with: { template_id: "cnf.vitals" }   # the template_id of cnf.opt.vitals
+    expect: ok
+    assert:
+      - { assert: field, path: "templateId", equals: "cnf.vitals" }
+      # step 3 lowercase: "Vitals" -> vitals (COMPOSITION root)
+      - { assert: field, path: "tree/id", equals: "vitals" }
+      # step 1 char-normalisation (space -> "_") + step 3 lowercase
+      - { assert: field, path: "tree/children[1]/id", equals: "body_temperature" }
+      - { assert: field, path: "tree/children[1]/children[0]/id", equals: "any_event" }
+      # step 3 lowercase on the ELEMENT leaves under any_event
+      - { assert: field, path: "tree/children[1]/children[0]/children[0]/id", equals: "temperature" }
+      - { assert: field, path: "tree/children[1]/children[0]/children[1]/id", equals: "symptom" }
+      # step 1 char-normalisation (space -> "_") + step 3 lowercase
+      - { assert: field, path: "tree/children[1]/children[0]/children[2]/id", equals: "body_exposure" }

@@ -336,6 +336,33 @@ fn ordinal_input(co: &CObject, labels: &dyn Labels, scale: bool) -> WebTemplateI
             }
             input.list.push(cv);
         }
+        return input;
+    }
+    // Generic C_COMPLEX_OBJECT form: AOM 1.4 has no `C_DV_SCALE` constrainer (AM
+    // `masterAppA-domain_extension.adoc` defines an integer-valued `C_ORDINAL`
+    // only), so a DV_SCALE (or a generically-constrained DV_ORDINAL) constrains
+    // its coded `symbol` through `symbol.defining_code` as a `C_CODE_PHRASE`
+    // `code_list` (RM `data_types` §`DV_SCALE`; AOM 1.4 §`C_CODE_PHRASE`). Surface
+    // that code set as the coded `list` so the walk enforces symbol membership;
+    // the numeric `value` set is captured separately as a `C_REAL`/`C_INTEGER`
+    // list. No paired `(symbol, value)` numeric is recorded here — the generic
+    // form loses the pairing — so the coded values carry no `ordinal`/`scale`.
+    for symbol_child in attr_children(co, "symbol") {
+        for dc_child in attr_children(symbol_child, "defining_code") {
+            if let CObject::CCodePhrase(cp) = dc_child {
+                let term = cp.terminology_id.as_ref().map(|t| t.value.clone());
+                for code in &cp.code_list {
+                    let cv = coded_value(term.as_deref().unwrap_or("local"), code, labels, None);
+                    if let Some(t) = &term
+                        && !t.is_empty()
+                        && t != "local"
+                    {
+                        input.terminology = Some(t.clone());
+                    }
+                    input.list.push(cv);
+                }
+            }
+        }
     }
     input
 }

@@ -22,7 +22,7 @@ spec_refs:
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.vitals]            # the OPT exists — the failure is the missing header, not a missing OPT
+  templates: [cnf.opt.minimal_action]            # the OPT exists — the failure is the missing header, not a missing OPT
   ehr: { commits: none }                 # mints ${ehr_id}
 data_sets: [cnf.flat.vitals.minimal_ctx]
 flow:

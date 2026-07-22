@@ -443,11 +443,9 @@
     },
     {
       "case": "CONT-DV_DATE_TIME-validate_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 165,
-      "rows_total": 165,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 165
     },
     {
       "case": "CONT-DV_DATE_TIME-validate_open",
@@ -457,27 +455,21 @@
     },
     {
       "case": "CONT-DV_DATE_TIME-validate_range",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 37,
-      "rows_total": 37,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 37
     },
     {
       "case": "CONT-DV_DURATION-validate_fields",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 18,
-      "rows_total": 18,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 18
     },
     {
       "case": "CONT-DV_DURATION-validate_fields_range",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 9,
-      "rows_total": 9,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 9
     },
     {
       "case": "CONT-DV_DURATION-validate_open",
@@ -511,19 +503,15 @@
     },
     {
       "case": "CONT-DV_IDENTIFIER-validate_all_list",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 12,
-      "rows_total": 12,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 12
     },
     {
       "case": "CONT-DV_IDENTIFIER-validate_all_pattern",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 12,
-      "rows_total": 12,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 12
     },
     {
       "case": "CONT-DV_INTERVAL_DV_COUNT-validate_lower_upper",
@@ -563,11 +551,9 @@
     },
     {
       "case": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 64,
-      "rows_total": 64,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 64
     },
     {
       "case": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_range",
@@ -583,19 +569,15 @@
     },
     {
       "case": "CONT-DV_INTERVAL_DV_DURATION-validate_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 11,
-      "rows_total": 11,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 11
     },
     {
       "case": "CONT-DV_INTERVAL_DV_DURATION-validate_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 9,
-      "rows_total": 9,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 9
     },
     {
       "case": "CONT-DV_INTERVAL_DV_DURATION-validate_range",
@@ -605,19 +587,15 @@
     },
     {
       "case": "CONT-DV_INTERVAL_DV_ORDINAL-validate_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 7,
-      "rows_total": 7,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 7
     },
     {
       "case": "CONT-DV_INTERVAL_DV_ORDINAL-validate_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 6,
-      "rows_total": 6,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 6
     },
     {
       "case": "CONT-DV_INTERVAL_DV_PROPORTION-validate_fraction",
@@ -675,35 +653,27 @@
     },
     {
       "case": "CONT-DV_INTERVAL_DV_SCALE-validate_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 7,
-      "rows_total": 7,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 7
     },
     {
       "case": "CONT-DV_INTERVAL_DV_SCALE-validate_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 6,
-      "rows_total": 6,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 6
     },
     {
       "case": "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 5,
-      "rows_total": 5,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 5
     },
     {
       "case": "CONT-DV_INTERVAL_DV_TIME-validate_lower_upper_range",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 9,
-      "rows_total": 9,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 9
     },
     {
       "case": "CONT-DV_INTERVAL_DV_TIME-validate_open",
@@ -713,11 +683,9 @@
     },
     {
       "case": "CONT-DV_MULTIMEDIA-validate_media_type",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 8,
-      "rows_total": 8,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 8
     },
     {
       "case": "CONT-DV_MULTIMEDIA-validate_open",
@@ -769,11 +737,9 @@
     },
     {
       "case": "CONT-DV_PROPORTION-validate_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 19,
-      "rows_total": 19,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 19
     },
     {
       "case": "CONT-DV_PROPORTION-validate_percent",
@@ -825,11 +791,9 @@
     },
     {
       "case": "CONT-DV_SCALE-validate_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 3,
-      "rows_total": 3,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 3
     },
     {
       "case": "CONT-DV_SCALE-validate_open",
@@ -851,27 +815,21 @@
     },
     {
       "case": "CONT-DV_TIME-validate_constraint",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 63,
-      "rows_total": 63,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 63
     },
     {
       "case": "CONT-DV_TIME-validate_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 23,
-      "rows_total": 23,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 23
     },
     {
       "case": "CONT-DV_TIME-validate_range",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 192,
-      "rows_total": 192,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 192
     },
     {
       "case": "CONT-DV_URI-validate_list",
@@ -881,11 +839,9 @@
     },
     {
       "case": "CONT-DV_URI-validate_open",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 11,
-      "rows_total": 11,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 11
     },
     {
       "case": "CONT-DV_URI-validate_pattern",
@@ -895,11 +851,9 @@
     },
     {
       "case": "CONT-EVENT-state_existence",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 5,
-      "rows_total": 5,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 5
     },
     {
       "case": "CONT-EVENT-type_narrowing",
@@ -915,11 +869,9 @@
     },
     {
       "case": "CONT-HISTORY-summary_existence",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 4,
-      "rows_total": 4,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 4
     },
     {
       "case": "CONT-ITEM_STRUCTURE-type_narrowing",
@@ -929,11 +881,9 @@
     },
     {
       "case": "CONT-OBSERVATION-state_protocol_existence",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 9,
-      "rows_total": 9,
-      "failing_step": 1,
-      "reason": "expected `validation_failed`, observed `created`"
+      "rows_total": 9
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete",
@@ -1168,11 +1118,10 @@
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_latest_version",
-      "status": "failed",
-      "rows_driven": 1,
+      "status": "not_applicable",
+      "rows_driven": 0,
       "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `ok`, observed `not_found`"
+      "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_single",
@@ -1182,9 +1131,10 @@
     },
     {
       "case": "I_DEFINITION_ADL14.get_opt-retrieve_specific_version",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all",
@@ -1219,9 +1169,10 @@
     },
     {
       "case": "I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "I_DEFINITION_ADL14.validate_opt-invalid_opt",
@@ -2187,11 +2138,9 @@
     },
     {
       "case": "SF-CTX-participations_forms",
-      "status": "failed",
-      "rows_driven": 9,
-      "rows_total": 9,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-CTX-vocabulary_mapping",
@@ -2201,17 +2150,16 @@
     },
     {
       "case": "SF-DEPRECATED-media_supported",
-      "status": "passed",
-      "rows_driven": 1,
-      "rows_total": 1
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
       "case": "SF-DEPRECATED-media_unsupported",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `unsupported_media`, observed `created`"
+      "rows_total": 1
     },
     {
       "case": "SF-EXAMPLE-accept_forms",
@@ -2233,19 +2181,15 @@
     },
     {
       "case": "SF-FLAT-commit_roundtrip_ctx_defaults",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 3,
-      "reason": "equivalent: retrieved content differs from committed (modulo the normative ignore-set); got {\"ctx/language\":\"en\",\"ctx/territory\":\"US\",\"ctx/composer_name\":\"Silvia Blake\",\"ct … want {\"ctx/language\":\"en\",\"ctx/territory\":\"US\",\"ctx/composer_name\":\"Silvia Blake\",\"ct …"
+      "rows_total": 1
     },
     {
       "case": "SF-FLAT-missing_template_id",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `missing_template_id`, observed `created`"
+      "rows_total": 1
     },
     {
       "case": "SF-FLAT-reject_cardinality",
@@ -2285,19 +2229,15 @@
     },
     {
       "case": "SF-INDEX-multi_event_commit",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 1
     },
     {
       "case": "SF-INDEX-semantics",
-      "status": "failed",
-      "rows_driven": 7,
-      "rows_total": 7,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-LEVELS-collapsed_wrappers",
@@ -2355,11 +2295,9 @@
     },
     {
       "case": "SF-MAP-events_audit",
-      "status": "failed",
-      "rows_driven": 19,
-      "rows_total": 19,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-MAP-interval_reference_range",
@@ -2399,11 +2337,9 @@
     },
     {
       "case": "SF-NODEID-generation_rules",
-      "status": "failed",
-      "rows_driven": 7,
-      "rows_total": 7,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-NODEID-web_template_ids",
@@ -2425,11 +2361,9 @@
     },
     {
       "case": "SF-RAW-structured_embedding",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 1
     },
     {
       "case": "SF-RMATTR-normal_range_commit",
@@ -2463,11 +2397,9 @@
     },
     {
       "case": "SF-STRUCT-arrays_single_cardinality",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 1
     },
     {
       "case": "SF-STRUCT-empty_object_omission",
@@ -2483,11 +2415,9 @@
     },
     {
       "case": "SF-STRUCTURED-commit_roundtrip",
-      "status": "failed",
+      "status": "passed",
       "rows_driven": 1,
-      "rows_total": 1,
-      "failing_step": 1,
-      "reason": "expected `created`, observed `validation_failed`"
+      "rows_total": 1
     },
     {
       "case": "SF-WT-web_template_get",

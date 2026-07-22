@@ -33,7 +33,7 @@ guards:
   - "Deprecated-media-type support is statement-declared, not spec-mandated — the ICS options declaration selects this branch (AMB-39); ITS-REST simplified_formats master02 defines only the current wt.flat/wt.structured MIME types"
 requires:
   server: any
-  templates: [cnf.opt.vitals]
+  templates: [cnf.opt.minimal_action]
   ehr: { commits: none }                 # mints ${ehr_id}
 data_sets: [cnf.flat.vitals.minimal_ctx]
 flow:

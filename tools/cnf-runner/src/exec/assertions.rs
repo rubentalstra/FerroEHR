@@ -7,6 +7,7 @@
 //! still happens here so the judgement stays pure.
 
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 use crate::exec::resultset;
 use crate::exec::state::{Captured, VarStore};
@@ -99,11 +100,214 @@ pub fn strip_ignored(value: &Value, ignored_paths: &[String]) -> Value {
     out
 }
 
+/// A FLAT body: a one-level object whose keys are path-formed strings.
+fn is_flat_map(value: &Value) -> bool {
+    match value {
+        Value::Object(map) => {
+            !map.is_empty()
+                && map.keys().any(|k| k.contains('/'))
+                && map.values().all(|v| !matches!(v, Value::Object(_)))
+        }
+        _ => false,
+    }
+}
+
+/// Fold a committed FLAT document's `ctx/*` input-convenience keys onto the
+/// RM-tree flat paths a read-back expresses them at, per ITS-REST
+/// `simplified_formats` master06 §Context Information: `ctx/participation_*`
+/// → `{root}/context/_participation:{i}|*`, `ctx/health_care_facility|*` →
+/// `{root}/context/_health_care_facility|*`, and the declared
+/// `ctx/id_namespace`/`ctx/id_scheme` defaults expand onto every folded
+/// party that carries an `|id` ("default namespace/scheme for external
+/// references" — master06 §ID Namespace and Scheme). Pure default-setters
+/// whose targets the ignore-set covers (`ctx/time`, `ctx/setting`,
+/// composer) pass through untouched for the ignore pass.
+fn fold_flat_ctx(committed: &BTreeMap<String, Value>, root: &str) -> BTreeMap<String, Value> {
+    let id_namespace = committed.get("ctx/id_namespace").cloned();
+    let id_scheme = committed.get("ctx/id_scheme").cloned();
+    let mut out: BTreeMap<String, Value> = BTreeMap::new();
+    let mut folded_id_carriers: Vec<String> = Vec::new();
+    for (key, value) in committed {
+        if let Some(rest) = key.strip_prefix("ctx/participation_") {
+            // participation_<field>[:i] — default index 0.
+            let (field, index) = match rest.split_once(':') {
+                Some((f, i)) => (f, i),
+                None => (rest, "0"),
+            };
+            let target = format!("{root}/context/_participation:{index}|{field}");
+            if field == "id" {
+                folded_id_carriers.push(format!("{root}/context/_participation:{index}"));
+            }
+            out.insert(target, value.clone());
+        } else if let Some(rest) = key.strip_prefix("ctx/health_care_facility|") {
+            if rest == "id" {
+                folded_id_carriers.push(format!("{root}/context/_health_care_facility"));
+            }
+            out.insert(
+                format!("{root}/context/_health_care_facility|{rest}"),
+                value.clone(),
+            );
+        } else if key == "ctx/id_namespace" || key == "ctx/id_scheme" {
+            // consumed as qualifiers below
+        } else {
+            out.insert(key.clone(), value.clone());
+        }
+    }
+    for carrier in folded_id_carriers {
+        if let Some(ns) = &id_namespace {
+            out.insert(format!("{carrier}|id_namespace"), ns.clone());
+        }
+        if let Some(scheme) = &id_scheme {
+            out.insert(format!("{carrier}|id_scheme"), scheme.clone());
+        }
+    }
+    out
+}
+
+/// Whether a FLAT key falls under an ignore path: the `ctx/*` default-setter
+/// spellings map to their master06 targets (`ctx/time` →
+/// `context/start_time`, `ctx/setting` → `context/setting`, `ctx/composer_*`
+/// → `composer`); any other key matches when its post-root path starts with
+/// the ignore path (`uid` also matches the flat `_uid` spelling).
+fn flat_key_ignored(key: &str, ignored_paths: &[String]) -> bool {
+    let effective: &str = match key {
+        "ctx/time" => "context/start_time",
+        "ctx/end_time" => "context/end_time",
+        "ctx/setting" => "context/setting",
+        k if k.starts_with("ctx/composer") => "composer",
+        k => k.split_once('/').map_or(k, |(_, rest)| rest),
+    };
+    let effective = effective.replace("/_uid", "/uid");
+    let effective = effective.strip_prefix('_').unwrap_or(&effective);
+    ignored_paths.iter().any(|p| {
+        effective == p.as_str()
+            || effective.starts_with(&format!("{p}/"))
+            || effective.starts_with(&format!("{p}|"))
+    })
+}
+
+/// Canonicalize a FLAT key by eliding every `:0` first-element index
+/// (`a:0/b`, `a:0|x`, trailing `a:0`) — the index is optional on the wire
+/// (`simplified_formats` master04 §Field Identifiers), so both spellings
+/// name the same datum.
+fn dezero(key: &str) -> String {
+    let inner = key.replace(":0/", "/").replace(":0|", "|");
+    inner
+        .strip_suffix(":0")
+        .map_or(inner.clone(), ToOwned::to_owned)
+}
+
+/// Flatten a STRUCTURED body into its FLAT key form per the
+/// `simplified_formats` master04 STRUCTURED->FLAT algorithm: object keys
+/// join with `/`, array elements append `:{i}` to their segment,
+/// `|`-prefixed attribute keys append without a separator, and the
+/// empty-string key is the element's main value.
+fn flatten_structured(value: &Value, prefix: &str, out: &mut BTreeMap<String, Value>) {
+    match value {
+        Value::Object(map) => {
+            for (key, child) in map {
+                let next = if key.is_empty() {
+                    prefix.to_owned()
+                } else if let Some(attr) = key.strip_prefix('|') {
+                    format!("{prefix}|{attr}")
+                } else if prefix.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{prefix}/{key}")
+                };
+                flatten_structured(child, &next, out);
+            }
+        }
+        Value::Array(items) => {
+            for (i, item) in items.iter().enumerate() {
+                flatten_structured(item, &format!("{prefix}:{i}"), out);
+            }
+        }
+        leaf => {
+            out.insert(prefix.to_owned(), leaf.clone());
+        }
+    }
+}
+
+/// STRUCTURED is recognized by its attribute-key shape: `|`-prefixed or
+/// empty-string keys somewhere in the tree (master04 §Structured format) —
+/// canonical JSON never carries either, so a canonical body is never
+/// misread as simplified.
+fn has_simplified_leaf_keys(value: &Value) -> bool {
+    match value {
+        Value::Object(map) => map
+            .iter()
+            .any(|(k, v)| k.is_empty() || k.starts_with('|') || has_simplified_leaf_keys(v)),
+        Value::Array(items) => items.iter().any(has_simplified_leaf_keys),
+        _ => false,
+    }
+}
+
+/// A simplified body in either wire form, as a FLAT key map: a FLAT body
+/// verbatim, a STRUCTURED body via the master04 flattening. `None` for
+/// canonical/other bodies (a canonical COMPOSITION carries `_type`).
+fn simplified_as_flat(value: &Value) -> Option<BTreeMap<String, Value>> {
+    let Value::Object(map) = value else {
+        return None;
+    };
+    if is_flat_map(value) {
+        return Some(map.iter().map(|(k, v)| (k.clone(), v.clone())).collect());
+    }
+    if !map.is_empty()
+        && map.keys().all(|k| !k.contains('/'))
+        && !map.contains_key("_type")
+        && (map.contains_key("ctx") || has_simplified_leaf_keys(value))
+    {
+        let mut out = BTreeMap::new();
+        flatten_structured(value, "", &mut out);
+        return Some(out);
+    }
+    None
+}
+
+/// FLAT round-trip equivalence: fold the committed side's ctx keys onto the
+/// read-back's RM-path forms (master06), drop ignore-set keys from both
+/// sides, then require every committed entry to appear in the read-back
+/// with an equal value (keys compared in their `:0`-elided canonical form,
+/// master04 §Field Identifiers). Read-back surplus (template-derived
+/// defaults such as `category|*`, terminology qualifiers, server-assigned
+/// ids) is tolerated: the export is the full RM projection of the committed
+/// data (`simplified_formats` master04), so the round-trip guarantee is
+/// that no committed datum is lost or altered. (No openEHR spec defines a
+/// round-trip comparator — our own design over the master04/master06
+/// semantics.)
+fn flat_equivalent(
+    actual: &BTreeMap<String, Value>,
+    committed: &BTreeMap<String, Value>,
+    ignored_paths: &[String],
+) -> bool {
+    let root = actual
+        .keys()
+        .find(|k| !k.starts_with("ctx/"))
+        .and_then(|k| k.split(['/', ':']).next())
+        .unwrap_or_default()
+        .to_owned();
+    let normalized: BTreeMap<String, &Value> = actual.iter().map(|(k, v)| (dezero(k), v)).collect();
+    let folded = fold_flat_ctx(committed, &root);
+    folded
+        .iter()
+        .filter(|(k, _)| !flat_key_ignored(k, ignored_paths))
+        .all(|(k, want)| {
+            normalized
+                .get(&dezero(k))
+                .is_some_and(|got| resultset::cells_equal(got, want))
+        })
+}
+
 /// The `equivalent` comparison: structural equality after stripping the
 /// resolved ignore paths from BOTH sides (numeric leaves by value, via the
-/// result-set cell rule — canonical JSON carries RM numbers).
+/// result-set cell rule — canonical JSON carries RM numbers). FLAT bodies
+/// take the master06-aware round-trip rule ([`flat_equivalent`]).
 #[must_use]
 pub fn equivalent(actual: &Value, expected: &Value, ignored_paths: &[String]) -> bool {
+    if let (Some(a), Some(e)) = (simplified_as_flat(actual), simplified_as_flat(expected)) {
+        return flat_equivalent(&a, &e, ignored_paths);
+    }
     let a = strip_ignored(actual, ignored_paths);
     let b = strip_ignored(expected, ignored_paths);
     resultset::cells_equal(&a, &b)

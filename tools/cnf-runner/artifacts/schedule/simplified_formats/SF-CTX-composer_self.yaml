@@ -21,7 +21,7 @@ spec_refs:
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.vitals]
+  templates: [cnf.opt.minimal_action]
   ehr: { commits: none }                 # mints ${ehr_id}
 data_sets: [cnf.flat.vitals.composer_self]
 flow:

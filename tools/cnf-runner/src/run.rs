@@ -84,10 +84,20 @@ fn fully_unrealized(set: &ArtifactSet, case: &CaseCore) -> Option<String> {
 
 /// Execute every runnable case against the ixit's default topology.
 ///
+/// `statement` (the party ICS), when supplied, drives ISO/IEC 9646-style
+/// test selection: an option-gated case whose `option` tag the ICS does not
+/// declare is recorded not-applicable with citation instead of being driven
+/// against a server that legitimately implements the other register branch.
+/// Without a statement every case runs (the statement-blind sweep).
+///
 /// # Errors
 /// Interpreter defects only; per-case conformance outcomes land in the
 /// report.
-pub fn execute(set: &ArtifactSet, ixit: &Ixit) -> Result<RunReport, String> {
+pub fn execute(
+    set: &ArtifactSet,
+    ixit: &Ixit,
+    statement: Option<&crate::party::Statement>,
+) -> Result<RunReport, String> {
     let mut report = RunReport::default();
     // Exclusive-server cases (global-state grounds like an empty template
     // list) run FIRST: on a freshly reset, exclusively-owned SUT their
@@ -110,6 +120,33 @@ pub fn execute(set: &ArtifactSet, ixit: &Ixit) -> Result<RunReport, String> {
             continue;
         }
         if let Some(citation) = fully_unrealized(set, case) {
+            report.records.push(CaseRecord {
+                case: case.id.clone(),
+                format: None,
+                rows: vec![RowOutcome::NotApplicable {
+                    citation: citation.clone(),
+                }],
+                rows_driven: 0,
+                rows_total: crate::exec::row_count(case),
+            });
+            report
+                .exceptions
+                .push((case.id.clone(), Exception::Unrealized(citation)));
+            continue;
+        }
+        // ICS-driven selection (ISO/IEC 9646): an option branch the party
+        // statement does not declare is not this SUT's behaviour — driving
+        // it records a spurious failure the verdict pipeline would excuse
+        // anyway (`verdict::effective_outcome`); excuse it at drive time
+        // with the same citation.
+        if let Some(stmt) = statement
+            && let Some(tag) = &case.option
+            && !stmt.options.contains(tag)
+        {
+            let citation = format!(
+                "option {tag}: the ICS does not declare this register branch \
+                 (statement.options) — ISO/IEC 9646 test selection"
+            );
             report.records.push(CaseRecord {
                 case: case.id.clone(),
                 format: None,

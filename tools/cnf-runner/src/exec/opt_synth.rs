@@ -17,11 +17,14 @@
 //!
 //! NOTE: no openEHR spec governs the corpus template packaging — our own
 //! corpus-authoring design; the constraint SHAPES are the AOM1.4 ones cited.
-//! NOTE: AM ADL1.4 master05-cadl §Patterns has no slot for milliseconds and no
-//! way to PROHIBIT a timezone in a date/time constraint pattern (only an
-//! optional required-timezone suffix) — so the `millisecond_validity` and
-//! `timezone_validity` columns are inexpressible as an AOM1.4 pattern and are
-//! ignored when building the pattern.
+//! NOTE: the `timezone_validity` columns are emitted as the Archetype.xsd
+//! `<timezone_validity>` element (`VALIDITY_KIND` 1001/1003 — the ITS-XML
+//! 1.0.2 wire serializes exactly this one validity axis); the
+//! `millisecond_validity` columns and the `C_DURATION` seconds-vs-fractional
+//! distinction have NO wire form (no XSD element; the ADL1.4 pattern ends at
+//! the seconds slot) — rows whose expected rejection rests solely on those
+//! axes are gated per-row N/A upstream (AMB-42,
+//! [`crate::exec::content_synth::unrealizable_row`]).
 
 use serde_json::Value;
 
@@ -227,12 +230,39 @@ fn item_c_date(pattern: &str) -> String {
     format!("<item xsi:type=\"C_DATE\"><pattern>{pattern}</pattern></item>")
 }
 
-fn item_c_time(pattern: &str) -> String {
-    format!("<item xsi:type=\"C_TIME\"><pattern>{pattern}</pattern></item>")
+/// `mandatory|optional|prohibited` -> the ITS-XML `VALIDITY_KIND` code
+/// (Archetype.xsd: 1001 mandatory, 1002 optional, 1003 disallowed); `None`
+/// when the column is absent/optional (the XSD element is 0..1 and absence
+/// means optional).
+fn validity_kind_code(token: Option<&str>) -> Option<&'static str> {
+    match token {
+        Some("mandatory") => Some("1001"),
+        Some("prohibited") => Some("1003"),
+        _ => None,
+    }
 }
 
-fn item_c_date_time(pattern: &str) -> String {
-    format!("<item xsi:type=\"C_DATE_TIME\"><pattern>{pattern}</pattern></item>")
+/// `<timezone_validity>` element (the ONE validity the ITS-XML 1.0.2
+/// `Archetype.xsd` serializes on `C_TIME`/`C_DATE_TIME` — see AMB-42 for the
+/// unserializable millisecond axis).
+fn timezone_validity_elem(token: Option<&str>) -> String {
+    validity_kind_code(token)
+        .map(|code| format!("<timezone_validity>{code}</timezone_validity>"))
+        .unwrap_or_default()
+}
+
+fn item_c_time_tz(pattern: &str, tz: Option<&str>) -> String {
+    format!(
+        "<item xsi:type=\"C_TIME\"><pattern>{pattern}</pattern>{}</item>",
+        timezone_validity_elem(tz)
+    )
+}
+
+fn item_c_date_time_tz(pattern: &str, tz: Option<&str>) -> String {
+    format!(
+        "<item xsi:type=\"C_DATE_TIME\"><pattern>{pattern}</pattern>{}</item>",
+        timezone_validity_elem(tz)
+    )
 }
 
 fn item_c_duration(pattern: &str) -> String {
@@ -241,33 +271,53 @@ fn item_c_duration(pattern: &str) -> String {
 
 /// Interval of a temporal/duration literal (string bounds), both included.
 fn literal_interval(lo: &str, hi: &str) -> String {
-    format!(
-        "<lower_included>true</lower_included><upper_included>true</upper_included>\
-         <lower_unbounded>false</lower_unbounded><upper_unbounded>false</upper_unbounded>\
-         <lower>{}</lower><upper>{}</upper>",
-        xesc(lo),
-        xesc(hi)
-    )
+    literal_interval_opt(Some(lo), Some(hi))
 }
 
-fn item_c_date_range(lo: &str, hi: &str) -> String {
+/// Interval of a temporal/duration literal with optionally unbounded sides
+/// (`None` bound => that side unbounded, included flag omitted per the
+/// ITS-XML base-types interval shape).
+fn literal_interval_opt(lo: Option<&str>, hi: Option<&str>) -> String {
+    let mut s = String::new();
+    if lo.is_some() {
+        s.push_str("<lower_included>true</lower_included>");
+    }
+    if hi.is_some() {
+        s.push_str("<upper_included>true</upper_included>");
+    }
+    let _ = write!(
+        s,
+        "<lower_unbounded>{}</lower_unbounded><upper_unbounded>{}</upper_unbounded>",
+        lo.is_none(),
+        hi.is_none()
+    );
+    if let Some(lo) = lo {
+        let _ = write!(s, "<lower>{}</lower>", xesc(lo));
+    }
+    if let Some(hi) = hi {
+        let _ = write!(s, "<upper>{}</upper>", xesc(hi));
+    }
+    s
+}
+
+fn item_c_date_range(lo: Option<&str>, hi: Option<&str>) -> String {
     format!(
         "<item xsi:type=\"C_DATE\"><range>{}</range></item>",
-        literal_interval(lo, hi)
+        literal_interval_opt(lo, hi)
     )
 }
 
-fn item_c_time_range(lo: &str, hi: &str) -> String {
+fn item_c_time_range(lo: Option<&str>, hi: Option<&str>) -> String {
     format!(
         "<item xsi:type=\"C_TIME\"><range>{}</range></item>",
-        literal_interval(lo, hi)
+        literal_interval_opt(lo, hi)
     )
 }
 
-fn item_c_date_time_range(lo: &str, hi: &str) -> String {
+fn item_c_date_time_range(lo: Option<&str>, hi: Option<&str>) -> String {
     format!(
         "<item xsi:type=\"C_DATE_TIME\"><range>{}</range></item>",
-        literal_interval(lo, hi)
+        literal_interval_opt(lo, hi)
     )
 }
 
@@ -327,12 +377,9 @@ fn build_date(row: &Row<'_>) -> String {
     if row.has("range.lower") || row.has("range.upper") {
         let lo = row.text("range.lower");
         let hi = row.text("range.upper");
-        return match (lo, hi) {
-            (Some(lo), Some(hi)) => {
-                dv_leaf("DV_DATE", "value", "DATE", Some(&item_c_date_range(lo, hi)))
-            }
-            _ => dv_leaf("DV_DATE", "value", "DATE", None),
-        };
+        // A half-open range is a real constraint: the absent side is
+        // unbounded, never "no constraint".
+        return dv_leaf("DV_DATE", "value", "DATE", Some(&item_c_date_range(lo, hi)));
     }
     let month = date_component(row.text("month_validity"), "mm");
     let day = date_component(row.text("day_validity"), "dd");
@@ -342,32 +389,34 @@ fn build_date(row: &Row<'_>) -> String {
 
 fn build_time(row: &Row<'_>) -> String {
     if row.has("range.lower") || row.has("range.upper") {
-        return match (row.text("range.lower"), row.text("range.upper")) {
-            (Some(lo), Some(hi)) => {
-                dv_leaf("DV_TIME", "value", "TIME", Some(&item_c_time_range(lo, hi)))
-            }
-            _ => dv_leaf("DV_TIME", "value", "TIME", None),
-        };
+        let lo = row.text("range.lower");
+        let hi = row.text("range.upper");
+        return dv_leaf("DV_TIME", "value", "TIME", Some(&item_c_time_range(lo, hi)));
     }
-    // AOM1.4 pattern base is HH; minute/second from validity. millisecond and
-    // timezone have no pattern slot (see module NOTE) and are ignored.
+    // AOM1.4 pattern base is HH; minute/second from validity. timezone is
+    // the Archetype.xsd `timezone_validity` element; millisecond is
+    // unserializable on this wire (AMB-42) and gated per-row upstream.
     let min = date_component(row.text("minute_validity"), "MM");
     let sec = date_component(row.text("second_validity"), "SS");
     let pattern = format!("HH:{min}:{sec}");
-    dv_leaf("DV_TIME", "value", "TIME", Some(&item_c_time(&pattern)))
+    dv_leaf(
+        "DV_TIME",
+        "value",
+        "TIME",
+        Some(&item_c_time_tz(&pattern, row.text("timezone_validity"))),
+    )
 }
 
 fn build_date_time(row: &Row<'_>) -> String {
     if row.has("range.lower") || row.has("range.upper") {
-        return match (row.text("range.lower"), row.text("range.upper")) {
-            (Some(lo), Some(hi)) => dv_leaf(
-                "DV_DATE_TIME",
-                "value",
-                "DATE_TIME",
-                Some(&item_c_date_time_range(lo, hi)),
-            ),
-            _ => dv_leaf("DV_DATE_TIME", "value", "DATE_TIME", None),
-        };
+        let lo = row.text("range.lower");
+        let hi = row.text("range.upper");
+        return dv_leaf(
+            "DV_DATE_TIME",
+            "value",
+            "DATE_TIME",
+            Some(&item_c_date_time_range(lo, hi)),
+        );
     }
     let month = date_component(row.text("month_validity"), "mm");
     let day = date_component(row.text("day_validity"), "dd");
@@ -379,7 +428,10 @@ fn build_date_time(row: &Row<'_>) -> String {
         "DV_DATE_TIME",
         "value",
         "DATE_TIME",
-        Some(&item_c_date_time(&pattern)),
+        Some(&item_c_date_time_tz(
+            &pattern,
+            row.text("timezone_validity"),
+        )),
     )
 }
 
@@ -658,31 +710,104 @@ fn dv_interval(inner: &str, lower: Option<&str>, upper: Option<&str>) -> String 
 
 /// The `DV_ORDINAL` / `DV_SCALE` list limit object (mirrors Python
 /// `dv_ordinal_list` — a two-item mild/severe list) and its term extras.
-fn ordinal_list_children(inner: &str) -> (String, Vec<(&'static str, &'static str, &'static str)>) {
+/// Parse an ordinal/scale list cell — `"[1|[local::at0005], 2.4|[local::at0006]]"`
+/// — into (value, terminology, code) triples. Falls back to the fixed
+/// mild/severe pair when the cell is absent (the fixed-list corpus shape).
+fn parse_ordinal_list_cell(cell: Option<&str>) -> Vec<(String, String, String)> {
+    let Some(text) = cell else {
+        return vec![
+            ("1".to_owned(), "local".to_owned(), "at0005".to_owned()),
+            ("2".to_owned(), "local".to_owned(), "at0006".to_owned()),
+        ];
+    };
+    let inner = text
+        .trim()
+        .strip_prefix('[')
+        .and_then(|t| t.strip_suffix(']'))
+        .unwrap_or(text);
+    inner
+        .split("], ")
+        .filter_map(|entry| {
+            let (value, rest) = entry.split_once("|[")?;
+            let rest = rest.trim_end_matches(']');
+            let (term, code) = rest.split_once("::")?;
+            Some((
+                value.trim().to_owned(),
+                term.trim().to_owned(),
+                code.trim().to_owned(),
+            ))
+        })
+        .collect()
+}
+
+fn ordinal_list_children(
+    inner: &str,
+    cell: Option<&str>,
+) -> (String, Vec<(String, String, String)>) {
+    let entries = parse_ordinal_list_cell(cell);
     if inner == "DV_SCALE" {
-        // AOM1.4 has no C_DV_SCALE — express as C_COMPLEX_OBJECT over DV_SCALE
-        // with a C_REAL value list (per the Python reference).
-        let item = "<item xsi:type=\"C_REAL\"><list>1.5</list><list>2.0</list></item>";
-        let val = c_single_attr("value", &c_primitive("REAL", item), (1, 1));
-        return (c_complex("DV_SCALE", &val), Vec::new());
+        // AOM1.4 has no C_DV_SCALE constrainer (AM masterAppA domain
+        // extension defines integer-valued C_ORDINAL only) — express the
+        // row's value set generically: a C_REAL list on DV_SCALE.value plus
+        // a C_CODE_PHRASE code_list on symbol.defining_code.
+        let mut item = String::from("<item xsi:type=\"C_REAL\">");
+        for (value, _, _) in &entries {
+            let _ = write!(item, "<list>{}</list>", xesc(value));
+        }
+        item.push_str("</item>");
+        let mut attrs = c_single_attr("value", &c_primitive("REAL", &item), (1, 1));
+        let terminology = entries
+            .first()
+            .map_or("local", |(_, term, _)| term.as_str())
+            .to_owned();
+        let codes: Vec<String> = entries.iter().map(|(_, _, code)| code.clone()).collect();
+        attrs.push_str(&c_single_attr(
+            "symbol",
+            &c_complex(
+                "DV_CODED_TEXT",
+                &c_single_attr(
+                    "defining_code",
+                    &c_code_phrase(&terminology, &codes),
+                    (1, 1),
+                ),
+            ),
+            // DV_SCALE.symbol is 1..1 in the RM — an OPT existence may
+            // narrow but never relax RM existence (VCAEX).
+            (1, 1),
+        ));
+        let terms = entries
+            .iter()
+            .map(|(value, _, code)| {
+                (
+                    code.clone(),
+                    format!("scale {value}"),
+                    format!("scale {value}"),
+                )
+            })
+            .collect();
+        return (c_complex("DV_SCALE", &attrs), terms);
     }
-    let items = [(1, "at0005", "mild"), (2, "at0006", "severe")];
     let mut body = String::new();
-    for (value, code, label) in items {
+    for (value, term, code) in &entries {
         let _ = write!(
             body,
-            "<list xsi:type=\"DV_ORDINAL\"><value>{value}</value><symbol><value>{label}</value>\
-             <defining_code><terminology_id><value>local</value></terminology_id><code_string>{code}</code_string></defining_code></symbol></list>"
+            "<list xsi:type=\"DV_ORDINAL\"><value>{}</value><symbol><value>ord {}</value>\
+             <defining_code><terminology_id><value>{}</value></terminology_id><code_string>{}</code_string></defining_code></symbol></list>",
+            xesc(value),
+            xesc(code),
+            xesc(term),
+            xesc(code)
         );
     }
     let children = format!(
         "<children xsi:type=\"C_DV_ORDINAL\"><rm_type_name>DV_ORDINAL</rm_type_name>{}<node_id />{body}</children>",
         occ(1, Some(1))
     );
-    (
-        children,
-        vec![("at0005", "mild", "mild"), ("at0006", "severe", "severe")],
-    )
+    let terms = entries
+        .iter()
+        .map(|(value, _, code)| (code.clone(), format!("ord {value}"), format!("ord {value}")))
+        .collect();
+    (children, terms)
 }
 
 /// A `DV_PROPORTION` limit with numerator/denominator `C_REAL` ranges (`ratio_range`).
@@ -727,10 +852,7 @@ fn proportion_range_limit(num_range: Option<&str>, den_range: Option<&str>) -> S
 }
 
 #[allow(clippy::too_many_lines)] // one match arm per DV_INTERVAL inner type
-fn build_interval(
-    case_id: &str,
-    row: &Row<'_>,
-) -> (String, Vec<(&'static str, &'static str, &'static str)>) {
+fn build_interval(case_id: &str, row: &Row<'_>) -> (String, Vec<(String, String, String)>) {
     let inner = interval_inner(case_id);
     let mut terms = Vec::new();
     let (lower, upper): (Option<String>, Option<String>) = match inner {
@@ -744,7 +866,7 @@ fn build_interval(
                             "DV_DATE",
                             "value",
                             "DATE",
-                            Some(&item_c_date_range(&lo, &hi)),
+                            Some(&item_c_date_range(Some(&lo), Some(&hi))),
                         )
                     });
                 let u = row
@@ -755,7 +877,7 @@ fn build_interval(
                             "DV_DATE",
                             "value",
                             "DATE",
-                            Some(&item_c_date_range(&lo, &hi)),
+                            Some(&item_c_date_range(Some(&lo), Some(&hi))),
                         )
                     });
                 (l, u)
@@ -775,7 +897,7 @@ fn build_interval(
                             "DV_DATE_TIME",
                             "value",
                             "DATE_TIME",
-                            Some(&item_c_date_time_range(&lo, &hi)),
+                            Some(&item_c_date_time_range(Some(&lo), Some(&hi))),
                         )
                     });
                 let u = row
@@ -786,7 +908,7 @@ fn build_interval(
                             "DV_DATE_TIME",
                             "value",
                             "DATE_TIME",
-                            Some(&item_c_date_time_range(&lo, &hi)),
+                            Some(&item_c_date_time_range(Some(&lo), Some(&hi))),
                         )
                     });
                 (l, u)
@@ -806,7 +928,7 @@ fn build_interval(
                             "DV_TIME",
                             "value",
                             "TIME",
-                            Some(&item_c_time_range(&lo, &hi)),
+                            Some(&item_c_time_range(Some(&lo), Some(&hi))),
                         )
                     });
                 let u = row
@@ -817,7 +939,7 @@ fn build_interval(
                             "DV_TIME",
                             "value",
                             "TIME",
-                            Some(&item_c_time_range(&lo, &hi)),
+                            Some(&item_c_time_range(Some(&lo), Some(&hi))),
                         )
                     });
                 (l, u)
@@ -851,11 +973,23 @@ fn build_interval(
             }
         }
         "DV_ORDINAL" | "DV_SCALE" if row.has("lower_c_dv_ordinal_list") => {
-            let (l, lt) = ordinal_list_children(inner);
-            terms = lt;
-            let has_lower = row.text("lower_c_dv_ordinal_list").is_some();
-            let has_upper = row.text("upper_c_dv_ordinal_list").is_some();
-            (has_lower.then(|| l.clone()), has_upper.then_some(l))
+            // Each bound carries ITS OWN row-cell value set — never a
+            // shared fixed list (the bounds' lists differ per row).
+            let lower_cell = row.text("lower_c_dv_ordinal_list");
+            let upper_cell = row.text("upper_c_dv_ordinal_list");
+            let l = lower_cell.map(|cell| {
+                let (children, lt) = ordinal_list_children(inner, Some(cell));
+                terms.extend(lt);
+                children
+            });
+            let u = upper_cell.map(|cell| {
+                let (children, ut) = ordinal_list_children(inner, Some(cell));
+                terms.extend(ut);
+                children
+            });
+            terms.sort();
+            terms.dedup();
+            (l, u)
         }
         "DV_PROPORTION" if row.has("lower_num_range") => {
             let l =
@@ -901,7 +1035,10 @@ fn date_time_pattern_limit(row: &Row<'_>, suffix: &str) -> Option<String> {
         "DV_DATE_TIME",
         "value",
         "DATE_TIME",
-        Some(&item_c_date_time(&pattern)),
+        Some(&item_c_date_time_tz(
+            &pattern,
+            row.text(&format!("timezone_validity{suffix}")),
+        )),
     ))
 }
 
@@ -915,7 +1052,10 @@ fn time_pattern_limit(row: &Row<'_>, suffix: &str) -> Option<String> {
         "DV_TIME",
         "value",
         "TIME",
-        Some(&item_c_time(&format!("HH:{min}:{sec}"))),
+        Some(&item_c_time_tz(
+            &format!("HH:{min}:{sec}"),
+            row.text(&format!("timezone_validity{suffix}")),
+        )),
     ))
 }
 
@@ -933,7 +1073,7 @@ fn duration_range_limit(row: &Row<'_>, lo_col: &str, hi_col: &str) -> Option<Str
 // The OBSERVATION carrier assembler (mirrors the Python skeleton exactly).
 // ---------------------------------------------------------------------------
 
-fn obs_term_defs(extra: &[(&str, &str, &str)]) -> String {
+fn obs_term_defs(extra: &[(String, String, String)]) -> String {
     let mut base: Vec<(&str, &str, &str)> = vec![
         ("at0000", "Minimal", "unknown"),
         ("at0001", "Event Series", "@ internal @"),
@@ -941,7 +1081,11 @@ fn obs_term_defs(extra: &[(&str, &str, &str)]) -> String {
         ("at0003", "Tree", "@ internal @"),
         ("at0004", "value", "*"),
     ];
-    base.extend_from_slice(extra);
+    base.extend(
+        extra
+            .iter()
+            .map(|(code, text, desc)| (code.as_str(), text.as_str(), desc.as_str())),
+    );
     let mut out = String::new();
     for (code, text, desc) in base {
         let _ = write!(
@@ -954,7 +1098,7 @@ fn obs_term_defs(extra: &[(&str, &str, &str)]) -> String {
     out
 }
 
-fn observation_root(value_children: &str, extra_terms: &[(&str, &str, &str)]) -> String {
+fn observation_root(value_children: &str, extra_terms: &[(String, String, String)]) -> String {
     let value_attr = c_single_attr("value", value_children, (0, 1));
     let element = format!(
         "<children xsi:type=\"C_COMPLEX_OBJECT\"><rm_type_name>ELEMENT</rm_type_name>{}<node_id>at0004</node_id>{value_attr}</children>",
@@ -994,7 +1138,7 @@ fn cardinality_min1() -> String {
 fn value_template(
     template_id: &str,
     value_children: &str,
-    extra_terms: &[(&str, &str, &str)],
+    extra_terms: &[(String, String, String)],
 ) -> String {
     let uid = det_uid(template_id);
     let obs = observation_root(value_children, extra_terms);

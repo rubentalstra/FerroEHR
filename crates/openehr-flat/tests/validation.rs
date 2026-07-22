@@ -130,8 +130,17 @@ fn kinds(msgs: &[ValidationMessage]) -> Vec<ValidationKind> {
 ///   missing the mandatory `type` (`PARTY_REF.type [1]`, RM support) whose `id`
 ///   is a `GENERIC_ID` missing the mandatory `value` (`OBJECT_ID.value [1]`, RM
 ///   support). Strict typed validation surfaces both.
+/// - `all_types_no_multimedia.json` — carries schemeless `DV_URI` values
+///   (`www.iana.org`): rejected under the CNF-mandated absolute-reference
+///   rule (CNF `platform_test_schedule` master17.7 `xyz | rejected | value
+///   doesn't comply with RFC3986`; RM `data_types` `dv_uri` Description
+///   "structurally conforms to ... RFC-3986").
+/// - `minimal_action2_1.json` — carries a `DV_PROPORTION` `{type: 3
+///   (pk_fraction), precision: 1}`: invalid under RM `data_types`
+///   `dv_proportion` `Fraction_validity` ("(type = `pk_fraction` or type =
+///   `pk_integer_fraction`) implies `is_integral`", with `is_integral()` =
+///   "True ... if precision is 0").
 const CLEAN_COMPOSITIONS: &[&str] = &[
-    "all_types_no_multimedia.json",
     "choice_validation_test.json",
     "compo_corona.json",
     "demo_vitals_352.json",
@@ -139,7 +148,6 @@ const CLEAN_COMPOSITIONS: &[&str] = &[
     "ehrb_adbm_op_consult_record.json",
     "interval_partial_date.json",
     "ips_canonical.json",
-    "minimal_action2_1.json",
     "minimal_with_optional_attribute.json",
     "minimal_without_optional_attribute.json",
     "my_spanish_template_v0_COMPOSITION_EXAMPLE.json",

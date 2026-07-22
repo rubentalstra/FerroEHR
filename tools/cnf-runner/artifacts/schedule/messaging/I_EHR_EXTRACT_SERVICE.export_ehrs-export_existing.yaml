@@ -9,7 +9,7 @@ id: I_EHR_EXTRACT_SERVICE.export_ehrs-export_existing
 kind: functional
 component: MESSAGING
 sm_operation: I_EHR_EXTRACT_SERVICE.export_ehrs
-capabilities: [EhrExtract]
+capabilities: [EhrExtract, MessageApi]
 profiles: [OPTIONS]
 test_purpose: "Exporting a whole existing EHR yields its content as a list of EXTRACTs."
 description: "Export a whole existing EHR as EXTRACTs"

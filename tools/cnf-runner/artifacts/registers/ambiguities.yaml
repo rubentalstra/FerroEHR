@@ -497,3 +497,55 @@ AMB-41:
     the certificate, never a silent pass and never a CORE failure the ITS
     cannot avoid.
   disposition: fixed_handling
+AMB-42:
+  ambiguity: >-
+    The AOM 1.4 object model defines millisecond_validity on
+    C_TIME/C_DATE_TIME (AM UML c_time.adoc, c_date_time.adoc) and the
+    separate seconds_allowed / fractional_seconds_allowed booleans on
+    C_DURATION (c_duration.adoc), and the CNF content schedule tests them
+    (master17.4: "mandatory/optional/prohibited flags for each part of the
+    time expression: minute, second, millisecond and timezone") — but the
+    ITS-XML 1.0.2 OPT serialization (Archetype.xsd) carries NO
+    millisecond_validity element (C_TIME/C_DATE_TIME sequence is pattern,
+    timezone_validity, range, assumed_value) and NO per-field duration
+    booleans (C_DURATION is pattern, range, assumed_value), and the ADL 1.4
+    pattern grammar ends at the seconds slot (master05-cadl §Patterns).
+    A constraint the schedule tests is unserializable on the OPT 1.4 wire.
+  source: >-
+    AM docs/UML/classes/org.openehr.am.aom14.c_time.adoc +
+    c_date_time.adoc + c_duration.adoc; AM ADL1.4 master05-cadl.adoc
+    §Patterns (lexer V_ISO8601_TIME_CONSTRAINT_PATTERN ends at seconds) vs
+    ITS-XML 1.0.2 Archetype.xsd (C_TIME/C_DATE_TIME/C_DURATION sequences);
+    CNF platform_test_schedule master17.4 §DV_TIME / §DV_DURATION
+  handling: >-
+    Content rows whose expected rejection rests SOLELY on these
+    unserializable axes (millisecond_validity, or a seconds_allowed /
+    fractional_seconds_allowed split where the other seconds flag is true)
+    are recorded not-applicable WITH CITATION by the per-row realizability
+    gate (the ground OPT cannot exist on this technology profile); rows
+    whose violations include any serializable axis (timezone_validity IS an
+    Archetype.xsd element and stays tested) run normally. The rows activate
+    when an ITS-XML release serializes the AOM fields.
+  disposition: fixed_handling
+AMB-43:
+  ambiguity: >-
+    BASE 1.3.0 Interval<T> declares lower/upper as optional (0..1) and
+    carries exactly four invariants (Lower_included_valid,
+    Upper_included_valid, Limits_consistent, Limits_comparable) — none of
+    which requires a bound VALUE to be present when the corresponding
+    *_unbounded flag is false. An instance {lower_unbounded: false, no
+    lower; upper_unbounded: false, no upper} therefore violates no RM
+    invariant, while the CNF content lineage expects such an interval to be
+    rejected as malformed. (Older openEHR revisions carried such an
+    invariant; the vendored 1.3.0 does not.)
+  source: >-
+    BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc
+    §Attributes (lower/upper 0..1) + §Invariants (the four-invariant set);
+    CNF platform_test_schedule master17.3 (interval open tables)
+  handling: >-
+    The framework adopts the RM-invariant reading: a bounded-flag interval
+    with absent limits is ACCEPTED (no invariant violated; the flags are
+    then vacuous). The affected content rows expect accepted with this
+    citation. The rows flip to rejected if a future BASE release restores
+    the bound-required invariant.
+  disposition: fixed_handling

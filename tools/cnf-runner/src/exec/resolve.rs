@@ -98,7 +98,15 @@ impl<'a> Resolver<'a> {
             .as_ref()
             .is_some_and(|ctx| !ctx.constraint_columns.is_empty())
         {
-            Some(recipes::synth_template_id(&self.case_id, row))
+            Some(recipes::synth_template_id(
+                &self.case_id,
+                row,
+                case.parameters
+                    .as_ref()
+                    .and_then(|p| p.matrix.as_ref())
+                    .and_then(|m| m.rows.get(row))
+                    .map_or(&[][..], |cells| cells.as_slice()),
+            ))
         } else {
             case.requires.templates.first().map(|key| {
                 self.manifest

@@ -29,7 +29,7 @@ server's observed behaviour. The catalogue spans the schedule's chapters:
 | EHR / EHR_STATUS | EHR service and status operations |
 | COMPOSITION / CONTRIBUTION / DIRECTORY | Clinical content, change sets, folder trees |
 | DEFINITION | ADL 1.4 + ADL 2 template and stored-query provisioning |
-| QUERY | AQL 1.1 execution with committed result-set grounds |
+| QUERY | AQL query execution with committed result-set grounds |
 | CONTENT | Reference-Model and archetype-constraint accept/reject tables |
 | DEMOGRAPHIC / ADMIN / MESSAGING | Party, admin, and messaging services |
 | SF / SEC / PERF | Simplified formats, security, performance classes |
@@ -76,14 +76,18 @@ under test, into its own directory:
 - **EHRbase-rs** (the default) — the composed stack built from the current
   sources. This is the project's own gate: a phase can only close on a run
   with zero drift against the committed baseline.
+- **Upstream EHRbase (Java)** — `CONF_SUT=ehrbase-java` composes the
+  official `ehrbase/ehrbase` image (with its companion PostgreSQL) on fresh
+  volumes and runs the same catalogue with upstream's own committed party
+  set. Its measured artifacts live under `docs/conformance/ehrbase-java/`
+  and feed the [comparison page](comparison.md).
 - **Bring your own endpoint** — point the runner at any deployed CDR by URL
   and credentials, with its own party set (an `ixit.json` naming the
-  instances and credential environment variables, and a `statement.json`
-  declaring the capabilities and options the vendor claims). No code or
-  adapter is needed; a target is a configuration entry. (The upstream
-  EHRbase (Java) comparison re-bases on this pipeline — the previous
-  harness's measured artifacts remain frozen under
-  `docs/conformance/ehrbase-java/`.)
+  instances and credential environment variables, and a `statement.json` —
+  the ICS — declaring the capabilities and ambiguity-register options the
+  vendor claims; option branches the ICS does not declare are excused as
+  not-applicable with a citation, ISO/IEC 9646-style test selection). No
+  code or adapter is needed; a target is a configuration entry.
 
 ## Running the suite yourself
 
@@ -95,6 +99,9 @@ available:
 ```bash
 # our server, from the current sources (the default)
 bash scripts/conformance.sh
+
+# upstream EHRbase (Java), from the official images
+CONF_SUT=ehrbase-java bash scripts/conformance.sh
 
 # any deployed CDR, by URL (credentials via the SUT_* variables the
 # ixit references)
@@ -157,24 +164,29 @@ picture.
 
 ### The comparison matrix
 
-`docs/conformance/COMPARISON.md` holds the multi-SUT side-by-side record.
-The current document is the frozen final artifact of the previous harness;
-the comparison re-bases on this pipeline with a fresh measured run against
-upstream EHRbase (tracked on the issue tracker) — measured numbers only, no
-editorial adjustment, both directions always published.
+`docs/conformance/COMPARISON.md` is the fully generated multi-SUT record:
+profile verdicts, the capability-by-capability evidence matrix, and failure
+tables in both directions, derived from the two committed
+results/verdicts sets (ours and upstream EHRbase's) by
+`scripts/render-comparison.sh` — measured numbers only, no editorial
+adjustment, both directions always published. The same content renders as
+the [comparison page](comparison.md).
 
 > [!TIP]
-> The four conformance badges in the project README (overall, Core, Standard,
-> Options) are generated from the same run. A badge can never show PASS unless
-> the machine verdict does — so a green badge is a claim you can immediately
+> The conformance badges in the project README are generated from the same
+> run and carry the measured amounts (per-profile capability counts, the
+> overall passed/driven case count). A badge can never show PASS unless the
+> machine verdict does — so a green badge is a claim you can immediately
 > reproduce with `scripts/conformance.sh`.
 
 ## What conformance does not cover
 
-The catalogue measures the openEHR platform surface. It deliberately does not
-stand in for a performance benchmark (durations are telemetry only) and does
-not cover the Better-style FLAT/STRUCTURED interoperability formats, which
-have their own test suite. Optional capabilities left "not evidenced" in the
-certificate (for example ADL 2 provisioning or the more advanced AQL
-constructs) are exactly that — untested in this configuration — and are
-reported as such rather than claimed.
+The catalogue measures the openEHR platform surface, including the
+simplified (FLAT/STRUCTURED) formats chapter of the ITS-REST specification.
+It deliberately does not stand in for a performance benchmark (durations
+are telemetry only — the [benchmark harness](benchmarks.md) owns that
+claim). A capability whose wire cannot exist on this technology profile
+(for example ADL 1.4 archetype provisioning, which ITS-REST 1.1.0 defines
+no endpoint for) is excused through the schedule's typed ambiguity register
+and reported as an explicit scope exclusion on the certificate — never a
+silent pass and never an unavoidable failure.

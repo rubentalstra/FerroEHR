@@ -175,10 +175,31 @@
     }
   },
   {
+    "case": "I_DEFINITION_ADL14.get_opt-retrieve_latest_version",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
+    "case": "I_DEFINITION_ADL14.get_opt-retrieve_specific_version",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
+    }
+  },
+  {
     "case": "I_DEFINITION_ADL14.list_archetypes-unrealized",
     "exception": {
       "kind": "unrealized",
       "detail": "I_DEFINITION_ADL14.list_archetypes: AMB-41"
+    }
+  },
+  {
+    "case": "I_DEFINITION_ADL14.upload_opt-valid_opt_twice_no_conflict",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   },
   {
@@ -438,6 +459,13 @@
     "exception": {
       "kind": "unrealized",
       "detail": "I_TDD_SERVICE.import_tdds: AMB-34"
+    }
+  },
+  {
+    "case": "SF-DEPRECATED-media_supported",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     }
   }
 ]

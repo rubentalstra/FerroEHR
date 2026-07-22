@@ -4,7 +4,7 @@
 //! cnf-runner emit-schemas --out DIR     write the published JSON-Schema set
 //! cnf-runner validate --root DIR [--specs DIR]
 //! cnf-runner compare-ecc --root DIR --ecc-catalog TSV --map YAML --out REPORT.md
-//! cnf-runner run --root DIR --ixit FILE --out DIR [--sut-name N] [--sut-version V]
+//! cnf-runner run --root DIR --ixit FILE --out DIR [--sut-name N] [--sut-version V] [--statement F]
 //!                                       validate an artifact tree (all gates);
 //!                                       --specs enables the SM/spec-ref
 //!                                       resolution checks against the vendored
@@ -87,6 +87,11 @@ enum Command {
         /// Only run cases whose id contains this substring.
         #[arg(long)]
         filter: Option<String>,
+        /// The party statement (ICS) — when supplied, option-gated cases
+        /// whose option the ICS does not declare are recorded N/A at drive
+        /// time (ISO/IEC 9646 test selection) instead of driven.
+        #[arg(long)]
+        statement: Option<PathBuf>,
     },
     /// Validate one artifact tree through every machine gate.
     Validate {
@@ -157,6 +162,7 @@ fn main() -> ExitCode {
             sut_name,
             sut_version,
             filter,
+            statement,
         } => run_command(
             &root,
             &ixit,
@@ -164,6 +170,7 @@ fn main() -> ExitCode {
             &sut_name,
             &sut_version,
             filter.as_deref(),
+            statement.as_deref(),
         ),
         Command::Validate { root, specs } => validate_command(&root, specs.as_deref()),
         Command::Verdicts {
@@ -382,6 +389,7 @@ fn run_command(
     sut_name: &str,
     sut_version: &str,
     filter: Option<&str>,
+    statement_path: Option<&std::path::Path>,
 ) -> ExitCode {
     let loaded = match load_root(root) {
         Ok(loaded) => loaded,
@@ -414,7 +422,20 @@ fn run_command(
     if let Some(needle) = filter {
         set.cases.retain(|(_, c)| c.id.as_str().contains(needle));
     }
-    let report = match cnf_runner::run::execute(&set, &ixit) {
+    let statement: Option<cnf_runner::party::Statement> = match statement_path {
+        None => None,
+        Some(path) => match std::fs::read_to_string(path)
+            .map_err(|e| format!("cannot read {}: {e}", path.display()))
+            .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("statement: {e}")))
+        {
+            Ok(statement) => Some(statement),
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        },
+    };
+    let report = match cnf_runner::run::execute(&set, &ixit, statement.as_ref()) {
         Ok(report) => report,
         Err(e) => {
             eprintln!("execution defect: {e}");

@@ -28,12 +28,12 @@ spec_refs:
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.vitals]            # provisioned as precondition (idempotent; 409 tolerated)
+  templates: [cnf.opt.minimal_action]    # provisioned as precondition (idempotent; 409 tolerated)
 flow:
   - step: 1
     call: get_opt
     format: wt                            # Accept application/openehr.wt+json (Web Template document)
-    with: { template_id: "minimal_action.en.v1" }   # the template_id of cnf.opt.vitals
+    with: { template_id: "minimal_action.en.v1" }   # the template_id of cnf.opt.minimal_action
     expect: ok
     assert:
       - { assert: field, path: "templateId", exists: true }
