@@ -1187,6 +1187,16 @@ fn perf_command(
                 }
             };
         results.measurements.retain(|m| m.case != measurement.case);
+        // A measurement whose case is no longer in the catalogue (a
+        // renamed/retired case) is an orphan the verdict review would
+        // flag — prune it here, visibly.
+        results.measurements.retain(|m| {
+            let known = loaded.set.performance.iter().any(|(_, c)| c.id == m.case);
+            if !known {
+                println!("  pruned orphaned measurement for retired case {}", m.case);
+            }
+            known
+        });
         results.measurements.push(measurement);
         results
             .measurements

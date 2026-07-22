@@ -3,7 +3,7 @@
 //! measurement record. Shared by the class runs (conformance) and the
 //! stress ladder (exploration).
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, mpsc};
 use std::time::Instant;
 
@@ -23,6 +23,11 @@ use crate::perf_run::schedule::{JourneyWorkload, build_schedule};
 /// significant figures — far past the client timeout, so a timeout can
 /// never saturate the range.
 const HDR_MAX_US: u64 = 600_000_000;
+
+/// How many failed arrivals report their observed wire status / reason
+/// through the progress channel — the triage evidence a bare error count
+/// cannot carry.
+const FAILURE_SAMPLES: u32 = 16;
 
 /// The per-operation aggregation a run collects.
 struct OpRecorder {
@@ -118,6 +123,8 @@ pub fn run_window(
 
     let start = Instant::now();
     let dispatched_measured = Arc::new(AtomicU64::new(0));
+    // Failure sampling (the first FAILURE_SAMPLES failed arrivals).
+    let failure_samples = Arc::new(AtomicU32::new(0));
     progress(format!(
         "open-loop schedule: {total} arrivals ({} measured) at {rate}/s aggregate \
          ({warmup_s}s warmup + {duration_s}s measured, {} journeys interleaved)",
@@ -145,7 +152,9 @@ pub fn run_window(
             let client = client.clone();
             let captures = &captures;
             let arrival_index = u64::try_from(i).unwrap_or(u64::MAX);
+            let failure_samples = Arc::clone(&failure_samples);
             scope.spawn(move || {
+                let mut observed: Option<u16> = None;
                 let outcome = perform(
                     &client,
                     arrival_index,
@@ -153,13 +162,30 @@ pub fn run_window(
                     corpus,
                     workload.pack,
                     captures,
+                    &mut observed,
                 );
                 let latency = planned.elapsed();
                 let latency_us = u64::try_from(latency.as_micros().min(u128::from(HDR_MAX_US)))
                     .unwrap_or(HDR_MAX_US);
                 // An unresolvable prerequisite (the SUT has not landed the
                 // earlier stage) is an honest error observation.
-                let ok = outcome.unwrap_or(false);
+                let ok = match &outcome {
+                    Ok(ok) => *ok,
+                    Err(_) => false,
+                };
+                if !ok && failure_samples.fetch_add(1, Ordering::Relaxed) < FAILURE_SAMPLES {
+                    let detail = match (&outcome, observed) {
+                        (Err(reason), _) => reason.clone(),
+                        (Ok(_), Some(status)) => format!("unexpected wire status {status}"),
+                        (Ok(_), None) => "no wire observation".to_owned(),
+                    };
+                    progress(format!(
+                        "arrival failure sample: {} journey {} at {:?}: {detail}",
+                        planned_arrival.op.as_str(),
+                        planned_arrival.journey,
+                        planned_arrival.at,
+                    ));
+                }
                 let _closed = tx.send(Completion {
                     op: planned_arrival.op,
                     latency_us,
