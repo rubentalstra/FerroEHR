@@ -193,6 +193,14 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub numeric_lists: Vec<(String, Vec<f64>)>,
 
+    /// `C_INTEGER.range`/`C_REAL.range` constraints on a leaf's numeric datum
+    /// the `inputs` builders do not otherwise carry (e.g. `DV_MULTIMEDIA.size` —
+    /// RM `data_types` §`DV_MULTIMEDIA`, `size: Integer`; AOM 1.4
+    /// `master04-constraint_model_package.adoc` §`C_INTEGER`), keyed by RM
+    /// attribute name. Validation-only; `#[serde(skip)]`.
+    #[serde(skip)]
+    pub numeric_ranges: Vec<(String, WebTemplateRange)>,
+
     /// `C_DURATION.range` (ISO-8601 duration bounds) on a `DV_DURATION` leaf's
     /// `value` — the `inputs` document encodes only the allowed-field split into
     /// per-field inputs, so the range is validation-only.
@@ -322,6 +330,7 @@ impl WebTemplateNode {
             card_all: Vec::new(),
             slots: Vec::new(),
             numeric_lists: Vec::new(),
+            numeric_ranges: Vec::new(),
             duration_range: None,
             tz_validity: None,
             quantity_property: None,

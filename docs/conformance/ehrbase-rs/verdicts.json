@@ -47,7 +47,7 @@
     ],
     [
       "ArchetypeValidation",
-      "failed"
+      "passed"
     ],
     [
       "PartyOperations",
@@ -115,7 +115,7 @@
     ],
     [
       "DemographicApi",
-      "no_cases"
+      "passed"
     ],
     [
       "QueryApi",
@@ -123,11 +123,11 @@
     ],
     [
       "AdminApi",
-      "no_cases"
+      "passed"
     ],
     [
       "MessageApi",
-      "no_cases"
+      "unrealized"
     ],
     [
       "Signing",
@@ -135,7 +135,7 @@
     ],
     [
       "SimplifiedFormats",
-      "failed"
+      "passed"
     ],
     [
       "EhrDemographicSeparation",
@@ -161,11 +161,11 @@
   "profiles": [
     [
       "CORE",
-      "fail"
+      "pass"
     ],
     [
       "STANDARD",
-      "fail"
+      "pass"
     ],
     [
       "OPTIONS",

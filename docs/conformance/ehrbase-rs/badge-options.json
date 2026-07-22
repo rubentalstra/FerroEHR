@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR CNF OPTIONS",
-  "message": "PASS (CNF 2.0)",
-  "color": "lightgrey"
+  "message": "PASS 17/19 capabilities",
+  "color": "brightgreen"
 }

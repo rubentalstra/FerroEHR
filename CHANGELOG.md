@@ -36,8 +36,54 @@ workflow refuses a tag that has no matching section here.
   API-presence capabilities (EHR/DEFINITION/QUERY API) are evidenced by
   chapter exemplar cases.
 
+### Added
+
+- The conformance pipeline assesses **upstream EHRbase (Java)** as a second
+  system under test: `CONF_SUT=ehrbase-java scripts/conformance.sh` composes
+  the official `ehrbase/ehrbase:2.34.0` + `ehrbase-v2-postgres` images on
+  fresh volumes (`docker/sut-ehrbase-java.yml`, readiness probed externally
+  — the official image carries no in-container health tooling) and runs the
+  same committed catalogue with upstream's own committed party set
+  (`tools/cnf-runner/party/ehrbase-java/`). The public comparison
+  (`docs/conformance/COMPARISON.md` + the website comparison page) is fully
+  generated from the two committed results/verdicts sets — profile verdicts,
+  the 39-capability evidence matrix, and failure tables in both directions.
+- The conformance runner performs ISO/IEC 9646-style ICS-driven test
+  selection: `cnf-runner run --statement` excuses option-gated cases whose
+  register branch the party statement does not declare as N/A with citation
+  (previously they ran and recorded spurious failures the verdict pipeline
+  then excused).
+- Conformance badges carry measured amounts: per-tier badges read e.g.
+  `PASS 10/10 capabilities`, the overall badge `CORE+STANDARD PASS ·
+  323/323 cases` — derived from `verdicts.json` + the capability matrix,
+  never hand-typed.
+
 ### Fixed
 
+- Composition validation closes eight archetype-constraint enforcement gaps
+  the CNF content chapter exposed: `C_STRING` list/pattern constraints on
+  `DV_IDENTIFIER.issuer`/`assigner`/`type` (only `id` was checked);
+  `DV_MULTIMEDIA.size` against `C_INTEGER` list and range constraints
+  (previously unvalidated); `C_ATTRIBUTE` existence `1..1` on
+  `OBSERVATION.state`/`protocol`, `HISTORY.summary`, and `EVENT.state` now
+  rejects the absent attribute; `DV_SCALE` value/symbol value-set
+  constraints (generic `C_REAL` list + `C_CODE_PHRASE` code list — AOM 1.4
+  has no `C_DV_SCALE`) are enforced, including on `DV_INTERVAL` bounds;
+  `timezone_validity` on `C_TIME`/`C_DATE_TIME` (mandatory and prohibited)
+  is honoured; half-open (one-side-unbounded) temporal range constraints
+  reject out-of-range values; a `DV_PROPORTION` of kind fraction or
+  integer-fraction with a non-zero `precision` is rejected
+  (`Fraction_validity`); and a partial `DV_TIME` such as `10` is no longer
+  over-rejected against `HH:??:??`/`HH:XX:XX` patterns (optional and
+  not-allowed fields both admit an absent field).
+- A `DV_TIME`/`DV_DATE_TIME` literal carrying a fraction on the hours or
+  minutes component (e.g. `10.5`, `10:05.5`) is now rejected: openEHR
+  supports fractional seconds only (BASE time types §ISO 8601 semantics not
+  included).
+- A `DV_URI` whose value has no URI scheme (e.g. `xyz`, `www.example.org`)
+  is now rejected on commit per the CNF content schedule's RFC-3986 rule;
+  plain-text URI content after the scheme remains accepted per the RM's
+  plain-text allowance.
 - A COMPOSITION create (`201`) or update (`200`) whose response is negotiated
   as a Simplified Format (`Accept: application/openehr.wt.flat+json` or
   `…wt.structured+json`) now returns the `ETag` and `Location` headers, matching

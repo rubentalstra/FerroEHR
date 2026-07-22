@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR CNF SEC-BASIC",
-  "message": "PASS (CNF 2.0)",
-  "color": "lightgrey"
+  "message": "PASS 5/5 capabilities",
+  "color": "brightgreen"
 }

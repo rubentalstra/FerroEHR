@@ -130,11 +130,18 @@ pub fn deterministic_ehr_id(case: &str, row_index: usize) -> String {
 /// declares `constraint_context.constraint_columns` (issue #228): the runner
 /// synthesizes one OPT per decision-table row and uploads it under this id, and
 /// the row's committed carrier stamps the same id into
-/// `archetype_details.template_id`. Pure function of (case id, row) — two
-/// runners mint identical ids. (No openEHR spec governs the corpus template
-/// packaging — our own corpus-authoring design.)
+/// `archetype_details.template_id`. Pure function of (case id, row, row
+/// cells) — two runners mint identical ids, and a re-adjudicated row (or a
+/// synthesis change) mints a NEW id, so a 409-tolerant re-upload against a
+/// dirty server can never silently reuse a stale OPT with different
+/// constraints. (No openEHR spec governs the corpus template packaging —
+/// our own corpus-authoring design.)
 #[must_use]
-pub fn synth_template_id(case_id: &str, row: usize) -> String {
+pub fn synth_template_id(case_id: &str, row: usize, cells: &[MatrixCell]) -> String {
+    const NS: uuid::Uuid = uuid::Uuid::from_bytes([
+        0x6f, 0x96, 0x19, 0xff, 0x8b, 0x86, 0xd0, 0x11, 0xb4, 0x2d, 0x00, 0xcf, 0x4f, 0xc9, 0x64,
+        0xfe,
+    ]);
     let slug: String = case_id
         .chars()
         .map(|c| {
@@ -145,7 +152,23 @@ pub fn synth_template_id(case_id: &str, row: usize) -> String {
             }
         })
         .collect();
-    format!("cnf.tpl.{slug}.r{row}")
+    // Content digest of the row cells: UUIDv5 (deterministic) over the
+    // encoded cells, truncated for readability.
+    let encoded = cells
+        .iter()
+        .map(|cell| match cell {
+            MatrixCell::Absent => "\u{1}absent".to_owned(),
+            MatrixCell::Provided => "\u{1}provided".to_owned(),
+            MatrixCell::Null => "\u{1}null".to_owned(),
+            MatrixCell::Literal(v) => v.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join("\u{2}");
+    let digest = uuid::Uuid::new_v5(&NS, encoded.as_bytes())
+        .simple()
+        .to_string();
+    let short = digest.get(..8).unwrap_or("00000000");
+    format!("cnf.tpl.{slug}.r{row}.{short}")
 }
 
 /// `bp_series` — the generated blood-pressure corpus (contract:

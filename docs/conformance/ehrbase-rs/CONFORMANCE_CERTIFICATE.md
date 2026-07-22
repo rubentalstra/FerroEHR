@@ -34,7 +34,7 @@ Result column: ITS its-rest (canonical-json)
 | Platform | DirectoryOps | Y | pass |
 | Platform | ChangeSets | Y | pass |
 | Platform | Versioning | Y | pass |
-| Platform | ArchetypeValidation | Y | FAIL |
+| Platform | ArchetypeValidation | Y | pass |
 | Platform | PartyOperations | OPT | pass |
 | Platform | PartyRelationshipOperations | OPT | excused (unrealized on this technology profile) |
 | Platform | DemographicArchetypeValidation | OPT | no cases |
@@ -51,12 +51,12 @@ Result column: ITS its-rest (canonical-json)
 | Platform | Tds | OPT | excused (unrealized on this technology profile) |
 | Platform | DefinitionApi | Y | pass |
 | Platform | EhrApi | Y | pass |
-| Platform | DemographicApi | OPT | no cases |
+| Platform | DemographicApi | OPT | pass |
 | Platform | QueryApi | Y | pass |
-| Platform | AdminApi | OPT | no cases |
-| Platform | MessageApi | OPT | no cases |
+| Platform | AdminApi | OPT | pass |
+| Platform | MessageApi | OPT | excused (unrealized on this technology profile) |
 | Platform | Signing | OPT | pass |
-| Platform | SimplifiedFormats | OPT | FAIL |
+| Platform | SimplifiedFormats | OPT | pass |
 | Security | EhrDemographicSeparation | Y | pass |
 | Security | AuthenticatedAccess | Y | pass |
 | Security | AuthorizationSeparation | Y | pass |

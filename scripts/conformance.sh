@@ -20,9 +20,13 @@
 # FILTER (optional) is passed to the runner's --filter (an id substring).
 #
 # Env:
-#   CONF_SUT        ehrbase-rs (default) | byo.
+#   CONF_SUT        ehrbase-rs (default) | ehrbase-java | byo.
 #                   ehrbase-rs: builds + composes the root stack (the current
 #                     sources — the phase-gate zero-drift run).
+#                   ehrbase-java: composes upstream EHRbase (Java) from
+#                     docker/sut-ehrbase-java.yml (official images, fresh
+#                     volumes, host port 8091) — the #232 comparison target
+#                     with its committed party set.
 #                   byo: no compose management — point CONF_BASE_URL at any
 #                     deployed CDR and supply CONF_IXIT/CONF_STATEMENT.
 #   CONF_BASE_URL   SUT base URL for byo (rewrites the ixit instances).
@@ -77,22 +81,55 @@ PY
   IXIT="$TMP_IXIT"
 fi
 
-SUT_VERSION="$(grep -m1 '^version' "$REPO_ROOT/Cargo.toml" | sed 's/.*"\(.*\)"/\1/')"
+if [ "$SUT" = "ehrbase-java" ]; then
+  # The upstream image tag is the SUT version (default pinned in the compose).
+  JAVA_IMAGE="${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}"
+  SUT_VERSION="${JAVA_IMAGE#*:}"
+else
+  SUT_VERSION="$(grep -m1 '^version' "$REPO_ROOT/Cargo.toml" | sed 's/.*"\(.*\)"/\1/')"
+fi
+
+# ehrbase-java composes as its own project so it can coexist with (and never
+# tear down) the ehrbase-rs stack.
+JAVA_COMPOSE=(docker compose -p cnf-ehrbase-java -f "$REPO_ROOT/docker/sut-ehrbase-java.yml")
 
 compose_down() {
-  (cd "$REPO_ROOT" && docker compose down -v) || true
+  if [ "$SUT" = "ehrbase-java" ]; then
+    "${JAVA_COMPOSE[@]}" down -v || true
+  else
+    (cd "$REPO_ROOT" && docker compose down -v) || true
+  fi
 }
 
 if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
   trap compose_down EXIT
   echo "==> Composing $SUT on fresh volumes (the exclusive-server ground)"
-  (cd "$REPO_ROOT" && docker compose down -v) || true
-  if [ -n "${SKIP_BUILD:-}" ]; then
-    (cd "$REPO_ROOT" && docker compose up -d --wait ehrbase)
+  if [ "$SUT" = "ehrbase-java" ]; then
+    "${JAVA_COMPOSE[@]}" down -v || true
+    "${JAVA_COMPOSE[@]}" up -d
+    # The official EHRbase image has no in-container health tooling (no
+    # wget/curl), so poll the status endpoint EXTERNALLY: any HTTP answer
+    # (200 with credentials, 401 without) means the server is serving.
+    echo "==> Waiting for upstream EHRbase on :${EHRBASE_JAVA_PORT:-8091}"
+    ready=""
+    for _ in $(seq 1 60); do
+      code=$(curl -s -o /dev/null -w '%{http_code}' \
+        "http://localhost:${EHRBASE_JAVA_PORT:-8091}/ehrbase/rest/status" || true)
+      case "$code" in
+        200|401|403) ready=1; break ;;
+      esac
+      sleep 5
+    done
+    [ -n "$ready" ] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
   else
-    # A conformance verdict on OUR server is only meaningful against the
-    # CURRENT sources — build the image unless explicitly skipped.
-    (cd "$REPO_ROOT" && docker compose up -d --build --wait ehrbase)
+    (cd "$REPO_ROOT" && docker compose down -v) || true
+    if [ -n "${SKIP_BUILD:-}" ]; then
+      (cd "$REPO_ROOT" && docker compose up -d --wait ehrbase)
+    else
+      # A conformance verdict on OUR server is only meaningful against the
+      # CURRENT sources — build the image unless explicitly skipped.
+      (cd "$REPO_ROOT" && docker compose up -d --build --wait ehrbase)
+    fi
   fi
 fi
 
@@ -103,7 +140,8 @@ mkdir -p "$OUT"
 
 echo "==> Executing the catalogue (sut=$SUT_NAME filter='${FILTER}')"
 run_args=(run --root "$ROOT" --ixit "$IXIT" --out "$OUT"
-          --sut-name "$SUT_NAME" --sut-version "$SUT_VERSION")
+          --sut-name "$SUT_NAME" --sut-version "$SUT_VERSION"
+          --statement "$STATEMENT")
 [ -n "$FILTER" ] && run_args+=(--filter "$FILTER")
 # Exit 1 = failing cases (data for the verdict pipeline, not a pipeline
 # abort); only 2 (runner defect) stops the run.
@@ -125,34 +163,74 @@ if [ "$verdict_rc" -ge 2 ]; then
 fi
 
 echo "==> Deriving the badges from verdicts.json"
-python3 - "$OUT" <<'PY'
+python3 - "$OUT" "$ROOT/vocab/capability_matrix.yaml" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
 out = pathlib.Path(sys.argv[1])
 verdicts = json.load(open(out / "verdicts.json"))
+results = json.load(open(out / "results.json"))
+
+# Tier membership from the capability matrix (Name: { tier: X, family: Y }).
+tier_caps: dict[str, list[str]] = {}
+family: dict[str, str] = {}
+for line in open(sys.argv[2]):
+    m = re.match(r"^(\w+):\s*\{(.*)\}", line)
+    if not m:
+        continue
+    name, body = m.group(1), m.group(2)
+    tier = re.search(r"tier:\s*([A-Z-]+)", body)
+    fam = re.search(r"family:\s*(\w+)", body)
+    if tier:
+        tier_caps.setdefault(tier.group(1), []).append(name)
+    if fam:
+        family[name] = fam.group(1)
+
+evidence = {name: ev for name, ev in verdicts["capabilities"]}
 tiers = {tier: verdict for tier, verdict in verdicts["profiles"]}
 security = verdicts.get("security")
 if security is not None:
     tiers["SEC-BASIC"] = security if isinstance(security, str) else security.get("verdict", "")
-colors = {"Pass": "brightgreen", "Fail": "red", "NotClaimed": "lightgrey"}
+
+def satisfied(names):
+    ok = sum(1 for n in names if evidence.get(n) in ("passed", "unrealized"))
+    return ok, len(names)
+
+counts = {}
+for tier, names in tier_caps.items():
+    counts[tier] = satisfied(names)
+counts["SEC-BASIC"] = satisfied([n for n, f in family.items() if f == "Security"])
+
+colors = {"pass": "brightgreen", "fail": "red", "not_claimed": "lightgrey"}
 slug = {"CORE": "core", "STANDARD": "standard", "OPTIONS": "options", "SEC-BASIC": "sec-basic"}
 for tier, verdict in tiers.items():
     token = verdict if isinstance(verdict, str) else str(verdict)
+    ok_n, total_n = counts.get(tier, (0, 0))
+    amount = f" {ok_n}/{total_n}" if total_n else ""
     badge = {
         "schemaVersion": 1,
         "label": f"openEHR CNF {tier}",
-        "message": f"{token.upper()} (CNF 2.0)",
+        "message": f"{token.upper().replace('_', ' ')}{amount} capabilities" if total_n else f"{token.upper().replace('_', ' ')}",
         "color": colors.get(token, "lightgrey"),
     }
     path = out / f"badge-{slug.get(tier, tier.lower())}.json"
     path.write_text(json.dumps(badge, indent=2) + "\n")
-ok = tiers.get("CORE") == "Pass" and tiers.get("STANDARD") == "Pass"
+
+by_status = {}
+for o in results.get("outcomes", []):
+    by_status[o["status"]] = by_status.get(o["status"], 0) + 1
+driven = by_status.get("passed", 0) + by_status.get("failed", 0) + by_status.get("errored", 0)
+ok = tiers.get("CORE") == "pass" and tiers.get("STANDARD") == "pass"
 (out / "badge.json").write_text(json.dumps({
     "schemaVersion": 1,
     "label": "openEHR conformance",
-    "message": "CORE+STANDARD PASS (CNF 2.0)" if ok else "NOT PASSING (CNF 2.0)",
+    "message": (
+        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
+        if ok
+        else f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
+    ),
     "color": "brightgreen" if ok else "red",
 }, indent=2) + "\n")
 print("badges written")

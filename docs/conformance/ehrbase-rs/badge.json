@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR conformance",
-  "message": "NOT PASSING (CNF 2.0)",
-  "color": "red"
+  "message": "CORE+STANDARD PASS \u00b7 323/323 cases",
+  "color": "brightgreen"
 }

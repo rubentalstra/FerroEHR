@@ -31,14 +31,12 @@ Capabilities claimed:
 - ArchetypeValidation
 - PartyOperations
 - PartyRelationshipOperations
-- DemographicArchetypeValidation
 - AqlBasic
 - AqlAdvanced
 - AqlTerminology
 - ActivityReport
 - PhysicalDeletion
 - EhrDumpLoad
-- BulkEhrLoad
 - EhrArchive
 - DemographicArchive
 - EhrExtract
@@ -63,8 +61,8 @@ Options declared: adl14-duplicate-conflict, directory-empty-error, sf-deprecated
 
 | Profile | Verdict |
 | --- | --- |
-| CORE | FAIL |
-| STANDARD | FAIL |
+| CORE | PASS |
+| STANDARD | PASS |
 | OPTIONS | PASS |
 | SEC-BASIC | PASS |
 

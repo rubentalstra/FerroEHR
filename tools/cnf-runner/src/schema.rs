@@ -719,9 +719,22 @@ pub fn results_schema() -> Value {
                         "status": { "enum": tokens(OutcomeStatus::ALL) },
                         "rows_driven": { "type": "integer", "minimum": 0 },
                         "rows_total": { "type": "integer", "minimum": 0 },
-                        "failing_step": { "type": "integer", "minimum": 1 },
+                        "failing_step": { "type": "integer", "minimum": 0 },
                         "reason": { "type": "string" },
-                        "citation": { "type": "string" }
+                        "citation": { "type": "string" },
+                        "failed_rows": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["row", "step", "reason"],
+                                "properties": {
+                                    "row": { "type": "integer", "minimum": 0 },
+                                    "step": { "type": "integer", "minimum": 0 },
+                                    "reason": { "type": "string", "minLength": 1 }
+                                }
+                            }
+                        }
                     },
                     "allOf": [
                         { "if": { "properties": { "status": { "enum": ["skipped", "not_applicable"] } },

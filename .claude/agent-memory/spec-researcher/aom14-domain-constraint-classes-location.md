@@ -44,6 +44,40 @@ are SPEC-SILENT in the vendored AOM1.4. `AM/docs/ADL1.4/master09-customising_adl
 (§Introduction L5-77 C_QTY/property; L79-131 C_CODE_PHRASE) describes intent
 only, no validity rules.
 
+## ADL1.4 constraint SYNTAX for these types (prose + grammar)
+- Coded terms: `master05-cadl.adoc` §Custom Syntax L79-131 — standard-ADL
+  CODE_PHRASE alternatives (L83-95) vs the C_CODE_PHRASE dADL form (L105-118)
+  vs the compact custom syntax `[local:: at0039, at0040]` (L122-131). Grammar
+  lexer `V_TERM_CODE_CONSTRAINT` L1373-1392: `[terminology::code, code]` with an
+  OPTIONAL assumed-value via `;`-terminated last code (`[term::code, code; code]`).
+  NO `...`/list-open continuation form for coded terms; C_CODED_TEXT class has
+  NO list_open attr (only terminology/code_list/reference).
+- C_QUANTITY dADL form: `master09-customising_adl.adoc` §Introduction L50-67
+  (`C_QTY < property=<..> list=< ["1"]=<units=<..> magnitude=<|..|>> > >`);
+  standard-ADL multi-alternative equivalent L24-38.
+- C_STRING open list: class `c_string.adoc` has `list_open` (1..1 Boolean,
+  "True if the list is being used to specify the constraint but is not
+  considered exhaustive"), `pattern`, `list`, `assumed_value`. Syntax = trailing
+  `...` (`SYM_LIST_CONTINUE`): grammar `c_string_spec: string_list_value ','
+  SYM_LIST_CONTINUE` (`master05-cadl.adoc` L1247, token L1323). String-list prose
+  §Constraints on String L668-683; regex §L685-741.
+
+## ELEMENT.value DV_TEXT|DV_CODED_TEXT choice = the "free-text alternative"
+- The canonical open-coded mechanism is an ATTRIBUTE-level alternative, not a
+  list-open flag: `master05-cadl.adoc` §Single-valued Attributes L212-237 — two+
+  object blocks under a non-container attribute are ALTERNATIVE constraints
+  ("only one of which needs to be matched"). So `value matches { DV_CODED_TEXT
+  matches {...} DV_TEXT matches {...} }`.
+- RM basis: `RM/docs/UML/classes/org.openehr.rm.data_structures.element.adoc`
+  L23-24 `value: DATA_VALUE` ("any concrete subtype of DATA_VALUE can be used").
+- RM rule: `RM/docs/data_types/master05-text_package.adoc` L102 — "`DV_TEXT`
+  should be used wherever a coded or non-coded text item is allowed, while
+  `DV_CODED_TEXT`…wherever a text item must be coded"; allergies:NONE choice
+  example L198-201 ("either a `DV_CODED_TEXT` or a `DV_TEXT`"). AOM1.4 defines NO
+  dedicated "open coded value set" construct — openness = this ELEMENT.value
+  choice (or an `[ac]` external value-set query, `master05-cadl.adoc`
+  §Placeholder Constraints L603-616).
+
 ## CONSTRAINT_REF resolution + the unbound-ac-code silence
 - Prose: `AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
   Objects (C_REFERENCE_OBJECT) L83-91 ("proxy for a set of constraints…

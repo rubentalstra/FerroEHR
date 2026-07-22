@@ -48,6 +48,90 @@ impl Cells<'_> {
     }
 }
 
+/// AMB-42 realizability gate: a rejected-expected row whose EVERY violated
+/// constraint axis is unserializable on the OPT 1.4 wire (ITS-XML 1.0.2
+/// `Archetype.xsd`: `C_TIME`/`C_DATE_TIME` carry no `millisecond_validity`
+/// element; `C_DURATION` carries only pattern+range, so the AOM-1.4
+/// `seconds_allowed` vs `fractional_seconds_allowed` distinction collapses
+/// into the single pattern `S` slot) cannot be driven — its ground OPT
+/// cannot exist. Returns the excusing citation, or `None` when the row is
+/// realizable. (AOM-1.4 UML defines the fields — `c_time.adoc`,
+/// `c_duration.adoc` — and CNF master17.4 tests them; the serialization gap
+/// is the register entry's subject.)
+#[must_use]
+pub fn unrealizable_row(
+    rm_class: &str,
+    columns: &[String],
+    cells: &[MatrixCell],
+) -> Option<String> {
+    if !matches!(
+        rm_class,
+        "DV_TIME" | "DV_DATE_TIME" | "DV_DURATION" | "DV_INTERVAL"
+    ) {
+        return None;
+    }
+    let cell = |name: &str| {
+        columns
+            .iter()
+            .position(|c| c == name)
+            .and_then(|i| cells.get(i))
+    };
+    // Only rejected-expected rows can be unrealizable this way. The loader
+    // (`run::synthesize_content_case`) normalizes the authored
+    // `rejected` token to the `validation_failed` outcome kind before the
+    // driver sees the matrix — accept both spellings.
+    match cell("expected") {
+        Some(MatrixCell::Literal(serde_json::Value::String(s)))
+            if s == "rejected" || s == "validation_failed" => {}
+        _ => return None,
+    }
+    let Some(MatrixCell::Literal(serde_json::Value::Array(violations))) = cell("violates") else {
+        return None;
+    };
+    if violations.is_empty() {
+        return None;
+    }
+    let flag_true = |name: &str| {
+        matches!(
+            cell(name),
+            Some(MatrixCell::Literal(serde_json::Value::Bool(true)))
+        )
+    };
+    let inexpressible = |violation: &str| {
+        if violation.contains("millisecond_validity") {
+            return true;
+        }
+        // The duration S slot is shared: prohibiting one of integer/
+        // fractional seconds while allowing the other has no pattern form.
+        let suffix = if violation.contains("for lower") || violation.contains("_lower") {
+            "_lower"
+        } else if violation.contains("for upper") || violation.contains("_upper") {
+            "_upper"
+        } else {
+            ""
+        };
+        if violation.contains("fractional_seconds_allowed") {
+            return flag_true(&format!("seconds_allowed{suffix}"));
+        }
+        if violation.contains("seconds_allowed") {
+            return flag_true(&format!("fractional_seconds_allowed{suffix}"));
+        }
+        false
+    };
+    let all_inexpressible = violations
+        .iter()
+        .filter_map(|v| v.as_str())
+        .all(inexpressible)
+        && violations.iter().all(serde_json::Value::is_string);
+    all_inexpressible.then(|| {
+        "AMB-42: the violated constraint axes (millisecond_validity / the C_DURATION \
+         seconds-vs-fractional distinction) are unserializable in the ITS-XML 1.0.2 \
+         OPT wire (Archetype.xsd C_TIME/C_DATE_TIME/C_DURATION) — the row's ground \
+         OPT cannot exist on this technology profile"
+            .to_owned()
+    })
+}
+
 /// Synthesize the OPT 1.4 XML for one content row. Dispatches structural
 /// `rm_classes` here and value/interval classes to [`opt_synth`].
 ///

@@ -1,61 +1,60 @@
-# Per-RM-type suffix mapping: events + audit + link — INTERVAL_EVENT,
-# POINT_EVENT, FEEDER_AUDIT, FEEDER_AUDIT_DETAILS, LINK (simplified_formats
-# master05 §INTERVAL_EVENT, §POINT_EVENT, §FEEDER_AUDIT, §FEEDER_AUDIT_DETAILS,
-# §LINK). original_content (DV_PARSABLE) and original_content_multimedia
-# (DV_MULTIMEDIA) are mutually exclusive on FEEDER_AUDIT. Vectors: the
-# INTERVAL_EVENT blocks (+sample_count), the POINT_EVENT block, the FEEDER_AUDIT
-# minimal+full blocks, the FEEDER_AUDIT_DETAILS minimal+full blocks, and the
-# LINK block.
-# TODO: convert to a functional FLAT commit + read-back — POINT_EVENT/time is
-#       assertable on cnf.opt.maximal (content[0]/data/events[0]), but
-#       INTERVAL_EVENT (needs a repeating/interval-event template), FEEDER_AUDIT/
-#       FEEDER_AUDIT_DETAILS (no FLAT ctx vector) and LINK have no vector in the
-#       maximal template; needs a dedicated corpus template/fixture. The current
-#       content decision-table commits against the removed body_temperature
-#       carrier and 422s.
+# FEEDER_AUDIT suffix mapping (simplified_formats master05 §FEEDER_AUDIT +
+# §FEEDER_AUDIT_DETAILS). A FLAT commit carries a representative `_feeder_audit`
+# key set on the body_temperature OBSERVATION (feeder_audit is a LOCATABLE
+# attribute; master05 shows it on both the OBSERVATION and the EVENT), and the
+# canonical read-back proves each master05 Flat-Path landed at its documented RM
+# path: originating_system_audit|system_id (required) + |version_id;
+# feeder_system_audit|system_id; and an originating_system_item_id:i DV_IDENTIFIER
+# (|id + |issuer). Every asserted key traces to the master05 FEEDER_AUDIT /
+# FEEDER_AUDIT_DETAILS mapping tables.
+#
+# Scope note: the placeholder decision-table also enumerated INTERVAL_EVENT,
+# POINT_EVENT and LINK suffixes. Those are DROPPED here — the vitals carrier has
+# no INTERVAL_EVENT/LINK vector, and POINT_EVENT time is already witnessed by the
+# functional event cases (SF-INDEX-*). This case is the FEEDER_AUDIT witness; a
+# dedicated interval-event/link template would carry the others.
 id: SF-MAP-events_audit
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
-rm_class: FEEDER_AUDIT
+sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  INTERVAL_EVENT, POINT_EVENT, FEEDER_AUDIT, FEEDER_AUDIT_DETAILS and LINK map
-  their FLAT suffixes to the documented RM paths, including the mutually
-  exclusive original_content vs original_content_multimedia FEEDER_AUDIT leaves.
-description: "INTERVAL_EVENT/POINT_EVENT/FEEDER_AUDIT(_DETAILS)/LINK mapping (master05)"
+  A FLAT commit carrying a _feeder_audit key set on an OBSERVATION round-trips to
+  canonical JSON with a FEEDER_AUDIT whose originating/feeder system audits and
+  originating_system_item_ids map to their documented RM paths.
+description: "FLAT _feeder_audit commit, canonical FEEDER_AUDIT read-back (master05)"
 spec_refs:
   - "ITS-REST simplified_formats master05 §FEEDER_AUDIT"
   - "ITS-REST simplified_formats master05 §FEEDER_AUDIT_DETAILS"
-  - "ITS-REST simplified_formats master05 §INTERVAL_EVENT"
-  - "ITS-REST simplified_formats master05 §POINT_EVENT"
-  - "ITS-REST simplified_formats master05 §LINK"
+  - "ITS-REST simplified_formats master05 §DV_IDENTIFIER"
+  - "ITS-REST overview Requests_and_responses §openehr-template-id"
   - "RM common §FEEDER_AUDIT"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-guards:
-  - "FEEDER_AUDIT.original_content and original_content_multimedia are mutually exclusive — only one may be set (master05 §FEEDER_AUDIT)"
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events"
-decision_table:
-  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
-  rows:
-    - ["INTERVAL_EVENT", "/width", "width", "DV_DURATION", "yes"]
-    - ["INTERVAL_EVENT", "/math_function", "math_function", "DV_CODED_TEXT", "yes"]
-    - ["INTERVAL_EVENT", "|sample_count", "sample_count", "INTEGER", "no"]
-    - ["POINT_EVENT", "/time", "time", "DV_DATE_TIME", "yes"]
-    - ["FEEDER_AUDIT", "/originating_system_audit", "originating_system_audit", "FEEDER_AUDIT_DETAILS", "yes"]
-    - ["FEEDER_AUDIT", "/feeder_system_audit", "feeder_system_audit", "FEEDER_AUDIT_DETAILS", "no"]
-    - ["FEEDER_AUDIT", "/originating_system_item_id:i", "originating_system_item_ids", "DV_IDENTIFIER", "no"]
-    - ["FEEDER_AUDIT", "/feeder_system_item_id:i", "feeder_system_item_ids", "DV_IDENTIFIER", "no"]
-    - ["FEEDER_AUDIT", "/original_content", "original_content", "DV_PARSABLE", "no"]
-    - ["FEEDER_AUDIT", "/original_content_multimedia", "original_content", "DV_MULTIMEDIA", "no"]
-    - ["FEEDER_AUDIT_DETAILS", "|system_id", "system_id", "String", "yes"]
-    - ["FEEDER_AUDIT_DETAILS", "|version_id", "version_id", "String", "no"]
-    - ["FEEDER_AUDIT_DETAILS", "|time", "time.value", "String", "no"]
-    - ["FEEDER_AUDIT_DETAILS", "/subject", "subject", "PARTY_PROXY", "no"]
-    - ["FEEDER_AUDIT_DETAILS", "/provider", "provider", "PARTY_IDENTIFIED", "no"]
-    - ["FEEDER_AUDIT_DETAILS", "/location", "location", "PARTY_IDENTIFIED", "no"]
-    - ["LINK", "|type", "type.value", "String", "yes"]
-    - ["LINK", "|meaning", "meaning.value", "String", "yes"]
-    - ["LINK", "|target", "target.value", "String", "yes"]
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.sf.flat.feeder_audit]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.sf.flat.feeder_audit}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # FEEDER_AUDIT.originating_system_audit (required) -> FEEDER_AUDIT_DETAILS.system_id/version_id
+      - { assert: field, path: "content[0]/feeder_audit/originating_system_audit/system_id", equals: "orig-sys" }
+      - { assert: field, path: "content[0]/feeder_audit/originating_system_audit/version_id", equals: "v1.2" }
+      # FEEDER_AUDIT.feeder_system_audit -> FEEDER_AUDIT_DETAILS.system_id
+      - { assert: field, path: "content[0]/feeder_audit/feeder_system_audit/system_id", equals: "feeder-sys" }
+      # FEEDER_AUDIT.originating_system_item_ids[i] -> DV_IDENTIFIER (id/issuer)
+      - { assert: field, path: "content[0]/feeder_audit/originating_system_item_ids[0]/id", equals: "item-id-1" }
+      - { assert: field, path: "content[0]/feeder_audit/originating_system_item_ids[0]/issuer", equals: "issuer1" }

@@ -389,7 +389,7 @@ fn run_invariants(ty: &str, obj: &Map<String, Value>, out: &mut Vec<InvariantVio
             let Some(value) = str_of(obj, "value") else {
                 return false;
             };
-            generated::dv_uri_core(value, out);
+            crate::data_types::uri::dv_uri_impl::push_dv_uri_invariants(value, out);
         }
         "DV_EHR_URI" => {
             let Some(value) = str_of(obj, "value") else {
