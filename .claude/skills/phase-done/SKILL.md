@@ -32,11 +32,14 @@ does not decide the work is done on your behalf.
    confirm a conformance pass happened (`/spec-audit` findings addressed or
    filed as new issues). If it never happened, stop and say so — that is an
    unmet exit criterion in spirit.
-3a. **ECC zero-drift gate:** confirm a full ECC run
-   (`/run-conformance`) happened at close and shows zero drift vs the
-   committed baseline, and that the ratcheted `docs/conformance/` artifacts
-   (results.json + report + badges) are in-branch. No green ECC run → the
-   issue is not closable.
+3a. **CNF zero-drift gate:** confirm a full CNF 2.0 run
+   (`/run-conformance` → `scripts/conformance.sh`) happened at close and
+   shows zero drift vs the committed baseline
+   (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`; the
+   baseline only ratchets upward), and that the ratcheted
+   `docs/conformance/ehrbase-rs/` artifacts (results.json, verdicts.json,
+   CONFORMANCE_REPORT/STATEMENT/CERTIFICATE.md, badge*.json) are in-branch.
+   No green CNF run → the issue is not closable.
 3b. **User docs + changelog updated?** If this work changed a user-visible
    surface (REST, configuration, CLI, deployment artifacts), confirm BOTH:
    the matching `website/book/src` page was updated in-branch (and
@@ -65,14 +68,17 @@ does not decide the work is done on your behalf.
 7. **Delete the implemented plan file** in the same PR (the
    delete-on-implementation lifecycle; `docs/plans/README.md`) — unless
    another still-open issue consumes the same plan file; then note that on
-   the issue instead.
+   the issue instead. Exceptions that are NEVER deleted:
+   `docs/plans/WORKLIST.md` (the tracker pointer stub), `docs/plans/README.md`
+   (the lifecycle guide), and `docs/plans/cnf-conformance-strategy.md` (the
+   permanent CNF 2.0 design record, owner ruling 2026-07-22).
 8. **Remind the user to commit** the close on the current
    conventional-type branch (`feat/…` etc., per the CLAUDE.md branch hard
    rule).
 
 ## What this skill does not do
 
-It does not run `cargo build`, the test suite, or the ECC suite to "check"
+It does not run `cargo build`, the test suite, or the CNF pipeline to "check"
 the exit criteria for you — those must already have been run and have
 genuinely passed before this skill is invoked. If in doubt, run
 `/run-conformance` or the relevant `cargo` command first.

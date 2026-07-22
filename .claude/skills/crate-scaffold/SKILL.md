@@ -23,16 +23,20 @@ the current three-directory workspace).
 > `["crates/*", "app/*", "tools/*"]` — **every directory under these globs
 > must contain a Cargo.toml or `cargo metadata` fails**, so never create the
 > directory without the manifest in the same step. Do not scaffold retired
-> names (`openehr-foundation`, `ehrbase-audit`, `ehrbase-signing`,
-> `ehrbase-authz`, `ehrbase-compat` — all folded in or removed).
+> names (`openehr-foundation`, `ehrbase-sm`, `ehrbase-audit`,
+> `ehrbase-signing`, `ehrbase-authz`, `ehrbase-compat` — all folded in or
+> removed; the app is now the four crates `ehrbase`, `ehrbase-rest`,
+> `ehrbase-server`, `ehrbase-admin-ui`).
 
 ## Steps
 
 1. **Confirm the crate belongs.** Check `docs/architecture.md` (workspace
-   layout + crate map) and the governing plan/design doc for its role and
-   dependency arrows. Dependencies point downward only:
+   layout + crate map) and the governing tracker issue / plan file
+   (`docs/plans/`, if one exists) for its role and dependency arrows. Dependencies point downward only:
    `tools/* → app/* → crates/openehr-*`; never `app → app` unless the
-   architecture doc names the seam (e.g. `ehrbase-rest → ehrbase-sm`).
+   architecture doc names the seam (`ehrbase-server → {ehrbase-rest,
+   ehrbase}`, `ehrbase-rest → ehrbase`; `ehrbase-admin-ui` depends on
+   `crates/openehr-*` only, never on `ehrbase`/`ehrbase-rest`).
 2. **Create `<dir>/<name>/Cargo.toml`**:
    - `[package]`: `name`, plus `version`, `edition`, `rust-version`,
      `license`, `authors`, `repository` all `.workspace = true` (never
@@ -46,7 +50,7 @@ the current three-directory workspace).
    - A binary crate also gets `[[bin]]` + `src/main.rs`.
 3. **Create `src/lib.rs`** (or `main.rs`) containing only a top-of-file doc
    comment: the crate's one-line purpose and its governing spec component
-   or design doc. No `mod` declarations, no placeholder types — an empty
+   or tracker issue. No `mod` declarations, no placeholder types — an empty
    crate compiles as an empty crate.
 4. **Create the crate's `CLAUDE.md`** (the layered-memory convention, root
    `CLAUDE.md` §Layered memory): ~20–35 lines — role, discipline
