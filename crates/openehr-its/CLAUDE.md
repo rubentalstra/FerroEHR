@@ -33,5 +33,12 @@ RM class-invariant dispatcher that drives the reader. Proven by
 - XML: one impl set serves both namespaces (v1/v2 differ only by root
   `xmlns`); `xsi:type` emitted iff concrete type ≠ declared slot type.
 - **The fidelity gates in `tests/` are the crate's acceptance instrument**
-  (corpus round-trips, C14N, schema validation) — never weaken or skip one
-  to get green; a gate failure means the emitter or runtime is wrong.
+  (canonical-JSON corpus round-trips, C14N, schema validation, the R0
+  determinism manifest) — never weaken or skip one to get green; a gate failure
+  means the emitter or runtime is wrong.
+- `tests/opt14_corpus.rs` is a parse gate: every vendored `.opt` operational
+  template (`app/ehrbase/tests/resources/service`) must parse into the generated
+  `opt14::OperationalTemplate`, with exactly two fixtures adjudicated XSD-invalid
+  (a missing mandatory `OPERATIONAL_TEMPLATE.language`; a missing mandatory
+  `DV_PROPORTION.type`) — each carrying its XSD citation; a fixture that starts
+  parsing must be re-adjudicated, never silently dropped.
