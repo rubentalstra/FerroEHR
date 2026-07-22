@@ -20,7 +20,7 @@ fn committed_comparison_report_matches_regeneration() {
         loaded.errors.first()
     );
     let (_, report) = compare::run(
-        &repo.join("tools/conformance/inventory/ecc-catalog.tsv"),
+        &crate_dir.join("comparison/ecc-catalog.tsv"),
         &crate_dir.join("comparison/ecc-map.yaml"),
         &loaded.set,
     )

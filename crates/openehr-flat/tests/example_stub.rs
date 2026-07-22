@@ -192,7 +192,21 @@ fn unconstrained_structural_attribute_keeps_the_any_placeholder() {
 /// (`Falls care plan.opt` was here too — an archetyped `EVENT_CONTEXT` the walk
 /// wrongly required an `archetype_node_id` on; that was OUR validator defect, now
 /// fixed by matching non-`LOCATABLE` nodes structurally, so it validates clean.)
-const CONTRADICTORY_FIXTURES: &[&str] = &["section_cardinality.opt"];
+///
+/// - `Testing.opt` — constrains a MANDATORY `DV_URI.value` with the anchored
+///   `C_STRING` pattern `abcdef`: no value matching it can carry a URI scheme,
+///   so no instance satisfies both the OPT constraint and the CNF-mandated
+///   absolute-reference rule for `DV_URI` (CNF `platform_test_schedule`
+///   master17.7 `xyz | rejected | value doesn't comply with RFC3986`; RM
+///   `data_types` `dv_uri` "structurally conforms to ... RFC-3986").
+///
+/// (fixture, level) pairs: `None` = contradictory at every committable level.
+const CONTRADICTORY_FIXTURES: &[(&str, Option<DetailLevel>)] = &[
+    ("section_cardinality.opt", None),
+    // Only Medium populates the optional branch carrying the defective leaf;
+    // the Required skeleton omits it and rightly validates clean.
+    ("Testing.opt", Some(DetailLevel::Medium)),
+];
 
 /// The full-validation bar: the committable levels (`Required` and `Medium`) of
 /// every vendored template produce a **fully valid** COMPOSITION —
@@ -230,8 +244,10 @@ fn committable_example_of_every_fixture_fully_validates() {
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or_default();
-        let contradictory = CONTRADICTORY_FIXTURES.contains(&name);
         for level in [DetailLevel::Required, DetailLevel::Medium] {
+            let contradictory = CONTRADICTORY_FIXTURES
+                .iter()
+                .any(|(n, l)| *n == name && l.is_none_or(|l| l == level));
             let comp = example_composition(&wt, level);
             let msgs = validate_composition(&comp, &wt);
             if contradictory {

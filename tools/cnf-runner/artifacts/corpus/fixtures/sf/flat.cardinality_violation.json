@@ -4,6 +4,6 @@
   "ctx/composer_self": true,
   "vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
   "vitals/body_temperature:0/any_event:0/temperature|unit": "Cel",
-  "vitals/body_temperature:1/any_event:0/temperature|magnitude": 37.4,
-  "vitals/body_temperature:1/any_event:0/temperature|unit": "Cel"
+  "vitals/body_temperature:0/any_event:0/temperature:1|magnitude": 37.4,
+  "vitals/body_temperature:0/any_event:0/temperature:1|unit": "Cel"
 }

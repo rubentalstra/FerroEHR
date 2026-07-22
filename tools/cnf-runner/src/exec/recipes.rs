@@ -126,6 +126,51 @@ pub fn deterministic_ehr_id(case: &str, row_index: usize) -> String {
     uuid::Uuid::new_v5(&ns, format!("{case}/{row_index}").as_bytes()).to_string()
 }
 
+/// The deterministic per-row constraint-template id for a content case that
+/// declares `constraint_context.constraint_columns` (issue #228): the runner
+/// synthesizes one OPT per decision-table row and uploads it under this id, and
+/// the row's committed carrier stamps the same id into
+/// `archetype_details.template_id`. Pure function of (case id, row, row
+/// cells) — two runners mint identical ids, and a re-adjudicated row (or a
+/// synthesis change) mints a NEW id, so a 409-tolerant re-upload against a
+/// dirty server can never silently reuse a stale OPT with different
+/// constraints. (No openEHR spec governs the corpus template packaging —
+/// our own corpus-authoring design.)
+#[must_use]
+pub fn synth_template_id(case_id: &str, row: usize, cells: &[MatrixCell]) -> String {
+    const NS: uuid::Uuid = uuid::Uuid::from_bytes([
+        0x6f, 0x96, 0x19, 0xff, 0x8b, 0x86, 0xd0, 0x11, 0xb4, 0x2d, 0x00, 0xcf, 0x4f, 0xc9, 0x64,
+        0xfe,
+    ]);
+    let slug: String = case_id
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    // Content digest of the row cells: UUIDv5 (deterministic) over the
+    // encoded cells, truncated for readability.
+    let encoded = cells
+        .iter()
+        .map(|cell| match cell {
+            MatrixCell::Absent => "\u{1}absent".to_owned(),
+            MatrixCell::Provided => "\u{1}provided".to_owned(),
+            MatrixCell::Null => "\u{1}null".to_owned(),
+            MatrixCell::Literal(v) => v.to_string(),
+        })
+        .collect::<Vec<_>>()
+        .join("\u{2}");
+    let digest = uuid::Uuid::new_v5(&NS, encoded.as_bytes())
+        .simple()
+        .to_string();
+    let short = digest.get(..8).unwrap_or("00000000");
+    format!("cnf.tpl.{slug}.r{row}.{short}")
+}
+
 /// `bp_series` — the generated blood-pressure corpus (contract:
 /// `corpus/recipes/bp_series.md`): composition k has systolic 100+10k,
 /// diastolic 60+5k, event time 2026-01-01T00:00:00Z + k hours.
@@ -251,6 +296,9 @@ pub fn content_instance(
     cells: &[MatrixCell],
 ) -> Value {
     let row = RowView { columns, cells };
+    if is_structural(rm_class) {
+        return structural_instance(rm_class, template_id, &row);
+    }
     let value = build_value(rm_class, template_id, &row);
     let mut composition = base_carrier_composition();
     // The committed carrier resolves its template from
@@ -270,16 +318,22 @@ pub fn content_instance(
     composition
 }
 
+/// Whether the content case's `rm_class` describes carrier *shape* (a
+/// structural family) rather than an ELEMENT.value domain constraint. These are
+/// committed as a per-row-shaped carrier by [`structural_instance`] against a
+/// per-row synthesized OPT ([`crate::exec::content_synth`]).
+fn is_structural(rm_class: &str) -> bool {
+    matches!(
+        rm_class,
+        "COMPOSITION" | "EVENT" | "HISTORY" | "ITEM_STRUCTURE" | "OBSERVATION"
+    )
+}
+
 /// Build the ELEMENT.value data value for one row, dispatched on the RM class.
 ///
 /// Returns `None` for the structural `rm_class`es (COMPOSITION / EVENT / HISTORY
-/// / `ITEM_STRUCTURE` / OBSERVATION), whose decision tables describe carrier
-/// *shape* (content counts, event slot types, existence-tightened
-/// attributes), not an ELEMENT value.
-// TODO: the structural rm_classes need per-row carrier-shape projection driven
-// by their constraint-axis columns (an event slot type, an omitted summary, N
-// content items) plus a per-row constraint template — the single-template
-// execution model cannot represent their varying-constraint decision tables.
+/// / `ITEM_STRUCTURE` / OBSERVATION), which are handled by
+/// [`structural_instance`] instead (carrier-shape projection, not a value).
 fn build_value(rm_class: &str, template_id: &str, row: &RowView<'_>) -> Option<Value> {
     let dv = match rm_class {
         "DV_INTERVAL" => build_interval(template_id, row),
@@ -543,6 +597,267 @@ fn terminology_id(value: &str) -> Value {
     json!({ "_type": "TERMINOLOGY_ID", "value": value })
 }
 
+// ---------------------------------------------------------------------------
+// Structural content instances — per-row carrier SHAPE (content counts, event
+// slot/subtype, existence-committed attributes), committed against the matching
+// per-row synthesized OPT (`crate::exec::content_synth`). RM shapes per RM
+// `ehr`/`data_structures`/`data_types`; node ids mirror the synthesized OPT.
+// ---------------------------------------------------------------------------
+
+/// A committed/absent flag column: `present` ⇒ true, anything else ⇒ false.
+fn committed(row: &RowView<'_>, column: &str) -> bool {
+    matches!(row.text(column), Some("present"))
+}
+
+/// An integer count column (`content_count`/`events_count`); missing ⇒ 0.
+fn count(row: &RowView<'_>, column: &str) -> usize {
+    row.literal(column)
+        .and_then(Value::as_u64)
+        .and_then(|n| usize::try_from(n).ok())
+        .unwrap_or(0)
+}
+
+/// ELEMENT at0004 with a valid `DV_TEXT` value.
+fn min_element() -> Value {
+    json!({
+        "_type": "ELEMENT",
+        "name": { "_type": "DV_TEXT", "value": "value" },
+        "archetype_node_id": "at0004",
+        "value": { "_type": "DV_TEXT", "value": "cnf value" }
+    })
+}
+
+/// `ITEM_TREE` at `node` carrying one value ELEMENT.
+fn min_item_tree(node: &str) -> Value {
+    json!({
+        "_type": "ITEM_TREE",
+        "name": { "_type": "DV_TEXT", "value": "tree" },
+        "archetype_node_id": node,
+        "items": [min_element()]
+    })
+}
+
+/// An EVENT (or `POINT_EVENT/INTERVAL_EVENT`) at0002; `with_data`/`with_state`
+/// gate the optional attributes. `INTERVAL_EVENT` carries its mandatory `width`
+/// + `math_function` (RM `data_structures` §`INTERVAL_EVENT`).
+fn min_event(slot_type: &str, with_data: bool, with_state: bool) -> Value {
+    let mut ev = serde_json::Map::new();
+    ev.insert("_type".to_owned(), Value::String(slot_type.to_owned()));
+    ev.insert(
+        "name".to_owned(),
+        json!({ "_type": "DV_TEXT", "value": "any event" }),
+    );
+    ev.insert(
+        "archetype_node_id".to_owned(),
+        Value::String("at0002".to_owned()),
+    );
+    ev.insert(
+        "time".to_owned(),
+        json!({ "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" }),
+    );
+    if slot_type == "INTERVAL_EVENT" {
+        ev.insert(
+            "width".to_owned(),
+            json!({ "_type": "DV_DURATION", "value": "PT1H" }),
+        );
+        ev.insert(
+            "math_function".to_owned(),
+            json!({ "_type": "DV_CODED_TEXT", "value": "mean",
+                "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "146" } }),
+        );
+    }
+    if with_data {
+        ev.insert("data".to_owned(), min_item_tree("at0003"));
+    }
+    if with_state {
+        ev.insert(
+            "state".to_owned(),
+            json!({ "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "state" }, "archetype_node_id": "at0005", "items": [] }),
+        );
+    }
+    Value::Object(ev)
+}
+
+/// OBSERVATION openEHR-EHR-OBSERVATION.minimal.v1 with an explicit events list
+/// and optional OBSERVATION-level state (HISTORY at0005) / protocol (at0006).
+#[allow(clippy::needless_pass_by_value)] // args are serialized into the JSON tree
+fn min_observation(events: Vec<Value>, state: Option<Value>, protocol: Option<Value>) -> Value {
+    let mut obs = serde_json::Map::new();
+    obs.insert("_type".to_owned(), Value::String("OBSERVATION".to_owned()));
+    obs.insert(
+        "name".to_owned(),
+        json!({ "_type": "DV_TEXT", "value": "content observation" }),
+    );
+    obs.insert(
+        "archetype_node_id".to_owned(),
+        Value::String("openEHR-EHR-OBSERVATION.minimal.v1".to_owned()),
+    );
+    obs.insert("archetype_details".to_owned(), json!({
+        "_type": "ARCHETYPED",
+        "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-OBSERVATION.minimal.v1" },
+        "rm_version": "1.0.2"
+    }));
+    obs.insert("language".to_owned(), json!({ "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" }));
+    obs.insert("encoding".to_owned(), json!({ "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "IANA_character-sets" }, "code_string": "UTF-8" }));
+    obs.insert("subject".to_owned(), json!({ "_type": "PARTY_SELF" }));
+    obs.insert("data".to_owned(), json!({
+        "_type": "HISTORY", "name": { "_type": "DV_TEXT", "value": "history" }, "archetype_node_id": "at0001",
+        "origin": { "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" },
+        "events": events
+    }));
+    if let Some(state) = state {
+        obs.insert("state".to_owned(), state);
+    }
+    if let Some(protocol) = protocol {
+        obs.insert("protocol".to_owned(), protocol);
+    }
+    Value::Object(obs)
+}
+
+/// The COMPOSITION shell (category/composer/[context]) carrying `content`
+/// (omitted entirely when empty — COMPOSITION.content existence 0..1, so an
+/// absent list is 0 items; a present-but-empty list is an RM error).
+fn comp_shell(template_id: &str, content: Vec<Value>, with_context: bool) -> Value {
+    let mut comp = serde_json::Map::new();
+    comp.insert("_type".to_owned(), Value::String("COMPOSITION".to_owned()));
+    comp.insert(
+        "name".to_owned(),
+        json!({ "_type": "DV_TEXT", "value": "content case carrier" }),
+    );
+    comp.insert(
+        "archetype_node_id".to_owned(),
+        Value::String("openEHR-EHR-COMPOSITION.minimal.v1".to_owned()),
+    );
+    comp.insert("archetype_details".to_owned(), json!({
+        "_type": "ARCHETYPED",
+        "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-COMPOSITION.minimal.v1" },
+        "template_id": { "_type": "TEMPLATE_ID", "value": template_id },
+        "rm_version": "1.0.2"
+    }));
+    comp.insert("language".to_owned(), json!({ "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" }));
+    comp.insert("territory".to_owned(), json!({ "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" }, "code_string": "NL" }));
+    comp.insert("category".to_owned(), json!({ "_type": "DV_CODED_TEXT", "value": "event",
+        "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "433" } }));
+    comp.insert("composer".to_owned(), json!({ "_type": "PARTY_SELF" }));
+    if with_context {
+        comp.insert("context".to_owned(), json!({ "_type": "EVENT_CONTEXT",
+            "start_time": { "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" },
+            "setting": { "_type": "DV_CODED_TEXT", "value": "other care",
+                "defining_code": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" }, "code_string": "238" } } }));
+    }
+    if !content.is_empty() {
+        comp.insert("content".to_owned(), Value::Array(content));
+    }
+    Value::Object(comp)
+}
+
+/// A minimal `ITEM_STRUCTURE` instance of the given subtype (at0003), for the
+/// EVALUATION type-narrowing carrier (RM `data_structures` §`ITEM_STRUCTURE`).
+fn min_item_structure(rm_type: &str) -> Value {
+    let base = json!({
+        "_type": rm_type,
+        "name": { "_type": "DV_TEXT", "value": "structure" },
+        "archetype_node_id": "at0003"
+    });
+    let mut map = base.as_object().cloned().unwrap_or_default();
+    // ITEM_SINGLE.item is mandatory (1..1); ITEM_TABLE.rows / ITEM_LIST.items /
+    // ITEM_TREE.items are existence 0..1 — omit them for a minimal valid structure.
+    if rm_type == "ITEM_SINGLE" {
+        map.insert("item".to_owned(), min_element());
+    }
+    Value::Object(map)
+}
+
+/// An EVALUATION openEHR-EHR-EVALUATION.minimal.v1 carrying the given data.
+#[allow(clippy::needless_pass_by_value)] // `data` is serialized into the JSON tree
+fn min_evaluation(data: Value) -> Value {
+    json!({
+        "_type": "EVALUATION",
+        "name": { "_type": "DV_TEXT", "value": "content evaluation" },
+        "archetype_node_id": "openEHR-EHR-EVALUATION.minimal.v1",
+        "archetype_details": { "_type": "ARCHETYPED", "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EVALUATION.minimal.v1" }, "rm_version": "1.0.2" },
+        "language": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" }, "code_string": "en" },
+        "encoding": { "_type": "CODE_PHRASE", "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "IANA_character-sets" }, "code_string": "UTF-8" },
+        "subject": { "_type": "PARTY_SELF" },
+        "data": data
+    })
+}
+
+/// Build the per-row structural carrier for one content row.
+fn structural_instance(rm_class: &str, template_id: &str, row: &RowView<'_>) -> Value {
+    match rm_class {
+        "COMPOSITION" if row.cell("cardinality").is_some() => {
+            let n = count(row, "content_count");
+            let content: Vec<Value> = (0..n)
+                .map(|_| min_observation(vec![min_event("POINT_EVENT", true, false)], None, None))
+                .collect();
+            comp_shell(template_id, content, true)
+        }
+        "COMPOSITION" => {
+            let obs = min_observation(vec![min_event("POINT_EVENT", true, false)], None, None);
+            comp_shell(template_id, vec![obs], committed(row, "context_committed"))
+        }
+        "EVENT" if row.cell("slot_type").is_some() => {
+            let committed_type = row.text("committed_type").unwrap_or("POINT_EVENT");
+            let obs = min_observation(vec![min_event(committed_type, true, false)], None, None);
+            comp_shell(template_id, vec![obs], true)
+        }
+        "EVENT" => {
+            let event = min_event(
+                "POINT_EVENT",
+                committed(row, "data_committed"),
+                committed(row, "state_committed"),
+            );
+            let obs = min_observation(vec![event], None, None);
+            comp_shell(template_id, vec![obs], true)
+        }
+        "HISTORY" if row.cell("cardinality").is_some() => {
+            let n = count(row, "events_count");
+            let events: Vec<Value> = (0..n)
+                .map(|_| min_event("POINT_EVENT", true, false))
+                .collect();
+            let obs = min_observation(events, None, None);
+            comp_shell(template_id, vec![obs], true)
+        }
+        "HISTORY" => {
+            let n = count(row, "events_count");
+            let events: Vec<Value> = (0..n)
+                .map(|_| min_event("POINT_EVENT", true, false))
+                .collect();
+            let mut obs = min_observation(events, None, None);
+            if committed(row, "summary_committed")
+                && let Some(history) = obs.pointer_mut("/data").and_then(Value::as_object_mut)
+            {
+                history.insert(
+                    "summary".to_owned(),
+                    json!({ "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "summary" }, "archetype_node_id": "at0007", "items": [] }),
+                );
+            }
+            comp_shell(template_id, vec![obs], true)
+        }
+        "ITEM_STRUCTURE" => {
+            let committed_type = row.text("committed_type").unwrap_or("ITEM_TREE");
+            let eval = min_evaluation(min_item_structure(committed_type));
+            comp_shell(template_id, vec![eval], true)
+        }
+        "OBSERVATION" => {
+            let event = min_event("POINT_EVENT", committed(row, "data_committed"), false);
+            let state = committed(row, "state_committed").then(|| json!({
+                "_type": "HISTORY", "name": { "_type": "DV_TEXT", "value": "state" }, "archetype_node_id": "at0005",
+                "origin": { "_type": "DV_DATE_TIME", "value": "2026-01-01T00:00:00Z" },
+                "events": [min_event("POINT_EVENT", true, false)]
+            }));
+            let protocol = committed(row, "protocol_committed").then(|| json!({
+                "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "protocol" }, "archetype_node_id": "at0006", "items": []
+            }));
+            let obs = min_observation(vec![event], state, protocol);
+            comp_shell(template_id, vec![obs], true)
+        }
+        // Not a structural family — caller guards with `is_structural`.
+        _ => comp_shell(template_id, Vec::new(), true),
+    }
+}
+
 /// The minimal-event carrier the content instances commit inside.
 fn base_carrier_composition() -> Value {
     json!({
@@ -803,7 +1118,10 @@ mod tests {
     }
 
     #[test]
-    fn structural_rm_class_injects_no_value() {
+    fn structural_rm_class_builds_per_row_carrier() {
+        // Issue #228: a structural rm_class no longer injects an ELEMENT.value —
+        // it builds a per-row-shaped carrier (here `content_count` content items)
+        // committed against the per-row synthesized cardinality OPT.
         let c = cols(&["cardinality", "content_count", "expected"]);
         let cells = vec![
             MatrixCell::Literal(json!("3to5")),
@@ -812,15 +1130,24 @@ mod tests {
         ];
         let comp = content_instance(
             "COMPOSITION",
-            "cnf.tpl.ecc_composition_content_cardinality",
+            "cnf.tpl.cont_composition_content_cardinality.r22",
             &c,
             &cells,
         );
-        assert!(
-            comp["content"][0]["data"]["events"][0]["data"]["items"][0]
-                .get("value")
-                .is_none()
+        assert_eq!(comp["content"].as_array().map(Vec::len), Some(3));
+        // content_count 0 => the content attribute is omitted (an empty present
+        // list is an RM error), so the "any/0" row is accepted.
+        let zero = content_instance(
+            "COMPOSITION",
+            "cnf.tpl.cont_composition_content_cardinality.r0",
+            &cols(&["cardinality", "content_count", "expected"]),
+            &[
+                MatrixCell::Literal(json!("any")),
+                MatrixCell::Literal(json!(0)),
+                MatrixCell::Literal(json!("created")),
+            ],
         );
+        assert!(zero.get("content").is_none());
     }
 
     #[test]

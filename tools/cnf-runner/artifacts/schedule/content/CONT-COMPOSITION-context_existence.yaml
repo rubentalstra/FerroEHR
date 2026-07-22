@@ -28,6 +28,7 @@ constraint_context:
   # (optional=0..1 = the RM default; mandatory=1..1 = archetype-tightened).
   template: cnf.tpl.ecc_composition_context_existence
   path: "/context"
+  constraint_columns: ["context_existence"]
 decision_table:
   # context_existence: the archetype C_ATTRIBUTE.existence constraint token.
   # context_committed: whether a COMPOSITION.context object is committed.

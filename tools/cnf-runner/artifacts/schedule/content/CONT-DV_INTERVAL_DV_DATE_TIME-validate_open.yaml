@@ -1,3 +1,10 @@
+# Re-adjudicated 2026-07-22 (issue #228, mirroring the DV_DATE-open exemplar):
+# null-bound rows rested on a value-mandatory-when-not-unbounded invariant the
+# openEHR RM does NOT define (BASE foundation_types §Interval defines only
+# Lower/Upper_included_valid, Limits_consistent, Limits_comparable) — corrected
+# rejected -> accepted. Empty-string bounds stay rejected: "" is not a
+# well-formed ISO 8601 date-time (BASE foundation_types §Iso8601_date_time
+# formation), a DATA_VALUE formation defect independent of interval invariants.
 id: CONT-DV_INTERVAL_DV_DATE_TIME-validate_open
 kind: content
 component: CONTENT
@@ -21,11 +28,11 @@ constraint_context:
 decision_table:
   columns: [lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included, expected, violates]
   rows:
-    - [null, null, false, false, true, true, rejected, ["rm_schema: value is mandatory for lower and upper"]]
-    - [null, "", false, false, true, true, rejected, ["rm_schema: value is mandatory for lower", "iso8601(year_required): at least year is required for upper"]]
-    - ["", null, false, false, true, true, rejected, ["iso8601(year_required): at least year is required for lower", "rm_schema: value is mandatory for upper"]]
-    - ["2021", null, false, false, true, true, rejected, ["rm_schema: value is mandatory for upper"]]
-    - [null, "2022", false, false, true, true, rejected, ["rm_schema: value is mandatory for lower"]]
+    - [null, null, false, false, true, true, accepted, []]
+    - [null, "", false, false, true, true, rejected, ["iso8601(year_required): \"\" is not a well-formed ISO 8601 date-time (upper)"]]
+    - ["", null, false, false, true, true, rejected, ["iso8601(year_required): \"\" is not a well-formed ISO 8601 date-time (lower)"]]
+    - ["2021", null, false, false, true, true, accepted, []]
+    - [null, "2022", false, false, true, true, accepted, []]
     - ["2021", "2022", false, false, true, true, accepted, []]
     - ["2021-00", "2022-01", false, false, true, true, rejected, ["iso8601(month_range): month in 01..12 for lower"]]
     - ["2021-01", "2022-01", false, false, true, true, accepted, []]

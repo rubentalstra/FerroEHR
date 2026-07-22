@@ -39,7 +39,27 @@ pub(super) fn check_inputs(v: &mut Validator, instance: &Value, wt: &WebTemplate
     // `capture_leaf_constraints`): C_INTEGER/C_REAL lists on numeric data and
     // C_CODE_PHRASE lists on coded attributes (e.g. DV_MULTIMEDIA.media_type).
     check_numeric_lists(v, instance, wt);
+    check_numeric_ranges(v, instance, wt);
     check_code_lists(v, instance, wt);
+}
+
+/// `C_INTEGER.range` / `C_REAL.range` on a leaf's numeric datum the `inputs`
+/// builders do not otherwise carry (`DV_MULTIMEDIA.size` — AOM 1.4
+/// `master04-constraint_model_package.adoc` §`C_INTEGER`; RM `data_types`
+/// §`DV_MULTIMEDIA`): the instance datum must lie within the declared interval.
+fn check_numeric_ranges(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
+    for (attr, range) in &wt.numeric_ranges {
+        let Some(value) = instance.get(attr).and_then(as_f64) else {
+            continue;
+        };
+        if !in_range(value, range) {
+            v.push(
+                &wt.aql_path,
+                format!("{attr} {value} is outside the constrained range"),
+                ValidationKind::RangeError,
+            );
+        }
+    }
 }
 
 /// `C_INTEGER.list` / `C_REAL.list` membership on the leaf's numeric data
@@ -174,6 +194,20 @@ fn check_ordinal(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
             format!("ordinal symbol '{code}' is not in the constrained value set"),
             ValidationKind::CodedValue,
         );
+        return;
+    }
+    // Generic C_COMPLEX_OBJECT form: AOM 1.4 has no `C_DV_SCALE` constrainer, so
+    // a DV_SCALE constrains its coded `symbol` through `symbol.defining_code` as a
+    // `C_CODE_PHRASE` `code_list` with no paired numeric (the builder records the
+    // codes with `ordinal`/`scale` unset). Symbol membership alone is then the
+    // coded constraint — the numeric `value` set is enforced separately via
+    // `numeric_lists` — so the (symbol, value) pair check below applies only to
+    // the C_DV_ORDINAL form, which does pin the pair (AOM 1.4 §`C_CODE_PHRASE`;
+    // RM `data_types` §`DV_SCALE`).
+    if same_symbol
+        .iter()
+        .all(|cv| cv.scale.is_none() && cv.ordinal.is_none())
+    {
         return;
     }
     // The symbol is known; require the (symbol, value) pair to match one entry.
@@ -669,6 +703,22 @@ fn duration_seconds(fields: &[(&'static str, f64)]) -> f64 {
 fn temporal_pattern_ok(pattern: &str, value: &str) -> bool {
     let (pat_date, pat_time) = split_date_time(pattern);
     let (val_date, val_time) = split_date_time(value);
+    // A colon-less bare DV_TIME value (e.g. "10" = hour only) has no `:` and is
+    // classified as a date part by `split_date_time`; but a pure-time pattern
+    // ("HH:??:??" / "HH:XX:XX") means the value IS a time — reclassify it so the
+    // hour-only value is judged against the time segments, not demanded as a date.
+    // ADL 1.4 `master05-cadl.adoc` §"Date, Time and Date/Time" Patterns (L847-910):
+    // `?` = optional field, `X` = disallowed field, so a value carrying only the
+    // hour satisfies both "HH:??:??" and "HH:XX:XX".
+    let (val_date, val_time) = if pat_date.is_empty()
+        && !pat_time.is_empty()
+        && !val_date.is_empty()
+        && val_time.is_empty()
+    {
+        ("", val_date)
+    } else {
+        (val_date, val_time)
+    };
     // Date part: year is always required; month/day per the pattern segment.
     let pat_segs: Vec<&str> = if pat_date.is_empty() {
         Vec::new()

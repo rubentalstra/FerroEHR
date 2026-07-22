@@ -162,7 +162,7 @@ bin is still named `ehrbase`), and `ehrbase-admin-ui` (the Leptos SSR admin
 console — its own binary/OCI image, consuming the CDR strictly over
 ITS-REST); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`conformance` — the
-ECC runner, `benchmark`, `testkit` — the shared test-database harness, and
+CNF 2.0 conformance runner, `benchmark`, `testkit` — the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
@@ -209,7 +209,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
 | `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
 | `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |
-| `conformance` | ECC conformance runner (`tools/*`) | tooling |
+| `cnf-runner` | CNF 2.0 conformance runner (`tools/*`) | tooling |
 | `benchmark` | Benchmark harness (`tools/*`) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
@@ -231,9 +231,12 @@ The service layer realizes the openEHR **SM Platform Service Model**
 
 - **Fidelity gates** (spec/serialization): canonical JSON read + lossless
   round-trip + ITS-JSON schema validation; XML round-trips.
-- **Conformance suite** (`scripts/conformance.sh` — present): the ECC catalogue
-  (Docker-composed SUT, both formats) — the acceptance instrument;
-  the standing baseline: 402 executed · 384 passed · 0 failed · 18 N/A,
-  CORE/STANDARD PASS.
+- **Conformance pipeline** (`scripts/conformance.sh`): the CNF 2.0 reference
+  runner (`tools/cnf-runner`) over the committed machine-readable catalogue
+  (Docker-composed SUT on fresh volumes) — the acceptance instrument;
+  results → pure-function verdicts → report/statement/certificate + badges,
+  all under `docs/conformance/<sut>/` (the baseline lives ONLY in those
+  committed artifacts; the ECC harness retired 2026-07-22 with the reviewed
+  `docs/conformance/cnf-comparison.md`).
 - **Drift check** (`scripts/check-codegen-drift.sh` + CI): the generated layer
   is always in sync with the vendored specs.

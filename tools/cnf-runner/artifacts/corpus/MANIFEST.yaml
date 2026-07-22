@@ -51,8 +51,15 @@ cnf.opt.vitals:
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
+  template_id: "cnf.vitals"
+  provenance: "authored 2026-07-22 as the Simplified-Formats vitals carrier the SF-* cases reference with vitals/body_temperature:i/any_event:i/... FLAT paths: COMPOSITION 'Vitals' (WT root `vitals`) -> openEHR-EHR-OBSERVATION.body_temperature.v1 (WT `body_temperature`, occurrences 0..* so body_temperature:i index to distinct OBSERVATIONs per master04 §Instance Indexing; the SF-FLAT-reject_cardinality ground violates the Temperature ELEMENT's 1..1 occurrence bound instead) -> HISTORY -> EVENT 'Any event' (WT `any_event`, 0..* so any_event:i expand to distinct EVENTs per SF-INDEX-multi_event_commit) -> ELEMENTs Temperature (DV_QUANTITY, property openehr::127, unit Cel), Symptom (OPEN value-set: ELEMENT.value DV_CODED_TEXT|DV_TEXT choice), Body exposure (CLOSED value-set: DV_CODED_TEXT local code_list). Node ids per ITS-REST simplified_formats master04-basic_concepts §Node ID Generation Rules; leaf suffixes per master05-rm_mapping §DV_QUANTITY/§DV_CODED_TEXT; open vs closed value-set per master04 §'Open Value-Sets and the |other Suffix' + master05 §'When a DV_CODED_TEXT becomes a DV_TEXT' (open = DV_CODED_TEXT|DV_TEXT alternatives, AOM 1.4 c_coded_text code_list present = closed). template_id cnf.vitals matches the update_composition-wrong_template composition's archetype_details.template_id reference."
+cnf.opt.minimal_action:
+  source: templates/minimal_action.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
   template_id: "minimal_action.en.v1"
-  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
+  provenance: "the minimal ACTION template (openEHR-EHR-COMPOSITION.minimal.v1 + openEHR-EHR-ACTION.minimal.v1, WT root `minimal`, ISM_TRANSITION + DV_MULTIMEDIA leaf), preserved verbatim 2026-07-22 from the former templates/vitals.opt when cnf.opt.vitals was re-authored as the body_temperature carrier. Carries the minimal/... FLAT paths + ISM_TRANSITION current_state that the SF ctx/example/wt/map/nodeid cases and the cnf.flat.vitals.minimal_ctx / cnf.flat.vitals.composer_self fixtures exercise; provenance of the ACTION content: openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin)"
 cnf.opt.blood_pressure:
   source: templates/blood_pressure.opt
   format: opt-xml
@@ -1456,6 +1463,38 @@ cnf.sf.flat.multi_event:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §Instance Indexing multiple-events example (any_event:0 + any_event:1); structural placeholder pending corpus authoring"
+
+cnf.sf.flat.index_semantics:
+  source: fixtures/sf/flat.index_semantics.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.vitals"
+  provenance: "authored 2026-07-22 from the ITS-REST simplified_formats master04 §Instance Indexing examples (multiple observations in a composition: body_temperature:0/:1; multiple events in an observation: any_event:0/:1). Distinguishable per-instance temperatures (36.1/36.2 in body_temperature:0; 37.1/37.2 in body_temperature:1) let the read-back prove each :i index maps to a distinct RM instance at both levels"
+
+cnf.sf.flat.feeder_audit:
+  source: fixtures/sf/flat.feeder_audit.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.vitals"
+  provenance: "authored 2026-07-22 from the ITS-REST simplified_formats master05 §FEEDER_AUDIT / §FEEDER_AUDIT_DETAILS mapping tables — a representative _feeder_audit key set on the body_temperature OBSERVATION (originating_system_audit|system_id [required] + |version_id; feeder_system_audit|system_id; originating_system_item_id:0|id + |issuer). Every key traces to the master05 FEEDER_AUDIT/FEEDER_AUDIT_DETAILS Flat-Path tables"
+
+cnf.sf.flat.participation_compact:
+  source: fixtures/sf/flat.participation_compact.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.vitals"
+  provenance: "authored 2026-07-22 from the ITS-REST simplified_formats master06 §Participation example — the COMPACT participation_identifiers form (one key holding the semicolon-separated issuer::assigner::id::type quad)"
+
+cnf.sf.flat.participation_expanded:
+  source: fixtures/sf/flat.participation_expanded.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "cnf.vitals"
+  provenance: "authored 2026-07-22 from the ITS-REST simplified_formats master06 §Participation example — the EXPANDED (non-compact) participation_identifiers form (one indexed key per component: |issuer:j / |assigner:j / |id:j / |type:j). Carries the same identifier data as cnf.sf.flat.participation_compact so both forms must resolve to identical EVENT_CONTEXT.participations"
 
 cnf.sf.flat.other_closed_list:
   source: fixtures/sf/flat.other_closed_list.json

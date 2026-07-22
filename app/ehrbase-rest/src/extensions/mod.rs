@@ -55,10 +55,8 @@ pub mod terminology;
 // — openEHR `specifications-ITS-REST` tag `Release-1.1.0`
 // @ `24058992d5fa96e8dfbd855d9c133f328387fc09` (byte-identical to the earlier
 // pre-release snapshot the contract was first generated against). This is the
-// same tree the conformance instrument derives its identity from
-// (`tools/conformance` `model::provenance`, which `include_str!`s that
-// PROVENANCE.md) and the same tree the codegen consumes, so the reported
-// version equals the one the ECC report claims. The ITS-REST spec *text*
+// same tree the codegen consumes, so the reported version equals the
+// vendored contract's identity. The ITS-REST spec *text*
 // (`docs/specs/openehr/ITS-REST/`) is vendored at the same release tag and is
 // the source of per-section citations.
 //

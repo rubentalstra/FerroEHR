@@ -17,6 +17,7 @@ spec_refs:
 constraint_context:
   template: cnf.tpl.interval_duration_allowed
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["years_allowed_lower", "months_allowed_lower", "weeks_allowed_lower", "days_allowed_lower", "hours_allowed_lower", "minutes_allowed_lower", "seconds_allowed_lower", "fractional_seconds_allowed_lower", "years_allowed_upper", "months_allowed_upper", "weeks_allowed_upper", "days_allowed_upper", "hours_allowed_upper", "minutes_allowed_upper", "seconds_allowed_upper", "fractional_seconds_allowed_upper"]
 decision_table:
   columns: [lower, upper, years_allowed_lower, months_allowed_lower, weeks_allowed_lower, days_allowed_lower, hours_allowed_lower, minutes_allowed_lower, seconds_allowed_lower, fractional_seconds_allowed_lower, years_allowed_upper, months_allowed_upper, weeks_allowed_upper, days_allowed_upper, hours_allowed_upper, minutes_allowed_upper, seconds_allowed_upper, fractional_seconds_allowed_upper, expected, violates]
   rows:

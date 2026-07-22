@@ -1,0 +1,61 @@
+{
+  "product": {
+    "name": "EHRbase",
+    "version": "2.34.0",
+    "vendor": "EHRbase (vitagroup / upstream open-source project)",
+    "identifier": "urn:ehrbase:ehrbase"
+  },
+  "schedule_release": "cnf-2.0-w2",
+  "spec_versions": {
+    "rm": "1.1.0",
+    "base": "1.2.0",
+    "term": "3.0.0",
+    "aql": "1.1.0",
+    "its_rest": "1.0.3"
+  },
+  "claims": {
+    "capabilities": [
+      "Adl14ArchetypeProvisioning",
+      "Adl14OptProvisioning",
+      "QueryProvisioning",
+      "EhrOperations",
+      "EhrStatus",
+      "CompositionOps",
+      "DirectoryOps",
+      "ChangeSets",
+      "Versioning",
+      "ArchetypeValidation",
+      "AqlBasic",
+      "AqlAdvanced",
+      "PhysicalDeletion",
+      "EhrApi",
+      "DefinitionApi",
+      "QueryApi",
+      "AdminApi",
+      "EhrDemographicSeparation",
+      "AuthenticatedAccess",
+      "AuthorizationSeparation"
+    ],
+    "profiles": [
+      "CORE",
+      "STANDARD"
+    ]
+  },
+  "tech_profiles": [
+    {
+      "its": "its-rest",
+      "formats": [
+        "canonical-json",
+        "canonical-xml"
+      ]
+    }
+  ],
+  "options": [
+    "adl14-duplicate-conflict",
+    "directory-empty-error"
+  ],
+  "non_functional": {
+    "note": "First-cut ICS for the CNF comparison re-base (#232), derived from the EHRbase 2.x documented surface: ADL 1.4 OPT provisioning only (no ADL 2 endpoints), no demographic/messaging/EHR-extract services, Basic auth with one clinical + one admin principal (no readonly role \u2014 the ixit declares no readonly instance), SimplifiedFormats UNCLAIMED: measured 2026-07-22, the /openehr/v1 composition endpoint answers 415 to the ITS-REST 1.1.0 media types (application/openehr.wt.flat+json / wt.structured+json) and accepts only the deprecated .schema+json names \u2014 the ITS-REST simplified wire is not implemented. Option selections (duplicate-template 409 via SYSTEM_ALLOWTEMPLATEOVERWRITE=false; directory-empty-error) are configuration-pinned by docker/sut-ehrbase-java.yml. Every claim is refined by the measured run \u2014 the published verdicts, not this file, are the record."
+  },
+  "evidence": []
+}

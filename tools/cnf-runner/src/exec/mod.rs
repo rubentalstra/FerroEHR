@@ -15,7 +15,9 @@
 //! reqwest driver and the verification-pack transcript player.
 
 pub mod assertions;
+pub mod content_synth;
 pub mod driver;
+pub mod opt_synth;
 pub mod outcome;
 pub mod player;
 pub mod recipes;
@@ -109,12 +111,19 @@ pub trait StepDriver {
     ) -> Result<StepObservation, String>;
 
     /// Re-establish the case's `requires` block (law a). Called before the
-    /// first row and again before every row under `reset_per_row`.
+    /// first row and again before every row under `reset_per_row`. Returns
+    /// [`Provisioned::RowNotApplicable`] when THIS row's ground cannot be
+    /// realized on the technology profile (register-cited) — the row is
+    /// recorded N/A and its steps are not driven.
     ///
     /// # Errors
     /// As [`StepDriver::perform`]: interpreter defects only.
-    fn provision(&mut self, case: &CaseCore, row: usize, vars: &mut VarStore)
-    -> Result<(), String>;
+    fn provision(
+        &mut self,
+        case: &CaseCore,
+        row: usize,
+        vars: &mut VarStore,
+    ) -> Result<Provisioned, String>;
 
     /// Evaluate the case's per-row postconditions (non-aggregate).
     ///
@@ -134,6 +143,19 @@ pub trait StepDriver {
     /// Interpreter defects only.
     fn aggregates(&mut self, case: &CaseCore, all_rows: &[VarStore])
     -> Result<Vec<String>, String>;
+}
+
+/// The outcome of law-a provisioning for one row.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Provisioned {
+    /// The ground is established; drive the row's steps.
+    Ready,
+    /// The row's ground is unrealizable on this technology profile — the
+    /// row is N/A with the given register citation.
+    RowNotApplicable {
+        /// The excusing register citation (e.g. an `AMB-nn` entry).
+        citation: String,
+    },
 }
 
 /// Resolve the expected kind for a step in a given row (the per-fixture
@@ -198,7 +220,14 @@ pub fn run_case<D: StepDriver>(
     for row in 0..total {
         if reset_per_row || row == 0 {
             vars = VarStore::default();
-            driver.provision(case, row, &mut vars)?; // law a
+            // Law a; an unrealizable per-row ground records the row N/A.
+            if let Provisioned::RowNotApplicable { citation } =
+                driver.provision(case, row, &mut vars)?
+            {
+                row_states.push(vars.clone());
+                rows.push(RowOutcome::NotApplicable { citation });
+                continue;
+            }
         }
 
         let mut row_outcome = RowOutcome::Passed;
@@ -311,9 +340,14 @@ mod tests {
                 assertion_failures: Vec::new(),
             })
         }
-        fn provision(&mut self, _c: &CaseCore, _r: usize, _v: &mut VarStore) -> Result<(), String> {
+        fn provision(
+            &mut self,
+            _c: &CaseCore,
+            _r: usize,
+            _v: &mut VarStore,
+        ) -> Result<Provisioned, String> {
             self.provisioned += 1;
-            Ok(())
+            Ok(Provisioned::Ready)
         }
         fn postconditions(
             &mut self,

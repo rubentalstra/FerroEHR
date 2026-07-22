@@ -107,13 +107,10 @@ impl Builder {
         render::preflight()?;
         // Validate the auxiliary fixtures once so a missing/corrupt file surfaces
         // as a build error rather than a silently-null payload in the hot loop.
-        conformance::testdata::fixtures::read_from("ehr-status.valid", render::EHR_STATUS_FIXTURE)
+        crate::sutclient::fixtures::read_from("ehr-status.valid", render::EHR_STATUS_FIXTURE)
             .map_err(|e| BenchError::Fixture(e.to_string()))?;
-        conformance::testdata::fixtures::read_from(
-            "contribution.valid",
-            render::CONTRIBUTION_ENVELOPE,
-        )
-        .map_err(|e| BenchError::Fixture(e.to_string()))?;
+        crate::sutclient::fixtures::read_from("contribution.valid", render::CONTRIBUTION_ENVELOPE)
+            .map_err(|e| BenchError::Fixture(e.to_string()))?;
         Ok(Self {
             profile: spec.profile,
             load_factor: spec.load_factor,

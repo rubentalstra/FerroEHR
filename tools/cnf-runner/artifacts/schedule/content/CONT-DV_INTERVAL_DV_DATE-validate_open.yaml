@@ -1,3 +1,13 @@
+# Re-adjudicated 2026-07-22 (issue #228): the previously-rejected rows rested on
+# invariants the openEHR RM does NOT define. BASE foundation_types §Interval
+# defines exactly Lower_included_valid, Upper_included_valid, Limits_consistent
+# ((not upper_unbounded and not lower_unbounded) implies lower <= upper) and
+# Limits_comparable ((not upper_unbounded and not lower_unbounded) implies
+# lower.strictly_comparable_to(upper)) — there is NO invariant requiring a bound
+# VALUE when the corresponding *_unbounded flag is false, and strictly_comparable
+# for partial dates of differing precision is an acknowledged open discussion
+# (the schedule's own DV_INTERVAL missing-invariants note). A conformant SUT
+# therefore accepts all of these; expectations corrected rejected -> accepted.
 id: CONT-DV_INTERVAL_DV_DATE-validate_open
 kind: content
 component: CONTENT
@@ -6,12 +16,15 @@ capabilities: [ArchetypeValidation]
 profiles: [CORE]
 test_purpose: >-
   A committed DV_INTERVAL<DV_DATE> against an open constraint ({*}) is accepted
-  iff its own interval invariants hold: a bounded limit must carry a value, and
-  the limits must be strictly comparable.
-description: "DV_INTERVAL<DV_DATE> open ({*}): interval invariants"
+  whenever the BASE Interval invariants that the RM actually defines hold
+  (Lower/Upper_included_valid, Limits_consistent). The RM defines no
+  value-present-when-bounded invariant and does not pin strictly_comparable for
+  partial dates of differing precision, so those rows are accepted.
+description: "DV_INTERVAL<DV_DATE> open ({*}): the RM-defined interval invariants"
 spec_refs:
   - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_DATE-validate_open"
   - "AM AOM1.4 §C_COMPLEX_OBJECT"
+  - "BASE foundation_types §Interval (Lower_included_valid / Upper_included_valid / Limits_consistent / Limits_comparable — the complete invariant set; no bound-value-required invariant)"
   - "RM data_types §DV_INTERVAL"
 applies: { rm: ">=1.0.2" }
 constraint_context:
@@ -20,11 +33,11 @@ constraint_context:
 decision_table:
   columns: [lower, upper, lower_unbounded, upper_unbounded, lower_included, upper_included, expected, violates]
   rows:
-    - [null, null, false, false, true, true, rejected, ["rm_schema: value is mandatory for lower and upper when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
-    - [null, "2022", false, false, true, true, rejected, ["rm_schema: value is mandatory for lower when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
-    - ["2021", null, false, false, true, true, rejected, ["rm_schema: value is mandatory for upper when the limit is not unbounded (schedule flags per the DV_INTERVAL missing-invariants discussion)"]]
+    - [null, null, false, false, true, true, accepted, []]
+    - [null, "2022", false, false, true, true, accepted, []]
+    - ["2021", null, false, false, true, true, accepted, []]
     - ["2021", "2022", false, false, true, true, accepted, []]
     - ["2021-01", "2022-08", false, false, true, true, accepted, []]
     - ["2021-01-20", "2022-08-11", false, false, true, true, accepted, []]
-    - ["2021", "2021-10", false, false, true, true, rejected, ["rm_invariant(limits_comparable): partial dates with different precision but common higher-order components are not strictly comparable (schedule cites the partial-date-time comparison discussion)"]]
+    - ["2021", "2021-10", false, false, true, true, accepted, []]
     - [null, null, true, true, false, false, accepted, []]

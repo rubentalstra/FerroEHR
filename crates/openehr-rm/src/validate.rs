@@ -244,7 +244,15 @@ fn is_valid_tz(tz: &str) -> bool {
 }
 
 fn is_valid_time_core(s: &str) -> bool {
-    // optional fractional seconds after '.' or ','
+    // A trailing decimal fraction (after '.' or ',') is legal ONLY on the
+    // seconds component: "partial date/times with fractional minutes or hours
+    // … in openEHR, only fractional seconds are supported" (BASE
+    // `foundation_types/master06-time_types.adoc` §"ISO 8601 semantics not
+    // included in these types"). A fractional hour ("10.5") or fractional
+    // minute ("10:05.5") is therefore rejected — a fraction is accepted only
+    // when the base carries full `HH:MM:SS` (seconds present). This mirrors the
+    // seconds-only fraction rule the duration path enforces
+    // (`parse_duration_components`).
     let (base, frac) = match s.split_once(['.', ',']) {
         Some((b, f)) => (b, Some(f)),
         None => (s, None),
@@ -254,17 +262,18 @@ fn is_valid_time_core(s: &str) -> bool {
     {
         return false;
     }
+    let has_frac = frac.is_some();
     if base.contains(':') {
         match base.split(':').collect::<Vec<_>>().as_slice() {
-            [h] => in_range(h, 0, 23),
-            [h, m] => in_range(h, 0, 23) && in_range(m, 0, 59),
+            [h] => !has_frac && in_range(h, 0, 23),
+            [h, m] => !has_frac && in_range(h, 0, 23) && in_range(m, 0, 59),
             [h, m, sec] => in_range(h, 0, 23) && in_range(m, 0, 59) && in_range(sec, 0, 60),
             _ => false,
         }
     } else {
         match base.len() {
-            2 => in_range(base, 0, 23),
-            4 => in_range(&base[0..2], 0, 23) && in_range(&base[2..4], 0, 59),
+            2 => !has_frac && in_range(base, 0, 23),
+            4 => !has_frac && in_range(&base[0..2], 0, 23) && in_range(&base[2..4], 0, 59),
             6 => {
                 in_range(&base[0..2], 0, 23)
                     && in_range(&base[2..4], 0, 59)
@@ -425,6 +434,25 @@ mod tests {
         assert!(!is_valid_iso_time("25:00"));
         assert!(!is_valid_iso_time("10:61"));
         assert!(!is_valid_iso_time("abc"));
+    }
+
+    /// BASE `foundation_types/master06-time_types.adoc` §"ISO 8601 semantics
+    /// not included in these types": "partial date/times with fractional
+    /// minutes or hours … in openEHR, only fractional seconds are supported".
+    /// A fraction is accepted only on full `HH:MM:SS` (seconds present);
+    /// fractional hours/minutes are rejected.
+    #[test]
+    fn iso_time_fraction_only_on_seconds() {
+        // Fractional seconds (period or comma) is the sole permitted case.
+        assert!(is_valid_iso_time("10:30:59.250"));
+        assert!(is_valid_iso_time("10:30:59,5"));
+        assert!(is_valid_iso_time("103059.250")); // compact HHMMSS
+        assert!(is_valid_iso_time("10:30:59.5+01:00")); // fraction before timezone
+        // A fractional hour or minute is rejected in every base form.
+        assert!(!is_valid_iso_time("10.5")); // fractional hour
+        assert!(!is_valid_iso_time("10:05.5")); // fractional minute (extended)
+        assert!(!is_valid_iso_time("1005.5")); // fractional minute (compact HHMM)
+        assert!(!is_valid_iso_time("10,5")); // fractional hour, comma
     }
 
     #[test]

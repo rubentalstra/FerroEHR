@@ -27,6 +27,7 @@ constraint_context:
   # (optional=0..1 = RM default; mandatory=1..1 = archetype-tightened).
   template: cnf.tpl.ecc_history_summary_existence
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data"
+  constraint_columns: ["summary_existence"]
 decision_table:
   # summary_existence: the archetype C_ATTRIBUTE.existence constraint token.
   # events_count: fixed 1 (Events_valid satisfied by the event, isolating summary).

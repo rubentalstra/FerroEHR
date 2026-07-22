@@ -125,6 +125,38 @@ mod tests {
         );
     }
 
+    /// CNF `master17.3-content_tc_data_types-quantity.adoc`
+    /// (CONT-DV_PROPORTION-validate_open): `type 3, num 10, den 500, precision 1
+    /// | rejected | fraction_validity` (and the type-4 analogue). A
+    /// fraction / integer_fraction with a present, non-zero precision is not
+    /// integral (`is_integral()` is "True … if precision is 0", RM
+    /// dv_proportion.adoc §Functions), so `Fraction_validity` must reject it even
+    /// though the numerator/denominator are whole numbers.
+    #[test]
+    fn fraction_with_nonzero_precision_rejected() {
+        let fraction_validity =
+            "Invariant Fraction_validity failed on type DV_PROPORTION".to_owned();
+        assert!(
+            messages(&proportion(10.0, 500.0, PK_FRACTION, Some(1))).contains(&fraction_validity)
+        );
+        assert!(
+            messages(&proportion(10.0, 500.0, PK_INTEGER_FRACTION, Some(1)))
+                .contains(&fraction_validity)
+        );
+        // Precision 0 with integer numerator/denominator is the valid fraction
+        // shape (CNF `type 3, 10/100, precision 0 | accepted`).
+        assert!(
+            proportion(10.0, 100.0, PK_FRACTION, Some(0))
+                .invariants()
+                .is_empty()
+        );
+        assert!(
+            proportion(10.0, 100.0, PK_INTEGER_FRACTION, Some(0))
+                .invariants()
+                .is_empty()
+        );
+    }
+
     #[test]
     fn denominator_zero_invalid() {
         assert!(

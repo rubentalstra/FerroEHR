@@ -46,17 +46,19 @@ applies to every crate — generated and hand-written alike.
 
 ## Oracles and the acceptance instrument
 
-- **The acceptance instrument is the ECC suite** (`tools/conformance`,
-  `scripts/conformance.sh`) — our own conformance framework with its own
-  numbering and generated data sets. Phase-close ECC runs must show **zero
-  drift** vs the committed baseline
-  (`docs/conformance/ehrbase-rs/results.json` — per-SUT artefact dirs since
-  W-10); the baseline only ratchets upward.
+- **The acceptance instrument is the CNF 2.0 runner** (`tools/cnf-runner`,
+  `scripts/conformance.sh`) — the data-driven interpreter over the committed
+  machine-readable catalogue, with pure-function verdicts. Phase-close runs
+  must show **zero drift** vs the committed baseline
+  (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`); the
+  baseline only ratchets upward. (The ECC harness retired 2026-07-22; the
+  reviewed comparison is `docs/conformance/cnf-comparison.md`.)
 - **The vendored CNF text is the oracle the instrument derives from:**
   `docs/specs/openehr/CNF/docs/platform_test_schedule/` defines what a
-  conformant server must do; the upstream Robot suites + fixtures under
-  `CNF/tests/platform/robot/` are *reference material only* — ECC cases are
-  never mapped to or imported from them (owner ruling).
+  conformant server must do; the upstream Robot suites under
+  `CNF/tests/platform/robot/` are reference material, and their official
+  DATA fixtures are adopted into the runner corpus as provenance-stamped
+  re-adjudications (never blind imports).
 - Golden vectors: openEHR conformance corpora, the vendored canonical-JSON
   corpus, Better's `web-template-tests`, openEHR reference archetypes.
   Prefer an existing golden vector over a hand-written fixture. A test that
@@ -77,7 +79,7 @@ Do not invent a third location.
 
 ## Target
 
-Full-ECC green is the standing bar (CORE + STANDARD PASS) —
+A green CNF pipeline is the standing bar (CORE + STANDARD PASS) —
 every change preserves it; the baseline only ratchets upward. Every phase
 ships compiling, clippy-clean, tested increments — this whole rule is fully
 active at all times.

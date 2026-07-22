@@ -17,6 +17,7 @@ spec_refs:
 constraint_context:
   template: cnf.tpl.interval_date_range
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["c_date_range_lower", "c_date_range_upper"]
 decision_table:
   columns: [lower, upper, c_date_range_lower, c_date_range_upper, expected, violates]
   rows:

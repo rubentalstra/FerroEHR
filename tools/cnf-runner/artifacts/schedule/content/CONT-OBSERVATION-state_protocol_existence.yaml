@@ -28,6 +28,7 @@ constraint_context:
   # per row (optional=0..1 = RM default; mandatory=1..1 = archetype-tightened).
   template: cnf.tpl.ecc_observation_state_protocol_existence
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]"
+  constraint_columns: ["state_existence", "protocol_existence"]
 decision_table:
   # state_existence/protocol_existence: the archetype C_ATTRIBUTE.existence tokens.
   # data_committed/state_committed/protocol_committed: whether each object is committed.

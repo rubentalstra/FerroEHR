@@ -26,6 +26,7 @@ constraint_context:
   # (optional=0..1 = RM default; mandatory=1..1 = archetype-tightened).
   template: cnf.tpl.ecc_event_state_existence
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events"
+  constraint_columns: ["state_existence"]
 decision_table:
   # state_existence: the archetype C_ATTRIBUTE.existence constraint token.
   # data_committed/state_committed: whether each EVENT object is committed.

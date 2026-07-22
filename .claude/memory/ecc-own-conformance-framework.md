@@ -1,30 +1,31 @@
 ---
 name: ecc-own-conformance-framework
-description: "2026-07-08 owner pivot — conformance is OUR framework (ECC), legacy openEHR CNF is reference reading only; no mapping/Robot/Python ever"
+description: "2026-07-22 cutover — the acceptance instrument is the CNF 2.0 runner (tools/cnf-runner); the ECC harness is retired; official Robot DATA enters the corpus only as provenance-stamped re-adjudications"
 metadata: 
   node_type: memory
   type: project
   originSessionId: 6e259293-e623-4384-b476-748dce5b3ab2
 ---
 
-The conformance instrument is the **ehrbase-rs Conformance Catalogue (ECC)**
-— our own framework; its design lives in the `tools/conformance` crate's own
-doc comments (`src/lib.rs` + the module headers) and git history.
+The conformance instrument is the **CNF 2.0 reference runner**
+(`tools/cnf-runner`) — a ground-up rebuild on the CNF framework itself
+(#202): machine-readable catalogue (case cores anchored on the official
+schedule ids, per-ITS operation bindings, closed vocabularies, typed
+ambiguity register), a data-driven interpreter under the five step laws,
+and pure-function verdicts from (statement, results, catalogue, capability
+matrix). `scripts/conformance.sh` is the pipeline; artifacts + baseline
+live ONLY under `docs/conformance/<sut>/`.
 
-**Why:** the official openEHR CNF corpus is frozen/unmaintained upstream
-(dormant since 2024-08, stub chapters, 2019 Robot/Python harness). Owner
-directives (emphatic, repeated): own numbering (`ECC-<AREA>-<NNN>[.VV]`,
-committed `inventory/ecc-catalog.tsv`, numbers never reused), own taxonomy
-(15 areas), spec-first case universe from the *pinned current specs*,
-generated data sets (not copied 2019 fixtures), version-aware model
-(`SpecVersions`, latest-only supported today), ≥2,000 tests at build-out,
-enterprise-clean layered crate (`model/testdata/engine/reporting/suites` +
-facade in `ehrbase-conformance`). **Never** build mapping/trace machinery to
-legacy CNF ids, never parse Robot files as framework machinery — vendored
-CNF is design-time reading + input payloads only.
+**Why:** the 2026-07-08 "own framework (ECC)" pivot was superseded by the
+owner-approved CNF 2.0 rebuild (#197/#202); the ECC harness retired
+2026-07-22 with the reviewed comparison (`docs/conformance/cnf-comparison.md`,
+gate clean). Its catalogue inventory is preserved at
+`tools/cnf-runner/comparison/ecc-catalog.tsv`.
 
-**How to apply:** any conformance work goes through the ECC catalogue +
-guards (`REGEN_CATALOG=1` to allocate); reports are catalogue-driven; keep
-the crate clippy-clean; check the v4 build-out list in the phase file before
-starting. (The spec-adherence mandate + greenfield pivot now live in
-CLAUDE.md hard rules.) Related: [[owner-work-style]].
+**How to apply:** never resurrect `tools/conformance` or ECC ids in new
+work; expectations trace to spec text only; the upstream Robot suites stay
+reference material, but their official DATA fixtures are adopted into the
+runner corpus as provenance-stamped re-adjudications (the earlier
+"no Robot ever" wording applied to CASE mapping, not data). Case authoring
+defects are fixed with citations — see [[owner-work-style]] and the
+catalogue-audit issue #231.

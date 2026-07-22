@@ -1,7 +1,7 @@
 # Per-RM-type suffix mapping: the context types — EVENT_CONTEXT, PARTICIPATION,
 # ISM_TRANSITION (simplified_formats master05 §EVENT_CONTEXT, §PARTICIPATION,
 # §ISM_TRANSITION). Exercised functionally on the official minimal_action
-# template (cnf.opt.vitals), whose FLAT instance (cnf.flat.vitals.minimal_ctx)
+# template (cnf.opt.minimal_action), whose FLAT instance (cnf.flat.vitals.minimal_ctx)
 # carries ctx/time, ctx/setting, ctx/participation_* and an ACTION
 # ism_transition: the commit is read back canonical and the mapped RM paths
 # asserted.
@@ -27,7 +27,7 @@ spec_refs:
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.vitals]
+  templates: [cnf.opt.minimal_action]
   ehr: { commits: none }                 # mints ${ehr_id}
 data_sets: [cnf.flat.vitals.minimal_ctx]
 flow:

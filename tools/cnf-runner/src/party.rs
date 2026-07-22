@@ -276,6 +276,19 @@ impl OutcomeStatus {
     }
 }
 
+/// One failing row of a table-driven case: the row index (0-based, the
+/// content-table order), the failing step (0 = a postcondition/aggregate),
+/// and the reason.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FailedRow {
+    /// The 0-based row index in the case's parameter table.
+    pub row: usize,
+    /// The failing step number (0 for postcondition/aggregate failures).
+    pub step: u32,
+    /// The failure reason.
+    pub reason: String,
+}
+
 /// One case×format outcome record — the executor's [`CaseRecord`] rolled up
 /// into a single verdict for the results document.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -300,6 +313,10 @@ pub struct OutcomeRecord {
     /// The excusing citation — mandatory for `skipped`/`not_applicable`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub citation: Option<String>,
+    /// Every failing row of a table-driven case (empty unless `failed`) —
+    /// the per-row evidence a triage needs, not just the first reason.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub failed_rows: Vec<FailedRow>,
 }
 
 impl OutcomeRecord {
@@ -331,11 +348,17 @@ impl From<&CaseRecord> for OutcomeRecord {
         let mut na_citation: Option<String> = None;
         let mut skip_citation: Option<String> = None;
         let mut has_passed = false;
+        let mut failed_rows = Vec::new();
 
-        for row in &record.rows {
+        for (index, row) in record.rows.iter().enumerate() {
             match row {
                 RowOutcome::Passed => has_passed = true,
                 RowOutcome::Failed { step, reason } => {
+                    failed_rows.push(FailedRow {
+                        row: index,
+                        step: *step,
+                        reason: reason.clone(),
+                    });
                     if failing.is_none() {
                         failing = Some((*step, reason.clone()));
                     }
@@ -358,7 +381,7 @@ impl From<&CaseRecord> for OutcomeRecord {
             }
         }
 
-        let base = |status, failing_step, reason, citation| OutcomeRecord {
+        let base = |status, failing_step, reason, citation, failed_rows| OutcomeRecord {
             case: record.case.clone(),
             format: record.format,
             status,
@@ -367,24 +390,50 @@ impl From<&CaseRecord> for OutcomeRecord {
             failing_step,
             reason,
             citation,
+            failed_rows,
         };
 
         if let Some((step, reason)) = failing {
-            base(OutcomeStatus::Failed, Some(step), Some(reason), None)
+            base(
+                OutcomeStatus::Failed,
+                Some(step),
+                Some(reason),
+                None,
+                failed_rows,
+            )
         } else if let Some((step, reason)) = erroring {
-            base(OutcomeStatus::Errored, Some(step), Some(reason), None)
+            base(
+                OutcomeStatus::Errored,
+                Some(step),
+                Some(reason),
+                None,
+                Vec::new(),
+            )
         } else if has_passed {
-            base(OutcomeStatus::Passed, None, None, None)
+            base(OutcomeStatus::Passed, None, None, None, Vec::new())
         } else if let Some(citation) = na_citation {
-            base(OutcomeStatus::NotApplicable, None, None, Some(citation))
+            base(
+                OutcomeStatus::NotApplicable,
+                None,
+                None,
+                Some(citation),
+                Vec::new(),
+            )
         } else if let Some(citation) = skip_citation {
-            base(OutcomeStatus::Skipped, None, None, Some(citation))
+            base(
+                OutcomeStatus::Skipped,
+                None,
+                None,
+                Some(citation),
+                Vec::new(),
+            )
         } else {
             base(
                 OutcomeStatus::Errored,
                 None,
                 Some("no rows driven".to_owned()),
                 None,
+                Vec::new(),
             )
         }
     }
@@ -531,7 +580,7 @@ mod tests {
     fn statement_round_trips() {
         let json = serde_json::json!({
             "product": { "name": "EHRbase-rs", "version": "3.5.0",
-                          "vendor": "openHospi", "identifier": "urn:x:ehrbase-rs" },
+                          "vendor": "Ruben Talstra", "identifier": "urn:rubentalstra:ehrbase-rs" },
             "schedule_release": "CNF-2.0",
             "spec_versions": { "rm": "1.2.0", "its_rest": "1.1.0" },
             "claims": { "capabilities": ["EhrOperations"], "profiles": ["CORE"] },

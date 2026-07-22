@@ -185,12 +185,37 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     emit_direct_rm_paths(node, rm, out);
 }
 
+/// Whether the template-child walk already emitted a child that realizes RM
+/// attribute `attr` on `node` — i.e. some template child whose relative RM path
+/// (master04 §Level Removal) begins with `attr` produced an entry in `out`.
+///
+/// This is the correct suppression signal for the direct-RM-path fallback: the
+/// web template may constrain an attribute under a node-id-specialized child
+/// whose id is NOT the attribute name (e.g. the CKM ACTION templates model
+/// `ism_transition` as the careflow-state children `ism_transition[at0109,…]`,
+/// id `intended`/`completed`/…), so an id-string check on the attribute name
+/// misses it. Conversely, when the template models the attribute but no such
+/// child matched this instance (e.g. the RM value carries no careflow node id),
+/// the walk emits nothing — and the direct path MUST still emit the generic
+/// spelling so the datum is not lost. Hence: suppress iff a realizing child was
+/// actually emitted; the WT-child realization then wins entirely (it carries
+/// the constrained node identity/name the direct path cannot reconstruct).
+fn attr_emitted(node: &WebTemplateNode, out: &SimNode, attr: &str) -> bool {
+    node.children.iter().any(|c| {
+        out.children.contains_key(&c.id)
+            && rmpath::relative(&node.aql_path, &c.aql_path)
+                .first()
+                .is_some_and(|s| s.attribute == attr)
+    })
+}
+
 /// Emit the direct RM-attribute paths the master05 per-type mapping tables
 /// declare on this node but that the OPT left unconstrained (so the compacted
 /// web-template carries no child for them) — the mirror of
 /// [`crate::build`]'s direct-path handling, keeping the RM⇄FLAT round-trip
-/// lossless. Each attribute is emitted only when the datum-driven walk above
-/// did not already surface it as a template child (`out` lacks the segment).
+/// lossless. Each attribute is emitted ONLY when the template-child walk did
+/// not already realize that RM attribute ([`attr_emitted`]); whenever a
+/// WT-child realized it, that realization wins entirely.
 ///
 /// `master05-rm_mapping.adoc` §§ACTION (`/time`, `/ism_transition`),
 /// INSTRUCTION (`/narrative`), OBSERVATION (`/history_origin`), ACTIVITY
@@ -200,7 +225,7 @@ fn walk(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
 /// (master06; [`crate::ctx`]) to avoid a duplicate encoding of the same datum.
 fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     let mut leaf = |name: &str, rm_type: &str, value: Option<&Value>| {
-        if out.children.contains_key(name) {
+        if attr_emitted(node, out, name) {
             return;
         }
         if let Some(v) = value.filter(|v| !v.is_null()) {
@@ -210,7 +235,7 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
     match base_type(&node.rm_type) {
         "ACTION" => {
             leaf("time", "DV_DATE_TIME", rm.get("time"));
-            if !out.children.contains_key("ism_transition")
+            if !attr_emitted(node, out, "ism_transition")
                 && let Some(ism) = rm.get("ism_transition").filter(|v| !v.is_null())
             {
                 emit_ism_transition(ism, out.occurrence_mut("ism_transition", None));
@@ -218,6 +243,9 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
         }
         "INSTRUCTION" => leaf("narrative", "DV_TEXT", rm.get("narrative")),
         "OBSERVATION" => {
+            // `history_origin` maps to the nested `data.origin` (master05
+            // §OBSERVATION); the HISTORY is compacted away, so `origin` is
+            // never a template leaf child — emit it unless the walk already did.
             if !out.children.contains_key("history_origin")
                 && let Some(origin) = rm.pointer("/data/origin/value")
             {
@@ -232,7 +260,7 @@ fn emit_direct_rm_paths(node: &WebTemplateNode, rm: &Value, out: &mut SimNode) {
             // (master05 §ACTIVITY: "Will be set to /.*/ if not set explicit.");
             // that default is re-synthesised on build, so emitting it would
             // desync the round-trip — emit only an explicit non-default value.
-            if !out.children.contains_key("action_archetype_id")
+            if !attr_emitted(node, out, "action_archetype_id")
                 && let Some(aid) = rm.get("action_archetype_id").and_then(Value::as_str)
                 && aid != "/.*/"
             {

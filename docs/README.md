@@ -59,10 +59,12 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
   PG, openEHR spec components) except third-party Rust crates (root `Cargo.toml`
   wins for those).
 - `postgres-features.md` — the PG 17/18 feature delta this CDR exploits.
-- `conformance/` — ECC run artifacts, one directory per SUT (`ehrbase-rs/`,
-  `ehrbase-java/`, …): `CONFORMANCE_REPORT.md`, `CONFORMANCE_STATEMENT.md`,
-  `CONFORMANCE_CERTIFICATE.md`, `results.json`, badges; the SUT-independent
-  `CATALOG.md` at the root. Current (ehrbase-rs): **402 executed · 384
-  passed · 0 failed · 18 N/A — CORE PASS / STANDARD PASS**.
+- `conformance/` — CNF 2.0 pipeline artifacts, one directory per SUT
+  (`ehrbase-rs/`: `results.json`, `verdicts.json`, the rendered
+  report/statement/certificate, badges), plus `cnf-comparison.md` (the
+  reviewed ECC↔CNF cutover record). `ehrbase-java/` + `COMPARISON.md` are
+  the FROZEN final artifacts of the retired ECC harness (2026-07-22) —
+  historical comparison data until the CNF pipeline re-bases the public
+  comparison. Numbers live ONLY in these committed artifacts.
 - `benchmarks/` — `REPORT.md` + `results.json` + `COMPARISON.md` from the
   benchmark harness (`tools/benchmark`), regenerated per measured pair.
