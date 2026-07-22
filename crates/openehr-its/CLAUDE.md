@@ -36,9 +36,12 @@ RM class-invariant dispatcher that drives the reader. Proven by
   (canonical-JSON corpus round-trips, C14N, schema validation, the R0
   determinism manifest) — never weaken or skip one to get green; a gate failure
   means the emitter or runtime is wrong.
-- `tests/opt14_corpus.rs` is a parse gate: every vendored `.opt` operational
-  template (`app/ehrbase/tests/resources/service`) must parse into the generated
-  `opt14::OperationalTemplate`, with exactly two fixtures adjudicated XSD-invalid
-  (a missing mandatory `OPERATIONAL_TEMPLATE.language`; a missing mandatory
-  `DV_PROPORTION.type`) — each carrying its XSD citation; a fixture that starts
-  parsing must be re-adjudicated, never silently dropped.
+- `tests/opt14_corpus.rs` carries TWO parse gates: (1) every vendored `.opt`
+  under `app/ehrbase/tests/resources/service` parses + round-trips through the
+  generated `opt14::OperationalTemplate`; (2) every official CNF robot
+  VALID-template fixture (`docs/specs/openehr/CNF/tests/platform/robot/
+  _resources/test_data_sets/valid_templates`) parses, with exactly two fixtures
+  adjudicated XSD-invalid (a missing mandatory `OPERATIONAL_TEMPLATE.language`
+  per Template.xsd; a missing mandatory `DV_PROPORTION.type` per BaseTypes.xsd)
+  — each pinned as an EXPECTED rejection with its citation; a fixture that
+  starts parsing must be re-adjudicated, never silently dropped.

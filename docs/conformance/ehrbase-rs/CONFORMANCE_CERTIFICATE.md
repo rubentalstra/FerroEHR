@@ -7,7 +7,7 @@
 | Solution | ehrbase-rs 3.6.0 |
 | Vendor | Ruben Talstra |
 | Runner | cnf-runner 3.6.0 |
-| Infrastructure | — |
+| Infrastructure | ixit.json#/environment |
 
 ## Scope of Test
 
@@ -15,6 +15,7 @@
 | --- | --- |
 | Functional | CORE, STANDARD, OPTIONS, SEC-BASIC |
 | Sec & Priv | SEC-BASIC PASS |
+| Performance | class POC (earned) |
 | Ext Data Fmt | canonical-json |
 
 ## Profile Report
@@ -62,4 +63,14 @@ Result column: ITS its-rest (canonical-json)
 | Security | AuthorizationSeparation | Y | pass |
 | Security | AuditAccountability | Y | pass |
 | Security | AnonymousEhrs | Y | pass |
+
+## Performance Rating
+
+Classes are EARNED by measurement (never declared); every earned class is bound to the measured environment recorded in the results.
+
+| Class | Case | Claimed | Verdict |
+| --- | --- | --- | --- |
+| POC | PERF-mixed_load-class_POC | yes | EARNED |
+
+Environment (PERF-mixed_load-class_POC): consumer-laptop · 8 cores · 16 GB · nvme · single-node docker compose (8-CPU/8GB Docker VM) on Apple M2
 
