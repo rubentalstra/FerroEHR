@@ -395,21 +395,50 @@ async fn drain(
     // multi-row INSERT instead of per-event round trips (the throughput
     // defect behind a full queue at write-path rates).
     let mut batch: Vec<AuditEvent> = Vec::with_capacity(DRAIN_BATCH);
+    // The subject lookup memo: an EHR's subject id is immutable for audit
+    // purposes at write-path rates, and one awaited per-event lookup was the
+    // remaining drain bottleneck (a saturated queue at seeding-grade load).
+    // Distinct uncached ids of a batch resolve CONCURRENTLY, then memoize.
+    let subject_cache: moka::future::Cache<String, Option<String>> = moka::future::Cache::builder()
+        .max_capacity(100_000)
+        .time_to_live(Duration::from_hours(1))
+        .build();
     loop {
         batch.clear();
         if rx.recv_many(&mut batch, DRAIN_BATCH).await == 0 {
             break; // channel closed and drained
         }
 
-        // Enrich + render once per event; both the store and the FHIR feed
-        // consume the rendered document.
+        // Optional subject enrichment — background only, never on the
+        // request path: dedupe the batch's EHR ids, resolve the uncached
+        // ones concurrently, memoize.
+        if resolve_subject && let Some(resolve) = &resolver {
+            let mut pending: Vec<String> = batch
+                .iter()
+                .filter_map(|event| event.ehr_id.clone())
+                .filter(|ehr_id| !subject_cache.contains_key(ehr_id))
+                .collect();
+            pending.sort_unstable();
+            pending.dedup();
+            let mut lookups = tokio::task::JoinSet::new();
+            for ehr_id in pending {
+                let lookup = resolve(ehr_id.clone());
+                lookups.spawn(async move { (ehr_id, lookup.await) });
+            }
+            while let Some(joined) = lookups.join_next().await {
+                if let Ok((ehr_id, subject)) = joined {
+                    subject_cache.insert(ehr_id, subject).await;
+                }
+            }
+        }
+
+        // Render once per event; both the store and the FHIR feed consume
+        // the rendered document.
         let mut records: Vec<(AuditEvent, Option<String>, fhir::FhirAuditEvent)> =
             Vec::with_capacity(batch.len());
         for event in batch.drain(..) {
-            // Optional subject enrichment — background only, never on the
-            // request path.
-            let subject = match (resolve_subject, &resolver, &event.ehr_id) {
-                (true, Some(resolve), Some(ehr_id)) => resolve(ehr_id.clone()).await,
+            let subject = match (resolve_subject, &event.ehr_id) {
+                (true, Some(ehr_id)) => subject_cache.get(ehr_id).await.flatten(),
                 _ => None,
             };
             let rendered = fhir::to_fhir(&event, &ctx, subject.as_deref());
