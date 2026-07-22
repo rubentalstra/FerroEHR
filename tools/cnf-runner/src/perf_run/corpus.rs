@@ -20,10 +20,19 @@ use crate::perf_run::pack::JourneyPack;
 pub(crate) const STORED_QUERY_NAME: &str = "cnf.ward_dashboard";
 
 /// The per-patient blood-pressure trend (the corpus contract's committed
-/// series), EHR-scoped — the ad-hoc read and the stored query.
+/// series), EHR-scoped via the `$ehr_id` binding — the ad-hoc read.
 pub(crate) const ADHOC_AQL: &str = "SELECT c/uid/value, o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude \
      FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
      WHERE e/ehr_id/value = $ehr_id LIMIT 10";
+
+/// The registered dashboard query: the same trend WITHOUT a `$ehr_id`
+/// parameter — the stored-query GET scopes by the wire `ehr_id` query
+/// parameter (ITS-REST `query_execute_stored_query`: `ehr_id` is the EHR
+/// scope; AQL `$name` bindings ride `query_parameters`, which the
+/// continuous dashboard pattern does not need).
+pub(crate) const STORED_QUERY_AQL: &str = "SELECT c/uid/value, o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude \
+     FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
+     LIMIT 10";
 
 /// The cross-EHR ward worklist (the population query class).
 pub(crate) const WARD_AQL: &str = "SELECT e/ehr_id/value, c/uid/value \
@@ -321,7 +330,7 @@ pub fn seed_ward(
     let stored = client.request(
         reqwest::Method::PUT,
         &format!("/definition/query/{STORED_QUERY_NAME}"),
-        Some(("text/plain", ADHOC_AQL.as_bytes().to_vec())),
+        Some(("text/plain", STORED_QUERY_AQL.as_bytes().to_vec())),
         false,
         None,
     )?;
