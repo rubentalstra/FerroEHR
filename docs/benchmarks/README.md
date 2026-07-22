@@ -19,8 +19,8 @@ in both directions.
 
 Its artifacts live per system under this directory
 (`docs/benchmarks/<sut>/` — `results.json`, `REPORT.md`, `charts/`, raw
-histograms) with the head-to-head comparison in
-[`COMPARISON.md`](COMPARISON.md).
+histograms); the head-to-head comparison against upstream is published on the
+website comparison page and in `../conformance/COMPARISON.md`.
 
 ## The CNF measured class runs (conformance-by-measurement)
 

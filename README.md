@@ -269,72 +269,34 @@ of this page are generated from real runs.
 One benchmark, two servers, byte-identical requests: a **simulated hospital
 day** of fully-populated clinical documents — admissions, shift vitals,
 medication rounds, lab results, AQL chart reviews, corrections, discharges —
-on official openEHR CKM templates. Both directions always published.
+on official openEHR CKM templates. Both directions are always published, and
+every number is derived from committed run artifacts — nothing here is
+hand-typed.
 
-### Maximum sustained throughput
+The measured **knee throughput**, **p99 latency per operation class**, and
+**runtime footprint** are published as generated charts from the committed
+comparison run. The knee is the highest load that holds the p99
+service-level objective with errors inside budget; the ladder auto-extends
+until a real breach bounds each knee from above, so neither side's figure is
+a guess. Where upstream wins an operation class, its bar is drawn exactly
+like one where it loses.
 
-**631 req/s vs 475 req/s — ehrbase-rs sustains 1.3× upstream's load**, and
-carries **15,642 vs 11,755 completed clinical events per minute** doing it
-(the knee: the highest load holding p99 ≤ 1 s and errors ≤ 0.1%, measured
-back-to-back on the same host, same payloads, full config parity). Both
-knees are breach-resolved — the ladder auto-extends until a real SLO breach
-bounds every knee from above, so neither figure is a guess:
-
-| | Max sustained | Clinical events/min | p99 at the knee |
-|---|--:|--:|--:|
-| **ehrbase-rs** | **631 req/s** (37,890 req/min) | **15,642** | **205 ms** |
-| EHRbase 2.34.0 (Java) | 475 req/s (28,500 req/min) | 11,755 | 575 ms |
-
-![Max sustained req/s at the SLO](docs/benchmarks/charts/comparison-knee.svg)
-
-At L=64 — a third past upstream's knee — ehrbase-rs still holds a **205 ms**
-p99 at 0.03% errors; upstream starts breaching at L=52 (a **26-second** p99
-at 6.8% errors) and never reaches a rung ehrbase-rs cannot sustain. Full
-ladders: [ehrbase-rs](docs/benchmarks/ehrbase-rs/KNEE.md) ·
-[upstream](docs/benchmarks/ehrbase-java/KNEE.md).
-
-![ehrbase-rs saturation ladder](docs/benchmarks/ehrbase-rs/charts/knee.svg)
-
-### Identical load, side by side
-
-The measured clinical hour (1,209 requests, zero errors on both servers),
-from [the full comparison](docs/benchmarks/COMPARISON.md) — generated,
-every number traces to a committed artefact. **ehrbase-rs holds the lower
-p99 and the lower median in 13 of the 14 operation classes** (upstream
-keeps `ehr-read`, printed):
-
-| | ehrbase-rs | EHRbase 2.33.0 (Java) |
-|---|--:|--:|
-| Idle memory | **16 MB** | 519 MB |
-| Peak memory | **134 MB** | 605 MB |
-| Mean CPU, identical load | **0.4 %** | 1.6 % |
-| Cold start (container → healthy) | **11.5 s** | 11.9 s |
-| p99 — composition create (large) | **110 ms** | 148 ms |
-| p99 — patient AQL dashboard | **36 ms** | 87 ms |
-| p99 — composition read | **36 ms** | 75 ms |
-| p99 — composition update | **75 ms** | 135 ms |
-| Storage per composition | **27.0 KB** | 35.0 KB |
-| Efficiency | **78.4 req/s per core** | 21.6 |
-
-![App memory: idle and peak RSS](docs/benchmarks/charts/comparison-memory.svg)
+![Maximum sustained throughput at the SLO](docs/benchmarks/charts/comparison-knee.svg)
 
 ![p99 latency per operation class](docs/benchmarks/charts/comparison-p99.svg)
 
-### Fair, and reproducible
+![App memory: idle and peak resident set](docs/benchmarks/charts/comparison-memory.svg)
 
-Where upstream wins, it's printed (in this pair: `ehr-read`, at both the
-median and the p99 — everything else is ehrbase-rs, both directions in the
-generated comparison). The instrument
-treats both sides identically — same payload set (accepted 6/6 by both
-servers), same DB tuning floor incl. shared-memory and vacuum settling,
-same admission depth, same log levels — and its fairness fixes cut both
-ways: two found handicapping *upstream* (a starved database `/dev/shm`,
-storm-contaminated rungs), three handicapping *ehrbase-rs* (an admission
-cap upstream doesn't have, cold-start timing charging our image build,
-payload quirks). Single-run numbers on one shared host — a lower bound,
-not a certified maximum. Reproduce with `scripts/benchmark.sh` (the
-pre-registered workload, CO-corrected latency, and config-parity method is
-documented in the tool itself, `tools/benchmark/`).
+The full, generated comparison — the throughput knee, the per-class latency
+table, memory, CPU, cold start, and storage per composition, with a
+computed "where the other side wins" section — is the
+[comparison page](https://rubentalstra.github.io/ehrbase-rs/docs/latest/comparison.html)
+on the website and [`docs/conformance/COMPARISON.md`](docs/conformance/COMPARISON.md)
+in the repo, with the per-system benchmark artifacts under
+[`docs/benchmarks/`](docs/benchmarks/). Reproduce either side with
+`scripts/benchmark.sh`; the pre-registered workload,
+coordinated-omission-corrected latency, and config-parity method are
+documented in the tool itself, `tools/benchmark/`.
 
 ## Deployment
 

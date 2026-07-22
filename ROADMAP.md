@@ -38,7 +38,10 @@ container image.
 - **Performance** — profile-first, one change per ladder, re-measured per
   release; the PG18-native headroom (AIO tuning, pipelined hot reads,
   `JSON_TABLE` codegen, speculative indexes) is spent only where a profile
-  demands it.
+  demands it. Performance conformance is now measured, not asserted:
+  volumetric deployment classes are earned per release through the CNF
+  runner's open-loop measured runs and published from committed artifacts,
+  never declared.
 - **The admin console** — a real design system and 100% feature
   completeness over strictly ITS-REST; the CDR stays headless, the console
   stays a client, never a bypass.
