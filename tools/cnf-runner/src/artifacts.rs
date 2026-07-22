@@ -7,6 +7,7 @@
 //! <root>/vocab/outcomes.yaml       outcome vocabulary
 //! <root>/vocab/selectors.yaml      selector vocabulary + ignore-sets
 //! <root>/vocab/capability_matrix.yaml
+//! <root>/vocab/journey_catalogue.yaml   the hospital-simulation journeys
 //! <root>/corpus/MANIFEST.yaml      corpus manifest
 //! <root>/registers/ambiguities.yaml
 //! ```
@@ -37,6 +38,9 @@ pub struct ArtifactSet {
     pub outcomes: Option<(PathBuf, OutcomesVocab)>,
     pub selectors: Option<(PathBuf, SelectorsVocab)>,
     pub matrix: Option<(PathBuf, CapabilityMatrix)>,
+    /// The clinical journey catalogue the performance workloads decompose
+    /// into (`vocab/journey_catalogue.yaml`).
+    pub journeys: Option<(PathBuf, crate::perf::JourneyCatalogue)>,
     pub corpus: Option<(PathBuf, CorpusManifest)>,
     pub register: Option<(PathBuf, AmbiguityRegister)>,
     /// The corpus manifest's directory (source paths resolve against it).
@@ -93,6 +97,7 @@ fn load_performance_case(path: &Path) -> Result<crate::perf::PerformanceCase, Lo
 /// Only on a schema-compilation defect in [`crate::schema`] itself — a bug
 /// in this crate, not in the artifact tree. Tree problems come back as
 /// [`Loaded::errors`].
+#[allow(clippy::too_many_lines)] // one singleton-loading block per artifact family
 pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     let case_schema = compile_schema(&schema::case_core_schema(), "case-core.schema.json")?;
     let binding_schema = compile_schema(
@@ -112,6 +117,10 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
     let register_schema = compile_schema(
         &schema::ambiguity_register_schema(),
         "ambiguity-register.schema.json",
+    )?;
+    let journeys_schema = compile_schema(
+        &schema::journey_catalogue_schema(),
+        "journey-catalogue.schema.json",
     )?;
 
     let mut loaded = Loaded::default();
@@ -171,6 +180,16 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
         &mut |path, p| match load_artifact::<CapabilityMatrix>(p, &matrix_schema) {
             Ok(v) => {
                 loaded.set.matrix = Some((path, v));
+                None
+            }
+            Err(e) => Some(e),
+        },
+    );
+    singleton(
+        "vocab/journey_catalogue.yaml",
+        &mut |path, p| match load_artifact::<crate::perf::JourneyCatalogue>(p, &journeys_schema) {
+            Ok(v) => {
+                loaded.set.journeys = Some((path, v));
                 None
             }
             Err(e) => Some(e),

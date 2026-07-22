@@ -969,12 +969,14 @@ pub fn performance_case_schema() -> Value {
             "workload": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["arrival_rate", "warmup", "duration", "mix"],
+                "required": ["arrival_rate", "warmup", "duration", "journeys"],
                 "properties": {
                     "arrival_rate": { "type": "string", "pattern": "^[0-9.]+/s$" },
                     "warmup": { "type": "string", "pattern": "^PT([0-9]+H)?([0-9]+M)?([0-9]+S)?$" },
                     "duration": { "type": "string", "pattern": "^PT([0-9]+H)?([0-9]+M)?([0-9]+S)?$" },
-                    "mix": { "type": "object", "minProperties": 1,
+                    "arrival_curve": { "enum": ["uniform", "diurnal"] },
+                    "journeys": { "type": "object", "minProperties": 1,
+                              "propertyNames": { "pattern": IDENT_PATTERN },
                               "additionalProperties": { "type": "string", "pattern": "^[0-9.]+%$" } }
                 }
             },
@@ -990,6 +992,71 @@ pub fn performance_case_schema() -> Value {
                         "operation": { "type": "string" },
                         "max": { "type": "number" },
                         "min": { "type": "number" }
+                    }
+                }
+            }
+        }
+    })
+}
+
+/// The published journey-operation tokens, vocabulary order.
+fn perf_op_tokens() -> Vec<&'static str> {
+    crate::perf::PerfOp::ALL
+        .iter()
+        .map(|op| op.as_str())
+        .collect()
+}
+
+/// `vocab/journey_catalogue.yaml` — the hospital-simulation journey
+/// vocabulary the performance workloads decompose into.
+#[must_use]
+pub fn journey_catalogue_schema() -> Value {
+    let duration_pattern = "^PT([0-9]+H)?([0-9]+M)?([0-9]+S)?$";
+    let offset = json!({
+        "oneOf": [
+            { "type": "string", "pattern": duration_pattern },
+            { "type": "object", "additionalProperties": false,
+              "required": ["uniform"],
+              "properties": { "uniform": {
+                  "type": "array", "minItems": 2, "maxItems": 2,
+                  "items": { "type": "string", "pattern": duration_pattern } } } },
+            { "type": "object", "additionalProperties": false,
+              "required": ["periodic"],
+              "properties": { "periodic": {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["interval", "count"],
+                  "properties": {
+                      "interval": { "type": "string", "pattern": duration_pattern },
+                      "count": { "type": "integer", "minimum": 1 } } } } }
+        ]
+    });
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("journey-catalogue"),
+        "title": "CNF 2.0 journey catalogue",
+        "description": "The hospital-simulation vocabulary: clinical journeys as ordered, time-offset operation sequences over the closed operation vocabulary; commit/update stages name their corpus template; each journey cites its activity-statistics derivation. No openEHR spec governs measured performance (CNF guide master03-overview.adoc §Product Scope) — our own design/extension.",
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "pattern": IDENT_PATTERN },
+        "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["description", "derivation", "stages"],
+            "properties": {
+                "description": { "type": "string", "minLength": 1 },
+                "derivation": { "type": "string", "minLength": 1 },
+                "stages": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["op", "at"],
+                        "properties": {
+                            "op": { "enum": perf_op_tokens() },
+                            "template": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+                            "at": offset
+                        }
                     }
                 }
             }
@@ -1080,6 +1147,7 @@ pub fn emit_all() -> Vec<(&'static str, Value)> {
         ("results.schema.json", results_schema()),
         ("ixit.schema.json", ixit_schema()),
         ("performance-case.schema.json", performance_case_schema()),
+        ("journey-catalogue.schema.json", journey_catalogue_schema()),
         ("stress.schema.json", stress_schema()),
         ("transcript.schema.json", transcript_schema()),
     ]
