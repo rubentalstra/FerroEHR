@@ -22,6 +22,13 @@ intuition.
   under `CNF/tests/platform/robot/`), the implementation must satisfy those
   test cases — exact status codes, headers, and payload shapes. When in doubt,
   the CNF test case wins over a plausible reading of prose.
+- **CNF red-run triage is spec-adjudicated** (`.claude/rules/cnf-triage.md`;
+  the `cnf-triage` agent): when the CNF runner and the application disagree,
+  the vendored spec text decides — it is always right and never a suspect.
+  The failure is attributed to the application, the runner machinery, or the
+  catalogue artifacts by three-way comparison against the spec text, never
+  by assuming either side; no fix lands before the attribution, and every
+  attribution carries the spec citation.
 - **Cite the source:** conformance-relevant decisions name the spec file +
   section heading in the commit/PR description. A deliberate deviation or gap
   gets a `// NOTE:` with the spec reference and the reason.
