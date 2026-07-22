@@ -15,9 +15,9 @@ openEHR REST API (ITS-REST 1.1.0) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![Containers](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml/badge.svg?branch=develop)](https://github.com/rubentalstra/ehrbase-rs/actions/workflows/containers.yml)
 [![Last commit](https://img.shields.io/github/last-commit/rubentalstra/ehrbase-rs/develop?logo=github)](https://github.com/rubentalstra/ehrbase-rs/commits/develop)
 
-<!-- CNF 2.0 conformance badges: shields.io endpoint scheme over the runner-generated
-     badge JSONs on develop — auto-updating on every merged ECC ratchet, zero
-     manual edits (issue #138). -->
+<!-- CNF 2.0 conformance badges: shields.io endpoint scheme over the
+     runner-generated badge JSONs on develop — auto-updating on every merged
+     conformance ratchet, zero manual edits. -->
 [![openEHR CNF conformance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
 [![CNF CORE](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-core.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![CNF STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
@@ -60,12 +60,21 @@ Conformance Statement and Certificate.
 
 ## Why EHRbase-rs
 
-- **Compliance you can verify, not just read.** The built-in conformance
-  runner executes the complete catalogue in both wire formats and computes
-  the openEHR profile verdicts. The ECC badges above render straight from
-  the committed run artifacts — generated from real runs, never hand-edited
-  — and the [Conformance Report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
+- **Compliance you can verify, not just read.** The built-in CNF 2.0
+  conformance runner executes the complete machine-readable catalogue across
+  the claimed wire formats and computes the openEHR profile verdicts as pure
+  functions of the run records. The conformance badges above render straight
+  from the committed run artifacts — generated from real runs, never
+  hand-edited — and the
+  [Conformance Report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md)
   carries the full per-case record.
+- **Performance is a verdict, not a slogan.** Volumetric deployment classes
+  are *earned* by open-loop measured runs (population-anchored offered-load
+  floors held for at least the normative hour, extendable to half-day
+  holds), with re-checkable latency histograms embedded in the committed
+  results; a separate step-load stress instrument finds the maximum
+  sustainable throughput. Every published chart regenerates from those
+  committed records, guarded in CI.
 - **The latest openEHR specifications**, generated from the official
   machine-readable models: REST API 1.1.0, AQL 1.1, RM 1.2.0, Archetype
   Model 1.4 + 2.4, Terminology 3.1. A specification update is a
@@ -180,7 +189,7 @@ curl -u ehrbase:ehrbase -H 'Content-Type: application/json' \
 ```
 
 Interactive OpenAPI documentation is served at
-`http://localhost:8080/ehrbase/swagger-ui`.
+`http://localhost:8080/ehrbase/rest/swagger-ui`.
 
 Published images: [`ghcr.io/rubentalstra/ehrbase-rs`](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs)
 and [`ghcr.io/rubentalstra/ehrbase-rs-postgres`](https://github.com/rubentalstra/ehrbase-rs/pkgs/container/ehrbase-rs-postgres)
@@ -209,8 +218,10 @@ Dashboards and alert rules live in [`docker/observability/`](docker/observabilit
 
 ## Architecture
 
-Three directories, three spec layers, one strict dependency direction
-(`tools/* → app/* → crates/*`):
+Three directories, one strict dependency direction — the application
+consumes the generated specification layer (`app/* → crates/*`), and the
+tools verify from outside (the conformance runner drives the deployed
+server purely over HTTP):
 
 ```mermaid
 flowchart TB
@@ -229,8 +240,8 @@ flowchart TB
 
     subgraph tools ["tools/* — generation + verification (not shipped)"]
         codegen["openehr-codegen<br/>(BMM/XSD/OAS → Rust)"]
-        conf["conformance<br/>(ECC runner)"]
-        bench["benchmark"]
+        conf["cnf-runner<br/>(the CNF 2.0 conformance runner +<br/>measured-performance and stress instruments)"]
+        bench["benchmark<br/>(transitional profile lab)"]
         testkit["testkit<br/>(shared PG18 harness)"]
     end
 
@@ -238,7 +249,8 @@ flowchart TB
     bin -- "wires" --> rest
     rest -- "calls the concrete service" --> core
     app --> crates
-    tools --> app
+    conf -. "drives the deployed server over HTTP" .-> rest
+    testkit --> core
 ```
 
 The service layer follows the openEHR **SM Platform Service Model**: one
@@ -253,16 +265,41 @@ full design is documented in
 ## Conformance, measured not asserted
 
 ```shell
-scripts/conformance.sh
+bash scripts/conformance.sh
 ```
 
 One command builds the current sources into a container, runs the complete
-openEHR conformance catalogue against it in both wire formats, and writes
-the [report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md), the
+machine-readable openEHR conformance catalogue against it across the claimed
+wire formats, and writes the
+[report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md), the
 [Conformance Statement](docs/conformance/ehrbase-rs/CONFORMANCE_STATEMENT.md), and the
 [Certificate](docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md). Profile verdicts
 are computed by the runner — never hand-asserted — and the badges at the top
 of this page are generated from real runs.
+
+Performance is graded the same way. A volumetric deployment class is
+**earned** by holding its population-anchored offered-load floor for the
+sustained window — the normative hour by default, extendable to longer
+demonstrations, never shorter — with every latency histogram embedded in the
+committed results so the verdict re-derives from the artifact alone:
+
+```shell
+# the measured class stage (hour-plus, on the exclusively composed server)
+CONF_PERF_CLASS=POC bash scripts/conformance.sh
+
+# an extended sustained hold (a stricter demonstration of the same class)
+CONF_PERF_CLASS=POC CONF_PERF_HOURS=8 CONF_PERF_SKIP_SEED=1 bash scripts/conformance.sh
+
+# the step-load stress instrument — exploration only, never a conformance record
+cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
+  --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
+  --out docs/conformance/ehrbase-rs/stress.json --skip-seed
+```
+
+The published performance visuals — the class ladder, per-operation latency
+percentiles, and the latency-throughput stress curve — regenerate from the
+committed records (`bash scripts/render-perf-assets.sh`) and are diff-guarded
+in CI, exactly like the conformance numbers.
 
 ## Measured against EHRbase (Java)
 
