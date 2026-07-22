@@ -1,5 +1,5 @@
 ---
-paths: ["crates/**", "app/**", "tools/conformance/**", "scripts/conformance*", "docs/specs/**"]
+paths: ["crates/**", "app/**", "tools/cnf-runner/**", "scripts/conformance*", "docs/specs/**"]
 ---
 
 # openEHR spec adherence (the vendored specs are the oracle)

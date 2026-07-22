@@ -736,15 +736,16 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 name = "benchmark"
 version = "3.6.0"
 dependencies = [
+ "async-trait",
  "base64 0.22.1",
  "clap",
- "conformance",
  "dashmap",
  "hdrhistogram",
  "jiff",
  "openehr-flat",
  "openehr-its",
  "rand 0.10.2",
+ "reqwest 0.13.4",
  "serde",
  "serde_json",
  "sha2 0.11.0",
@@ -1437,31 +1438,6 @@ dependencies = [
  "toml",
  "winnow",
  "yaml-rust2",
-]
-
-[[package]]
-name = "conformance"
-version = "3.6.0"
-dependencies = [
- "async-trait",
- "base64 0.22.1",
- "clap",
- "jiff",
- "openehr-base",
- "openehr-flat",
- "openehr-its",
- "openehr-rm",
- "pgp",
- "reqwest 0.13.4",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "thiserror 2.0.18",
- "tokio",
- "toml",
- "urlencoding",
- "uuid",
- "wiremock",
 ]
 
 [[package]]

@@ -5,7 +5,7 @@ id: I_DEFINITION_ADL14.upload_opt-valid_opt
 kind: functional
 component: DEFINITION_ADL14
 sm_operation: I_DEFINITION_ADL14.upload_opt
-capabilities: [Adl14OptProvisioning]
+capabilities: [Adl14OptProvisioning, DefinitionApi]   # the API-presence capability is evidenced by this chapter exemplar (CNF profiles master03 §Functional REST APIs)
 exercises: [ArchetypeValidation]
 profiles: [CORE]
 test_purpose: "Valid OPTs are accepted, stored as uploaded, and become retrievable by template_id."

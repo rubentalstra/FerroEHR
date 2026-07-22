@@ -17,6 +17,7 @@ spec_refs:
 constraint_context:
   template: cnf.tpl.interval_duration_range
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["range_lower_for_lower", "range_upper_for_lower", "range_lower_for_upper", "range_upper_for_upper"]
 decision_table:
   columns: [lower, upper, range_lower_for_lower, range_upper_for_lower, range_lower_for_upper, range_upper_for_upper, expected, violates]
   rows:

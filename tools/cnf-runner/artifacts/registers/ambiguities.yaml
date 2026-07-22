@@ -480,3 +480,20 @@ AMB-40:
     other status is accepted. The kinds on the shared status are
     distinguished by fixture (the AMB-2 pattern).
   disposition: fixed_handling
+AMB-41:
+  ambiguity: >-
+    The SM I_DEFINITION_ADL14 interface defines archetype provisioning
+    (upload/get/list over ADL 1.4 archetypes) alongside OPT provisioning,
+    and the Profiles book lists "ADL 1.4 Archetype provisioning" as a
+    required CORE capability — but ITS-REST 1.1.0 surfaces ONLY the
+    operational-template wire under /definition/template/adl1.4; there is
+    no ADL 1.4 archetype endpoint at all.
+  source: "SM docs/UML/classes/i_definition_adl14.adoc vs ITS-REST specifications/operations (definition_template_adl1.4_* — OPT-only); CNF profiles master03-profiles.adoc §Functional (Definitions)"
+  handling: >-
+    The archetype-provisioning operations carry unrealized its-rest bindings;
+    their cases are not-applicable WITH CITATION and activate when a later
+    ITS release adds the wire. The verdict pipeline records the capability as
+    unrealized-on-this-technology-profile — an explicit scope exclusion on
+    the certificate, never a silent pass and never a CORE failure the ITS
+    cannot avoid.
+  disposition: fixed_handling

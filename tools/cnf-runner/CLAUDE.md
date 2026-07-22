@@ -19,8 +19,8 @@ language, ever.
   status, header, or media type) in a case core; wire lives in per-ITS
   operation bindings, each mapping cited to its OAS source.
 - **Expectations trace to spec text** (`docs/specs/openehr/CNF/`, `QUERY`,
-  `ITS-REST`) — never to observed SUT behaviour; EHRbase and ECC
-  (`tools/conformance`, running untouched until the W2 comparison gate) are
+  `ITS-REST`) — never to observed SUT behaviour; EHRbase and the retired ECC
+  harness (its catalogue preserved at `comparison/ecc-catalog.tsv`) are
   prior art, not oracles. Spec silences go through the ambiguity register
   with a typed `disposition`, never private resolution.
 - **Verdicts are computed, never asserted** — pure functions of

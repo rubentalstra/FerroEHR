@@ -21,11 +21,14 @@ command -v jq >/dev/null 2>&1 || {
   exit 1
 }
 
-executed=$(jq '.cases | length' "$ART/results.json")
-passed=$(jq '[.cases[] | select(.status == "passed")] | length' "$ART/results.json")
-failed=$(jq '[.cases[] | select(.status == "failed" or .status == "errored")] | length' "$ART/results.json")
-skipped=$(jq '[.cases[] | select(.status == "skipped")] | length' "$ART/results.json")
-run_date=$(jq -r '.started' "$ART/results.json" | cut -dT -f1)
+executed=$(jq '[.outcomes[] | select(.status != "not_applicable" and .status != "skipped")] | length' "$ART/results.json")
+passed=$(jq '[.outcomes[] | select(.status == "passed")] | length' "$ART/results.json")
+failed=$(jq '[.outcomes[] | select(.status == "failed" or .status == "errored")] | length' "$ART/results.json")
+skipped=$(jq '[.outcomes[] | select(.status == "skipped" or .status == "not_applicable")] | length' "$ART/results.json")
+# The results artifact is deliberately clock-free (deterministic re-runs);
+# the run date is the artifact's last commit date (fallback: file mtime).
+run_date=$(git log -1 --format=%cs -- "$ART/results.json" 2>/dev/null || true)
+[ -n "$run_date" ] || run_date=$(date -r "$ART/results.json" +%Y-%m-%d)
 # Verdicts come from the runner-generated badge JSONs (first word of message).
 core=$(jq -r '.message' "$ART/badge-core.json" | awk '{print $1}')
 standard=$(jq -r '.message' "$ART/badge-standard.json" | awk '{print $1}')

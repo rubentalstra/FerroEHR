@@ -21,6 +21,7 @@ spec_refs:
 constraint_context:
   template: cnf.tpl.interval_date_field_validity
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["month_validity_lower", "day_validity_lower", "month_validity_upper", "day_validity_upper"]
 decision_table:
   columns: [lower, upper, month_validity_lower, day_validity_lower, month_validity_upper, day_validity_upper, expected, violates]
   rows:

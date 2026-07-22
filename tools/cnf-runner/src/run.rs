@@ -259,7 +259,16 @@ pub fn synthesize_content_case(case: &CaseCore) -> CaseCore {
     }
     if let Some(context) = &case.constraint_context {
         synthesized.requires.server = Some(crate::vocab::ServerState::Any);
-        synthesized.requires.templates = vec![context.template.clone()];
+        // A varying-constraint case (constraint_columns declared) provisions no
+        // baked template — the driver synthesizes and uploads one OPT PER ROW
+        // (issue #228). A constant-constraint case keeps its single baked
+        // template. constraint_context rides on the synthesized case so the
+        // driver can tell the two apart.
+        synthesized.requires.templates = if context.constraint_columns.is_empty() {
+            vec![context.template.clone()]
+        } else {
+            Vec::new()
+        };
         synthesized.requires.ehr = Some(crate::model::case::EhrRequirement::Exists {
             commits: crate::model::case::CommitState::None,
         });

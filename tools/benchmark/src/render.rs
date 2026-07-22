@@ -57,7 +57,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use serde_json::{Map, Value};
 
-use conformance::testdata::fixtures;
+use crate::sutclient::fixtures;
 use openehr_flat::convert::{composition_from_flat, composition_to_flat};
 use openehr_flat::validation::validate_composition;
 use openehr_flat::webtemplate::{
@@ -115,7 +115,7 @@ pub struct TemplateSource {
 }
 
 /// The ECC-corpus source for a template kind, or `None` for the CKM-pack kinds
-/// (which are sourced from [`crate::pack`], not the conformance fixtures).
+/// (which are sourced from [`crate::pack`], not the vendored CNF fixtures).
 ///
 /// NOTE: no openEHR spec governs the benchmark's template selection. The
 /// ECC-corpus kinds are retained as proven both-server-accepted payloads; the
@@ -799,7 +799,8 @@ fn message_set(msgs: &[openehr_flat::validation::ValidationMessage]) -> HashSet<
 
 /// Render an `EHR_STATUS` body carrying the patient's subject id (E1 create,
 /// E9 status update). The corpus `EHR_STATUS` fixture is adapted to RM 1.2.0 by
-/// the conformance loader; we only stamp the subject id + namespace.
+/// the [`fixtures::adapt_ehr_status`] overlay; we only stamp the subject id +
+/// namespace.
 ///
 /// # Errors
 /// [`BenchError::Fixture`] if the fixture cannot be read.

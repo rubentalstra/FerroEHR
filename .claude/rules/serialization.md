@@ -106,7 +106,7 @@ entry points.
   corpus round-trips (regression).
 - Redact volatile fields (timestamps, generated UUIDs) before committing
   any snapshot. Never weaken a gate to get green (testing.md).
-- At the wire, the ECC suite (`tools/conformance`) is the end-to-end
+- At the wire, the CNF pipeline (`tools/cnf-runner`) is the end-to-end
   acceptance instrument.
 
 Hand-written files here follow `rust-style.md` (the official

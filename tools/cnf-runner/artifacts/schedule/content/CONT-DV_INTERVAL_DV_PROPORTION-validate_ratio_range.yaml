@@ -20,6 +20,7 @@ guards:
 constraint_context:
   template: cnf.tpl.interval_proportion_ratio_range    # type C_INTEGER.list=[0]; numerator/denominator C_REAL.range per limit (per row)
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
+  constraint_columns: ["lower_num_range", "lower_den_range", "upper_num_range", "upper_den_range"]
 decision_table:
   columns: [lower_type, lower_numerator, lower_denominator, lower_precision, upper_type, upper_numerator, upper_denominator, upper_precision, lower_num_range, lower_den_range, upper_num_range, upper_den_range, expected, violates]
   rows:

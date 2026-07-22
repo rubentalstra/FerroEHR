@@ -757,6 +757,129 @@ fn action_ism_transition_from_flat_builds_supplied_state() {
     );
 }
 
+/// Every ACTION node's first careflow-state ISM_TRANSITION child's
+/// `(node_id, name)`, in web-template pre-order — the node-id-specialized
+/// `ism_transition[at…,…]` constraints the CKM ACTION archetypes carry (ids
+/// `intended`/`completed`/…, NOT a child literally named `ism_transition`).
+/// `None` for an ACTION whose careflow children carry no node id. Positional
+/// (not archetype-keyed) because a template may reuse one ACTION archetype in
+/// several slots (ips.v0 uses `medication.v1` for both medication and
+/// immunization) with per-slot careflow specialization.
+fn wt_action_careflows(
+    n: &openehr_flat::webtemplate::WebTemplateNode,
+    out: &mut Vec<Option<(String, String)>>,
+) {
+    if n.rm_type == "ACTION" {
+        out.push(
+            n.children
+                .iter()
+                .find(|c| c.rm_type == "ISM_TRANSITION" && c.node_id.is_some())
+                .and_then(|c| {
+                    c.node_id
+                        .clone()
+                        .map(|nid| (nid, c.name.clone().unwrap_or_else(|| "Careflow".to_owned())))
+                }),
+        );
+    }
+    for c in &n.children {
+        wt_action_careflows(c, out);
+    }
+}
+
+/// Stamp the i-th composition ACTION's ism_transition (document pre-order, the
+/// same order as [`wt_action_careflows`]) with the matching careflow
+/// `archetype_node_id` + a `name` DV_TEXT — so the WT careflow child resolves it
+/// and a `name` exists to (previously) be lost, exactly as the CKM skeleton
+/// generator stamps a name on every node.
+fn stamp_careflow(v: &mut Value, careflows: &[Option<(String, String)>], idx: &mut usize) {
+    match v {
+        Value::Object(m) => {
+            if m.get("_type").and_then(Value::as_str) == Some("ACTION") {
+                if let Some(Some((cf_nid, cf_name))) = careflows.get(*idx)
+                    && let Some(ism) = m.get_mut("ism_transition").and_then(Value::as_object_mut)
+                {
+                    ism.insert(
+                        "archetype_node_id".to_owned(),
+                        Value::String(cf_nid.clone()),
+                    );
+                    ism.insert(
+                        "name".to_owned(),
+                        serde_json::json!({"_type": "DV_TEXT", "value": cf_name}),
+                    );
+                }
+                *idx += 1;
+            }
+            for x in m.values_mut() {
+                stamp_careflow(x, careflows, idx);
+            }
+        }
+        Value::Array(a) => {
+            for x in a {
+                stamp_careflow(x, careflows, idx);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn dv_leaf_count(v: &Value) -> usize {
+    match v {
+        Value::Object(m) => {
+            let here = usize::from(
+                m.get("_type")
+                    .and_then(Value::as_str)
+                    .is_some_and(|t| t.starts_with("DV_")),
+            );
+            here + m.values().map(dv_leaf_count).sum::<usize>()
+        }
+        Value::Array(a) => a.iter().map(dv_leaf_count).sum(),
+        _ => 0,
+    }
+}
+
+/// Regression (benchmark IPS faithfulness): when the web template models
+/// `ACTION.ism_transition` as node-id-specialized careflow-state children
+/// (the CKM ACTION archetypes constrain `ism_transition[at0109,'Intended']` &c.
+/// — ids `intended`/`completed`/… , NOT a child literally named
+/// `ism_transition`) AND the RM value carries the matching careflow node id,
+/// the WT-child realization wins entirely: it is the sole spelling on the wire
+/// and its careflow `name` DV_TEXT survives the round-trip. The master05
+/// direct-RM-path fallback must NOT emit a duplicate generic `.../ism_transition/*`
+/// spelling that then overwrites the WT-child value on rebuild and drops the
+/// name (4 leaves were lost on the CKM IPS). (master05 §§ACTION
+/// `/ism_transition`, ISM_TRANSITION; master04 §Level Removal.)
+#[test]
+fn action_careflow_ism_transition_wins_over_direct_path() {
+    let wts = web_templates();
+    let Some(wt) = wts.get("International Patient Summary") else {
+        return; // ips.v0 OPT not present in this checkout
+    };
+    let mut careflows = Vec::new();
+    wt_action_careflows(&wt.tree, &mut careflows);
+    assert!(
+        careflows.iter().filter(|c| c.is_some()).count() >= 3,
+        "ips.v0 models ism_transition via node-id-specialized careflow children on its ACTIONs"
+    );
+
+    let mut comp = load("ips_canonical.json");
+    stamp_careflow(&mut comp, &careflows, &mut 0);
+    let before = dv_leaf_count(&comp);
+
+    let flat = composition_to_flat(&comp, wt).unwrap();
+    // No DV leaf is lost: for every ACTION whose careflow child resolved the
+    // ism_transition, its careflow `name` DV_TEXT survives because the WT-child
+    // build wins (the direct path no longer over-emits nor overwrites it). At
+    // least three of the four IPS ACTIONs resolve, so a shadowing regression
+    // drops ≥3 DV_TEXT leaves and trips this equality.
+    let rebuilt = composition_from_flat(&flat, wt, NOW).unwrap();
+    assert_eq!(
+        before,
+        dv_leaf_count(&rebuilt),
+        "ism_transition careflow names are preserved (WT-child realization wins, not shadowed)"
+    );
+    assert!(is_valid_rm(&rebuilt), "ips_canonical from_flat valid RM");
+}
+
 /// canonical → FLAT → canonical stability for an ACTION `ism_transition`: the
 /// reverse (RM → FLAT) emits the `ism_transition` sub-paths symmetrically, so
 /// the state survives a round-trip (master05 §ISM_TRANSITION).

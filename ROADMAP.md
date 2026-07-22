@@ -15,7 +15,7 @@ A pure-Rust, headless, API-first openEHR CDR on PostgreSQL 18: ITS-REST
 1.1.0 at the API, AQL 1.1 as the query language, RM 1.2.0 as the domain
 model — the spec layer generated from the official machine-readable specs,
 the application our own design on top (`docs/architecture.md`). Conformance
-is machine-verified per release by the built-in ECC runner; performance is
+is machine-verified per release by the built-in CNF 2.0 runner; performance is
 measured against upstream EHRbase (Java) on identical workloads with both
 directions always published. Shipped surface: the full platform (EHR /
 COMPOSITION / DIRECTORY / CONTRIBUTION, versioning, templates + validation,
@@ -27,7 +27,7 @@ container image.
 
 ## Direction (durable themes)
 
-- **Conformance depth** — the ECC baseline only ratchets upward; skips go
+- **Conformance depth** — the conformance baseline only ratchets upward; skips go
   to zero (executed or cited-N/A); spec updates are watched continuously,
   never just at pin bumps; every spec-facing behaviour traces to the
   vendored spec text.
@@ -54,7 +54,7 @@ container image.
 
 ## Standing rules (apply to everything above)
 
-Vendored specs are the oracle; ECC zero-drift gates every phase; the
+Vendored specs are the oracle; CNF zero-drift gates every phase; the
 conformance baseline only ratchets upward; comparisons publish both
 directions; a claim without a committed measurement or citation does not
 ship.

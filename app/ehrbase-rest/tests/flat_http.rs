@@ -43,6 +43,7 @@ mod common;
 
 const BASE: &str = "/ehrbase/rest/openehr/v1";
 const FLAT_MIME: &str = "application/openehr.wt.flat+json";
+const STRUCTURED_MIME: &str = "application/openehr.wt.structured+json";
 /// The IPS template id, supplied through the `openehr-template-id` request
 /// header on a simplified commit (`Requests_and_responses` §openehr-template-id —
 /// the header, not a query parameter, is the mechanism).
@@ -116,6 +117,23 @@ fn etag_uid(h: &header::HeaderMap) -> String {
         .expect("ETag present")
         .trim_start_matches("W/")
         .trim_matches('"')
+        .to_owned()
+}
+
+/// The full `OBJECT_VERSION_ID` carried in the weak `ETag` (`W/"<uid>"`).
+fn etag_full(h: &header::HeaderMap) -> String {
+    h.get(header::ETAG)
+        .and_then(|v| v.to_str().ok())
+        .expect("ETag present")
+        .trim_start_matches("W/")
+        .trim_matches('"')
+        .to_owned()
+}
+
+fn location_of(h: &header::HeaderMap) -> String {
+    h.get(header::LOCATION)
+        .and_then(|v| v.to_str().ok())
+        .expect("Location present")
         .to_owned()
 }
 
@@ -390,5 +408,147 @@ async fn flat_round_trips_through_http() {
         without_uids(flat_in_sorted),
         without_uids(flat_out),
         "flat → RM → flat stable through the HTTP endpoints (modulo server uids)"
+    );
+}
+
+/// Regression for #229: a `201 Created` whose negotiated representation is FLAT
+/// (`Accept: application/openehr.wt.flat+json`, `Prefer: return=representation`)
+/// MUST still carry the committed-resource `ETag` (new version uid) and
+/// `Location` headers — they are representation-independent (RFC 7231 §6.3.2
+/// requires `Location` on a `201` regardless of body form; the ITS-REST 201
+/// response declares both headers unconditionally,
+/// `docs/specs/openehr/ITS-REST/specifications/responses/201_COMPOSITION.yaml`).
+/// Previously the FLAT response path dropped both headers.
+#[tokio::test]
+async fn post_flat_representation_carries_etag_and_location() {
+    let (_pg, app, ehr) = app_with_ehr().await;
+    let wt = web_template();
+    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
+
+    let (status, h, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
+            .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(header::ACCEPT, FLAT_MIME)
+            .header("prefer", "return=representation")
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
+            .body(Body::from(serde_json::to_string(&flat_map).unwrap()))
+            .unwrap(),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED, "flat commit: {body}");
+    // The body is the FLAT representation…
+    assert_eq!(h.get(header::CONTENT_TYPE).unwrap(), FLAT_MIME);
+    assert!(
+        serde_json::from_str::<serde_json::Map<String, Value>>(&body).is_ok(),
+        "FLAT body present: {body}"
+    );
+    // …and the version-id headers are the same set the canonical path sets.
+    let uid = etag_full(&h);
+    assert!(
+        uid.contains("::"),
+        "ETag carries the full version uid: {uid}"
+    );
+    assert_eq!(
+        location_of(&h),
+        format!("{BASE}/ehr/{ehr}/composition/{uid}"),
+        "Location points at the new COMPOSITION version"
+    );
+}
+
+/// The STRUCTURED representation of the same commit likewise carries `ETag` +
+/// `Location` (same spec basis as the FLAT case above; #229).
+#[tokio::test]
+async fn post_structured_representation_carries_etag_and_location() {
+    let (_pg, app, ehr) = app_with_ehr().await;
+    let wt = web_template();
+    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
+
+    // Commit in FLAT, negotiate the STRUCTURED representation back.
+    let (status, h, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
+            .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(header::ACCEPT, STRUCTURED_MIME)
+            .header("prefer", "return=representation")
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
+            .body(Body::from(serde_json::to_string(&flat_map).unwrap()))
+            .unwrap(),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED, "structured commit: {body}");
+    assert_eq!(h.get(header::CONTENT_TYPE).unwrap(), STRUCTURED_MIME);
+    let uid = etag_full(&h);
+    assert!(
+        uid.contains("::"),
+        "ETag carries the full version uid: {uid}"
+    );
+    assert_eq!(
+        location_of(&h),
+        format!("{BASE}/ehr/{ehr}/composition/{uid}")
+    );
+}
+
+/// The `200 OK` from an update whose negotiated representation is FLAT carries
+/// the new version's `ETag` + `Location`, matching the canonical update path
+/// (`docs/specs/openehr/ITS-REST/specifications/responses/
+/// 200_COMPOSITION_updated.yaml` declares both headers unconditionally; #229).
+#[tokio::test]
+async fn update_flat_representation_carries_etag_and_location() {
+    let (_pg, app, ehr) = app_with_ehr().await;
+
+    // Seed a first version canonically to obtain its full version uid for If-Match.
+    let (status, seed_h, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(canonical_composition().to_string()))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CREATED, "seed commit: {body}");
+    let prior_uid = etag_full(&seed_h);
+    let vo = vo_of(&prior_uid);
+
+    // Update with a FLAT body, negotiating the FLAT representation back.
+    let wt = web_template();
+    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
+    let (status, h, body) = send(
+        &app,
+        Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/ehr/{ehr}/composition/{vo}"))
+            .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(header::ACCEPT, FLAT_MIME)
+            .header(header::IF_MATCH, &prior_uid)
+            .header("prefer", "return=representation")
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
+            .body(Body::from(serde_json::to_string(&flat_map).unwrap()))
+            .unwrap(),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::OK, "flat update: {body}");
+    assert_eq!(h.get(header::CONTENT_TYPE).unwrap(), FLAT_MIME);
+    let new_uid = etag_full(&h);
+    assert!(
+        new_uid.contains("::"),
+        "ETag carries the version uid: {new_uid}"
+    );
+    assert_ne!(new_uid, prior_uid, "the update produced a new version");
+    assert_eq!(
+        location_of(&h),
+        format!("{BASE}/ehr/{ehr}/composition/{new_uid}")
     );
 }

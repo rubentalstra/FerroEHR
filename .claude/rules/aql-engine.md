@@ -49,8 +49,8 @@ the vendored spec text at `docs/specs/openehr/QUERY/docs/AQL/` — never from
 EHRbase behaviour. Conformance expectations derive from the CNF schedule
 (`docs/specs/openehr/CNF/docs/platform_test_schedule/master05-func_tc_definition_query.adoc`
 + `master11-func_tc_querying.adoc`; the upstream Robot suites are reference
-material only) and are **verified by the ECC QUERY/AqlBasic areas**
-(`tools/conformance`) — the accept/reject envelope, status codes, and result
+material only) and are **verified by the CNF QUERY chapter/AqlBasic capability**
+(`tools/cnf-runner`) — the accept/reject envelope, status codes, and result
 shapes. Use `/spec-lookup` and cite the section (spec-adherence.md).
 
 ## Boundary
@@ -58,5 +58,6 @@ shapes. Use `/spec-lookup` and cite the section (spec-adherence.md).
 `openehr-query` produces a parsed, semantically-analysable AST; everything after
 (the IR, SQL generation via `sea-query`, execution via `sqlx`) lives in `ehrbase`.
 Keep it clean: no SQL in the spec crate, no grammar/parsing in the server crate.
-Behaviour is verified by the AQL corpus + the ECC suite — every engine change
-ends with an ECC run showing zero drift vs the committed baseline.
+Behaviour is verified by the AQL corpus + the CNF pipeline — every engine
+change ends with a `scripts/conformance.sh` run showing zero drift vs the
+committed baseline.
