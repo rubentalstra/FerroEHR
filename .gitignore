@@ -50,3 +50,4 @@ _check/
 website/book/generated/
 website/book/src/comparison-assets/
 __pycache__/
+docs/conformance/*/perf-corpus-*.json

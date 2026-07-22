@@ -38,6 +38,21 @@ Runner: cnf-runner 3.6.0 · verification pack: passed
 | SF | 50 | 0 | 0 | 0 | 1 |
 | SIG | 4 | 0 | 0 | 0 | 0 |
 
+## Performance measurements
+
+### PERF-mixed_load-class_POC — class POC · EARNED
+
+Offered load sustained: 2.00/s over 3600 s (after 300 s warmup) · environment: consumer-laptop (8 cores, 16 GB, nvme, single-node docker compose (8-CPU/8GB Docker VM) on Apple M2)
+
+| Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |
+| --- | --- | --- | --- | --- | --- |
+| adhoc_query | 2160 | 0 | 23.0 | 30.2 | 43.5 |
+| composition_commit | 576 | 0 | 21.8 | 29.7 | 51.4 |
+| composition_read | 4392 | 0 | 15.9 | 21.4 | 33.0 |
+| ehr_create | 72 | 0 | 19.3 | 26.4 | 43.2 |
+
+Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.
+
 ## Honesty
 
 Coverage: 323 of 390 selected cases driven.

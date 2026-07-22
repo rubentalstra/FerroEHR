@@ -173,6 +173,15 @@
     ]
   ],
   "security": "pass",
+  "performance": [
+    {
+      "case": "PERF-mixed_load-class_POC",
+      "class": "POC",
+      "claimed": true,
+      "verdict": "earned",
+      "violations": []
+    }
+  ],
   "coverage": {
     "selected": 390,
     "driven": 323
