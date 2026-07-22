@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P20 profiling harness (phase-20-optimization.md T1): run ONE capacity step
+# Profiling harness: run ONE capacity step
 # of the hospital-day workload against the composed ehrbase-rs stack and dump
 # the PostgreSQL statement profile + the AQL dashboard plans into a committed
 # evidence file. Never optimize without a before/after pair of these.
