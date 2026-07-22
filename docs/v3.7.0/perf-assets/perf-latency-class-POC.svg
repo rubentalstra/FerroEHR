@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" width="760" height="360" role="img">
+<style>
+text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.title { fill: #0b0b0b; font-weight: 600; }
+.muted { fill: #8a8880; font-size: 11px; }
+.grid { stroke: #e4e2dd; stroke-width: 1; }
+.p50 { fill: #7db4ea; } .p90 { fill: #3d7fd0; } .p99 { fill: #1b5cab; }
+.measured { fill: #2a78d6; }
+.floor { fill: none; stroke: #8a8880; stroke-width: 1.5; stroke-dasharray: 4 3; }
+.earned { fill: #1baf7a; font-weight: 600; }
+.notearned { fill: #b3261e; font-weight: 600; }
+.slo { stroke: #b3261e; stroke-width: 1.5; stroke-dasharray: 6 4; }
+.slotext { fill: #b3261e; font-size: 11px; }
+@media (prefers-color-scheme: dark) {
+text { fill: #c3c2b7; }
+.title { fill: #ffffff; }
+.muted { fill: #8f8e85; }
+.grid { stroke: #3a3a38; }
+.p50 { fill: #3d5f82; } .p90 { fill: #3987e5; } .p99 { fill: #9ec7ef; }
+.measured { fill: #3987e5; }
+.floor { stroke: #8f8e85; }
+.earned { fill: #26c78d; }
+.notearned { fill: #e5484d; }
+.slo { stroke: #e5484d; }
+.slotext { fill: #e5484d; }
+}
+</style>
+<text x="24" y="28" class="title">Latency percentiles — class POC measured run (PERF-mixed_load-class_POC)</text>
+<text x="24" y="44" class="muted">Re-derived from the committed HDR V2 histograms · offered load 2.0/s sustained for 3600 s · errors are a verdict input, not shown</text>
+<line x1="90" y1="300.0" x2="720.0" y2="300.0" class="grid"/><text x="82.0" y="304.0" class="muted" text-anchor="end">0.1 ms</text>
+<line x1="90" y1="247.3" x2="720.0" y2="247.3" class="grid"/><text x="82.0" y="251.3" class="muted" text-anchor="end">1 ms</text>
+<line x1="90" y1="194.6" x2="720.0" y2="194.6" class="grid"/><text x="82.0" y="198.6" class="muted" text-anchor="end">10 ms</text>
+<line x1="90" y1="141.9" x2="720.0" y2="141.9" class="grid"/><text x="82.0" y="145.9" class="muted" text-anchor="end">100 ms</text>
+<line x1="90" y1="89.2" x2="720.0" y2="89.2" class="grid"/><text x="82.0" y="93.2" class="muted" text-anchor="end">1000 ms</text>
+<line x1="90" y1="89.2" x2="720.0" y2="89.2" class="slo"/><text x="716.0" y="83.2" class="slotext" text-anchor="end">SLO p99 &#8804; 1 s</text>
+<rect x="120.0" y="175.5" width="34" height="124.5" rx="4" class="p50"/><text x="137.0" y="316.0" class="muted" text-anchor="middle">p50</text><text x="137.0" y="169.5" text-anchor="middle">23</text>
+<rect x="156.0" y="169.3" width="34" height="130.7" rx="4" class="p90"/><text x="173.0" y="316.0" class="muted" text-anchor="middle">p90</text><text x="173.0" y="163.3" text-anchor="middle">30</text>
+<rect x="192.0" y="160.9" width="34" height="139.1" rx="4" class="p99"/><text x="209.0" y="316.0" class="muted" text-anchor="middle">p99</text><text x="209.0" y="154.9" text-anchor="middle">44</text>
+<text x="171.0" y="334.0" text-anchor="middle">adhoc_query</text>
+<rect x="270.0" y="176.7" width="34" height="123.3" rx="4" class="p50"/><text x="287.0" y="316.0" class="muted" text-anchor="middle">p50</text><text x="287.0" y="170.7" text-anchor="middle">22</text>
+<rect x="306.0" y="169.7" width="34" height="130.3" rx="4" class="p90"/><text x="323.0" y="316.0" class="muted" text-anchor="middle">p90</text><text x="323.0" y="163.7" text-anchor="middle">30</text>
+<rect x="342.0" y="157.1" width="34" height="142.9" rx="4" class="p99"/><text x="359.0" y="316.0" class="muted" text-anchor="middle">p99</text><text x="359.0" y="151.1" text-anchor="middle">51</text>
+<text x="321.0" y="334.0" text-anchor="middle">composition_commit</text>
+<rect x="420.0" y="184.0" width="34" height="116.0" rx="4" class="p50"/><text x="437.0" y="316.0" class="muted" text-anchor="middle">p50</text><text x="437.0" y="178.0" text-anchor="middle">16</text>
+<rect x="456.0" y="177.2" width="34" height="122.8" rx="4" class="p90"/><text x="473.0" y="316.0" class="muted" text-anchor="middle">p90</text><text x="473.0" y="171.2" text-anchor="middle">21</text>
+<rect x="492.0" y="167.3" width="34" height="132.7" rx="4" class="p99"/><text x="509.0" y="316.0" class="muted" text-anchor="middle">p99</text><text x="509.0" y="161.3" text-anchor="middle">33</text>
+<text x="471.0" y="334.0" text-anchor="middle">composition_read</text>
+<rect x="570.0" y="179.6" width="34" height="120.4" rx="4" class="p50"/><text x="587.0" y="316.0" class="muted" text-anchor="middle">p50</text><text x="587.0" y="173.6" text-anchor="middle">19</text>
+<rect x="606.0" y="172.4" width="34" height="127.6" rx="4" class="p90"/><text x="623.0" y="316.0" class="muted" text-anchor="middle">p90</text><text x="623.0" y="166.4" text-anchor="middle">26</text>
+<rect x="642.0" y="161.1" width="34" height="138.9" rx="4" class="p99"/><text x="659.0" y="316.0" class="muted" text-anchor="middle">p99</text><text x="659.0" y="155.1" text-anchor="middle">43</text>
+<text x="621.0" y="334.0" text-anchor="middle">ehr_create</text>
+</svg>
