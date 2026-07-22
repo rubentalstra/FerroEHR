@@ -94,6 +94,20 @@ workflow refuses a tag that has no matching section here.
   eight pilot case encodings as the first schedule artifacts. The existing
   ECC (`tools/conformance`) is unchanged and remains the acceptance
   instrument until the comparison gate.
+- Performance conformance, measured end to end: a `cnf-runner perf` run plays
+  an open-loop offered-load schedule against a composed server at a
+  population-anchored volumetric class (proof-of-concept, small, large,
+  regional), records re-checkable HDR histograms into the conformance
+  results, and earns — never declares — a class verdict recomputed by the
+  verdict pipeline. `CONF_PERF_CLASS=<class> scripts/conformance.sh` runs it
+  as a pipeline stage; the earned classes flow into the verdicts, report,
+  certificate, and a performance badge. Published SVG assets (the class
+  ladder and per-class latency charts) plus a generated summary are rendered
+  from the committed measurement records by `scripts/render-perf-assets.sh`
+  and guarded against drift in CI, and a new **Performance** chapter on the
+  documentation website explains the class ladder, the floors' derivation
+  from official activity statistics, how a coordinated-omission-free run
+  works, and how to reproduce it.
 
 ### Changed
 
@@ -115,6 +129,13 @@ workflow refuses a tag that has no matching section here.
   exclusion on the certificate instead of silently failing the tier; the
   API-presence capabilities (EHR/DEFINITION/QUERY API) are evidenced by
   chapter exemplar cases.
+- The benchmark harness converged onto the conformance runner's corpus,
+  recipes, and ixit topology, so both instruments seed identical clinical
+  documents through the public write path. The performance numbers in the
+  README and on the website are no longer hand-typed: they derive from
+  committed run artifacts (the benchmark comparison charts and the CNF
+  measurement records), and the site stale-numbers guard now also rejects a
+  hand-typed rate, latency, or footprint in the sources.
 
 
 - OPT-1.4 → ADL2 conversion fidelity: `DV_ORDINAL`/`DV_QUANTITY` constraints
