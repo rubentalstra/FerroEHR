@@ -1,184 +1,240 @@
 #!/usr/bin/env bash
-# openEHR CNF conformance runner — the acceptance instrument, multi-SUT.
+# openEHR CNF 2.0 conformance pipeline — the acceptance instrument.
 #
-# The thin wrapper satisfying the /run-conformance skill contract: bring up the
-# selected SUT's compose stack, run the conformance CLI against it, write the
-# per-SUT artefact set (results.json + report + Statement + Certificate +
-# badges) under $CONF_OUT/<sut-name>/, tear down.
+# Drives the CNF reference runner (tools/cnf-runner) end to end: bring up the
+# SUT's compose stack on FRESH volumes (the exclusive-server ground), execute
+# the committed catalogue, compute the verdicts through the pure pipeline,
+# and write the per-SUT artefact set under $CONF_OUT/<sut-name>/:
+#
+#   results.json               the party results (§8.10 schema)
+#   run-exceptions.json        the interpreter-coverage exception register
+#   verdicts.json              the computed verdict report
+#   CONFORMANCE_REPORT.md      rendered from (results, verdicts)
+#   CONFORMANCE_STATEMENT.md   rendered from (statement, verdicts)
+#   CONFORMANCE_CERTIFICATE.md rendered per the CNF certificate book
+#   badge*.json                shields.io endpoints derived from verdicts.json
 #
 # Usage:
 #   scripts/conformance.sh [FILTER]
 #
-# FILTER (optional) is passed to the CLI's --filter (an id substring).
+# FILTER (optional) is passed to the runner's --filter (an id substring).
 #
 # Env:
 #   CONF_SUT        ehrbase-rs (default) | ehrbase-java | byo.
 #                   ehrbase-rs: builds + composes the root stack (the current
-#                     sources — the phase-gate zero-drift run, edition PINNED
-#                     to development).
-#                   ehrbase-java: composes the upstream official image from
-#                     docker/benchmark/ (fairness register auto-applied;
-#                     results are comparison DATA, never a gate).
+#                     sources — the phase-gate zero-drift run).
+#                   ehrbase-java: composes upstream EHRbase (Java) from
+#                     docker/sut-ehrbase-java.yml (official images, fresh
+#                     volumes, host port 8091) — the #232 comparison target
+#                     with its committed party set.
 #                   byo: no compose management — point CONF_BASE_URL at any
-#                     deployed CDR (edition ladder = auto).
-#   CONF_BASE_URL   SUT base URL (defaults per CONF_SUT).
-#   CONF_SUT_NAME   output/lookup name for byo (default: byo).
-#   CONF_AUTH       regular credential spec (default: basic:ehrbase:ehrbase).
-#   CONF_ADMIN_AUTH admin credential spec   (default per CONF_SUT).
-#   CONF_EDITION    auto|development|1.0.3  (default: the target's default).
-#   CONF_PROFILE    all|core|standard|options (default: all).
-#   CONF_FORMAT     json|xml|both           (default: both).
-#   CONF_OUT        artefact root           (default: docs/conformance;
-#                   the SUT name is appended by the CLI).
-#   CONF_NO_COMPOSE if set, do not manage compose (assume the SUT is up).
+#                     deployed CDR and supply CONF_IXIT/CONF_STATEMENT.
+#   CONF_BASE_URL   SUT base URL for byo (rewrites the ixit instances).
+#   CONF_SUT_NAME   output name (default: $CONF_SUT).
+#   CONF_IXIT       ixit topology file (default: the committed per-SUT one).
+#   CONF_STATEMENT  party statement    (default: the committed per-SUT one).
+#   CONF_OUT        artefact root      (default: docs/conformance; the SUT
+#                   name is appended).
+#   CONF_NO_COMPOSE if set, do not manage compose (assume the SUT is up;
+#                   NOTE: the exclusive-server cases then run against
+#                   whatever state the SUT holds).
+#   SKIP_BUILD      if set, compose up without --build (published image).
+#   SUT_USER/SUT_PASS, SUT_ADMIN_USER/SUT_ADMIN_PASS,
+#   SUT_RO_USER/SUT_RO_PASS
+#                   credentials the ixit references (defaults: the dev
+#                   compose users; override for byo).
 set -Eeuo pipefail
 
 FILTER="${1:-}"
 SUT="${CONF_SUT:-ehrbase-rs}"
-AUTH="${CONF_AUTH:-basic:ehrbase:ehrbase}"
-PROFILE="${CONF_PROFILE:-all}"
-FORMAT="${CONF_FORMAT:-both}"
-OUT="${CONF_OUT:-docs/conformance}"
-# Repo root (this script lives in scripts/) — used for absolute compose -f + the
-# committed conformance pgp key, so paths resolve regardless of the invocation CWD.
+SUT_NAME="${CONF_SUT_NAME:-$SUT}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# The host port the runner binds the hermetic FHIR-tx fixture on for the ECC-TS
-# cases; MUST match docker/conformance.override.yml's provider URL port.
-TX_FIXTURE_PORT="${CONF_TX_FIXTURE_PORT:-8099}"
-# The host port the pgp-signing sibling (ehrbase-pgp) publishes; MUST match
-# docker/conformance.override.yml's port mapping.
-PGP_PORT="${EHRBASE_PGP_PORT:-8082}"
+OUT="${CONF_OUT:-$REPO_ROOT/docs/conformance}/$SUT_NAME"
+ROOT="$REPO_ROOT/tools/cnf-runner/artifacts"
+PARTY="$REPO_ROOT/tools/cnf-runner/party/$SUT_NAME"
+IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
+STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
-# macOS bash 3.2 treats an empty array expansion as unbound under `set -u`;
-# the compose() wrapper guards the expansion once.
-COMPOSE_ARGS=()
-compose() { docker compose ${COMPOSE_ARGS[@]+"${COMPOSE_ARGS[@]}"} "$@"; }
-case "$SUT" in
-  ehrbase-rs)
-    BASE_URL="${CONF_BASE_URL:-http://localhost:8080/ehrbase/rest/openehr/v1}"
-    # The compose dev config ships an ADMIN-role account (ehrbase-admin/ehrbase,
-    # docker/ehrbase.dev.toml) — without it the AdminApi cases 403.
-    ADMIN_AUTH="${CONF_ADMIN_AUTH:-basic:ehrbase-admin:ehrbase}"
-    APP_SERVICE=ehrbase
-    # The conformance override adds the FHIR terminology provider wiring (ECC-TS)
-    # and the pgp-signing sibling (ECC-SIG-005). Absolute -f paths pin the compose
-    # project directory to the repo root so the override's `./docker/…` volume
-    # mounts resolve regardless of CWD.
-    COMPOSE_ARGS=(-f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/conformance.override.yml")
-    CORE_SERVICES=(ehrbase-postgres ehrbase ehrbase-pgp)
-    ;;
-  ehrbase-java)
-    # The upstream official image + its postgres, from the benchmark dual-stack
-    # definitions (same images/credentials the X1 comparison pins).
-    BASE_URL="${CONF_BASE_URL:-http://localhost:8091/ehrbase/rest/openehr/v1}"
-    ADMIN_AUTH="${CONF_ADMIN_AUTH:-basic:ehrbase-admin:ehrbase}"
-    APP_SERVICE=ehrbase-java
-    CORE_SERVICES=(ehrbase-java-db ehrbase-java)
-    COMPOSE_ARGS=(-f docker/benchmark/docker-compose.yml --profile java)
-    ;;
-  byo)
-    BASE_URL="${CONF_BASE_URL:?CONF_SUT=byo requires CONF_BASE_URL}"
-    ADMIN_AUTH="${CONF_ADMIN_AUTH:-$AUTH}"
-    APP_SERVICE=""
-    CORE_SERVICES=()
-    CONF_NO_COMPOSE=1
-    ;;
-  *)
-    echo "::error::unknown CONF_SUT '$SUT' (ehrbase-rs|ehrbase-java|byo)" >&2
-    exit 2
-    ;;
-esac
-STATUS_URL="${BASE_URL%/openehr/v1}/status"
+# The dev-compose credentials (docker/ehrbase.dev.toml); override for byo.
+export SUT_USER="${SUT_USER:-ehrbase}"
+export SUT_PASS="${SUT_PASS:-ehrbase}"
+export SUT_ADMIN_USER="${SUT_ADMIN_USER:-ehrbase-admin}"
+export SUT_ADMIN_PASS="${SUT_ADMIN_PASS:-ehrbase}"
+export SUT_RO_USER="${SUT_RO_USER:-ehrbase-readonly}"
+export SUT_RO_PASS="${SUT_RO_PASS:-ehrbase}"
 
-manage_compose=1
-[ -n "${CONF_NO_COMPOSE:-}" ] && manage_compose=0
+[ -f "$IXIT" ] || { echo "conformance: ixit not found: $IXIT" >&2; exit 2; }
+[ -f "$STATEMENT" ] || { echo "conformance: statement not found: $STATEMENT" >&2; exit 2; }
 
-cleanup() {
-  if [ "$manage_compose" = "1" ]; then
-    compose down -v || true
-  fi
-}
-trap cleanup EXIT
+# byo: rewrite the ixit's base URLs into a temp copy.
+if [ "$SUT" = "byo" ] && [ -n "${CONF_BASE_URL:-}" ]; then
+  TMP_IXIT="$(mktemp -t cnf-ixit.XXXXXX)"
+  python3 - "$IXIT" "$CONF_BASE_URL" "$TMP_IXIT" <<'PY'
+import json
+import sys
 
-wait_healthy() {
-  # Containers with a compose healthcheck report .State.Health; ones without
-  # (the upstream ehrbase-java image) are probed over HTTP instead — any HTTP
-  # answer on the API base means the server is up.
-  local service="$1"
-  local cid health code
-  for _ in $(seq 1 60); do
-    cid=$(compose ps -q "$service")
-    if [ -n "$cid" ]; then
-      health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$cid")
-      if [ "$health" = "healthy" ]; then
-        return 0
-      fi
-      if [ "$health" = "none" ]; then
-        code=$(curl -s -o /dev/null -w '%{http_code}' -u ehrbase:ehrbase "$BASE_URL/ehr" || true)
-        [ "$code" != "000" ] && return 0
-      fi
-    fi
-    sleep 5
-  done
-  echo "::error::$service container did not become healthy"
-  compose logs "$service" || true
-  return 1
-}
-
-if [ "$manage_compose" = "1" ]; then
-  echo "==> Starting $SUT services"
-  if [ "$SUT" = "ehrbase-rs" ] && [ "${SKIP_BUILD:-0}" != "1" ]; then
-    # --build: a conformance verdict on OUR server is only meaningful against
-    # the current sources — a stale image once produced a silently-wrong drift
-    # verdict (2026-07-09). Opt out via SKIP_BUILD=1 for a published-image run.
-    compose up -d --build "${CORE_SERVICES[@]}"
-  else
-    compose up -d "${CORE_SERVICES[@]}"
-  fi
-  echo "==> Waiting for $APP_SERVICE to become healthy"
-  wait_healthy "$APP_SERVICE"
-  # The pgp-signing sibling (ECC-SIG-005) shares the migrated database; it starts
-  # after the main SUT so migrations run once.
-  if [ "$SUT" = "ehrbase-rs" ]; then
-    echo "==> Waiting for ehrbase-pgp to become healthy"
-    wait_healthy ehrbase-pgp
-  fi
+ixit = json.load(open(sys.argv[1]))
+for inst in ixit["instances"].values():
+    inst["base_url"] = sys.argv[2].rstrip("/")
+json.dump(ixit, open(sys.argv[3], "w"), indent=2)
+PY
+  IXIT="$TMP_IXIT"
 fi
 
-if [ "$SUT" = "ehrbase-rs" ]; then
-  echo "==> GET $STATUS_URL must be reachable"
-  curl -fsS -o /dev/null "$STATUS_URL"
-fi
-
-echo "==> Running conformance suite (sut=$SUT profile=$PROFILE format=$FORMAT filter='${FILTER}')"
-args=(run --sut "$SUT" --base-url "$BASE_URL" --auth "$AUTH" --admin-auth "$ADMIN_AUTH"
-      --format "$FORMAT" --out "$OUT")
-[ "$PROFILE" != "all" ] && args+=(--profile "$PROFILE")
-[ -n "$FILTER" ] && args+=(--filter "$FILTER")
-[ -n "${CONF_EDITION:-}" ] && args+=(--edition "$CONF_EDITION")
-[ -n "${CONF_SUT_NAME:-}" ] && args+=(--sut-name "$CONF_SUT_NAME")
-
-# Foreign-SUT provenance: derive the upstream version from the compose-resolved
-# image tag (honours EHRBASE_JAVA_IMAGE), so the artifacts record the version
-# actually run — never a hand-typed label that can drift from the pin.
 if [ "$SUT" = "ehrbase-java" ]; then
-  SUT_VERSION="${CONF_SUT_VERSION:-}"
-  if [ -z "$SUT_VERSION" ]; then
-    img=$(compose config --format json 2>/dev/null \
-      | jq -r '.services["ehrbase-java"].image // empty' || true)
-    SUT_VERSION="${img##*:}"
+  # The upstream image tag is the SUT version (default pinned in the compose).
+  JAVA_IMAGE="${EHRBASE_JAVA_IMAGE:-ehrbase/ehrbase:2.34.0}"
+  SUT_VERSION="${JAVA_IMAGE#*:}"
+else
+  SUT_VERSION="$(grep -m1 '^version' "$REPO_ROOT/Cargo.toml" | sed 's/.*"\(.*\)"/\1/')"
+fi
+
+# ehrbase-java composes as its own project so it can coexist with (and never
+# tear down) the ehrbase-rs stack.
+JAVA_COMPOSE=(docker compose -p cnf-ehrbase-java -f "$REPO_ROOT/docker/sut-ehrbase-java.yml")
+
+compose_down() {
+  if [ "$SUT" = "ehrbase-java" ]; then
+    "${JAVA_COMPOSE[@]}" down -v || true
+  else
+    (cd "$REPO_ROOT" && docker compose down -v) || true
   fi
-  [ -n "$SUT_VERSION" ] && args+=(--sut-version "$SUT_VERSION")
+}
+
+if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
+  trap compose_down EXIT
+  echo "==> Composing $SUT on fresh volumes (the exclusive-server ground)"
+  if [ "$SUT" = "ehrbase-java" ]; then
+    "${JAVA_COMPOSE[@]}" down -v || true
+    "${JAVA_COMPOSE[@]}" up -d
+    # The official EHRbase image has no in-container health tooling (no
+    # wget/curl), so poll the status endpoint EXTERNALLY: any HTTP answer
+    # (200 with credentials, 401 without) means the server is serving.
+    echo "==> Waiting for upstream EHRbase on :${EHRBASE_JAVA_PORT:-8091}"
+    ready=""
+    for _ in $(seq 1 60); do
+      code=$(curl -s -o /dev/null -w '%{http_code}' \
+        "http://localhost:${EHRBASE_JAVA_PORT:-8091}/ehrbase/rest/status" || true)
+      case "$code" in
+        200|401|403) ready=1; break ;;
+      esac
+      sleep 5
+    done
+    [ -n "$ready" ] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
+  else
+    (cd "$REPO_ROOT" && docker compose down -v) || true
+    if [ -n "${SKIP_BUILD:-}" ]; then
+      (cd "$REPO_ROOT" && docker compose up -d --wait ehrbase)
+    else
+      # A conformance verdict on OUR server is only meaningful against the
+      # CURRENT sources — build the image unless explicitly skipped.
+      (cd "$REPO_ROOT" && docker compose up -d --build --wait ehrbase)
+    fi
+  fi
 fi
 
-# ehrbase-rs only: wire the host-run FHIR-tx fixture into the composed SUT
-# (ECC-TS-006…009) and point the pgp-signing case at the pgp sibling
-# (ECC-SIG-005). These SUT-config surfaces do not exist for a foreign/BYO SUT.
-if [ "$SUT" = "ehrbase-rs" ]; then
-  args+=(--tx-fixture-port "$TX_FIXTURE_PORT")
-  args+=(--sig-pgp-base-url "http://localhost:${PGP_PORT}/ehrbase/rest/openehr/v1")
-  args+=(--sig-pgp-key "$REPO_ROOT/docker/conformance/pgp/signing-key.asc")
+echo "==> Building the CNF runner"
+(cd "$REPO_ROOT" && cargo build -q -p cnf-runner)
+
+mkdir -p "$OUT"
+
+echo "==> Executing the catalogue (sut=$SUT_NAME filter='${FILTER}')"
+run_args=(run --root "$ROOT" --ixit "$IXIT" --out "$OUT"
+          --sut-name "$SUT_NAME" --sut-version "$SUT_VERSION"
+          --statement "$STATEMENT")
+[ -n "$FILTER" ] && run_args+=(--filter "$FILTER")
+# Exit 1 = failing cases (data for the verdict pipeline, not a pipeline
+# abort); only 2 (runner defect) stops the run.
+run_rc=0
+"$REPO_ROOT/target/debug/cnf-runner" "${run_args[@]}" || run_rc=$?
+if [ "$run_rc" -ge 2 ]; then
+  echo "conformance: runner defect (exit $run_rc)" >&2
+  exit "$run_rc"
 fi
 
-# Exit code is the CLI's: 0 pass · 1 failures · 2 runner/SUT error.
-cargo run -q -p conformance --bin conformance -- "${args[@]}"
+echo "==> Computing the verdicts (pure pipeline)"
+verdict_rc=0
+"$REPO_ROOT/target/debug/cnf-runner" verdicts \
+  --statement "$STATEMENT" --results "$OUT/results.json" \
+  --root "$ROOT" --out "$OUT" || verdict_rc=$?
+if [ "$verdict_rc" -ge 2 ]; then
+  echo "conformance: verdict pipeline defect (exit $verdict_rc)" >&2
+  exit "$verdict_rc"
+fi
+
+echo "==> Deriving the badges from verdicts.json"
+python3 - "$OUT" "$ROOT/vocab/capability_matrix.yaml" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+out = pathlib.Path(sys.argv[1])
+verdicts = json.load(open(out / "verdicts.json"))
+results = json.load(open(out / "results.json"))
+
+# Tier membership from the capability matrix (Name: { tier: X, family: Y }).
+tier_caps: dict[str, list[str]] = {}
+family: dict[str, str] = {}
+for line in open(sys.argv[2]):
+    m = re.match(r"^(\w+):\s*\{(.*)\}", line)
+    if not m:
+        continue
+    name, body = m.group(1), m.group(2)
+    tier = re.search(r"tier:\s*([A-Z-]+)", body)
+    fam = re.search(r"family:\s*(\w+)", body)
+    if tier:
+        tier_caps.setdefault(tier.group(1), []).append(name)
+    if fam:
+        family[name] = fam.group(1)
+
+evidence = {name: ev for name, ev in verdicts["capabilities"]}
+tiers = {tier: verdict for tier, verdict in verdicts["profiles"]}
+security = verdicts.get("security")
+if security is not None:
+    tiers["SEC-BASIC"] = security if isinstance(security, str) else security.get("verdict", "")
+
+def satisfied(names):
+    ok = sum(1 for n in names if evidence.get(n) in ("passed", "unrealized"))
+    return ok, len(names)
+
+counts = {}
+for tier, names in tier_caps.items():
+    counts[tier] = satisfied(names)
+counts["SEC-BASIC"] = satisfied([n for n, f in family.items() if f == "Security"])
+
+colors = {"pass": "brightgreen", "fail": "red", "not_claimed": "lightgrey"}
+slug = {"CORE": "core", "STANDARD": "standard", "OPTIONS": "options", "SEC-BASIC": "sec-basic"}
+for tier, verdict in tiers.items():
+    token = verdict if isinstance(verdict, str) else str(verdict)
+    ok_n, total_n = counts.get(tier, (0, 0))
+    amount = f" {ok_n}/{total_n}" if total_n else ""
+    badge = {
+        "schemaVersion": 1,
+        "label": f"openEHR CNF {tier}",
+        "message": f"{token.upper().replace('_', ' ')}{amount} capabilities" if total_n else f"{token.upper().replace('_', ' ')}",
+        "color": colors.get(token, "lightgrey"),
+    }
+    path = out / f"badge-{slug.get(tier, tier.lower())}.json"
+    path.write_text(json.dumps(badge, indent=2) + "\n")
+
+by_status = {}
+for o in results.get("outcomes", []):
+    by_status[o["status"]] = by_status.get(o["status"], 0) + 1
+driven = by_status.get("passed", 0) + by_status.get("failed", 0) + by_status.get("errored", 0)
+ok = tiers.get("CORE") == "pass" and tiers.get("STANDARD") == "pass"
+(out / "badge.json").write_text(json.dumps({
+    "schemaVersion": 1,
+    "label": "openEHR conformance",
+    "message": (
+        f"CORE+STANDARD PASS · {by_status.get('passed', 0)}/{driven} cases"
+        if ok
+        else f"NOT PASSING · {by_status.get('passed', 0)}/{driven} cases"
+    ),
+    "color": "brightgreen" if ok else "red",
+}, indent=2) + "\n")
+print("badges written")
+PY
+
+echo "==> Artefacts in $OUT"
+ls -1 "$OUT"

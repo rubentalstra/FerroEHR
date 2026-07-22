@@ -366,7 +366,25 @@ fn emit_leaf(node: &WebTemplateNode, base: &str, out: &mut Map<String, Value>) -
             put(out, base, "", json!(example_temporal(node, rm)));
         }
         "DV_DURATION" => put(out, base, "", json!(example_duration(node))),
-        "DV_IDENTIFIER" => put(out, base, "id", json!("example-id")),
+        "DV_IDENTIFIER" => {
+            // `id` is RM-mandatory (RM `data_types` §`DV_IDENTIFIER`); honour a
+            // C_STRING constraint on it, else a placeholder.
+            let id = input_with_suffix(node, "id")
+                .and_then(constrained_string_example)
+                .unwrap_or_else(|| "example-id".to_owned());
+            put(out, base, "id", json!(id));
+            // Fill any OPT-constrained (hence, per the builder, mandated)
+            // sub-attribute with a conforming value so the example validates
+            // (AOM 1.4 `C_STRING.valid_value`; the validator enforces a
+            // constrained-and-mandatory DV_IDENTIFIER sub-attribute's presence).
+            for part in ["issuer", "assigner", "type"] {
+                if let Some(value) =
+                    input_with_suffix(node, part).and_then(constrained_string_example)
+                {
+                    put(out, base, part, json!(value));
+                }
+            }
+        }
         "DV_MULTIMEDIA" => {
             put(out, base, "", json!("http://example.org/media"));
             // Honour a `C_CODE_PHRASE` list on `media_type` (captured in
@@ -470,6 +488,30 @@ fn example_for_pattern(pattern: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+/// A deterministic value satisfying a leaf sub-attribute's `C_STRING` constraint
+/// (a closed value list or a value pattern), or `None` when the input carries no
+/// enforceable string constraint. Used to fill an OPT-constrained (hence
+/// mandated) `DV_IDENTIFIER` sub-attribute (AOM 1.4
+/// `master04-constraint_model_package.adoc` §`C_STRING`). For a pattern, the
+/// literal pattern body is offered when it satisfies its own regex (e.g. `gov.si`,
+/// where `.` matches the literal dot) — a conforming instance even when the
+/// pattern carries regex metacharacters that [`example_for_pattern`] declines.
+fn constrained_string_example(input: &WebTemplateInput) -> Option<String> {
+    if input.list_open != Some(true)
+        && let Some(cv) = input.list.first()
+    {
+        return Some(cv.value.clone());
+    }
+    let pattern = input.validation.as_ref()?.pattern.as_deref()?;
+    example_for_pattern(pattern).or_else(|| {
+        let body = pattern
+            .strip_prefix('/')
+            .and_then(|p| p.strip_suffix('/'))
+            .unwrap_or(pattern);
+        (!body.is_empty() && pattern_matches(pattern, body)).then(|| body.to_owned())
+    })
 }
 
 /// Whether `value` satisfies an ADL `C_STRING` regex `pattern` (`/`-delimited,

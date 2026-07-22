@@ -1689,6 +1689,142 @@ mod tests {
         assert!(walk_only(&inst, &n).is_empty());
     }
 
+    // ── DV_MULTIMEDIA.size (C_INTEGER list / range) ──────────────────────────
+    // RM `data_types` §DV_MULTIMEDIA (`size: Integer`); AOM 1.4
+    // `master04-constraint_model_package.adoc` §C_INTEGER (list + range).
+
+    #[test]
+    fn multimedia_size_out_of_range_reported() {
+        let mut n = node("DV_MULTIMEDIA", "/media");
+        n.inputs = vec![WebTemplateInput::new(WebTemplateInputType::Text, None)];
+        n.numeric_ranges = vec![(
+            "size".to_owned(),
+            WebTemplateRange {
+                min_op: Some(">=".to_owned()),
+                min: Some(Value::from(200)),
+                max_op: Some("<=".to_owned()),
+                max: Some(Value::from(1000)),
+            },
+        )];
+        let bad = json!({"_type": "DV_MULTIMEDIA", "uri": "http://x", "size": 123});
+        assert_eq!(
+            kinds(&walk_only(&bad, &n)),
+            vec![ValidationKind::RangeError]
+        );
+        let good = json!({"_type": "DV_MULTIMEDIA", "uri": "http://x", "size": 500});
+        assert!(walk_only(&good, &n).is_empty());
+    }
+
+    #[test]
+    fn multimedia_size_not_in_list_reported() {
+        let mut n = node("DV_MULTIMEDIA", "/media");
+        n.inputs = vec![WebTemplateInput::new(WebTemplateInputType::Text, None)];
+        n.numeric_lists = vec![("size".to_owned(), vec![10.0, 100.0, 1000.0])];
+        let bad = json!({"_type": "DV_MULTIMEDIA", "uri": "http://x", "size": 123});
+        assert_eq!(
+            kinds(&walk_only(&bad, &n)),
+            vec![ValidationKind::CodedValue]
+        );
+        let good = json!({"_type": "DV_MULTIMEDIA", "uri": "http://x", "size": 100});
+        assert!(walk_only(&good, &n).is_empty());
+    }
+
+    // ── DV_IDENTIFIER mandatory (existence 1..1) constrained sub-attribute ────
+    // RM `data_types` §DV_IDENTIFIER; AOM 1.4 §existence + §C_STRING. An OPT that
+    // constrains and mandates `issuer` rejects a value that omits it (the `id`
+    // absence is caught separately by the RM invariant).
+
+    #[test]
+    fn dv_identifier_mandatory_issuer_enforced() {
+        let mut n = node("DV_IDENTIFIER", "/value");
+        let mut issuer = WebTemplateInput::new(WebTemplateInputType::Text, Some("issuer"));
+        issuer.list = vec![WebTemplateCodedValue::new("XYZ", Some("XYZ".to_owned()))];
+        issuer.list_open = Some(false);
+        n.inputs = vec![
+            WebTemplateInput::new(WebTemplateInputType::Text, Some("id")),
+            issuer,
+        ];
+        n.existence = vec![WebTemplateExistence {
+            min: 1,
+            max: 1,
+            path: "/value/issuer".to_owned(),
+        }];
+        // issuer absent → Required.
+        let absent = json!({"_type": "DV_IDENTIFIER", "id": "x"});
+        assert!(kinds(&walk_only(&absent, &n)).contains(&ValidationKind::Required));
+        // issuer present but not in the list → CodedValue.
+        let wrong = json!({"_type": "DV_IDENTIFIER", "id": "x", "issuer": "ABC"});
+        assert!(kinds(&walk_only(&wrong, &n)).contains(&ValidationKind::CodedValue));
+        // issuer present and conforming → clean.
+        let ok = json!({"_type": "DV_IDENTIFIER", "id": "x", "issuer": "XYZ"});
+        assert!(walk_only(&ok, &n).is_empty());
+    }
+
+    // ── DV_SCALE generic (C_REAL value list + symbol C_CODE_PHRASE) ───────────
+    // AOM 1.4 has no C_DV_SCALE, so DV_SCALE constrains `symbol.defining_code`
+    // as a C_CODE_PHRASE code_list (AOM 1.4 §C_CODE_PHRASE; RM §DV_SCALE): a
+    // symbol not in the list is rejected, with no (symbol, value) pair check.
+
+    #[test]
+    fn dv_scale_generic_symbol_membership_enforced() {
+        let mut n = node("DV_SCALE", "/value");
+        let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, None);
+        // Generic form: coded symbols carry no scale/ordinal number.
+        input.list = vec![
+            WebTemplateCodedValue::new("at0005", Some("mild".to_owned())),
+            WebTemplateCodedValue::new("at0006", Some("severe".to_owned())),
+        ];
+        n.inputs = vec![input];
+        n.numeric_lists = vec![("value".to_owned(), vec![1.5, 2.4])];
+        // Symbol not in the code list (value in the real list) → CodedValue.
+        let bad = json!({
+            "_type": "DV_SCALE", "value": 1.5,
+            "symbol": {"_type": "DV_CODED_TEXT", "value": "?",
+                "defining_code": {"_type": "CODE_PHRASE",
+                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
+                    "code_string": "at0666"}}
+        });
+        assert!(kinds(&walk_only(&bad, &n)).contains(&ValidationKind::CodedValue));
+        // Symbol in the list, value in the list → clean (no spurious pair check).
+        let ok = json!({
+            "_type": "DV_SCALE", "value": 1.5,
+            "symbol": {"_type": "DV_CODED_TEXT", "value": "mild",
+                "defining_code": {"_type": "CODE_PHRASE",
+                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
+                    "code_string": "at0005"}}
+        });
+        assert!(walk_only(&ok, &n).is_empty(), "{:?}", walk_only(&ok, &n));
+    }
+
+    // ── DV_TIME partial value vs C_TIME pattern (over-rejection fix) ──────────
+    // ADL 1.4 `master05-cadl.adoc` §"Date, Time and Date/Time" Patterns: `?` =
+    // optional field, `X` = disallowed field; an hour-only value "10" satisfies
+    // both "HH:??:??" and "HH:XX:XX".
+
+    fn time_node(pattern: &str) -> WebTemplateNode {
+        let mut n = node("DV_TIME", "/time");
+        let mut input = WebTemplateInput::new(WebTemplateInputType::Time, None);
+        input.validation = Some(WebTemplateValidation {
+            pattern: Some(pattern.to_owned()),
+            ..Default::default()
+        });
+        n.inputs = vec![input];
+        n
+    }
+
+    #[test]
+    fn dv_time_hour_only_accepts_optional_and_prohibited_patterns() {
+        for pattern in ["HH:??:??", "HH:XX:XX"] {
+            let n = time_node(pattern);
+            let inst = json!({"_type": "DV_TIME", "value": "10"});
+            assert!(
+                walk_only(&inst, &n).is_empty(),
+                "hour-only \"10\" must satisfy pattern {pattern}: {:?}",
+                walk_only(&inst, &n)
+            );
+        }
+    }
+
     // ── string pattern ─────────────────────────────────────────────────────────
 
     #[test]

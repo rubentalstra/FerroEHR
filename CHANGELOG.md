@@ -15,49 +15,28 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
-### Fixed
-
-- Composition validation now rejects a `DV_DURATION` whose value carries a
-  decimal fraction on any component other than seconds (e.g. `P1Y3M4DT2.5H` or
-  `PT2H14.5M`). openEHR permits a fraction only on the seconds component
-  (BASE time types: "in openEHR, only fractional seconds are supported"), so
-  such a value now fails its RM `Value_valid` invariant with `422` instead of
-  being accepted.
-- Composition validation now enforces a `DV_QUANTITY` constraint that fixes a
-  measurement `property` (with no enumerated unit list): the committed `units`
-  must be a unit of that physical property (per the openEHR measurement
-  property↔unit table). A quantity constrained to `length` committed with a
-  mass unit such as `mg` is now rejected with `422` instead of being accepted.
-- Composition validation now rejects a coded value whose terminology is
-  foreign to a `C_CODE_PHRASE` constraint that explicitly binds the
-  archetype-`local` terminology with a closed code list. Committing a
-  `DV_CODED_TEXT` whose `defining_code` uses, e.g., SNOMED-CT against a
-  `local`-scoped closed list now yields `422` instead of being accepted.
-- The AQL `ehr_id` execution scope now also binds bare `FROM EHR e` sources:
-  a scoped query without a CONTAINS chain previously ran over the whole
-  population instead of the single EHR context the `ehr_id` parameter selects
-  (ITS-REST query `Request.md` §Common Headers and Query Parameters).
-- A CONTRIBUTION delete member targeting the EHR_STATUS is now refused with
-  `409 Conflict`: `EHR.ehr_status` is mandatory (RM ehr, EHR class, 1..1), so
-  deleting the only status would leave the EHR violating its own invariant.
-- FLAT/STRUCTURED commits: spec-listed direct RM-attribute paths that an
-  operational template leaves unconstrained are no longer rejected as unknown
-  paths. `ACTION/ism_transition` (`current_state`/`transition`/`careflow_step`
-  + `_reason:i`) and `ACTION/time`, plus `INSTRUCTION/narrative`,
-  `OBSERVATION/history_origin`, `ACTIVITY/timing` + `action_archetype_id`, and
-  `INTERVAL_EVENT/width` + `math_function`, are now built from their datum
-  parts per the ITS-REST Simplified-Formats `master05-rm_mapping.adoc` per-type
-  tables, and emitted symmetrically on the reverse (RM → FLAT) direction so
-  round-trips stay lossless. Previously a client-supplied `ism_transition` was
-  rejected with "unknown simplified path" and the ACTION state fell back to the
-  synthesized `initial` default.
-- AQL paging: the REST `fetch`/`offset` parameters now page over the result
-  set the AQL `LIMIT`/`OFFSET` clauses define instead of being rejected with
-  `400` when combined. Per ITS-REST query `Request.md`, only pairing `fetch`
-  with the deprecated AQL `TOP` modifier is prohibited — that rejection
-  remains. Negative `fetch`/`offset` values are now rejected explicitly.
-
 ### Added
+
+- The conformance pipeline assesses **upstream EHRbase (Java)** as a second
+  system under test: `CONF_SUT=ehrbase-java scripts/conformance.sh` composes
+  the official `ehrbase/ehrbase:2.34.0` + `ehrbase-v2-postgres` images on
+  fresh volumes (`docker/sut-ehrbase-java.yml`, readiness probed externally
+  — the official image carries no in-container health tooling) and runs the
+  same committed catalogue with upstream's own committed party set
+  (`tools/cnf-runner/party/ehrbase-java/`). The public comparison
+  (`docs/conformance/COMPARISON.md` + the website comparison page) is fully
+  generated from the two committed results/verdicts sets — profile verdicts,
+  the 39-capability evidence matrix, and failure tables in both directions.
+- The conformance runner performs ISO/IEC 9646-style ICS-driven test
+  selection: `cnf-runner run --statement` excuses option-gated cases whose
+  register branch the party statement does not declare as N/A with citation
+  (previously they ran and recorded spurious failures the verdict pipeline
+  then excused).
+- Conformance badges carry measured amounts: per-tier badges read e.g.
+  `PASS 10/10 capabilities`, the overall badge `CORE+STANDARD PASS ·
+  323/323 cases` — derived from `verdicts.json` + the capability matrix,
+  never hand-typed.
+
 
 - Read-only role support in RBAC: a principal carrying the configured
   `authz.rbac.readonly_role` (default `READONLY`) is refused with `403` on
@@ -118,6 +97,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- The conformance acceptance instrument is now the CNF 2.0 reference runner
+  (`tools/cnf-runner`) end to end: `scripts/conformance.sh` composes the SUT
+  on fresh volumes, executes the committed machine-readable catalogue,
+  computes verdicts through the pure pipeline, and writes
+  results/verdicts/report/statement/certificate + badges per SUT. The ECC
+  harness (`tools/conformance`) is retired — its final inventory is
+  preserved at `tools/cnf-runner/comparison/ecc-catalog.tsv` and the
+  reviewed cutover record is `docs/conformance/cnf-comparison.md`; the
+  previous ehrbase-java comparison artifacts are frozen as historical data.
+  Committed per-SUT party sets (ixit + statement) live under
+  `tools/cnf-runner/party/`.
+- Verdict semantics: a REQUIRED capability whose every selected case is
+  excluded by a schedule-registered ambiguity (an unrealized wire on the
+  technology profile, e.g. ADL 1.4 archetype provisioning under ITS-REST
+  1.1.0 — AMB-41) is now recorded as an explicit `unrealized` scope
+  exclusion on the certificate instead of silently failing the tier; the
+  API-presence capabilities (EHR/DEFINITION/QUERY API) are evidenced by
+  chapter exemplar cases.
+
+
 - OPT-1.4 → ADL2 conversion fidelity: `DV_ORDINAL`/`DV_QUANTITY` constraints
   now convert to real AOM2 attribute tuples (`[value, symbol]`,
   `[units, magnitude(, precision)]`) instead of loose unconstrained nodes;
@@ -135,6 +134,77 @@ workflow refuses a tag that has no matching section here.
   standing test gate.
 
 ### Fixed
+
+- Composition validation closes eight archetype-constraint enforcement gaps
+  the CNF content chapter exposed: `C_STRING` list/pattern constraints on
+  `DV_IDENTIFIER.issuer`/`assigner`/`type` (only `id` was checked);
+  `DV_MULTIMEDIA.size` against `C_INTEGER` list and range constraints
+  (previously unvalidated); `C_ATTRIBUTE` existence `1..1` on
+  `OBSERVATION.state`/`protocol`, `HISTORY.summary`, and `EVENT.state` now
+  rejects the absent attribute; `DV_SCALE` value/symbol value-set
+  constraints (generic `C_REAL` list + `C_CODE_PHRASE` code list — AOM 1.4
+  has no `C_DV_SCALE`) are enforced, including on `DV_INTERVAL` bounds;
+  `timezone_validity` on `C_TIME`/`C_DATE_TIME` (mandatory and prohibited)
+  is honoured; half-open (one-side-unbounded) temporal range constraints
+  reject out-of-range values; a `DV_PROPORTION` of kind fraction or
+  integer-fraction with a non-zero `precision` is rejected
+  (`Fraction_validity`); and a partial `DV_TIME` such as `10` is no longer
+  over-rejected against `HH:??:??`/`HH:XX:XX` patterns (optional and
+  not-allowed fields both admit an absent field).
+- A `DV_TIME`/`DV_DATE_TIME` literal carrying a fraction on the hours or
+  minutes component (e.g. `10.5`, `10:05.5`) is now rejected: openEHR
+  supports fractional seconds only (BASE time types §ISO 8601 semantics not
+  included).
+- A `DV_URI` whose value has no URI scheme (e.g. `xyz`, `www.example.org`)
+  is now rejected on commit per the CNF content schedule's RFC-3986 rule;
+  plain-text URI content after the scheme remains accepted per the RM's
+  plain-text allowance.
+- A COMPOSITION create (`201`) or update (`200`) whose response is negotiated
+  as a Simplified Format (`Accept: application/openehr.wt.flat+json` or
+  `…wt.structured+json`) now returns the `ETag` and `Location` headers, matching
+  the canonical (`application/json`/`application/xml`) response. Previously a
+  FLAT/STRUCTURED commit body omitted both version-id headers, so clients could
+  not read the new version uid or resource URL from a simplified-format commit.
+- Composition validation now rejects a `DV_DURATION` whose value carries a
+  decimal fraction on any component other than seconds (e.g. `P1Y3M4DT2.5H` or
+  `PT2H14.5M`). openEHR permits a fraction only on the seconds component
+  (BASE time types: "in openEHR, only fractional seconds are supported"), so
+  such a value now fails its RM `Value_valid` invariant with `422` instead of
+  being accepted.
+- Composition validation now enforces a `DV_QUANTITY` constraint that fixes a
+  measurement `property` (with no enumerated unit list): the committed `units`
+  must be a unit of that physical property (per the openEHR measurement
+  property↔unit table). A quantity constrained to `length` committed with a
+  mass unit such as `mg` is now rejected with `422` instead of being accepted.
+- Composition validation now rejects a coded value whose terminology is
+  foreign to a `C_CODE_PHRASE` constraint that explicitly binds the
+  archetype-`local` terminology with a closed code list. Committing a
+  `DV_CODED_TEXT` whose `defining_code` uses, e.g., SNOMED-CT against a
+  `local`-scoped closed list now yields `422` instead of being accepted.
+- The AQL `ehr_id` execution scope now also binds bare `FROM EHR e` sources:
+  a scoped query without a CONTAINS chain previously ran over the whole
+  population instead of the single EHR context the `ehr_id` parameter selects
+  (ITS-REST query `Request.md` §Common Headers and Query Parameters).
+- A CONTRIBUTION delete member targeting the EHR_STATUS is now refused with
+  `409 Conflict`: `EHR.ehr_status` is mandatory (RM ehr, EHR class, 1..1), so
+  deleting the only status would leave the EHR violating its own invariant.
+- FLAT/STRUCTURED commits: spec-listed direct RM-attribute paths that an
+  operational template leaves unconstrained are no longer rejected as unknown
+  paths. `ACTION/ism_transition` (`current_state`/`transition`/`careflow_step`
+  + `_reason:i`) and `ACTION/time`, plus `INSTRUCTION/narrative`,
+  `OBSERVATION/history_origin`, `ACTIVITY/timing` + `action_archetype_id`, and
+  `INTERVAL_EVENT/width` + `math_function`, are now built from their datum
+  parts per the ITS-REST Simplified-Formats `master05-rm_mapping.adoc` per-type
+  tables, and emitted symmetrically on the reverse (RM → FLAT) direction so
+  round-trips stay lossless. Previously a client-supplied `ism_transition` was
+  rejected with "unknown simplified path" and the ACTION state fell back to the
+  synthesized `initial` default.
+- AQL paging: the REST `fetch`/`offset` parameters now page over the result
+  set the AQL `LIMIT`/`OFFSET` clauses define instead of being rejected with
+  `400` when combined. Per ITS-REST query `Request.md`, only pairing `fetch`
+  with the deprecated AQL `TOP` modifier is prohibited — that rejection
+  remains. Negative `fetch`/`offset` values are now rejected explicitly.
+
 
 - Spec version identity is now derived from the `openehr-*` crate versions
   instead of hand-typed literals, fixing the stale values those literals had

@@ -894,8 +894,12 @@ mod tests {
             Some(10.0 * 3600.0 + 30.0 * 60.0 + 15.0)
         );
         assert_eq!(iso_time_magnitude_seconds("10:30:15.5"), Some(37815.5));
-        // Partial time: fraction applies to the last present component.
-        assert_eq!(iso_time_magnitude_seconds("10.5"), Some(37800.0));
+        // A fractional hour/minute is not a valid openEHR time — "only
+        // fractional seconds are supported" (BASE
+        // `foundation_types/master06-time_types.adoc` §"ISO 8601 semantics not
+        // included in these types") — so it has no magnitude.
+        assert_eq!(iso_time_magnitude_seconds("10.5"), None);
+        assert_eq!(iso_time_magnitude_seconds("10:05.5"), None);
         // Timezone does not shift the start-of-day origin.
         assert_eq!(iso_time_magnitude_seconds("10:00:00+02:00"), Some(36000.0));
         assert_eq!(iso_time_magnitude_seconds("bad"), None);

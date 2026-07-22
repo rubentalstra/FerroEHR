@@ -3,7 +3,7 @@ id: I_EHR_SERVICE.create_ehr-main
 kind: functional
 component: EHR
 sm_operation: I_EHR_SERVICE.create_ehr
-capabilities: [EhrOperations]
+capabilities: [EhrOperations, EhrApi]   # the API-presence capability is evidenced by this chapter exemplar (CNF profiles master03 §Functional REST APIs)
 profiles: [CORE]
 test_purpose: >-
   Creating an EHR succeeds for every valid EHR_STATUS variant, and for an

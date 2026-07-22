@@ -178,6 +178,12 @@
         "path": {
           "type": "string",
           "minLength": 1
+        },
+        "constraint_columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

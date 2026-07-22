@@ -18,6 +18,42 @@ fn is_scheme(s: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
 }
 
+/// `true` when `value` is an absolute RFC-3986 reference — a scheme
+/// (`ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )`) followed by `:`.
+fn has_scheme(value: &str) -> bool {
+    matches!(value.split_once(':'), Some((s, _)) if is_scheme(s))
+}
+
+/// The DV_URI `Value_valid` (RM invariant) + scheme-presence (CNF conformance)
+/// core over the projected value — one source for the typed impl and the
+/// value-level fast path (`validate::fast`), mirroring the DV_EHR_URI sibling
+/// (`dv_ehr_uri_impl::push_dv_ehr_uri_invariants`).
+pub(crate) fn push_dv_uri_invariants(value: &str, out: &mut Vec<InvariantViolation>) {
+    // RM invariant `Value_valid: not value.is_empty` (the only DV_URI invariant).
+    crate::validate::generated::dv_uri_core(value, out);
+    // NOTE: scheme presence is NOT an RM class invariant. The only DV_URI
+    // invariant is `Value_valid: not value.is_empty`
+    // (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.data_types.dv_uri.adoc`
+    // §Invariants); the class Description asserts the value "structurally
+    // conforms to … RFC-3986" only in prose, and that same prose explicitly
+    // allows "plain-text URIs" containing RFC-3986-forbidden characters such as
+    // spaces. RFC 3986 itself permits relative references (so `xyz` is a valid
+    // relative-path reference), but the CNF content schedule is the conformance
+    // oracle here and is stricter than both the RM invariant set and RFC 3986:
+    // `master17.7-content_tc_data_types-uri.adoc` (Test Case
+    // CONT-DV_URI-validate_open) states "only invalid URIs should be rejected.
+    // Any RFC3986-compliant URI should be accepted" and tabulates
+    // `xyz | rejected | value doesn't comply with RFC3986` vs
+    // `ftp://ftp.is.co.za/rfc/rfc1808.txt | accepted`. We therefore require an
+    // absolute reference (a scheme followed by `:`); per the RM prose we do NOT
+    // enforce RFC-3986 encoding of the remainder (plain-text URIs stay valid).
+    if !has_scheme(value) {
+        out.push(InvariantViolation::here(
+            "Invariant Scheme_valid failed on type DV_URI",
+        ));
+    }
+}
+
 impl DvUriData {
     /// RM `DV_URI.scheme()`: the URI scheme (e.g. `ftp`, `mailto`), or the
     /// empty string for a scheme-less (relative) value.
@@ -66,7 +102,7 @@ impl DvUriData {
 
 impl Validate for DvUriData {
     fn validate_invariants(&self, out: &mut Vec<InvariantViolation>) {
-        crate::validate::generated::dv_uri_core(&self.value, out);
+        push_dv_uri_invariants(&self.value, out);
     }
 }
 
@@ -80,27 +116,58 @@ impl Validate for DvUriData {
 mod tests {
     use super::*;
 
-    #[test]
-    fn value_valid() {
-        assert!(
-            DvUriData {
-                value: "http://example.org/x".to_owned()
-            }
-            .invariants()
-            .is_empty()
-        );
-        let v = DvUriData {
-            value: String::new(),
-        }
-        .invariants();
-        assert_eq!(v.len(), 1);
-        assert_eq!(v[0].message, "Invariant Value_valid failed on type DV_URI");
-    }
-
     fn uri(value: &str) -> DvUriData {
         DvUriData {
             value: value.to_owned(),
         }
+    }
+
+    fn messages(value: &str) -> Vec<String> {
+        uri(value)
+            .invariants()
+            .into_iter()
+            .map(|m| m.message)
+            .collect()
+    }
+
+    #[test]
+    fn value_valid() {
+        assert!(uri("http://example.org/x").invariants().is_empty());
+        // An empty value fails both `Value_valid` (non-empty) and `Scheme_valid`
+        // (no scheme), mirroring the DV_EHR_URI sibling `empty_fails_both`.
+        let msgs = messages("");
+        assert!(msgs.contains(&"Invariant Value_valid failed on type DV_URI".to_owned()));
+        assert!(msgs.contains(&"Invariant Scheme_valid failed on type DV_URI".to_owned()));
+    }
+
+    /// CNF `master17.7-content_tc_data_types-uri.adoc` (Test Case
+    /// CONT-DV_URI-validate_open): "only invalid URIs should be rejected. Any
+    /// RFC3986-compliant URI should be accepted"; the row `xyz | rejected`
+    /// requires a bare relative reference (no scheme) to be rejected, while
+    /// `ftp://ftp.is.co.za/rfc/rfc1808.txt | accepted`. A DV_URI value must
+    /// therefore be an absolute reference (scheme present).
+    #[test]
+    fn scheme_required_for_absolute_reference() {
+        let scheme_valid = "Invariant Scheme_valid failed on type DV_URI".to_owned();
+        // Absolute references (scheme present) are accepted.
+        assert!(
+            uri("ftp://ftp.is.co.za/rfc/rfc1808.txt")
+                .invariants()
+                .is_empty()
+        );
+        assert!(
+            uri("http://example.com/path/resource")
+                .invariants()
+                .is_empty()
+        );
+        assert!(uri("mailto:someone@example.org").invariants().is_empty());
+        // RM prose allows "plain-text URIs" with RFC-3986-forbidden characters
+        // (e.g. a space) — still accepted so long as a scheme is present.
+        assert!(uri("http://example.org/a b").invariants().is_empty());
+        // Bare relative references (no scheme) are rejected (CNF `xyz` row).
+        assert!(messages("xyz").contains(&scheme_valid));
+        assert!(messages("www.iana.org").contains(&scheme_valid));
+        assert!(messages("content/items").contains(&scheme_valid));
     }
 
     #[test]

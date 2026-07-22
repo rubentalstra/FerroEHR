@@ -8,14 +8,14 @@ are expected and enumerated here (comparison, not reproduction).
 
 | measure | count |
 |---|---|
-| CNF catalogue cases | 389 |
+| CNF catalogue cases | 390 |
 | active ECC rows | 394 |
 | mapped: covered | 361 |
 | mapped: deferred | 5 |
 | mapped: dropped | 19 |
 | mapped: out_of_scope | 9 |
 | unmapped (open gap) | 0 |
-| CNF cases beyond the old catalogue | 82 |
+| CNF cases beyond the old catalogue | 83 |
 
 Gate clean: **yes**
 
@@ -429,6 +429,7 @@ Gate clean: **yes**
 - `I_ADMIN_SERVICE.physical_party_delete-delete_non_existing`
 - `I_ADMIN_SERVICE.versioned_composition_count-time_range`
 - `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type_deleted`
+- `I_DEFINITION_ADL14.list_archetypes-unrealized`
 - `I_DEFINITION_ADL2.archetypes_count-unrealized`
 - `I_DEFINITION_ADL2.artefacts_count-unrealized`
 - `I_DEFINITION_ADL2.delete_artefact-existing`

@@ -1,7 +1,8 @@
 //! The open-loop executor.
 //!
-//! Takes a [`SutClient`] (the provably-ECC-identical conformance transport —
-//! the fairness guarantee), a built [`Workload`], and a [`Recorder`]; provisions
+//! Takes a [`SutClient`] (the self-contained transport — the same client for
+//! both targets, the fairness guarantee), a built [`Workload`], and a
+//! [`Recorder`]; provisions
 //! the workload's templates, then dispatches every [`PlannedOp`] at its *planned*
 //! offset from the run start. Dispatch is **open loop**: a slow response never
 //! delays the next send (each op runs in its own task), and a late dispatch is
@@ -24,9 +25,9 @@ use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tokio::time::Instant;
 
-use conformance::harness::{AuthSlot, HttpRequest, HttpResponse, Method, Transport};
-use conformance::testdata::fixtures;
-use conformance::transport::SutClient;
+use crate::sutclient::fixtures;
+use crate::sutclient::harness::{AuthSlot, HttpRequest, HttpResponse, Method, Transport};
+use crate::sutclient::transport::SutClient;
 
 use crate::measure::{EventLedger, Recorder};
 use crate::model::Workload;
@@ -55,10 +56,10 @@ pub struct TemplateFixtures {
     pub composition_file: &'static str,
 }
 
-/// The ECC-corpus fixtures a [`TemplateKind`] provisions and renders from, or
+/// The CNF-corpus fixtures a [`TemplateKind`] provisions and renders from, or
 /// `None` for the CKM-pack kinds (sourced from [`crate::pack`], not the
-/// conformance corpus). The corpus pairings are vendored CNF fixtures already
-/// exercised by the ECC suite: `nested.en.v1` (small event, ~5 KB),
+/// vendored corpus). The corpus pairings are vendored CNF fixtures:
+/// `nested.en.v1` (small event, ~5 KB),
 /// `composition_evaluation_test` (large, ~25 KB, deeply nested),
 /// `persistent_minimal.en.v1` (persistent category).
 #[must_use]
@@ -912,13 +913,13 @@ fn miss(reason: &str) -> OpOutcome {
 // ── Response parsing ──────────────────────────────────────────────────────────
 
 /// The version uid from a versioned write: the `ETag` — parsed by the
-/// conformance wire layer, which handles the weak form `W/"…"` that
-/// Release-1.1.0 emits (ITS-REST overview §"`ETag` and Last-Modified");
-/// a hand-rolled quote-strip kept the `W/` prefix and poisoned every stored
-/// uid — else the last path segment of `Location`.
+/// [`sutclient::headers`](crate::sutclient::headers) layer, which handles the
+/// weak form `W/"…"` that Release-1.1.0 emits (ITS-REST overview §"`ETag` and
+/// Last-Modified"); a hand-rolled quote-strip kept the `W/` prefix and poisoned
+/// every stored uid — else the last path segment of `Location`.
 fn version_uid_from(resp: &HttpResponse) -> Option<String> {
     if let Some(raw) = resp.header("etag")
-        && let Ok(etag) = conformance::wire::headers::parse_etag(raw)
+        && let Ok(etag) = crate::sutclient::headers::parse_etag(raw)
     {
         return Some(etag.value);
     }

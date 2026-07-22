@@ -351,25 +351,33 @@ async fn composition_write_response(
     // A FLAT/STRUCTURED Accept returns the simplified representation (which
     // needs the stored body regardless of `Prefer`); canonical JSON/XML (or an
     // unfulfillable Accept) fall through to the `Prefer`-aware canonical write.
-    match negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson) {
-        Some(WireFormat::Flat) => {
-            let ovid = parse_version_uid(&uid)?;
-            let body = state
-                .backend()
-                .get_composition_at_version(ehr_id, ovid)
-                .await?;
-            return crate::formats::dispatch::composition_flat_response(state, repr, &body).await;
-        }
-        Some(WireFormat::Structured) => {
-            let ovid = parse_version_uid(&uid)?;
-            let body = state
-                .backend()
-                .get_composition_at_version(ehr_id, ovid)
-                .await?;
-            return crate::formats::dispatch::composition_structured_response(state, repr, &body)
-                .await;
-        }
-        _ => {}
+    if let Some(fmt @ (WireFormat::Flat | WireFormat::Structured)) =
+        negotiate::resolve_accept(h, COMPOSITION_FORMATS, WireFormat::CanonicalJson)
+    {
+        let ovid = parse_version_uid(&uid)?;
+        let body = state
+            .backend()
+            .get_composition_at_version(ehr_id, ovid)
+            .await?;
+        let mut out = if fmt == WireFormat::Structured {
+            crate::formats::dispatch::composition_structured_response(state, repr, &body).await?
+        } else {
+            crate::formats::dispatch::composition_flat_response(state, repr, &body).await?
+        };
+        // The committed-resource version-id headers are representation-
+        // independent: a FLAT/STRUCTURED commit carries the same `ETag`
+        // (new version uid) + `Location` as the canonical path. RFC 7231
+        // §6.3.2 requires `Location` on a `201` regardless of body form, and
+        // the ITS-REST response definitions declare both headers on every
+        // COMPOSITION commit (`docs/specs/openehr/ITS-REST/specifications/
+        // responses/201_COMPOSITION.yaml` + `200_COMPOSITION_updated.yaml`
+        // — `ETag`/`Location` unconditional;
+        // `specifications/docs/overview/Requests_and_responses.md` §Prefer).
+        // Route through the same header helper the canonical write uses, as
+        // the CONTRIBUTION simplified-commit path already does.
+        let meta = ResourceMeta::new(ehr_id_str, uid);
+        negotiate::set_resource_headers(&mut out, base, Some("composition"), &meta);
+        return Ok(out);
     }
     let body = if negotiate::prefers_representation(h) {
         let ovid = parse_version_uid(&uid)?;

@@ -18,8 +18,8 @@ maintenance and extension, not initial build.
   silent; flag it as such in comments ("no openEHR spec governs this"),
   never cite an internal doc (spec-adherence.md).
 - **401 vs 403 discipline:** unauthenticated → 401, authenticated-but-
-  unauthorized → 403, per the ITS-REST text — verified by the ECC SEC cases
-  (`ECC-SEC-*` in `tools/conformance`), not by comparison with any other
+  unauthorized → 403, per the ITS-REST text — verified by the CNF security
+  chapter (`SEC-*` cases in `tools/cnf-runner`), not by comparison with any other
   server. Public endpoints (`/rest/status`, health, discovery documents
   incl. `/.well-known/smart-configuration`) stay outside the auth layer.
 - SMART scope grammar/enforcement: the vendored

@@ -17,8 +17,9 @@
 //! ```
 //!
 //! `run` provisions the workload's templates, (optionally) seeds the scale rung,
-//! drives the open-loop schedule against the SUT (the conformance transport —
-//! the fairness guarantee), samples container CPU/RSS + storage, and writes the
+//! drives the open-loop schedule against the SUT (the self-contained transport,
+//! the same client for both targets — the fairness guarantee), samples container
+//! CPU/RSS + storage, and writes the
 //! per-SUT artefact set into `--out/<sut-name>/`. Exit codes: `0` ok · `1` the
 //! 0.1% error-rate flag was breached · `2` runner/SUT failure.
 //!
@@ -50,9 +51,9 @@ use benchmark::report::knee::{KneeResults, KneeStep};
 use benchmark::sample::{self, ContainerSeries, DbAccess, ResourceSampler};
 use benchmark::{Profile, Scale, report, seed};
 
-use conformance::sut::builtin;
-use conformance::sut::descriptor::{SutDescriptor, SutKind};
-use conformance::transport::{Credential, SutClient};
+use benchmark::sutclient::builtin;
+use benchmark::sutclient::descriptor::{SutDescriptor, SutKind};
+use benchmark::sutclient::transport::{Credential, SutClient};
 
 /// A fixed default seed so an unqualified run is reproducible run-to-run.
 const DEFAULT_SEED: u64 = 0x_B0_11_CA_FE;
@@ -184,7 +185,7 @@ struct KneeArgs {
 
 #[derive(Debug, Parser)]
 struct RunArgs {
-    /// The target class (mirrors `conformance run`).
+    /// The target class (mirrors `bench run`).
     #[arg(long, value_enum, default_value_t = SutArg::EhrbaseRs)]
     sut: SutArg,
     /// The SUT's ITS-REST base URL (default per target).
@@ -388,7 +389,7 @@ fn default_base_url(sut: SutArg) -> Option<&'static str> {
     }
 }
 
-/// Build the SUT descriptor (mirrors `conformance run`).
+/// Build the SUT descriptor (mirrors `bench run`).
 fn build_descriptor(
     sut: SutArg,
     base_url: Option<String>,
@@ -441,7 +442,7 @@ fn build_transport(descriptor: &SutDescriptor) -> Result<SutClient, String> {
 /// server answers 5xx; a dead one answers nothing). Used by the knee ladder to
 /// distinguish saturation from a crash.
 async fn sut_answers(client: &SutClient) -> bool {
-    use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
+    use benchmark::sutclient::harness::{AuthSlot, HttpRequest, Method, Transport};
     let req =
         HttpRequest::new(Method::Get, "/definition/template/adl1.4").with_auth(AuthSlot::Regular);
     client.send(req).await.is_ok()
@@ -477,7 +478,7 @@ async fn settle_db(db: Option<&DbAccess>, phase: &str) {
 /// a request flowed through the whole admission + DB path), capped so a SUT
 /// that never settles cannot stall the ladder forever.
 async fn drain_settle(client: &SutClient) {
-    use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
+    use benchmark::sutclient::harness::{AuthSlot, HttpRequest, Method, Transport};
     const CONSECUTIVE_FAST: u32 = 5;
     const FAST: Duration = Duration::from_millis(250);
     const CAP: Duration = Duration::from_mins(3);

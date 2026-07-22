@@ -47,7 +47,7 @@ pub struct Results {
 pub struct SutBlock {
     /// The output/lookup name (`ehrbase-rs`, `ehrbase-java`, a BYO name).
     pub name: String,
-    /// `ours` | `foreign` (the conformance `SutKind`).
+    /// `ours` | `foreign` (from [`SutKind`](crate::sutclient::descriptor::SutKind)).
     pub kind: String,
     /// The ITS-REST base URL exercised.
     pub base_url: String,

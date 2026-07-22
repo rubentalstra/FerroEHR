@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "ECC STANDARD",
-  "message": "5/13 capabilities",
+  "label": "openEHR CNF STANDARD",
+  "message": "FAIL 2/5 capabilities",
   "color": "red"
 }

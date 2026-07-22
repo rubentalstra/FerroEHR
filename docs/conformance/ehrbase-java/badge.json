@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "ECC conformance",
-  "message": "146/394",
+  "label": "openEHR conformance",
+  "message": "NOT PASSING \u00b7 158/322 cases",
   "color": "red"
 }

@@ -49,8 +49,8 @@ prose feels ambiguous, the CNF test case wins. Cite sections
   STRUCTURED / Web-Template simplified formats are served through the standard
   openEHR endpoints via `openehr-flat`.)
 
-Behaviour is verified by the **ECC suite** (`tools/conformance` — the CNF
+Behaviour is verified by the **CNF pipeline** (`tools/cnf-runner` — the CNF
 schedule text is the oracle it derives from), never by mirroring another
-server. Every wire-visible change ends with an ECC run showing zero drift vs
-the committed baseline. Build compiling + tested (`rust-style.md`); REST
+server. Every wire-visible change ends with a `scripts/conformance.sh` run
+showing zero drift vs the committed baseline. Build compiling + tested (`rust-style.md`); REST
 surface changes are user-visible → same-PR website-book + changelog entries.

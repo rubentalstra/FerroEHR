@@ -135,13 +135,39 @@
           },
           "failing_step": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 0
           },
           "reason": {
             "type": "string"
           },
           "citation": {
             "type": "string"
+          },
+          "failed_rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "row",
+                "step",
+                "reason"
+              ],
+              "properties": {
+                "row": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "step": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           }
         },
         "allOf": [

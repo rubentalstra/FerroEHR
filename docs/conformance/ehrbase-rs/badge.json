@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "label": "ECC conformance",
-  "message": "384/394",
-  "color": "yellow"
+  "label": "openEHR conformance",
+  "message": "CORE+STANDARD PASS \u00b7 323/323 cases",
+  "color": "brightgreen"
 }

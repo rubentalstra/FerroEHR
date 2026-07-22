@@ -28,6 +28,7 @@ constraint_context:
   # (any=0..*, 1plus=1..*, 3plus=3..*, opt=0..1, mand=1..1, 3to5=3..5).
   template: cnf.tpl.ecc_composition_content_cardinality
   path: "/content"
+  constraint_columns: ["cardinality"]
 decision_table:
   # cardinality: the C_MULTIPLE_ATTRIBUTE.cardinality interval token.
   # content_count: number of COMPOSITION.content items committed.

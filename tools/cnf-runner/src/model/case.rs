@@ -315,6 +315,20 @@ pub struct FlowStep {
 pub struct ConstraintContext {
     pub template: CorpusKey,
     pub path: String,
+    /// The decision-table columns that are *constraint axis* — cells that
+    /// describe the archetype/template constraint the row bakes (e.g.
+    /// `cardinality`, `month_validity`, `range.lower`, `slot_type`,
+    /// `state_existence`), as opposed to the *instance axis* (the genuine RM
+    /// attributes of the committed value). When non-empty the runner
+    /// synthesizes one OPT per row from these cells (a per-row constraint
+    /// template) rather than committing every row against one baked template;
+    /// the named columns flow into the synthesizer and are excluded from the
+    /// committed instance. Empty (the default) keeps the single-template
+    /// model: the constraint is constant across rows and baked into
+    /// `template`. (No openEHR spec governs this — our own corpus-authoring
+    /// design; the constraint shapes are grounded in AM AOM1.4.)
+    #[serde(default)]
+    pub constraint_columns: Vec<String>,
 }
 
 /// A content decision table (master15–17 shape). Each row is one committed

@@ -376,8 +376,17 @@ pub(crate) fn dv_proportion_core(
             "Invariant Precision_validity failed on type DV_PROPORTION",
         ));
     }
-    // Fraction_validity: fraction / integer_fraction kinds are integral.
-    if (kind == PK_FRACTION || kind == PK_INTEGER_FRACTION) && !integral {
+    // Fraction_validity: `(type = pk_fraction or type = pk_integer_fraction)
+    // implies is_integral`, where `is_integral()` is "True … if precision is 0"
+    // (RM dv_proportion.adoc §Functions; archie `getPrecision() != null &&
+    // getPrecision() == 0`). A fraction / integer_fraction is therefore invalid
+    // when its numerator/denominator are non-integral OR its precision is a
+    // present, non-zero value: CNF `master17.3` (CONT-DV_PROPORTION-validate_open)
+    // rejects `type 3, 10/500, precision 1` under fraction_validity. (Precision 0
+    // or absent keeps a whole-numerator/denominator fraction valid.)
+    if (kind == PK_FRACTION || kind == PK_INTEGER_FRACTION)
+        && (!integral || precision.is_some_and(|p| p != 0))
+    {
         out.push(InvariantViolation::here(
             "Invariant Fraction_validity failed on type DV_PROPORTION",
         ));

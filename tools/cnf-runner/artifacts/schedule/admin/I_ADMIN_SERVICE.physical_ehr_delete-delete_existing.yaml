@@ -8,8 +8,7 @@ id: I_ADMIN_SERVICE.physical_ehr_delete-delete_existing
 kind: functional
 component: ADMIN
 sm_operation: I_ADMIN_SERVICE.physical_ehr_delete
-capabilities: [PhysicalDeletion]
-exercises: [AdminApi]
+capabilities: [PhysicalDeletion, AdminApi]
 profiles: [OPTIONS]
 test_purpose: >-
   Physically deleting an existing EHR succeeds with no content and the EHR is

@@ -14,6 +14,7 @@ applies: { rm: ">=1.0.2" }
 constraint_context:
   template: cnf.tpl.dv_date_c_date
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items[at0001]/value"
+  constraint_columns: ["month_validity", "day_validity"]
 decision_table:
   columns: ["value", "month_validity", "day_validity", "expected", "violates"]
   rows:

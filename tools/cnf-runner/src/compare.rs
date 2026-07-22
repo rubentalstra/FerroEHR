@@ -1,5 +1,5 @@
 //! The ECC↔CNF comparison gate: relate every row of the old harness's
-//! catalogue (`tools/conformance/inventory/ecc-catalog.tsv`) to the ground
+//! catalogue (`comparison/ecc-catalog.tsv`) to the ground
 //! the CNF 2.0 catalogue covers, and generate the committed comparison
 //! report. Differences from the old baseline are expected — honesty lives in
 //! the enumeration: every active ECC row must be mapped, every mapping must

@@ -10,8 +10,8 @@
 
 use serde_json::Value;
 
-use conformance::harness::{AuthSlot, HttpRequest, Method, Transport};
-use conformance::transport::SutClient;
+use crate::sutclient::harness::{AuthSlot, HttpRequest, Method, Transport};
+use crate::sutclient::transport::SutClient;
 
 use crate::drive::{template_composition, template_opt_xml};
 use crate::{BenchError, Scale, TemplateKind};

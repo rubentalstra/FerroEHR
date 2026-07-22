@@ -440,7 +440,10 @@ fn all_cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinalit
 ///   `defining_code` (e.g. `DV_MULTIMEDIA.media_type`) →
 ///   [`WebTemplateNode::code_lists`] (AOM 1.4 §`C_CODE_PHRASE`).
 fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
-    for datum in ["magnitude", "value", "numerator", "denominator"] {
+    // `size` covers `DV_MULTIMEDIA.size` (RM `data_types` §`DV_MULTIMEDIA`,
+    // `size: Integer`), whose `C_INTEGER` list/range the `inputs` builder does
+    // not model (the DV_MULTIMEDIA input is only the `value` text input).
+    for datum in ["magnitude", "value", "numerator", "denominator", "size"] {
         match inputs::primitive_under(co, datum) {
             Some(CPrimitive::CInteger(ci)) if !ci.list.is_empty() => {
                 node.numeric_lists.push((
@@ -454,6 +457,8 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
             _ => {}
         }
     }
+    capture_size_range(co, node);
+    capture_leaf_existence(co, node);
     if let Some(CPrimitive::CDuration(d)) = inputs::primitive_under(co, "value")
         && let Some(range) = &d.range
     {
@@ -579,20 +584,99 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
     }
 }
 
+/// `DV_MULTIMEDIA.size` against a `C_INTEGER.range` (AOM 1.4
+/// `master04-constraint_model_package.adoc` §`C_INTEGER`): the instance's `size`
+/// must lie within the declared `IntervalOfInteger`. The other numeric data
+/// (`magnitude`/`numerator`/…) already carry their range through the `inputs`
+/// builders (`count_input`, `quantity_inputs`, `proportion_part`), so only `size`
+/// needs a validation-only range captured here.
+fn capture_size_range(co: &CObject, node: &mut WebTemplateNode) {
+    let Some(CPrimitive::CInteger(ci)) = inputs::primitive_under(co, "size") else {
+        return;
+    };
+    let Some(iv) = &ci.range else { return };
+    let min = if iv.lower_unbounded { None } else { iv.lower };
+    let max = if iv.upper_unbounded { None } else { iv.upper };
+    if min.is_none() && max.is_none() {
+        return;
+    }
+    let min_strict = iv.lower_included == Some(false);
+    let max_strict = iv.upper_included == Some(false);
+    node.numeric_ranges.push((
+        "size".to_owned(),
+        super::model::WebTemplateRange {
+            min_op: min.map(|_| if min_strict { ">" } else { ">=" }.to_owned()),
+            min: min.map(serde_json::Value::from),
+            max_op: max.map(|_| if max_strict { "<" } else { "<=" }.to_owned()),
+            max: max.map(serde_json::Value::from),
+        },
+    ));
+}
+
+/// AOM 1.4 `C_ATTRIBUTE.existence` on a DV leaf's directly-navigable data
+/// attributes (`master04-constraint_model_package.adoc` §existence): an OPT may
+/// narrow an RM-optional leaf attribute (e.g. `DV_IDENTIFIER.issuer`,
+/// `.assigner`, `.type` — RM `data_types` §`DV_IDENTIFIER`) to mandatory
+/// (existence lower `>= 1`), so a committed value missing that attribute must be
+/// rejected. The structural [`existence_constraints`] pass runs only for
+/// attribute-recursing nodes, and its primitive-child carve-out excludes exactly
+/// these string data attributes.
+///
+/// Captured **only** when the OPT actually CONSTRAINS the sub-attribute (a
+/// `C_STRING` closed list or pattern, surfaced on the matching leaf input) as
+/// well as mandating it — an attribute carrying only the tooling-default
+/// existence (`{1..1}` serialised for every attribute; see the NOTE on
+/// [`existence_constraints`]) with no value constraint is left unenforced, so a
+/// real template's optional-in-intent identifier field is not over-rejected.
+fn capture_leaf_existence(co: &CObject, node: &mut WebTemplateNode) {
+    for attr in inputs::attributes(co) {
+        let openehr_its::opt14::CAttribute::CSingleAttribute(s) = attr else {
+            continue;
+        };
+        if s.rm_attribute_name == "name" {
+            continue;
+        }
+        let constrained = node.inputs.iter().any(|i| {
+            i.suffix.as_deref() == Some(s.rm_attribute_name.as_str())
+                && ((!i.list.is_empty() && i.list_open != Some(true))
+                    || i.validation.as_ref().is_some_and(|v| v.pattern.is_some()))
+        });
+        if !constrained {
+            continue;
+        }
+        let (min, max) = occurrences(&s.existence);
+        if min.unwrap_or(0) >= 1 {
+            node.existence.push(WebTemplateExistence {
+                min: min.unwrap_or(0),
+                max,
+                path: format!("{}/{}", node.aql_path, s.rm_attribute_name),
+            });
+        }
+    }
+}
+
 // ── existence (AOM 1.4 C_ATTRIBUTE.existence) ─────────────────────────────────
 
-/// Capture the AOM 1.4 `C_ATTRIBUTE.existence` constraints for the mandatory,
-/// plain (non-archetype-node-identified) single-valued RM attributes of `co`,
-/// keyed by their absolute archetype path.
+/// Capture the AOM 1.4 `C_ATTRIBUTE.existence` constraints for the mandatory
+/// single-valued RM attributes of `co`, keyed by their absolute archetype path.
 ///
-/// Scope: only `C_SINGLE_ATTRIBUTE`s with an existence lower bound `>= 1` whose
-/// constraint children carry **no** `node_id`. Archetype-node-identified children
-/// are governed by *occurrences* (checked in the walk), and container membership
-/// by *cardinality* — existence covers exactly the remaining case: a mandatory
-/// plain RM attribute field (e.g. an ELEMENT `value`, a `HISTORY.events`,
-/// `COMPOSITION.language`) that must be present. `name` is excluded (it names the
-/// node — master04 §"Field Identifiers" — and is matched by the archetype-node
+/// Scope: `C_SINGLE_ATTRIBUTE`s with an existence lower bound `>= 1` and at
+/// least one object-valued constraint child (excluding pure function/primitive
+/// constraints such as `is_integral`/`lower_included`, which never appear as
+/// navigable instance attributes). `name` is excluded (it names the node —
+/// master04 §"Field Identifiers" — and is matched by the archetype-node
 /// predicate instead).
+///
+/// A node-identified structural child (e.g. `OBSERVATION.state → HISTORY[at0005]`,
+/// `HISTORY.summary → ITEM_TREE[at0007]`) is captured here **too**, not only when
+/// the child carries no `node_id`: existence and *occurrences* are orthogonal
+/// (AOM 1.4 §existence — "indicates whether its target object exists or not, i.e.
+/// is mandatory or not"), and a mandated structural wrapper with no leaf content
+/// is dropped by master04 §"Level Removal" compaction, so it never becomes a
+/// walkable node the occurrence check could visit — leaving existence as the only
+/// enforcement that the mandatory attribute is present at all. When the child
+/// does survive, existence and occurrences both fire only on absence (redundant,
+/// never contradictory).
 ///
 /// NOTE: AOM 1.4 (`master04-constraint_model_package.adoc` §existence) makes
 /// existence "always required" with an unstated default of `{1..1}`; the OPT XML
@@ -634,11 +718,7 @@ fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExiste
             || s.children
                 .iter()
                 .any(|c| !matches!(c, CObject::CPrimitiveObject(_)));
-        if min >= 1
-            && s.rm_attribute_name != "name"
-            && object_valued
-            && s.children.iter().all(|c| object_node_id(c).is_empty())
-        {
+        if min >= 1 && s.rm_attribute_name != "name" && object_valued {
             out.push(WebTemplateExistence {
                 min,
                 max,

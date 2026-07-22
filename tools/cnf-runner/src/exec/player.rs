@@ -196,7 +196,7 @@ impl StepDriver for TranscriptPlayer<'_> {
         _case: &CaseCore,
         _row: usize,
         vars: &mut VarStore,
-    ) -> Result<(), String> {
+    ) -> Result<crate::exec::Provisioned, String> {
         // Provisioning is pre-recorded state in the pack; the requires
         // handles bind to fixed adjudicated values.
         if let Ok(handle) = CaptureName::parse("ehr_id") {
@@ -205,7 +205,7 @@ impl StepDriver for TranscriptPlayer<'_> {
                 Captured::Scalar("7d44b88c-4199-4bad-97dc-d78268e01398".to_owned()),
             );
         }
-        Ok(())
+        Ok(crate::exec::Provisioned::Ready)
     }
 
     fn postconditions(

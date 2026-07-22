@@ -27,82 +27,169 @@ for f in "$RS/results.json" "$JV/results.json" "$BRS/knee.json" "$BJV/knee.json"
 done
 mkdir -p "$OUT" website/book/src/comparison-assets
 
-count() { jq "[.cases[] | select(.status == \"$2\")] | length" "$1/results.json"; }
-# Badge messages differ by verdict: "PASS (9/9 capabilities)" vs the
-# no-verdict "3/9 capabilities" form a failing profile gets — render the
-# latter as "not met (3/9)".
-verdict() {
-  local msg
-  msg=$(jq -r '.message' "$1")
-  case "$msg" in
-    PASS*|FAIL*|OBTAINED*) echo "${msg%% *}" ;;
-    *) echo "not met (${msg%% *})" ;;
-  esac
-}
+# Unified CNF schema on BOTH sides since the #232 re-base: `outcomes` records
+# keyed by case id + optional format.
+count() { jq "[(.cases // .outcomes)[] | select(.status == \"$2\")] | length" "$1/results.json"; }
 
 # ── conformance side ─────────────────────────────────────────────────────────
-rs_date=$(jq -r '.started' "$RS/results.json" | cut -dT -f1)
-jv_date=$(jq -r '.started' "$JV/results.json" | cut -dT -f1)
-jv_version=$(jq -r '.sut.product.version // .sut.product.name' "$JV/results.json")
-rs_total=$(jq '.cases | length' "$RS/results.json")
-jv_total=$(jq '.cases | length' "$JV/results.json")
+# The CNF results artifacts are clock-free; date = the artifact's commit date
+# (falling back to mtime for a not-yet-committed regeneration).
+run_date() {
+  local d
+  d=$(git log -1 --format=%cs -- "$1/results.json" 2>/dev/null || true)
+  [ -n "$d" ] || d=$(date -r "$1/results.json" +%Y-%m-%d)
+  echo "$d"
+}
+rs_date=$(run_date "$RS")
+jv_date=$(run_date "$JV")
+jv_version=$(jq -r '.sut.version // .sut.name' "$JV/results.json")
+rs_total=$(jq '(.cases // .outcomes) | length' "$RS/results.json")
+jv_total=$(jq '(.cases // .outcomes) | length' "$JV/results.json")
 
-# Shared-catalogue outcomes: the upstream run predates the newest catalogue
-# additions, so the honest comparison runs over the intersection of
-# (case id, format) keys; jq joins via INDEX.
+# The shared per-case join: both runs execute the SAME committed catalogue,
+# keyed by case id + format. (A case one run records N/A — an unclaimed
+# option branch or an unrealizable ground on that party's topology — still
+# joins; its status shows as not_applicable.)
 shared=$(jq -n --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json" '
-  (INDEX($a[0].cases[]; "\(.id)|\(.format)")) as $rs
-  | [$b[0].cases[] | select($rs["\(.id)|\(.format)"] != null)
-     | {key: "\(.id)|\(.format)", java: .status, rs: $rs["\(.id)|\(.format)"].status}]')
+  (INDEX($a[0].outcomes[]; "\(.case)|\(.format // "-")")) as $rs
+  | [$b[0].outcomes[] | . as $o | ($rs["\(.case)|\(.format // "-")"]) as $mine
+     | select($mine != null)
+     | {key: "\(.case)|\(.format // "-")", java: .status, rs: $mine.status}]')
 shared_n=$(echo "$shared" | jq 'length')
 srow() { echo "$shared" | jq "[.[] | select(.$1 == \"$2\")] | length"; }
 
-# Upstream failures grouped by capability, and the full per-case list with
-# our outcome on the identical case.
+# Upstream failures grouped by schedule chapter (the case-id prefix), and the
+# full per-case list with our outcome on the identical case.
 fail_by_cap=$(jq -n --slurpfile b "$JV/results.json" '
-  [$b[0].cases[] | select(.status=="failed")] | group_by(.capability)
-  | map({cap: .[0].capability, n: length}) | sort_by(-.n)')
+  [$b[0].outcomes[] | select(.status=="failed")]
+  | group_by(.case | split(".")[0] | split("-")[0])
+  | map({cap: (.[0].case | split(".")[0] | split("-")[0]), n: length}) | sort_by(-.n)')
 fail_rows=$(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json" '
-  (INDEX($a[0].cases[]; "\(.id)|\(.format)")) as $rs
-  | [$b[0].cases[] | select(.status=="failed")]
-  | sort_by(.ecc_id, .format)[]
-  | "| \(.ecc_id) | \(.title | gsub("\\|"; "\\\\|")) | \(.format) | \($rs["\(.id)|\(.format)"].status // "not in shared set") |"')
+  (INDEX($a[0].outcomes[]; "\(.case)|\(.format // "-")")) as $rs
+  | [$b[0].outcomes[] | select(.status=="failed")]
+  | sort_by(.case)[]
+  | "| \(.case) | \(.format // "—") | \((.reason // "") | .[0:90] | gsub("\\|"; "\\\\|")) | \($rs["\(.case)|\(.format // "-")"].status // "—") |"')
+
+# Profile verdict tokens from verdicts.json (pass/fail/not_claimed).
+pverdict() { jq -r --arg t "$2" '.profiles[] | select(.[0]==$t) | .[1] // "—"' "$1/verdicts.json" | sed -e 's/^$/—/' -e 's/_/ /g'; }
+sverdict() { jq -r '.security // "not claimed"' "$1/verdicts.json"; }
 
 {
   cat <<EOF
-Runs compared: **ehrbase-rs** (run of ${rs_date}, ${rs_total} case-by-format
-executions of the current catalogue) vs **${jv_version}** (run of ${jv_date},
-${jv_total} executions — the catalogue as it stood at that run; the newer
-cases are excluded from the shared table below). Every number on this page is
-read from the committed \`results.json\`/badge artifacts of those runs.
+## Systems under test
 
-| | executed | passed | failed | errored | skipped | N/A | CORE | STANDARD | OPTIONS |
-|---|---|---|---|---|---|---|---|---|---|
-| **ehrbase-rs** | ${rs_total} | $(count "$RS" passed) | $(count "$RS" failed) | $(count "$RS" errored) | $(count "$RS" skipped) | $(count "$RS" notapplicable) | $(verdict "$RS/badge-core.json") | $(verdict "$RS/badge-standard.json") | $(verdict "$RS/badge-options.json") |
-| **upstream (Java)** | ${jv_total} | $(count "$JV" passed) | $(count "$JV" failed) | $(count "$JV" errored) | $(count "$JV" skipped) | $(count "$JV" notapplicable) | $(verdict "$JV/badge-core.json") | $(verdict "$JV/badge-standard.json") | $(verdict "$JV/badge-options.json") |
+| | ehrbase-rs | upstream (Java) |
+|---|---|---|
+| Product | $(jq -r '.sut.name' "$RS/results.json") $(jq -r '.sut.version' "$RS/results.json") | $(jq -r '.sut.name' "$JV/results.json") $(jq -r '.sut.version' "$JV/results.json") |
+| Run date | ${rs_date} | ${jv_date} |
+| Party statement | \`tools/cnf-runner/party/ehrbase-rs/\` | \`tools/cnf-runner/party/ehrbase-java/\` |
+| Stack | root compose, built from the current sources | \`docker/sut-ehrbase-java.yml\` (official images) |
 
-On the **${shared_n} case-by-format executions both runs share**:
+## Methodology
 
-| | passed | failed | skipped | N/A |
-|---|---|---|---|---|
-| **ehrbase-rs** | $(srow rs passed) | $(srow rs failed) | $(srow rs skipped) | $(srow rs notapplicable) |
-| **upstream (Java)** | $(srow java passed) | $(srow java failed) | $(srow java skipped) | $(srow java notapplicable) |
+Both systems execute the **same committed CNF 2.0 catalogue** ($(jq '(.cases // .outcomes) | length' "$RS/results.json") case-by-format
+executions) through the same reference runner (\`tools/cnf-runner\`), each on
+fresh volumes with its own committed party set: the ixit names the reachable
+instances (upstream declares no readonly principal), and the statement (the
+ICS) declares the claimed capabilities and ambiguity-register options —
+ISO/IEC 9646-style test selection excuses undeclared option branches as N/A
+with a citation, never as silent skips. Verdicts are pure functions of
+(statement, results, catalogue, capability matrix).
 
-### Upstream failures by capability
+## Profile verdicts
 
-| Capability | failed cases |
+| Profile | ehrbase-rs | upstream (Java) |
+|---|---|---|
+| CORE | $(pverdict "$RS" CORE) | $(pverdict "$JV" CORE) |
+| STANDARD | $(pverdict "$RS" STANDARD) | $(pverdict "$JV" STANDARD) |
+| OPTIONS | $(pverdict "$RS" OPTIONS) | $(pverdict "$JV" OPTIONS) |
+| SEC-BASIC | $(sverdict "$RS") | $(sverdict "$JV") |
+
+## Outcome totals
+
+Runs compared: **ehrbase-rs** (run of ${rs_date}) vs **upstream EHRbase
+${jv_version}** (run of ${jv_date}) — the SAME catalogue through the same
+runner, each with its own committed party statement.
+
+| | executed | passed | failed | errored | skipped | N/A |
+|---|---|---|---|---|---|---|
+| **ehrbase-rs** | ${rs_total} | $(count "$RS" passed) | $(count "$RS" failed) | $(count "$RS" errored) | $(count "$RS" skipped) | $(count "$RS" not_applicable) |
+| **upstream (Java)** | ${jv_total} | $(count "$JV" passed) | $(count "$JV" failed) | $(count "$JV" errored) | $(count "$JV" skipped) | $(count "$JV" not_applicable) |
+
+An **errored** row is inconclusive (the wire answered outside the operation's
+bound outcome map), never counted as a failure. An **N/A** row carries a
+machine-readable citation (an undeclared option branch, an unrealizable wire
+on the technology profile, or a ground the party's topology cannot
+establish).
+
+## Capability-by-capability
+
+Evidence tokens from each party's computed verdicts: **passed** (every
+gating case green), **failed** (at least one gating case red), **unrealized**
+(every case excused by a register citation — e.g. AMB-41: ADL 1.4 archetype
+provisioning has no ITS-REST wire), **not_evidenced** (claimed, no gating
+case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
+
+| Capability | ehrbase-rs | upstream (Java) |
+|---|---|---|
+$(jq -rn --slurpfile a "$RS/verdicts.json" --slurpfile b "$JV/verdicts.json" '
+  (INDEX($a[0].capabilities[]; .[0])) as $rs
+  | (INDEX($b[0].capabilities[]; .[0])) as $jv
+  | ([$a[0].capabilities[][0], $b[0].capabilities[][0]] | unique)[]
+  | "| \(.) | \($rs[.][1] // "not claimed") | \($jv[.][1] // "not claimed") |"')
+
+## Failures — both directions
+
+### ehrbase-rs failures (with the upstream outcome on the identical case)
+
+| Case | Format | Failure | upstream outcome |
+|---|---|---|---|
+$(jq -rn --slurpfile a "$RS/results.json" --slurpfile b "$JV/results.json" '
+  (INDEX($b[0].outcomes[]; "\(.case)|\(.format // "-")")) as $jv
+  | [$a[0].outcomes[] | select(.status=="failed")]
+  | sort_by(.case)[]
+  | "| \(.case) | \(.format // "—") | \((.reason // "") | .[0:90] | gsub("\\|"; "\\\\|")) | \($jv["\(.case)|\(.format // "-")"].status // "—") |"' ; [ "$(count "$RS" failed)" = "0" ] && echo '| — | — | *none — zero failing cases* | — |' )
+
+### Upstream failures by schedule chapter
+
+| Chapter | failed cases |
 |---|---|
 $(echo "$fail_by_cap" | jq -r '.[] | "| \(.cap) | \(.n) |"')
 
 <details><summary>Every upstream-failed case, with the ehrbase-rs outcome on the identical case</summary>
 
-| ECC id | Case | Format | ehrbase-rs outcome |
+| Case | Format | Upstream failure | ehrbase-rs outcome |
 |---|---|---|---|
 ${fail_rows}
 
 </details>
 EOF
 } > "$OUT/comparison-conformance.md"
+
+# The repo-committed comparison record: the same derivation, with the honesty
+# preamble, at docs/conformance/COMPARISON.md (regenerated per run -- #232).
+{
+  cat <<'PREAMBLE'
+# openEHR CDR conformance comparison (generated)
+
+> **Measured, not asserted.** Every cell below is derived from the two
+> committed `results.json`/`verdicts.json` sets produced by the CNF 2.0
+> reference runner (`tools/cnf-runner`) executing the SAME committed
+> catalogue against each system, each with its own committed party statement
+> (`tools/cnf-runner/party/<sut>/`). Nothing here is hand-entered
+> (`scripts/render-comparison.sh`; CI: `scripts/check-conformance-numbers.sh`).
+>
+> - A capability a party's statement does not claim reads **not claimed** and
+>   never gates its verdicts; a ground unrealizable on a party's topology or
+>   technology profile reads **N/A with a machine citation**, never fail.
+> - This comparison makes **no certification claim on behalf of any other
+>   vendor** -- each column is computed from that SUT's own run.
+> - Where the comparison SUT out-performs ehrbase-rs, its cell reads pass
+>   while ours reads fail -- stated plainly, not hidden.
+
+PREAMBLE
+  cat "$OUT/comparison-conformance.md"
+} > docs/conformance/COMPARISON.md
 
 # ── benchmark side ───────────────────────────────────────────────────────────
 kfield() { jq -r ".knee.$2" "$1/knee.json"; }
