@@ -63,7 +63,7 @@
         "arrival_rate",
         "warmup",
         "duration",
-        "mix"
+        "journeys"
       ],
       "properties": {
         "arrival_rate": {
@@ -78,9 +78,18 @@
           "type": "string",
           "pattern": "^PT([0-9]+H)?([0-9]+M)?([0-9]+S)?$"
         },
-        "mix": {
+        "arrival_curve": {
+          "enum": [
+            "uniform",
+            "diurnal"
+          ]
+        },
+        "journeys": {
           "type": "object",
           "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          },
           "additionalProperties": {
             "type": "string",
             "pattern": "^[0-9.]+%$"

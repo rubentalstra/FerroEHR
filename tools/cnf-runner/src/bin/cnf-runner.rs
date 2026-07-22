@@ -669,31 +669,66 @@ fn scale_opt_xml(loaded: &cnf_runner::artifacts::Loaded) -> Result<String, Strin
         .map_err(|e| format!("cannot read OPT fixture {source}: {e}"))
 }
 
-/// Seed the scale corpus (or load the sidecar index a prior seeding wrote —
-/// the index lives beside `artifact_path` so `perf` and `stress` share it).
+/// The journey context every measured run needs: the catalogue (loaded
+/// artifact) and the CKM template pack its stages name.
+fn journey_context(
+    loaded: &cnf_runner::artifacts::Loaded,
+) -> Result<
+    (
+        cnf_runner::perf::JourneyCatalogue,
+        cnf_runner::perf_run::pack::JourneyPack,
+    ),
+    String,
+> {
+    let catalogue = loaded
+        .set
+        .journeys
+        .as_ref()
+        .map(|(_, catalogue)| catalogue.clone())
+        .ok_or_else(|| "artifact set has no vocab/journey_catalogue.yaml".to_owned())?;
+    let corpus_dir = loaded
+        .set
+        .corpus_dir
+        .as_deref()
+        .ok_or_else(|| "artifact set has no corpus directory".to_owned())?;
+    let manifest = loaded
+        .set
+        .corpus
+        .as_ref()
+        .map(|(_, manifest)| manifest)
+        .ok_or_else(|| "artifact set has no corpus manifest".to_owned())?;
+    let pack = cnf_runner::perf_run::pack::JourneyPack::load(corpus_dir, manifest, &catalogue)?;
+    Ok((catalogue, pack))
+}
+
+/// Seed the scale corpus + the standing ward (or load the sidecar index a
+/// prior seeding wrote — the index lives beside `artifact_path` so `perf`
+/// and `stress` share it). Ward seeding is idempotent, so a pre-journey
+/// sidecar upgrades in place on the next non-skip run.
 #[allow(clippy::too_many_arguments)] // the one-shot seeding seam both handlers share
 fn seed_or_load_corpus(
-    client: &cnf_runner::perf_run::PerfClient,
+    client: &cnf_runner::perf_run::client::PerfClient,
     corpus_key: &str,
     opt_xml: &str,
+    journey_pack: &cnf_runner::perf_run::pack::JourneyPack,
     artifact_path: &std::path::Path,
     skip_seed: bool,
     seed_workers: usize,
     progress: &(dyn Fn(String) + Sync),
-) -> Result<cnf_runner::perf_run::SeededCorpus, String> {
-    use cnf_runner::perf_run;
+) -> Result<cnf_runner::perf_run::corpus::SeededCorpus, String> {
+    use cnf_runner::perf_run::corpus;
     let index_path =
         artifact_path.with_file_name(format!("perf-corpus-{}.json", corpus_key.replace('.', "-")));
     if skip_seed {
         return std::fs::read_to_string(&index_path)
             .map_err(|e| format!("cannot read corpus index {}: {e}", index_path.display()))
             .and_then(|text| {
-                serde_json::from_str::<perf_run::SeededCorpus>(&text)
+                serde_json::from_str::<corpus::SeededCorpus>(&text)
                     .map_err(|e| format!("corpus index: {e}"))
             });
     }
-    let (ehrs, versions) = perf_run::scale_shape(corpus_key)?;
-    let corpus = perf_run::seed_scale_ladder(
+    let (ehrs, versions) = corpus::scale_shape(corpus_key)?;
+    let mut seeded = corpus::seed_scale_ladder(
         client,
         corpus_key,
         opt_xml,
@@ -703,11 +738,13 @@ fn seed_or_load_corpus(
         progress,
     )
     .map_err(|e| format!("seeding failed: {e}"))?;
+    corpus::seed_ward(client, &mut seeded, journey_pack, seed_workers, progress)
+        .map_err(|e| format!("ward seeding failed: {e}"))?;
     let text =
-        serde_json::to_string(&corpus).map_err(|e| format!("serialize corpus index: {e}"))?;
+        serde_json::to_string(&seeded).map_err(|e| format!("serialize corpus index: {e}"))?;
     std::fs::write(&index_path, text)
         .map_err(|e| format!("cannot write corpus index {}: {e}", index_path.display()))?;
-    Ok(corpus)
+    Ok(seeded)
 }
 
 /// The stress handler: the step-load ladder to the maximum sustainable
@@ -757,21 +794,21 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
-    let (instance, environment) = match perf_run::measured_run_context(&ixit) {
+    let (instance, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    let client = match perf_run::PerfClient::from_instance(instance) {
+    let client = match perf_run::client::PerfClient::from_instance(instance) {
         Ok(client) => client,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    // The class supplies corpus + workload mix (data-volume context only).
+    // The class supplies corpus + journey workload (data-volume context only).
     let Some((_, case)) = loaded
         .set
         .performance
@@ -788,11 +825,19 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
+    let (catalogue, journey_pack) = match journey_context(&loaded) {
+        Ok(context) => context,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
     let progress = |message: String| eprintln!("[stress] {message}");
     let corpus = match seed_or_load_corpus(
         &client,
         case.corpus.as_str(),
         &opt_xml,
+        &journey_pack,
         out,
         skip_seed,
         seed_workers,
@@ -810,10 +855,17 @@ fn stress_command(
         max_rate,
         ..cnf_runner::stress::StressOptions::default()
     };
+    let workload = cnf_runner::perf_run::schedule::JourneyWorkload {
+        catalogue: &catalogue,
+        shares: &case.workload.journeys,
+        pack: &journey_pack,
+        // Stress steps are short — the day curve has no meaning there.
+        curve: cnf_runner::perf::ArrivalCurve::Uniform,
+    };
     let report = match cnf_runner::stress::run_stress(
         &client,
         &corpus,
-        &case.workload.mix,
+        &workload,
         environment,
         &options,
         &progress,
@@ -905,14 +957,14 @@ fn perf_command(
             return ExitCode::from(2);
         }
     };
-    let (instance, environment) = match perf_run::measured_run_context(&ixit) {
+    let (instance, environment) = match perf_run::window::measured_run_context(&ixit) {
         Ok(context) => context,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(2);
         }
     };
-    let client = match perf_run::PerfClient::from_instance(instance) {
+    let client = match perf_run::client::PerfClient::from_instance(instance) {
         Ok(client) => client,
         Err(e) => {
             eprintln!("{e}");
@@ -937,6 +989,13 @@ fn perf_command(
             return ExitCode::from(2);
         }
     };
+    let (catalogue, journey_pack) = match journey_context(&loaded) {
+        Ok(context) => context,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
     let progress = |message: String| eprintln!("[perf] {message}");
 
     let mut earned_all = true;
@@ -950,6 +1009,7 @@ fn perf_command(
             &client,
             case.corpus.as_str(),
             &opt_xml,
+            &journey_pack,
             results_path,
             skip_seed,
             seed_workers,
@@ -966,10 +1026,12 @@ fn perf_command(
         // demonstration of the same class).
         let warmup_s = case.workload.warmup.0;
         let duration_s = case.workload.duration.0.max(hours.saturating_mul(3600));
-        let measurement = match perf_run::drive_case(
+        let measurement = match perf_run::window::drive_case(
             case,
             &client,
             &corpus,
+            &journey_pack,
+            &catalogue,
             environment,
             warmup_s,
             duration_s,

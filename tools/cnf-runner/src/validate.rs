@@ -52,6 +52,10 @@ pub enum CheckId {
     CapabilityTier,
     /// Published vocabulary files drift from the compiled enums.
     VocabDrift,
+    /// Journey-catalogue invariants + the population-anchored envelope
+    /// reconciliation of every performance workload (write share inside the
+    /// 10:1..50:1 derivation band; stage templates resolve in the corpus).
+    JourneyEnvelope,
 }
 
 impl CheckId {
@@ -73,6 +77,7 @@ impl CheckId {
             Self::OptionTag => "option-tag",
             Self::CapabilityTier => "capability-tier",
             Self::VocabDrift => "vocab-drift",
+            Self::JourneyEnvelope => "journey-envelope",
         }
     }
 }
@@ -158,8 +163,70 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     }
     check_corpus_integrity(ctx.set, &mut findings);
     check_vocab_drift(ctx.set, &mut findings);
+    check_journey_envelope(ctx.set, &mut findings);
 
     findings
+}
+
+/// The journey catalogue's own invariants, every performance workload's
+/// envelope reconciliation through it, and the resolution of every stage
+/// template (OPT + example payload) in the corpus manifest.
+fn check_journey_envelope(set: &ArtifactSet, findings: &mut Vec<Finding>) {
+    let Some((path, catalogue)) = &set.journeys else {
+        if !set.performance.is_empty() {
+            push(
+                findings,
+                CheckId::JourneyEnvelope,
+                "vocab/journey_catalogue.yaml",
+                "performance cases exist but the journey catalogue is missing".to_owned(),
+            );
+        }
+        return;
+    };
+    let who = path.display().to_string();
+    if let Err(message) = catalogue.check_invariants() {
+        push(findings, CheckId::JourneyEnvelope, &who, message);
+        return;
+    }
+    // Every stage template resolves in the corpus manifest: the OPT entry
+    // (the constraint carrier the seeder uploads) and its `.example`
+    // sibling (the committed payload skeleton the driver commits).
+    if let Some((_, manifest)) = &set.corpus {
+        for (name, journey) in &catalogue.0 {
+            for stage in &journey.stages {
+                let Some(template) = &stage.template else {
+                    continue;
+                };
+                for (key, role) in [
+                    (template.clone(), "OPT"),
+                    (format!("{template}.example"), "example payload"),
+                ] {
+                    match CorpusKey::parse(&key) {
+                        Ok(parsed) if manifest.get(&parsed).is_some() => {}
+                        _ => push(
+                            findings,
+                            CheckId::JourneyEnvelope,
+                            &who,
+                            format!(
+                                "journey {name} template {template}: corpus manifest has no \
+                                 {role} entry {key}"
+                            ),
+                        ),
+                    }
+                }
+            }
+        }
+    }
+    for (case_path, case) in &set.performance {
+        if let Err(message) = catalogue.expansion(&case.workload.journeys) {
+            push(
+                findings,
+                CheckId::JourneyEnvelope,
+                &case_path.display().to_string(),
+                message,
+            );
+        }
+    }
 }
 
 fn push(findings: &mut Vec<Finding>, check: CheckId, artifact: &str, message: String) {
