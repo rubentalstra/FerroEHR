@@ -289,7 +289,7 @@ fn upgrade_add_use_nodes_converts() {
 
 /// A 1.4 source that reuses one at-code across two sibling subtrees (legal in
 /// 1.4 — node ids are only sibling-unique) converts with archetype-wide
-/// unique node ids (`AOM2/master04.5` §Validity Rules: C_OBJECT, VCOSU): the
+/// unique node ids (`AOM2/master04.5` §Validity Rules: `C_OBJECT`, VCOSU): the
 /// second occurrence is re-minted and its terminology cloned from the shared
 /// 1.4 term.
 #[test]
@@ -443,9 +443,14 @@ ontology
         .collect();
     assert!(errors.is_empty(), "phase-1 errors: {errors:?}");
 
-    // Depth 0 everywhere: the printed form carries no dotted code.
+    // Depth 0 everywhere: no dotted code remains in USE — as a bracketed
+    // node id/constraint (`[at0.32]`) or a terminology key (`["at0.32"]`).
+    // The conversion_details provenance deliberately NAMES the original
+    // dotted codes, so a bare-substring scan would false-positive there.
     let printed = openehr_adl::printer::print(&got);
-    for token in ["id1.", "id3.", "at0.", ".1]"] {
+    for token in [
+        "[id1.", "[id3.", "[at0.", "[\"at0.", "[\"id1.", ".1]", ".1\"]",
+    ] {
         assert!(
             !printed.contains(token),
             "dotted code survived the collapse ({token:?}):\n{printed}"

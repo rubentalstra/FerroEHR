@@ -180,9 +180,9 @@ pub fn run_stress(
     let mut generator_bound = false;
     let mut ladder_capped = false;
 
-    let mut run_step = |rate: f64,
-                        steps: &mut Vec<LoadStep>,
-                        generator_bound: &mut bool|
+    let run_step = |rate: f64,
+                    steps: &mut Vec<LoadStep>,
+                    generator_bound: &mut bool|
      -> Result<bool, String> {
         progress(format!(
             "load step at {rate}/s ({}s hold)",
@@ -314,11 +314,15 @@ mod tests {
     use super::*;
 
     fn record(p99_us: u64, errors: u64) -> OperationMeasurement {
+        // 95 fast samples + 5 at the target value, so the p99 rank lands on
+        // the target (a single 1-in-100 outlier sits below the 0.99 rank).
         let mut h = Histogram::<u64>::new(3).unwrap();
-        for _ in 0..99 {
+        for _ in 0..95 {
             h.record(1_000).unwrap();
         }
-        h.record(p99_us).unwrap();
+        for _ in 0..5 {
+            h.record(p99_us).unwrap();
+        }
         OperationMeasurement::from_histogram("composition_read", &h, errors).unwrap()
     }
 

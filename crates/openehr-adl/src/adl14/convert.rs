@@ -150,9 +150,12 @@ struct Converter<'a> {
     /// Collapsed-value remapping (dotted `local` value at-codes → fresh flat
     /// at-codes) — populated only under `collapse_specialised_codes`.
     value_map: BTreeMap<String, String>,
+    /// Collapsed-constraint remapping (dotted ac-codes → fresh flat
+    /// ac-codes) — populated only under `collapse_specialised_codes`.
+    ac_map: BTreeMap<String, String>,
     /// New node ids already claimed by an occurrence — the VCOSU ground:
     /// ADL2 node ids are unique archetype-wide (`AOM2/master04.5` §Validity
-    /// Rules: C_OBJECT), while 1.4 at-codes are only sibling-unique, so a
+    /// Rules: `C_OBJECT`), while 1.4 at-codes are only sibling-unique, so a
     /// reused code's second occurrence mints a fresh id.
     assigned_node_ids: std::collections::BTreeSet<String>,
     /// `(first-occurrence new id, freshly minted id)` per VCOSU re-mint — the
@@ -179,6 +182,7 @@ impl<'a> Converter<'a> {
             node_map: BTreeMap::new(),
             value_at_codes: std::collections::BTreeSet::new(),
             value_map: BTreeMap::new(),
+            ac_map: BTreeMap::new(),
             assigned_node_ids: std::collections::BTreeSet::new(),
             dup_mints: Vec::new(),
             next_id: 1,
@@ -262,8 +266,32 @@ impl<'a> Converter<'a> {
             value_at_codes.insert(code.to_owned());
         });
         self.value_at_codes = value_at_codes;
+        // Existing ac codes (terminology entries + bare constraint refs):
+        // synthesised/minted acs must allocate ABOVE the shifted range so a
+        // fresh `acN` never collides with an existing `ac000(N-1)` → `acN`.
+        let mut highest_ac = 0i64;
+        let mut track_ac = |code: &str| {
+            if crate::codes::is_ac_code(code)
+                && !code.contains('.')
+                && let Some(n) = first_num(&shift_code(code, "ac"))
+            {
+                highest_ac = highest_ac.max(n);
+            }
+        };
+        for terms in data.terminology.term_definitions.values() {
+            for code in terms.keys() {
+                track_ac(code);
+            }
+        }
+        walk_constraints(&data.definition, &mut |raw, _| {
+            let body = raw.split_once(';').map_or(raw, |(b, _)| b);
+            if !body.contains("::") {
+                track_ac(body.trim());
+            }
+        });
         self.next_id = max_id + 1;
         self.next_at = max_at + 1;
+        self.next_ac = highest_ac + 1;
         for code in deferred_nodes {
             let fresh = self.alloc_id();
             self.log.note(format!(
@@ -343,6 +371,42 @@ impl<'a> Converter<'a> {
             .unwrap_or_else(|| shift_code(code, "at"))
     }
 
+    /// The at-code for a terminology entry under the collapse: a dotted code
+    /// with no planned remap yet (an UNUSED flattened-ontology entry — VTSD
+    /// covers defined codes, not only used ones) mints a fresh flat at-code
+    /// on first sight; everything else follows [`Self::value_at`].
+    fn collapsed_value_at(&mut self, code: &str) -> String {
+        if self.cfg.collapse_specialised_codes
+            && code.contains('.')
+            && !self.value_map.contains_key(code)
+        {
+            let fresh = self.alloc_at();
+            self.log.note(format!(
+                "specialised terminology code {code} collapsed to {fresh} (standalone depth-0 emission)"
+            ));
+            self.value_map.insert(code.to_owned(), fresh);
+        }
+        self.value_at(code)
+    }
+
+    /// The ac-code under the collapse: a dotted ac (specialised constraint
+    /// definition) mints a fresh flat ac on first sight; else the ordinary
+    /// shift.
+    fn collapsed_ac(&mut self, code: &str) -> String {
+        if self.cfg.collapse_specialised_codes && code.contains('.') {
+            if let Some(existing) = self.ac_map.get(code) {
+                return existing.clone();
+            }
+            let fresh = self.alloc_ac();
+            self.log.note(format!(
+                "specialised constraint code {code} collapsed to {fresh} (standalone depth-0 emission)"
+            ));
+            self.ac_map.insert(code.to_owned(), fresh.clone());
+            return fresh;
+        }
+        shift_code(code, "ac")
+    }
+
     // ── terminology-constraint conversion ────────────────────────────────────
 
     fn convert_constraints(&mut self, def: &mut CComplexObject) {
@@ -368,10 +432,9 @@ impl<'a> Converter<'a> {
         // already ADL2; pass through.
         let Some((terminology, codes_str)) = body.split_once("::") else {
             if crate::codes::is_ac_code(body) {
-                return (
-                    shift_code(body, "ac"),
-                    assumed_raw.map(|a| shift_code(a, "at")),
-                );
+                let ac = self.collapsed_ac(body);
+                let assumed = assumed_raw.map(|a| self.collapsed_value_at(a));
+                return (ac, assumed);
             }
             return (body.to_owned(), assumed_raw.map(str::to_owned));
         };
@@ -387,7 +450,7 @@ impl<'a> Converter<'a> {
         let mut at_codes: Vec<String> = Vec::new();
         for code in &codes {
             let at = if is_local {
-                self.value_at(code)
+                self.collapsed_value_at(code)
             } else {
                 self.external_at_code(terminology, code)
             };
@@ -396,7 +459,7 @@ impl<'a> Converter<'a> {
 
         let assumed = assumed_raw.map(|a| {
             if is_local {
-                self.value_at(a)
+                self.collapsed_value_at(a)
             } else {
                 self.external_at_code(terminology, a)
             }
@@ -457,6 +520,7 @@ impl<'a> Converter<'a> {
 
     // ── terminology rebuild ──────────────────────────────────────────────────
 
+    #[allow(clippy::too_many_lines)] // one linear rebuild: definitions → bindings → value sets
     fn rebuild_terminology(&mut self, old: &ArchetypeTerminology) -> ArchetypeTerminology {
         // `@ internal @` node terms are dropped in every language (the marker is
         // authored in the original language; translations carry the openEHR
@@ -485,7 +549,7 @@ impl<'a> Converter<'a> {
                 // shifted like every other code so the converted
                 // `C_TERMINOLOGY_CODE` ac constraints still resolve (VACDF).
                 if crate::codes::is_ac_code(code) {
-                    let ac = shift_code(code, "ac");
+                    let ac = self.collapsed_ac(code);
                     out.insert(ac.clone(), term_with_code(term, ac));
                     continue;
                 }
@@ -493,7 +557,7 @@ impl<'a> Converter<'a> {
                 // at-code term; used as a node id it yields an id-code term. A
                 // code that is both splits into both entries.
                 if self.value_at_codes.contains(code) || !is_node {
-                    let at = self.value_at(code);
+                    let at = self.collapsed_value_at(code);
                     out.insert(at.clone(), term_with_code(term, at));
                 }
                 if is_node {
@@ -502,7 +566,14 @@ impl<'a> Converter<'a> {
                     if internal_nodes.contains(code) {
                         continue;
                     }
-                    let id = shift_code(code, "id");
+                    // The planned mapping, never a re-shift: under the
+                    // specialisation collapse a dotted code maps to a fresh
+                    // flat id that a plain shift would miss.
+                    let id = self
+                        .node_map
+                        .get(code)
+                        .cloned()
+                        .unwrap_or_else(|| shift_code(code, "id"));
                     out.insert(id.clone(), term_with_code(term, id));
                 }
             }
@@ -606,9 +677,13 @@ impl<'a> Converter<'a> {
             self.value_at(key)
         } else if crate::codes::is_ac_code(key) {
             // A merged 1.4 `constraint_bindings` key (ADL2 folds that section
-            // into `term_bindings`, `master07.13` §Terminology section) shifts
-            // with its ac prefix, matching the definitions rebuild (VTCBK).
-            shift_code(key, "ac")
+            // into `term_bindings`, `master07.13` §Terminology section)
+            // follows its definitions-rebuild remap (collapse map first,
+            // else the ordinary ac shift), matching VTCBK.
+            self.ac_map
+                .get(key)
+                .cloned()
+                .unwrap_or_else(|| shift_code(key, "ac"))
         } else {
             key.to_owned()
         }
