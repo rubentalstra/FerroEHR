@@ -32,6 +32,7 @@
   - [Templates & EHR browsing](admin-ui/browsing.md)
 - [Operations](operations.md)
 - [Conformance](conformance.md)
+- [Performance](performance.md)
 - [Benchmarks](benchmarks.md)
 - [Comparison with upstream](comparison.md)
 - [Contributing](contributing.md)
