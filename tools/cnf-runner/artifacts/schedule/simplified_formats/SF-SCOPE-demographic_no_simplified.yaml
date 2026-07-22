@@ -33,6 +33,6 @@ flow:
   - step: 2
     call: get_party
     format: wt-flat                      # the forbidden cell of the media-type matrix
-    with: { party_uid: "${party_uid}" }
+    with: { versioned_object_uid: "${party_uid}" }   # get_party path param (HIER_OBJECT_ID)
     expect: not_acceptable
 ambiguities: [AMB-7]

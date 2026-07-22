@@ -11,8 +11,9 @@
 # the box.
 #
 # DEV DEFAULTS — do NOT use in production. The credentials are:
-#   username: ehrbase        password: ehrbase   (Argon2id PHC hash below)
-#   username: ehrbase-admin  password: ehrbase   (ADMIN + USER roles)
+#   username: ehrbase           password: ehrbase   (Argon2id PHC hash below)
+#   username: ehrbase-admin     password: ehrbase   (ADMIN + USER roles)
+#   username: ehrbase-readonly  password: ehrbase   (READONLY role; writes 403)
 
 [server]
 bind = "0.0.0.0:8080"
@@ -53,3 +54,11 @@ password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r
 username = "ehrbase-admin"
 password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
 roles = ["ADMIN", "USER"]
+
+# Dev-only READ-ONLY account for the conformance suite's authorization-
+# separation cases (SEC-BASIC): authenticated, but every write operation is
+# refused by the RBAC read-only gate. Do NOT use in production.
+[[auth.basic.users]]
+username = "ehrbase-readonly"
+password_hash = "$argon2id$v=19$m=4096,t=2,p=1$ZWhyYmFzZURldlNhbHQ$4Cf1W/JiP800r2sbj8/y0HbNAcwMb/YseM1fTINO3Dc"
+roles = ["READONLY"]

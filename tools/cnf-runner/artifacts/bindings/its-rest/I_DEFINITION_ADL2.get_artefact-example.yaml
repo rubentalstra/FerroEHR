@@ -21,6 +21,7 @@
 # 200_Template_example_retrieved.yaml / 404_unknown_template_id.yaml / 406.yaml.
 sm_operation: I_DEFINITION_ADL2.get_artefact
 its: its-rest
+variant: example
 request:
   method: GET
   path: /definition/template/adl2/{template_id}/example  # definition_template_adl2_example_get.yaml

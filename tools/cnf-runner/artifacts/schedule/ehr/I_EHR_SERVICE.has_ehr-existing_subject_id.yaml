@@ -23,10 +23,10 @@ data_sets: [cnf.ehr_status.with_subject]
 flow:
   - step: 1
     call: create_ehr                     # provision the "EHR with a known subject_id" precondition
-    with: { ehr_status: "${ds:cnf.ehr_status.with_subject}" }
+    with: { ehr_status: "${ds:cnf.ehr_status.with_subject.d}" }
     expect: created
   - step: 2
     call: has_ehr_for_subject
-    with: { subject_id: "cnf-subject-01", subject_namespace: "cnf" }
+    with: { subject_id: "cnf-subject-03", subject_namespace: "cnf" }
     expect: ok                           # positive: "the EHR with <subject_id> exists"
 ambiguities: [AMB-14]

@@ -66,6 +66,10 @@ pub struct CorpusEntry {
     #[serde(default)]
     pub generated_by: Option<GeneratedBy>,
     pub format: CorpusFormat,
+    /// The openEHR template identity the payload declares (OPTs and
+    /// template-bound instances) — the `openehr-template-id` header source.
+    #[serde(default)]
+    pub template_id: Option<String>,
     #[serde(default)]
     pub rm_versions: Vec<String>,
     pub validity: Validity,

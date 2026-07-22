@@ -2,20 +2,21 @@
   "_type": "COMPOSITION",
   "name": {
     "_type": "DV_TEXT",
-    "value": "minimal persistent invalid"
+    "value": "Persistent minimal"
   },
   "archetype_details": {
     "_type": "ARCHETYPED",
     "archetype_id": {
       "_type": "ARCHETYPE_ID",
-      "value": "openEHR-EHR-COMPOSITION.minimal.v1"
+      "value": "openEHR-EHR-COMPOSITION.persistent_minimal.v1"
     },
     "template_id": {
       "_type": "TEMPLATE_ID",
-      "value": "cnf.minimal_persistent"
+      "value": "persistent_minimal.en.v1"
     },
     "rm_version": "1.0.2"
   },
+  "archetype_node_id": "openEHR-EHR-COMPOSITION.persistent_minimal.v1",
   "language": {
     "_type": "CODE_PHRASE",
     "terminology_id": {
@@ -30,7 +31,7 @@
       "_type": "TERMINOLOGY_ID",
       "value": "ISO_3166-1"
     },
-    "code_string": "NL"
+    "code_string": "UY"
   },
   "category": {
     "_type": "DV_CODED_TEXT",
@@ -45,16 +46,26 @@
     }
   },
   "composer": {
-    "_type": "PARTY_SELF"
+    "_type": "PARTY_IDENTIFIED",
+    "external_ref": {
+      "_type": "PARTY_REF",
+      "id": {
+        "_type": "HIER_OBJECT_ID",
+        "value": "a3dce0d4-fa51-4ff2-9cce-93dd60437842"
+      },
+      "namespace": "DEMOGRAPHIC",
+      "type": "PERSON"
+    },
+    "name": "Dr. Yamamoto"
   },
   "content": [
     {
-      "_type": "EVALUATION",
+      "_type": "OBSERVATION",
       "name": {
         "_type": "DV_TEXT",
-        "value": "minimal evaluation"
+        "value": "Minimal"
       },
-      "archetype_node_id": "openEHR-EHR-EVALUATION.minimal.v1",
+      "archetype_node_id": "openEHR-EHR-OBSERVATION.minimal.v1",
       "language": {
         "_type": "CODE_PHRASE",
         "terminology_id": {
@@ -73,6 +84,14 @@
       },
       "subject": {
         "_type": "PARTY_SELF"
+      },
+      "archetype_details": {
+        "_type": "ARCHETYPED",
+        "archetype_id": {
+          "_type": "ARCHETYPE_ID",
+          "value": "openEHR-EHR-OBSERVATION.minimal.v1"
+        },
+        "rm_version": "1.0.2"
       }
     }
   ]

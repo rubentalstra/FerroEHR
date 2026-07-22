@@ -1,50 +1,56 @@
-# The full ctx/ vocabulary and its default-mapping table (simplified_formats
-# master06 §Context Information + all its sub-sections). Every ctx/ key sets a
-# default value in the RM tree; language + territory are mandatory; ctx/time
-# defaults to now() and ctx/setting to openehr::238 (other care) when not set.
-# This content decision table encodes the master06 default-mapping table
-# verbatim — one row per ctx/ key with its RM target and default rule. Vectors:
-# every master06 JSON block (the comprehensive block plus every per-key block).
+# The ctx/ vocabulary and its default-mapping table (simplified_formats master06
+# §Context Information). Each ctx/ key sets a value in the RM tree; language +
+# territory are mandatory, ctx/time defaults to now() and ctx/setting to
+# openehr::238 (other care) when not set. Exercised functionally on the official
+# minimal_action template (cnf.opt.vitals), whose FLAT instance
+# (cnf.flat.vitals.minimal_ctx) carries the ctx/ keys: the commit is read back
+# canonical and each ctx/ key's RM target is asserted, including the two default
+# rules (ctx/time -> now, ctx/setting -> 238).
 id: SF-CTX-vocabulary_mapping
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: EVENT_CONTEXT
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  Each ctx/ key maps to the RM attribute(s) it defaults, with language and
-  territory mandatory, ctx/time defaulting to now(), and ctx/setting defaulting
-  to openehr::238 (other care).
-description: "Full ctx/ vocabulary -> RM default mapping (master06)"
+  ctx/ keys map to their RM targets: ctx/language -> language, ctx/territory ->
+  territory, ctx/time -> context/start_time (default now), ctx/setting ->
+  context/setting (default openehr::238), ctx/composer_name -> composer,
+  ctx/participation -> context/participations.
+description: "ctx/ vocabulary -> RM default mapping (master06)"
 spec_refs:
   - "ITS-REST simplified_formats master06 §Context Information"
   - "ITS-REST simplified_formats master04 §Context"
   - "RM ehr §EVENT_CONTEXT"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/context"
-decision_table:
-  columns: ["ctx_key", "rm_target", "default_rule"]
-  rows:
-    - ["ctx/language", "ENTRY.language and COMPOSITION.language", "mandatory"]
-    - ["ctx/territory", "COMPOSITION.territory", "mandatory"]
-    - ["ctx/time", "COMPOSITION.context.start_time; ACTION.time; OBSERVATION.history.origin", "default_now"]
-    - ["ctx/end_time", "COMPOSITION.context.end_time", "none"]
-    - ["ctx/history_origin", "OBSERVATION.history.origin", "none"]
-    - ["ctx/action_time", "ACTION.time", "none"]
-    - ["ctx/activity_timing", "ACTIVITY.timing", "none"]
-    - ["ctx/setting", "COMPOSITION.context.setting", "default_setting_238"]
-    - ["ctx/location", "COMPOSITION.context.location", "none"]
-    - ["ctx/composer_name", "composer.name (PARTY_IDENTIFIED)", "none"]
-    - ["ctx/composer_self", "composer (PARTY_SELF)", "none"]
-    - ["ctx/composer_id", "composer.external_ref.id.value", "none"]
-    - ["ctx/id_namespace", "OBJECT_REF.namespace", "default_namespace"]
-    - ["ctx/id_scheme", "OBJECT_REF.id.scheme", "default_scheme"]
-    - ["ctx/health_care_facility", "COMPOSITION.context.health_care_facility", "none"]
-    - ["ctx/work_flow_id", "ENTRY.workflow_id", "none"]
-    - ["ctx/participation", "EVENT_CONTEXT.participations and ENTRY.other_participations", "none"]
-    - ["ctx/provider", "ENTRY.provider (PARTY_IDENTIFIED)", "none"]
-    - ["ctx/instruction_narrative", "INSTRUCTION.narrative", "none"]
-    - ["ctx/action_ism_transition_current_state", "ACTION.ism_transition.current_state", "none"]
-    - ["ctx/link", "LOCATABLE.links", "none"]
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.vitals.minimal_ctx]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.vitals.minimal_ctx}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # ctx/language, ctx/territory (mandatory)
+      - { assert: field, path: "language/code_string", equals: "en" }
+      - { assert: field, path: "territory/code_string", equals: "US" }
+      # ctx/time -> context/start_time (default now)
+      - { assert: field, path: "context/start_time", exists: true }
+      # ctx/setting -> context/setting (default openehr::238)
+      - { assert: field, path: "context/setting/defining_code/code_string", equals: "238" }
+      # ctx/composer_name -> composer (PARTY_IDENTIFIED)
+      - { assert: field, path: "composer/name", equals: "Silvia Blake" }
+      # ctx/participation -> context/participations
+      - { assert: field, path: "context/participations[0]/function/value", equals: "requester" }

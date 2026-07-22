@@ -1,6 +1,5 @@
 ---
 source: crates/openehr-flat/tests/flat.rs
-assertion_line: 250
 expression: map
 ---
 {
@@ -18,5 +17,6 @@ expression: map
   "vitals/vitals/body_temperature:0/any_event:0/symptoms:0|value": "Chills / rigor / shivering",
   "vitals/vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
   "vitals/vitals/body_temperature:0/any_event:0/temperature|unit": "°C",
-  "vitals/vitals/body_temperature:0/any_event:0/time": "2020-10-26T15:39:53.668+01:00"
+  "vitals/vitals/body_temperature:0/any_event:0/time": "2020-10-26T15:39:53.668+01:00",
+  "vitals/vitals/body_temperature:0/history_origin": "2020-10-26T15:39:53.668+01:00"
 }

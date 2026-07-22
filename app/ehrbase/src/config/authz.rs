@@ -46,6 +46,12 @@ pub struct RbacConfig {
     /// The baseline clinical role (default `USER`).
     #[serde(default = "defaults::user_role")]
     pub user_role: String,
+    /// The role marking a principal as read-only (default `READONLY`): a caller
+    /// carrying it is refused on every write operation even when it also holds
+    /// granting roles (a restriction overrides a grant). Supports the CNF
+    /// SEC-BASIC authorization-separation profile.
+    #[serde(default = "defaults::readonly_role")]
+    pub readonly_role: String,
     /// JWT claim paths mined for roles (default `["realm_access.roles","scope"]`).
     #[serde(default = "defaults::role_claims")]
     pub role_claims: Vec<String>,
@@ -60,6 +66,7 @@ impl Default for RbacConfig {
             enabled: defaults::yes(),
             admin_role: defaults::admin_role(),
             user_role: defaults::user_role(),
+            readonly_role: defaults::readonly_role(),
             role_claims: defaults::role_claims(),
             management_access: ManagementAccess::default(),
         }
@@ -274,6 +281,9 @@ impl AuthzConfig {
         if self.rbac.user_role.trim().is_empty() {
             return Err(AuthzConfigError::EmptyRole("user_role"));
         }
+        if self.rbac.readonly_role.trim().is_empty() {
+            return Err(AuthzConfigError::EmptyRole("readonly_role"));
+        }
         if self.rbac.role_claims.is_empty()
             || self.rbac.role_claims.iter().any(|c| c.trim().is_empty())
         {
@@ -349,6 +359,9 @@ mod defaults {
     pub(super) fn user_role() -> String {
         "USER".to_owned()
     }
+    pub(super) fn readonly_role() -> String {
+        "READONLY".to_owned()
+    }
     pub(super) fn role_claims() -> Vec<String> {
         vec!["realm_access.roles".to_owned(), "scope".to_owned()]
     }
@@ -382,6 +395,7 @@ mod tests {
         assert!(c.rbac.enabled);
         assert_eq!(c.rbac.admin_role, "ADMIN");
         assert_eq!(c.rbac.user_role, "USER");
+        assert_eq!(c.rbac.readonly_role, "READONLY");
         assert_eq!(c.rbac.management_access, ManagementAccess::AdminOnly);
         assert_eq!(
             c.rbac.role_claims,
@@ -400,6 +414,21 @@ mod tests {
             ..AuthzConfig::default()
         };
         assert_eq!(c.validate(), Err(AuthzConfigError::EmptyRole("admin_role")));
+    }
+
+    #[test]
+    fn blank_readonly_role_rejected() {
+        let c = AuthzConfig {
+            rbac: RbacConfig {
+                readonly_role: "  ".to_owned(),
+                ..RbacConfig::default()
+            },
+            ..AuthzConfig::default()
+        };
+        assert_eq!(
+            c.validate(),
+            Err(AuthzConfigError::EmptyRole("readonly_role"))
+        );
     }
 
     #[test]

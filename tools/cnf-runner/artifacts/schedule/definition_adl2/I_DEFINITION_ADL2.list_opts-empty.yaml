@@ -13,7 +13,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL2.list_opts"
   - "ITS-REST definition_template_adl2_list §200 OK"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }
+requires: { server: exclusive }    # global-state ground (empty listing) — shared instances N/A
 flow:
   - step: 1
     call: list_opts

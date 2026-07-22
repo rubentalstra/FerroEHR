@@ -1,6 +1,5 @@
 ---
 source: crates/openehr-flat/tests/structured.rs
-assertion_line: 319
 expression: structured
 ---
 {
@@ -38,6 +37,9 @@ expression: structured
                   "2020-10-26T15:39:53.668+01:00"
                 ]
               }
+            ],
+            "history_origin": [
+              "2020-10-26T15:39:53.668+01:00"
             ]
           }
         ]

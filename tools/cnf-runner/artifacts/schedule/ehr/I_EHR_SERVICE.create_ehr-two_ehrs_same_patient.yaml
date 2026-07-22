@@ -20,12 +20,12 @@ data_sets: [cnf.ehr_status.with_subject]
 flow:
   - step: 1
     call: create_ehr                     # VALID data set, provided subject, no ehr_id
-    with: { ehr_status: "${ds:cnf.ehr_status.with_subject}" }
+    with: { ehr_status: "${ds:cnf.ehr_status.with_subject.b}" }
     expect: created
     capture: { first_ehr_id: created.ehr_id }
   - step: 2
     call: create_ehr                     # same data set (same subject) again
-    with: { ehr_status: "${ds:cnf.ehr_status.with_subject}" }
+    with: { ehr_status: "${ds:cnf.ehr_status.with_subject.b}" }
     expect: already_exists               # negative: EHR already exists for the provided subject
   - step: 3                              # in-case verification of the postcondition
     call: has_ehr_for_subject

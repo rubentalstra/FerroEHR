@@ -43,9 +43,9 @@ pub mod remote;
 pub mod request;
 pub mod roles;
 
-use crate::extensions::access::authz::classify::{OperationClass, class_of};
+use crate::extensions::access::authz::classify::{OperationClass, class_of, is_write};
 use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
-use crate::extensions::access::authz::roles::{RbacDecision, authorize};
+use crate::extensions::access::authz::roles::{RbacDecision, authorize, authorize_readonly};
 use ehrbase::config::authz::{AbacConfig, AbacEngineKind, AuthzConfig, RbacConfig};
 
 use std::collections::HashMap;
@@ -229,9 +229,11 @@ impl AbacGate {
 #[derive(Debug)]
 pub(crate) struct RbacGate {
     rules: RbacConfig,
-    /// `(method, full-path-template)` → class, keyed by `base_path` +
-    /// [`crate::api::normalize_path`] so a request's `MatchedPath` matches.
-    routes: HashMap<(Method, String), OperationClass>,
+    /// `(method, full-path-template)` → (class, operation id), keyed by
+    /// `base_path` + [`crate::api::normalize_path`] so a request's `MatchedPath`
+    /// matches. The op id feeds the read-only write classifier
+    /// ([`classify::is_write`]).
+    routes: HashMap<(Method, String), (OperationClass, &'static str)>,
 }
 
 impl RbacGate {
@@ -253,7 +255,7 @@ impl RbacGate {
                     continue;
                 };
                 let full = format!("{base_path}{}", crate::api::normalize_path(path));
-                routes.insert((method, full), class);
+                routes.insert((method, full), (class, *op));
             }
         }
         Self { rules, routes }
@@ -270,20 +272,51 @@ impl RbacGate {
             Some(mp) => self
                 .routes
                 .get(&(method.clone(), mp.to_owned()))
-                .copied()
-                .unwrap_or_else(|| {
-                    if mp.contains("/admin/") {
-                        OperationClass::Admin
-                    } else {
-                        OperationClass::Clinical
-                    }
-                }),
+                .map_or_else(
+                    || {
+                        if mp.contains("/admin/") {
+                            OperationClass::Admin
+                        } else {
+                            OperationClass::Clinical
+                        }
+                    },
+                    |(class, _op)| *class,
+                ),
+        }
+    }
+
+    /// Whether the matched request is a **write** operation, for the read-only
+    /// gate. A mapped route classifies via its op id ([`classify::is_write`]); an
+    /// unmapped route (an extension surface outside the generated tables) falls
+    /// back to its HTTP method — only `GET`/`HEAD` are reads, every mutating verb
+    /// is a write so the read-only restriction cannot be bypassed there. A
+    /// request with no matched path (a 404) is not a write to gate.
+    pub(crate) fn is_write_for(&self, method: &Method, matched: Option<&str>) -> bool {
+        match matched {
+            None => false,
+            Some(mp) => self
+                .routes
+                .get(&(method.clone(), mp.to_owned()))
+                .map_or_else(
+                    || !matches!(*method, Method::GET | Method::HEAD),
+                    |(_class, op)| is_write(op),
+                ),
         }
     }
 
     /// Apply the RBAC decision for a class + the caller's roles.
     pub(crate) fn decide(&self, class: OperationClass, principal_roles: &[String]) -> RbacDecision {
         authorize(class, principal_roles, &self.rules)
+    }
+
+    /// Apply the read-only restriction for a write flag + the caller's roles: a
+    /// principal carrying the configured read-only role is refused on writes.
+    pub(crate) fn decide_readonly(
+        &self,
+        is_write: bool,
+        principal_roles: &[String],
+    ) -> RbacDecision {
+        authorize_readonly(is_write, principal_roles, &self.rules)
     }
 }
 
@@ -352,6 +385,46 @@ mod tests {
         );
         assert_eq!(
             g.decide(OperationClass::Clinical, &["USER".to_owned()]),
+            RbacDecision::Allow
+        );
+    }
+
+    #[test]
+    fn is_write_for_maps_generated_ops() {
+        let g = gate();
+        // Writes on the clinical + definition surface.
+        assert!(g.is_write_for(&Method::POST, Some(&format!("{BASE}/ehr"))));
+        assert!(g.is_write_for(
+            &Method::POST,
+            Some(&format!("{BASE}/ehr/{{ehr_id}}/composition"))
+        ));
+        assert!(g.is_write_for(
+            &Method::POST,
+            Some(&format!("{BASE}/definition/template/adl1.4"))
+        ));
+        // Reads: a GET, and AQL execution (POST-but-read).
+        assert!(!g.is_write_for(&Method::GET, Some(&format!("{BASE}/ehr/{{ehr_id}}"))));
+        assert!(!g.is_write_for(&Method::POST, Some(&format!("{BASE}/query/aql"))));
+        // Unmapped route: method-based fail-safe.
+        assert!(g.is_write_for(&Method::POST, Some("/x/extension/unknown")));
+        assert!(!g.is_write_for(&Method::GET, Some("/x/extension/unknown")));
+        // A 404 (no matched path) is not a write to gate.
+        assert!(!g.is_write_for(&Method::POST, None));
+    }
+
+    #[test]
+    fn decide_readonly_denies_writes() {
+        let g = gate();
+        assert!(matches!(
+            g.decide_readonly(true, &["READONLY".to_owned()]),
+            RbacDecision::Deny(_)
+        ));
+        assert_eq!(
+            g.decide_readonly(false, &["READONLY".to_owned()]),
+            RbacDecision::Allow
+        );
+        assert_eq!(
+            g.decide_readonly(true, &["USER".to_owned()]),
             RbacDecision::Allow
         );
     }

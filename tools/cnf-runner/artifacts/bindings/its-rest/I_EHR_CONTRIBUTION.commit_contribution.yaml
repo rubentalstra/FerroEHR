@@ -17,9 +17,11 @@ outcomes:
     body: prefer_conditional
   validation_failed:
     status: 400                           # 400_CONTRIBUTION.yaml — aggregate rejection, nothing committed
+    alt_status: [422]                     # AMB-40: semantic validation of versions[i].data — overview §HTTP status codes permits the non-conflicting 422 (400_CONTRIBUTION scopes syntax-level failures only)
     body: error_loose                     # AMB-1
   template_not_found:
     status: 400                           # same 400_CONTRIBUTION family — kind distinguished by fixture (the AMB-2 pattern)
+    alt_status: [422]                     # AMB-40 (the same semantic family; 422.yaml names the unknown-template case verbatim)
     body: error_loose
   not_found: { status: 404 }
   conflict: { status: 409 }

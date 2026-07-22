@@ -10,12 +10,8 @@
 # This is a SECOND realization of I_DEFINITION_ADL14.get_opt (the plain
 # /definition/template/adl1.4/{template_id} OPT GET is the first). The two are
 # selected by the flow step `variant`: this example realization by
-# `variant: example`, the plain OPT GET by its absence.
-# TODO: the operation-binding schema has no variant discriminator, so the
-#       interpreter cannot yet select deterministically between two bindings
-#       that share an sm_operation; add a variant key to the binding schema so
-#       `variant: example` picks this realization (SPECPR candidate: add an
-#       example-generation operation to the SM I_DEFINITION_ADL14 interface).
+# `variant: example`, the plain OPT GET by its absence (the binding `variant`
+# discriminator; a variant-less step selects the variant-less plain binding).
 #
 # Sources: specifications/operations/definition_template_adl1.4_example_get.yaml
 # (operationId definition_template_adl1.4_example_get, "Get example data by
@@ -23,6 +19,7 @@
 # parameters/header/Accept_LOCATABLE.yaml), responses 200/404/406.
 sm_operation: I_DEFINITION_ADL14.get_opt
 its: its-rest
+variant: example
 request:
   method: GET
   path: /definition/template/adl1.4/{template_id}/example  # definition_template_adl1.4_example_get.yaml

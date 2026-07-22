@@ -15,8 +15,58 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- Composition validation now rejects a `DV_DURATION` whose value carries a
+  decimal fraction on any component other than seconds (e.g. `P1Y3M4DT2.5H` or
+  `PT2H14.5M`). openEHR permits a fraction only on the seconds component
+  (BASE time types: "in openEHR, only fractional seconds are supported"), so
+  such a value now fails its RM `Value_valid` invariant with `422` instead of
+  being accepted.
+- Composition validation now enforces a `DV_QUANTITY` constraint that fixes a
+  measurement `property` (with no enumerated unit list): the committed `units`
+  must be a unit of that physical property (per the openEHR measurement
+  property↔unit table). A quantity constrained to `length` committed with a
+  mass unit such as `mg` is now rejected with `422` instead of being accepted.
+- Composition validation now rejects a coded value whose terminology is
+  foreign to a `C_CODE_PHRASE` constraint that explicitly binds the
+  archetype-`local` terminology with a closed code list. Committing a
+  `DV_CODED_TEXT` whose `defining_code` uses, e.g., SNOMED-CT against a
+  `local`-scoped closed list now yields `422` instead of being accepted.
+- The AQL `ehr_id` execution scope now also binds bare `FROM EHR e` sources:
+  a scoped query without a CONTAINS chain previously ran over the whole
+  population instead of the single EHR context the `ehr_id` parameter selects
+  (ITS-REST query `Request.md` §Common Headers and Query Parameters).
+- A CONTRIBUTION delete member targeting the EHR_STATUS is now refused with
+  `409 Conflict`: `EHR.ehr_status` is mandatory (RM ehr, EHR class, 1..1), so
+  deleting the only status would leave the EHR violating its own invariant.
+- FLAT/STRUCTURED commits: spec-listed direct RM-attribute paths that an
+  operational template leaves unconstrained are no longer rejected as unknown
+  paths. `ACTION/ism_transition` (`current_state`/`transition`/`careflow_step`
+  + `_reason:i`) and `ACTION/time`, plus `INSTRUCTION/narrative`,
+  `OBSERVATION/history_origin`, `ACTIVITY/timing` + `action_archetype_id`, and
+  `INTERVAL_EVENT/width` + `math_function`, are now built from their datum
+  parts per the ITS-REST Simplified-Formats `master05-rm_mapping.adoc` per-type
+  tables, and emitted symmetrically on the reverse (RM → FLAT) direction so
+  round-trips stay lossless. Previously a client-supplied `ism_transition` was
+  rejected with "unknown simplified path" and the ACTION state fell back to the
+  synthesized `initial` default.
+- AQL paging: the REST `fetch`/`offset` parameters now page over the result
+  set the AQL `LIMIT`/`OFFSET` clauses define instead of being rejected with
+  `400` when combined. Per ITS-REST query `Request.md`, only pairing `fetch`
+  with the deprecated AQL `TOP` modifier is prohibited — that rejection
+  remains. Negative `fetch`/`offset` values are now rejected explicitly.
+
 ### Added
 
+- Read-only role support in RBAC: a principal carrying the configured
+  `authz.rbac.readonly_role` (default `READONLY`) is refused with `403` on
+  every write operation — creating an EHR, committing a composition,
+  uploading a template, and any update/delete — even when it also holds
+  granting roles such as `ADMIN`. Reads and AQL queries stay permitted, so a
+  `READONLY` account is an authenticated, view-only principal. The dev compose
+  stack ships an `ehrbase-readonly` account (password `ehrbase`) for
+  evaluation.
 - CNF 2.0 reference runner, third increment — the executor and both verdict
   machineries: the data-driven flow interpreter under the five interpreter
   laws (per-row re-provisioning, step-mismatch row abort, errored-vs-failed

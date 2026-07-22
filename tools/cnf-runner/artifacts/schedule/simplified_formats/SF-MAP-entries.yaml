@@ -1,67 +1,53 @@
 # Per-RM-type suffix mapping: the COMPOSITION + ENTRY types — COMPOSITION,
-# ADMIN_ENTRY, INSTRUCTION, ACTION, EVALUATION, OBSERVATION (simplified_formats
-# master05 §COMPOSITION, §ADMIN_ENTRY, §INSTRUCTION, §ACTION, §EVALUATION,
-# §OBSERVATION). Each type shares the language/territory context leaves and the
-# common RM-attribute paths (_link/_feeder_audit/_uid); the type-distinctive
-# rows (category/composer/context; narrative/_expiry_time; time/ism_transition;
-# history_origin) are the per-table content. Vectors: the minimal + full FLAT
-# blocks of all six sections.
+# OBSERVATION, EVALUATION (simplified_formats master05 §COMPOSITION,
+# §OBSERVATION, §EVALUATION). Exercised functionally on the official
+# Test_all_types template (cnf.opt.maximal), which carries an OBSERVATION
+# (content[0]) and an EVALUATION (content[1]): the FLAT commit is read back
+# canonical and the COMPOSITION mandatory context leaves (language/territory/
+# category/composer) plus the ENTRY-type discrimination are asserted.
 id: SF-MAP-entries
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: COMPOSITION
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  The COMPOSITION and ENTRY subtypes map their FLAT suffixes to the documented
-  RM paths, covering the mandatory context leaves, the type-distinctive
-  attributes, and the shared _link/_feeder_audit/_uid RM-attribute paths.
-description: "COMPOSITION + ENTRY-type suffix mapping (master05)"
+  COMPOSITION maps /language, /territory, /category and /composer to the RM
+  attributes, and the ENTRY subtypes (OBSERVATION with data:HISTORY, EVALUATION)
+  round-trip as their RM types under content.
+description: "COMPOSITION + ENTRY-type (OBSERVATION/EVALUATION) suffix mapping (master05)"
 spec_refs:
   - "ITS-REST simplified_formats master05 §COMPOSITION"
-  - "ITS-REST simplified_formats master05 §ADMIN_ENTRY"
-  - "ITS-REST simplified_formats master05 §INSTRUCTION"
-  - "ITS-REST simplified_formats master05 §ACTION"
-  - "ITS-REST simplified_formats master05 §EVALUATION"
   - "ITS-REST simplified_formats master05 §OBSERVATION"
+  - "ITS-REST simplified_formats master05 §EVALUATION"
   - "RM ehr §COMPOSITION"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/"
-decision_table:
-  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
-  rows:
-    - ["COMPOSITION", "/language", "language", "CODE_PHRASE", "yes"]
-    - ["COMPOSITION", "/territory", "territory", "CODE_PHRASE", "yes"]
-    - ["COMPOSITION", "/category", "category", "DV_CODED_TEXT", "yes"]
-    - ["COMPOSITION", "/composer", "composer", "PARTY_PROXY", "yes"]
-    - ["COMPOSITION", "/context", "context", "EVENT_CONTEXT", "yes"]
-    - ["COMPOSITION", "/_link:i", "links", "LINK", "no"]
-    - ["COMPOSITION", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
-    - ["COMPOSITION", "/_uid", "uid.value", "STRING", "no"]
-    - ["ADMIN_ENTRY", "/language", "language", "CODE_PHRASE", "yes"]
-    - ["ADMIN_ENTRY", "/territory", "territory", "CODE_PHRASE", "yes"]
-    - ["ADMIN_ENTRY", "/subject", "subject", "PARTY_PROXY", "no"]
-    - ["ADMIN_ENTRY", "/_work_flow_id", "workflow_id", "OBJECT_REF", "no"]
-    - ["ADMIN_ENTRY", "/_uid", "uid.value", "STRING", "no"]
-    - ["INSTRUCTION", "/language", "language", "CODE_PHRASE", "yes"]
-    - ["INSTRUCTION", "/territory", "territory", "CODE_PHRASE", "yes"]
-    - ["INSTRUCTION", "/narrative", "narrative", "DV_TEXT", "yes"]
-    - ["INSTRUCTION", "/_expiry_time", "expiry_time", "DV_DATE_TIME", "yes"]
-    - ["INSTRUCTION", "/_wf_definition", "wf_definition", "DV_PARSABLE", "no"]
-    - ["INSTRUCTION", "/_guideline_id", "guideline_id", "OBJECT_REF", "no"]
-    - ["ACTION", "/language", "language", "CODE_PHRASE", "yes"]
-    - ["ACTION", "/territory", "territory", "CODE_PHRASE", "yes"]
-    - ["ACTION", "/time", "time", "DV_DATE_TIME", "yes"]
-    - ["ACTION", "/ism_transition", "ism_transition", "ISM_TRANSITION", "yes"]
-    - ["ACTION", "/_instruction_details", "instruction_details", "INSTRUCTION_DETAILS", "no"]
-    - ["EVALUATION", "/language", "language", "CODE_PHRASE", "yes"]
-    - ["EVALUATION", "/territory", "territory", "CODE_PHRASE", "yes"]
-    - ["EVALUATION", "/subject", "subject", "PARTY_PROXY", "no"]
-    - ["EVALUATION", "/_uid", "uid.value", "STRING", "no"]
-    - ["OBSERVATION", "/language", "language", "CODE_PHRASE", "yes"]
-    - ["OBSERVATION", "/territory", "territory", "CODE_PHRASE", "yes"]
-    - ["OBSERVATION", "/history_origin", "history.origin", "DV_DATE_TIME", "no"]
-    - ["OBSERVATION", "/subject", "subject", "PARTY_PROXY", "no"]
-    - ["OBSERVATION", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # COMPOSITION mandatory context leaves (master05 §COMPOSITION)
+      - { assert: field, path: "language/code_string", equals: "en" }
+      - { assert: field, path: "territory/code_string", equals: "US" }
+      - { assert: field, path: "category/defining_code/code_string", equals: "433" }
+      - { assert: field, path: "composer/_type", equals: "PARTY_IDENTIFIED" }
+      # ENTRY subtype discrimination (master05 §OBSERVATION, §EVALUATION)
+      - { assert: field, path: "content[0]/_type", equals: "OBSERVATION" }
+      - { assert: field, path: "content[0]/data/_type", equals: "HISTORY" }
+      - { assert: field, path: "content[1]/_type", equals: "EVALUATION" }

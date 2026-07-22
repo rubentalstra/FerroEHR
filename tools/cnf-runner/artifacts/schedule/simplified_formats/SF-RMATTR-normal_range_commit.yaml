@@ -24,14 +24,14 @@ spec_refs:
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.vitals]
+  templates: [cnf.opt.maximal]
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.sf.flat.normal_range]
+data_sets: [cnf.flat.all_types]          # quantity leaf carries value/_normal_range/lower|upper
 flow:
   - step: 1
     call: create_composition
     format: wt-flat                       # binding adds openehr-template-id
-    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.sf.flat.normal_range}" }
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
     expect: created
     capture: { version_uid: created.version_uid }
   - step: 2
@@ -41,5 +41,6 @@ flow:
     expect: ok
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }
-      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/normal_range/lower/magnitude", exists: true }
-      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/normal_range/upper/magnitude", exists: true }
+      # DV_QUANTITY leaf (content[0] OBSERVATION items[3], at0007) with an underscore _normal_range
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/normal_range/lower/magnitude", exists: true }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/normal_range/upper/magnitude", exists: true }

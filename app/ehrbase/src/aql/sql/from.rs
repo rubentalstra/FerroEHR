@@ -343,6 +343,13 @@ impl Builder<'_> {
             for root in self.group_roots.clone() {
                 self.q.and_where(col(&root, "ehr_id").is_in(ids.clone()));
             }
+            // A bare `FROM EHR e` (no CONTAINS) has no VO root — the scope
+            // must bind the EHR source itself, or a scoped query would run
+            // over the whole population (ITS-REST query Request.md: `ehr_id`
+            // "used to execute the query within a single EHR context").
+            for alias in self.ehr_alias.values().cloned().collect::<Vec<_>>() {
+                self.q.and_where(col(&alias, "id").is_in(ids.clone()));
+            }
         }
         // ABAC patient scope (no openEHR spec governs this, our own
         // access-control extension): restrict
