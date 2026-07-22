@@ -102,8 +102,8 @@ async fn adhoc_aql_over_http_returns_result_set() {
     let json: serde_json::Value = serde_json::from_str(&body).expect("result set json");
     assert_eq!(
         json["meta"]["_schema_version"],
-        serde_json::json!("1.0.3"),
-        "RESULT_SET carries the ITS-REST schema version"
+        serde_json::json!(ehrbase::telemetry::provenance::ITS_REST),
+        "RESULT_SET carries the implemented ITS-REST release as its schema version"
     );
     assert_eq!(
         json["rows"],

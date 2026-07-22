@@ -143,27 +143,13 @@ fn load_party_json<T: serde::de::DeserializeOwned>(
 
 fn main() -> ExitCode {
     match Cli::parse().command {
-        Command::EmitSchemas { out } => {
-            if let Err(e) = std::fs::create_dir_all(&out) {
-                eprintln!("cannot create {}: {e}", out.display());
-                return ExitCode::from(2);
-            }
-            for (name, schema) in emit_all() {
-                let path = out.join(name);
-                if let Err(e) = std::fs::write(&path, render(&schema)) {
-                    eprintln!("cannot write {}: {e}", path.display());
-                    return ExitCode::from(2);
-                }
-                println!("wrote {}", path.display());
-            }
-            ExitCode::SUCCESS
-        }
+        Command::EmitSchemas { out } => emit_schemas_command(&out),
         Command::CompareEcc {
             root,
             ecc_catalog,
             map,
             out,
-        } => run_compare_ecc(&root, &ecc_catalog, &map, &out),
+        } => compare_ecc_command(&root, &ecc_catalog, &map, &out),
         Command::Run {
             root,
             ixit,
@@ -179,34 +165,7 @@ fn main() -> ExitCode {
             &sut_version,
             filter.as_deref(),
         ),
-        Command::Validate { root, specs } => {
-            let loaded = match load_root(&root) {
-                Ok(loaded) => loaded,
-                Err(e) => {
-                    eprintln!("runner defect: {e}");
-                    return ExitCode::from(2);
-                }
-            };
-            let findings = validate(&Context {
-                set: &loaded.set,
-                load_errors: &loaded.errors,
-                spec_root: specs.as_deref(),
-            });
-            for finding in &findings {
-                println!("{finding}");
-            }
-            println!(
-                "{} case(s), {} binding(s), {} finding(s)",
-                loaded.set.cases.len(),
-                loaded.set.bindings.len(),
-                findings.len()
-            );
-            if findings.is_empty() {
-                ExitCode::SUCCESS
-            } else {
-                ExitCode::from(1)
-            }
-        }
+        Command::Validate { root, specs } => validate_command(&root, specs.as_deref()),
         Command::Verdicts {
             statement,
             results,
@@ -216,7 +175,23 @@ fn main() -> ExitCode {
     }
 }
 
-fn run_compare_ecc(
+fn emit_schemas_command(out: &std::path::Path) -> ExitCode {
+    if let Err(e) = std::fs::create_dir_all(out) {
+        eprintln!("cannot create {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    for (name, schema) in emit_all() {
+        let path = out.join(name);
+        if let Err(e) = std::fs::write(&path, render(&schema)) {
+            eprintln!("cannot write {}: {e}", path.display());
+            return ExitCode::from(2);
+        }
+        println!("wrote {}", path.display());
+    }
+    ExitCode::SUCCESS
+}
+
+fn compare_ecc_command(
     root: &std::path::Path,
     ecc_catalog: &std::path::Path,
     map: &std::path::Path,
@@ -258,6 +233,35 @@ fn run_compare_ecc(
             eprintln!("comparison failed: {e}");
             ExitCode::from(2)
         }
+    }
+}
+
+fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> ExitCode {
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let findings = validate(&Context {
+        set: &loaded.set,
+        load_errors: &loaded.errors,
+        spec_root: specs,
+    });
+    for finding in &findings {
+        println!("{finding}");
+    }
+    println!(
+        "{} case(s), {} binding(s), {} finding(s)",
+        loaded.set.cases.len(),
+        loaded.set.bindings.len(),
+        findings.len()
+    );
+    if findings.is_empty() {
+        ExitCode::SUCCESS
+    } else {
+        ExitCode::from(1)
     }
 }
 

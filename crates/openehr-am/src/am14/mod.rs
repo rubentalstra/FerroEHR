@@ -2,3 +2,7 @@
 
 pub mod aom14;
 pub mod prelude;
+
+/// The openEHR specification version this generation implements —
+/// the vendored BMM schema's `rm_release`.
+pub const SPEC_VERSION: &str = "1.4.0";
