@@ -31,6 +31,11 @@
 //!                        [--summary FILE] [--stress FILE]
 //!                                       render the published SVGs + summary
 //!                                       FROM committed artifacts
+//! cnf-runner conformance-assets --root DIR --results FILE --verdicts FILE
+//!                               --out DIR [--suffix=-java]
+//!                                       render the capability heat grid +
+//!                                       per-chapter outcome bars FROM the
+//!                                       committed party artifacts
 //! ```
 //!
 //! Exit codes: `0` clean · `1` findings · `2` runner error.
@@ -212,6 +217,27 @@ enum Command {
         #[arg(long)]
         stress: Option<PathBuf>,
     },
+    /// Render the conformance visuals (the capability heat grid + the
+    /// per-chapter outcome bars) deterministically FROM the committed party
+    /// artifacts — the perf-assets pattern for functional conformance.
+    ConformanceAssets {
+        /// The artifact root (for the capability matrix).
+        #[arg(long)]
+        root: PathBuf,
+        /// The committed results.json.
+        #[arg(long)]
+        results: PathBuf,
+        /// The committed verdicts.json.
+        #[arg(long)]
+        verdicts: PathBuf,
+        /// Output directory for the SVG files.
+        #[arg(long)]
+        out: PathBuf,
+        /// A suffix appended to the SVG file stems (`-java` for the
+        /// comparison SUT's copies).
+        #[arg(long, default_value = "")]
+        suffix: String,
+    },
     /// Compute the verdicts from a statement + results against an artifact
     /// tree (the pure pipeline) and write the rendered submission documents.
     Verdicts {
@@ -327,6 +353,13 @@ fn main() -> ExitCode {
             summary,
             stress,
         } => perf_assets_command(&root, &results, &out, summary.as_deref(), stress.as_deref()),
+        Command::ConformanceAssets {
+            root,
+            results,
+            verdicts,
+            out,
+            suffix,
+        } => conformance_assets_command(&root, &results, &verdicts, &out, &suffix),
         Command::Verdicts {
             statement,
             results,
@@ -539,6 +572,83 @@ fn run_verdicts(
     } else {
         ExitCode::from(1)
     }
+}
+
+/// The conformance-asset renderer (`conformance-assets`): the capability
+/// heat grid + the per-chapter outcome bars, deterministic SVGs FROM the
+/// committed party artifacts (regenerate-and-diff guarded in CI).
+fn conformance_assets_command(
+    root: &std::path::Path,
+    results_path: &std::path::Path,
+    verdicts_path: &std::path::Path,
+    out: &std::path::Path,
+    suffix: &str,
+) -> ExitCode {
+    // The committed verdicts.json — only the capability evidence list is
+    // the render input.
+    #[derive(serde::Deserialize)]
+    struct VerdictSlice {
+        capabilities: Vec<(String, cnf_runner::verdict::Evidence)>,
+    }
+
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let Some((_, matrix)) = &loaded.set.matrix else {
+        eprintln!("artifact set has no capability matrix");
+        return ExitCode::from(2);
+    };
+    let results: Results =
+        match load_party_json(results_path, &results_schema(), "results.schema.json") {
+            Ok(results) => results,
+            Err(e) => {
+                eprintln!("{e}");
+                return ExitCode::from(2);
+            }
+        };
+    let verdicts: VerdictSlice = match std::fs::read_to_string(verdicts_path)
+        .map_err(|e| format!("cannot read {}: {e}", verdicts_path.display()))
+        .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("verdicts: {e}")))
+    {
+        Ok(verdicts) => verdicts,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    if let Err(e) = std::fs::create_dir_all(out) {
+        eprintln!("cannot create {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    let sut_label = format!("{} {}", results.sut.name, results.sut.version);
+    let chapters = cnf_runner::conf_assets::chapter_counts(&results);
+    let chapter_refs: Vec<(&str, cnf_runner::conf_assets::ChapterCounts)> = chapters
+        .iter()
+        .map(|(chapter, counts)| (*chapter, counts.clone()))
+        .collect();
+    let assets = [
+        (
+            format!("conformance-heat-grid{suffix}.svg"),
+            cnf_runner::conf_assets::heat_grid_svg(&sut_label, matrix, &verdicts.capabilities),
+        ),
+        (
+            format!("conformance-chapter-bars{suffix}.svg"),
+            cnf_runner::conf_assets::chapter_bars_svg(&sut_label, &chapter_refs),
+        ),
+    ];
+    for (name, body) in &assets {
+        let path = out.join(name);
+        if let Err(e) = std::fs::write(&path, body) {
+            eprintln!("cannot write {}: {e}", path.display());
+            return ExitCode::from(2);
+        }
+        println!("wrote {}", path.display());
+    }
+    ExitCode::SUCCESS
 }
 
 /// The asset renderer (`perf-assets`): deterministic SVGs FROM the committed
