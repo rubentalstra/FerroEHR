@@ -248,6 +248,7 @@ RBAC + ABAC.
 | `enabled` | bool | `true` | Coarse role gate (active when auth is enabled). |
 | `admin_role` | string | `ADMIN` | Role required for admin-class operations. |
 | `user_role` | string | `USER` | Baseline clinical role. |
+| `readonly_role` | string | `READONLY` | Role marking a principal read-only: refused on every write operation (create/update/delete/upload), even alongside granting roles. Reads and AQL queries are still allowed. |
 | `role_claims` | list of string | `["realm_access.roles","scope"]` | JWT claim paths mined for roles. |
 | `management_access` | enum{admin_only,private,public} | `admin_only` | Access level for the management surface. |
 

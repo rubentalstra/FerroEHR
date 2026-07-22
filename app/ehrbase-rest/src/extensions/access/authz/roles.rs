@@ -124,6 +124,36 @@ pub fn authorize(class: OperationClass, roles: &[String], rbac: &RbacConfig) -> 
     }
 }
 
+/// The read-only restriction: refuse a principal carrying the read-only role on
+/// every write operation, even when it also holds granting roles (a restriction
+/// overrides a grant). Reads, non-read-only principals, and the rbac-disabled
+/// case all pass through with [`RbacDecision::Allow`]. Role matching is
+/// ASCII-case-insensitive, the same idiom as [`authorize`].
+///
+// NOTE: no openEHR spec governs this — our own design/extension. The SM places
+// authorization out of band (SM `openehr_platform/master02-overview.adoc`
+// §General Assumptions) and no CNF profile carries a role requirement; the
+// read-only role is an ehrbase-rs enterprise capability supporting the CNF
+// SEC-BASIC authorization-separation profile (an authenticated principal
+// refused on every write). It composes on top of the [`authorize`] class gate.
+#[must_use]
+pub fn authorize_readonly(is_write: bool, roles: &[String], rbac: &RbacConfig) -> RbacDecision {
+    if !rbac.enabled || !is_write {
+        return RbacDecision::Allow;
+    }
+    let carries_readonly = roles
+        .iter()
+        .any(|r| r.eq_ignore_ascii_case(&rbac.readonly_role));
+    if carries_readonly {
+        RbacDecision::Deny(format!(
+            "principal carries the read-only role '{}' — write operations are forbidden",
+            rbac.readonly_role
+        ))
+    } else {
+        RbacDecision::Allow
+    }
+}
+
 #[cfg(test)]
 #[allow(
     clippy::panic,
@@ -202,6 +232,82 @@ mod tests {
         ));
         assert_eq!(
             authorize(OperationClass::Clinical, &["USER".to_owned()], &rbac),
+            RbacDecision::Allow
+        );
+    }
+
+    #[test]
+    fn readonly_role_denies_writes_allows_reads() {
+        let rbac = RbacConfig::default();
+        let readonly = &["READONLY".to_owned()];
+        // A write is refused for a read-only principal.
+        assert!(matches!(
+            authorize_readonly(true, readonly, &rbac),
+            RbacDecision::Deny(_)
+        ));
+        // A read is permitted.
+        assert_eq!(
+            authorize_readonly(false, readonly, &rbac),
+            RbacDecision::Allow
+        );
+    }
+
+    #[test]
+    fn readonly_role_matches_case_insensitively() {
+        let rbac = RbacConfig::default();
+        assert!(matches!(
+            authorize_readonly(true, &["readonly".to_owned()], &rbac),
+            RbacDecision::Deny(_)
+        ));
+    }
+
+    #[test]
+    fn readonly_restriction_overrides_grants() {
+        // The read-only role denies a write even alongside ADMIN + USER.
+        let rbac = RbacConfig::default();
+        let roles = &["ADMIN".to_owned(), "USER".to_owned(), "READONLY".to_owned()];
+        assert!(matches!(
+            authorize_readonly(true, roles, &rbac),
+            RbacDecision::Deny(_)
+        ));
+    }
+
+    #[test]
+    fn readonly_gate_inert_when_rbac_disabled() {
+        let rbac = RbacConfig {
+            enabled: false,
+            ..RbacConfig::default()
+        };
+        assert_eq!(
+            authorize_readonly(true, &["READONLY".to_owned()], &rbac),
+            RbacDecision::Allow
+        );
+    }
+
+    #[test]
+    fn non_readonly_principal_may_write() {
+        let rbac = RbacConfig::default();
+        assert_eq!(
+            authorize_readonly(true, &["USER".to_owned()], &rbac),
+            RbacDecision::Allow
+        );
+        // No roles at all is not read-only either (the class gate handles that).
+        assert_eq!(authorize_readonly(true, &[], &rbac), RbacDecision::Allow);
+    }
+
+    #[test]
+    fn custom_readonly_role_name() {
+        let rbac = RbacConfig {
+            readonly_role: "VIEWER".to_owned(),
+            ..RbacConfig::default()
+        };
+        assert!(matches!(
+            authorize_readonly(true, &["VIEWER".to_owned()], &rbac),
+            RbacDecision::Deny(_)
+        ));
+        // The default READONLY name no longer restricts once reconfigured.
+        assert_eq!(
+            authorize_readonly(true, &["READONLY".to_owned()], &rbac),
             RbacDecision::Allow
         );
     }

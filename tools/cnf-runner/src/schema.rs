@@ -266,6 +266,7 @@ pub fn operation_binding_schema() -> Value {
         "properties": {
             "sm_operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
             "its": { "enum": ["its-rest"] },
+            "variant": { "type": "string", "minLength": 1 },
             "applies": { "type": "object" },
             "unrealized": {
                 "type": "object",
@@ -318,6 +319,12 @@ pub fn operation_binding_schema() -> Value {
                     "required": ["status"],
                     "properties": {
                         "status": { "type": "integer", "minimum": 100, "maximum": 599 },
+                        "alt_status": {
+                            "type": "array",
+                            "minItems": 1,
+                            "items": { "type": "integer", "minimum": 100, "maximum": 599 },
+                            "description": "Overview-permitted additional non-conflicting status codes beyond the OAS enumeration (ITS-REST Requests_and_responses §HTTP status codes)"
+                        },
                         "headers": { "type": "object", "additionalProperties": { "type": "string" } },
                         "body": { "enum": BODY_SELECTOR_TOKENS }
                     }
@@ -487,6 +494,7 @@ pub fn corpus_manifest_schema() -> Value {
                     }
                 },
                 "format": { "enum": tokens(CorpusFormat::ALL) },
+                "template_id": { "type": "string", "minLength": 1 },
                 "rm_versions": { "type": "array", "items": { "type": "string" } },
                 "validity": {
                     "type": "object",

@@ -308,7 +308,9 @@ fn parse_duration_components(s: &str, allowed: &[u8], any: &mut bool) -> bool {
         while i < bytes.len() && bytes[i].is_ascii_digit() {
             i += 1;
         }
+        let mut has_fraction = false;
         if i < bytes.len() && (bytes[i] == b'.' || bytes[i] == b',') {
+            has_fraction = true;
             i += 1;
             while i < bytes.len() && bytes[i].is_ascii_digit() {
                 i += 1;
@@ -318,6 +320,12 @@ fn parse_duration_components(s: &str, allowed: &[u8], any: &mut bool) -> bool {
             return false; // no number, or number without a designator
         }
         if !allowed.contains(&bytes[i]) {
+            return false;
+        }
+        // BASE `master06-time_types.adoc` §Primitive Time Types: "in openEHR,
+        // only fractional seconds are supported" — a decimal fraction is only
+        // permitted on the seconds ('S') component, never on Y/M/W/D/H/M.
+        if has_fraction && bytes[i] != b'S' {
             return false;
         }
         i += 1;
@@ -441,6 +449,26 @@ mod tests {
         assert!(!is_valid_iso_duration("1Y"));
         assert!(!is_valid_iso_duration("P1X"));
         assert!(!is_valid_iso_duration("PT"));
+    }
+
+    /// BASE `master06-time_types.adoc` §Primitive Time Types: "in openEHR, only
+    /// fractional seconds are supported" — a decimal fraction on any component
+    /// other than seconds is invalid, even though the pattern of designators is
+    /// otherwise well-formed.
+    #[test]
+    fn iso_duration_fraction_only_on_seconds() {
+        // Fraction on seconds (period or comma) is the sole permitted case.
+        assert!(is_valid_iso_duration("PT2H30M0.5S"));
+        assert!(is_valid_iso_duration("PT0,5S"));
+        // Fraction on any other component is rejected.
+        assert!(!is_valid_iso_duration("P1Y3M4DT2.5H"));
+        assert!(!is_valid_iso_duration("PT2H14.5M"));
+        assert!(!is_valid_iso_duration("P1.5Y"));
+        assert!(!is_valid_iso_duration("P1.5M"));
+        assert!(!is_valid_iso_duration("P1.5W"));
+        assert!(!is_valid_iso_duration("P1.5D"));
+        assert!(!is_valid_iso_duration("PT1.5H"));
+        assert!(!is_valid_iso_duration("PT2H14,5M"));
     }
 
     // NOTE: the `_type`-dispatch tests (fast/typed equivalence, corpus, mutation

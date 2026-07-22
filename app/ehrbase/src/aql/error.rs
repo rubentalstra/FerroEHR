@@ -245,20 +245,6 @@ pub enum SqlError {
     /// (should have been caught by [`super::plan`]; a defensive guard).
     #[error("unbound query parameter `${0}` at SQL build time")]
     UnboundParameter(String),
-
-    /// A REST paging parameter (`fetch`/`offset`) combined with an AQL
-    /// `LIMIT`/`OFFSET`/`TOP`. ITS-REST query Request (`fetch` "cannot be
-    /// combined with AQL-top") + QUERY §Query structure/LIMIT.
-    #[error(
-        "the `{param}` query parameter cannot be combined with an AQL {aql} clause \
-         (ITS-REST query Request; QUERY §Query structure/LIMIT)"
-    )]
-    PagingConflict {
-        /// The REST parameter in conflict (`fetch` or `offset`).
-        param: &'static str,
-        /// The AQL clause in conflict (`LIMIT`/`OFFSET`/`TOP`).
-        aql: &'static str,
-    },
 }
 
 /// An execution / `RESULT_SET` assembly failure.

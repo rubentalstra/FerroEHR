@@ -23,12 +23,12 @@ requires:
   server: any
   templates: [cnf.opt.vitals]
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.flat.vitals.minimal_ctx]
+data_sets: [cnf.flat.vitals.composer_self]
 flow:
   - step: 1
     call: create_composition
     format: wt-flat                       # binding adds openehr-template-id
-    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.vitals.minimal_ctx}" }
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.vitals.composer_self}" }
     expect: created
     capture: { version_uid: created.version_uid }
   - step: 2

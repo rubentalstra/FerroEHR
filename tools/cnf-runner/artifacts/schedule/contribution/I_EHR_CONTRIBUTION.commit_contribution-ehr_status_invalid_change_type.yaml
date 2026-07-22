@@ -26,8 +26,7 @@ parameters:
   matrix:
     columns: [change_type]               # the two invalid change types (creation, deleted)
     rows:
-      - [creation]
-      - [deleted]
+      - [creation]                         # the deleted row is the sibling case (-deleted): its wire needs the current status version as preceding
 flow:
   - step: 1
     call: commit_contribution

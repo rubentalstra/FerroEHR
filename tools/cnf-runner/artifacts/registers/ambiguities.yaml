@@ -453,3 +453,30 @@ AMB-39:
     (sf-deprecated-types-unsupported) expects unsupported_media (415).
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
+AMB-40:
+  ambiguity: >-
+    Several write operations enumerate only 400 (plus 404/409) for rejected
+    content — contribution_create, definition_template_adl1.4_upload,
+    definition_template_adl2 upload, ehr_create/ehr_create_with_id — yet
+    their payloads can fail SEMANTIC validation (RM/AOM/template
+    nonconformance), which the overview's general status table assigns to
+    422 ("well-formed but unable to be followed due to semantic errors") and
+    which 422.yaml describes verbatim ("could be converted to a resource,
+    but there are semantic validation errors, such as the underlying
+    template is not known or is not validating the supplied resource"). The
+    enumerated 400 responses scope syntax-level failures (parse, malformed
+    URL/header/content, mismatched modification type), so which code a
+    semantic rejection carries is unenumerated.
+  source: >-
+    ITS-REST operations/contribution_create.yaml (responses 201/400/404/409)
+    + responses/400_CONTRIBUTION.yaml + responses/422.yaml + overview
+    Requests_and_responses.md §HTTP status codes ("Additional status codes
+    MAY be used as long as they do not conflict with the predefined codes")
+  handling: >-
+    The affected bindings' validation_failed (and, on contribution,
+    template_not_found) expectations carry alt_status [422]: a server
+    answering the OAS-enumerated 400 or the overview-permitted,
+    non-conflicting 422 both classify as the semantic-rejection kind; no
+    other status is accepted. The kinds on the shared status are
+    distinguished by fixture (the AMB-2 pattern).
+  disposition: fixed_handling

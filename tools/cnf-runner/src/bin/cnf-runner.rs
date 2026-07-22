@@ -163,45 +163,7 @@ fn main() -> ExitCode {
             ecc_catalog,
             map,
             out,
-        } => {
-            let loaded = match load_root(&root) {
-                Ok(loaded) => loaded,
-                Err(e) => {
-                    eprintln!("runner defect: {e}");
-                    return ExitCode::from(2);
-                }
-            };
-            if !loaded.errors.is_empty() {
-                for e in &loaded.errors {
-                    eprintln!("{e}");
-                }
-                return ExitCode::from(2);
-            }
-            match compare::run(&ecc_catalog, &map, &loaded.set) {
-                Ok((cmp, report)) => {
-                    if let Err(e) = std::fs::write(&out, report) {
-                        eprintln!("cannot write {}: {e}", out.display());
-                        return ExitCode::from(2);
-                    }
-                    println!(
-                        "wrote {} — mapped {} · unmapped {} · gate {}",
-                        out.display(),
-                        cmp.mapped.len(),
-                        cmp.unmapped.len(),
-                        if cmp.gate_clean() { "clean" } else { "OPEN" }
-                    );
-                    if cmp.gate_clean() {
-                        ExitCode::SUCCESS
-                    } else {
-                        ExitCode::from(1)
-                    }
-                }
-                Err(e) => {
-                    eprintln!("comparison failed: {e}");
-                    ExitCode::from(2)
-                }
-            }
-        }
+        } => run_compare_ecc(&root, &ecc_catalog, &map, &out),
         Command::Run {
             root,
             ixit,
@@ -251,6 +213,51 @@ fn main() -> ExitCode {
             root,
             out,
         } => run_verdicts(&statement, &results, &root, &out),
+    }
+}
+
+fn run_compare_ecc(
+    root: &std::path::Path,
+    ecc_catalog: &std::path::Path,
+    map: &std::path::Path,
+    out: &std::path::Path,
+) -> ExitCode {
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    match compare::run(ecc_catalog, map, &loaded.set) {
+        Ok((cmp, report)) => {
+            if let Err(e) = std::fs::write(out, report) {
+                eprintln!("cannot write {}: {e}", out.display());
+                return ExitCode::from(2);
+            }
+            println!(
+                "wrote {} — mapped {} · unmapped {} · gate {}",
+                out.display(),
+                cmp.mapped.len(),
+                cmp.unmapped.len(),
+                if cmp.gate_clean() { "clean" } else { "OPEN" }
+            );
+            if cmp.gate_clean() {
+                ExitCode::SUCCESS
+            } else {
+                ExitCode::from(1)
+            }
+        }
+        Err(e) => {
+            eprintln!("comparison failed: {e}");
+            ExitCode::from(2)
+        }
     }
 }
 

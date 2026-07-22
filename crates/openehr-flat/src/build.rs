@@ -254,6 +254,10 @@ fn build(
 
     let mut obj = Map::new();
     obj.insert("_type".into(), json!(concrete_type(&node.rm_type)));
+    // `OBSERVATION/history_origin` (master05 §OBSERVATION `/history_origin`) is
+    // an alias for `data.origin`; captured here and applied after the mandatory
+    // HISTORY is materialised (see below).
+    let mut history_origin: Option<String> = None;
 
     for child in &node.children {
         // Standard EVENT_CONTEXT fields come from ctx/ (master06); only the
@@ -315,8 +319,6 @@ fn build(
             )?;
             continue;
         }
-        // Reject identifiers that matched no template child (master04
-        // §Validation: field identifiers match WT metadata structure).
         let known = node
             .children
             .iter()
@@ -326,9 +328,28 @@ fn build(
                 seg.as_str(),
                 "language" | "territory" | "composer" | "category"
             );
-        if !known && !ctx_covered {
-            return Err(FlatError::UnknownPath(format!("{path}/{seg}")));
+        if known || ctx_covered {
+            continue;
         }
+        // A direct RM-attribute path the master05 per-type mapping tables
+        // declare addressable on this node even when the OPT leaves it
+        // unconstrained (so the compacted web-template carries no child for
+        // it) — e.g. `ACTION/time`, `ACTION/ism_transition` (master05
+        // §§ACTION, ISM_TRANSITION). Built here from the datum sub-tree.
+        if place_direct_rm_path(
+            &mut obj,
+            &node.rm_type,
+            seg,
+            &child.occurrences,
+            path,
+            &mut history_origin,
+        )? {
+            continue;
+        }
+        // Otherwise the identifier matches no template child and no
+        // spec-listed RM path (master04 §Validation: field identifiers match
+        // WT metadata structure).
+        return Err(FlatError::UnknownPath(format!("{path}/{seg}")));
     }
     // Datum parts on a container node are only legal via |raw
     // (master04 §Raw canonical JSON); anything else is an unknown suffix.
@@ -346,8 +367,190 @@ fn build(
     let mut value = Value::Object(obj);
     if let Value::Object(m) = &mut value {
         finish_identity(m, node, false, "");
+        // `OBSERVATION/history_origin` sets `data.origin` (master05 §OBSERVATION
+        // `/history_origin`), applied after the mandatory HISTORY is
+        // materialised so the datum-supplied origin wins the structural default.
+        if let Some(ts) = &history_origin
+            && let Some(Value::Object(hist)) = m.get_mut("data")
+        {
+            hist.insert("origin".to_owned(), dv_date_time(ts));
+        }
     }
     Ok(value)
+}
+
+/// A direct RM-attribute path (non-`_`, non-`|`) that the master05 per-type
+/// mapping tables declare addressable on a node of `host` even when the OPT
+/// leaves it unconstrained — so the compacted web-template carries no child
+/// for it and the datum-driven walk must build it here
+/// (`master05-rm_mapping.adoc`).
+enum DirectPath {
+    /// A single `DATA_VALUE` leaf attribute of the named RM type.
+    Leaf {
+        /// The RM attribute name the value is inserted under.
+        attr: &'static str,
+        /// The concrete leaf RM type to build.
+        rm_type: &'static str,
+    },
+    /// `ACTION.ism_transition` — the ISM_TRANSITION object built from its
+    /// `current_state`/`transition`/`careflow_step` + `_reason:i` sub-tree
+    /// (master05 §ISM_TRANSITION).
+    Ism,
+    /// `ACTIVITY.action_archetype_id` — a plain-String RM field
+    /// (master05 §ACTIVITY).
+    ActionArchetypeId,
+    /// `OBSERVATION.history_origin` — the alias for `data.origin`
+    /// (master05 §OBSERVATION `/history_origin`).
+    HistoryOrigin,
+}
+
+/// The direct RM-attribute path (if any) named by `seg` on a node of base RM
+/// type `host`, per the master05 per-type mapping tables.
+fn direct_rm_path(host: &str, seg: &str) -> Option<DirectPath> {
+    use DirectPath::{ActionArchetypeId, HistoryOrigin, Ism, Leaf};
+    Some(match (host, seg) {
+        // master05 §§ACTION, POINT_EVENT, INTERVAL_EVENT: `/time` (DV_DATE_TIME)
+        // is addressable on the ACTION and on every EVENT concrete type.
+        ("ACTION" | "POINT_EVENT" | "INTERVAL_EVENT" | "EVENT", "time") => Leaf {
+            attr: "time",
+            rm_type: "DV_DATE_TIME",
+        },
+        // master05 §ACTION: `/ism_transition`.
+        ("ACTION", "ism_transition") => Ism,
+        // master05 §INSTRUCTION: `/narrative` (DV_TEXT).
+        ("INSTRUCTION", "narrative") => Leaf {
+            attr: "narrative",
+            rm_type: "DV_TEXT",
+        },
+        // master05 §OBSERVATION: `/history_origin` → `history.origin`.
+        ("OBSERVATION", "history_origin") => HistoryOrigin,
+        // master05 §ACTIVITY: `/timing` (DV_PARSABLE), `/action_archetype_id`.
+        ("ACTIVITY", "timing") => Leaf {
+            attr: "timing",
+            rm_type: "DV_PARSABLE",
+        },
+        ("ACTIVITY", "action_archetype_id") => ActionArchetypeId,
+        // master05 §INTERVAL_EVENT: `/width` (DV_DURATION), `/math_function`.
+        ("INTERVAL_EVENT", "width") => Leaf {
+            attr: "width",
+            rm_type: "DV_DURATION",
+        },
+        ("INTERVAL_EVENT", "math_function") => Leaf {
+            attr: "math_function",
+            rm_type: "DV_CODED_TEXT",
+        },
+        // master05 §EVENT_CONTEXT: `/start_time` (DV_DATE_TIME), `/setting`
+        // (DV_CODED_TEXT). Normally supplied via the `ctx/` vocabulary
+        // (master06); accepted as path keys here for the master05 path form.
+        ("EVENT_CONTEXT", "start_time") => Leaf {
+            attr: "start_time",
+            rm_type: "DV_DATE_TIME",
+        },
+        ("EVENT_CONTEXT", "setting") => Leaf {
+            attr: "setting",
+            rm_type: "DV_CODED_TEXT",
+        },
+        _ => return None,
+    })
+}
+
+/// Build and place a direct RM-attribute path onto `obj` (see [`direct_rm_path`]).
+/// Returns `true` when `seg` was a recognised direct RM path (built or captured),
+/// `false` when it is not — the caller then rejects it as an unknown path.
+fn place_direct_rm_path(
+    obj: &mut Map<String, Value>,
+    host_rm_type: &str,
+    seg: &str,
+    occurrences: &[SimNode],
+    path: &str,
+    history_origin: &mut Option<String>,
+) -> Result<bool, FlatError> {
+    let Some(dp) = direct_rm_path(base_type(host_rm_type), seg) else {
+        return Ok(false);
+    };
+    let occ = occurrences.iter().find(|o| !o.is_empty());
+    let sub_path = format!("{path}/{seg}");
+    match dp {
+        DirectPath::Leaf { attr, rm_type } => {
+            if let Some(node) = occ {
+                obj.insert(
+                    attr.to_owned(),
+                    map::build_leaf(node, rm_type, None, &sub_path)?,
+                );
+            }
+        }
+        DirectPath::Ism => {
+            if let Some(node) = occ {
+                obj.insert(
+                    "ism_transition".to_owned(),
+                    build_ism_transition(node, &sub_path)?,
+                );
+            }
+        }
+        DirectPath::ActionArchetypeId => {
+            if let Some(v) = occ.and_then(SimNode::bare) {
+                obj.insert("action_archetype_id".to_owned(), v.clone());
+            }
+        }
+        DirectPath::HistoryOrigin => {
+            *history_origin = occ
+                .and_then(SimNode::bare)
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+        }
+    }
+    Ok(true)
+}
+
+/// Build an `ACTION.ism_transition` (ISM_TRANSITION) from its simplified
+/// sub-tree: `/current_state` (DV_CODED_TEXT, required), `/transition`,
+/// `/careflow_step` (DV_CODED_TEXT), and the `/_reason:i` DV_TEXT list
+/// (master05 §ISM_TRANSITION). `current_state` is 1..1 DV_CODED_TEXT, the other
+/// two 0..1 DV_CODED_TEXT (RM ehr `ism_transition.adoc`).
+fn build_ism_transition(node: &SimNode, path: &str) -> Result<Value, FlatError> {
+    let mut o = Map::new();
+    o.insert("_type".into(), json!("ISM_TRANSITION"));
+    for (seg, group) in [
+        ("current_state", Some("instruction_states")),
+        ("transition", Some("instruction_transitions")),
+        ("careflow_step", None),
+    ] {
+        if let Some(cs) = node.child(seg).filter(|n| !n.is_empty()) {
+            o.insert(
+                seg.to_owned(),
+                build_ism_coded(cs, group, &format!("{path}/{seg}"))?,
+            );
+        }
+    }
+    for (seg, child) in &node.children {
+        if seg.starts_with('_') {
+            apply_rm_attr(&mut o, seg, &child.occurrences, "ISM_TRANSITION", path)?;
+        } else if !matches!(
+            seg.as_str(),
+            "current_state" | "transition" | "careflow_step"
+        ) {
+            return Err(FlatError::UnknownPath(format!("{path}/{seg}")));
+        }
+    }
+    Ok(Value::Object(o))
+}
+
+/// Build one ISM_TRANSITION state field as a DV_CODED_TEXT. With an explicit
+/// `|value` the datum parts stand as given; with only a `|code` in the openEHR
+/// terminology, the rubric is resolved from the state's openEHR group
+/// (`group`) — the same idiom the `ctx/action_ism_transition_current_state`
+/// shortcut uses ([`crate::ctx`]; master05 §DV_CODED_TEXT).
+fn build_ism_coded(node: &SimNode, group: Option<&str>, path: &str) -> Result<Value, FlatError> {
+    let has_value = node.attrs.contains_key("value");
+    let terminology = node.attrs.get("terminology").and_then(Value::as_str);
+    if !has_value
+        && let Some(group) = group
+        && let Some(code) = node.attrs.get("code").and_then(Value::as_str)
+        && matches!(terminology, None | Some("openehr"))
+    {
+        return Ok(map::coded_from_group(group, code));
+    }
+    map::build_leaf(node, "DV_CODED_TEXT", None, path)
 }
 
 /// Apply one `_`-segment RM attribute family onto the RM object under

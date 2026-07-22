@@ -24,3 +24,4 @@ outcomes:
     headers: { Content-Type: negotiated }
   ok_empty: { status: 204 }               # 204_deleted_at_time.yaml
   not_found: { status: 404 }              # unknown ehr_id or no version at the requested time
+server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks

@@ -348,18 +348,33 @@ async fn aql_acceptance_set() {
         .collect();
     assert_eq!(mags, vec![100.0, 120.0], "fetch=2 offset=1 → rows 2 and 3");
 
-    // fetch + AQL LIMIT is a spec conflict (ITS-REST query Request) → rejected.
+    // fetch composes OVER an AQL LIMIT window (ITS-REST query Request.md
+    // §Common Headers and Query Parameters: `fetch` "cannot be combined with
+    // AQL-top" — TOP is the ONLY prohibited pairing; `offset`/`fetch` page
+    // the result set the AQL clauses define).
+    let aql = format!(
+        "SELECT o/{MAG_PATH} AS m FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] \
+         ORDER BY o/{MAG_PATH} LIMIT 5"
+    );
+    let mut req = ehr_scope(&ehr_id);
+    req.fetch = Some(2);
+    let r = run_aql(&svc, &aql, req).await;
+    assert_eq!(
+        rows(&r).len(),
+        2,
+        "fetch=2 pages inside the AQL LIMIT 5 window"
+    );
+
+    // fetch + the deprecated TOP modifier stays rejected (Request.md names
+    // exactly this pairing), as the SM `precondition_violation` → wire `400`.
     let aql =
-        format!("SELECT o/{MAG_PATH} FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}] LIMIT 5");
+        format!("SELECT TOP 2 o/{MAG_PATH} FROM EHR e CONTAINS OBSERVATION o[{OBS_ARCHETYPE}]");
     let mut req = ehr_scope(&ehr_id);
     req.fetch = Some(2);
     let err = svc
         .execute_ad_hoc_query(aql, req)
         .await
-        .expect_err("fetch + AQL LIMIT must conflict");
-    // NOTE: the paging conflict is now the SM
-    // `precondition_violation` (`SmError::precondition`), which the adapter maps
-    // to the same wire `400` the old `ApiError::BadRequest` produced.
+        .expect_err("fetch + AQL TOP must be rejected");
     assert!(
         matches!(
             err,
@@ -368,7 +383,7 @@ async fn aql_acceptance_set() {
                 ..
             }
         ),
-        "paging conflict is precondition_violation, got {err:?}"
+        "fetch+TOP is precondition_violation, got {err:?}"
     );
 
     // ── NOT CONTAINS (none contain a different archetype) ──────────────────────
@@ -1391,5 +1406,33 @@ async fn plan_cache_reuses_plan_and_binds_per_request() {
         rows(&page_two).len(),
         2,
         "fetch=2 returns two rows from the same plan"
+    );
+}
+
+/// The `ehr_id` execution scope binds the EHR SOURCE itself, not only
+/// versioned-object roots: a bare `SELECT … FROM EHR e` scoped to one EHR
+/// returns exactly that EHR's row, never the population (ITS-REST query
+/// `Request.md` §Common Headers and Query Parameters: `ehr_id` — "used to
+/// execute the query within a single EHR context").
+#[tokio::test]
+async fn ehr_scope_binds_the_bare_ehr_source() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let a = create_ehr(&svc).await;
+    let _b = create_ehr(&svc).await; // a second EHR the scope must exclude
+
+    let r = run_aql(
+        &svc,
+        "SELECT e/ehr_id/value AS id FROM EHR e",
+        ehr_scope(&a),
+    )
+    .await;
+    let got = rows(&r);
+    assert_eq!(got.len(), 1, "scoped bare-EHR query returns one row");
+    assert_eq!(
+        got[0][0].as_str(),
+        Some(a.as_str()),
+        "and it is the scoped EHR"
     );
 }

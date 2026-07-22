@@ -9,9 +9,12 @@ match this spec; its digest pins the recipe version).
 - Otherwise emit a canonical-JSON `EHR_STATUS` (RM ehr, EHR_STATUS):
   `is_queryable`/`is_modifiable` verbatim from the row;
   `subject = provided` => a `PARTY_SELF` carrying an external ref with a
-  deterministic namespace `cnf` and id `subject-<row index>`;
+  deterministic namespace `cnf` and id `subject-<case id>-<row index>` —
+  case-scoped so single-EHR-per-subject SUTs never collide across cases;
   `other_details = provided` => an `ITEM_TREE` with one fixed
   `DV_TEXT` element (`"cnf other_details"`); `absent` => omitted.
-- `ehr_id = provided` => a fresh deterministic UUIDv5 over namespace
-  `cnf.create_ehr` and the row index; `absent` => omit (server assigns).
-- Seed: none required — the outputs are pure functions of the row.
+- `ehr_id = provided` => a deterministic UUIDv5 over namespace
+  `cnf.create_ehr` (itself UUIDv5 of that literal under the URL namespace)
+  and the name `<case id>/<row index>` — case-scoped so distinct cases on a
+  shared SUT never collide; `absent` => omit (server assigns).
+- Seed: none required — the outputs are pure functions of (case, row).

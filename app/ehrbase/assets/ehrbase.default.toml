@@ -85,6 +85,7 @@ verified_cache_ttl_seconds = 60
 enabled = true
 admin_role = "ADMIN"
 user_role = "USER"
+readonly_role = "READONLY"   # carriers are refused on every write operation
 role_claims = ["realm_access.roles", "scope"]
 management_access = "admin_only"   # admin_only | private | public
 

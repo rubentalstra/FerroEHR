@@ -6,6 +6,8 @@ its: its-rest
 request:
   method: POST                            # spec-recommended over GET for parameterized queries
   path: /query/aql
+  query:
+    ehr_id: "${ehr_id?}"                  # optional single-EHR scope (Request.md §Common Headers and Query Parameters)
   body:
     q: "${q}"
     query_parameters: "${query_parameters?}"

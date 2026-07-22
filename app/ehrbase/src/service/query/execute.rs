@@ -3,10 +3,10 @@
 //! ITS-REST 1.1.0 `RESULT_SET`, the paging composition, the `ehr_ids`
 //! resolution, and the per-query execution budget.
 //!
-//! Paging (ITS-REST QUERY `Request.md`): `fetch` is the row limit and "cannot
-//! be combined with AQL-`TOP`"; `offset` is the 0-based start row. A REST
-//! `fetch`/`offset` that collides with an AQL `LIMIT`/`OFFSET`/`TOP` is a
-//! `400`; otherwise the AQL clause wins when present, else the REST parameter.
+//! Paging (ITS-REST QUERY `Request.md`): `fetch` is the page size and "cannot
+//! be combined with AQL-`TOP`" (the one prohibited pairing); `offset` is the
+//! 0-based start row. REST paging composes OVER the AQL `LIMIT`/`OFFSET`
+//! window — the page is cut out of the AQL-shaped result set.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -135,7 +135,7 @@ impl EhrbaseService {
         let ir = self.plan_query(aql, &params).await?;
         record_phase("plan", plan_start);
 
-        let (limit, offset) = compose_paging(ir.limit, ir.offset, request)?;
+        let (limit, offset) = compose_paging(ir.limit, ir.offset, ir.limit_is_top, request)?;
         // Multi-EHR scoping (`ehr_ids: List<UUID>`): a malformed id is a
         // client precondition (`400`); a well-formed but absent id raises
         // `ehr_id_does_not_exist` (`i_query_service.adoc`).
@@ -318,29 +318,57 @@ impl Failure {
     }
 }
 
-/// Compose the effective `(limit, offset)` from the AQL clause and the REST
-/// paging parameters, rejecting collisions (ITS-REST query `Request.md`;
-/// QUERY §Query structure/LIMIT).
+/// Compose the effective `(limit, offset)` from the AQL clauses and the REST
+/// paging parameters.
+///
+/// The REST layer pages OVER the result set the AQL `LIMIT`/`OFFSET` clauses
+/// define: `offset` is "the row number in result-set to start result-set
+/// from" and `fetch` is "the number of rows to fetch" (ITS-REST query
+/// `Request.md` §Common Headers and Query Parameters) — the two layers
+/// compose; the only prohibited combination is `fetch` with the deprecated
+/// AQL `TOP` modifier, which `Request.md` names explicitly.
 fn compose_paging(
     aql_limit: Option<i64>,
     aql_offset: Option<i64>,
+    limit_is_top: bool,
     request: &AqlQueryRequest,
 ) -> Result<(Option<i64>, Option<i64>), Failure> {
-    if request.fetch.is_some() && aql_limit.is_some() {
+    if request.fetch.is_some() && limit_is_top {
         return Err(Failure::analysis(SmError::precondition(
-            "the `fetch` query parameter cannot be combined with an AQL LIMIT/TOP clause \
-             (ITS-REST query Request; QUERY §Query structure/LIMIT)"
+            "the `fetch` query parameter cannot be combined with the deprecated AQL TOP \
+             modifier (ITS-REST query Request.md §Common Headers and Query Parameters)"
                 .to_owned(),
         )));
     }
-    if request.offset.is_some() && aql_offset.is_some() {
-        return Err(Failure::analysis(SmError::precondition(
-            "the `offset` query parameter cannot be combined with an AQL OFFSET clause \
-             (ITS-REST query Request; QUERY §Query structure)"
-                .to_owned(),
-        )));
+    if let Some(f) = request.fetch
+        && f < 0
+    {
+        return Err(Failure::analysis(SmError::precondition(format!(
+            "the `fetch` query parameter must be non-negative, got {f}"
+        ))));
     }
-    Ok((aql_limit.or(request.fetch), aql_offset.or(request.offset)))
+    if let Some(o) = request.offset
+        && o < 0
+    {
+        return Err(Failure::analysis(SmError::precondition(format!(
+            "the `offset` query parameter must be non-negative, got {o}"
+        ))));
+    }
+    let rest_offset = request.offset.unwrap_or(0);
+    let offset = match (aql_offset, request.offset) {
+        (None, None) => None,
+        _ => Some(aql_offset.unwrap_or(0).saturating_add(rest_offset)),
+    };
+    let limit = match aql_limit {
+        None => request.fetch,
+        Some(l) => {
+            // The page window sits inside the AQL-limited result set: skip
+            // `rest_offset` rows of it, then take at most `fetch`.
+            let remaining = l.saturating_sub(rest_offset).max(0);
+            Some(request.fetch.map_or(remaining, |f| f.min(remaining)))
+        }
+    };
+    Ok((limit, offset))
 }
 
 /// The `aql_queries_total{outcome}` label for an [`AqlError`] (spec-silent

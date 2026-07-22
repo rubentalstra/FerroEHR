@@ -494,6 +494,68 @@ fn capture_leaf_constraints(co: &CObject, node: &mut WebTemplateNode) {
         }
         _ => None,
     };
+    // C_QUANTITY.property (openEHR `property`-group code): captured so the
+    // instance's `units` can be checked against the property's unit set
+    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc` §C_QUANTITY:
+    // `property` = "Name of physical property for Quantities being
+    // constrained"). Only the openEHR-terminology property code is meaningful,
+    // and the placeholder "0" (Ocean Template Designer's unconstrained property)
+    // is treated as no constraint (matching the OPT-side C_DV_QUANTITY check).
+    if let CObject::CDvQuantity(q) = co
+        && let Some(property) = &q.property
+        && property
+            .terminology_id
+            .value
+            .eq_ignore_ascii_case("openehr")
+        && !property.code_string.is_empty()
+        && property.code_string != "0"
+    {
+        node.quantity_property = Some(property.code_string.clone());
+    }
+    // Explicit-local closed C_CODE_PHRASE on `defining_code` (DV_CODED_TEXT) or
+    // the node's own bare CODE_PHRASE: when the archetype author explicitly
+    // scopes the code list to the `local` terminology, the closed list admits
+    // ONLY local codes, so a foreign-terminology instance code is a violation
+    // (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc` §C_CODED_TEXT:
+    // the `code_list` is "a list of codes FROM the terminology"). The wt+json
+    // `inputs` mapping strips the implicit/default `local`, so this explicit
+    // scoping is recorded on the node instead (validation-only). Only the
+    // EXPLICIT `local` case is flagged — a `C_CODE_PHRASE` with no terminology
+    // named keeps the confident-violations bias (unchanged).
+    let defining_cp = match co {
+        CObject::CCodePhrase(cp) => Some(cp),
+        _ => inputs::attr_children(co, "defining_code").find_map(|c| match c {
+            CObject::CCodePhrase(cp) => Some(cp),
+            _ => None,
+        }),
+    };
+    if let Some(cp) = defining_cp
+        && !cp.code_list.is_empty()
+        && cp
+            .terminology_id
+            .as_ref()
+            .is_some_and(|t| t.value.eq_ignore_ascii_case("local"))
+    {
+        node.coded_terminology_local = true;
+    }
+    // NOTE — CONSTRAINT_REF (an `ac`-code proxy under a coded attribute, e.g.
+    // `defining_code`) is intentionally NOT captured as a leaf constraint.
+    // A CONSTRAINT_REF is "a proxy for a set of constraints … expressed in the
+    // binding of the constraint reference (e.g. 'ac0004') to a query … into an
+    // external service (e.g. a terminology service)"
+    // (`AM/docs/AOM1.4/master04-constraint_model_package.adoc` §Reference
+    // Objects). Its resolution is a `constraint_binding` to an external
+    // terminology-query URI (`AM/docs/ADL1.4/master08-adl.adoc`
+    // §Constraint_bindings), not a local code list. AOM 1.4 requires the ac-code
+    // be DEFINED in `constraint_definitions` (VATDF/VACDF, master08 §Coded Term
+    // Validity) but nowhere states what a DATA validator must do for an ac-code
+    // with no binding — the case is spec-silent, and no local fallback is
+    // defined. The honest reading is therefore that an unbound/externally-bound
+    // CONSTRAINT_REF constrains nothing enforceable at commit time (no openEHR
+    // spec governs the no-binding case — our own design/extension), so it admits
+    // any well-formed CODE_PHRASE; well-formedness stays the RM-invariant pass's
+    // job. A local terminology service integration could resolve a present
+    // binding in future (`TerminologyService` seam).
     for attr in inputs::attributes(co) {
         let attr_name = inputs::attribute_name(attr);
         if attr_name == "defining_code" {

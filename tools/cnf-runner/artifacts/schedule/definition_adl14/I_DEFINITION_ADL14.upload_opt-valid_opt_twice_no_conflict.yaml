@@ -21,15 +21,15 @@ spec_refs:
   - "CNF platform_test_schedule master04 §upload_opt-valid_opt_twice_no_conflict"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }              # "No OPTs should be loaded on the system"
-data_sets: [cnf.opt.versioned.v1, cnf.opt.versioned.v2]
+data_sets: [cnf.opt.versioned.v3, cnf.opt.versioned.v4]
 flow:
   - step: 1
     call: upload_opt
-    with: { opt: "${ds:cnf.opt.versioned.v1}" }   # version parameter = 1
+    with: { opt: "${ds:cnf.opt.versioned.v3}" }   # version parameter = 1
     expect: created                      # "the result should be positive (the server accepted the OPT)"
   - step: 2
     call: upload_opt
-    with: { opt: "${ds:cnf.opt.versioned.v2}" }   # version parameter = 2
+    with: { opt: "${ds:cnf.opt.versioned.v4}" }   # version parameter = 2
     expect: created                      # "the result should be positive (the server accepted the OPT)"
 postconditions:
   - assert: state

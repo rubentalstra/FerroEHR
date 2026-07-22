@@ -14,17 +14,14 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
   - "CNF platform_test_schedule master04 §get_opt-retrieve_single"
 applies: { rm: ">=1.0.2" }
-requires: { server: empty }              # single-versioned OPTs loaded by the flow below
+requires:
+  server: any
+  templates: [cnf.opt.minimal_all_entries]   # the upload ground (master04: the flow includes the Upload OPT flow; provisioned, 409-tolerant on a shared world)
 data_sets: [cnf.opt.minimal_all_entries]
 flow:
   - step: 1
-    call: upload_opt
-    with: { opt: "${ds:cnf.opt.minimal_all_entries}" }
-    expect: created
-    capture: { template_id: created.template_id }
-  - step: 2
     call: get_opt
-    with: { template_id: "${template_id}" }
+    with: { template_id: "obs_act.en.v1" }     # the provisioned OPT's template_id (corpus manifest)
     expect: ok                           # "the correct OPT will be returned"
     assert:
-      - { assert: equivalent, to: committed }   # "the retrieved OPT should be exactly the same as the uploaded one"
+      - { assert: equivalent, to: "${ds:cnf.opt.minimal_all_entries}" }   # "the retrieved OPT should be exactly the same as the uploaded one"

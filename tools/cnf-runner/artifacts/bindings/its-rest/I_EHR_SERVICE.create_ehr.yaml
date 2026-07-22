@@ -20,6 +20,7 @@ outcomes:
     status: 409                           # 409_EHR.yaml (subject/ehr_id conflict)
   validation_failed:
     status: 400                           # AMB-2: no 422 enumerated on EHR create
+    alt_status: [422]                     # AMB-40: semantic EHR_STATUS rejection — overview-permitted non-conflicting 422
 captures:
   ehr_id:
     from: body "ehr_id.value"

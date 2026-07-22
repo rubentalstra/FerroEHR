@@ -19,7 +19,12 @@ pub enum Captured {
     Body(serde_json::Value),
     /// A committed audit instant, milliseconds since the Unix epoch
     /// (`created.commit_time` — the anchor for temporal at-time cases).
-    InstantMs(i64),
+    /// Live commits are only known to an INTERVAL — `lo` = the request-send
+    /// instant, `hi` = the response-receipt instant, and the true commit
+    /// lies inside it — so `before` resolves from `lo` and `after` from
+    /// `hi`, keeping both sound on the wire. A point instant (the
+    /// transcript player's recorded ordinals) has `lo == hi`.
+    InstantMs { lo: i64, hi: i64 },
 }
 
 /// The per-row variable store. Reset around every row under
@@ -50,29 +55,46 @@ impl VarStore {
         }
     }
 
+    /// The upper bound of the latest bound commit window, if any (the
+    /// driver's temporal-separability pacing reads it).
+    #[must_use]
+    pub fn latest_instant_hi(&self) -> Option<i64> {
+        self.values
+            .values()
+            .filter_map(|c| match c {
+                Captured::InstantMs { hi, .. } => Some(*hi),
+                _ => None,
+            })
+            .max()
+    }
+
     /// Resolve a temporal expression against captured instants (law d).
     ///
     /// # Errors
     /// Returns a message when a referenced capture is missing or not an
     /// instant, or the arithmetic overflows.
     pub fn resolve_time(&self, expr: &TimeExpr) -> Result<i64, String> {
-        let instant = |name: &CaptureName| -> Result<i64, String> {
+        let instant = |name: &CaptureName| -> Result<(i64, i64), String> {
             match self.values.get(name) {
-                Some(Captured::InstantMs(ms)) => Ok(*ms),
+                Some(Captured::InstantMs { lo, hi }) => Ok((*lo, *hi)),
                 Some(_) => Err(format!("capture {name} is not a commit instant")),
                 None => Err(format!("capture {name} is not bound")),
             }
         };
         match expr {
+            // strictly before the earliest the commit can have happened
             TimeExpr::Before(t) => instant(t)?
+                .0
                 .checked_sub(1)
                 .ok_or_else(|| "instant arithmetic underflow".to_owned()),
+            // strictly after the latest the commit can have happened
             TimeExpr::After(t) => instant(t)?
+                .1
                 .checked_add(1)
                 .ok_or_else(|| "instant arithmetic overflow".to_owned()),
             TimeExpr::Between(t1, t2) => {
-                let (a, b) = (instant(t1)?, instant(t2)?);
-                // midpoint without overflow: a + (b - a) / 2
+                // midpoint of the gap between the two commit windows
+                let (a, b) = (instant(t1)?.1, instant(t2)?.0);
                 b.checked_sub(a)
                     .and_then(|d| a.checked_add(d / 2))
                     .ok_or_else(|| "instant arithmetic overflow".to_owned())
@@ -91,8 +113,20 @@ mod tests {
         let mut store = VarStore::default();
         let t1 = CaptureName::parse("t1").unwrap();
         let t2 = CaptureName::parse("t2").unwrap();
-        store.set(t1.clone(), Captured::InstantMs(1_000));
-        store.set(t2.clone(), Captured::InstantMs(2_001));
+        store.set(
+            t1.clone(),
+            Captured::InstantMs {
+                lo: 1_000,
+                hi: 1_000,
+            },
+        );
+        store.set(
+            t2.clone(),
+            Captured::InstantMs {
+                lo: 2_001,
+                hi: 2_001,
+            },
+        );
 
         assert_eq!(
             store.resolve_time(&TimeExpr::Before(t1.clone())).unwrap(),

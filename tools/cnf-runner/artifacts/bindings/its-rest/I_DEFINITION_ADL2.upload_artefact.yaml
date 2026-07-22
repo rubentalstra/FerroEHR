@@ -21,6 +21,7 @@ outcomes:
   already_exists: { status: 409 }                 # 409_template_already_exists.yaml — duplicate template_id
   validation_failed:
     status: 400                                   # 400.yaml — unparseable / AOM2-invalid artefact
+    alt_status: [422]                             # AMB-40: semantic artefact rejection — overview-permitted non-conflicting 422
     body: error_loose                             # AMB-1 (error body shape divergence)
 captures:
   template_id:

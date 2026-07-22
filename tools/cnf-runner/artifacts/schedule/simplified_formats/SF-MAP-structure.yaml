@@ -1,40 +1,49 @@
-# Per-RM-type suffix mapping: the structural nodes — ELEMENT, CLUSTER, ACTIVITY
-# (simplified_formats master05 §ELEMENT, §CLUSTER, §ACTIVITY). ELEMENT carries
-# no distinction between the element and its value (the value IS the leaf), plus
-# the null-flavour and RM-attribute paths; CLUSTER carries only RM-attribute
-# paths; ACTIVITY carries /timing and /action_archetype_id. Vectors: the ELEMENT
-# blocks (value; +_uid/_link/_feeder_audit; +_null_flavour/_null_reason), the
-# CLUSTER blocks, and the ACTIVITY blocks (+action_archetype_id).
+# Per-RM-type suffix mapping: the structural nodes — ELEMENT, CLUSTER
+# (simplified_formats master05 §ELEMENT, §CLUSTER). Exercised functionally on
+# the official Test_all_types template (cnf.opt.maximal): a FLAT commit is read
+# back canonical and the ELEMENT (leaf name + value) and nested-CLUSTER
+# structural mappings are asserted. Leaves: content[0] OBSERVATION items[0]
+# ELEMENT (at0004); content[1] EVALUATION items[5] CLUSTER (at0006) nesting
+# cluster_2/cluster_3/text_2 down to a DV_TEXT leaf.
 id: SF-MAP-structure
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: ELEMENT
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  ELEMENT maps /_null_flavour, /_null_reason and the shared RM-attribute paths;
-  CLUSTER maps the RM-attribute paths; ACTIVITY maps /timing and
-  /action_archetype_id.
-description: "ELEMENT/CLUSTER/ACTIVITY suffix mapping (master05)"
+  ELEMENT maps its FLAT leaf to an ELEMENT carrying name + value; nested CLUSTER
+  path segments map to nested CLUSTER RM nodes terminating in a leaf ELEMENT.
+description: "ELEMENT/CLUSTER structural mapping (master05)"
 spec_refs:
   - "ITS-REST simplified_formats master05 §ELEMENT"
   - "ITS-REST simplified_formats master05 §CLUSTER"
-  - "ITS-REST simplified_formats master05 §ACTIVITY"
   - "RM data_structures §ELEMENT"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items"
-decision_table:
-  columns: ["rm_type", "suffix", "rm_path", "flat_type", "required"]
-  rows:
-    - ["ELEMENT", "/_null_flavour", "null_flavour", "DV_CODED_TEXT", "no"]
-    - ["ELEMENT", "/_null_reason", "null_reason", "DV_TEXT", "no"]
-    - ["ELEMENT", "/_link:i", "links", "LINK", "no"]
-    - ["ELEMENT", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
-    - ["ELEMENT", "/_uid", "uid.value", "STRING", "no"]
-    - ["CLUSTER", "/_link:i", "links", "LINK", "no"]
-    - ["CLUSTER", "/_feeder_audit", "feeder_audit", "FEEDER_AUDIT", "no"]
-    - ["CLUSTER", "/_uid", "uid.value", "STRING", "no"]
-    - ["ACTIVITY", "/timing", "timing", "DV_PARSABLE", "no"]
-    - ["ACTIVITY", "/action_archetype_id", "action_archetype_id", "STRING", "no"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # ELEMENT wraps name + value (master05 §ELEMENT)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/_type", equals: "ELEMENT" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/name/value", exists: true }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/value", equals: "text value" }
+      # Nested CLUSTER path -> nested CLUSTER RM nodes (master05 §CLUSTER)
+      - { assert: field, path: "content[1]/data/items[5]/_type", equals: "CLUSTER" }
+      - { assert: field, path: "content[1]/data/items[5]/items[0]/items[0]/items[0]/value/value", equals: "text 2 3" }

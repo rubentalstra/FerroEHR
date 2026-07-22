@@ -72,6 +72,10 @@
           "adl2-text"
         ]
       },
+      "template_id": {
+        "type": "string",
+        "minLength": 1
+      },
       "rm_versions": {
         "type": "array",
         "items": {

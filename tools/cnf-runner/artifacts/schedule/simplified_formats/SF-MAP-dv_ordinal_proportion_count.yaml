@@ -1,20 +1,24 @@
 # Per-RM-type suffix mapping: the numeric-with-ranges family — DV_ORDINAL,
 # DV_PROPORTION, DV_COUNT (simplified_formats master05 §DV_ORDINAL,
-# §DV_PROPORTION, §DV_COUNT). Vectors: the DV_ORDINAL blocks (code/value/ordinal;
-# +normal_range/other_reference_ranges), DV_PROPORTION blocks (numerator/
-# denominator/type; +bare-magnitude/status/accuracy/ranges), DV_COUNT blocks
-# (bare value; +status/accuracy/ranges). Note the bare (empty-suffix) value for
-# DV_PROPORTION/DV_COUNT.
+# §DV_PROPORTION, §DV_COUNT). Exercised functionally on the official
+# Test_all_types template (cnf.opt.maximal): a FLAT commit carrying the
+# ordinal/proportion_any/count leaves is read back canonical and the RM paths
+# the |code/|value/|ordinal, |numerator/|denominator/|type and bare-magnitude
+# suffixes map to are asserted. Leaves: content[0] OBSERVATION items[9]
+# DV_ORDINAL (at0013), items[15] DV_PROPORTION (at0022), items[4] DV_COUNT
+# (at0008).
 id: SF-MAP-dv_ordinal_proportion_count
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
+sm_operation: I_EHR_COMPOSITION.create_composition
 rm_class: DV_ORDINAL
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
   The DV_ORDINAL, DV_PROPORTION and DV_COUNT FLAT suffixes map to their
-  documented RM paths, including the bare (empty-suffix) magnitude value for
-  DV_PROPORTION/DV_COUNT and the shared reference-range RM-attribute paths.
+  documented RM paths: DV_ORDINAL |ordinal -> value and |code ->
+  symbol/defining_code/code_string; DV_PROPORTION |numerator/|denominator/|type;
+  DV_COUNT bare value -> magnitude.
 description: "DV_ORDINAL/DV_PROPORTION/DV_COUNT suffix mapping (master05)"
 spec_refs:
   - "ITS-REST simplified_formats master05 §DV_ORDINAL"
@@ -22,32 +26,33 @@ spec_refs:
   - "ITS-REST simplified_formats master05 §DV_COUNT"
   - "RM data_types §DV_ORDINAL"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/content[openEHR-EHR-OBSERVATION.body_temperature.v1]/data/events/data/items/value"
-decision_table:
-  columns: ["rm_type", "suffix", "rm_path", "required"]
-  rows:
-    - ["DV_ORDINAL", "|code", "symbol.defining_code.code_string", "yes"]
-    - ["DV_ORDINAL", "|value", "symbol.value", "conditional"]
-    - ["DV_ORDINAL", "|ordinal", "value", "conditional"]
-    - ["DV_ORDINAL", "/_normal_range", "normal_range", "no"]
-    - ["DV_ORDINAL", "/_other_reference_ranges:i", "_other_reference_ranges", "no"]
-    - ["DV_PROPORTION", "|numerator", "numerator", "yes"]
-    - ["DV_PROPORTION", "|denominator", "denominator", "yes"]
-    - ["DV_PROPORTION", "|type", "type", "yes"]
-    - ["DV_PROPORTION", "|precision", "precision", "no"]
-    - ["DV_PROPORTION", "", "magnitude", "no"]
-    - ["DV_PROPORTION", "|magnitude_status", "magnitude_status", "no"]
-    - ["DV_PROPORTION", "|accuracy", "accuracy", "no"]
-    - ["DV_PROPORTION", "|accuracy_is_percent", "accuracy_is_percent", "no"]
-    - ["DV_PROPORTION", "|normal_status", "normal_status.code_string", "no"]
-    - ["DV_PROPORTION", "/_normal_range", "normal_range", "no"]
-    - ["DV_PROPORTION", "/_other_reference_ranges:i", "_other_reference_ranges", "no"]
-    - ["DV_COUNT", "", "magnitude", "yes"]
-    - ["DV_COUNT", "|magnitude_status", "magnitude_status", "no"]
-    - ["DV_COUNT", "|normal_status", "normal_status.code_string", "no"]
-    - ["DV_COUNT", "|accuracy", "accuracy", "no"]
-    - ["DV_COUNT", "|accuracy_is_percent", "accuracy_is_percent", "no"]
-    - ["DV_COUNT", "/_normal_range", "normal_range", "no"]
-    - ["DV_COUNT", "/_other_reference_ranges:i", "_other_reference_ranges", "no"]
+requires:
+  server: any
+  templates: [cnf.opt.maximal]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.flat.all_types]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-flat                       # binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version      # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-json
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      - { assert: instance_of, rm_type: COMPOSITION }
+      # DV_ORDINAL |ordinal -> value; |code -> symbol/defining_code/code_string (master05 §DV_ORDINAL)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[9]/value/_type", equals: "DV_ORDINAL" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[9]/value/value", equals: 0 }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[9]/value/symbol/defining_code/code_string", equals: "at0014" }
+      # DV_PROPORTION |numerator/|denominator/|type (master05 §DV_PROPORTION)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[15]/value/_type", equals: "DV_PROPORTION" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[15]/value/numerator", equals: 90.07 }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[15]/value/denominator", equals: 50.85 }
+      # DV_COUNT bare value -> magnitude (master05 §DV_COUNT)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[4]/value/_type", equals: "DV_COUNT" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[4]/value/magnitude", equals: 6 }

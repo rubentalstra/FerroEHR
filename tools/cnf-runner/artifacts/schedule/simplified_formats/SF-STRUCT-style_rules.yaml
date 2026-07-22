@@ -5,6 +5,11 @@
 # used throughout (even at 0..1 / 1..1), and empty objects are omitted. This
 # content decision table encodes each rule. Vector: the master04 Structured
 # format example JSON block.
+# TODO: convert to a functional STRUCTURED commit + read-back against
+#       cnf.opt.maximal asserting the six master04 Structured syntax rules on the
+#       wt-structured read-back; the current content decision-table shape is a
+#       documentation table the interpreter commits against the removed
+#       body_temperature carrier and 422s.
 id: SF-STRUCT-style_rules
 kind: content
 component: SIMPLIFIED_FORMATS

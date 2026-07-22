@@ -346,7 +346,19 @@ pub(crate) async fn middleware(
                     .get::<MatchedPath>()
                     .map(|m| m.as_str().to_owned());
                 let class = rbac.class_for(req.method(), matched.as_deref());
-                if let RbacDecision::Deny(reason) = rbac.decide(class, &principal.roles) {
+                // The coarse class gate, then the read-only restriction: a
+                // principal carrying the configured read-only role is refused on
+                // every write operation, overriding any grant. Both denials share
+                // the one 403 path below (no openEHR spec governs role semantics
+                // — our own design/extension).
+                let decision = match rbac.decide(class, &principal.roles) {
+                    RbacDecision::Deny(reason) => RbacDecision::Deny(reason),
+                    RbacDecision::Allow => {
+                        let is_write = rbac.is_write_for(req.method(), matched.as_deref());
+                        rbac.decide_readonly(is_write, &principal.roles)
+                    }
+                };
+                if let RbacDecision::Deny(reason) = decision {
                     metrics::counter!(
                         ehrbase::telemetry::prometheus::AUTH_FAILURES,
                         "mechanism" => mechanism_label(principal.method),

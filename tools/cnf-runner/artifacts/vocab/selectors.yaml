@@ -20,3 +20,6 @@ universal_outcomes:
   forbidden:
     status: 403
     source: "ITS-REST overview Requests_and_responses (HTTP status codes: 403 forbidden) — route-table-wide, never per binding"
+  unsupported_media:
+    status: 415
+    source: "ITS-REST overview Requests_and_responses (HTTP status codes: 415 Unsupported Media Type) — route-table-wide, never per binding"

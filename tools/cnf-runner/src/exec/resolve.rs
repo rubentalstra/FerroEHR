@@ -52,6 +52,11 @@ pub struct Resolver<'a> {
     fixture: Option<FixtureEntry>,
     /// The case's `rm_class` (content cases: the generated instance type).
     rm_class: Option<String>,
+    /// The bound case id (scopes the deterministic-id recipes).
+    case_id: String,
+    /// The bound case's constraint template id (content carrier stamping):
+    /// the manifest `template_id` of the first `requires.templates` key.
+    content_template_id: Option<String>,
     row_index: usize,
 }
 
@@ -74,12 +79,21 @@ impl<'a> Resolver<'a> {
             row: None,
             fixture: None,
             rm_class: None,
+            case_id: String::new(),
+            content_template_id: None,
             row_index: 0,
         }
     }
 
     /// Bind the resolver to a case row (matrix or fixture iteration).
     pub fn bind_row(&mut self, case: &CaseCore, row: usize) {
+        self.case_id = case.id.to_string();
+        self.content_template_id = case.requires.templates.first().map(|key| {
+            self.manifest
+                .get(key)
+                .and_then(|entry| entry.template_id.clone())
+                .unwrap_or_else(|| key.to_string())
+        });
         self.row_index = row;
         self.row = case
             .parameters
@@ -96,6 +110,12 @@ impl<'a> Resolver<'a> {
             .and_then(|p| p.fixture_set.as_ref())
             .and_then(|fs| fs.get(row).cloned());
         self.rm_class.clone_from(&case.rm_class);
+    }
+
+    /// The declared corpus format of a manifest key (upload routing).
+    #[must_use]
+    pub fn corpus_format(&self, key: &CorpusKey) -> Option<crate::vocab::CorpusFormat> {
+        self.manifest.get(key).map(|entry| entry.format)
     }
 
     /// The current row's index.
@@ -194,9 +214,10 @@ impl<'a> Resolver<'a> {
         }
         let data = self.data_set(key)?;
         match view.as_str() {
-            // cnf.flat.vitals.minimal_ctx#temperature_magnitude
-            "temperature_magnitude" => data
-                .get("vitals/body_temperature:0/any_event:0/temperature|magnitude")
+            // cnf.flat.vitals.minimal_ctx#current_state_code (the official
+            // minimal_action FLAT instance's ACTION state leaf)
+            "current_state_code" => data
+                .get("minimal/minimal:0/ism_transition/current_state|code")
                 .cloned()
                 .ok_or_else(|| ResolveError::View {
                     key: key.clone(),
@@ -218,6 +239,12 @@ impl<'a> Resolver<'a> {
             // driver evaluates.
             "magnitude_ge_140_by_uid" | "magnitude_ge_140" => {
                 Ok(serde_json::json!({ "systolic_min": 140, "order": "uid" }))
+            }
+            // the whole committed set, uid-ascending (bag/order anchors)
+            "all_uids_asc" => Ok(serde_json::json!({ "systolic_min": 0, "order": "uid" })),
+            // ORDER BY systolic DESC LIMIT 3 — the top of the 100+10k ladder
+            "top3_systolic_desc_uids" => {
+                Ok(serde_json::json!({ "systolic_min": 0, "order": "systolic_desc", "limit": 3 }))
             }
             other => Err(ResolveError::View {
                 key: key.clone(),
@@ -248,7 +275,10 @@ impl<'a> Resolver<'a> {
                     Some(MatrixCell::Null | MatrixCell::Absent) | None => Ok(Value::Null),
                     Some(MatrixCell::Provided) => {
                         // `provided` in an id column: deterministic synthesis.
-                        Ok(Value::String(recipes::deterministic_ehr_id(self.row_index)))
+                        Ok(Value::String(recipes::deterministic_ehr_id(
+                            &self.case_id,
+                            self.row_index,
+                        )))
                     }
                 }
             }
@@ -280,7 +310,7 @@ impl<'a> Resolver<'a> {
                     items.iter().cloned().map(Value::String).collect(),
                 )),
                 Some(Captured::Body(v)) => Ok(v.clone()),
-                Some(Captured::InstantMs(ms)) => Ok(Value::Number((*ms).into())),
+                Some(Captured::InstantMs { hi, .. }) => Ok(Value::Number((*hi).into())),
                 None if *optional => Ok(Value::Null),
                 None => Err(ResolveError::Vars(format!("capture {name} is not bound"))),
             },
@@ -299,7 +329,16 @@ impl<'a> Resolver<'a> {
                     let rm_class = self.rm_class.clone().ok_or_else(|| {
                         ResolveError::Row("content_instance without an rm_class".to_owned())
                     })?;
-                    Ok(recipes::content_instance(&rm_class, columns, cells))
+                    let template_id = self
+                        .content_template_id
+                        .clone()
+                        .unwrap_or_else(|| "cnf.minimal_event".to_owned());
+                    Ok(recipes::content_instance(
+                        &rm_class,
+                        &template_id,
+                        columns,
+                        cells,
+                    ))
                 }
                 "ehr_status" => {
                     let (columns, cells) = self.row.as_ref().ok_or_else(|| {
@@ -308,7 +347,8 @@ impl<'a> Resolver<'a> {
                         )
                     })?;
                     let bound = BoundRow { columns, cells };
-                    Ok(recipes::ehr_status(&bound, self.row_index)?.unwrap_or(Value::Null))
+                    Ok(recipes::ehr_status(&self.case_id, &bound, self.row_index)?
+                        .unwrap_or(Value::Null))
                 }
                 _ => Err(ResolveError::UnknownRecipe(name.clone())),
             },

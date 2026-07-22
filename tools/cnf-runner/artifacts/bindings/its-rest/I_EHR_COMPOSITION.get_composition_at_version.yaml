@@ -13,3 +13,4 @@ outcomes:
     headers: { Content-Type: negotiated }
   ok_empty: { status: 204 }               # deleted at requested time (composition_get.yaml)
   not_found: { status: 404 }
+server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks

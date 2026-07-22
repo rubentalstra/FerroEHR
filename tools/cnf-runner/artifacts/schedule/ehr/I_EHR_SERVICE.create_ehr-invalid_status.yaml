@@ -24,7 +24,7 @@ parameters:
     - { data_set: cnf.ehr_status.invalid.missing-is-queryable, expected: validation_failed, defect: "RM/Schema: is_queryable is mandatory" }
     - { data_set: cnf.ehr_status.invalid.missing-is-modifiable, expected: validation_failed, defect: "RM/Schema: is_modifiable is mandatory" }
     - { data_set: cnf.ehr_status.invalid.missing-subject, expected: validation_failed, defect: "RM/Schema: subject is mandatory" }
-    - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: validation_failed, defect: "ITEM_TREE without its mandatory name" }
+    - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: validation_failed, defect: "EHR_STATUS carries no _type discriminator" }
 flow:
   - step: 1
     call: create_ehr

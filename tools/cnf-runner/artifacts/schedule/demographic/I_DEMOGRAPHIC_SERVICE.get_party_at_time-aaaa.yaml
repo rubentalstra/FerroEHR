@@ -27,12 +27,14 @@ flow:
     call: I_DEMOGRAPHIC_SERVICE.create_party
     with: { party: "${ds:cnf.demographic.person.v1}" }
     expect: created
-    capture: { versioned_object_uid: created.versioned_object_uid }
+    capture:
+      versioned_object_uid: created.versioned_object_uid
+      t0: created.commit_time
   - step: 2
     call: get_party_at_time
     with:
       versioned_object_uid: "${versioned_object_uid}"
-      version_at_time: "2026-07-21T00:00:00Z"
+      version_at_time: "${time:after(t0)}"   # after the captured commit window -> the created version
     expect: ok
     assert:
       - { assert: instance_of, rm_type: PERSON }

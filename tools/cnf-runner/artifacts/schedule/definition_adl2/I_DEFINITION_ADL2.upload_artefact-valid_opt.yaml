@@ -22,8 +22,8 @@ requires: { server: empty }
 parameters:
   iteration: reset_per_row
   fixture_set:
-    - { data_set: cnf.adl2.opt.minimal, expected: created }
-    - { data_set: cnf.adl2.opt.vitals, expected: created }
+    - { data_set: cnf.adl2.opt.minimal_b, expected: created }
+    - { data_set: cnf.adl2.opt.minimal_c, expected: created }
 flow:
   - step: 1
     call: upload_artefact

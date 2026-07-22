@@ -19,16 +19,16 @@ spec_refs:
   - "ITS-REST definition_template_adl2_upload §409 Conflict"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
-data_sets: [cnf.adl2.opt.minimal]
+data_sets: [cnf.adl2.opt.minimal_d]
 flow:
   - step: 1
     call: upload_artefact
-    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal}" }
+    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal_d}" }
     expect: created
     capture: { template_id: created.template_id }
   - step: 2
     call: upload_artefact
-    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal}" }
+    with: { opt_adl2: "${ds:cnf.adl2.opt.minimal_d}" }
     expect: already_exists
 postconditions:
   - assert: state

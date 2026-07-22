@@ -24,14 +24,14 @@ spec_refs:
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
-  templates: [cnf.opt.vitals]
+  templates: [cnf.opt.maximal]
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.sf.flat.raw_quantity]
+data_sets: [cnf.flat.all_types.raw]      # quantity leaf supplied via the |raw embedded canonical DV_QUANTITY
 flow:
   - step: 1
     call: create_composition
     format: wt-flat                       # binding adds openehr-template-id
-    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.sf.flat.raw_quantity}" }
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.flat.all_types.raw}" }
     expect: created
     capture: { version_uid: created.version_uid }
   - step: 2
@@ -41,5 +41,7 @@ flow:
     expect: ok
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }
-      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/magnitude", exists: true }
-      - { assert: field, path: "content[0]/data/events[0]/data/items[0]/value/units", exists: true }
+      # |raw DV_QUANTITY decomposed onto the RM leaf (content[0] OBSERVATION items[3], at0007)
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/_type", equals: "DV_QUANTITY" }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/magnitude", equals: 72.5 }
+      - { assert: field, path: "content[0]/data/events[0]/data/items[3]/value/units", equals: "mg" }

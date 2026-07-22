@@ -660,3 +660,150 @@ fn event_composition_context_follows_explicit_ctx_input() {
         "setting defaults to openehr 238 other care (master06 §setting)"
     );
 }
+
+// ── direct RM-attribute paths the OPT leaves unconstrained ───────────────────
+//
+// master05-rm_mapping.adoc lists RM-level attributes addressable directly on a
+// node regardless of whether the OPT constrains them. The compacted
+// web-template carries no child for the ones the OPT leaves unconstrained (e.g.
+// `ACTION/ism_transition`, `ACTION/time`), so the FLAT builder must build them
+// from their datum sub-tree — not reject them as unknown paths. Oracle: the CNF
+// Robot `minimal_action.en.v1` template + its FLAT instance shape (master05
+// §§ACTION, ISM_TRANSITION and the worked JSON examples).
+
+fn minimal_action_wt() -> WebTemplate {
+    let opt_xml = std::fs::read_to_string(format!(
+        "{CNF_CORPUS}/valid_templates/minimal/minimal_action.opt"
+    ))
+    .unwrap_or_else(|e| panic!("read minimal_action OPT: {e}"));
+    let opt = opt14::from_xml(&opt_xml).unwrap_or_else(|e| panic!("parse OPT: {e}"));
+    build_web_template(&opt).unwrap_or_else(|e| panic!("build WT: {e}"))
+}
+
+/// The FLAT instance shape of the vendored CNF Robot fixture
+/// `vitals.minimal_ctx.json`: an `ism_transition/current_state` (code + value +
+/// terminology) plus `time`, addressed on the ACTION content node (`minimal:0`).
+fn minimal_action_flat() -> serde_json::Map<String, Value> {
+    let mut flat = serde_json::Map::new();
+    flat.insert("ctx/language".to_owned(), Value::String("en".into()));
+    flat.insert("ctx/territory".to_owned(), Value::String("US".into()));
+    flat.insert(
+        "ctx/composer_name".to_owned(),
+        Value::String("Dr. Marcus Johnson".into()),
+    );
+    flat.insert(
+        "minimal/minimal:0/ism_transition/current_state|code".to_owned(),
+        Value::String("532".into()),
+    );
+    flat.insert(
+        "minimal/minimal:0/ism_transition/current_state|value".to_owned(),
+        Value::String("completed".into()),
+    );
+    flat.insert(
+        "minimal/minimal:0/ism_transition/current_state|terminology".to_owned(),
+        Value::String("openehr".into()),
+    );
+    flat.insert(
+        "minimal/minimal:0/time".to_owned(),
+        Value::String("2019-03-22T22:26:01.127+01:00".into()),
+    );
+    flat
+}
+
+/// The ACTION content node's `ism_transition` (`current_state|code`/`|value`)
+/// builds a real DV_CODED_TEXT — not the synthesized `initial` (524) default
+/// (master05 §ACTION `/ism_transition`; §ISM_TRANSITION `/current_state` +
+/// the worked JSON example block).
+#[test]
+fn action_ism_transition_from_flat_builds_supplied_state() {
+    let wt = minimal_action_wt();
+    assert_eq!(wt.tree.id, "minimal", "fixture root segment is `minimal`");
+
+    let rm = composition_from_flat(&minimal_action_flat(), &wt, NOW)
+        .expect("ism_transition path keys are accepted, not rejected");
+
+    let ism = rm
+        .pointer("/content/0/ism_transition")
+        .expect("ACTION carries the built ism_transition");
+    assert_eq!(
+        ism.pointer("/current_state/_type").and_then(Value::as_str),
+        Some("DV_CODED_TEXT")
+    );
+    assert_eq!(
+        ism.pointer("/current_state/value").and_then(Value::as_str),
+        Some("completed"),
+        "the supplied |value stands"
+    );
+    assert_eq!(
+        ism.pointer("/current_state/defining_code/code_string")
+            .and_then(Value::as_str),
+        Some("532"),
+        "the supplied |code stands — not the synthesized initial (524) default"
+    );
+    assert_eq!(
+        ism.pointer("/current_state/defining_code/terminology_id/value")
+            .and_then(Value::as_str),
+        Some("openehr")
+    );
+    // ACTION/time (master05 §ACTION `/time`, DV_DATE_TIME) is likewise built.
+    assert_eq!(
+        rm.pointer("/content/0/time/value").and_then(Value::as_str),
+        Some("2019-03-22T22:26:01.127+01:00"),
+        "ACTION/time is built from its datum, not defaulted"
+    );
+    assert!(
+        is_valid_rm(&rm),
+        "the rebuilt ACTION composition deserialises as openehr-rm: {rm}"
+    );
+}
+
+/// canonical → FLAT → canonical stability for an ACTION `ism_transition`: the
+/// reverse (RM → FLAT) emits the `ism_transition` sub-paths symmetrically, so
+/// the state survives a round-trip (master05 §ISM_TRANSITION).
+#[test]
+fn action_ism_transition_round_trip_stable() {
+    let wt = minimal_action_wt();
+    // rm1 is the canonical composition (built once from the FLAT fixture).
+    let rm1 = composition_from_flat(&minimal_action_flat(), &wt, NOW).expect("from_flat");
+
+    let flat1 = composition_to_flat(&rm1, &wt).expect("to_flat");
+    assert!(
+        flat1
+            .keys()
+            .any(|k| k.ends_with("/ism_transition/current_state|code")),
+        "the reverse direction emits the ism_transition sub-paths: {:?}",
+        flat1.keys().collect::<Vec<_>>()
+    );
+
+    let rm2 = composition_from_flat(&flat1, &wt, NOW).expect("from_flat again");
+    assert_eq!(
+        rm1.pointer("/content/0/ism_transition"),
+        rm2.pointer("/content/0/ism_transition"),
+        "ism_transition is stable across canonical→FLAT→canonical"
+    );
+    assert_eq!(
+        rm1.pointer("/content/0/time"),
+        rm2.pointer("/content/0/time"),
+        "ACTION/time is stable across the round-trip"
+    );
+}
+
+/// A genuinely unknown segment on the ACTION node is still rejected — the fix
+/// admits only the master05-listed RM paths for the node's RM type, never a
+/// blanket accept (master04 §Validation: "Field identifiers match WT metadata
+/// structure").
+#[test]
+fn bogus_action_segment_is_still_rejected() {
+    let wt = minimal_action_wt();
+    let mut flat = minimal_action_flat();
+    flat.insert(
+        "minimal/minimal:0/not_a_real_rm_attribute".to_owned(),
+        Value::String("x".into()),
+    );
+    let err = composition_from_flat(&flat, &wt, NOW)
+        .expect_err("an unknown ACTION segment must still be rejected");
+    assert!(
+        matches!(err, openehr_flat::error::FlatError::UnknownPath(ref p) if p.contains("not_a_real_rm_attribute")),
+        "the rejection is an UnknownPath naming the offending segment: {err}"
+    );
+}

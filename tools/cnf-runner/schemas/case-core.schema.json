@@ -274,6 +274,7 @@
         "server": {
           "enum": [
             "empty",
+            "exclusive",
             "any"
           ]
         },

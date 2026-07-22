@@ -181,6 +181,12 @@ impl Requires {
         {
             handles.push(handle);
         }
+        // a provisioned FOLDER tree publishes its created VERSION uid
+        if self.directory.is_some()
+            && let Ok(handle) = CaptureName::parse("directory_version_uid")
+        {
+            handles.push(handle);
+        }
         handles
     }
 }

@@ -353,6 +353,89 @@ fn coded_value_external_terminology_is_skipped() {
     assert!(walk_only(&external, &n).is_empty());
 }
 
+/// AOM 1.4 `AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
+/// §`C_CODED_TEXT` (the AOM1.4 form of `C_CODE_PHRASE`): the `code_list` is "a
+/// list of codes FROM the terminology", so a `C_CODE_PHRASE` that EXPLICITLY binds to
+/// the archetype-`local` terminology admits only local codes in its closed
+/// list. A `defining_code` from a different terminology (here SNOMED-CT) is a
+/// violation — the enforcement the `coded_terminology_local` node flag drives.
+#[test]
+fn coded_value_explicit_local_rejects_foreign_terminology() {
+    let mut n = coded_node(&["ABC", "OPQ"]);
+    n.coded_terminology_local = true;
+    // Foreign terminology (SNOMED-CT) against an explicit-local closed list.
+    let foreign = json!({
+        "_type": "DV_CODED_TEXT", "value": "snomed",
+        "defining_code": {"_type": "CODE_PHRASE",
+            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "SNOMED-CT"},
+            "code_string": "82272006"}
+    });
+    assert_eq!(
+        kinds(&walk_only(&foreign, &n)),
+        vec![ValidationKind::CodedValue],
+        "an explicit-local closed C_CODE_PHRASE must reject a foreign-terminology code"
+    );
+    // A local code in the list is clean.
+    let good = json!({
+        "_type": "DV_CODED_TEXT", "value": "abc",
+        "defining_code": {"_type": "CODE_PHRASE",
+            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
+            "code_string": "ABC"}
+    });
+    assert!(walk_only(&good, &n).is_empty());
+    // A local code NOT in the list is still rejected.
+    let bad_local = json!({
+        "_type": "DV_CODED_TEXT", "value": "zzz",
+        "defining_code": {"_type": "CODE_PHRASE",
+            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
+            "code_string": "ZZZ"}
+    });
+    assert_eq!(
+        kinds(&walk_only(&bad_local, &n)),
+        vec![ValidationKind::CodedValue]
+    );
+}
+
+/// A `DV_QUANTITY` leaf node carrying a `unit` input list plus the constrained
+/// `property` code.
+fn quantity_property_node(property: &str) -> WebTemplateNode {
+    let mut n = node("DV_QUANTITY", "/q");
+    // A property-only constraint (no enumerated C_QUANTITY_ITEM unit list) — the
+    // template case that leaves `units` constrained solely via the property.
+    n.inputs = vec![
+        WebTemplateInput::new(WebTemplateInputType::Decimal, Some("magnitude")),
+        WebTemplateInput::new(WebTemplateInputType::Text, Some("unit")),
+    ];
+    n.quantity_property = Some(property.to_owned());
+    n
+}
+
+/// AOM 1.4 `AM/docs/UML/classes/org.openehr.am.aom14.c_quantity.adoc`
+/// §`C_QUANTITY`: `property` is the physical property the Quantities are
+/// constrained to. When no unit list is enumerated, the instance's `units` must
+/// belong to that property's unit set (grounded on the openEHR
+/// `PropertyUnitData.xml` property↔unit table). Property `122` = Length; a
+/// mass unit ("mg") is not a Length unit.
+#[test]
+fn quantity_property_units_membership() {
+    let n = quantity_property_node("122"); // Length
+    let bad = json!({"_type": "DV_QUANTITY", "magnitude": 0.0, "units": "mg"});
+    assert_eq!(
+        kinds(&walk_only(&bad, &n)),
+        vec![ValidationKind::CodedValue],
+        "a mass unit must be rejected against the Length property"
+    );
+    // A Length unit (symbol "cm", or the UCUM "cm") is accepted.
+    let good = json!({"_type": "DV_QUANTITY", "magnitude": 1.0, "units": "cm"});
+    assert!(walk_only(&good, &n).is_empty());
+    let good_m = json!({"_type": "DV_QUANTITY", "magnitude": 1.0, "units": "m"});
+    assert!(walk_only(&good_m, &n).is_empty());
+    // An unknown property code constrains nothing (empty unit set → no check).
+    let no_prop = quantity_property_node("999999");
+    let any = json!({"_type": "DV_QUANTITY", "magnitude": 1.0, "units": "mg"});
+    assert!(walk_only(&any, &no_prop).is_empty());
+}
+
 // ── type conformance ─────────────────────────────────────────────────────────────
 
 #[test]
@@ -610,6 +693,29 @@ fn dv_ordered_bad_normal_status_reported() {
         "normal_status": code_phrase("openehr", "N"),
     });
     assert!(!kinds(&validate_rm_and_terminology(&good)).contains(&ValidationKind::Terminology));
+}
+
+/// BASE `master06-time_types.adoc` §Primitive Time Types ("in openEHR, only
+/// fractional seconds are supported"): a `DV_DURATION` whose value carries a
+/// decimal fraction on any component other than seconds fails its `Value_valid`
+/// RM invariant, surfaced through the composition RM-invariant pass.
+#[test]
+fn dv_duration_fractional_non_seconds_rejected() {
+    for bad in ["P1Y3M4DT2.5H", "PT2H14.5M"] {
+        let inst = json!({"_type": "DV_DURATION", "value": bad});
+        let msgs = validate_rm_and_terminology(&inst);
+        assert!(
+            msgs.iter()
+                .any(|m| m.kind == ValidationKind::Invariant && m.message.contains("Value_valid")),
+            "duration {bad} must fail Value_valid, got {msgs:?}"
+        );
+    }
+    // A fraction on the seconds component is valid.
+    let good = json!({"_type": "DV_DURATION", "value": "PT2H30M0.5S"});
+    assert!(
+        !kinds(&validate_rm_and_terminology(&good)).contains(&ValidationKind::Invariant),
+        "a fractional-seconds duration must be accepted"
+    );
 }
 
 // ── AOM 1.4 C_ATTRIBUTE.existence ───────────────────────────────────────

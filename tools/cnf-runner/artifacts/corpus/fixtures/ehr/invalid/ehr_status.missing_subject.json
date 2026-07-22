@@ -1,10 +1,9 @@
 {
   "_type": "EHR_STATUS",
-  "name": {
-    "_type": "DV_TEXT",
-    "value": "ehr status"
-  },
   "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
-  "is_queryable": true,
-  "is_modifiable": true
+  "name": {
+    "value": "EHR Status"
+  },
+  "is_modifiable": true,
+  "is_queryable": true
 }

@@ -209,6 +209,29 @@ pub struct WebTemplateNode {
     #[serde(skip)]
     pub tz_validity: Option<i32>,
 
+    /// `C_QUANTITY.property` openEHR `property`-group code (e.g. `"122"` =
+    /// Length) on a `DV_QUANTITY` leaf whose constraint carries a `property` but
+    /// no enumerated `C_QUANTITY_ITEM` unit list. The instance's `units` must
+    /// then belong to that property's unit set — resolved against the openEHR
+    /// `PropertyUnitData.xml` property↔unit table (`openehr_term::bundle`).
+    /// Validation-only; `#[serde(skip)]`.
+    #[serde(skip)]
+    pub quantity_property: Option<String>,
+
+    /// True when this leaf's coded constraint (a `DV_CODED_TEXT` `defining_code`
+    /// or a bare `CODE_PHRASE`) is a `C_CODE_PHRASE` that **explicitly** names
+    /// the archetype-`local` terminology with a non-empty closed `code_list`.
+    /// The builder strips the implicit/default `local` from
+    /// [`WebTemplateInput::terminology`] (so it never reaches the wt+json
+    /// document), losing the distinction between "explicitly local" and "no
+    /// terminology named"; this flag preserves the explicit-local signal so the
+    /// validator can reject a foreign-terminology instance code
+    /// (`AM/docs/UML/classes/org.openehr.am.aom14.c_coded_text.adoc`
+    /// §C_CODED_TEXT: the `code_list` is scoped to the named terminology).
+    /// Validation-only; `#[serde(skip)]`.
+    #[serde(skip)]
+    pub coded_terminology_local: bool,
+
     /// `C_CODE_PHRASE` code lists on coded RM attributes the `inputs` mapping
     /// does not model (e.g. `DV_MULTIMEDIA.media_type`). `defining_code` is
     /// excluded (already covered by the coded-text `inputs`).
@@ -301,6 +324,8 @@ impl WebTemplateNode {
             numeric_lists: Vec::new(),
             duration_range: None,
             tz_validity: None,
+            quantity_property: None,
+            coded_terminology_local: false,
             code_lists: Vec::new(),
             closed_attributes: Vec::new(),
             structural_stubs: Vec::new(),
