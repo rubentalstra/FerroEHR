@@ -32,3 +32,5 @@ decision_table:
     - [null, null, true, true, true, false, rejected, ["rm_invariant(lower_included_valid): lower_included must be false when lower is unbounded"]]
     - [0, null, false, true, false, true, rejected, ["rm_invariant(upper_included_valid): upper_included must be false when upper is unbounded"]]
     - [200, 100, false, false, true, true, rejected, ["rm_invariant(limits_consistent): lower must not exceed upper"]]
+    - [null, 100, false, false, false, true, rejected, ["rm_schema: lower bound absent while lower_unbounded is false (BASE Interval: a false unbounded flag asserts a finite bound; ITS-JSON requires the boundary flags)"]]
+    - [0, null, false, false, true, false, rejected, ["rm_schema: upper bound absent while upper_unbounded is false (BASE Interval: a false unbounded flag asserts a finite bound; ITS-JSON requires the boundary flags)"]]
