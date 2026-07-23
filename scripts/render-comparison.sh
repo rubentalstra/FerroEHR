@@ -197,7 +197,9 @@ JV_STRESS="$JV/stress.json"
 # step at the maximum sustainable rate; its worst per-operation p99 and its
 # sampled resource peaks summarize the knee honestly.
 mst() { jq -r '.max_sustainable_throughput_per_s | round' "$1"; }
-knee_p99() { jq -r '.max_sustainable_throughput_per_s as $m | [.steps[] | select(.rate == $m and .stable) | .operations[].latency_ms_p99] | max | round' "$1"; }
+# Every knee-step derivation tolerates a ZERO knee (no stable step — the
+# measured "cannot sustain the workload" case renders as an em dash).
+knee_p99() { jq -r '.max_sustainable_throughput_per_s as $m | [.steps[] | select(.rate == $m and .stable) | .operations[].latency_ms_p99] | if length == 0 then "—" else (max | round | tostring) end' "$1"; }
 knee_res() { # $1 file, $2 role, $3 field-expression over samples
   jq -r --arg role "$2" '.max_sustainable_throughput_per_s as $m
     | [.steps[] | select(.rate == $m and .stable) | .resources.containers[]? | select(.role == $role) | .samples[]'"$3"'] 
