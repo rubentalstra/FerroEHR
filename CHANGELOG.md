@@ -31,54 +31,20 @@ workflow refuses a tag that has no matching section here.
   time-series and the disk-growth chart) join the perf-assets family and
   the book's Performance chapter, drift-guarded in CI like every
   published number.
-
-### Fixed
-
-- **AQL cross-EHR queries with `LIMIT` no longer collapse under corpus
-  scale**: predicates on multi-valued (anchored) paths now lower as
-  existential semi-joins (`EXISTS` — the predicate holds when ANY matched
-  node satisfies it; deterministic where the previous first-match pick was
-  plan-dependent), the archetype anchor index leads with the RM type so
-  the whole `CONTAINS`-class + archetype boundary is one index probe, and
-  queries that never touch audit fields no longer join the audit table.
-  The measured ward-dashboard profile (p99 5.8 s at class-POC scale) drops
-  to milliseconds-per-request territory.
-- The template **example generator no longer collapses `DV_INTERVAL`
-  wrappers** onto a single constrained bound: interval-valued elements keep
-  their interval identity (bounds as `/lower`/`/upper` sub-paths per the
-  Simplified Formats mapping), fixing generated examples the platform's own
-  validation rejected (the CKM CCTA report OPT); the CNF journey catalogue
-  re-commits the CCTA imaging report.
-
-### Removed
-
-- The completed ECC→CNF cutover comparison lane: the generated
-  `docs/conformance/cnf-comparison.md`, the `cnf-runner compare-ecc`
-  subcommand, the drift gate, and the preserved ECC catalogue/map (all in
-  git history; the five deferred grounds are re-registered on the
-  catalogue-deepening tracker). The `docs/conformance/CATALOG.md` pointer
-  stub is gone with it, and the CNF 2.0 design record moved to
-  `docs/conformance/cnf-design.md` as a permanent reference document.
-
-### Changed
-
-- The CNF measured-performance workload is now a full **hospital
-  simulation**: the class cases (`PERF-hospital_sim-*`, renamed from
-  `PERF-mixed_load-*`) schedule clinical journeys — ADT
-  admission/discharge, vitals rounds, the medication loop, medicines
-  reconciliation, asynchronous laboratory/imaging order-to-result
-  pipelines, specialist/registry reporting, public-health notifications,
-  chart review, ward dashboards with a registered stored query, versioned
-  corrections, contribution audit review, workflow tagging, logical
-  deletion, and template polling — expanding into 22 measured operation
-  kinds instead of 4, each with its own HDR-V2 record. The
-  population-anchored envelope is unchanged and now validator-enforced
-  (the expanded write share must reconcile to the derivation's 10:1..50:1
-  read:write band); journey payloads commit against 15 COMPOSITION-rooted
-  openEHR CKM templates vendored with provenance.
-
-### Added
-
+- **`cnf-runner aql-probe`** — the seeded-corpus AQL optimization probe:
+  fires the measurement machinery's own AQL vocabulary against a freshly
+  seeded server, records wire-latency percentiles per probe, and
+  attributes the database-side cost per statement (`pg_stat_statements`
+  through the ixit `containers` capability, degrading honestly without
+  it). Report schema published (`aql-probe.schema.json`); exploration
+  evidence only — never a conformance record.
+- **Stress steps carry resource telemetry** — every load-ladder rung
+  records the same per-container CPU/memory/I/O series as the measured
+  class runs over its own warmup+hold window, so a breached rung shows
+  where it saturated; the stress progress stream now logs each rung's
+  verdict live (stable/BREACHED with the sustained rate, resource peaks,
+  and named breaches) plus a ladder recap, and measured class runs log
+  their verdict evidence at window end.
 - A **diurnal day-curve** arrival option for the extended 8/12-hour
   measured holds (ITU-T E.500 busy-hour semantics: the class floor is the
   busy-hour rate).
@@ -98,6 +64,62 @@ workflow refuses a tag that has no matching section here.
   (`scripts/render-conformance-assets.sh`, CI regenerate-and-diff
   guarded) and embedded on the book's conformance and comparison pages
   (both SUTs) and the landing page.
+
+### Changed
+
+- **`--skip-seed` and the sidecar corpus index are retired** (CLI flags on
+  `perf`/`stress`, the `CONF_PERF_SKIP_SEED` pipeline variable): every
+  measurement instrument now always seeds a freshly composed, empty
+  server and the stack is torn down afterwards — seed reuse bred
+  stale-state confusion.
+- **Measurement instruments settle database maintenance
+  deterministically** (`vacuumdb --analyze` through the DB container)
+  after seeding and before every measured window and stress rung —
+  a stale-statistics plan after the million-row seed cost a measured ~9×
+  on the ward-worklist query; settling moves that debt outside every
+  measured window, identically for every SUT.
+- The CNF measured-performance workload is now a full **hospital
+  simulation**: the class cases (`PERF-hospital_sim-*`, renamed from
+  `PERF-mixed_load-*`) schedule clinical journeys — ADT
+  admission/discharge, vitals rounds, the medication loop, medicines
+  reconciliation, asynchronous laboratory/imaging order-to-result
+  pipelines, specialist/registry reporting, public-health notifications,
+  chart review, ward dashboards with a registered stored query, versioned
+  corrections, contribution audit review, workflow tagging, logical
+  deletion, and template polling — expanding into 22 measured operation
+  kinds instead of 4, each with its own HDR-V2 record. The
+  population-anchored envelope is unchanged and now validator-enforced
+  (the expanded write share must reconcile to the derivation's 10:1..50:1
+  read:write band); journey payloads commit against 15 COMPOSITION-rooted
+  openEHR CKM templates vendored with provenance.
+
+### Removed
+
+- The completed ECC→CNF cutover comparison lane: the generated
+  `docs/conformance/cnf-comparison.md`, the `cnf-runner compare-ecc`
+  subcommand, the drift gate, and the preserved ECC catalogue/map (all in
+  git history; the five deferred grounds are re-registered on the
+  catalogue-deepening tracker). The `docs/conformance/CATALOG.md` pointer
+  stub is gone with it, and the CNF 2.0 design record moved to
+  `docs/conformance/cnf-design.md` as a permanent reference document.
+
+### Fixed
+
+- **AQL cross-EHR queries with `LIMIT` no longer collapse under corpus
+  scale**: predicates on multi-valued (anchored) paths now lower as
+  existential semi-joins (`EXISTS` — the predicate holds when ANY matched
+  node satisfies it; deterministic where the previous first-match pick was
+  plan-dependent), the archetype anchor index leads with the RM type so
+  the whole `CONTAINS`-class + archetype boundary is one index probe, and
+  queries that never touch audit fields no longer join the audit table.
+  The measured ward-dashboard profile (p99 5.8 s at class-POC scale) drops
+  to milliseconds-per-request territory.
+- The template **example generator no longer collapses `DV_INTERVAL`
+  wrappers** onto a single constrained bound: interval-valued elements keep
+  their interval identity (bounds as `/lower`/`/upper` sub-paths per the
+  Simplified Formats mapping), fixing generated examples the platform's own
+  validation rejected (the CKM CCTA report OPT); the CNF journey catalogue
+  re-commits the CCTA imaging report.
 
 ## [3.7.0] - 2026-07-22
 
