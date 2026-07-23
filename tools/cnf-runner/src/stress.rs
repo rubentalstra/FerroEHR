@@ -3,17 +3,17 @@
 //! throughput** (the industry headline for this procedure; TPC benchmarks
 //! call their equivalent "maximum qualified throughput" — the highest rate
 //! held inside a response-time constraint). On the latency-throughput curve
-//! this is the knee: the point past which latency departs its plateau.
+//! this is the knee: the point past which latency departs its plateau —
+//! WHERE THE SYSTEM BREAKS is the instrument's one question.
 //!
-//! This is EXPLORATION, deliberately distinct from conformance: the class
-//! runs (population-anchored floors held for the normative hour-plus
-//! windows) alone earn classes and alone write `measurements` into
-//! results.json. A stress report earns nothing, lives in its own artifact,
-//! and mentions the class floors only as context ("the measured maximum
-//! clears the class-L floor ~4×"). No openEHR spec governs stress testing —
-//! our own design/extension; the step envelope (p99 budget + a small error
-//! tolerance) is standard load-testing methodology, NOT the class cases'
-//! zero-error demand, precisely because no class claim is being made.
+//! This is EXPLORATION, deliberately distinct from conformance: it earns
+//! nothing, lives in its own artifact, never touches results.json, and its
+//! vocabulary is deliberately CLASS-FREE — the volumetric class ladder
+//! belongs to the measured class runs alone, and no class token appears in
+//! the stress CLI, report, remark, or rendered chart (a knee measures
+//! nothing about a class). No openEHR spec governs stress testing — our
+//! own design/extension; the step envelope (p99 budget + a small error
+//! tolerance) is standard load-testing methodology.
 //!
 //! Machinery-wise the instrument reuses ONLY runner-owned parts: the
 //! open-loop arrival scheduler ([`crate::perf_run::window::run_window`],
@@ -23,7 +23,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::ixit::Environment;
-use crate::perf::{OperationMeasurement, PerfClass};
+use crate::perf::OperationMeasurement;
 use crate::perf_run::client::PerfClient;
 use crate::perf_run::corpus::SeededCorpus;
 use crate::perf_run::schedule::JourneyWorkload;
@@ -45,7 +45,7 @@ pub struct StressOptions {
     /// The p99 budget every operation must hold per step (milliseconds).
     pub p99_budget_ms: f64,
     /// The error tolerance per step (fraction of requests) — standard
-    /// load-testing practice, distinct from the class cases' zero budget.
+    /// load-testing practice (no zero-error conformance demand here).
     pub error_budget: f64,
 }
 
@@ -88,22 +88,11 @@ pub struct LoadStep {
     pub resources: Option<crate::perf::ResourcesRecord>,
 }
 
-/// A class floor, as CONTEXT beside the measured maximum (never a claim).
-#[derive(Debug, Serialize, Deserialize)]
-pub struct FloorContext {
-    /// The class token.
-    pub class: PerfClass,
-    /// The class's offered-load floor (arrivals/s).
-    pub floor_per_s: f64,
-    /// Whether the measured maximum clears this floor.
-    pub cleared: bool,
-}
-
 /// The stress report — the committed exploration artifact. Never merged into
 /// results.json; earns nothing.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StressReport {
-    /// The corpus the stress ran on (a class corpus key, e.g. `cnf.scale.10k`).
+    /// The corpus the stress ran on (a scale corpus key, e.g. `cnf.scale.10k`).
     pub corpus: String,
     /// The ixit environment the stress ran in.
     pub environment: Environment,
@@ -125,10 +114,7 @@ pub struct StressReport {
     pub ladder_capped: bool,
     /// The generator topped out before the SUT did.
     pub generator_bound: bool,
-    /// The class floors as context; classes are earned EXCLUSIVELY by the
-    /// hour-long class runs, never by this report.
-    pub floors_context: Vec<FloorContext>,
-    /// The human summary, incl. the explicit class-earning disclaimer.
+    /// The human summary, incl. the explicit exploration disclaimer.
     pub remark: String,
 }
 
@@ -143,7 +129,7 @@ fn step_breaches(
         requests = requests.saturating_add(op.requests);
         errors = errors.saturating_add(op.errors);
         // Re-derive from the decoded histogram — the same discipline as the
-        // class verdicts (the summary fields are never load-bearing).
+        // measured-run verdicts (the summary fields are never load-bearing).
         let histogram = op.decode_histogram()?;
         #[allow(clippy::cast_precision_loss)] // latencies << 2^52 µs
         let p99_ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
@@ -337,24 +323,10 @@ pub fn run_stress(
         ));
     }
 
-    let floors_context: Vec<FloorContext> = PerfClass::ALL
-        .iter()
-        .map(|class| FloorContext {
-            class: *class,
-            floor_per_s: class.arrival_floor_per_s(),
-            cleared: last_good >= class.arrival_floor_per_s(),
-        })
-        .collect();
-    let cleared: Vec<&str> = floors_context
-        .iter()
-        .filter(|f| f.cleared)
-        .map(|f| f.class.token())
-        .collect();
     let remark = format!(
         "Maximum sustainable throughput ≈ {last_good:.1} arrivals/s on the {} corpus \
-         ({}s steps){}{}. Class-floor context: {} cleared. Classes are earned \
-         EXCLUSIVELY by the hour-long class runs on their own corpus scales — \
-         this stress report claims none.",
+         ({}s steps){}{}. Exploration only — never a conformance record; the first \
+         breached rung past this rate is where the system leaves the envelope.",
         corpus.corpus,
         options.step_hold_s,
         if ladder_capped {
@@ -366,11 +338,6 @@ pub fn run_stress(
             " — generator bound (the instrument topped out first)"
         } else {
             ""
-        },
-        if cleared.is_empty() {
-            "none".to_owned()
-        } else {
-            cleared.join(", ")
         },
     );
     progress(remark.clone());
@@ -386,7 +353,6 @@ pub fn run_stress(
         max_sustainable_throughput_per_s: last_good,
         ladder_capped,
         generator_bound,
-        floors_context,
         remark,
     })
 }

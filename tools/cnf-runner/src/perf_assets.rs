@@ -284,11 +284,13 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
     Ok(out)
 }
 
-/// The latency-throughput curve from a committed stress report: offered rate
-/// (x, log) vs the worst per-operation p99 (y, log, re-derived from the
-/// decoded histograms), stable and breached steps distinguished by mark AND
-/// color, the p99 budget line, the class floors as context verticals, and
-/// the maximum-sustainable-throughput marker.
+/// The latency-throughput curve from a committed stress report — WHERE THE
+/// SYSTEM BREAKS, nothing else: offered rate (x, log) vs the worst
+/// per-operation p99 (y, log, re-derived from the decoded histograms),
+/// envelope-holding steps as circles, breached steps as crosses, the p99
+/// budget line, and the maximum-sustainable-throughput marker (the knee).
+/// Deliberately class-free: the volumetric class ladder belongs to the
+/// measured class runs, and no class token appears here.
 ///
 /// # Errors
 /// A message when a histogram fails to decode.
@@ -296,7 +298,7 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
 pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, String> {
     let (width, height) = (760.0, 400.0);
     let (x0, x1) = (90.0, 700.0);
-    let (y_top, y_bottom) = (64.0, 330.0);
+    let (y_top, y_bottom) = (80.0, 330.0);
     let (min_rate, max_rate) = (1.0, 6000.0);
     let (min_ms, max_ms) = (1.0, 6000.0);
 
@@ -308,8 +310,12 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Short intense load steps ({} s hold) on the {} corpus · exploration only — classes are earned exclusively by the hour-long class runs</text>",
+        "<text x=\"24\" y=\"44\" class=\"muted\">Short intense load steps ({} s hold) on the {} corpus · exploration only — never a conformance record</text>",
         report.step_hold_s, report.corpus,
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"59\" class=\"muted\">Circles hold the envelope, crosses breach it; the dotted line is the last rate held inside the envelope — the knee.</text>"
     );
 
     let x_of = |rate: f64| log_pos(rate, min_rate, max_rate, x0, x1);
@@ -349,18 +355,6 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
         x1 - 4.0,
         budget_y - 6.0,
     );
-    // Class floors as CONTEXT verticals.
-    for floor in &report.floors_context {
-        let x = x_of(floor.floor_per_s);
-        let _ = writeln!(
-            out,
-            "<line x1=\"{x:.1}\" y1=\"{y_top}\" x2=\"{x:.1}\" y2=\"{y_bottom}\" class=\"floor\"/>\
-             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{}</text>",
-            y_top - 6.0,
-            floor.class.token(),
-        );
-    }
-
     // Steps, in rate order: worst per-operation p99 per step (re-derived).
     let mut points: Vec<(f64, f64, bool)> = Vec::new();
     for step in &report.steps {
@@ -410,14 +404,20 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
             );
         }
     }
-    // The maximum-sustainable-throughput marker.
+    // The maximum-sustainable-throughput marker; the label sits at the
+    // plot bottom (clear of any top-clamped breach crosses) and flips to
+    // the marker's left past the midline so it can never leave the canvas.
     let mst_x = x_of(report.max_sustainable_throughput_per_s.max(min_rate));
+    let (label_x, anchor) = if mst_x > f64::midpoint(x0, x1) {
+        (mst_x - 6.0, "end")
+    } else {
+        (mst_x + 6.0, "start")
+    };
     let _ = writeln!(
         out,
         "<line x1=\"{mst_x:.1}\" y1=\"{y_top}\" x2=\"{mst_x:.1}\" y2=\"{y_bottom}\" class=\"knee\"/>\
-         <text x=\"{:.1}\" y=\"{:.1}\" class=\"earned\">max sustainable {:.0}/s</text>",
-        mst_x + 6.0,
-        y_top + 14.0,
+         <text x=\"{label_x:.1}\" y=\"{:.1}\" class=\"earned\" text-anchor=\"{anchor}\">max sustainable {:.0}/s</text>",
+        y_bottom - 10.0,
         report.max_sustainable_throughput_per_s,
     );
     out.push_str("</svg>\n");
@@ -455,7 +455,7 @@ pub fn stress_compare_svg(
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Identical committed workload and ladder per side ({} s holds) · exploration only — classes are earned exclusively by the hour-long class runs</text>",
+        "<text x=\"24\" y=\"44\" class=\"muted\">Identical committed workload and ladder per side ({} s holds) · exploration only — never a conformance record</text>",
         left.1.step_hold_s,
     );
     // Legend: label + line sample + marker per side, fixed columns.
@@ -513,21 +513,10 @@ pub fn stress_compare_svg(
         x1 - 4.0,
         budget_y - 6.0,
     );
-    for floor in &left.1.floors_context {
-        let x = x_of(floor.floor_per_s);
-        let _ = writeln!(
-            out,
-            "<line x1=\"{x:.1}\" y1=\"{y_top}\" x2=\"{x:.1}\" y2=\"{y_bottom}\" class=\"floor\"/>\
-             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{}</text>",
-            y_top - 6.0,
-            floor.class.token(),
-        );
-    }
-
     // One curve per side: worst per-operation p99 per step (re-derived).
     let side = |report: &crate::stress::StressReport,
-                    line_class: &str,
-                    out: &mut String|
+                line_class: &str,
+                out: &mut String|
      -> Result<Vec<(f64, f64, bool)>, String> {
         let mut points: Vec<(f64, f64, bool)> = Vec::new();
         for step in &report.steps {
@@ -1442,7 +1431,7 @@ mod tests {
 
     #[test]
     fn the_stress_overlay_is_deterministic_and_two_sided() {
-        use crate::stress::{FloorContext, LoadStep, StressReport};
+        use crate::stress::{LoadStep, StressReport};
         let step = |rate: f64, p99_us: u64, stable: bool| {
             let mut h = Histogram::<u64>::new(3).unwrap();
             for _ in 0..99 {
@@ -1456,7 +1445,11 @@ mod tests {
                     OperationMeasurement::from_histogram("composition_read", &h, 0).unwrap(),
                 ],
                 stable,
-                breaches: if stable { vec![] } else { vec!["p99".to_owned()] },
+                breaches: if stable {
+                    vec![]
+                } else {
+                    vec!["p99".to_owned()]
+                },
                 generator_bound: false,
                 resources: None,
             }
@@ -1480,11 +1473,6 @@ mod tests {
             max_sustainable_throughput_per_s: mst,
             ladder_capped: false,
             generator_bound: false,
-            floors_context: vec![FloorContext {
-                class: PerfClass::Poc,
-                floor_per_s: 2.0,
-                cleared: true,
-            }],
             remark: "r".to_owned(),
         };
         let ours = report(256.0);

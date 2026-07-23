@@ -213,8 +213,9 @@ cnf-runner stress --root tools/cnf-runner/artifacts \
 ```
 
 The two instruments never blur: a stress report earns no class, never
-touches `results.json`, and names the class floors only as context so you
-can see the headroom at a glance. Every load step embeds its own
+touches `results.json`, and carries no class vocabulary at all — the class
+ladder belongs to the measured class runs, and the stress chart shows one
+thing only: where the system breaks. Every load step embeds its own
 re-checkable histograms and its own resource telemetry (the same
 per-container CPU/memory/I/O series the measured runs record, so a
 breached step shows *where* it saturated), a breached step is reported

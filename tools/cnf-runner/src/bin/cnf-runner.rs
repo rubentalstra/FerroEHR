@@ -143,8 +143,9 @@ enum Command {
         hours: u64,
     },
     /// Run the step-load STRESS instrument: geometric load steps to the
-    /// maximum sustainable throughput (exploration — never a conformance
-    /// record; classes are earned exclusively by the hour-long class runs).
+    /// maximum sustainable throughput — where the system breaks
+    /// (exploration only; never a conformance record, and class-free by
+    /// design).
     Stress {
         /// The artifact root.
         #[arg(long)]
@@ -157,8 +158,9 @@ enum Command {
         /// Where to write the stress report (stress.json).
         #[arg(long)]
         out: PathBuf,
-        /// The class whose corpus + workload mix the stress runs on
-        /// (POC | S | L | R) — data volume context only, no class claim.
+        /// The class-scale corpus the stress runs on (POC | S | L | R —
+        /// the standardized corpus selector): data volume + workload mix
+        /// only; no class floor enters the stress report or chart.
         #[arg(long, default_value = "POC")]
         corpus_class: String,
         /// Parallel seeding workers.
@@ -191,8 +193,7 @@ enum Command {
         /// Where to write the probe report (aql-probe.json).
         #[arg(long)]
         out: PathBuf,
-        /// The class whose corpus the probes run against (data-volume
-        /// context only).
+        /// The class-scale corpus the probes run against (POC | S | L | R).
         #[arg(long, default_value = "POC")]
         corpus_class: String,
         /// Parallel seeding workers.
@@ -906,7 +907,8 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
-    // The class supplies corpus + journey workload (data-volume context only).
+    // The class token is the STANDARDIZED corpus selector (data volume +
+    // workload mix); no class floor enters the stress report or chart.
     let Some((_, case)) = loaded
         .set
         .performance
