@@ -206,7 +206,10 @@ impl Builder<'_> {
             self.q.and_where(col(&node, "vo_id").eq(col(&voa, "vo_id")));
             self.q
                 .and_where(col(&node, "sys_version").eq(col(&voa, "sys_version")));
-            self.ensure_audit(&voa);
+            // The audit join is summoned lazily (`ensure_audit`) by the
+            // version-field expressions that actually read it — a query that
+            // never projects/filters audit fields pays no join to the
+            // ever-growing audit table.
             self.push_scope(&voa, &r.scope)?;
             self.group_roots.push(node.clone());
             self.group_vos.push(voa.clone());

@@ -442,8 +442,14 @@ CREATE INDEX idx_node_archetype_lower ON node (lower(archetype));
 -- to arch_entity = $entity AND arch_major = $major AND (arch_concept = $concept
 -- OR arch_concept LIKE $concept || '-%'). text_pattern_ops on arch_concept makes
 -- the specialisation-child prefix scan (`LIKE 'concept-%'`) index-usable under
--- the pool's non-C collation.
-CREATE INDEX idx_node_arch_subsume ON node (arch_entity, arch_concept text_pattern_ops, arch_major)
+-- the pool's non-C collation. rm_type LEADS: the AQL engine emits the
+-- CONTAINS class filter (rm_type) alongside every archetype predicate, and
+-- the single full-boundary index serves the anchor scan in ONE probe — the
+-- measured cross-EHR profile showed the old (entity, concept, major) order
+-- degrading to a BitmapAnd with a second whole-type bitmap, whose build
+-- materializes every matching row before the first result and defeats
+-- LIMIT early termination at corpus scale.
+CREATE INDEX idx_node_arch_subsume ON node (rm_type, arch_entity, arch_major, arch_concept text_pattern_ops)
     WHERE arch_entity IS NOT NULL;
 CREATE INDEX idx_node_ehr ON node (ehr_id);
 -- P20 NOTE: two speculative jsonb indexes were REMOVED here after the measured
