@@ -215,9 +215,14 @@ cnf-runner stress --root tools/cnf-runner/artifacts \
 The two instruments never blur: a stress report earns no class, never
 touches `results.json`, and names the class floors only as context so you
 can see the headroom at a glance. Every load step embeds its own
-re-checkable histograms, a breached step is reported with the exact
-envelope violation, and a run where the load *generator* tops out before
-the server is flagged as such rather than counted against the system.
+re-checkable histograms and its own resource telemetry (the same
+per-container CPU/memory/I/O series the measured runs record, so a
+breached step shows *where* it saturated), a breached step is reported
+with the exact envelope violation, and a run where the load *generator*
+tops out before the server is flagged as such rather than counted against
+the system.
+
+![The latency-throughput curve from the committed stress run](perf-assets/perf-stress-curve.svg)
 
 The published assets are rendered from the committed `results.json` by
 `cnf-runner perf-assets` (wrapped by `scripts/render-perf-assets.sh`); the
