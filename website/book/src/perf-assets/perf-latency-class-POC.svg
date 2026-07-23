@@ -15,6 +15,8 @@ text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sa
 .db { stroke: #8a8880; fill: none; stroke-width: 1.6; stroke-dasharray: 5 3; }
 .warm { fill: #efede8; }
 .curve { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.cmp { stroke: #8a8880; fill: none; stroke-width: 2; stroke-dasharray: 7 4; }
+.cmpfill { fill: #8a8880; }
 .knee { stroke: #1baf7a; stroke-width: 2; stroke-dasharray: 2 3; }
 @media (prefers-color-scheme: dark) {
 text { fill: #c3c2b7; }
@@ -32,6 +34,8 @@ text { fill: #c3c2b7; }
 .db { stroke: #8f8e85; }
 .warm { fill: #2a2a28; }
 .curve { stroke: #3987e5; }
+.cmp { stroke: #8f8e85; }
+.cmpfill { fill: #8f8e85; }
 .knee { stroke: #26c78d; }
 }
 </style>
