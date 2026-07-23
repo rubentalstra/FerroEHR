@@ -389,6 +389,23 @@ impl EhrbaseService {
         version: Option<&str>,
         query_text: String,
     ) -> Result<String, ServiceError> {
+        // The bare query-name segment must not be the reserved name `aql`,
+        // case-insensitively (ITS-REST query Qualified_query_name §NOTE: "The
+        // `query-name` value must not be `aql` (case-insensitive), as that is
+        // a reserved name") — it would collide with the ad-hoc
+        // `GET /query/aql` route. Decomposed via the master04 schemes so a
+        // three-part name's *formalism* segment (`ns::aql::name`) is never
+        // mistaken for the query-name.
+        if parse_qualified_name(qualified_name)
+            .name
+            .eq_ignore_ascii_case("aql")
+        {
+            return Err(ServiceError::BadRequest(format!(
+                "`{qualified_name}`: the query-name `aql` is reserved \
+                 (ITS-REST Qualified_query_name)"
+            )));
+        }
+
         // Store-time AQL validation via the `openehr_query` parser: the
         // stored-query table only holds AQL (`query_type = 'AQL'`), so a non-AQL
         // or syntactically-invalid body is a `400 Bad Request`

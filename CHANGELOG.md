@@ -17,6 +17,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **CNF catalogue: stored-query name-grammar cases** — three new
+  `definition_query` cases pin the ITS-REST `Qualified_query_name` grammar:
+  a plain unqualified name and a namespace-less dotted name (the dot is part
+  of the query-name character set, not a namespace separator) both store and
+  read back, and the reserved query-name `aql` is rejected case-insensitively.
 - **`cnf-runner stress-compare`** — the cross-SUT stress overlay: both
   systems' latency-throughput curves on one canvas, rendered
   deterministically from the two committed `stress.json` reports (driven
@@ -117,6 +122,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Storing a query under the reserved name `aql` is now rejected** with
+  400, case-insensitively and whether or not a namespace is supplied
+  (ITS-REST `Qualified_query_name` §NOTE — the name would collide with the
+  ad-hoc `/query/aql` route). A three-part `ns::aql::name` name keeps
+  working: its middle segment is the formalism, not the query-name.
 - **A coded value whose text is not the template-bound rubric is now
   rejected at commit** (422 naming the path, the committed value, and
   the bound rubric): RM `DV_CODED_TEXT` — "value must be the rubric from

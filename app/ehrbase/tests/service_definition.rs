@@ -463,6 +463,66 @@ async fn query_store_rejects_non_aql_formalism() {
     .expect("AQL formalism stores");
 }
 
+/// The stored-query name grammar per ITS-REST query `Qualified_query_name`:
+/// the namespace is optional (`[{namespace}::]{query-name}`; `my_compositions`
+/// is a listed valid example), the query-name character set `[a-zA-Z0-9_.-]`
+/// admits dots and hyphens, and the query-name `aql` is reserved
+/// (case-insensitive, §NOTE).
+#[tokio::test]
+async fn query_store_name_grammar_and_reserved_name() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let aql = "SELECT c FROM EHR e CONTAINS COMPOSITION c".to_owned();
+
+    // Namespace-less names — plain and dotted — store and read back.
+    for name in ["ward_dashboard_probe", "cnf.ward_dashboard-probe"] {
+        svc.query_store(name.to_owned(), None, "AQL".to_owned(), aql.clone())
+            .await
+            .unwrap_or_else(|e| panic!("namespace-less name `{name}` must store: {e:?}"));
+        let listed = svc
+            .query_list(name.to_owned())
+            .await
+            .unwrap_or_else(|e| panic!("`{name}` must be retrievable: {e:?}"));
+        assert!(
+            listed
+                .iter()
+                .any(|d| d.get("name").and_then(|v| v.as_str()) == Some(name)),
+            "the stored descriptor carries the namespace-less name verbatim: {listed:?}"
+        );
+    }
+
+    // The reserved query-name `aql` is rejected case-insensitively, with or
+    // without a namespace (Qualified_query_name §NOTE).
+    for name in ["aql", "AQL", "org.openehr::aql", "org.openehr::AQL"] {
+        let err = svc
+            .query_store(name.to_owned(), None, "AQL".to_owned(), aql.clone())
+            .await
+            .expect_err("the reserved query-name `aql` must be rejected");
+        assert!(
+            matches!(
+                err,
+                SmError {
+                    status: CallStatusType::PreconditionViolation,
+                    ..
+                }
+            ),
+            "`{name}` rejects as precondition_violation (wire 400), got {err:?}"
+        );
+    }
+
+    // A three-part name's MIDDLE `aql` is the formalism segment (SM master04
+    // §Registered Queries scheme 2), not the query-name — never reserved.
+    svc.query_store(
+        "task_planning::aql::chemotherapy_plans".to_owned(),
+        None,
+        "AQL".to_owned(),
+        aql,
+    )
+    .await
+    .expect("a three-part name with the `aql` formalism segment stores");
+}
+
 #[tokio::test]
 async fn opt_errors() {
     let db = testkit::db().await.expect("testkit database");

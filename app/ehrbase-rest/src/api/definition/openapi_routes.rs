@@ -575,8 +575,10 @@ pub(crate) async fn definition_query_list(
         (status = 200, description = "Stored; `Location` addresses the stored \
                                       query at its auto-assigned version.",
          body = serde_json::Value),
-        (status = 400, description = "The AQL fails to parse, or `query_type` is \
-                                      an unsupported non-AQL formalism.",
+        (status = 400, description = "The AQL fails to parse, `query_type` is \
+                                      an unsupported non-AQL formalism, or the \
+                                      query-name is the reserved `aql` \
+                                      (case-insensitive).",
          body = serde_json::Value)
     )
 )]
@@ -651,8 +653,10 @@ pub(crate) async fn definition_query_version_get(
         (status = 200, description = "Stored; `Location` addresses the stored \
                                       query at this version.",
          body = serde_json::Value),
-        (status = 400, description = "The AQL fails to parse, or `query_type` is \
-                                      an unsupported non-AQL formalism.",
+        (status = 400, description = "The AQL fails to parse, `query_type` is \
+                                      an unsupported non-AQL formalism, or the \
+                                      query-name is the reserved `aql` \
+                                      (case-insensitive).",
          body = serde_json::Value),
         (status = 409, description = "A stored query already exists at this \
                                       `(name, version)`.",
