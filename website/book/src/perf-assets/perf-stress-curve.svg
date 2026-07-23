@@ -51,18 +51,19 @@ text { fill: #c3c2b7; }
 <line x1="90" y1="197.7" x2="700" y2="197.7" class="grid"/><text x="82.0" y="201.7" class="muted" text-anchor="end">100 ms</text>
 <line x1="90" y1="131.5" x2="700" y2="131.5" class="grid"/><text x="82.0" y="135.5" class="muted" text-anchor="end">1000 ms</text>
 <line x1="90" y1="131.5" x2="700" y2="131.5" class="slo"/><text x="696.0" y="125.5" class="slotext" text-anchor="end">p99 budget</text>
-<path d="M138.6,167.5 L187.2,161.4 L235.8,168.8 L284.4,165.0 L333.0,171.6 L381.6,174.0 L430.2,172.4 L478.8,165.5 L487.1,80.0 L494.5,80.0 L507.3,80.0 L527.4,80.0" class="curve"/>
-<circle cx="138.6" cy="167.5" r="5" class="measured"/>
-<circle cx="187.2" cy="161.4" r="5" class="measured"/>
-<circle cx="235.8" cy="168.8" r="5" class="measured"/>
-<circle cx="284.4" cy="165.0" r="5" class="measured"/>
-<circle cx="333.0" cy="171.6" r="5" class="measured"/>
-<circle cx="381.6" cy="174.0" r="5" class="measured"/>
-<circle cx="430.2" cy="172.4" r="5" class="measured"/>
-<circle cx="478.8" cy="165.5" r="5" class="measured"/>
-<path d="M482.1,75.0 L492.1,85.0 M482.1,85.0 L492.1,75.0" class="slo" stroke-width="2"/>
-<path d="M489.5,75.0 L499.5,85.0 M489.5,85.0 L499.5,75.0" class="slo" stroke-width="2"/>
-<path d="M502.3,75.0 L512.3,85.0 M502.3,85.0 L512.3,75.0" class="slo" stroke-width="2"/>
-<path d="M522.4,75.0 L532.4,85.0 M522.4,85.0 L532.4,75.0" class="slo" stroke-width="2"/>
-<line x1="478.8" y1="80" x2="478.8" y2="330" class="knee"/><text x="472.8" y="320.0" class="earned" text-anchor="end">max sustainable 256/s</text>
+<path d="M138.6,200.0 L187.2,196.4 L235.8,199.3 L284.4,199.5 L333.0,192.4 L381.6,207.6 L430.2,212.6 L478.8,208.5 L527.4,186.7 L535.7,174.3 L543.1,175.6 L555.9,142.2 L576.0,121.4" class="curve"/>
+<circle cx="138.6" cy="200.0" r="5" class="measured"/>
+<circle cx="187.2" cy="196.4" r="5" class="measured"/>
+<circle cx="235.8" cy="199.3" r="5" class="measured"/>
+<circle cx="284.4" cy="199.5" r="5" class="measured"/>
+<circle cx="333.0" cy="192.4" r="5" class="measured"/>
+<circle cx="381.6" cy="207.6" r="5" class="measured"/>
+<circle cx="430.2" cy="212.6" r="5" class="measured"/>
+<circle cx="478.8" cy="208.5" r="5" class="measured"/>
+<circle cx="527.4" cy="186.7" r="5" class="measured"/>
+<path d="M530.7,169.3 L540.7,179.3 M530.7,179.3 L540.7,169.3" class="slo" stroke-width="2"/>
+<path d="M538.1,170.6 L548.1,180.6 M538.1,180.6 L548.1,170.6" class="slo" stroke-width="2"/>
+<path d="M550.9,137.2 L560.9,147.2 M550.9,147.2 L560.9,137.2" class="slo" stroke-width="2"/>
+<path d="M571.0,116.4 L581.0,126.4 M571.0,126.4 L581.0,116.4" class="slo" stroke-width="2"/>
+<line x1="527.4" y1="80" x2="527.4" y2="330" class="knee"/><text x="521.4" y="320.0" class="earned" text-anchor="end">max sustainable 512/s</text>
 </svg>
