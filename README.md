@@ -339,6 +339,20 @@ its curve is drawn exactly like one where it doesn't:
 
 ![Both systems' latency-throughput curves](website/book/src/perf-assets/perf-stress-compare.svg)
 
+Both systems' capability conformance, rendered from each party's own
+committed verdicts (one cell per claimed capability, evidence as color and
+glyph):
+
+![EHRbase-rs capability conformance](website/book/src/conformance-assets/conformance-heat-grid.svg)
+
+![Upstream EHRbase capability conformance](website/book/src/comparison-assets/conformance-heat-grid-java.svg)
+
+And the per-chapter outcomes side by side:
+
+![EHRbase-rs outcomes by chapter](website/book/src/conformance-assets/conformance-chapter-bars.svg)
+
+![Upstream EHRbase outcomes by chapter](website/book/src/comparison-assets/conformance-chapter-bars-java.svg)
+
 The full, generated comparison — profile verdicts, capability-by-capability
 evidence, failures in both directions, and the stress overlay once both
 committed reports exist — is the
