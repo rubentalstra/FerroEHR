@@ -65,7 +65,7 @@ Options declared: adl14-duplicate-conflict, directory-empty-error, sf-deprecated
 | STANDARD | PASS |
 | OPTIONS | PASS |
 | SEC-BASIC | PASS |
-| Performance class POC (claimed) | not earned |
+| Performance class POC (claimed) | EARNED |
 
 ## Attestation
 
