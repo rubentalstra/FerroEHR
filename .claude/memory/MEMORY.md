@@ -24,3 +24,4 @@ is not repeated here.
 - [TODO-only markers](todo-only-markers.md) — pending work uses ONLY official TODO(...); PORT NOTE/TODO(port)/PERF(port) deleted+banned+CI-guarded; design notes are plain NOTE: with spec citation
 - [CNF design record is permanent](cnf-strategy-doc-kept-permanently.md) — owner rulings 2026-07-22/23: the CNF 2.0 design record lives at docs/conformance/cnf-design.md (moved from docs/plans/, never delete/move back); §8.14 perf-class + journey model lives there
 - [Benchmark crate retires into cnf-runner](benchmark-crate-retires-into-cnf-runner.md) — owner 2026-07-22: NOTHING consumes cnf-runner as a lib, ever; benchmark condemned — features migrate INTO the runner (#237) then crate deletes; no interim coupling either direction
+- [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
