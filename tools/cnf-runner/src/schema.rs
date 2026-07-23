@@ -843,17 +843,19 @@ pub fn ixit_schema() -> Value {
     })
 }
 
-/// The resource-telemetry block of one measurement record — measured
-/// CONTEXT, never verdict-bearing: per-container CPU/RSS/I/O series on a
-/// fixed cadence (run-clock offsets, phase-stamped) plus the database
-/// volume's four disk anchors. Optional: absent when the ixit declares no
-/// `containers` block or the container runtime was unreachable.
+/// The resource-telemetry block of one measurement record or stress step
+/// — measured CONTEXT, never verdict-bearing: per-container CPU/RSS/I/O
+/// series on a fixed cadence (run-clock offsets, phase-stamped) plus, on
+/// measured class runs only, the database volume's four disk anchors
+/// (stress steps stay anchor-free — exploration stays light). Optional:
+/// absent when the ixit declares no `containers` block or the container
+/// runtime was unreachable.
 fn resources_def() -> Value {
     let byte_counter = json!({ "type": "integer", "minimum": 0 });
     json!({
         "type": "object",
         "additionalProperties": false,
-        "required": ["sample_interval_s", "containers", "disk"],
+        "required": ["sample_interval_s", "containers"],
         "properties": {
             "sample_interval_s": { "type": "integer", "minimum": 1 },
             "containers": {
@@ -983,7 +985,8 @@ pub fn stress_schema() -> Value {
                         },
                         "stable": { "type": "boolean" },
                         "breaches": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-                        "generator_bound": { "type": "boolean" }
+                        "generator_bound": { "type": "boolean" },
+                        "resources": resources_def()
                     }
                 }
             },

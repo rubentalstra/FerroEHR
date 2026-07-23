@@ -157,6 +157,124 @@
           },
           "generator_bound": {
             "type": "boolean"
+          },
+          "resources": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sample_interval_s",
+              "containers"
+            ],
+            "properties": {
+              "sample_interval_s": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "containers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "role",
+                    "name",
+                    "samples"
+                  ],
+                  "properties": {
+                    "role": {
+                      "enum": [
+                        "sut",
+                        "db"
+                      ]
+                    },
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "samples": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "offset_s",
+                          "phase",
+                          "cpu_pct",
+                          "rss_bytes",
+                          "blk_read_bytes",
+                          "blk_write_bytes",
+                          "net_rx_bytes",
+                          "net_tx_bytes"
+                        ],
+                        "properties": {
+                          "offset_s": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "phase": {
+                            "enum": [
+                              "warmup",
+                              "measured",
+                              "drain"
+                            ]
+                          },
+                          "cpu_pct": {
+                            "type": "number",
+                            "minimum": 0.0
+                          },
+                          "rss_bytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "blk_read_bytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "blk_write_bytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "net_rx_bytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "net_tx_bytes": {
+                            "type": "integer",
+                            "minimum": 0
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "disk": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "before_scale_seed_bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "after_scale_seed_bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "after_ward_seed_bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "after_window_bytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "seed_compositions": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
           }
         }
       }

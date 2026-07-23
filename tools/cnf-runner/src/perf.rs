@@ -995,7 +995,11 @@ pub struct ResourcesRecord {
     pub sample_interval_s: u64,
     /// Per-container series (SUT and database separately).
     pub containers: Vec<ContainerResourceSeries>,
-    pub disk: DiskAnchors,
+    /// The disk anchors — present on measured class runs (whose seeding
+    /// milestones bracket them); absent on stress steps (exploration
+    /// stays light).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disk: Option<DiskAnchors>,
 }
 
 /// The whole measured run for one performance case.
@@ -1248,13 +1252,13 @@ mod tests {
                     net_tx_bytes: 4_000,
                 }],
             }],
-            disk: DiskAnchors {
+            disk: Some(DiskAnchors {
                 before_scale_seed_bytes: Some(10),
                 after_scale_seed_bytes: Some(20),
                 after_ward_seed_bytes: None,
                 after_window_bytes: Some(30),
                 seed_compositions: Some(1_000_000),
-            },
+            }),
         });
         let full = serde_json::to_value(&m).unwrap();
         // Run-clock offsets + phase stamps on the wire, absent anchors omitted.
@@ -1270,7 +1274,7 @@ mod tests {
         let parsed: Measurement = serde_json::from_value(full).unwrap();
         let resources = parsed.resources.unwrap();
         assert_eq!(resources.sample_interval_s, 10);
-        assert_eq!(resources.disk.seed_compositions, Some(1_000_000));
+        assert_eq!(resources.disk.unwrap().seed_compositions, Some(1_000_000));
     }
 
     #[test]
