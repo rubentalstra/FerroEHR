@@ -15,6 +15,8 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-07-24
+
 ### Added
 
 - **CNF catalogue: stored-query name-grammar cases** — three new
@@ -1479,7 +1481,8 @@ but has not yet run in production.
   seccomp, default-deny NetworkPolicy) and golden-render validation.
 
 
-[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.7.0...HEAD
+[unreleased]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.6.0...v3.7.0
 [3.6.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.5.0...v3.6.0
 [3.5.0]: https://github.com/rubentalstra/ehrbase-rs/compare/v3.4.0...v3.5.0
