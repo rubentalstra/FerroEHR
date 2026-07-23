@@ -84,21 +84,14 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
         out,
         "<text x=\"24\" y=\"28\" class=\"title\">Performance class ladder — offered-load floors vs measured sustained load</text>"
     );
-    for (i, line) in [
-        "Floors are the request rate the hospital-simulation workload must sustain",
-        "against the class corpus; a class is earned only when every measured operation",
-        "holds p99 &#8804; 1 s with zero errors.",
-    ]
-    .iter()
-    .enumerate()
-    {
-        #[allow(clippy::cast_precision_loss)] // 3 caption lines
-        let y = 46.0 + i as f64 * 14.0;
-        let _ = writeln!(
-            out,
-            "<text x=\"24\" y=\"{y}\" class=\"muted\">{line}</text>"
-        );
-    }
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"48\" class=\"muted\">Floors are the request rate the hospital-simulation workload must sustain against the class corpus.</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"63\" class=\"muted\">A class is earned only with p99 &#8804; 1 s on every measured operation and zero errors under that load.</text>"
+    );
 
     // Grid at decades.
     for decade in [1.0, 10.0, 100.0, 1000.0] {
