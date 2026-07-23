@@ -16,6 +16,7 @@ language, ever.
 | `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12] [--skip-seed]` | the measured class run (conformance-by-measurement; merges into results.json) |
 | `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit F --out stress.json [--corpus-class POC] [--skip-seed] [--step-secs 120] [--bisections 3] [--max-rate 4096]` | the step-load stress ladder → maximum sustainable throughput (exploration only; NEVER touches results.json) |
 | `bash scripts/render-perf-assets.sh` (env `CONF_SUT`) | regenerate the published SVGs + summary FROM committed artifacts (CI diffs them) |
+| `bash scripts/render-conformance-assets.sh` (env `CONF_SUT`) | regenerate the conformance visuals (capability heat grid + per-chapter outcome bars) FROM committed verdicts/results (CI diffs them) |
 | `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas` | regenerate the published JSON Schemas after a schema.rs change (drift-tested) |
 
 Credentials for direct `run`/`perf`/`stress` invocations come from the env
@@ -43,20 +44,31 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
 - **The measurement machinery is conformance-by-measurement** (`perf.rs`,
-  `perf_run.rs`, `perf_assets.rs`, the `perf`/`perf-assets` subcommands):
-  OPEN-LOOP offered load only (a deterministic seeded arrival schedule;
-  latency from the PLANNED arrival instant so coordinated omission cannot
-  hide stalls); every measurement embeds its base64 HDR V2 histograms + the
-  ixit environment block; class verdicts (earned | not-earned) re-derive
-  from the DECODED histograms in the verdict pipeline — the stored verdict
-  and summary percentiles are tamper-checked, never trusted. The scale
-  corpora seed strictly through the public API per
-  `artifacts/corpus/recipes/scale_ladder.md`; published SVGs/summary tables
-  render FROM committed results.json (`scripts/render-perf-assets.sh`,
-  CI regenerate-and-diff guarded). The sustained window only extends
-  (`--hours 1|2|4|6|8|12`; the case's normative hour is the floor) — no
-  shortened run exists, so nothing sub-normative can ever look like a
-  measured record.
+  the `perf_run/` modules — client/pack/corpus/schedule/execute/window —,
+  `perf_assets.rs`, the `perf`/`perf-assets` subcommands): OPEN-LOOP
+  offered load only (a deterministic seeded arrival schedule; latency from
+  the PLANNED arrival instant so coordinated omission cannot hide stalls);
+  every measurement embeds its base64 HDR V2 histograms + the ixit
+  environment block; class verdicts (earned | not-earned) re-derive from
+  the DECODED histograms in the verdict pipeline — the stored verdict and
+  summary percentiles are tamper-checked, never trusted. **The workload is
+  the hospital simulation**: the class cases name journey shares
+  decomposed through `artifacts/vocab/journey_catalogue.yaml` (the closed
+  `PerfOp` vocabulary; every stage its own planned arrival; dependent
+  stages never block — an unlanded prerequisite records as an error; the
+  `journey-envelope` validator gate reconciles every workload's expanded
+  write share into the population-anchored 10:1..50:1 band). Journey
+  payloads = the CKM template pack (`artifacts/corpus/templates/ckm/`,
+  COMPOSITION-rooted only, provenance in its PROVENANCE.md; example
+  skeletons regenerate via `scripts/generate-ckm-examples.sh` against a
+  running SUT). The scale corpora + the standing ward seed strictly
+  through the public API per `artifacts/corpus/recipes/scale_ladder.md`;
+  published SVGs/summary tables render FROM committed results.json
+  (`scripts/render-perf-assets.sh`, CI regenerate-and-diff guarded). The
+  sustained window only extends (`--hours 1|2|4|6|8|12`; the case's
+  normative hour is the floor; the diurnal arrival curve is valid only for
+  the >= 8 h holds) — no shortened run exists, so nothing sub-normative
+  can ever look like a measured record.
 - Gates: `cargo clippy -p cnf-runner --all-targets` +
   `cargo nextest run -p cnf-runner` (schema drift, pilot acceptance,
   seeded-defect rejection, the §8.13-derived cross-artifact guards).

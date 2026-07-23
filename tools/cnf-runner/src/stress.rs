@@ -16,15 +16,18 @@
 //! zero-error demand, precisely because no class claim is being made.
 //!
 //! Machinery-wise the instrument reuses ONLY runner-owned parts: the
-//! open-loop arrival scheduler ([`crate::perf_run::run_window`],
-//! coordinated-omission-free), the schedule's workload mix and corpus
+//! open-loop arrival scheduler ([`crate::perf_run::window::run_window`],
+//! coordinated-omission-free), the schedule's journey workload and corpus
 //! seeding, and the re-checkable HDR-V2 records embedded per step.
 
 use serde::{Deserialize, Serialize};
 
 use crate::ixit::Environment;
-use crate::perf::{OperationMeasurement, Percent, PerfClass};
-use crate::perf_run::{PerfClient, SeededCorpus, run_window};
+use crate::perf::{OperationMeasurement, PerfClass};
+use crate::perf_run::client::PerfClient;
+use crate::perf_run::corpus::SeededCorpus;
+use crate::perf_run::schedule::JourneyWorkload;
+use crate::perf_run::window::run_window;
 
 /// The stress envelope + ladder shape (all defaults flag-tunable).
 #[derive(Debug, Clone)]
@@ -169,7 +172,7 @@ fn step_breaches(
 pub fn run_stress(
     client: &PerfClient,
     corpus: &SeededCorpus,
-    mix: &[(String, Percent)],
+    workload: &JourneyWorkload<'_>,
     environment: &Environment,
     options: &StressOptions,
     progress: &(dyn Fn(String) + Sync),
@@ -191,7 +194,7 @@ pub fn run_stress(
         let window = run_window(
             client,
             corpus,
-            mix,
+            workload,
             rate,
             options.step_warmup_s,
             options.step_hold_s,

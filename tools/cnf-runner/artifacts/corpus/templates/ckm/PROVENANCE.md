@@ -1,0 +1,27 @@
+# CKM template pack — provenance
+
+Vendored from the official openEHR CKM (`https://ckm.openehr.org/ckm/rest/v1`) by
+`scripts/vendor-ckm-templates.sh` on 2026-07-22T18:28:46Z.
+Each file is CKM's own OPT export for the cited template, verbatim.
+Example skeletons (`*.example.json`) are generated once against the
+composed SUT by `scripts/generate-ckm-examples.sh` and committed
+(byte-identical payload ground for every SUT; never fetched at run
+time). Manifest entries: `tools/cnf-runner/artifacts/corpus/MANIFEST.yaml`.
+
+| cid | slug | display name | status | modified | journey role |
+|---|---|---|---|---|---|
+| 1013.26.380 | vital-signs | Vital signs | DRAFT | 2021-03-08T13:30:44+01:00 | vitals_round (full observation round) |
+| 1013.26.408 | generic-lab-test-result | Generic lab test result example simple | DRAFT | 2021-10-18T11:28:46+02:00 | lab_pipeline (result contribution) |
+| 1013.26.2 | ereferral | eReferral | DRAFT | 2010-03-25T07:26:15+01:00 | lab_pipeline / imaging_pipeline (order) |
+| 1013.26.386 | ccta-report | CCTA report | INITIAL | 2021-08-02T07:29:55+02:00 | imaging_pipeline (report) |
+| 1013.26.80 | eprescription-fhir | ePrescription (FHIR) | DRAFT | 2016-05-23T23:01:02+02:00 | medication_round (order + administrations) |
+| 1013.26.357 | medicines-list | Medicines list item R1 | INITIAL | 2020-07-22T09:13:37+02:00 | medicines_reconciliation (ward-seeded, updated) |
+| 1013.26.191 | gp-data-set | GP data set | INITIAL | 2018-10-15T02:11:04+02:00 | correction target (ward-seeded, amended) |
+| 1013.26.376 | international-patient-summary | International Patient Summary | DRAFT | 2020-08-18T04:28:14+02:00 | admission / discharge summary |
+| 1013.26.360 | problem-list | Problem/Diagnosis list item R1 | INITIAL | 2020-07-22T09:15:48+02:00 | admission (problem list) |
+| 1013.26.199 | bc-breast-cancer-report | British Columbia Cancer agency Breast Cancer Synoptic Report | INITIAL | 2018-11-12T12:27:58+01:00 | specialist_report (cancer synoptic report) |
+| 1013.26.40 | treat-registry-report | TREAT Registry report | DRAFT | 2015-02-18T21:32:34+01:00 | registry_submission (registry export) |
+| 1013.26.377 | sars-event-notification | SARS event notification | DRAFT | 2020-10-13T06:36:16+02:00 | public_health_notification (statutory notification) |
+| 1013.26.282 | covid19-infection-report | openEHR confirmed COVID-19 infection report.v0 | DRAFT | 2020-08-07T07:19:11+02:00 | public_health_notification (confirmed-case follow-up) |
+| 1013.26.988 | poisoning-case-investigation | Accidental poisoning case investigation form | INITIAL | 2024-12-30T03:35:42+01:00 | case_investigation |
+| 1013.26.980 | diphtheria-case-investigation | Diphtheria case investigation form | INITIAL | 2024-12-30T01:55:25+01:00 | case_investigation |

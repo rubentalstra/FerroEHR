@@ -1693,29 +1693,36 @@ schedule — same artifact discipline, different verdict machinery. A
 performance case (`kind: performance`) defines:
 
 ```yaml
-# schedule/performance/PERF-mixed_load-class_S.yaml
-id: PERF-mixed_load-class_S
+# schedule/performance/PERF-hospital_sim-class_S.yaml (the journey shape,
+# 2026-07-22 — the original flat mix `{ composition_read: 61%, adhoc_query:
+# 30%, composition_commit: 8%, ehr_create: 1% }` is preserved here as the
+# derivation's historical first realization; the journey catalogue
+# decomposes the same envelope)
+id: PERF-hospital_sim-class_S
 kind: performance
 component: PERFORMANCE
-description: "Class-S sustained mixed workload"
+description: "Class-S sustained hospital-simulation workload"
 test_purpose: >
-  Under the class-S normative offered load the platform sustains the class-S
-  latency and throughput thresholds.
+  Under the class-S normative offered load, decomposed into clinical
+  journeys over the whole claimed platform surface, the platform sustains
+  the class-S latency and throughput thresholds on every operation.
 spec_refs: ["CNF 2.0 performance schedule §classes (this proposal; 2017 schedule lineage)"]
 class: S                        # POC | S | L | R — the selection key (§8.11 step 2c);
                                 # performance cases carry no `capabilities` (§8.3)
 corpus: cnf.scale.100k          # synthesized corpus recipe (§11.11 scale classes)
-workload:                       # OPEN-LOOP offered load (the donated engine's model):
-  arrival_rate: 15/s            #   the class-S floor (table below) — a seeded
-                                #   arrival schedule, never closed-loop users,
-  warmup: PT5M                  #   so coordinated omission cannot hide stalls
-  duration: PT1H
-  mix: { composition_read: 61%, adhoc_query: 30%, composition_commit: 8%, ehr_create: 1% }
-                                #   mix = share of scheduled ARRIVALS; ~9% writes / 91% reads,
-                                #   matching the derived read:write ratio (below)
+workload:                       # OPEN-LOOP offered load:
+  arrival_rate: 15/s            #   the class-S floor (table below), in aggregate
+                                #   OPERATION arrivals — a seeded schedule, never
+  warmup: PT5M                  #   closed-loop users, so coordinated omission
+  duration: PT1H                #   cannot hide stalls
+  journeys:                     # shares of JOURNEY instances (the catalogue,
+    chart_review: 56%           # vocab/journey_catalogue.yaml, expands each into
+    ward_dashboard: 12%         # its ordered, time-offset operation stages);
+    vitals_round: 6%            # the validator recomputes the expansion — the
+    # … (the committed cases    # expanded write share must sit inside the
+    # carry 18 journeys)        # derived 10:1..50:1 read-heavy band (below)
 thresholds:                     # ALL must hold in the single measured run
-  - { metric: latency_p99, operation: composition_read, max: 1s }    # the standard SLO (table below)
-  - { metric: latency_p99, operation: composition_commit, max: 1s }
+  - { metric: latency_p99, max: 1s }   # operation-less = EVERY measured operation
   - { metric: error_rate, max: 0 }
   - { metric: offered_load_sustained, min: 15/s }   # class-S floor (table below)
 # environment: bound to the mandatory ixit.json environment block (§8.10)
@@ -1817,6 +1824,35 @@ Rules:
   `tools/benchmark` is the donated working draft); any runner reproducing
   the workload definition and emitting the measurement schema qualifies —
   harness independence holds here too.
+
+**The journey decomposition (2026-07-22, the hospital simulation — #240).**
+The measured workload evolved from the flat four-operation mix into
+journey-structured arrivals: the performance case's `workload` block names
+shares of *clinical journeys* (a committed catalogue,
+`vocab/journey_catalogue.yaml` — ADT admission/discharge, vitals rounds,
+the eMAR loop, medicines reconciliation, asynchronous laboratory/imaging
+order-to-result pipelines, specialist/registry reporting, public-health
+notification, chart review, ward dashboards with a registered stored
+query, versioned corrections, contribution audit review, ITEM_TAG
+workflow tagging, logical deletion, and the integration-engine template
+poll), each journey an ordered, time-offset operation sequence over a
+closed 22-operation vocabulary with fixed ITS-REST wire realizations,
+payloads carried by COMPOSITION-rooted openEHR CKM templates vendored
+with provenance. The population anchor is UNCHANGED and machine-enforced:
+`arrival_rate` stays aggregate operation arrivals (this section's floors'
+unit); every journey's `derivation` cites the same activity-statistics
+register as the floors (documents per discharge, prescription items per
+capita, laboratory reports per capita, the audit-log ~597
+interactions/encounter read evidence); and the runner's `journey-envelope`
+validator gate recomputes the catalogue expansion of every workload,
+requiring the expanded write share inside the 10:1..50:1 read-heavy band
+of step 4 — the decomposition is arguable, never arbitrary. Every stage is
+its own planned arrival on the same open-loop schedule (dependent stages
+never block; an unlanded prerequisite records as an error), and the
+extended 8/12-hour holds may follow a diurnal day curve realizing step 3's
+ITU-T E.500 busy-hour convention (the floor is then the busy-hour rate).
+The certificate reports workload coverage: exercised capabilities vs the
+ICS claims, with untouched claimed capabilities listed as catalogue gaps.
 
 ### 8.15 The Security & Privacy schedule
 

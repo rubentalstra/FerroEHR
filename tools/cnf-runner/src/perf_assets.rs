@@ -518,7 +518,7 @@ mod tests {
 
     fn case(yaml_class: &str, rate: &str) -> PerformanceCase {
         serde_saphyr::from_str(&format!(
-            "id: PERF-mixed_load-class_{yaml_class}\nkind: performance\ncomponent: PERFORMANCE\ndescription: d\ntest_purpose: t\nspec_refs: [\"CNF 2.0 performance schedule\"]\nclass: {yaml_class}\ncorpus: cnf.scale.10k\nworkload:\n  arrival_rate: {rate}\n  warmup: PT5M\n  duration: PT1H\n  mix: {{ composition_read: 61%, adhoc_query: 30%, composition_commit: 8%, ehr_create: 1% }}\nthresholds:\n  - {{ metric: error_rate, max: 0 }}\n"
+            "id: PERF-hospital_sim-class_{yaml_class}\nkind: performance\ncomponent: PERFORMANCE\ndescription: d\ntest_purpose: t\nspec_refs: [\"CNF 2.0 performance schedule\"]\nclass: {yaml_class}\ncorpus: cnf.scale.10k\nworkload:\n  arrival_rate: {rate}\n  warmup: PT5M\n  duration: PT1H\n  journeys: {{ chart_review: 88%, vitals_round: 12% }}\nthresholds:\n  - {{ metric: error_rate, max: 0 }}\n"
         ))
         .unwrap()
     }
@@ -530,7 +530,7 @@ mod tests {
         }
         let op = OperationMeasurement::from_histogram("composition_read", &h, 0).unwrap();
         Measurement {
-            case: crate::ids::CaseId::parse("PERF-mixed_load-class_POC").unwrap(),
+            case: crate::ids::CaseId::parse("PERF-hospital_sim-class_POC").unwrap(),
             class: PerfClass::Poc,
             environment: serde_json::from_value(serde_json::json!({
                 "hardware_class": "test", "cores": 1, "memory_gb": 1,
