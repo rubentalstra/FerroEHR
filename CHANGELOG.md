@@ -117,6 +117,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Child-assembled `DV_INTERVAL` values now carry the mandatory boundary
+  flags**: an interval built from `lower`/`upper` sub-path children (the
+  FLAT builder's container path — template examples included) previously
+  omitted `lower_unbounded`/`upper_unbounded`/`lower_included`/
+  `upper_included`, making every half-open interval spec-invalid (BASE
+  `Interval`: the flags are mandatory and `Limits_consistent` is
+  unevaluable against an absent bound); the flags now derive from bound
+  presence, an explicit datum flag wins, and the committed CCTA example
+  is regenerated. Strict validators (upstream EHRbase) rejected the old
+  instances with 422.
 - **Population AQL with `LIMIT` now streams instead of materializing the
   corpus**: a LIMIT-bearing, unordered, non-DISTINCT, non-aggregate
   population query lowers to a streaming FROM shape (the current-version

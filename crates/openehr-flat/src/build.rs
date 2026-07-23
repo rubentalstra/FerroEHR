@@ -375,8 +375,29 @@ fn build(
         {
             hist.insert("origin".to_owned(), dv_date_time(ts));
         }
+        apply_interval_flags(m, &node.rm_type);
     }
     Ok(value)
+}
+
+/// An interval assembled from bound CHILDREN (a WT tree whose
+/// `lower`/`upper` are their own nodes — vs the leaf form
+/// `map::build_interval` covers) must still carry the four boundary flags:
+/// BASE foundation_types Interval declares them mandatory, and a half-open
+/// instance without `*_unbounded: true` violates Limits_consistent
+/// (`(not upper_unbounded and not lower_unbounded) implies lower <= upper`
+/// — unevaluable against an absent bound). Derived from bound presence; an
+/// explicit datum flag wins.
+fn apply_interval_flags(m: &mut Map<String, Value>, rm_type: &str) {
+    if base_type(rm_type) != "DV_INTERVAL" {
+        return;
+    }
+    let has_lower = m.contains_key("lower");
+    let has_upper = m.contains_key("upper");
+    m.entry("lower_unbounded").or_insert(json!(!has_lower));
+    m.entry("upper_unbounded").or_insert(json!(!has_upper));
+    m.entry("lower_included").or_insert(json!(has_lower));
+    m.entry("upper_included").or_insert(json!(has_upper));
 }
 
 /// A direct RM-attribute path (non-`_`, non-`|`) that the master05 per-type
