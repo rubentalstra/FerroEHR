@@ -23,6 +23,10 @@
       }
     }
   },
+  "containers": {
+    "sut": "cnf-ehrbase-java-ehrbase-java-1",
+    "db": "cnf-ehrbase-java-ehrbase-java-db-1"
+  },
   "environment": {
     "exclusive_server": true,
     "hardware_class": "ci-runner",

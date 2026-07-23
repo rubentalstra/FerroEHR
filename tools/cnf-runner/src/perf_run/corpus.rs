@@ -3,8 +3,9 @@
 //! STANDING WARD — the per-patient state the journey stages address
 //! mid-flight (an episode directory, the GP-data-set chart document, the
 //! medicines list, one committed CONTRIBUTION), seeded strictly through
-//! the public API (never a database backdoor) and persisted as a sidecar
-//! index so re-runs can skip re-seeding.
+//! the public API (never a database backdoor). The workflow always seeds
+//! a freshly composed, empty SUT and tears the stack down afterwards —
+//! there is no seed reuse.
 
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -55,8 +56,8 @@ pub struct WardPatient {
     pub contribution_uid: String,
 }
 
-/// The seeded corpus index: what the measurement operations address.
-/// Persisted as a sidecar JSON so a re-run can skip re-seeding.
+/// The seeded corpus index: what the measurement operations address
+/// (in-memory for the run; the workflow always seeds fresh).
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SeededCorpus {
     /// The corpus key this index realizes (e.g. `cnf.scale.10k`).
@@ -65,8 +66,7 @@ pub struct SeededCorpus {
     pub ehr_ids: Vec<String>,
     /// Seeded compositions as `(ehr index, version_uid)`.
     pub compositions: Vec<(usize, String)>,
-    /// The standing ward (empty in a pre-journey sidecar; `seed_ward`
-    /// fills it).
+    /// The standing ward (`seed_ward` fills it after the scale seed).
     #[serde(default)]
     pub ward: Vec<WardPatient>,
 }
@@ -288,8 +288,8 @@ pub fn seed_scale_ladder(
 /// (409 on re-run is fine), register the dashboard stored query, then per
 /// ward patient commit the GP chart document, the medicines list, the
 /// episode directory, and one CONTRIBUTION — capturing every uid the
-/// journey stages address. Idempotent per sidecar: a corpus whose `ward`
-/// already covers the target size is left untouched.
+/// journey stages address. Idempotent: a corpus whose `ward` already
+/// covers the target size is left untouched.
 ///
 /// # Errors
 /// A message on any unexpected wire outcome or a transport fault.
@@ -558,10 +558,9 @@ mod tests {
     }
 
     #[test]
-    fn a_pre_journey_sidecar_still_parses_without_a_ward() {
-        let sidecar =
-            r#"{"corpus":"cnf.scale.10k","ehr_ids":["a"],"compositions":[[0,"u::s::1"]]}"#;
-        let corpus: SeededCorpus = serde_json::from_str(sidecar).unwrap();
+    fn a_pre_ward_index_parses_with_an_empty_ward() {
+        let index = r#"{"corpus":"cnf.scale.10k","ehr_ids":["a"],"compositions":[[0,"u::s::1"]]}"#;
+        let corpus: SeededCorpus = serde_json::from_str(index).unwrap();
         assert!(corpus.ward.is_empty());
     }
 }

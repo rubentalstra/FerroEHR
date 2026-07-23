@@ -79,6 +79,13 @@ pub struct LoadStep {
     pub breaches: Vec<String>,
     /// The generator, not the SUT, was the bottleneck at this rate.
     pub generator_bound: bool,
+    /// The step's resource telemetry (the shared measured-run sampler over
+    /// this step's own warmup+hold window; no disk anchors — exploration
+    /// stays light). Joins resource burn to offered rate: a breached rung
+    /// shows WHERE it saturated. Optional by the ixit `containers`
+    /// capability; absence never fails a step.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resources: Option<crate::perf::ResourcesRecord>,
 }
 
 /// A class floor, as CONTEXT beside the measured maximum (never a claim).
@@ -174,6 +181,7 @@ pub fn run_stress(
     corpus: &SeededCorpus,
     workload: &JourneyWorkload<'_>,
     environment: &Environment,
+    containers: Option<&crate::ixit::Containers>,
     options: &StressOptions,
     progress: &(dyn Fn(String) + Sync),
 ) -> Result<StressReport, String> {
@@ -182,15 +190,37 @@ pub fn run_stress(
     let mut first_bad: Option<f64> = None;
     let mut generator_bound = false;
     let mut ladder_capped = false;
+    if containers.is_none() {
+        progress("resources: not sampled (ixit declares no `containers` block)".to_owned());
+    }
 
     let run_step = |rate: f64,
                     steps: &mut Vec<LoadStep>,
                     generator_bound: &mut bool|
      -> Result<bool, String> {
+        // Settle the maintenance debt the previous rungs' writes built up
+        // BEFORE the rung, so autovacuum/analyze never fires inside a hold
+        // and every rung starts from the same settled state.
+        if let Some(c) = containers {
+            if let Err(e) = crate::perf_run::resources::settle_maintenance(&c.db) {
+                progress(format!("maintenance not settled: {e}"));
+            }
+        } else {
+            progress("maintenance not settled (no ixit `containers` block)".to_owned());
+        }
         progress(format!(
             "load step at {rate}/s ({}s hold)",
             options.step_hold_s
         ));
+        // The sampler brackets this step's own warmup+hold window (phase
+        // stamps derive from the step bounds).
+        let sampler = containers.map(|c| {
+            crate::perf_run::resources::ResourceSampler::start(
+                c,
+                options.step_warmup_s,
+                options.step_hold_s,
+            )
+        });
         let window = run_window(
             client,
             corpus,
@@ -199,7 +229,22 @@ pub fn run_stress(
             options.step_warmup_s,
             options.step_hold_s,
             progress,
-        )?;
+        );
+        let resources = sampler.and_then(|sampler| {
+            let (series, notes) = sampler.stop();
+            for note in notes {
+                progress(note);
+            }
+            series
+                .iter()
+                .any(|s| !s.samples.is_empty())
+                .then_some(crate::perf::ResourcesRecord {
+                    sample_interval_s: crate::perf_run::resources::SAMPLE_INTERVAL.as_secs(),
+                    containers: series,
+                    disk: None,
+                })
+        });
+        let window = window?;
         let breaches = step_breaches(&window.operations, options)?;
         let stable = breaches.is_empty() && !window.generator_bound;
         if window.generator_bound {
@@ -208,6 +253,28 @@ pub fn run_stress(
                 "generator bound at {rate}/s — the instrument, not the SUT, is the bottleneck"
             ));
         }
+        // The verdict, live: what the instrument DECIDED about this rung —
+        // never leave the console reading as a pass while the SUT sheds.
+        let resource_note = resources.as_ref().map_or(String::new(), |r| {
+            let peaks: Vec<String> = r
+                .containers
+                .iter()
+                .map(|c| format!("{} peak {:.0}% cpu", c.role.label(), c.cpu_peak()))
+                .collect();
+            format!(", {}", peaks.join(", "))
+        });
+        progress(if stable {
+            format!(
+                "step {rate}/s: stable (sustained {:.1}/s{resource_note})",
+                window.offered_load_sustained
+            )
+        } else {
+            format!(
+                "step {rate}/s: BREACHED (sustained {:.1}/s{resource_note}) — {}",
+                window.offered_load_sustained,
+                breaches.join("; ")
+            )
+        });
         steps.push(LoadStep {
             rate,
             offered_load_sustained: window.offered_load_sustained,
@@ -215,6 +282,7 @@ pub fn run_stress(
             stable,
             breaches,
             generator_bound: window.generator_bound,
+            resources,
         });
         Ok(stable)
     };
@@ -246,6 +314,9 @@ pub fn run_stress(
             if !(mid.is_finite() && mid > good && mid < bad) {
                 break;
             }
+            progress(format!(
+                "bisecting between {good}/s (stable) and {bad}/s (breached)"
+            ));
             if run_step(mid, &mut steps, &mut generator_bound)? {
                 good = mid;
             } else {
@@ -253,6 +324,17 @@ pub fn run_stress(
             }
         }
         last_good = good;
+    }
+
+    // The rung recap — one line per executed step, so an operator reading
+    // only the tail still sees the whole ladder's verdicts.
+    for step in &steps {
+        progress(format!(
+            "recap: {:>7}/s {} {}",
+            step.rate,
+            if step.stable { "stable  " } else { "BREACHED" },
+            step.breaches.first().map_or("", String::as_str),
+        ));
     }
 
     let floors_context: Vec<FloorContext> = PerfClass::ALL

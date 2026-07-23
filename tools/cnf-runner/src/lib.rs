@@ -21,6 +21,7 @@ pub mod party;
 pub mod perf;
 pub mod perf_assets;
 pub mod perf_run;
+pub mod probe;
 pub mod refgrammar;
 pub mod render;
 pub mod run;
