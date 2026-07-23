@@ -32,6 +32,8 @@ const STYLE: &str = "<style>\n\
   .sut { stroke: #2a78d6; fill: none; stroke-width: 1.8; }\n\
   .db { stroke: #8a8880; fill: none; stroke-width: 1.6; stroke-dasharray: 5 3; }\n\
   .warm { fill: #efede8; }\n\
+  .curve { stroke: #2a78d6; fill: none; stroke-width: 2; }\n\
+  .knee { stroke: #1baf7a; stroke-width: 2; stroke-dasharray: 2 3; }\n\
   @media (prefers-color-scheme: dark) {\n\
     text { fill: #c3c2b7; }\n\
     .title { fill: #ffffff; }\n\
@@ -47,6 +49,8 @@ const STYLE: &str = "<style>\n\
     .sut { stroke: #3987e5; }\n\
     .db { stroke: #8f8e85; }\n\
     .warm { fill: #2a2a28; }\n\
+    .curve { stroke: #3987e5; }\n\
+    .knee { stroke: #26c78d; }\n\
   }\n\
 </style>\n";
 
@@ -378,11 +382,7 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
             )
         })
         .collect();
-    let _ = writeln!(
-        out,
-        "<path d=\"{}\" fill=\"none\" class=\"s1s\" stroke-width=\"2\"/>",
-        path.join(" ")
-    );
+    let _ = writeln!(out, "<path d=\"{}\" class=\"curve\"/>", path.join(" "));
     for (rate, ms, stable) in &points {
         let (x, y) = (x_of(*rate), y_of(*ms));
         if *stable {
@@ -410,7 +410,7 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
     let mst_x = x_of(report.max_sustainable_throughput_per_s.max(min_rate));
     let _ = writeln!(
         out,
-        "<line x1=\"{mst_x:.1}\" y1=\"{y_top}\" x2=\"{mst_x:.1}\" y2=\"{y_bottom}\" class=\"s2s\" stroke-width=\"2\" stroke-dasharray=\"2 3\"/>\
+        "<line x1=\"{mst_x:.1}\" y1=\"{y_top}\" x2=\"{mst_x:.1}\" y2=\"{y_bottom}\" class=\"knee\"/>\
          <text x=\"{:.1}\" y=\"{:.1}\" class=\"earned\">max sustainable {:.0}/s</text>",
         mst_x + 6.0,
         y_top + 14.0,
@@ -771,19 +771,22 @@ pub fn disk_growth_svg(measurements: &[Measurement]) -> Option<String> {
     let measurement = measurements
         .iter()
         .filter(|m| {
-            m.resources.as_ref().is_some_and(|r| {
-                r.disk.before_scale_seed_bytes.is_some()
-                    || r.disk.after_scale_seed_bytes.is_some()
-                    || r.disk.after_ward_seed_bytes.is_some()
-                    || r.disk.after_window_bytes.is_some()
-            })
+            m.resources
+                .as_ref()
+                .and_then(|r| r.disk)
+                .is_some_and(|disk| {
+                    disk.before_scale_seed_bytes.is_some()
+                        || disk.after_scale_seed_bytes.is_some()
+                        || disk.after_ward_seed_bytes.is_some()
+                        || disk.after_window_bytes.is_some()
+                })
         })
         .max_by(|a, b| {
             a.class
                 .arrival_floor_per_s()
                 .total_cmp(&b.class.arrival_floor_per_s())
         })?;
-    let disk = &measurement.resources.as_ref()?.disk;
+    let disk = measurement.resources.as_ref()?.disk?;
 
     let (width, height) = (640.0, 312.0);
     let (y_top, y_bottom) = (100.0, 244.0);
@@ -1035,13 +1038,18 @@ fn resources_markdown(out: &mut String, resources: Option<&crate::perf::Resource
             format_bytes(rss_peak as f64),
         );
     }
+    // The disk anchors exist only on measured class runs (stress-style
+    // records sample containers without them).
+    let Some(disk) = r.disk else {
+        return;
+    };
     #[allow(clippy::cast_precision_loss)] // volume sizes << 2^52
     let anchor =
         |v: Option<u64>| v.map_or_else(|| "not probed".to_owned(), |b| format_bytes(b as f64));
     let per_composition = match (
-        r.disk.before_scale_seed_bytes,
-        r.disk.after_scale_seed_bytes,
-        r.disk.seed_compositions,
+        disk.before_scale_seed_bytes,
+        disk.after_scale_seed_bytes,
+        disk.seed_compositions,
     ) {
         (Some(before), Some(after), Some(n)) if n > 0 => {
             #[allow(clippy::cast_precision_loss)] // sizes/counts << 2^52
@@ -1057,10 +1065,10 @@ fn resources_markdown(out: &mut String, resources: Option<&crate::perf::Resource
     let _ = writeln!(
         out,
         "\nDisk anchors: empty {} → after scale seed {}{per_composition} → after ward seed {} → after window {}.",
-        anchor(r.disk.before_scale_seed_bytes),
-        anchor(r.disk.after_scale_seed_bytes),
-        anchor(r.disk.after_ward_seed_bytes),
-        anchor(r.disk.after_window_bytes),
+        anchor(disk.before_scale_seed_bytes),
+        anchor(disk.after_scale_seed_bytes),
+        anchor(disk.after_ward_seed_bytes),
+        anchor(disk.after_window_bytes),
     );
 }
 
@@ -1172,13 +1180,13 @@ mod tests {
                     ],
                 },
             ],
-            disk: crate::perf::DiskAnchors {
+            disk: Some(crate::perf::DiskAnchors {
                 before_scale_seed_bytes: Some(64_000_000),
                 after_scale_seed_bytes: Some(10_000_000_000),
                 after_ward_seed_bytes: None,
                 after_window_bytes: Some(11_000_000_000),
                 seed_compositions: Some(1_000_000),
-            },
+            }),
         });
         m
     }

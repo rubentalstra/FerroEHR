@@ -937,6 +937,7 @@ fn stress_command(
         &corpus,
         &workload,
         environment,
+        ixit.containers.as_ref(),
         &options,
         &progress,
     ) {
@@ -1175,7 +1176,7 @@ fn perf_command(
                 measurement.resources = Some(cnf_runner::perf::ResourcesRecord {
                     sample_interval_s: perf_run::resources::SAMPLE_INTERVAL.as_secs(),
                     containers: series,
-                    disk,
+                    disk: Some(disk),
                 });
             } else {
                 progress(

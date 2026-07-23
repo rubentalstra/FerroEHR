@@ -79,6 +79,13 @@ pub struct LoadStep {
     pub breaches: Vec<String>,
     /// The generator, not the SUT, was the bottleneck at this rate.
     pub generator_bound: bool,
+    /// The step's resource telemetry (the shared measured-run sampler over
+    /// this step's own warmup+hold window; no disk anchors — exploration
+    /// stays light). Joins resource burn to offered rate: a breached rung
+    /// shows WHERE it saturated. Optional by the ixit `containers`
+    /// capability; absence never fails a step.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resources: Option<crate::perf::ResourcesRecord>,
 }
 
 /// A class floor, as CONTEXT beside the measured maximum (never a claim).
@@ -174,6 +181,7 @@ pub fn run_stress(
     corpus: &SeededCorpus,
     workload: &JourneyWorkload<'_>,
     environment: &Environment,
+    containers: Option<&crate::ixit::Containers>,
     options: &StressOptions,
     progress: &(dyn Fn(String) + Sync),
 ) -> Result<StressReport, String> {
@@ -182,6 +190,9 @@ pub fn run_stress(
     let mut first_bad: Option<f64> = None;
     let mut generator_bound = false;
     let mut ladder_capped = false;
+    if containers.is_none() {
+        progress("resources: not sampled (ixit declares no `containers` block)".to_owned());
+    }
 
     let run_step = |rate: f64,
                     steps: &mut Vec<LoadStep>,
@@ -191,6 +202,15 @@ pub fn run_stress(
             "load step at {rate}/s ({}s hold)",
             options.step_hold_s
         ));
+        // The sampler brackets this step's own warmup+hold window (phase
+        // stamps derive from the step bounds).
+        let sampler = containers.map(|c| {
+            crate::perf_run::resources::ResourceSampler::start(
+                c,
+                options.step_warmup_s,
+                options.step_hold_s,
+            )
+        });
         let window = run_window(
             client,
             corpus,
@@ -199,7 +219,22 @@ pub fn run_stress(
             options.step_warmup_s,
             options.step_hold_s,
             progress,
-        )?;
+        );
+        let resources = sampler.and_then(|sampler| {
+            let (series, notes) = sampler.stop();
+            for note in notes {
+                progress(note);
+            }
+            series
+                .iter()
+                .any(|s| !s.samples.is_empty())
+                .then_some(crate::perf::ResourcesRecord {
+                    sample_interval_s: crate::perf_run::resources::SAMPLE_INTERVAL.as_secs(),
+                    containers: series,
+                    disk: None,
+                })
+        });
+        let window = window?;
         let breaches = step_breaches(&window.operations, options)?;
         let stable = breaches.is_empty() && !window.generator_bound;
         if window.generator_bound {
@@ -215,6 +250,7 @@ pub fn run_stress(
             stable,
             breaches,
             generator_bound: window.generator_bound,
+            resources,
         });
         Ok(stable)
     };

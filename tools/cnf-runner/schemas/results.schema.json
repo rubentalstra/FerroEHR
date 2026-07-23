@@ -345,8 +345,7 @@
             "additionalProperties": false,
             "required": [
               "sample_interval_s",
-              "containers",
-              "disk"
+              "containers"
             ],
             "properties": {
               "sample_interval_s": {
