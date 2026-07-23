@@ -191,6 +191,12 @@ struct Builder<'a> {
     group_vos: Vec<String>,
     /// Fresh-alias counter for anchor subqueries / anti-joins.
     sub_ctr: usize,
+    /// Whether the FROM was built in the STREAMING shape (one `vo_version`
+    /// FROM item, everything else a join) — lazily summoned tables
+    /// (`ensure_audit`, the population gate, the `EHR_STATUS` root) must
+    /// then JOIN instead of adding comma-separated FROM items, or a later
+    /// `LATERAL` could no longer reference them (SQL join-tree scoping).
+    streaming: bool,
 }
 
 impl<'a> Builder<'a> {
@@ -210,6 +216,7 @@ impl<'a> Builder<'a> {
             roots_linked_to_ehr: std::collections::HashSet::new(),
             group_vos: Vec::new(),
             sub_ctr: 0,
+            streaming: false,
         }
     }
 
@@ -250,6 +257,23 @@ impl<'a> Builder<'a> {
     }
 }
 
+/// Whether the LIMIT-streaming FROM shape may apply. QUERY master03 §LIMIT:
+/// without `ORDER BY`, "deterministic behavior" is explicitly not required —
+/// which rows return is unconstrained, so a lazy streaming scan is
+/// conformant. With `ORDER BY`, `DISTINCT`, or aggregates the full row set
+/// is needed anyway; an EHR-scoped query (`ehr_ids`) is already bounded by
+/// the `ehr_id` indexes and keeps the flat shape.
+fn streaming_eligible(ir: &QueryIr, ctx: &SqlCtx) -> bool {
+    ctx.limit.is_some()
+        && ctx.ehr_ids.is_empty()
+        && ir.order_by.is_empty()
+        && !ir.distinct
+        && !ir
+            .select
+            .iter()
+            .any(|c| matches!(c.value, super::ir::SelectValue::Aggregate { .. }))
+}
+
 /// Lower a planned [`QueryIr`] to SQL.
 ///
 /// # Errors
@@ -258,7 +282,13 @@ impl<'a> Builder<'a> {
 /// render yet.
 pub fn build(ir: &QueryIr, params: &Params, ctx: &SqlCtx) -> Result<PreparedQuery, AqlError> {
     let mut b = Builder::new(ir, params, ctx);
-    b.build_from(&ir.contains)?;
+    match streaming_eligible(ir, ctx)
+        .then(|| from::streaming_plan(ir))
+        .flatten()
+    {
+        Some(plan) => b.build_from_streaming(&plan)?,
+        None => b.build_from(&ir.contains)?,
+    }
     b.apply_ehr_scope();
     b.apply_population_gate();
     let columns = b.build_select()?;
