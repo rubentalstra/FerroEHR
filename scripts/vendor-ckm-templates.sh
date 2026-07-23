@@ -29,7 +29,11 @@ SET=(
   # ── laboratory / imaging pipelines ────────────────────────────────────
   "1013.26.408|generic-lab-test-result|lab_pipeline (result contribution)"
   "1013.26.2|ereferral|lab_pipeline / imaging_pipeline (order)"
-  "1013.26.386|ccta-report|imaging_pipeline (report)"
+  # NOTE: 1013.26.386 (CCTA report) stays vendored, but the journey
+  # catalogue does not commit it: the example generator emits an RM-invalid
+  # instance for it (ELEMENT.value = ITEM_TREE) that conformant validation
+  # rejects — the catalogue carries a TODO to restore it.
+  "1013.26.386|ccta-report|vendored; catalogue commit pending an RM-valid generated example"
   # ── medication (the eMAR loop) ────────────────────────────────────────
   "1013.26.80|eprescription-fhir|medication_round (order + administrations)"
   "1013.26.357|medicines-list|medicines_reconciliation (ward-seeded, updated)"
