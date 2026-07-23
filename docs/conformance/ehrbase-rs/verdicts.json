@@ -180,8 +180,7 @@
       "claimed": true,
       "verdict": "not-earned",
       "violations": [
-        "ward_query LatencyP99 5705.727ms > max 1000ms",
-        "error_rate 0.001092896174863388 > max 0"
+        "ward_query LatencyP99 5775.359ms > max 1000ms"
       ]
     }
   ],
