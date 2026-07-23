@@ -1,10 +1,11 @@
 ---
 name: session-workflow-gotchas
-description: "Harness/hook gotchas that repeatedly cost time — background-task kill limit, attribution-hook false positives, changelog-guard label refresh"
+description: "Harness/hook gotchas that repeatedly cost time — background-task kill limit, attribution-hook false positives, changelog-guard label refresh, conformance.sh EXIT-trap corpus wipe"
 metadata: 
   node_type: memory
   type: project
   originSessionId: 1be6641a-9768-4fd5-8149-acb2551a1d97
+  modified: 2026-07-23T01:35:32.325Z
 ---
 
 Three recurring session-workflow traps (all hit 2026-07-13/14):
@@ -23,6 +24,16 @@ Three recurring session-workflow traps (all hit 2026-07-13/14):
    marker — a hand-written file whose doc comment merely *mentions* the
    marker string gets blocked from Edit (fixed in openehr-term bundle.rs by
    rewording; avoid quoting the marker in prose).
+
+4. **Killing scripts/conformance.sh destroys the seeded corpus** (hit
+   2026-07-23): the script's `trap compose_down EXIT` fires on ANY exit —
+   `pkill` of a mid-seed pipeline runs `docker compose down -v` and wipes
+   the hour-long 1M-composition seed + the perf-corpus sidecar's backing
+   data. If a run must be aborted but the corpus kept, kill with SIGKILL
+   (`pkill -9 -f conformance.sh`) so the trap cannot run — or accept the
+   re-seed. Corollary: smoke-test new measured-workload wire shapes against
+   a light composed stack BEFORE burning a seeded run (the pack preflight
+   gate now covers payload validity at seeding).
 
 3. **Guard labels need a fresh PR event** — the label-gated CI guards
    (`no-changelog` on changelog-guard, `no-ui-visual-change` on
