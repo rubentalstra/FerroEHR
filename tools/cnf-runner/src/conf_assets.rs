@@ -167,7 +167,8 @@ pub fn heat_grid_svg(
     svg_open(&mut out, width, height);
     let _ = writeln!(
         out,
-        "<text x=\"{MARGIN}\" y=\"28\" class=\"title\">Capability conformance — {sut_label}</text>"
+        "<text x=\"{MARGIN}\" y=\"28\" class=\"title\">Capability conformance — {}</text>",
+        xml_escape(sut_label)
     );
     // Legend (glyph + label per evidence kind; swatch + glyph = both channels).
     let mut lx = MARGIN;
@@ -244,6 +245,13 @@ pub struct ChapterCounts {
     pub failed: u64,
     pub errored: u64,
     pub not_applicable: u64,
+}
+
+/// Escape a string for SVG text content (XML character data): `&` and `<`
+/// break strict XML parsers when emitted raw — "Security & privacy" once
+/// shipped an invalid document.
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
 /// The schedule chapter of a case id — the SM component of an
@@ -345,7 +353,8 @@ pub fn chapter_bars_svg(sut_label: &str, chapters: &[(&str, ChapterCounts)]) -> 
     svg_open(&mut out, width, height);
     let _ = writeln!(
         out,
-        "<text x=\"{MARGIN}\" y=\"28\" class=\"title\">Schedule outcomes by chapter — {sut_label}</text>\n"
+        "<text x=\"{MARGIN}\" y=\"28\" class=\"title\">Schedule outcomes by chapter — {}</text>\n",
+        xml_escape(sut_label)
     );
     // Legend.
     let mut lx = MARGIN;
@@ -369,7 +378,8 @@ pub fn chapter_bars_svg(sut_label: &str, chapters: &[(&str, ChapterCounts)]) -> 
         let total = counts.passed + counts.failed + counts.errored + counts.not_applicable;
         let _ = writeln!(
             out,
-            "<text x=\"{x}\" y=\"{ty}\" text-anchor=\"end\">{chapter}</text>",
+            "<text x=\"{x}\" y=\"{ty}\" text-anchor=\"end\">{}</text>",
+            xml_escape(chapter),
             x = MARGIN + LABEL_W - 8.0,
             ty = y + 17.0,
         );
@@ -507,5 +517,18 @@ mod tests {
         assert!(svg.contains(">15<"));
         assert!(svg.contains("bar-na"));
         assert!(svg.contains("prefers-color-scheme: dark"));
+    }
+
+    #[test]
+    fn svg_text_is_xml_escaped() {
+        // "Security & privacy" once shipped a raw ampersand — invalid XML
+        // strict renderers refuse. Both emitters escape text content.
+        let bars = chapter_bars_svg(
+            "sut & co",
+            &[("Security & privacy", ChapterCounts::default())],
+        );
+        assert!(!bars.contains("Security & privacy"), "raw ampersand: {bars}");
+        assert!(bars.contains("Security &amp; privacy"));
+        assert!(bars.contains("sut &amp; co"));
     }
 }
