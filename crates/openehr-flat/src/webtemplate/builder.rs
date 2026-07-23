@@ -147,15 +147,30 @@ struct ArchetypeLabels<'a> {
 }
 
 impl Labels for ArchetypeLabels<'_> {
-    fn text(&self, _terminology: &str, code: &str) -> Option<String> {
+    fn text(&self, terminology: &str, code: &str) -> Option<String> {
+        // An EXTERNAL code's rubric is keyed by the qualified
+        // `TERMINOLOGY::code` form in the OPT ontology (OPT 1.4
+        // `term_definitions code="SNOMED-CT::…"`); the bare-code key serves
+        // the local at-codes. Try bare first (the overwhelmingly common
+        // case), then qualified.
         self.ctx
             .text(self.arch_id, code, &self.ctx.default_language)
+            .or_else(|| {
+                self.ctx.text(
+                    self.arch_id,
+                    &format!("{terminology}::{code}"),
+                    &self.ctx.default_language,
+                )
+            })
     }
 
-    fn localized(&self, _terminology: &str, code: &str) -> IndexMap<String, String> {
+    fn localized(&self, terminology: &str, code: &str) -> IndexMap<String, String> {
         let mut out = IndexMap::new();
         for lang in &self.ctx.languages {
-            if let Some(t) = self.ctx.text(self.arch_id, code, lang) {
+            if let Some(t) = self.ctx.text(self.arch_id, code, lang).or_else(|| {
+                self.ctx
+                    .text(self.arch_id, &format!("{terminology}::{code}"), lang)
+            }) {
                 out.insert(lang.clone(), t);
             }
         }

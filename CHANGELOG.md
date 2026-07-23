@@ -117,6 +117,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Coded-text example values now carry the template-bound rubric**: the
+  Web Template builder resolved display labels only for local at-codes,
+  so an external code's rubric (OPT `term_definitions` keyed
+  `TERMINOLOGY::code`, e.g. SNOMED-CT bindings) was lost and generated
+  examples emitted the raw code as `DV_CODED_TEXT.value` — spec-invalid
+  instance data (RM: "value must be the rubric from a controlled
+  terminology"). The qualified key now resolves; the covid19 example
+  regenerates with rubrics; every pack example commits clean on strict
+  validators.
 - **A `DV_INTERVAL` with an absent bound but a false `*_unbounded` flag is
   now rejected at commit** (422 naming the rule): BASE `Interval`
   semantics make a false unbounded flag assert a finite bound, and the
