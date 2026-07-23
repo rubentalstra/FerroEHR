@@ -558,6 +558,7 @@ mod tests {
             operations: vec![op],
             verdict: ClassVerdict::Earned,
             violations: Vec::new(),
+            resources: None,
         }
     }
 
