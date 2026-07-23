@@ -717,27 +717,24 @@ fn terminology_uncoded_and_absent_slots_are_skipped() {
     assert!(terminology_of("ISM_TRANSITION", &no_transition).is_empty());
 }
 
-/// The pinned rejection of the once-accepted wire instance: a half-open
-/// `DV_INTERVAL` carrying NO boundary flags (the ITS-JSON schema requires
-/// all four — `INTERVAL`/`DV_INTERVAL` `required`). The tolerant read defaults
-/// the missing flags to `false`, and the bound-presence rule then rejects
-/// the absent lower bound (BASE `foundation_types` `Interval`:
-/// `lower_unbounded` false asserts a finite bound). A properly-flagged
-/// half-open interval stays clean.
+/// A half-open `DV_INTERVAL` is ACCEPTED whether or not its boundary flags
+/// are present on the wire. BASE
+/// `org.openehr.base.foundation_types.interval.adoc` declares `lower`/`upper`
+/// as 0..1 with a CLOSED four-invariant set (`Limits_consistent`,
+/// `Limits_comparable`, `Lower/Upper_included_valid`) — no invariant requires
+/// a bound value when its `*_unbounded` flag is false; the guarded
+/// implications are unevaluable then and skip (AMB-43 disposition, ACCEPTED).
+/// The tolerant read defaults missing flags to `false`, which violates
+/// nothing.
 #[test]
-fn flagless_half_open_interval_is_rejected() {
-    let stale_wire = json!({
+fn half_open_interval_is_accepted_with_or_without_flags() {
+    let flagless = json!({
         "_type": "DV_INTERVAL",
         "upper": {"_type": "DV_DURATION", "value": "PT1S"}
     });
-    let violations = full(&stale_wire);
-    assert!(
-        violations.iter().any(|iv| iv.message
-            == "lower bound absent while lower_unbounded is false on type DV_INTERVAL"),
-        "got {violations:?}"
-    );
+    assert!(full(&flagless).is_empty(), "got {:?}", full(&flagless));
 
-    let proper = json!({
+    let flagged = json!({
         "_type": "DV_INTERVAL",
         "upper": {"_type": "DV_DURATION", "value": "PT1S"},
         "lower_unbounded": true,
@@ -745,5 +742,5 @@ fn flagless_half_open_interval_is_rejected() {
         "lower_included": false,
         "upper_included": true
     });
-    assert!(full(&proper).is_empty(), "got {:?}", full(&proper));
+    assert!(full(&flagged).is_empty(), "got {:?}", full(&flagged));
 }

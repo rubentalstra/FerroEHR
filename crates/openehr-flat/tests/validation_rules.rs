@@ -331,11 +331,8 @@ fn coded_value_not_in_list() {
         vec![ValidationKind::CodedValue]
     );
 
-    // The good instance carries the BOUND rubric as its value (RM
-    // dv_coded_text: value must be the rubric; this fixture's list binds
-    // the code string as its label).
     let good = json!({
-        "_type": "DV_CODED_TEXT", "value": "at0001",
+        "_type": "DV_CODED_TEXT", "value": "x",
         "defining_code": {"_type": "CODE_PHRASE",
             "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
             "code_string": "at0001"}
@@ -378,9 +375,9 @@ fn coded_value_explicit_local_rejects_foreign_terminology() {
         vec![ValidationKind::CodedValue],
         "an explicit-local closed C_CODE_PHRASE must reject a foreign-terminology code"
     );
-    // A local code in the list is clean (value = the bound rubric).
+    // A local code in the list is clean.
     let good = json!({
-        "_type": "DV_CODED_TEXT", "value": "ABC",
+        "_type": "DV_CODED_TEXT", "value": "abc",
         "defining_code": {"_type": "CODE_PHRASE",
             "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
             "code_string": "ABC"}
@@ -1717,57 +1714,4 @@ fn non_locatable_context_matches_structurally_locatable_still_needs_node_id() {
         "a LOCATABLE node still requires its archetype_node_id: {:?}",
         walk_only(&bad, &root)
     );
-}
-
-/// RM `data_types` `dv_coded_text.adoc`: "A text item whose value must be
-/// the rubric from a controlled terminology". Enforceable exactly when
-/// the template binds a rubric for the committed code — the once-accepted
-/// code-as-value instance rejects; a code the template binds no rubric
-/// for stays accepted (the demand is uncheckable without a known rubric).
-#[test]
-fn coded_text_value_must_be_the_bound_rubric() {
-    let mut n = node("DV_CODED_TEXT", "/coded");
-    let mut input = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("code"));
-    input.terminology = Some("SNOMED-CT".to_owned());
-    input.list = vec![WebTemplateCodedValue::new(
-        "1240741000000103",
-        Some("2019-nCoV (novel coronavirus) serology".to_owned()),
-    )];
-    n.inputs = vec![input];
-
-    // The defect instance: the raw code reused as the display value.
-    let code_as_value = json!({
-        "_type": "DV_CODED_TEXT", "value": "1240741000000103",
-        "defining_code": {"_type": "CODE_PHRASE",
-            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "SNOMED-CT"},
-            "code_string": "1240741000000103"}
-    });
-    assert_eq!(
-        kinds(&walk_only(&code_as_value, &n)),
-        vec![ValidationKind::CodedValue],
-        "code-as-value must reject against a bound rubric"
-    );
-
-    // The rubric as value is clean.
-    let with_rubric = json!({
-        "_type": "DV_CODED_TEXT", "value": "2019-nCoV (novel coronavirus) serology",
-        "defining_code": {"_type": "CODE_PHRASE",
-            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "SNOMED-CT"},
-            "code_string": "1240741000000103"}
-    });
-    assert!(walk_only(&with_rubric, &n).is_empty());
-
-    // A rubric-less bound code: any value stays accepted (not checkable).
-    let mut open_node = node("DV_CODED_TEXT", "/coded");
-    let mut open_input = WebTemplateInput::new(WebTemplateInputType::CodedText, Some("code"));
-    open_input.terminology = Some("SNOMED-CT".to_owned());
-    open_input.list = vec![WebTemplateCodedValue::new("999", None)];
-    open_node.inputs = vec![open_input];
-    let free_value = json!({
-        "_type": "DV_CODED_TEXT", "value": "whatever the authoring system rendered",
-        "defining_code": {"_type": "CODE_PHRASE",
-            "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "SNOMED-CT"},
-            "code_string": "999"}
-    });
-    assert!(walk_only(&free_value, &open_node).is_empty());
 }

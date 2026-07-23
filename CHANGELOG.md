@@ -146,13 +146,6 @@ workflow refuses a tag that has no matching section here.
   terminology"). The qualified key now resolves; the covid19 example
   regenerates with rubrics; every pack example commits clean on strict
   validators.
-- **A `DV_INTERVAL` with an absent bound but a false `*_unbounded` flag is
-  now rejected at commit** (422 naming the rule): BASE `Interval`
-  semantics make a false unbounded flag assert a finite bound, and the
-  ITS-JSON schema requires all four boundary flags on the wire — the
-  previously-accepted flag-less half-open instance (whose missing flags
-  read as false) is a pinned rejection test at the wire boundary, and the
-  CNF interval decision tables gain the bound-presence rejection rows.
 - **Child-assembled `DV_INTERVAL` values now carry the mandatory boundary
   flags**: an interval built from `lower`/`upper` sub-path children (the
   FLAT builder's container path — template examples included) previously
