@@ -127,9 +127,33 @@ pub fn seed_scale_ladder(
 
     let workers = workers.max(1);
 
-    // Phase 1: EHRs.
+    // Phase 1: EHRs. The FIRST create runs serially: SUTs that lazily
+    // create per-principal bookkeeping on the first authenticated write
+    // (upstream EHRbase races its internal user-row creation across
+    // parallel first contacts — "User already created concurrently",
+    // HTTP 500) settle that state once before the fan-out. Identical
+    // treatment for every SUT (fairness); a no-op where no such lazy
+    // state exists.
     let ehr_slots: Vec<Mutex<Option<String>>> = (0..ehrs).map(|_| Mutex::new(None)).collect();
-    let next_ehr = AtomicUsize::new(0);
+    let first = client
+        .request(reqwest::Method::POST, "/ehr", None, true, None)
+        .and_then(|reply| {
+            if reply.status != 201 {
+                return Err(format!("create_ehr returned {}", reply.status));
+            }
+            reply
+                .location
+                .as_deref()
+                .and_then(location_last_segment)
+                .ok_or_else(|| "create_ehr: no Location ehr_id".to_owned())
+        })
+        .map_err(|e| format!("seeding EHRs failed: {e}"))?;
+    if let Some(slot) = ehr_slots.first()
+        && let Ok(mut guard) = slot.lock()
+    {
+        *guard = Some(first);
+    }
+    let next_ehr = AtomicUsize::new(1);
     let failures: Mutex<Vec<String>> = Mutex::new(Vec::new());
     let done = AtomicUsize::new(0);
     std::thread::scope(|scope| {
