@@ -1057,3 +1057,147 @@ fn unlinked_vo_root_keeps_its_own_gate() {
         "the gate is a join + column filter, not an EXISTS probe: {sql}"
     );
 }
+
+// ── the LIMIT-streaming FROM shape ───────────────────────────────────────────
+
+/// Lower `q` with an effective LIMIT (the streaming-shape trigger).
+fn build_sql_limited(q: &str) -> String {
+    let ir = plan_ok(q);
+    let ctx = SqlCtx {
+        system_id: "sys.example.com".to_owned(),
+        ehr_ids: Vec::new(),
+        subject_scope: None,
+        limit: Some(50),
+        offset: None,
+    };
+    ehrbase::aql::sql::build(&ir, &Params::new(), &ctx)
+        .unwrap_or_else(|e| panic!("SQL build failed for {q:?}: {e}"))
+        .sql
+}
+
+const WARD_QUERY: &str = "SELECT e/ehr_id/value, c/uid/value \
+     FROM EHR e CONTAINS COMPOSITION c CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
+     WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude > 130";
+
+/// A LIMIT-bearing, unordered population query lowers to the STREAMING
+/// shape: the version spine is the single FROM item, every node source is a
+/// `LATERAL` subquery behind the `OFFSET 0` pull-up fence, and the root is
+/// pre-filtered by `vo_version.kind` — so the planner walks current versions
+/// lazily and stops at the LIMIT instead of materializing an
+/// archetype-anchor bitmap over the corpus (QUERY master03 §LIMIT: without
+/// ORDER BY, which rows return is explicitly non-deterministic).
+#[test]
+fn limit_without_order_by_streams() {
+    let sql = build_sql_limited(WARD_QUERY);
+    assert!(
+        sql.contains(r#"FROM "vo_version" AS "v"#),
+        "the version spine drives: {sql}"
+    );
+    assert_eq!(
+        sql.matches("JOIN LATERAL").count(),
+        2,
+        "one lateral per node source (root + observation): {sql}"
+    );
+    // sea-query binds the fence's 0 as a parameter — the pull-up block is
+    // syntactic (an OFFSET clause of any value), so the fence holds.
+    assert_eq!(
+        sql.matches("OFFSET $").count(),
+        2,
+        "every lateral carries the pull-up fence: {sql}"
+    );
+    assert!(
+        sql.contains(r#""kind" IN"#),
+        "the spine pre-filters by versioned-object kind: {sql}"
+    );
+    assert!(sql.contains("LIMIT"), "the paging window survives: {sql}");
+    // The dead-audit fix: nothing projects an audit field, so no audit join.
+    assert!(
+        !sql.contains(r#""audit""#),
+        "no audit join without an audit-field projection: {sql}"
+    );
+}
+
+/// `ORDER BY` needs the full row set in a defined order — the flat shape
+/// stays (no laterals).
+#[test]
+fn order_by_keeps_the_flat_shape() {
+    let sql = build_sql_limited(&format!("{WARD_QUERY} ORDER BY c/uid/value"));
+    assert!(!sql.contains("JOIN LATERAL"), "flat under ORDER BY: {sql}");
+}
+
+/// Without a LIMIT there is nothing to stream toward — flat.
+#[test]
+fn no_limit_keeps_the_flat_shape() {
+    let sql = build_sql(WARD_QUERY);
+    assert!(!sql.contains("JOIN LATERAL"), "flat without LIMIT: {sql}");
+}
+
+/// An EHR-scoped execution is already bounded by the `ehr_id` indexes — flat.
+#[test]
+fn ehr_scoped_execution_keeps_the_flat_shape() {
+    let ir = plan_ok(WARD_QUERY);
+    let ctx = SqlCtx {
+        system_id: "sys.example.com".to_owned(),
+        ehr_ids: vec![ehrbase::ids::EhrId(uuid::Uuid::nil())],
+        subject_scope: None,
+        limit: Some(50),
+        offset: None,
+    };
+    let sql = ehrbase::aql::sql::build(&ir, &Params::new(), &ctx)
+        .unwrap_or_else(|e| panic!("SQL build failed: {e}"))
+        .sql;
+    assert!(!sql.contains("JOIN LATERAL"), "flat when EHR-scoped: {sql}");
+}
+
+/// Aggregates and DISTINCT consume the full row set — flat.
+#[test]
+fn aggregates_and_distinct_keep_the_flat_shape() {
+    let agg = build_sql_limited("SELECT COUNT(*) FROM EHR e CONTAINS COMPOSITION c");
+    assert!(!agg.contains("JOIN LATERAL"), "flat under COUNT: {agg}");
+    let distinct =
+        build_sql_limited("SELECT DISTINCT c/uid/value FROM EHR e CONTAINS COMPOSITION c");
+    assert!(
+        !distinct.contains("JOIN LATERAL"),
+        "flat under DISTINCT: {distinct}"
+    );
+}
+
+/// OR-containment needs the disjunctive EXISTS machinery — falls back flat.
+#[test]
+fn or_containment_keeps_the_flat_shape() {
+    let sql = build_sql_limited(
+        "SELECT c/uid/value FROM COMPOSITION c CONTAINS \
+         (OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] OR \
+          EVALUATION ev [openEHR-EHR-EVALUATION.problem_diagnosis.v1])",
+    );
+    assert!(
+        !sql.contains("JOIN LATERAL"),
+        "flat under OR containment: {sql}"
+    );
+}
+
+/// The streaming shape keeps the population gate: a bare root (no EHR
+/// variable) still joins the queryable gate; an EHR-linked root is covered
+/// by its EHR alias.
+#[test]
+fn streaming_shape_keeps_the_population_gate() {
+    let linked = build_sql_limited(WARD_QUERY);
+    assert_eq!(
+        linked.matches(r#""is_queryable" = $"#).count(),
+        1,
+        "exactly one gate: {linked}"
+    );
+    assert!(
+        linked.contains(r#""e0"."is_queryable" = $"#),
+        "the gate sits on the EHR alias: {linked}"
+    );
+    let bare = build_sql_limited("SELECT c/uid/value FROM COMPOSITION c");
+    assert!(
+        bare.contains("JOIN LATERAL"),
+        "a bare VO root still streams: {bare}"
+    );
+    assert!(
+        bare.contains(r#""is_queryable" = $"#),
+        "the bare root keeps its queryable gate: {bare}"
+    );
+}

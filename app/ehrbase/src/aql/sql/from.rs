@@ -13,12 +13,12 @@
 //! §Containment — boolean `AND`/`OR`, `NOT`).
 
 use sea_query::extension::postgres::PgExpr as _;
-use sea_query::{Alias, Expr, ExprTrait as _, Query, SelectStatement};
+use sea_query::{Alias, Asterisk, Expr, ExprTrait as _, JoinType, Query, SelectStatement};
 use uuid::Uuid;
 
 use crate::aql::error::{AqlError, SqlError};
 use crate::aql::ir::{
-    Contained, ContainsTree, EhrField, EhrPredicate, Link, RmSource, Source, VersionField,
+    Contained, ContainsTree, EhrField, EhrPredicate, Link, QueryIr, RmSource, Source, VersionField,
     VersionScope,
 };
 use crate::db::iden::{Audit, Ehr, Node, VoVersion};
@@ -37,12 +37,238 @@ enum ExistsAnchor {
     Ehr(String),
 }
 
+/// The streaming-shape plan: the linear containment chain eligible for the
+/// LIMIT-streaming FROM (see [`Builder::build_from_streaming`]).
+#[derive(Debug)]
+pub(super) struct StreamPlan {
+    /// The enclosing `EHR` source, when present.
+    ehr: Option<usize>,
+    /// The single versioned-object-root RM source.
+    root: usize,
+    /// Contained content sources as `(source id, parent source id)`,
+    /// pre-order.
+    contained: Vec<(usize, usize)>,
+}
+
+/// Extract the streaming-eligible containment chain, or `None` when the
+/// tree needs the general flat shape: `OR`/`NOT CONTAINS` branches,
+/// `VERSION` sources, a bare `EHR` with no versioned-object root, nested
+/// versioned-object roots (a second version group), or an untyped root.
+pub(super) fn streaming_plan(ir: &QueryIr) -> Option<StreamPlan> {
+    let (ehr, root_tree) = match &ir.contains {
+        ContainsTree::Operand { source, contained } => match &ir.sources[source.0] {
+            Source::Ehr(_) => match contained.as_deref() {
+                Some(Contained {
+                    link: Link::Contains,
+                    tree,
+                }) => (Some(source.0), tree),
+                _ => return None,
+            },
+            Source::Rm(_) => (None, &ir.contains),
+            Source::Version(_) => return None,
+        },
+        _ => return None,
+    };
+    let ContainsTree::Operand { source, contained } = root_tree else {
+        return None;
+    };
+    let root = source.0;
+    let Source::Rm(r) = &ir.sources[root] else {
+        return None;
+    };
+    if r.rm_type.is_empty() || !r.rm_type.names().iter().all(|t| is_vo_root_type(t)) {
+        return None;
+    }
+    let mut plan = StreamPlan {
+        ehr,
+        root,
+        contained: Vec::new(),
+    };
+    if let Some(c) = contained.as_deref() {
+        if !matches!(c.link, Link::Contains) {
+            return None;
+        }
+        if !collect_contained(ir, &c.tree, root, &mut plan.contained) {
+            return None;
+        }
+    }
+    Some(plan)
+}
+
+/// Collect the contained content sources of a streaming chain (pre-order),
+/// or `false` when the subtree is ineligible.
+fn collect_contained(
+    ir: &QueryIr,
+    tree: &ContainsTree,
+    parent: usize,
+    out: &mut Vec<(usize, usize)>,
+) -> bool {
+    match tree {
+        ContainsTree::And(a, b) => {
+            collect_contained(ir, a, parent, out) && collect_contained(ir, b, parent, out)
+        }
+        ContainsTree::Or(..) => false,
+        ContainsTree::Operand { source, contained } => {
+            let sid = source.0;
+            let Source::Rm(r) = &ir.sources[sid] else {
+                return false;
+            };
+            // A nested versioned-object root would open its own version
+            // group — the flat shape owns that case.
+            if r.rm_type.names().iter().any(|t| is_vo_root_type(t)) {
+                return false;
+            }
+            out.push((sid, parent));
+            match contained.as_deref() {
+                None => true,
+                Some(Contained {
+                    link: Link::Contains,
+                    tree,
+                }) => collect_contained(ir, tree, sid, out),
+                Some(_) => false,
+            }
+        }
+    }
+}
+
 impl Builder<'_> {
     // ── FROM / containment ────────────────────────────────────────────────────
 
     pub(super) fn build_from(&mut self, tree: &ContainsTree) -> Result<(), AqlError> {
         self.walk(tree, None, None)?;
         Ok(())
+    }
+
+    /// Emit the STREAMING FROM shape for a LIMIT-bearing, unordered query:
+    /// the version spine (`vo_version`) is the single FROM item and every
+    /// node source hangs off it as a `LATERAL` subquery (`OFFSET 0` as the
+    /// planner's documented pull-up fence), so `PostgreSQL` walks current
+    /// versions lazily, probes each through the nested-set indexes, and
+    /// stops at the LIMIT — instead of materializing an archetype-anchor
+    /// bitmap over the whole corpus first (the measured 1M-entry/1 s
+    /// failure on non-selective anchors).
+    ///
+    /// Semantics are identical to the flat shape: each `LATERAL` returns
+    /// ALL matching nodes per outer row, so row-per-binding multiplicity
+    /// is preserved (QUERY master03 §DISTINCT — duplicates exist by
+    /// default), and QUERY master03 §LIMIT makes WHICH rows return
+    /// explicitly non-deterministic without `ORDER BY`, so the changed
+    /// visit order is conformant. No openEHR spec governs the join
+    /// mechanics — the shape selection is our own design.
+    pub(super) fn build_from_streaming(&mut self, plan: &StreamPlan) -> Result<(), AqlError> {
+        self.streaming = true;
+        let Source::Rm(root) = self.ir.sources[plan.root].clone() else {
+            return Err(SqlError::Unsupported(
+                "streaming plan root is not an RM source".to_owned(),
+            )
+            .into());
+        };
+
+        // The version spine: the one FROM item everything joins onto.
+        let v = format!("v{}", plan.root);
+        self.q.from_as(VoVersion::Table, Alias::new(v.as_str()));
+        let kinds: Vec<String> = root.rm_type.names().to_vec();
+        self.q.and_where(col(&v, "kind").is_in(kinds));
+        self.push_scope(&v, &root.scope)?;
+
+        if let Some(esid) = plan.ehr {
+            let e = format!("e{esid}");
+            self.q.join_as(
+                JoinType::Join,
+                Ehr::Table,
+                Alias::new(e.as_str()),
+                col(&e, "id").eq(col(&v, "ehr_id")),
+            );
+            let Source::Ehr(src) = self.ir.sources[esid].clone() else {
+                return Err(SqlError::Unsupported(
+                    "streaming plan EHR is not an EHR source".to_owned(),
+                )
+                .into());
+            };
+            for p in &src.predicates {
+                self.push_ehr_predicate(&e, p)?;
+            }
+            self.ehr_alias.insert(esid, e);
+        }
+
+        // The root node: `num = 0` of the spine's version.
+        let root_alias = format!("n{}", plan.root);
+        let mut sub = Query::select();
+        sub.column(Asterisk)
+            .from(Node::Table)
+            .and_where(Expr::col(Alias::new("vo_id")).eq(col(&v, "vo_id")))
+            .and_where(Expr::col(Alias::new("sys_version")).eq(col(&v, "sys_version")))
+            .and_where(Expr::col(Alias::new("num")).eq(Expr::val(0)))
+            .offset(0);
+        self.q.join_lateral(
+            JoinType::Join,
+            sub,
+            Alias::new(root_alias.as_str()),
+            Expr::val(true),
+        );
+        for cond in self.rm_conds(&root_alias, &root)? {
+            self.q.and_where(cond);
+        }
+        self.node_alias.insert(plan.root, root_alias.clone());
+        self.vo_alias.insert(plan.root, v.clone());
+        self.group_roots.push(root_alias.clone());
+        self.group_vos.push(v.clone());
+        if plan.ehr.is_some() {
+            self.roots_linked_to_ehr.insert(root_alias.clone());
+        }
+
+        // Contained content sources: one LATERAL per source, interval-bound
+        // into its parent's subtree.
+        for (sid, parent) in &plan.contained {
+            let p = self.node_alias.get(parent).cloned().ok_or_else(|| {
+                SqlError::Unsupported("streaming plan parent without an alias".to_owned())
+            })?;
+            let Source::Rm(r) = self.ir.sources[*sid].clone() else {
+                return Err(SqlError::Unsupported(
+                    "streaming plan content is not an RM source".to_owned(),
+                )
+                .into());
+            };
+            let alias = format!("n{sid}");
+            let mut sub = Query::select();
+            sub.column(Asterisk)
+                .from(Node::Table)
+                .and_where(Expr::col(Alias::new("vo_id")).eq(col(&p, "vo_id")))
+                .and_where(Expr::col(Alias::new("sys_version")).eq(col(&p, "sys_version")))
+                .and_where(Expr::col(Alias::new("num")).between(col(&p, "num"), col(&p, "num_cap")))
+                .offset(0);
+            self.q.join_lateral(
+                JoinType::Join,
+                sub,
+                Alias::new(alias.as_str()),
+                Expr::val(true),
+            );
+            for cond in self.rm_conds(&alias, &r)? {
+                self.q.and_where(cond);
+            }
+            self.node_alias.insert(*sid, alias);
+        }
+        Ok(())
+    }
+
+    /// The single-source node conditions of an RM source (type, archetype,
+    /// name, standard predicates) — the one implementation the flat walk,
+    /// the `EXISTS` builder, and the streaming laterals all share.
+    fn rm_conds(&self, alias: &str, r: &RmSource) -> Result<Vec<Expr>, AqlError> {
+        let mut out = Vec::new();
+        if let Some(cond) = type_cond(alias, &r.rm_type) {
+            out.push(cond);
+        }
+        if let Some(a) = &r.archetype {
+            out.push(self.archetype_cond(alias, a)?);
+        }
+        if let Some(n) = &r.name {
+            out.push(self.name_cond(alias, n)?);
+        }
+        for sp in &r.standard {
+            out.push(self.std_cond(alias, sp)?);
+        }
+        Ok(out)
     }
 
     fn walk(
@@ -166,19 +392,7 @@ impl Builder<'_> {
         let node = format!("n{sid}");
         self.q.from_as(Node::Table, Alias::new(node.as_str()));
         self.node_alias.insert(sid, node.clone());
-        if let Some(cond) = type_cond(&node, &r.rm_type) {
-            self.q.and_where(cond);
-        }
-        if let Some(a) = &r.archetype {
-            let cond = self.archetype_cond(&node, a)?;
-            self.q.and_where(cond);
-        }
-        if let Some(n) = &r.name {
-            let cond = self.name_cond(&node, n)?;
-            self.q.and_where(cond);
-        }
-        for sp in &r.standard {
-            let cond = self.std_cond(&node, sp)?;
+        for cond in self.rm_conds(&node, r)? {
             self.q.and_where(cond);
         }
 
@@ -261,19 +475,7 @@ impl Builder<'_> {
                 sub.expr(Expr::val(1));
                 sub.from_as(Node::Table, Alias::new(alias.as_str()));
                 self.anchor_correlation(&mut sub, anchor, &alias, &r.scope)?;
-                if let Some(cond) = type_cond(&alias, &r.rm_type) {
-                    sub.and_where(cond);
-                }
-                if let Some(a) = &r.archetype {
-                    let cond = self.archetype_cond(&alias, a)?;
-                    sub.and_where(cond);
-                }
-                if let Some(n) = &r.name {
-                    let cond = self.name_cond(&alias, n)?;
-                    sub.and_where(cond);
-                }
-                for sp in &r.standard {
-                    let cond = self.std_cond(&alias, sp)?;
+                for cond in self.rm_conds(&alias, &r)? {
                     sub.and_where(cond);
                 }
                 if let Some(c) = contained {
@@ -410,8 +612,14 @@ impl Builder<'_> {
     /// spec governs the join mechanics — our own storage design.
     fn gate_vo_root(&mut self, root: &str) {
         let alias = format!("qg{}", self.next_ctr());
-        self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
-        self.q.and_where(col(&alias, "id").eq(col(root, "ehr_id")));
+        let link = col(&alias, "id").eq(col(root, "ehr_id"));
+        if self.streaming {
+            self.q
+                .join_as(JoinType::Join, Ehr::Table, Alias::new(alias.as_str()), link);
+        } else {
+            self.q.from_as(Ehr::Table, Alias::new(alias.as_str()));
+            self.q.and_where(link);
+        }
         self.q.and_where(col(&alias, "is_queryable").eq(true));
     }
 
@@ -435,18 +643,35 @@ impl Builder<'_> {
         })?;
         let vo = format!("esv{}", self.next_ctr());
         let node = format!("esn{}", self.next_ctr());
-        self.q.from_as(VoVersion::Table, Alias::new(vo.as_str()));
-        self.q.from_as(Node::Table, Alias::new(node.as_str()));
-        self.q.and_where(col(&vo, "ehr_id").eq(col(&ehr, "id")));
+        let vo_link = col(&vo, "ehr_id").eq(col(&ehr, "id"));
+        let node_link = col(&node, "vo_id")
+            .eq(col(&vo, "vo_id"))
+            .and(col(&node, "sys_version").eq(col(&vo, "sys_version")));
+        if self.streaming {
+            self.q.join_as(
+                JoinType::Join,
+                VoVersion::Table,
+                Alias::new(vo.as_str()),
+                vo_link,
+            );
+            self.q.join_as(
+                JoinType::Join,
+                Node::Table,
+                Alias::new(node.as_str()),
+                node_link,
+            );
+        } else {
+            self.q.from_as(VoVersion::Table, Alias::new(vo.as_str()));
+            self.q.from_as(Node::Table, Alias::new(node.as_str()));
+            self.q.and_where(vo_link);
+            self.q.and_where(node_link);
+        }
         self.q
             .and_where(col(&vo, "kind").eq(Expr::val("EHR_STATUS")));
         self.q
             .and_where(call("upper_inf", vec![col(&vo, "sys_period")]));
         // Current = latest trunk (master06 latest_trunk_version).
         self.q.and_where(col(&vo, "branch_number").eq(Expr::val(0)));
-        self.q.and_where(col(&node, "vo_id").eq(col(&vo, "vo_id")));
-        self.q
-            .and_where(col(&node, "sys_version").eq(col(&vo, "sys_version")));
         self.q.and_where(col(&node, "num").eq(Expr::val(0)));
         self.ehr_status_node.insert(ehr_sid, node.clone());
         // Register as the source node so `source_node`/`whole_object_alias`/
@@ -461,8 +686,18 @@ impl Builder<'_> {
             return a.clone();
         }
         let alias = format!("a_{voa}");
-        self.q.from_as(Audit::Table, Alias::new(alias.as_str()));
-        self.q.and_where(col(&alias, "id").eq(col(voa, "audit_id")));
+        let cond = col(&alias, "id").eq(col(voa, "audit_id"));
+        if self.streaming {
+            self.q.join_as(
+                JoinType::Join,
+                Audit::Table,
+                Alias::new(alias.as_str()),
+                cond,
+            );
+        } else {
+            self.q.from_as(Audit::Table, Alias::new(alias.as_str()));
+            self.q.and_where(cond);
+        }
         self.audit_alias.insert(voa.to_owned(), alias.clone());
         alias
     }
@@ -489,9 +724,9 @@ impl Builder<'_> {
                 self.q.and_where(col(voa, "branch_number").eq(Expr::val(0)));
             }
             VersionScope::Predicate(p) => {
-                let aud = self.ensure_audit(voa);
-                let lhs = version_field_expr(voa, &aud, p.field, &self.ctx.system_id);
+                let system_id = self.ctx.system_id.clone();
                 let rhs = cast(Expr::val(self.bind_value(&p.value)?), "text");
+                let lhs = version_field_expr(voa, || self.ensure_audit(voa), p.field, &system_id);
                 self.q
                     .and_where(lhs.binary(super::expr::binoper(p.op), rhs));
             }
