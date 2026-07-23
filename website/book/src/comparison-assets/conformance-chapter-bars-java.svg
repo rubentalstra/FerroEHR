@@ -54,15 +54,15 @@ text { fill: #c3c2b7; }
 
 <text x="793.1869918699185" y="81" class="seg-label-dim" text-anchor="middle">8</text><text x="821.9999999999999" y="81" class="muted">123</text>
 <text x="166" y="115" text-anchor="end">Definitions</text>
-<rect x="174" y="98" width="57.235772357723576" height="26" class="bar-passed"/>
+<rect x="174" y="98" width="62.4390243902439" height="26" class="bar-passed"/>
 
-<text x="202.6178861788618" y="115" class="seg-label" text-anchor="middle">11</text><rect x="231.2357723577236" y="98" width="20.8130081300813" height="26" class="bar-failed"/>
+<text x="205.21951219512195" y="115" class="seg-label" text-anchor="middle">12</text><rect x="236.4390243902439" y="98" width="31.21951219512195" height="26" class="bar-failed"/>
 
-<rect x="252.0487804878049" y="98" width="88.45528455284553" height="26" class="bar-errored"/>
+<text x="252.0487804878049" y="115" class="seg-label" text-anchor="middle">6</text><rect x="267.6585365853658" y="98" width="88.45528455284553" height="26" class="bar-errored"/>
 
-<text x="296.2764227642277" y="115" class="seg-label" text-anchor="middle">17</text><rect x="340.5040650406504" y="98" width="83.2520325203252" height="26" class="bar-na"/>
+<text x="311.8861788617886" y="115" class="seg-label" text-anchor="middle">17</text><rect x="356.11382113821134" y="98" width="83.2520325203252" height="26" class="bar-na"/>
 
-<text x="382.130081300813" y="115" class="seg-label-dim" text-anchor="middle">16</text><text x="431.7560975609756" y="115" class="muted">48</text>
+<text x="397.73983739837394" y="115" class="seg-label-dim" text-anchor="middle">16</text><text x="447.36585365853654" y="115" class="muted">51</text>
 <text x="166" y="149" text-anchor="end">Query</text>
 <rect x="174" y="132" width="46.829268292682926" height="26" class="bar-passed"/>
 
