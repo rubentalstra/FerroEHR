@@ -70,7 +70,7 @@ does not decide the work is done on your behalf.
    another still-open issue consumes the same plan file; then note that on
    the issue instead. Exceptions that are NEVER deleted:
    `docs/plans/WORKLIST.md` (the tracker pointer stub), `docs/plans/README.md`
-   (the lifecycle guide), and `docs/plans/cnf-conformance-strategy.md` (the
+   (the lifecycle guide), and `docs/conformance/cnf-design.md` (the
    permanent CNF 2.0 design record, owner ruling 2026-07-22).
 8. **Remind the user to commit** the close on the current
    conventional-type branch (`feat/…` etc., per the CLAUDE.md branch hard
