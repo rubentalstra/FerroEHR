@@ -129,51 +129,48 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
             floor_x - x0,
         );
         let measured = measurements.iter().find(|m| m.class == case.class);
-        match measured {
-            Some(m) => {
-                let mx = log_pos(m.offered_load_sustained, min, max, x0, x1);
-                let _ = writeln!(
-                    out,
-                    "<rect x=\"{x0}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{bar_h}\" rx=\"4\" class=\"measured\"/>",
-                    (mx - x0).max(2.0),
-                );
-                let (class_name, verdict_text) = match m.verdict {
-                    ClassVerdict::Earned => ("earned", "EARNED"),
-                    ClassVerdict::NotEarned => ("notearned", "not earned"),
-                };
-                // Right-edge guard: a bar ending far right gets its label
-                // INSIDE (anchored at the bar end) instead of clipping.
-                let label_w = 176.0;
-                let (lx, anchor) = if mx + 8.0 + label_w > width - 24.0 {
-                    (mx - 8.0 - label_w, "start")
-                } else {
-                    (mx + 8.0, "start")
-                };
-                let _ = writeln!(
-                    out,
-                    "<text x=\"{lx:.1}\" y=\"{:.1}\" text-anchor=\"{anchor}\">sustained {:.1}/s</text>\
-                     <text x=\"{:.1}\" y=\"{:.1}\" class=\"{class_name}\"> · {verdict_text}</text>",
-                    y + bar_h - 4.0,
-                    m.offered_load_sustained,
-                    lx + 92.0,
-                    y + bar_h - 4.0,
-                );
-            }
-            None => {
-                // Same right-edge guard for the un-measured rows (class R's
-                // floor bar ends near the canvas edge).
-                let label_w = 160.0;
-                let lx = if floor_x + 8.0 + label_w > width - 24.0 {
-                    floor_x - 8.0 - label_w
-                } else {
-                    floor_x + 8.0
-                };
-                let _ = writeln!(
-                    out,
-                    "<text x=\"{lx:.1}\" y=\"{:.1}\" class=\"muted\">floor {floor}/s — not measured</text>",
-                    y + bar_h - 4.0,
-                );
-            }
+        if let Some(m) = measured {
+            let mx = log_pos(m.offered_load_sustained, min, max, x0, x1);
+            let _ = writeln!(
+                out,
+                "<rect x=\"{x0}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{bar_h}\" rx=\"4\" class=\"measured\"/>",
+                (mx - x0).max(2.0),
+            );
+            let (class_name, verdict_text) = match m.verdict {
+                ClassVerdict::Earned => ("earned", "EARNED"),
+                ClassVerdict::NotEarned => ("notearned", "not earned"),
+            };
+            // Right-edge guard: a bar ending far right gets its label
+            // INSIDE (anchored at the bar end) instead of clipping.
+            let label_w = 176.0;
+            let lx = if mx + 8.0 + label_w > width - 24.0 {
+                mx - 8.0 - label_w
+            } else {
+                mx + 8.0
+            };
+            let _ = writeln!(
+                out,
+                "<text x=\"{lx:.1}\" y=\"{:.1}\">sustained {:.1}/s</text>\
+                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"{class_name}\"> · {verdict_text}</text>",
+                y + bar_h - 4.0,
+                m.offered_load_sustained,
+                lx + 92.0,
+                y + bar_h - 4.0,
+            );
+        } else {
+            // Same right-edge guard for the un-measured rows (class R's
+            // floor bar ends near the canvas edge).
+            let label_w = 160.0;
+            let lx = if floor_x + 8.0 + label_w > width - 24.0 {
+                floor_x - 8.0 - label_w
+            } else {
+                floor_x + 8.0
+            };
+            let _ = writeln!(
+                out,
+                "<text x=\"{lx:.1}\" y=\"{:.1}\" class=\"muted\">floor {floor}/s — not measured</text>",
+                y + bar_h - 4.0,
+            );
         }
     }
     out.push_str("</svg>\n");
