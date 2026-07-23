@@ -41,7 +41,7 @@ text { fill: #c3c2b7; }
 }
 </style>
 
-<text x="24" y="28" class="title">Schedule outcomes by chapter — ehrbase-rs 3.7.0</text>
+<text x="24" y="28" class="title">Schedule outcomes by chapter — ehrbase-rs 3.8.0</text>
 
 <rect x="24" y="38" width="14" height="14" rx="3" class="bar-passed"/><text x="42" y="49" class="muted">passed</text><rect x="103.2" y="38" width="14" height="14" rx="3" class="bar-failed"/><text x="121.2" y="49" class="muted">failed</text><rect x="182.4" y="38" width="14" height="14" rx="3" class="bar-errored"/><text x="200.4" y="49" class="muted">errored</text><rect x="268.8" y="38" width="14" height="14" rx="3" class="bar-na"/><text x="286.8" y="49" class="muted">N/A (cited)</text><text x="166" y="81" text-anchor="end">EHR</text>
 <rect x="174" y="64" width="598.3739837398374" height="26" class="bar-passed"/>
