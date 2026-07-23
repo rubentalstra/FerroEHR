@@ -314,6 +314,43 @@ fn parse_stats(v: &serde_json::Value) -> Option<RawCounters> {
     })
 }
 
+/// Pay the database's maintenance debt outside the measured windows:
+/// seeding outruns autovacuum/autoanalyze (a stale-statistics plan cost a
+/// measured ~9x on the ward-worklist query, 2026-07-23), and an
+/// autovacuum firing INSIDE a window saturates the engine
+/// mid-measurement. `vacuumdb --all --analyze` through the DB container
+/// settles both, deterministically, identically for every SUT.
+/// NOTE: no openEHR spec governs measured performance — instrument-side
+/// fairness, our own design/extension (the retired benchmark lab's
+/// documented prior art).
+///
+/// # Errors
+/// A message when the runtime/exec/`vacuumdb` is unavailable or fails
+/// (logged and skipped by callers — never a run failure).
+pub fn settle_maintenance(db_container: &str) -> Result<(), String> {
+    let output = Command::new("docker")
+        .args([
+            "exec",
+            db_container,
+            "vacuumdb",
+            "-U",
+            "postgres",
+            "--all",
+            "--analyze",
+        ])
+        .output()
+        .map_err(|e| format!("docker exec: {e}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "vacuumdb failed (exit {:?}): {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
 /// Probe the database volume's on-disk size (bytes): a read-only `du`
 /// over the volume mount inside the DB container — instrument telemetry
 /// through the container runtime, never a clinical-data path.

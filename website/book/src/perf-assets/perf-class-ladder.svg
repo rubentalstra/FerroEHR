@@ -11,6 +11,11 @@ text { fill: #52514e; font: 12px -apple-system, 'Segoe UI', Helvetica, Arial, sa
 .notearned { fill: #b3261e; font-weight: 600; }
 .slo { stroke: #b3261e; stroke-width: 1.5; stroke-dasharray: 6 4; }
 .slotext { fill: #b3261e; font-size: 11px; }
+.sut { stroke: #2a78d6; fill: none; stroke-width: 1.8; }
+.db { stroke: #8a8880; fill: none; stroke-width: 1.6; stroke-dasharray: 5 3; }
+.warm { fill: #efede8; }
+.curve { stroke: #2a78d6; fill: none; stroke-width: 2; }
+.knee { stroke: #1baf7a; stroke-width: 2; stroke-dasharray: 2 3; }
 @media (prefers-color-scheme: dark) {
 text { fill: #c3c2b7; }
 .title { fill: #ffffff; }
@@ -23,6 +28,11 @@ text { fill: #c3c2b7; }
 .notearned { fill: #e5484d; }
 .slo { stroke: #e5484d; }
 .slotext { fill: #e5484d; }
+.sut { stroke: #3987e5; }
+.db { stroke: #8f8e85; }
+.warm { fill: #2a2a28; }
+.curve { stroke: #3987e5; }
+.knee { stroke: #26c78d; }
 }
 </style>
 <text x="24" y="28" class="title">Performance class ladder — offered-load floors vs measured sustained load</text>

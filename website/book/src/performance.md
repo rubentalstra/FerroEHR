@@ -181,10 +181,10 @@ cnf-runner perf --root tools/cnf-runner/artifacts \
 # the case's normative window and the default; two, four, six, eight, or
 # twelve hours hold the same offered load for longer — a stricter
 # demonstration of the same class). The seeded corpus is reusable across
-# runs via the sidecar index written by the first seeding.
+# every run seeds the freshly composed server from empty.
 cnf-runner perf --root tools/cnf-runner/artifacts \
                 --ixit <ixit.json> --results <results.json> \
-                --class POC --skip-seed --hours 8
+                --class POC --hours 8
 ```
 
 There is deliberately no shortened run: the measurement record always covers
@@ -209,7 +209,7 @@ throughput**: the highest offered rate held inside the latency budget
 # the step-load stress ladder over the seeded corpus (exploration only)
 cnf-runner stress --root tools/cnf-runner/artifacts \
                   --ixit <ixit.json> --out <stress.json> \
-                  --corpus-class POC --skip-seed
+                  --corpus-class POC
 ```
 
 The two instruments never blur: a stress report earns no class, never

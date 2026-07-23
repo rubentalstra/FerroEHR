@@ -126,8 +126,8 @@ cargo fmt --all
 cargo audit && cargo deny check
 # conformance pipeline (the acceptance instrument) — the CNF 2.0 runner:
 bash scripts/conformance.sh   # compose up --build (fresh volumes) → the CNF catalogue → verdicts → docs/conformance/<sut>/ (results + verdicts + report/statement/certificate + badges); baseline numbers live ONLY in the committed artifacts
-# measured performance (hour-plus, exclusive SUT): CONF_PERF_CLASS=POC|S|L|R [CONF_PERF_HOURS=1|2|4|6|8|12] [CONF_PERF_SKIP_SEED=1] bash scripts/conformance.sh
-# step-load STRESS (exploration only, never a conformance record): cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out docs/conformance/<sut>/stress.json [--skip-seed]
+# measured performance (hour-plus, exclusive SUT): CONF_PERF_CLASS=POC|S|L|R [CONF_PERF_HOURS=1|2|4|6|8|12] bash scripts/conformance.sh
+# step-load STRESS (exploration only, never a conformance record): cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out docs/conformance/<sut>/stress.json
 # published perf/stress SVGs + summary regenerate FROM committed artifacts: bash scripts/render-perf-assets.sh (CI diff-guards) — full canonical CLI table: tools/cnf-runner/CLAUDE.md
 # admin-console gates: /ui-gates (both-target clippy, nextest, leptosfmt, cargo-leptos build)
 bash scripts/ui-e2e.sh        # the browser journey battery against the composed stack (merge gate in CI)

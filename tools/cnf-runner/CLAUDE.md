@@ -9,17 +9,21 @@ language, ever.
 
 | Command | Purpose |
 |---|---|
-| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_PERF_SKIP_SEED=1`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
+| `bash scripts/conformance.sh` | THE pipeline (compose fresh → run → verdicts → badges). Env: `CONF_SUT=ehrbase-rs\|ehrbase-java\|byo`, `CONF_PERF_CLASS=POC\|S\|L\|R` (adds the measured stage), `CONF_PERF_HOURS=1\|2\|4\|6\|8\|12`, `CONF_NO_COMPOSE=1`, `SKIP_BUILD=1` |
 | `cargo run -p cnf-runner -- validate --root tools/cnf-runner/artifacts --specs docs/specs/openehr` | every machine gate over the artifact tree (zero findings = green) |
 | `cargo run -p cnf-runner -- run --root tools/cnf-runner/artifacts --ixit <party>/ixit.json --out <dir> --sut-name N --sut-version V --statement <party>/statement.json [--filter SUBSTR]` | execute the functional catalogue against a live SUT |
 | `cargo run -p cnf-runner -- verdicts --statement F --results F --root tools/cnf-runner/artifacts --out <dir>` | the pure verdict pipeline + report/statement/certificate |
-| `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12] [--skip-seed]` | the measured class run (conformance-by-measurement; merges into results.json) |
-| `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit F --out stress.json [--corpus-class POC] [--skip-seed] [--step-secs 120] [--bisections 3] [--max-rate 4096]` | the step-load stress ladder → maximum sustainable throughput (exploration only; NEVER touches results.json) |
+| `cargo run -p cnf-runner -- perf --root tools/cnf-runner/artifacts --ixit F --results F --class POC\|S\|L\|R [--hours 1\|2\|4\|6\|8\|12]` | the measured class run (conformance-by-measurement; merges into results.json) |
+| `cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts --ixit F --out stress.json [--corpus-class POC] [--step-secs 120] [--bisections 3] [--max-rate 4096]` | the step-load stress ladder → maximum sustainable throughput (exploration only; NEVER touches results.json) |
+| `cargo run -p cnf-runner -- aql-probe --root tools/cnf-runner/artifacts --ixit F --out aql-probe.json [--corpus-class POC] [--requests 20]` | the seeded-corpus AQL optimization probe: wire percentiles + pg_stat_statements attribution (exploration only; NEVER touches results.json) |
 | `bash scripts/render-perf-assets.sh` (env `CONF_SUT`) | regenerate the published SVGs + summary FROM committed artifacts (CI diffs them) |
 | `bash scripts/render-conformance-assets.sh` (env `CONF_SUT`) | regenerate the conformance visuals (capability heat grid + per-chapter outcome bars) FROM committed verdicts/results (CI diffs them) |
 | `cargo run -p cnf-runner -- emit-schemas --out tools/cnf-runner/schemas` | regenerate the published JSON Schemas after a schema.rs change (drift-tested) |
 
-Credentials for direct `run`/`perf`/`stress` invocations come from the env
+Every instrument seeds a freshly composed, empty SUT and the stack is torn
+down afterwards — there is no seed reuse (the `--skip-seed`/sidecar scheme
+is retired). Credentials for direct `run`/`perf`/`stress`/`aql-probe`
+invocations come from the env
 the ixit references: `SUT_USER/SUT_PASS` (+ `SUT_ADMIN_*`, `SUT_RO_*`) —
 the dev-compose defaults are exported by `scripts/conformance.sh`.
 

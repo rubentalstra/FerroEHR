@@ -898,6 +898,16 @@ pub enum ContainerRole {
 impl ContainerRole {
     /// All roles, fixed order (schema emission derives from this).
     pub const ALL: &'static [ContainerRole] = &[ContainerRole::Sut, ContainerRole::Db];
+
+    /// The display label (progress lines, summary tables) — the same token
+    /// the wire serialization carries.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            ContainerRole::Sut => "sut",
+            ContainerRole::Db => "db",
+        }
+    }
 }
 
 /// The run phase a resource sample was taken in (closed vocabulary): the
@@ -957,11 +967,44 @@ pub struct ContainerResourceSeries {
     pub samples: Vec<ResourceSample>,
 }
 
+impl ContainerResourceSeries {
+    /// Peak CPU% over the whole series (`0` when empty) — the one shared
+    /// derivation the progress logs and the generated summaries both use
+    /// (aggregates DERIVE from the series, never stored beside it).
+    #[must_use]
+    pub fn cpu_peak(&self) -> f64 {
+        self.samples.iter().map(|s| s.cpu_pct).fold(0.0, f64::max)
+    }
+
+    /// Peak RSS bytes over the whole series (`0` when empty).
+    #[must_use]
+    pub fn rss_peak(&self) -> u64 {
+        self.samples.iter().map(|s| s.rss_bytes).max().unwrap_or(0)
+    }
+
+    /// The measured-phase samples — falling back to the whole series when
+    /// the window never reached the measured phase (an aborted run still
+    /// reports what it saw).
+    #[must_use]
+    pub fn measured_samples(&self) -> Vec<&ResourceSample> {
+        let measured: Vec<&ResourceSample> = self
+            .samples
+            .iter()
+            .filter(|s| s.phase == ResourcePhase::Measured)
+            .collect();
+        if measured.is_empty() {
+            self.samples.iter().collect()
+        } else {
+            measured
+        }
+    }
+}
+
 /// The database volume's on-disk size at the run's four anchors (bytes).
 /// The first two yield bytes per committed composition (the
 /// storage-efficiency headline); the last two yield the sustained load's
 /// write amplification. Each anchor is honestly absent when it could not
-/// be probed (e.g. a `--skip-seed` run never sees the seeding anchors).
+/// be probed (a failed probe degrades to absence, never a run failure).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DiskAnchors {
@@ -1031,6 +1074,44 @@ pub struct Measurement {
     /// `containers` block or the container runtime was unreachable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resources: Option<ResourcesRecord>,
+}
+
+/// The one-line evidence behind a measured-run verdict, for progress
+/// streams and console summaries — the committed record (encoded
+/// histograms + environment) stays the re-checkable evidence; this is the
+/// operator-facing digest of it.
+#[must_use]
+pub fn verdict_evidence(measurement: &Measurement) -> String {
+    let floor = measurement.class.arrival_floor_per_s();
+    let (requests, errors) = measurement
+        .operations
+        .iter()
+        .fold((0_u64, 0_u64), |(r, e), op| {
+            (r.saturating_add(op.requests), e.saturating_add(op.errors))
+        });
+    let worst = measurement
+        .operations
+        .iter()
+        .max_by(|a, b| a.latency_ms_p99.total_cmp(&b.latency_ms_p99));
+    let worst_text = worst.map_or_else(
+        || "no operations measured".to_owned(),
+        |op| format!("worst p99 {:.0} ms ({})", op.latency_ms_p99, op.operation),
+    );
+    let verdict_text = match measurement.verdict {
+        ClassVerdict::Earned => "EARNED",
+        ClassVerdict::NotEarned => "NOT EARNED",
+    };
+    let violation_text = if measurement.violations.is_empty() {
+        String::new()
+    } else {
+        format!(" — {}", measurement.violations.join("; "))
+    };
+    format!(
+        "window verdict: class {} {verdict_text} — offered {:.2}/s vs floor {floor}/s; \
+         {worst_text}; {errors} errors / {requests} requests{violation_text}",
+        measurement.class.token(),
+        measurement.offered_load_sustained,
+    )
 }
 
 /// Class verdicts (the second machinery's output).

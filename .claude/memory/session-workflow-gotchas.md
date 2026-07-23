@@ -28,7 +28,7 @@ Three recurring session-workflow traps (all hit 2026-07-13/14):
 4. **Killing scripts/conformance.sh destroys the seeded corpus** (hit
    2026-07-23): the script's `trap compose_down EXIT` fires on ANY exit —
    `pkill` of a mid-seed pipeline runs `docker compose down -v` and wipes
-   the hour-long 1M-composition seed + the perf-corpus sidecar's backing
+   the hour-long 1M-composition seed's backing
    data. If a run must be aborted but the corpus kept, kill with SIGKILL
    (`pkill -9 -f conformance.sh`) so the trap cannot run — or accept the
    re-seed. Corollary: smoke-test new measured-workload wire shapes against

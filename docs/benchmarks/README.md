@@ -57,7 +57,7 @@ CONF_PERF_CLASS=POC CONF_PERF_HOURS=1 bash scripts/conformance.sh
 # the step-load stress ladder (exploration only)
 cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
   --ixit tools/cnf-runner/party/<sut>/ixit.json \
-  --out docs/conformance/<sut>/stress.json --skip-seed
+  --out docs/conformance/<sut>/stress.json
 
 # regenerate every published perf/stress visual FROM committed artifacts
 bash scripts/render-perf-assets.sh

@@ -289,12 +289,12 @@ committed results so the verdict re-derives from the artifact alone:
 CONF_PERF_CLASS=POC bash scripts/conformance.sh
 
 # an extended sustained hold (a stricter demonstration of the same class)
-CONF_PERF_CLASS=POC CONF_PERF_HOURS=8 CONF_PERF_SKIP_SEED=1 bash scripts/conformance.sh
+CONF_PERF_CLASS=POC CONF_PERF_HOURS=8 bash scripts/conformance.sh
 
 # the step-load stress instrument — exploration only, never a conformance record
 cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
   --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
-  --out docs/conformance/ehrbase-rs/stress.json --skip-seed
+  --out docs/conformance/ehrbase-rs/stress.json
 ```
 
 The published performance visuals — the class ladder, per-operation latency

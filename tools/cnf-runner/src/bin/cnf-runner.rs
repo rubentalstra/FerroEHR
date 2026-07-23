@@ -13,19 +13,25 @@
 //!                                       and write the report/statement/
 //!                                       certificate + verdicts.json
 //! cnf-runner perf --root DIR --ixit FILE --results FILE --class POC|S|L|R
-//!                 [--hours 1|2|4|6|8|12] [--skip-seed] [--seed-workers N]
+//!                 [--hours 1|2|4|6|8|12] [--seed-workers N]
 //!                                       the measured class run (conformance-
 //!                                       by-measurement): seed the scale
 //!                                       corpus, hold the class's offered
 //!                                       load for the sustained window, merge
 //!                                       the record into results.json
 //! cnf-runner stress --root DIR --ixit FILE --out FILE
-//!                   [--corpus-class POC|S|L|R] [--skip-seed]
+//!                   [--corpus-class POC|S|L|R]
 //!                   [--step-secs N] [--bisections N] [--max-rate R]
 //!                                       the step-load stress ladder to the
 //!                                       maximum sustainable throughput
 //!                                       (exploration only — writes
 //!                                       stress.json, never results.json)
+//! cnf-runner aql-probe --root DIR --ixit FILE --out FILE
+//!                      [--corpus-class POC|S|L|R] [--requests N]
+//!                                       the seeded-corpus AQL optimization
+//!                                       probe: wire percentiles + DB
+//!                                       statement attribution (exploration
+//!                                       only — never a conformance record)
 //! cnf-runner perf-assets --root DIR --results FILE --out DIR
 //!                        [--summary FILE] [--stress FILE]
 //!                                       render the published SVGs + summary
@@ -126,10 +132,6 @@ enum Command {
         /// Select the performance case(s) of this class (POC | S | L | R).
         #[arg(long)]
         class: String,
-        /// Skip corpus seeding and load the sidecar corpus index written by
-        /// a prior seeding pass.
-        #[arg(long)]
-        skip_seed: bool,
         /// Parallel seeding workers.
         #[arg(long, default_value_t = 16)]
         seed_workers: usize,
@@ -159,10 +161,6 @@ enum Command {
         /// (POC | S | L | R) — data volume context only, no class claim.
         #[arg(long, default_value = "POC")]
         corpus_class: String,
-        /// Skip corpus seeding and load the sidecar corpus index written by
-        /// a prior seeding pass (shared with `perf`).
-        #[arg(long)]
-        skip_seed: bool,
         /// Parallel seeding workers.
         #[arg(long, default_value_t = 16)]
         seed_workers: usize,
@@ -176,6 +174,33 @@ enum Command {
         /// The climb cap (arrivals/s).
         #[arg(long, default_value_t = 4096.0)]
         max_rate: f64,
+    },
+    /// Run the AQL optimization probe: fire the measurement machinery's
+    /// AQL vocabulary against a live, freshly seeded SUT, record wire
+    /// percentiles, and attribute the DB-side cost per probe via
+    /// `pg_stat_statements` (exploration evidence for the optimization
+    /// loop — never a conformance record).
+    AqlProbe {
+        /// The artifact root.
+        #[arg(long)]
+        root: PathBuf,
+        /// The ixit topology file (JSON) — the `containers` block enables
+        /// DB-side attribution and maintenance settling.
+        #[arg(long)]
+        ixit: PathBuf,
+        /// Where to write the probe report (aql-probe.json).
+        #[arg(long)]
+        out: PathBuf,
+        /// The class whose corpus the probes run against (data-volume
+        /// context only).
+        #[arg(long, default_value = "POC")]
+        corpus_class: String,
+        /// Parallel seeding workers.
+        #[arg(long, default_value_t = 16)]
+        seed_workers: usize,
+        /// Requests fired per probe.
+        #[arg(long, default_value_t = 20)]
+        requests: u32,
     },
     /// Render the published performance SVG assets FROM a committed
     /// results.json (deterministic; CI regenerates and diffs — hand-drawn
@@ -289,24 +314,14 @@ fn main() -> ExitCode {
             ixit,
             results,
             class,
-            skip_seed,
             seed_workers,
             hours,
-        } => perf_command(
-            &root,
-            &ixit,
-            &results,
-            &class,
-            skip_seed,
-            seed_workers,
-            hours,
-        ),
+        } => perf_command(&root, &ixit, &results, &class, seed_workers, hours),
         Command::Stress {
             root,
             ixit,
             out,
             corpus_class,
-            skip_seed,
             seed_workers,
             step_secs,
             bisections,
@@ -316,12 +331,19 @@ fn main() -> ExitCode {
             &ixit,
             &out,
             &corpus_class,
-            skip_seed,
             seed_workers,
             step_secs,
             bisections,
             max_rate,
         ),
+        Command::AqlProbe {
+            root,
+            ixit,
+            out,
+            corpus_class,
+            seed_workers,
+            requests,
+        } => probe_command(&root, &ixit, &out, &corpus_class, seed_workers, requests),
         Command::PerfAssets {
             root,
             results,
@@ -763,35 +785,21 @@ enum SeedStage {
     AfterWard,
 }
 
-/// Seed the scale corpus + the standing ward (or load the sidecar index a
-/// prior seeding wrote — the index lives beside `artifact_path` so `perf`
-/// and `stress` share it). Ward seeding is idempotent, so a pre-journey
-/// sidecar upgrades in place on the next non-skip run. `stage` observes
-/// the seeding milestones (never called on a `--skip-seed` load — those
-/// anchors would be dishonest).
-#[allow(clippy::too_many_arguments)] // the one-shot seeding seam both handlers share
-fn seed_or_load_corpus(
+/// Seed the scale corpus + the standing ward. The workflow ALWAYS seeds a
+/// freshly composed, empty SUT and the stack is torn down afterwards —
+/// there is no seed reuse (the retired `--skip-seed`/sidecar-index scheme
+/// bred stale-state confusion). `stage` observes the seeding milestones
+/// (the disk anchors).
+fn seed_corpus(
     client: &cnf_runner::perf_run::client::PerfClient,
     corpus_key: &str,
     opt_xml: &str,
     journey_pack: &cnf_runner::perf_run::pack::JourneyPack,
-    artifact_path: &std::path::Path,
-    skip_seed: bool,
     seed_workers: usize,
     progress: &(dyn Fn(String) + Sync),
     stage: &mut dyn FnMut(SeedStage),
 ) -> Result<cnf_runner::perf_run::corpus::SeededCorpus, String> {
     use cnf_runner::perf_run::corpus;
-    let index_path =
-        artifact_path.with_file_name(format!("perf-corpus-{}.json", corpus_key.replace('.', "-")));
-    if skip_seed {
-        return std::fs::read_to_string(&index_path)
-            .map_err(|e| format!("cannot read corpus index {}: {e}", index_path.display()))
-            .and_then(|text| {
-                serde_json::from_str::<corpus::SeededCorpus>(&text)
-                    .map_err(|e| format!("corpus index: {e}"))
-            });
-    }
     let (ehrs, versions) = corpus::scale_shape(corpus_key)?;
     stage(SeedStage::BeforeScale);
     let mut seeded = corpus::seed_scale_ladder(
@@ -808,10 +816,6 @@ fn seed_or_load_corpus(
     corpus::seed_ward(client, &mut seeded, journey_pack, seed_workers, progress)
         .map_err(|e| format!("ward seeding failed: {e}"))?;
     stage(SeedStage::AfterWard);
-    let text =
-        serde_json::to_string(&seeded).map_err(|e| format!("serialize corpus index: {e}"))?;
-    std::fs::write(&index_path, text)
-        .map_err(|e| format!("cannot write corpus index {}: {e}", index_path.display()))?;
     Ok(seeded)
 }
 
@@ -823,7 +827,6 @@ fn stress_command(
     ixit_path: &std::path::Path,
     out: &std::path::Path,
     corpus_class: &str,
-    skip_seed: bool,
     seed_workers: usize,
     step_secs: u64,
     bisections: u32,
@@ -901,13 +904,11 @@ fn stress_command(
         }
     };
     let progress = |message: String| eprintln!("[stress] {message}");
-    let corpus = match seed_or_load_corpus(
+    let corpus = match seed_corpus(
         &client,
         case.corpus.as_str(),
         &opt_xml,
         &journey_pack,
-        out,
-        skip_seed,
         seed_workers,
         &progress,
         // The stress instrument records no disk anchors (exploration only).
@@ -976,6 +977,143 @@ fn stress_command(
     ExitCode::SUCCESS
 }
 
+/// The AQL-probe handler (`aql-probe`): seed the class corpus fresh, run
+/// the probe set, write the report (exploration only — never touches
+/// results.json).
+#[allow(clippy::too_many_lines)] // one-shot orchestration seam
+fn probe_command(
+    root: &std::path::Path,
+    ixit_path: &std::path::Path,
+    out: &std::path::Path,
+    corpus_class: &str,
+    seed_workers: usize,
+    requests: u32,
+) -> ExitCode {
+    use cnf_runner::perf::PerfClass;
+    use cnf_runner::perf_run;
+
+    let class = match PerfClass::parse(corpus_class) {
+        Ok(class) => class,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let loaded = match load_root(root) {
+        Ok(loaded) => loaded,
+        Err(e) => {
+            eprintln!("runner defect: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if !loaded.errors.is_empty() {
+        for e in &loaded.errors {
+            eprintln!("{e}");
+        }
+        return ExitCode::from(2);
+    }
+    let ixit: cnf_runner::ixit::Ixit = match std::fs::read_to_string(ixit_path)
+        .map_err(|e| format!("cannot read {}: {e}", ixit_path.display()))
+        .and_then(|text| serde_json::from_str(&text).map_err(|e| format!("ixit: {e}")))
+    {
+        Ok(ixit) => ixit,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let (instance, environment) = match perf_run::window::measured_run_context(&ixit) {
+        Ok(context) => context,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let client = match perf_run::client::PerfClient::from_instance(instance) {
+        Ok(client) => client,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let Some((_, case)) = loaded
+        .set
+        .performance
+        .iter()
+        .find(|(_, c)| c.class == class)
+    else {
+        eprintln!("no performance case of class {corpus_class} in the catalogue");
+        return ExitCode::from(2);
+    };
+    let opt_xml = match scale_opt_xml(&loaded) {
+        Ok(xml) => xml,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let (_, journey_pack) = match journey_context(&loaded) {
+        Ok(context) => context,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let progress = |message: String| eprintln!("[probe] {message}");
+    let corpus = match seed_corpus(
+        &client,
+        case.corpus.as_str(),
+        &opt_xml,
+        &journey_pack,
+        seed_workers,
+        &progress,
+        // The probe records no disk anchors (exploration only).
+        &mut |_| {},
+    ) {
+        Ok(corpus) => corpus,
+        Err(e) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let options = cnf_runner::probe::ProbeOptions { requests };
+    let report = match cnf_runner::probe::run_probe(
+        &client,
+        &corpus,
+        environment,
+        ixit.containers.as_ref(),
+        &options,
+        &progress,
+    ) {
+        Ok(report) => report,
+        Err(e) => {
+            eprintln!("probe run failed: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    match serde_json::to_string_pretty(&report) {
+        Ok(mut text) => {
+            text.push('\n');
+            if let Some(parent) = out.parent()
+                && let Err(e) = std::fs::create_dir_all(parent)
+            {
+                eprintln!("cannot create {}: {e}", parent.display());
+                return ExitCode::from(2);
+            }
+            if let Err(e) = std::fs::write(out, text) {
+                eprintln!("cannot write {}: {e}", out.display());
+                return ExitCode::from(2);
+            }
+        }
+        Err(e) => {
+            eprintln!("serialize: {e}");
+            return ExitCode::from(2);
+        }
+    }
+    println!("wrote {} ({} probes)", out.display(), report.probes.len());
+    ExitCode::SUCCESS
+}
+
 /// The measured-run handler (`perf`): seed the scale corpus, drive the
 /// open-loop workload, merge the measurement record into results.json.
 #[allow(clippy::too_many_lines)] // one-shot orchestration seam
@@ -984,7 +1122,6 @@ fn perf_command(
     ixit_path: &std::path::Path,
     results_path: &std::path::Path,
     class_token: &str,
-    skip_seed: bool,
     seed_workers: usize,
     hours: u64,
 ) -> ExitCode {
@@ -1106,13 +1243,11 @@ fn perf_command(
                 }
             }
         };
-        let corpus = match seed_or_load_corpus(
+        let corpus = match seed_corpus(
             &client,
             case.corpus.as_str(),
             &opt_xml,
             &journey_pack,
-            results_path,
-            skip_seed,
             seed_workers,
             &progress,
             &mut |milestone| match milestone {
@@ -1133,6 +1268,17 @@ fn perf_command(
                 return ExitCode::from(2);
             }
         };
+        // Settle the seeding's maintenance debt before the window: a
+        // mid-window autovacuum/analyze of the freshly seeded tables would
+        // saturate the engine inside the measurement.
+        if let Some(c) = &containers {
+            progress(
+                "settling maintenance before the measured window (vacuumdb --analyze)".to_owned(),
+            );
+            if let Err(e) = perf_run::resources::settle_maintenance(&c.db) {
+                progress(format!("maintenance not settled: {e}"));
+            }
+        }
         // The case's normative warmup; the sustained window extends by the
         // hours ladder (a longer hold of the same offered load is a stricter
         // demonstration of the same class).
@@ -1196,16 +1342,7 @@ fn perf_command(
                 op.latency_ms_p99
             );
         }
-        println!(
-            "  offered load sustained {:.2}/s — verdict {:?}{}",
-            measurement.offered_load_sustained,
-            measurement.verdict,
-            if measurement.violations.is_empty() {
-                String::new()
-            } else {
-                format!(" ({})", measurement.violations.join("; "))
-            }
-        );
+        println!("  {}", cnf_runner::perf::verdict_evidence(&measurement));
         if measurement.verdict != cnf_runner::perf::ClassVerdict::Earned {
             earned_all = false;
         }
