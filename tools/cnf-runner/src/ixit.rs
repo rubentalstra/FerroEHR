@@ -62,6 +62,19 @@ pub struct Environment {
     pub topology: String,
 }
 
+/// The container-runtime identities of the composed SUT — topology facts,
+/// exactly what the ixit is for. Presence enables resource sampling on
+/// measured runs; absence records no `resources` block and never fails a
+/// run (a BYO SUT has no reachable containers).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Containers {
+    /// The SUT process container name.
+    pub sut: String,
+    /// The database container name (also the disk-anchor probe target).
+    pub db: String,
+}
+
 /// The whole IXIT document.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -72,6 +85,10 @@ pub struct Ixit {
     pub instances: Vec<(InstanceName, Instance)>,
     #[serde(default)]
     pub environment: Option<Environment>,
+    /// The composed SUT's container identities (optional by capability —
+    /// see [`Containers`]).
+    #[serde(default)]
+    pub containers: Option<Containers>,
 }
 
 impl Ixit {
@@ -126,6 +143,24 @@ mod tests {
                 .auth,
             AuthMode::None
         ));
+    }
+
+    #[test]
+    fn containers_block_is_optional_and_parses() {
+        let bare: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } }
+        }))
+        .unwrap();
+        assert!(bare.containers.is_none());
+
+        let with: Ixit = serde_json::from_value(serde_json::json!({
+            "instances": { "sut": { "base_url": "http://x", "auth": { "mode": "none" } } },
+            "containers": { "sut": "ehrbase-rs-ehrbase-1", "db": "ehrbase-rs-ehrbase-postgres-1" }
+        }))
+        .unwrap();
+        let containers = with.containers.unwrap();
+        assert_eq!(containers.sut, "ehrbase-rs-ehrbase-1");
+        assert_eq!(containers.db, "ehrbase-rs-ehrbase-postgres-1");
     }
 
     #[test]

@@ -765,7 +765,8 @@ pub fn results_schema() -> Value {
                             "items": operation_measurement_def()
                         },
                         "verdict": { "enum": ["earned", "not-earned"] },
-                        "violations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+                        "violations": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                        "resources": resources_def()
                     }
                 }
             },
@@ -828,7 +829,76 @@ pub fn ixit_schema() -> Value {
                     }
                 }
             },
-            "environment": environment_def()
+            "environment": environment_def(),
+            "containers": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["sut", "db"],
+                "properties": {
+                    "sut": { "type": "string", "minLength": 1 },
+                    "db": { "type": "string", "minLength": 1 }
+                }
+            }
+        }
+    })
+}
+
+/// The resource-telemetry block of one measurement record — measured
+/// CONTEXT, never verdict-bearing: per-container CPU/RSS/I/O series on a
+/// fixed cadence (run-clock offsets, phase-stamped) plus the database
+/// volume's four disk anchors. Optional: absent when the ixit declares no
+/// `containers` block or the container runtime was unreachable.
+fn resources_def() -> Value {
+    let byte_counter = json!({ "type": "integer", "minimum": 0 });
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sample_interval_s", "containers", "disk"],
+        "properties": {
+            "sample_interval_s": { "type": "integer", "minimum": 1 },
+            "containers": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["role", "name", "samples"],
+                    "properties": {
+                        "role": { "enum": tokens(crate::perf::ContainerRole::ALL) },
+                        "name": { "type": "string", "minLength": 1 },
+                        "samples": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["offset_s", "phase", "cpu_pct", "rss_bytes",
+                                              "blk_read_bytes", "blk_write_bytes",
+                                              "net_rx_bytes", "net_tx_bytes"],
+                                "properties": {
+                                    "offset_s": { "type": "integer", "minimum": 0 },
+                                    "phase": { "enum": tokens(crate::perf::ResourcePhase::ALL) },
+                                    "cpu_pct": { "type": "number", "minimum": 0.0 },
+                                    "rss_bytes": byte_counter.clone(),
+                                    "blk_read_bytes": byte_counter.clone(),
+                                    "blk_write_bytes": byte_counter.clone(),
+                                    "net_rx_bytes": byte_counter.clone(),
+                                    "net_tx_bytes": byte_counter.clone()
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "disk": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                    "before_scale_seed_bytes": byte_counter.clone(),
+                    "after_scale_seed_bytes": byte_counter.clone(),
+                    "after_ward_seed_bytes": byte_counter.clone(),
+                    "after_window_bytes": byte_counter.clone(),
+                    "seed_compositions": { "type": "integer", "minimum": 1 }
+                }
+            }
         }
     })
 }

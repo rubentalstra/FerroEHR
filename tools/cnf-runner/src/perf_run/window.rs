@@ -306,6 +306,9 @@ pub fn drive_case(
         operations: window.operations,
         verdict,
         violations,
+        // The perf handler attaches the sampled telemetry after the window
+        // (the sampler brackets this call); stress windows never carry one.
+        resources: None,
     })
 }
 
