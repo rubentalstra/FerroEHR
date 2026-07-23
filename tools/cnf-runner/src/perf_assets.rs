@@ -254,19 +254,13 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
             let bar_end = x_of(ms);
             let _ = writeln!(
                 out,
-                "<rect x=\"{x0:.1}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{BAR_H}\" rx=\"2\" class=\"{class}\"/>",
+                "<rect x=\"{x0:.1}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{BAR_H}\" rx=\"2\" class=\"{class}\"/>\
+                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">{}</text>",
                 (bar_end - x0).max(2.0),
+                bar_end + 6.0,
+                y + BAR_H - 1.0,
+                format_ms(ms),
             );
-            // The p99 value labels its bar end (the SLO-relevant number).
-            if *class == "p99" {
-                let _ = writeln!(
-                    out,
-                    "<text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">{}</text>",
-                    bar_end + 6.0,
-                    y + BAR_H - 1.0,
-                    format_ms(ms),
-                );
-            }
         }
     }
     out.push_str("</svg>\n");
