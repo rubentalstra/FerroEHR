@@ -71,6 +71,16 @@ pub struct SeededCorpus {
     pub ward: Vec<WardPatient>,
 }
 
+/// Whether a provisioning WRITE landed in the created family. Corpus
+/// seeding is PROVISIONING, not the conformance instrument: with
+/// `Prefer: return=minimal` some SUTs answer 201 Created and others 204
+/// No Content with the identifying headers (upstream EHRbase's minimal
+/// create). The functional catalogue pins exact status codes; the seeder
+/// accepts either, then still demands the identifying header it needs.
+fn created(status: u16) -> bool {
+    matches!(status, 201 | 204)
+}
+
 /// The volumetric shape of one `cnf.scale.*` corpus key per the
 /// `scale_ladder` contract (EHR count; ~100 composition versions each).
 ///
@@ -253,7 +263,7 @@ pub fn seed_scale_ladder(
                             None,
                         )
                         .and_then(|reply| {
-                            if reply.status != 201 {
+                            if !created(reply.status) {
                                 return Err(format!(
                                     "create_composition returned {}",
                                     reply.status
@@ -374,7 +384,7 @@ pub fn seed_ward(
             true,
             None,
         )?;
-        if reply.status != 201 {
+        if !created(reply.status) {
             return Err(format!(
                 "pack preflight: template {} example returned {} — the committed payload                  ground is invalid for this SUT; fix the pack (or the SUT's validation)                  before measuring",
                 template.key, reply.status
@@ -498,7 +508,7 @@ fn seed_one_patient(
             true,
             None,
         )?;
-        if reply.status != 201 {
+        if !created(reply.status) {
             return Err(format!(
                 "ward commit ({}) returned {}",
                 template.key, reply.status
@@ -520,7 +530,7 @@ fn seed_one_patient(
         true,
         None,
     )?;
-    if directory.status != 201 {
+    if !created(directory.status) {
         return Err(format!(
             "ward directory create returned {}",
             directory.status
@@ -545,7 +555,7 @@ fn seed_one_patient(
         true,
         None,
     )?;
-    if contribution.status != 201 {
+    if !created(contribution.status) {
         return Err(format!(
             "ward contribution returned {}",
             contribution.status
