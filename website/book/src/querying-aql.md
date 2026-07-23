@@ -154,6 +154,12 @@ curl -u ehrbase:ehrbase \
   parameter names the formalism, default `AQL` (case-insensitive); anything
   other than AQL is rejected with **400** — the server never silently stores
   a query it cannot execute.
+- The name is `[{namespace}::]{query-name}` — the namespace is **optional**,
+  and the query-name may use letters, digits, `_`, `.`, and `-`, so plain
+  names like `my_compositions` and dotted names like `cnf.ward_dashboard`
+  are valid as-is. The query-name `aql` is **reserved** (case-insensitive,
+  it would collide with the ad-hoc `/query/aql` route) and is rejected with
+  **400**.
 - `GET /definition/query/{name}[/{version}]` — list or fetch.
 - `GET|POST /query/{name}[/{version}]` — execute, taking the same `offset`,
   `fetch`, and `query_parameters` as ad-hoc queries. A version can be given
