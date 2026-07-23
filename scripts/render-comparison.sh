@@ -236,10 +236,12 @@ EOF
 The step-load stress instrument (\`cnf-runner stress\`) has a committed
 report for **ehrbase-rs** — the maximum sustainable throughput of
 $(mst "$RS_STRESS") req/s on the $(corpus_of "$RS_STRESS") corpus, with the
-latency-throughput curve below. **Upstream EHRbase (Java) is not measured
-yet**: the same instrument runs against the composed upstream stack, and
-this page publishes both directions the moment its committed report lands
-— never a one-sided claim.
+latency-throughput curve below. **Upstream EHRbase (Java) is not measured**:
+the first attempt was refused at workload provisioning (the stored-query
+registration rejects a spec-valid qualified name — a conformance finding
+recorded on the project tracker); the instrument is never adjusted to
+accommodate, and this page publishes both directions the moment upstream
+can host the workload — never a one-sided claim.
 
 ![The ehrbase-rs latency-throughput curve](perf-assets/perf-stress-curve.svg)
 EOF
