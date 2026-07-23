@@ -7103,12 +7103,7 @@
                           "value": "After R-wave"
                         },
                         "value": {
-                          "_type": "ITEM_TREE",
-                          "items": [],
-                          "name": {
-                            "_type": "DV_TEXT",
-                            "value": "ITEM_TREE"
-                          },
+                          "_type": "DV_INTERVAL",
                           "upper": {
                             "_type": "DV_DURATION",
                             "value": "PT1S"

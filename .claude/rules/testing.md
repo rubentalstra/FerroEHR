@@ -53,7 +53,7 @@ applies to every crate — generated and hand-written alike.
   must show **zero drift** vs the committed baseline
   (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`); the
   baseline only ratchets upward. (The ECC harness retired 2026-07-22; the
-  reviewed comparison is `docs/conformance/cnf-comparison.md`.)
+  reviewed cutover comparison lives in git history.)
 - **The vendored CNF text is the oracle the instrument derives from:**
   `docs/specs/openehr/CNF/docs/platform_test_schedule/` defines what a
   conformant server must do; the upstream Robot suites under

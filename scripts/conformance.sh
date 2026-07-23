@@ -251,24 +251,29 @@ for tier, verdict in tiers.items():
     path = out / f"badge-{slug.get(tier, tier.lower())}.json"
     path.write_text(json.dumps(badge, indent=2) + "\n")
 
-# Performance badge — from the measured class verdicts (§8.14): the highest
-# earned class, or "not earned" when a measurement exists but failed. No
-# badge file when nothing was measured (the dimension is absent, not failed).
+# Performance badge — from the measured class verdicts (§8.14). The badge
+# always NAMES the class it speaks about ("class POC earned" / "class POC
+# not earned") — a bare verdict is meaningless without the volumetric
+# class it was measured against — and an un-measured state writes "not
+# measured" so no stale badge outlives its record.
 perf = verdicts.get("performance") or []
-if perf:
-    ladder = {"POC": 0, "S": 1, "L": 2, "R": 3}
-    earned = [p["class"] for p in perf if p["verdict"] == "earned"]
-    if earned:
-        best = max(earned, key=lambda c: ladder.get(c, -1))
-        message, color = f"class {best} earned", "brightgreen"
-    else:
-        message, color = "not earned", "red"
-    (out / "badge-performance.json").write_text(json.dumps({
-        "schemaVersion": 1,
-        "label": "openEHR CNF performance",
-        "message": message,
-        "color": color,
-    }, indent=2) + "\n")
+ladder = {"POC": 0, "S": 1, "L": 2, "R": 3}
+earned = [p["class"] for p in perf if p["verdict"] == "earned"]
+measured = [p["class"] for p in perf]
+if earned:
+    best = max(earned, key=lambda c: ladder.get(c, -1))
+    message, color = f"class {best} earned", "brightgreen"
+elif measured:
+    best = max(measured, key=lambda c: ladder.get(c, -1))
+    message, color = f"class {best} not earned", "red"
+else:
+    message, color = "not measured", "lightgrey"
+(out / "badge-performance.json").write_text(json.dumps({
+    "schemaVersion": 1,
+    "label": "openEHR CNF performance",
+    "message": message,
+    "color": color,
+}, indent=2) + "\n")
 
 by_status = {}
 for o in results.get("outcomes", []):

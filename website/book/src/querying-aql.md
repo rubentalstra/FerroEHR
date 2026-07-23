@@ -36,7 +36,11 @@ ORDER BY systolic DESC
 - **`SELECT`** projects values by path. Paths use archetype node ids
   (`at0004`) and RM attribute names (`value/magnitude`); `AS` names a column.
 - **`WHERE`** filters on typed leaf values, with comparisons, `EXISTS`, `LIKE`,
-  `MATCHES`, and boolean combinators.
+  `MATCHES`, and boolean combinators. Comparisons over multi-valued paths
+  use any-match semantics: when a path matches several nodes, the
+  predicate holds if **any** matched value satisfies it (the AQL
+  specification is silent here; any-match is this engine's documented
+  convention — deterministic and index-friendly).
 - **`ORDER BY`**, **`LIMIT`**, and **`OFFSET`** behave as you expect; quantities
   order by their openEHR magnitude semantics.
 

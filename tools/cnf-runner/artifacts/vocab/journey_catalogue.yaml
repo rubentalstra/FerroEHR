@@ -118,11 +118,7 @@ imaging_pipeline:
     report turnaround hours.
   stages:
     - { op: composition_commit, template: cnf.ckm.ereferral, at: PT0S }
-    # TODO: restore cnf.ckm.ccta_report as the report payload once the
-    # example generator emits RM-valid instances for it (its generated
-    # example carries ELEMENT.value = ITEM_TREE, which the platform's own
-    # validation rejects); the synoptic report carries the stage meanwhile.
-    - { op: composition_commit, template: cnf.ckm.breast_cancer_report, at: { uniform: [PT1H, PT3H] } }
+    - { op: composition_commit, template: cnf.ckm.ccta_report, at: { uniform: [PT1H, PT3H] } }
     - { op: composition_read_current, at: PT3H30M }
 
 # ── specialist & registry reporting ─────────────────────────────────────

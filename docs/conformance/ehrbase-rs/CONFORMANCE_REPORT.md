@@ -40,38 +40,34 @@ Runner: cnf-runner 3.7.0 · verification pack: passed
 
 ## Performance measurements
 
-### PERF-hospital_sim-class_POC — class POC · not earned
+### PERF-hospital_sim-class_POC — class POC · EARNED
 
 Offered load sustained: 2.03/s over 3600 s (after 300 s warmup) · environment: consumer-laptop (8 cores, 16 GB, nvme, single-node docker compose (8-CPU/8GB Docker VM) on Apple M2)
 
 | Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| adhoc_query | 953 | 0 | 29.7 | 36.8 | 46.8 |
-| composition_commit | 315 | 0 | 38.1 | 73.1 | 114.0 |
-| composition_delete | 4 | 0 | 20.7 | 25.2 | 25.2 |
-| composition_read | 1906 | 0 | 19.5 | 25.2 | 32.0 |
-| composition_read_current | 1072 | 0 | 20.6 | 26.9 | 32.9 |
-| composition_revision_history | 1029 | 0 | 13.9 | 18.3 | 21.4 |
-| composition_update | 77 | 0 | 33.6 | 44.5 | 86.2 |
-| contribution_commit | 52 | 0 | 55.3 | 91.4 | 123.6 |
-| contribution_read | 110 | 0 | 17.5 | 23.3 | 26.8 |
-| directory_create | 13 | 0 | 15.6 | 24.1 | 34.3 |
-| directory_read | 967 | 0 | 14.2 | 19.3 | 26.7 |
-| directory_update | 13 | 0 | 25.0 | 31.0 | 32.9 |
-| ehr_create | 13 | 0 | 22.8 | 29.0 | 43.9 |
-| ehr_read | 98 | 0 | 16.1 | 22.0 | 29.1 |
-| ehr_status_read | 26 | 0 | 16.4 | 21.8 | 22.6 |
-| ehr_status_update | 26 | 0 | 23.9 | 32.2 | 42.7 |
-| stored_query_execute | 204 | 0 | 32.3 | 38.5 | 46.6 |
-| tags_put | 34 | 0 | 21.9 | 30.0 | 31.5 |
-| tags_read | 34 | 0 | 13.6 | 17.6 | 23.4 |
-| template_get | 85 | 0 | 29.3 | 63.4 | 89.7 |
-| template_list | 85 | 0 | 44.3 | 62.3 | 84.2 |
-| ward_query | 204 | 0 | 310.5 | 5029.9 | 5775.4 |
-
-Violations:
-
-- ward_query LatencyP99 5775.359ms > max 1000ms
+| adhoc_query | 953 | 0 | 29.6 | 35.9 | 46.4 |
+| composition_commit | 315 | 0 | 35.5 | 75.0 | 95.2 |
+| composition_delete | 4 | 0 | 19.1 | 25.2 | 25.2 |
+| composition_read | 1906 | 0 | 18.2 | 23.8 | 29.3 |
+| composition_read_current | 1072 | 0 | 18.6 | 24.6 | 35.0 |
+| composition_revision_history | 1029 | 0 | 12.5 | 17.3 | 22.0 |
+| composition_update | 77 | 0 | 32.8 | 44.2 | 60.2 |
+| contribution_commit | 52 | 0 | 37.1 | 92.1 | 103.3 |
+| contribution_read | 110 | 0 | 15.6 | 20.7 | 22.5 |
+| directory_create | 13 | 0 | 12.9 | 16.0 | 24.0 |
+| directory_read | 967 | 0 | 12.9 | 18.1 | 22.9 |
+| directory_update | 13 | 0 | 20.3 | 28.7 | 31.7 |
+| ehr_create | 13 | 0 | 19.3 | 24.3 | 24.4 |
+| ehr_read | 98 | 0 | 13.8 | 20.9 | 33.2 |
+| ehr_status_read | 26 | 0 | 14.2 | 18.4 | 19.3 |
+| ehr_status_update | 26 | 0 | 20.5 | 27.8 | 29.4 |
+| stored_query_execute | 204 | 0 | 30.0 | 36.8 | 44.7 |
+| tags_put | 34 | 0 | 17.7 | 25.1 | 31.0 |
+| tags_read | 34 | 0 | 13.5 | 16.8 | 19.5 |
+| template_get | 85 | 0 | 44.7 | 76.5 | 104.7 |
+| template_list | 85 | 0 | 43.3 | 59.8 | 73.7 |
+| ward_query | 204 | 0 | 173.7 | 247.6 | 436.2 |
 
 Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.
 

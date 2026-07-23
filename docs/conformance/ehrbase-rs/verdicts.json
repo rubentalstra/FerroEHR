@@ -178,10 +178,8 @@
       "case": "PERF-hospital_sim-class_POC",
       "class": "POC",
       "claimed": true,
-      "verdict": "not-earned",
-      "violations": [
-        "ward_query LatencyP99 5775.359ms > max 1000ms"
-      ]
+      "verdict": "earned",
+      "violations": []
     }
   ],
   "coverage": {
