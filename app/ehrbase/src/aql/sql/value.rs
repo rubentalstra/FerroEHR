@@ -164,6 +164,31 @@ impl Builder<'_> {
         let base = extract_base(col(&last, "data"), jp.as_deref());
         sub.expr(Expr::val(1));
         sub.and_where(cond(coerce_value(base, mode, leaf)));
+        if self.streaming {
+            // STREAMING shape: the EXISTS must stay CORRELATED. As a bare
+            // WHERE sublink the planner may pull it up into a semi-join and
+            // DECORRELATE its inner side into a corpus-wide Materialize —
+            // the instrumented 32/s rung caught exactly that plan (600k
+            // subtree rows materialized, 18M join-filter rejections, 13-35 s
+            // per execution) while the correlated probe runs in
+            // milliseconds; which side the planner lands on flips with the
+            // ANALYZE sample. Hosting the EXISTS inside a LATERAL subquery
+            // behind the `OFFSET 0` fence pins the correlated per-row
+            // SubPlan by construction (a `LIMIT 1` inside the sublink is
+            // NOT a fence — the planner simplifies EXISTS sublinks before
+            // pull-up). Identical semantics: one boolean per outer row.
+            let probe = format!("p{}", self.next_ctr());
+            let mut wrapper = Query::select();
+            wrapper.expr_as(Expr::exists(sub), Alias::new("hit"));
+            wrapper.offset(0);
+            self.q.join_lateral(
+                sea_query::JoinType::Join,
+                wrapper,
+                Alias::new(probe.as_str()),
+                Expr::val(true),
+            );
+            return Ok(Some(col(&probe, "hit")));
+        }
         Ok(Some(Expr::exists(sub)))
     }
 

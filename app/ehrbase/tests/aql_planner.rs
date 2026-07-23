@@ -1095,15 +1095,22 @@ fn limit_without_order_by_streams() {
     );
     assert_eq!(
         sql.matches("JOIN LATERAL").count(),
-        2,
-        "one lateral per node source (root + observation): {sql}"
+        3,
+        "one lateral per node source (root + observation) plus the correlated predicate probe: {sql}"
     );
     // sea-query binds the fence's 0 as a parameter — the pull-up block is
     // syntactic (an OFFSET clause of any value), so the fence holds.
     assert_eq!(
         sql.matches("OFFSET $").count(),
-        2,
+        3,
         "every lateral carries the pull-up fence: {sql}"
+    );
+    // The multi-valued-path predicate stays a CORRELATED probe: the EXISTS
+    // lives inside a lateral (never a bare WHERE sublink the planner could
+    // decorrelate into a corpus-wide materialize).
+    assert!(
+        sql.contains("EXISTS(SELECT") && sql.contains(r#""hit""#),
+        "the predicate EXISTS is hosted in the lateral boolean probe: {sql}"
     );
     assert!(
         sql.contains(r#""kind" IN"#),
