@@ -163,10 +163,8 @@ console — its own binary/OCI image, consuming the CDR strictly over
 ITS-REST); **`tools/*`** holds the dev/verification
 tooling that is *not* part of the shipped application (`cnf-runner` — the
 CNF 2.0 conformance runner incl. the measured-performance and step-load
-stress instruments, `benchmark` — the transitional profile-first lab, kept
-running but condemned: its unique features migrate into `cnf-runner` and the
-crate then deletes; nothing consumes `cnf-runner` as a library, `testkit` —
-the shared test-database harness, and
+stress/probe instruments; nothing consumes `cnf-runner` as a library),
+`testkit` — the shared test-database harness, and
 `openehr-codegen` — the BMM/XSD/OAS → Rust generator); **`crates/*`** holds the
 generated openEHR spec layer + its tooling (`openehr-*`). Root
 workspace `members = ["crates/*", "app/*", "tools/*"]`. Arrows:
@@ -213,8 +211,7 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
 | `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |
 | `ehrbase-server` | The wiring-only binary (config → pool → migrations → service → serve); bin name `ehrbase` | application |
-| `cnf-runner` | CNF 2.0 conformance runner + measured-performance and step-load stress instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
-| `benchmark` | Transitional profile-first benchmark lab (`tools/*`; condemned — features migrate into `cnf-runner`, then deleted) | tooling |
+| `cnf-runner` | CNF 2.0 conformance runner + the measured-performance, step-load stress, and AQL-probe instruments (`tools/*`; consumed by nothing — terminal instrument) | tooling |
 | `testkit` | Shared test-database harness: one PG18 server + template-database cloning (`tools/*`) | tooling |
 
 ## Build sequence & stages

@@ -953,13 +953,13 @@ pub fn stress_schema() -> Value {
         "$schema": DRAFT,
         "$id": urn("stress"),
         "title": "CNF 2.0 stress report",
-        "description": "The step-load stress instrument's exploration artifact: geometric load steps (each with re-checkable HDR V2 records) to the maximum sustainable throughput, environment-bound, with the class floors as context only — classes are earned exclusively by the hour-long class runs.",
+        "description": "The step-load stress instrument's exploration artifact: geometric load steps (each with re-checkable HDR V2 records) to the maximum sustainable throughput — where the system breaks — run on a class-scale corpus, environment-bound; never a conformance record, and floor-free by design.",
         "type": "object",
         "additionalProperties": false,
         "required": ["corpus", "environment", "step_warmup_s", "step_hold_s",
                       "p99_budget_ms", "error_budget", "steps",
                       "max_sustainable_throughput_per_s", "ladder_capped",
-                      "generator_bound", "floors_context", "remark"],
+                      "generator_bound", "remark"],
         "properties": {
             "corpus": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
             "environment": environment_def(),
@@ -993,19 +993,6 @@ pub fn stress_schema() -> Value {
             "max_sustainable_throughput_per_s": { "type": "number", "minimum": 0.0 },
             "ladder_capped": { "type": "boolean" },
             "generator_bound": { "type": "boolean" },
-            "floors_context": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": ["class", "floor_per_s", "cleared"],
-                    "properties": {
-                        "class": { "enum": perf_class_tokens() },
-                        "floor_per_s": { "type": "number", "exclusiveMinimum": 0.0 },
-                        "cleared": { "type": "boolean" }
-                    }
-                }
-            },
             "remark": { "type": "string", "minLength": 1 }
         }
     })

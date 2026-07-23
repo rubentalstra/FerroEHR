@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`cnf-runner stress-compare`** — the cross-SUT stress overlay: both
+  systems' latency-throughput curves on one canvas, rendered
+  deterministically from the two committed `stress.json` reports (driven
+  by `scripts/render-comparison.sh`); both directions on equal footing.
 - **Measured runs record resource telemetry**: each measurement in
   `results.json` now carries an optional, schema-published `resources`
   block — per-container (server and database separately) CPU, resident
@@ -95,6 +99,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **The transitional benchmark lab** (`tools/benchmark`,
+  `scripts/benchmark.sh`, `docker/benchmark/`, the manual benchmark
+  workflow, and the committed `docs/benchmarks/**` artifacts): all
+  measurement is native to the CNF runner — measured class runs, the
+  stress ladder, the AQL probe, and the cross-SUT stress overlay — and the
+  comparison page now derives its performance side from the committed
+  `docs/conformance/<sut>/stress.json` reports (upstream shown as "not
+  measured yet" until its report lands, never a one-sided claim).
 - The completed ECC→CNF cutover comparison lane: the generated
   `docs/conformance/cnf-comparison.md`, the `cnf-runner compare-ecc`
   subcommand, the drift gate, and the preserved ECC catalogue/map (all in
@@ -105,6 +117,53 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A coded value whose text is not the template-bound rubric is now
+  rejected at commit** (422 naming the path, the committed value, and
+  the bound rubric): RM `DV_CODED_TEXT` — "value must be the rubric from
+  a controlled terminology" — enforced wherever the template itself is
+  authoritative for the rubric (archetype-local at-codes and explicitly
+  bound external term definitions, any bound language); `openehr`-
+  terminology codes stay unchecked (the terminology ships official
+  translations the template cannot enumerate), and a bound code with no
+  rubric stays accepted. The once-accepted code-as-value instance is a
+  pinned rejection.
+- **Coded-text example values now carry the template-bound rubric**: the
+  Web Template builder resolved display labels only for local at-codes,
+  so an external code's rubric (OPT `term_definitions` keyed
+  `TERMINOLOGY::code`, e.g. SNOMED-CT bindings) was lost and generated
+  examples emitted the raw code as `DV_CODED_TEXT.value` — spec-invalid
+  instance data (RM: "value must be the rubric from a controlled
+  terminology"). The qualified key now resolves; the covid19 example
+  regenerates with rubrics; every pack example commits clean on strict
+  validators.
+- **A `DV_INTERVAL` with an absent bound but a false `*_unbounded` flag is
+  now rejected at commit** (422 naming the rule): BASE `Interval`
+  semantics make a false unbounded flag assert a finite bound, and the
+  ITS-JSON schema requires all four boundary flags on the wire — the
+  previously-accepted flag-less half-open instance (whose missing flags
+  read as false) is a pinned rejection test at the wire boundary, and the
+  CNF interval decision tables gain the bound-presence rejection rows.
+- **Child-assembled `DV_INTERVAL` values now carry the mandatory boundary
+  flags**: an interval built from `lower`/`upper` sub-path children (the
+  FLAT builder's container path — template examples included) previously
+  omitted `lower_unbounded`/`upper_unbounded`/`lower_included`/
+  `upper_included`, making every half-open interval spec-invalid (BASE
+  `Interval`: the flags are mandatory and `Limits_consistent` is
+  unevaluable against an absent bound); the flags now derive from bound
+  presence, an explicit datum flag wins, and the committed CCTA example
+  is regenerated. Strict validators (upstream EHRbase) rejected the old
+  instances with 422.
+- **Population AQL with `LIMIT` now streams instead of materializing the
+  corpus**: a LIMIT-bearing, unordered, non-DISTINCT, non-aggregate
+  population query lowers to a streaming FROM shape (the current-version
+  spine with `LATERAL` node probes), so PostgreSQL stops at the LIMIT
+  instead of building an archetype-anchor bitmap over every matching node
+  first — measured on a million-composition corpus, the cross-EHR ward
+  worklist drops from ~113 ms to ~2 ms per execution (~40× fewer buffer
+  reads); ordered/aggregate/EHR-scoped queries keep the previous plan
+  shape, and result semantics are unchanged. A version-field projection
+  of `uid`/`contribution_id`/`lifecycle_state` no longer joins the audit
+  table it never reads.
 - **AQL cross-EHR queries with `LIMIT` no longer collapse under corpus
   scale**: predicates on multi-valued (anchored) paths now lower as
   existential semi-joins (`EXISTS` — the predicate holds when ANY matched

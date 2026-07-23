@@ -81,7 +81,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "1240741000000103"
+                        "value": "2019-nCoV (novel coronavirus) serology"
                       }
                     },
                     {
@@ -101,7 +101,7 @@
                             "value": "WHO-COVID-TEST_REASON"
                           }
                         },
-                        "value": "CASE_CONTACT"
+                        "value": "Contact of a case."
                       }
                     },
                     {
@@ -121,7 +121,7 @@
                             "value": "WHO-COVID-TEST_RESULT"
                           }
                         },
-                        "value": "POSITIVE"
+                        "value": "The Covid-19 test was positive."
                       }
                     },
                     {
@@ -325,7 +325,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
@@ -349,7 +349,7 @@
                                 "value": "SNOMED-CT"
                               }
                             },
-                            "value": "315642008"
+                            "value": "Influenza-like symptoms"
                           }
                         },
                         {
@@ -478,7 +478,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
@@ -756,7 +756,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
@@ -889,7 +889,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
@@ -1069,7 +1069,7 @@
                       "value": "SNOMED-CT"
                     }
                   },
-                  "value": "840533007"
+                  "value": "SARS-CoV-2"
                 }
               },
               {
@@ -1667,7 +1667,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "1240741000000103"
+                        "value": "2019-nCoV (novel coronavirus) serology"
                       }
                     },
                     {
@@ -1731,7 +1731,7 @@
                             "value": "WHO-COVID-TEST_REASON"
                           }
                         },
-                        "value": "CASE_CONTACT"
+                        "value": "Contact of a case."
                       }
                     },
                     {
@@ -1763,7 +1763,7 @@
                             "value": "WHO-COVID-TEST_RESULT"
                           }
                         },
-                        "value": "POSITIVE"
+                        "value": "The Covid-19 test was positive."
                       }
                     },
                     {
@@ -1980,7 +1980,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
@@ -2004,7 +2004,7 @@
                                 "value": "SNOMED-CT"
                               }
                             },
-                            "value": "315642008"
+                            "value": "Influenza-like symptoms"
                           }
                         },
                         {
@@ -2133,7 +2133,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
@@ -2266,7 +2266,7 @@
                             "value": "SNOMED-CT"
                           }
                         },
-                        "value": "840544004"
+                        "value": "Suspected COVID-19"
                       }
                     },
                     {
