@@ -1,7 +1,7 @@
 # Conformance Report
 
-SUT: ehrbase-rs 3.6.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.6.0 · verification pack: passed
+SUT: ehrbase-rs 3.7.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.7.0 · verification pack: passed
 
 ## Summary
 
@@ -40,16 +40,39 @@ Runner: cnf-runner 3.6.0 · verification pack: passed
 
 ## Performance measurements
 
-### PERF-mixed_load-class_POC — class POC · EARNED
+### PERF-hospital_sim-class_POC — class POC · not earned
 
-Offered load sustained: 2.00/s over 3600 s (after 300 s warmup) · environment: consumer-laptop (8 cores, 16 GB, nvme, single-node docker compose (8-CPU/8GB Docker VM) on Apple M2)
+Offered load sustained: 2.03/s over 3600 s (after 300 s warmup) · environment: consumer-laptop (8 cores, 16 GB, nvme, single-node docker compose (8-CPU/8GB Docker VM) on Apple M2)
 
 | Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| adhoc_query | 2160 | 0 | 23.0 | 30.2 | 43.5 |
-| composition_commit | 576 | 0 | 21.8 | 29.7 | 51.4 |
-| composition_read | 4392 | 0 | 15.9 | 21.4 | 33.0 |
-| ehr_create | 72 | 0 | 19.3 | 26.4 | 43.2 |
+| adhoc_query | 953 | 0 | 29.9 | 37.7 | 50.4 |
+| composition_commit | 315 | 8 | 38.8 | 74.6 | 105.1 |
+| composition_delete | 4 | 0 | 18.2 | 22.1 | 22.1 |
+| composition_read | 1906 | 0 | 19.2 | 25.4 | 33.1 |
+| composition_read_current | 1072 | 0 | 20.9 | 27.2 | 34.3 |
+| composition_revision_history | 1029 | 0 | 13.7 | 18.8 | 25.5 |
+| composition_update | 77 | 0 | 35.3 | 52.0 | 65.0 |
+| contribution_commit | 52 | 0 | 51.5 | 106.4 | 155.4 |
+| contribution_read | 110 | 0 | 17.3 | 23.9 | 29.7 |
+| directory_create | 13 | 0 | 16.4 | 21.3 | 25.2 |
+| directory_read | 967 | 0 | 14.1 | 19.5 | 23.7 |
+| directory_update | 13 | 0 | 26.8 | 32.2 | 33.2 |
+| ehr_create | 13 | 0 | 25.1 | 33.4 | 34.4 |
+| ehr_read | 98 | 0 | 16.0 | 22.8 | 56.9 |
+| ehr_status_read | 26 | 0 | 14.3 | 20.5 | 29.0 |
+| ehr_status_update | 26 | 0 | 19.8 | 33.2 | 71.6 |
+| stored_query_execute | 204 | 0 | 31.3 | 40.8 | 53.6 |
+| tags_put | 34 | 0 | 19.8 | 29.5 | 35.8 |
+| tags_read | 34 | 0 | 12.3 | 19.5 | 23.5 |
+| template_get | 85 | 0 | 45.3 | 78.3 | 150.1 |
+| template_list | 85 | 0 | 44.0 | 61.4 | 77.1 |
+| ward_query | 204 | 0 | 327.4 | 5038.1 | 5705.7 |
+
+Violations:
+
+- ward_query LatencyP99 5705.727ms > max 1000ms
+- error_rate 0.001092896174863388 > max 0
 
 Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.
 

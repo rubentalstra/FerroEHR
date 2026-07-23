@@ -326,6 +326,42 @@ pub fn seed_ward(
             }
         }
     }
+    // PACK PREFLIGHT: every pack example must commit clean once (a
+    // scratch EHR) before any window opens — an RM-invalid generated
+    // payload is an instrument-ground defect and must fail seeding
+    // loudly, never surface as silent error arrivals inside a measured
+    // window.
+    let scratch = client.request(reqwest::Method::POST, "/ehr", None, true, None)?;
+    let scratch_ehr = if scratch.status == 201 {
+        scratch
+            .location
+            .as_deref()
+            .and_then(location_last_segment)
+            .ok_or_else(|| "preflight EHR: no Location ehr_id".to_owned())?
+    } else {
+        return Err(format!("preflight EHR create returned {}", scratch.status));
+    };
+    for (index, template) in journey_pack.templates.iter().enumerate() {
+        let body = pack::composition_body(template, 0, u64::try_from(index).unwrap_or(0))?;
+        let reply = client.request(
+            reqwest::Method::POST,
+            &format!("/ehr/{scratch_ehr}/composition"),
+            Some(("application/json", body)),
+            true,
+            None,
+        )?;
+        if reply.status != 201 {
+            return Err(format!(
+                "pack preflight: template {} example returned {} — the committed payload                  ground is invalid for this SUT; fix the pack (or the SUT's validation)                  before measuring",
+                template.key, reply.status
+            ));
+        }
+    }
+    progress(format!(
+        "pack preflight: {} template examples committed clean",
+        journey_pack.templates.len()
+    ));
+
     // The dashboard stored query (`store_query` → wire 200).
     let stored = client.request(
         reqwest::Method::PUT,

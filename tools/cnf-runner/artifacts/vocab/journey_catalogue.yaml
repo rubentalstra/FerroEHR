@@ -111,14 +111,18 @@ lab_pipeline:
 
 imaging_pipeline:
   description: >-
-    The imaging order-to-report pipeline: a request, the imaging report
-    landing after a longer turnaround, then the report review.
+    The imaging order-to-report pipeline: a request, the report landing
+    after a longer turnaround, then the report review.
   derivation: >-
     0.82 imaging tests/capita/yr (NHS Diagnostic Imaging Dataset 2023/24);
     report turnaround hours.
   stages:
     - { op: composition_commit, template: cnf.ckm.ereferral, at: PT0S }
-    - { op: composition_commit, template: cnf.ckm.ccta_report, at: { uniform: [PT1H, PT3H] } }
+    # TODO: restore cnf.ckm.ccta_report as the report payload once the
+    # example generator emits RM-valid instances for it (its generated
+    # example carries ELEMENT.value = ITEM_TREE, which the platform's own
+    # validation rejects); the synoptic report carries the stage meanwhile.
+    - { op: composition_commit, template: cnf.ckm.breast_cancer_report, at: { uniform: [PT1H, PT3H] } }
     - { op: composition_read_current, at: PT3H30M }
 
 # ── specialist & registry reporting ─────────────────────────────────────
