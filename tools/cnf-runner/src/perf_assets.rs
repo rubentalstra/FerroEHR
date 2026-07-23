@@ -29,6 +29,9 @@ const STYLE: &str = "<style>\n\
   .notearned { fill: #b3261e; font-weight: 600; }\n\
   .slo { stroke: #b3261e; stroke-width: 1.5; stroke-dasharray: 6 4; }\n\
   .slotext { fill: #b3261e; font-size: 11px; }\n\
+  .sut { stroke: #2a78d6; fill: none; stroke-width: 1.8; }\n\
+  .db { stroke: #8a8880; fill: none; stroke-width: 1.6; stroke-dasharray: 5 3; }\n\
+  .warm { fill: #efede8; }\n\
   @media (prefers-color-scheme: dark) {\n\
     text { fill: #c3c2b7; }\n\
     .title { fill: #ffffff; }\n\
@@ -41,6 +44,9 @@ const STYLE: &str = "<style>\n\
     .notearned { fill: #e5484d; }\n\
     .slo { stroke: #e5484d; }\n\
     .slotext { fill: #e5484d; }\n\
+    .sut { stroke: #3987e5; }\n\
+    .db { stroke: #8f8e85; }\n\
+    .warm { fill: #2a2a28; }\n\
   }\n\
 </style>\n";
 
@@ -414,6 +420,462 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
     Ok(out)
 }
 
+/// Fixed-precision byte label (decimal units — KB/MB/GB, the vocabulary
+/// every reader knows; the exact byte counts stay in the record):
+/// sub-10 values keep one decimal, larger values round whole.
+fn format_bytes(bytes: f64) -> String {
+    const UNITS: [&str; 5] = ["B", "KB", "MB", "GB", "TB"];
+    let mut value = bytes.max(0.0);
+    let mut unit = 0;
+    while value >= 1000.0 && unit < UNITS.len() - 1 {
+        value /= 1000.0;
+        unit += 1;
+    }
+    let text = if unit == 0 {
+        format!("{value:.0}")
+    } else if value < 10.0 {
+        format!("{value:.1}")
+    } else {
+        format!("{value:.0}")
+    };
+    format!("{text} {}", UNITS.get(unit).copied().unwrap_or("B"))
+}
+
+/// A count with thousands separators (`1,000,000`) — fixed formatting,
+/// locale-independent.
+fn format_count(n: u64) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
+}
+
+/// The smallest 1/2/2.5/5 × 10^k value at or above `v` — a nice axis
+/// ceiling (`v <= 0` yields 1).
+fn nice_ceil(v: f64) -> f64 {
+    if v <= 0.0 {
+        return 1.0;
+    }
+    let magnitude = 10.0_f64.powf(v.log10().floor());
+    for step in [1.0, 2.0, 2.5, 5.0, 10.0] {
+        if step * magnitude >= v {
+            return step * magnitude;
+        }
+    }
+    10.0 * magnitude
+}
+
+/// One derived series of a resource time-series chart: run-clock offset
+/// (seconds) → value.
+type ResourcePoints = Vec<(f64, f64)>;
+
+/// A cumulative-counter selector on a resource sample (the I/O strips).
+type CounterOf = &'static dyn Fn(&crate::perf::ResourceSample) -> u64;
+
+/// Extract one per-container value series from the sampled record.
+fn value_series(
+    series: &crate::perf::ContainerResourceSeries,
+    value: &dyn Fn(&crate::perf::ResourceSample) -> f64,
+) -> ResourcePoints {
+    series
+        .samples
+        .iter()
+        .map(|s| {
+            #[allow(clippy::cast_precision_loss)] // offsets << 2^52
+            (s.offset_s as f64, value(s))
+        })
+        .collect()
+}
+
+/// Derive a rate series (units/s) from a cumulative byte counter: deltas
+/// between consecutive samples over their spacing. A counter reset (a
+/// restarted container) clamps to zero rather than plunging negative.
+fn rate_series(
+    series: &crate::perf::ContainerResourceSeries,
+    counter: &dyn Fn(&crate::perf::ResourceSample) -> u64,
+) -> ResourcePoints {
+    series
+        .samples
+        .windows(2)
+        .filter_map(|pair| {
+            let (a, b) = (pair.first()?, pair.get(1)?);
+            let span = b.offset_s.saturating_sub(a.offset_s);
+            if span == 0 {
+                return None;
+            }
+            #[allow(clippy::cast_precision_loss)] // counters/offsets << 2^52
+            Some((
+                b.offset_s as f64,
+                counter(b).saturating_sub(counter(a)) as f64 / span as f64,
+            ))
+        })
+        .collect()
+}
+
+/// Append one polyline path for a value series.
+fn polyline(
+    out: &mut String,
+    points: &[(f64, f64)],
+    x_of: &dyn Fn(f64) -> f64,
+    y_of: &dyn Fn(f64) -> f64,
+    class: &str,
+) {
+    if points.len() < 2 {
+        return;
+    }
+    let d: Vec<String> = points
+        .iter()
+        .enumerate()
+        .map(|(i, (t, v))| {
+            format!(
+                "{}{:.1},{:.1}",
+                if i == 0 { "M" } else { "L" },
+                x_of(*t),
+                y_of(*v)
+            )
+        })
+        .collect();
+    let _ = writeln!(out, "<path d=\"{}\" class=\"{class}\"/>", d.join(" "));
+}
+
+/// The resource time-series for one measured run: CPU and RSS panels over
+/// the run clock (SUT and DB as two series, distinguishable by color AND
+/// dash), warmup shaded, with small-multiple I/O rate strips (block
+/// read/write, network receive/transmit) under them on the shared x-axis.
+/// Fixed canvas — the series are lines, so width never grows with
+/// duration. `None` when the record carries no drawable series (a chart
+/// of nothing would be a fabrication).
+#[must_use]
+#[allow(clippy::too_many_lines)] // one linear chart emitter
+pub fn resources_timeseries_svg(measurement: &Measurement) -> Option<String> {
+    let resources = measurement.resources.as_ref()?;
+    if !resources.containers.iter().any(|c| c.samples.len() >= 2) {
+        return None;
+    }
+    let width = 760.0;
+    let (x0, x1) = (86.0, 724.0);
+    let sut = resources
+        .containers
+        .iter()
+        .find(|c| c.role == crate::perf::ContainerRole::Sut);
+    let db = resources
+        .containers
+        .iter()
+        .find(|c| c.role == crate::perf::ContainerRole::Db);
+    let both = [sut, db];
+
+    // The x-domain: the planned window (warmup + sustained), extended by
+    // any trailing drain samples.
+    let last_offset = resources
+        .containers
+        .iter()
+        .flat_map(|c| c.samples.iter().map(|s| s.offset_s))
+        .max()
+        .unwrap_or(0);
+    #[allow(clippy::cast_precision_loss)] // spans << 2^52
+    let span_s = (measurement.warmup_s + measurement.duration_s).max(last_offset) as f64;
+    let x_of = move |t: f64| x0 + (t / span_s).clamp(0.0, 1.0) * (x1 - x0);
+
+    let mut out = String::new();
+    // Header (title + caption + legend) 84, two panels of 110 with 26-px
+    // titles, four 40-px strips with 22-px titles, 38 for the time axis.
+    let cpu_top = 110.0;
+    let panel_h = 110.0;
+    let rss_top = cpu_top + panel_h + 26.0;
+    let strips_top = rss_top + panel_h + 26.0;
+    let strip_h = 40.0;
+    let strip_step = strip_h + 22.0;
+    // The last strip's bottom edge; the time axis sits in a fixed band
+    // below it, inside the canvas by construction.
+    let bottom = strips_top + 3.0 * strip_step + strip_h;
+    let height = bottom + 34.0;
+    svg_open(&mut out, width, height);
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" class=\"title\">Resource telemetry — class {} measured run ({})</text>",
+        measurement.class.token(),
+        measurement.case,
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"44\" class=\"muted\">Sampled every {} s across the whole window · measured context, never a verdict input — the class is earned on latency, errors and offered load alone</text>",
+        resources.sample_interval_s,
+    );
+    // Legend at fixed columns (the container identities live in the
+    // generated summary table — the legend never grows with a name).
+    let legend_y = 58.0;
+    for (class, label, lx) in [
+        ("sut", "SUT container", 24.0),
+        ("db", "database container", 170.0),
+    ] {
+        let _ = writeln!(
+            out,
+            "<line x1=\"{lx}\" y1=\"{:.1}\" x2=\"{:.1}\" y2=\"{:.1}\" class=\"{class}\"/>\
+             <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">{label}</text>",
+            legend_y + 4.0,
+            lx + 22.0,
+            legend_y + 4.0,
+            lx + 28.0,
+            legend_y + 8.0,
+        );
+    }
+    let _ = writeln!(
+        out,
+        "<rect x=\"344\" y=\"{legend_y}\" width=\"14\" height=\"10\" class=\"warm\"/>\
+         <text x=\"364\" y=\"{:.1}\" class=\"muted\">warmup</text>",
+        legend_y + 8.0,
+    );
+
+    // Time ticks: a minute step giving <= 8 ticks.
+    let minutes = span_s / 60.0;
+    let tick_step_min = [1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0, 120.0, 240.0]
+        .into_iter()
+        .find(|step| minutes / step <= 8.0)
+        .unwrap_or(240.0);
+
+    #[allow(clippy::cast_precision_loss)] // window seconds << 2^52
+    let warm_w = x_of(measurement.warmup_s as f64) - x0;
+
+    // One panel or strip: warmup shade, gridlines, y-labels, series.
+    let panel = |out: &mut String,
+                 top: f64,
+                 h: f64,
+                 title: &str,
+                 points: &[(&str, ResourcePoints)],
+                 label_of: &dyn Fn(f64) -> String| {
+        let y_max = nice_ceil(
+            points
+                .iter()
+                .flat_map(|(_, p)| p.iter().map(|(_, v)| *v))
+                .fold(0.0, f64::max),
+        );
+        let y_of = move |v: f64| top + h - (v / y_max).clamp(0.0, 1.0) * h;
+        let _ = writeln!(
+            out,
+            "<text x=\"{x0}\" y=\"{:.1}\" class=\"muted\">{title}</text>",
+            top - 7.0,
+        );
+        let _ = writeln!(
+            out,
+            "<rect x=\"{x0}\" y=\"{top:.1}\" width=\"{warm_w:.1}\" height=\"{h}\" class=\"warm\"/>",
+        );
+        // Gridlines at 0 / half / full scale, labeled on the left.
+        for frac in [0.0, 0.5, 1.0] {
+            let y = y_of(y_max * frac);
+            let _ = writeln!(
+                out,
+                "<line x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1}\" y2=\"{y:.1}\" class=\"grid\"/>\
+                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"end\">{}</text>",
+                x0 - 8.0,
+                y + 4.0,
+                label_of(y_max * frac),
+            );
+        }
+        for (class, series_points) in points {
+            polyline(out, series_points, &x_of, &y_of, class);
+        }
+    };
+
+    let pair = |value: &dyn Fn(&crate::perf::ResourceSample) -> f64| -> Vec<(&'static str, ResourcePoints)> {
+        let mut set = Vec::new();
+        if let Some(c) = sut {
+            set.push(("sut", value_series(c, value)));
+        }
+        if let Some(c) = db {
+            set.push(("db", value_series(c, value)));
+        }
+        set
+    };
+    let rate_pair = |counter: &dyn Fn(&crate::perf::ResourceSample) -> u64| -> Vec<(&'static str, ResourcePoints)> {
+        both.iter()
+            .flatten()
+            .map(|c| {
+                (
+                    if c.role == crate::perf::ContainerRole::Sut {
+                        "sut"
+                    } else {
+                        "db"
+                    },
+                    rate_series(c, counter),
+                )
+            })
+            .collect()
+    };
+
+    panel(
+        &mut out,
+        cpu_top,
+        panel_h,
+        "CPU (% of one core)",
+        &pair(&|s| s.cpu_pct),
+        &|v| format!("{v:.0}%"),
+    );
+    panel(
+        &mut out,
+        rss_top,
+        panel_h,
+        "Resident memory",
+        &pair(&|s| {
+            #[allow(clippy::cast_precision_loss)] // bytes << 2^52
+            {
+                s.rss_bytes as f64
+            }
+        }),
+        &format_bytes,
+    );
+    let strips: [(&str, CounterOf); 4] = [
+        ("Block read", &|s| s.blk_read_bytes),
+        ("Block write", &|s| s.blk_write_bytes),
+        ("Network receive", &|s| s.net_rx_bytes),
+        ("Network transmit", &|s| s.net_tx_bytes),
+    ];
+    for (i, (title, counter)) in strips.iter().enumerate() {
+        #[allow(clippy::cast_precision_loss)] // four strips
+        let top = strips_top + i as f64 * strip_step;
+        panel(&mut out, top, strip_h, title, &rate_pair(counter), &|v| {
+            format!("{}/s", format_bytes(v))
+        });
+    }
+
+    // The shared time axis under the last strip.
+    let axis_y = bottom + 6.0;
+    let mut t_min = 0.0;
+    while t_min * 60.0 <= span_s {
+        let x = x_of(t_min * 60.0);
+        let _ = writeln!(
+            out,
+            "<text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{t_min:.0} min</text>",
+            axis_y + 12.0,
+        );
+        t_min += tick_step_min;
+    }
+    out.push_str("</svg>\n");
+    Some(out)
+}
+
+/// The disk-growth waterfall: the database volume's on-disk size at the
+/// run's four anchors (empty → scale seed → ward seed → after the
+/// window), each present anchor a bar labeled with its absolute size, the
+/// scale-seed step annotated with the derived bytes per committed
+/// composition. Rendered from the highest measured class carrying
+/// anchors; `None` when no record carries any. Fixed columns — nothing
+/// can overflow by construction.
+#[must_use]
+#[allow(clippy::too_many_lines)] // one linear chart emitter
+pub fn disk_growth_svg(measurements: &[Measurement]) -> Option<String> {
+    let measurement = measurements
+        .iter()
+        .filter(|m| {
+            m.resources.as_ref().is_some_and(|r| {
+                r.disk.before_scale_seed_bytes.is_some()
+                    || r.disk.after_scale_seed_bytes.is_some()
+                    || r.disk.after_ward_seed_bytes.is_some()
+                    || r.disk.after_window_bytes.is_some()
+            })
+        })
+        .max_by(|a, b| {
+            a.class
+                .arrival_floor_per_s()
+                .total_cmp(&b.class.arrival_floor_per_s())
+        })?;
+    let disk = &measurement.resources.as_ref()?.disk;
+
+    let (width, height) = (640.0, 312.0);
+    let (y_top, y_bottom) = (100.0, 244.0);
+    let anchors: [(&str, Option<u64>); 4] = [
+        ("empty", disk.before_scale_seed_bytes),
+        ("after scale seed", disk.after_scale_seed_bytes),
+        ("after ward seed", disk.after_ward_seed_bytes),
+        ("after window", disk.after_window_bytes),
+    ];
+    #[allow(clippy::cast_precision_loss)] // volume sizes << 2^52
+    let max_bytes = anchors
+        .iter()
+        .filter_map(|(_, v)| *v)
+        .max()
+        .unwrap_or(1)
+        .max(1) as f64;
+
+    let mut out = String::new();
+    svg_open(&mut out, width, height);
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" class=\"title\">Disk growth — database volume across the class {} measured run</text>",
+        measurement.class.token(),
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"48\" class=\"muted\">The volume's on-disk size at the run's four anchors, probed read-only inside the DB container.</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"63\" class=\"muted\">The scale-seed step yields the storage cost per committed composition · measured context, never a verdict input.</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<line x1=\"60\" y1=\"{y_bottom}\" x2=\"580\" y2=\"{y_bottom}\" class=\"grid\"/>"
+    );
+
+    let bar_w = 84.0;
+    for (i, (label, value)) in anchors.iter().enumerate() {
+        #[allow(clippy::cast_precision_loss)] // four columns
+        let cx = 120.0 + i as f64 * 140.0;
+        let _ = writeln!(
+            out,
+            "<text x=\"{cx:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{label}</text>",
+            y_bottom + 18.0,
+        );
+        match value {
+            Some(bytes) => {
+                #[allow(clippy::cast_precision_loss)] // volume sizes << 2^52
+                let bytes_f = *bytes as f64;
+                let h = (bytes_f / max_bytes) * (y_bottom - y_top);
+                let y = y_bottom - h.max(2.0);
+                let _ = writeln!(
+                    out,
+                    "<rect x=\"{:.1}\" y=\"{y:.1}\" width=\"{bar_w}\" height=\"{:.1}\" rx=\"4\" class=\"measured\"/>\
+                     <text x=\"{cx:.1}\" y=\"{:.1}\" text-anchor=\"middle\">{}</text>",
+                    cx - bar_w / 2.0,
+                    h.max(2.0),
+                    y - 8.0,
+                    format_bytes(bytes_f),
+                );
+            }
+            None => {
+                let _ = writeln!(
+                    out,
+                    "<text x=\"{cx:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">not probed</text>",
+                    f64::midpoint(y_top, y_bottom),
+                );
+            }
+        }
+    }
+    // The storage-efficiency headline under the scale-seed column.
+    if let (Some(before), Some(after), Some(n)) = (
+        disk.before_scale_seed_bytes,
+        disk.after_scale_seed_bytes,
+        disk.seed_compositions,
+    ) && n > 0
+    {
+        #[allow(clippy::cast_precision_loss)] // sizes/counts << 2^52
+        let per = after.saturating_sub(before) as f64 / n as f64;
+        let _ = writeln!(
+            out,
+            "<text x=\"260\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">&#8776; {} / composition ({} committed)</text>",
+            y_bottom + 34.0,
+            format_bytes(per),
+            format_count(n),
+        );
+    }
+    out.push_str("</svg>\n");
+    Some(out)
+}
+
 /// Fixed-precision label: sub-10 ms values keep one decimal, larger values
 /// round to whole milliseconds.
 fn format_ms(ms: f64) -> String {
@@ -519,8 +981,87 @@ pub fn summary_markdown(
                 format_ms(ms(0.99)),
             );
         }
+        resources_markdown(&mut out, m.resources.as_ref());
     }
     Ok(out)
+}
+
+/// The derived resources table of one measured run (peak/mean CPU, peak
+/// RSS, the disk anchors — every number derived from the committed series,
+/// never stored beside it), or the honest absence line.
+fn resources_markdown(out: &mut String, resources: Option<&crate::perf::ResourcesRecord>) {
+    let Some(r) = resources else {
+        let _ = writeln!(out, "\nResources: not sampled.");
+        return;
+    };
+    let _ = writeln!(
+        out,
+        "\nResources (measured context, never a verdict input) — sampled every {} s; \
+         CPU/RSS derived over the measured phase:\n",
+        r.sample_interval_s,
+    );
+    let _ = writeln!(out, "| Container | CPU mean | CPU peak | RSS peak |");
+    let _ = writeln!(out, "| --- | --- | --- | --- |");
+    for c in &r.containers {
+        let role = match c.role {
+            crate::perf::ContainerRole::Sut => "sut",
+            crate::perf::ContainerRole::Db => "db",
+        };
+        let measured: Vec<&crate::perf::ResourceSample> = c
+            .samples
+            .iter()
+            .filter(|s| s.phase == crate::perf::ResourcePhase::Measured)
+            .collect();
+        // A run whose window never reached the measured phase still
+        // reports what it saw.
+        let set = if measured.is_empty() {
+            c.samples.iter().collect()
+        } else {
+            measured
+        };
+        if set.is_empty() {
+            let _ = writeln!(out, "| {role} `{}` | — | — | — |", c.name);
+            continue;
+        }
+        #[allow(clippy::cast_precision_loss)] // sample counts << 2^52
+        let cpu_mean = set.iter().map(|s| s.cpu_pct).sum::<f64>() / set.len() as f64;
+        let cpu_peak = set.iter().map(|s| s.cpu_pct).fold(0.0, f64::max);
+        let rss_peak = set.iter().map(|s| s.rss_bytes).max().unwrap_or(0);
+        #[allow(clippy::cast_precision_loss)] // bytes << 2^52
+        let _ = writeln!(
+            out,
+            "| {role} `{}` | {cpu_mean:.1}% | {cpu_peak:.1}% | {} |",
+            c.name,
+            format_bytes(rss_peak as f64),
+        );
+    }
+    #[allow(clippy::cast_precision_loss)] // volume sizes << 2^52
+    let anchor =
+        |v: Option<u64>| v.map_or_else(|| "not probed".to_owned(), |b| format_bytes(b as f64));
+    let per_composition = match (
+        r.disk.before_scale_seed_bytes,
+        r.disk.after_scale_seed_bytes,
+        r.disk.seed_compositions,
+    ) {
+        (Some(before), Some(after), Some(n)) if n > 0 => {
+            #[allow(clippy::cast_precision_loss)] // sizes/counts << 2^52
+            let per = after.saturating_sub(before) as f64 / n as f64;
+            format!(
+                " (≈ {} / composition over {} committed)",
+                format_bytes(per),
+                format_count(n)
+            )
+        }
+        _ => String::new(),
+    };
+    let _ = writeln!(
+        out,
+        "\nDisk anchors: empty {} → after scale seed {}{per_composition} → after ward seed {} → after window {}.",
+        anchor(r.disk.before_scale_seed_bytes),
+        anchor(r.disk.after_scale_seed_bytes),
+        anchor(r.disk.after_ward_seed_bytes),
+        anchor(r.disk.after_window_bytes),
+    );
 }
 
 #[cfg(test)]
@@ -587,5 +1128,120 @@ mod tests {
         // p99 of the fixture histogram is 40ms — the label re-derives from
         // the decoded histogram.
         assert!(latency.contains(">40<"));
+    }
+
+    fn sample(
+        offset_s: u64,
+        phase: crate::perf::ResourcePhase,
+        cpu_pct: f64,
+        rss_bytes: u64,
+    ) -> crate::perf::ResourceSample {
+        crate::perf::ResourceSample {
+            offset_s,
+            phase,
+            cpu_pct,
+            rss_bytes,
+            blk_read_bytes: offset_s * 1_000,
+            blk_write_bytes: offset_s * 5_000,
+            net_rx_bytes: offset_s * 200,
+            net_tx_bytes: offset_s * 300,
+        }
+    }
+
+    fn measurement_with_resources() -> Measurement {
+        use crate::perf::ResourcePhase;
+        let mut m = measurement();
+        m.resources = Some(crate::perf::ResourcesRecord {
+            sample_interval_s: 10,
+            containers: vec![
+                crate::perf::ContainerResourceSeries {
+                    role: crate::perf::ContainerRole::Sut,
+                    name: "ehrbase-rs-ehrbase-1".to_owned(),
+                    samples: vec![
+                        sample(10, ResourcePhase::Warmup, 12.0, 400_000_000),
+                        sample(310, ResourcePhase::Measured, 55.0, 600_000_000),
+                        sample(3910, ResourcePhase::Drain, 5.0, 500_000_000),
+                    ],
+                },
+                crate::perf::ContainerResourceSeries {
+                    role: crate::perf::ContainerRole::Db,
+                    name: "ehrbase-rs-ehrbase-postgres-1".to_owned(),
+                    samples: vec![
+                        sample(10, ResourcePhase::Warmup, 30.0, 900_000_000),
+                        sample(310, ResourcePhase::Measured, 140.0, 1_400_000_000),
+                    ],
+                },
+            ],
+            disk: crate::perf::DiskAnchors {
+                before_scale_seed_bytes: Some(64_000_000),
+                after_scale_seed_bytes: Some(10_000_000_000),
+                after_ward_seed_bytes: None,
+                after_window_bytes: Some(11_000_000_000),
+                seed_compositions: Some(1_000_000),
+            },
+        });
+        m
+    }
+
+    #[test]
+    fn the_resource_charts_are_deterministic_and_honest() {
+        // A record without resources renders nothing — never a fabricated
+        // chart.
+        assert!(resources_timeseries_svg(&measurement()).is_none());
+        assert!(disk_growth_svg(&[measurement()]).is_none());
+
+        let m = measurement_with_resources();
+        let series = resources_timeseries_svg(&m).unwrap();
+        assert_eq!(series, resources_timeseries_svg(&m).unwrap());
+        assert!(series.contains("Resource telemetry — class POC measured run"));
+        assert!(series.contains("never a verdict input"));
+        assert!(series.contains("CPU (% of one core)"));
+        assert!(series.contains("Resident memory"));
+        assert!(series.contains("Block write"));
+        assert!(series.contains("Network transmit"));
+        assert!(series.contains("class=\"warm\"")); // the warmup shade
+        assert!(series.contains("class=\"sut\""));
+        assert!(series.contains("class=\"db\""));
+        assert!(series.contains("prefers-color-scheme: dark"));
+
+        let disk = disk_growth_svg(std::slice::from_ref(&m)).unwrap();
+        assert_eq!(disk, disk_growth_svg(std::slice::from_ref(&m)).unwrap());
+        assert!(disk.contains("Disk growth"));
+        assert!(disk.contains("64 MB")); // the empty anchor
+        assert!(disk.contains("10 GB"));
+        assert!(disk.contains("not probed")); // the absent ward anchor stays honest
+        // (10 GB - 64 MB) / 1M compositions ≈ 9.9 KB/composition.
+        assert!(disk.contains("/ composition"));
+        assert!(disk.contains("9.9 KB"));
+    }
+
+    #[test]
+    fn the_summary_carries_the_derived_resources_table() {
+        let cases = [case("POC", "2/s")];
+        // Without a record the summary says so.
+        let bare = summary_markdown(&cases, &[measurement()]).unwrap();
+        assert!(bare.contains("Resources: not sampled."));
+
+        let with = summary_markdown(&cases, &[measurement_with_resources()]).unwrap();
+        assert!(with.contains("| Container | CPU mean | CPU peak | RSS peak |"));
+        // The SUT row derives over the measured phase only (one sample:
+        // 55% / 600 MB).
+        assert!(with.contains("| sut `ehrbase-rs-ehrbase-1` | 55.0% | 55.0% | 600 MB |"));
+        assert!(with.contains("Disk anchors: empty 64 MB"));
+        assert!(with.contains("not probed"));
+        assert!(with.contains("/ composition over 1,000,000 committed"));
+    }
+
+    #[test]
+    fn byte_and_ceiling_helpers_are_fixed_precision() {
+        assert_eq!(format_bytes(0.0), "0 B");
+        assert_eq!(format_bytes(999.0), "999 B");
+        assert_eq!(format_bytes(1536.0), "1.5 KB");
+        assert_eq!(format_bytes(64_000_000.0), "64 MB");
+        assert_eq!(format_bytes(10_000_000_000.0), "10 GB");
+        assert!((nice_ceil(0.0) - 1.0).abs() < f64::EPSILON);
+        assert!((nice_ceil(3.0) - 5.0).abs() < f64::EPSILON);
+        assert!((nice_ceil(140.0) - 200.0).abs() < f64::EPSILON);
+        assert!((nice_ceil(730.0) - 1000.0).abs() < f64::EPSILON);
     }
 }

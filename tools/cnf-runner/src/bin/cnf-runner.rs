@@ -584,6 +584,7 @@ fn conformance_assets_command(
 
 /// The asset renderer (`perf-assets`): deterministic SVGs FROM the committed
 /// measurement records (regenerate-and-diff guarded in CI).
+#[allow(clippy::too_many_lines)] // one-shot orchestration seam
 fn perf_assets_command(
     root: &std::path::Path,
     results_path: &std::path::Path,
@@ -657,6 +658,17 @@ fn perf_assets_command(
                 return ExitCode::from(2);
             }
         }
+        // The resource time-series renders only from a record that carries
+        // one (sampling is optional by capability; nothing is fabricated).
+        if let Some(svg) = cnf_runner::perf_assets::resources_timeseries_svg(measurement) {
+            files.push((
+                format!("perf-resources-class-{}.svg", measurement.class.token()),
+                svg,
+            ));
+        }
+    }
+    if let Some(svg) = cnf_runner::perf_assets::disk_growth_svg(&results.measurements) {
+        files.push(("perf-disk-growth.svg".to_owned(), svg));
     }
     for (name, body) in &files {
         let path = out.join(name);

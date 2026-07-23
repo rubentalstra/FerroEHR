@@ -15,6 +15,23 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Measured runs record resource telemetry**: each measurement in
+  `results.json` now carries an optional, schema-published `resources`
+  block — per-container (server and database separately) CPU, resident
+  memory, block-device and network I/O sampled every 10 s across the
+  whole window (run-clock offsets, warmup/measured/drain phase stamps),
+  plus the database volume's on-disk size at four anchors (empty → scale
+  seed → ward seed → after the window) with the derived bytes per
+  committed composition. Sampling is enabled by the new optional
+  `containers` block in the ixit (compose container names); without it a
+  run records no resources and the report says so — telemetry never
+  influences a class verdict. Two new rendered assets (the resource
+  time-series and the disk-growth chart) join the perf-assets family and
+  the book's Performance chapter, drift-guarded in CI like every
+  published number.
+
 ### Fixed
 
 - **AQL cross-EHR queries with `LIMIT` no longer collapse under corpus
