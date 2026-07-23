@@ -7088,11 +7088,15 @@
                             "magnitude": 10.0,
                             "units": "%"
                           },
+                          "lower_included": true,
+                          "lower_unbounded": false,
                           "upper": {
                             "_type": "DV_QUANTITY",
                             "magnitude": 10.0,
                             "units": "%"
-                          }
+                          },
+                          "upper_included": true,
+                          "upper_unbounded": false
                         }
                       },
                       {
@@ -7104,10 +7108,14 @@
                         },
                         "value": {
                           "_type": "DV_INTERVAL",
+                          "lower_included": false,
+                          "lower_unbounded": true,
                           "upper": {
                             "_type": "DV_DURATION",
                             "value": "PT1S"
-                          }
+                          },
+                          "upper_included": true,
+                          "upper_unbounded": false
                         }
                       }
                     ],
