@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openehr:cnf:schema:stress:0.1.0",
   "title": "CNF 2.0 stress report",
-  "description": "The step-load stress instrument's exploration artifact: geometric load steps (each with re-checkable HDR V2 records) to the maximum sustainable throughput, environment-bound, with the class floors as context only — classes are earned exclusively by the hour-long class runs.",
+  "description": "The step-load stress instrument's exploration artifact: geometric load steps (each with re-checkable HDR V2 records) to the maximum sustainable throughput — where the system breaks — run on a class-scale corpus, environment-bound; never a conformance record, and floor-free by design.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -16,7 +16,6 @@
     "max_sustainable_throughput_per_s",
     "ladder_capped",
     "generator_bound",
-    "floors_context",
     "remark"
   ],
   "properties": {
@@ -288,35 +287,6 @@
     },
     "generator_bound": {
       "type": "boolean"
-    },
-    "floors_context": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-          "class",
-          "floor_per_s",
-          "cleared"
-        ],
-        "properties": {
-          "class": {
-            "enum": [
-              "POC",
-              "S",
-              "L",
-              "R"
-            ]
-          },
-          "floor_per_s": {
-            "type": "number",
-            "exclusiveMinimum": 0.0
-          },
-          "cleared": {
-            "type": "boolean"
-          }
-        }
-      }
     },
     "remark": {
       "type": "string",

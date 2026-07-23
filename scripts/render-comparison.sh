@@ -229,7 +229,7 @@ histograms and, where sampled, per-container resource telemetry.
 
 A stress report is exploration evidence: it earns no conformance class
 (classes are earned exclusively by the hour-long measured class runs) and
-the class floors appear on the chart as context only.
+carries no class vocabulary — the chart shows where each system breaks.
 EOF
   elif [ -f "$RS_STRESS" ]; then
     cat <<EOF
