@@ -65,9 +65,9 @@ fn log_pos(value: f64, min: f64, max: f64, x0: f64, x1: f64) -> f64 {
 #[must_use]
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement]) -> String {
-    let (width, height) = (760.0, 280.0);
+    let (width, height) = (760.0, 296.0);
     let (x0, x1) = (150.0, 640.0);
-    let top = 56.0;
+    let top = 72.0;
     let row_h = 48.0;
     let bar_h = 18.0;
     let (min, max) = (1.0, 3000.0);
@@ -80,7 +80,11 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Floors: POC 2/s · S 15/s · L 150/s · R 1,500/s (peak API arrivals, sustained) — classes are earned by measurement</text>"
+        "<text x=\"24\" y=\"44\" class=\"muted\">A class's floor is the API request rate (arrivals/s) the hospital-simulation workload must SUSTAIN against that class's seeded corpus for the normative hour-plus window.</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"58\" class=\"muted\">The rate alone earns nothing: the class is EARNED only when, under that load, every measured operation holds p99 &#8804; 1 s with zero errors (verdict re-derived from the committed histograms).</text>"
     );
 
     // Grid at decades.
@@ -132,7 +136,7 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
                 };
                 let _ = writeln!(
                     out,
-                    "<text x=\"{:.1}\" y=\"{:.1}\">measured {:.1}/s</text>\
+                    "<text x=\"{:.1}\" y=\"{:.1}\">sustained {:.1}/s</text>\
                      <text x=\"{:.1}\" y=\"{:.1}\" class=\"{class_name}\"> · {verdict_text}</text>",
                     mx + 8.0,
                     y + bar_h - 4.0,
