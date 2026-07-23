@@ -175,11 +175,13 @@
   "security": "pass",
   "performance": [
     {
-      "case": "PERF-mixed_load-class_POC",
+      "case": "PERF-hospital_sim-class_POC",
       "class": "POC",
       "claimed": true,
-      "verdict": "earned",
-      "violations": []
+      "verdict": "not-earned",
+      "violations": [
+        "ward_query LatencyP99 5775.359ms > max 1000ms"
+      ]
     }
   ],
   "coverage": {

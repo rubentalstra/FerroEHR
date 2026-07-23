@@ -15,6 +15,45 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- The CNF measured-performance workload is now a full **hospital
+  simulation**: the class cases (`PERF-hospital_sim-*`, renamed from
+  `PERF-mixed_load-*`) schedule clinical journeys — ADT
+  admission/discharge, vitals rounds, the medication loop, medicines
+  reconciliation, asynchronous laboratory/imaging order-to-result
+  pipelines, specialist/registry reporting, public-health notifications,
+  chart review, ward dashboards with a registered stored query, versioned
+  corrections, contribution audit review, workflow tagging, logical
+  deletion, and template polling — expanding into 22 measured operation
+  kinds instead of 4, each with its own HDR-V2 record. The
+  population-anchored envelope is unchanged and now validator-enforced
+  (the expanded write share must reconcile to the derivation's 10:1..50:1
+  read:write band); journey payloads commit against 15 COMPOSITION-rooted
+  openEHR CKM templates vendored with provenance.
+
+### Added
+
+- A **diurnal day-curve** arrival option for the extended 8/12-hour
+  measured holds (ITU-T E.500 busy-hour semantics: the class floor is the
+  busy-hour rate).
+- The conformance certificate gains a **Workload Coverage** section:
+  claimed capabilities vs the set the measured hospital simulation
+  actually exercised, with untouched claimed capabilities listed
+  explicitly as journey-catalogue gaps.
+- `scripts/generate-ckm-examples.sh` — regenerates the committed CKM
+  example payload skeletons from a running SUT's example endpoint;
+  `scripts/vendor-ckm-templates.sh` now vendors the runner's journey
+  template pack.
+- **Conformance visuals**: the capability-matrix heat grid (one cell per
+  claimed capability, grouped by profile tier, evidence encoded as a
+  CVD-safe color AND a glyph) and per-chapter outcome bars, rendered
+  deterministically from the committed verdicts/results by the new
+  `cnf-runner conformance-assets` subcommand
+  (`scripts/render-conformance-assets.sh`, CI regenerate-and-diff
+  guarded) and embedded on the book's conformance and comparison pages
+  (both SUTs) and the landing page.
+
 ## [3.7.0] - 2026-07-22
 
 ### Added

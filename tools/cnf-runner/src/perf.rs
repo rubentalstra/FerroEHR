@@ -1,8 +1,10 @@
 //! The performance schedule machinery — conformance-by-MEASUREMENT: the
 //! `kind: performance` case model (class, corpus, open-loop workload,
-//! thresholds), the measurement record (counts, errors, percentiles, the
-//! encoded HDR histogram so every threshold is RE-CHECKABLE from the
-//! artifact), and the class-verdict pure function (earned | not-earned).
+//! thresholds), the journey catalogue (the hospital-simulation vocabulary a
+//! workload decomposes into), the measurement record (counts, errors,
+//! percentiles, the encoded HDR histogram so every threshold is
+//! RE-CHECKABLE from the artifact), and the class-verdict pure function
+//! (earned | not-earned).
 //!
 //! The class floors are the population-anchored [legislated] defaults the
 //! schedule publishes (POC 2/s · S 15/s · L 150/s · R 1,500/s peak
@@ -10,6 +12,16 @@
 //! upstream ratification owns any change. The workload model is OPEN-LOOP
 //! (a seeded arrival schedule, never closed-loop users) so coordinated
 //! omission cannot hide stalls.
+//!
+//! NOTE: no openEHR spec governs measured performance — the CNF guide
+//! excludes it (CNF guide master03-overview.adoc §Product Scope:
+//! "Non-functional conformance (performance, etc) is not addressed by this
+//! guide") — our own design/extension. The journey decomposition keeps the
+//! population-anchored envelope: `arrival_rate` stays aggregate OPERATION
+//! arrivals (the class floor's unit), and the catalogue's expanded
+//! read:write share must stay inside the derivation band (the 10:1
+//! read-heavy OLTP convention per YCSB/OLTP-Bench as the floor, ~50:1 as
+//! the audit-log-evidenced ceiling).
 
 use base64::Engine;
 use hdrhistogram::Histogram;
@@ -179,29 +191,555 @@ impl Serialize for Percent {
     }
 }
 
-/// The OPEN-LOOP offered load: a seeded arrival schedule.
+/// The closed operation vocabulary a journey stage may name — each variant
+/// is one concrete platform operation with a fixed ITS-REST wire
+/// realization in the driver (`perf_run`). Reads and writes are classified
+/// so the catalogue's expanded mix reconciles against the derivation band.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PerfOp {
+    /// `POST /ehr` → 201 (`I_EHR_SERVICE.create_ehr`).
+    EhrCreate,
+    /// `GET /ehr/{ehr_id}` → 200 (`I_EHR_SERVICE.get_ehr`).
+    EhrRead,
+    /// `GET /ehr/{ehr_id}/ehr_status` → 200 (`I_EHR_STATUS.get_ehr_status`).
+    EhrStatusRead,
+    /// `PUT /ehr/{ehr_id}/ehr_status` (If-Match) → 200/204
+    /// (`I_EHR_STATUS.set_ehr_status`).
+    EhrStatusUpdate,
+    /// `POST /ehr/{ehr_id}/composition` → 201
+    /// (`I_EHR_COMPOSITION.create_composition`).
+    CompositionCommit,
+    /// `GET /ehr/{ehr_id}/composition/{version_uid}` → 200
+    /// (`I_EHR_COMPOSITION.get_composition_at_version`).
+    CompositionRead,
+    /// `GET /ehr/{ehr_id}/composition/{versioned_object_uid}` → 200
+    /// (`I_EHR_COMPOSITION.get_composition_latest`).
+    CompositionReadCurrent,
+    /// `GET /ehr/{ehr_id}/versioned_composition/{uid}/revision_history` →
+    /// 200 (`I_EHR_COMPOSITION.get_composition_revision_history`).
+    CompositionRevisionHistory,
+    /// `PUT /ehr/{ehr_id}/composition/{versioned_object_uid}` (If-Match) →
+    /// 200/204 (`I_EHR_COMPOSITION.update_composition`).
+    CompositionUpdate,
+    /// `DELETE /ehr/{ehr_id}/composition/{version_uid}` → 204
+    /// (`I_EHR_COMPOSITION.delete_composition`).
+    CompositionDelete,
+    /// `POST /ehr/{ehr_id}/directory` → 201
+    /// (`I_EHR_DIRECTORY.create_directory`).
+    DirectoryCreate,
+    /// `GET /ehr/{ehr_id}/directory` → 200
+    /// (`I_EHR_DIRECTORY.get_directory`).
+    DirectoryRead,
+    /// `PUT /ehr/{ehr_id}/directory` (If-Match) → 200/204
+    /// (`I_EHR_DIRECTORY.update_directory`).
+    DirectoryUpdate,
+    /// `POST /ehr/{ehr_id}/contribution` → 201
+    /// (`I_EHR_CONTRIBUTION.commit_contribution`).
+    ContributionCommit,
+    /// `GET /ehr/{ehr_id}/contribution/{uid}` → 200
+    /// (`I_EHR_CONTRIBUTION.get_contribution`).
+    ContributionRead,
+    /// `POST /query/aql` (EHR-scoped) → 200
+    /// (`I_QUERY_SERVICE.execute_ad_hoc_query`).
+    AdhocQuery,
+    /// `POST /query/aql` (cross-EHR ward worklist) → 200
+    /// (`I_QUERY_SERVICE.execute_ad_hoc_query`).
+    WardQuery,
+    /// `GET /query/{name}/{version}` → 200
+    /// (`I_QUERY_SERVICE.execute_stored_query`).
+    StoredQueryExecute,
+    /// `GET /definition/template/adl1.4` → 200
+    /// (`I_DEFINITION_ADL14.list_templates`).
+    TemplateList,
+    /// `GET /definition/template/adl1.4/{template_id}` → 200
+    /// (`I_DEFINITION_ADL14.get_template`).
+    TemplateGet,
+    /// `PUT /ehr/{ehr_id}/composition/{uid}/tags` → 200 (`ITEM_TAG` update;
+    /// ITS-REST TAGS API).
+    TagsPut,
+    /// `GET /ehr/{ehr_id}/composition/{uid}/tags` → 200 (`ITEM_TAG` read;
+    /// ITS-REST TAGS API).
+    TagsRead,
+}
+
+impl PerfOp {
+    /// All operations, vocabulary order (schema emission + the coverage
+    /// report derive from this).
+    pub const ALL: &'static [PerfOp] = &[
+        PerfOp::EhrCreate,
+        PerfOp::EhrRead,
+        PerfOp::EhrStatusRead,
+        PerfOp::EhrStatusUpdate,
+        PerfOp::CompositionCommit,
+        PerfOp::CompositionRead,
+        PerfOp::CompositionReadCurrent,
+        PerfOp::CompositionRevisionHistory,
+        PerfOp::CompositionUpdate,
+        PerfOp::CompositionDelete,
+        PerfOp::DirectoryCreate,
+        PerfOp::DirectoryRead,
+        PerfOp::DirectoryUpdate,
+        PerfOp::ContributionCommit,
+        PerfOp::ContributionRead,
+        PerfOp::AdhocQuery,
+        PerfOp::WardQuery,
+        PerfOp::StoredQueryExecute,
+        PerfOp::TemplateList,
+        PerfOp::TemplateGet,
+        PerfOp::TagsPut,
+        PerfOp::TagsRead,
+    ];
+
+    /// Parse a journey-stage operation name.
+    ///
+    /// # Errors
+    /// The unknown name (the operation vocabulary is closed).
+    pub fn parse(name: &str) -> Result<Self, String> {
+        PerfOp::ALL
+            .iter()
+            .copied()
+            .find(|op| op.as_str() == name)
+            .ok_or_else(|| format!("unknown journey operation {name:?}"))
+    }
+
+    /// The vocabulary name (journey stages, measurement labels).
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            PerfOp::EhrCreate => "ehr_create",
+            PerfOp::EhrRead => "ehr_read",
+            PerfOp::EhrStatusRead => "ehr_status_read",
+            PerfOp::EhrStatusUpdate => "ehr_status_update",
+            PerfOp::CompositionCommit => "composition_commit",
+            PerfOp::CompositionRead => "composition_read",
+            PerfOp::CompositionReadCurrent => "composition_read_current",
+            PerfOp::CompositionRevisionHistory => "composition_revision_history",
+            PerfOp::CompositionUpdate => "composition_update",
+            PerfOp::CompositionDelete => "composition_delete",
+            PerfOp::DirectoryCreate => "directory_create",
+            PerfOp::DirectoryRead => "directory_read",
+            PerfOp::DirectoryUpdate => "directory_update",
+            PerfOp::ContributionCommit => "contribution_commit",
+            PerfOp::ContributionRead => "contribution_read",
+            PerfOp::AdhocQuery => "adhoc_query",
+            PerfOp::WardQuery => "ward_query",
+            PerfOp::StoredQueryExecute => "stored_query_execute",
+            PerfOp::TemplateList => "template_list",
+            PerfOp::TemplateGet => "template_get",
+            PerfOp::TagsPut => "tags_put",
+            PerfOp::TagsRead => "tags_read",
+        }
+    }
+
+    /// Whether the operation mutates platform state (the reconciliation
+    /// class: the expanded write share must stay inside the derivation
+    /// band).
+    #[must_use]
+    pub fn is_write(self) -> bool {
+        matches!(
+            self,
+            PerfOp::EhrCreate
+                | PerfOp::EhrStatusUpdate
+                | PerfOp::CompositionCommit
+                | PerfOp::CompositionUpdate
+                | PerfOp::CompositionDelete
+                | PerfOp::DirectoryCreate
+                | PerfOp::DirectoryUpdate
+                | PerfOp::ContributionCommit
+                | PerfOp::TagsPut
+        )
+    }
+
+    /// Whether a journey stage of this operation must name a `template`
+    /// (the payload's constraint carrier).
+    #[must_use]
+    pub fn needs_template(self) -> bool {
+        matches!(
+            self,
+            PerfOp::CompositionCommit | PerfOp::CompositionUpdate | PerfOp::ContributionCommit
+        )
+    }
+
+    /// The claimed capabilities (capability-matrix keys) one measured
+    /// arrival of this operation exercises — the certificate's workload
+    /// coverage joins this against the ICS claims: a claimed capability no
+    /// journey touches is a catalogue gap, listed explicitly.
+    #[must_use]
+    pub fn capabilities(self) -> &'static [&'static str] {
+        match self {
+            PerfOp::EhrCreate | PerfOp::EhrRead => &["EhrOperations", "EhrApi"],
+            PerfOp::EhrStatusRead => &["EhrStatus", "EhrApi"],
+            PerfOp::EhrStatusUpdate => &["EhrStatus", "Versioning", "EhrApi"],
+            // Every commit/update is validated against its template on the
+            // way in (the walker over the WebTemplate + RM invariants).
+            PerfOp::CompositionCommit => &["CompositionOps", "ArchetypeValidation", "EhrApi"],
+            PerfOp::CompositionRead | PerfOp::CompositionReadCurrent => {
+                &["CompositionOps", "EhrApi"]
+            }
+            PerfOp::CompositionRevisionHistory | PerfOp::CompositionDelete => {
+                &["CompositionOps", "Versioning", "EhrApi"]
+            }
+            PerfOp::CompositionUpdate => &[
+                "CompositionOps",
+                "Versioning",
+                "ArchetypeValidation",
+                "EhrApi",
+            ],
+            PerfOp::DirectoryCreate | PerfOp::DirectoryRead | PerfOp::DirectoryUpdate => {
+                &["DirectoryOps", "EhrApi"]
+            }
+            PerfOp::ContributionCommit => {
+                &["ChangeSets", "ArchetypeValidation", "Versioning", "EhrApi"]
+            }
+            PerfOp::ContributionRead => &["ChangeSets", "EhrApi"],
+            PerfOp::AdhocQuery | PerfOp::WardQuery => &["AqlBasic", "QueryApi"],
+            PerfOp::StoredQueryExecute => &["QueryProvisioning", "AqlBasic", "QueryApi"],
+            PerfOp::TemplateList | PerfOp::TemplateGet => {
+                &["Adl14OptProvisioning", "DefinitionApi"]
+            }
+            // ITEM_TAG rides the EHR API's tag resources.
+            PerfOp::TagsPut | PerfOp::TagsRead => &["EhrApi"],
+        }
+    }
+}
+
+/// A journey stage's planned offset from the journey's arrival instant.
+/// Every form is deterministic under the seeded schedule (uniform draws
+/// hash the journey/stage indices — two runners produce the same instants).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StageOffset {
+    /// Exactly `s` seconds after the journey arrival.
+    Fixed(u64),
+    /// Uniformly hashed into `[min_s, max_s]` (e.g. a laboratory
+    /// turnaround band).
+    Uniform { min_s: u64, max_s: u64 },
+    /// `count` repetitions at `k * interval_s` (the medication round).
+    Periodic { interval_s: u64, count: u32 },
+}
+
+impl StageOffset {
+    /// How many operation arrivals the stage expands into.
+    #[must_use]
+    pub fn arrivals(self) -> u64 {
+        match self {
+            StageOffset::Fixed(_) | StageOffset::Uniform { .. } => 1,
+            StageOffset::Periodic { count, .. } => u64::from(count),
+        }
+    }
+
+    /// The latest possible offset (seconds) — the journey's span bound.
+    #[must_use]
+    pub fn max_offset_s(self) -> u64 {
+        match self {
+            StageOffset::Fixed(s) => s,
+            StageOffset::Uniform { max_s, .. } => max_s,
+            StageOffset::Periodic { interval_s, count } => {
+                interval_s.saturating_mul(u64::from(count.saturating_sub(1)))
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for StageOffset {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct PeriodicSpec {
+            interval: WorkloadDuration,
+            count: u32,
+        }
+        #[derive(Deserialize)]
+        #[serde(deny_unknown_fields)]
+        enum Structured {
+            #[serde(rename = "uniform")]
+            Uniform([WorkloadDuration; 2]),
+            #[serde(rename = "periodic")]
+            Periodic(PeriodicSpec),
+        }
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Raw {
+            Fixed(WorkloadDuration),
+            Structured(Structured),
+        }
+        match Raw::deserialize(deserializer)? {
+            Raw::Fixed(d) => Ok(StageOffset::Fixed(d.0)),
+            Raw::Structured(Structured::Uniform([min, max])) => {
+                if min.0 > max.0 {
+                    return Err(serde::de::Error::custom(format!(
+                        "uniform offset [{}, {}] is inverted",
+                        min.0, max.0
+                    )));
+                }
+                Ok(StageOffset::Uniform {
+                    min_s: min.0,
+                    max_s: max.0,
+                })
+            }
+            Raw::Structured(Structured::Periodic(p)) => {
+                if p.count == 0 {
+                    return Err(serde::de::Error::custom("periodic count must be >= 1"));
+                }
+                Ok(StageOffset::Periodic {
+                    interval_s: p.interval.0,
+                    count: p.count,
+                })
+            }
+        }
+    }
+}
+
+impl Serialize for StageOffset {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        match *self {
+            StageOffset::Fixed(s) => WorkloadDuration(s).serialize(serializer),
+            StageOffset::Uniform { min_s, max_s } => {
+                let mut map = serializer.serialize_map(Some(1))?;
+                map.serialize_entry(
+                    "uniform",
+                    &[WorkloadDuration(min_s), WorkloadDuration(max_s)],
+                )?;
+                map.end()
+            }
+            StageOffset::Periodic { interval_s, count } => {
+                #[derive(Serialize)]
+                struct PeriodicSpec {
+                    interval: WorkloadDuration,
+                    count: u32,
+                }
+                let mut map = serializer.serialize_map(Some(1))?;
+                map.serialize_entry(
+                    "periodic",
+                    &PeriodicSpec {
+                        interval: WorkloadDuration(interval_s),
+                        count,
+                    },
+                )?;
+                map.end()
+            }
+        }
+    }
+}
+
+/// One ordered stage of a clinical journey: a platform operation at a
+/// planned offset, optionally carrying its payload template.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct JourneyStage {
+    /// A [`PerfOp`] vocabulary name.
+    pub op: String,
+    /// The corpus template key the stage commits/updates against (required
+    /// exactly when [`PerfOp::needs_template`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub template: Option<String>,
+    pub at: StageOffset,
+}
+
+/// One clinical journey: an ordered, time-offset operation sequence with
+/// its activity-statistics ground.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Journey {
+    pub description: String,
+    /// The official activity statistic the journey's shape/rate traces to
+    /// (the same register the class floors derive from).
+    pub derivation: String,
+    pub stages: Vec<JourneyStage>,
+}
+
+impl Journey {
+    /// Operation arrivals one instance expands into.
+    #[must_use]
+    pub fn arrivals(&self) -> u64 {
+        self.stages.iter().map(|s| s.at.arrivals()).sum()
+    }
+
+    /// The journey's span bound (latest stage offset, seconds).
+    #[must_use]
+    pub fn max_offset_s(&self) -> u64 {
+        self.stages
+            .iter()
+            .map(|s| s.at.max_offset_s())
+            .max()
+            .unwrap_or(0)
+    }
+}
+
+/// The journey catalogue — the hospital-simulation vocabulary
+/// (`vocab/journey_catalogue.yaml`): every journey a workload may name,
+/// each stage a closed-vocabulary operation.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct JourneyCatalogue(
+    #[serde(deserialize_with = "crate::model::de::ordered_map")] pub Vec<(String, Journey)>,
+);
+
+/// The derivation band the expanded operation mix must reconcile with:
+/// write share within [100/(50+1), 100/(10+1)] percent — the 10:1
+/// read-heavy OLTP convention (YCSB/OLTP-Bench) as the floor's mix, ~50:1
+/// as the audit-log-evidenced read-heavy ceiling.
+pub const WRITE_SHARE_BAND: (f64, f64) = (100.0 / 51.0, 100.0 / 11.0);
+
+/// A workload's expansion through the catalogue: per-operation shares of
+/// scheduled arrivals, the mean arrivals per journey, and the write share.
+#[derive(Debug, Clone)]
+pub struct Expansion {
+    /// Mean operation arrivals per journey instance (> 0).
+    pub arrivals_per_journey: f64,
+    /// Share of scheduled operation arrivals per operation (sums to 100).
+    pub op_shares: Vec<(PerfOp, f64)>,
+    /// The expanded write share (percent of operation arrivals).
+    pub write_share: f64,
+}
+
+impl JourneyCatalogue {
+    /// Look up a journey by name.
+    #[must_use]
+    pub fn get(&self, name: &str) -> Option<&Journey> {
+        self.0
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, journey)| journey)
+    }
+
+    /// Catalogue shape invariants: non-empty journeys, known operations,
+    /// template presence exactly where the operation needs one.
+    ///
+    /// # Errors
+    /// The violated invariant, naming the journey/stage.
+    pub fn check_invariants(&self) -> Result<(), String> {
+        if self.0.is_empty() {
+            return Err("journey catalogue is empty".to_owned());
+        }
+        for (name, journey) in &self.0 {
+            if journey.stages.is_empty() {
+                return Err(format!("journey {name} has no stages"));
+            }
+            for (i, stage) in journey.stages.iter().enumerate() {
+                let op = PerfOp::parse(&stage.op)
+                    .map_err(|e| format!("journey {name} stage {i}: {e}"))?;
+                if op.needs_template() && stage.template.is_none() {
+                    return Err(format!(
+                        "journey {name} stage {i} ({}) needs a template",
+                        stage.op
+                    ));
+                }
+                if !op.needs_template() && stage.template.is_some() {
+                    return Err(format!(
+                        "journey {name} stage {i} ({}) must not carry a template",
+                        stage.op
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Expand journey shares into the per-operation arrival mix and check
+    /// the population-anchored envelope: shares sum to 100, every share
+    /// names a catalogue journey, and the expanded write share lies inside
+    /// [`WRITE_SHARE_BAND`].
+    ///
+    /// # Errors
+    /// The violated reconciliation rule.
+    pub fn expansion(&self, shares: &[(String, Percent)]) -> Result<Expansion, String> {
+        if shares.is_empty() {
+            return Err("workload journeys is empty".to_owned());
+        }
+        let sum: f64 = shares.iter().map(|(_, p)| p.0).sum();
+        if (sum - 100.0).abs() >= 0.01 {
+            return Err(format!("journey shares sum to {sum}%, must be 100%"));
+        }
+        let mut op_weight: Vec<(PerfOp, f64)> = Vec::new();
+        let mut arrivals_per_journey = 0.0;
+        for (name, share) in shares {
+            let journey = self
+                .get(name)
+                .ok_or_else(|| format!("workload names unknown journey {name:?}"))?;
+            for stage in &journey.stages {
+                let op = PerfOp::parse(&stage.op)?;
+                #[allow(clippy::cast_precision_loss)] // stage arrival counts are tiny
+                let weight = share.0 / 100.0 * stage.at.arrivals() as f64;
+                arrivals_per_journey += weight;
+                if let Some((_, w)) = op_weight.iter_mut().find(|(o, _)| *o == op) {
+                    *w += weight;
+                } else {
+                    op_weight.push((op, weight));
+                }
+            }
+        }
+        if arrivals_per_journey <= 0.0 {
+            return Err("journey expansion yields zero arrivals".to_owned());
+        }
+        let op_shares: Vec<(PerfOp, f64)> = op_weight
+            .iter()
+            .map(|(op, w)| (*op, w / arrivals_per_journey * 100.0))
+            .collect();
+        let write_share: f64 = op_shares
+            .iter()
+            .filter(|(op, _)| op.is_write())
+            .map(|(_, s)| s)
+            .sum();
+        let (min_w, max_w) = WRITE_SHARE_BAND;
+        if !(min_w..=max_w).contains(&write_share) {
+            return Err(format!(
+                "expanded write share {write_share:.2}% is outside the derivation band \
+                 [{min_w:.2}%, {max_w:.2}%] (10:1..50:1 read:write)"
+            ));
+        }
+        Ok(Expansion {
+            arrivals_per_journey,
+            op_shares,
+            write_share,
+        })
+    }
+}
+
+/// The arrival-time shape over the measured window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArrivalCurve {
+    /// Evenly spaced arrivals (the normative hour's shape).
+    #[default]
+    Uniform,
+    /// The hospital day curve — busy-hour peaking per the ITU-T E.500
+    /// busy-hour convention the floors' derivation already cites; valid
+    /// only for the extended (>= 8 h) holds. The busy-hour buckets meet
+    /// the class floor; the whole-window mean sits below it.
+    Diurnal,
+}
+
+/// The OPEN-LOOP offered load: a seeded arrival schedule of clinical
+/// journeys. `arrival_rate` stays aggregate OPERATION arrivals/s (the
+/// class floor's unit); the journey shares decompose it.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Workload {
     pub arrival_rate: RatePerSecond,
     pub warmup: WorkloadDuration,
     pub duration: WorkloadDuration,
-    /// mix = share of scheduled ARRIVALS per named operation.
+    /// The arrival-time shape (default uniform; diurnal only for the
+    /// extended holds).
+    #[serde(default)]
+    pub arrival_curve: ArrivalCurve,
+    /// journeys = share of scheduled JOURNEY instances per catalogue
+    /// journey (the inner decomposition of the population-anchored
+    /// envelope).
     #[serde(deserialize_with = "crate::model::de::ordered_map")]
-    pub mix: Vec<(String, Percent)>,
+    pub journeys: Vec<(String, Percent)>,
 }
 
 impl Workload {
-    /// The mix must sum to 100% (±0.01).
+    /// The journey shares must sum to 100% (±0.01).
     ///
     /// # Errors
     /// Returns the actual sum on violation.
-    pub fn check_mix(&self) -> Result<(), String> {
-        let sum: f64 = self.mix.iter().map(|(_, p)| p.0).sum();
+    pub fn check_journeys(&self) -> Result<(), String> {
+        let sum: f64 = self.journeys.iter().map(|(_, p)| p.0).sum();
         if (sum - 100.0).abs() < 0.01 {
             Ok(())
         } else {
-            Err(format!("workload mix sums to {sum}%, must be 100%"))
+            Err(format!("workload journeys sum to {sum}%, must be 100%"))
         }
     }
 }
@@ -268,7 +806,7 @@ impl PerformanceCase {
                 self.component
             ));
         }
-        self.workload.check_mix()?;
+        self.workload.check_journeys()?;
         for t in &self.thresholds {
             if t.max.is_none() && t.min.is_none() {
                 return Err("threshold carries neither max nor min".to_owned());
@@ -280,6 +818,13 @@ impl PerformanceCase {
                 "workload arrival_rate {}/s is below the class floor {floor}/s",
                 self.workload.arrival_rate.0
             ));
+        }
+        if self.workload.arrival_curve == ArrivalCurve::Diurnal
+            && self.workload.duration.0 < 8 * 3600
+        {
+            return Err(
+                "diurnal arrival curve requires an extended hold (duration >= PT8H)".to_owned(),
+            );
         }
         Ok(())
     }
@@ -464,8 +1009,15 @@ mod tests {
 
     fn case(rate: &str) -> PerformanceCase {
         serde_saphyr::from_str(&format!(
-            "id: PERF-mixed_load-class_S\nkind: performance\ncomponent: PERFORMANCE\ndescription: d\ntest_purpose: t\nspec_refs: [\"CNF 2.0 performance schedule\"]\nclass: S\ncorpus: cnf.scale.100k\nworkload:\n  arrival_rate: {rate}\n  warmup: PT5M\n  duration: PT1H\n  mix: {{ composition_read: 61%, adhoc_query: 30%, composition_commit: 8%, ehr_create: 1% }}\nthresholds:\n  - {{ metric: latency_p99, operation: composition_read, max: 1000 }}\n  - {{ metric: error_rate, max: 0 }}\n  - {{ metric: offered_load_sustained, min: 15 }}\n"
+            "id: PERF-hospital_sim-class_S\nkind: performance\ncomponent: PERFORMANCE\ndescription: d\ntest_purpose: t\nspec_refs: [\"CNF 2.0 performance schedule\"]\nclass: S\ncorpus: cnf.scale.100k\nworkload:\n  arrival_rate: {rate}\n  warmup: PT5M\n  duration: PT1H\n  journeys: {{ chart_review: 88%, vitals_round: 12% }}\nthresholds:\n  - {{ metric: latency_p99, operation: composition_read, max: 1000 }}\n  - {{ metric: error_rate, max: 0 }}\n  - {{ metric: offered_load_sustained, min: 15 }}\n"
         ))
+        .unwrap()
+    }
+
+    fn catalogue() -> JourneyCatalogue {
+        serde_saphyr::from_str(
+            "chart_review:\n  description: ward-round chart reads\n  derivation: \"~597 EHR interactions per encounter (PMC10148376)\"\n  stages:\n    - { op: composition_read, at: PT0S }\n    - { op: adhoc_query, at: PT30S }\nvitals_round:\n  description: shift vitals\n  derivation: \"nursing observation rounds per bed-day\"\n  stages:\n    - { op: composition_commit, template: cnf.ckm.vital_signs, at: PT0S }\nmedication_round:\n  description: eMAR loop\n  derivation: \"21.8 prescription items/capita/yr (NHS BSA PCA 2024/25)\"\n  stages:\n    - { op: composition_commit, template: cnf.ckm.eprescription, at: PT0S }\n    - { op: composition_commit, template: cnf.ckm.eprescription, at: { periodic: { interval: PT20M, count: 2 } } }\nlab_pipeline:\n  description: order -> result\n  derivation: \"15 laboratory results/capita/yr (RCPath)\"\n  stages:\n    - { op: composition_commit, template: cnf.ckm.ereferral, at: PT0S }\n    - { op: contribution_commit, template: cnf.ckm.lab_result, at: { uniform: [PT20M, PT50M] } }\n    - { op: composition_read_current, at: PT1H }\n",
+        )
         .unwrap()
     }
 
@@ -542,5 +1094,110 @@ mod tests {
         assert_eq!(parse_iso_duration_secs("PT1H30M15S"), Some(5415));
         assert_eq!(parse_iso_duration_secs("P1D"), None);
         assert!((PerfClass::R.arrival_floor_per_s() - 1_500.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn the_operation_vocabulary_is_closed_and_classified() {
+        for op in PerfOp::ALL {
+            assert_eq!(PerfOp::parse(op.as_str()).unwrap(), *op);
+        }
+        assert!(PerfOp::parse("delete_everything").is_err());
+        assert!(PerfOp::CompositionCommit.is_write());
+        assert!(!PerfOp::CompositionRead.is_write());
+        assert!(PerfOp::ContributionCommit.needs_template());
+        assert!(!PerfOp::DirectoryRead.needs_template());
+        // Every operation exercises at least one claimed capability (the
+        // certificate's workload-coverage join has no unmapped labels).
+        for op in PerfOp::ALL {
+            assert!(!op.capabilities().is_empty(), "{} unmapped", op.as_str());
+        }
+    }
+
+    #[test]
+    fn stage_offsets_parse_all_three_forms() {
+        let cat = catalogue();
+        cat.check_invariants().unwrap();
+        let meds = cat.get("medication_round").unwrap();
+        assert_eq!(meds.arrivals(), 3); // order + 2 periodic administrations
+        assert_eq!(meds.max_offset_s(), 1200); // (count-1) * 20 min
+        let lab = cat.get("lab_pipeline").unwrap();
+        assert_eq!(lab.arrivals(), 3);
+        assert_eq!(lab.max_offset_s(), 3600);
+        assert_eq!(
+            lab.stages[1].at,
+            StageOffset::Uniform {
+                min_s: 1200,
+                max_s: 3000
+            }
+        );
+    }
+
+    #[test]
+    fn catalogue_invariants_reject_bad_stages() {
+        // A commit without a template.
+        let bad: JourneyCatalogue = serde_saphyr::from_str(
+            "j:\n  description: d\n  derivation: g\n  stages:\n    - { op: composition_commit, at: PT0S }\n",
+        )
+        .unwrap();
+        assert!(bad.check_invariants().unwrap_err().contains("template"));
+        // A template on a read.
+        let bad: JourneyCatalogue = serde_saphyr::from_str(
+            "j:\n  description: d\n  derivation: g\n  stages:\n    - { op: ehr_read, template: x, at: PT0S }\n",
+        )
+        .unwrap();
+        assert!(
+            bad.check_invariants()
+                .unwrap_err()
+                .contains("must not carry")
+        );
+        // An unknown operation.
+        let bad: JourneyCatalogue = serde_saphyr::from_str(
+            "j:\n  description: d\n  derivation: g\n  stages:\n    - { op: drop_tables, at: PT0S }\n",
+        )
+        .unwrap();
+        assert!(bad.check_invariants().is_err());
+    }
+
+    #[test]
+    fn expansion_reconciles_the_population_envelope() {
+        let cat = catalogue();
+        // 88% chart_review (2 reads) + 12% vitals (1 write):
+        // arrivals/journey = 0.88*2 + 0.12 = 1.88; write share = 12/188.
+        let shares = vec![
+            ("chart_review".to_owned(), Percent(88.0)),
+            ("vitals_round".to_owned(), Percent(12.0)),
+        ];
+        let expansion = cat.expansion(&shares).unwrap();
+        assert!((expansion.arrivals_per_journey - 1.88).abs() < 1e-9);
+        assert!((expansion.write_share - 12.0 / 1.88).abs() < 1e-9);
+        let total: f64 = expansion.op_shares.iter().map(|(_, s)| s).sum();
+        assert!((total - 100.0).abs() < 1e-9);
+
+        // All-reads breaks the band (write share 0 < 10:1..50:1 floor).
+        let all_reads = vec![("chart_review".to_owned(), Percent(100.0))];
+        assert!(
+            cat.expansion(&all_reads)
+                .unwrap_err()
+                .contains("derivation band")
+        );
+        // Write-heavy breaks the band the other way.
+        let all_writes = vec![("vitals_round".to_owned(), Percent(100.0))];
+        assert!(
+            cat.expansion(&all_writes)
+                .unwrap_err()
+                .contains("derivation band")
+        );
+        // Unknown journey named.
+        let unknown = vec![("teleportation".to_owned(), Percent(100.0))];
+        assert!(cat.expansion(&unknown).unwrap_err().contains("unknown"));
+    }
+
+    #[test]
+    fn diurnal_requires_an_extended_hold() {
+        let mut c = case("15/s");
+        c.workload.arrival_curve = ArrivalCurve::Diurnal;
+        assert!(c.check_invariants().unwrap_err().contains("PT8H"));
+        c.workload.duration = WorkloadDuration(8 * 3600);
+        assert!(c.check_invariants().is_ok());
     }
 }

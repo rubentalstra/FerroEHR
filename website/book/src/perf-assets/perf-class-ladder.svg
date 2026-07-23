@@ -33,8 +33,8 @@ text { fill: #c3c2b7; }
 <line x1="572.8" y1="56" x2="572.8" y2="248.0" class="grid"/><text x="572.8" y="264.0" class="muted" text-anchor="middle">1000/s</text>
 <text x="24" y="80.0">class POC</text>
 <rect x="150" y="66.0" width="42.4" height="18" rx="4" class="floor"/>
-<rect x="150" y="66.0" width="42.4" height="18" rx="4" class="measured"/>
-<text x="200.4" y="80.0">measured 2.0/s</text><text x="292.4" y="80.0" class="earned"> · EARNED</text>
+<rect x="150" y="66.0" width="43.4" height="18" rx="4" class="measured"/>
+<text x="201.4" y="80.0">measured 2.0/s</text><text x="293.4" y="80.0" class="notearned"> · not earned</text>
 <text x="24" y="128.0">class S</text>
 <rect x="150" y="114.0" width="165.7" height="18" rx="4" class="floor"/>
 <text x="323.7" y="128.0" class="muted">floor 15/s — not measured</text>
