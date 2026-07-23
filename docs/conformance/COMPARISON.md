@@ -26,7 +26,7 @@
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (390 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (393 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
@@ -52,8 +52,8 @@ runner, each with its own committed party statement.
 
 | | executed | passed | failed | errored | skipped | N/A |
 |---|---|---|---|---|---|---|
-| **ehrbase-rs** | 390 | 323 | 0 | 0 | 0 | 67 |
-| **upstream (Java)** | 390 | 158 | 126 | 38 | 0 | 68 |
+| **ehrbase-rs** | 393 | 326 | 0 | 0 | 0 | 67 |
+| **upstream (Java)** | 393 | 159 | 128 | 38 | 0 | 68 |
 
 An **errored** row is inconclusive (the wire answered outside the operation's
 bound outcome map), never counted as a failure. An **N/A** row carries a
@@ -131,6 +131,7 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 | I_EHR_CONTRIBUTION | 4 |
 | I_EHR_DIRECTORY | 4 |
 | I_DEFINITION_ADL2 | 3 |
+| I_DEFINITION_QUERY | 2 |
 | I_ADMIN_SERVICE | 1 |
 | I_DEFINITION_ADL14 | 1 |
 | I_EHR_SERVICE | 1 |
@@ -192,6 +193,8 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 | I_DEFINITION_ADL2.get_artefact-example | canonical-json | expected `ok`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL2.get_artefact-example_unknown | — | expected `not_found`, observed `not_acceptable` | passed |
 | I_DEFINITION_ADL2.get_artefact-retrieve | — | expected `ok`, observed `not_found` | passed |
+| I_DEFINITION_QUERY.store_query-dotted_name | — | expected `stored`, observed `validation_failed` | passed |
+| I_DEFINITION_QUERY.store_query-unqualified_name | — | expected `stored`, observed `validation_failed` | passed |
 | I_EHR_COMPOSITION.get_composition_at_time | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); go | passed |
 | I_EHR_COMPOSITION.get_composition_at_time-no_time_arg | — | expected `updated`, observed `precondition_missing` | passed |
 | I_EHR_COMPOSITION.get_composition_at_times | — | expected `updated`, observed `precondition_missing` | passed |

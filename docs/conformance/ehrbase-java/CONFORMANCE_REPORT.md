@@ -1,18 +1,18 @@
 # Conformance Report
 
 SUT: ehrbase-java 2.34.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.6.0 · verification pack: passed
+Runner: cnf-runner 3.7.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 158 |
-| failed | 126 |
+| passed | 159 |
+| failed | 128 |
 | errored | 38 |
 | skipped | 0 |
 | not_applicable | 68 |
-| total | 390 |
+| total | 393 |
 
 ## By chapter
 
@@ -24,7 +24,7 @@ Runner: cnf-runner 3.6.0 · verification pack: passed
 | I_ADMIN_SERVICE | 1 | 1 | 0 | 0 | 10 |
 | I_DEFINITION_ADL14 | 3 | 1 | 5 | 0 | 8 |
 | I_DEFINITION_ADL2 | 1 | 3 | 12 | 0 | 8 |
-| I_DEFINITION_QUERY | 7 | 0 | 0 | 0 | 0 |
+| I_DEFINITION_QUERY | 8 | 2 | 0 | 0 | 0 |
 | I_DEMOGRAPHIC_SERVICE | 4 | 0 | 8 | 0 | 12 |
 | I_EHR_COMPOSITION | 19 | 9 | 4 | 0 | 0 |
 | I_EHR_CONTRIBUTION | 22 | 4 | 1 | 0 | 5 |
