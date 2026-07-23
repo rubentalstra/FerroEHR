@@ -181,10 +181,10 @@ cnf-runner perf --root tools/cnf-runner/artifacts \
 # the case's normative window and the default; two, four, six, eight, or
 # twelve hours hold the same offered load for longer — a stricter
 # demonstration of the same class). The seeded corpus is reusable across
-# runs via the sidecar index written by the first seeding.
+# every run seeds the freshly composed server from empty.
 cnf-runner perf --root tools/cnf-runner/artifacts \
                 --ixit <ixit.json> --results <results.json> \
-                --class POC --skip-seed --hours 8
+                --class POC --hours 8
 ```
 
 There is deliberately no shortened run: the measurement record always covers
@@ -209,15 +209,20 @@ throughput**: the highest offered rate held inside the latency budget
 # the step-load stress ladder over the seeded corpus (exploration only)
 cnf-runner stress --root tools/cnf-runner/artifacts \
                   --ixit <ixit.json> --out <stress.json> \
-                  --corpus-class POC --skip-seed
+                  --corpus-class POC
 ```
 
 The two instruments never blur: a stress report earns no class, never
 touches `results.json`, and names the class floors only as context so you
 can see the headroom at a glance. Every load step embeds its own
-re-checkable histograms, a breached step is reported with the exact
-envelope violation, and a run where the load *generator* tops out before
-the server is flagged as such rather than counted against the system.
+re-checkable histograms and its own resource telemetry (the same
+per-container CPU/memory/I/O series the measured runs record, so a
+breached step shows *where* it saturated), a breached step is reported
+with the exact envelope violation, and a run where the load *generator*
+tops out before the server is flagged as such rather than counted against
+the system.
+
+![The latency-throughput curve from the committed stress run](perf-assets/perf-stress-curve.svg)
 
 The published assets are rendered from the committed `results.json` by
 `cnf-runner perf-assets` (wrapped by `scripts/render-perf-assets.sh`); the
@@ -230,5 +235,17 @@ The per-operation percentiles below are re-derived at build time from the
 committed HDR V2 histograms for the proof-of-concept class:
 
 ![Proof-of-concept class latency, re-derived from the committed histograms](perf-assets/perf-latency-class-POC.svg)
+
+### What the run cost the machine
+
+Alongside the latencies, every measured run records its resource telemetry:
+CPU and resident memory for the server and database containers separately,
+plus block-device and network I/O, sampled every 10 seconds across the whole
+window with the warmup shaded, and the database volume's on-disk size at
+four anchors — empty, after the scale seed, after the ward seed, and after
+the measured window — down to the storage cost per committed composition.
+These numbers are capacity-planning context — they never influence whether
+a class is earned. The rendered resource time-series and disk-growth charts
+join this page with the next committed measured run.
 
 {{#include ../generated/perf-summary.md}}

@@ -289,18 +289,33 @@ committed results so the verdict re-derives from the artifact alone:
 CONF_PERF_CLASS=POC bash scripts/conformance.sh
 
 # an extended sustained hold (a stricter demonstration of the same class)
-CONF_PERF_CLASS=POC CONF_PERF_HOURS=8 CONF_PERF_SKIP_SEED=1 bash scripts/conformance.sh
+CONF_PERF_CLASS=POC CONF_PERF_HOURS=8 bash scripts/conformance.sh
 
 # the step-load stress instrument — exploration only, never a conformance record
 cargo run -p cnf-runner -- stress --root tools/cnf-runner/artifacts \
   --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
-  --out docs/conformance/ehrbase-rs/stress.json --skip-seed
+  --out docs/conformance/ehrbase-rs/stress.json
 ```
 
 The published performance visuals — the class ladder, per-operation latency
 percentiles, and the latency-throughput stress curve — regenerate from the
 committed records (`bash scripts/render-perf-assets.sh`) and are diff-guarded
 in CI, exactly like the conformance numbers.
+
+The committed stress run's latency-throughput curve — the knee, the p99
+budget line, and the class floors as context — renders straight from
+[`docs/conformance/ehrbase-rs/stress.json`](docs/conformance/ehrbase-rs/stress.json)
+(exploration only; the chart carries the measured numbers so none are typed
+here):
+
+![The latency-throughput stress curve](website/book/src/perf-assets/perf-stress-curve.svg)
+
+Every measured class run and every stress step also records **resource
+telemetry**: per-container CPU, resident memory, and block/network I/O for
+the server and the database separately — plus, on class runs, the database
+volume's disk anchors down to the storage cost per committed composition.
+The committed record shows what a run cost the machine and where saturation
+lives; telemetry is measured context only and never influences a verdict.
 
 ## Measured against EHRbase (Java)
 

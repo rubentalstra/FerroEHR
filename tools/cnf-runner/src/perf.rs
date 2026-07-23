@@ -885,6 +885,166 @@ impl OperationMeasurement {
     }
 }
 
+/// The container roles the resource sampler distinguishes (closed
+/// vocabulary): the SUT process and its database — the split shows where a
+/// class's headroom actually burns.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ContainerRole {
+    Sut,
+    Db,
+}
+
+impl ContainerRole {
+    /// All roles, fixed order (schema emission derives from this).
+    pub const ALL: &'static [ContainerRole] = &[ContainerRole::Sut, ContainerRole::Db];
+
+    /// The display label (progress lines, summary tables) — the same token
+    /// the wire serialization carries.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            ContainerRole::Sut => "sut",
+            ContainerRole::Db => "db",
+        }
+    }
+}
+
+/// The run phase a resource sample was taken in (closed vocabulary): the
+/// charts shade warmup, and trailing samples taken while in-flight
+/// completions drain past the planned window stamp as `drain`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ResourcePhase {
+    Warmup,
+    Measured,
+    Drain,
+}
+
+impl ResourcePhase {
+    /// All phases, run order (schema emission derives from this).
+    pub const ALL: &'static [ResourcePhase] = &[
+        ResourcePhase::Warmup,
+        ResourcePhase::Measured,
+        ResourcePhase::Drain,
+    ];
+}
+
+/// One resource observation of one container at a run-clock offset
+/// (offsets from the measured window's start — never wall-clock, the same
+/// determinism rule as every other record field). Peak and mean aggregates
+/// are DERIVED from the series at render time, never stored beside it.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResourceSample {
+    /// Seconds since the measured window started (warmup included).
+    pub offset_s: u64,
+    pub phase: ResourcePhase,
+    /// CPU utilisation percent over the preceding sample interval
+    /// (100 = one full core).
+    pub cpu_pct: f64,
+    /// Resident-set memory, bytes.
+    pub rss_bytes: u64,
+    /// Cumulative block-device bytes read since container start (deltas →
+    /// rates at render time).
+    pub blk_read_bytes: u64,
+    /// Cumulative block-device bytes written since container start.
+    pub blk_write_bytes: u64,
+    /// Cumulative network bytes received since container start.
+    pub net_rx_bytes: u64,
+    /// Cumulative network bytes transmitted since container start.
+    pub net_tx_bytes: u64,
+}
+
+/// One container's sampled resource time-series.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContainerResourceSeries {
+    pub role: ContainerRole,
+    /// The container-runtime identity sampled (the ixit `containers` block).
+    pub name: String,
+    /// The observations, in offset order.
+    pub samples: Vec<ResourceSample>,
+}
+
+impl ContainerResourceSeries {
+    /// Peak CPU% over the whole series (`0` when empty) — the one shared
+    /// derivation the progress logs and the generated summaries both use
+    /// (aggregates DERIVE from the series, never stored beside it).
+    #[must_use]
+    pub fn cpu_peak(&self) -> f64 {
+        self.samples.iter().map(|s| s.cpu_pct).fold(0.0, f64::max)
+    }
+
+    /// Peak RSS bytes over the whole series (`0` when empty).
+    #[must_use]
+    pub fn rss_peak(&self) -> u64 {
+        self.samples.iter().map(|s| s.rss_bytes).max().unwrap_or(0)
+    }
+
+    /// The measured-phase samples — falling back to the whole series when
+    /// the window never reached the measured phase (an aborted run still
+    /// reports what it saw).
+    #[must_use]
+    pub fn measured_samples(&self) -> Vec<&ResourceSample> {
+        let measured: Vec<&ResourceSample> = self
+            .samples
+            .iter()
+            .filter(|s| s.phase == ResourcePhase::Measured)
+            .collect();
+        if measured.is_empty() {
+            self.samples.iter().collect()
+        } else {
+            measured
+        }
+    }
+}
+
+/// The database volume's on-disk size at the run's four anchors (bytes).
+/// The first two yield bytes per committed composition (the
+/// storage-efficiency headline); the last two yield the sustained load's
+/// write amplification. Each anchor is honestly absent when it could not
+/// be probed (a failed probe degrades to absence, never a run failure).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DiskAnchors {
+    /// Before the scale seed (the empty-volume baseline).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub before_scale_seed_bytes: Option<u64>,
+    /// After the scale seed committed its compositions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after_scale_seed_bytes: Option<u64>,
+    /// After the pack preflight + standing-ward seed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after_ward_seed_bytes: Option<u64>,
+    /// After the measured window drained.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub after_window_bytes: Option<u64>,
+    /// Compositions the scale seed committed (the bytes-per-composition
+    /// denominator — a run fact, not derivable from the series).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seed_compositions: Option<u64>,
+}
+
+/// The resource telemetry of one measured run — measured CONTEXT, never
+/// verdict-bearing: classes stay earned on latency/error/throughput only,
+/// and an absent record never fails a run (sampling is optional by
+/// capability — it requires the ixit `containers` block and a reachable
+/// container runtime).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResourcesRecord {
+    /// The fixed sampling cadence, seconds.
+    pub sample_interval_s: u64,
+    /// Per-container series (SUT and database separately).
+    pub containers: Vec<ContainerResourceSeries>,
+    /// The disk anchors — present on measured class runs (whose seeding
+    /// milestones bracket them); absent on stress steps (exploration
+    /// stays light).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disk: Option<DiskAnchors>,
+}
+
 /// The whole measured run for one performance case.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -909,6 +1069,49 @@ pub struct Measurement {
     /// when earned).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub violations: Vec<String>,
+    /// The resource telemetry sampled during the run — measured CONTEXT,
+    /// never a verdict input; absent when the ixit declares no
+    /// `containers` block or the container runtime was unreachable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resources: Option<ResourcesRecord>,
+}
+
+/// The one-line evidence behind a measured-run verdict, for progress
+/// streams and console summaries — the committed record (encoded
+/// histograms + environment) stays the re-checkable evidence; this is the
+/// operator-facing digest of it.
+#[must_use]
+pub fn verdict_evidence(measurement: &Measurement) -> String {
+    let floor = measurement.class.arrival_floor_per_s();
+    let (requests, errors) = measurement
+        .operations
+        .iter()
+        .fold((0_u64, 0_u64), |(r, e), op| {
+            (r.saturating_add(op.requests), e.saturating_add(op.errors))
+        });
+    let worst = measurement
+        .operations
+        .iter()
+        .max_by(|a, b| a.latency_ms_p99.total_cmp(&b.latency_ms_p99));
+    let worst_text = worst.map_or_else(
+        || "no operations measured".to_owned(),
+        |op| format!("worst p99 {:.0} ms ({})", op.latency_ms_p99, op.operation),
+    );
+    let verdict_text = match measurement.verdict {
+        ClassVerdict::Earned => "EARNED",
+        ClassVerdict::NotEarned => "NOT EARNED",
+    };
+    let violation_text = if measurement.violations.is_empty() {
+        String::new()
+    } else {
+        format!(" — {}", measurement.violations.join("; "))
+    };
+    format!(
+        "window verdict: class {} {verdict_text} — offered {:.2}/s vs floor {floor}/s; \
+         {worst_text}; {errors} errors / {requests} requests{violation_text}",
+        measurement.class.token(),
+        measurement.offered_load_sustained,
+    )
 }
 
 /// Class verdicts (the second machinery's output).
@@ -1085,6 +1288,74 @@ mod tests {
         let (verdict, violations) = class_verdict(&c, 15.0, &[m]).unwrap();
         assert_eq!(verdict, ClassVerdict::NotEarned);
         assert!(!violations.is_empty());
+    }
+
+    #[test]
+    fn the_resources_block_is_optional_and_round_trips() {
+        // A pre-telemetry record (no `resources`) still parses — the
+        // committed baseline stays valid.
+        let h = histogram(&[10_000]);
+        let op = OperationMeasurement::from_histogram("ehr_read", &h, 0).unwrap();
+        let mut m = Measurement {
+            case: crate::ids::CaseId::parse("PERF-hospital_sim-class_POC").unwrap(),
+            class: PerfClass::Poc,
+            environment: serde_json::from_value(serde_json::json!({
+                "hardware_class": "test", "cores": 1, "memory_gb": 1,
+                "storage_class": "ram", "topology": "stub"
+            }))
+            .unwrap(),
+            offered_load_sustained: 2.0,
+            warmup_s: 300,
+            duration_s: 3600,
+            operations: vec![op],
+            verdict: ClassVerdict::Earned,
+            violations: Vec::new(),
+            resources: None,
+        };
+        let bare = serde_json::to_value(&m).unwrap();
+        assert!(bare.get("resources").is_none()); // absent, never null
+        let parsed: Measurement = serde_json::from_value(bare).unwrap();
+        assert!(parsed.resources.is_none());
+
+        m.resources = Some(ResourcesRecord {
+            sample_interval_s: 10,
+            containers: vec![ContainerResourceSeries {
+                role: ContainerRole::Sut,
+                name: "ehrbase-rs-ehrbase-1".to_owned(),
+                samples: vec![ResourceSample {
+                    offset_s: 10,
+                    phase: ResourcePhase::Warmup,
+                    cpu_pct: 42.5,
+                    rss_bytes: 123_456_789,
+                    blk_read_bytes: 1_000,
+                    blk_write_bytes: 2_000,
+                    net_rx_bytes: 3_000,
+                    net_tx_bytes: 4_000,
+                }],
+            }],
+            disk: Some(DiskAnchors {
+                before_scale_seed_bytes: Some(10),
+                after_scale_seed_bytes: Some(20),
+                after_ward_seed_bytes: None,
+                after_window_bytes: Some(30),
+                seed_compositions: Some(1_000_000),
+            }),
+        });
+        let full = serde_json::to_value(&m).unwrap();
+        // Run-clock offsets + phase stamps on the wire, absent anchors omitted.
+        let sample = &full["resources"]["containers"][0]["samples"][0];
+        assert_eq!(sample["offset_s"], 10);
+        assert_eq!(sample["phase"], "warmup");
+        assert_eq!(full["resources"]["containers"][0]["role"], "sut");
+        assert!(
+            full["resources"]["disk"]
+                .get("after_ward_seed_bytes")
+                .is_none()
+        );
+        let parsed: Measurement = serde_json::from_value(full).unwrap();
+        let resources = parsed.resources.unwrap();
+        assert_eq!(resources.sample_interval_s, 10);
+        assert_eq!(resources.disk.unwrap().seed_compositions, Some(1_000_000));
     }
 
     #[test]

@@ -31,6 +31,10 @@
       }
     }
   },
+  "containers": {
+    "sut": "ehrbase-rs-ehrbase-1",
+    "db": "ehrbase-rs-ehrbase-postgres-1"
+  },
   "environment": {
     "exclusive_server": true,
     "hardware_class": "consumer-laptop",
