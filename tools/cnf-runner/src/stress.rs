@@ -243,6 +243,37 @@ pub fn run_stress(
                 "generator bound at {rate}/s — the instrument, not the SUT, is the bottleneck"
             ));
         }
+        // The verdict, live: what the instrument DECIDED about this rung —
+        // never leave the console reading as a pass while the SUT sheds.
+        let resource_note = resources.as_ref().map_or(String::new(), |r| {
+            let peaks: Vec<String> = r
+                .containers
+                .iter()
+                .map(|c| {
+                    let cpu = c.samples.iter().map(|s| s.cpu_pct).fold(0.0, f64::max);
+                    format!(
+                        "{} peak {cpu:.0}% cpu",
+                        match c.role {
+                            crate::perf::ContainerRole::Sut => "sut",
+                            crate::perf::ContainerRole::Db => "db",
+                        }
+                    )
+                })
+                .collect();
+            format!(", {}", peaks.join(", "))
+        });
+        progress(if stable {
+            format!(
+                "step {rate}/s: stable (sustained {:.1}/s{resource_note})",
+                window.offered_load_sustained
+            )
+        } else {
+            format!(
+                "step {rate}/s: BREACHED (sustained {:.1}/s{resource_note}) — {}",
+                window.offered_load_sustained,
+                breaches.join("; ")
+            )
+        });
         steps.push(LoadStep {
             rate,
             offered_load_sustained: window.offered_load_sustained,
@@ -282,6 +313,9 @@ pub fn run_stress(
             if !(mid.is_finite() && mid > good && mid < bad) {
                 break;
             }
+            progress(format!(
+                "bisecting between {good}/s (stable) and {bad}/s (breached)"
+            ));
             if run_step(mid, &mut steps, &mut generator_bound)? {
                 good = mid;
             } else {
@@ -289,6 +323,17 @@ pub fn run_stress(
             }
         }
         last_good = good;
+    }
+
+    // The rung recap — one line per executed step, so an operator reading
+    // only the tail still sees the whole ladder's verdicts.
+    for step in &steps {
+        progress(format!(
+            "recap: {:>7}/s {} {}",
+            step.rate,
+            if step.stable { "stable  " } else { "BREACHED" },
+            step.breaches.first().map_or("", String::as_str),
+        ));
     }
 
     let floors_context: Vec<FloorContext> = PerfClass::ALL
