@@ -155,101 +155,119 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
     out
 }
 
-/// Per-operation latency percentiles for one measured run: grouped p50/p90/
-/// p99 bars (one hue, light→dark), log y in milliseconds, the p99 ≤ 1 s SLO
-/// line. Percentiles re-derived from the decoded histograms.
+/// Per-operation latency percentiles for one measured run — a VERTICAL
+/// layout that grows organically with the operation count (the journey
+/// workload measures ~20+ operations; a horizontal grouping cannot fit):
+/// one row per operation, three horizontal bars (p50/p90/p99, one hue
+/// light→dark), latency on a log x-axis in milliseconds, the p99 ≤ 1 s
+/// SLO as a vertical line, the p99 value printed at its bar end.
+/// Percentiles re-derived from the decoded histograms.
 ///
 /// # Errors
 /// A message when a histogram fails to decode.
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, String> {
-    let (width, height) = (760.0, 360.0);
-    let (y_top, y_bottom) = (64.0, 300.0);
-    let x0 = 90.0;
-    let group_w = 150.0;
-    let bar_w = 34.0;
+    const LABEL_W: f64 = 214.0;
+    const BAR_H: f64 = 9.0;
+    const BAR_GAP: f64 = 2.0;
+    const ROW_H: f64 = 3.0 * (BAR_H + BAR_GAP) + 10.0;
+    const MARGIN: f64 = 24.0;
+    let width = 900.0;
+    let x0 = MARGIN + LABEL_W;
+    let x1 = width - 96.0;
     let (min_ms, max_ms) = (0.1, 3000.0);
+    let header_h = 78.0;
+    #[allow(clippy::cast_precision_loss)] // operation counts are tiny
+    let rows_h = measurement.operations.len() as f64 * ROW_H;
+    let height = header_h + rows_h + 34.0;
 
     let mut out = String::new();
     svg_open(&mut out, width, height);
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"28\" class=\"title\">Latency percentiles — class {} measured run ({})</text>",
+        "<text x=\"{MARGIN}\" y=\"28\" class=\"title\">Latency percentiles — class {} measured run ({})</text>",
         measurement.class.token(),
         measurement.case,
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Re-derived from the committed HDR V2 histograms · offered load {:.1}/s sustained for {} s · errors are a verdict input, not shown</text>",
+        "<text x=\"{MARGIN}\" y=\"44\" class=\"muted\">Re-derived from the committed HDR V2 histograms · offered load {:.1}/s sustained for {} s · errors are a verdict input, not shown</text>",
         measurement.offered_load_sustained, measurement.duration_s,
     );
+    // Legend (the percentile ramp).
+    let mut lx = MARGIN;
+    for (class, label) in [("p50", "p50"), ("p90", "p90"), ("p99", "p99")] {
+        let _ = writeln!(
+            out,
+            "<rect x=\"{lx}\" y=\"54\" width=\"14\" height=\"10\" rx=\"3\" class=\"{class}\"/>\
+             <text x=\"{:.1}\" y=\"63\" class=\"muted\">{label}</text>",
+            lx + 18.0,
+        );
+        lx += 62.0;
+    }
 
-    let y_of = |ms: f64| {
+    let x_of = |ms: f64| {
         let clamped = ms.clamp(min_ms, max_ms);
-        y_bottom
-            - (clamped.log10() - min_ms.log10()) / (max_ms.log10() - min_ms.log10())
-                * (y_bottom - y_top)
+        x0 + (clamped.log10() - min_ms.log10()) / (max_ms.log10() - min_ms.log10()) * (x1 - x0)
     };
 
-    // Grid decades + axis labels.
+    // Vertical decade grid + axis labels along the bottom.
+    let grid_bottom = header_h + rows_h;
     for ms in [0.1, 1.0, 10.0, 100.0, 1000.0] {
-        let y = y_of(ms);
+        let x = x_of(ms);
         let _ = writeln!(
             out,
-            "<line x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{:.1}\" y2=\"{y:.1}\" class=\"grid\"/>\
-             <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"end\">{ms} ms</text>",
-            width - 40.0,
-            x0 - 8.0,
-            y + 4.0,
+            "<line x1=\"{x:.1}\" y1=\"{header_h}\" x2=\"{x:.1}\" y2=\"{grid_bottom:.1}\" class=\"grid\"/>\
+             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{ms} ms</text>",
+            grid_bottom + 16.0,
         );
     }
-    // The SLO line.
-    let slo_y = y_of(1000.0);
+    // The SLO line (vertical at 1 s).
+    let slo_x = x_of(1000.0);
     let _ = writeln!(
         out,
-        "<line x1=\"{x0}\" y1=\"{slo_y:.1}\" x2=\"{:.1}\" y2=\"{slo_y:.1}\" class=\"slo\"/>\
-         <text x=\"{:.1}\" y=\"{:.1}\" class=\"slotext\" text-anchor=\"end\">SLO p99 &#8804; 1 s</text>",
-        width - 40.0,
-        width - 44.0,
-        slo_y - 6.0,
+        "<line x1=\"{slo_x:.1}\" y1=\"{header_h}\" x2=\"{slo_x:.1}\" y2=\"{grid_bottom:.1}\" class=\"slo\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"slotext\">SLO p99 &#8804; 1 s</text>",
+        slo_x + 6.0,
+        header_h + 12.0,
     );
 
-    for (group, op) in measurement.operations.iter().enumerate() {
+    for (row, op) in measurement.operations.iter().enumerate() {
         let histogram = op.decode_histogram()?;
-        let percentiles = [
-            ("p50", "p50", histogram.value_at_quantile(0.50)),
-            ("p90", "p90", histogram.value_at_quantile(0.90)),
-            ("p99", "p99", histogram.value_at_quantile(0.99)),
-        ];
-        #[allow(clippy::cast_precision_loss)] // group counts are tiny
-        let gx = x0 + 30.0 + group as f64 * group_w;
-        for (i, (class, label, us)) in percentiles.iter().enumerate() {
-            #[allow(clippy::cast_precision_loss)] // us << 2^52
-            let ms = *us as f64 / 1_000.0;
-            #[allow(clippy::cast_precision_loss)] // 3 bars per group
-            let x = gx + i as f64 * (bar_w + 2.0);
-            let y = y_of(ms);
-            let _ = writeln!(
-                out,
-                "<rect x=\"{x:.1}\" y=\"{y:.1}\" width=\"{bar_w}\" height=\"{:.1}\" rx=\"4\" class=\"{class}\"/>\
-                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{}</text>\
-                 <text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\">{}</text>",
-                (y_bottom - y).max(2.0),
-                x + bar_w / 2.0,
-                y_bottom + 16.0,
-                label,
-                x + bar_w / 2.0,
-                y - 6.0,
-                format_ms(ms),
-            );
-        }
+        #[allow(clippy::cast_precision_loss)] // row counts are tiny
+        let ry = header_h + row as f64 * ROW_H + 5.0;
         let _ = writeln!(
             out,
-            "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\">{}</text>",
-            gx + 1.5 * bar_w,
-            y_bottom + 34.0,
+            "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"end\">{}</text>",
+            x0 - 10.0,
+            ry + 1.5 * (BAR_H + BAR_GAP) + 3.0,
             op.operation,
         );
+        for (i, (class, quantile)) in [("p50", 0.50), ("p90", 0.90), ("p99", 0.99)]
+            .iter()
+            .enumerate()
+        {
+            #[allow(clippy::cast_precision_loss)] // us << 2^52
+            let ms = histogram.value_at_quantile(*quantile) as f64 / 1_000.0;
+            #[allow(clippy::cast_precision_loss)] // 3 bars per row
+            let y = ry + i as f64 * (BAR_H + BAR_GAP);
+            let bar_end = x_of(ms);
+            let _ = writeln!(
+                out,
+                "<rect x=\"{x0:.1}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{BAR_H}\" rx=\"2\" class=\"{class}\"/>",
+                (bar_end - x0).max(2.0),
+            );
+            // The p99 value labels its bar end (the SLO-relevant number).
+            if *class == "p99" {
+                let _ = writeln!(
+                    out,
+                    "<text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">{}</text>",
+                    bar_end + 6.0,
+                    y + BAR_H - 1.0,
+                    format_ms(ms),
+                );
+            }
+        }
     }
     out.push_str("</svg>\n");
     Ok(out)
