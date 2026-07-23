@@ -231,4 +231,21 @@ committed HDR V2 histograms for the proof-of-concept class:
 
 ![Proof-of-concept class latency, re-derived from the committed histograms](perf-assets/perf-latency-class-POC.svg)
 
+### What the run cost the machine
+
+Alongside the latencies, every measured run records its resource telemetry:
+CPU and resident memory for the server and database containers separately,
+plus block-device and network I/O, sampled every 10 seconds across the whole
+window with the warmup shaded. These numbers are capacity-planning context —
+they never influence whether a class is earned.
+
+![Resource telemetry across the proof-of-concept measured run](perf-assets/perf-resources-class-POC.svg)
+
+The database volume's on-disk size is probed at four anchors — empty, after
+the scale seed, after the ward seed, and after the measured window — so the
+chart also answers the storage question directly: what one committed
+composition costs on disk, and how much the sustained hour wrote.
+
+![Disk growth across the measured run's four anchors](perf-assets/perf-disk-growth.svg)
+
 {{#include ../generated/perf-summary.md}}
