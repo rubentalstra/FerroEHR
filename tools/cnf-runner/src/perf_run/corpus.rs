@@ -18,7 +18,15 @@ use crate::perf_run::pack::JourneyPack;
 
 /// The stored query the ward dashboard executes continuously (registered
 /// once at seeding; `I_DEFINITION_QUERY.store_query` → wire 200).
-pub(crate) const STORED_QUERY_NAME: &str = "cnf.ward_dashboard";
+///
+/// NOTE: the namespaced form is the catalogue's own house convention —
+/// chosen as the workload constant so the workload runs on SUTs that
+/// (non-conformantly) reject the equally spec-valid namespace-less dotted
+/// form (ITS-REST `Qualified_query_name.md`: namespace optional, name
+/// charset `[a-zA-Z0-9_.-]`); that upstream non-conformance is recorded
+/// and catalogue-tested on its own tracker issue, never accommodated in
+/// any conformance expectation.
+pub(crate) const STORED_QUERY_NAME: &str = "org.openehr.cnf::ward_dashboard";
 
 /// The per-patient blood-pressure trend (the corpus contract's committed
 /// series), EHR-scoped via the `$ehr_id` binding — the ad-hoc read.
