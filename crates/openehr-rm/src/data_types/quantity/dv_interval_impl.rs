@@ -72,6 +72,25 @@ impl<T: OrderedLimit> Validate for DvInterval<T> {
                 "Invariant Upper_included_valid failed on type DV_INTERVAL",
             ));
         }
+        // Bound presence: `lower_unbounded` is "True if lower boundary open
+        // (i.e. = -infinity)" (BASE foundation_types `Interval`), so false
+        // asserts a FINITE bound — an absent one leaves `Limits_consistent`
+        // and `has()` unevaluable, and the ITS-JSON schema makes all four
+        // boundary flags required on the wire (INTERVAL/DV_INTERVAL
+        // `required`), so a flag-less half-open instance whose missing
+        // flags read as false must reject here rather than pass unchecked.
+        // NOTE: no NAMED openEHR invariant states this — our enforcement of
+        // the class semantics above (spec-silent on the name, not the rule).
+        if !self.lower_unbounded && self.lower.is_none() {
+            out.push(InvariantViolation::here(
+                "lower bound absent while lower_unbounded is false on type DV_INTERVAL",
+            ));
+        }
+        if !self.upper_unbounded && self.upper.is_none() {
+            out.push(InvariantViolation::here(
+                "upper bound absent while upper_unbounded is false on type DV_INTERVAL",
+            ));
+        }
         // Limits_consistent: bounded on both sides implies the limits are
         // strictly comparable and lower <= upper.
         if !self.lower_unbounded
@@ -146,6 +165,52 @@ mod tests {
         assert!(
             v.iter()
                 .any(|m| m.message == "Invariant Lower_included_valid failed on type DV_INTERVAL"),
+            "got {v:?}"
+        );
+    }
+
+    #[test]
+    fn absent_bound_with_bounded_flag_rejects() {
+        // The acceptance hole this rule closes: a half-open interval whose missing wire
+        // flags read as false (lower None, lower_unbounded false) must
+        // violate — BASE Interval semantics + the ITS-JSON required flags.
+        let half_open = DvInterval::<DvQuantity> {
+            lower: None,
+            upper: Some(quantity(1.0, "s")),
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: false,
+            upper_included: false,
+        };
+        let v = half_open.invariants();
+        assert!(
+            v.iter().any(|m| m.message
+                == "lower bound absent while lower_unbounded is false on type DV_INTERVAL"),
+            "got {v:?}"
+        );
+        // The PROPER half-open form (lower_unbounded true) is clean.
+        let proper = DvInterval::<DvQuantity> {
+            lower: None,
+            upper: Some(quantity(1.0, "s")),
+            lower_unbounded: true,
+            upper_unbounded: false,
+            lower_included: false,
+            upper_included: true,
+        };
+        assert!(proper.invariants().is_empty());
+        // Mirror on the upper side.
+        let no_upper = DvInterval::<DvQuantity> {
+            lower: Some(quantity(1.0, "s")),
+            upper: None,
+            lower_unbounded: false,
+            upper_unbounded: false,
+            lower_included: true,
+            upper_included: false,
+        };
+        let v = no_upper.invariants();
+        assert!(
+            v.iter().any(|m| m.message
+                == "upper bound absent while upper_unbounded is false on type DV_INTERVAL"),
             "got {v:?}"
         );
     }
