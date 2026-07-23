@@ -13,8 +13,8 @@ services:
     image: ${EHRBASE_POSTGRES_IMAGE:-ghcr.io/rubentalstra/ehrbase-rs-postgres:local}
     # Docker's default 64MB /dev/shm starves PostgreSQL's dynamic shared
     # memory under load (parallel workers error `could not resize shared
-    # memory segment … No space left on device`); benchmark runs share this
-    # floor with the upstream stack (docker/benchmark/docker-compose.yml).
+    # memory segment … No space left on device`); measured runs share this
+    # floor with the upstream comparison stack (docker/sut-ehrbase-java.yml).
     shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
     build:
       context: ./docker/postgres
@@ -32,9 +32,8 @@ services:
     # pg_stat_statements is loaded so the P20 profiling harness
     # (scripts/profile.sh) can attribute time per statement; negligible
     # overhead, ships in the stock image.
-    # The same PG tuning floor the benchmark parity compose applies to BOTH
-    # SUTs (docker/benchmark/docker-compose.yml, benchmarking.md §3.4), so
-    # local profiling (scripts/profile.sh) measures the tuned configuration.
+    # The same PG tuning floor the measurement instruments assume, so local
+    # profiling (scripts/profile.sh) measures the tuned configuration.
     command:
       - postgres
       - -c
@@ -69,24 +68,24 @@ services:
       # upper-cased, `__` between segments); they layer on top of the mounted
       # ehrbase.dev.toml (env beats file).
       EHRBASE__DB__URL: postgres://${PG_INIT_USER:-ehrbase}:${PG_INIT_PASSWORD:-ehrbase}@ehrbase-postgres:5432/${PG_INIT_DB:-ehrbase}
-      # Connection-pool ceiling; the benchmark harness raises it in lockstep
+      # Connection-pool ceiling; measured comparison runs raise it in lockstep
       # with the upstream stack's HikariCP pool (config parity — the dominant
       # tunable must match across compared SUTs).
       EHRBASE__DB__MAX_CONNECTIONS: ${EHRBASE__DB__MAX_CONNECTIONS:-10}
       # In-flight admission cap (503 load shed past it; 0 disables). The
-      # benchmark harness raises it so overload manifests as queueing latency —
+      # comparison runs raise it so overload manifests as queueing latency —
       # the same failure mode as upstream's Tomcat admission window — instead
-      # of shed errors tripping the SLO's error-rate arm (see scripts/benchmark.sh).
+      # of shed errors tripping the stress envelope's error-rate arm.
       EHRBASE__SERVER__MAX_IN_FLIGHT: ${EHRBASE__SERVER__MAX_IN_FLIGHT:-256}
-      # Version-signing toggle pass-through (the benchmark harness disables it
-      # for throughput parity — upstream has no signing; see scripts/benchmark.sh).
+      # Version-signing toggle pass-through (measured comparison runs disable it
+      # for throughput parity — upstream has no signing.)
       EHRBASE__SIGNING__ENABLED: ${EHRBASE__SIGNING__ENABLED:-true}
       # Dev quickstart: human-readable colored logs in `docker compose logs`.
       # Production/collector deployments override to `json` (or unset — the
       # `auto` default picks json when stdout is not a TTY).
       EHRBASE__LOG__FORMAT: ${EHRBASE__LOG__FORMAT:-pretty}
-      # Benchmark parity (benchmarking.md §3.4 "Logging: equal, minimal"):
-      # scripts/benchmark.sh sets warn on BOTH SUTs; default stays info.
+      # Measurement parity (logging equal and minimal on both SUTs):
+      # measured comparison runs set warn on BOTH SUTs; default stays info.
       EHRBASE__LOG__FILTER: ${EHRBASE__LOG__FILTER:-info}
     volumes:
       # Auto-discovered at config search-order position 4 (no pointer needed).

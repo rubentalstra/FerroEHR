@@ -95,10 +95,19 @@ impl PerfClient {
         prefer_minimal: bool,
         if_match: Option<&str>,
     ) -> Result<WireReply, String> {
+        // Accept follows the exchange's native representation (ITS-REST
+        // overview §Requests and responses): canonical JSON everywhere
+        // except the ADL 1.4 template surface, whose native form is the
+        // OPT XML — a JSON-only Accept there draws a 406 from SUTs that
+        // honour strict negotiation on the returned template.
+        let accept = match &body {
+            Some((content_type, _)) if content_type.contains("xml") => "application/xml",
+            _ => "application/json",
+        };
         let mut request = self
             .client
             .request(method, format!("{}{path}", self.base_url))
-            .header("Accept", "application/json");
+            .header("Accept", accept);
         if let Some(auth) = &self.authorization {
             request = request.header("Authorization", auth);
         }

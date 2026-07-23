@@ -143,8 +143,9 @@ enum Command {
         hours: u64,
     },
     /// Run the step-load STRESS instrument: geometric load steps to the
-    /// maximum sustainable throughput (exploration — never a conformance
-    /// record; classes are earned exclusively by the hour-long class runs).
+    /// maximum sustainable throughput — where the system breaks
+    /// (exploration only; never a conformance record, and class-free by
+    /// design).
     Stress {
         /// The artifact root.
         #[arg(long)]
@@ -157,8 +158,9 @@ enum Command {
         /// Where to write the stress report (stress.json).
         #[arg(long)]
         out: PathBuf,
-        /// The class whose corpus + workload mix the stress runs on
-        /// (POC | S | L | R) — data volume context only, no class claim.
+        /// The class-scale corpus the stress runs on (POC | S | L | R —
+        /// the standardized corpus selector): data volume + workload mix
+        /// only; no class floor enters the stress report or chart.
         #[arg(long, default_value = "POC")]
         corpus_class: String,
         /// Parallel seeding workers.
@@ -191,8 +193,7 @@ enum Command {
         /// Where to write the probe report (aql-probe.json).
         #[arg(long)]
         out: PathBuf,
-        /// The class whose corpus the probes run against (data-volume
-        /// context only).
+        /// The class-scale corpus the probes run against (POC | S | L | R).
         #[arg(long, default_value = "POC")]
         corpus_class: String,
         /// Parallel seeding workers.
@@ -201,6 +202,26 @@ enum Command {
         /// Requests fired per probe.
         #[arg(long, default_value_t = 20)]
         requests: u32,
+    },
+    /// Render the cross-SUT stress overlay (both systems' latency-throughput
+    /// curves on one canvas) FROM two committed stress reports —
+    /// deterministic, both directions on equal footing.
+    StressCompare {
+        /// The primary SUT's committed stress.json.
+        #[arg(long)]
+        left: PathBuf,
+        /// The primary SUT's display label.
+        #[arg(long)]
+        left_label: String,
+        /// The comparison SUT's committed stress.json.
+        #[arg(long)]
+        right: PathBuf,
+        /// The comparison SUT's display label.
+        #[arg(long)]
+        right_label: String,
+        /// Where to write the overlay SVG.
+        #[arg(long)]
+        out: PathBuf,
     },
     /// Render the published performance SVG assets FROM a committed
     /// results.json (deterministic; CI regenerates and diffs — hand-drawn
@@ -344,6 +365,13 @@ fn main() -> ExitCode {
             seed_workers,
             requests,
         } => probe_command(&root, &ixit, &out, &corpus_class, seed_workers, requests),
+        Command::StressCompare {
+            left,
+            left_label,
+            right,
+            right_label,
+            out,
+        } => stress_compare_command(&left, &left_label, &right, &right_label, &out),
         Command::PerfAssets {
             root,
             results,
@@ -879,7 +907,8 @@ fn stress_command(
             return ExitCode::from(2);
         }
     };
-    // The class supplies corpus + journey workload (data-volume context only).
+    // The class token is the STANDARDIZED corpus selector (data volume +
+    // workload mix); no class floor enters the stress report or chart.
     let Some((_, case)) = loaded
         .set
         .performance
@@ -974,6 +1003,53 @@ fn stress_command(
         report.steps.len(),
         report.max_sustainable_throughput_per_s
     );
+    ExitCode::SUCCESS
+}
+
+/// The stress-overlay handler (`stress-compare`): render both systems'
+/// latency-throughput curves from their committed stress reports.
+fn stress_compare_command(
+    left: &std::path::Path,
+    left_label: &str,
+    right: &std::path::Path,
+    right_label: &str,
+    out: &std::path::Path,
+) -> ExitCode {
+    let read = |path: &std::path::Path| -> Result<cnf_runner::stress::StressReport, String> {
+        std::fs::read_to_string(path)
+            .map_err(|e| format!("cannot read {}: {e}", path.display()))
+            .and_then(|text| {
+                serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))
+            })
+    };
+    let (left_report, right_report) = match (read(left), read(right)) {
+        (Ok(a), Ok(b)) => (a, b),
+        (Err(e), _) | (_, Err(e)) => {
+            eprintln!("{e}");
+            return ExitCode::from(2);
+        }
+    };
+    let svg = match cnf_runner::perf_assets::stress_compare_svg(
+        (left_label, &left_report),
+        (right_label, &right_report),
+    ) {
+        Ok(svg) => svg,
+        Err(e) => {
+            eprintln!("stress compare: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    if let Some(parent) = out.parent()
+        && let Err(e) = std::fs::create_dir_all(parent)
+    {
+        eprintln!("cannot create {}: {e}", parent.display());
+        return ExitCode::from(2);
+    }
+    if let Err(e) = std::fs::write(out, svg) {
+        eprintln!("cannot write {}: {e}", out.display());
+        return ExitCode::from(2);
+    }
+    println!("wrote {}", out.display());
     ExitCode::SUCCESS
 }
 

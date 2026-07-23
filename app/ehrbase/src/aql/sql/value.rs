@@ -39,8 +39,13 @@ impl Builder<'_> {
                 let voa = self.version_vo.get(&source.0).cloned().ok_or_else(|| {
                     SqlError::Unsupported("VERSION path without a bound version".to_owned())
                 })?;
-                let aud = self.ensure_audit(&voa);
-                Ok(version_field_expr(&voa, &aud, *field, &self.ctx.system_id))
+                let system_id = self.ctx.system_id.clone();
+                Ok(version_field_expr(
+                    &voa,
+                    || self.ensure_audit(&voa),
+                    *field,
+                    &system_id,
+                ))
             }
             PathTarget::Ehr { source, field } => {
                 let alias = self.ehr_alias.get(&source.0).cloned().ok_or_else(|| {
@@ -159,6 +164,31 @@ impl Builder<'_> {
         let base = extract_base(col(&last, "data"), jp.as_deref());
         sub.expr(Expr::val(1));
         sub.and_where(cond(coerce_value(base, mode, leaf)));
+        if self.streaming {
+            // STREAMING shape: the EXISTS must stay CORRELATED. As a bare
+            // WHERE sublink the planner may pull it up into a semi-join and
+            // DECORRELATE its inner side into a corpus-wide Materialize —
+            // the instrumented 32/s rung caught exactly that plan (600k
+            // subtree rows materialized, 18M join-filter rejections, 13-35 s
+            // per execution) while the correlated probe runs in
+            // milliseconds; which side the planner lands on flips with the
+            // ANALYZE sample. Hosting the EXISTS inside a LATERAL subquery
+            // behind the `OFFSET 0` fence pins the correlated per-row
+            // SubPlan by construction (a `LIMIT 1` inside the sublink is
+            // NOT a fence — the planner simplifies EXISTS sublinks before
+            // pull-up). Identical semantics: one boolean per outer row.
+            let probe = format!("p{}", self.next_ctr());
+            let mut wrapper = Query::select();
+            wrapper.expr_as(Expr::exists(sub), Alias::new("hit"));
+            wrapper.offset(0);
+            self.q.join_lateral(
+                sea_query::JoinType::Join,
+                wrapper,
+                Alias::new(probe.as_str()),
+                Expr::val(true),
+            );
+            return Ok(Some(col(&probe, "hit")));
+        }
         Ok(Some(Expr::exists(sub)))
     }
 
@@ -191,8 +221,13 @@ impl Builder<'_> {
         }
         let voa = self.vo_alias.get(&leaf.source.0).cloned()?;
         let names: Vec<&str> = leaf.fragment.iter().map(|s| s.name.as_str()).collect();
-        let aud = self.ensure_audit(&voa);
-        let uid = version_field_expr(&voa, &aud, VersionField::Uid, &self.ctx.system_id);
+        let system_id = self.ctx.system_id.clone();
+        let uid = version_field_expr(
+            &voa,
+            || self.ensure_audit(&voa),
+            VersionField::Uid,
+            &system_id,
+        );
         match names.as_slice() {
             // `uid/value` → the OBJECT_VERSION_ID string (projected → JSON string
             // via the caller's `to_jsonb`; compared/ordered as text).
@@ -380,9 +415,15 @@ fn raw_numeric(base: Expr) -> Expr {
 /// is immutable per version, RM common master06 §Distributed versioning) via
 /// the typed `PgExpr::concatenate` `||` operator; the tree id renders
 /// `trunk[.branch.version]`.
+///
+/// `audit` summons the audit-table join LAZILY: only the commit-audit
+/// fields read it, so a `uid`/`contribution_id`/`lifecycle_state` path
+/// never pays the join (the same pay-per-use rule as `ensure_audit`'s
+/// doc — the first live plan autopsy found the ward query joining `audit`
+/// it never projected).
 pub(super) fn version_field_expr(
     voa: &str,
-    aud: &str,
+    audit: impl FnOnce() -> String,
     field: VersionField,
     _system_id: &str,
 ) -> Expr {
@@ -408,11 +449,11 @@ pub(super) fn version_field_expr(
                 ],
             ),
         ]),
-        VersionField::TimeCommitted => col(aud, "time_committed"),
-        VersionField::SystemId => col(aud, "system_id"),
-        VersionField::ChangeType => col(aud, "change_type"),
-        VersionField::Committer => col(aud, "committer"),
-        VersionField::Description => col(aud, "description"),
+        VersionField::TimeCommitted => col(&audit(), "time_committed"),
+        VersionField::SystemId => col(&audit(), "system_id"),
+        VersionField::ChangeType => col(&audit(), "change_type"),
+        VersionField::Committer => col(&audit(), "committer"),
+        VersionField::Description => col(&audit(), "description"),
         VersionField::ContributionId => cast(col(voa, "contribution_id"), "text"),
         VersionField::LifecycleState => col(voa, "lifecycle_state"),
     }

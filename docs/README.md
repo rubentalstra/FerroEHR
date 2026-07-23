@@ -65,5 +65,5 @@ acceptance is the openEHR conformance suite. See `architecture.md`.)
   the FROZEN final artifacts of the retired ECC harness (2026-07-22) —
   historical comparison data until the CNF pipeline re-bases the public
   comparison. Numbers live ONLY in these committed artifacts.
-- `benchmarks/` — `REPORT.md` + `results.json` + `COMPARISON.md` from the
-  benchmark harness (`tools/benchmark`), regenerated per measured pair.
+- `profiles/` — per-statement profiling captures (`scripts/profile.sh`),
+  operator evidence for optimization rungs.

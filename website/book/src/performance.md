@@ -213,8 +213,9 @@ cnf-runner stress --root tools/cnf-runner/artifacts \
 ```
 
 The two instruments never blur: a stress report earns no class, never
-touches `results.json`, and names the class floors only as context so you
-can see the headroom at a glance. Every load step embeds its own
+touches `results.json`, and carries no class vocabulary at all — the class
+ladder belongs to the measured class runs, and the stress chart shows one
+thing only: where the system breaks. Every load step embeds its own
 re-checkable histograms and its own resource telemetry (the same
 per-container CPU/memory/I/O series the measured runs record, so a
 breached step shows *where* it saturated), a breached step is reported
@@ -223,6 +224,24 @@ tops out before the server is flagged as such rather than counted against
 the system.
 
 ![The latency-throughput curve from the committed stress run](perf-assets/perf-stress-curve.svg)
+
+### The optimization probe
+
+Between the two verdict-bearing instruments sits a third, purely
+diagnostic one: `cnf-runner aql-probe`. It seeds the same class corpus
+fresh, fires the measurement machinery's own AQL set repeatedly, and
+records each query's wire-latency percentiles alongside the
+database-side cost per SQL statement — so an optimization is argued from
+attributed evidence on a realistically seeded database, never from a
+hunch on an empty one. Its report (`aql-probe.json`, schema-published)
+is exploration evidence for the optimization loop: it earns nothing and
+never touches the conformance record.
+
+```bash
+# the seeded-corpus AQL probe (exploration only)
+cnf-runner aql-probe --root tools/cnf-runner/artifacts \
+                     --ixit <ixit.json> --out <aql-probe.json>
+```
 
 The published assets are rendered from the committed `results.json` by
 `cnf-runner perf-assets` (wrapped by `scripts/render-perf-assets.sh`); the
@@ -245,7 +264,15 @@ window with the warmup shaded, and the database volume's on-disk size at
 four anchors — empty, after the scale seed, after the ward seed, and after
 the measured window — down to the storage cost per committed composition.
 These numbers are capacity-planning context — they never influence whether
-a class is earned. The rendered resource time-series and disk-growth charts
-join this page with the next committed measured run.
+a class is earned.
+
+![Resource telemetry across the proof-of-concept measured run](perf-assets/perf-resources-class-POC.svg)
+
+The database volume's on-disk size is probed at four anchors — empty, after
+the scale seed, after the ward seed, and after the measured window — so the
+chart also answers the storage question directly: what one committed
+composition costs on disk, and how much the sustained hour wrote.
+
+![Disk growth across the measured run's four anchors](perf-assets/perf-disk-growth.svg)
 
 {{#include ../generated/perf-summary.md}}

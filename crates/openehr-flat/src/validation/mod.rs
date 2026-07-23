@@ -1873,8 +1873,12 @@ mod tests {
             vec![ValidationKind::CodedValue]
         );
 
+        // The good instance carries the BOUND rubric as its value (RM
+        // dv_coded_text: value must be the rubric — enforced since the
+        // rubric check landed; this fixture's list binds the code string
+        // as its label).
         let good = json!({
-            "_type": "DV_CODED_TEXT", "value": "x",
+            "_type": "DV_CODED_TEXT", "value": "at0001",
             "defining_code": {"_type": "CODE_PHRASE",
                 "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
                 "code_string": "at0001"}
@@ -2697,7 +2701,7 @@ mod tests {
     fn measure_ips_validation_walk_cost() {
         let path = concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../tools/benchmark/templates/ckm/international-patient-summary.example.json"
+            "/../../tools/cnf-runner/artifacts/corpus/templates/ckm/international-patient-summary.example.json"
         );
         let comp: Value =
             serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
@@ -2739,7 +2743,7 @@ mod tests {
     fn measure_ips_validation_full_cost() {
         let dir = concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../tools/benchmark/templates/ckm"
+            "/../../tools/cnf-runner/artifacts/corpus/templates/ckm"
         );
         let opt_xml = std::fs::read_to_string(format!("{dir}/international-patient-summary.opt"))
             .expect("read IPS OPT");

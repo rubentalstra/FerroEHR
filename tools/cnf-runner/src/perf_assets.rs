@@ -33,6 +33,8 @@ const STYLE: &str = "<style>\n\
   .db { stroke: #8a8880; fill: none; stroke-width: 1.6; stroke-dasharray: 5 3; }\n\
   .warm { fill: #efede8; }\n\
   .curve { stroke: #2a78d6; fill: none; stroke-width: 2; }\n\
+  .cmp { stroke: #8a8880; fill: none; stroke-width: 2; stroke-dasharray: 7 4; }\n\
+  .cmpfill { fill: #8a8880; }\n\
   .knee { stroke: #1baf7a; stroke-width: 2; stroke-dasharray: 2 3; }\n\
   @media (prefers-color-scheme: dark) {\n\
     text { fill: #c3c2b7; }\n\
@@ -50,6 +52,8 @@ const STYLE: &str = "<style>\n\
     .db { stroke: #8f8e85; }\n\
     .warm { fill: #2a2a28; }\n\
     .curve { stroke: #3987e5; }\n\
+    .cmp { stroke: #8f8e85; }\n\
+    .cmpfill { fill: #8f8e85; }\n\
     .knee { stroke: #26c78d; }\n\
   }\n\
 </style>\n";
@@ -280,11 +284,13 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
     Ok(out)
 }
 
-/// The latency-throughput curve from a committed stress report: offered rate
-/// (x, log) vs the worst per-operation p99 (y, log, re-derived from the
-/// decoded histograms), stable and breached steps distinguished by mark AND
-/// color, the p99 budget line, the class floors as context verticals, and
-/// the maximum-sustainable-throughput marker.
+/// The latency-throughput curve from a committed stress report — WHERE THE
+/// SYSTEM BREAKS, nothing else: offered rate (x, log) vs the worst
+/// per-operation p99 (y, log, re-derived from the decoded histograms),
+/// envelope-holding steps as circles, breached steps as crosses, the p99
+/// budget line, and the maximum-sustainable-throughput marker (the knee).
+/// Deliberately class-free: the volumetric class ladder belongs to the
+/// measured class runs, and no class token appears here.
 ///
 /// # Errors
 /// A message when a histogram fails to decode.
@@ -292,7 +298,7 @@ pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, Stri
 pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, String> {
     let (width, height) = (760.0, 400.0);
     let (x0, x1) = (90.0, 700.0);
-    let (y_top, y_bottom) = (64.0, 330.0);
+    let (y_top, y_bottom) = (80.0, 330.0);
     let (min_rate, max_rate) = (1.0, 6000.0);
     let (min_ms, max_ms) = (1.0, 6000.0);
 
@@ -304,8 +310,12 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Short intense load steps ({} s hold) on the {} corpus · exploration only — classes are earned exclusively by the hour-long class runs</text>",
+        "<text x=\"24\" y=\"44\" class=\"muted\">Short intense load steps ({} s hold) on the {} corpus · exploration only — never a conformance record</text>",
         report.step_hold_s, report.corpus,
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"59\" class=\"muted\">Circles hold the envelope, crosses breach it; the dotted line is the last rate held inside the envelope — the knee.</text>"
     );
 
     let x_of = |rate: f64| log_pos(rate, min_rate, max_rate, x0, x1);
@@ -345,18 +355,6 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
         x1 - 4.0,
         budget_y - 6.0,
     );
-    // Class floors as CONTEXT verticals.
-    for floor in &report.floors_context {
-        let x = x_of(floor.floor_per_s);
-        let _ = writeln!(
-            out,
-            "<line x1=\"{x:.1}\" y1=\"{y_top}\" x2=\"{x:.1}\" y2=\"{y_bottom}\" class=\"floor\"/>\
-             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{}</text>",
-            y_top - 6.0,
-            floor.class.token(),
-        );
-    }
-
     // Steps, in rate order: worst per-operation p99 per step (re-derived).
     let mut points: Vec<(f64, f64, bool)> = Vec::new();
     for step in &report.steps {
@@ -406,15 +404,220 @@ pub fn stress_curve_svg(report: &crate::stress::StressReport) -> Result<String, 
             );
         }
     }
-    // The maximum-sustainable-throughput marker.
+    // The maximum-sustainable-throughput marker; the label sits at the
+    // plot bottom (clear of any top-clamped breach crosses) and flips to
+    // the marker's left past the midline so it can never leave the canvas.
     let mst_x = x_of(report.max_sustainable_throughput_per_s.max(min_rate));
+    let (label_x, anchor) = if mst_x > f64::midpoint(x0, x1) {
+        (mst_x - 6.0, "end")
+    } else {
+        (mst_x + 6.0, "start")
+    };
     let _ = writeln!(
         out,
         "<line x1=\"{mst_x:.1}\" y1=\"{y_top}\" x2=\"{mst_x:.1}\" y2=\"{y_bottom}\" class=\"knee\"/>\
-         <text x=\"{:.1}\" y=\"{:.1}\" class=\"earned\">max sustainable {:.0}/s</text>",
-        mst_x + 6.0,
-        y_top + 14.0,
+         <text x=\"{label_x:.1}\" y=\"{:.1}\" class=\"earned\" text-anchor=\"{anchor}\">max sustainable {:.0}/s</text>",
+        y_bottom - 10.0,
         report.max_sustainable_throughput_per_s,
+    );
+    out.push_str("</svg>\n");
+    Ok(out)
+}
+
+/// The cross-SUT stress overlay: both systems' latency-throughput curves
+/// (offered rate vs worst per-operation p99, log-log, re-derived from each
+/// side's decoded histograms) on one canvas — the left/primary SUT a solid
+/// line with circle markers, the right/comparison SUT a dashed line with
+/// square markers (distinguishable by color AND mark), each side's
+/// maximum-sustainable-throughput marked, breached steps as crosses, the
+/// shared p99 budget line and the class floors as context. Both directions
+/// published on equal footing — where the comparison SUT's knee sits
+/// higher, the chart says so exactly like the reverse.
+///
+/// # Errors
+/// A message when a histogram fails to decode.
+#[allow(clippy::too_many_lines)] // one linear chart emitter
+pub fn stress_compare_svg(
+    left: (&str, &crate::stress::StressReport),
+    right: (&str, &crate::stress::StressReport),
+) -> Result<String, String> {
+    let (width, height) = (760.0, 430.0);
+    let (x0, x1) = (90.0, 700.0);
+    let (y_top, y_bottom) = (96.0, 360.0);
+    let (min_rate, max_rate) = (1.0, 6000.0);
+    let (min_ms, max_ms) = (1.0, 6000.0);
+
+    let mut out = String::new();
+    svg_open(&mut out, width, height);
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"28\" class=\"title\">Latency-throughput curves — both systems, the same step-load stress instrument</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"44\" class=\"muted\">Identical committed workload and ladder per side ({} s holds) · exploration only — never a conformance record</text>",
+        left.1.step_hold_s,
+    );
+    // Legend: label + line sample + marker per side, fixed columns.
+    let legend_y = 58.0;
+    let _ = writeln!(
+        out,
+        "<line x1=\"24\" y1=\"{legend_y}\" x2=\"52\" y2=\"{legend_y}\" class=\"curve\"/>\
+         <circle cx=\"38\" cy=\"{legend_y}\" r=\"4\" class=\"measured\"/>\
+         <text x=\"58\" y=\"{:.1}\" class=\"muted\">{}</text>",
+        legend_y + 4.0,
+        left.0,
+    );
+    let _ = writeln!(
+        out,
+        "<line x1=\"300\" y1=\"{legend_y}\" x2=\"328\" y2=\"{legend_y}\" class=\"cmp\"/>\
+         <rect x=\"310\" y=\"{:.1}\" width=\"8\" height=\"8\" class=\"cmpfill\"/>\
+         <text x=\"334\" y=\"{:.1}\" class=\"muted\">{}</text>",
+        legend_y - 4.0,
+        legend_y + 4.0,
+        right.0,
+    );
+
+    let x_of = |rate: f64| log_pos(rate, min_rate, max_rate, x0, x1);
+    let y_of = |ms: f64| {
+        let clamped = ms.clamp(min_ms, max_ms);
+        y_bottom
+            - (clamped.log10() - min_ms.log10()) / (max_ms.log10() - min_ms.log10())
+                * (y_bottom - y_top)
+    };
+
+    for rate in [1.0, 10.0, 100.0, 1000.0] {
+        let x = x_of(rate);
+        let _ = writeln!(
+            out,
+            "<line x1=\"{x:.1}\" y1=\"{y_top}\" x2=\"{x:.1}\" y2=\"{y_bottom}\" class=\"grid\"/>\
+             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{rate}/s</text>",
+            y_bottom + 16.0,
+        );
+    }
+    for ms in [1.0, 10.0, 100.0, 1000.0] {
+        let y = y_of(ms);
+        let _ = writeln!(
+            out,
+            "<line x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{x1}\" y2=\"{y:.1}\" class=\"grid\"/>\
+             <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"end\">{ms} ms</text>",
+            x0 - 8.0,
+            y + 4.0,
+        );
+    }
+    let budget_y = y_of(left.1.p99_budget_ms);
+    let _ = writeln!(
+        out,
+        "<line x1=\"{x0}\" y1=\"{budget_y:.1}\" x2=\"{x1}\" y2=\"{budget_y:.1}\" class=\"slo\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"slotext\" text-anchor=\"end\">p99 budget</text>",
+        x1 - 4.0,
+        budget_y - 6.0,
+    );
+    // One curve per side: worst per-operation p99 per step (re-derived).
+    let side = |report: &crate::stress::StressReport,
+                line_class: &str,
+                out: &mut String|
+     -> Result<Vec<(f64, f64, bool)>, String> {
+        let mut points: Vec<(f64, f64, bool)> = Vec::new();
+        for step in &report.steps {
+            let mut worst_ms: f64 = 0.0;
+            for op in &step.operations {
+                let histogram = op.decode_histogram()?;
+                #[allow(clippy::cast_precision_loss)] // latencies << 2^52 µs
+                let ms = histogram.value_at_quantile(0.99) as f64 / 1_000.0;
+                worst_ms = worst_ms.max(ms);
+            }
+            points.push((step.rate, worst_ms, step.stable));
+        }
+        points.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let path: Vec<String> = points
+            .iter()
+            .enumerate()
+            .map(|(i, (rate, ms, _))| {
+                format!(
+                    "{}{:.1},{:.1}",
+                    if i == 0 { "M" } else { "L" },
+                    x_of(*rate),
+                    y_of(*ms)
+                )
+            })
+            .collect();
+        let _ = writeln!(
+            out,
+            "<path d=\"{}\" class=\"{line_class}\"/>",
+            path.join(" ")
+        );
+        Ok(points)
+    };
+    let left_points = side(left.1, "curve", &mut out)?;
+    let right_points = side(right.1, "cmp", &mut out)?;
+    for (rate, ms, stable) in &left_points {
+        let (x, y) = (x_of(*rate), y_of(*ms));
+        if *stable {
+            let _ = writeln!(
+                out,
+                "<circle cx=\"{x:.1}\" cy=\"{y:.1}\" r=\"5\" class=\"measured\"/>"
+            );
+        } else {
+            let _ = writeln!(
+                out,
+                "<path d=\"M{:.1},{:.1} L{:.1},{:.1} M{:.1},{:.1} L{:.1},{:.1}\" class=\"slo\" stroke-width=\"2\"/>",
+                x - 5.0,
+                y - 5.0,
+                x + 5.0,
+                y + 5.0,
+                x - 5.0,
+                y + 5.0,
+                x + 5.0,
+                y - 5.0,
+            );
+        }
+    }
+    for (rate, ms, stable) in &right_points {
+        let (x, y) = (x_of(*rate), y_of(*ms));
+        if *stable {
+            let _ = writeln!(
+                out,
+                "<rect x=\"{:.1}\" y=\"{:.1}\" width=\"8\" height=\"8\" class=\"cmpfill\"/>",
+                x - 4.0,
+                y - 4.0,
+            );
+        } else {
+            let _ = writeln!(
+                out,
+                "<path d=\"M{:.1},{:.1} L{:.1},{:.1} M{:.1},{:.1} L{:.1},{:.1}\" class=\"slo\" stroke-width=\"2\"/>",
+                x - 5.0,
+                y - 5.0,
+                x + 5.0,
+                y + 5.0,
+                x - 5.0,
+                y + 5.0,
+                x + 5.0,
+                y - 5.0,
+            );
+        }
+    }
+    // Each side's maximum sustainable throughput, labels stacked at fixed
+    // rows so they can never collide.
+    let left_mst = x_of(left.1.max_sustainable_throughput_per_s.max(min_rate));
+    let right_mst = x_of(right.1.max_sustainable_throughput_per_s.max(min_rate));
+    let _ = writeln!(
+        out,
+        "<line x1=\"{left_mst:.1}\" y1=\"{y_top}\" x2=\"{left_mst:.1}\" y2=\"{y_bottom}\" class=\"knee\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"earned\">{} max sustainable {:.0}/s</text>",
+        x0,
+        y_bottom + 34.0,
+        left.0,
+        left.1.max_sustainable_throughput_per_s,
+    );
+    let _ = writeln!(
+        out,
+        "<line x1=\"{right_mst:.1}\" y1=\"{y_top}\" x2=\"{right_mst:.1}\" y2=\"{y_bottom}\" class=\"cmp\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">{} max sustainable {:.0}/s</text>",
+        x0,
+        y_bottom + 52.0,
+        right.0,
+        right.1.max_sustainable_throughput_per_s,
     );
     out.push_str("</svg>\n");
     Ok(out)
@@ -1224,6 +1427,65 @@ mod tests {
         assert!(with.contains("Disk anchors: empty 64 MB"));
         assert!(with.contains("not probed"));
         assert!(with.contains("/ composition over 1,000,000 committed"));
+    }
+
+    #[test]
+    fn the_stress_overlay_is_deterministic_and_two_sided() {
+        use crate::stress::{LoadStep, StressReport};
+        let step = |rate: f64, p99_us: u64, stable: bool| {
+            let mut h = Histogram::<u64>::new(3).unwrap();
+            for _ in 0..99 {
+                h.record(10_000).unwrap();
+            }
+            h.record(p99_us).unwrap();
+            LoadStep {
+                rate,
+                offered_load_sustained: rate,
+                operations: vec![
+                    OperationMeasurement::from_histogram("composition_read", &h, 0).unwrap(),
+                ],
+                stable,
+                breaches: if stable {
+                    vec![]
+                } else {
+                    vec!["p99".to_owned()]
+                },
+                generator_bound: false,
+                resources: None,
+            }
+        };
+        let report = |mst: f64| StressReport {
+            corpus: "cnf.scale.10k".to_owned(),
+            environment: serde_json::from_value(serde_json::json!({
+                "hardware_class": "test", "cores": 1, "memory_gb": 1,
+                "storage_class": "ram", "topology": "stub"
+            }))
+            .unwrap(),
+            step_warmup_s: 30,
+            step_hold_s: 120,
+            p99_budget_ms: 1000.0,
+            error_budget: 0.001,
+            steps: vec![
+                step(2.0, 40_000, true),
+                step(mst, 200_000, true),
+                step(mst * 2.0, 4_000_000, false),
+            ],
+            max_sustainable_throughput_per_s: mst,
+            ladder_capped: false,
+            generator_bound: false,
+            remark: "r".to_owned(),
+        };
+        let ours = report(256.0);
+        let theirs = report(512.0); // the comparison side winning is drawn plainly
+        let svg = stress_compare_svg(("ehrbase-rs", &ours), ("EHRbase (Java)", &theirs)).unwrap();
+        assert_eq!(
+            svg,
+            stress_compare_svg(("ehrbase-rs", &ours), ("EHRbase (Java)", &theirs)).unwrap()
+        );
+        assert!(svg.contains("ehrbase-rs max sustainable 256/s"));
+        assert!(svg.contains("EHRbase (Java) max sustainable 512/s"));
+        assert!(svg.contains("class=\"curve\"") && svg.contains("class=\"cmp\""));
+        assert!(svg.contains("prefers-color-scheme: dark"));
     }
 
     #[test]

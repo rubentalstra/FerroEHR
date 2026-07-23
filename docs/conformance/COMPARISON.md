@@ -19,8 +19,8 @@
 
 | | ehrbase-rs | upstream (Java) |
 |---|---|---|
-| Product | ehrbase-rs 3.6.0 | ehrbase-java 2.34.0 |
-| Run date | 2026-07-22 | 2026-07-21 |
+| Product | ehrbase-rs 3.7.0 | ehrbase-java 2.34.0 |
+| Run date | 2026-07-23 | 2026-07-22 |
 | Party statement | `tools/cnf-runner/party/ehrbase-rs/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
@@ -46,8 +46,8 @@ with a citation, never as silent skips. Verdicts are pure functions of
 
 ## Outcome totals
 
-Runs compared: **ehrbase-rs** (run of 2026-07-22) vs **upstream EHRbase
-2.34.0** (run of 2026-07-21) — the SAME catalogue through the same
+Runs compared: **ehrbase-rs** (run of 2026-07-23) vs **upstream EHRbase
+2.34.0** (run of 2026-07-22) — the SAME catalogue through the same
 runner, each with its own committed party statement.
 
 | | executed | passed | failed | errored | skipped | N/A |

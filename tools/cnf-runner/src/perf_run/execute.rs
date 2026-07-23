@@ -210,16 +210,20 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            if matches!(note(observed, reply.status), 200 | 204)
-                && let Some(ovid) = reply.etag.as_deref().map(strip_weak_quotes)
-            {
+            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let ovid = if ok {
+                reply.etag.as_deref().map(strip_weak_quotes)
+            } else {
+                refresh_current_ovid(client, &format!("/ehr/{ehr_id}/ehr_status"))
+            };
+            if let Some(ovid) = ovid {
                 if let Some(patient) = planned.patient {
                     captures.patient(patient, |s| s.status_ovid = Some(ovid));
                 } else {
                     captures.journey(journey, |s| s.status_ovid = Some(ovid));
                 }
             }
-            matches!(note(observed, reply.status), 200 | 204)
+            ok
         }
         PerfOp::CompositionCommit => {
             let template = planned
@@ -325,15 +329,21 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            if matches!(note(observed, reply.status), 200 | 204)
-                && let Some(next) = reply.etag.as_deref().map(strip_weak_quotes)
-            {
+            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let next = if ok {
+                reply.etag.as_deref().map(strip_weak_quotes)
+            } else {
+                // Conflict/failure: re-resolve the current version so the
+                // NEXT amendment chains correctly (see `refresh_current_ovid`).
+                refresh_current_ovid(client, &format!("/ehr/{ehr_id}/composition/{object_uid}"))
+            };
+            if let Some(next) = next {
                 captures.patient(patient, |s| match planned.doc {
                     WardDoc::MedList => s.medlist_ovid = Some(next),
                     WardDoc::Gp => s.gp_ovid = Some(next),
                 });
             }
-            matches!(note(observed, reply.status), 200 | 204)
+            ok
         }
         PerfOp::CompositionDelete => {
             // Deletes the journey's own commit (the deletion journey
@@ -404,18 +414,20 @@ pub(crate) fn perform(
                 true,
                 Some(&preceding),
             )?;
-            if matches!(note(observed, reply.status), 200 | 204) {
-                if let Some(next) = reply.etag.as_deref().map(strip_weak_quotes) {
-                    if let Some(patient) = planned.patient {
-                        captures.patient(patient, |s| s.directory_ovid = Some(next));
-                    } else {
-                        captures.journey(journey, |s| s.directory_ovid = Some(next));
-                    }
-                }
-                true
+            let ok = matches!(note(observed, reply.status), 200 | 204);
+            let next = if ok {
+                reply.etag.as_deref().map(strip_weak_quotes)
             } else {
-                false
+                refresh_current_ovid(client, &format!("/ehr/{ehr_id}/directory"))
+            };
+            if let Some(next) = next {
+                if let Some(patient) = planned.patient {
+                    captures.patient(patient, |s| s.directory_ovid = Some(next));
+                } else {
+                    captures.journey(journey, |s| s.directory_ovid = Some(next));
+                }
             }
+            ok
         }
         PerfOp::ContributionCommit => {
             let template = planned
@@ -559,6 +571,27 @@ pub(crate) fn perform(
 
 /// The versioned-object uid of the document a governance stage addresses:
 /// the journey's own last commit, else the ward chart.
+/// Re-resolve a ward document's CURRENT version after a failed versioned
+/// update — what every real EHR client does on an optimistic-concurrency
+/// conflict (re-read, then amend from the fresh version). Without it a
+/// single lost race (409) or timed-out update leaves the tracked
+/// `OBJECT_VERSION_ID` stale forever and every later update on that
+/// patient fails — an instrument-made error cascade the first corrected-
+/// pack ladder measured as a false knee (398/409 update failures at one
+/// rung while the SUT answered every stale If-Match correctly). The
+/// refresh rides INSIDE the failed arrival (its latency is that arrival's
+/// honest conflict cost); the arrival still records as an error.
+fn refresh_current_ovid(client: &PerfClient, path: &str) -> Option<String> {
+    let reply = client
+        .request(reqwest::Method::GET, path, None, false, None)
+        .ok()?;
+    if reply.status == 200 {
+        reply.etag.as_deref().map(strip_weak_quotes)
+    } else {
+        None
+    }
+}
+
 fn current_doc_object_uid(
     planned: &PlannedArrival,
     captures: &CaptureStore,

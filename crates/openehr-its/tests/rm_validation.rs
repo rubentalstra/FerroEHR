@@ -303,7 +303,7 @@ fn corpus_files() -> Vec<std::path::PathBuf> {
     // The benchmark CKM examples exercise the exact hot commit shapes.
     roots.push(std::path::PathBuf::from(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/benchmark/templates/ckm"
+        "/../../tools/cnf-runner/artifacts/corpus/templates/ckm"
     )));
     let mut files = Vec::new();
     while let Some(dir) = roots.pop() {
@@ -445,7 +445,7 @@ fn corpus_equivalence_mutated_nodes() {
 fn ips_nodes_ride_the_fast_path() {
     let path = concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../tools/benchmark/templates/ckm/international-patient-summary.example.json"
+        "/../../tools/cnf-runner/artifacts/corpus/templates/ckm/international-patient-summary.example.json"
     );
     let doc: Value =
         serde_json::from_str(&std::fs::read_to_string(path).expect("read IPS example"))
@@ -715,4 +715,35 @@ fn terminology_uncoded_and_absent_slots_are_skipped() {
     let no_transition =
         json!({"_type": "ISM_TRANSITION", "current_state": coded("openehr", "245")});
     assert!(terminology_of("ISM_TRANSITION", &no_transition).is_empty());
+}
+
+/// The pinned rejection of the once-accepted wire instance: a half-open
+/// `DV_INTERVAL` carrying NO boundary flags (the ITS-JSON schema requires
+/// all four — `INTERVAL`/`DV_INTERVAL` `required`). The tolerant read defaults
+/// the missing flags to `false`, and the bound-presence rule then rejects
+/// the absent lower bound (BASE `foundation_types` `Interval`:
+/// `lower_unbounded` false asserts a finite bound). A properly-flagged
+/// half-open interval stays clean.
+#[test]
+fn flagless_half_open_interval_is_rejected() {
+    let stale_wire = json!({
+        "_type": "DV_INTERVAL",
+        "upper": {"_type": "DV_DURATION", "value": "PT1S"}
+    });
+    let violations = full(&stale_wire);
+    assert!(
+        violations.iter().any(|iv| iv.message
+            == "lower bound absent while lower_unbounded is false on type DV_INTERVAL"),
+        "got {violations:?}"
+    );
+
+    let proper = json!({
+        "_type": "DV_INTERVAL",
+        "upper": {"_type": "DV_DURATION", "value": "PT1S"},
+        "lower_unbounded": true,
+        "upper_unbounded": false,
+        "lower_included": false,
+        "upper_included": true
+    });
+    assert!(full(&proper).is_empty(), "got {:?}", full(&proper));
 }
