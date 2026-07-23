@@ -85,7 +85,7 @@ text { fill: #c3c2b7; }
 <text x="304.0813008130081" y="319" class="seg-label" text-anchor="middle">50</text><rect x="434.1626016260162" y="302" width="5.203252032520325" height="26" class="bar-na"/>
 
 <text x="447.36585365853654" y="319" class="muted">51</text>
-<text x="166" y="353" text-anchor="end">Security & privacy</text>
+<text x="166" y="353" text-anchor="end">Security &amp; privacy</text>
 <rect x="174" y="336" width="26.016260162601625" height="26" class="bar-passed"/>
 
 <text x="187.0081300813008" y="353" class="seg-label" text-anchor="middle">5</text><text x="208.0162601626016" y="353" class="muted">5</text>
