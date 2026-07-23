@@ -224,6 +224,24 @@ the system.
 
 ![The latency-throughput curve from the committed stress run](perf-assets/perf-stress-curve.svg)
 
+### The optimization probe
+
+Between the two verdict-bearing instruments sits a third, purely
+diagnostic one: `cnf-runner aql-probe`. It seeds the same class corpus
+fresh, fires the measurement machinery's own AQL set repeatedly, and
+records each query's wire-latency percentiles alongside the
+database-side cost per SQL statement — so an optimization is argued from
+attributed evidence on a realistically seeded database, never from a
+hunch on an empty one. Its report (`aql-probe.json`, schema-published)
+is exploration evidence for the optimization loop: it earns nothing and
+never touches the conformance record.
+
+```bash
+# the seeded-corpus AQL probe (exploration only)
+cnf-runner aql-probe --root tools/cnf-runner/artifacts \
+                     --ixit <ixit.json> --out <aql-probe.json>
+```
+
 The published assets are rendered from the committed `results.json` by
 `cnf-runner perf-assets` (wrapped by `scripts/render-perf-assets.sh`); the
 docs CI job re-renders and `git diff`s them, so a hand-edited or stale asset
