@@ -251,7 +251,9 @@ pub struct ChapterCounts {
 /// break strict XML parsers when emitted raw — "Security & privacy" once
 /// shipped an invalid document.
 fn xml_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 /// The schedule chapter of a case id — the SM component of an
@@ -527,7 +529,10 @@ mod tests {
             "sut & co",
             &[("Security & privacy", ChapterCounts::default())],
         );
-        assert!(!bars.contains("Security & privacy"), "raw ampersand: {bars}");
+        assert!(
+            !bars.contains("Security & privacy"),
+            "raw ampersand: {bars}"
+        );
         assert!(bars.contains("Security &amp; privacy"));
         assert!(bars.contains("sut &amp; co"));
     }
