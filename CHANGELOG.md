@@ -15,6 +15,34 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **AQL cross-EHR queries with `LIMIT` no longer collapse under corpus
+  scale**: predicates on multi-valued (anchored) paths now lower as
+  existential semi-joins (`EXISTS` — the predicate holds when ANY matched
+  node satisfies it; deterministic where the previous first-match pick was
+  plan-dependent), the archetype anchor index leads with the RM type so
+  the whole `CONTAINS`-class + archetype boundary is one index probe, and
+  queries that never touch audit fields no longer join the audit table.
+  The measured ward-dashboard profile (p99 5.8 s at class-POC scale) drops
+  to milliseconds-per-request territory.
+- The template **example generator no longer collapses `DV_INTERVAL`
+  wrappers** onto a single constrained bound: interval-valued elements keep
+  their interval identity (bounds as `/lower`/`/upper` sub-paths per the
+  Simplified Formats mapping), fixing generated examples the platform's own
+  validation rejected (the CKM CCTA report OPT); the CNF journey catalogue
+  re-commits the CCTA imaging report.
+
+### Removed
+
+- The completed ECC→CNF cutover comparison lane: the generated
+  `docs/conformance/cnf-comparison.md`, the `cnf-runner compare-ecc`
+  subcommand, the drift gate, and the preserved ECC catalogue/map (all in
+  git history; the five deferred grounds are re-registered on the
+  catalogue-deepening tracker). The `docs/conformance/CATALOG.md` pointer
+  stub is gone with it, and the CNF 2.0 design record moved to
+  `docs/conformance/cnf-design.md` as a permanent reference document.
+
 ### Changed
 
 - The CNF measured-performance workload is now a full **hospital

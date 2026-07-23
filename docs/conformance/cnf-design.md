@@ -1,23 +1,28 @@
-> **KEPT PERMANENTLY (owner ruling 2026-07-22— exempt from the
-> delete-on-implementation rule):** this document is the normative internal
-> reference for the CNF 2.0 design that the runner implements — in
-> particular the §8.14 performance machinery (the population-anchored
-> volumetric class model: POC 2 · S 15 · L 150 · R 1,500 peak arrivals/s
-> floors, the p99 ≤ 1 s SLO, the workload mixes and their OECD/Eurostat/NHS
-> derivation) that #233/W7 builds and measures against. It was deleted at
-> the 2026-07-22 cutover per the standard plan lifecycle and restored the
-> same day by owner instruction. Do not delete again; spec-facing citations
-> in CODE still point at `docs/specs/openehr/` per the citation rules —
-> this file is the design record, not a code-citable oracle.
+<!-- PERMANENT (owner rulings 2026-07-22 + 2026-07-23): this document is
+the CNF 2.0 design record — the normative internal reference the runner
+implements, in particular the §8.14 performance machinery (the
+population-anchored volumetric class model: POC 2 · S 15 · L 150 ·
+R 1,500 peak arrivals/s floors, the p99 <= 1 s SLO, the workload
+derivation from OECD/Eurostat/NHS statistics, and the hospital-simulation
+journey decomposition). It lived as docs/plans/cnf-conformance-strategy.md
+under the delete-on-implementation lifecycle, was deleted at the
+2026-07-22 cutover, restored the same day by owner instruction, and moved
+here 2026-07-23 as a living reference document. Never delete it and never
+move it back under docs/plans/. Spec-facing citations in CODE still point
+at docs/specs/openehr/ per the citation rules — this file is the design
+record, not a code-citable oracle. -->
 
-# openEHR conformance & certification — the CNF 2.0 framework
+# openEHR conformance & certification — the CNF 2.0 design
 
-*Tracker: [#197](https://github.com/rubentalstra/ehrbase-rs/issues/197).
-Plan-file lifecycle applies: this document is deleted in the PR that closes
-#197. Every claim was verified 2026-07-21 against the sources in the Appendix
-(source register), through repeated independent audit rounds (openEHR spec
-conformance, ISO, legal/regulatory, internal consistency, implementability).
-Revision history: the PR trail on #197.*
+*The design record of the CNF 2.0 framework this repository implements:
+the machine-readable conformance schedule, the pure verdict pipeline, the
+profiles and certificate, and the measured performance-class model. Every
+claim was verified 2026-07-21 against the sources in the Appendix (source
+register), through repeated independent audit rounds (openEHR spec
+conformance, ISO, legal/regulatory, internal consistency,
+implementability). Built by the CNF 2.0 reference runner
+(`tools/cnf-runner`); the measured artifacts live beside this document
+under `docs/conformance/`.*
 
 ---
 

@@ -15,7 +15,7 @@
 | --- | --- |
 | Functional | CORE, STANDARD, OPTIONS, SEC-BASIC |
 | Sec & Priv | SEC-BASIC PASS |
-| Performance | — |
+| Performance | class POC (earned) |
 | Ext Data Fmt | canonical-json |
 
 ## Profile Report
@@ -116,7 +116,7 @@ Classes are EARNED by measurement (never declared); every earned class is bound 
 
 | Class | Case | Claimed | Verdict |
 | --- | --- | --- | --- |
-| POC | PERF-hospital_sim-class_POC | yes | not earned |
+| POC | PERF-hospital_sim-class_POC | yes | EARNED |
 
 Environment (PERF-hospital_sim-class_POC): consumer-laptop · 8 cores · 16 GB · nvme · single-node docker compose (8-CPU/8GB Docker VM) on Apple M2
 

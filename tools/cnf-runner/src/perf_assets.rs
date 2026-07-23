@@ -59,17 +59,23 @@ fn log_pos(value: f64, min: f64, max: f64, x0: f64, x1: f64) -> f64 {
     x0 + (v.log10() - min.log10()) / (max.log10() - min.log10()) * (x1 - x0)
 }
 
-/// The class ladder: every class's offered-load floor (dashed outline) with
-/// the measured sustained load and verdict overlaid for measured classes.
-/// Log x-axis (arrivals/s).
+/// The class ladder: every class's offered-load floor (dashed outline)
+/// with the measured sustained load and verdict overlaid. Fixed columns —
+/// class + floor on the left, the log-scale bars in a fixed plot area, the
+/// measured/verdict status right-aligned at a fixed edge — so no label
+/// ever chases a bar end or leaves the canvas.
 #[must_use]
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement]) -> String {
-    let (width, height) = (760.0, 280.0);
-    let (x0, x1) = (150.0, 640.0);
-    let top = 56.0;
-    let row_h = 48.0;
-    let bar_h = 18.0;
+    let (width, height) = (640.0, 292.0);
+    let (x0, x1) = (170.0, 500.0);
+    // The status column starts a fixed gap after the plot area — one short
+    // verdict word per row (the sustained rate is what the measured bar's
+    // length shows; the exact number lives in the generated summary table).
+    let status_x = x1 + 16.0;
+    let top = 92.0;
+    let row_h = 44.0;
+    let bar_h = 16.0;
     let (min, max) = (1.0, 3000.0);
 
     let mut out = String::new();
@@ -80,7 +86,11 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Floors: POC 2/s · S 15/s · L 150/s · R 1,500/s (peak API arrivals, sustained) — classes are earned by measurement</text>"
+        "<text x=\"24\" y=\"48\" class=\"muted\">Floors are the request rate the hospital-simulation workload must sustain against the class corpus.</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"63\" class=\"muted\">A class is earned only with p99 &#8804; 1 s on every measured operation and zero errors under that load.</text>"
     );
 
     // Grid at decades.
@@ -103,153 +113,158 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
     });
     for (row, case) in classes.iter().enumerate() {
         #[allow(clippy::cast_precision_loss)] // row counts are tiny
-        let y = top + row as f64 * row_h + 10.0;
+        let y = top + row as f64 * row_h + 8.0;
         let floor = case.class.arrival_floor_per_s();
         let floor_x = log_pos(floor, min, max, x0, x1);
+        // Left column: the class and its floor, fixed position.
         let _ = writeln!(
             out,
-            "<text x=\"24\" y=\"{:.1}\">class {}</text>",
-            y + bar_h - 4.0,
+            "<text x=\"24\" y=\"{:.1}\">class {}</text>\
+             <text x=\"24\" y=\"{:.1}\" class=\"muted\">floor {floor}/s</text>",
+            y + 8.0,
             case.class.token(),
+            y + 22.0,
         );
         let _ = writeln!(
             out,
             "<rect x=\"{x0}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{bar_h}\" rx=\"4\" class=\"floor\"/>",
             floor_x - x0,
         );
-        let measured = measurements.iter().find(|m| m.class == case.class);
-        match measured {
-            Some(m) => {
-                let mx = log_pos(m.offered_load_sustained, min, max, x0, x1);
-                let _ = writeln!(
-                    out,
-                    "<rect x=\"{x0}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{bar_h}\" rx=\"4\" class=\"measured\"/>",
-                    (mx - x0).max(2.0),
-                );
-                let (class_name, verdict_text) = match m.verdict {
-                    ClassVerdict::Earned => ("earned", "EARNED"),
-                    ClassVerdict::NotEarned => ("notearned", "not earned"),
-                };
-                let _ = writeln!(
-                    out,
-                    "<text x=\"{:.1}\" y=\"{:.1}\">measured {:.1}/s</text>\
-                     <text x=\"{:.1}\" y=\"{:.1}\" class=\"{class_name}\"> · {verdict_text}</text>",
-                    mx + 8.0,
-                    y + bar_h - 4.0,
-                    m.offered_load_sustained,
-                    mx + 8.0 + 92.0,
-                    y + bar_h - 4.0,
-                );
-            }
-            None => {
-                let _ = writeln!(
-                    out,
-                    "<text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">floor {floor}/s — not measured</text>",
-                    floor_x + 8.0,
-                    y + bar_h - 4.0,
-                );
-            }
+        // Right column: the status, right-aligned at a fixed edge.
+        let status_y = y + bar_h - 3.0;
+        if let Some(m) = measurements.iter().find(|m| m.class == case.class) {
+            let mx = log_pos(m.offered_load_sustained, min, max, x0, x1);
+            let _ = writeln!(
+                out,
+                "<rect x=\"{x0}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{bar_h}\" rx=\"4\" class=\"measured\"/>",
+                (mx - x0).max(2.0),
+            );
+            let (class_name, verdict_text) = match m.verdict {
+                ClassVerdict::Earned => ("earned", "EARNED"),
+                ClassVerdict::NotEarned => ("notearned", "NOT EARNED"),
+            };
+            let _ = writeln!(
+                out,
+                "<text x=\"{status_x}\" y=\"{status_y:.1}\" class=\"{class_name}\">{verdict_text}</text>",
+            );
+        } else {
+            let _ = writeln!(
+                out,
+                "<text x=\"{status_x}\" y=\"{status_y:.1}\" class=\"muted\">not measured</text>",
+            );
         }
     }
     out.push_str("</svg>\n");
     out
 }
 
-/// Per-operation latency percentiles for one measured run: grouped p50/p90/
-/// p99 bars (one hue, light→dark), log y in milliseconds, the p99 ≤ 1 s SLO
-/// line. Percentiles re-derived from the decoded histograms.
+/// Per-operation latency percentiles for one measured run — a VERTICAL
+/// layout that grows organically with the operation count (the journey
+/// workload measures ~20+ operations; a horizontal grouping cannot fit):
+/// one row per operation, three horizontal bars (p50/p90/p99, one hue
+/// light→dark), latency on a log x-axis in milliseconds, the p99 ≤ 1 s
+/// SLO as a vertical line, the p99 value printed at its bar end.
+/// Percentiles re-derived from the decoded histograms.
 ///
 /// # Errors
 /// A message when a histogram fails to decode.
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn latency_percentiles_svg(measurement: &Measurement) -> Result<String, String> {
-    let (width, height) = (760.0, 360.0);
-    let (y_top, y_bottom) = (64.0, 300.0);
-    let x0 = 90.0;
-    let group_w = 150.0;
-    let bar_w = 34.0;
+    const LABEL_W: f64 = 214.0;
+    const BAR_H: f64 = 9.0;
+    const BAR_GAP: f64 = 2.0;
+    const ROW_H: f64 = 3.0 * (BAR_H + BAR_GAP) + 10.0;
+    const MARGIN: f64 = 24.0;
+    let width = 900.0;
+    let x0 = MARGIN + LABEL_W;
+    let x1 = width - 96.0;
     let (min_ms, max_ms) = (0.1, 3000.0);
+    let header_h = 78.0;
+    #[allow(clippy::cast_precision_loss)] // operation counts are tiny
+    let rows_h = measurement.operations.len() as f64 * ROW_H;
+    let height = header_h + rows_h + 34.0;
 
     let mut out = String::new();
     svg_open(&mut out, width, height);
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"28\" class=\"title\">Latency percentiles — class {} measured run ({})</text>",
+        "<text x=\"{MARGIN}\" y=\"28\" class=\"title\">Latency percentiles — class {} measured run ({})</text>",
         measurement.class.token(),
         measurement.case,
     );
     let _ = writeln!(
         out,
-        "<text x=\"24\" y=\"44\" class=\"muted\">Re-derived from the committed HDR V2 histograms · offered load {:.1}/s sustained for {} s · errors are a verdict input, not shown</text>",
+        "<text x=\"{MARGIN}\" y=\"44\" class=\"muted\">Re-derived from the committed HDR V2 histograms · offered load {:.1}/s sustained for {} s · errors are a verdict input, not shown</text>",
         measurement.offered_load_sustained, measurement.duration_s,
     );
-
-    let y_of = |ms: f64| {
-        let clamped = ms.clamp(min_ms, max_ms);
-        y_bottom
-            - (clamped.log10() - min_ms.log10()) / (max_ms.log10() - min_ms.log10())
-                * (y_bottom - y_top)
-    };
-
-    // Grid decades + axis labels.
-    for ms in [0.1, 1.0, 10.0, 100.0, 1000.0] {
-        let y = y_of(ms);
+    // Legend (the percentile ramp).
+    let mut lx = MARGIN;
+    for (class, label) in [("p50", "p50"), ("p90", "p90"), ("p99", "p99")] {
         let _ = writeln!(
             out,
-            "<line x1=\"{x0}\" y1=\"{y:.1}\" x2=\"{:.1}\" y2=\"{y:.1}\" class=\"grid\"/>\
-             <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"end\">{ms} ms</text>",
-            width - 40.0,
-            x0 - 8.0,
-            y + 4.0,
+            "<rect x=\"{lx}\" y=\"54\" width=\"14\" height=\"10\" rx=\"3\" class=\"{class}\"/>\
+             <text x=\"{:.1}\" y=\"63\" class=\"muted\">{label}</text>",
+            lx + 18.0,
+        );
+        lx += 62.0;
+    }
+
+    let x_of = |ms: f64| {
+        let clamped = ms.clamp(min_ms, max_ms);
+        x0 + (clamped.log10() - min_ms.log10()) / (max_ms.log10() - min_ms.log10()) * (x1 - x0)
+    };
+
+    // Vertical decade grid + axis labels along the bottom.
+    let grid_bottom = header_h + rows_h;
+    for ms in [0.1, 1.0, 10.0, 100.0, 1000.0] {
+        let x = x_of(ms);
+        let _ = writeln!(
+            out,
+            "<line x1=\"{x:.1}\" y1=\"{header_h}\" x2=\"{x:.1}\" y2=\"{grid_bottom:.1}\" class=\"grid\"/>\
+             <text x=\"{x:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{ms} ms</text>",
+            grid_bottom + 16.0,
         );
     }
-    // The SLO line.
-    let slo_y = y_of(1000.0);
+    // The SLO line (vertical at 1 s).
+    let slo_x = x_of(1000.0);
     let _ = writeln!(
         out,
-        "<line x1=\"{x0}\" y1=\"{slo_y:.1}\" x2=\"{:.1}\" y2=\"{slo_y:.1}\" class=\"slo\"/>\
-         <text x=\"{:.1}\" y=\"{:.1}\" class=\"slotext\" text-anchor=\"end\">SLO p99 &#8804; 1 s</text>",
-        width - 40.0,
-        width - 44.0,
-        slo_y - 6.0,
+        "<line x1=\"{slo_x:.1}\" y1=\"{header_h}\" x2=\"{slo_x:.1}\" y2=\"{grid_bottom:.1}\" class=\"slo\"/>\
+         <text x=\"{:.1}\" y=\"{:.1}\" class=\"slotext\">SLO p99 &#8804; 1 s</text>",
+        slo_x + 6.0,
+        header_h + 12.0,
     );
 
-    for (group, op) in measurement.operations.iter().enumerate() {
+    for (row, op) in measurement.operations.iter().enumerate() {
         let histogram = op.decode_histogram()?;
-        let percentiles = [
-            ("p50", "p50", histogram.value_at_quantile(0.50)),
-            ("p90", "p90", histogram.value_at_quantile(0.90)),
-            ("p99", "p99", histogram.value_at_quantile(0.99)),
-        ];
-        #[allow(clippy::cast_precision_loss)] // group counts are tiny
-        let gx = x0 + 30.0 + group as f64 * group_w;
-        for (i, (class, label, us)) in percentiles.iter().enumerate() {
+        #[allow(clippy::cast_precision_loss)] // row counts are tiny
+        let ry = header_h + row as f64 * ROW_H + 5.0;
+        let _ = writeln!(
+            out,
+            "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"end\">{}</text>",
+            x0 - 10.0,
+            ry + 1.5 * (BAR_H + BAR_GAP) + 3.0,
+            op.operation,
+        );
+        for (i, (class, quantile)) in [("p50", 0.50), ("p90", 0.90), ("p99", 0.99)]
+            .iter()
+            .enumerate()
+        {
             #[allow(clippy::cast_precision_loss)] // us << 2^52
-            let ms = *us as f64 / 1_000.0;
-            #[allow(clippy::cast_precision_loss)] // 3 bars per group
-            let x = gx + i as f64 * (bar_w + 2.0);
-            let y = y_of(ms);
+            let ms = histogram.value_at_quantile(*quantile) as f64 / 1_000.0;
+            #[allow(clippy::cast_precision_loss)] // 3 bars per row
+            let y = ry + i as f64 * (BAR_H + BAR_GAP);
+            let bar_end = x_of(ms);
             let _ = writeln!(
                 out,
-                "<rect x=\"{x:.1}\" y=\"{y:.1}\" width=\"{bar_w}\" height=\"{:.1}\" rx=\"4\" class=\"{class}\"/>\
-                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\" text-anchor=\"middle\">{}</text>\
-                 <text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\">{}</text>",
-                (y_bottom - y).max(2.0),
-                x + bar_w / 2.0,
-                y_bottom + 16.0,
-                label,
-                x + bar_w / 2.0,
-                y - 6.0,
+                "<rect x=\"{x0:.1}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{BAR_H}\" rx=\"2\" class=\"{class}\"/>\
+                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">{}</text>",
+                (bar_end - x0).max(2.0),
+                bar_end + 6.0,
+                y + BAR_H - 1.0,
                 format_ms(ms),
             );
         }
-        let _ = writeln!(
-            out,
-            "<text x=\"{:.1}\" y=\"{:.1}\" text-anchor=\"middle\">{}</text>",
-            gx + 1.5 * bar_w,
-            y_bottom + 34.0,
-            op.operation,
-        );
     }
     out.push_str("</svg>\n");
     Ok(out)
@@ -559,7 +574,7 @@ mod tests {
         let ladder_b = class_ladder_svg(&cases, &m);
         assert_eq!(ladder_a, ladder_b);
         assert!(ladder_a.contains("class POC"));
-        assert!(ladder_a.contains("measured 2.0/s"));
+        assert!(ladder_a.contains(">EARNED<"));
         assert!(ladder_a.contains("EARNED"));
         assert!(ladder_a.contains("not measured")); // the unmeasured classes say so
         assert!(ladder_a.contains("prefers-color-scheme: dark"));

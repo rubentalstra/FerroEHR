@@ -23,6 +23,7 @@ openEHR REST API (ITS-REST 1.1.0) &nbsp;·&nbsp; AQL 1.1 query engine &nbsp;·&n
 [![CNF STANDARD](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-standard.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![CNF OPTIONS](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-options.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 [![CNF SEC-BASIC](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-sec-basic.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
+[![CNF performance](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Frubentalstra%2Fehrbase-rs%2Fdevelop%2Fdocs%2Fconformance%2Fehrbase-rs%2Fbadge-performance.json)](https://github.com/rubentalstra/ehrbase-rs/blob/develop/docs/conformance/ehrbase-rs/CONFORMANCE_CERTIFICATE.md)
 
 [![openEHR BASE](https://img.shields.io/badge/openEHR_BASE-1.3.0-1F6FEB.svg)](https://specifications.openehr.org/releases/BASE/latest)
 [![openEHR RM](https://img.shields.io/badge/openEHR_RM-1.2.0-1F6FEB.svg)](https://specifications.openehr.org/releases/RM/latest)

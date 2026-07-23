@@ -26,16 +26,25 @@ impl Builder<'_> {
         let Some(filter) = self.ir.filter.clone() else {
             return Ok(());
         };
-        let cond = self.where_expr(&filter)?;
+        let cond = self.where_expr(&filter, true)?;
         self.q.and_where(cond);
         Ok(())
     }
 
-    pub(super) fn where_expr(&mut self, expr: &IrExpr) -> Result<Expr, AqlError> {
+    /// Lower one WHERE expression. `positive` tracks the polarity (flipped
+    /// under `NOT`): the existential anchored-leaf lowering
+    /// ([`data_leaf_exists`](Self::data_leaf_exists)) applies only in
+    /// positive positions, so `NOT (path > x)` keeps the scalar shape and
+    /// its SQL three-valued behaviour for absent leaves is unchanged.
+    pub(super) fn where_expr(&mut self, expr: &IrExpr, positive: bool) -> Result<Expr, AqlError> {
         match expr {
-            IrExpr::And(a, b) => Ok(self.where_expr(a)?.and(self.where_expr(b)?)),
-            IrExpr::Or(a, b) => Ok(self.where_expr(a)?.or(self.where_expr(b)?)),
-            IrExpr::Not(a) => Ok(self.where_expr(a)?.not()),
+            IrExpr::And(a, b) => Ok(self
+                .where_expr(a, positive)?
+                .and(self.where_expr(b, positive)?)),
+            IrExpr::Or(a, b) => Ok(self
+                .where_expr(a, positive)?
+                .or(self.where_expr(b, positive)?)),
+            IrExpr::Not(a) => Ok(self.where_expr(a, !positive)?.not()),
             IrExpr::Compare {
                 lhs,
                 op,
@@ -50,6 +59,12 @@ impl Builder<'_> {
                 // base_types master05 §Composite Identifiers and Case); a
                 // literal that is not a uuid can match no EHR (constant).
                 if let Some(expr) = self.ehr_id_typed_compare(lhs, *op, rhs)? {
+                    return Ok(expr);
+                }
+                // Existential lowering for an anchored data leaf compared to
+                // a bound value (any matched node satisfies) — positive
+                // polarity only.
+                if positive && let Some(expr) = self.exists_compare(lhs, *op, rhs, *coercion)? {
                     return Ok(expr);
                 }
                 // a mixed-type (`Raw`) leaf compared to a numeric literal
@@ -72,6 +87,10 @@ impl Builder<'_> {
             IrExpr::Exists(target) => Ok(self
                 .value_expr(target, ValueMode::Projection)?
                 .is_not_null()),
+            // TODO: unify `LIKE`/`matches` on anchored multi-valued paths
+            // with the existential lowering above (`exists_compare`) — they
+            // still take the scalar LIMIT-1 extraction, whose matched-node
+            // choice is order-undefined when a path matches several nodes.
             IrExpr::Like { path, pattern } => {
                 let lhs = self.value_expr(path, ValueMode::Value(Coercion::Text))?;
                 let pat = match pattern {
@@ -239,6 +258,55 @@ impl Builder<'_> {
                 Expr::cust("to_char(now(), 'YYYY-MM-DD\"T\"HH24:MI:SS.MSTZH:TZM')")
             }
             ScalarFn::CurrentTimezone => Expr::cust("to_char(now(), 'TZH:TZM')"),
+        })
+    }
+
+    /// The existential lowering of `path OP bound` / `bound OP path` where
+    /// the path is an anchored data leaf and the other operand is a
+    /// literal/param/scalar-function (never a second path — correlating two
+    /// walks stays scalar). Returns `Ok(None)` where the lowering does not
+    /// apply; the caller falls back to the scalar comparison.
+    fn exists_compare(
+        &mut self,
+        lhs: &Operand,
+        op: CompOp,
+        rhs: &Operand,
+        coercion: Coercion,
+    ) -> Result<Option<Expr>, AqlError> {
+        // Exactly one side a path; the extract keeps its written orientation.
+        let (leaf_target, bound, path_is_lhs) = match (lhs, rhs) {
+            (Operand::Path(t), b) if !matches!(b, Operand::Path(_)) => (t, b, true),
+            (b, Operand::Path(t)) if !matches!(b, Operand::Path(_)) => (t, b, false),
+            _ => return Ok(None),
+        };
+        let leaf = match leaf_target {
+            PathTarget::Data(leaf) => leaf.clone(),
+            PathTarget::EhrStatus(leaf) => {
+                self.ensure_ehr_status_root(leaf.source.0)?;
+                leaf.clone()
+            }
+            _ => return Ok(None),
+        };
+        // The same numeric-vs-text branch as the scalar comparison (QUERY
+        // master03 §Comparison operators).
+        let raw_numeric = coercion == Coercion::Raw && raw_numeric_wanted(&[lhs, rhs]);
+        let (mode, bound_expr) = if raw_numeric {
+            (
+                ValueMode::RawNumeric,
+                self.operand_value_raw_numeric(bound)?,
+            )
+        } else {
+            (
+                ValueMode::Value(coercion),
+                self.operand_value(bound, coercion)?,
+            )
+        };
+        self.data_leaf_exists(&leaf, mode, |extract| {
+            if path_is_lhs {
+                extract.binary(binoper(op), bound_expr)
+            } else {
+                bound_expr.binary(binoper(op), extract)
+            }
         })
     }
 
