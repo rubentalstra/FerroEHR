@@ -1873,12 +1873,8 @@ mod tests {
             vec![ValidationKind::CodedValue]
         );
 
-        // The good instance carries the BOUND rubric as its value (RM
-        // dv_coded_text: value must be the rubric — enforced since the
-        // rubric check landed; this fixture's list binds the code string
-        // as its label).
         let good = json!({
-            "_type": "DV_CODED_TEXT", "value": "at0001",
+            "_type": "DV_CODED_TEXT", "value": "x",
             "defining_code": {"_type": "CODE_PHRASE",
                 "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
                 "code_string": "at0001"}

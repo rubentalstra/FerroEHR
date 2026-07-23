@@ -6,7 +6,7 @@
 | --- | --- |
 | Solution | ehrbase-java 2.34.0 |
 | Vendor | EHRbase (vitagroup / upstream open-source project) |
-| Runner | cnf-runner 3.6.0 |
+| Runner | cnf-runner 3.7.0 |
 | Infrastructure | — |
 
 ## Scope of Test
@@ -15,6 +15,7 @@
 | --- | --- |
 | Functional | CORE, STANDARD |
 | Sec & Priv | — |
+| Performance | — |
 | Ext Data Fmt | canonical-json |
 
 ## Profile Report

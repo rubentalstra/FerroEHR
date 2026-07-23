@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR conformance",
-  "message": "NOT PASSING \u00b7 158/322 cases",
+  "message": "NOT PASSING \u00b7 159/325 cases",
   "color": "red"
 }

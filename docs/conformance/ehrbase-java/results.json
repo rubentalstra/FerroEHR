@@ -5,7 +5,7 @@
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.6.0",
+    "version": "3.7.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -15,7 +15,7 @@
       "canonical-json"
     ]
   },
-  "ixit_digest": "50fd94ddd3ef0d1e",
+  "ixit_digest": "bd88c8dadd68a7ce",
   "outcomes": [
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
@@ -4236,6 +4236,42 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-dotted_name",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `stored`, observed `validation_failed`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `stored`, observed `validation_failed`"
+        }
+      ]
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-reserved_name",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-unqualified_name",
+      "status": "failed",
+      "rows_driven": 1,
+      "rows_total": 1,
+      "failing_step": 1,
+      "reason": "expected `stored`, observed `validation_failed`",
+      "failed_rows": [
+        {
+          "row": 0,
+          "step": 1,
+          "reason": "expected `stored`, observed `validation_failed`"
+        }
+      ]
     },
     {
       "case": "I_DEFINITION_QUERY.valid_query-bad_formalism",

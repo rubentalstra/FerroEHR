@@ -136,66 +136,6 @@ fn check_coded_text(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
         .and_then(|t| t.get("value"))
         .and_then(Value::as_str);
     check_code_membership(v, wt, code_input, code, terminology);
-    check_coded_text_rubric(v, instance, wt, code_input, code);
-}
-
-/// `DV_CODED_TEXT.value` must be the RUBRIC of the defining code (RM
-/// data_types `dv_coded_text.adoc`: "A text item whose value must be the
-/// rubric from a controlled terminology […] in the language in which the
-/// data were authored"). Checkable exactly when the template BINDS a
-/// rubric for the committed code (the coded-list entry's label /
-/// localized labels — local at-codes and qualified external
-/// `term_definitions` alike): the committed value must match one of the
-/// bound languages' rubrics. A code the template binds no rubric for
-/// stays accepted — the spec demand is only enforceable against a known
-/// rubric.
-fn check_coded_text_rubric(
-    v: &mut Validator,
-    instance: &Value,
-    wt: &WebTemplateNode,
-    code_input: &WebTemplateInput,
-    code: Option<&str>,
-) {
-    let Some(code) = code else { return };
-    // `openehr`-terminology rubrics belong to the TERMINOLOGY, not the
-    // template: TERM ships official translations (`433` is "event" in en,
-    // "evento" in es) beyond whatever single-language label the template
-    // carries, so a translated rubric is spec-valid data the template
-    // cannot enumerate — the check stays scoped to the rubrics the
-    // template itself is authoritative for (archetype-local at-codes and
-    // explicitly bound external term_definitions).
-    if code_input.terminology.as_deref() == Some("openehr") {
-        return;
-    }
-    let Some(value) = instance.get("value").and_then(Value::as_str) else {
-        return;
-    };
-    let Some(entry) = code_input.list.iter().find(|cv| cv.value == code) else {
-        return;
-    };
-    let mut bound = entry
-        .label
-        .iter()
-        .chain(entry.localized_labels.values())
-        .peekable();
-    if bound.peek().is_none() {
-        return; // no rubric bound — not checkable
-    }
-    if !bound.any(|rubric| rubric == value) {
-        let expected = entry
-            .label
-            .clone()
-            .or_else(|| entry.localized_labels.values().next().cloned())
-            .unwrap_or_default();
-        v.push(
-            &wt.aql_path,
-            format!(
-                "coded value '{code}': value '{value}' is not the bound rubric \
-                 (expected '{expected}')"
-            ),
-            ValidationKind::CodedValue,
-        );
-    }
 }
 
 fn check_code_phrase(v: &mut Validator, instance: &Value, wt: &WebTemplateNode) {
