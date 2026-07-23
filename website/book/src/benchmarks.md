@@ -1,78 +1,82 @@
 # Benchmarks
 
-EHRbase-rs ships its own benchmark instrument, built on the same principle
-as the conformance suite: every published number is measured, reproducible,
-and reported in both directions. There is no marketing chart in this project
-that you cannot regenerate yourself with one command.
+EHRbase-rs measures performance with the **same instrument family that
+measures conformance** — the built-in CNF runner. There is no separate
+benchmark harness: every published number is measured by a committed,
+re-runnable instrument, reported in both directions, and regenerated from
+committed artifacts. There is no marketing chart in this project that you
+cannot regenerate yourself with one command.
 
 <!-- toc -->
 
-## What the benchmark simulates
+## The three instruments
 
-Rather than an abstract operation list, the workload models a **hospital
-day** on a ward of patients: admissions, vital-signs observations every
-shift, medication rounds, laboratory results arriving as CONTRIBUTION
-batches, clinicians reviewing charts (repeated reads, version history, AQL
-dashboards), documentation corrections producing new versions, and
-discharges. The clinical documents are built from **official openEHR CKM
-templates** (Vital signs, Generic lab test result, ePrescription, eReferral,
-GP data set), vendored with provenance, with deterministic seeded variation
-so every run — and every compared server — receives byte-identical requests.
+- **Measured class runs** (`cnf-runner perf`, wrapped by
+  `CONF_PERF_CLASS=… bash scripts/conformance.sh`) — conformance by
+  measurement: the open-loop hospital-simulation workload holds a
+  population-anchored offered-load floor for the normative hour (or an
+  extended 2–12 h hold), and the volumetric deployment class is **earned or
+  not** from the committed record. Every measurement embeds re-checkable
+  HDR histograms and per-container resource telemetry. See
+  [Performance](performance.md).
+- **The step-load stress ladder** (`cnf-runner stress`) — exploration: the
+  same workload at geometrically climbing rates until the system leaves the
+  envelope, then bisection to the **maximum sustainable throughput** (the
+  knee of the latency-throughput curve). Each rung embeds its own
+  histograms and resource telemetry; a rung where the load *generator* fell
+  behind is flagged generator-bound, never counted against the server. A
+  stress report earns no class.
+- **The AQL probe** (`cnf-runner aql-probe`) — diagnosis: the instrument's
+  AQL set fired repeatedly against a freshly seeded corpus, with
+  wire-latency percentiles and the database-side cost attributed per SQL
+  statement. The optimization loop's entry point; exploration evidence
+  only.
 
-The blend works out to roughly 70 % reads / 30 % writes, the capacity-planning
-mix. Three profiles compress the day differently: `smoke` (a two-minute
-self-test), `hour` (a steady-state measured hour), and `day` (a compressed
-day with morning-round and shift-change peaks). Databases are pre-seeded to
-a scale rung (`empty`, `10k`, `100k`, `1m` compositions) before measuring.
+## What the workload simulates
 
-## What is measured
+All three instruments drive the same **hospital simulation**: clinical
+journeys — admissions, shift vitals, medication rounds, laboratory results
+arriving asynchronously, chart reviews, AQL ward dashboards, corrections,
+discharges — expanded from a committed journey catalogue onto an open-loop
+arrival schedule, with payloads built from **official openEHR CKM
+templates** vendored with provenance. Every stage is its own planned
+arrival instant, so latency is measured from the *planned* time
+(coordinated-omission-corrected) and a stalled server cannot hide. The full
+workload story lives in [Performance](performance.md#the-hospital-simulation).
 
-- **Latency** per operation class (16 classes, from composition creates to
-  AQL dashboards): p50/p90/p99/p99.9/max from HdrHistograms, recorded
-  against *planned* send times (coordinated-omission-corrected), warmup
-  discarded.
-- **Throughput** over the window, and the **saturation knee**: `bench knee`
-  ramps the identical clinical mix at ascending load factors until p99
-  crosses one second or errors exceed 0.1 %, publishing the last sustained
-  step. A ladder step where the load generator itself fell behind schedule
-  is flagged generator-bound, and a server that stops answering is recorded
-  as having **died under load** — a first-class finding, never hidden.
-- **Resources**: CPU and memory of the app *and* database containers
-  sampled through the run, idle baselines, cold-start time, and storage
-  bytes per composition.
-- **Charts**: every report embeds generated SVGs (latency ranges, CPU/RSS
-  over the run, cross-server comparisons) — committed text files, no
-  external tooling.
-
-## Running it
+## Running the instruments
 
 ```bash
-# our server, from the current sources
-bash scripts/benchmark.sh
+# the measured class run (the conformance pipeline's perf stage)
+CONF_PERF_CLASS=POC bash scripts/conformance.sh
 
-# the same workload against upstream EHRbase (Java)
-BENCH_SUT=ehrbase-java bash scripts/benchmark.sh
+# the step-load stress ladder (fresh compose + seed, then the climb)
+cnf-runner stress --root tools/cnf-runner/artifacts \
+                  --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
+                  --out docs/conformance/ehrbase-rs/stress.json
 
-# the saturation ladder
-BENCH_KNEE=1 BENCH_SCALE=10k bash scripts/benchmark.sh
-
-# the cross-server comparison from two committed runs
-bench compare --from docs/benchmarks/ehrbase-rs/results.json \
-              --from docs/benchmarks/ehrbase-java/results.json
+# the AQL optimization probe
+cnf-runner aql-probe --root tools/cnf-runner/artifacts \
+                     --ixit tools/cnf-runner/party/ehrbase-rs/ixit.json \
+                     --out docs/conformance/ehrbase-rs/aql-probe.json
 ```
 
-Artefacts land in `docs/benchmarks/<sut>/` (`results.json`, `REPORT.md`,
-`charts/`, raw histograms) and the comparison in
-`docs/benchmarks/COMPARISON.md`.
+Every instrument seeds a freshly composed, empty server through the public
+API and the stack is torn down afterwards — there is no seed reuse, so no
+run ever measures another run's leftovers. Committed records land under
+`docs/conformance/<sut>/`; the published charts regenerate from them
+(`scripts/render-perf-assets.sh`, `scripts/render-comparison.sh`) and are
+diff-guarded in CI.
 
 ## Fairness rules
 
-The comparison methodology is pre-registered and enforced by construction:
-the same client code drives both servers (the conformance suite's
-transport), the workload is frozen and hashed (`workload.lock`), warmup is
-discarded symmetrically, configuration parity is explicit (connection pools
-raised in lockstep; version signing — an ehrbase-rs extension upstream does
-not perform — is disabled for throughput runs and labeled), and the report
-always carries a computed "where the other side wins" section plus a
-limitations block. Single-host preview runs are labeled as such; publication
-numbers follow a multi-run protocol on dedicated hardware.
+The comparison methodology is enforced by construction: the same runner
+drives both servers against the same committed catalogue and ladder, each
+on its own freshly composed stack with its own committed party statement;
+payload skeletons are byte-identical; database maintenance is settled
+deterministically on both sides before every measured window; configuration
+parity is explicit (connection pools raised in lockstep; version signing —
+an ehrbase-rs extension upstream does not perform — disabled for throughput
+comparisons and labeled). Both directions publish on equal footing: where
+upstream sustains more, its curve says so exactly like the reverse — see
+[Comparison](comparison.md).

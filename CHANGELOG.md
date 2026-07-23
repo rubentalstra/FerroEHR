@@ -17,6 +17,10 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **`cnf-runner stress-compare`** — the cross-SUT stress overlay: both
+  systems' latency-throughput curves on one canvas, rendered
+  deterministically from the two committed `stress.json` reports (driven
+  by `scripts/render-comparison.sh`); both directions on equal footing.
 - **Measured runs record resource telemetry**: each measurement in
   `results.json` now carries an optional, schema-published `resources`
   block — per-container (server and database separately) CPU, resident
@@ -95,6 +99,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **The transitional benchmark lab** (`tools/benchmark`,
+  `scripts/benchmark.sh`, `docker/benchmark/`, the manual benchmark
+  workflow, and the committed `docs/benchmarks/**` artifacts): all
+  measurement is native to the CNF runner — measured class runs, the
+  stress ladder, the AQL probe, and the cross-SUT stress overlay — and the
+  comparison page now derives its performance side from the committed
+  `docs/conformance/<sut>/stress.json` reports (upstream shown as "not
+  measured yet" until its report lands, never a one-sided claim).
 - The completed ECC→CNF cutover comparison lane: the generated
   `docs/conformance/cnf-comparison.md`, the `cnf-runner compare-ecc`
   subcommand, the drift gate, and the preserved ECC catalogue/map (all in
@@ -105,6 +117,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Population AQL with `LIMIT` now streams instead of materializing the
+  corpus**: a LIMIT-bearing, unordered, non-DISTINCT, non-aggregate
+  population query lowers to a streaming FROM shape (the current-version
+  spine with `LATERAL` node probes), so PostgreSQL stops at the LIMIT
+  instead of building an archetype-anchor bitmap over every matching node
+  first — measured on a million-composition corpus, the cross-EHR ward
+  worklist drops from ~113 ms to ~2 ms per execution (~40× fewer buffer
+  reads); ordered/aggregate/EHR-scoped queries keep the previous plan
+  shape, and result semantics are unchanged. A version-field projection
+  of `uid`/`contribution_id`/`lifecycle_state` no longer joins the audit
+  table it never reads.
 - **AQL cross-EHR queries with `LIMIT` no longer collapse under corpus
   scale**: predicates on multi-valued (anchored) paths now lower as
   existential semi-joins (`EXISTS` — the predicate holds when ANY matched

@@ -263,7 +263,15 @@ window with the warmup shaded, and the database volume's on-disk size at
 four anchors — empty, after the scale seed, after the ward seed, and after
 the measured window — down to the storage cost per committed composition.
 These numbers are capacity-planning context — they never influence whether
-a class is earned. The rendered resource time-series and disk-growth charts
-join this page with the next committed measured run.
+a class is earned.
+
+![Resource telemetry across the proof-of-concept measured run](perf-assets/perf-resources-class-POC.svg)
+
+The database volume's on-disk size is probed at four anchors — empty, after
+the scale seed, after the ward seed, and after the measured window — so the
+chart also answers the storage question directly: what one committed
+composition costs on disk, and how much the sustained hour wrote.
+
+![Disk growth across the measured run's four anchors](perf-assets/perf-disk-growth.svg)
 
 {{#include ../generated/perf-summary.md}}

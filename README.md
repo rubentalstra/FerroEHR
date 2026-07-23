@@ -315,41 +315,40 @@ telemetry**: per-container CPU, resident memory, and block/network I/O for
 the server and the database separately — plus, on class runs, the database
 volume's disk anchors down to the storage cost per committed composition.
 The committed record shows what a run cost the machine and where saturation
-lives; telemetry is measured context only and never influences a verdict.
+lives; telemetry is measured context only and never influences a verdict:
+
+![Resource telemetry across the measured class run](website/book/src/perf-assets/perf-resources-class-POC.svg)
+
+![Disk growth across the measured run's four anchors](website/book/src/perf-assets/perf-disk-growth.svg)
 
 ## Measured against EHRbase (Java)
 
-One benchmark, two servers, byte-identical requests: a **simulated hospital
-day** of fully-populated clinical documents — admissions, shift vitals,
-medication rounds, lab results, AQL chart reviews, corrections, discharges —
-on official openEHR CKM templates. Both directions are always published, and
-every number is derived from committed run artifacts — nothing here is
-hand-typed.
+One instrument, two servers, byte-identical requests: both systems run the
+**same committed CNF catalogue** for conformance and the **same step-load
+stress ladder** for throughput — the hospital-simulation workload on
+official openEHR CKM templates, seeded fresh through the public API on each
+side's own composed stack. Both directions are always published, and every
+number derives from committed run artifacts — nothing here is hand-typed.
 
-The measured **knee throughput**, **p99 latency per operation class**, and
-**runtime footprint** are published as generated charts from the committed
-comparison run. The knee is the highest load that holds the p99
-service-level objective with errors inside budget; the ladder auto-extends
-until a real breach bounds each knee from above, so neither side's figure is
-a guess. Where upstream wins an operation class, its bar is drawn exactly
-like one where it loses.
+The stress ladder climbs geometrically until the system leaves the envelope
+(p99 over budget or errors past tolerance), then bisects to the **maximum
+sustainable throughput** — every load step embeds its own re-checkable
+histograms and per-container resource telemetry, and a breached step is
+reported with the exact violation. Where upstream sustains a higher rate,
+its curve is drawn exactly like one where it doesn't:
 
-![Maximum sustained throughput at the SLO](docs/benchmarks/charts/comparison-knee.svg)
+![Both systems' latency-throughput curves](website/book/src/perf-assets/perf-stress-compare.svg)
 
-![p99 latency per operation class](docs/benchmarks/charts/comparison-p99.svg)
-
-![App memory: idle and peak resident set](docs/benchmarks/charts/comparison-memory.svg)
-
-The full, generated comparison — the throughput knee, the per-class latency
-table, memory, CPU, cold start, and storage per composition, with a
-computed "where the other side wins" section — is the
+The full, generated comparison — profile verdicts, capability-by-capability
+evidence, failures in both directions, and the stress overlay once both
+committed reports exist — is the
 [comparison page](https://rubentalstra.github.io/ehrbase-rs/docs/latest/comparison.html)
 on the website and [`docs/conformance/COMPARISON.md`](docs/conformance/COMPARISON.md)
-in the repo, with the per-system benchmark artifacts under
-[`docs/benchmarks/`](docs/benchmarks/). Reproduce either side with
-`scripts/benchmark.sh`; the pre-registered workload,
-coordinated-omission-corrected latency, and config-parity method are
-documented in the tool itself, `tools/benchmark/`.
+in the repo, with each system's committed measurement records under
+[`docs/conformance/`](docs/conformance/). Reproduce either side with the
+built-in instruments: `bash scripts/conformance.sh` (`CONF_SUT=ehrbase-java`
+for upstream) and `cnf-runner stress` / `cnf-runner aql-probe`
+(`tools/cnf-runner/`).
 
 ## Deployment
 
