@@ -21,11 +21,13 @@
 //! arrivals (uniform + diurnal curves) · [`execute`] the per-stage wire
 //! realization + captured-id state · [`window`] the measured window core
 //! shared by the class runs (conformance) and the stress ladder
-//! (exploration).
+//! (exploration) · [`resources`] the per-container resource sampler + disk
+//! anchors (measured context, never verdict-bearing).
 
 pub mod client;
 pub mod corpus;
 pub mod execute;
 pub mod pack;
+pub mod resources;
 pub mod schedule;
 pub mod window;
