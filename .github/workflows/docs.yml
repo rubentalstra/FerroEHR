@@ -53,7 +53,7 @@ jobs:
       - name: Conformance-assets drift gate (regenerated SVGs match the committed assets)
         # comparison-assets/ is gitignored build output (regenerated above);
         # the committed, drift-guarded copies are the product's own.
-        run: git diff --exit-code website/book/src/conformance-assets website/landing/assets/conformance-heat-grid.svg
+        run: git diff --exit-code website/book/src/conformance-assets website/landing/assets/conformance-heat-grid.svg website/book/src/comparison-assets/conformance-heat-grid-java.svg website/book/src/comparison-assets/conformance-chapter-bars-java.svg
       - name: Markdown lint gate
         run: mdbook-lint lint website/book/src
       - name: Assemble _site (landing + api + /docs/dev/)
