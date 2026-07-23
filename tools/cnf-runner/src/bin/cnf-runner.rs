@@ -742,10 +742,21 @@ fn journey_context(
     Ok((catalogue, pack))
 }
 
+/// The seeding milestones the disk anchors probe at (`perf` passes a
+/// probing observer; `stress` observes nothing).
+#[derive(Debug, Clone, Copy)]
+enum SeedStage {
+    BeforeScale,
+    AfterScale,
+    AfterWard,
+}
+
 /// Seed the scale corpus + the standing ward (or load the sidecar index a
 /// prior seeding wrote — the index lives beside `artifact_path` so `perf`
 /// and `stress` share it). Ward seeding is idempotent, so a pre-journey
-/// sidecar upgrades in place on the next non-skip run.
+/// sidecar upgrades in place on the next non-skip run. `stage` observes
+/// the seeding milestones (never called on a `--skip-seed` load — those
+/// anchors would be dishonest).
 #[allow(clippy::too_many_arguments)] // the one-shot seeding seam both handlers share
 fn seed_or_load_corpus(
     client: &cnf_runner::perf_run::client::PerfClient,
@@ -756,6 +767,7 @@ fn seed_or_load_corpus(
     skip_seed: bool,
     seed_workers: usize,
     progress: &(dyn Fn(String) + Sync),
+    stage: &mut dyn FnMut(SeedStage),
 ) -> Result<cnf_runner::perf_run::corpus::SeededCorpus, String> {
     use cnf_runner::perf_run::corpus;
     let index_path =
@@ -769,6 +781,7 @@ fn seed_or_load_corpus(
             });
     }
     let (ehrs, versions) = corpus::scale_shape(corpus_key)?;
+    stage(SeedStage::BeforeScale);
     let mut seeded = corpus::seed_scale_ladder(
         client,
         corpus_key,
@@ -779,8 +792,10 @@ fn seed_or_load_corpus(
         progress,
     )
     .map_err(|e| format!("seeding failed: {e}"))?;
+    stage(SeedStage::AfterScale);
     corpus::seed_ward(client, &mut seeded, journey_pack, seed_workers, progress)
         .map_err(|e| format!("ward seeding failed: {e}"))?;
+    stage(SeedStage::AfterWard);
     let text =
         serde_json::to_string(&seeded).map_err(|e| format!("serialize corpus index: {e}"))?;
     std::fs::write(&index_path, text)
@@ -883,6 +898,8 @@ fn stress_command(
         skip_seed,
         seed_workers,
         &progress,
+        // The stress instrument records no disk anchors (exploration only).
+        &mut |_| {},
     ) {
         Ok(corpus) => corpus,
         Err(e) => {
@@ -1038,6 +1055,12 @@ fn perf_command(
         }
     };
     let progress = |message: String| eprintln!("[perf] {message}");
+    // Resource sampling is optional by capability: no ixit `containers`
+    // block → no `resources` record, never a failed run.
+    let containers = ixit.containers.clone();
+    if containers.is_none() {
+        progress("resources: not sampled (ixit declares no `containers` block)".to_owned());
+    }
 
     let mut earned_all = true;
     for (path, case) in selected {
@@ -1046,6 +1069,30 @@ fn perf_command(
             case.id,
             path.display()
         );
+        // The disk anchors bracket the seeding milestones; every probe
+        // failure degrades to an absent anchor with the reason logged.
+        let mut disk = cnf_runner::perf::DiskAnchors {
+            before_scale_seed_bytes: None,
+            after_scale_seed_bytes: None,
+            after_ward_seed_bytes: None,
+            after_window_bytes: None,
+            seed_compositions: perf_run::corpus::scale_shape(case.corpus.as_str())
+                .ok()
+                .and_then(|(ehrs, versions)| u64::try_from(ehrs.saturating_mul(versions)).ok()),
+        };
+        let probe_volume = |label: &str| -> Option<u64> {
+            let db = &containers.as_ref()?.db;
+            match perf_run::resources::db_volume_bytes(db) {
+                Ok(bytes) => {
+                    progress(format!("disk anchor {label}: {bytes} bytes"));
+                    Some(bytes)
+                }
+                Err(e) => {
+                    progress(format!("disk anchor {label} unavailable: {e}"));
+                    None
+                }
+            }
+        };
         let corpus = match seed_or_load_corpus(
             &client,
             case.corpus.as_str(),
@@ -1055,6 +1102,17 @@ fn perf_command(
             skip_seed,
             seed_workers,
             &progress,
+            &mut |milestone| match milestone {
+                SeedStage::BeforeScale => {
+                    disk.before_scale_seed_bytes = probe_volume("before scale seed");
+                }
+                SeedStage::AfterScale => {
+                    disk.after_scale_seed_bytes = probe_volume("after scale seed");
+                }
+                SeedStage::AfterWard => {
+                    disk.after_ward_seed_bytes = probe_volume("after preflight + ward seed");
+                }
+            },
         ) {
             Ok(corpus) => corpus,
             Err(e) => {
@@ -1067,7 +1125,13 @@ fn perf_command(
         // demonstration of the same class).
         let warmup_s = case.workload.warmup.0;
         let duration_s = case.workload.duration.0.max(hours.saturating_mul(3600));
-        let measurement = match perf_run::window::drive_case(
+        // The sampler brackets the whole window (warmup + sustained + the
+        // completion drain) and stops after the dispatcher's last
+        // completion lands — drive_case returns only then.
+        let sampler = containers
+            .as_ref()
+            .map(|c| perf_run::resources::ResourceSampler::start(c, warmup_s, duration_s));
+        let mut measurement = match perf_run::window::drive_case(
             case,
             &client,
             &corpus,
@@ -1084,6 +1148,30 @@ fn perf_command(
                 return ExitCode::from(2);
             }
         };
+        if let Some(sampler) = sampler {
+            let (series, notes) = sampler.stop();
+            for note in notes {
+                progress(note);
+            }
+            disk.after_window_bytes = probe_volume("after measured window");
+            let sampled_any = series.iter().any(|s| !s.samples.is_empty());
+            let anchored_any = disk.before_scale_seed_bytes.is_some()
+                || disk.after_scale_seed_bytes.is_some()
+                || disk.after_ward_seed_bytes.is_some()
+                || disk.after_window_bytes.is_some();
+            if sampled_any || anchored_any {
+                measurement.resources = Some(cnf_runner::perf::ResourcesRecord {
+                    sample_interval_s: perf_run::resources::SAMPLE_INTERVAL.as_secs(),
+                    containers: series,
+                    disk,
+                });
+            } else {
+                progress(
+                    "resources: not sampled (container runtime unreachable for the whole run)"
+                        .to_owned(),
+                );
+            }
+        }
         for op in &measurement.operations {
             println!(
                 "  {}: {} requests, {} errors, p50 {:.1}ms p90 {:.1}ms p99 {:.1}ms",
