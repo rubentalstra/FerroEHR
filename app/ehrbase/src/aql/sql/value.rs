@@ -85,8 +85,26 @@ impl Builder<'_> {
             return Ok(coerce_value(base, mode, leaf));
         }
 
+        let (mut sub, last) = self.anchored_walk(leaf, &src)?;
+        let base = extract_base(col(&last, "data"), jp.as_deref());
+        sub.expr(coerce_value(base, mode, leaf));
+        sub.limit(1);
+        Ok(Expr::from(sub))
+    }
+
+    /// The anchored containment walk shared by the scalar extraction (above)
+    /// and the existential predicate lowering
+    /// ([`data_leaf_exists`](Self::data_leaf_exists)): a correlated
+    /// `SELECT`-less subquery joining one `node` alias per anchor step, with
+    /// the nested-set containment + type/constraint conditions. Returns the
+    /// statement (FROM/WHERE only) and the innermost alias.
+    fn anchored_walk(
+        &mut self,
+        leaf: &LeafPath,
+        src: &str,
+    ) -> Result<(sea_query::SelectStatement, String), AqlError> {
         let mut sub = Query::select();
-        let mut prev = src;
+        let mut prev = src.to_owned();
         let mut last = String::new();
         for step in &leaf.anchor {
             let alias = format!("s{}", self.next_ctr());
@@ -105,10 +123,43 @@ impl Builder<'_> {
             prev.clone_from(&alias);
             last = alias;
         }
+        Ok((sub, last))
+    }
+
+    /// The EXISTENTIAL lowering of a predicate on an anchored data leaf:
+    /// `EXISTS (SELECT 1 <walk> WHERE <cond(extracted value)>)` — the
+    /// predicate holds when ANY node the path matches satisfies it.
+    ///
+    /// NOTE: QUERY master03 §WHERE is silent on predicates over multi-valued
+    /// paths — any-match is our own design decision (also the prior-art
+    /// convention): it is deterministic where a scalar `LIMIT 1` pick without
+    /// an ordering is not, and it lets the planner cost the filter as a
+    /// semi-join instead of an opaque scalar subquery (which the measured
+    /// cross-EHR profile showed collapsing cardinality estimates and
+    /// materializing bitmap plans under `LIMIT`).
+    ///
+    /// Returns `Ok(None)` when the leaf is not an anchored-walk extraction
+    /// (uid synthesis, a promoted column, or an inline fragment read) — the
+    /// caller falls back to the scalar comparison, which is exact there.
+    pub(super) fn data_leaf_exists(
+        &mut self,
+        leaf: &LeafPath,
+        mode: ValueMode,
+        cond: impl FnOnce(Expr) -> Expr,
+    ) -> Result<Option<Expr>, AqlError> {
+        if leaf.anchor.is_empty()
+            || self.version_uid_expr(leaf, mode).is_some()
+            || self.promoted_leaf_expr(leaf, mode).is_some()
+        {
+            return Ok(None);
+        }
+        let src = self.source_node(leaf.source.0)?;
+        let jp = fragment_jsonpath(leaf);
+        let (mut sub, last) = self.anchored_walk(leaf, &src)?;
         let base = extract_base(col(&last, "data"), jp.as_deref());
-        sub.expr(coerce_value(base, mode, leaf));
-        sub.limit(1);
-        Ok(Expr::from(sub))
+        sub.expr(Expr::val(1));
+        sub.and_where(cond(coerce_value(base, mode, leaf)));
+        Ok(Some(Expr::exists(sub)))
     }
 
     /// The server-assigned `OBJECT_VERSION_ID` for a `uid` / `uid/value` path on

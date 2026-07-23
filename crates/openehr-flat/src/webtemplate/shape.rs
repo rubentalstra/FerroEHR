@@ -500,7 +500,13 @@ fn process_children(mut node: WebTemplateNode, depth: usize) -> Option<WebTempla
 }
 
 fn is_skippable(rm_type: &str) -> bool {
-    rm_type.starts_with("DV_") || rm_type == "ELEMENT"
+    // A DV_INTERVAL wrapper is NEVER promoted away: its bounds are FLAT
+    // sub-paths of the interval node (ITS-REST simplified_formats master05
+    // §DV_INTERVAL — `/lower`, `/upper` each carrying the bound type's own
+    // suffixes), so collapsing the wrapper onto a single constrained bound
+    // loses the interval identity and mis-shapes the built RM (an
+    // ELEMENT.value must stay the interval, RM data_types §DV_INTERVAL).
+    (rm_type.starts_with("DV_") && !rm_type.starts_with("DV_INTERVAL")) || rm_type == "ELEMENT"
 }
 
 /// Merge a two-child `DV_CODED_TEXT` + `DV_TEXT` pair with equal paths into a
