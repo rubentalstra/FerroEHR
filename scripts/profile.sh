@@ -12,10 +12,10 @@ L="${1:-32}"
 WINDOW="${2:-120}"
 SCALE="${PROFILE_SCALE:-10k}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-OUT="docs/benchmarks/profiles/${STAMP}-L${L}-${SCALE}.md"
-mkdir -p docs/benchmarks/profiles
+OUT="docs/profiles/${STAMP}-L${L}-${SCALE}.md"
+mkdir -p docs/profiles
 
-# Pool/signing parity identical to the benchmark harness.
+# Pool/signing parity identical to the measurement instruments (cnf-runner).
 export EHRBASE_DB__MAX_CONNECTIONS="${BENCH_DB_POOL:-50}"
 export EHRBASE_SIGNING__ENABLED=false
 

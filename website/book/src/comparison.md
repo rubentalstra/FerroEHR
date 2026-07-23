@@ -19,9 +19,9 @@ the comparison stays fair without ever weakening a case.
 
 Every number and every curve on this page is generated at build time from
 the committed run artifacts (`docs/conformance/*/results.json` +
-`verdicts.json`, `docs/benchmarks/*/knee.json`) — nothing here is
-hand-typed, and the CI stale-numbers gate rejects any attempt to hand-type
-it. To reproduce either side yourself, see
+`verdicts.json` + `stress.json`) — nothing here is hand-typed, and the CI
+stale-numbers gate rejects any attempt to hand-type it. To reproduce either
+side yourself, see
 [Conformance](conformance.md#running-the-suite-yourself) and
 [Benchmarks](benchmarks.md).
 
@@ -68,10 +68,11 @@ ehrbase-rs-only extension.
 The conformance instrument derives every expected outcome from the openEHR
 specifications — never from either server's observed behaviour — and runs
 against real composed deployments of both systems (`scripts/conformance.sh`,
-`CONF_SUT=ehrbase-java` for the upstream side). The benchmark models a
-hospital day (admissions, observations, medication rounds, lab
-contributions, chart reviews, corrections, discharges) built from official
-CKM templates with seeded determinism, so both servers receive byte-identical
-requests; latencies are coordinated-omission-corrected and the knee ladder
-stops at the first step past the SLO. The full method chapters:
+`CONF_SUT=ehrbase-java` for the upstream side). The stress instrument drives
+the same hospital-simulation workload (admissions, observations, medication
+rounds, lab contributions, chart reviews, corrections, discharges) built
+from official CKM templates with seeded determinism, so both servers receive
+byte-identical requests; latencies are coordinated-omission-corrected from
+each request's planned arrival instant, and the ladder bisects to the last
+rate held inside the envelope. The full method chapters:
 [Conformance](conformance.md) · [Benchmarks](benchmarks.md).

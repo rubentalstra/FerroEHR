@@ -6,8 +6,8 @@ The live work tracker is GitHub Issues (`gh issue list --state open`; pinned
 issues = current focus; milestones = releases — root `CLAUDE.md` §Issue
 workflow). The build record is the closed issues + PR descriptions +
 `CHANGELOG.md` + git history. Every measured claim lives in the generated
-artifacts: conformance in `docs/conformance/`, benchmarks in
-`docs/benchmarks/` — always cite those, never this file.*
+artifacts: conformance and every measured performance/stress/probe record
+in `docs/conformance/` — always cite those, never this file.*
 
 ## What the product is
 
