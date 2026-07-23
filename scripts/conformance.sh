@@ -46,9 +46,6 @@
 #   CONF_PERF_HOURS sustained-window ladder for the perf stage:
 #                   1 (default) | 2 | 4 | 6 | 8 | 12 — longer holds are
 #                   stricter demonstrations; nothing shorter exists.
-#   CONF_PERF_SKIP_SEED
-#                   if set, reuse the sidecar corpus index a prior seeding
-#                   wrote beside results.json instead of re-seeding.
 #   SKIP_BUILD      if set, compose up without --build (published image).
 #   SUT_USER/SUT_PASS, SUT_ADMIN_USER/SUT_ADMIN_PASS,
 #   SUT_RO_USER/SUT_RO_PASS
@@ -164,10 +161,10 @@ if [ "$run_rc" -ge 2 ]; then
 fi
 
 # Optional measured performance run (§8.14, conformance-by-measurement):
-# CONF_PERF_CLASS=POC|S|L|R seeds the scale corpus (unless
-# CONF_PERF_SKIP_SEED is set — reuse a prior seeding's sidecar index) and
-# drives the class's open-loop sustained case, merging the measurement
-# records into results.json BEFORE the verdict pipeline runs. This is an
+# CONF_PERF_CLASS=POC|S|L|R seeds the scale corpus into the freshly
+# composed SUT (the workflow always seeds an empty database) and drives
+# the class's open-loop sustained case, merging the measurement records
+# into results.json BEFORE the verdict pipeline runs. This is an
 # hour-plus act (5 min warmup + the sustained window, after corpus seeding)
 # and needs the exclusive composed SUT — never on by default.
 # CONF_PERF_HOURS=1|2|4|6|8|12 extends the sustained window (default 1 —
@@ -176,7 +173,6 @@ if [ -n "${CONF_PERF_CLASS:-}" ]; then
   echo "==> Measured performance run (class $CONF_PERF_CLASS, ${CONF_PERF_HOURS:-1} h window)"
   perf_args=(perf --root "$ROOT" --ixit "$IXIT" --results "$OUT/results.json"
              --class "$CONF_PERF_CLASS" --hours "${CONF_PERF_HOURS:-1}")
-  [ -n "${CONF_PERF_SKIP_SEED:-}" ] && perf_args+=(--skip-seed)
   perf_rc=0
   "$REPO_ROOT/target/debug/cnf-runner" "${perf_args[@]}" || perf_rc=$?
   if [ "$perf_rc" -ge 2 ]; then

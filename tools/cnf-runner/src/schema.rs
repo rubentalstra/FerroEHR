@@ -1011,6 +1011,73 @@ pub fn stress_schema() -> Value {
     })
 }
 
+/// `aql-probe.json` — the AQL optimization probe report (exploration
+/// evidence: wire percentiles + per-statement DB attribution over the
+/// seeded corpus; never a conformance record).
+#[must_use]
+pub fn aql_probe_schema() -> Value {
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("aql-probe"),
+        "title": "CNF 2.0 AQL probe report",
+        "description": "The seeded-corpus AQL optimization probe: per-probe wire-latency percentiles and pg_stat_statements attribution through the container runtime, environment-bound. Exploration evidence for the optimization loop — never a conformance record; results.json is never touched.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["corpus", "environment", "requests_per_probe", "maintenance_settled",
+                      "attribution", "probes", "remark"],
+        "properties": {
+            "corpus": { "type": "string", "pattern": CORPUS_KEY_PATTERN },
+            "environment": environment_def(),
+            "requests_per_probe": { "type": "integer", "minimum": 1 },
+            "maintenance_settled": { "type": "boolean" },
+            "attribution": { "type": "string", "minLength": 1 },
+            "probes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "aql", "failures", "wire_ms"],
+                    "properties": {
+                        "name": { "type": "string", "minLength": 1 },
+                        "aql": { "type": "string", "minLength": 1 },
+                        "failures": { "type": "integer", "minimum": 0 },
+                        "wire_ms": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["min_ms", "p50_ms", "p95_ms", "max_ms"],
+                            "properties": {
+                                "min_ms": { "type": "number", "minimum": 0.0 },
+                                "p50_ms": { "type": "number", "minimum": 0.0 },
+                                "p95_ms": { "type": "number", "minimum": 0.0 },
+                                "max_ms": { "type": "number", "minimum": 0.0 }
+                            }
+                        },
+                        "statements": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["sql", "calls", "mean_ms", "total_ms",
+                                              "shared_blks_hit", "shared_blks_read"],
+                                "properties": {
+                                    "sql": { "type": "string", "minLength": 1 },
+                                    "calls": { "type": "integer", "minimum": 0 },
+                                    "mean_ms": { "type": "number", "minimum": 0.0 },
+                                    "total_ms": { "type": "number", "minimum": 0.0 },
+                                    "shared_blks_hit": { "type": "integer", "minimum": 0 },
+                                    "shared_blks_read": { "type": "integer", "minimum": 0 }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "remark": { "type": "string", "minLength": 1 }
+        }
+    })
+}
+
 /// The published performance-class tokens, ladder order.
 fn perf_class_tokens() -> Vec<&'static str> {
     crate::perf::PerfClass::ALL
@@ -1222,6 +1289,7 @@ pub fn emit_all() -> Vec<(&'static str, Value)> {
         ("performance-case.schema.json", performance_case_schema()),
         ("journey-catalogue.schema.json", journey_catalogue_schema()),
         ("stress.schema.json", stress_schema()),
+        ("aql-probe.schema.json", aql_probe_schema()),
         ("transcript.schema.json", transcript_schema()),
     ]
 }

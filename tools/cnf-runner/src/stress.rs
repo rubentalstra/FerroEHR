@@ -198,6 +198,16 @@ pub fn run_stress(
                     steps: &mut Vec<LoadStep>,
                     generator_bound: &mut bool|
      -> Result<bool, String> {
+        // Settle the maintenance debt the previous rungs' writes built up
+        // BEFORE the rung, so autovacuum/analyze never fires inside a hold
+        // and every rung starts from the same settled state.
+        if let Some(c) = containers {
+            if let Err(e) = crate::perf_run::resources::settle_maintenance(&c.db) {
+                progress(format!("maintenance not settled: {e}"));
+            }
+        } else {
+            progress("maintenance not settled (no ixit `containers` block)".to_owned());
+        }
         progress(format!(
             "load step at {rate}/s ({}s hold)",
             options.step_hold_s
@@ -249,16 +259,7 @@ pub fn run_stress(
             let peaks: Vec<String> = r
                 .containers
                 .iter()
-                .map(|c| {
-                    let cpu = c.samples.iter().map(|s| s.cpu_pct).fold(0.0, f64::max);
-                    format!(
-                        "{} peak {cpu:.0}% cpu",
-                        match c.role {
-                            crate::perf::ContainerRole::Sut => "sut",
-                            crate::perf::ContainerRole::Db => "db",
-                        }
-                    )
-                })
+                .map(|c| format!("{} peak {:.0}% cpu", c.role.label(), c.cpu_peak()))
                 .collect();
             format!(", {}", peaks.join(", "))
         });

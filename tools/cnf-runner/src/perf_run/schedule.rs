@@ -299,8 +299,7 @@ pub(crate) fn build_schedule(
     let needs_ward = resolved.iter().any(|j| !j.fresh_ehr);
     if needs_ward && ward_len == 0 {
         return Err(
-            "the workload addresses standing ward patients but the corpus has no seeded ward \
-             (re-seed without --skip-seed)"
+            "the workload addresses standing ward patients but the corpus has no seeded ward"
                 .to_owned(),
         );
     }

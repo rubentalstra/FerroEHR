@@ -1006,22 +1006,8 @@ fn resources_markdown(out: &mut String, resources: Option<&crate::perf::Resource
     let _ = writeln!(out, "| Container | CPU mean | CPU peak | RSS peak |");
     let _ = writeln!(out, "| --- | --- | --- | --- |");
     for c in &r.containers {
-        let role = match c.role {
-            crate::perf::ContainerRole::Sut => "sut",
-            crate::perf::ContainerRole::Db => "db",
-        };
-        let measured: Vec<&crate::perf::ResourceSample> = c
-            .samples
-            .iter()
-            .filter(|s| s.phase == crate::perf::ResourcePhase::Measured)
-            .collect();
-        // A run whose window never reached the measured phase still
-        // reports what it saw.
-        let set = if measured.is_empty() {
-            c.samples.iter().collect()
-        } else {
-            measured
-        };
+        let role = c.role.label();
+        let set = c.measured_samples();
         if set.is_empty() {
             let _ = writeln!(out, "| {role} `{}` | — | — | — |", c.name);
             continue;
