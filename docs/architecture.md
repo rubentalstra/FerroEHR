@@ -240,8 +240,8 @@ The service layer realizes the openEHR **SM Platform Service Model**
   (Docker-composed SUT on fresh volumes) — the acceptance instrument;
   results → pure-function verdicts → report/statement/certificate + badges,
   all under `docs/conformance/<sut>/` (the baseline lives ONLY in those
-  committed artifacts; the ECC harness retired 2026-07-22 with the reviewed
-  `docs/conformance/cnf-comparison.md`).
+  committed artifacts; the ECC harness retired 2026-07-22 — the reviewed
+  cutover comparison lives in git history).
 - **Measured performance** (the same runner): `cnf-runner perf` earns the
   volumetric deployment classes (POC/S/L/R) by open-loop,
   coordinated-omission-free sustained runs (normative hour, extendable

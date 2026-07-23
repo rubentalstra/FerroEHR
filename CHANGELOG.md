@@ -33,6 +33,16 @@ workflow refuses a tag that has no matching section here.
   validation rejected (the CKM CCTA report OPT); the CNF journey catalogue
   re-commits the CCTA imaging report.
 
+### Removed
+
+- The completed ECC→CNF cutover comparison lane: the generated
+  `docs/conformance/cnf-comparison.md`, the `cnf-runner compare-ecc`
+  subcommand, the drift gate, and the preserved ECC catalogue/map (all in
+  git history; the five deferred grounds are re-registered on the
+  catalogue-deepening tracker). The `docs/conformance/CATALOG.md` pointer
+  stub is gone with it, and the CNF 2.0 design record moved to
+  `docs/conformance/cnf-design.md` as a permanent reference document.
+
 ### Changed
 
 - The CNF measured-performance workload is now a full **hospital

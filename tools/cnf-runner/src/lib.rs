@@ -10,7 +10,6 @@
 //! vocabulary is a Rust enum/newtype so illegal states are unrepresentable.
 
 pub mod artifacts;
-pub mod compare;
 pub mod conf_assets;
 pub mod exec;
 pub mod ids;
