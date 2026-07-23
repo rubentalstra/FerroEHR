@@ -72,25 +72,14 @@ impl<T: OrderedLimit> Validate for DvInterval<T> {
                 "Invariant Upper_included_valid failed on type DV_INTERVAL",
             ));
         }
-        // Bound presence: `lower_unbounded` is "True if lower boundary open
-        // (i.e. = -infinity)" (BASE foundation_types `Interval`), so false
-        // asserts a FINITE bound — an absent one leaves `Limits_consistent`
-        // and `has()` unevaluable, and the ITS-JSON schema makes all four
-        // boundary flags required on the wire (INTERVAL/DV_INTERVAL
-        // `required`), so a flag-less half-open instance whose missing
-        // flags read as false must reject here rather than pass unchecked.
-        // NOTE: no NAMED openEHR invariant states this — our enforcement of
-        // the class semantics above (spec-silent on the name, not the rule).
-        if !self.lower_unbounded && self.lower.is_none() {
-            out.push(InvariantViolation::here(
-                "lower bound absent while lower_unbounded is false on type DV_INTERVAL",
-            ));
-        }
-        if !self.upper_unbounded && self.upper.is_none() {
-            out.push(InvariantViolation::here(
-                "upper bound absent while upper_unbounded is false on type DV_INTERVAL",
-            ));
-        }
+        // NOTE: an absent bound with a false `*_unbounded` flag is ACCEPTED.
+        // BASE `org.openehr.base.foundation_types.interval.adoc` declares
+        // `lower`/`upper` as 0..1 and its §Invariants set is closed
+        // (Limits_consistent, Limits_comparable, Lower/Upper_included_valid) —
+        // no invariant requires a bound VALUE when its flag is false; the
+        // guarded `Limits_consistent`/`Limits_comparable` implications are
+        // simply unevaluable then and are skipped, never a rejection
+        // (AMB-43 disposition in the CNF ambiguity register).
         // Limits_consistent: bounded on both sides implies the limits are
         // strictly comparable and lower <= upper.
         if !self.lower_unbounded
@@ -170,10 +159,11 @@ mod tests {
     }
 
     #[test]
-    fn absent_bound_with_bounded_flag_rejects() {
-        // The acceptance hole this rule closes: a half-open interval whose missing wire
-        // flags read as false (lower None, lower_unbounded false) must
-        // violate — BASE Interval semantics + the ITS-JSON required flags.
+    fn absent_bound_with_bounded_flag_is_accepted() {
+        // BASE Interval: `lower`/`upper` are 0..1 and the closed invariant
+        // set has no bound-presence rule — an absent bound with a false
+        // `*_unbounded` flag violates nothing (the guarded Limits_consistent
+        // implication is unevaluable and skipped; AMB-43, ACCEPTED).
         let half_open = DvInterval::<DvQuantity> {
             lower: None,
             upper: Some(quantity(1.0, "s")),
@@ -182,13 +172,8 @@ mod tests {
             lower_included: false,
             upper_included: false,
         };
-        let v = half_open.invariants();
-        assert!(
-            v.iter().any(|m| m.message
-                == "lower bound absent while lower_unbounded is false on type DV_INTERVAL"),
-            "got {v:?}"
-        );
-        // The PROPER half-open form (lower_unbounded true) is clean.
+        assert!(half_open.invariants().is_empty());
+        // The flagged half-open form is equally clean.
         let proper = DvInterval::<DvQuantity> {
             lower: None,
             upper: Some(quantity(1.0, "s")),
@@ -207,12 +192,7 @@ mod tests {
             lower_included: true,
             upper_included: false,
         };
-        let v = no_upper.invariants();
-        assert!(
-            v.iter().any(|m| m.message
-                == "upper bound absent while upper_unbounded is false on type DV_INTERVAL"),
-            "got {v:?}"
-        );
+        assert!(no_upper.invariants().is_empty());
     }
 
     #[test]
