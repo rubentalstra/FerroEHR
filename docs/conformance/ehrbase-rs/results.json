@@ -15,7 +15,7 @@
       "canonical-json"
     ]
   },
-  "ixit_digest": "4ef725fd7a51445e",
+  "ixit_digest": "f902513124f7e8de",
   "outcomes": [
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
@@ -1341,6 +1341,24 @@
     },
     {
       "case": "I_DEFINITION_QUERY.list_queries-select_items",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-dotted_name",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-reserved_name",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEFINITION_QUERY.store_query-unqualified_name",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

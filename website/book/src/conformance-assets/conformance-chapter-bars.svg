@@ -50,11 +50,11 @@ text { fill: #c3c2b7; }
 
 <text x="793.1869918699188" y="81" class="seg-label-dim" text-anchor="middle">8</text><text x="822" y="81" class="muted">123</text>
 <text x="166" y="115" text-anchor="end">Definitions</text>
-<rect x="174" y="98" width="166.5040650406504" height="26" class="bar-passed"/>
+<rect x="174" y="98" width="182.1138211382114" height="26" class="bar-passed"/>
 
-<text x="257.2520325203252" y="115" class="seg-label" text-anchor="middle">32</text><rect x="340.5040650406504" y="98" width="83.2520325203252" height="26" class="bar-na"/>
+<text x="265.0569105691057" y="115" class="seg-label" text-anchor="middle">35</text><rect x="356.1138211382114" y="98" width="83.2520325203252" height="26" class="bar-na"/>
 
-<text x="382.130081300813" y="115" class="seg-label-dim" text-anchor="middle">16</text><text x="431.7560975609756" y="115" class="muted">48</text>
+<text x="397.739837398374" y="115" class="seg-label-dim" text-anchor="middle">16</text><text x="447.3658536585366" y="115" class="muted">51</text>
 <text x="166" y="149" text-anchor="end">Query</text>
 <rect x="174" y="132" width="78.04878048780488" height="26" class="bar-passed"/>
 
