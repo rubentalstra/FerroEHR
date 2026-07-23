@@ -1,6 +1,6 @@
 ---
 name: cnf-strategy-doc-kept-permanently
-description: "Owner ruling 2026-07-22: docs/plans/cnf-conformance-strategy.md is KEPT PERMANENTLY — exempt from the delete-on-implementation plan lifecycle"
+description: "Owner rulings 2026-07-22 + 2026-07-23: the CNF 2.0 design record is PERMANENT and lives at docs/conformance/cnf-design.md (moved out of docs/plans/) — never delete, never move back"
 metadata: 
   node_type: memory
   type: feedback
@@ -8,7 +8,9 @@ metadata:
   modified: 2026-07-22T13:48:14.237Z
 ---
 
-`docs/plans/cnf-conformance-strategy.md` is exempt from the
+`docs/conformance/cnf-design.md` (formerly `docs/plans/cnf-conformance-strategy.md`,
+moved 2026-07-23 by owner instruction — a living reference document with a
+community-facing head and an HTML-comment agent note) is exempt from the
 delete-on-implementation rule (owner ruling 2026-07-22, PR #236 — it was
 deleted at the #202 cutover and the owner ordered it restored the same day).
 
