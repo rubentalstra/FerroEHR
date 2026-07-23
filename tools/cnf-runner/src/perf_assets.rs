@@ -67,9 +67,12 @@ fn log_pos(value: f64, min: f64, max: f64, x0: f64, x1: f64) -> f64 {
 #[must_use]
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement]) -> String {
-    let (width, height) = (760.0, 296.0);
+    let (width, height) = (640.0, 292.0);
     let (x0, x1) = (170.0, 500.0);
-    let status_x = width - 24.0;
+    // The status column starts a fixed gap after the plot area — one short
+    // verdict word per row (the sustained rate is what the measured bar's
+    // length shows; the exact number lives in the generated summary table).
+    let status_x = x1 + 16.0;
     let top = 92.0;
     let row_h = 44.0;
     let bar_h = 16.0;
@@ -81,14 +84,21 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
         out,
         "<text x=\"24\" y=\"28\" class=\"title\">Performance class ladder — offered-load floors vs measured sustained load</text>"
     );
-    let _ = writeln!(
-        out,
-        "<text x=\"24\" y=\"48\" class=\"muted\">A class is earned by measurement only: the floor rate sustained against the class corpus</text>"
-    );
-    let _ = writeln!(
-        out,
-        "<text x=\"24\" y=\"63\" class=\"muted\">for the normative window, with p99 &#8804; 1 s on every measured operation and zero errors.</text>"
-    );
+    for (i, line) in [
+        "Floors are the request rate the hospital-simulation workload must sustain",
+        "against the class corpus; a class is earned only when every measured operation",
+        "holds p99 &#8804; 1 s with zero errors.",
+    ]
+    .iter()
+    .enumerate()
+    {
+        #[allow(clippy::cast_precision_loss)] // 3 caption lines
+        let y = 46.0 + i as f64 * 14.0;
+        let _ = writeln!(
+            out,
+            "<text x=\"24\" y=\"{y}\" class=\"muted\">{line}</text>"
+        );
+    }
 
     // Grid at decades.
     for decade in [1.0, 10.0, 100.0, 1000.0] {
@@ -138,17 +148,16 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
             );
             let (class_name, verdict_text) = match m.verdict {
                 ClassVerdict::Earned => ("earned", "EARNED"),
-                ClassVerdict::NotEarned => ("notearned", "not earned"),
+                ClassVerdict::NotEarned => ("notearned", "NOT EARNED"),
             };
             let _ = writeln!(
                 out,
-                "<text x=\"{status_x}\" y=\"{status_y:.1}\" text-anchor=\"end\">sustained {:.1}/s · <tspan class=\"{class_name}\">{verdict_text}</tspan></text>",
-                m.offered_load_sustained,
+                "<text x=\"{status_x}\" y=\"{status_y:.1}\" class=\"{class_name}\">{verdict_text}</text>",
             );
         } else {
             let _ = writeln!(
                 out,
-                "<text x=\"{status_x}\" y=\"{status_y:.1}\" class=\"muted\" text-anchor=\"end\">not measured</text>",
+                "<text x=\"{status_x}\" y=\"{status_y:.1}\" class=\"muted\">not measured</text>",
             );
         }
     }
@@ -572,7 +581,7 @@ mod tests {
         let ladder_b = class_ladder_svg(&cases, &m);
         assert_eq!(ladder_a, ladder_b);
         assert!(ladder_a.contains("class POC"));
-        assert!(ladder_a.contains("sustained 2.0/s"));
+        assert!(ladder_a.contains(">EARNED<"));
         assert!(ladder_a.contains("EARNED"));
         assert!(ladder_a.contains("not measured")); // the unmeasured classes say so
         assert!(ladder_a.contains("prefers-color-scheme: dark"));
