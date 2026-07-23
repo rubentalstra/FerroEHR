@@ -74,7 +74,7 @@ pub struct SeededCorpus {
 /// Whether a provisioning WRITE landed in the created family. Corpus
 /// seeding is PROVISIONING, not the conformance instrument: with
 /// `Prefer: return=minimal` some SUTs answer 201 Created and others 204
-/// No Content with the identifying headers (upstream EHRbase's minimal
+/// No Content with the identifying headers (upstream `EHRbase`'s minimal
 /// create). The functional catalogue pins exact status codes; the seeder
 /// accepts either, then still demands the identifying header it needs.
 fn created(status: u16) -> bool {
