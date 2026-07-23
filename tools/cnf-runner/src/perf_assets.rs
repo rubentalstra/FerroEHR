@@ -65,9 +65,9 @@ fn log_pos(value: f64, min: f64, max: f64, x0: f64, x1: f64) -> f64 {
 #[must_use]
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement]) -> String {
-    let (width, height) = (760.0, 324.0);
+    let (width, height) = (880.0, 330.0);
     let (x0, x1) = (150.0, 640.0);
-    let top = 100.0;
+    let top = 106.0;
     let row_h = 48.0;
     let bar_h = 18.0;
     let (min, max) = (1.0, 3000.0);
@@ -78,19 +78,18 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
         out,
         "<text x=\"24\" y=\"28\" class=\"title\">Performance class ladder — offered-load floors vs measured sustained load</text>"
     );
-    // Caption wrapped to fit the 760px canvas (11px muted text ≈ 5.5px per
-    // character — keep each line under ~120 characters).
+    // Caption: three comfortably spaced lines (16px leading), each well
+    // inside the canvas (11px muted text ≈ 6.2px per character).
     for (i, line) in [
-        "A class's floor is the API request rate (arrivals/s) the hospital-simulation workload must SUSTAIN",
-        "against that class's seeded corpus for the normative hour-plus window. The rate alone earns nothing:",
-        "the class is EARNED only when, under that load, every measured operation holds p99 &#8804; 1 s with",
-        "zero errors — the verdict re-derived from the committed HDR histograms.",
+        "A class's floor is the API request rate (arrivals/s) the hospital-simulation workload must sustain against",
+        "that class's seeded corpus for the normative hour-plus window. The rate alone earns nothing: the class is",
+        "EARNED only when every measured operation holds p99 &#8804; 1 s with zero errors under that load.",
     ]
     .iter()
     .enumerate()
     {
-        #[allow(clippy::cast_precision_loss)] // 4 caption lines
-        let y = 44.0 + i as f64 * 14.0;
+        #[allow(clippy::cast_precision_loss)] // 3 caption lines
+        let y = 48.0 + i as f64 * 16.0;
         let _ = writeln!(out, "<text x=\"24\" y=\"{y}\" class=\"muted\">{line}</text>");
     }
 
@@ -140,14 +139,9 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
                 ClassVerdict::Earned => ("earned", "EARNED"),
                 ClassVerdict::NotEarned => ("notearned", "not earned"),
             };
-            // Right-edge guard: a bar ending far right gets its label
-            // INSIDE (anchored at the bar end) instead of clipping.
-            let label_w = 176.0;
-            let lx = if mx + 8.0 + label_w > width - 24.0 {
-                mx - 8.0 - label_w
-            } else {
-                mx + 8.0
-            };
+            // Labels always sit OUTSIDE (after) the bar — the canvas is
+            // sized so even the class-R row fits with margin.
+            let lx = mx + 8.0;
             let _ = writeln!(
                 out,
                 "<text x=\"{lx:.1}\" y=\"{:.1}\">sustained {:.1}/s</text>\
@@ -158,17 +152,10 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
                 y + bar_h - 4.0,
             );
         } else {
-            // Same right-edge guard for the un-measured rows (class R's
-            // floor bar ends near the canvas edge).
-            let label_w = 160.0;
-            let lx = if floor_x + 8.0 + label_w > width - 24.0 {
-                floor_x - 8.0 - label_w
-            } else {
-                floor_x + 8.0
-            };
             let _ = writeln!(
                 out,
-                "<text x=\"{lx:.1}\" y=\"{:.1}\" class=\"muted\">floor {floor}/s — not measured</text>",
+                "<text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">floor {floor}/s — not measured</text>",
+                floor_x + 8.0,
                 y + bar_h - 4.0,
             );
         }
