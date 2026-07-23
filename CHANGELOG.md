@@ -117,6 +117,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **A coded value whose text is not the template-bound rubric is now
+  rejected at commit** (422 naming the path, the committed value, and
+  the bound rubric): RM `DV_CODED_TEXT` — "value must be the rubric from
+  a controlled terminology" — enforced wherever the template itself is
+  authoritative for the rubric (archetype-local at-codes and explicitly
+  bound external term definitions, any bound language); `openehr`-
+  terminology codes stay unchecked (the terminology ships official
+  translations the template cannot enumerate), and a bound code with no
+  rubric stays accepted. The once-accepted code-as-value instance is a
+  pinned rejection.
 - **Coded-text example values now carry the template-bound rubric**: the
   Web Template builder resolved display labels only for local at-codes,
   so an external code's rubric (OPT `term_definitions` keyed

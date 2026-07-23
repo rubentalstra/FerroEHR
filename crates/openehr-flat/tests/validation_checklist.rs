@@ -362,8 +362,11 @@ fn bullet7_terminology_bindings_valid() {
     )];
     leaf.inputs = vec![input];
     let coded_wt = wt_of(leaf);
+    // value = the bound rubric for the in-list code (RM dv_coded_text:
+    // value must be the rubric; the out-of-list code binds none, and the
+    // CodedValue kind under test fires on membership either way).
     let coded = |code: &str| {
-        json!({"_type": "DV_CODED_TEXT", "value": "x",
+        json!({"_type": "DV_CODED_TEXT", "value": "at0001",
                "defining_code": {"_type": "CODE_PHRASE",
                    "terminology_id": {"_type": "TERMINOLOGY_ID", "value": "local"},
                    "code_string": code}})
