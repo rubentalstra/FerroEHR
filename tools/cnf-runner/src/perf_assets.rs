@@ -59,17 +59,20 @@ fn log_pos(value: f64, min: f64, max: f64, x0: f64, x1: f64) -> f64 {
     x0 + (v.log10() - min.log10()) / (max.log10() - min.log10()) * (x1 - x0)
 }
 
-/// The class ladder: every class's offered-load floor (dashed outline) with
-/// the measured sustained load and verdict overlaid for measured classes.
-/// Log x-axis (arrivals/s).
+/// The class ladder: every class's offered-load floor (dashed outline)
+/// with the measured sustained load and verdict overlaid. Fixed columns —
+/// class + floor on the left, the log-scale bars in a fixed plot area, the
+/// measured/verdict status right-aligned at a fixed edge — so no label
+/// ever chases a bar end or leaves the canvas.
 #[must_use]
 #[allow(clippy::too_many_lines)] // one linear chart emitter
 pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement]) -> String {
-    let (width, height) = (880.0, 330.0);
-    let (x0, x1) = (150.0, 640.0);
-    let top = 106.0;
-    let row_h = 48.0;
-    let bar_h = 18.0;
+    let (width, height) = (760.0, 296.0);
+    let (x0, x1) = (170.0, 500.0);
+    let status_x = width - 24.0;
+    let top = 92.0;
+    let row_h = 44.0;
+    let bar_h = 16.0;
     let (min, max) = (1.0, 3000.0);
 
     let mut out = String::new();
@@ -78,20 +81,14 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
         out,
         "<text x=\"24\" y=\"28\" class=\"title\">Performance class ladder — offered-load floors vs measured sustained load</text>"
     );
-    // Caption: three comfortably spaced lines (16px leading), each well
-    // inside the canvas (11px muted text ≈ 6.2px per character).
-    for (i, line) in [
-        "A class's floor is the API request rate (arrivals/s) the hospital-simulation workload must sustain against",
-        "that class's seeded corpus for the normative hour-plus window. The rate alone earns nothing: the class is",
-        "EARNED only when every measured operation holds p99 &#8804; 1 s with zero errors under that load.",
-    ]
-    .iter()
-    .enumerate()
-    {
-        #[allow(clippy::cast_precision_loss)] // 3 caption lines
-        let y = 48.0 + i as f64 * 16.0;
-        let _ = writeln!(out, "<text x=\"24\" y=\"{y}\" class=\"muted\">{line}</text>");
-    }
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"48\" class=\"muted\">A class is earned by measurement only: the floor rate sustained against the class corpus</text>"
+    );
+    let _ = writeln!(
+        out,
+        "<text x=\"24\" y=\"63\" class=\"muted\">for the normative window, with p99 &#8804; 1 s on every measured operation and zero errors.</text>"
+    );
 
     // Grid at decades.
     for decade in [1.0, 10.0, 100.0, 1000.0] {
@@ -113,22 +110,26 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
     });
     for (row, case) in classes.iter().enumerate() {
         #[allow(clippy::cast_precision_loss)] // row counts are tiny
-        let y = top + row as f64 * row_h + 10.0;
+        let y = top + row as f64 * row_h + 8.0;
         let floor = case.class.arrival_floor_per_s();
         let floor_x = log_pos(floor, min, max, x0, x1);
+        // Left column: the class and its floor, fixed position.
         let _ = writeln!(
             out,
-            "<text x=\"24\" y=\"{:.1}\">class {}</text>",
-            y + bar_h - 4.0,
+            "<text x=\"24\" y=\"{:.1}\">class {}</text>\
+             <text x=\"24\" y=\"{:.1}\" class=\"muted\">floor {floor}/s</text>",
+            y + 8.0,
             case.class.token(),
+            y + 22.0,
         );
         let _ = writeln!(
             out,
             "<rect x=\"{x0}\" y=\"{y:.1}\" width=\"{:.1}\" height=\"{bar_h}\" rx=\"4\" class=\"floor\"/>",
             floor_x - x0,
         );
-        let measured = measurements.iter().find(|m| m.class == case.class);
-        if let Some(m) = measured {
+        // Right column: the status, right-aligned at a fixed edge.
+        let status_y = y + bar_h - 3.0;
+        if let Some(m) = measurements.iter().find(|m| m.class == case.class) {
             let mx = log_pos(m.offered_load_sustained, min, max, x0, x1);
             let _ = writeln!(
                 out,
@@ -139,24 +140,15 @@ pub fn class_ladder_svg(cases: &[PerformanceCase], measurements: &[Measurement])
                 ClassVerdict::Earned => ("earned", "EARNED"),
                 ClassVerdict::NotEarned => ("notearned", "not earned"),
             };
-            // Labels always sit OUTSIDE (after) the bar — the canvas is
-            // sized so even the class-R row fits with margin.
-            let lx = mx + 8.0;
             let _ = writeln!(
                 out,
-                "<text x=\"{lx:.1}\" y=\"{:.1}\">sustained {:.1}/s</text>\
-                 <text x=\"{:.1}\" y=\"{:.1}\" class=\"{class_name}\"> · {verdict_text}</text>",
-                y + bar_h - 4.0,
+                "<text x=\"{status_x}\" y=\"{status_y:.1}\" text-anchor=\"end\">sustained {:.1}/s · <tspan class=\"{class_name}\">{verdict_text}</tspan></text>",
                 m.offered_load_sustained,
-                lx + 92.0,
-                y + bar_h - 4.0,
             );
         } else {
             let _ = writeln!(
                 out,
-                "<text x=\"{:.1}\" y=\"{:.1}\" class=\"muted\">floor {floor}/s — not measured</text>",
-                floor_x + 8.0,
-                y + bar_h - 4.0,
+                "<text x=\"{status_x}\" y=\"{status_y:.1}\" class=\"muted\" text-anchor=\"end\">not measured</text>",
             );
         }
     }
