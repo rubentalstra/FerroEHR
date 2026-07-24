@@ -2468,6 +2468,18 @@
       "rows_total": 1
     },
     {
+      "case": "SF-FLAT-adl2_commit",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-FLAT-adl2_reject_cardinality",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SF-FLAT-commit_roundtrip_ctx_defaults",
       "status": "passed",
       "rows_driven": 1,

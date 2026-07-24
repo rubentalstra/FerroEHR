@@ -23,23 +23,26 @@
 //! am24-specific `build`/`inputs` half; the tree shaping is shared.
 //!
 //! NOTE: the am24 front end populates the node **shape** + `inputs` the example
-//! generator and FLAT/STRUCTURED codecs consume; it does **not** populate the
-//! validation-only constraint fields (`existence`/`card_all`/`slots`/
-//! `closed_attributes`/`structural_stubs`) the archetype-conformance walk
-//! ([`crate::flat::validation::validate_archetype_conformance`]) reads. No openEHR
-//! spec governs an example's completeness or an am24 instance-conformance walk
-//! against a Web Template — our own design/extension; a generated am24 example
-//! is validated by [`crate::flat::validation::validate_rm_and_terminology`] (RM class
-//! invariants + RM-mandated terminology, template-independent), which is
-//! self-consistent with the tree by construction. The am24 structural
-//! conformance walk is out of scope for this front end (master04 §"Web Template
-//! Metadata" is the seam it fills).
+//! generator and FLAT/STRUCTURED codecs consume **and** the validation-only
+//! constraint fields (`existence`/`card_all`/`closed_attributes`/
+//! `structural_stubs`; the hoisted-wrapper `slots` are added by the shared
+//! [`super::shape`] compaction) the archetype-conformance walk
+//! ([`crate::flat::validation::validate_archetype_conformance`]) reads — from the
+//! AOM2 constraint model (`C_ATTRIBUTE.existence`/`.cardinality`, node-identified
+//! `C_OBJECT` alternatives, `ARCHETYPE_SLOT`; AOM2
+//! `AM/docs/AOM2/master02-archetype_definition.adoc` §C_ATTRIBUTE, §ARCHETYPE_SLOT).
+//! So the archetype-conformance walk runs against an ADL2 template exactly as it
+//! does against an OPT 1.4 template (the shared dialect-neutral seam is the Web
+//! Template layer). No openEHR spec governs the Web Template model itself — our
+//! own design/extension; the walk *semantics* the captured fields serve cite AOM2
+//! / RM common.
 
 use std::collections::BTreeMap;
 
 use indexmap::IndexMap;
 use openehr_am::am24::aom2::archetype::archetype_hrid::ArchetypeHrid;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
+use openehr_am::am24::aom2::constraint_model::archetype_slot::ArchetypeSlot;
 use openehr_am::am24::aom2::constraint_model::c_attribute::CAttribute;
 use openehr_am::am24::aom2::constraint_model::c_attribute_tuple::CAttributeTuple;
 use openehr_am::am24::aom2::constraint_model::c_complex_object::CComplexObject;
@@ -51,11 +54,13 @@ use openehr_am::am24::aom2::constraint_model::primitive::c_real::CReal;
 use openehr_am::am24::aom2::constraint_model::primitive::c_string::CString;
 use openehr_am::am24::aom2::constraint_model::primitive::c_terminology_code::CTerminologyCode;
 use openehr_am::am24::aom2::terminology::archetype_terminology::ArchetypeTerminology;
+use openehr_am::am24::beom::core::assertion::Assertion;
 use openehr_base::prelude::{Cardinality, Interval, MultiplicityInterval, ProperInterval};
 
 use super::model::{
-    WebTemplate, WebTemplateBindingCodedValue, WebTemplateCardinality, WebTemplateCodedValue,
-    WebTemplateInput, WebTemplateInputType, WebTemplateNode, WebTemplateRange,
+    WebTemplate, WebTemplateArchetypeSlot, WebTemplateBindingCodedValue, WebTemplateCardinality,
+    WebTemplateClosedAttribute, WebTemplateCodedValue, WebTemplateExistence, WebTemplateInput,
+    WebTemplateInputType, WebTemplateNode, WebTemplateRange, WebTemplateStructuralStub,
     WebTemplateValidation,
 };
 use super::shape;
@@ -241,16 +246,19 @@ fn build_node(
     parent_path: &str,
 ) -> WebTemplateNode {
     // A `C_ARCHETYPE_ROOT` switches the terminology scope to its constituent's
-    // (OPT2 master03 §Terminology); its own name is looked up in the new scope,
-    // falling back to the parent scope for the slot-level rubric.
-    let (child_term, is_root) = match co {
+    // for its CHILDREN (OPT2 master03 §Terminology). The root node's OWN rubric
+    // is the slot-level term the introducing artefact defines (ADL2 requires
+    // the artefact that introduces a node id to define it — AOM2 master03
+    // §Validity Rules), so it resolves in the OUTER scope first; the component
+    // scope is only a last resort. Resolving the slot id in the component scope
+    // first can false-positive on the constituent's own unrelated id codes.
+    let child_term = match co {
         CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
-            (ctx.scope(&r.archetype_ref).unwrap_or(term), true)
+            ctx.scope(&r.archetype_ref).unwrap_or(term)
         }
-        _ => (term, false),
+        _ => term,
     };
-    let name_term = if is_root { child_term } else { term };
-    let mut node = create_node(ctx, name_term, term, attr_name, co, parent_path);
+    let mut node = create_node(ctx, term, child_term, attr_name, co, parent_path);
     build_children(ctx, child_term, co, &mut node);
     node
 }
@@ -279,8 +287,11 @@ fn create_node(
 
     let code = object_node_id(co);
     if !code.is_empty() {
-        // Resolve the rubric name in the node's own scope, falling back to the
-        // parent scope (a filler root's slot code lives in the parent).
+        // Resolve the rubric in the introducing artefact's scope first (for a
+        // filler root that is the OUTER template terminology, which ADL2
+        // obliges to define the slot code — AOM2 master03 §Validity Rules),
+        // falling back to the component scope only when the outer one is
+        // silent.
         node.name = rubric_text(name_term, code, &ctx.default_language)
             .or_else(|| rubric_text(parent_term, code, &ctx.default_language));
         node.localized_name.clone_from(&node.name);
@@ -335,6 +346,17 @@ fn build_children(
     }
 
     node.cardinalities = cardinalities(co, &node.aql_path);
+    node.card_all = all_cardinalities(co, &node.aql_path);
+    // Existence / closed-attribute / structural-stub capture is meaningful only
+    // for attribute-recursing (structural) nodes; a DV leaf's constraints are
+    // handled by `inputs` (mirrors the OPT-1.4 front end's `recurse_attrs` guard).
+    if recurse_attrs {
+        node.existence = existence_constraints(co, &node.aql_path);
+        node.closed_attributes = closed_attributes(co, &node.aql_path);
+        if shape::is_entry_family(&node.rm_type) {
+            node.structural_stubs = structural_stubs(ctx, term, co);
+        }
+    }
     node.children = children;
     shape::post_process(node);
 }
@@ -778,6 +800,225 @@ fn requires_cardinality(card: &Cardinality, children_count: usize) -> bool {
     } else {
         min > 1 || (max != -1 && max < count)
     }
+}
+
+// ── archetype-conformance constraint capture (validation-only fields) ─────────
+//
+// The am24 front end fills the same validation-only constraint fields the OPT-1.4
+// front end does ([`super::builder`]), so
+// [`crate::flat::validation::validate_archetype_conformance`] runs identically
+// for both dialects. AOM2 expresses these as `C_ATTRIBUTE.existence` /
+// `C_ATTRIBUTE.cardinality` / node-identified `C_OBJECT` alternatives /
+// `ARCHETYPE_SLOT` (AOM2 `AM/docs/AOM2/master02-archetype_definition.adoc`
+// §C_ATTRIBUTE, §ARCHETYPE_SLOT). Captured from the raw `co` (before the shared
+// [`super::shape`] compaction hoists wrappers and re-homes these — by absolute
+// archetype path — onto the surviving parent), so no constraint is lost.
+
+/// Capture EVERY constraining `C_ATTRIBUTE.cardinality` (AOM2 §C_ATTRIBUTE:
+/// "Cardinality constraint of attribute, if a container attribute") for the
+/// validation walk: any interval with a lower bound `>= 1` or a bounded upper
+/// bound constrains the container. A superset of the serialized [`cardinalities`]
+/// selection, so `0..1`/`1..1`/`1..*` container bounds are enforced from
+/// [`WebTemplateNode::card_all`] too (mirrors the OPT-1.4 front end).
+fn all_cardinalities(co: &CObject, node_path: &str) -> Vec<WebTemplateCardinality> {
+    let mut out = Vec::new();
+    for attr in co_attributes(co) {
+        let Some(card) = &attr.cardinality else {
+            continue;
+        };
+        let (min, max) = occ(&card.interval);
+        if min.unwrap_or(0) >= 1 || max != -1 {
+            out.push(WebTemplateCardinality {
+                min,
+                max,
+                ids: None,
+                path: format!("{node_path}/{}", attr.rm_attribute_name),
+            });
+        }
+    }
+    out
+}
+
+/// Capture the AOM2 `C_ATTRIBUTE.existence` constraints (AOM2 §C_ATTRIBUTE:
+/// existence "indicates whether its target object exists or not, i.e. is
+/// mandatory or not") with a lower bound `>= 1`, keyed by the attribute's
+/// absolute archetype path. `existence` is `Option` in AOM2 — "Only set if it
+/// overrides the underlying reference model or parent archetype" (AOM2
+/// §C_ATTRIBUTE) — so only an explicitly-mandated attribute is captured, biasing
+/// toward confident violations exactly as the OPT-1.4 front end does (where the
+/// RM-mandatory presence an AOM2 template leaves to the RM is still covered by the
+/// RM-invariant pass + occurrences). `name` is excluded — it names the node
+/// (master04 §"Field Identifiers").
+fn existence_constraints(co: &CObject, node_path: &str) -> Vec<WebTemplateExistence> {
+    let mut out = Vec::new();
+    for attr in co_attributes(co) {
+        if attr.rm_attribute_name == "name" {
+            continue;
+        }
+        let Some(ex) = &attr.existence else {
+            continue;
+        };
+        let (min, max) = occ(ex);
+        let min = min.unwrap_or(0);
+        if min < 1 {
+            continue;
+        }
+        // A container mandates the attribute's presence regardless of member
+        // cardinality (existence and cardinality are orthogonal, AOM2
+        // §C_ATTRIBUTE). A single-valued attribute counts when it is object-valued
+        // (a navigable RM instance attribute) or a bare mandatory attribute with no
+        // value constraint — a pure primitive-value constraint never appears as a
+        // navigable instance attribute.
+        let object_valued = attr.is_multiple
+            || attr.children.is_empty()
+            || attr.children.iter().any(is_object_valued);
+        if !object_valued {
+            continue;
+        }
+        out.push(WebTemplateExistence {
+            min,
+            max,
+            path: format!("{node_path}/{}", attr.rm_attribute_name),
+        });
+    }
+    out
+}
+
+/// Whether a child `C_OBJECT` is an object-valued (navigable) constraint — a
+/// complex object, an inlined archetype root, a proxy, or a slot — as opposed to
+/// a primitive value constraint (`C_STRING`/`C_INTEGER`/… never appears as a
+/// navigable RM instance attribute).
+fn is_object_valued(co: &CObject) -> bool {
+    matches!(
+        co,
+        CObject::CComplexObject(_) | CObject::CComplexObjectProxy(_) | CObject::ArchetypeSlot(_)
+    )
+}
+
+/// Capture the closed-archetype constraints (the AOM2 closed-world direction):
+/// per attribute carrying node-identified `C_OBJECT` alternatives and/or
+/// `ARCHETYPE_SLOT`s, the admissible child identities keyed by the attribute's
+/// absolute archetype path. An attribute carrying an unresolved
+/// `C_COMPLEX_OBJECT_PROXY` is left OPEN (its target is not resolved in this front
+/// end — matching the OPT-1.4 internal-ref handling), and a purely
+/// primitive/unconstrained attribute is never closed. `name` is matched by
+/// predicate, not closure (master04 §"Field Identifiers").
+fn closed_attributes(co: &CObject, node_path: &str) -> Vec<WebTemplateClosedAttribute> {
+    let mut out = Vec::new();
+    for attr in co_attributes(co) {
+        if attr.rm_attribute_name == "name" {
+            continue;
+        }
+        // An unresolved proxy makes the admissible set uncertain: leave OPEN
+        // rather than risk over-rejecting.
+        if attr
+            .children
+            .iter()
+            .any(|c| matches!(c, CObject::CComplexObjectProxy(_)))
+        {
+            continue;
+        }
+        let mut allowed_ids: Vec<String> = Vec::new();
+        let mut slots: Vec<WebTemplateArchetypeSlot> = Vec::new();
+        for child in &attr.children {
+            match child {
+                CObject::ArchetypeSlot(s) => slots.push(archetype_slot(s)),
+                // A node-identified LOCATABLE alternative (an at/id-coded
+                // C_COMPLEX_OBJECT, or an inlined C_ARCHETYPE_ROOT carrying its
+                // interface archetype id). Primitive value constraints never
+                // participate in sibling closure.
+                CObject::CComplexObject(_) => {
+                    let id = object_archetype_node_id(child);
+                    if !id.is_empty() {
+                        allowed_ids.push(id);
+                    }
+                }
+                _ => {}
+            }
+        }
+        if allowed_ids.is_empty() && slots.is_empty() {
+            continue; // Open attribute (no node-id alternatives, no slot).
+        }
+        out.push(WebTemplateClosedAttribute {
+            path: format!("{node_path}/{}", attr.rm_attribute_name),
+            allowed_ids,
+            slots,
+        });
+    }
+    out
+}
+
+/// The validation-only slot record from an AOM2 `ARCHETYPE_SLOT`: its constrained
+/// RM type, occurrences bounds, and the archetype-id regexes lifted from the
+/// include/exclude assertions (AOM2 §ARCHETYPE_SLOT: `includes`/`excludes` are
+/// ASSERTIONs of the form `EXPR_ARCHETYPE_REF matches EXPR_ARCHETYPE_ID_CONSTRAINT`).
+fn archetype_slot(s: &ArchetypeSlot) -> WebTemplateArchetypeSlot {
+    let (min, max) = occurrences(s.occurrences.as_ref());
+    WebTemplateArchetypeSlot {
+        rm_type: s.rm_type_name.clone(),
+        min: min.unwrap_or(0).max(0),
+        max,
+        includes: s.includes.iter().filter_map(slot_pattern).collect(),
+        excludes: s.excludes.iter().filter_map(slot_pattern).collect(),
+    }
+}
+
+/// The archetype-id regex of a slot `ASSERTION`, lifted from its
+/// `string_expression` (`… matches {/<regex>/}`; AOM2 §ARCHETYPE_SLOT — the
+/// serialised assertion form). Archetype ids contain no `/`, so the last `/}`
+/// delimits the regex.
+fn slot_pattern(a: &Assertion) -> Option<String> {
+    let s = a.string_expression.as_deref()?;
+    let start = s.find("matches {/")? + "matches {/".len();
+    let rest = &s[start..];
+    let end = rest.rfind("/}")?;
+    Some(rest[..end].to_owned())
+}
+
+/// The RM-mandatory structural attributes of an ENTRY whose value the FLAT/TDD
+/// composition builder synthesises when the simplified form carries no content
+/// under them (the ENTRY `data`/`state`/`protocol` plus `ACTION.description`;
+/// RM `composition`).
+const ENTRY_STRUCTURAL_ATTRS: [&str; 4] = ["data", "description", "protocol", "state"];
+
+/// Capture the structural stubs for an ENTRY node (mirrors the OPT-1.4 front
+/// end): for each RM-mandatory structural attribute the OPT constrains with a
+/// node-identified structural child, record its RM type, archetype node id, and
+/// rubric name. The compactor drops such a wrapper when it carries no leaf
+/// content, so this is the only surviving record of the *constrained* identity —
+/// the composition builder synthesises the empty attribute from it (AOM2
+/// §C_ATTRIBUTE: a constrained attribute must be filled by a conforming value)
+/// rather than a blind `at0001`/`id1` placeholder a closed-archetype walk rejects.
+fn structural_stubs(
+    ctx: &Ctx,
+    term: &ArchetypeTerminology,
+    co: &CObject,
+) -> Vec<WebTemplateStructuralStub> {
+    let mut out = Vec::new();
+    for attr in co_attributes(co) {
+        if !ENTRY_STRUCTURAL_ATTRS.contains(&attr.rm_attribute_name.as_str()) {
+            continue;
+        }
+        for child in &attr.children {
+            // Only a node-identified structural child gives a concrete identity to
+            // stamp; a slot / proxy leaves the attribute to its placeholder.
+            let CObject::CComplexObject(_) = child else {
+                continue;
+            };
+            let node_id = object_archetype_node_id(child);
+            if node_id.is_empty() {
+                continue;
+            }
+            out.push(WebTemplateStructuralStub {
+                attr: attr.rm_attribute_name.clone(),
+                rm_type: object_rm_type(child).to_owned(),
+                node_id,
+                name: rubric_text(term, object_node_id(child), &ctx.default_language),
+            });
+            break; // first node-identified structural child under this attribute
+        }
+    }
+    out
 }
 
 // ── am24 C_OBJECT navigation ─────────────────────────────────────────────────

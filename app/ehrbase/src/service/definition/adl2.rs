@@ -11,6 +11,7 @@
 //! `openehr-adl` phases degrade gracefully when a parent is unresolved).
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use openehr_adl::assemble::parse_artefact;
 use openehr_adl::meta::{ArtefactSummary, summarize};
@@ -35,6 +36,15 @@ use crate::service::list::Page;
 use crate::service::status::{CallStatusType, SmError};
 
 use super::{compile_pattern, page_bounds, paginate};
+
+/// The `WebTemplate`-cache key namespace for ADL2/OPT2 templates. The trailing
+/// ASCII Unit Separator (`U+001F`) cannot appear in a grammar-legal
+/// archetype/template id (printable ASCII —
+/// `docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
+/// §Archetype Identifiers), so an ADL2 entry can never collide with an OPT 1.4
+/// entry keyed by the plain identity-canonical form. No openEHR spec governs the
+/// cache — our own design/extension.
+const ADL2_CACHE_NS: &str = "adl2\u{1f}";
 
 /// A memoised [`TerminologyResolver`] for ADL2 VETDF validation.
 ///
@@ -533,14 +543,93 @@ impl EhrbaseService {
     /// - [`ServiceError::Unprocessable`] (`422`) — the OPT cannot be compiled or
     ///   built into a `WebTemplate`.
     pub async fn web_template_adl2(&self, template_id: &str) -> Result<WebTemplate, ServiceError> {
-        let hrid = self.adl2_resolve(template_id, None).await?;
-        let source = self.adl2_get(&hrid).await?;
-        let opt = self.adl2_operational_template(&source).await?;
+        let opt = self.adl2_operational_template_for(template_id).await?;
         build_web_template_am24(&opt).map_err(|e| {
             ServiceError::Unprocessable(format!(
-                "ADL2 template {hrid} could not be built into a WebTemplate: {e}"
+                "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
             ))
         })
+    }
+
+    /// The (cached) [`WebTemplate`] for a stored ADL2/OPT2 template on the
+    /// FLAT/STRUCTURED **commit** path — the ADL2 twin of
+    /// [`web_template_for`](crate::service::EhrbaseService::web_template_for)'s OPT
+    /// 1.4 resolution, reached as its fallback when a template id is not an ADL 1.4
+    /// template. The resulting Web Template carries the AOM2 archetype-conformance
+    /// constraints ([`build_web_template_am24`]), so a FLAT/STRUCTURED commit
+    /// against an ADL2 template is archetype-constraint-checked exactly as an OPT
+    /// 1.4 commit is.
+    ///
+    /// NOTE: the entry is cached under a dialect-namespaced key
+    /// ([`ADL2_CACHE_NS`]) in the shared `WebTemplate` cache, so an OPT 1.4 and an
+    /// ADL2 template that happen to share a `template_id` can never collide there —
+    /// the namespace prefix uses an ASCII control separator that no
+    /// grammar-legal archetype/template id can contain
+    /// (`docs/specs/openehr/BASE/docs/base_types/master05-identification_package.adoc`
+    /// §Archetype Identifiers — ids are printable ASCII). No openEHR spec governs
+    /// the internal resolver wiring or the derived-runtime cache — our own
+    /// design/extension.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::Unprocessable`] (`422`) — no ADL2 template matches (an
+    ///   unknown referenced template on a commit is a *semantic* error, matching
+    ///   the OPT 1.4 side —
+    ///   `docs/specs/openehr/ITS-REST/specifications/responses/422.yaml`) or the
+    ///   stored OPT2 cannot be built into a `WebTemplate`.
+    /// - [`ServiceError::Internal`] (`500`) — the stored ADL2 source no longer
+    ///   parses (it was engine-valid at upload, so this is a server fault).
+    /// - [`ServiceError::Database`] — a store read failed.
+    pub(crate) async fn web_template_adl2_cached(
+        &self,
+        template_id: &str,
+    ) -> Result<Arc<WebTemplate>, ServiceError> {
+        let key = format!(
+            "{ADL2_CACHE_NS}{}",
+            crate::templates::identity::canonical_key(template_id)
+        );
+        if let Some(wt) = self.web_templates.get(&key).await {
+            return Ok(wt);
+        }
+        // Compile the stored ADL2 source to its OPT2 (async) before the sync WT
+        // build, mapping an unknown ADL2 template to the commit-path 422 the OPT
+        // 1.4 side uses (`web_template_for`).
+        let opt = match self.adl2_operational_template_for(template_id).await {
+            Ok(opt) => opt,
+            Err(ServiceError::NotFound(_)) => {
+                return Err(ServiceError::Unprocessable(format!(
+                    "operational template not known: {template_id}"
+                )));
+            }
+            Err(e) => return Err(e),
+        };
+        self.web_templates
+            .get_or_build(&key, || build_web_template_am24(&opt))
+            .await
+            .map_err(|e| {
+                ServiceError::Unprocessable(format!(
+                    "ADL2 template {template_id} could not be built into a WebTemplate: {e}"
+                ))
+            })
+    }
+
+    /// Resolve a `template_id` to its stored ADL2 source and compile it to its
+    /// operational template (OPT2). Shared by the example
+    /// ([`web_template_adl2`](Self::web_template_adl2)) and commit
+    /// ([`web_template_adl2_cached`](Self::web_template_adl2_cached)) paths.
+    ///
+    /// # Errors
+    ///
+    /// - [`ServiceError::NotFound`] (`404`) — no stored ADL2 template matches.
+    /// - [`ServiceError::Internal`] (`500`) — the stored source no longer parses.
+    /// - [`ServiceError::Unprocessable`] (`422`) — the OPT cannot be compiled.
+    async fn adl2_operational_template_for(
+        &self,
+        template_id: &str,
+    ) -> Result<OperationalTemplate, ServiceError> {
+        let hrid = self.adl2_resolve(template_id, None).await?;
+        let source = self.adl2_get(&hrid).await?;
+        self.adl2_operational_template(&source).await
     }
 
     /// Compile stored ADL2 `source` to its operational template: a stored

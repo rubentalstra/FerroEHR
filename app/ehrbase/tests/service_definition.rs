@@ -1001,3 +1001,135 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         "got {bad:?}"
     );
 }
+
+// ── ADL2/OPT2 FLAT parity: commit-path resolver fallback (#269) ───────────────
+
+/// The runtime `WebTemplate` resolver (`web_template`/`web_template_for`) falls
+/// back to the ADL2/OPT2 store when a template id is not an ADL 1.4 template, so a
+/// FLAT/STRUCTURED composition **commit** keyed to an ADL2-registered template
+/// resolves and is validated — the ADL2 twin of the OPT 1.4 commit path. Before
+/// #269 this 422'd "operational template not known" (the resolver read only the
+/// OPT 1.4 `template_store`).
+///
+/// Validation runs through the same choke point every commit uses
+/// (`content_valid` → `validate_for_commit` → `web_template_for` →
+/// `validate_archetype_conformance`), so this also exercises the am24
+/// archetype-conformance capture end-to-end.
+#[tokio::test]
+async fn adl2_template_resolves_on_the_commit_path_and_validates() {
+    use serde_json::Value;
+
+    const HRID: &str = "openEHR-EHR-COMPOSITION.commit_resolver.v1.0.0";
+
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let opt = adl2_source("operational_template", HRID, None);
+    svc.upload_artefact(opt).await.expect("upload ADL2 OPT");
+
+    // Gap 2: the runtime resolver used by the FLAT/STRUCTURED commit path now
+    // resolves the ADL2 template (before #269: `ServiceError::Unprocessable`).
+    let wt = svc
+        .web_template(HRID)
+        .await
+        .expect("the ADL2 template resolves on the commit path");
+    assert_eq!(wt.template_id, HRID);
+    assert_eq!(
+        wt.sem_ver.as_deref(),
+        Some("1.0.0"),
+        "resolved through the am24 (OPT2) front end, which carries semVer"
+    );
+
+    // A composition declaring that template validates end-to-end through the same
+    // per-commit choke point.
+    let mut comp = openehr_its::flat::example::example_composition(
+        &wt,
+        openehr_its::flat::example::DetailLevel::Complete,
+    );
+    assert_eq!(
+        comp.pointer("/archetype_details/template_id/value")
+            .and_then(Value::as_str),
+        Some(HRID),
+        "the example declares the ADL2 template id"
+    );
+    assert!(
+        svc.definitions_valid(&comp)
+            .await
+            .expect("definitions_valid"),
+        "the declared ADL2 template is now known to the definitions service"
+    );
+    assert!(
+        svc.content_valid(&comp).await.expect("content_valid"),
+        "a self-consistent instance validates clean against the ADL2 template"
+    );
+
+    // A structurally RM-broken instance is rejected — proving the validation
+    // passes actually run against the ADL2-resolved template
+    // (COMPOSITION.composer [1], RM common `composition.adoc`).
+    comp.as_object_mut()
+        .expect("composition object")
+        .remove("composer");
+    assert!(
+        !svc.content_valid(&comp).await.expect("content_valid"),
+        "an RM-invalid instance is rejected on the ADL2-resolved commit path"
+    );
+}
+
+/// The full service seam for a template-with-filler: upload the archetype +
+/// the `template` that `use_archetype`-fills it, then assert the projected
+/// commit-path `WebTemplate` CONTAINS the filler's flattened subtree — under
+/// the SLOT-LEVEL name the template's own terminology defines (OPT2 master03:
+/// `create_opt` inlines every filler; RM `composition.entry.adoc` §Invariants
+/// `Is_archetype_root` makes the fill the only conformant way to put an ENTRY
+/// under content). Regression for the filler-root rubric resolving in the
+/// component terminology (mislabeling the node from the constituent's
+/// unrelated same-numbered id code).
+#[tokio::test]
+async fn adl2_template_with_filler_projects_the_filled_web_template() {
+    fn find<'a>(
+        n: &'a openehr_its::flat::webtemplate::WebTemplateNode,
+        id: &str,
+    ) -> Option<&'a openehr_its::flat::webtemplate::WebTemplateNode> {
+        if n.id == id {
+            return Some(n);
+        }
+        n.children.iter().find_map(|c| find(c, id))
+    }
+    fn dump(n: &openehr_its::flat::webtemplate::WebTemplateNode, d: usize, out: &mut String) {
+        use std::fmt::Write;
+        let _ = writeln!(out, "{}{} [{}]", "  ".repeat(d), n.id, n.rm_type);
+        for c in &n.children {
+            dump(c, d + 1, out);
+        }
+    }
+    const ARCH: &str = include_str!(
+        "../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/archetype/cnf_count_a.adls"
+    );
+    const TMPL: &str = include_str!(
+        "../../../tools/cnf-runner/artifacts/corpus/fixtures/adl2/opt/flat_parity_a.adls"
+    );
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    svc.upload_artefact(ARCH.to_owned())
+        .await
+        .expect("upload the filler archetype");
+    svc.upload_artefact(TMPL.to_owned())
+        .await
+        .expect("upload the template");
+
+    let wt = svc
+        .web_template("openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0")
+        .await
+        .expect("the ADL2 template resolves on the commit path");
+    let mut tree = String::new();
+    dump(&wt.tree, 0, &mut tree);
+    assert!(
+        find(&wt.tree, "observation_one").is_some(),
+        "the filled OBSERVATION must appear in the projected WebTemplate; tree:\n{tree}"
+    );
+    assert!(
+        find(&wt.tree, "count_item").is_some(),
+        "the filler's constrained leaf must appear in the projected WebTemplate"
+    );
+}
