@@ -31,8 +31,8 @@ optional:
   -f state=closed`) and make sure the NEXT milestone exists so triage always
   has a target. The milestone's closed-issue list + the changelog section
   together are the release's record.
-- **Versioning split:** the product (workspace, `ehrbase-*`, tools,
-  `openehr-flat`, codegen tooling) follows the product SemVer (3.x line).
+- **Versioning split:** the product (workspace, `ehrbase-*`, tools, codegen
+  tooling) follows the product SemVer (3.x line).
   The `openehr-*` **spec crates** carry the version of the openEHR
   specification they implement (BASE 1.3.0, RM 1.2.0, AM 2.4.0, ADL 2.4.0, TERM 3.1.0,
   LANG 1.0.0, QUERY 1.1.0, ITS 1.1.0 — see `docs/VERSIONS.md`); bump them

@@ -625,13 +625,13 @@ impl EhrbaseService {
         let flat = mapping::build_flat(&a_resource, &def)
             .map_err(|e| SmError::precondition(e.to_string()))?;
         let now = feeder_audit::now_iso();
-        let mut composition = openehr_flat::convert::composition_from_flat(&flat, &wt, &now)
+        let mut composition = openehr_its::flat::convert::composition_from_flat(&flat, &wt, &now)
             .map_err(|e| {
-                SmError::new(
-                    CallStatusType::ContentInvalid,
-                    format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
-                )
-            })?;
+            SmError::new(
+                CallStatusType::ContentInvalid,
+                format!("FHIR resource did not map to a valid COMPOSITION: {e}"),
+            )
+        })?;
 
         // 4. Stamp FEEDER_AUDIT provenance.
         let feeder = feeder_audit::feeder_audit(

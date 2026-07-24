@@ -37,8 +37,7 @@ Do not re-plan these — the audit confirmed each in code:
   editor, history/restore, folder templates); runtime-config +
   repository-usage panels; full-stack OIDC; image-mode e2e
   (`UI_E2E_IMAGE=1`).
-- **Rule compliance**: REST-only boundary (deps: `openehr-query`,
-  `openehr-flat`, `openehr-its` — no app crates); every CDR-touching
+- **Rule compliance**: REST-only boundary (deps: `openehr-query`, `openehr-its` — no app crates); every CDR-touching
   `#[server]` fn session-guards first (sampled exhaustively); `/login`
   no-JS via `SsrMode::Async` with written rationale.
 

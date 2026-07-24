@@ -53,9 +53,9 @@ const TEMPLATE_ID_HEADER: &str = "openehr-template-id";
 fn opt_xml() -> String {
     std::fs::read_to_string(
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../crates/openehr-flat/tests/fixtures/sdk/ips.v0.opt"),
+            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
     )
-    .expect("ips.v0.opt vendored in openehr-flat")
+    .expect("ips.v0.opt vendored in openehr-its")
 }
 
 /// The IPS canonical composition (with its stored `uid` removed — a create
@@ -73,9 +73,9 @@ fn canonical_composition() -> Value {
 }
 
 /// The IPS `WebTemplate` (built from the vendored OPT).
-fn web_template() -> openehr_flat::webtemplate::WebTemplate {
+fn web_template() -> openehr_its::flat::webtemplate::WebTemplate {
     let opt = openehr_its::opt14::from_xml(&opt_xml()).expect("parse OPT");
-    openehr_flat::webtemplate::build_web_template(&opt).expect("build web template")
+    openehr_its::flat::webtemplate::build_web_template(&opt).expect("build web template")
 }
 
 fn config() -> AppConfig {
@@ -230,7 +230,8 @@ async fn post_flat_composition_is_rebuilt_to_canonical() {
 
     // Derive a real flat body from the canonical composition + its template.
     let wt = web_template();
-    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat =
+        openehr_its::flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
     let flat_body = serde_json::to_string(&flat_map).unwrap();
 
@@ -370,7 +371,7 @@ async fn flat_round_trips_through_http() {
     let (_pg, app, ehr) = app_with_ehr().await;
     let wt = web_template();
     let flat_in =
-        openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+        openehr_its::flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_in_map: serde_json::Map<String, Value> = flat_in.clone().into_iter().collect();
 
     // POST the flat body → the service stores the rebuilt canonical composition.
@@ -423,7 +424,8 @@ async fn flat_round_trips_through_http() {
 async fn post_flat_representation_carries_etag_and_location() {
     let (_pg, app, ehr) = app_with_ehr().await;
     let wt = web_template();
-    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat =
+        openehr_its::flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
 
     let (status, h, body) = send(
@@ -466,7 +468,8 @@ async fn post_flat_representation_carries_etag_and_location() {
 async fn post_structured_representation_carries_etag_and_location() {
     let (_pg, app, ehr) = app_with_ehr().await;
     let wt = web_template();
-    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat =
+        openehr_its::flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
 
     // Commit in FLAT, negotiate the STRUCTURED representation back.
@@ -522,7 +525,8 @@ async fn update_flat_representation_carries_etag_and_location() {
 
     // Update with a FLAT body, negotiating the FLAT representation back.
     let wt = web_template();
-    let flat = openehr_flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat =
+        openehr_its::flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
     let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
     let (status, h, body) = send(
         &app,

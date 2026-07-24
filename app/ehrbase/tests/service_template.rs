@@ -182,9 +182,9 @@ const EXAMPLE_TEMPLATES: &[&str] = &[
 ];
 
 /// The (cached) `WebTemplate` built from an OPT file, as the service builds it.
-fn web_template_of(rel: &str) -> openehr_flat::webtemplate::WebTemplate {
+fn web_template_of(rel: &str) -> openehr_its::flat::webtemplate::WebTemplate {
     let opt = openehr_its::opt14::from_xml(&corpus_opt(rel)).expect("parse OPT");
-    openehr_flat::webtemplate::build_web_template(&opt).expect("build web template")
+    openehr_its::flat::webtemplate::build_web_template(&opt).expect("build web template")
 }
 
 /// The generated `required` example is committable (passes the validator)
@@ -223,7 +223,7 @@ async fn required_example_validates_and_converts() {
         // Acceptance bar: the required example is committable — it passes the
         // full validator (RM invariants + terminology + archetype
         // conformance) with no violations.
-        let violations = openehr_flat::validation::validate_composition(&comp, &wt);
+        let violations = openehr_its::flat::validation::validate_composition(&comp, &wt);
         assert!(
             violations.is_empty(),
             "{rel}: required example must validate clean, got {} violation(s): {violations:?}",
@@ -233,12 +233,12 @@ async fn required_example_validates_and_converts() {
         // FLAT round-trip is stable (canonical → FLAT → canonical → FLAT). The
         // rebuild's ctx/time default is a fixed instant (ITS-REST
         // simplified_formats master04 §Context) so the round-trip is deterministic.
-        let flat1 = openehr_flat::convert::composition_to_flat(&comp, &wt)
+        let flat1 = openehr_its::flat::convert::composition_to_flat(&comp, &wt)
             .unwrap_or_else(|e| panic!("{rel} to_flat: {e}"));
         let flat1_map: serde_json::Map<String, Value> = flat1.clone().into_iter().collect();
-        let comp2 = openehr_flat::convert::composition_from_flat(&flat1_map, &wt, NOW)
+        let comp2 = openehr_its::flat::convert::composition_from_flat(&flat1_map, &wt, NOW)
             .unwrap_or_else(|e| panic!("{rel} from_flat: {e}"));
-        let flat2 = openehr_flat::convert::composition_to_flat(&comp2, &wt)
+        let flat2 = openehr_its::flat::convert::composition_to_flat(&comp2, &wt)
             .unwrap_or_else(|e| panic!("{rel} to_flat2: {e}"));
         assert_eq!(flat1, flat2, "{rel}: FLAT round-trip is stable");
 

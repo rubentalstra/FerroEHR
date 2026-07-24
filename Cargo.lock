@@ -2326,7 +2326,6 @@ dependencies = [
  "openehr-adl",
  "openehr-am",
  "openehr-base",
- "openehr-flat",
  "openehr-its",
  "openehr-lang",
  "openehr-query",
@@ -2385,7 +2384,6 @@ dependencies = [
  "leptos_icons",
  "leptos_meta",
  "leptos_router",
- "openehr-flat",
  "openehr-its",
  "openehr-query",
  "openidconnect",
@@ -2428,7 +2426,6 @@ dependencies = [
  "metrics-exporter-prometheus",
  "moka",
  "openehr-base",
- "openehr-flat",
  "openehr-its",
  "openehr-rm",
  "openidconnect",
@@ -5236,49 +5233,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "openehr-flat"
-version = "3.9.0"
-dependencies = [
- "fancy-regex",
- "indexmap 2.14.0",
- "insta",
- "moka",
- "openehr-adl",
- "openehr-am",
- "openehr-base",
- "openehr-its",
- "openehr-rm",
- "openehr-term",
- "quick-xml 0.41.0",
- "regex",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
 name = "openehr-its"
 version = "1.1.0"
 dependencies = [
  "async-trait",
  "axum",
+ "fancy-regex",
  "http",
  "indexmap 2.14.0",
  "insta",
  "itoa",
  "jsonschema",
+ "moka",
+ "openehr-adl",
  "openehr-am",
  "openehr-base",
  "openehr-lang",
  "openehr-rm",
  "openehr-term",
  "quick-xml 0.41.0",
+ "regex",
  "ryu",
  "serde",
  "serde_json",
  "sha2 0.11.0",
  "thiserror 2.0.18",
+ "tokio",
  "uuid",
 ]
 

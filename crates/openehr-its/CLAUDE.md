@@ -1,6 +1,6 @@
-# `openehr-its` — canonical JSON/XML + the ITS-REST contract (MIXED)
+# `openehr-its` — canonical JSON/XML + the ITS-REST contract + Simplified Formats (MIXED)
 
-Three surfaces in one crate, with a strict generated/hand-written split.
+Four ITS surfaces in one crate, with a strict generated/hand-written split.
 Know which half you are touching before editing anything:
 
 | Part | Status | To change it |
@@ -9,6 +9,7 @@ Know which half you are touching before editing anything:
 | `src/json_codec/generated/` (`ToJson`/`FromJson`) | **GENERATED** (`emit-json`, from BMM) | edit the emitter, regenerate |
 | `src/rest/generated/` (ITS-REST DTOs, server traits, routes) | **GENERATED** (`emit-rest`, from the vendored OAS) | edit the emitter, regenerate |
 | `xml/runtime.rs`, `json_codec/runtime.rs`, `rest/runtime.rs`, `json` + `rm_validate` entry points, validation, fidelity gates | hand-written | edit normally, with spec citations |
+| `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
 
 The native canonical-JSON codec (`json_codec`) is THE canonical-JSON
 (de)serialization for every spec type (all five crates) — the emitted
@@ -45,3 +46,38 @@ RM class-invariant dispatcher that drives the reader. Proven by
   per Template.xsd; a missing mandatory `DV_PROPORTION.type` per BaseTypes.xsd)
   — each pinned as an EXPECTED rejection with its citation; a fixture that
   starts parsing must be re-adjudicated, never silently dropped.
+
+## The `flat` module — Simplified Formats (`openehr_its::flat`, hand-written)
+
+FLAT + STRUCTURED data instances, the Web Template model, and the
+TDD → COMPOSITION converter (`flat::tdd::from_tdd`, corpus-verified). This is
+the ITS-REST **Formats** sub-specification (STABLE) living beside the other
+ITS surfaces; it is hand-written because the BMM has no simplified-format
+model.
+
+- **The wire oracle is the ITS-REST Simplified Formats specification**
+  (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`, STABLE):
+  `master04` (field identifiers, node-id algorithm, level removal, `|raw`,
+  `|other`, FLAT⇄STRUCTURED algorithms), `master05` (per-RM-type mapping
+  tables), `master06` (the `ctx/` vocabulary). SM SIM-B / SDF are
+  DEVELOPMENT-state model documents — never implement their terse string
+  encodings; SDT is retired. No vendor implementation is an oracle.
+- **Architecture: one internal tree** (`flat::sim::SimNode`) — FLAT
+  (`flat::sim::flat`) and STRUCTURED (`flat::sim::structured`) are pure codecs
+  over it; the template-driven RM conversion is written once (`flat::flatten`
+  RM→sim, `flat::build` sim→RM, entry points in `flat::convert`). Datum codecs
+  from the `master05` tables live in `flat::map`; the `ctx/` vocabulary in
+  `flat::ctx`; the Web Template model/builder in `flat::webtemplate` (node ids
+  per `master04 §Node ID Generation Rules`; the document shape serves
+  `application/openehr.wt+json`).
+- Path/key encoding (`a/b:0/c|unit`) is load-bearing wire surface — no
+  ad-hoc changes; every accepted/emitted form needs a spec citation and a
+  round-trip test. Spec-example JSON blocks are the primary test vectors;
+  the OPT corpus is regression.
+- Consumes `openehr-rm`/`openehr-am` types directly (canonical JSON with
+  `_type` tagging); never re-models the RM. Carries the crate's ITS 1.1.0
+  spec version (the Simplified Formats spec is part of ITS-REST 1.1.0; no
+  separate pin).
+- Fidelity gates for it live in the crate's `tests/` (the `simplified_formats`
+  spec-example vectors, `insta` goldens, the OPT-corpus round-trips) — never
+  weaken or skip one.
