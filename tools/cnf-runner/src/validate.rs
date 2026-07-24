@@ -1006,7 +1006,7 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
             } else {
                 anchor.sibling(&step.call)
             };
-            let bindings: Vec<_> = set
+            let mut bindings: Vec<_> = set
                 .bindings
                 .iter()
                 .filter(|(_, b)| b.sm_operation == op)
@@ -1019,6 +1019,24 @@ fn check_binding_completeness(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                     format!("no binding declares operation {op}"),
                 );
                 continue;
+            }
+            // Mirror the interpreter's binding selection (`binding_for_variant`):
+            // a step's `variant` selects the binding declaring that variant;
+            // a variant-less step (or a variant with no dedicated binding)
+            // falls back to the variant-less binding. Completeness is judged
+            // against the binding the interpreter would actually drive, not
+            // against every binding of the operation.
+            if let Some(v) = &step.variant
+                && bindings
+                    .iter()
+                    .any(|(_, b)| b.variant.as_deref() == Some(v.as_str()))
+            {
+                bindings.retain(|(_, b)| b.variant.as_deref() == Some(v.as_str()));
+            } else {
+                let has_variantless = bindings.iter().any(|(_, b)| b.variant.is_none());
+                if has_variantless {
+                    bindings.retain(|(_, b)| b.variant.is_none());
+                }
             }
             // An explicit `unrealized` declaration satisfies completeness:
             // the gap is machine-readable and the interpreter yields
