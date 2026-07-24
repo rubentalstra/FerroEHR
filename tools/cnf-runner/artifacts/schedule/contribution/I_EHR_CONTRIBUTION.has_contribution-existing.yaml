@@ -1,7 +1,8 @@
 # G.1 — has_contribution for an EHR and an existing CONTRIBUTION uid reports the
 # CONTRIBUTION exists (TRUE). ITS-REST has no CONTRIBUTION-existence probe, so
-# has_contribution is realized as a GET of the CONTRIBUTION (200 = exists); the
-# CONTRIBUTION to probe is committed in-flow so its uid is known.
+# has_contribution is realized as a GET of the CONTRIBUTION (200 = exists) —
+# the registered AMB-23 realization; the CONTRIBUTION to probe is committed
+# in-flow so its uid is known.
 id: I_EHR_CONTRIBUTION.has_contribution-existing
 kind: functional
 component: EHR_CONTRIBUTION
@@ -34,3 +35,4 @@ flow:
     call: has_contribution
     with: { ehr_id: "${ehr_id}", contribution_uid: "${contribution_uid}" }
     expect: ok                            # positive: "The result must be TRUE"
+ambiguities: [AMB-23]

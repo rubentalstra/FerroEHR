@@ -144,3 +144,42 @@ The SM operation `I_EHR_CONTRIBUTION.contribution_count` (1..1 in `i_ehr_contrib
 - The EHR_STATUS reject case `lifecycle_state = incomplete` (master08 reject case 2, SPECPR-368 / AMB-9 report-only): no catalogue case commits an incomplete-lifecycle EHR_STATUS.
 - The `[[folder_commit]]` row `deleted | deleted | valid | accepted` (directory deletion via contribution): E.1–E.4 cover creation/wrong-creation/wrong-modification/modification only.
 - B.2 valid-COMPOSITION variants beyond minimal-event + maximal: time-series COMPOSITION, alternative-types, `DV_CODED_TEXT` on a `DV_TEXT` node, empty `ELEMENT.value` with `null_flavour` (the maximal set covers "all ENTRY types" in one instance, so B.2.a's per-ENTRY minimal rows are covered in aggregate only).
+
+## Fixes applied (2026-07-24)
+
+All defects, ambiguities, minors, and coverage gaps above were fixed on `feat/cnf-catalogue-audit` (issue #231); `cnf-runner validate` ends **0 findings** with the chapter at **41 cases** (32 + 9 new).
+
+| id | fix applied |
+|---|---|
+| D1 | `two_commits_second_creation` `requires.templates` → `cnf.opt.minimal_persistent` (both persistent data sets' MANIFEST/fixture `template_id` = `persistent_minimal.en.v1`, provided only by that OPT — verified against `templates/minimal_persistent.opt`). |
+| D3 | AMB-3 tags + "ITS-REST: If-Match (AMB-3)" comments removed from all 8 cases (`-delete`, `-event_composition`, `-persistent_composition`, `-two_commits_second_creation`, `-two_commits_second_invalid`, `-minimal_ehr_status`, `-full_ehr_status`, `-update_existing_directory`); comments now cite the body-property realization (SM `update_version.adoc` `UPDATE_VERSION.preceding_version_uid`; OAS `UpdateVersion.preceding_version_uid`). Other tags (AMB-10/11 on `-delete`) kept. |
+| D4 | `full_ehr_status`: committed-payload realization kept and stated openly — header REALIZATION NOTE quoting the official D.2 precondition 2 and naming what is NOT established (starting-state-full); `test_purpose` carries the realization sentence; the `requires.ehr` comment no longer claims a full-status EHR. |
+| D5 | `minimal_ehr_status` + `full_ehr_status`: official step 3 uid half realized — `contribution_uid` captured on the commit, new `get_contribution` step (`instance_of: CONTRIBUTION`); count half declared as a state postcondition naming its unverifiability (no `list_contributions` wire — AMB-22; no `contribution_count` wire) with `ambiguities: [AMB-22]`. |
+| D6 | `non_exiting_opt`: header comment rewritten to the actual binding state (template_not_found mapped distinctly, 400 + alt_status [422] per AMB-40; kind distinguished by fixture, AMB-2 pattern); both ghost `REQUIREMENTS.md` references scrubbed. |
+| D7 | `two_commits_second_creation`: the 409/`already_exists` rationale deleted; the surviving derivation is the `400_CONTRIBUTION` mismatched-modification-type quote already on the expect line; ghost `REQUIREMENTS.md` reference scrubbed. |
+| D8 | `valid_composition`: version assert now carries `uid_pattern: "<uuid>::<system>::1"` (the official "creation = 1" cell; placeholder segments documented — the contribution wire captures no versioned_object_uid); the "new CONTRIBUTION" state postcondition carries `verified_by: I_EHR_CONTRIBUTION.get_contribution-existing`. |
+| D9 | Catalogue half verified: `commit: [cnf.composition.minimal_event.v1]` resolves to a real MANIFEST entry and now provisions (the runner's fail-loud fix accepts a single composition object as a one-item set); precondition comments on `get/has _contribution-bad_contribution` state the one-item-set mechanism explicitly. |
+| D10 | `ambiguities: [AMB-23]` on all four `has_contribution` cases; binding comment now cites the registered AMB-23 (AMB-19/AMB-48 family) instead of the ghost `REQUIREMENTS.md`. |
+| D11 | `ambiguities: [AMB-22]` on all five `list_contributions` cases; binding comment's "proposed … REQUIREMENTS.md" replaced with "registered as AMB-22". |
+| D12 | `list_contributions-ehr_containing_ehr_status`: the unprovisionable `commit: [cnf.ehr_status.minimal]` removed; the precondition CONTRIBUTION is now established in-flow through the status-modification path (get_ehr_status → commit modification naming the current status VERSION, capturing `contribution_uid`), the D.1 pattern — honest and realizable the day the list wire activates. |
+| A1 | **AMB-52 registered** (RM master06 §2.4 "data attribute is set to Void" + `ORIGINAL_VERSION.data` 0..1 vs OAS `UpdateVersion required: [lifecycle_state, data, commit_audit]`; both quoted; disposition `fixed_handling` = the catalogue's existing data-less delete member). Tagged on `-delete`, `-ehr_status_invalid_change_type_deleted`, and the new `-delete_directory`. |
+| A2 | **AMB-53 registered** (master08 reject case 1 "can't be deleted once created" vs the generic OAS 409 covering only "already exists" — unassigned code; disposition `fixed_handling`: conflict → 409, the AMB-21/25/26 state-conflict family). Tagged on `-ehr_status_invalid_change_type_deleted`. |
+| M1 | `cnf.opt.minimal_persistent` MANIFEST entry now carries `template_id: "persistent_minimal.en.v1"` (verified against the OPT). |
+| M2 | `valid_invalid_compositions` declares its two `${ds:…}` refs under `data_sets:`. |
+
+### Coverage gaps closed — new cases
+
+| official ground (master08) | new case id | notes |
+|---|---|---|
+| `[[one_commit]]` matrix, event reject rows (7: amendment/modification/deleted × complete; creation/amendment/modification/deleted × deleted-lifecycle) | `I_EHR_CONTRIBUTION.commit_contribution-one_commit_invalid_change_types` | pre-built ORIGINAL_VERSION members (row-controlled change_type × lifecycle_state); accepted rows stay with C.1/C.6 |
+| `[[one_commit]]` matrix, persistent reject rows (3) | `I_EHR_CONTRIBUTION.commit_contribution-one_commit_invalid_change_types_persistent` | |
+| Multi-version combination A (two valid events, one commit, accepted) | `I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_event_compositions` | the change-set defining positive; uid_pattern ::1 per member |
+| Multi-version combination B (two valid persistents, DIFFERENT OPTs, accepted) | `I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_persistent_compositions` | new corpus OPT `cnf.opt.persistent_minimal_2` (official Robot `persistent_minimal_2.opt`) + derived `cnf.composition.persistent_2.v1` |
+| Multi-version combination C (mixed categories, accepted) | `I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_mixed_compositions` | |
+| Combination D remaining orderings (persistent/persistent, event/persistent, invalid-first) | `I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions_orderings` | three bundles, one EHR, count-0 atomicity |
+| EHR_STATUS accepted-combination matrix (12 unique rows: is_modifiable × is_queryable × external_ref HIER/GENERIC/NULL) | `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_valid_combinations` | inline EHR_STATUS payload, row-templated flags, `absent` sentinel for NULL refs; distinct subject refs per row (with_subject.alt precedent); archetype_id-variation NOTE recorded as recommendation |
+| EHR_STATUS reject case 2 (lifecycle_state = incomplete, SPECPR-368) | `I_EHR_CONTRIBUTION.commit_contribution-ehr_status_incomplete_lifecycle` | pre-built ORIGINAL_VERSION member isolating the lifecycle axis; `ambiguities: [AMB-9]` (report_only) |
+| `[[folder_commit]]` deleted \| deleted \| valid \| accepted row | `I_EHR_CONTRIBUTION.commit_contribution-delete_directory` | data-less delete member against `${directory_version_uid}`; AMB-10/AMB-11/AMB-52 |
+| B.2 valid variants (time series, alternative types, DV_CODED_TEXT-on-DV_TEXT, null_flavour) | *(fixture rows added to `commit_contribution-valid_composition`)* | four new fixture-set rows — the B.2 variants are C.1 data-set rows, not separate official Test Cases; new corpus entries `cnf.composition.time_series` / `.alternative_types` / `.coded_text_on_text` / `.null_flavour` + `cnf.opt.alternative_types`, all extracted from the official Robot contributions and normalized to the literal RM `Is_archetype_root` invariant (the `cnf.composition.maximal` precedent) |
+
+New corpus artifacts: 7 MANIFEST entries (`cnf.opt.alternative_types`, `cnf.opt.persistent_minimal_2`, `cnf.composition.time_series`, `cnf.composition.alternative_types`, `cnf.composition.coded_text_on_text`, `cnf.composition.null_flavour`, `cnf.composition.persistent_2.v1`) + 7 fixture files (5 canonical-json compositions, 2 OPTs). New register entries: AMB-52, AMB-53. Chapter case count: 32 → 41.

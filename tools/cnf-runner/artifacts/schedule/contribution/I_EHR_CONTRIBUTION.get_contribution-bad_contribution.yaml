@@ -1,5 +1,8 @@
 # H.4 — get_contribution on an EHR that has CONTRIBUTIONs, for a random,
 # non-existing uid, is rejected as not found (the CONTRIBUTION does not exist).
+# The "EHR has CONTRIBUTIONs" precondition is established by the requires.commit
+# provisioning (the single composition fixture commits as a one-item set through
+# create_composition, which mints a CONTRIBUTION).
 id: I_EHR_CONTRIBUTION.get_contribution-bad_contribution
 kind: functional
 component: EHR_CONTRIBUTION

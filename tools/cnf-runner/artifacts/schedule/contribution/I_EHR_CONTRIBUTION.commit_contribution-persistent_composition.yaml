@@ -2,7 +2,9 @@
 # (change_type = modification). The second version is version 2 of the same
 # VERSIONED_OBJECT.
 # NOTE: commit 1 commits exactly one VERSION, so ${v1_uids} resolves to that
-# single version uid for the modification's preceding_version_uid (AMB-3).
+# single version uid for the modification's preceding_version_uid — carried IN
+# the member body on the contribution wire (SM update_version.adoc:
+# UPDATE_VERSION.preceding_version_uid; OAS UpdateVersion.preceding_version_uid).
 id: I_EHR_CONTRIBUTION.commit_contribution-persistent_composition
 kind: functional
 component: EHR_CONTRIBUTION
@@ -44,7 +46,7 @@ flow:
       versions:
         - data: "${ds:cnf.composition.persistent.v2}"
           change_type: modification
-          preceding_version_uid: "${v1_uids}"   # ITS-REST: If-Match (AMB-3)
+          preceding_version_uid: "${v1_uids}"   # body property: OAS UpdateVersion.preceding_version_uid
     expect: created
     capture:
       v2_uids: created.version_uids[]
@@ -52,4 +54,3 @@ flow:
       - { assert: version, for_each: "${v2_uids}", change_type: MODIFY }
 postconditions:
   - { assert: version, count: 2 }        # two VERSIONs of the same COMPOSITION
-ambiguities: [AMB-3]

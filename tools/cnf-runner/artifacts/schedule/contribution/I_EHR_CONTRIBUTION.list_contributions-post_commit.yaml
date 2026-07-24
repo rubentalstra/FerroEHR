@@ -31,3 +31,4 @@ postconditions:
   - assert: state
     text: "The list has one CONTRIBUTION containing a VERSION<COMPOSITION>."
     verified_by: I_EHR_CONTRIBUTION.get_contribution-existing
+ambiguities: [AMB-22]

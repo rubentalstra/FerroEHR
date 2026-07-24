@@ -715,3 +715,52 @@ AMB-51:
     two cells. Flips back to accepted only if a future RM release drops or
     relaxes Events_valid.
   disposition: editorial
+AMB-52:
+  ambiguity: >-
+    The data-less delete member contradicts the ITS-REST wire schema: RM
+    common master06 §2.4 defines the deletion procedure as "deletion of
+    existing item: a new ORIGINAL_VERSION whose data attribute is set to
+    Void is added to an existing VERSIONED_OBJECT; the
+    ORIGINAL_VERSION.commit_audit.change_type is set to the code
+    523|deleted|" and ORIGINAL_VERSION declares data 0..1 (optional) — but
+    the OAS UpdateVersion schema declares "required: [lifecycle_state,
+    data, commit_audit]", so a delete member WITHOUT data violates the
+    schema a SUT may enforce; the master08 C.7 flow cell "The COMPOSITION
+    should reference the same template_id" also reads as a data-carrying
+    member.
+  source: >-
+    RM docs/common/master06-change_control_package.adoc §2.4 (deletion of
+    existing item) + RM
+    docs/UML/classes/org.openehr.rm.common.original_version.adoc (data
+    0..1) vs ITS-REST ehr-codegen.openapi.yaml UpdateVersion (required:
+    lifecycle_state, data, commit_audit); CNF platform_test_schedule
+    master08 §commit_contribution-delete
+  handling: >-
+    The catalogue adopts the RM reading: delete members are committed
+    data-less (data set to Void per master06 §2.4) with lifecycle_state
+    523|deleted|; a SUT enforcing the OAS required-list against a delete
+    member fails those cases and the failure is adjudicated against this
+    entry, not silently reclassified. The affected cases tag this entry.
+    SPECPR candidate: relax UpdateVersion.required for the deletion case
+    or define the delete-member wire shape.
+  disposition: fixed_handling
+AMB-53:
+  ambiguity: >-
+    The status code for the cannot-delete-the-EHR_STATUS rejection is
+    unassigned: master08's EHR_STATUS reject case 1 grounds the rejection
+    in "the EHR_STATUS can't be deleted once created", but contribution_create
+    enumerates only 201/400/404/409 and the generic 409 text covers solely
+    "a resource with same identifier(s) already exists" — no sentence
+    assigns the cannot-delete state conflict, and 400_CONTRIBUTION scopes
+    parse/mismatched-modification failures.
+  source: >-
+    CNF platform_test_schedule master08 §EHR_STATUS CONTRIBUTION Commit
+    Data Sets (Reject Cases, case 1) vs ITS-REST ehr-codegen.openapi.yaml
+    contribution_create (responses 201/400/404/409) + the generic 409
+    response ("a resource with same identifier(s) already exists")
+  handling: >-
+    Bind the EHR_STATUS-delete rejection to conflict -> 409 (the
+    uniqueness/state-conflict family — the AMB-21/AMB-25/AMB-26
+    precedent); flag for upstream code assignment. The affected case tags
+    this entry.
+  disposition: fixed_handling
