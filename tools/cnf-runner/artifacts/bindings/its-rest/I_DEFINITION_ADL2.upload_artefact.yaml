@@ -20,9 +20,8 @@ outcomes:
   created: { status: 201 }                        # 201_Template_adl2_upload.yaml
   already_exists: { status: 409 }                 # 409_template_already_exists.yaml — duplicate template_id
   validation_failed:
-    status: 400                                   # 400.yaml — unparseable / AOM2-invalid artefact
-    alt_status: [422]                             # AMB-40: semantic artefact rejection — overview-permitted non-conflicting 422
-    body: error_loose                             # AMB-1 (error body shape divergence)
+    status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors
+    body: error_loose                             # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
 captures:
   template_id:
     from: body "template_id"                      # TemplateIdentifier.yaml (Prefer: return=identifier|representation)

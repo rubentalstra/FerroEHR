@@ -35,6 +35,12 @@
     "sut": "ehrbase-rs-ehrbase-1",
     "db": "ehrbase-rs-ehrbase-postgres-1"
   },
+  "signing": {
+    "mode": "digest",
+    "algorithm": "sha256",
+    "encoding": "base64",
+    "prefix": "sha256:"
+  },
   "environment": {
     "exclusive_server": true,
     "hardware_class": "consumer-laptop",

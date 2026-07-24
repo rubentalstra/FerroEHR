@@ -1,6 +1,6 @@
 # Pilot 4 — the versioning case: prerequisites, capture ->
 # preceding_version_uid replay, RM-level version assertions; the REST binding
-# realizes preceding_version_uid as If-Match per AMB-3.
+# realizes preceding_version_uid as If-Match per ITS-REST overview §If-Match.
 id: I_EHR_COMPOSITION.update_composition-event
 kind: functional
 component: EHR_COMPOSITION
@@ -36,7 +36,7 @@ flow:
       ehr_id: "${ehr_id}"
       composition: "${ds:cnf.composition.minimal_event.v2}"
       versioned_object_uid: "${versioned_object_uid}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { v2_uid: updated.version_uid }
     assert:
@@ -49,4 +49,3 @@ postconditions:
   # in the get_composition cases, not in update_composition; kept here as
   # extra rigor.
   - { assert: equivalent, to: committed, ignoring: server_assigned }
-ambiguities: [AMB-3]

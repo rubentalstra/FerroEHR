@@ -7,8 +7,8 @@
 # Sources: specifications/operations/definition_template_adl2_get.yaml,
 # responses/200_Template_adl2_retrieved.yaml, 404_unknown_template_id.yaml.
 # NOTE: the ADL2 get OAS enumerates only 200/400/404 — unlike the ADL 1.4 get,
-# it lists NO 406, so this binding maps no not_acceptable (schedule/definition_adl2/
-# REQUIREMENTS.md records why the example-negotiation 406 cannot be tested here).
+# it lists NO 406, so this binding maps no not_acceptable — which is why the
+# example-negotiation 406 cannot be tested on this wire (AMB-37).
 sm_operation: I_DEFINITION_ADL2.get_artefact
 its: its-rest
 request:

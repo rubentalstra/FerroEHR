@@ -1,10 +1,9 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.update_party() — the schedule
 # entry is TBD; authored as the success/happy path from the SM operation
-# semantics. Resolvable SM operation is I_PARTY.update_party (the AMB-13 rule; see
-# REQUIREMENTS.md). Updating with the correct preceding_version_uid creates a
+# semantics. Resolvable SM operation is I_PARTY.update_party. Updating with the correct preceding_version_uid creates a
 # second VERSION with change_type MODIFY (RM common §change_control), the same
 # version-assertion family as update_composition. The ITS-REST binding realizes
-# preceding_version_uid as If-Match (AMB-3).
+# preceding_version_uid as If-Match (ITS-REST overview §If-Match).
 id: I_DEMOGRAPHIC_SERVICE.update_party-aaaa
 kind: functional
 component: DEMOGRAPHIC
@@ -13,7 +12,7 @@ capabilities: [PartyOperations]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
 test_purpose: >-
   update_party with the correct preceding_version_uid creates a second VERSION
   of the PARTY with change_type MODIFY.
@@ -39,7 +38,7 @@ flow:
     with:
       versioned_object_uid: "${versioned_object_uid}"
       party: "${ds:cnf.demographic.person.v2}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { v2_uid: updated.version_uid }
     assert:
@@ -48,4 +47,3 @@ postconditions:
   - { assert: version, count: 2 }
   - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - { assert: version, of: "${v2_uid}", change_type: MODIFY }
-ambiguities: [AMB-3]

@@ -96,18 +96,21 @@ impl Signer {
         };
         Ok(Self {
             enabled: config.enabled,
-            verify_on_read: config.verify_on_read,
+            verify_on_read: config.effective_verify_on_read(),
             mode,
         })
     }
 
     /// A digest-mode signer with no key handling — the default when no signing
-    /// config is present (`enabled`, `verify_on_read = off`).
+    /// config is present. Mirrors [`SigningConfig::default`]: signing enabled,
+    /// `digest` mode, and (enabled ⇒) `verify_on_read = strict`
+    /// ([`SigningConfig::effective_verify_on_read`]).
     #[must_use]
     pub fn digest_default() -> Self {
+        let config = SigningConfig::default();
         Self {
-            enabled: true,
-            verify_on_read: VerifyOnRead::Off,
+            enabled: config.enabled,
+            verify_on_read: config.effective_verify_on_read(),
             mode: SignerMode::Digest,
         }
     }

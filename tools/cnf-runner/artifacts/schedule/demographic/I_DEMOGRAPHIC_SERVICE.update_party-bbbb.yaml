@@ -1,10 +1,10 @@
 # master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.update_party() — the schedule
 # entry is TBD; authored as the primary versioning-error path from the SM
 # operation semantics (.Errors: object_version_does_not_exist). Resolvable SM
-# operation is I_PARTY.update_party (the AMB-13 rule; see REQUIREMENTS.md). An
+# operation is I_PARTY.update_party. An
 # update carrying a stale/wrong preceding_version_uid is rejected — the ITS-REST
 # binding realizes preceding_version_uid as If-Match, so a mismatch is
-# precondition_failed (AMB-3).
+# precondition_failed (ITS-REST overview §If-Match).
 id: I_DEMOGRAPHIC_SERVICE.update_party-bbbb
 kind: functional
 component: DEMOGRAPHIC
@@ -13,7 +13,7 @@ capabilities: [PartyOperations]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
 test_purpose: >-
   update_party with a wrong preceding_version_uid is rejected
   (object_version_does_not_exist / precondition failed) and no new VERSION is
@@ -39,4 +39,3 @@ flow:
       party: "${ds:cnf.demographic.person.v2}"
       preceding_version_uid: "00000000-0000-4000-8000-0000000000ff::openEHRSys.example.com::1"
     expect: precondition_failed
-ambiguities: [AMB-3]

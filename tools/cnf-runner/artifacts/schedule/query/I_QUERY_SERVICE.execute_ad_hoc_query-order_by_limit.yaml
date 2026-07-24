@@ -5,7 +5,7 @@
 # bounding with LIMIT returns exactly the top N in that order. Exceeds AQL basic
 # (ORDER BY + LIMIT), so this carries AqlAdvanced (OPTIONS) — the profile
 # capability the master11 spine otherwise leaves unevidenced. `ecc-` id namespace
-# pending upstream adoption. See REQUIREMENTS.md §AqlAdvanced.
+# pending upstream adoption.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit
 kind: functional
 component: QUERY
@@ -37,7 +37,7 @@ flow:
         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2]
         ORDER BY o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude DESC
         LIMIT 3
-      fetch: 100                            # AMB-6: fetch always explicit
+      fetch: 100                            # fetch always explicit
     expect: ok
     assert:
       - assert: result_set

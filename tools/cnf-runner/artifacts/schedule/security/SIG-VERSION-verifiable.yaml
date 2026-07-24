@@ -4,12 +4,14 @@
 # stored on a committed VERSION verifies against the declared key material
 # (RM common: the signature is generated per the openPGP standard from a hash of
 # the canonical Version serialisation).
-# Cryptographic verification (and the ECC digest recompute) is NOT expressible
-# with the current typed-assertion vocabulary, and the verifying key material is
-# an ixit/statement-declared input, not a wire value — so this case is carried as
-# a `state` postcondition with an in-case commit verification step, and the
-# check is recorded in REQUIREMENTS.md as a `signature` assertion-family
-# candidate with an explicit ixit/statement key-material dependency.
+# The verifying posture is an ixit-declared input (the `signing` block: the
+# digest algorithm+encoding+prefix, or the openPGP public key), not a wire
+# value. Wire-asserted: the committed ORIGINAL_VERSION envelope is read back
+# (get_versioned_composition variant:version), and the `signature` assertion
+# reconstructs the agreed canonical form — RFC 8785 (JCS) of the version minus
+# `signature` (RM common master06 §Digital Signature: "all attributes except
+# signature") — then verifies per the declared mode (digest recompute / openPGP
+# RFC 4880).
 id: SIG-VERSION-verifiable
 kind: functional
 component: SECURITY
@@ -43,7 +45,16 @@ flow:
     expect: created
     capture:
       version_uid: created.version_uid
+      versioned_object_uid: created.versioned_object_uid
     assert:
       - { assert: version, of: "${version_uid}", change_type: CREATE }
-postconditions:
-  - { assert: signature, of: "${version_uid}", present: true, verifiable: true }
+  - step: 2
+    call: get_versioned_composition          # RM VERSIONED_OBJECT.version_with_id
+    variant: version                          # -> /versioned_composition/{vo}/version/{vuid} (ORIGINAL_VERSION envelope)
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${version_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${version_uid}", verifiable: true }

@@ -23,5 +23,5 @@ decision_table:
   columns: [symbol, value, expected, violates]
   rows:
     - ["local::at0005", 1.5, accepted, []]
-    - ["local::at0005", 66.6, rejected, ["constraint(C_DV_ORDINAL.list): no matching value"]]
-    - ["local::at0666", 1.5, rejected, ["constraint(C_DV_ORDINAL.list): no matching symbol"]]
+    - ["local::at0005", 66.6, rejected, ["constraint(C_DV_SCALE.list): no matching value"]]
+    - ["local::at0666", 1.5, rejected, ["constraint(C_DV_SCALE.list): no matching symbol"]]

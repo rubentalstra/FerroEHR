@@ -147,7 +147,7 @@ data:
     [signing]
       enabled = true
       mode = "digest"
-      verify_on_read = "off"
+      verify_on_read = "strict"
     
     [tenancy]
       claim = "tenant"

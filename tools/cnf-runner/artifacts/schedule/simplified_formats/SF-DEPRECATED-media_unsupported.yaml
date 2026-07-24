@@ -7,12 +7,11 @@
 # option_select candidate): this is the sf-deprecated-types-unsupported branch.
 # ECC-SF-004/005 ground.
 #
-# TODO: `variant` now selects the binding, but a HEADER-MUTATION variant
-#       (deprecated_media_type = send a pre-1.1.0 SDT-era simplified-format
-#       Content-Type) is not yet implemented in the driver; without it the runner
-#       sends the current wt.flat Content-Type and the SUT correctly creates.
-#       Needs a driver mechanism to override the request Content-Type per step
-#       variant.
+# NOTE: `variant: deprecated_media_type` selects the deprecated_media binding,
+#       which sends the deprecated pre-1.1.0 Content-Type
+#       application/openehr.wt.flat.schema+json (per each binding's format_headers);
+#       the SUT on the unsupported branch refuses it 415. Verified live against
+#       the composed SUT.
 id: SF-DEPRECATED-media_unsupported
 kind: functional
 component: SIMPLIFIED_FORMATS
@@ -30,6 +29,7 @@ spec_refs:
   - "ITS-REST simplified_formats master02 §MIME Types"
   - "ITS-REST simplified_formats master02 §Overview"
   - "ITS-REST overview Requests_and_responses §HTTP status codes"
+  - "ITS-REST overview Resources.md §Simplified Formats (deprecated media types NOTE)"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 guards:
   - "Deprecated-media-type support is statement-declared, not spec-mandated — the ICS options declaration selects this branch (AMB-39); ITS-REST simplified_formats master02 defines only the current wt.flat/wt.structured MIME types"

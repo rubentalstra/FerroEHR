@@ -89,6 +89,13 @@ pub struct Ixit {
     /// see [`Containers`]).
     #[serde(default)]
     pub containers: Option<Containers>,
+    /// The SUT's version-signing posture (RM common master06 §Digital
+    /// Signature). Present => the SUT claims the Signing capability and this
+    /// block declares its mode (digest | pgp) so the SIG-VERSION `verifiable`
+    /// check knows how to verify; absent => no Signing capability, and the
+    /// SIG-VERSION cases N/A on their guard.
+    #[serde(default)]
+    pub signing: Option<crate::exec::signature::SigningMode>,
 }
 
 impl Ixit {

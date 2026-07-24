@@ -1,6 +1,7 @@
 # G.3 — has_contribution on a non-existent EHR errors on the missing EHR —
-# realized as a 404 (not_found). Fixed arbitrary UUID literals absent on an empty
-# server.
+# realized as a 404 (not_found) of the CONTRIBUTION GET (the registered realization; the SM error path ehr_id_does_not_exist makes the 404 directly
+# derivable from 404_CONTRIBUTION). Fixed arbitrary UUID literals absent on an
+# empty server.
 id: I_EHR_CONTRIBUTION.has_contribution-bad_ehr
 kind: functional
 component: EHR_CONTRIBUTION

@@ -31,7 +31,7 @@ flow:
     capture: { preceding_version_uid: created.version_uid }
   - step: 2
     call: delete_directory
-    with: { ehr_id: "${ehr_id}", preceding_version_uid: "${preceding_version_uid}" }   # ITS-REST: If-Match (AMB-3)
+    with: { ehr_id: "${ehr_id}", preceding_version_uid: "${preceding_version_uid}" }   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: deleted                       # "a positive result related with the deleted directory"
   - step: 3
     call: get_directory

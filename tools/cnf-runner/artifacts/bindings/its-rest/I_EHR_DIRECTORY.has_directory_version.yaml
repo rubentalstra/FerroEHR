@@ -4,7 +4,7 @@
 # I_EHR_COMPOSITION.has_composition — it is realized as
 # GET /ehr/{ehr_id}/directory/{version_uid}: 200 = the version exists (TRUE),
 # 404 = no such version, or the EHR does not exist (FALSE / error). The boolean
-# is carried by the ok/not_found outcome kind (schedule/directory/REQUIREMENTS.md).
+# is carried by the ok/not_found outcome kind (no dedicated existence endpoint in ITS-REST 1.1.0).
 # Sources: specifications/operations/directory_get_by_version_id.yaml (200/404),
 # parameters/path/version_uid.yaml, responses/200_FOLDER_retrieved.yaml,
 # 404_directory_unknown_ehr_id_or_no_version_uid_or_no_path.yaml.

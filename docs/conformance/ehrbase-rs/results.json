@@ -15,7 +15,7 @@
       "canonical-json"
     ]
   },
-  "ixit_digest": "f902513124f7e8de",
+  "ixit_digest": "2c397b7d62e12a09",
   "outcomes": [
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
@@ -358,16 +358,88 @@
       "rows_total": 1
     },
     {
-      "case": "CONT-COMPOSITION-content_cardinality",
+      "case": "CONT-COMP-content_card_1plus-context_any",
       "status": "passed",
-      "rows_driven": 24,
-      "rows_total": 24
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_1plus-context_mand",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_3plus-context_any",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_3plus-context_mand",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_3to5-context_any",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_3to5-context_mand",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_any-context_any",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_any-context_mand",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_mand-context_any",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_mand-context_mand",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_opt-context_any",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMP-content_card_opt-context_mand",
+      "status": "passed",
+      "rows_driven": 9,
+      "rows_total": 9
+    },
+    {
+      "case": "CONT-COMPOSITION-content_cardinality_count6",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
     },
     {
       "case": "CONT-COMPOSITION-context_existence",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "CONT-DV_BOOLEAN-anything_allowed",
@@ -546,8 +618,14 @@
     {
       "case": "CONT-DV_INTERVAL_DV_DATE-validate_open",
       "status": "passed",
-      "rows_driven": 8,
-      "rows_total": 8
+      "rows_driven": 7,
+      "rows_total": 7
+    },
+    {
+      "case": "CONT-DV_INTERVAL_DV_DATE-validate_open_mixed_precision",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "CONT-DV_INTERVAL_DV_DATE_TIME-validate_lower_upper_constraint",
@@ -678,8 +756,14 @@
     {
       "case": "CONT-DV_INTERVAL_DV_TIME-validate_open",
       "status": "passed",
-      "rows_driven": 8,
-      "rows_total": 8
+      "rows_driven": 7,
+      "rows_total": 7
+    },
+    {
+      "case": "CONT-DV_INTERVAL_DV_TIME-validate_open_mixed_precision",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "CONT-DV_MULTIMEDIA-validate_media_type",
@@ -850,43 +934,181 @@
       "rows_total": 2
     },
     {
-      "case": "CONT-EVENT-state_existence",
-      "status": "passed",
-      "rows_driven": 5,
-      "rows_total": 5
-    },
-    {
-      "case": "CONT-EVENT-type_narrowing",
-      "status": "passed",
-      "rows_driven": 6,
-      "rows_total": 6
-    },
-    {
-      "case": "CONT-HISTORY-events_cardinality",
-      "status": "passed",
-      "rows_driven": 24,
-      "rows_total": 24
-    },
-    {
-      "case": "CONT-HISTORY-summary_existence",
+      "case": "CONT-EVENT-state_ex_mand",
       "status": "passed",
       "rows_driven": 4,
       "rows_total": 4
     },
     {
-      "case": "CONT-ITEM_STRUCTURE-type_narrowing",
+      "case": "CONT-EVENT-state_ex_opt",
       "status": "passed",
-      "rows_driven": 12,
-      "rows_total": 12
+      "rows_driven": 4,
+      "rows_total": 4
     },
     {
-      "case": "CONT-OBSERVATION-state_protocol_existence",
+      "case": "CONT-EVENT-type_any",
       "status": "passed",
-      "rows_driven": 9,
-      "rows_total": 9
+      "rows_driven": 2,
+      "rows_total": 2
+    },
+    {
+      "case": "CONT-EVENT-type_interval_event",
+      "status": "passed",
+      "rows_driven": 2,
+      "rows_total": 2
+    },
+    {
+      "case": "CONT-EVENT-type_point_event",
+      "status": "passed",
+      "rows_driven": 2,
+      "rows_total": 2
+    },
+    {
+      "case": "CONT-HIST-events_card_1plus-summary_ex_mand",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_1plus-summary_ex_opt",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_3plus-summary_ex_mand",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_3plus-summary_ex_opt",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_3to5-summary_ex_mand",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_3to5-summary_ex_opt",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_any-summary_ex_mand",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_any-summary_ex_opt",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_mand-summary_ex_mand",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_mand-summary_ex_opt",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_opt-summary_ex_mand",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HIST-events_card_opt-summary_ex_opt",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-HISTORY-events_cardinality_count6",
+      "status": "passed",
+      "rows_driven": 6,
+      "rows_total": 6
+    },
+    {
+      "case": "CONT-ITEM_STR-type_any",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
+      "case": "CONT-ITEM_STR-type_item_list",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
+      "case": "CONT-ITEM_STR-type_item_single",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
+      "case": "CONT-ITEM_STR-type_item_table",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
+      "case": "CONT-ITEM_STR-type_item_tree",
+      "status": "passed",
+      "rows_driven": 4,
+      "rows_total": 4
+    },
+    {
+      "case": "CONT-OBS-state_ex_mand-protocol_ex_mand",
+      "status": "passed",
+      "rows_driven": 8,
+      "rows_total": 8
+    },
+    {
+      "case": "CONT-OBS-state_ex_mand-protocol_ex_opt",
+      "status": "passed",
+      "rows_driven": 8,
+      "rows_total": 8
+    },
+    {
+      "case": "CONT-OBS-state_ex_opt-protocol_ex_mand",
+      "status": "passed",
+      "rows_driven": 8,
+      "rows_total": 8
+    },
+    {
+      "case": "CONT-OBS-state_ex_opt-protocol_ex_opt",
+      "status": "passed",
+      "rows_driven": 8,
+      "rows_total": 8
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-delete",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-delete_directory",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_incomplete_lifecycle",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -902,6 +1124,12 @@
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-ehr_status_valid_combinations",
+      "status": "passed",
+      "rows_driven": 12,
+      "rows_total": 12
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-empty",
@@ -952,10 +1180,40 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_event_compositions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_mixed_compositions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-multiple_valid_persistent_compositions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-one_commit_invalid_change_types",
+      "status": "passed",
+      "rows_driven": 7,
+      "rows_total": 7
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-one_commit_invalid_change_types_persistent",
+      "status": "passed",
+      "rows_driven": 3,
+      "rows_total": 3
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-persistent_composition",
@@ -984,8 +1242,8 @@
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_composition",
       "status": "passed",
-      "rows_driven": 2,
-      "rows_total": 2
+      "rows_driven": 6,
+      "rows_total": 6
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_directory",
@@ -995,6 +1253,12 @@
     },
     {
       "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_CONTRIBUTION.commit_contribution-valid_invalid_compositions_orderings",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2055,8 +2319,8 @@
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-terminology_unsupported_forms",
       "status": "passed",
-      "rows_driven": 3,
-      "rows_total": 3
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-uid_projection",
@@ -2120,6 +2384,12 @@
     },
     {
       "case": "SIG-VERSION-client_supplied_verbatim",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SIG-VERSION-ehr_status_signature",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2422,14 +2692,14 @@
     {
       "case": "SF-STRUCT-empty_object_omission",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-STRUCT-style_rules",
       "status": "passed",
-      "rows_driven": 6,
-      "rows_total": 6
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-STRUCTURED-commit_roundtrip",
@@ -2720,7 +2990,7 @@
               {
                 "offset_s": 60,
                 "phase": "warmup",
-                "cpu_pct": 1.2963615746202801,
+                "cpu_pct": 1.29636157462028,
                 "rss_bytes": 224927744,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -2730,7 +3000,7 @@
               {
                 "offset_s": 70,
                 "phase": "warmup",
-                "cpu_pct": 1.8751962244919553,
+                "cpu_pct": 1.875196224491955,
                 "rss_bytes": 238141440,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -2830,7 +3100,7 @@
               {
                 "offset_s": 170,
                 "phase": "warmup",
-                "cpu_pct": 2.1247437684026558,
+                "cpu_pct": 2.124743768402656,
                 "rss_bytes": 252862464,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -2880,7 +3150,7 @@
               {
                 "offset_s": 220,
                 "phase": "warmup",
-                "cpu_pct": 0.9017349695195215,
+                "cpu_pct": 0.9017349695195216,
                 "rss_bytes": 253640704,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -2920,7 +3190,7 @@
               {
                 "offset_s": 260,
                 "phase": "warmup",
-                "cpu_pct": 1.8192762273451222,
+                "cpu_pct": 1.8192762273451224,
                 "rss_bytes": 253644800,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -2980,7 +3250,7 @@
               {
                 "offset_s": 320,
                 "phase": "measured",
-                "cpu_pct": 1.1287508253869363,
+                "cpu_pct": 1.1287508253869365,
                 "rss_bytes": 259325952,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3010,7 +3280,7 @@
               {
                 "offset_s": 350,
                 "phase": "measured",
-                "cpu_pct": 0.9806140231344453,
+                "cpu_pct": 0.9806140231344452,
                 "rss_bytes": 259346432,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3060,7 +3330,7 @@
               {
                 "offset_s": 400,
                 "phase": "measured",
-                "cpu_pct": 1.5184209722435653,
+                "cpu_pct": 1.518420972243565,
                 "rss_bytes": 267534336,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3080,7 +3350,7 @@
               {
                 "offset_s": 420,
                 "phase": "measured",
-                "cpu_pct": 0.9889246142345329,
+                "cpu_pct": 0.9889246142345328,
                 "rss_bytes": 267538432,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3090,7 +3360,7 @@
               {
                 "offset_s": 430,
                 "phase": "measured",
-                "cpu_pct": 1.4690400706928555,
+                "cpu_pct": 1.4690400706928557,
                 "rss_bytes": 267538432,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3110,7 +3380,7 @@
               {
                 "offset_s": 450,
                 "phase": "measured",
-                "cpu_pct": 0.9814372839635731,
+                "cpu_pct": 0.9814372839635732,
                 "rss_bytes": 267538432,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3220,7 +3490,7 @@
               {
                 "offset_s": 560,
                 "phase": "measured",
-                "cpu_pct": 0.9285937817521859,
+                "cpu_pct": 0.928593781752186,
                 "rss_bytes": 280522752,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3230,7 +3500,7 @@
               {
                 "offset_s": 570,
                 "phase": "measured",
-                "cpu_pct": 0.9077992130062613,
+                "cpu_pct": 0.9077992130062612,
                 "rss_bytes": 280535040,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3350,7 +3620,7 @@
               {
                 "offset_s": 690,
                 "phase": "measured",
-                "cpu_pct": 0.9925060301714373,
+                "cpu_pct": 0.9925060301714372,
                 "rss_bytes": 290893824,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3370,7 +3640,7 @@
               {
                 "offset_s": 710,
                 "phase": "measured",
-                "cpu_pct": 1.3269932015772319,
+                "cpu_pct": 1.326993201577232,
                 "rss_bytes": 290865152,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3390,7 +3660,7 @@
               {
                 "offset_s": 730,
                 "phase": "measured",
-                "cpu_pct": 1.0621134163867045,
+                "cpu_pct": 1.0621134163867043,
                 "rss_bytes": 290848768,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3410,7 +3680,7 @@
               {
                 "offset_s": 750,
                 "phase": "measured",
-                "cpu_pct": 1.3355666092722647,
+                "cpu_pct": 1.335566609272265,
                 "rss_bytes": 291098624,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3420,7 +3690,7 @@
               {
                 "offset_s": 760,
                 "phase": "measured",
-                "cpu_pct": 1.4423559562284063,
+                "cpu_pct": 1.4423559562284065,
                 "rss_bytes": 290840576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3470,7 +3740,7 @@
               {
                 "offset_s": 810,
                 "phase": "measured",
-                "cpu_pct": 0.9810242591178001,
+                "cpu_pct": 0.9810242591178,
                 "rss_bytes": 300503040,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3500,7 +3770,7 @@
               {
                 "offset_s": 840,
                 "phase": "measured",
-                "cpu_pct": 1.7420538926742815,
+                "cpu_pct": 1.7420538926742817,
                 "rss_bytes": 301322240,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3510,7 +3780,7 @@
               {
                 "offset_s": 850,
                 "phase": "measured",
-                "cpu_pct": 1.3694471841825777,
+                "cpu_pct": 1.3694471841825775,
                 "rss_bytes": 301322240,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3520,7 +3790,7 @@
               {
                 "offset_s": 860,
                 "phase": "measured",
-                "cpu_pct": 0.9710893435500529,
+                "cpu_pct": 0.9710893435500528,
                 "rss_bytes": 301580288,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3540,7 +3810,7 @@
               {
                 "offset_s": 880,
                 "phase": "measured",
-                "cpu_pct": 1.0505021379635227,
+                "cpu_pct": 1.0505021379635229,
                 "rss_bytes": 303419392,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3580,7 +3850,7 @@
               {
                 "offset_s": 920,
                 "phase": "measured",
-                "cpu_pct": 1.4313141582022257,
+                "cpu_pct": 1.4313141582022255,
                 "rss_bytes": 303161344,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3650,7 +3920,7 @@
               {
                 "offset_s": 990,
                 "phase": "measured",
-                "cpu_pct": 1.1521910834018059,
+                "cpu_pct": 1.152191083401806,
                 "rss_bytes": 303226880,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3680,7 +3950,7 @@
               {
                 "offset_s": 1020,
                 "phase": "measured",
-                "cpu_pct": 1.9692978911030798,
+                "cpu_pct": 1.96929789110308,
                 "rss_bytes": 303927296,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3740,7 +4010,7 @@
               {
                 "offset_s": 1080,
                 "phase": "measured",
-                "cpu_pct": 1.9556331446455237,
+                "cpu_pct": 1.9556331446455235,
                 "rss_bytes": 304934912,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3750,7 +4020,7 @@
               {
                 "offset_s": 1090,
                 "phase": "measured",
-                "cpu_pct": 1.4442833510342181,
+                "cpu_pct": 1.444283351034218,
                 "rss_bytes": 304930816,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3790,7 +4060,7 @@
               {
                 "offset_s": 1130,
                 "phase": "measured",
-                "cpu_pct": 1.7393647665029839,
+                "cpu_pct": 1.739364766502984,
                 "rss_bytes": 304955392,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3840,7 +4110,7 @@
               {
                 "offset_s": 1180,
                 "phase": "measured",
-                "cpu_pct": 0.9889214007066391,
+                "cpu_pct": 0.9889214007066393,
                 "rss_bytes": 304934912,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3850,7 +4120,7 @@
               {
                 "offset_s": 1190,
                 "phase": "measured",
-                "cpu_pct": 1.5333908385524417,
+                "cpu_pct": 1.5333908385524415,
                 "rss_bytes": 304967680,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3920,7 +4190,7 @@
               {
                 "offset_s": 1260,
                 "phase": "measured",
-                "cpu_pct": 1.3007650199173557,
+                "cpu_pct": 1.3007650199173555,
                 "rss_bytes": 306733056,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -3970,7 +4240,7 @@
               {
                 "offset_s": 1310,
                 "phase": "measured",
-                "cpu_pct": 1.3941469678688079,
+                "cpu_pct": 1.394146967868808,
                 "rss_bytes": 306700288,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4020,7 +4290,7 @@
               {
                 "offset_s": 1360,
                 "phase": "measured",
-                "cpu_pct": 1.0254017203134647,
+                "cpu_pct": 1.0254017203134649,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4100,7 +4370,7 @@
               {
                 "offset_s": 1440,
                 "phase": "measured",
-                "cpu_pct": 1.9382447026064014,
+                "cpu_pct": 1.9382447026064016,
                 "rss_bytes": 306728960,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4140,7 +4410,7 @@
               {
                 "offset_s": 1480,
                 "phase": "measured",
-                "cpu_pct": 0.9899657558304863,
+                "cpu_pct": 0.9899657558304864,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4180,7 +4450,7 @@
               {
                 "offset_s": 1520,
                 "phase": "measured",
-                "cpu_pct": 1.5648299141676025,
+                "cpu_pct": 1.5648299141676023,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4200,7 +4470,7 @@
               {
                 "offset_s": 1540,
                 "phase": "measured",
-                "cpu_pct": 1.0110022625743407,
+                "cpu_pct": 1.011002262574341,
                 "rss_bytes": 306966528,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4210,7 +4480,7 @@
               {
                 "offset_s": 1550,
                 "phase": "measured",
-                "cpu_pct": 1.3195187592281539,
+                "cpu_pct": 1.319518759228154,
                 "rss_bytes": 306704384,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4360,7 +4630,7 @@
               {
                 "offset_s": 1700,
                 "phase": "measured",
-                "cpu_pct": 1.3170908550891103,
+                "cpu_pct": 1.3170908550891105,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4380,7 +4650,7 @@
               {
                 "offset_s": 1720,
                 "phase": "measured",
-                "cpu_pct": 1.2189753915040957,
+                "cpu_pct": 1.2189753915040955,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4430,7 +4700,7 @@
               {
                 "offset_s": 1770,
                 "phase": "measured",
-                "cpu_pct": 0.9924568798182999,
+                "cpu_pct": 0.9924568798183,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4450,7 +4720,7 @@
               {
                 "offset_s": 1790,
                 "phase": "measured",
-                "cpu_pct": 1.1766202823329381,
+                "cpu_pct": 1.176620282332938,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4520,7 +4790,7 @@
               {
                 "offset_s": 1860,
                 "phase": "measured",
-                "cpu_pct": 1.1736719214053701,
+                "cpu_pct": 1.17367192140537,
                 "rss_bytes": 306987008,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4530,7 +4800,7 @@
               {
                 "offset_s": 1870,
                 "phase": "measured",
-                "cpu_pct": 1.2521979477297687,
+                "cpu_pct": 1.252197947729769,
                 "rss_bytes": 306716672,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4690,7 +4960,7 @@
               {
                 "offset_s": 2030,
                 "phase": "measured",
-                "cpu_pct": 0.9262547674589519,
+                "cpu_pct": 0.926254767458952,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4720,7 +4990,7 @@
               {
                 "offset_s": 2060,
                 "phase": "measured",
-                "cpu_pct": 1.0126900640619239,
+                "cpu_pct": 1.012690064061924,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4770,7 +5040,7 @@
               {
                 "offset_s": 2110,
                 "phase": "measured",
-                "cpu_pct": 0.9535866263772591,
+                "cpu_pct": 0.9535866263772592,
                 "rss_bytes": 306720768,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4830,7 +5100,7 @@
               {
                 "offset_s": 2170,
                 "phase": "measured",
-                "cpu_pct": 0.9401672602373099,
+                "cpu_pct": 0.94016726023731,
                 "rss_bytes": 306720768,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4860,7 +5130,7 @@
               {
                 "offset_s": 2200,
                 "phase": "measured",
-                "cpu_pct": 1.2632740764571053,
+                "cpu_pct": 1.263274076457105,
                 "rss_bytes": 306716672,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -4930,7 +5200,7 @@
               {
                 "offset_s": 2270,
                 "phase": "measured",
-                "cpu_pct": 0.9629792021114367,
+                "cpu_pct": 0.9629792021114368,
                 "rss_bytes": 306716672,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5000,7 +5270,7 @@
               {
                 "offset_s": 2340,
                 "phase": "measured",
-                "cpu_pct": 1.2448859600558657,
+                "cpu_pct": 1.2448859600558655,
                 "rss_bytes": 306819072,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5010,7 +5280,7 @@
               {
                 "offset_s": 2350,
                 "phase": "measured",
-                "cpu_pct": 0.9235204921988599,
+                "cpu_pct": 0.92352049219886,
                 "rss_bytes": 306749440,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5030,7 +5300,7 @@
               {
                 "offset_s": 2370,
                 "phase": "measured",
-                "cpu_pct": 0.9156514215802787,
+                "cpu_pct": 0.9156514215802788,
                 "rss_bytes": 306819072,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5050,7 +5320,7 @@
               {
                 "offset_s": 2390,
                 "phase": "measured",
-                "cpu_pct": 0.9971355034265307,
+                "cpu_pct": 0.9971355034265308,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5090,7 +5360,7 @@
               {
                 "offset_s": 2430,
                 "phase": "measured",
-                "cpu_pct": 0.9291602186340817,
+                "cpu_pct": 0.9291602186340816,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5140,7 +5410,7 @@
               {
                 "offset_s": 2480,
                 "phase": "measured",
-                "cpu_pct": 0.9023051852234837,
+                "cpu_pct": 0.9023051852234836,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5200,7 +5470,7 @@
               {
                 "offset_s": 2540,
                 "phase": "measured",
-                "cpu_pct": 0.9488174950006655,
+                "cpu_pct": 0.9488174950006656,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5230,7 +5500,7 @@
               {
                 "offset_s": 2570,
                 "phase": "measured",
-                "cpu_pct": 0.9139551827780525,
+                "cpu_pct": 0.9139551827780524,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5450,7 +5720,7 @@
               {
                 "offset_s": 2790,
                 "phase": "measured",
-                "cpu_pct": 0.9558674346843463,
+                "cpu_pct": 0.9558674346843464,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5620,7 +5890,7 @@
               {
                 "offset_s": 2960,
                 "phase": "measured",
-                "cpu_pct": 1.5371855623283865,
+                "cpu_pct": 1.5371855623283863,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5640,7 +5910,7 @@
               {
                 "offset_s": 2980,
                 "phase": "measured",
-                "cpu_pct": 0.9289317202317985,
+                "cpu_pct": 0.9289317202317984,
                 "rss_bytes": 306708480,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5840,7 +6110,7 @@
               {
                 "offset_s": 3180,
                 "phase": "measured",
-                "cpu_pct": 0.9710493102408901,
+                "cpu_pct": 0.97104931024089,
                 "rss_bytes": 306741248,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5890,7 +6160,7 @@
               {
                 "offset_s": 3230,
                 "phase": "measured",
-                "cpu_pct": 0.9267377463614227,
+                "cpu_pct": 0.9267377463614228,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -5960,7 +6230,7 @@
               {
                 "offset_s": 3300,
                 "phase": "measured",
-                "cpu_pct": 1.1878548230386539,
+                "cpu_pct": 1.187854823038654,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6060,7 +6330,7 @@
               {
                 "offset_s": 3400,
                 "phase": "measured",
-                "cpu_pct": 0.9396218634517071,
+                "cpu_pct": 0.9396218634517072,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6070,7 +6340,7 @@
               {
                 "offset_s": 3410,
                 "phase": "measured",
-                "cpu_pct": 1.4125341987138467,
+                "cpu_pct": 1.412534198713847,
                 "rss_bytes": 306712576,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6290,7 +6560,7 @@
               {
                 "offset_s": 3630,
                 "phase": "measured",
-                "cpu_pct": 1.1112995943797699,
+                "cpu_pct": 1.11129959437977,
                 "rss_bytes": 306802688,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6320,7 +6590,7 @@
               {
                 "offset_s": 3660,
                 "phase": "measured",
-                "cpu_pct": 1.0695129009254363,
+                "cpu_pct": 1.0695129009254365,
                 "rss_bytes": 306790400,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6350,7 +6620,7 @@
               {
                 "offset_s": 3690,
                 "phase": "measured",
-                "cpu_pct": 0.9937365390037521,
+                "cpu_pct": 0.993736539003752,
                 "rss_bytes": 306790400,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6370,7 +6640,7 @@
               {
                 "offset_s": 3710,
                 "phase": "measured",
-                "cpu_pct": 1.2000503019566935,
+                "cpu_pct": 1.2000503019566937,
                 "rss_bytes": 306810880,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6400,7 +6670,7 @@
               {
                 "offset_s": 3740,
                 "phase": "measured",
-                "cpu_pct": 0.9903293061685131,
+                "cpu_pct": 0.9903293061685132,
                 "rss_bytes": 306790400,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6470,7 +6740,7 @@
               {
                 "offset_s": 3810,
                 "phase": "measured",
-                "cpu_pct": 0.9759043204573421,
+                "cpu_pct": 0.975904320457342,
                 "rss_bytes": 306790400,
                 "blk_read_bytes": 225280,
                 "blk_write_bytes": 0,
@@ -6616,7 +6886,7 @@
               {
                 "offset_s": 60,
                 "phase": "warmup",
-                "cpu_pct": 3.0200335905805518,
+                "cpu_pct": 3.020033590580552,
                 "rss_bytes": 1498533888,
                 "blk_read_bytes": 6146822144,
                 "blk_write_bytes": 46491648000,
@@ -6626,7 +6896,7 @@
               {
                 "offset_s": 70,
                 "phase": "warmup",
-                "cpu_pct": 2.6050255566871234,
+                "cpu_pct": 2.605025556687123,
                 "rss_bytes": 1501630464,
                 "blk_read_bytes": 6147903488,
                 "blk_write_bytes": 46493630464,
@@ -6666,7 +6936,7 @@
               {
                 "offset_s": 110,
                 "phase": "warmup",
-                "cpu_pct": 2.3456430469176874,
+                "cpu_pct": 2.345643046917687,
                 "rss_bytes": 1502146560,
                 "blk_read_bytes": 6152310784,
                 "blk_write_bytes": 46502207488,
@@ -7336,7 +7606,7 @@
               {
                 "offset_s": 780,
                 "phase": "measured",
-                "cpu_pct": 2.0579690052287414,
+                "cpu_pct": 2.057969005228742,
                 "rss_bytes": 1535483904,
                 "blk_read_bytes": 6224662528,
                 "blk_write_bytes": 47279853568,
@@ -7436,7 +7706,7 @@
               {
                 "offset_s": 880,
                 "phase": "measured",
-                "cpu_pct": 2.0735848913898374,
+                "cpu_pct": 2.073584891389838,
                 "rss_bytes": 1541148672,
                 "blk_read_bytes": 6235410432,
                 "blk_write_bytes": 47288369152,
@@ -7516,7 +7786,7 @@
               {
                 "offset_s": 960,
                 "phase": "measured",
-                "cpu_pct": 1.9713127635163326,
+                "cpu_pct": 1.9713127635163328,
                 "rss_bytes": 1543499776,
                 "blk_read_bytes": 6243749888,
                 "blk_write_bytes": 47299321856,
@@ -7666,7 +7936,7 @@
               {
                 "offset_s": 1110,
                 "phase": "measured",
-                "cpu_pct": 2.2536776525529922,
+                "cpu_pct": 2.253677652552992,
                 "rss_bytes": 1549533184,
                 "blk_read_bytes": 6260023296,
                 "blk_write_bytes": 47307685888,
@@ -7896,7 +8166,7 @@
               {
                 "offset_s": 1340,
                 "phase": "measured",
-                "cpu_pct": 2.0574291758478642,
+                "cpu_pct": 2.057429175847864,
                 "rss_bytes": 1422098432,
                 "blk_read_bytes": 6283841536,
                 "blk_write_bytes": 47329562624,
@@ -7946,7 +8216,7 @@
               {
                 "offset_s": 1390,
                 "phase": "measured",
-                "cpu_pct": 1.9794870807667113,
+                "cpu_pct": 1.979487080766711,
                 "rss_bytes": 1427873792,
                 "blk_read_bytes": 6288896000,
                 "blk_write_bytes": 47332806656,
@@ -7966,7 +8236,7 @@
               {
                 "offset_s": 1410,
                 "phase": "measured",
-                "cpu_pct": 1.8900796821111814,
+                "cpu_pct": 1.8900796821111816,
                 "rss_bytes": 1428602880,
                 "blk_read_bytes": 6290837504,
                 "blk_write_bytes": 47333666816,
@@ -7976,7 +8246,7 @@
               {
                 "offset_s": 1420,
                 "phase": "measured",
-                "cpu_pct": 1.6212138826283313,
+                "cpu_pct": 1.621213882628331,
                 "rss_bytes": 1428430848,
                 "blk_read_bytes": 6292107264,
                 "blk_write_bytes": 47333920768,
@@ -8076,7 +8346,7 @@
               {
                 "offset_s": 1520,
                 "phase": "measured",
-                "cpu_pct": 1.8616864115107306,
+                "cpu_pct": 1.8616864115107303,
                 "rss_bytes": 1434492928,
                 "blk_read_bytes": 6302236672,
                 "blk_write_bytes": 47344115712,
@@ -8146,7 +8416,7 @@
               {
                 "offset_s": 1590,
                 "phase": "measured",
-                "cpu_pct": 1.7448910841310081,
+                "cpu_pct": 1.744891084131008,
                 "rss_bytes": 1436200960,
                 "blk_read_bytes": 6308769792,
                 "blk_write_bytes": 47351881728,
@@ -8206,7 +8476,7 @@
               {
                 "offset_s": 1650,
                 "phase": "measured",
-                "cpu_pct": 1.9226301992210142,
+                "cpu_pct": 1.9226301992210144,
                 "rss_bytes": 1441673216,
                 "blk_read_bytes": 6314487808,
                 "blk_write_bytes": 47355781120,
@@ -8246,7 +8516,7 @@
               {
                 "offset_s": 1690,
                 "phase": "measured",
-                "cpu_pct": 1.9705267603043402,
+                "cpu_pct": 1.97052676030434,
                 "rss_bytes": 1441570816,
                 "blk_read_bytes": 6317563904,
                 "blk_write_bytes": 47357558784,
@@ -8286,7 +8556,7 @@
               {
                 "offset_s": 1730,
                 "phase": "measured",
-                "cpu_pct": 2.0364492319959426,
+                "cpu_pct": 2.036449231995942,
                 "rss_bytes": 1441955840,
                 "blk_read_bytes": 6321524736,
                 "blk_write_bytes": 47359311872,
@@ -8436,7 +8706,7 @@
               {
                 "offset_s": 1880,
                 "phase": "measured",
-                "cpu_pct": 2.3647163738454546,
+                "cpu_pct": 2.364716373845454,
                 "rss_bytes": 1448521728,
                 "blk_read_bytes": 6337536000,
                 "blk_write_bytes": 47377592320,
@@ -8546,7 +8816,7 @@
               {
                 "offset_s": 1990,
                 "phase": "measured",
-                "cpu_pct": 2.0971066760012746,
+                "cpu_pct": 2.097106676001274,
                 "rss_bytes": 1448427520,
                 "blk_read_bytes": 6350012416,
                 "blk_write_bytes": 47383449600,
@@ -8566,7 +8836,7 @@
               {
                 "offset_s": 2010,
                 "phase": "measured",
-                "cpu_pct": 1.8472544059757654,
+                "cpu_pct": 1.8472544059757656,
                 "rss_bytes": 1448517632,
                 "blk_read_bytes": 6352289792,
                 "blk_write_bytes": 47384334336,
@@ -8586,7 +8856,7 @@
               {
                 "offset_s": 2030,
                 "phase": "measured",
-                "cpu_pct": 1.6626869417457655,
+                "cpu_pct": 1.6626869417457657,
                 "rss_bytes": 1449373696,
                 "blk_read_bytes": 6354481152,
                 "blk_write_bytes": 47385456640,
@@ -8666,7 +8936,7 @@
               {
                 "offset_s": 2110,
                 "phase": "measured",
-                "cpu_pct": 1.9434053783939527,
+                "cpu_pct": 1.9434053783939529,
                 "rss_bytes": 1448456192,
                 "blk_read_bytes": 6362320896,
                 "blk_write_bytes": 47394897920,
@@ -8736,7 +9006,7 @@
               {
                 "offset_s": 2180,
                 "phase": "measured",
-                "cpu_pct": 1.7967994940722827,
+                "cpu_pct": 1.796799494072283,
                 "rss_bytes": 1449406464,
                 "blk_read_bytes": 6369308672,
                 "blk_write_bytes": 47403229184,
@@ -8786,7 +9056,7 @@
               {
                 "offset_s": 2230,
                 "phase": "measured",
-                "cpu_pct": 1.9192508993340833,
+                "cpu_pct": 1.919250899334083,
                 "rss_bytes": 1450037248,
                 "blk_read_bytes": 6373269504,
                 "blk_write_bytes": 47406120960,
@@ -8836,7 +9106,7 @@
               {
                 "offset_s": 2280,
                 "phase": "measured",
-                "cpu_pct": 1.8411467645997734,
+                "cpu_pct": 1.8411467645997737,
                 "rss_bytes": 1450692608,
                 "blk_read_bytes": 6378348544,
                 "blk_write_bytes": 47407833088,
@@ -8966,7 +9236,7 @@
               {
                 "offset_s": 2410,
                 "phase": "measured",
-                "cpu_pct": 1.8536391779132462,
+                "cpu_pct": 1.8536391779132464,
                 "rss_bytes": 1457430528,
                 "blk_read_bytes": 6389960704,
                 "blk_write_bytes": 47421124608,
@@ -9046,7 +9316,7 @@
               {
                 "offset_s": 2490,
                 "phase": "measured",
-                "cpu_pct": 1.5676613504511863,
+                "cpu_pct": 1.5676613504511865,
                 "rss_bytes": 1456570368,
                 "blk_read_bytes": 6397042688,
                 "blk_write_bytes": 47428947968,
@@ -9106,7 +9376,7 @@
               {
                 "offset_s": 2550,
                 "phase": "measured",
-                "cpu_pct": 1.3814238517053639,
+                "cpu_pct": 1.381423851705364,
                 "rss_bytes": 1457029120,
                 "blk_read_bytes": 6403469312,
                 "blk_write_bytes": 47431618560,
@@ -9216,7 +9486,7 @@
               {
                 "offset_s": 2660,
                 "phase": "measured",
-                "cpu_pct": 1.9898134587381193,
+                "cpu_pct": 1.989813458738119,
                 "rss_bytes": 1463255040,
                 "blk_read_bytes": 6414282752,
                 "blk_write_bytes": 47438454784,
@@ -9226,7 +9496,7 @@
               {
                 "offset_s": 2670,
                 "phase": "measured",
-                "cpu_pct": 1.9365552457309314,
+                "cpu_pct": 1.9365552457309312,
                 "rss_bytes": 1463214080,
                 "blk_read_bytes": 6414893056,
                 "blk_write_bytes": 47440429056,
@@ -9246,7 +9516,7 @@
               {
                 "offset_s": 2690,
                 "phase": "measured",
-                "cpu_pct": 1.8276328190029254,
+                "cpu_pct": 1.8276328190029256,
                 "rss_bytes": 1463209984,
                 "blk_read_bytes": 6417416192,
                 "blk_write_bytes": 47442870272,
@@ -9256,7 +9526,7 @@
               {
                 "offset_s": 2700,
                 "phase": "measured",
-                "cpu_pct": 1.8379950807748007,
+                "cpu_pct": 1.837995080774801,
                 "rss_bytes": 1463255040,
                 "blk_read_bytes": 6418325504,
                 "blk_write_bytes": 47443968000,
@@ -9276,7 +9546,7 @@
               {
                 "offset_s": 2720,
                 "phase": "measured",
-                "cpu_pct": 1.9328903372154982,
+                "cpu_pct": 1.9328903372154984,
                 "rss_bytes": 1463250944,
                 "blk_read_bytes": 6420094976,
                 "blk_write_bytes": 47447252992,
@@ -9306,7 +9576,7 @@
               {
                 "offset_s": 2750,
                 "phase": "measured",
-                "cpu_pct": 1.9489213740975537,
+                "cpu_pct": 1.9489213740975535,
                 "rss_bytes": 1462046720,
                 "blk_read_bytes": 6422958080,
                 "blk_write_bytes": 47451480064,
@@ -9316,7 +9586,7 @@
               {
                 "offset_s": 2760,
                 "phase": "measured",
-                "cpu_pct": 1.9306516166467793,
+                "cpu_pct": 1.930651616646779,
                 "rss_bytes": 1461899264,
                 "blk_read_bytes": 6424072192,
                 "blk_write_bytes": 47453052928,
@@ -9456,7 +9726,7 @@
               {
                 "offset_s": 2900,
                 "phase": "measured",
-                "cpu_pct": 1.9997433384893066,
+                "cpu_pct": 1.9997433384893064,
                 "rss_bytes": 1462341632,
                 "blk_read_bytes": 6437777408,
                 "blk_write_bytes": 47460687872,
@@ -9586,7 +9856,7 @@
               {
                 "offset_s": 3030,
                 "phase": "measured",
-                "cpu_pct": 1.9026117986992594,
+                "cpu_pct": 1.9026117986992592,
                 "rss_bytes": 1469431808,
                 "blk_read_bytes": 6450970624,
                 "blk_write_bytes": 47474634752,
@@ -9596,7 +9866,7 @@
               {
                 "offset_s": 3040,
                 "phase": "measured",
-                "cpu_pct": 1.8171643132934239,
+                "cpu_pct": 1.817164313293424,
                 "rss_bytes": 1469468672,
                 "blk_read_bytes": 6451544064,
                 "blk_write_bytes": 47476895744,
@@ -9606,7 +9876,7 @@
               {
                 "offset_s": 3050,
                 "phase": "measured",
-                "cpu_pct": 1.9603383607636478,
+                "cpu_pct": 1.960338360763648,
                 "rss_bytes": 1469476864,
                 "blk_read_bytes": 6452838400,
                 "blk_write_bytes": 47478034432,
@@ -9696,7 +9966,7 @@
               {
                 "offset_s": 3140,
                 "phase": "measured",
-                "cpu_pct": 1.7596529157387555,
+                "cpu_pct": 1.7596529157387557,
                 "rss_bytes": 1416523776,
                 "blk_read_bytes": 6461911040,
                 "blk_write_bytes": 47482974208,
@@ -9726,7 +9996,7 @@
               {
                 "offset_s": 3170,
                 "phase": "measured",
-                "cpu_pct": 1.8533485346874399,
+                "cpu_pct": 1.85334853468744,
                 "rss_bytes": 1422639104,
                 "blk_read_bytes": 6464950272,
                 "blk_write_bytes": 47485267968,
@@ -9806,7 +10076,7 @@
               {
                 "offset_s": 3250,
                 "phase": "measured",
-                "cpu_pct": 1.8404302177361542,
+                "cpu_pct": 1.8404302177361545,
                 "rss_bytes": 1426063360,
                 "blk_read_bytes": 6472888320,
                 "blk_write_bytes": 47488970752,
@@ -9826,7 +10096,7 @@
               {
                 "offset_s": 3270,
                 "phase": "measured",
-                "cpu_pct": 2.1730608716151854,
+                "cpu_pct": 2.173060871615186,
                 "rss_bytes": 1426567168,
                 "blk_read_bytes": 6475362304,
                 "blk_write_bytes": 47491997696,
@@ -9836,7 +10106,7 @@
               {
                 "offset_s": 3280,
                 "phase": "measured",
-                "cpu_pct": 1.9008088963104754,
+                "cpu_pct": 1.9008088963104752,
                 "rss_bytes": 1427099648,
                 "blk_read_bytes": 6476161024,
                 "blk_write_bytes": 47493193728,
@@ -9856,7 +10126,7 @@
               {
                 "offset_s": 3300,
                 "phase": "measured",
-                "cpu_pct": 1.8736412799698614,
+                "cpu_pct": 1.8736412799698616,
                 "rss_bytes": 1428791296,
                 "blk_read_bytes": 6478233600,
                 "blk_write_bytes": 47496314880,
@@ -9896,7 +10166,7 @@
               {
                 "offset_s": 3340,
                 "phase": "measured",
-                "cpu_pct": 1.9206488084646898,
+                "cpu_pct": 1.9206488084646895,
                 "rss_bytes": 1431261184,
                 "blk_read_bytes": 6481780736,
                 "blk_write_bytes": 47501246464,
@@ -9976,7 +10246,7 @@
               {
                 "offset_s": 3420,
                 "phase": "measured",
-                "cpu_pct": 1.9936208474970458,
+                "cpu_pct": 1.9936208474970456,
                 "rss_bytes": 1439608832,
                 "blk_read_bytes": 6489399296,
                 "blk_write_bytes": 47507644416,
@@ -10016,7 +10286,7 @@
               {
                 "offset_s": 3460,
                 "phase": "measured",
-                "cpu_pct": 1.7581253813316033,
+                "cpu_pct": 1.7581253813316031,
                 "rss_bytes": 1436803072,
                 "blk_read_bytes": 6493257728,
                 "blk_write_bytes": 47509913600,
@@ -10136,7 +10406,7 @@
               {
                 "offset_s": 3580,
                 "phase": "measured",
-                "cpu_pct": 1.8546565175642373,
+                "cpu_pct": 1.854656517564237,
                 "rss_bytes": 1443422208,
                 "blk_read_bytes": 6506070016,
                 "blk_write_bytes": 47519141888,
@@ -10336,7 +10606,7 @@
               {
                 "offset_s": 3780,
                 "phase": "measured",
-                "cpu_pct": 1.8864687992715365,
+                "cpu_pct": 1.8864687992715363,
                 "rss_bytes": 1446137856,
                 "blk_read_bytes": 6523146240,
                 "blk_write_bytes": 47538180096,
@@ -10376,7 +10646,7 @@
               {
                 "offset_s": 3820,
                 "phase": "measured",
-                "cpu_pct": 1.3332425472319707,
+                "cpu_pct": 1.3332425472319709,
                 "rss_bytes": 1440788480,
                 "blk_read_bytes": 6526988288,
                 "blk_write_bytes": 47539728384,
@@ -10446,7 +10716,7 @@
               {
                 "offset_s": 3890,
                 "phase": "measured",
-                "cpu_pct": 1.9474864487918582,
+                "cpu_pct": 1.9474864487918584,
                 "rss_bytes": 1447112704,
                 "blk_read_bytes": 6533656576,
                 "blk_write_bytes": 47546982400,

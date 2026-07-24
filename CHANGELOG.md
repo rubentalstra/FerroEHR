@@ -17,6 +17,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Content structural conformance cases from the official schedule**: the
+  master15 COMPOSITION content×context tables and the master16 ENTRY-family
+  tables (OBSERVATION, HISTORY, EVENT, ITEM_STRUCTURE) are now encoded under
+  their verbatim official ids, replacing the ad-hoc structural cases that
+  had been authored on the false claim that those chapters were empty;
+  derivable catalogue extensions beyond the official cells survive as
+  flagged addition cases.
+
 - **Dual POC measured records on the v3.8.0 build, both directions
   published**: ehrbase-rs earns class POC (normative hour at 2.03/s
   offered, worst p99 108 ms, 0 errors / 7,320 requests); upstream
@@ -25,7 +33,42 @@ workflow refuses a tag that has no matching section here.
   errors). Comparison page and all measurement visuals derive from the
   committed runner artifacts.
 
+### Changed
+
+- **Version-signature read verification is now `strict` by default (#273)**:
+  with signing enabled and `signing.verify_on_read` unset, the server now
+  recomputes the signature of every version it served and returns a `500`
+  integrity fault on a mismatch, instead of the previous silent-pass (`off`)
+  default that signed every version and then never checked it. Set
+  `signing.verify_on_read` explicitly to `warn` (log + meter, still serve) or
+  `off` (never check) to opt out. **Client-supplied signatures** (an author's
+  own signature, or one carried by an imported version) are tracked as such and
+  are always stored verbatim and never re-verified, so strict-by-default never
+  rejects a legitimately-stored foreign signature. Our-own-design integrity
+  hardening — no openEHR spec governs server-side verify-on-read timing (RM
+  common master06 §Digital Signature).
+
+- **CNF catalogue audited case-by-case against the official spec text
+  (#231)**: every case in every chapter re-verified across grounds,
+  expectations, citations, fixtures, captures, and register linkage, with
+  the findings applied directly to the catalogue and register (the durable
+  record is the register + closed issues + git history).
+  Highlights: spec-overreaching rejection rows removed (AQL TERMINOLOGY
+  operation strictness; the mixed-precision interval rows now report-only
+  under the SPECPR-380 openness); the SEC-BASIC proposal citations corrected;
+  stale stub-era template ids fixed; the delete-latest-version OPT case
+  realigned to the official version-less ground; the wrong-template update
+  ground rebased onto a fixture that is valid against its own template; the
+  physical-EHR-delete binding accepts the OAS-enumerated async 202; eight
+  new ambiguity-register entries pin previously prose-only adjudications;
+  and every phantom REQUIREMENTS.md pointer now carries its real anchor.
+
 ### Fixed
+
+- **Conformance-runner commit provisioning fails loud**: a `requires.commit`
+  key resolving to a plain composition fixture was silently skipped, leaving
+  the case's committed-state precondition unestablished; a single object now
+  commits as a one-item set and any other shape is a provisioning error.
 
 - **The measured-window driver accepts the spec-legal `204 No Content`
   minimal-return form** on create-family writes (ITS-REST: with

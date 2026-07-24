@@ -14,5 +14,7 @@ request:
   method: DELETE
   path: /admin/ehr/{ehr_id}
 outcomes:
-  ok_empty: { status: 204 }               # 204_deleted_hard.yaml (async: 202.yaml)
+  ok_empty:
+    status: 204                           # 204_deleted_hard.yaml (synchronous hard delete)
+    alt_status: [202]                     # 202.yaml — the OAS-enumerated async acceptance; same logical kind (fulfilled, no content)
   not_found: { status: 404 }              # 404_unknown_ehr_id.yaml — ehr_id_does_not_exist

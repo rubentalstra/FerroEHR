@@ -2,10 +2,11 @@
 # counterpart of the exemplar SF-FLAT round-trip: a STRUCTURED composition
 # committed round-trips to canonical JSON and FLAT with equal clinical leaves.
 # An intrinsic-format case: format is a fixed role per step.
-# TODO: repoint to a wt-structured instance of test_all_types.en.v1
-#       (cnf.opt.maximal) derived from the SUT web template — the current
-#       cnf.structured.vitals.minimal placeholder targets the removed
-#       body_temperature leaf and 422s.
+# NOTE: the step-2 `equivalent to: committed` assertion is reconciled by the
+#       fold_flat_ctx ctx normalisation + the ctx_defaults ignore-set (ITS-REST
+#       simplified_formats master06 §Context Information), as in
+#       SF-FLAT-commit_roundtrip_ctx_defaults. Verified live green against the
+#       composed SUT.
 id: SF-STRUCTURED-commit_roundtrip
 kind: functional
 component: SIMPLIFIED_FORMATS

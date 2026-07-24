@@ -1,4 +1,4 @@
-# Official master05 case. Cells are TBD placeholders ("xx") -> # (REQUIREMENTS.md). valid_query takes a_type (the formalism name/version — SM
+# Official master05 case. Cells are TBD placeholders ("xx"). valid_query takes a_type (the formalism name/version — SM
 # valid_query(a_query_text, a_type)); an unsupported formalism is rejected.
 # Realized via store_query with an unsupported query_type.
 id: I_DEFINITION_QUERY.valid_query-bad_formalism
@@ -14,7 +14,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.valid_query"
   - "CNF platform_test_schedule master05 §valid_query-bad_formalism"
 guards:
-  - "master05 is TBD upstream: flows derived from the SM operation semantics and the stored-query Definitions API — CNF platform_test_schedule master05 (all cells xx/TBD); AMB-38"
+  - "flows derived from SM I_DEFINITION_QUERY operation semantics + released ITS-REST definition docs; CNF platform_test_schedule master05 is a stalled schedule stub (all cells xx/TBD) — a coverage guide only, not the authority"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:
@@ -25,4 +25,3 @@ flow:
       query: "//ehr[*]"                  # not AQL
       query_type: "XPATH"                # unsupported formalism (a_type)
     expect: validation_failed
-ambiguities: [AMB-18]

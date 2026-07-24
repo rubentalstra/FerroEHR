@@ -179,11 +179,9 @@ cnf.ehr_status.with_subject.alt:
 # MANIFEST.yaml and are reused by the cases; only the new valid OPTs are
 # declared here.
 #
-# NOTE (master05 stored-query texts): AQL query text has no representable
-# CorpusFormat variant (canonical-json | canonical-xml | wt-flat |
-# wt-structured | opt-xml), so the master05 cases carry their AQL inline in
-# the flow `with:` payloads rather than as corpus data sets. See the master05
-# REQUIREMENTS.md for the proposed `aql-text` CorpusFormat addition.
+# NOTE (master05 stored-query texts): the simple stored-query texts stay
+# inline in the flow `with:` payloads; reusable/invalid AQL texts are corpus
+# entries with the `aql-text` CorpusFormat (added with the AQL corpus wave).
 cnf.opt.minimal_all_entries:
   source: fixtures/opt/valid/minimal_all_entries.opt
   format: opt-xml
@@ -219,6 +217,13 @@ cnf.opt.obs_admin:
   validity: { verdict: valid }
   template_id: "obs_admin.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22"
+cnf.opt.obs_admin.v2:
+  source: fixtures/opt/valid/obs_admin.v2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "obs_admin.en.v2"
+  provenance: "derived from cnf.opt.obs_admin by bumping only the template_id version suffix (obs_admin.en.v1 -> obs_admin.en.v2) so the commit-flow contribution case owns a template_id distinct from the master04 validate_opt-valid_opt DEFINITION exemplar, which owns the canonical obs_admin.en.v1; mirrors the cnf.opt.versioned.v3/v4 precedent (each upload-flow case owns a fresh id under the shared-SUT run model)"
 cnf.opt.obs_eva:
   source: fixtures/opt/valid/obs_eva.opt
   format: opt-xml
@@ -261,6 +266,13 @@ cnf.opt.time_series:
   validity: { verdict: valid }
   template_id: "time_series.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22"
+cnf.opt.time_series.v2:
+  source: fixtures/opt/valid/time_series.v2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "time_series.en.v2"
+  provenance: "derived from cnf.opt.time_series by bumping only the template_id version suffix (time_series.en.v1 -> time_series.en.v2) so the commit-flow contribution case owns a template_id distinct from the master04 upload_opt-valid_opt DEFINITION exemplar, which owns the canonical time_series.en.v1; mirrors the cnf.opt.versioned.v3/v4 precedent (each upload-flow case owns a fresh id under the shared-SUT run model)"
 cnf.opt.vital_signs:
   source: fixtures/opt/valid/vital_signs.opt
   format: opt-xml
@@ -291,6 +303,7 @@ cnf.opt.minimal_persistent:
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
+  template_id: "persistent_minimal.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
 cnf.composition.minimal_persistent.v1:
   source: fixtures/composition/minimal_persistent.v1.json
@@ -316,12 +329,6 @@ cnf.composition.minimal_persistent.invalid_structure:
     spec_ref: "RM ehr (EVALUATION.data is mandatory)"
   template_id: "persistent_minimal.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; mandatory ENTRY seam removed"
-cnf.composition.minimal_event.wrong_template:
-  source: fixtures/composition/minimal_event.wrong_template.json
-  format: canonical-json
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 (valid event COMPOSITION whose archetype_details.template_id is cnf.vitals, a different OPT than the versioned object's cnf.minimal_event — the update_composition-wrong_template mismatch source); structural placeholder pending corpus authoring"
 # Corpus additions for the master08 (EHR_CONTRIBUTION) schedule cases. Same
 # entry schema as MANIFEST.yaml; the validate harness concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
@@ -382,6 +389,60 @@ cnf.folder.updated:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22"
+# master08 coverage additions (2026-07-24, catalogue audit #231): the official
+# B.2 valid-COMPOSITION variant data sets (time series, alternative types,
+# DV_CODED_TEXT on a DV_TEXT node, null_flavour) and the second persistent OPT
+# the multi-version combination B requires ("both COMPOSITIONs reference
+# different persistent OPTs" — CNF master08 §Combinations of data sets, B).
+cnf.opt.alternative_types:
+  source: fixtures/opt/valid/alternative_types.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "alternative_types.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); adopted 2026-07-24 for the master08 B.2.e valid variant (ELEMENT with alternative value types)"
+cnf.opt.persistent_minimal_2:
+  source: fixtures/opt/valid/persistent_minimal_2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "persistent_minimal_2.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); adopted 2026-07-24 as the second persistent OPT the master08 multi-version combination B mandates (its NOTE: both COMPOSITIONs reference different persistent OPTs)"
+cnf.composition.time_series:
+  source: fixtures/contribution/composition.time_series.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "time_series.en.v2"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official time_series.contribution.json (versions[0].data — OBSERVATION with a multi-event HISTORY, the master08 B.2.d time-series row) and normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
+cnf.composition.alternative_types:
+  source: fixtures/contribution/composition.alternative_types.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "alternative_types.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official alternative_types.contribution.json (versions[0].data — the DV_COUNT alternative on the multi-type ELEMENT, the master08 B.2.e row) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+cnf.composition.coded_text_on_text:
+  source: fixtures/contribution/composition.obs_admin.coded_text_on_text.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "obs_admin.en.v2"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.altdvcodedtext.json (versions[0].data — a DV_CODED_TEXT instance on the OPT's DV_TEXT node at0004, the master08 B.2.f row) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+cnf.composition.null_flavour:
+  source: fixtures/contribution/composition.obs_admin.null_flavour.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "obs_admin.en.v2"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.null_flavour.json (versions[0].data — empty ELEMENT.value with null_flavour |no information|, the master08 B.2.g row; RM data_structures ELEMENT Inv_null_flavour_indicated holds) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+cnf.composition.persistent_2.v1:
+  source: fixtures/contribution/composition.persistent_2.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "persistent_minimal_2.en.v1"
+  provenance: "derived 2026-07-24 from cnf.composition.persistent.v1 by re-pointing archetype_details.template_id to persistent_minimal_2.en.v1 (the official persistent_minimal_2.opt shares the identical archetype set, so the instance stays conformant) — the second-persistent-OPT member of the master08 multi-version combination B"
 # Corpus additions for the CNF master09 (DIRECTORY) schedule cases.
 # FOLDER payloads / provisioned directory trees. Structural placeholders — the
 # spine-first authored corpus lands with the catalogue authoring (#202).
@@ -918,56 +979,56 @@ cnf.tpl.ecc_composition_content_cardinality:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_composition_content_cardinality"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-COMPOSITION-content_cardinality (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master15 CONT-COMP-content_card_*-context_any family + the CONT-COMPOSITION-content_cardinality_count6 extension (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_composition_context_existence:
   source: templates/cnf.tpl.ecc_composition_context_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_composition_context_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-COMPOSITION-context_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master15 CONT-COMP-content_card_any-context_mand case + the CONT-COMPOSITION-context_existence realization complement (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_observation_state_protocol_existence:
   source: templates/cnf.tpl.ecc_observation_state_protocol_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_observation_state_protocol_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-OBSERVATION-state_protocol_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-OBS-state_ex_*-protocol_ex_* family (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_history_events_cardinality:
   source: templates/cnf.tpl.ecc_history_events_cardinality.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_history_events_cardinality"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-HISTORY-events_cardinality (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-HIST-events_card_*-summary_ex_opt family + the CONT-HISTORY-events_cardinality_count6 extension (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_history_summary_existence:
   source: templates/cnf.tpl.ecc_history_summary_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_history_summary_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-HISTORY-summary_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-HIST-events_card_1plus-summary_ex_{opt,mand} cases (AM 1.4 C_ATTRIBUTE.existence; the synthesized events cardinality is fixed 1..*); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_event_state_existence:
   source: templates/cnf.tpl.ecc_event_state_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_event_state_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-EVENT-state_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-EVENT-state_ex_{opt,mand} cases (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_event_type_narrowing:
   source: templates/cnf.tpl.ecc_event_type_narrowing.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_event_type_narrowing"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-EVENT-type_narrowing (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-EVENT-type_{any,point_event,interval_event} cases (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_item_structure_type_narrowing:
   source: templates/cnf.tpl.ecc_item_structure_type_narrowing.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_item_structure_type_narrowing"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-ITEM_STRUCTURE-type_narrowing (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-ITEM_STR-type_* family (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
 # Corpus additions for the CNF master11 (QUERY) schedule cases. Same entry
 # schema as MANIFEST.yaml; the validate harness concatenates this into
 # corpus/MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
@@ -1052,33 +1113,15 @@ cnf.aql.invalid.syntax_garbage:
   provenance: "re-adjudicated 2026-07-21 from the retired ECC invalid-query corpus (ECC-QRY-005) against QUERY AQL 1.1"
 
 # ── AQL query-text fixtures (invalid: unsupported TERMINOLOGY() forms) ─────────
-cnf.aql.invalid.terminology_lookup_matches:
-  source: fixtures/query/reject_terminology_lookup_matches.aql
-  format: aql-text
-  rm_versions: [">=1.0.2"]
-  validity:
-    verdict: invalid
-    defect: "'lookup' operation as a matches operand — only 'expand' has code-list semantics (§TERMINOLOGY usage a/b)"
-    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-002 against QUERY AQL 1.1"
 cnf.aql.invalid.terminology_in_select:
   source: fixtures/query/reject_terminology_in_select.aql
   format: aql-text
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
-    defect: "TERMINOLOGY() in a SELECT column — an unsupported position (§TERMINOLOGY defines matches-operand and Boolean-assertion forms only)"
+    defect: "TERMINOLOGY() in a SELECT column — the §TERMINOLOGY usage positions are all WHERE-clause forms (matches operand, braces-merged matches operand, Boolean assertion)"
     spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
   provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-003 against QUERY AQL 1.1"
-cnf.aql.invalid.terminology_boolean_lookup:
-  source: fixtures/query/reject_terminology_boolean_lookup.aql
-  format: aql-text
-  rm_versions: [">=1.0.2"]
-  validity:
-    verdict: invalid
-    defect: "Boolean TERMINOLOGY('lookup', …) — only 'validate'/'subsumes' have Boolean semantics (§TERMINOLOGY)"
-    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-004 against QUERY AQL 1.1"
 # Corpus additions for the CNF simplified_formats chapter seed. Same entry
 # schema as MANIFEST.yaml; the validate harness concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
@@ -1268,18 +1311,11 @@ cnf.messaging.tdd.invalid:
 # Corpus additions for the DEFINITION_ADL2 (I_DEFINITION_ADL2) chapter.
 # Merged into corpus/MANIFEST.yaml at verify time; entries live here ONLY.
 #
-# FORMAT CAVEAT (forcing item, see schedule/definition_adl2/REQUIREMENTS.md):
-# ADL2 operational templates and archetypes are `text/plain` ADL2 SOURCE, not
-# XML. `CorpusFormat` (tools/cnf-runner/src/vocab.rs) has no `adl2-text` /
-# `adl2-opt` variant yet, so these entries carry `format: adl2-text` as the
-# closest existing operational-template role. This misnames the wire encoding
-# (opt-xml = ADL 1.4 OPT XML) and MUST be replaced by a dedicated `adl2-text`
-# (source) / `adl2-opt` (operational template) CorpusFormat once the enum is
-# extended. The same stopgap+propose pattern the master05 chapter used for
-# `aql-text`.
-# TODO: switch these entries to `adl2-text` once CorpusFormat gains the ADL2
-#       source variant, and replace the structural placeholder payloads with
-#       the spine-first authored ADL2 corpus (#202).
+# FORMAT NOTE: ADL2 operational templates and archetypes are `text/plain`
+# ADL2 SOURCE; these entries carry the dedicated `adl2-text` CorpusFormat
+# (tools/cnf-runner/src/vocab.rs — added with the ADL2 chapter wave).
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored ADL2 corpus.
 
 cnf.adl2.opt.minimal:
   source: fixtures/adl2/opt/minimal.adls
@@ -1367,7 +1403,7 @@ cnf.adl2.opt.invalid.empty:
 # Documentary only: a valid ADL2 ARCHETYPE (not an OPT). ITS-REST 1.1.0
 # surfaces no ADL2 archetype-provisioning wire (only OPTs upload under
 # /definition/template/adl2), so no case references this key today — it stages
-# the eventual Adl2ArchetypeProvisioning coverage (AMB-37; see REQUIREMENTS.md).
+# the eventual Adl2ArchetypeProvisioning coverage (AMB-37).
 cnf.adl2.archetype.minimal:
   source: fixtures/adl2/archetype/minimal.adls
   format: adl2-text
@@ -1409,20 +1445,6 @@ cnf.flat.all_types.raw:
   template_id: "test_all_types.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22 — cnf.flat.all_types with the DV_QUANTITY leaf supplied via the master04 |raw suffix (an embedded canonical DV_QUANTITY object carrying _type) instead of attribute decomposition"
 
-cnf.sf.flat.normal_range:
-  source: fixtures/sf/flat.normal_range.json
-  format: wt-flat
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §RM Attributes prefix _normal_range example (adapted to the vitals body_temperature leaf); structural placeholder pending corpus authoring"
-
-cnf.sf.flat.raw_quantity:
-  source: fixtures/sf/flat.raw_quantity.json
-  format: wt-flat
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §Raw canonical JSON example (|raw DV_QUANTITY, canonical units); structural placeholder pending corpus authoring"
-
 cnf.sf.flat.raw_no_type:
   source: fixtures/sf/flat.raw_no_type.json
   format: wt-flat
@@ -1439,13 +1461,6 @@ cnf.sf.structured.raw_quantity:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 as the STRUCTURED counterpart of the master04 §Raw canonical JSON example; structural placeholder pending corpus authoring"
-
-cnf.sf.flat.composer_name:
-  source: fixtures/sf/flat.composer_name.json
-  format: wt-flat
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master06 §Composer composer_name example; structural placeholder pending corpus authoring"
 
 cnf.sf.flat.missing_territory:
   source: fixtures/sf/flat.missing_territory.json
@@ -1524,7 +1539,7 @@ cnf.sf.flat.cardinality_violation:
     verdict: invalid
     defect: "second indexed instance (:1) supplied for a max=1 node"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (cardinality constraints are satisfied)"
-  provenance: "authored 2026-07-21 by adding a second body_temperature instance to a max=1 node; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 by adding a second Temperature ELEMENT instance (temperature:1) to the max=1 Temperature node (body_temperature is 0..*); structural placeholder pending corpus authoring"
 
 cnf.sf.flat.binding_violation:
   source: fixtures/sf/flat.binding_violation.json

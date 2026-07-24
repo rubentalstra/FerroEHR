@@ -8,7 +8,7 @@
 # version?version_at_time is the VERSIONED_PARTY-resource alternative but returns
 # a VERSION<PARTY> wrapper rather than the PARTY the SM returns.
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY.get_party_at_time (the AMB-13 rule; see REQUIREMENTS.md).
+# operation is I_PARTY.get_party_at_time.
 # Sources: specifications/operations/person_get.yaml (200/204/404),
 # responses/200_PERSON_retrieved.yaml, 204_deleted_at_time.yaml,
 # 404_not_found_or_no_version_at_time.yaml; parameters/query/version_at_time.yaml.

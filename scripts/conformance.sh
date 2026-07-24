@@ -63,6 +63,18 @@ PARTY="$REPO_ROOT/tools/cnf-runner/party/$SUT_NAME"
 IXIT="${CONF_IXIT:-$PARTY/ixit.json}"
 STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 
+# CONF_SIGNING_MODE=pgp runs the ehrbase-rs SUT in openPGP version-signing mode
+# (the dual-mode signature run): overlay the pgp compose variant (mounts the
+# test OpenPGP secret key, sets EHRBASE__SIGNING__MODE=pgp) and use the pgp ixit
+# (which carries the verifying public key for SIG-VERSION verifiable). Default:
+# digest. Only meaningful for CONF_SUT=ehrbase-rs.
+SIGNING_MODE="${CONF_SIGNING_MODE:-digest}"
+EHRBASE_RS_COMPOSE=(docker compose)
+if [ "$SIGNING_MODE" = "pgp" ] && [ "$SUT" = "ehrbase-rs" ]; then
+  EHRBASE_RS_COMPOSE=(docker compose -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-signing-pgp.yml")
+  [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.pgp.json"
+fi
+
 # The dev-compose credentials (docker/ehrbase.dev.toml); override for byo.
 export SUT_USER="${SUT_USER:-ehrbase}"
 export SUT_PASS="${SUT_PASS:-ehrbase}"
@@ -105,7 +117,7 @@ compose_down() {
   if [ "$SUT" = "ehrbase-java" ]; then
     "${JAVA_COMPOSE[@]}" down -v || true
   else
-    (cd "$REPO_ROOT" && docker compose down -v) || true
+    (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" down -v) || true
   fi
 }
 
@@ -130,13 +142,13 @@ if [ -z "${CONF_NO_COMPOSE:-}" ] && [ "$SUT" != "byo" ]; then
     done
     [ -n "$ready" ] || { echo "conformance: upstream EHRbase never became ready" >&2; exit 2; }
   else
-    (cd "$REPO_ROOT" && docker compose down -v) || true
+    (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" down -v) || true
     if [ -n "${SKIP_BUILD:-}" ]; then
-      (cd "$REPO_ROOT" && docker compose up -d --wait ehrbase)
+      (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" up -d --wait ehrbase)
     else
       # A conformance verdict on OUR server is only meaningful against the
       # CURRENT sources — build the image unless explicitly skipped.
-      (cd "$REPO_ROOT" && docker compose up -d --build --wait ehrbase)
+      (cd "$REPO_ROOT" && "${EHRBASE_RS_COMPOSE[@]}" up -d --build --wait ehrbase)
     fi
   fi
 fi

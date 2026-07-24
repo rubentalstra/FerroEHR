@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # The SM list_contributions carries an optional time_interval; this sibling
 # exercises the supplied-range form. Unrealized on ITS-REST 1.1.0 (AMB-33).
 id: I_ADMIN_SERVICE.list_contributions-time_range

@@ -2,8 +2,8 @@
 # AQL corpus (the corpus exercises projections but no dedicated DISTINCT case).
 # AQL is bag-semantics absent DISTINCT (QUERY master03 §DISTINCT); the 10 loaded
 # compositions share one template name, so SELECT DISTINCT c/name/value collapses
-# the ten identical projected rows to a single row. Recorded as a judgment-call
-# addition in REQUIREMENTS.md §DISTINCT. `ecc-` id namespace pending upstream
+# the ten identical projected rows to a single row. A judgment-call catalogue
+# addition (this authoring comment is the record). `ecc-` id namespace pending upstream
 # adoption.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-distinct
 kind: functional
@@ -34,7 +34,7 @@ flow:
         SELECT DISTINCT o/name/value AS name
         FROM EHR e[ehr_id/value='${ehr_id}'] CONTAINS COMPOSITION c
         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2]
-      fetch: 100                            # AMB-6: fetch always explicit
+      fetch: 100                            # fetch always explicit
     expect: ok
     assert:
       - assert: result_set

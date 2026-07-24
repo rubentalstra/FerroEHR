@@ -20,10 +20,10 @@ description: "Unauthenticated requests to protected operations are refused"
 spec_refs:
   - "SM openehr_platform §I_EHR_SERVICE.create_ehr"
   - "ITS-REST overview Requests_and_responses (HTTP status codes: 401 — unauthenticated)"
-  - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Authenticated access)"
+  - "CNF 2.0 security schedule §SEC-BASIC Authenticated access (this proposal; 2017 schedule Security BASIC lineage)"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "applies only when the SUT declares the SEC-BASIC security profile — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy)"
+  - "applies only when the SUT declares the SEC-BASIC security tier — CNF 2.0 security schedule (this proposal; 2017 schedule Security BASIC lineage)"
 requires:
   server: any
 flow:

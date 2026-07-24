@@ -169,7 +169,12 @@ enabled = true
 mode = "digest"              # digest | pgp
 #? key_path = "/etc/ehrbase/signing.asc"   # required for mode = pgp
 #? key_passphrase = "..."    # or key_passphrase_file = "/run/secrets/pgp-pass"
-verify_on_read = "off"       # off | warn | strict
+# Read-time verification of OUR OWN signatures. UNSET (the default) resolves to
+# `strict` when signing is enabled — a served version whose stored signature no
+# longer recomputes is a 5xx integrity fault. Set explicitly to opt out:
+# `warn` (log + meter, still serve) or `off` (never check). Client-supplied
+# signatures are always stored verbatim and never re-verified.
+#? verify_on_read = "strict" # off | warn | strict (unset ⇒ strict when enabled)
 
 # ── [query] — AQL execution knobs ─────────────────────────────────────────────
 [query]

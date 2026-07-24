@@ -563,7 +563,8 @@ async fn commit_resolved(
         ContributionCtx::Existing(cid) => cid,
     };
 
-    let signature = version_signature(ctx, audit, contribution_id, &r)?;
+    let (signature, signature_client_supplied) =
+        version_signature(ctx, audit, contribution_id, &r)?;
 
     let folded = crate::storage::version_repo::commit::FoldedVersion {
         vo_id: r.vo_id,
@@ -579,6 +580,7 @@ async fn commit_resolved(
         other_input_version_uids: &r.other_input_version_uids,
         template_id: r.template_id.as_deref(),
         signature: signature.as_deref(),
+        signature_client_supplied,
     };
     let time_committed = match contribution {
         ContributionCtx::New => {
@@ -640,13 +642,14 @@ async fn commit_resolved(
     ))
 }
 
-/// The signature stored with the version: a client-supplied signature is kept
-/// verbatim (`VERSION.signature`, master06 §Digital Signature); otherwise,
-/// with server signing enabled, the version's canonical form is signed — a
-/// logically deleted version has no nodes → Void (master06 §Logical Deletion);
-/// a content version signs the reassembled served bytes so the digest
-/// recomputes at read time. Reassembly runs only when a signature will
-/// actually be computed.
+/// The signature stored with the version, and whether it is **client-supplied**
+/// (foreign — stored verbatim, never re-verified at read; master06 §Digital
+/// Signature) vs server-generated. A client-supplied signature is kept verbatim;
+/// otherwise, with server signing enabled, the version's canonical form is
+/// signed — a logically deleted version has no nodes → Void (master06 §Logical
+/// Deletion); a content version signs the reassembled served bytes so the digest
+/// recomputes at read time. Reassembly runs only when a signature will actually
+/// be computed.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
@@ -656,27 +659,31 @@ fn version_signature(
     audit: &AuditInput,
     contribution_id: Uuid,
     r: &ResolvedWrite,
-) -> Result<Option<String>, ServiceError> {
-    if r.client_signature.is_some() || !ctx.signer.enabled() {
-        return Ok(r.client_signature.clone());
+) -> Result<(Option<String>, bool), ServiceError> {
+    if let Some(client) = &r.client_signature {
+        return Ok((Some(client.clone()), true));
+    }
+    if !ctx.signer.enabled() {
+        return Ok((None, false));
     }
     let served = if r.rows.is_empty() {
         Value::Null
     } else {
         reassemble(&r.rows)?
     };
-    integrity::sign_version(
+    let signature = integrity::sign_version(
         ctx,
         audit,
         r.time_committed,
         r.vo_id,
         r.tree,
         r.preceding_uid.as_deref(),
+        &r.other_input_version_uids,
         contribution_id,
         &r.lifecycle,
         &served,
-        None,
-    )
+    )?;
+    Ok((signature, false))
 }
 
 /// Write the one PHI-free event-outbox row a single-object commit announces,

@@ -32,3 +32,4 @@ decision_table:
     - ["P1Y1M1DT1H1M1.5S", "P2Y", true, true, true, true, true, false, true, true, true, true, true, true, true, true, true, true, rejected, ["constraint(minutes_allowed): minutes component not allowed for lower"]]
     - ["P1Y1M1DT1H1M1.5S", "P2Y", true, true, true, true, true, true, false, true, true, true, true, true, true, true, true, true, rejected, ["constraint(seconds_allowed): seconds component not allowed for lower"]]
     - ["P1Y1M1DT1H1M1.5S", "P2Y", true, true, true, true, true, true, true, false, true, true, true, true, true, true, true, true, rejected, ["constraint(fractional_seconds_allowed): fractional_seconds component not allowed for lower"]]
+ambiguities: [AMB-42]

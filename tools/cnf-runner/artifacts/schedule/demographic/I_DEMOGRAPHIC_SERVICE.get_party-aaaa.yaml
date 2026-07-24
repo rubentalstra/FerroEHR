@@ -1,8 +1,7 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.get_party() — the schedule
 # entry is TBD; authored as the success/happy path from the SM operation
 # semantics. master10 anchors the case under I_DEMOGRAPHIC_SERVICE; the
-# resolvable SM operation is I_PARTY.get_party (the AMB-13 rule; see
-# REQUIREMENTS.md). The versioned party is created in-flow so its id is known.
+# resolvable SM operation is I_PARTY.get_party. The versioned party is created in-flow so its id is known.
 id: I_DEMOGRAPHIC_SERVICE.get_party-aaaa
 kind: functional
 component: DEMOGRAPHIC
@@ -11,7 +10,7 @@ capabilities: [PartyOperations]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
 test_purpose: >-
   get_party for an existing versioned PARTY returns the current PARTY version.
 description: "Get an existing PARTY (success)"

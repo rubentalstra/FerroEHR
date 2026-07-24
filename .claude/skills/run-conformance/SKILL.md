@@ -19,7 +19,26 @@ exclusive-server ground) → the committed catalogue → pure-function verdicts
 `docs/conformance/ehrbase-rs/`). Rewritten 2026-07-22 for the CNF cutover
 (#202; the ECC harness is retired).
 
-## Ground rules (before touching anything)
+## Ground rules (before touching ANYTHING)
+
+**The oracle-and-attribution law — the whole point of this instrument
+(`.claude/rules/cnf-triage.md`).** The vendored openEHR spec
+(`docs/specs/openehr/`) is the ONLY oracle and is ALWAYS right. The three
+things WE built — the **application** (`app/*` + `crates/openehr-*`), the
+**runner** (`tools/cnf-runner/src`), the **catalogue**
+(`tools/cnf-runner/artifacts`) — are ALL suspects, none privileged. A red row
+means exactly one of the three is wrong, and WHICH one is decided by reading
+the spec, never assumed. **The application is NOT presumed correct because "we
+wrote it carefully to the spec" — it is the single most common real culprit,
+and this instrument exists precisely to catch it.** Two reflexes are
+FORBIDDEN:
+
+- *"Our code is right, so the CNF must be wrong"* → editing the catalogue or
+  runner to make a red row green. This is the mistake we keep making; it is
+  banned. A red row is not evidence the catalogue is wrong.
+- *"Let me check our SUT"* to decide what the expected value should be. The
+  SUT's observed response is **evidence** for the three-way comparison, NEVER
+  the reference. The reference is the spec text, read first-hand, every time.
 
 - The catalogue is **authored from the CNF 2.0 framework** (official
   schedule case ids; spec-text-only expectations; ambiguities through the
@@ -29,6 +48,9 @@ exclusive-server ground) → the committed catalogue → pure-function verdicts
 - **Never weaken a case to pass.** A failing case against our server is a
   correct instrument outcome; corpus/authoring defects are fixed with spec
   citations or registered as ambiguities — never bent to observed behaviour.
+- **Coverage only ratchets up.** A spec-defined behaviour the catalogue does
+  not yet exercise is a GAP to close (a new spec-cited case), never an
+  acceptable omission — see `.claude/rules/testing.md` §CNF coverage.
 - Profile verdicts (CORE/STANDARD/OPTIONS/SEC-BASIC) are **machine-computed**
   by the verdict pipeline from (statement, results, catalogue, capability
   matrix); never hand-assert them anywhere.
@@ -60,11 +82,31 @@ exclusive-server ground) → the committed catalogue → pure-function verdicts
    permitted delta is newly-green cases — **zero drift**. Report:
    passed / failed / errored / not-applicable counts, the machine verdicts,
    and any drift case-by-case.
-4. **Diagnose failures** from the case's own `spec_refs` + the run record:
-   read the cited `docs/specs/openehr/...` section, then fix the **server**
-   — or, for a genuine catalogue/corpus defect, fix it with the citation (or
-   register the ambiguity). `CNF_DEBUG_EXCHANGES=1` dumps every wire
-   exchange during triage.
+4. **On any non-green result, ATTRIBUTE before you touch anything**
+   (`.claude/rules/cnf-triage.md`; **delegate a red run to the `cnf-triage`
+   agent**). Per red row, in order — no shortcuts:
+   1. Read the observed wire exchange (`CNF_DEBUG_EXCHANGES=1` dumps every
+      exchange sent/received/classified).
+   2. Read what the catalogue expects and its cited `spec_refs` source.
+   3. **Read the governing `docs/specs/openehr/...` section FIRST-HAND** and
+      derive independently what a conformant server must return — status,
+      headers, body — from the spec text alone. Never from the SUT's response,
+      never from memory, never from EHRbase.
+   4. **Three-way compare** spec-required vs catalogue-expected vs SUT-observed
+      and attribute to exactly ONE suspect. Only THEN fix the guilty party the
+      one sanctioned way:
+      - **Application defect** (catalogue matches spec, SUT ≠ spec) → fix
+        `app/*`, or the `openehr-codegen` emitter + regenerate for
+        `crates/openehr-*` (never a hand-edit or consumer workaround), carrying
+        a reproduced `curl` exchange + the quoted spec sentence.
+      - **Catalogue defect** (catalogue-expected ≠ spec, regardless of what the
+        SUT did) → fix the artifact WITH a new spec-cited source.
+      - **Runner defect** (SUT spec-correct but mis-driven/mis-classified) →
+        fix the `tools/cnf-runner/src` module.
+      - **Spec silence/ambiguity** → an
+        `artifacts/registers/ambiguities.yaml` entry with a typed disposition.
+   Never adjust an expectation to match observed behaviour; never change app
+   code without a reproduced exchange; never assume the app is the correct one.
 5. **At phase close:** the ratcheted `results.json`, `verdicts.json`,
    rendered report/statement/certificate and badges under
    `docs/conformance/<sut>/` are committed with the phase.

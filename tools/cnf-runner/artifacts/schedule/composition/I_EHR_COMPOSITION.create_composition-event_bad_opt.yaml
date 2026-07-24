@@ -1,6 +1,6 @@
 # Create an event COMPOSITION referencing an OPT that is not on the server:
 # rejected with information about the non-existent OPT. No template is
-# provisioned, so the composition's referenced OPT (cnf.minimal_event) is absent.
+# provisioned, so the composition's referenced OPT (cnf.absent_template.v99) is absent.
 id: I_EHR_COMPOSITION.create_composition-event_bad_opt
 kind: functional
 component: EHR_COMPOSITION

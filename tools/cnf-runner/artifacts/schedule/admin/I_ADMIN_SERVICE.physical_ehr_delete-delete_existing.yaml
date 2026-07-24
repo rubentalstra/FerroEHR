@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # The ONE master12 operation ITS-REST 1.1.0 realizes: physical_ehr_delete is
 # wired as DELETE /admin/ehr/{ehr_id} (admin_ehr_delete). Physical deletion is
 # a HARD delete producing no VERSION, so the success kind is ok_empty

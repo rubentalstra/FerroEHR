@@ -3,9 +3,9 @@
 # version; realized as GET /demographic/person/{uid_based_id} with the
 # HIER_OBJECT_ID form (a versioned_object_uid) and no version_at_time — the
 # server returns the latest PERSON version (person_get.yaml). PERSON is the
-# representative concrete PARTY subtype (see REQUIREMENTS.md).
+# representative concrete PARTY subtype (this binding NOTE is the record).
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY.get_party (the AMB-13 rule; see REQUIREMENTS.md).
+# operation is I_PARTY.get_party.
 # Sources: specifications/operations/person_get.yaml (200/204/404),
 # responses/200_PERSON_retrieved.yaml, 404_not_found_or_no_version_at_time.yaml.
 sm_operation: I_PARTY.get_party

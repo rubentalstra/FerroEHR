@@ -1,0 +1,30 @@
+# Wire realization of I_EHR_STATUS.get_versioned_ehr_status, variant `version`:
+# read a specific EHR_STATUS ORIGINAL_VERSION envelope (uid, commit_audit,
+# lifecycle_state, data, signature) — the RM VERSIONED_OBJECT.version_with_id
+# accessor on the versioned EHR_STATUS, realized as the /version/{version_uid}
+# sub-resource. Surfaces VERSION.signature (RM common master06 §Digital
+# Signature) for the SIG-VERSION signature family on EHR_STATUS versions
+# (master06 signs "each Version of any logical item", not just COMPOSITION).
+# Sources (ITS-REST DOCS TEXT — the wire oracle, not the stalled OAS):
+#   - Resource: overview Resources.md §Resource identification — a VERSION is
+#     retrievable by `version_uid`; "versioned entities: VERSIONED_COMPOSITION,
+#     VERSIONED_EHR_STATUS, etc. or their contained VERSION instances". The
+#     EHR_STATUS is a per-EHR singleton, so its versioned-object URI carries no
+#     {versioned_object_uid} segment (unlike versioned_composition): the version
+#     sub-resource is /versioned_ehr_status/version/{version_uid}.
+#   - `ok` 200 / `not_found` 404: overview Requests_and_responses.md §HTTP
+#     status codes table ("200 | OK | The request succeeded …"; "404 | Not Found
+#     | The origin service did not find the target resource …").
+#   - signature: RM common master06 §change_control (ORIGINAL_VERSION.signature).
+sm_operation: I_EHR_STATUS.get_versioned_ehr_status
+its: its-rest
+variant: version
+request:
+  method: GET
+  path: /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}
+formats: [canonical-json, canonical-xml]
+outcomes:
+  ok:
+    status: 200                           # overview §HTTP status codes (200 OK — payload = the ORIGINAL_VERSION)
+    headers: { Content-Type: negotiated }
+  not_found: { status: 404 }              # overview §HTTP status codes (404 — target resource not found)

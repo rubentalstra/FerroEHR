@@ -36,3 +36,4 @@ decision_table:
     - ["local::at0005", 1.5, "local::at0002", 5.3, false, false, true, true, accepted, []]
     - ["local::at0004", 666.1, "local::at0003", 777.1, false, false, true, true, accepted, []]
     - ["local::at0003", 777.1, "local::at0004", 666.1, false, false, true, true, rejected, ["rm_invariant(Limits_consistent): lower (777.1) > upper (666.1) — BASE foundation_types §Interval"]]
+ambiguities: [AMB-43]

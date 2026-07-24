@@ -609,6 +609,24 @@ fn committed(row: &RowView<'_>, column: &str) -> bool {
     matches!(row.text(column), Some("present"))
 }
 
+/// The COMPOSITION carrier honouring the three-state `context_committed`
+/// data axis (`absent` | `present` | `present_with_other`); a missing column
+/// keeps the context present — the official tables' fixed condition for the
+/// context-less families.
+fn composition_carrier(template_id: &str, content: Vec<Value>, row: &RowView<'_>) -> Value {
+    let token = row.text("context_committed").unwrap_or("present");
+    let mut comp = comp_shell(template_id, content, token != "absent");
+    if token == "present_with_other"
+        && let Some(ctx) = comp.pointer_mut("/context").and_then(Value::as_object_mut)
+    {
+        ctx.insert(
+            "other_context".to_owned(),
+            json!({ "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "Other context" }, "archetype_node_id": "at0011", "items": [] }),
+        );
+    }
+    comp
+}
+
 /// An integer count column (`content_count`/`events_count`); missing ⇒ 0.
 fn count(row: &RowView<'_>, column: &str) -> usize {
     row.literal(column)
@@ -791,11 +809,11 @@ fn structural_instance(rm_class: &str, template_id: &str, row: &RowView<'_>) -> 
             let content: Vec<Value> = (0..n)
                 .map(|_| min_observation(vec![min_event("POINT_EVENT", true, false)], None, None))
                 .collect();
-            comp_shell(template_id, content, true)
+            composition_carrier(template_id, content, row)
         }
         "COMPOSITION" => {
             let obs = min_observation(vec![min_event("POINT_EVENT", true, false)], None, None);
-            comp_shell(template_id, vec![obs], committed(row, "context_committed"))
+            composition_carrier(template_id, vec![obs], row)
         }
         "EVENT" if row.cell("slot_type").is_some() => {
             let committed_type = row.text("committed_type").unwrap_or("POINT_EVENT");
@@ -816,7 +834,17 @@ fn structural_instance(rm_class: &str, template_id: &str, row: &RowView<'_>) -> 
             let events: Vec<Value> = (0..n)
                 .map(|_| min_event("POINT_EVENT", true, false))
                 .collect();
-            let obs = min_observation(events, None, None);
+            let mut obs = min_observation(events, None, None);
+            // The combined master16 family adds the summary data axis (the
+            // single-axis family carries no summary_committed column).
+            if committed(row, "summary_committed")
+                && let Some(history) = obs.pointer_mut("/data").and_then(Value::as_object_mut)
+            {
+                history.insert(
+                    "summary".to_owned(),
+                    json!({ "_type": "ITEM_TREE", "name": { "_type": "DV_TEXT", "value": "summary" }, "archetype_node_id": "at0007", "items": [] }),
+                );
+            }
             comp_shell(template_id, vec![obs], true)
         }
         "HISTORY" => {

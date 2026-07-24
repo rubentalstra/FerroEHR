@@ -19,10 +19,10 @@ description: "EHR_STATUS.subject exposes only opaque refs / PARTY_SELF"
 spec_refs:
   - "SM openehr_platform §I_EHR_STATUS.get_ehr_status"
   - "RM ehr §EHR Status (EHR_STATUS.subject is a PARTY_SELF; anonymous form carries no identifier, otherwise an opaque external ref)"
-  - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: EHR/Demographic separation)"
+  - "CNF 2.0 security schedule §SEC-BASIC EHR/Demographic separation (this proposal; 2017 schedule Security BASIC lineage)"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "applies only when the SUT declares the SEC-BASIC security profile — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy)"
+  - "applies only when the SUT declares the SEC-BASIC security tier — CNF 2.0 security schedule (this proposal; 2017 schedule Security BASIC lineage)"
 requires:
   server: any
 flow:

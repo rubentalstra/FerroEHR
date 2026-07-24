@@ -1,6 +1,6 @@
 # Official master06 case — existence check by a random ehr_id returns negative.
 # "A random ehr_id" is encoded as a fixed arbitrary UUID literal that cannot
-# exist on an empty server (see the schedule/ehr REQUIREMENTS.md judgment call).
+# exist on an empty server.
 id: I_EHR_SERVICE.has_ehr-non_existing_ehr_id
 kind: functional
 component: EHR

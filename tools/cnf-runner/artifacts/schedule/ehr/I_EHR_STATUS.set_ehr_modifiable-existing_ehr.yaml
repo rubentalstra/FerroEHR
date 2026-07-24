@@ -1,8 +1,8 @@
 # Official master06 case — set_ehr_modifiable leaves is_modifiable = true.
 # ITS-REST has no field-level setter: the SM set_ehr_modifiable is realized as a
 # read-modify-write of the whole EHR_STATUS (step 1 reads the current version
-# for If-Match; step 2 PUTs the modified status; step 3 verifies) — see the
-# schedule/ehr REQUIREMENTS.md SM-setter divergence and AMB-3 for the
+# for If-Match; step 2 PUTs the modified status; step 3 verifies) — see
+# the SM-setter read-modify-write realization and ITS-REST overview §If-Match for the
 # preceding_version_uid -> If-Match realization.
 id: I_EHR_STATUS.set_ehr_modifiable-existing_ehr
 kind: functional
@@ -40,4 +40,3 @@ flow:
 postconditions:
   - assert: state
     text: "EHR_STATUS.is_modifiable for the EHR with known ehr_id is true"
-ambiguities: [AMB-3]

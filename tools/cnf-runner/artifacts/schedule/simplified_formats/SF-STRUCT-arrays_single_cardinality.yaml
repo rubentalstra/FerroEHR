@@ -4,11 +4,11 @@
 # wrapped in a single-element array commits and round-trips to canonical JSON
 # and back to Structured with the value equal — proving the mandatory-array
 # rule is honoured on read as well as write.
-# TODO: convert to a functional STRUCTURED commit + canonical read-back against
-#       cnf.opt.maximal — needs a vendored/derived wt-structured instance for
-#       test_all_types.en.v1 (the SUT web template's STRUCTURED input shape); the
-#       current cnf.structured.vitals.minimal placeholder targets the removed
-#       body_temperature leaf and 422s.
+# NOTE: the step-3 `equivalent to: committed` assertion is reconciled by the
+#       fold_flat_ctx ctx normalisation + the ctx_defaults ignore-set (ITS-REST
+#       simplified_formats master06 §Context Information), as in
+#       SF-FLAT-commit_roundtrip_ctx_defaults. Verified live green against the
+#       composed SUT.
 id: SF-STRUCT-arrays_single_cardinality
 kind: functional
 component: SIMPLIFIED_FORMATS

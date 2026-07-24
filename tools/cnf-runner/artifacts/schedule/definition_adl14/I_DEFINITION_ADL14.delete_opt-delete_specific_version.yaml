@@ -21,11 +21,11 @@ requires:
 flow:
   - step: 1
     call: delete_opt
-    with: { template_id: "cnf.versioned.v1" }
+    with: { template_id: "test_versioned.en.v1" }
     expect: deleted
   - step: 2
     call: get_opt
-    with: { template_id: "cnf.versioned.v2" }
+    with: { template_id: "test_versioned.en.v2" }
     expect: ok
 postconditions:
   - assert: state

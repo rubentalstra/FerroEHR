@@ -18,6 +18,7 @@ spec_refs:
   - "SM openehr_platform §I_EHR_DIRECTORY.get_directory_at_time"
   - "CNF platform_test_schedule master09 §I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions"
   - "RM common §change_control (VERSIONED_OBJECT versions over time)"
+  - "ITS-REST ehr OAS §404 directory (no directory exists at the specified version_at_time)"
 applies: { rm: ">=1.0.2" }
 requires:
   server: any
@@ -36,13 +37,13 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       directory: "${ds:cnf.directory.v2}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { t1: updated.commit_time }
   - step: 3
     call: get_directory_at_time
     with: { ehr_id: "${ehr_id}", a_time: "${time:before(t0)}" }
-    expect: not_found                     # before EHR.directory existed -> empty (AMB-8 error branch on REST)
+    expect: not_found                     # before(t0) stands in for G.5's "before EHR.time_created" (no version extant either way); OAS 404: no directory at version_at_time (AMB-8 error branch on REST)
   - step: 4
     call: get_directory_at_time
     with: { ehr_id: "${ehr_id}", a_time: "${time:between(t0,t1)}" }
@@ -55,3 +56,4 @@ flow:
     expect: ok                            # current time -> the second version
     assert:
       - { assert: equivalent, to: "${ds:cnf.directory.v2}", ignoring: server_assigned }
+ambiguities: [AMB-8]

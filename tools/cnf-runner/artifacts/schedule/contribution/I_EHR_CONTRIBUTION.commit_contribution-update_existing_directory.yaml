@@ -1,7 +1,9 @@
 # E.4 — commit a CONTRIBUTION updating an existing EHR directory (change_type =
 # modification): accepted; a new VERSION of the root FOLDER is created.
-# NOTE: the directory modification targets the EHR's current directory VERSION;
-# the ITS-REST binding realizes the precedent as If-Match (AMB-3).
+# NOTE: the directory modification targets the EHR's current directory VERSION
+# in the member body (SM update_version.adoc: UPDATE_VERSION.preceding_version_uid;
+# OAS UpdateVersion.preceding_version_uid), bound from the requires.directory
+# provisioning's published ${directory_version_uid}.
 id: I_EHR_CONTRIBUTION.commit_contribution-update_existing_directory
 kind: functional
 component: EHR_CONTRIBUTION
@@ -40,4 +42,3 @@ flow:
 postconditions:
   - assert: state
     text: "The EHR has a new CONTRIBUTION and a new VERSION for the root FOLDER."
-ambiguities: [AMB-3]

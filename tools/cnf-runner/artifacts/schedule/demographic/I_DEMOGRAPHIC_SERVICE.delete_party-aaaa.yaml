@@ -1,8 +1,8 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.delete_party() — the schedule
 # entry is TBD; authored as the success/happy path from the SM operation
 # semantics (Post_party_deleted: not has_party). Resolvable SM operation is
-# I_PARTY.delete_party (the AMB-13 rule; see REQUIREMENTS.md). delete_party
-# realizes the preceding_version_uid as the path uid_based_id (AMB-3); the
+# I_PARTY.delete_party. delete_party
+# realizes the preceding_version_uid as the path uid_based_id (ITS-REST overview §If-Match); the
 # ITS-REST person_delete is a logical delete adding a deleted VERSION, so the
 # result is verified by the RM change_control version facts (the delete_composition
 # precedent), which are unambiguous regardless of the get-after-delete wire code.
@@ -14,7 +14,7 @@ capabilities: [PartyOperations]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
 test_purpose: >-
   delete_party on an existing PARTY succeeds, adding a second VERSION with
   change_type DELETED (logical delete); the created version keeps change_type
@@ -45,4 +45,3 @@ postconditions:
   - { assert: version, count: 2 }
   - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - { assert: version, of: "${deleted_uid}", change_type: DELETED }
-ambiguities: [AMB-3]

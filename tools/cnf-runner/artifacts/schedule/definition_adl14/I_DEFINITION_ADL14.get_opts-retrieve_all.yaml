@@ -1,7 +1,6 @@
 # Official master04 case: retrieve all loaded OPTs. The case id keeps the
 # schedule's get_opts family while sm_operation carries the resolvable
-# list_opts (the SM I_DEFINITION_ADL14 defines list_opts, not get_opts —
-# AMB-13). For versioned OPTs, only the latest version is listed.
+# list_opts (the SM I_DEFINITION_ADL14 defines list_opts, not get_opts). For versioned OPTs, only the latest version is listed.
 id: I_DEFINITION_ADL14.get_opts-retrieve_all
 kind: functional
 component: DEFINITION_ADL14
@@ -27,4 +26,3 @@ flow:
       # (whole-list equality holds only on a single-case pristine world)
       - { assert: returns, matches: "obs_act\\.en\\.v1" }
       - { assert: returns, matches: "test_all_types\\.en\\.v1" }
-ambiguities: [AMB-13]

@@ -1,1 +1,0 @@
-SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c WHERE TERMINOLOGY('lookup', 'openehr', 'system=openehr&code=433') = true

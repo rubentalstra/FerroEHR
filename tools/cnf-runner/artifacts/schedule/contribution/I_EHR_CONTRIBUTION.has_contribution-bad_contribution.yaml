@@ -1,6 +1,8 @@
 # G.4 — has_contribution on an EHR that has CONTRIBUTIONs, probing a random,
 # non-existing CONTRIBUTION uid, reports the CONTRIBUTION does not exist (FALSE) —
-# realized as a 404 (not_found) of the CONTRIBUTION GET.
+# realized as a 404 (not_found) of the CONTRIBUTION GET (the registered realization). The "EHR has CONTRIBUTIONs" precondition is established by the
+# requires.commit provisioning (the single composition fixture commits as a
+# one-item set through create_composition, which mints a CONTRIBUTION).
 id: I_EHR_CONTRIBUTION.has_contribution-bad_contribution
 kind: functional
 component: EHR_CONTRIBUTION
