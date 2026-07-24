@@ -94,7 +94,7 @@ pub fn synthesize_value_opt(
         "DV_DATE_TIME" => (build_date_time(&row), Vec::new()),
         "DV_DURATION" => (build_duration(&row), Vec::new()),
         "DV_TEXT" | "DV_URI" | "DV_EHR_URI" => (build_string(rm_class, &row, "value"), Vec::new()),
-        "DV_CODED_TEXT" => (build_coded_text(&row), Vec::new()),
+        "DV_CODED_TEXT" => build_coded_text(&row),
         "DV_IDENTIFIER" => (build_identifier(&row), Vec::new()),
         "DV_PARSABLE" => (build_parsable(&row), Vec::new()),
         "DV_MULTIMEDIA" => (build_multimedia(&row), Vec::new()),
@@ -533,23 +533,53 @@ fn build_string(rm_class: &str, row: &Row<'_>, field: &str) -> String {
     dv_leaf(rm_class, field, "STRING", None)
 }
 
-fn build_coded_text(row: &Row<'_>) -> String {
+fn build_coded_text(row: &Row<'_>) -> (String, Vec<(String, String, String)>) {
     if let Some(reference) = row.text("CONSTRAINT_REF.reference") {
-        return c_complex(
-            "DV_CODED_TEXT",
-            &c_single_attr("defining_code", &constraint_ref(reference), (1, 1)),
+        // A CONSTRAINT_REF proxies an external terminology query (AOM1.4
+        // master04 §Reference Objects); its rubric is resolved by the
+        // terminology service, not bound in the archetype ontology.
+        return (
+            c_complex(
+                "DV_CODED_TEXT",
+                &c_single_attr("defining_code", &constraint_ref(reference), (1, 1)),
+            ),
+            Vec::new(),
         );
     }
     let codes = parse_list(row.literal("C_CODE_PHRASE.code_list"));
     if !codes.is_empty() {
         let term = row.text("C_CODE_PHRASE.terminology_id").unwrap_or("local");
-        return c_complex(
+        let children = c_complex(
             "DV_CODED_TEXT",
             &c_single_attr("defining_code", &c_code_phrase(term, &codes), (1, 1)),
         );
+        // Bind a rubric for each constrained code in the component ontology.
+        // Local codes ARE archetype-local terms whose rubric lives in
+        // term_definitions (AM ADL1.4 master02 §Terminology; RM dv_text.adoc
+        // §value — "For DV_CODED_TEXT, this is the rubric of the complete
+        // term"), so a value=rubric commit has a bound rubric to match. A
+        // qualified external terminology binds the rubric under the
+        // terminology-qualified code so the same acceptance dimension is
+        // exercisable without pretending the external code is archetype-local.
+        let terms = codes
+            .iter()
+            .map(|c| {
+                let code = if term.eq_ignore_ascii_case("local") {
+                    c.clone()
+                } else {
+                    format!("{term}::{c}")
+                };
+                (
+                    code.clone(),
+                    format!("Rubric for {code}"),
+                    format!("CNF coded-text rubric {code}"),
+                )
+            })
+            .collect();
+        return (children, terms);
     }
     // Open coded text (RM mandatory-attribute checks only).
-    c_complex("DV_CODED_TEXT", "")
+    (c_complex("DV_CODED_TEXT", ""), Vec::new())
 }
 
 fn build_identifier(row: &Row<'_>) -> String {

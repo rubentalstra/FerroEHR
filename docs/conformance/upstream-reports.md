@@ -421,3 +421,57 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
 - **Ask:** Assign a specific status code (400 or 422) to the
   mismatched-`change_type` rejection on contribution commit in the ITS-REST
   spec (docs text + OAS), so the behaviour is gateable.
+
+### UPR-24 — DV_CODED_TEXT.value has no value==rubric invariant
+
+- **Register entry:** AMB-55
+- **Channel:** editorial (RM)
+- **Status:** draft
+- **Spec citation:** RM data_types `dv_coded_text.adoc` §Description ("A text
+  item whose value must be the rubric from a controlled terminology") and
+  `dv_text.adoc` §Attributes value ("For DV_CODED_TEXT, this is the rubric of
+  the complete term") vs `dv_text.adoc` §Invariants (`Valid_value: not
+  value.is_empty` — the sole invariant on value) and `dv_coded_text.adoc`
+  §Invariants (none beyond `defining_code` 1..1).
+- **Problem:** The "value must be the rubric" statement is Description prose,
+  not an invariant, so a committed DV_CODED_TEXT whose value is a non-empty
+  string that is not the coded rubric violates no RM invariant — conformance
+  cannot require value==rubric (doing so was reverted as overreach in PR #263).
+- **Ask:** Either promote the "must be the rubric" statement to a formal
+  invariant, or clarify it is authoring guidance, so the value==rubric
+  expectation is unambiguously (non-)gateable.
+
+### UPR-25 — Accept quality-factor (q-value) negotiation is undefined
+
+- **Register entry:** AMB-56
+- **Channel:** ITS-REST
+- **Status:** draft
+- **Spec citation:** ITS-REST `overview/Resources.md` §Data representation
+  ("The client SHOULD use the Accept ... request header to specify the expected
+  ... response format. If the service cannot fulfil this aspect of the request,
+  it MUST respond with HTTP status code 406 Not Acceptable") +
+  `overview/Requests_and_responses.md` §Representation details negotiation
+  (Prefer verbosity only). The ITS-REST corpus is silent on q-values (no "q=",
+  "quality", or "weight").
+- **Problem:** ITS-REST defines only that an unfulfillable Accept yields 406; it
+  assigns no behaviour to a weighted or multi-type Accept (q-value ordering,
+  `*/*` wildcard resolution), so q-value strictness cannot be gated.
+- **Ask:** Define (or explicitly delegate to RFC 7231) the q-value / weighted
+  Accept semantics a conformant server must apply, so the behaviour is gateable.
+
+### UPR-26 — No simplified inner-data surface for commit_contribution
+
+- **Register entry:** AMB-57
+- **Channel:** ITS-REST
+- **Status:** draft
+- **Spec citation:** ITS-REST `simplified_formats/master02-overview.adoc`
+  §Scope (covers "Mapping between the Simplified Formats and canonical openEHR
+  RM (e.g. COMPOSITION)"; CONTRIBUTION not in scope) + §MIME Types (only the
+  two wt COMPOSITION MIME types) vs the released ITS-REST contribution-create
+  operation (CONTRIBUTION envelope body, canonical JSON/XML only).
+- **Problem:** There is no ITS-REST 1.1.0 wire for committing a CONTRIBUTION
+  whose inner versions carry simplified-format COMPOSITIONs, so the behaviour
+  cannot be exercised as a normative case.
+- **Ask:** Define a simplified-format inner-data surface for
+  `commit_contribution` (or state explicitly that CONTRIBUTION commit is
+  canonical-only), so the boundary is authoritative rather than inferred.

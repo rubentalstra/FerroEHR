@@ -315,11 +315,17 @@ AMB-39:
     types is implementation-defined.
   source: "ITS-REST simplified_formats master02-overview.adoc §MIME Types + §Overview (SDT rename NOTE)"
   handling: >-
-    Two sibling cases carry option tags; the ICS options declaration selects
-    which applies — the declared behaviour MUST pass, the undeclared sibling is
-    not-applicable. The supported branch (sf-deprecated-types-supported) expects
-    the legacy commit to succeed; the unsupported branch
-    (sf-deprecated-types-unsupported) expects unsupported_media (415).
+    Sibling cases carry option tags; the ICS options declaration selects which
+    applies — the declared behaviour MUST pass, the undeclared sibling is
+    not-applicable. Request side (Content-Type): the supported branch
+    (sf-deprecated-types-supported) expects the legacy commit to succeed; the
+    unsupported branch (sf-deprecated-types-unsupported) expects
+    unsupported_media (415). Response side (Accept): the
+    sf-deprecated-types-unsupported branch also expects not_acceptable (406)
+    when a deprecated media type is requested via Accept and the server does
+    not support it (ITS-REST overview Resources.md §Simplified Formats — "If
+    the service cannot fulfil this aspect of the request, it MUST respond with
+    HTTP status code 406 Not Acceptable").
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
   upstream_ref: "UPR-15"
@@ -503,3 +509,85 @@ AMB-54:
     the latter. Pure semantic-content cases stay 422.
   disposition: fixed_handling
   upstream_ref: "UPR-23"
+AMB-55:
+  ambiguity: >-
+    DV_CODED_TEXT.value has no value==rubric invariant. The dv_coded_text.adoc
+    Description prose ("A text item whose value must be the rubric from a
+    controlled terminology") and the dv_text.adoc value-attribute meaning ("For
+    DV_CODED_TEXT, this is the rubric of the complete term as provided by the
+    terminology service") are DESCRIPTION text, not invariants: the only
+    invariant governing value is the inherited dv_text.adoc Valid_value
+    (not value.is_empty), and DV_CODED_TEXT adds only defining_code 1..1. So a
+    committed DV_CODED_TEXT whose value is a non-empty string that is NOT the
+    coded rubric (an arbitrary display label, or the raw code string) violates
+    no RM invariant.
+  source: >-
+    RM data_types dv_coded_text.adoc §Description ("A text item whose value must
+    be the rubric from a controlled terminology") + dv_text.adoc §Attributes
+    value ("For DV_CODED_TEXT, this is the rubric of the complete term as
+    provided by the terminology service") vs dv_text.adoc §Invariants
+    (Valid_value: not value.is_empty — the SOLE invariant on value) +
+    dv_coded_text.adoc §Invariants (none beyond defining_code 1..1) — CONFIRMED
+    first-hand
+  handling: >-
+    The framework adopts the RM-invariant reading: a committed DV_CODED_TEXT
+    with a present defining_code and ANY non-empty value (the bound rubric, an
+    arbitrary label, or the raw code) is ACCEPTED; only an empty value is
+    rejected (Valid_value). The acceptance-direction value rows of
+    CONT-DV_CODED_TEXT-validate_local_codes / -validate_ext_term tag this entry.
+    Flips to value==rubric enforcement only if a future RM release promotes the
+    "must be the rubric" prose to an invariant. Pins the anti-overreach ruling
+    that reverted value==rubric enforcement (PR #263).
+  disposition: fixed_handling
+  upstream_ref: "UPR-24"
+AMB-56:
+  ambiguity: >-
+    Accept quality-factor (q-value) negotiation strictness is not spec-defined.
+    ITS-REST content negotiation states only that a client SHOULD use Accept to
+    specify the expected representation and that a service that cannot fulfil it
+    MUST respond 406 Not Acceptable; nothing in the ITS-REST corpus defines
+    q-value weighting, preference ordering across multiple acceptable types, or
+    */* wildcard resolution (grep: no "q=", "quality", or "weight"). RFC 7231
+    defines q-values generically, but ITS-REST assigns them no
+    conformance-visible behaviour.
+  source: >-
+    ITS-REST overview Resources.md §Data representation ("The client SHOULD use
+    the Accept ... request header to specify the expected ... response format.
+    If the service cannot fulfil this aspect of the request, it MUST respond
+    with HTTP status code 406 Not Acceptable") + Requests_and_responses.md
+    §Representation details negotiation (Prefer verbosity only; no q-value text)
+    — silence across the ITS-REST corpus CONFIRMED first-hand
+  handling: >-
+    No normative cases: a server's handling of a weighted or multi-type Accept
+    (q-value ordering, wildcard resolution) is statement-declared, not gated.
+    The one documented rule — an Accept the service cannot fulfil yields 406 —
+    is already exercised by the unsupported-Accept case
+    (SF-EXAMPLE-unsupported_accept). Activates as gating cases only if a future
+    ITS-REST release defines q-value semantics.
+  disposition: statement_declared
+  upstream_ref: "UPR-25"
+AMB-57:
+  ambiguity: >-
+    ITS-REST 1.1.0 defines no simplified-format (FLAT/STRUCTURED) inner-data
+    surface for commit_contribution. The contribution create operation accepts a
+    CONTRIBUTION envelope (versions[] + audit) in canonical JSON/XML; the
+    Simplified Formats sub-spec scopes itself to COMPOSITION serialization and
+    defines only the two wt COMPOSITION MIME types, with no CONTRIBUTION
+    representation. So committing a CONTRIBUTION whose inner versions carry
+    simplified-format COMPOSITIONs has no wire.
+  source: >-
+    ITS-REST simplified_formats master02-overview.adoc §Scope (covers "Mapping
+    between the Simplified Formats and canonical openEHR RM (e.g. COMPOSITION)";
+    CONTRIBUTION not in scope) + §MIME Types (only
+    application/openehr.wt.flat+json and application/openehr.wt.structured+json)
+    vs the released ITS-REST contribution-create operation (CONTRIBUTION
+    envelope body, canonical JSON/XML only) — CONFIRMED first-hand
+  handling: >-
+    No normative cases: there is no ITS-REST 1.1.0 wire for committing a
+    CONTRIBUTION with simplified inner data, so the behaviour is
+    statement-declared (a server MAY offer it as an extension). commit_contribution
+    coverage stays on the canonical-JSON/XML envelope. Activates if a future
+    ITS-REST release defines a simplified contribution surface. SM/ITS alignment
+    candidate.
+  disposition: statement_declared
+  upstream_ref: "UPR-26"

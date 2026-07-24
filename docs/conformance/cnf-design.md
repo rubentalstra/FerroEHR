@@ -773,7 +773,7 @@ outcomes:
   validation_failed:  { status: 422, body: error_loose }            # 422.yaml; AMB-1 error body
   template_not_found: { status: 422, body: error_loose }            # same wire code; kind distinguished by fixture
   missing_template_id:{ status: 422 }                               # simplified commit without openehr-template-id
-  unsupported_media:  { status: 415 }     # layered from the overview negotiation rules — not in the operation's enumerated set (AMB-7)
+  unsupported_media:  { status: 415 }     # layered from the overview negotiation rules — not in the operation's enumerated set (AMB-39)
 captures:
   version_uid: { from: header ETag, strip: weak-quotes }            # OBJECT_VERSION_ID …::…::1
   versioned_object_uid: { from: capture version_uid, transform: root-uid }
@@ -1087,7 +1087,7 @@ listed in the ITS-REST overview (`Resources.md`) as deprecated/MAY-supported:
 a server MAY still accept them, so cases assert only **correct negotiation
 behaviour** — a type the server does not support yields 406 (Accept) / 415
 (Content-Type) — never mandatory rejection, which would both exceed the spec
-and contradict AMB-7.
+and contradict AMB-39.
 
 Two distinct format models (both defined in §8.3): a case **parameterized
 over** format declares a case-level `formats:` axis and runs once per
