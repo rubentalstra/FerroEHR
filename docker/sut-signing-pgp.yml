@@ -1,0 +1,21 @@
+# CNF pgp-mode signing variant (compose OVERLAY).
+#
+# Reconfigures the ehrbase SUT to sign committed VERSIONs with an OpenPGP
+# (RFC 4880) key instead of the default digest, so the SIG-VERSION `verifiable`
+# case exercises real OpenPGP signature verification (RM common master06
+# §Digital Signature) — not only the digest recompute.
+#
+# Usage (overlay on the root stack):
+#   docker compose -f docker-compose.yml -f docker/sut-signing-pgp.yml up -d --wait ehrbase
+# The reference conformance pipeline selects it with CONF_SIGNING_MODE=pgp.
+#
+# The mounted key is the committed TEST OpenPGP secret key
+# (tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc) — test-only, no
+# passphrase; its paired public key is the pgp ixit's signing.public_key.
+services:
+  ehrbase:
+    environment:
+      EHRBASE__SIGNING__MODE: pgp
+      EHRBASE__SIGNING__KEY_PATH: /etc/ehrbase/cnf-signing.sec.asc
+    volumes:
+      - ./tools/cnf-runner/artifacts/corpus/keys/cnf-signing.sec.asc:/etc/ehrbase/cnf-signing.sec.asc:ro
