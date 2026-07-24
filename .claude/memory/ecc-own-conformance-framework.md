@@ -18,9 +18,10 @@ live ONLY under `docs/conformance/<sut>/`.
 
 **Why:** the 2026-07-08 "own framework (ECC)" pivot was superseded by the
 owner-approved CNF 2.0 rebuild (#197/#202); the ECC harness retired
-2026-07-22 with the reviewed comparison (`docs/conformance/the cutover comparison (git history; lane fully retired 2026-07-23, deferred grounds re-registered)`,
-gate clean). Its catalogue inventory is preserved at
-git history (the comparison lane retired 2026-07-23).
+2026-07-22, and the reviewed ECC→CNF cutover-comparison lane was fully retired
+2026-07-23 (its deferred grounds re-registered as catalogue issues). The ECC
+catalogue inventory and the cutover comparison are preserved in git history
+only.
 
 **How to apply:** never resurrect `tools/conformance` or ECC ids in new
 work; expectations trace to spec text only; the upstream Robot suites stay

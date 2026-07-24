@@ -2,7 +2,7 @@
 # the COMPOSITION with that version id does not exist (404 not_found). ITS-REST
 # returns the same 404 whether the EHR or the version id is unknown; the get
 # binding maps not_found (a distinct version_not_found kind is a binding-extension
-# candidate — see REQUIREMENTS.md).
+# candidate for a future ITS release).
 id: I_EHR_COMPOSITION.get_composition_version-bad_version
 kind: functional
 component: EHR_COMPOSITION

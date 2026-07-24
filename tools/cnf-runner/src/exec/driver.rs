@@ -336,10 +336,23 @@ impl<'a> HttpDriver<'a> {
                 }
                 WireFrom::Body { path } => {
                     let body = exchange.body.as_ref()?;
-                    // dotted body paths (`ehr_id.value`)
+                    // dotted body paths with optional array indices
+                    // (`ehr_id.value`, `versions[0].id.value`).
                     let mut current = body;
                     for seg in path.split('.') {
-                        current = current.get(seg)?;
+                        let (attr, index) = match seg.split_once('[') {
+                            Some((a, rest)) => (
+                                a,
+                                rest.strip_suffix(']').and_then(|i| i.parse::<usize>().ok()),
+                            ),
+                            None => (seg, None),
+                        };
+                        if !attr.is_empty() {
+                            current = current.get(attr)?;
+                        }
+                        if let Some(i) = index {
+                            current = current.get(i)?;
+                        }
                     }
                     match current {
                         Value::String(s) => Some(s.clone()),
@@ -416,6 +429,66 @@ impl<'a> HttpDriver<'a> {
         }
     }
 
+    /// Evaluate a `signature` assertion against a read-back `ORIGINAL_VERSION`
+    /// envelope (the version-envelope read step's body). `present`/`equals` are
+    /// mode-agnostic; `verifiable` reconstructs the agreed canonical form and
+    /// verifies per the ixit `signing` posture (RM common master06 §Digital
+    /// Signature; [`crate::exec::signature`]).
+    fn eval_signature_assertion(
+        &mut self,
+        body: &Value,
+        present: Option<bool>,
+        verifiable: Option<bool>,
+        equals: Option<&crate::model::value::TemplatedValue>,
+        vars: &VarStore,
+    ) -> Result<(), AssertionFailure> {
+        let signature = body.get("signature").and_then(Value::as_str);
+        if present == Some(true) && signature.is_none_or(str::is_empty) {
+            return Err(AssertionFailure(
+                "signature: expected present, the ORIGINAL_VERSION envelope carries no signature"
+                    .into(),
+            ));
+        }
+        if let Some(expected) = equals {
+            let want = self
+                .resolver
+                .resolve_value(expected, vars)
+                .map_err(|e| AssertionFailure(e.to_string()))?;
+            let want = want
+                .as_str()
+                .map_or_else(|| want.to_string(), ToOwned::to_owned);
+            if signature != Some(want.as_str()) {
+                return Err(AssertionFailure(format!(
+                    "signature: stored {signature:?} is not the client-supplied {want:?} (must be stored verbatim)"
+                )));
+            }
+        }
+        if verifiable == Some(true) {
+            let Some(sig) = signature else {
+                return Err(AssertionFailure(
+                    "signature: verifiable requested but the envelope carries no signature".into(),
+                ));
+            };
+            let Some(mode) = self.ixit.signing.as_ref() else {
+                return Err(AssertionFailure(
+                    "signature: verifiable requested but the ixit declares no `signing` posture"
+                        .into(),
+                ));
+            };
+            match crate::exec::signature::verify(body, sig, mode) {
+                Ok(true) => {}
+                Ok(false) => {
+                    return Err(AssertionFailure(
+                        "signature: does not verify over the agreed canonical form (RFC 8785 JCS of the version minus signature)"
+                            .into(),
+                    ));
+                }
+                Err(e) => return Err(AssertionFailure(format!("signature verify: {e}"))),
+            }
+        }
+        Ok(())
+    }
+
     /// A Boolean SM return (`has_directory`, `has_path`, `has_query`) is
     /// realized on the wire as presence: 2xx = TRUE, the mapped not-found =
     /// FALSE — the response body is the resource (or empty per `Prefer`),
@@ -443,6 +516,7 @@ impl<'a> HttpDriver<'a> {
     }
 
     /// Evaluate the pure-side assertions for a step against the exchange.
+    #[allow(clippy::too_many_lines)] // one match arm per Assertion variant — a dispatch, each arm delegates
     fn eval_assertions(
         &mut self,
         _case: &CaseCore,
@@ -535,17 +609,28 @@ impl<'a> HttpDriver<'a> {
                         ))),
                     }
                 }
-                // Wire-dependent version/signature facts need versioned-object
-                // reads the ITS does not surface uniformly; they are evaluated
-                // by the postcondition pass where the case's own flow provides
-                // the read (in-case verification), else recorded as a
-                // registered exception by the run command.
-                // Version/signature facts need versioned-object reads the
-                // ITS does not surface uniformly (in-case verification
-                // carries them); unique is aggregate (law e);
-                // message_exemplar/state are informative.
+                // The signature family is wire-asserted against the
+                // ORIGINAL_VERSION envelope the case's own flow reads (the
+                // version-envelope read step; RM common master06 §Digital
+                // Signature). present/equals are mode-agnostic; verifiable
+                // dispatches on the ixit signing posture.
+                Assertion::Signature {
+                    present,
+                    verifiable,
+                    equals,
+                    ..
+                } => self.eval_signature_assertion(
+                    body,
+                    *present,
+                    *verifiable,
+                    equals.as_ref(),
+                    vars,
+                ),
+                // The version family still needs a versioned-object read the
+                // ITS does not surface uniformly for change_type/lifecycle
+                // (in-case verification carries them); unique is aggregate
+                // (law e); message_exemplar/state are informative.
                 Assertion::Version { .. }
-                | Assertion::Signature { .. }
                 | Assertion::Unique { .. }
                 | Assertion::MessageExemplar { .. }
                 | Assertion::State { .. } => Ok(()),
@@ -955,8 +1040,18 @@ impl HttpDriver<'_> {
     ) -> Result<(), String> {
         for key in case.requires.commit.clone() {
             let set = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
-            let Some(items) = set.as_array() else {
-                continue;
+            // A generated set is an array; a plain composition fixture is a
+            // single object and commits as a one-item set. Anything else is a
+            // catalogue defect — never skip silently (the precondition "the
+            // EHR has commits" must hold or the run must fail).
+            let items: Vec<serde_json::Value> = match set {
+                serde_json::Value::Array(a) => a,
+                obj @ serde_json::Value::Object(_) => vec![obj],
+                other => {
+                    return Err(format!(
+                        "requires.commit key {key}: expected a set array or a composition object, got {other}"
+                    ));
+                }
             };
             let binding = self.binding_for(case, "I_EHR_COMPOSITION.create_composition")?;
             let instance = self.ixit.default_instance()?;
@@ -980,7 +1075,7 @@ impl HttpDriver<'_> {
                 let base = instance.base_url.trim_end_matches('/');
                 let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
                 let url = format!("{base}{path}");
-                let exchange = self.send(request_spec.method, &url, &headers, Some(item), true)?;
+                let exchange = self.send(request_spec.method, &url, &headers, Some(&item), true)?;
                 if let Some((_, spec)) = binding
                     .captures
                     .as_deref()

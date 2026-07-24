@@ -1,7 +1,7 @@
 # Re-adjudicated 2026-07-21 from the retired ECC AQL empty-db golden battery
 # (ECC-QRY-006..009, corpus groups A-D against an empty server). The vendored
 # goldens are RM-1.0.x-era wire and are NOT derivable from AQL 1.1 spec text, so
-# the exact-row goldens are excluded (recorded in REQUIREMENTS.md); the
+# the exact-row goldens are excluded (not derivable from AQL 1.1 spec text); the
 # spec-groundable core is carried here: representative valid AQL query shapes are
 # accepted by the grammar and, on an empty server, return zero rows. `ecc-` id
 # namespace pending upstream adoption.
@@ -35,7 +35,7 @@ flow:
     with:
       ehr_id: "${ehr_id}"                  # single-EHR execution context
       q: "${ds:fixture}"
-      fetch: 100                            # AMB-6: fetch always explicit
+      fetch: 100                            # fetch always explicit
     expect: "${fixture.expected}"
     assert:
       - assert: result_set

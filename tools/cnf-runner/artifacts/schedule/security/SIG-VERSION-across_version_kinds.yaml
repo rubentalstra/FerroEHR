@@ -4,10 +4,10 @@
 # regardless of version kind — the first creation, a subsequent modification,
 # and a logical deletion each produce a signed ORIGINAL_VERSION (RM common: a
 # signature of the object can be made at the time of committal of a Version).
-# Signature presence per kind is not expressible with the current bindings +
-# typed assertions (no operation returns ORIGINAL_VERSION.signature); the
-# lineage is asserted with the `version` family and the per-kind signature fact
-# is carried as a `state` postcondition — see REQUIREMENTS.md.
+# Wire-asserted: each version kind's ORIGINAL_VERSION envelope is read back
+# (get_versioned_composition variant:version) and asserted signature-present —
+# the creation, the modification, and the logical deletion versions all carry a
+# signature over their canonical form.
 id: SIG-VERSION-across_version_kinds
 kind: functional
 component: SECURITY
@@ -45,26 +45,52 @@ flow:
     assert:
       - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - step: 2
+    call: get_versioned_composition          # read the creation VERSION envelope
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${preceding_version_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${preceding_version_uid}", present: true }
+  - step: 3
     call: update_composition
     with:
       ehr_id: "${ehr_id}"
       composition: "${ds:cnf.composition.minimal_event.v2}"
       versioned_object_uid: "${versioned_object_uid}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { v2_uid: updated.version_uid }
     assert:
       - { assert: version, of: "${v2_uid}", change_type: MODIFY }
-  - step: 3
+  - step: 4
+    call: get_versioned_composition          # read the modification VERSION envelope
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${v2_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${v2_uid}", present: true }
+  - step: 5
     call: delete_composition
     with: { ehr_id: "${ehr_id}", preceding_version_uid: "${v2_uid}" }
     expect: deleted
     capture: { deleted_uid: deleted.version_uid }
     assert:
       - { assert: version, of: "${deleted_uid}", change_type: DELETED, lifecycle_state: "openehr::523|deleted|" }
+  - step: 6
+    call: get_versioned_composition          # read the deletion VERSION envelope (ORIGINAL_VERSION, data Void, still signed)
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${deleted_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${deleted_uid}", present: true }
 postconditions:
   - { assert: version, count: 3 }
-  - { assert: signature, of: "${preceding_version_uid}", present: true }
-  - { assert: signature, of: "${v2_uid}", present: true }
-  - { assert: signature, of: "${deleted_uid}", present: true }
-ambiguities: [AMB-3]

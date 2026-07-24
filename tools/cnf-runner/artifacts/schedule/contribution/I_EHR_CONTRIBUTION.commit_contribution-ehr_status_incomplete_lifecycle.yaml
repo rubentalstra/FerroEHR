@@ -1,0 +1,68 @@
+# The official EHR_STATUS reject case 2 (master08 §EHR_STATUS CONTRIBUTION
+# Commit Data Sets): "CONTRIBUTIONs with VERSION, where VERSION.lifecycle_state
+# = incomplete should be rejected, because the incomplete state doesn't apply
+# to EHR_STATUS. Though there is an open issue related to this:
+# .../browse/SPECPR-368" — AMB-9: the case reports but does not gate until
+# SPECPR-368 resolves. The member is a pre-built ORIGINAL_VERSION (the verbatim
+# member seam) so lifecycle_state 553|incomplete| rides an otherwise-valid
+# modification member naming the current status VERSION (isolating the
+# incomplete-lifecycle axis as the rejection ground). Codes per the openEHR
+# Terminology version lifecycle state group (RM common master06
+# §change_control: 532|complete|, 553|incomplete|, 523|deleted|).
+id: I_EHR_CONTRIBUTION.commit_contribution-ehr_status_incomplete_lifecycle
+kind: functional
+component: EHR_CONTRIBUTION
+sm_operation: I_EHR_CONTRIBUTION.commit_contribution
+capabilities: [ChangeSets]
+profiles: [CORE]
+test_purpose: >-
+  Committing a CONTRIBUTION whose EHR_STATUS member carries lifecycle_state =
+  incomplete is rejected — the incomplete state does not apply to EHR_STATUS
+  (report-only pending SPECPR-368, AMB-9).
+description: "Commit CONTRIBUTION containing EHR_STATUS with lifecycle_state = incomplete"
+spec_refs:
+  - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
+  - "CNF platform_test_schedule master08 §EHR_STATUS CONTRIBUTION Commit Data Sets (Reject Cases, case 2 + SPECPR-368)"
+  - "RM common §change_control (lifecycle_state; version lifecycle state group)"
+applies: { rm: ">=1.0.2" }
+requires:
+  server: any
+  ehr: { commits: none }                 # EHR with the default EHR_STATUS; mints ${ehr_id}
+data_sets: [cnf.ehr_status.minimal]
+flow:
+  - step: 1
+    call: I_EHR_STATUS.get_ehr_status
+    with: { ehr_id: "${ehr_id}" }
+    expect: ok
+    capture: { status_version_uid: ok.status_version_uid }
+  - step: 2
+    call: commit_contribution
+    with:
+      ehr_id: "${ehr_id}"
+      versions:                            # pre-built ORIGINAL_VERSION member: lifecycle 553|incomplete| on a valid modification
+        - data:
+            _type: ORIGINAL_VERSION
+            preceding_version_uid: { _type: OBJECT_VERSION_ID, value: "${status_version_uid}" }
+            lifecycle_state:
+              _type: DV_CODED_TEXT
+              value: "incomplete"
+              defining_code:
+                _type: CODE_PHRASE
+                terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
+                code_string: "553"
+            commit_audit:
+              _type: AUDIT_DETAILS
+              system_id: "cnf-runner"
+              committer: { _type: PARTY_IDENTIFIED, name: "cnf runner" }
+              change_type:
+                _type: DV_CODED_TEXT
+                value: "modification"
+                defining_code:
+                  _type: CODE_PHRASE
+                  terminology_id: { _type: TERMINOLOGY_ID, value: "openehr" }
+                  code_string: "251"
+            data: "${ds:cnf.ehr_status.minimal}"
+    expect: validation_failed              # "the incomplete state doesn't apply to EHR_STATUS" — report-only per AMB-9
+postconditions:
+  - { assert: version, count: 1 }          # only the pre-existing default EHR_STATUS remains
+ambiguities: [AMB-9]

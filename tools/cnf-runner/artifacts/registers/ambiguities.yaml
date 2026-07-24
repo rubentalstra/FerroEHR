@@ -1,301 +1,204 @@
 # The ambiguity register: every entry a real, verified spec divergence or
 # silence with the normative handling a runner MUST apply. A runner that
 # resolves an ambiguity privately is non-conformant to the schedule.
-AMB-1:
-  ambiguity: >-
-    Error body shape diverges inside ITS-REST 1.1.0: prose says
-    {message, code, errors[DV_CODED_TEXT]} under Prefer: return=representation,
-    while the OAS Error.yaml says {message, validationErrors[string]} and is
-    wired only into 400. Most 4xx bodies are undefined.
-  source: "ITS-REST overview Requests_and_responses (Error handling) vs ITS-REST specifications/schemas Error.yaml"
-  handling: >-
-    error_loose: assert only that a `message` string is present (when Prefer
-    representation); never assert either full shape. SEC decision item: pick
-    one shape in ITS-REST 1.2.0.
-  disposition: loose_assert
-AMB-2:
-  ambiguity: >-
-    EHR create enumerates no 422 — EHR_STATUS validation failure has no
-    assigned code (ehr_create responses = 201/400/409).
-  source: "ITS-REST specifications/operations ehr_create.yaml"
-  handling: "Bind validation_failed -> 400 on EHR create; flag for upstream clarification."
-  disposition: fixed_handling
-AMB-3:
-  ambiguity: >-
-    The SM does not say where preceding_version_uid lives for update
-    (spec-ambiguity note in the schedule's COMPOSITION chapter preamble).
-  source: "CNF platform_test_schedule master07 (preamble); SM openehr_platform I_EHR_COMPOSITION"
-  handling: >-
-    Cases speak preceding_version_uid abstractly; the ITS-REST binding
-    realizes it as If-Match. SPECPR candidate.
-  disposition: fixed_handling
+#
+# ORACLE (owner rulings 2026-07-24): only RELEASED openEHR components are
+# enforceable authority — RM, BASE, AM/ADL, QUERY, TERM, ITS-XML, SM, and the
+# ITS-REST docs text. The vendored OAS, the CNF Platform Conformance Test
+# Schedule, and the Robot suites are STALLED GUIDES (which behaviour to cover),
+# never authority. Every `source` cites a released component; a CNF/OAS/Robot
+# mention is a coverage guide, never the ground for a verdict.
 AMB-4:
   ambiguity: >-
     ADL 1.4 templates have no formal versioning — duplicate template_id
     handling is implementation-defined: conflict vs version-parameter.
-  source: "CNF platform_test_schedule master04 (NOTE on duplicate template_id)"
+  source: >-
+    AM ADL 1.4 master02-overview.adoc §Templates (templates are defined at a
+    local level in the dADL formalism and "do not introduce any new semantics
+    to archetypes"; no template versioning or duplicate-template_id handling is
+    defined) — silence CONFIRMED first-hand
   handling: >-
     Two sibling cases carry option tags; the ICS options declaration selects
     which applies — at least the declared behaviour MUST pass; the undeclared
     sibling is not-applicable.
   disposition: option_select
   options: [adl14-duplicate-conflict, adl14-duplicate-versioned]
+  upstream_ref: "UPR-01"
 AMB-5:
   ambiguity: "Persistent-COMPOSITION uniqueness per EHR is under SEC debate."
-  source: "CNF platform_test_schedule master07 (NOTE on persistent compositions)"
+  source: >-
+    RM ehr COMPOSITION class §Invariants (Category_validity / Territory_valid /
+    Language_valid / Content_valid / Is_archetype_root — no invariant requires a
+    persistent COMPOSITION to be unique per EHR) + RM ehr
+    master05-composition_package.adoc §Persistent Compositions (silent on
+    uniqueness) — silence CONFIRMED first-hand
   handling: >-
     Affected cases carry the flag; verdicts on them are reported but excluded
     from profile computation until resolved.
   disposition: report_only
-AMB-6:
-  ambiguity: >-
-    The `fetch` default is implementation-defined; `fetch` cannot combine
-    with AQL TOP.
-  source: "ITS-REST specifications/docs/query Request.md"
-  handling: >-
-    Cases always pass `fetch` explicitly; the TOP+fetch rejection is its own
-    case.
-  disposition: fixed_handling
-AMB-7:
-  ambiguity: "Additional non-conflicting status codes are permitted."
-  source: "ITS-REST overview Requests_and_responses (HTTP status codes)"
-  handling: >-
-    Bindings assert the expected code exactly for the expected outcome; they
-    never enumerate-reject other codes for other situations.
-  disposition: fixed_handling
+  upstream_ref: "UPR-02"
 AMB-8:
   ambiguity: >-
     Empty-directory retrieval is empty-vs-error ambiguous: get_directory on
     an EHR without one "should return an empty structure ... could be an
     error status instead".
-  source: "CNF platform_test_schedule master09 (F.1/G.1/L.1)"
-  handling: "Sibling cases with option tags; the ICS declares the behaviour. Upstream clarification candidate."
+  source: >-
+    RM ehr EHR class §directory (0..1 — a directory is optional) + released
+    ITS-REST 1.1.0 directory retrieval docs (silent on the representation of an
+    empty/never-created directory)
+  handling: >-
+    Sibling cases with option tags; the ICS declares the behaviour.
+    On ITS-REST 1.1.0 only the ERROR option is realizable: released ITS-REST
+    directory retrieval returns not-found for a directory that does not exist
+    (overview Requests_and_responses.md §status codes) and defines no
+    empty-structure representation for a never-created directory — so the
+    its-rest binding fixes the error branch and no directory-empty-structure
+    sibling exists for this ITS (the option pair stands for future ITS
+    bindings). Upstream clarification candidate.
   disposition: option_select
+  upstream_ref: "UPR-03"
   options: [directory-empty-structure, directory-empty-error]
 AMB-9:
   ambiguity: "EHR_STATUS `incomplete` lifecycle_state references SPECPR-368 (open upstream problem report)."
-  source: "CNF platform_test_schedule master08 (SPECPR-368 reference)"
+  source: >-
+    RM common master06-change_control_package.adoc §Version Lifecycle
+    (lifecycle_state coded from the 'version lifecycle state' group, including
+    553|incomplete|) + upstream SPECPR-368
   handling: "Affected cases report but do not gate until SPECPR-368 resolves."
   disposition: report_only
+  upstream_ref: "SPECPR-368"
 AMB-10:
   ambiguity: >-
     Deleting a VERSIONED_OBJECT is under-specified: "needs further
     specification at the openEHR Service Model".
-  source: "CNF platform_test_schedule master08"
+  source: >-
+    RM common master06-change_control_package.adoc §Change Control (a versioned
+    repository is "by definition indelible", all changes achieved by committing
+    new Versions) + §Logical Deletion (information "can only ever be logically
+    deleted" — a new Version with data set to Void and lifecycle_state deleted);
+    no physical deletion of a whole VERSIONED_OBJECT container is defined —
+    silence CONFIRMED first-hand
   handling: "No normative cases; statement-declared behaviour only."
   disposition: statement_declared
-AMB-11:
-  ambiguity: >-
-    openehr::523|deleted| as a lifecycle_state code: the schedule reproduces
-    it, but the code assignment warrants terminology verification.
-  source: "CNF platform_test_schedule master07; TERM"
-  handling: "Cases assert the schedule's value; register flags it for TERM cross-check."
-  disposition: fixed_handling
-AMB-12:
-  ambiguity: >-
-    master06 mislabels its provided-status table "1.a" against its own class
-    list (1.a = no EHR_STATUS provided).
-  source: "CNF platform_test_schedule master06 (create_ehr data-set caption)"
-  handling: >-
-    The create_ehr-main encoding carries both classes; the conversion records
-    the caption defect; editorial fix upstream.
-  disposition: editorial
-AMB-13:
-  ambiguity: >-
-    CNF<->SM operation-name divergence for OPT retrieval: the schedule
-    anchors I_DEFINITION_ADL14.get_opts() and names its cases get_opts-*, but
-    the SM I_DEFINITION_ADL14 interface defines list_opts/opts_count — no
-    get_opts operation exists.
-  source: "CNF platform_test_schedule master04 (Service Model operation: I_DEFINITION_ADL14.get_opts()) vs SM docs/UML/classes/i_definition_adl14.adoc"
-  handling: >-
-    Official case ids keep the schedule's get_opts family (ids are never
-    renamed); sm_operation carries the resolvable I_DEFINITION_ADL14.list_opts.
-    Upstream editorial-alignment candidate.
-  disposition: fixed_handling
-AMB-14:
-  ambiguity: >-
-    CNF<->SM operation-name divergence for subject-based EHR access: master06
-    places the subject-keyed cases under its has_ehr()/get_ehr() headings, but
-    those SM operations take an ehr_id (UUID); the subject flows are the
-    distinct SM operations has_ehr_for_subject and get_ehrs_for_subject.
-  source: "CNF platform_test_schedule master06 (subject-based has_ehr/get_ehr cases) vs SM docs/UML/classes/i_ehr_service.adoc"
-  handling: >-
-    Official case ids unchanged; sm_operation carries the resolvable subject
-    variant (the AMB-13 rule). Upstream editorial-alignment candidate.
-  disposition: fixed_handling
-AMB-15:
-  ambiguity: >-
-    The SM EHR_STATUS field-setters (set/clear_ehr_queryable,
-    set/clear_ehr_modifiable) have no dedicated ITS-REST endpoint — ITS-REST
-    1.1.0 exposes only the whole-resource PUT /ehr/{ehr_id}/ehr_status.
-  source: "SM docs/UML/classes/i_ehr_status.adoc vs ITS-REST specifications/operations/ehr_status_update.yaml"
-  handling: >-
-    Realized as read-modify-write: the cases encode the GET explicitly
-    (capture the status version uid), then PUT the flipped flag with the
-    prior version as the precondition (AMB-3 realizes it as If-Match).
-    SPECPR candidate: add field-setter endpoints or document the
-    read-modify-write realization normatively.
-  disposition: fixed_handling
-AMB-16:
-  ambiguity: >-
-    CNF<->SM operation-name divergence for OPT validation: master04 anchors
-    I_DEFINITION_ADL14.validate_opt() and names its cases validate_opt-*, but
-    the SM interface defines valid_opt (no validate_opt). ITS-REST 1.1.0 also
-    exposes no dedicated validation endpoint.
-  source: "CNF platform_test_schedule master04 (validate_opt cases + NOTE) vs SM docs/UML/classes/i_definition_adl14.adoc; ITS-REST specifications/operations (no validate endpoint)"
-  handling: >-
-    Case ids keep the schedule's validate_opt family; sm_operation carries the
-    resolvable valid_opt; validation is realized via upload per the master04
-    NOTE ("validation might be part of the OPT upload functionality").
-    Upstream editorial-alignment candidate.
-  disposition: fixed_handling
+  upstream_ref: "UPR-04"
 AMB-17:
   ambiguity: >-
     The SM I_DEFINITION_ADL14.delete_opt operation is not surfaced by
     ITS-REST 1.1.0 — no DELETE exists on any /definition/template/adl1.4*
     path, so the four official master04 delete_opt cases have no bindable
     wire realization.
-  source: "SM docs/UML/classes/i_definition_adl14.adoc (delete_opt) vs ITS-REST specifications (definition template operations: no DELETE)"
+  source: >-
+    SM i_definition_adl14.adoc (delete_opt — defines the operation) vs released
+    ITS-REST 1.1.0 (no DELETE on /definition/template/adl1.4 — no wire)
   handling: >-
     The four official cases are in the catalogue, active and SM-anchored; the
     its-rest binding carries an explicit `unrealized` declaration, so on
-    ITS-REST 1.1.0 they verdict as not-applicable with this citation and
+    ITS-REST 1.1.0 they verdict as not-applicable WITH CITATION and
     activate when a later ITS release adds the endpoint.
-    SPECPR/ITS-REST 1.2.0 candidate.
+    SM/ITS alignment candidate.
   disposition: fixed_handling
-AMB-18:
-  ambiguity: >-
-    The SM I_DEFINITION_QUERY.valid_query operation has no dedicated ITS-REST
-    endpoint.
-  source: "SM docs/UML/classes/i_definition_query.adoc (valid_query; store_query Pre_valid_query) vs ITS-REST specifications/operations definition_query_store.yaml"
-  handling: >-
-    Realized via store_query (its precondition is is_valid_query): a valid
-    text stores, an invalid text or unsupported formalism is rejected.
-  disposition: fixed_handling
-AMB-19:
-  ambiguity: >-
-    The SM I_DEFINITION_QUERY.has_query operation (Boolean) has no dedicated
-    ITS-REST existence endpoint.
-  source: "SM docs/UML/classes/i_definition_query.adoc (has_query) vs ITS-REST specifications/operations definition_query_list.yaml"
-  handling: "Realized via the list-by-name GET: a non-empty result set is the positive return."
-  disposition: fixed_handling
-AMB-20:
-  ambiguity: >-
-    The SM I_DEFINITION_QUERY.list_queries pagination parameters
-    (item_offset, items_to_fetch) are not exposed by ITS-REST 1.1.0.
-  source: "SM docs/UML/classes/i_definition_query.adoc (list_queries) vs ITS-REST specifications/operations definition_query_list.yaml (no offset/fetch parameters)"
-  handling: >-
-    The select-items case lists without pagination while the wire lacks the
-    parameters; pagination asserts enter when an ITS surfaces them.
-    Upstream candidate.
-  disposition: fixed_handling
-AMB-21:
-  ambiguity: >-
-    Persistent-COMPOSITION uniqueness rejection has no assigned status code:
-    the composition_create OAS enumerates 201/400/404/422 and assigns nothing
-    to a second persistent COMPOSITION for the same template in one EHR (the
-    create-side analogue of AMB-2; the uniqueness rule itself is under SEC
-    debate, AMB-5).
-  source: "ITS-REST specifications/operations/composition_create.yaml vs CNF platform_test_schedule master07 (create_composition-same_opt_twice + persistent NOTE)"
-  handling: >-
-    Bind conflict -> 409 on create_composition (the uniqueness/state-conflict
-    family); flag for upstream code assignment. Verdict gating is already
-    suspended by AMB-5 (report_only).
-  disposition: fixed_handling
+  upstream_ref: "UPR-05"
 AMB-22:
   ambiguity: >-
     The SM I_EHR_CONTRIBUTION.list_contributions operation is not surfaced by
     ITS-REST 1.1.0 — no collection GET exists on /ehr/{ehr_id}/contribution
     (only the single-CONTRIBUTION GET by uid).
-  source: "SM docs/UML/classes/i_ehr_contribution.adoc (list_contributions) vs ITS-REST specifications/operations (contribution operations: no collection GET)"
+  source: >-
+    SM i_ehr_contribution.adoc (list_contributions — defines the operation) vs
+    released ITS-REST 1.1.0 (no collection GET on /ehr/{ehr_id}/contribution —
+    no wire)
   handling: >-
     The five official list_contributions cases are in the catalogue, active
     and SM-anchored; the its-rest binding carries an explicit unrealized
-    declaration, so on ITS-REST 1.1.0 they verdict as not-applicable with
-    this citation. SPECPR/ITS-REST 1.2.0 candidate.
+    declaration, so on ITS-REST 1.1.0 they verdict as not-applicable WITH
+    CITATION. SM/ITS alignment candidate.
   disposition: fixed_handling
-AMB-23:
-  ambiguity: >-
-    The SM I_EHR_CONTRIBUTION.has_contribution operation (Boolean) has no
-    dedicated ITS-REST existence endpoint.
-  source: "SM docs/UML/classes/i_ehr_contribution.adoc (has_contribution) vs ITS-REST specifications/operations contribution_get.yaml"
-  handling: >-
-    Realized via the single-CONTRIBUTION GET: 200 is the positive return,
-    404 the negative (the has_composition precedent).
-  disposition: fixed_handling
+  upstream_ref: "UPR-06"
 AMB-24:
   ambiguity: >-
     The SM I_EHR_DIRECTORY.get_versioned_directory operation is not surfaced
     by ITS-REST 1.1.0 — there is no versioned_directory resource (unlike
     versioned_composition and versioned_ehr_status).
-  source: "SM docs/UML/classes/i_ehr_directory.adoc (get_versioned_directory) vs ITS-REST specifications/operations (directory operations: no versioned resource)"
+  source: >-
+    SM i_ehr_directory.adoc (get_versioned_directory — defines the operation) vs
+    released ITS-REST 1.1.0 (no versioned_directory resource — no wire)
   handling: >-
     The three official get_versioned_directory cases are in the catalogue,
     active and SM-anchored; the its-rest binding carries an explicit
     unrealized declaration, so on ITS-REST 1.1.0 they verdict as
-    not-applicable with this citation. SPECPR/ITS-REST 1.2.0 candidate.
+    not-applicable WITH CITATION. SM/ITS alignment candidate.
   disposition: fixed_handling
-AMB-25:
-  ambiguity: >-
-    Creating a directory on an EHR that already has one carries no assigned
-    status code in the directory_create OAS (the DIRECTORY analogue of the
-    AMB-21 create-side gap).
-  source: "ITS-REST specifications/operations/directory_create.yaml vs CNF platform_test_schedule master09 (create_directory on an EHR with a directory)"
-  handling: "Bind already_exists -> 409 (the uniqueness/state-conflict family); flag for upstream code assignment."
-  disposition: fixed_handling
-AMB-26:
-  ambiguity: >-
-    Updating or deleting the directory of an EHR that has none overloads the
-    unknown-ehr 404 — the OAS assigns no distinct code to the
-    missing-directory precondition.
-  source: "ITS-REST specifications/operations/directory_update.yaml + directory_delete.yaml vs CNF platform_test_schedule master09 (update/delete on an EHR without a directory)"
-  handling: "Bind not_found -> 404 for the missing-directory precondition; kind distinguished by the case's provisioned state."
-  disposition: fixed_handling
+  upstream_ref: "UPR-07"
 AMB-27:
   ambiguity: >-
-    master17.3 table editorial defects, enumerated: an accepted row whose
-    violates cell names a violation (the accepted/[] contradiction near the
-    proportion tables); a millisecond-validity column omission in the
-    date/time validity tables; the "different limit types" rows label a
-    type=0 (ratio) proportion with unitary wording; the integer_fraction
-    prose says type [3] while the data column says [4]; several
-    interval-of-date/time/duration rows carry a forum-style "IMO should
-    fail" note instead of a normative verdict.
-  source: "CNF platform_test_schedule master17.3 (quantity decision tables)"
+    BASE-grounded correction: the master17.3 DV_INTERVAL<DV_TIME> range table
+    verdicts a domain-constraint rejection (C_TIME.range on lower) for a row
+    whose lower bound is absent with lower_unbounded=true — underivable, since
+    BASE Interval carries no invariant making a bound-value constraint bite on
+    an absent optional limit (the four-invariant set does not require a bound
+    value when *_unbounded is false). Guide-quality CNF-internal table typos
+    recorded WITHOUT an upstream report: the accepted/[] contradiction near the
+    proportion tables; the millisecond-validity column omission; the "different
+    limit types" unitary wording on a type=0 (ratio) row; the integer_fraction
+    prose type [3] vs data column [4]; the forum-style "IMO should fail" notes.
+  source: >-
+    BASE foundation_types interval.adoc §Invariants (the four-invariant set —
+    Lower_included_valid / Upper_included_valid / Limits_consistent /
+    Limits_comparable — none requires a bound value on an absent
+    unbounded-flagged limit); the master17.3 quantity decision tables are the
+    stalled guide where the defect appears
   handling: >-
     Rows are encoded verbatim where the verdict is unambiguous; the
     contradiction rows follow the data column (verdict cell wins over
     prose); the forum-note rows keep the stated verdict with the note kept
-    as case commentary. Upstream editorial fixes proposed with the chapter
-    conversion.
+    as case commentary; the constraint-on-absent-unbounded-bound row is
+    corrected to accepted with the BASE interval-invariant citation (the
+    reported correction). The remaining master17.3 table typos are
+    guide-quality observations recorded with the chapter conversion only, NOT
+    part of the upstream report.
   disposition: editorial
+  upstream_ref: "UPR-08"
 AMB-28:
   ambiguity: >-
-    master17.1/17.2/17.4 table editorial defects, enumerated: the DV_BOOLEAN
-    only_false_allowed table's first row is internally inconsistent
-    (expected=accepted while naming a violated constraint); master17.2
-    carries a duplicate DV_TEXT validate_open heading (two tables under one
-    id); the DV_DURATION fields_range table carries C_DURATION clause-name
-    typos and a period-vs-comma multi-violation cell.
-  source: "CNF platform_test_schedule master17.1/17.2/17.4 (basic/text/date_time decision tables)"
+    AM-grounded correction: the master17.1 DV_BOOLEAN only_false_allowed
+    table's first row is internally inconsistent (expected=accepted while
+    naming a violated constraint) — AM aom14 C_BOOLEAN makes the verdict
+    derivable (rejected). Guide-quality CNF-internal defects recorded WITHOUT
+    an upstream report: the master17.2 duplicate DV_TEXT validate_open heading
+    (two tables under one id); the DV_DURATION fields_range C_DURATION
+    clause-name typos and period-vs-comma multi-violation cell.
+  source: >-
+    AM aom14 c_boolean.adoc (C_BOOLEAN.true_valid=false disallows true — the
+    DV_BOOLEAN only_false_allowed row's verdict is rejected); the
+    master17.1/17.2/17.4 basic/text/date_time decision tables are the stalled
+    guide where the defect appears
   handling: >-
     Rows encoded verbatim where the verdict is unambiguous; the inconsistent
-    DV_BOOLEAN row follows the verdict cell; the duplicate DV_TEXT heading is
-    one case with the two tables merged (distinguished by the pattern
-    column). Upstream editorial fixes proposed with the chapter conversion.
+    DV_BOOLEAN row resolves to the AM-derivable verdict (rejected — AOM1.4
+    C_BOOLEAN.true_valid=false disallows true; the violates cell wins over
+    the verdict cell there — the reported correction); the duplicate DV_TEXT
+    heading is one case with the two tables merged (distinguished by the pattern
+    column) — a guide-quality observation recorded with the conversion, NOT
+    part of the upstream report.
   disposition: editorial
+  upstream_ref: "UPR-09"
 AMB-29:
   ambiguity: >-
-    Reduced-precision temporal comparability is under-specified (SPECPR-380,
-    open upstream; RM DV_ORDERED comparison for partial dates/times) — the
-    date/time constraint tables mix precisions whose ordering the RM leaves
-    open.
-  source: "CNF platform_test_schedule master17.4 (temporal constraint tables); RM data_types (DV_ORDERED); upstream SPECPR-380"
+    Reduced-precision temporal comparability is under-specified (open SEC
+    item; RM DV_ORDERED comparison for partial/reduced-accuracy dates and
+    times) — the date/time constraint tables mix precisions whose ordering the
+    RM leaves open.
+  source: >-
+    RM data_types DV_ORDERED class §less_than ("<") + §is_strictly_comparable_to
+    (redefined in descendants) + RM data_types master07-date_time_package.adoc
+    §Partial Date/Times (reduced-accuracy partials per ISO 8601; no
+    mixed-precision ordering semantics defined) — silence CONFIRMED first-hand
   handling: >-
     Affected rows carry guards quoting the chapter NOTEs; verdicts on
     mixed-precision comparisons are reported but excluded from profile
-    computation until SPECPR-380 resolves.
+    computation until the SEC resolves the comparability question.
   disposition: report_only
+  upstream_ref: "UPR-10"
 AMB-30:
   ambiguity: >-
     Rejection of AQL constructs outside the defined language is spec-silent:
@@ -304,7 +207,10 @@ AMB-30:
     construct such as TIMEWINDOW, a non-grammar clause order, or an undefined
     TERMINOLOGY() form). Interoperability argues for rejection; the spec does
     not mandate it.
-  source: "QUERY AQL (grammar; §TERMINOLOGY; Amendment Record SPECQUERY-20) vs ITS-REST query 400_Query (defined only for invalid AQL)"
+  source: >-
+    QUERY AQL (grammar; §TERMINOLOGY; Amendment Record SPECQUERY-20 — no clause
+    mandates rejecting a dialect superset) + released ITS-REST query Response.md
+    (400 defined only for invalid AQL, not for a dialect superset)
   handling: >-
     Dialect-extension rejection cases carry this entry and are report_only:
     verdicts are reported per SUT but never gate profile computation, until
@@ -312,91 +218,66 @@ AMB-30:
     no possible interpretation (e.g. missing FROM) remain gating. SPECQUERY
     candidate.
   disposition: report_only
-AMB-31:
-  ambiguity: >-
-    The SM defines no template-example-generation or web-template
-    representation operation: ITS-REST 1.1.0 serves GET
-    /definition/template/adl1.4/{template_id}/example and the web-template
-    representation (application/openehr.wt+json), but I_DEFINITION_ADL14
-    only defines get_opt/list_opts et al.
-  source: "SM docs/UML/classes/i_definition_adl14.adoc vs ITS-REST specifications/operations (template example + web template)"
-  handling: >-
-    The example endpoint binds as a variant of the genuine get_opt anchor
-    (the AMB-13 rule: official ground, resolvable SM operation); the
-    web-template representation rides the negotiated get_opt binding.
-    SPECPR candidate: add the example/web-template operations to the SM.
-  disposition: fixed_handling
+  upstream_ref: "SPECQUERY-20"
 AMB-32:
   ambiguity: >-
-    PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire: the DEVELOPMENT-stage
-    Demographic API surfaces PERSON/ORGANISATION/GROUP/AGENT/ROLE resources
-    but no PARTY_RELATIONSHIP endpoints, so the six SM relationship
-    operations have no bindable realization.
-  source: "SM docs/UML/classes/i_party_relationship.adoc + i_demographic_service.adoc vs ITS-REST specifications/operations (demographic_*: no relationship resource)"
+    PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire: the Demographic API
+    surfaces PERSON/ORGANISATION/GROUP/AGENT/ROLE resources but no
+    PARTY_RELATIONSHIP endpoints, so the six SM relationship operations have no
+    bindable realization.
+  source: >-
+    SM i_party_relationship.adoc + i_demographic_service.adoc (the
+    PARTY_RELATIONSHIP operations — define the operations) vs released ITS-REST
+    1.1.0 (no PARTY_RELATIONSHIP resource — no wire)
   handling: >-
     The relationship cases are in the catalogue, active and SM-anchored; the
     its-rest bindings carry explicit unrealized declarations, so on ITS-REST
-    1.1.0 they verdict as not-applicable with this citation. SPECPR/ITS-REST
+    1.1.0 they verdict as not-applicable WITH CITATION. SM/ITS alignment
     candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-11"
 AMB-33:
   ambiguity: >-
     The SM ADMIN component is almost entirely unrealized in ITS-REST 1.1.0:
-    the only admin_* operations in the OAS are admin_ehr_delete and
-    admin_ehr_delete_all (physical EHR deletion). I_ADMIN_SERVICE
+    the only realized admin operations are physical EHR deletion
+    (admin_ehr_delete / admin_ehr_delete_all). I_ADMIN_SERVICE
     list_contributions / contribution_count / versioned_composition_count /
     composition_version_count / physical_party_delete, I_ADMIN_DUMP_LOAD
     export_ehrs, and I_ADMIN_ARCHIVE archive_ehrs / archive_parties have no
     wire.
-  source: "ITS-REST specifications/operations (admin_ehr_delete, admin_ehr_delete_all only) vs SM docs/UML/classes/i_admin_service.adoc / i_admin_dump_load.adoc / i_admin_archive.adoc; CNF platform_test_schedule master12"
+  source: >-
+    SM i_admin_service.adoc / i_admin_dump_load.adoc / i_admin_archive.adoc
+    (list_contributions, contribution_count, versioned_composition_count,
+    composition_version_count, physical_party_delete, export_ehrs, archive_ehrs,
+    archive_parties — define the operations) vs released ITS-REST 1.1.0 (only
+    physical EHR deletion realized; no wire for the rest)
   handling: >-
     The its-rest binding declares each unwired admin operation unrealized;
     the master12 cases anchored to them are not-applicable WITH CITATION on
     ITS-REST 1.1.0 and activate when a later ITS release adds the endpoints.
     The one realized operation (physical_ehr_delete -> admin_ehr_delete)
-    carries a full binding.
+    carries a full binding. SM/ITS alignment candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-12"
 AMB-34:
   ambiguity: >-
     The SM MESSAGE component has NO realization in ITS-REST 1.1.0: there is
-    no MESSAGE / EHR-Extract / TDD API (no message_*/extract_*/tdd_*
-    operations in the OAS). I_EHR_EXTRACT_SERVICE (export_ehrs,
+    no MESSAGE / EHR-Extract / TDD API. I_EHR_EXTRACT_SERVICE (export_ehrs,
     export_ehr_extracts, import_ehr, import_ehr_extract) and I_TDD_SERVICE
-    (import_tdd, import_tdds) are entirely unwired. Separately, master13
-    cites the non-existent interface I_EHR_EXTRACT with operations
-    export_ehr()/export_ehr_extract() (and lists export_ehr() twice) — the
-    vendored SM I_EHR_EXTRACT_SERVICE is the resolution oracle.
-  source: "ITS-REST specifications/operations (no message/extract/tdd operations) vs SM docs/UML/classes/i_ehr_extract_service.adoc / i_tdd_service.adoc / i_message_service.adoc; CNF platform_test_schedule master13"
+    (import_tdd, import_tdds) are entirely unwired.
+  source: >-
+    SM i_ehr_extract_service.adoc / i_tdd_service.adoc / i_message_service.adoc
+    (export/import_ehr(_extract), import_tdd(s) — define the operations; the
+    vendored SM I_EHR_EXTRACT_SERVICE is the resolution oracle for the master13
+    naming) vs released ITS-REST 1.1.0 (no MESSAGE / extract / tdd wire)
   handling: >-
     Every master13 case is anchored to a resolvable SM operation on
     I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE and its its-rest binding is
     declared unrealized; the cases are not-applicable WITH CITATION on
     ITS-REST 1.1.0 and activate when a later ITS release adds a MESSAGE API.
-    Upstream editorial candidate for the master13 interface naming.
+    SM/ITS alignment candidate.
   disposition: fixed_handling
-AMB-35:
-  ambiguity: >-
-    master10 files its cases under I_DEMOGRAPHIC_SERVICE headings while the
-    SM places the party CRUD on I_PARTY and the relationship CRUD on
-    I_PARTY_RELATIONSHIP (only create_party/create_party_relationship live
-    on the service interface).
-  source: "CNF platform_test_schedule master10 vs SM docs/UML/classes/{i_demographic_service,i_party,i_party_relationship}.adoc"
-  handling: >-
-    Official case ids unchanged; sm_operation carries the resolvable
-    interface operation (the AMB-13 rule). Upstream editorial-alignment
-    candidate.
-  disposition: fixed_handling
-AMB-36:
-  ambiguity: >-
-    master10 is a stub chapter: all 24 cases carry TBD bodies (aaaa/bbbb
-    placeholder variants) — the schedule defines the operation inventory but
-    no behaviour text.
-  source: "CNF platform_test_schedule master10 (all case tables TBD)"
-  handling: >-
-    Cases are authored from the SM operation Meaning and .Errors paths with
-    a per-case disclosure guard; flows/assertions are replaced when the
-    upstream chapter is fleshed. Upstream authoring candidate.
-  disposition: fixed_handling
+  upstream_ref: "UPR-13"
 AMB-37:
   ambiguity: >-
     The SM I_DEFINITION_ADL2 interface is artefact-generic — a single
@@ -405,36 +286,24 @@ AMB-37:
     ITS-REST 1.1.0 surfaces ONLY operational-template (OPT) wire under
     /definition/template/adl2*. There is no ADL2 archetype-provisioning
     endpoint, no generic all-artefacts listing, no DELETE, no *_count endpoint,
-    no validation-only endpoint, and no regex match-by-pattern (the list filter
-    is a wildcard glob with no invalid-pattern error path). ITS-REST also adds
-    an example-generation surface the SM does not define, and its single ADL2
-    list does not distinguish TEMPLATE from OPERATIONAL_TEMPLATE.
-  source: "SM docs/UML/classes/i_definition_adl2.adoc vs ITS-REST specifications/operations (definition_template_adl2_* — OPT-only)"
+    and no regex match-by-pattern; the single ADL2 list does not distinguish
+    TEMPLATE from OPERATIONAL_TEMPLATE.
+  source: >-
+    SM i_definition_adl2.adoc (upload_artefact / get_artefact / has_artefact /
+    delete_artefact + list_* / *_count generic artefact operations — define the
+    operations) vs released ITS-REST 1.1.0 (OPT-only wire under
+    /definition/template/adl2; no archetype provisioning, generic listing,
+    DELETE, or *_count — no wire)
   handling: >-
     Archetype provisioning, generic listing, delete, and counts are declared
     unrealized on its-rest (cases not-applicable WITH CITATION, activating on a
     later ITS release). valid_artefact realizes via upload_artefact; has_artefact
     and list_matching_artefacts realize via the ADL2 list (filter); list_templates
     conflates with list_opts on the one list endpoint; example generation and the
-    deprecated version GET anchor to get_artefact (the closest SM op, AMB-13/AMB-31
-    rule). SPECPR candidates: (1) add ADL2 archetype provisioning + delete + count
-    + generic-list + example-generation operations to the SM/ITS alignment;
-    (2) give the runner binding schema a variant discriminator so example can
-    carry its own 406 independently of the plain get_artefact binding.
+    deprecated version GET anchor to get_artefact (the closest SM op). SM/ITS alignment candidate: add ADL2 archetype provisioning + delete +
+    count + generic-list + example-generation operations to the released ITS.
   disposition: fixed_handling
-AMB-38:
-  ambiguity: >-
-    master05 is a stub chapter: all seven stored-query case tables carry
-    xx/TBD cells — the schedule defines the case inventory but no behaviour
-    text.
-  source: "CNF platform_test_schedule master05 (all case tables xx/TBD)"
-  handling: >-
-    Cases are active with flows derived from the SM I_DEFINITION_QUERY
-    operation semantics and the STABLE stored-query Definitions API, each
-    carrying a disclosure guard (the master10/master12 stub-chapter rule,
-    AMB-36 precedent); flows/assertions are replaced when the upstream
-    chapter is fleshed.
-  disposition: fixed_handling
+  upstream_ref: "UPR-14"
 AMB-39:
   ambiguity: >-
     Support for the deprecated pre-1.1.0 "Simplified Data Template (SDT)"-era
@@ -444,7 +313,7 @@ AMB-39:
     records that "Simplified Data Template (SDT)" was superseded by "Simplified
     Formats" at Release 1.1.0. Whether a server still accepts the legacy media
     types is implementation-defined.
-  source: "ITS-REST simplified_formats master02 §MIME Types + §Overview (SDT rename NOTE)"
+  source: "ITS-REST simplified_formats master02-overview.adoc §MIME Types + §Overview (SDT rename NOTE)"
   handling: >-
     Two sibling cases carry option tags; the ICS options declaration selects
     which applies — the declared behaviour MUST pass, the undeclared sibling is
@@ -453,70 +322,43 @@ AMB-39:
     (sf-deprecated-types-unsupported) expects unsupported_media (415).
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
-AMB-40:
-  ambiguity: >-
-    Several write operations enumerate only 400 (plus 404/409) for rejected
-    content — contribution_create, definition_template_adl1.4_upload,
-    definition_template_adl2 upload, ehr_create/ehr_create_with_id — yet
-    their payloads can fail SEMANTIC validation (RM/AOM/template
-    nonconformance), which the overview's general status table assigns to
-    422 ("well-formed but unable to be followed due to semantic errors") and
-    which 422.yaml describes verbatim ("could be converted to a resource,
-    but there are semantic validation errors, such as the underlying
-    template is not known or is not validating the supplied resource"). The
-    enumerated 400 responses scope syntax-level failures (parse, malformed
-    URL/header/content, mismatched modification type), so which code a
-    semantic rejection carries is unenumerated.
-  source: >-
-    ITS-REST operations/contribution_create.yaml (responses 201/400/404/409)
-    + responses/400_CONTRIBUTION.yaml + responses/422.yaml + overview
-    Requests_and_responses.md §HTTP status codes ("Additional status codes
-    MAY be used as long as they do not conflict with the predefined codes")
-  handling: >-
-    The affected bindings' validation_failed (and, on contribution,
-    template_not_found) expectations carry alt_status [422]: a server
-    answering the OAS-enumerated 400 or the overview-permitted,
-    non-conflicting 422 both classify as the semantic-rejection kind; no
-    other status is accepted. The kinds on the shared status are
-    distinguished by fixture (the AMB-2 pattern).
-  disposition: fixed_handling
+  upstream_ref: "UPR-15"
 AMB-41:
   ambiguity: >-
     The SM I_DEFINITION_ADL14 interface defines archetype provisioning
-    (upload/get/list over ADL 1.4 archetypes) alongside OPT provisioning,
-    and the Profiles book lists "ADL 1.4 Archetype provisioning" as a
-    required CORE capability — but ITS-REST 1.1.0 surfaces ONLY the
-    operational-template wire under /definition/template/adl1.4; there is
-    no ADL 1.4 archetype endpoint at all.
-  source: "SM docs/UML/classes/i_definition_adl14.adoc vs ITS-REST specifications/operations (definition_template_adl1.4_* — OPT-only); CNF profiles master03-profiles.adoc §Functional (Definitions)"
+    (upload/get/list over ADL 1.4 archetypes) alongside OPT provisioning, but
+    ITS-REST 1.1.0 surfaces ONLY the operational-template wire under
+    /definition/template/adl1.4; there is no ADL 1.4 archetype endpoint at all.
+  source: >-
+    SM i_definition_adl14.adoc (ADL 1.4 archetype provisioning: upload / get /
+    list over archetypes — define the operations) vs released ITS-REST 1.1.0
+    (OPT-only wire under /definition/template/adl1.4; no archetype endpoint —
+    no wire)
   handling: >-
     The archetype-provisioning operations carry unrealized its-rest bindings;
     their cases are not-applicable WITH CITATION and activate when a later
     ITS release adds the wire. The verdict pipeline records the capability as
     unrealized-on-this-technology-profile — an explicit scope exclusion on
     the certificate, never a silent pass and never a CORE failure the ITS
-    cannot avoid.
+    cannot avoid. SM/ITS alignment candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-16"
 AMB-42:
   ambiguity: >-
     The AOM 1.4 object model defines millisecond_validity on
-    C_TIME/C_DATE_TIME (AM UML c_time.adoc, c_date_time.adoc) and the
-    separate seconds_allowed / fractional_seconds_allowed booleans on
-    C_DURATION (c_duration.adoc), and the CNF content schedule tests them
-    (master17.4: "mandatory/optional/prohibited flags for each part of the
-    time expression: minute, second, millisecond and timezone") — but the
-    ITS-XML 1.0.2 OPT serialization (Archetype.xsd) carries NO
-    millisecond_validity element (C_TIME/C_DATE_TIME sequence is pattern,
-    timezone_validity, range, assumed_value) and NO per-field duration
-    booleans (C_DURATION is pattern, range, assumed_value), and the ADL 1.4
-    pattern grammar ends at the seconds slot (master05-cadl §Patterns).
-    A constraint the schedule tests is unserializable on the OPT 1.4 wire.
+    C_TIME/C_DATE_TIME and the separate seconds_allowed /
+    fractional_seconds_allowed booleans on C_DURATION, but the ITS-XML 1.0.2
+    OPT serialization (Archetype.xsd) carries NO millisecond_validity element
+    (C_TIME/C_DATE_TIME sequence is pattern, timezone_validity, range,
+    assumed_value) and NO per-field duration booleans (C_DURATION is pattern,
+    range, assumed_value), and the ADL 1.4 pattern grammar ends at the seconds
+    slot. A constraint the schedule tests is unserializable on the OPT 1.4 wire.
   source: >-
-    AM docs/UML/classes/org.openehr.am.aom14.c_time.adoc +
-    c_date_time.adoc + c_duration.adoc; AM ADL1.4 master05-cadl.adoc
-    §Patterns (lexer V_ISO8601_TIME_CONSTRAINT_PATTERN ends at seconds) vs
-    ITS-XML 1.0.2 Archetype.xsd (C_TIME/C_DATE_TIME/C_DURATION sequences);
-    CNF platform_test_schedule master17.4 §DV_TIME / §DV_DURATION
+    AM aom14 c_time.adoc + c_date_time.adoc (millisecond_validity) +
+    c_duration.adoc (seconds_allowed / fractional_seconds_allowed) + AM ADL1.4
+    master05-cadl.adoc §Patterns (V_ISO8601_TIME_CONSTRAINT_PATTERN ends at
+    seconds) vs ITS-XML 1.0.2 Archetype.xsd (C_TIME/C_DATE_TIME/C_DURATION
+    sequences — no such elements)
   handling: >-
     Content rows whose expected rejection rests SOLELY on these
     unserializable axes (millisecond_validity, or a seconds_allowed /
@@ -527,6 +369,7 @@ AMB-42:
     Archetype.xsd element and stays tested) run normally. The rows activate
     when an ITS-XML release serializes the AOM fields.
   disposition: fixed_handling
+  upstream_ref: "UPR-17"
 AMB-43:
   ambiguity: >-
     BASE 1.3.0 Interval<T> declares lower/upper as optional (0..1) and
@@ -539,9 +382,9 @@ AMB-43:
     rejected as malformed. (Older openEHR revisions carried such an
     invariant; the vendored 1.3.0 does not.)
   source: >-
-    BASE docs/UML/classes/org.openehr.base.foundation_types.interval.adoc
-    §Attributes (lower/upper 0..1) + §Invariants (the four-invariant set);
-    CNF platform_test_schedule master17.3 (interval open tables)
+    BASE foundation_types interval.adoc §Attributes (lower/upper 0..1) +
+    §Invariants (the four-invariant set — none requires a bound value when
+    *_unbounded is false)
   handling: >-
     The framework adopts the RM-invariant reading: a bounded-flag interval
     with absent limits is ACCEPTED (no invariant violated; the flags are
@@ -549,3 +392,114 @@ AMB-43:
     citation. The rows flip to rejected if a future BASE release restores
     the bound-required invariant.
   disposition: fixed_handling
+  upstream_ref: "UPR-18"
+AMB-44:
+  ambiguity: >-
+    DV_TIME literal form diverges between the CNF schedule and BASE: the
+    master17.4 §DV_TIME NOTE says "our test data sets all include the T
+    time marker" (and the master17.3 interval-of-time tables print
+    T-prefixed literals), while BASE Iso8601_time defines the value syntax
+    as hh:mm:ss[(,|.)sss][Z|±hh[:mm]] (extended) or hhmmss… (compact) —
+    no leading T in either form. DV_TIME.value's type oracle is the BASE
+    class.
+  source: >-
+    BASE foundation_types iso8601_time.adoc §Description (value syntax
+    hh:mm:ss[(,|.)sss][Z|±hh[:mm]] extended or hhmmss… compact — no leading T)
+  handling: >-
+    Time literals in the catalogue take the BASE Iso8601_time form: the
+    schedule's T-prefixed time data sets are transcribed WITHOUT the
+    leading marker (the T marks the date-time separator and duration
+    designators only). The affected DV_TIME/interval-of-time cases tag
+    this entry. Flips back if a future BASE release admits the T-prefixed
+    time form.
+  disposition: fixed_handling
+  upstream_ref: "UPR-19"
+AMB-45:
+  ambiguity: >-
+    The master17.4 DV_DATE_TIME range table's T-precision block tests values
+    anchored at 2021-10-24 (e.g. 2021-10-24T10) against ranges anchored at
+    1900-03-13 yet expects accepted — arithmetically impossible under BASE
+    Interval total-order containment.
+  source: >-
+    BASE foundation_types interval.adoc §has() (total-order containment — the
+    master17.4 DV_DATE_TIME T-precision block is arithmetically underivable);
+    the master17.4 temporal range table is the stalled guide where the defect
+    appears
+  handling: >-
+    The catalogue re-anchors the block's values to the ranges' 1900-03-13
+    date (preserving each row's precision axis and verdict), making every
+    row derivable. Editorial correction proposed with the chapter
+    conversion.
+  disposition: editorial
+  upstream_ref: "UPR-20"
+AMB-46:
+  ambiguity: >-
+    Commit-time enforcement of a CONSTRAINT_REF (C_CODE_REFERENCE) against
+    the instance's terminology_id is not derivable from AOM1.4: master04
+    §Reference Objects defines CONSTRAINT_REF as a proxy whose actual
+    constraint definition lives OUTSIDE the archetype, in the
+    constraint_bindings query into an external service — no clause mandates
+    rejecting a committed instance whose terminology no binding covers. The
+    schedule's validate_ext_term row 4 nevertheless verdicts rejected.
+  source: >-
+    AM AOM1.4 master04-constraint_model_package.adoc §Reference Objects
+    (C_REFERENCE_OBJECT / CONSTRAINT_REF — the constraint definition is external
+    to the archetype; no commit-time terminology-binding enforcement defined)
+  handling: >-
+    The unmatched-terminology row asserts acceptance with the AOM citation
+    (rejection is not derivable). Instrument note: the declared
+    constraint_bindings axis is not yet realized by the OPT synthesizer
+    (no binding is emitted into the synthesized template) — the axis is
+    declarative until the terminology-binding synthesis lands; the rm_schema
+    rows are unaffected. Flips to rejected only if a future AM release defines
+    commit-time binding enforcement.
+  disposition: fixed_handling
+  upstream_ref: "UPR-21"
+AMB-51:
+  ambiguity: >-
+    Two master16 HISTORY cells contradict the RM Events_valid invariant: the
+    CONT-HIST-events_card_any-summary_ex_opt table (row 1) and the
+    CONT-HIST-events_card_opt-summary_ex_opt table (row 1) both verdict
+    "no events | absent | accepted" — a HISTORY with zero events and no
+    summary — while RM history.adoc defines Events_valid as
+    "(events /= Void and then not events.is_empty) or summary /= Void",
+    which such an instance violates regardless of any archetype events
+    cardinality.
+  source: >-
+    RM data_structures history.adoc §Invariants (Events_valid: "(events /= Void
+    and then not events.is_empty) or summary /= Void"); the master16 HISTORY
+    tables are the stalled guide where the defect appears
+  handling: >-
+    The two rows follow the RM-derivable verdict — rejected, violation
+    rm_invariant(Events_valid) — with the history.adoc citation; the two
+    affected cases tag this entry. Editorial correction proposed for the
+    two cells. Flips back to accepted only if a future RM release drops or
+    relaxes Events_valid.
+  disposition: editorial
+  upstream_ref: "UPR-22"
+AMB-54:
+  ambiguity: >-
+    commit_contribution rejection of a mismatched change_type has no assigned
+    status code: a 251|modification| committed as the FIRST version of a
+    VERSIONED_OBJECT (nothing to modify), or a 249|creation| naming a
+    preceding_version_uid, violates RM change-control and MUST be rejected —
+    but the released ITS-REST docs text assigns no code, and the overview
+    permits either 400 (generic client error) or 422 (semantic).
+  source: >-
+    RM common master06-change_control_package.adoc §Change Control (addition =
+    a first ORIGINAL_VERSION with preceding_version_uid Void, change_type
+    249|creation|; modification = a new ORIGINAL_VERSION on an EXISTING
+    VERSIONED_OBJECT, change_type 251|modification|) — the rejection of a
+    mismatched change_type is REQUIRED. The ITS-REST docs text
+    (specifications/docs/) assigns NO status code to a change_type mismatch
+    (confirmed silent first-hand); ITS-REST overview Requests_and_responses.md
+    §HTTP status codes permits 400 (generic client-side error, "used when no
+    other 4xx error code is appropriate") or 422 (semantic) — the exact code is
+    unassigned.
+  handling: >-
+    commit_contribution's validation_failed carries BOTH semantic content
+    invalidity (422, exact) AND this mismatched-change_type rejection
+    (spec-unassigned code); the binding accepts 422 with alt_status [400] for
+    the latter. Pure semantic-content cases stay 422.
+  disposition: fixed_handling
+  upstream_ref: "UPR-23"

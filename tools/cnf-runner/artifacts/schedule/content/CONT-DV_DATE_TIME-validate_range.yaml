@@ -4,7 +4,7 @@ component: CONTENT
 rm_class: DV_DATE_TIME
 capabilities: [ArchetypeValidation]
 profiles: [CORE]
-test_purpose: "A committed DV_DATE_TIME is accepted iff it falls within the C_DATE_TIME range; a reduced-precision limit is interpreted as its full interval (e.g. 1900..2021 = 1900-01-01..2021-12-31). The single schedule range cell is decomposed into inclusive range.lower / range.upper columns \u2014 see REQUIREMENTS-rest.md."
+test_purpose: "A committed DV_DATE_TIME is accepted iff it falls within the C_DATE_TIME range; a reduced-precision limit is interpreted as its full interval (e.g. 1900..2021 = 1900-01-01..2021-12-31). The single schedule range cell is decomposed into inclusive range.lower / range.upper columns."
 description: "DV_DATE_TIME against C_DATE_TIME range constraints (year/month/day/date-time precision)"
 spec_refs:
   - "CNF platform_test_schedule master17.4 \u00a7CONT-DV_DATE_TIME-validate_range"
@@ -56,3 +56,4 @@ decision_table:
     - ["1900-03-13T10", null, "1900-03-13T09:59", "rejected", ["constraint(C_DATE_TIME.range): value is outside the C_DATE_TIME.range interval"]]
     - ["1900-03-13T10", null, "1900-03-13T09:59:59", "rejected", ["constraint(C_DATE_TIME.range): value is outside the C_DATE_TIME.range interval"]]
     - ["1900-03-13T10", null, "1900-03-13T09:59:59.999", "rejected", ["constraint(C_DATE_TIME.range): value is outside the C_DATE_TIME.range interval"]]
+ambiguities: [AMB-45]

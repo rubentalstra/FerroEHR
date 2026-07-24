@@ -12,7 +12,7 @@
 #       binding-completeness check matches by sm_operation only, so a case that
 #       observed `not_acceptable` here would (wrongly) require the plain
 #       get_artefact binding to map 406 too; the schedule therefore authors no
-#       406 example case (see REQUIREMENTS.md). Add a variant discriminator so
+#       406 example case. Add a variant discriminator so
 #       example can carry its own 406 independently (AMB-37 forcing item).
 #
 # Sources: specifications/operations/definition_template_adl2_example_get.yaml

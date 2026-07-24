@@ -36,13 +36,13 @@ outcomes:
   not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
   validation_failed:
     status: 422                           # 422.yaml
-    body: error_loose                     # AMB-1
+    body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   template_not_found:
     status: 422                           # same wire code; kind distinguished by fixture
     body: error_loose
   missing_template_id: { status: 422 }    # simplified commit without openehr-template-id
-  conflict: { status: 409 }               # persistent-COMPOSITION uniqueness rejection — no code assigned by the OAS; bound per AMB-21
-  unsupported_media: { status: 415 }      # overview negotiation rules (AMB-7 layering)
+  conflict: { status: 409 }               # persistent-COMPOSITION uniqueness rejection — ITS-REST overview §HTTP status codes: 409 = conflict
+  unsupported_media: { status: 415 }      # overview negotiation rules
 captures:
   version_uid:
     from: header ETag

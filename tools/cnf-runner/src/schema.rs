@@ -563,13 +563,16 @@ pub fn ambiguity_register_schema() -> Value {
                 "source": { "type": "string", "minLength": 1 },
                 "handling": { "type": "string", "minLength": 1 },
                 "disposition": { "enum": tokens(Disposition::ALL) },
-                "options": { "type": "array", "items": { "type": "string", "pattern": OPTION_TAG_PATTERN } }
+                "options": { "type": "array", "items": { "type": "string", "pattern": OPTION_TAG_PATTERN } },
+                "upstream_ref": { "type": "string", "minLength": 1 }
             },
             "allOf": [
                 { "if": { "properties": { "disposition": { "const": "option_select" } } },
                   "then": { "required": ["ambiguity", "source", "handling", "disposition", "options"],
                             "properties": { "options": { "minItems": 2 } } },
-                  "else": { "properties": { "options": { "maxItems": 0 } } } }
+                  "else": { "properties": { "options": { "maxItems": 0 } } } },
+                { "if": { "properties": { "disposition": { "enum": ["report_only", "editorial"] } }, "required": ["disposition"] },
+                  "then": { "required": ["upstream_ref"] } }
             ]
         }
     })
@@ -838,6 +841,21 @@ pub fn ixit_schema() -> Value {
                     "sut": { "type": "string", "minLength": 1 },
                     "db": { "type": "string", "minLength": 1 }
                 }
+            },
+            "signing": {
+                "description": "The SUT's version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode the deployment runs (a deployment runs one). digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key.",
+                "type": "object",
+                "required": ["mode"],
+                "oneOf": [
+                    { "additionalProperties": false, "required": ["mode", "algorithm", "encoding"],
+                      "properties": { "mode": { "const": "digest" },
+                                      "algorithm": { "type": "string", "minLength": 1 },
+                                      "encoding": { "type": "string", "minLength": 1 },
+                                      "prefix": { "type": "string" } } },
+                    { "additionalProperties": false, "required": ["mode", "public_key"],
+                      "properties": { "mode": { "const": "pgp" },
+                                      "public_key": { "type": "string", "minLength": 1 } } }
+                ]
             }
         }
     })

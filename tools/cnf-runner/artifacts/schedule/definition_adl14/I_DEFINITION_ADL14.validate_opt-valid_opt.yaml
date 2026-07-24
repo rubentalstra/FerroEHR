@@ -1,8 +1,7 @@
 # Official master04 case. The schedule anchors I_DEFINITION_ADL14.validate_opt(),
 # but the vendored SM I_DEFINITION_ADL14 defines valid_opt (there is no
 # validate_opt operation) — sm_operation carries the resolvable valid_opt while
-# the case id keeps the schedule's validate_opt family verbatim (AMB-13
-# precedent; recorded as an ambiguity-register candidate in REQUIREMENTS.md).
+# the case id keeps the schedule's validate_opt family verbatim.
 # ITS-REST 1.1.0 exposes no dedicated OPT-validation endpoint, so validation is
 # realized via upload per the master04 §validate_opt NOTE; iteration:
 # reset_per_row restores the empty server between rows.
@@ -31,4 +30,3 @@ flow:
     call: upload_opt
     with: { opt: "${ds:fixture}" }
     expect: "${fixture.expected}"        # positive: "the result should be positive ... OPT is valid"
-ambiguities: [AMB-16]

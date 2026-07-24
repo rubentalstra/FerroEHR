@@ -1,7 +1,8 @@
 # G.2 — has_contribution on an EHR with no CONTRIBUTIONs, probing a random
 # CONTRIBUTION uid, reports the CONTRIBUTION does not exist (FALSE) — realized as
-# a 404 (not_found) of the CONTRIBUTION GET. "A random CONTRIBUTION uid" is a
-# fixed arbitrary UUID literal that cannot exist on an EHR with no commits.
+# a 404 (not_found) of the CONTRIBUTION GET (the registered realization).
+# "A random CONTRIBUTION uid" is a fixed arbitrary UUID literal that cannot
+# exist on an EHR with no commits.
 id: I_EHR_CONTRIBUTION.has_contribution-empty_ehr
 kind: functional
 component: EHR_CONTRIBUTION

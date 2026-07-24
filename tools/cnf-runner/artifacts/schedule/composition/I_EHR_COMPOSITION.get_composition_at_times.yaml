@@ -4,8 +4,7 @@
 # committed at t1. The commit instants are captured; the closed temporal forms
 # fix the queried instants.
 # Schedule heading "get_composition_at_times" maps to the resolvable SM
-# operation get_composition_at_time (AMB-13 precedent — official id unchanged;
-# see schedule/composition/REQUIREMENTS.md).
+# operation get_composition_at_time (official id unchanged).
 id: I_EHR_COMPOSITION.get_composition_at_times
 kind: functional
 component: EHR_COMPOSITION
@@ -42,7 +41,7 @@ flow:
       ehr_id: "${ehr_id}"
       composition: "${ds:cnf.composition.minimal_event.v2}"
       versioned_object_uid: "${versioned_object_uid}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { t1: updated.commit_time }
   - step: 3
@@ -61,4 +60,3 @@ flow:
     expect: ok
     assert:
       - { assert: equivalent, to: "${ds:cnf.composition.minimal_event.v2}", ignoring: server_assigned }
-ambiguities: [AMB-3]

@@ -2,9 +2,9 @@
 # the schedule entry is TBD; authored as the success/happy path from the SM
 # operation semantics. create_party_relationship is genuinely on
 # I_DEMOGRAPHIC_SERVICE. ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource,
-# so the its-rest binding is unrealized (proposed AMB-32) and this case is
+# so the its-rest binding is unrealized (AMB-32) and this case is
 # not-applicable on ITS-REST 1.1.0; it activates when a later ITS release adds
-# the wire. (See REQUIREMENTS.md.)
+# the wire.
 id: I_DEMOGRAPHIC_SERVICE.create_party_relationship-aaaa
 kind: functional
 component: DEMOGRAPHIC
@@ -13,8 +13,8 @@ capabilities: [PartyRelationshipOperations]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
-  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY_RELATIONSHIP operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (AMB-32)"
 test_purpose: >-
   Creating the first version of a new PARTY_RELATIONSHIP from a valid data set
   succeeds, causing server-side creation of a new VERSIONED_OBJECT,

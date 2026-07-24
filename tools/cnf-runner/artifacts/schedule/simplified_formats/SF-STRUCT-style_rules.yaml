@@ -1,39 +1,54 @@
-# Structured-format style rules (simplified_formats master04 §Structured format
-# — the six syntax rules). In the Structured format the hierarchy is nested
-# objects, instance indices stay in property names, attribute suffixes are
+# Structured-format style rules (simplified_formats master04 §Structured format).
+# In Structured output the hierarchy is nested objects, attribute suffixes are
 # pipe-prefixed properties, context is grouped under a ctx object, arrays are
-# used throughout (even at 0..1 / 1..1), and empty objects are omitted. This
-# content decision table encodes each rule. Vector: the master04 Structured
-# format example JSON block.
-# TODO: convert to a functional STRUCTURED commit + read-back against
-#       cnf.opt.maximal asserting the six master04 Structured syntax rules on the
-#       wt-structured read-back; the current content decision-table shape is a
-#       documentation table the interpreter commits against the removed
-#       body_temperature carrier and 422s.
+# used throughout (even at 0..1 / 1..1), and empty objects are omitted.
+# NOTE: functional wt-structured commit + read-back against cnf.opt.vitals; each
+#       assertion below pins one master04 Structured syntax rule on the observed
+#       read-back (verified live against the composed SUT). Instance indexing is
+#       realised as array position (rule: arrays throughout), so a single
+#       cardinality node still reads back as a one-element array.
 id: SF-STRUCT-style_rules
-kind: content
+kind: functional
 component: SIMPLIFIED_FORMATS
-rm_class: COMPOSITION
+sm_operation: I_EHR_COMPOSITION.create_composition
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
 test_purpose: >-
-  The Structured format holds its six syntax rules: nested-object hierarchy,
-  indices in property names, pipe-prefixed suffix properties, ctx grouping,
-  arrays throughout, and empty-object omission.
-description: "Structured-format six syntax rules (master04)"
+  The Structured output holds its syntax rules: nested-object hierarchy,
+  pipe-prefixed suffix properties, ctx grouping, arrays throughout (even at
+  single cardinality), and empty-object omission.
+description: "Structured-format syntax rules (master04)"
 spec_refs:
   - "ITS-REST simplified_formats master04 §Structured format"
   - "ITS-REST simplified_formats master04 §Conversion Between Formats"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
-constraint_context:
-  template: cnf.opt.vitals
-  path: "/"
-decision_table:
-  columns: ["rule", "requirement", "holds"]
-  rows:
-    - ["hierarchy_nested_objects", "hierarchy_represented_by_nested_objects", "yes"]
-    - ["indices_in_property_names", "instance_indices_remain_in_property_names", "yes"]
-    - ["suffix_pipe_prefix", "attribute_suffixes_use_pipe_prefix", "yes"]
-    - ["ctx_grouping", "context_grouped_under_ctx_property", "yes"]
-    - ["arrays_throughout", "arrays_used_even_when_cardinality_single", "yes"]
-    - ["empty_object_omission", "empty_objects_should_be_omitted", "yes"]
+requires:
+  server: any
+  templates: [cnf.opt.vitals]
+  ehr: { commits: none }                 # mints ${ehr_id}
+data_sets: [cnf.structured.vitals.minimal]
+flow:
+  - step: 1
+    call: create_composition
+    format: wt-structured                # intrinsic role; binding adds openehr-template-id
+    with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.structured.vitals.minimal}" }
+    expect: created
+    capture: { version_uid: created.version_uid }
+  - step: 2
+    call: get_composition_at_version     # SM I_EHR_COMPOSITION.get_composition_at_version
+    format: wt-structured
+    with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
+    expect: ok
+    assert:
+      # nested-object hierarchy — vitals is a nested object down to the leaf
+      - { assert: field, path: "vitals/body_temperature[0]/any_event[0]/temperature[0]", exists: true }
+      # arrays used throughout even at single cardinality — COMPOSITION.category
+      # is RM-mandatory (1..1) yet reads back array-wrapped (the [0] resolves)
+      # with a pipe-prefixed coded suffix (rules 3 + 5)
+      - { assert: field, path: "vitals/category[0]/|code", exists: true }
+      # attribute suffixes are pipe-prefixed properties
+      - { assert: field, path: "vitals/body_temperature[0]/any_event[0]/temperature[0]/|unit", equals: "Cel" }
+      # context grouped under the ctx object
+      - { assert: field, path: "ctx/language", equals: "en" }
+      # empty objects omitted — the unpopulated optional Symptom ELEMENT is absent
+      - { assert: field, path: "vitals/body_temperature[0]/any_event[0]/symptom", absent: true }

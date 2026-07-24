@@ -48,5 +48,7 @@ maintenance and extension, not initial build.
 - Errors map through `openehr-its::rest::runtime::ApiError`; never invent
   an error body shape.
 - Every auth change lands with tests (401/403 paths, valid/expired/wrong-
-  audience tokens, Basic + bearer, scope-narrowing cases) and an ECC run
-  showing zero drift — the SEC area covers this surface.
+  audience tokens, Basic + bearer, scope-narrowing cases) and a CNF pipeline
+  run showing zero drift — the SEC area covers this surface. A red SEC row is
+  attributed spec-first (`.claude/rules/cnf-triage.md`); the server is never
+  assumed correct.

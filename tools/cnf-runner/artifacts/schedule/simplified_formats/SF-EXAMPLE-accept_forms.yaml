@@ -4,7 +4,7 @@
 # each returning the example instance in the negotiated format. The example
 # endpoint has no SM operation (grep of SM i_definition_adl14.adoc: no example
 # op), so the case anchors to the closest genuine SM operation get_opt per the
-# AMB-13 precedent; the wire realization is the distinct `variant: example`
+# The wire realization is the distinct `variant: example`
 # binding (path .../example). An intrinsic-format case: one get step per form.
 id: SF-EXAMPLE-accept_forms
 kind: functional
@@ -12,7 +12,6 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_DEFINITION_ADL14.get_opt
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
-ambiguities: [AMB-31, AMB-13]         # CNF<->SM operation-name divergence precedent (no example op in the SM)
 test_purpose: >-
   Retrieving a template example under each of the four LOCATABLE Accept forms
   (canonical JSON/XML and the FLAT/STRUCTURED simplified forms) returns the

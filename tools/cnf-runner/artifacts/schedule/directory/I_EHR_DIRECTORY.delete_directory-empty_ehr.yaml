@@ -1,6 +1,8 @@
 # delete_directory on an EHR with no directory errors: there is no directory to
-# delete (SM Pre_has_directory). Realized as a 404; no preceding version exists
-# so no If-Match is sent.
+# delete (SM Pre_has_directory). Realized as a 404. The wire-required If-Match
+# IS sent (a synthetic value; the OAS marks the header required) — RFC 9110
+# §13.2.2 precedence makes the missing-resource 404 win over precondition
+# evaluation (RM ehr §EHR.directory 0..1; ITS-REST overview §HTTP status codes (404)).
 id: I_EHR_DIRECTORY.delete_directory-empty_ehr
 kind: functional
 component: EHR_DIRECTORY
@@ -22,4 +24,4 @@ flow:
   - step: 1
     call: delete_directory
     with: { ehr_id: "${ehr_id}", preceding_version_uid: "11111111-1111-4111-8111-111111111111::cnf.fake::1" }   # wire-required If-Match value; the negative is the unknown ehr
-    expect: not_found                     # "the non existent directory" (SM Pre_has_directory; AMB-26)
+    expect: not_found                     # "the non existent directory" (SM Pre_has_directory; RM ehr §EHR.directory 0..1; ITS-REST overview §HTTP status codes (404))

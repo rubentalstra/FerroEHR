@@ -4,9 +4,14 @@
 # NOTE: the effect of a VERSIONED_OBJECT deletion is under-specified in the SM
 # (AMB-10 / master08: "needs further specification at the openEHR Service
 # Model"), so the logical-delete state postcondition reports but does not gate.
-# The lifecycle code is asserted per the schedule and flagged for TERM
-# cross-check (AMB-11). commit 1 commits one VERSION, so ${v1_uids} is the
-# single precedent uid (AMB-3 → If-Match).
+# The deletion VERSION carries change_type/lifecycle_state openehr::523|deleted|
+# — a spec-defined lifecycle code (RM common master06 §Version lifecycle + TERM
+# Version Lifecycle State list 523|deleted|). The delete member carries NO data
+# (RM common master06 §2.4: "a new ORIGINAL_VERSION whose data attribute is set
+# to Void"; ORIGINAL_VERSION.data 0..1) — the RM-correct data-less deletion.
+# commit 1 commits one VERSION, so ${v1_uids} is the single precedent uid —
+# carried IN the member body (SM update_version.adoc:
+# UPDATE_VERSION.preceding_version_uid).
 id: I_EHR_CONTRIBUTION.commit_contribution-delete
 kind: functional
 component: EHR_CONTRIBUTION
@@ -47,8 +52,8 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - change_type: deleted
-          preceding_version_uid: "${v1_uids}"   # ITS-REST: If-Match (AMB-3)
+        - change_type: deleted                  # data-less member (RM common master06 §2.4 Void data)
+          preceding_version_uid: "${v1_uids}"   # body property: OAS UpdateVersion.preceding_version_uid
     expect: created
     capture:
       v2_uids: created.version_uids[]
@@ -60,4 +65,4 @@ postconditions:
     text: >-
       The VERSIONED_OBJECT is logically deleted (effect under-specified in the
       SM — AMB-10; reported, not gating).
-ambiguities: [AMB-3, AMB-10, AMB-11]
+ambiguities: [AMB-10]

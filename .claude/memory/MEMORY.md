@@ -12,16 +12,19 @@
 - [Codegen emits the complete model](codegen-emits-complete-model.md) — owner hard rule: never trim/prune/suppress generated output; full closures, source-package mirroring, big diffs welcome; fix generator defects in-change
 - [Conventional branch naming](conventional-branch-naming.md) — owner hard rule 2026-07-19: `<type>/<kebab-slug>` (feat/fix/chore/…); `claude/*` retired, never create one again
 - [Tracker is GitHub Issues](tracker-is-github-issues.md) — owner 2026-07-20: WORKLIST.md + PROGRESS.md retired; open issue list IS the tracker, PR descriptions carry the build narrative; type+P0–P3+domain labels, milestones=releases, `Closes #N` auto-close; ROADMAP = themes only; never copy numbers forward — re-derive from artifacts
+- [Issue relationships](issue-relationships.md) — owner 2026-07-24: use GitHub's 4 native edges (sub-issue/blocked-by/blocking/security-alert) as first-class structure, set ONLY via scripts/gh-rel.sh (writes need the DB id not #number; gh has no native subcommand); milestones stay the release spine (no epics); upstream waits keep the blocked-upstream label; security-alert linking is UI-only (CodeQL via .github/workflows/codeql.yml)
+- [CNF spec-oracle + attribution](cnf-spec-oracle-attribution.md) — owner 2026-07-24: on a red CNF run the vendored spec is the ONLY oracle; the app is NEVER assumed correct and "check the SUT to decide the expectation" is banned; three-way attribute (spec vs catalogue vs SUT) to app|runner|catalogue via the cnf-triage agent; NEVER fix the CNF to match the SUT; catalogue must have TOTAL wire coverage (every small use-case); enforced by cnf_attribution_guard.sh + testing.md §CNF coverage
 
 Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
-already records (CLAUDE.md, ADR-004/005/008, docs/spec-audit, the blueprint)
-is not repeated here.
+already records (CLAUDE.md, docs/architecture.md, git history) is not repeated
+here. (The ADR layer referenced in the original note was deleted 2026-07-17.)
 - [Max 2 concurrent workers](max-two-concurrent-workers.md) — owner cap: implementation subagents run in pairs, never wider
 - [Session workflow gotchas](session-workflow-gotchas.md) — background-task ~30min kill (nohup+caffeinate+Monitor), attribution-hook regex traps, changelog-guard label needs PR reopen, conformance.sh EXIT trap wipes the seed on any kill
 - [Pre-production migrations: edit the baseline directly](pre-production-migrations-edit-baseline.md) — never append ALTER/DROP migrations while nothing is deployed; minimum migration files, update the count guard in the same change
 - [No task IDs in code](no-task-ids-in-code.md) — F-nn/S-nn/G-nn/W-nn tracker markers banned from all code/doc comments; only docs/specs/openehr citations
-- [Served OpenAPI is native](served-openapi-is-native.md) — ehrbase-rest serves ONLY its own utoipa-generated document; vendored ITS-REST OAS = codegen input + behavioural oracle, never imported/served; update our #[utoipa::path] in the same PR as any wire change
+- [Served OpenAPI is native](served-openapi-is-native.md) — ehrbase-rest serves ONLY its own utoipa-generated document; vendored ITS-REST OAS = codegen input ONLY (owner 2026-07-24: OAS is STALLED, NOT a behavioural oracle; the ITS-REST docs text is the conformance oracle and wins over the OAS), never imported/served; update our #[utoipa::path] in the same PR as any wire change
 - [TODO-only markers](todo-only-markers.md) — pending work uses ONLY official TODO(...); PORT NOTE/TODO(port)/PERF(port) deleted+banned+CI-guarded; design notes are plain NOTE: with spec citation
 - [CNF design record is permanent](cnf-strategy-doc-kept-permanently.md) — owner rulings 2026-07-22/23: the CNF 2.0 design record lives at docs/conformance/cnf-design.md (moved from docs/plans/, never delete/move back); §8.14 perf-class + journey model lives there
 - [Benchmark crate retires into cnf-runner](benchmark-crate-retires-into-cnf-runner.md) — DONE 2026-07-23: lab deleted; NOTHING consumes cnf-runner as a lib, ever; all measurement = cnf-runner subcommands, always fresh-seeded
 - [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
+- [Signature verify-on-read provenance](signature-verify-on-read-provenance.md) — #273: verify-on-read defaults strict-when-enabled + judges ONLY server-generated sigs; client-supplied sigs stored verbatim + never re-verified via a vo_version provenance bit (RM master06); format heuristics are leaky in pgp mode

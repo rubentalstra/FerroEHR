@@ -1,6 +1,6 @@
 # Official master06 case — retrieving a non-existent EHR by ehr_id fails.
 # "A random ehr_id" is a fixed arbitrary UUID literal absent on an empty server
-# (see the schedule/ehr REQUIREMENTS.md judgment call).
+#.
 id: I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id
 kind: functional
 component: EHR

@@ -33,3 +33,4 @@ flow:
     expect: ok
     assert:
       - { assert: instance_of, rm_type: VERSIONED_COMPOSITION }
+      - { assert: field, path: "uid/value", equals: "${versioned_object_uid}" }   # "referencing the VERSION it contains" — the resource identifies its versioned object (OAS VERSIONED_COMPOSITION.uid)

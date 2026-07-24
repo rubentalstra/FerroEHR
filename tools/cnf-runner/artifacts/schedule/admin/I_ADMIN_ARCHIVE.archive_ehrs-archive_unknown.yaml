@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # Unrealized on ITS-REST 1.1.0 (AMB-33). SM Errors: ehr_id_does_not_exist.
 id: I_ADMIN_ARCHIVE.archive_ehrs-archive_unknown
 kind: functional

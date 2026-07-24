@@ -147,6 +147,12 @@ pub fn synthesize_opt(
 ) -> Result<String, SynthError> {
     let row = Cells { columns, cells };
     match rm_class {
+        "COMPOSITION"
+            if columns.iter().any(|c| c == "cardinality")
+                && columns.iter().any(|c| c == "context_existence") =>
+        {
+            Ok(composition_content_cardinality_context(template_id, &row))
+        }
         "COMPOSITION" if columns.iter().any(|c| c == "cardinality") => {
             Ok(composition_content_cardinality(template_id, &row))
         }
@@ -155,6 +161,12 @@ pub fn synthesize_opt(
             Ok(event_type_narrowing(template_id, &row))
         }
         "EVENT" => Ok(event_state_existence(template_id, &row)),
+        "HISTORY"
+            if columns.iter().any(|c| c == "cardinality")
+                && columns.iter().any(|c| c == "summary_existence") =>
+        {
+            Ok(history_events_cardinality_summary(template_id, &row))
+        }
         "HISTORY" if columns.iter().any(|c| c == "cardinality") => {
             Ok(history_events_cardinality(template_id, &row))
         }
@@ -312,13 +324,28 @@ fn composition(
         ),
         (1, 1),
     );
-    let context_attr = match context_exist {
-        Some(exist) => c_single_attr(
-            "context",
-            &c_complex("EVENT_CONTEXT", "", "", (1, Some(1))),
-            exist,
-        ),
-        None => String::new(),
+    // A constrained context always carries an OPTIONAL other_context child
+    // (ITEM_TREE at0011, existence 0..1) so the official "context with
+    // other_context" data rows are committable against a constrained node
+    // (EVENT_CONTEXT itself is PATHABLE — empty node_id — while ITEM_TREE is
+    // LOCATABLE and needs the archetype node).
+    let (context_attr, context_terms) = match context_exist {
+        Some(exist) => {
+            let other = c_single_attr(
+                "other_context",
+                &c_complex("ITEM_TREE", "", "at0011", (1, Some(1))),
+                (0, 1),
+            );
+            (
+                c_single_attr(
+                    "context",
+                    &c_complex("EVENT_CONTEXT", &other, "", (1, Some(1))),
+                    exist,
+                ),
+                "<term_definitions code=\"at0011\"><items id=\"description\">@ internal @</items><items id=\"text\">Other context</items></term_definitions>".to_owned(),
+            )
+        }
+        None => (String::new(), String::new()),
     };
     format!(
         "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\
@@ -338,6 +365,7 @@ fn composition(
     <archetype_id><value>openEHR-EHR-COMPOSITION.minimal.v1</value></archetype_id>\n\
     <template_id><value>{tid}</value></template_id>\n\
     <term_definitions code=\"at0000\"><items id=\"description\">unknown</items><items id=\"text\">Minimal</items></term_definitions>\n\
+    {context_terms}\n\
   </definition>\n\
 </template>\n",
         tid = xesc(template_id),
@@ -389,14 +417,19 @@ fn observation_root(attrs: &str, extra_terms: &[(&str, &str, &str)]) -> String {
 }
 
 /// Standard OBSERVATION.data = HISTORY(at0001) / EVENT(slot,at0002) / `ITEM_TREE`.
+/// `events_exist` is the `HISTORY.events` `C_ATTRIBUTE.existence`; callers pass
+/// `cardinality_existence(token)` when the cardinality axis is under test so a
+/// zero-events row is admitted for the tokens that allow it, and `(1, 1)` when
+/// events are fixed mandatory (the standard `events 1..*` data shape).
 fn observation_history(
     events_slot_type: &str,
     event_attrs_extra: &str,
     events_card: &str,
+    events_exist: (i64, i64),
 ) -> String {
     let event_attrs = format!("{}{event_attrs_extra}", item_tree_data());
     let event = c_complex(events_slot_type, &event_attrs, "at0002", (0, Some(1)));
-    let events = c_multiple_attr("events", &event, events_card, (1, 1));
+    let events = c_multiple_attr("events", &event, events_card, events_exist);
     let history = c_complex("HISTORY", &events, "at0001", (1, Some(1)));
     c_single_attr("data", &history, (1, 1))
 }
@@ -427,20 +460,49 @@ fn existence_token(token: &str) -> (i64, i64) {
     }
 }
 
+/// A container attribute's `C_ATTRIBUTE.existence` must follow its cardinality
+/// token: `any`/`opt` leave the attribute optional (0..1) so an omitted /
+/// zero-count container is admitted and the RM invariant decides — e.g.
+/// `HISTORY.Events_valid` (`(events /= Void and then not events.is_empty) or
+/// summary /= Void`, RM `data_structures` §HISTORY Invariants) accepts a
+/// zero-events HISTORY via its summary disjunct; `1plus`/`3plus`/`mand`/`3to5`
+/// make the attribute mandatory (1..1). The cardinality alone never fires on an
+/// omitted container (AOM1.4 §`C_MULTIPLE_ATTRIBUTE` + §`C_ATTRIBUTE`), and on
+/// the canonical wire an empty list serializes as absent, so mandating
+/// existence 1..1 would wrongly reject the zero-count row.
+fn cardinality_existence(token: &str) -> (i64, i64) {
+    match token {
+        "1plus" | "3plus" | "mand" | "3to5" => (1, 1),
+        _ => (0, 1),
+    }
+}
+
+/// The master15 combined family: `C_MULTIPLE_ATTRIBUTE.cardinality` on
+/// `COMPOSITION.content` AND `C_ATTRIBUTE.existence` on `COMPOSITION.context`
+/// in one template (AOM1.4 §`C_MULTIPLE_ATTRIBUTE` + §`C_ATTRIBUTE`) — the
+/// content_card_X-context_mand official cases constrain both axes at once.
+#[allow(clippy::similar_names)] // content_exist / context_exist name the two RM attributes precisely
+fn composition_content_cardinality_context(template_id: &str, row: &Cells<'_>) -> String {
+    let token = row.text("cardinality").unwrap_or("any");
+    let card = cardinality_token(token);
+    // Same existence-follows-the-token rule as the single-axis family (see
+    // `cardinality_existence`): the cardinality alone never fires on an omitted
+    // container.
+    let content_exist = cardinality_existence(token);
+    let context_exist = existence_token(row.text("context_existence").unwrap_or("optional"));
+    let obs = observation_root(&item_tree_data_observation_history(), &[]);
+    composition(template_id, &obs, &card, content_exist, Some(context_exist))
+}
+
 fn composition_content_cardinality(template_id: &str, row: &Cells<'_>) -> String {
     let token = row.text("cardinality").unwrap_or("any");
     let card = cardinality_token(token);
-    // The COMPOSITION.content existence must follow the token: `any`/`opt`
-    // leave content optional (0..1) so an absent/zero-count content is accepted,
-    // while `1plus`/`3plus`/`mand`/`3to5` make it mandatory (1..1) so the
-    // absent-content rows are rejected by existence (AOM1.4 §C_ATTRIBUTE) — the
-    // cardinality alone never fires on an omitted container. The instance omits
-    // content when the count is 0 (an empty present list is rejected at the RM
-    // level regardless of cardinality).
-    let content_exist = match token {
-        "1plus" | "3plus" | "mand" | "3to5" => (1, 1),
-        _ => (0, 1),
-    };
+    // The COMPOSITION.content existence follows the cardinality token so an
+    // absent/zero-count content is accepted for `any`/`opt` and rejected by
+    // existence for the mandatory families (`cardinality_existence`); the
+    // instance omits content when the count is 0 (an empty present list is
+    // rejected at the RM level regardless of cardinality).
+    let content_exist = cardinality_existence(token);
     let obs = observation_root(&item_tree_data_observation_history(), &[]);
     composition(template_id, &obs, &card, content_exist, None)
 }
@@ -448,7 +510,7 @@ fn composition_content_cardinality(template_id: &str, row: &Cells<'_>) -> String
 /// OBSERVATION with the standard `HISTORY/EVENT/ITEM_TREE` data (default events
 /// cardinality 1..*, EVENT slot).
 fn item_tree_data_observation_history() -> String {
-    observation_history("EVENT", "", &cardinality(1, None))
+    observation_history("EVENT", "", &cardinality(1, None), (1, 1))
 }
 
 fn composition_context_existence(template_id: &str, row: &Cells<'_>) -> String {
@@ -470,22 +532,50 @@ fn event_state_existence(template_id: &str, row: &Cells<'_>) -> String {
         &c_complex("ITEM_TREE", "", "at0005", (1, Some(1))),
         exist,
     );
-    let data = observation_history("EVENT", &state_attr, &cardinality(1, None));
+    let data = observation_history("EVENT", &state_attr, &cardinality(1, None), (1, 1));
     let obs = observation_root(&data, &[("at0005", "State", "@ internal @")]);
     composition(template_id, &obs, &cardinality(0, None), (0, 1), None)
 }
 
 fn event_type_narrowing(template_id: &str, row: &Cells<'_>) -> String {
     let slot = row.text("slot_type").unwrap_or("EVENT");
-    let data = observation_history(slot, "", &cardinality(1, None));
+    let data = observation_history(slot, "", &cardinality(1, None), (1, 1));
     let obs = observation_root(&data, &[]);
     composition(template_id, &obs, &cardinality(0, None), (0, 1), None)
 }
 
 fn history_events_cardinality(template_id: &str, row: &Cells<'_>) -> String {
-    let card = cardinality_token(row.text("cardinality").unwrap_or("any"));
-    let data = observation_history("EVENT", "", &card);
+    let token = row.text("cardinality").unwrap_or("any");
+    let card = cardinality_token(token);
+    let data = observation_history("EVENT", "", &card, cardinality_existence(token));
     let obs = observation_root(&data, &[]);
+    composition(template_id, &obs, &cardinality(0, None), (0, 1), None)
+}
+
+/// The master16 combined family: `C_MULTIPLE_ATTRIBUTE.cardinality` on
+/// HISTORY.events AND `C_ATTRIBUTE.existence` on HISTORY.summary in one
+/// template — the events_card_X-summary_ex_mand official cases (and the
+/// summary-present rows of the `summary_ex_opt` cases) constrain both axes.
+fn history_events_cardinality_summary(template_id: &str, row: &Cells<'_>) -> String {
+    let token = row.text("cardinality").unwrap_or("any");
+    let card = cardinality_token(token);
+    let summary_exist = existence_token(row.text("summary_existence").unwrap_or("optional"));
+    let summary_attr = c_single_attr(
+        "summary",
+        &c_complex("ITEM_TREE", "", "at0007", (1, Some(1))),
+        summary_exist,
+    );
+    let event_attrs = item_tree_data();
+    let event = c_complex("EVENT", &event_attrs, "at0002", (0, Some(1)));
+    let events = c_multiple_attr("events", &event, &card, cardinality_existence(token));
+    let history = c_complex(
+        "HISTORY",
+        &format!("{events}{summary_attr}"),
+        "at0001",
+        (1, Some(1)),
+    );
+    let data = c_single_attr("data", &history, (1, 1));
+    let obs = observation_root(&data, &[("at0007", "Summary", "@ internal @")]);
     composition(template_id, &obs, &cardinality(0, None), (0, 1), None)
 }
 

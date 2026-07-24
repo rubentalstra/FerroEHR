@@ -12,8 +12,10 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
 
 - **The wire is the spec:** status codes, headers (`ETag`, `Location`,
   `Last-Modified`, `Prefer`, committal merge), and content negotiation
-  (canonical JSON + XML via `openehr-its`) come from
-  `docs/specs/openehr/ITS-REST/` + the vendored OAS — never invented.
+  (canonical JSON + XML via `openehr-its`) come from the ITS-REST **docs text**
+  `docs/specs/openehr/ITS-REST/` — never invented, and NOT from the vendored
+  OAS (owner ruling 2026-07-24: the OAS is stalled and is NOT an oracle; where
+  it and the docs text disagree, the text wins).
   Cross-check the CNF schedule; the CNF pipeline is the acceptance instrument.
 - **Implement the generated traits; never fork the contract.** If the contract
   is wrong, fix `openehr-codegen -- emit-rest` and regenerate — never hand-edit
@@ -28,11 +30,15 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
   the ABAC PEP and is config-gated off by default (zero wire drift when
   disabled). Spec: `docs/specs/openehr/ITS-REST/docs/smart_app_launch/`.
 - **OpenAPI:** serve ONLY our own `utoipa`-generated document
-  (`extensions::openapi`); the vendored OAS is the `emit-rest` codegen input +
-  behavioural oracle, never served.
+  (`extensions::openapi`); the vendored OAS is the `emit-rest` codegen input
+  ONLY (stalled — NOT a behavioural oracle; the ITS-REST docs text is the
+  oracle), never served.
 - URL/percent encoding ONLY via the `urlencoding` crate (owner hard rule).
 - Rules: `.claude/rules/rest-axum.md`, `.claude/rules/auth.md`,
   `.claude/rules/serialization.md`.
 - Gates: `cargo clippy -p ehrbase-rest --all-targets` +
   `cargo nextest run -p ehrbase-rest` green; wire changes re-verified by a CNF
-  pipeline run (`bash scripts/conformance.sh`) with zero drift.
+  pipeline run (`bash scripts/conformance.sh`) with zero drift. A red row is
+  attributed spec-first (`.claude/rules/cnf-triage.md`): the wire spec decides,
+  this server is never assumed correct, and the catalogue/runner are never bent
+  to match it.

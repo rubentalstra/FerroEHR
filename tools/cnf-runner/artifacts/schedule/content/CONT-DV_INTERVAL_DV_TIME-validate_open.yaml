@@ -13,8 +13,9 @@ capabilities: [ArchetypeValidation]
 profiles: [CORE]
 test_purpose: >-
   A committed DV_INTERVAL<DV_TIME> against an open constraint ({*}) is accepted
-  iff its own interval invariants hold: a bounded limit must carry a value, and
-  the limits must be strictly comparable.
+  whenever the BASE Interval invariants that the RM actually defines hold —
+  the RM defines no value-present-when-bounded invariant (AMB-43). The
+  mixed-precision bound pair lives in the report_only sibling case (AMB-29).
 description: "DV_INTERVAL<DV_TIME> open ({*}): interval invariants"
 spec_refs:
   - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_TIME-validate_open"
@@ -34,5 +35,5 @@ decision_table:
     - ["10", "11", false, false, true, true, accepted, []]
     - ["10:00", "11:00", false, false, true, true, accepted, []]
     - ["10:00:00", "11:00:00", false, false, true, true, accepted, []]
-    - ["10", "10:45:00", false, false, true, true, accepted, []]   # re-adjudicated: no RM invariant grounds the rejection (see header)
     - [null, null, true, true, false, false, accepted, []]
+ambiguities: [AMB-43, AMB-44]

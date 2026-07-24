@@ -2,10 +2,9 @@
 # demographic.openapi.yaml has no /demographic/party_relationship* path;
 # PARTY_RELATIONSHIP is a schema only (RM demographic: a relationship is held
 # by-value in the source PARTY's relationships attribute). Explicit unrealized
-# declaration (AMB-17/22/24 precedent); proposed register entry AMB-32 documented
-# in schedule/demographic/REQUIREMENTS.md.
+# declaration (AMB-17/22/24 precedent); register entry AMB-32.
 # master10 anchors the case under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY_RELATIONSHIP.get_party_relationship_at_version (AMB-13 rule).
+# operation is I_PARTY_RELATIONSHIP.get_party_relationship_at_version.
 sm_operation: I_PARTY_RELATIONSHIP.get_party_relationship_at_version
 its: its-rest
 unrealized:

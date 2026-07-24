@@ -6,8 +6,7 @@
 # declaration (the AMB-17 delete_opt precedent) so the five official master08
 # list_contributions cases are not-applicable WITH CITATION on this ITS (never
 # silently absent) and activate when a later ITS-REST release adds the endpoint.
-# The proposed register entry (AMB-22) is documented in
-# schedule/contribution/REQUIREMENTS.md.
+# The gap is registered as AMB-22.
 sm_operation: I_EHR_CONTRIBUTION.list_contributions
 its: its-rest
 unrealized:

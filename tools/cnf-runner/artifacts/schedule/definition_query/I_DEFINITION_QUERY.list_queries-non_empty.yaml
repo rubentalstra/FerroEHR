@@ -1,4 +1,4 @@
-# Official master05 case. Cells are TBD placeholders ("xx") -> # (REQUIREMENTS.md). Flow derived from the SM list_queries: after registering a
+# Official master05 case. Cells are TBD placeholders ("xx"). Flow derived from the SM list_queries: after registering a
 # query, the listing returns it.
 id: I_DEFINITION_QUERY.list_queries-non_empty
 kind: functional
@@ -12,7 +12,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.list_queries"
   - "CNF platform_test_schedule master05 §list_queries-non_empty"
 guards:
-  - "master05 is TBD upstream: flows derived from the SM operation semantics and the stored-query Definitions API — CNF platform_test_schedule master05 (all cells xx/TBD); AMB-38"
+  - "flows derived from SM I_DEFINITION_QUERY operation semantics + released ITS-REST definition docs; CNF platform_test_schedule master05 is a stalled schedule stub (all cells xx/TBD) — a coverage guide only, not the authority"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:

@@ -34,6 +34,6 @@ flow:
     call: execute_ad_hoc_query
     with:
       q: "${ds:fixture}"
-      fetch: 100                            # AMB-6: fetch always explicit
+      fetch: 100                            # fetch always explicit
     expect: "${fixture.expected}"
-ambiguities: [AMB-6, AMB-30]
+ambiguities: [AMB-30]

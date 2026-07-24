@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # Realized via admin_ehr_delete; the SM Errors row names ehr_id_does_not_exist,
 # wired as 404 (404_unknown_ehr_id.yaml).
 id: I_ADMIN_SERVICE.physical_ehr_delete-delete_non_existing

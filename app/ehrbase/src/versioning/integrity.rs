@@ -20,17 +20,19 @@ use crate::versioning::signature::config::VerifyOnRead;
 use crate::versioning::signature::signer::Signer;
 use crate::versioning::wire::build_original_version;
 
-/// Compute the `VERSION.signature` for a version about to be persisted (RM
-/// common master06 §Digital Signature).
+/// Compute the server-generated `VERSION.signature` for a version about to be
+/// persisted (RM common master06 §Digital Signature). The caller
+/// ([`crate::versioning::change`]) decides client-vs-server first: a
+/// client-supplied signature is stored verbatim and never reaches here.
 ///
-/// A **client-supplied** signature (from the CONTRIBUTION `UPDATE_VERSION` path)
-/// wins and is stored verbatim — never re-signed, never validated against our
-/// canonical form (the author may use another agreed serialization, master06
-/// §Digital Signature). Otherwise, when signing is enabled, the
-/// fully-assembled `ORIGINAL_VERSION` — the *exact* value that will later be
-/// served (built by the shared [`build_original_version`] so commit-time and
-/// read-time bytes match) — is signed over its `canonical_form()` (the
-/// signature attribute Void during serialization).
+/// When signing is enabled, the fully-assembled `ORIGINAL_VERSION` — the
+/// *exact* value that will later be served (built by the shared
+/// [`build_original_version`] so commit-time and read-time bytes match,
+/// **including `other_input_version_uids` merge provenance**, which is part of
+/// the committed version) — is signed over its `canonical_form()` (the signature
+/// attribute Void during serialization). Attestations are NOT signed: they
+/// arrive after committal (master06 §Attestation) and are appended after
+/// verification, so they are excluded here exactly as at read time.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when the canonical form cannot be produced or the
@@ -43,14 +45,11 @@ pub(crate) fn sign_version(
     vo_id: VoId,
     tree: TreeId,
     preceding_uid: Option<&str>,
+    other_input_version_uids: &[String],
     contribution_id: Uuid,
     lifecycle_state: &str,
     data: &Value,
-    client_signature: Option<String>,
 ) -> Result<Option<String>, ServiceError> {
-    if let Some(sig) = client_signature {
-        return Ok(Some(sig));
-    }
     if !ctx.signer.enabled() {
         return Ok(None);
     }
@@ -59,7 +58,7 @@ pub(crate) fn sign_version(
         vo_id,
         tree,
         preceding_uid,
-        &[],
+        other_input_version_uids,
         contribution_id,
         audit,
         &time_committed,
@@ -78,21 +77,27 @@ pub(crate) fn sign_version(
 
 /// Read-time signature verification (RM common master06 §Digital Signature —
 /// the signature verifies the served version against its recomputed
-/// `canonical_form`). No-op when `verify_on_read = off` or the version carries
-/// no signature. A `warn` mismatch logs + meters
-/// (`version_signature_invalid_total`); a `strict` mismatch is a 5xx integrity
-/// failure.
+/// `canonical_form`). Applies ONLY to signatures **this server generated**: a
+/// `client_supplied` signature is stored verbatim and never re-verified (the
+/// author may have signed another agreed serialization we cannot recompute —
+/// master06 §Digital Signature / §Copying). Otherwise a no-op when
+/// `verify_on_read = off` or the version carries no signature. A `warn`
+/// mismatch logs + meters (`version_signature_invalid_total`); a `strict`
+/// mismatch is a 5xx integrity failure.
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
-/// signature fails verification, or (in any non-`off` mode) when the served
-/// version's canonical form cannot be recomputed.
+/// server signature fails verification, or (in any non-`off` mode) when the
+/// served version's canonical form cannot be recomputed.
 pub(crate) fn verify_on_read(
     signer: &Signer,
     ov: &Value,
     signature: Option<&str>,
+    client_supplied: bool,
 ) -> Result<(), ServiceError> {
-    if signer.verify_on_read() == VerifyOnRead::Off {
+    // Client-supplied signatures are foreign facts stored verbatim — never our
+    // canonical form to recompute (master06 §Digital Signature).
+    if client_supplied || signer.verify_on_read() == VerifyOnRead::Off {
         return Ok(());
     }
     let Some(signature) = signature else {

@@ -1,6 +1,8 @@
 # update_directory on an EHR with no directory errors: there is no directory to
 # update (SM Pre_has_directory). Realized as a 404 (no directory resource); no
-# preceding version exists so no If-Match is sent.
+# preceding version exists; the wire-required If-Match IS sent (a synthetic
+# value) — RFC 9110 §13.2.2 precedence makes the missing-resource 404 win
+# over precondition evaluation (RM ehr §EHR.directory 0..1; ITS-REST overview §HTTP status codes (404)).
 id: I_EHR_DIRECTORY.update_directory-empty_ehr
 kind: functional
 component: EHR_DIRECTORY
@@ -23,4 +25,4 @@ flow:
   - step: 1
     call: update_directory
     with: { ehr_id: "${ehr_id}", preceding_version_uid: "11111111-1111-4111-8111-111111111111::cnf.fake::1", directory: "${ds:cnf.directory.root_only}" }
-    expect: not_found                     # "non existent directory to update" (SM Pre_has_directory; AMB-26)
+    expect: not_found                     # "non existent directory to update" (SM Pre_has_directory; RM ehr §EHR.directory 0..1; ITS-REST overview §HTTP status codes (404))

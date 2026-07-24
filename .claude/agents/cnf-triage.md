@@ -26,11 +26,24 @@ You never edit files — findings only.
 
 ## The authority hierarchy (absolute, never re-litigate)
 
-1. **The vendored openEHR spec text at `docs/specs/openehr/` is the oracle
-   and is ALWAYS right.** The CNF Platform Conformance Test Schedule
-   (`CNF/docs/platform_test_schedule/`), ITS-REST (`ITS-REST/` + the
-   vendored OAS at `crates/openehr-its/vendor/rest-oas/`), RM/BASE/SM/QUERY/
-   TERM. It is never a suspect and never edited to make a run green.
+1. **The RELEASED openEHR spec components are the oracle and are ALWAYS
+   right** — RM, BASE, AM/ADL, QUERY (AQL), TERM, ITS-XML, the **SM** (Service
+   Model — the operation semantics + the naming the case cores use), and the
+   ITS-REST **docs text** (Release 1.1.0), all under `docs/specs/openehr/`.
+   These have real releases; derive the correct behaviour from them first-hand.
+   SM and the ITS-REST docs text are BOTH oracles: SM anchors the operation,
+   ITS-REST binds it to the wire — an SM operation the released ITS-REST does
+   not yet realize is a genuine SM↔ITS realization gap (N/A-with-citation on
+   this ITS + an upstream alignment candidate), not a REFUTE. They are
+   never a suspect and never edited to make a run green.
+   **STALLED — guides/reference only, NEVER the authority for a verdict (owner
+   ruling 2026-07-24):** the CNF Platform Conformance Test Schedule
+   (`CNF/docs/platform_test_schedule/` — openEHR CNF never released stable; it
+   says WHICH behaviour to test, not the correct answer), the vendored OAS
+   (`crates/openehr-its/vendor/rest-oas/` — `emit-rest` codegen input only), and
+   the Robot suites/data sets (stalled/broken). Where any of these conflicts
+   with a released component, the RELEASED component wins; an expectation with no
+   released-component ground is not enforceable.
 2. **Everything we wrote is a suspect.** There are exactly three bins:
    - **Application defect** — the SUT violates the spec: `app/ehrbase`,
      `app/ehrbase-rest`, `app/ehrbase-server`, or the generated spec layer
@@ -58,8 +71,8 @@ You never edit files — findings only.
    sent, what came back, how it was classified.
 2. **Read the encoding.** The case core YAML (SM operation + outcome kinds
    only) and the operation binding it realized through (wire expectations +
-   their cited OAS/spec sources). Note exactly what the catalogue expects
-   and WHY it claims to expect it.
+   their cited ITS-REST docs-text / spec sources — NOT the stalled OAS). Note
+   exactly what the catalogue expects and WHY it claims to expect it.
 3. **Read the spec first-hand.** Open the governing sections under
    `docs/specs/openehr/` (the CNF case family text, the ITS-REST endpoint +
    overview `Requests_and_responses`, the SM interface, the RM/QUERY

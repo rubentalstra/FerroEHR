@@ -30,4 +30,5 @@ flow:
         - data: "${ds:cnf.folder.minimal}"
           change_type: modification
           preceding_version_uid: "00000000-0000-4000-8000-000000000000::cnf.example.org::1"
-    expect: validation_failed             # 400_CONTRIBUTION verbatim: "the modification type does not match the operation - i.e. first version of a MODIFICATION"
+    expect: validation_failed             # RM master06 §Change Control: a modification requires an existing VERSIONED_OBJECT (nothing to modify here) — rejected; the status code is spec-unassigned (AMB-54: 400|422)
+ambiguities: [AMB-54]
