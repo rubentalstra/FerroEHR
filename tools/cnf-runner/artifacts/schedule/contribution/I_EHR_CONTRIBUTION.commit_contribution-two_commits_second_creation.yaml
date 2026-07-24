@@ -2,12 +2,12 @@
 # change_type = creation against the same COMPOSITION: rejected for the wrong
 # change type (only one create is allowed for a persistent COMPOSITION; further
 # operations must be modification — master08 C.9 NOTE). Only the first VERSION
-# remains. The rejection realizes as validation_failed: 400_CONTRIBUTION names
-# the ground verbatim ("the modification type does not match the operation"),
-# and a creation member naming a preceding version is exactly that mismatch.
-# commit 1 commits one VERSION, so ${v1_uids} is the single precedent uid; the
-# contribution wire carries it IN the member body (SM update_version.adoc:
-# UPDATE_VERSION.preceding_version_uid; OAS UpdateVersion.preceding_version_uid).
+# remains. Per RM master06 §Change Control a 249|creation| is a first
+# ORIGINAL_VERSION (preceding_version_uid Void); a creation member naming a
+# preceding version is that change_type mismatch, rejected — the status code is
+# spec-unassigned (AMB-54: 400|422). commit 1 commits one VERSION, so
+# ${v1_uids} is the single precedent uid; the contribution wire carries it IN
+# the member body (SM update_version.adoc: UPDATE_VERSION.preceding_version_uid).
 id: I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation
 kind: functional
 component: EHR_CONTRIBUTION
@@ -47,7 +47,8 @@ flow:
       versions:
         - data: "${ds:cnf.composition.persistent.v2}"
           change_type: creation                 # wrong: the object already exists
-          preceding_version_uid: "${v1_uids}"   # body property: OAS UpdateVersion.preceding_version_uid
-    expect: validation_failed             # 400_CONTRIBUTION verbatim: "the modification type does not match the operation - i.e. first version of a MODIFICATION" (a creation member naming a preceding version is that mismatch)
+          preceding_version_uid: "${v1_uids}"   # body property: RM VERSION.preceding_version_uid (SM update_version.adoc)
+    expect: validation_failed             # RM master06 §Change Control: a creation is a first version — a creation naming a preceding version is a change_type mismatch, rejected; the status code is spec-unassigned (AMB-54: 400|422)
 postconditions:
   - { assert: version, count: 1 }        # only the first VERSION remains
+ambiguities: [AMB-54]

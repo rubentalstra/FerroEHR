@@ -16,7 +16,8 @@ outcomes:
     headers: { ETag: present, Location: present }
     body: prefer_conditional
   validation_failed:
-    status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors (well-formed but semantically invalid version content)
+    status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors (invalid version content)
+    alt_status: [400]                     # on commit_contribution this kind ALSO carries mismatched-modification-type rejections (a MODIFICATION as first version; a CREATION naming a preceding version) — a structurally-invalid/mismatched request, which the overview classes as 400 (§HTTP status codes: 400 = syntactically invalid content / generic client error)
     body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   template_not_found:
     status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors ("the underlying template is not known"); kind distinguished by fixture
