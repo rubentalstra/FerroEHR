@@ -1,8 +1,7 @@
 # SM I_DEFINITION_ADL2.list_matching_artefacts positive: list artefacts whose
 # identifiers match a pattern. ITS-REST 1.1.0 realizes this via the ADL2 list's
 # filter_template_id query, which matches with WILDCARDS (`*`), not the SM's
-# regex (AMB-37; the SM invalid_id_pattern negative has no wire error path — see
-# REQUIREMENTS.md).
+# regex (AMB-37; the SM invalid_id_pattern negative has no wire error path).
 id: I_DEFINITION_ADL2.list_matching_artefacts-filter
 kind: functional
 component: DEFINITION_ADL2

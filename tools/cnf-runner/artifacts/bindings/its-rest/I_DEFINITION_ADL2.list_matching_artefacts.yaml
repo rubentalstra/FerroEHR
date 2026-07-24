@@ -5,8 +5,7 @@
 # filter_template_id query parameter, which matches with WILDCARDS (`*`), not a
 # regex, and defines no invalid-pattern error path (list returns 200 only).
 # So this binding realizes the positive filter behaviour only; the SM
-# invalid_id_pattern negative is unrealizable on this wire (AMB-37, recorded in
-# REQUIREMENTS.md).
+# invalid_id_pattern negative is unrealizable on this wire (AMB-37).
 # Sources: specifications/operations/definition_template_adl2_list.yaml (200),
 # parameters/query/filter_template_id.yaml ("Pattern for matching template_id
 # (supports wildcards *)"), responses/200_TemplateList_adl2.yaml.

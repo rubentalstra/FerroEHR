@@ -5,7 +5,7 @@
 # bounding with LIMIT returns exactly the top N in that order. Exceeds AQL basic
 # (ORDER BY + LIMIT), so this carries AqlAdvanced (OPTIONS) — the profile
 # capability the master11 spine otherwise leaves unevidenced. `ecc-` id namespace
-# pending upstream adoption. See REQUIREMENTS.md §AqlAdvanced.
+# pending upstream adoption.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-order_by_limit
 kind: functional
 component: QUERY

@@ -1,7 +1,7 @@
 # master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.update_party() — the schedule
 # entry is TBD; authored as the primary versioning-error path from the SM
 # operation semantics (.Errors: object_version_does_not_exist). Resolvable SM
-# operation is I_PARTY.update_party (the AMB-13 rule; see REQUIREMENTS.md). An
+# operation is I_PARTY.update_party (the AMB-13 rule). An
 # update carrying a stale/wrong preceding_version_uid is rejected — the ITS-REST
 # binding realizes preceding_version_uid as If-Match, so a mismatch is
 # precondition_failed (AMB-3).

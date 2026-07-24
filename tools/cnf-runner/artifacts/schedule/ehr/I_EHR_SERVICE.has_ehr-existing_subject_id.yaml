@@ -2,7 +2,7 @@
 # The schedule groups this under the I_EHR_SERVICE.has_ehr() heading, but the
 # flow queries by subject_id, which the SM realizes with the distinct operation
 # has_ehr_for_subject (CNF<->SM naming divergence; see the schedule/ehr
-# REQUIREMENTS.md ambiguity candidate). The official case id is unchanged.
+# AMB-14). The official case id is unchanged.
 # The known subject is provisioned in-flow via the with_subject fixture, whose
 # external_ref carries id "cnf-subject-01" in namespace "cnf".
 id: I_EHR_SERVICE.has_ehr-existing_subject_id

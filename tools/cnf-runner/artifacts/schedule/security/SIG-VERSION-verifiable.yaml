@@ -8,8 +8,9 @@
 # with the current typed-assertion vocabulary, and the verifying key material is
 # an ixit/statement-declared input, not a wire value — so this case is carried as
 # a `state` postcondition with an in-case commit verification step, and the
-# check is recorded in REQUIREMENTS.md as a `signature` assertion-family
-# candidate with an explicit ixit/statement key-material dependency.
+# check stays a state postcondition.
+# TODO: add a `signature` assertion family (with the ixit/statement
+#       key-material dependency) so verification is wire-asserted.
 id: SIG-VERSION-verifiable
 kind: functional
 component: SECURITY

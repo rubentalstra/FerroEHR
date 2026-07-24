@@ -3,7 +3,7 @@
 # the SM operation semantics (.Errors: object_version_does_not_exist). Resolvable
 # SM operation is I_PARTY_RELATIONSHIP.update_party_relationship (the AMB-13 rule).
 # ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding
-# (proposed AMB-32); not-applicable on ITS-REST 1.1.0. (See REQUIREMENTS.md.)
+# (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb
 kind: functional
 component: DEMOGRAPHIC
@@ -13,7 +13,7 @@ profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
   - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
-  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (AMB-32)"
 test_purpose: >-
   update_party_relationship with a wrong preceding_version_uid is rejected
   (object_version_does_not_exist / precondition failed).

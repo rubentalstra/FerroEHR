@@ -2,7 +2,7 @@
 # I_EHR_EXTRACT.export_ehr()/export_ehr_extract(), but the vendored SM declares
 # I_EHR_EXTRACT_SERVICE with export_ehrs/export_ehr_extracts/import_ehr/
 # import_ehr_extract — the SM is the operation-resolution oracle, so cases
-# anchor to its real operations (see REQUIREMENTS.md). ITS-REST 1.1.0 exposes NO
+# anchor to its real operations (AMB-34). ITS-REST 1.1.0 exposes NO
 # message/extract API, so the its-rest binding is unrealized (AMB-34) and this
 # case is not-applicable with citation until a MESSAGE API release lands.
 id: I_EHR_EXTRACT_SERVICE.export_ehr_extracts-by_spec

@@ -5,7 +5,7 @@
 # derived from the ITS-REST QUERY contract directly: "the query service responds"
 # is realized as the simplest ad-hoc query returning a well-formed RESULT_SET.
 # Anchored to execute_ad_hoc_query (a stored query would need provisioning the
-# smoke ritual should not depend on). See REQUIREMENTS.md §smoke_test.
+# smoke ritual should not depend on).
 id: I_QUERY_SERVICE.smoke_test
 kind: functional
 component: QUERY

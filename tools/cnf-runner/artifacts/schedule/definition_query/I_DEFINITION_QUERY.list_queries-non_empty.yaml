@@ -1,4 +1,4 @@
-# Official master05 case. Cells are TBD placeholders ("xx") -> # (REQUIREMENTS.md). Flow derived from the SM list_queries: after registering a
+# Official master05 case. Cells are TBD placeholders ("xx" — AMB-38). Flow derived from the SM list_queries: after registering a
 # query, the listing returns it.
 id: I_DEFINITION_QUERY.list_queries-non_empty
 kind: functional

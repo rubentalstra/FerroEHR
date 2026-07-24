@@ -9,7 +9,9 @@
 # Byte-for-byte verbatim storage cannot be asserted with the current bindings +
 # typed assertions (no operation returns ORIGINAL_VERSION.signature); the
 # lineage is asserted with the `version` family and the verbatim fact is carried
-# as a `state` postcondition — see REQUIREMENTS.md.
+# as a `state` postcondition.
+# TODO: wire-assert the byte-verbatim signature once the `signature`
+#       assertion family + version-read binding exist.
 id: SIG-VERSION-client_supplied_verbatim
 kind: functional
 component: SECURITY
