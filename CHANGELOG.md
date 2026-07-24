@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Citation metadata (`CITATION.cff`)**: the repository is now citable in
+  research papers — GitHub renders a "Cite this repository" button (APA +
+  BibTeX) from the new CFF 1.2.0 file (author with ORCID, Apache-2.0,
+  abstract, keywords, release version/date). A `citation-guard` CI job
+  schema-validates the file and enforces that its `version` matches the
+  workspace version; the release procedure bumps `version`/`date-released`
+  on every cut.
+
 ## [3.9.0] - 2026-07-24
 
 ### Added

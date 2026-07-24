@@ -1,0 +1,37 @@
+# Citation metadata (CFF 1.2.0) — renders GitHub's "Cite this repository"
+# button (APA + BibTeX). Kept release-accurate: every release cut bumps
+# `version` + `date-released` (.claude/rules/changelog.md §Cutting a release);
+# the citation-guard CI job schema-validates this file and enforces that
+# `version` matches the workspace version in the root Cargo.toml.
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "EHRbase-rs"
+abstract: >-
+  A pure-Rust, openEHR-specification-conformant clinical data repository
+  (CDR): ITS-REST 1.1.0 REST API, AQL 1.1 query language, and the openEHR
+  RM 1.2.0 reference model on PostgreSQL-18-native storage. The openEHR
+  specification layer is generated from the official machine-readable
+  specifications, and conformance is machine-verified per release by a
+  built-in CNF conformance runner.
+authors:
+  - family-names: Talstra
+    given-names: Ruben
+    orcid: "https://orcid.org/0009-0009-2758-0141"
+repository-code: "https://github.com/rubentalstra/ehrbase-rs"
+url: "https://rubentalstra.github.io/ehrbase-rs/"
+license: Apache-2.0
+keywords:
+  - openEHR
+  - clinical data repository
+  - CDR
+  - electronic health records
+  - EHR
+  - AQL
+  - health informatics
+  - healthcare interoperability
+  - ITS-REST
+  - Rust
+  - PostgreSQL
+version: 3.9.0
+date-released: "2026-07-24"
