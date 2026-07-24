@@ -1,6 +1,6 @@
 //! The path catalog the Query Builder navigates: a slim, serializable tree
 //! distilled BFF-side from the Web Template (built from the CDR's OPT with
-//! `openehr_flat::webtemplate::build_web_template` — the same code the CDR
+//! `openehr_its::flat::webtemplate::build_web_template` — the same code the CDR
 //! serves `application/openehr.wt+json` with) and shipped to the browser.
 //! Node shape per `docs/specs/openehr/ITS-REST/docs/simplified_formats/
 //! master04-basic_concepts.adoc` §"Web Template Metadata".
@@ -45,13 +45,13 @@ pub struct CatalogNode {
 /// Distill the Web Template tree into the catalog (BFF-side).
 #[cfg(feature = "ssr")]
 #[must_use]
-pub fn from_web_template(wt: &openehr_flat::webtemplate::WebTemplate) -> CatalogNode {
+pub fn from_web_template(wt: &openehr_its::flat::webtemplate::WebTemplate) -> CatalogNode {
     node(&wt.tree)
 }
 
 #[cfg(feature = "ssr")]
-fn node(wt: &openehr_flat::webtemplate::WebTemplateNode) -> CatalogNode {
-    use openehr_flat::webtemplate::WebTemplateInputType;
+fn node(wt: &openehr_its::flat::webtemplate::WebTemplateNode) -> CatalogNode {
+    use openehr_its::flat::webtemplate::WebTemplateInputType;
 
     let label = wt
         .localized_name
@@ -93,7 +93,7 @@ fn node(wt: &openehr_flat::webtemplate::WebTemplateNode) -> CatalogNode {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use openehr_flat::webtemplate::{
+    use openehr_its::flat::webtemplate::{
         WebTemplateCodedValue, WebTemplateInput, WebTemplateInputType, WebTemplateNode,
     };
 
@@ -136,7 +136,7 @@ mod tests {
         root.id = "vitals".to_owned();
         root.children.push(obs);
 
-        let wt = openehr_flat::webtemplate::WebTemplate {
+        let wt = openehr_its::flat::webtemplate::WebTemplate {
             template_id: "vitals.v1".to_owned(),
             sem_ver: None,
             version: "2.3".to_owned(),

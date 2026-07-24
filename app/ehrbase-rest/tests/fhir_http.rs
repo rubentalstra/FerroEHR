@@ -79,7 +79,7 @@ async fn app(enabled: bool) -> (testkit::TestDb, Router) {
 /// the `fhir_mapping.template_id` foreign key.
 async fn upload_template(app: &Router) {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../crates/openehr-flat/tests/fixtures/better/Demo Vitals.opt");
+        .join("../../crates/openehr-its/tests/fixtures/better/Demo Vitals.opt");
     let opt = std::fs::read_to_string(path).expect("Demo Vitals.opt vendored");
     let req = Request::builder()
         .method("POST")

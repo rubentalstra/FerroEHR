@@ -15,6 +15,16 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Simplified Formats folded into `openehr-its` (#268)**: the FLAT /
+  STRUCTURED / Web-Template implementation moved from the standalone
+  `openehr-flat` crate into `openehr-its` as the `openehr_its::flat` module,
+  mirroring the openEHR ITS component decomposition (Simplified Formats is a
+  STABLE ITS-REST 1.1.0 sub-specification, alongside canonical JSON, XML, and
+  the REST contract this crate already houses). Pure packaging refactor — no
+  change to the FLAT/STRUCTURED/Web-Template wire behaviour.
+
 ## [3.9.0] - 2026-07-24
 
 ### Added

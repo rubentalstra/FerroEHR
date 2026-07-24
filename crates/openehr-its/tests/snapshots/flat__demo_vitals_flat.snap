@@ -1,0 +1,22 @@
+---
+source: crates/openehr-its/tests/flat.rs
+expression: map
+---
+{
+  "ctx/composer_name": "Jane Nurse",
+  "ctx/language": "en",
+  "ctx/setting": "238",
+  "ctx/territory": "SI",
+  "ctx/time": "2020-10-26T15:39:53.668+01:00",
+  "vitals/category|code": "433",
+  "vitals/category|terminology": "openehr",
+  "vitals/category|value": "event",
+  "vitals/vitals/body_temperature:0/any_event:0/description_of_thermal_stress": "Test description of symptoms",
+  "vitals/vitals/body_temperature:0/any_event:0/symptoms:0|code": "at0.64",
+  "vitals/vitals/body_temperature:0/any_event:0/symptoms:0|terminology": "local",
+  "vitals/vitals/body_temperature:0/any_event:0/symptoms:0|value": "Chills / rigor / shivering",
+  "vitals/vitals/body_temperature:0/any_event:0/temperature|magnitude": 37.2,
+  "vitals/vitals/body_temperature:0/any_event:0/temperature|unit": "°C",
+  "vitals/vitals/body_temperature:0/any_event:0/time": "2020-10-26T15:39:53.668+01:00",
+  "vitals/vitals/body_temperature:0/history_origin": "2020-10-26T15:39:53.668+01:00"
+}

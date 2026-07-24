@@ -30,12 +30,12 @@ opentelemetry-otlp.workspace = true
 metrics.workspace = true
 metrics-exporter-prometheus.workspace = true
 jiff-sqlx.workspace = true
-# FHIR reverse-mapping (ADR-016 §Decision 4): `openehr-flat::to_flat` returns an
+# FHIR reverse-mapping: `openehr_its::flat` FLAT conversion returns an
 # `IndexMap` FLAT map the reverse transform reads leaf-by-leaf.
 indexmap.workspace = true
-# `events` module (contribution-outbox eventing, ADR-014): AMQP 0.9.1 publisher
-# (RabbitMQ) draining the transactional outbox at-least-once, with `backon`
-# retry/backoff.
+# `events` module (contribution-outbox eventing — no openEHR spec governs
+# eventing; our own extension): AMQP 0.9.1 publisher (RabbitMQ) draining the
+# transactional outbox at-least-once, with `backon` retry/backoff.
 lapin.workspace = true
 backon.workspace = true
 sea-query.workspace = true
@@ -59,15 +59,15 @@ thiserror.workspace = true
 toml.workspace = true
 uuid.workspace = true
 
-# `signing` module (RM common §Digital Signature; ADR-011, moved from the former
+# `signing` module (RM common §Digital Signature; moved from the former
 # ehrbase-signing crate): OpenPGP (rPGP) detached signatures + SHA-256 digest mode.
 pgp.workspace = true
 sha2.workspace = true
 base64.workspace = true
 # `multimedia` module (DV_MULTIMEDIA externalization to S3-compatible object
-# storage, ADR-017): `object_store` is the backend abstraction (SeaweedFS in
-# dev/test via its S3 gateway, any S3 endpoint in prod); `bytes` carries blob
-# payloads to/from it.
+# storage — no openEHR spec governs blob storage mechanics; our own design):
+# `object_store` is the backend abstraction (SeaweedFS in dev/test via its S3
+# gateway, any S3 endpoint in prod); `bytes` carries blob payloads to/from it.
 object_store.workspace = true
 bytes.workspace = true
 # NOTE: rPGP 0.20's `DetachedSignature::sign_binary_data` takes an
@@ -75,8 +75,8 @@ bytes.workspace = true
 # pin (0.10) is a trait-incompatible major, so the `signing` module pins the
 # rand version pgp itself requires purely to name `OsRng` for that one call.
 rand = "0.8"
-# `system_log` module (IHE ATNA audit trail, SM `I_SYSTEM_LOG`; ADR-011, moved
-# from the former ehrbase-audit crate): TLS syslog transport.
+# `system_log` module (IHE ATNA audit trail, SM `I_SYSTEM_LOG`; moved from the
+# former ehrbase-audit crate): TLS syslog transport.
 tokio-rustls.workspace = true
 rustls.workspace = true
 
@@ -87,7 +87,6 @@ openehr-its = { path = "../../crates/openehr-its" }
 openehr-lang = { path = "../../crates/openehr-lang" }
 openehr-am = { path = "../../crates/openehr-am" }
 openehr-adl = { path = "../../crates/openehr-adl" }
-openehr-flat = { path = "../../crates/openehr-flat" }
 openehr-query = { path = "../../crates/openehr-query" }
 
 [dev-dependencies]
@@ -101,8 +100,8 @@ assert_fs.workspace = true
 wiremock.workspace = true
 testcontainers.workspace = true
 # testcontainers-modules `rabbitmq` feature (workspace) drives the end-to-end
-# eventing tests against a real broker (ADR-014). `futures` gives the lapin
-# Consumer its `StreamExt::next` in those tests.
+# eventing tests against a real broker. `futures` gives the lapin Consumer its
+# `StreamExt::next` in those tests.
 testcontainers-modules.workspace = true
 futures.workspace = true
 tokio.workspace = true
