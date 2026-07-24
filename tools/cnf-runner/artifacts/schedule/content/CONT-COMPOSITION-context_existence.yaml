@@ -1,13 +1,14 @@
 # REALIZATION COMPLEMENT (rebuilt 2026-07-24, catalogue audit D1/D2): carries
-# the one official master15 cell the CONT-COMP-content_card_any-context_any
-# case file cannot drive — "one entry | no context | accepted" — because that
-# file's cardinality synth family always commits a context. Realized here via
-# the context-existence family with the archetype at the RM default (0..1 =
-# the official case's "no constraint over context") and the instance
-# committing exactly one content entry with no context. The former ad-hoc
-# rows of this case are otherwise covered: (optional, present) by
-# CONT-COMP-content_card_any-context_any; (mandatory, present/absent) by
-# CONT-COMP-content_card_any-context_mand.
+# the official master15 "one entry | no context | accepted" cell realized on
+# the context-existence synth family, with the archetype at the RM default
+# (0..1 = the official case's "no constraint over context") and the instance
+# committing exactly one content entry with no context. Since 2026-07-24 the
+# cardinality synth family drives the context per row (context_committed), so
+# CONT-COMP-content_card_any-context_any encodes this cell too — this file is
+# retained as the distinct-family (existence-template) realization of the same
+# cell. The former ad-hoc rows of this case are otherwise covered: (optional,
+# present) by CONT-COMP-content_card_any-context_any; (mandatory,
+# present/absent) by CONT-COMP-content_card_any-context_mand.
 id: CONT-COMPOSITION-context_existence
 kind: content
 component: CONTENT

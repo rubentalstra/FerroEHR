@@ -132,3 +132,64 @@ master16 (21 of 26): `CONT-OBS-state_ex_{opt,mand}-protocol_ex_{opt,mand}` (4 fi
 - master15 `CONT-COMP-content_card_{1plus,3plus,opt,mand,3to5}-context_mand` (5 cases, 45 rows): the per-row OPT synthesis has no combined content-cardinality × context-occurrences family.
 - master16 `CONT-HIST-events_card_{any,3plus,opt,mand,3to5}-summary_ex_mand` (5 cases, 30 rows): the summary-existence family fixes events cardinality at 1..*, which is not these cases' constraint.
 - The "no context"/"context with other_context" data-set rows of the 6 encoded `context_any` cases (36 rows; the one "one entry | no context" acceptance cell IS carried by the `CONT-COMPOSITION-context_existence` complement) and the remaining 7 rows of `card_any-context_mand`; the summary-present rows of the 5 partially-encoded `summary_ex_opt` cases (15 rows). Each encoded case file carries the matching `TODO:`.
+
+## Completion (2026-07-24, combined synth families)
+
+The synth vocabulary extension (combined cardinality×context-existence and
+events-cardinality×summary-existence template families; the three-state
+`context_committed` and the `summary_committed` data axes on the single-axis
+cardinality families) made every remaining master15/master16 row realizable.
+The "Not encoded" list in the Rebuild section above is now empty — the
+official structural inventory is fully encoded (all 12 master15 CONT-COMP
+cases + all 12 master16 CONT-HIST cases, full official tables). Every verdict
+recomputed against AOM1.4 `c_multiple_attribute.adoc`/`c_attribute.adoc` and
+the RM `composition.adoc`/`history.adoc` invariants read first-hand.
+
+### New case files (10 — 75 rows)
+
+- master15 `CONT-COMP-content_card_{1plus,3plus,opt,mand,3to5}-context_mand`
+  (5 files × 9 rows = 45): constraint_columns `["cardinality",
+  "context_existence"]` on the combined family (one template constrains both
+  axes; the constrained context carries an optional other_context ITEM_TREE
+  at0011 so the "context with other_context" block commits against a
+  constrained node). All 45 recomputed verdicts match the official cells.
+- master16 `CONT-HIST-events_card_{any,3plus,opt,mand,3to5}-summary_ex_mand`
+  (5 files × 6 rows = 30): constraint_columns `["cardinality",
+  "summary_existence"]`. The zero-events + summary-present cells recompute as
+  the official tables verdict them: `accepted` where the cardinality admits 0
+  (`any`, `opt` — Events_valid holds via its second disjunct), `rejected` on
+  cardinality.lower where it does not (`3plus`, `mand`, `3to5`). All 30
+  recomputed verdicts match the official cells — no new AMB-51-style
+  contradiction found.
+
+### Extended case files (12 — +58 rows)
+
+- The 6 `CONT-COMP-content_card_*-context_any` files: 3 → 9 rows each (+36),
+  the three-state `context_committed` axis realizing the official "no
+  context" / "context without other_context" / "context with other_context"
+  blocks (existing rows kept as the `present` block; verdicts identical
+  across blocks — context is unconstrained). TODOs removed.
+- `CONT-COMP-content_card_any-context_mand`: 2 → 9 rows (+7), migrated onto
+  the combined family (constraint_columns `["cardinality",
+  "context_existence"]`, the full official content 0/1/3 × three context
+  conditions table). TODO removed.
+- The 5 partial `CONT-HIST-events_card_*-summary_ex_opt` files (`any`,
+  `3plus`, `opt`, `mand`, `3to5`): 3 → 6 rows each (+15), the
+  `summary_committed` axis realizing the official summary-present block. The
+  two registered AMB-51 rows (zero events + absent summary verdicting
+  `rejected` against the official `accepted`) are unchanged and stay tagged.
+  TODOs removed.
+- Comment-only: `CONT-COMPOSITION-context_existence` — its premise ("the
+  cardinality synth family always commits a context") is obsolete; retained
+  as the distinct-family (existence-template) realization of the "one entry |
+  no context | accepted" cell, comment updated.
+
+### Still unencodable
+
+Nothing. No master15/master16 row remains outside the catalogue; no case file
+in the structural family carries a realizability `TODO:` anymore. (The 3..5
+upper-bound crossing is still not an *official* row — the official data sets
+stop at 3 — and remains covered by the `*_count6` catalogue extensions.)
+
+Validator: `cnf-runner validate --root tools/cnf-runner/artifacts --specs
+docs/specs/openehr` → 429 case(s), 88 binding(s), **0 finding(s)**.
