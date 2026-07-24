@@ -1,9 +1,13 @@
 //! The per-stage wire realization: each [`crate::perf::PerfOp`] maps to
 //! its committed ITS-REST operation binding (`artifacts/bindings/its-rest/`
-//! — create EHR 201, commit COMPOSITION 201 with uid via `ETag`, versioned
-//! update via `If-Match`, directory 201/200/204, contribution 201, ad-hoc
-//! and stored query 200, template list/get 200, tags 200). Anything else
-//! observed counts as an error arrival.
+//! — create EHR / commit COMPOSITION / directory / contribution in the
+//! created family with the uid via `ETag`/`Location`, versioned update via
+//! `If-Match`, ad-hoc and stored query 200, template list/get 200, tags
+//! 200). The driver sends `Prefer: return=minimal` on its writes, so the
+//! created family accepts BOTH `201` and `204` (ITS-REST overview
+//! `Requests_and_responses` §Prefer: "typically `201 Created`. If no
+//! response body is returned, the service SHOULD use `204 No Content`").
+//! Anything else observed counts as an error arrival.
 //!
 //! Dependent stages resolve prerequisites from [`CaptureStore`] — the
 //! journey-instance state earlier stages captured (a fresh EHR's id, a
@@ -97,6 +101,17 @@ fn note(observed: &mut Option<u16>, status: u16) -> u16 {
     status
 }
 
+/// Whether a `Prefer: return=minimal` write landed in the created family.
+/// ITS-REST overview `Requests_and_responses` §Prefer: the status is
+/// "typically `201 Created`. If no response body is returned, the service
+/// SHOULD use `204 No Content`" — both are conformant (upstream `EHRbase`
+/// answers 204; this SUT answers 201). The identifying `ETag`/`Location`
+/// is still demanded by each arm. Mirrors the seeder's acceptance
+/// ([`crate::perf_run::corpus`]).
+fn created(status: u16) -> bool {
+    matches!(status, 201 | 204)
+}
+
 /// Deterministic corpus addressing: a large odd stride cycles the pools.
 fn stride(arrival: u64) -> u64 {
     arrival
@@ -146,7 +161,7 @@ pub(crate) fn perform(
     let ok = match planned.op {
         PerfOp::EhrCreate => {
             let reply = client.request(reqwest::Method::POST, "/ehr", None, true, None)?;
-            if note(observed, reply.status) == 201
+            if created(note(observed, reply.status))
                 && let Some(id) = reply.location.as_deref().and_then(location_last_segment)
             {
                 captures.journey(journey, |s| s.ehr_id = Some(id));
@@ -238,7 +253,7 @@ pub(crate) fn perform(
                 true,
                 None,
             )?;
-            if note(observed, reply.status) == 201
+            if created(note(observed, reply.status))
                 && let Some(uid) = reply.etag.as_deref().map(strip_weak_quotes)
             {
                 captures.journey(journey, |s| s.last_commit_ovid = Some(uid));
@@ -372,12 +387,11 @@ pub(crate) fn perform(
                 true,
                 None,
             )?;
-            if note(observed, reply.status) == 201
-                && let Some(ovid) = reply.etag.as_deref().map(strip_weak_quotes)
-            {
+            let ok = created(note(observed, reply.status));
+            if ok && let Some(ovid) = reply.etag.as_deref().map(strip_weak_quotes) {
                 captures.journey(journey, |s| s.directory_ovid = Some(ovid));
             }
-            note(observed, reply.status) == 201
+            ok
         }
         PerfOp::DirectoryRead => {
             let reply = client.request(
@@ -442,7 +456,7 @@ pub(crate) fn perform(
                 true,
                 None,
             )?;
-            if note(observed, reply.status) == 201 {
+            if created(note(observed, reply.status)) {
                 let uid = reply
                     .location
                     .as_deref()

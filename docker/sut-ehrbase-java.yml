@@ -13,6 +13,12 @@
 services:
   ehrbase-java-db:
     image: ${EHRBASE_JAVA_POSTGRES_IMAGE:-ehrbase/ehrbase-v2-postgres:16.2}
+    # The same /dev/shm floor as the rs stack (docker-compose.yml
+    # ehrbase-postgres) — Docker's default 64MB starves PostgreSQL's dynamic
+    # shared memory (`could not resize shared memory segment … No space left
+    # on device` during vacuumdb/parallel workers). The resource floor is
+    # host environment, not SUT tuning: both comparison sides share it.
+    shm_size: ${BENCH_PG_SHM_SIZE:-1gb}
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

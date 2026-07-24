@@ -5,7 +5,7 @@
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.7.0",
+    "version": "3.8.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
