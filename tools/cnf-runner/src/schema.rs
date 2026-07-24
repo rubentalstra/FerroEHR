@@ -841,6 +841,21 @@ pub fn ixit_schema() -> Value {
                     "sut": { "type": "string", "minLength": 1 },
                     "db": { "type": "string", "minLength": 1 }
                 }
+            },
+            "signing": {
+                "description": "The SUT's version-signing posture (RM common master06 §Digital Signature). Present => the Signing capability is claimed and this block declares the mode the deployment runs (a deployment runs one). digest: self-describing plain digest (algorithm/encoding/prefix); pgp: openPGP verified against the public key.",
+                "type": "object",
+                "required": ["mode"],
+                "oneOf": [
+                    { "additionalProperties": false, "required": ["mode", "algorithm", "encoding"],
+                      "properties": { "mode": { "const": "digest" },
+                                      "algorithm": { "type": "string", "minLength": 1 },
+                                      "encoding": { "type": "string", "minLength": 1 },
+                                      "prefix": { "type": "string" } } },
+                    { "additionalProperties": false, "required": ["mode", "public_key"],
+                      "properties": { "mode": { "const": "pgp" },
+                                      "public_key": { "type": "string", "minLength": 1 } } }
+                ]
             }
         }
     })
