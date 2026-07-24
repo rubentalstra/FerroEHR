@@ -1391,20 +1391,6 @@ cnf.flat.all_types.raw:
   template_id: "test_all_types.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22 — cnf.flat.all_types with the DV_QUANTITY leaf supplied via the master04 |raw suffix (an embedded canonical DV_QUANTITY object carrying _type) instead of attribute decomposition"
 
-cnf.sf.flat.normal_range:
-  source: fixtures/sf/flat.normal_range.json
-  format: wt-flat
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §RM Attributes prefix _normal_range example (adapted to the vitals body_temperature leaf); structural placeholder pending corpus authoring"
-
-cnf.sf.flat.raw_quantity:
-  source: fixtures/sf/flat.raw_quantity.json
-  format: wt-flat
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §Raw canonical JSON example (|raw DV_QUANTITY, canonical units); structural placeholder pending corpus authoring"
-
 cnf.sf.flat.raw_no_type:
   source: fixtures/sf/flat.raw_no_type.json
   format: wt-flat
@@ -1421,13 +1407,6 @@ cnf.sf.structured.raw_quantity:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 as the STRUCTURED counterpart of the master04 §Raw canonical JSON example; structural placeholder pending corpus authoring"
-
-cnf.sf.flat.composer_name:
-  source: fixtures/sf/flat.composer_name.json
-  format: wt-flat
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master06 §Composer composer_name example; structural placeholder pending corpus authoring"
 
 cnf.sf.flat.missing_territory:
   source: fixtures/sf/flat.missing_territory.json
@@ -1506,7 +1485,7 @@ cnf.sf.flat.cardinality_violation:
     verdict: invalid
     defect: "second indexed instance (:1) supplied for a max=1 node"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (cardinality constraints are satisfied)"
-  provenance: "authored 2026-07-21 by adding a second body_temperature instance to a max=1 node; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 by adding a second Temperature ELEMENT instance (temperature:1) to the max=1 Temperature node (body_temperature is 0..*); structural placeholder pending corpus authoring"
 
 cnf.sf.flat.binding_violation:
   source: fixtures/sf/flat.binding_violation.json

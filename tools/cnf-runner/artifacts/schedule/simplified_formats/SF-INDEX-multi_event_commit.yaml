@@ -4,12 +4,11 @@
 # body_temperature observation round-trips to canonical JSON with two EVENT
 # entries under the observation history — proving the zero-based per-level index
 # expands to distinct RM instances.
-# TODO: repoint to a FLAT instance + template carrying a repeating EVENT
-#       (max>1) so any_event:0/any_event:1 expand to two EVENTs — cnf.opt.maximal
-#       test_all_types has a single max=1 POINT_EVENT, and the current
-#       cnf.sf.flat.multi_event placeholder targets the removed body_temperature
-#       leaf and 422s. Candidate: a vendored Robot template with a repeatable
-#       event (e.g. time_series.en.v1) added as a new corpus template.
+# TODO: re-verify this flow once live against the composed SUT. cnf.opt.vitals
+#       (re-authored 2026-07-22) is the body_temperature carrier whose EVENT
+#       at0002 is unbounded, so the cnf.sf.flat.multi_event any_event:0/:1 expand
+#       to two distinct EVENTs; the `created` and mapping expectations are
+#       spec-derivable and need no change.
 id: SF-INDEX-multi_event_commit
 kind: functional
 component: SIMPLIFIED_FORMATS

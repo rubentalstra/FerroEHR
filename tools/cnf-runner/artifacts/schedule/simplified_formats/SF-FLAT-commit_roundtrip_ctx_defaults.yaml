@@ -15,7 +15,7 @@ description: "FLAT commit, three-format read-back, ctx defaulting"
 spec_refs:
   - "ITS-REST simplified_formats master02 §MIME Types"
   - "ITS-REST simplified_formats master04 §Field Identifiers, §Validation"
-  - "ITS-REST simplified_formats master06 §ctx defaults"
+  - "ITS-REST simplified_formats master06 §time + §setting"
   - "ITS-REST overview Requests_and_responses §openehr-template-id"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
@@ -56,11 +56,9 @@ flow:
     expect: ok
     assert:
       - { assert: equivalent, to: "${flat_readback}", ignoring: [] }   # FLAT<->STRUCTURED value-equality (master04)
-# TODO: step 3 `equivalent to: committed` fails because the committed FLAT uses
-#       ctx/ input-convenience keys (ctx/participation_*, ctx/health_care_facility,
-#       ctx/id_namespace) while the read-back FLAT expresses the same data via RM
-#       paths (minimal/context/_participation:0|name, .../_health_care_facility|name).
-#       This is the ctx-input vs RM-path-output asymmetry (verified live 2026-07-22),
-#       not a SUT defect. Needs the `equivalent` evaluator to normalise ctx/ keys
-#       to their RM-path forms (or the case to compare clinical leaves only, as
-#       steps 2/4 already do) before this step can pass.
+# TODO: the step-3 committed-equivalence assertion needs either leaf-only
+#       comparison or evaluator ctx normalisation before it can pass: ctx/ input
+#       defaults read back as RM paths (EVENT_CONTEXT participations /
+#       health_care_facility) that are not covered by the registered ctx_defaults
+#       ignore-set (start_time / setting / composer only). To be resolved with a
+#       live run. The assertion itself is unchanged.

@@ -22,8 +22,8 @@ spec_refs:
   - "ITS-REST simplified_formats master05 §EVENT_CONTEXT"
   - "ITS-REST simplified_formats master05 §PARTICIPATION"
   - "ITS-REST simplified_formats master05 §ISM_TRANSITION"
-  - "ITS-REST simplified_formats master06 §ctx defaults"
-  - "RM data_structures §EVENT_CONTEXT"
+  - "ITS-REST simplified_formats master06 §time + §setting"
+  - "RM composition §EVENT_CONTEXT"
 applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
