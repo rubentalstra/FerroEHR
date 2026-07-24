@@ -1,5 +1,0 @@
-# Context trimming for docker/Dockerfile.runtime (context is the repo root in
-# CI, after the binary artifacts are downloaded). Only the prebuilt binaries
-# enter the build context.
-*
-!bin/

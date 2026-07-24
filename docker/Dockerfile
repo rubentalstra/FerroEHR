@@ -1,49 +1,97 @@
 # syntax=docker/dockerfile:1
 #
-# From-source multi-stage build for the `ehrbase` server binary (ADR-006/008).
-# This is the LOCAL/compose path (`docker compose build`, `docker build -f
-# docker/Dockerfile .`); CI packages prebuilt native binaries with
-# docker/Dockerfile.runtime instead (see .github/workflows/containers.yml).
+# The single Dockerfile for the `ehrbase` server image (issue #282 D1/D5).
+# ONE runtime stage feeds TWO final targets so a compose-built image and a
+# CI-published image can never drift (docs.docker.com/build/building/multi-stage):
 #
-#   builder : rust:${RUST_VERSION}-slim-bookworm, single `cargo build` with
-#             BuildKit cache mounts for the registry and target dir — repeat
-#             local builds are incremental, and nothing (cargo-chef, a second
-#             dependency compile) runs besides the one real build.
-#   runtime : gcr.io/distroless/cc-debian12:nonroot (shell-less, non-root;
-#             glibc 2.36 matches the bookworm builder).
+#   runtime-from-source  the LOCAL/compose path — cargo-chef + cache mounts
+#                         compile the binary in-image.
+#   runtime-prebuilt     the CI path — COPY-only packaging of a context-provided
+#                         native binary (bin/${TARGETARCH}/ehrbase); no RUN, so a
+#                         multi-arch buildx needs no QEMU and finishes in seconds.
 #
-# The toolchain is single-sourced from rust-toolchain.toml; RUST_VERSION must
-# equal its `channel` (CI cross-checks the two so they never drift).
+# Caching (D1, the F2/F3 fix): cargo-chef splits the dependency compile into its
+# own layer keyed ONLY on the lockfile/recipe, so an app-only edit never
+# recompiles dependencies, and — unlike a bare `--mount=type=cache` — that layer
+# is a real image layer CI can export/import via the GHA backend
+# (docs.docker.com/build/cache/optimize; docs.docker.com/guides/rust).
+#
+# The RUST_VERSION toolchain is single-sourced from rust-toolchain.toml; CI
+# cross-checks the ARG against its `channel` so they never drift.
 
 ARG RUST_VERSION=1.96.1
+ARG CARGO_CHEF_VERSION=0.1.77
 
-# ── builder: one cached compile ──────────────────────────────────────────────
-FROM rust:${RUST_VERSION}-slim-bookworm AS builder
-WORKDIR /app
-COPY . .
-# The binary is pure-Rust (rustls, no OpenSSL); no system libraries are needed
-# beyond the slim base. Cache mounts persist the crates.io registry and the
-# incremental target dir across builds; the binary is copied out of the mount
-# before it unmounts.
+# ── chef: the builder toolchain + cargo-chef, a cached base for planner/builder ─
+# Digest-pinned rust:1.96.1-slim-trixie (Debian 13, glibc 2.41), resolved
+# 2026-07-24. The builder and the cc-debian13 runtime below share the Debian 13
+# generation so the binary links the exact glibc it runs against. Pinning by
+# digest (not the mutable tag) guarantees a reproducible base
+# (docs.docker.com/build/building/best-practices — "pinning to a digest
+# guarantees the same image version").
+FROM rust:${RUST_VERSION}-slim-trixie@sha256:31ee7fc65186be7e0e0ccb3f2ca305f14e4739e7642a1ae65753aa5d7b874523 AS chef
+ARG CARGO_CHEF_VERSION
+# cargo-chef pinned by version, installed behind a cargo-registry cache mount so
+# the download is not repeated on rebuilds (docs.docker.com/build/cache/optimize
+# — RUN --mount=type=cache). This layer rebuilds only when RUST_VERSION or
+# CARGO_CHEF_VERSION changes.
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/app/target,sharing=locked \
+    cargo install cargo-chef --version ${CARGO_CHEF_VERSION} --locked
+WORKDIR /app
+
+# ── planner: distil the dependency recipe from the workspace manifests ─────────
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ── builder: cook dependencies (cached layer), then build the app ──────────────
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Cook ONLY the dependency graph of the server binary. This writes the compiled
+# dependencies into the image layer (NOT a target cache mount — a mount would
+# not export via the GHA backend and would shadow the cooked target on the next
+# stage), so the layer is cache-hit until Cargo.lock/recipe.json changes and CI
+# can reuse it cold (docs.docker.com/guides/rust; docs.docker.com/build/cache/backends).
+# The registry cache mount is safe: it holds downloaded crate sources, never
+# shadows /app/target, and only speeds a cache-missed cook.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    cargo chef cook --release --locked -p ehrbase-server --recipe-path recipe.json
+COPY . .
+# Build provenance: the OCI-standard REVISION build-arg (the git SHA CI's
+# metadata-action already sets for org.opencontainers.image.revision) is the
+# ONLY provenance input — no bespoke arg. Exposed as an ENV so build.rs reads it
+# and stamps /management/info with the same SHA the image LABEL carries. Absent,
+# build.rs degrades to a version-only identity with SHA=unknown BY DESIGN (never
+# a broken build; .git is not in the context). Declaring it here (after
+# `chef cook`) keeps the cooked dependency layer above untouched by an SHA change
+# (docs.docker.com/reference/dockerfile — ARG/ENV scoping).
+ARG REVISION=""
+ENV REVISION=${REVISION}
+# The binary is pure-Rust (rustls, no OpenSSL); the slim base needs no extra
+# system libraries. Deps are already compiled by `chef cook`, so this step only
+# builds the workspace's own crates.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
     cargo build --release --locked -p ehrbase-server \
     && cp target/release/ehrbase /usr/local/bin/ehrbase \
     && strip /usr/local/bin/ehrbase
 
-# ── runtime: distroless cc (glibc + CA certs), non-root ──────────────────────
-FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
-COPY --from=builder /usr/local/bin/ehrbase /usr/local/bin/ehrbase
-
+# ── runtime-base: the SHARED final base (digest-pinned distroless, non-root) ───
+# gcr.io/distroless/cc-debian13:nonroot (glibc + libgcc_s + CA certs; non-root
+# 65532, Helm-aligned), digest-pinned, resolved 2026-07-24. `cc` (not the
+# smaller base-nossl) is REQUIRED: the Rust binary dynamically links
+# libgcc_s.so.1 for stack unwinding, which the base-nossl image does not ship
+# (verified 2026-07-24: base-nossl fails at load with "libgcc_s.so.1: cannot
+# open shared object file"); the ~11 MB base-nossl would save is unusable.
+# Both final targets inherit this stage's EXPOSE/HEALTHCHECK/ENTRYPOINT/LABELs,
+# so they are byte-for-byte identical except the one binary-provenance layer
+# (D5 — zero drift).
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775 AS runtime-base
 EXPOSE 8080
-
-# Shell-less image: the healthcheck is the binary's own subcommand, which
-# probes /rest/status and exits 0 (2xx) / 1 otherwise.
+# Shell-less image: the healthcheck is the binary's own subcommand, which probes
+# /rest/status and exits 0 (2xx) / 1 otherwise.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD ["/usr/local/bin/ehrbase", "healthcheck"]
-
 ENTRYPOINT ["/usr/local/bin/ehrbase"]
-
 # OCI image labels. CI (docker/metadata-action) overrides source/revision/
 # version/created at build time; these are sensible static defaults.
 ARG VERSION="0.1.0"
@@ -54,3 +102,18 @@ LABEL org.opencontainers.image.title="ehrbase-rs" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}"
+
+# ── runtime-from-source: compose/local (COPY the in-image build) ───────────────
+FROM runtime-base AS runtime-from-source
+COPY --from=builder /usr/local/bin/ehrbase /usr/local/bin/ehrbase
+
+# ── runtime-prebuilt: CI (COPY the context-provided native binary; no compile) ─
+# The `ehrbase` binaries are built natively per architecture on the CI runners
+# (inside rust:*-slim-trixie, so they target Debian 13 glibc 2.41 — exactly what
+# this distroless base ships) and land in the build context as
+# bin/amd64/ehrbase and bin/arm64/ehrbase. Because no RUN executes, a multi-arch
+# buildx of this target needs no QEMU.
+FROM runtime-base AS runtime-prebuilt
+# amd64 | arm64 — supplied by buildx per platform.
+ARG TARGETARCH
+COPY --chmod=0755 bin/${TARGETARCH}/ehrbase /usr/local/bin/ehrbase

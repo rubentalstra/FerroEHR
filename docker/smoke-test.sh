@@ -15,6 +15,11 @@
 # EHRBASE_IMAGE / EHRBASE_POSTGRES_IMAGE select the images to run.
 set -Eeuo pipefail
 
+# Own project (docs.docker.com/compose/how-tos/project-name) so the `down -v`
+# teardown is scoped to `ehrbase-rs-smoke` and never wipes a running dev
+# (`ehrbase-rs`) stack (issue #282 D3). Only the two core services are started
+# (keycloak/seaweedfs are behind profiles and stay down).
+export COMPOSE_PROJECT_NAME=ehrbase-rs-smoke
 BASE="http://localhost:8080/ehrbase/rest"
 CORE_SERVICES=(ehrbase-postgres ehrbase)
 

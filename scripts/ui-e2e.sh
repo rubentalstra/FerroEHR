@@ -15,6 +15,11 @@
 #                       image reference instead of building — CI verifies the
 #                       very artifact containers.yml pushed.
 #   UI_E2E_NO_COMPOSE   if set, assume CDR+Keycloak are already up.
+#   UI_E2E_NO_BUILD     if set, `up --no-build` the compose stack (use images
+#                       already present as the `*_IMAGE` refs) instead of
+#                       building from source. CI pre-builds the app image with
+#                       an exported GHA layer cache and sets this, so the cold
+#                       runner does not pay the full compile (issue #282 F2/D1).
 #   UI_E2E_KEEP_UP      if set, skip teardown (local debugging).
 #   UI_E2E_SHOTS_ONLY   if set, skip the journeys entirely (capture pass only).
 #   UI_E2E_DOCS_SHOTS   if set, also run the --docs-shots capture pass
@@ -32,6 +37,16 @@ set -Eeuo pipefail
 FILTER="${1:-}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+
+# This lane composes as its OWN project (docs.docker.com/compose/how-tos/project-name):
+# COMPOSE_PROJECT_NAME scopes EVERY `docker compose` call below — crucially the
+# `down -v` teardown — to `ehrbase-rs-e2e`, so it can never wipe a running dev
+# (`ehrbase-rs`) or conformance (`ehrbase-rs-cnf`) stack (issue #282 D3/F7).
+export COMPOSE_PROJECT_NAME=ehrbase-rs-e2e
+# Build provenance for the compose-built images: the OCI-standard REVISION arg
+# (forwarded by the compose build.args block, bridged into build.rs by the
+# server Dockerfile). Degrades to `unknown` off-checkout.
+export REVISION="${REVISION:-$(git -C "$ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 
 if [ -n "${UI_E2E_IMAGE:-}" ]; then
   # Image mode: the composed console publishes the quickstart port.
@@ -74,7 +89,11 @@ wait_http() { # url, tries
 # ── 1. The composed stack: postgres + CDR + Keycloak ────────────────────────
 if [ -z "${UI_E2E_NO_COMPOSE:-}" ]; then
   echo "── compose up (postgres + ehrbase + keycloak)"
-  docker compose up -d --build ehrbase-postgres ehrbase keycloak
+  # keycloak is behind the `keycloak` profile (docs.docker.com/compose/how-tos/profiles);
+  # enable it so the OIDC journeys have an issuer.
+  BUILD_ARGS=(--build)
+  [ -n "${UI_E2E_NO_BUILD:-}" ] && BUILD_ARGS=(--no-build)
+  docker compose --profile keycloak up -d "${BUILD_ARGS[@]}" ehrbase-postgres ehrbase keycloak
 fi
 wait_http "$CDR_URL/ehrbase/rest/status" 150
 wait_http "$KEYCLOAK_URL/auth/realms/ehrbase/.well-known/openid-configuration" 90

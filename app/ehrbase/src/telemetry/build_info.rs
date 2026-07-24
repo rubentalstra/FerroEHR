@@ -61,7 +61,7 @@ impl BuildInfo {
         Self {
             name: env!("CARGO_PKG_NAME"),
             version: env!("CARGO_PKG_VERSION"),
-            git_sha: env!("EHRBASE_GIT_SHA"),
+            git_sha: env!("REVISION"),
             build_date: build_date(),
             rustc: env!("EHRBASE_RUSTC"),
             spec: SpecVersions {

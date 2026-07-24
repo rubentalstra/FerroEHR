@@ -7,8 +7,10 @@ use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 fn main() {
-    // Git short SHA: an explicit CI-provided value wins; otherwise ask git.
-    let git_sha = std::env::var("EHRBASE_GIT_SHA")
+    // Git short SHA: the OCI-standard REVISION value (the same one that fills
+    // org.opencontainers.image.revision) wins; otherwise ask git. Degrades to
+    // `unknown` rather than failing the build.
+    let revision = std::env::var("REVISION")
         .ok()
         .filter(|s| !s.is_empty())
         .or_else(|| {
@@ -20,7 +22,7 @@ fn main() {
                 .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
         })
         .unwrap_or_else(|| "unknown".to_owned());
-    println!("cargo:rustc-env=EHRBASE_GIT_SHA={git_sha}");
+    println!("cargo:rustc-env=REVISION={revision}");
 
     // Build timestamp (epoch seconds), honouring SOURCE_DATE_EPOCH for
     // reproducible builds; rendered to an ISO-8601 string at runtime (jiff).
@@ -49,7 +51,7 @@ fn main() {
         );
     println!("cargo:rustc-env=EHRBASE_RUSTC={rustc_version}");
 
-    println!("cargo:rerun-if-env-changed=EHRBASE_GIT_SHA");
+    println!("cargo:rerun-if-env-changed=REVISION");
     println!("cargo:rerun-if-env-changed=SOURCE_DATE_EPOCH");
     println!("cargo:rerun-if-changed=../../.git/HEAD");
     println!("cargo:rerun-if-changed=../../.git/refs");
