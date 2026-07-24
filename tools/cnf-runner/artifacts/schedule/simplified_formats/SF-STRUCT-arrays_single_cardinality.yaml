@@ -4,12 +4,11 @@
 # wrapped in a single-element array commits and round-trips to canonical JSON
 # and back to Structured with the value equal — proving the mandatory-array
 # rule is honoured on read as well as write.
-# TODO: re-verify this flow once live against the composed SUT — the
-#       cnf.structured.vitals.minimal fixture targets paths that exist in the
-#       re-authored cnf.opt.vitals carrier. The step-3 `equivalent to: committed`
-#       assertion carries the same ctx-representation residual as
-#       SF-FLAT-commit_roundtrip_ctx_defaults (ctx defaults read back as RM paths
-#       not covered by the ctx_defaults ignore-set) and is resolved together with it.
+# NOTE: the step-3 `equivalent to: committed` assertion is reconciled by the
+#       fold_flat_ctx ctx normalisation + the ctx_defaults ignore-set (ITS-REST
+#       simplified_formats master06 §Context Information), as in
+#       SF-FLAT-commit_roundtrip_ctx_defaults. Verified live green against the
+#       composed SUT.
 id: SF-STRUCT-arrays_single_cardinality
 kind: functional
 component: SIMPLIFIED_FORMATS
