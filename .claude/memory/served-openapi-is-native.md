@@ -16,7 +16,7 @@ router; one `ehrbase-rest` spec entry; "serve only what we generate").
 
 **Why:** the vendored OAS is exactly two things — the `emit-rest` codegen
 input for the generated `openehr-its` contract, and the behavioural/
-conformance oracle (verified by the ECC, not by a document diff). The two
+conformance oracle (verified by the CNF pipeline, not by a document diff). The two
 documents legitimately differ (ours includes the own-design extensions).
 
 **How to apply:** when changing anything wire-visible (media types,

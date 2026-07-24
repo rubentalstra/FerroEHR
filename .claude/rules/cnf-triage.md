@@ -11,6 +11,25 @@ wrote, in exactly one of three bins. Run the `cnf-triage` agent (or follow
 this protocol in-session) for every red row; never "fix" a red run by
 guessing which side is wrong.
 
+**The two reflexes we keep making — both BANNED.** This is the single most
+common process failure in this repo, and the reason this instrument exists:
+
+1. **"Our code is right, so the CNF must be wrong."** The application
+   (`app/*` + `crates/openehr-*`) is NEVER presumed correct because "we wrote
+   it carefully to the spec". It is a suspect equally with the runner and the
+   catalogue — and, wire-visible bugs being the point of the instrument, it is
+   frequently the real culprit. Do not reach for the catalogue/runner to make
+   a red row green.
+2. **"Let me check our SUT."** The SUT's observed response is *evidence* for
+   the three-way comparison — it is NEVER the reference for what the expected
+   value should be. You never derive an expectation from what the server did;
+   you derive it from the spec text, first-hand, and then check whether the
+   server matched. Reading the SUT to *decide* the expectation is the bug.
+
+The reference is the spec, every time. This instrument validates OUR setup
+(the app AND the runner AND the catalogue) against that spec — it is not a
+test suite that presumes our code and questions the tests.
+
 ## The three suspects (and the only fix path for each)
 
 | Bin | What it means | Fix path |

@@ -381,6 +381,9 @@ Honest implications:
    flows, or behavioural quirks in normative artifacts; fixtures carry spec
    citations, not `EhrBase ref:` markers; reference expectations are
    adjudicated against spec text, never against whichever SUT emitted them.
+   (Red-run triage from the SUT side applies the same law: the vendored spec is
+   the sole oracle and the application, runner, and catalogue are all suspects,
+   none presumed correct — `.claude/rules/cnf-triage.md`.)
    CI enforces what it can; the maintainer charter (§12) enforces the rest.
 7. **Versioned like every other component.** Cases pin spec-version
    applicability ranges; a statement names the schedule release + tech profile

@@ -1,6 +1,6 @@
 ---
 name: owner-work-style
-description: "Durable owner rulings on HOW to work: defer nothing, no quick fixes (proper rewrites welcome), orchestrator codes context-heavy work itself, rerun ECC after runner/validation merges"
+description: "Durable owner rulings on HOW to work: defer nothing, no quick fixes (proper rewrites welcome), orchestrator codes context-heavy work itself, rerun the CNF pipeline after runner/validation merges"
 metadata: 
   node_type: memory
   type: feedback
@@ -21,9 +21,10 @@ binding after A1 closed:
   time all the context again and it's not doing anything"). Delegate only
   bounded tasks with a tight, self-contained spec; the orchestrator writes
   the hard, context-rich code itself.
-- **Rerun ECC after merging anything that touches the runner or
-  validation.** PR #69 left develop with a stale ECC baseline (92 phantom
-  failures); the baseline is only trustworthy immediately after a rerun.
+- **Rerun the CNF pipeline (`scripts/conformance.sh`) after merging anything
+  that touches the runner or validation.** PR #69 left develop with a stale
+  conformance baseline (92 phantom failures); the baseline is only trustworthy
+  immediately after a rerun.
 - **"Rewrite" means FRESH FILES FROM THE SPEC, not in-place refactor
   (owner, 2026-07-16, service-rewrite escalation).** When the owner orders a
   "nuking complete rewrite" of a subsystem: design it anew from the governing

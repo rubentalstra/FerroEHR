@@ -46,6 +46,13 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   harness (its final catalogue in git history; retired 2026-07-22) are
   prior art, not oracles. Spec silences go through the ambiguity register
   with a typed `disposition`, never private resolution.
+- **Coverage is a mandate, not just pass rate** — the catalogue must exercise
+  EVERY wire behaviour the spec defines (every operation, status-code branch,
+  required/conditional header, negotiation variant, precondition + error
+  family, and RM/AQL behaviour), each as its own small isolated case; a
+  spec-defined behaviour with no case is a gap to close or an honest boundary
+  to register, never a silent omission (`.claude/rules/testing.md` §CNF
+  coverage).
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
 - **The measurement machinery is conformance-by-measurement** (`perf.rs`,
