@@ -955,8 +955,18 @@ impl HttpDriver<'_> {
     ) -> Result<(), String> {
         for key in case.requires.commit.clone() {
             let set = self.resolver.data_set(&key).map_err(|e| e.to_string())?;
-            let Some(items) = set.as_array() else {
-                continue;
+            // A generated set is an array; a plain composition fixture is a
+            // single object and commits as a one-item set. Anything else is a
+            // catalogue defect — never skip silently (the precondition "the
+            // EHR has commits" must hold or the run must fail).
+            let items: Vec<serde_json::Value> = match set {
+                serde_json::Value::Array(a) => a,
+                obj @ serde_json::Value::Object(_) => vec![obj],
+                other => {
+                    return Err(format!(
+                        "requires.commit key {key}: expected a set array or a composition object, got {other}"
+                    ));
+                }
             };
             let binding = self.binding_for(case, "I_EHR_COMPOSITION.create_composition")?;
             let instance = self.ixit.default_instance()?;
@@ -980,7 +990,7 @@ impl HttpDriver<'_> {
                 let base = instance.base_url.trim_end_matches('/');
                 let path = request_spec.path.raw().replace("{ehr_id}", &ehr_id);
                 let url = format!("{base}{path}");
-                let exchange = self.send(request_spec.method, &url, &headers, Some(item), true)?;
+                let exchange = self.send(request_spec.method, &url, &headers, Some(&item), true)?;
                 if let Some((_, spec)) = binding
                     .captures
                     .as_deref()
