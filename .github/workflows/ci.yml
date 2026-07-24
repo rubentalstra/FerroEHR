@@ -409,3 +409,30 @@ jobs:
           fi
           echo "::error::This PR changes user-visible surfaces (app/, crates/, deploy/, docker/, manifests) but does not add a CHANGELOG.md [Unreleased] entry (Keep a Changelog 1.1.0). Add one, or apply the 'no-changelog' label if truly invisible." >&2
           exit 1
+
+  # Citation guard: CITATION.cff must stay CFF-1.2.0-schema-valid and
+  # version-consistent with the workspace — a malformed file silently breaks
+  # GitHub's "Cite this repository" button, and a stale version misquotes the
+  # release in research citations. The release cut bumps version +
+  # date-released (.claude/rules/changelog.md §Cutting a release).
+  citation:
+    name: citation-guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate CITATION.cff (CFF 1.2.0 schema)
+        run: pipx run cffconvert --validate
+      - name: CITATION.cff version matches the workspace version
+        run: |
+          set -euo pipefail
+          cff_ver=$(sed -nE 's/^version:[[:space:]]*"?([^"]+)"?[[:space:]]*$/\1/p' CITATION.cff)
+          ws_ver=$(sed -nE 's/^version = "(.*)"$/\1/p' Cargo.toml | head -1)
+          if [ -z "$cff_ver" ] || [ -z "$ws_ver" ]; then
+            echo "::error::could not extract versions (CITATION.cff: '$cff_ver', Cargo.toml: '$ws_ver')." >&2
+            exit 1
+          fi
+          if [ "$cff_ver" != "$ws_ver" ]; then
+            echo "::error::CITATION.cff version ($cff_ver) != workspace version ($ws_ver) — the release cut bumps CITATION.cff version/date-released (.claude/rules/changelog.md)." >&2
+            exit 1
+          fi
+          echo "CITATION.cff version $cff_ver matches the workspace version."
