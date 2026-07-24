@@ -4,12 +4,10 @@
 # regardless of version kind — the first creation, a subsequent modification,
 # and a logical deletion each produce a signed ORIGINAL_VERSION (RM common: a
 # signature of the object can be made at the time of committal of a Version).
-# Signature presence per kind is not expressible with the current bindings +
-# typed assertions (no operation returns ORIGINAL_VERSION.signature); the
-# lineage is asserted with the `version` family and the per-kind signature fact
-# is carried as a `state` postcondition.
-# TODO: wire-assert per-kind signature presence once the `signature`
-#       assertion family + version-read binding exist.
+# Wire-asserted: each version kind's ORIGINAL_VERSION envelope is read back
+# (get_versioned_composition variant:version) and asserted signature-present —
+# the creation, the modification, and the logical deletion versions all carry a
+# signature over their canonical form.
 id: SIG-VERSION-across_version_kinds
 kind: functional
 component: SECURITY
