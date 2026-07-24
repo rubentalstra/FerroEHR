@@ -37,6 +37,13 @@ hdrhistogram = { workspace = true, features = ["serialization"] }
 base64 = { workspace = true }
 # Deterministic case-scoped ids (UUIDv5) for the recipe machinery.
 uuid = { workspace = true, features = ["v5"] }
+# Version-signature verification (SIG-VERSION cases): reconstruct the agreed
+# signed canonical form (RFC 8785 JCS of the ORIGINAL_VERSION minus signature),
+# recompute the digest (digest mode), or verify the RFC 4880 detached signature
+# (pgp mode). Spec: RM common master06 §Digital Signature.
+serde_jcs = { workspace = true }
+sha2 = { workspace = true }
+pgp = { workspace = true }
 
 [dev-dependencies]
 assert_fs = { workspace = true }

@@ -1,0 +1,159 @@
+//! Version-signature verification for the SIG-VERSION cases — a portable,
+//! deterministic capability (the reference interpreter of a language-agnostic
+//! rule).
+//!
+//! Spec: RM common `master06-change_control_package.adoc` §Digital Signature —
+//! a committed `VERSION` is "serialised into canonical form" over "all
+//! attributes except signature", then hashed (digest mode) or signed (openPGP
+//! mode). openEHR leaves the exact JSON serialisation "an agreed XML, ODIN or
+//! other text format", so the framework PINS the agreed signed form:
+//!
+//!   **canonical form = RFC 8785 (JCS) of the `ORIGINAL_VERSION` ITS-JSON with
+//!   the `signature` member removed, UTF-8 bytes.**
+//!
+//! Grounds: RM common `version.adoc` (`canonical_form`: "all attributes except
+//! signature") + ITS-JSON (the canonical JSON representation) + RFC 8785 (byte
+//! determinism so any language reproduces the bytes identically). This is a
+//! framework-normative pin, not a spec silence.
+
+use base64::Engine as _;
+use serde_json::Value;
+use sha2::{Digest as _, Sha256};
+
+/// The IXIT-declared signing posture of the SUT (`signing` block). `present`/
+/// `equals` are mode-agnostic; `verifiable` dispatches on this.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SigningMode {
+    /// Plain digest (no PKI): the wire form is `<prefix><encoding(hash(bytes))>`,
+    /// self-described by the SUT's declared algorithm/encoding/prefix.
+    Digest {
+        algorithm: String,
+        encoding: String,
+        prefix: String,
+    },
+    /// openPGP (RFC 4880): a detached armored signature over the canonical
+    /// bytes, verified against the declared public key.
+    Pgp { public_key: String },
+}
+
+/// Reconstruct the agreed signed canonical form from a read-back
+/// `ORIGINAL_VERSION` envelope: drop `signature`, then RFC 8785 JCS.
+///
+/// # Errors
+/// [`String`] when the object cannot be JCS-serialised.
+pub fn canonical_form(envelope: &Value) -> Result<String, String> {
+    let mut value = envelope.clone();
+    if let Value::Object(map) = &mut value {
+        map.remove("signature");
+    }
+    serde_jcs::to_string(&value).map_err(|e| format!("canonical-form (jcs): {e}"))
+}
+
+/// Whether `signature` verifies over the reconstructed canonical form of
+/// `envelope` under `mode`. Digest mode recomputes and compares; pgp mode
+/// verifies the RFC 4880 detached signature against the declared key.
+///
+/// # Errors
+/// [`String`] on a malformed signature/key or an unknown digest algorithm or
+/// encoding (an interpreter/artefact defect, never a conformance verdict).
+pub fn verify(envelope: &Value, signature: &str, mode: &SigningMode) -> Result<bool, String> {
+    let canonical = canonical_form(envelope)?;
+    match mode {
+        SigningMode::Digest {
+            algorithm,
+            encoding,
+            prefix,
+        } => {
+            let body = signature.strip_prefix(prefix.as_str()).unwrap_or(signature);
+            let recomputed = recompute_digest(canonical.as_bytes(), algorithm, encoding)?;
+            Ok(recomputed == body)
+        }
+        SigningMode::Pgp { public_key } => verify_pgp(canonical.as_bytes(), signature, public_key),
+    }
+}
+
+/// `<encoding>(<algorithm>(bytes))` — the digest body a digest-mode signature
+/// carries (after its self-describing prefix).
+fn recompute_digest(bytes: &[u8], algorithm: &str, encoding: &str) -> Result<String, String> {
+    let raw: Vec<u8> = match algorithm {
+        "sha256" => Sha256::digest(bytes).to_vec(),
+        other => return Err(format!("unknown digest algorithm {other:?}")),
+    };
+    match encoding {
+        "base64" => Ok(base64::engine::general_purpose::STANDARD.encode(raw)),
+        "base64url" => Ok(base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(raw)),
+        other => Err(format!("unknown digest encoding {other:?}")),
+    }
+}
+
+/// Verify an RFC 4880 detached signature over `bytes` against an armored
+/// public key.
+///
+/// # Errors
+/// [`String`] on a malformed key/signature or a failed verification.
+fn verify_pgp(
+    bytes: &[u8],
+    signature_armored: &str,
+    public_key_armored: &str,
+) -> Result<bool, String> {
+    use pgp::composed::{Deserializable as _, DetachedSignature, SignedPublicKey};
+
+    let (key, _) = SignedPublicKey::from_string(public_key_armored)
+        .map_err(|e| format!("pgp public key: {e}"))?;
+    let (sig, _) = DetachedSignature::from_string(signature_armored)
+        .map_err(|e| format!("pgp signature: {e}"))?;
+    Ok(sig.verify(&key, bytes).is_ok())
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::panic)] // test assertions
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn digest_mode() -> SigningMode {
+        SigningMode::Digest {
+            algorithm: "sha256".to_owned(),
+            encoding: "base64".to_owned(),
+            prefix: "sha256:".to_owned(),
+        }
+    }
+
+    #[test]
+    fn canonical_form_drops_signature_and_is_jcs() {
+        // JCS sorts object keys lexicographically; `signature` is removed.
+        let env = json!({ "signature": "sha256:x", "b": 2, "a": 1 });
+        assert_eq!(canonical_form(&env).unwrap(), r#"{"a":1,"b":2}"#);
+    }
+
+    #[test]
+    fn digest_verifies_and_detects_tamper() {
+        // Sign-side: compute the digest of the canonical form the way a
+        // conformant server must, then confirm verify() accepts it.
+        let env = json!({ "_type": "ORIGINAL_VERSION", "data": { "b": 2, "a": 1 } });
+        let canonical = canonical_form(&env).unwrap();
+        let good = format!(
+            "sha256:{}",
+            base64::engine::general_purpose::STANDARD.encode(Sha256::digest(canonical.as_bytes()))
+        );
+        assert!(verify(&env, &good, &digest_mode()).unwrap());
+        // A tampered signature body must fail.
+        assert!(!verify(&env, "sha256:AAAA", &digest_mode()).unwrap());
+        // A tampered envelope (different data) must fail against the old digest.
+        let env2 = json!({ "_type": "ORIGINAL_VERSION", "data": { "b": 3, "a": 1 } });
+        assert!(!verify(&env2, &good, &digest_mode()).unwrap());
+    }
+
+    #[test]
+    fn present_is_signature_nonempty() {
+        // `present` is evaluated by the driver as a non-empty signature field;
+        // this pins the canonical-form contract the driver relies on.
+        let env = json!({ "signature": "sha256:abc", "data": {} });
+        assert!(
+            env.get("signature")
+                .and_then(Value::as_str)
+                .is_some_and(|s| !s.is_empty())
+        );
+        assert!(canonical_form(&env).unwrap().contains("data"));
+    }
+}
