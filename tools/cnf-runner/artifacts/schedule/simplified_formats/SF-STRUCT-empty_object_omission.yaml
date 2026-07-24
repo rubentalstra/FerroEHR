@@ -5,11 +5,10 @@
 # content decision table encodes the output disposition per element state.
 # Vector: the master04 Structured format example (which shows the ctx object and
 # omits every empty node).
-# TODO: convert to a functional STRUCTURED commit + read-back against
-#       cnf.opt.maximal asserting the master04 rules 4/6 (ctx grouping, empty-
-#       object omission) on the wt-structured read-back; the current content
-#       decision-table shape is a documentation table the interpreter commits
-#       against the removed body_temperature carrier and 422s.
+# TODO: convert this content decision table to a live-verified functional
+#       STRUCTURED commit + wt-structured read-back against cnf.opt.vitals
+#       asserting the master04 rules 4/6 (ctx grouping, empty-object omission);
+#       the fixture paths exist in the re-authored cnf.opt.vitals carrier.
 id: SF-STRUCT-empty_object_omission
 kind: content
 component: SIMPLIFIED_FORMATS
