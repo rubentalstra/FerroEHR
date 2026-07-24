@@ -15,6 +15,26 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Dual POC measured records on the v3.8.0 build, both directions
+  published**: ehrbase-rs earns class POC (normative hour at 2.03/s
+  offered, worst p99 108 ms, 0 errors / 7,320 requests); upstream
+  EHRbase 2.34.0 on the identical instrument, corpus, and resource floor
+  does not (ward-dashboard AQL p99 10.9 s vs the 1 s ceiling, 2.4%
+  errors). Comparison page and all measurement visuals derive from the
+  committed runner artifacts.
+
+### Fixed
+
+- **The measured-window driver accepts the spec-legal `204 No Content`
+  minimal-return form** on create-family writes (ITS-REST: with
+  `Prefer: return=minimal` a service SHOULD use 204 when no body is
+  returned) — previously every upstream journey commit was falsely
+  counted an error; and the upstream comparison stack's database now
+  gets the same `shm_size` floor as the ehrbase-rs stack (Docker's 64 MB
+  default starved its PostgreSQL during maintenance settling).
+
 ## [3.8.0] - 2026-07-24
 
 ### Added
