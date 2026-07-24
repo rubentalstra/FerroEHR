@@ -7,12 +7,12 @@ Runner: cnf-runner 3.8.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 370 |
+| passed | 371 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 67 |
-| total | 437 |
+| total | 438 |
 
 ## By chapter
 
@@ -36,7 +36,7 @@ Runner: cnf-runner 3.8.0 · verification pack: passed
 | I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
 | SEC | 5 | 0 | 0 | 0 | 0 |
 | SF | 50 | 0 | 0 | 0 | 1 |
-| SIG | 4 | 0 | 0 | 0 | 0 |
+| SIG | 5 | 0 | 0 | 0 | 0 |
 
 ## Performance measurements
 
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 370 of 437 selected cases driven.
+Coverage: 371 of 438 selected cases driven.
 
 Not-executed verdicts (each cited):
 
