@@ -38,7 +38,8 @@ workflow refuses a tag that has no matching section here.
 - **CNF catalogue audited case-by-case against the official spec text
   (#231)**: every case in every chapter re-verified across grounds,
   expectations, citations, fixtures, captures, and register linkage, with
-  per-chapter audit reports committed under `docs/conformance/catalogue-audit/`.
+  the findings applied directly to the catalogue and register (the durable
+  record is the register + closed issues + git history).
   Highlights: spec-overreaching rejection rows removed (AQL TERMINOLOGY
   operation strictness; the mixed-precision interval rows now report-only
   under the SPECPR-380 openness); the SEC-BASIC proposal citations corrected;
