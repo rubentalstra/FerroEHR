@@ -691,3 +691,27 @@ AMB-50:
     non-existent COMPOSITION"); the flow cells are the ground. Upstream
     editorial fix proposed.
   disposition: editorial
+AMB-51:
+  ambiguity: >-
+    Two master16 HISTORY cells contradict the RM Events_valid invariant: the
+    CONT-HIST-events_card_any-summary_ex_opt table (row 1) and the
+    CONT-HIST-events_card_opt-summary_ex_opt table (row 1) both verdict
+    "no events | absent | accepted" — a HISTORY with zero events and no
+    summary — while RM history.adoc defines Events_valid as
+    "(events /= Void and then not events.is_empty) or summary /= Void",
+    which such an instance violates regardless of any archetype events
+    cardinality (0 is within both cases' cardinality intervals; the
+    invariant, not the archetype, forces the rejection).
+  source: >-
+    CNF platform_test_schedule master16
+    (§CONT-HIST-events_card_any-summary_ex_opt row 1 "no events | absent |
+    accepted"; §CONT-HIST-events_card_opt-summary_ex_opt row 1, same cell)
+    vs RM docs/UML/classes/org.openehr.rm.data_structures.history.adoc
+    §Invariants (Events_valid)
+  handling: >-
+    The two rows follow the RM-derivable verdict — rejected, violation
+    rm_invariant(Events_valid) — with the history.adoc citation; the two
+    affected cases tag this entry. Upstream editorial fix proposed for the
+    two cells. Flips back to accepted only if a future RM release drops or
+    relaxes Events_valid.
+  disposition: editorial

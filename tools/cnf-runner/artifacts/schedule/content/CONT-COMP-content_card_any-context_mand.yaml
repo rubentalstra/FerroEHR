@@ -1,0 +1,45 @@
+# OFFICIAL master15 test case (rebuilt 2026-07-24, catalogue audit D1/D2).
+# Verdicts recomputed against AOM1.4 C_ATTRIBUTE.existence and the RM
+# COMPOSITION class (context: EVENT_CONTEXT 0..1; no category<->context
+# invariant). The official constraint "context occurrences 1..1" is realized
+# as C_ATTRIBUTE.existence 1..1 on COMPOSITION.context (equivalent for a
+# single-valued attribute: the attribute's target object must exist).
+# Realization (COMPOSITION x context-existence synth family): the committed
+# instance carries exactly ONE content entry and the content cardinality is
+# the unconstrained 0..* this case mandates ("any"); the committed context is
+# an EVENT_CONTEXT without other_context. These two rows realize the official
+# "one entry" data-set rows for the "no context" and "context without
+# other_context" blocks.
+# TODO: encode the official no-entries / three-entries rows and the "context
+#       with other_context" block once the content synth vocabulary carries
+#       per-row content-count and other_context axes in this family.
+id: CONT-COMP-content_card_any-context_mand
+kind: content
+component: CONTENT
+rm_class: COMPOSITION
+status: active
+capabilities: [ArchetypeValidation]
+profiles: [CORE]
+test_purpose: >-
+  COMPOSITION content cardinality 0..*, context occurrences 1..1: a committed
+  COMPOSITION with no context is rejected (context mandated by the archetype);
+  a COMPOSITION with a valid context is accepted.
+description: "COMPOSITION.context presence against an archetype-tightened 1..1 context, content unconstrained"
+spec_refs:
+  - "CNF platform_test_schedule master15 §Test Case CONT-COMP-content_card_any-context_mand"
+  - "AM AOM1.4 §C_ATTRIBUTE (existence) — whether the attribute field must be present"
+  - "RM ehr §COMPOSITION (context: EVENT_CONTEXT, existence 0..1; invariants Category_validity, Territory_valid, Language_valid, Content_valid, Is_archetype_root — none couples category to context)"
+applies: { rm: ">=1.0.2" }
+constraint_context:
+  # C_ATTRIBUTE.existence 1..1 on COMPOSITION.context (the official
+  # "context occurrences 1..1"); content left at 0..*.
+  template: cnf.tpl.ecc_composition_context_existence
+  path: "/context"
+  constraint_columns: ["context_existence"]
+decision_table:
+  # context_committed: absent = the official "no context" data set;
+  # present = "context without other_context" (all context structures valid).
+  columns: [context_existence, context_committed, expected, violates]
+  rows:
+    - ["mandatory", "absent", rejected, ["constraint(C_ATTRIBUTE.existence): context is mandated by the archetype (existence 1..1) but absent"]]
+    - ["mandatory", "present", accepted, []]

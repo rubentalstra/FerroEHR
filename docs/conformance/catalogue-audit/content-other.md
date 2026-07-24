@@ -103,3 +103,32 @@ master17.4 (line 147) states "our test data sets all include the `T` time marker
 - **Citation form "AM AOM1.4 §C_CODE_PHRASE"**: the AOM1.4 UML names this class `C_CODED_TEXT` (attributes `terminology`, `code_list`); `C_CODE_PHRASE` is the openEHR-profile/OPT name (ADL1.4 master05/master09). The cited constraint exists; consider citing the profile document for precision.
 - **Fixtures/collisions**: every `cnf.tpl.*` key used by slice-B cases exists in `corpus/MANIFEST.yaml` with a matching `template_id` and an existing `templates/*.opt` file; the runner stamps per-case+per-row synthesized template ids (`recipes::synth_template_id`), so shared static skeletons cannot collide across cases on a shared SUT. All declared `constraint_columns` (incl. the structural `cardinality`/`*_existence`/`slot_type` tokens and the DV `C_*`/`range.*`/`*_validity`/`attribute` columns) are consumed by `exec/opt_synth.rs`/`exec/content_synth.rs` — the sole unrealized column is `constraint_bindings` (D10).
 - **Manifest provenance strings** for `dv_text_c_string` ("constraint per CONT-DV_TEXT-validate_list") and the per-template "validated against the SUT" phrasing are sloppy but carry no expectation weight (expectations live in the cases; OPT constraints are synthesized per row).
+
+## Rebuild (2026-07-24)
+
+D1–D8 resolved by rebuilding the structural family on the official master15/master16 inventory (verbatim official ids, every table recomputed against AOM1.4 `c_multiple_attribute.adoc`/`c_attribute.adoc`/`C_OBJECT` and the RM class adocs read first-hand). Register entry **AMB-51** added (master16 `CONT-HIST-events_card_any-summary_ex_opt` row 1 + `CONT-HIST-events_card_opt-summary_ex_opt` row 1 — "no events | absent | accepted" vs RM `Events_valid`; rows encoded rejected per the RM-derivable verdict, disposition editorial); the two affected cases tag it. No other recomputed cell contradicted its official verdict.
+
+### Old id → disposition
+
+| old ad-hoc id | disposition |
+|---|---|
+| CONT-COMPOSITION-content_cardinality | deleted — count 0/1/3 rows covered by the 6 new `CONT-COMP-content_card_*-context_any` files; count-6 rows converted to the addition case `CONT-COMPOSITION-content_cardinality_count6` |
+| CONT-COMPOSITION-context_existence | converted — mandatory rows covered by `CONT-COMP-content_card_any-context_mand`, (optional, present) by `CONT-COMP-content_card_any-context_any`; the file now carries ONLY the (optional, absent) official "no context" cell as a flagged realization complement (the cardinality synth family always commits a context) |
+| CONT-OBSERVATION-state_protocol_existence | deleted — all 9 rows covered by the 4 new `CONT-OBS-state_ex_*-protocol_ex_*` files (32 official rows, full tables) |
+| CONT-EVENT-state_existence | deleted — all 5 rows covered by `CONT-EVENT-state_ex_{opt,mand}` (8 official rows, full tables) |
+| CONT-EVENT-type_narrowing | deleted — all 6 rows covered by `CONT-EVENT-type_{any,point_event,interval_event}` (full tables) |
+| CONT-HISTORY-events_cardinality | deleted — count 0/1/3 rows covered by the 6 new `CONT-HIST-events_card_*-summary_ex_opt` files; count-6 rows converted to the addition case `CONT-HISTORY-events_cardinality_count6` |
+| CONT-HISTORY-summary_existence | deleted — all 4 rows covered by `CONT-HIST-events_card_1plus-summary_ex_{opt,mand}` (both full official tables; the summary synth family's fixed 1..* events cardinality IS these cases' constraint) |
+| CONT-ITEM_STRUCTURE-type_narrowing | deleted — all 12 rows covered by the 5 new `CONT-ITEM_STR-type_*` files (20 official rows: every narrowed table rejects all three siblings) |
+
+### Official ids added
+
+master15 (7 of 12): `CONT-COMP-content_card_{any,1plus,3plus,opt,mand,3to5}-context_any` (3 rows each — the "context without other_context" block; the instance builder always commits a context without other_context), `CONT-COMP-content_card_any-context_mand` (2 rows — the "one entry" block; the context-existence family fixes content at one entry).
+
+master16 (21 of 26): `CONT-OBS-state_ex_{opt,mand}-protocol_ex_{opt,mand}` (4 files, full 8-row tables), `CONT-HIST-events_card_{any,1plus,3plus,opt,mand,3to5}-summary_ex_opt` (card_1plus full 6 rows via the summary family; the other 5 carry the 3 summary-absent rows each), `CONT-HIST-events_card_1plus-summary_ex_mand` (full 6 rows), `CONT-EVENT-state_ex_{opt,mand}`, `CONT-EVENT-type_{any,point_event,interval_event}`, `CONT-ITEM_STR-type_{any,item_tree,item_list,item_table,item_single}` (all full tables).
+
+### Not encoded (synth-vocabulary limits — no runner code invented; reported on the tracker issue)
+
+- master15 `CONT-COMP-content_card_{1plus,3plus,opt,mand,3to5}-context_mand` (5 cases, 45 rows): the per-row OPT synthesis has no combined content-cardinality × context-occurrences family.
+- master16 `CONT-HIST-events_card_{any,3plus,opt,mand,3to5}-summary_ex_mand` (5 cases, 30 rows): the summary-existence family fixes events cardinality at 1..*, which is not these cases' constraint.
+- The "no context"/"context with other_context" data-set rows of the 6 encoded `context_any` cases (36 rows; the one "one entry | no context" acceptance cell IS carried by the `CONT-COMPOSITION-context_existence` complement) and the remaining 7 rows of `card_any-context_mand`; the summary-present rows of the 5 partially-encoded `summary_ex_opt` cases (15 rows). Each encoded case file carries the matching `TODO:`.
