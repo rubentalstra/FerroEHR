@@ -187,6 +187,50 @@ EOF
 
 PREAMBLE
   cat "$OUT/comparison-conformance.md"
+
+  # Upstream measured-window error-class adjudication: the table derives from
+  # the committed upstream measured record; the verdicts are the recorded
+  # three-way adjudication (spec-required vs driver-sent vs upstream-observed,
+  # .claude/rules/cnf-triage.md), live-reproduced against a composed upstream
+  # on 2026-07-24 (tracker record: issue #266).
+  if jq -e '.measurements[0].operations[]? | select(.errors > 0)' "$JV/results.json" >/dev/null 2>&1; then
+    cat <<'ADJHEAD'
+
+## Upstream measured-window error classes (adjudicated)
+
+The upstream measured record is honest as measured — errors are observations.
+Every class below was reproduced against a freshly composed upstream and
+adjudicated three-way against the RELEASED ITS-REST docs text before any
+narrative: the driver payloads are spec-correct (the identical exchanges
+succeed 0-error against ehrbase-rs in the committed record), and each class
+attributes to the upstream implementation. No expectation was bent either way.
+
+| Operation | errors/requests (measured window) |
+|---|---|
+ADJHEAD
+    jq -r '.measurements[0].operations[] | select(.errors > 0) | "| `\(.operation)` | \(.errors)/\(.requests) |"' "$JV/results.json"
+    cat <<'ADJ'
+
+- **`composition_update` + `ehr_status_update` (wire 400, deterministic)** —
+  one shared root cause: upstream rejects the RFC-9110-quoted `If-Match`
+  entity-tag form with `400 "UUID string too large"`. The released docs text
+  itself mandates the quoted form (ITS-REST overview `Requests_and_responses.md`
+  §"If-Match and accidental overwrites": `If-Match: "8849182c-…::openEHRSys.example.com::2"`),
+  and upstream 400s even its own returned `ETag` echoed back verbatim; it
+  succeeds only on the non-standard unquoted form. Upstream non-conformance;
+  the record stands.
+- **`tags_put` + `tags_read` (wire 404, deterministic)** — the item-tag paths
+  (`/ehr/{ehr_id}/tags`, `/ehr/{ehr_id}/composition/{uid}/tags`, …) are members
+  of the STABLE EHR API in released ITS-REST 1.1.0 (RM grounding:
+  `RM/docs/common/master07-tags.adoc`); upstream serves no such routes
+  ("No resource found at path"). A released-STABLE surface absent upstream is
+  non-conformance, not a citable N/A; the record stands.
+- **`template_get` (partial)** — the endpoint is fully functional when
+  reproduced (200 for JSON and XML); the small error share sits in a load
+  window whose `ward_query` p99 was ~10.9 s. Load-window transient, no defect
+  on either side; honest error observation.
+ADJ
+  fi
 } > docs/conformance/COMPARISON.md
 
 # ── stress side (the CNF step-load instrument; the retired lab's overlays are gone) ──
