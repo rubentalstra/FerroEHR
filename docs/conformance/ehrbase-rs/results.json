@@ -462,14 +462,14 @@
     {
       "case": "CONT-DV_CODED_TEXT-validate_ext_term",
       "status": "passed",
-      "rows_driven": 5,
-      "rows_total": 5
+      "rows_driven": 8,
+      "rows_total": 8
     },
     {
       "case": "CONT-DV_CODED_TEXT-validate_local_codes",
       "status": "passed",
-      "rows_driven": 5,
-      "rows_total": 5
+      "rows_driven": 9,
+      "rows_total": 9
     },
     {
       "case": "CONT-DV_CODED_TEXT-validate_open",
@@ -2457,6 +2457,12 @@
       "rows_total": 1
     },
     {
+      "case": "SF-DEPRECATED-accept_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SF-DEPRECATED-media_supported",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -2471,6 +2477,12 @@
     },
     {
       "case": "SF-EXAMPLE-accept_forms",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-EXAMPLE-roundtrip",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
