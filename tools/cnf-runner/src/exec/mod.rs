@@ -23,6 +23,7 @@ pub mod player;
 pub mod recipes;
 pub mod resolve;
 pub mod resultset;
+pub mod signature;
 pub mod state;
 
 use crate::ids::CaseId;
