@@ -16,7 +16,6 @@
 pub(super) const ALLOWLIST: &[&str] = &[
     "EHRBASE_CONFIG",
     "EHRBASE_HEALTHCHECK_URL",
-    "EHRBASE_GIT_SHA",
     "EHRBASE_BUILD_EPOCH",
     "EHRBASE_RUSTC",
     "EHRBASE_IMAGE",

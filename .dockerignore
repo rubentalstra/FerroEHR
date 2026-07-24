@@ -1,12 +1,48 @@
-# Keep the docker build context small: both server images build with
-# `context: .` + `COPY . .` (docker/Dockerfile, docker/admin-ui/Dockerfile),
-# so without this file every image build ships the entire working tree —
-# observed 53 GB of context transfer once target/ grew (2026-07-24).
-# `.git` stays IN the context deliberately: app/ehrbase/build.rs derives the
-# /management/info git SHA from it (best-effort, no build arg wired).
+# The ONE authoritative build-context ignore for every image built from the
+# repo root (docker/Dockerfile + docker/admin-ui/Dockerfile, both targets).
+# A Dockerfile-adjacent *.dockerignore would SHADOW this file entirely
+# (docs.docker.com/build/concepts/context — "a Dockerfile-specific ignore-file
+# takes precedence"), which is exactly the split that let the admin-UI context
+# ship the whole ~200 MB .git while the server context dropped it; there is now
+# only this file (issue #282 F1/D4).
+#
+# .git is EXCLUDED (owner directive 2026-07-24): it added ~200 MB to the
+# context and invalidated the COPY layer on every commit/fetch
+# (docs.docker.com/build/cache — a changed file busts its layer). Build
+# provenance no longer reads .git at all: it flows through the OCI-standard
+# REVISION build-arg (CI's metadata-action sets it; the driving scripts export
+# it), which the server Dockerfile bridges into build.rs's compile env, and
+# degrades to a version-only identity with SHA=unknown when absent.
+
+# Build output — the whole point of this file (target/ once grew the context
+# to 53 GB, 2026-07-24).
 target/
+**/target/
+.git/
+
+# Vendored spec text + conformance corpus + generated site — not needed to
+# compile; large.
+docs/
 docs-dist/
+
+# Agent worktrees (full duplicate build trees) and Node artifacts.
 .claude/worktrees/
 **/node_modules/
+
+# CI, tooling, and editor dirs — never a compile input.
+.github/
+.githooks/
+.idea/
+.vscode/
+
+# Local env / secrets / coverage / logs.
+.env
+.env.*
+*.pem
+*.key
 *.log
+lcov.info
+*.profraw
+.sccache/
+coverage/
 .DS_Store

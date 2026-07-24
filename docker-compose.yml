@@ -1,12 +1,46 @@
-# Quickstart for ehrbase-rs: the preconfigured PostgreSQL image + the app image.
+# Quickstart for ehrbase-rs: the preconfigured PostgreSQL image + the app image
+# + the admin console.
 #
-#   docker compose up --build          # build + run both from the Dockerfiles
+#   docker compose up --build          # build + run the core services
 #   curl -u ehrbase:ehrbase -X POST -i \
 #     http://localhost:8080/ehrbase/rest/openehr/v1/ehr
 #
-# The same Dockerfiles CI publishes are used here (no drift). CI can point the
-# `*_IMAGE` vars at pre-built images and run `docker compose up --no-build`.
-name: ehrbase-rs
+# The same Dockerfiles CI publishes are used here (no drift — the compose build
+# targets `runtime-from-source`, CI targets `runtime-prebuilt`, both share ONE
+# runtime stage). CI can point the `*_IMAGE` vars at pre-built images and run
+# `docker compose up --no-build`.
+#
+# ── Lanes (docs.docker.com/compose/how-tos/project-name) ──────────────────────
+# NO hard-coded `name:` (issue #282 D3): the project name is chosen per lane so
+# the lanes coexist and never tear down each other's containers/networks/volumes.
+# All lanes share the 8080/3000/5432/8081 host port block (the CNF ixit pins
+# localhost:8080), so they run one at a time on defaults — conformance is the
+# "exclusive-server ground" by design; override the *_PORT env vars for true
+# parallel coexistence.
+#
+#   | Lane      | Invocation                                   | Project           |
+#   |-----------|----------------------------------------------|-------------------|
+#   | dev       | docker compose up                            | ehrbase-rs (dir)  |
+#   | CNF (rs)  | scripts/conformance.sh                       | ehrbase-rs-cnf    |
+#   | CNF(java) | CONF_SUT=ehrbase-java scripts/conformance.sh | cnf-ehrbase-java  |
+#   | ui-e2e    | scripts/ui-e2e.sh                            | ehrbase-rs-e2e    |
+#
+# ── Profiles (docs.docker.com/compose/how-tos/profiles) ───────────────────────
+# Core services (postgres, ehrbase, ehrbase-admin-ui) are profile-less and start
+# on every `up`. Optional dependencies are opt-in:
+#   --profile keycloak        OAuth2/OIDC provider (the app defaults to Basic)
+#   --profile s3              SeaweedFS S3 gateway for DV_MULTIMEDIA (off by default)
+# The observability stack stays a documented overlay
+# (docker-compose.observability.yml) because it must MUTATE the ehrbase service's
+# env (OTEL endpoint, internal management port) — a change profiles cannot express
+# (docs.docker.com/compose/how-tos/multiple-compose-files).
+#
+# ── Build provenance ──────────────────────────────────────────────────────────
+# Provenance uses the OCI-standard REVISION build-arg only (no bespoke arg): the
+# server Dockerfile bridges it into build.rs so /management/info matches the
+# org.opencontainers.image.revision LABEL. The driving scripts export
+# `REVISION=$(git rev-parse --short=12 HEAD)`. Absent, the identity degrades to
+# version-only with SHA=unknown by design (.git is not in the build context).
 
 services:
   ehrbase-postgres:
@@ -48,6 +82,14 @@ services:
       - ehrbase-pgdata:/var/lib/postgresql
     ports:
       - "${EHRBASE_DB_PORT:-5432}:5432"
+    # Resource ceilings (docs.docker.com/reference/compose-file/deploy;
+    # docs.docker.com/engine/containers/resource_constraints) — the DB gets
+    # headroom above the app for shared_buffers (1GB) + /dev/shm (1gb).
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_INIT_USER:-ehrbase} -d ${PG_INIT_DB:-ehrbase}"]
       interval: 5s
@@ -60,6 +102,13 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+      # The Dockerfile has two final targets sharing one runtime stage; compose
+      # builds the from-source one (CI builds runtime-prebuilt). Without this,
+      # buildx would build the last stage (runtime-prebuilt) and fail on the
+      # missing bin/ context.
+      target: runtime-from-source
+      args:
+        REVISION: ${REVISION:-}
     depends_on:
       ehrbase-postgres:
         condition: service_healthy
@@ -93,6 +142,12 @@ services:
       - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
       - "${EHRBASE_PORT:-8080}:8080"
+    # Mirrors deploy/helm/ehrbase-rs/values.yaml resources.limits exactly.
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
     healthcheck:
       test: ["CMD", "/usr/local/bin/ehrbase", "healthcheck"]
       interval: 10s
@@ -109,6 +164,9 @@ services:
     build:
       context: .
       dockerfile: docker/admin-ui/Dockerfile
+      target: runtime-from-source
+      args:
+        REVISION: ${REVISION:-}
     depends_on:
       ehrbase:
         condition: service_healthy
@@ -116,6 +174,11 @@ services:
       EHRBASE_ADMIN__CDR__BASE_URL: http://ehrbase:8080
     ports:
       - "${EHRBASE_ADMIN_UI_PORT:-3000}:3000"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
     healthcheck:
       test: ["CMD", "/usr/local/bin/ehrbase-admin-ui", "healthcheck"]
       interval: 10s
@@ -123,10 +186,10 @@ services:
       retries: 5
       start_period: 15s
 
-  # SeaweedFS S3 gateway for DV_MULTIMEDIA externalization (ADR-017) —
-  # DEV/TEST ONLY. Externalization is OFF by default, so the app does NOT depend
-  # on this. To try it, enable it and point the app at the gateway (or set the
-  # equivalent [multimedia] keys in ehrbase.dev.toml):
+  # SeaweedFS S3 gateway for DV_MULTIMEDIA externalization — DEV/TEST ONLY,
+  # behind the `s3` profile (off by default; externalization is OFF by default,
+  # so the app does NOT depend on this). To try it:
+  #   docker compose --profile s3 up
   #   EHRBASE__MULTIMEDIA__ENABLED=true
   #   EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333
   #   EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia
@@ -135,12 +198,20 @@ services:
   # (dev/test only). In production point EHRBASE__MULTIMEDIA__* at a real,
   # credentialed, HTTPS S3 endpoint (AWS S3 / MinIO / etc.) instead of this.
   seaweedfs:
-    image: chrislusf/seaweedfs:latest
+    profiles: [s3]
+    # Digest-pinned chrislusf/seaweedfs:4.40 (current stable), resolved
+    # 2026-07-24; no `:latest` (docs.docker.com/build/building/best-practices).
+    image: chrislusf/seaweedfs:4.40@sha256:52194fba4fecd0083c842158b3a902ba6e04a63619b2b0efcd08007bdb6a4602
     command: ["server", "-s3", "-dir=/data"]
     volumes:
       - ehrbase-seaweedfs:/data
     ports:
       - "${EHRBASE_S3_PORT:-8333}:8333"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O - http://localhost:8333/ || exit 1"]
       interval: 5s
@@ -149,12 +220,16 @@ services:
       start_period: 10s
 
   # Keycloak for OAuth2/OIDC bearer auth (the "ehrbase" realm is imported from
-  # docker/keycloak/import). The app defaults to Basic auth (see ehrbase.dev.toml),
-  # so it does NOT depend on Keycloak; add an [auth.oidc] block to ehrbase.dev.toml
-  # (or set EHRBASE__AUTH__OIDC__* env) pointing issuer at
-  # http://localhost:8081/auth/realms/ehrbase to use it.
+  # docker/keycloak/import), behind the `keycloak` profile. The app defaults to
+  # Basic auth (see ehrbase.dev.toml), so it does NOT depend on Keycloak; add an
+  # [auth.oidc] block to ehrbase.dev.toml (or set EHRBASE__AUTH__OIDC__* env)
+  # pointing issuer at http://localhost:8081/auth/realms/ehrbase to use it, and
+  # start it with `docker compose --profile keycloak up`.
   keycloak:
-    image: quay.io/keycloak/keycloak:26.6.4
+    profiles: [keycloak]
+    # Digest-pinned quay.io/keycloak/keycloak:26.7.0 (current release), resolved
+    # 2026-07-24 (docs.docker.com/build/building/best-practices).
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -176,6 +251,24 @@ services:
       - ./docker/keycloak/import:/opt/keycloak/data/import:ro
     ports:
       - "${KEYCLOAK_PORT:-8081}:8081"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+    # F10: the Keycloak image ships bash (no curl/wget), so probe the imported
+    # realm's OIDC discovery doc over bash's /dev/tcp — this makes
+    # `depends_on: {keycloak: {condition: service_healthy}}` a valid gate for
+    # the OIDC lanes (docs.docker.com/compose/how-tos/startup-order). Readiness
+    # here means the realm is imported AND the HTTP listener answers 200.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "exec 3<>/dev/tcp/127.0.0.1/8081; printf 'GET /auth/realms/ehrbase/.well-known/openid-configuration HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3; grep -q '^HTTP/1.1 200' <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
 volumes:
   ehrbase-pgdata:

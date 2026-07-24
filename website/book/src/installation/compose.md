@@ -35,7 +35,7 @@ database self-provisions and a restart is a no-op.
 docker compose up --build
 ```
 
-This starts two core services:
+This starts the core services (no profile needed):
 
 - **`ehrbase-postgres`** — the database image, with a named data volume and a
   `pg_isready` healthcheck.
@@ -43,6 +43,14 @@ This starts two core services:
   (`depends_on: condition: service_healthy`), then boots, migrates, and serves
   on port 8080. Its healthcheck is the binary's own `healthcheck` subcommand
   (there is no shell in the image).
+- **`ehrbase-admin-ui`** — the admin console, which waits for the server to be
+  healthy and serves on port 3000.
+
+> [!NOTE]
+> All base images are pinned by digest (`name:tag@sha256:…`), not by a mutable
+> tag, so a rebuild always resolves the exact same base. Each service also
+> declares a memory/CPU limit (`deploy.resources.limits`) mirroring the Helm
+> chart, so a local stack cannot exhaust the host.
 
 The server's development configuration is mounted read-only from
 `docker/ehrbase.dev.toml` to `/etc/ehrbase/ehrbase.toml`, where the server
@@ -77,21 +85,38 @@ auto-discovered at `/etc/ehrbase/ehrbase.toml`. Any other `EHRBASE_*` setting
 from the [configuration reference](configuration.md) can be added under the
 `ehrbase` service's `environment:` block.
 
-## Optional services
+## Optional services (Compose profiles)
 
 The Compose file also defines two services the quickstart does **not** depend
 on — the server defaults to Basic auth and inline multimedia, so neither is
-required:
+required. Each sits behind a [Compose
+profile](https://docs.docker.com/compose/how-tos/profiles/) and stays down
+until you enable it:
 
-- **`seaweedfs`** — an S3 gateway for large `DV_MULTIMEDIA` externalization
-  (development/test only). To try it, set `EHRBASE__MULTIMEDIA__ENABLED=true`,
+- **`seaweedfs`** (`--profile s3`) — an S3 gateway for large `DV_MULTIMEDIA`
+  externalization (development/test only). Start it with
+  `docker compose --profile s3 up`, then set `EHRBASE__MULTIMEDIA__ENABLED=true`,
   `EHRBASE__MULTIMEDIA__ENDPOINT=http://seaweedfs:8333`,
   `EHRBASE__MULTIMEDIA__BUCKET=openehr-multimedia`, and (dev only)
   `EHRBASE__MULTIMEDIA__ALLOW_HTTP=true`. In production, point the multimedia
   settings at a real, credentialed, HTTPS S3 endpoint instead.
-- **`keycloak`** — an OIDC provider with a preloaded `ehrbase` realm, on port
-  8081. To use bearer auth instead of Basic, point the auth OIDC settings at
-  `http://localhost:8081/auth/realms/ehrbase`.
+- **`keycloak`** (`--profile keycloak`) — an OIDC provider with a preloaded
+  `ehrbase` realm, on port 8081. Start it with
+  `docker compose --profile keycloak up`; to use bearer auth instead of Basic,
+  point the auth OIDC settings at `http://localhost:8081/auth/realms/ehrbase`.
+  Its healthcheck probes the realm's OIDC discovery document, so services can
+  gate their startup on it being fully ready.
+
+## Build provenance
+
+Images built by CI (and any `docker compose build` you drive) embed a build
+SHA reported at `/management/info` and on the `ehrbase_build_info` metric. The
+build does not read `.git`; instead the SHA is passed as the standard
+`REVISION` build argument — the same value that fills the
+`org.opencontainers.image.revision` image label (CI uses the commit SHA; the
+project's own scripts export `git rev-parse --short=12 HEAD`). When no value is
+supplied the identity falls back to the workspace version with an `unknown`
+SHA — the build never fails for lack of it.
 
 ## Observability overlay
 
