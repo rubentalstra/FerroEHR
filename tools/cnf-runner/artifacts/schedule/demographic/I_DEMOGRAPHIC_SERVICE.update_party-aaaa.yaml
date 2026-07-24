@@ -3,7 +3,7 @@
 # semantics. Resolvable SM operation is I_PARTY.update_party (the AMB-13 rule). Updating with the correct preceding_version_uid creates a
 # second VERSION with change_type MODIFY (RM common §change_control), the same
 # version-assertion family as update_composition. The ITS-REST binding realizes
-# preceding_version_uid as If-Match (AMB-3).
+# preceding_version_uid as If-Match (ITS-REST overview §If-Match).
 id: I_DEMOGRAPHIC_SERVICE.update_party-aaaa
 kind: functional
 component: DEMOGRAPHIC
@@ -38,7 +38,7 @@ flow:
     with:
       versioned_object_uid: "${versioned_object_uid}"
       party: "${ds:cnf.demographic.person.v2}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { v2_uid: updated.version_uid }
     assert:
@@ -47,4 +47,3 @@ postconditions:
   - { assert: version, count: 2 }
   - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - { assert: version, of: "${v2_uid}", change_type: MODIFY }
-ambiguities: [AMB-3]

@@ -9,7 +9,7 @@ request:
   path: /ehr/{ehr_id}/composition/{versioned_object_uid}
   body: composition
   headers:
-    If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
     Prefer: "return=representation"
 formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
 outcomes:

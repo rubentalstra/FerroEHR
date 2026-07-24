@@ -36,4 +36,3 @@ postconditions:
     text: "No artefacts are loaded on the system (the rejected upload left state unchanged)"
     verified_by: I_DEFINITION_ADL2.list_opts-empty
 verified_by: [I_DEFINITION_ADL2.list_opts-empty]
-ambiguities: [AMB-1]

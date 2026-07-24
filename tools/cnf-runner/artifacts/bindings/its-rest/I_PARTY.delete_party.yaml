@@ -3,7 +3,7 @@
 # realized as DELETE /demographic/person/{uid_based_id} with the OBJECT_VERSION_ID
 # form — the uid_based_id MUST be the last (most recent) VERSION.uid.value, the
 # preceding_version_uid to be deleted (person_delete.yaml) — the same
-# preceding_version_uid realization pattern as delete_composition (AMB-3). PERSON
+# preceding_version_uid realization pattern as delete_composition (ITS-REST overview §If-Match). PERSON
 # is the representative concrete PARTY subtype.
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
 # operation is I_PARTY.delete_party (the AMB-13 rule).

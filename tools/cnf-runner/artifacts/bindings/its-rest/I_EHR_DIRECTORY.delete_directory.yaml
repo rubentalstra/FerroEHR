@@ -2,7 +2,7 @@
 # The SM delete_directory(ehr_id) logically deletes the directory by creating a
 # new (deleted) version; realized as DELETE /ehr/{ehr_id}/directory. The
 # existing latest version_uid (SM preceding_version_uid) is the required
-# `If-Match` header (AMB-3); it is omitted for the empty-EHR / bad-EHR cases
+# `If-Match` header (ITS-REST overview §If-Match); it is omitted for the empty-EHR / bad-EHR cases
 # where no directory version exists to match.
 # Sources: specifications/operations/directory_delete.yaml (204/400/404/412),
 # responses/204_deleted.yaml, 404_unknown_ehr_id.yaml, 412_directory.yaml;
@@ -13,11 +13,11 @@ request:
   method: DELETE
   path: /ehr/{ehr_id}/directory
   headers:
-    If-Match: '"${preceding_version_uid?}"'   # REQUIRED when a directory exists (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    If-Match: '"${preceding_version_uid?}"'   # REQUIRED when a directory exists (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
 outcomes:
   deleted: { status: 204 }                # 204_deleted.yaml — logical delete performed
   precondition_failed:
     status: 412                           # 412_directory.yaml (stale If-Match)
     headers: { ETag: latest-version-uid }
   precondition_missing: { status: 400 }   # If-Match absent when required -> 400.yaml
-  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to delete (404_unknown_ehr_id.yaml); the absent-directory overload is AMB-26
+  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to delete (RM ehr §EHR.directory 0..1) — ITS-REST overview §HTTP status codes: 404 = target resource not found; If-Match precedence per RFC 9110 §13.2.2

@@ -1,7 +1,8 @@
 # Framework-added case: CNF master06 lists the INVALID EHR_STATUS data-set
 # class (missing/empty flags, invalid subject/other_details) but heads no
-# test case for it — this case carries that ground. AMB-2 binds
-# validation_failed to 400 on EHR create (no 422 enumerated).
+# test case for it — this case carries that ground. The create_ehr binding
+# maps validation_failed to 422 (ITS-REST overview §HTTP status codes — 422 =
+# semantic errors).
 id: I_EHR_SERVICE.create_ehr-invalid_status
 kind: functional
 component: EHR
@@ -34,4 +35,3 @@ postconditions:
   - assert: state
     text: "No EHR was created (the rejected status leaves the server empty)"
     verified_by: I_EHR_STATUS.get_ehr_status-get_by_ehr_id
-ambiguities: [AMB-2]

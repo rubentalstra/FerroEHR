@@ -2,7 +2,7 @@
 # entry is TBD; authored as the success/happy path from the SM operation
 # semantics (Post_party_deleted: not has_party). Resolvable SM operation is
 # I_PARTY.delete_party (the AMB-13 rule). delete_party
-# realizes the preceding_version_uid as the path uid_based_id (AMB-3); the
+# realizes the preceding_version_uid as the path uid_based_id (ITS-REST overview §If-Match); the
 # ITS-REST person_delete is a logical delete adding a deleted VERSION, so the
 # result is verified by the RM change_control version facts (the delete_composition
 # precedent), which are unambiguous regardless of the get-after-delete wire code.
@@ -45,4 +45,3 @@ postconditions:
   - { assert: version, count: 2 }
   - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - { assert: version, of: "${deleted_uid}", change_type: DELETED }
-ambiguities: [AMB-3]

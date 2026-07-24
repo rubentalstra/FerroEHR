@@ -37,7 +37,7 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       directory: "${ds:cnf.directory.v2}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { t1: updated.commit_time }
   - step: 3
@@ -56,4 +56,4 @@ flow:
     expect: ok                            # current time -> the second version
     assert:
       - { assert: equivalent, to: "${ds:cnf.directory.v2}", ignoring: server_assigned }
-ambiguities: [AMB-3, AMB-8]
+ambiguities: [AMB-8]

@@ -3,7 +3,7 @@
 # PARTY version; realized as PUT /demographic/person/{uid_based_id} with the
 # HIER_OBJECT_ID form. The existing latest version_uid (the preceding_version_uid)
 # is REQUIRED in the If-Match header (person_update.yaml) — the same
-# preceding_version_uid realization as update_composition (AMB-3). PERSON is the
+# preceding_version_uid realization as update_composition (ITS-REST overview §If-Match). PERSON is the
 # representative concrete PARTY subtype.
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
 # operation is I_PARTY.update_party (the AMB-13 rule).
@@ -17,7 +17,7 @@ request:
   path: /demographic/person/{versioned_object_uid}
   body: party
   headers:
-    If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    If-Match: '"${preceding_version_uid}"'   # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
     Prefer: "return=representation"
 formats: [canonical-json, canonical-xml]
 outcomes:

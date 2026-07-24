@@ -41,7 +41,7 @@ flow:
       ehr_id: "${ehr_id}"
       composition: "${ds:cnf.composition.minimal_event.v2}"
       versioned_object_uid: "${versioned_object_uid}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { t1: updated.commit_time }
   - step: 3
@@ -60,4 +60,3 @@ flow:
     expect: ok
     assert:
       - { assert: equivalent, to: "${ds:cnf.composition.minimal_event.v2}", ignoring: server_assigned }
-ambiguities: [AMB-3]

@@ -1,34 +1,6 @@
 # The ambiguity register: every entry a real, verified spec divergence or
 # silence with the normative handling a runner MUST apply. A runner that
 # resolves an ambiguity privately is non-conformant to the schedule.
-AMB-1:
-  ambiguity: >-
-    Error body shape diverges inside ITS-REST 1.1.0: prose says
-    {message, code, errors[DV_CODED_TEXT]} under Prefer: return=representation,
-    while the OAS Error.yaml says {message, validationErrors[string]} and is
-    wired only into 400. Most 4xx bodies are undefined.
-  source: "ITS-REST overview Requests_and_responses (Error handling) vs ITS-REST specifications/schemas Error.yaml"
-  handling: >-
-    error_loose: assert only that a `message` string is present (when Prefer
-    representation); never assert either full shape. SEC decision item: pick
-    one shape in ITS-REST 1.2.0.
-  disposition: loose_assert
-AMB-2:
-  ambiguity: >-
-    EHR create enumerates no 422 — EHR_STATUS validation failure has no
-    assigned code (ehr_create responses = 201/400/409).
-  source: "ITS-REST specifications/operations ehr_create.yaml"
-  handling: "Bind validation_failed -> 400 on EHR create; flag for upstream clarification."
-  disposition: fixed_handling
-AMB-3:
-  ambiguity: >-
-    The SM does not say where preceding_version_uid lives for update
-    (spec-ambiguity note in the schedule's COMPOSITION chapter preamble).
-  source: "CNF platform_test_schedule master07 (preamble); SM openehr_platform I_EHR_COMPOSITION"
-  handling: >-
-    Cases speak preceding_version_uid abstractly; the ITS-REST binding
-    realizes it as If-Match. SPECPR candidate.
-  disposition: fixed_handling
 AMB-4:
   ambiguity: >-
     ADL 1.4 templates have no formal versioning — duplicate template_id
@@ -47,6 +19,7 @@ AMB-5:
     Affected cases carry the flag; verdicts on them are reported but excluded
     from profile computation until resolved.
   disposition: report_only
+  upstream_ref: "UPR-04"
 AMB-6:
   ambiguity: >-
     The `fetch` default is implementation-defined; `fetch` cannot combine
@@ -79,12 +52,14 @@ AMB-8:
     (the option pair stands for future ITS bindings). Upstream
     clarification candidate.
   disposition: option_select
+  upstream_ref: "UPR-05"
   options: [directory-empty-structure, directory-empty-error]
 AMB-9:
   ambiguity: "EHR_STATUS `incomplete` lifecycle_state references SPECPR-368 (open upstream problem report)."
   source: "CNF platform_test_schedule master08 (SPECPR-368 reference)"
   handling: "Affected cases report but do not gate until SPECPR-368 resolves."
   disposition: report_only
+  upstream_ref: "SPECPR-368"
 AMB-10:
   ambiguity: >-
     Deleting a VERSIONED_OBJECT is under-specified: "needs further
@@ -92,13 +67,7 @@ AMB-10:
   source: "CNF platform_test_schedule master08"
   handling: "No normative cases; statement-declared behaviour only."
   disposition: statement_declared
-AMB-11:
-  ambiguity: >-
-    openehr::523|deleted| as a lifecycle_state code: the schedule reproduces
-    it, but the code assignment warrants terminology verification.
-  source: "CNF platform_test_schedule master07; TERM"
-  handling: "Cases assert the schedule's value; register flags it for TERM cross-check."
-  disposition: fixed_handling
+  upstream_ref: "UPR-06"
 AMB-12:
   ambiguity: >-
     master06 mislabels its provided-status table "1.a" against its own class
@@ -108,6 +77,7 @@ AMB-12:
     The create_ehr-main encoding carries both classes; the conversion records
     the caption defect; editorial fix upstream.
   disposition: editorial
+  upstream_ref: "UPR-08"
 AMB-13:
   ambiguity: >-
     CNF<->SM operation-name divergence for OPT retrieval: the schedule
@@ -120,6 +90,7 @@ AMB-13:
     renamed); sm_operation carries the resolvable I_DEFINITION_ADL14.list_opts.
     Upstream editorial-alignment candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-09"
 AMB-14:
   ambiguity: >-
     CNF<->SM operation-name divergence for subject-based EHR access: master06
@@ -131,6 +102,7 @@ AMB-14:
     Official case ids unchanged; sm_operation carries the resolvable subject
     variant (the AMB-13 rule). Upstream editorial-alignment candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-10"
 AMB-15:
   ambiguity: >-
     The SM EHR_STATUS field-setters (set/clear_ehr_queryable,
@@ -140,10 +112,11 @@ AMB-15:
   handling: >-
     Realized as read-modify-write: the cases encode the GET explicitly
     (capture the status version uid), then PUT the flipped flag with the
-    prior version as the precondition (AMB-3 realizes it as If-Match).
+    prior version as the precondition (realized as If-Match — ITS-REST overview §If-Match).
     SPECPR candidate: add field-setter endpoints or document the
     read-modify-write realization normatively.
   disposition: fixed_handling
+  upstream_ref: "UPR-11"
 AMB-16:
   ambiguity: >-
     CNF<->SM operation-name divergence for OPT validation: master04 anchors
@@ -157,6 +130,7 @@ AMB-16:
     NOTE ("validation might be part of the OPT upload functionality").
     Upstream editorial-alignment candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-12"
 AMB-17:
   ambiguity: >-
     The SM I_DEFINITION_ADL14.delete_opt operation is not surfaced by
@@ -171,6 +145,7 @@ AMB-17:
     activate when a later ITS release adds the endpoint.
     SPECPR/ITS-REST 1.2.0 candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-13"
 AMB-18:
   ambiguity: >-
     The SM I_DEFINITION_QUERY.valid_query operation has no dedicated ITS-REST
@@ -197,19 +172,7 @@ AMB-20:
     parameters; pagination asserts enter when an ITS surfaces them.
     Upstream candidate.
   disposition: fixed_handling
-AMB-21:
-  ambiguity: >-
-    Persistent-COMPOSITION uniqueness rejection has no assigned status code:
-    the composition_create OAS enumerates 201/400/404/422 and assigns nothing
-    to a second persistent COMPOSITION for the same template in one EHR (the
-    create-side analogue of AMB-2; the uniqueness rule itself is under SEC
-    debate, AMB-5).
-  source: "ITS-REST specifications/operations/composition_create.yaml vs CNF platform_test_schedule master07 (create_composition-same_opt_twice + persistent NOTE)"
-  handling: >-
-    Bind conflict -> 409 on create_composition (the uniqueness/state-conflict
-    family); flag for upstream code assignment. Verdict gating is already
-    suspended by AMB-5 (report_only).
-  disposition: fixed_handling
+  upstream_ref: "UPR-14"
 AMB-22:
   ambiguity: >-
     The SM I_EHR_CONTRIBUTION.list_contributions operation is not surfaced by
@@ -222,6 +185,7 @@ AMB-22:
     declaration, so on ITS-REST 1.1.0 they verdict as not-applicable with
     this citation. SPECPR/ITS-REST 1.2.0 candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-16"
 AMB-23:
   ambiguity: >-
     The SM I_EHR_CONTRIBUTION.has_contribution operation (Boolean) has no
@@ -243,31 +207,7 @@ AMB-24:
     unrealized declaration, so on ITS-REST 1.1.0 they verdict as
     not-applicable with this citation. SPECPR/ITS-REST 1.2.0 candidate.
   disposition: fixed_handling
-AMB-25:
-  ambiguity: >-
-    Creating a directory on an EHR that already has one carries no assigned
-    status code in the directory_create OAS (the DIRECTORY analogue of the
-    AMB-21 create-side gap).
-  source: "ITS-REST specifications/operations/directory_create.yaml vs CNF platform_test_schedule master09 (create_directory on an EHR with a directory)"
-  handling: "Bind already_exists -> 409 (the uniqueness/state-conflict family); flag for upstream code assignment."
-  disposition: fixed_handling
-AMB-26:
-  ambiguity: >-
-    Updating or deleting the directory of an EHR that has none overloads the
-    unknown-ehr 404 — the OAS assigns no distinct code to the
-    missing-directory precondition.
-  source: "ITS-REST specifications/operations/directory_update.yaml + directory_delete.yaml vs CNF platform_test_schedule master09 (update/delete on an EHR without a directory)"
-  handling: >-
-    Bind not_found -> 404 for the missing-directory precondition; kind
-    distinguished by the case's provisioned state. Supplied-stale-If-Match
-    precedence: the directory update/delete wire REQUIRES If-Match, so the
-    empty-EHR cases send a synthetic value; the overview's If-Match-false
-    MUST-412 does not fire because HTTP conditional-request precedence
-    (RFC 9110 §13.2.2) ignores received preconditions when the response to
-    the same request without them would be neither 2xx nor 412 — the
-    missing directory answers 404 unconditioned, so 404 stands (a 412
-    here is the non-conformant reading).
-  disposition: fixed_handling
+  upstream_ref: "UPR-17"
 AMB-27:
   ambiguity: >-
     master17.3 table editorial defects, enumerated: an accepted row whose
@@ -292,6 +232,7 @@ AMB-27:
     corrected to accepted with the AOM citation. Upstream editorial fixes
     proposed with the chapter conversion.
   disposition: editorial
+  upstream_ref: "UPR-20"
 AMB-28:
   ambiguity: >-
     master17.1/17.2/17.4 table editorial defects, enumerated: the DV_BOOLEAN
@@ -309,6 +250,7 @@ AMB-28:
     one case with the two tables merged (distinguished by the pattern
     column). Upstream editorial fixes proposed with the chapter conversion.
   disposition: editorial
+  upstream_ref: "UPR-21"
 AMB-29:
   ambiguity: >-
     Reduced-precision temporal comparability is under-specified (SPECPR-380,
@@ -321,6 +263,7 @@ AMB-29:
     mixed-precision comparisons are reported but excluded from profile
     computation until SPECPR-380 resolves.
   disposition: report_only
+  upstream_ref: "SPECPR-380"
 AMB-30:
   ambiguity: >-
     Rejection of AQL constructs outside the defined language is spec-silent:
@@ -337,6 +280,7 @@ AMB-30:
     no possible interpretation (e.g. missing FROM) remain gating. SPECQUERY
     candidate.
   disposition: report_only
+  upstream_ref: "UPR-22"
 AMB-31:
   ambiguity: >-
     The SM defines no template-example-generation or web-template
@@ -351,6 +295,7 @@ AMB-31:
     web-template representation rides the negotiated get_opt binding.
     SPECPR candidate: add the example/web-template operations to the SM.
   disposition: fixed_handling
+  upstream_ref: "UPR-23"
 AMB-32:
   ambiguity: >-
     PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire: the DEVELOPMENT-stage
@@ -364,6 +309,7 @@ AMB-32:
     1.1.0 they verdict as not-applicable with this citation. SPECPR/ITS-REST
     candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-24"
 AMB-33:
   ambiguity: >-
     The SM ADMIN component is almost entirely unrealized in ITS-REST 1.1.0:
@@ -381,6 +327,7 @@ AMB-33:
     The one realized operation (physical_ehr_delete -> admin_ehr_delete)
     carries a full binding.
   disposition: fixed_handling
+  upstream_ref: "UPR-25"
 AMB-34:
   ambiguity: >-
     The SM MESSAGE component has NO realization in ITS-REST 1.1.0: there is
@@ -399,6 +346,7 @@ AMB-34:
     ITS-REST 1.1.0 and activate when a later ITS release adds a MESSAGE API.
     Upstream editorial candidate for the master13 interface naming.
   disposition: fixed_handling
+  upstream_ref: "UPR-26"
 AMB-35:
   ambiguity: >-
     master10 files its cases under I_DEMOGRAPHIC_SERVICE headings while the
@@ -411,6 +359,7 @@ AMB-35:
     interface operation (the AMB-13 rule). Upstream editorial-alignment
     candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-27"
 AMB-36:
   ambiguity: >-
     master10 is a stub chapter: all 24 cases carry TBD bodies (aaaa/bbbb
@@ -422,6 +371,7 @@ AMB-36:
     a per-case disclosure guard; flows/assertions are replaced when the
     upstream chapter is fleshed. Upstream authoring candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-28"
 AMB-37:
   ambiguity: >-
     The SM I_DEFINITION_ADL2 interface is artefact-generic — a single
@@ -447,6 +397,7 @@ AMB-37:
     (2) give the runner binding schema a variant discriminator so example can
     carry its own 406 independently of the plain get_artefact binding.
   disposition: fixed_handling
+  upstream_ref: "UPR-29"
 AMB-38:
   ambiguity: >-
     master05 is a stub chapter: all seven stored-query case tables carry
@@ -460,6 +411,7 @@ AMB-38:
     AMB-36 precedent); flows/assertions are replaced when the upstream
     chapter is fleshed.
   disposition: fixed_handling
+  upstream_ref: "UPR-30"
 AMB-39:
   ambiguity: >-
     Support for the deprecated pre-1.1.0 "Simplified Data Template (SDT)"-era
@@ -478,33 +430,6 @@ AMB-39:
     (sf-deprecated-types-unsupported) expects unsupported_media (415).
   disposition: option_select
   options: [sf-deprecated-types-supported, sf-deprecated-types-unsupported]
-AMB-40:
-  ambiguity: >-
-    Several write operations enumerate only 400 (plus 404/409) for rejected
-    content — contribution_create, definition_template_adl1.4_upload,
-    definition_template_adl2 upload, ehr_create/ehr_create_with_id — yet
-    their payloads can fail SEMANTIC validation (RM/AOM/template
-    nonconformance), which the overview's general status table assigns to
-    422 ("well-formed but unable to be followed due to semantic errors") and
-    which 422.yaml describes verbatim ("could be converted to a resource,
-    but there are semantic validation errors, such as the underlying
-    template is not known or is not validating the supplied resource"). The
-    enumerated 400 responses scope syntax-level failures (parse, malformed
-    URL/header/content, mismatched modification type), so which code a
-    semantic rejection carries is unenumerated.
-  source: >-
-    ITS-REST operations/contribution_create.yaml (responses 201/400/404/409)
-    + responses/400_CONTRIBUTION.yaml + responses/422.yaml + overview
-    Requests_and_responses.md §HTTP status codes ("Additional status codes
-    MAY be used as long as they do not conflict with the predefined codes")
-  handling: >-
-    The affected bindings' validation_failed (and, on contribution,
-    template_not_found) expectations carry alt_status [422]: a server
-    answering the OAS-enumerated 400 or the overview-permitted,
-    non-conflicting 422 both classify as the semantic-rejection kind; no
-    other status is accepted. The kinds on the shared status are
-    distinguished by fixture (the AMB-2 pattern).
-  disposition: fixed_handling
 AMB-41:
   ambiguity: >-
     The SM I_DEFINITION_ADL14 interface defines archetype provisioning
@@ -522,6 +447,7 @@ AMB-41:
     the certificate, never a silent pass and never a CORE failure the ITS
     cannot avoid.
   disposition: fixed_handling
+  upstream_ref: "UPR-32"
 AMB-42:
   ambiguity: >-
     The AOM 1.4 object model defines millisecond_validity on
@@ -552,6 +478,7 @@ AMB-42:
     Archetype.xsd element and stays tested) run normally. The rows activate
     when an ITS-XML release serializes the AOM fields.
   disposition: fixed_handling
+  upstream_ref: "UPR-33"
 AMB-43:
   ambiguity: >-
     BASE 1.3.0 Interval<T> declares lower/upper as optional (0..1) and
@@ -574,6 +501,7 @@ AMB-43:
     citation. The rows flip to rejected if a future BASE release restores
     the bound-required invariant.
   disposition: fixed_handling
+  upstream_ref: "UPR-34"
 AMB-44:
   ambiguity: >-
     DV_TIME literal form diverges between the CNF schedule and BASE: the
@@ -596,6 +524,7 @@ AMB-44:
     this entry. Flips back if a future BASE release admits the T-prefixed
     time form.
   disposition: fixed_handling
+  upstream_ref: "UPR-35"
 AMB-45:
   ambiguity: >-
     The master17.4 DV_DATE_TIME range table's T-precision block tests values
@@ -612,6 +541,7 @@ AMB-45:
     row derivable. Upstream editorial fix proposed with the chapter
     conversion.
   disposition: editorial
+  upstream_ref: "UPR-36"
 AMB-46:
   ambiguity: >-
     Commit-time enforcement of a CONSTRAINT_REF (C_CODE_REFERENCE) against
@@ -637,6 +567,7 @@ AMB-46:
     instrument lane); the rm_schema rows are unaffected. Flips to rejected
     only if a future AM release defines commit-time binding enforcement.
   disposition: fixed_handling
+  upstream_ref: "UPR-37"
 AMB-47:
   ambiguity: >-
     The master09 has_path folder-structure data set diverges from the
@@ -657,6 +588,7 @@ AMB-47:
     true/false probe pattern exactly. Upstream editorial-alignment
     candidate (table cells vs the chapter's own reference runner).
   disposition: fixed_handling
+  upstream_ref: "UPR-38"
 AMB-48:
   ambiguity: >-
     The SM I_EHR_COMPOSITION.has_composition operation (Boolean) has no
@@ -679,6 +611,7 @@ AMB-49:
     sm_operation carries the resolvable get_composition_at_version (the
     AMB-13 rule). Upstream editorial-alignment candidate.
   disposition: fixed_handling
+  upstream_ref: "UPR-39"
 AMB-50:
   ambiguity: >-
     master07 editorial defect: the delete_composition-non_existent case's
@@ -691,6 +624,7 @@ AMB-50:
     non-existent COMPOSITION"); the flow cells are the ground. Upstream
     editorial fix proposed.
   disposition: editorial
+  upstream_ref: "UPR-40"
 AMB-51:
   ambiguity: >-
     Two master16 HISTORY cells contradict the RM Events_valid invariant: the
@@ -715,52 +649,4 @@ AMB-51:
     two cells. Flips back to accepted only if a future RM release drops or
     relaxes Events_valid.
   disposition: editorial
-AMB-52:
-  ambiguity: >-
-    The data-less delete member contradicts the ITS-REST wire schema: RM
-    common master06 §2.4 defines the deletion procedure as "deletion of
-    existing item: a new ORIGINAL_VERSION whose data attribute is set to
-    Void is added to an existing VERSIONED_OBJECT; the
-    ORIGINAL_VERSION.commit_audit.change_type is set to the code
-    523|deleted|" and ORIGINAL_VERSION declares data 0..1 (optional) — but
-    the OAS UpdateVersion schema declares "required: [lifecycle_state,
-    data, commit_audit]", so a delete member WITHOUT data violates the
-    schema a SUT may enforce; the master08 C.7 flow cell "The COMPOSITION
-    should reference the same template_id" also reads as a data-carrying
-    member.
-  source: >-
-    RM docs/common/master06-change_control_package.adoc §2.4 (deletion of
-    existing item) + RM
-    docs/UML/classes/org.openehr.rm.common.original_version.adoc (data
-    0..1) vs ITS-REST ehr-codegen.openapi.yaml UpdateVersion (required:
-    lifecycle_state, data, commit_audit); CNF platform_test_schedule
-    master08 §commit_contribution-delete
-  handling: >-
-    The catalogue adopts the RM reading: delete members are committed
-    data-less (data set to Void per master06 §2.4) with lifecycle_state
-    523|deleted|; a SUT enforcing the OAS required-list against a delete
-    member fails those cases and the failure is adjudicated against this
-    entry, not silently reclassified. The affected cases tag this entry.
-    SPECPR candidate: relax UpdateVersion.required for the deletion case
-    or define the delete-member wire shape.
-  disposition: fixed_handling
-AMB-53:
-  ambiguity: >-
-    The status code for the cannot-delete-the-EHR_STATUS rejection is
-    unassigned: master08's EHR_STATUS reject case 1 grounds the rejection
-    in "the EHR_STATUS can't be deleted once created", but contribution_create
-    enumerates only 201/400/404/409 and the generic 409 text covers solely
-    "a resource with same identifier(s) already exists" — no sentence
-    assigns the cannot-delete state conflict, and 400_CONTRIBUTION scopes
-    parse/mismatched-modification failures.
-  source: >-
-    CNF platform_test_schedule master08 §EHR_STATUS CONTRIBUTION Commit
-    Data Sets (Reject Cases, case 1) vs ITS-REST ehr-codegen.openapi.yaml
-    contribution_create (responses 201/400/404/409) + the generic 409
-    response ("a resource with same identifier(s) already exists")
-  handling: >-
-    Bind the EHR_STATUS-delete rejection to conflict -> 409 (the
-    uniqueness/state-conflict family — the AMB-21/AMB-25/AMB-26
-    precedent); flag for upstream code assignment. The affected case tags
-    this entry.
-  disposition: fixed_handling
+  upstream_ref: "UPR-41"

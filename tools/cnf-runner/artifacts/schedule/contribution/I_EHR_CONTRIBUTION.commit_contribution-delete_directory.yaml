@@ -3,9 +3,9 @@
 # deleting the EHR directory (root FOLDER) via change_type = deleted against
 # the current directory VERSION is accepted. The delete member carries NO data
 # (RM common master06 §2.4: "a new ORIGINAL_VERSION whose data attribute is set
-# to Void ... change_type ... 523|deleted|"; the RM-vs-OAS required-list
-# contradiction is AMB-52) and the deleted lifecycle code is flagged for TERM
-# cross-check (AMB-11). The logical-delete effect is under-specified in the SM
+# to Void ... change_type ... 523|deleted|") — the RM-correct data-less
+# deletion; the lifecycle code openehr::523|deleted| is spec-defined (RM common
+# master06 §Version lifecycle + TERM Version Lifecycle State list 523|deleted|). The logical-delete effect is under-specified in the SM
 # (AMB-10) — the state postcondition reports but does not gate.
 id: I_EHR_CONTRIBUTION.commit_contribution-delete_directory
 kind: functional
@@ -34,7 +34,7 @@ flow:
     with:
       ehr_id: "${ehr_id}"
       versions:
-        - change_type: deleted                            # data-less member (RM master06 §2.4 Void data — AMB-52)
+        - change_type: deleted                            # data-less member (RM common master06 §2.4 Void data)
           preceding_version_uid: "${directory_version_uid}"   # body property: OAS UpdateVersion.preceding_version_uid; bound by the requires.directory provisioning
     expect: created
     capture:
@@ -47,4 +47,4 @@ postconditions:
     text: >-
       The EHR's directory (root FOLDER) is logically deleted (effect
       under-specified in the SM — AMB-10; reported, not gating).
-ambiguities: [AMB-10, AMB-11, AMB-52]
+ambiguities: [AMB-10]

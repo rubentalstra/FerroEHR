@@ -24,15 +24,43 @@ pub struct AmbiguityEntry {
     /// (the ICS `options` declaration selects among them).
     #[serde(default)]
     pub options: Vec<OptionTag>,
+    /// The outbound upstream report this ambiguity was raised as (an openEHR
+    /// SPECPR/SPECQUERY/editorial key once filed, or a `UPR-<n>` draft id in
+    /// `docs/conformance/upstream-reports.md` until then). REQUIRED for
+    /// `report_only` and `editorial` entries — a divergence the framework
+    /// carries must be reported back so openEHR can fix the spec; optional but
+    /// expected for the other dispositions that flag an upstream candidate.
+    /// The register never hides a divergence: it documents it and points at the
+    /// report that pushes the fix upstream.
+    #[serde(default)]
+    pub upstream_ref: Option<String>,
 }
 
 impl AmbiguityEntry {
-    /// Disposition-shape invariant: `option_select` entries enumerate ≥ 2
-    /// option tags; other dispositions carry none.
+    /// Disposition-shape invariants:
+    /// - `option_select` entries enumerate ≥ 2 option tags; other dispositions
+    ///   carry none.
+    /// - `report_only` and `editorial` entries MUST carry an `upstream_ref` —
+    ///   a divergence the framework carries (a gating suspension, or a spec/
+    ///   schedule defect the catalogue corrects) is reported back to openEHR,
+    ///   never silently absorbed.
     ///
     /// # Errors
     /// Returns a message naming the violated invariant.
     pub fn check_invariants(&self) -> Result<(), String> {
+        if matches!(
+            self.disposition,
+            Disposition::ReportOnly | Disposition::Editorial
+        ) && self
+            .upstream_ref
+            .as_ref()
+            .is_none_or(|r| r.trim().is_empty())
+        {
+            return Err(format!(
+                "disposition {:?} must carry an upstream_ref (the outbound openEHR report — SPECPR/SPECQUERY/editorial key or a UPR-<n> draft id)",
+                self.disposition
+            ));
+        }
         match self.disposition {
             Disposition::OptionSelect if self.options.len() < 2 => {
                 Err("option_select entry must enumerate at least two option tags".to_owned())

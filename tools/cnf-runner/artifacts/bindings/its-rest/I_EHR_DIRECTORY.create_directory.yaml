@@ -24,9 +24,9 @@ outcomes:
     body: prefer_conditional
   validation_failed:
     status: 400                           # 400.yaml (invalid FOLDER)
-    body: error_loose                     # AMB-1
+    body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   not_found: { status: 404 }              # unknown ehr_id (404_unknown_ehr_id.yaml)
-  already_exists: { status: 409 }         # EHR already has a directory — directory_create.yaml assigns no code (201/400/404); bound to the uniqueness/state-conflict family per AMB-25
+  already_exists: { status: 409 }         # EHR already has a directory (RM ehr §EHR.directory 0..1) — ITS-REST overview §HTTP status codes: 409 = conflict
 captures:
   version_uid:
     from: header ETag                     # the new directory VERSION uid (201_directory.yaml ETag)

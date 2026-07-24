@@ -3,9 +3,8 @@
 # EHR under the current criteria). This uniqueness rule is under SEC debate
 # (AMB-5, report_only): the verdict is reported but excluded from profile
 # computation until resolved.
-# NOTE: the ITS-REST composition_create OAS assigns no status code to the
-# persistent-uniqueness conflict; the create_composition binding maps
-# conflict -> 409 per AMB-21 (the create-side unassigned-code family).
+# NOTE: the create_composition binding maps the persistent-uniqueness conflict
+# to 409 (ITS-REST overview §HTTP status codes: 409 = conflict).
 id: I_EHR_COMPOSITION.create_composition-same_opt_twice
 kind: functional
 component: EHR_COMPOSITION
@@ -42,4 +41,4 @@ flow:
 postconditions:
   - { assert: version, count: 1 }        # only the first create succeeded
   - { assert: version, of: "${version_uid}", change_type: CREATE }
-ambiguities: [AMB-5, AMB-21]
+ambiguities: [AMB-5]

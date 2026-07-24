@@ -35,9 +35,8 @@ flow:
       ehr_id: "${ehr_id}"
       composition: "${ds:cnf.composition.minimal_persistent.v1}"   # a VALID composition of the OTHER OPT (persistent_minimal.en.v1): the only rejectable defect is the template mismatch (master07: a valid COMPOSITION of the other existing OPT)
       versioned_object_uid: "${versioned_object_uid}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: template_mismatch             # "error related to the template_id mismatch"
 postconditions:
   - { assert: version, count: 1 }        # the update failed: one version remains
   - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
-ambiguities: [AMB-3]

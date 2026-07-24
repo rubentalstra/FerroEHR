@@ -16,12 +16,10 @@ outcomes:
     headers: { ETag: present, Location: present }
     body: prefer_conditional
   validation_failed:
-    status: 400                           # 400_CONTRIBUTION.yaml — aggregate rejection, nothing committed
-    alt_status: [422]                     # AMB-40: semantic validation of versions[i].data — overview §HTTP status codes permits the non-conflicting 422 (400_CONTRIBUTION scopes syntax-level failures only)
-    body: error_loose                     # AMB-1
+    status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors (well-formed but semantically invalid version content)
+    body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
   template_not_found:
-    status: 400                           # same 400_CONTRIBUTION family — kind distinguished by fixture (the AMB-2 pattern)
-    alt_status: [422]                     # AMB-40 (the same semantic family; 422.yaml names the unknown-template case verbatim)
+    status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors ("the underlying template is not known"); kind distinguished by fixture
     body: error_loose
   not_found: { status: 404 }
   conflict: { status: 409 }
