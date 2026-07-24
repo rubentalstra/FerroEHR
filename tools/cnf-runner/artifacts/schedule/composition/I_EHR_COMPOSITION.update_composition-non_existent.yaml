@@ -1,7 +1,9 @@
-# Update with a random preceding_version_uid: negative, the preceding version
-# does not exist (version_not_found). The REST binding realizes
-# preceding_version_uid as If-Match (AMB-3); an unknown preceding version is a
-# 404 (version_not_found), distinct from a stale one (precondition_failed).
+# Update with a random preceding_version_uid: negative. The REST binding
+# realizes preceding_version_uid as If-Match (AMB-3); the random uid also
+# names an unknown versioned-object PATH, so the unconditioned response is
+# the 404 (not_found) and RFC 9110 §13.2.2 precedence keeps it — 412
+# (precondition_failed/version_not_found) is reserved for a false If-Match
+# condition on an EXISTING resource.
 id: I_EHR_COMPOSITION.update_composition-non_existent
 kind: functional
 component: EHR_COMPOSITION

@@ -316,12 +316,6 @@ cnf.composition.minimal_persistent.invalid_structure:
     spec_ref: "RM ehr (EVALUATION.data is mandatory)"
   template_id: "persistent_minimal.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; mandatory ENTRY seam removed"
-cnf.composition.minimal_event.wrong_template:
-  source: fixtures/composition/minimal_event.wrong_template.json
-  format: canonical-json
-  rm_versions: [">=1.0.2"]
-  validity: { verdict: valid }
-  provenance: "authored 2026-07-21 (valid event COMPOSITION whose archetype_details.template_id is cnf.vitals, a different OPT than the versioned object's cnf.minimal_event — the update_composition-wrong_template mismatch source); structural placeholder pending corpus authoring"
 # Corpus additions for the master08 (EHR_CONTRIBUTION) schedule cases. Same
 # entry schema as MANIFEST.yaml; the validate harness concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
