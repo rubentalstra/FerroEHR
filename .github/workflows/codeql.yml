@@ -1,0 +1,47 @@
+# CodeQL code scanning (security analysis).
+#
+# Enables GitHub code scanning so security alerts exist — the prerequisite for
+# the issue "Security alerts" relationship (link an alert to a tracked issue;
+# see .claude/rules/issue-relationships.md §4, which is UI-only by design).
+#
+# Rust is a generally-available CodeQL language (GA 2025-10-14) and scans with
+# build-mode "none" — no cargo build required, so this stays cheap and never
+# contends for the shared ./target tree.
+#
+# Docs: https://docs.github.com/en/code-security/code-scanning
+name: CodeQL
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+  schedule:
+    - cron: "23 5 * * 1" # Mondays 05:23 UTC (off-the-hour to dodge load spikes)
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (rust)
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write # upload the SARIF results / alerts
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: rust
+          build-mode: none
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:rust"

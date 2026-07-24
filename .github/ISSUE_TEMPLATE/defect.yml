@@ -43,3 +43,9 @@ body:
       label: Further information
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: >
+        **Relationships** are GitHub metadata, not body text. If this defect is
+        **blocked by** or **blocks** another issue, a maintainer links it with
+        `scripts/gh-rel.sh` (policy: `.claude/rules/issue-relationships.md`).
