@@ -1,7 +1,7 @@
 # Official master05 case (id verbatim, including the schedule's -xxx suffix).
 # The master05 test-case cells are TBD placeholders (Description/Pre/Post/Flow
 # all "xx"), so this case is status: draft — validated in shape but never
-# verdict-bearing — until the upstream schedule authors the specifics (AMB-38). The flow is derived from the SM has_query (Boolean:
+# verdict-bearing — until the upstream schedule authors the specifics. The flow is derived from the SM has_query (Boolean:
 # "True if the query identified by a_query_name is registered") and realized
 # via the stored-query definitions REST API: a query is registered (store),
 # then its presence is checked.
@@ -17,7 +17,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.has_query"
   - "CNF platform_test_schedule master05 §has_query-xxx"
 guards:
-  - "master05 is TBD upstream: flows derived from the SM operation semantics and the stored-query Definitions API — CNF platform_test_schedule master05 (all cells xx/TBD); AMB-38"
+  - "flows derived from SM I_DEFINITION_QUERY operation semantics + released ITS-REST definition docs; CNF platform_test_schedule master05 is a stalled schedule stub (all cells xx/TBD) — a coverage guide only, not the authority"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:

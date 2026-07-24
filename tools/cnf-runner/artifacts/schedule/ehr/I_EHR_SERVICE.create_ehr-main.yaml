@@ -25,7 +25,8 @@ parameters:
       - [absent, "-", "-", "-", "-", absent]
       - [absent, "-", "-", "-", "-", provided]
       # class 1.b — the official 16-row provided-status matrix, verbatim
-      # (the schedule's own caption mislabels this table "1.a" — AMB-12)
+      # (the schedule's own caption mislabels this table "1.a" — a CNF-internal
+      # caption typo in the stalled guide)
       - [provided, true, true, provided, absent, absent]
       - [provided, true, false, provided, absent, absent]
       - [provided, false, true, provided, absent, absent]
@@ -56,5 +57,4 @@ postconditions:
       server defaults applied)
     verified_by: I_EHR_STATUS.get_ehr_status-get_by_ehr_id
 verified_by: [I_EHR_STATUS.get_ehr_status-get_by_ehr_id]
-ambiguities: [AMB-12]
 data_sets: [cnf.ehr_status.provided]

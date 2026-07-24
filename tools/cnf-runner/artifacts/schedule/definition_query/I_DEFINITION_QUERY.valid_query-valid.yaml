@@ -1,5 +1,5 @@
 # Official master05 case. The master05 cells are TBD placeholders ("xx"), so
-# this case is status: draft (AMB-38). ITS-REST 1.1.0 has
+# this case is status: draft. ITS-REST 1.1.0 has
 # no dedicated query-validation endpoint; the SM valid_query is realized via
 # store_query (SM Pre_valid_query: is_valid_query(a_query_text)) — a valid AQL
 # text is accepted and stored.
@@ -16,7 +16,7 @@ spec_refs:
   - "SM openehr_platform §I_DEFINITION_QUERY.valid_query"
   - "CNF platform_test_schedule master05 §valid_query-valid"
 guards:
-  - "master05 is TBD upstream: flows derived from the SM operation semantics and the stored-query Definitions API — CNF platform_test_schedule master05 (all cells xx/TBD); AMB-38"
+  - "flows derived from SM I_DEFINITION_QUERY operation semantics + released ITS-REST definition docs; CNF platform_test_schedule master05 is a stalled schedule stub (all cells xx/TBD) — a coverage guide only, not the authority"
 applies: { rm: ">=1.0.2" }
 requires: { server: empty }
 flow:
