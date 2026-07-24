@@ -229,7 +229,7 @@ AMB-23:
   source: "SM docs/UML/classes/i_ehr_contribution.adoc (has_contribution) vs ITS-REST specifications/operations contribution_get.yaml"
   handling: >-
     Realized via the single-CONTRIBUTION GET: 200 is the positive return,
-    404 the negative (the has_composition precedent).
+    404 the negative (the has_composition realization (AMB-48)).
   disposition: fixed_handling
 AMB-24:
   ambiguity: >-
@@ -657,3 +657,37 @@ AMB-47:
     true/false probe pattern exactly. Upstream editorial-alignment
     candidate (table cells vs the chapter's own reference runner).
   disposition: fixed_handling
+AMB-48:
+  ambiguity: >-
+    The SM I_EHR_COMPOSITION.has_composition operation (Boolean) has no
+    dedicated ITS-REST existence endpoint (the AMB-19/AMB-23 shape).
+  source: "SM docs/UML/classes/i_ehr_composition.adoc (has_composition) vs ITS-REST specifications/operations (no composition-existence probe)"
+  handling: >-
+    Realized as a GET of the version at the known uid: 200 (ok) is the
+    positive return, 404 (not_found) the negative — the boolean is carried
+    by the outcome kind, never a response body.
+  disposition: fixed_handling
+AMB-49:
+  ambiguity: >-
+    CNF<->SM operation-name divergence for composition version retrieval:
+    master07 anchors I_EHR_COMPOSITION.get_composition_version(), but the
+    vendored SM defines get_composition_at_version (no
+    get_composition_version).
+  source: "CNF platform_test_schedule master07 (get_composition_version heading) vs SM docs/UML/classes/i_ehr_composition.adoc"
+  handling: >-
+    Official case ids keep the schedule's get_composition_version family;
+    sm_operation carries the resolvable get_composition_at_version (the
+    AMB-13 rule). Upstream editorial-alignment candidate.
+  disposition: fixed_handling
+AMB-50:
+  ambiguity: >-
+    master07 editorial defect: the delete_composition-non_existent case's
+    Description cell reads "Delete persistent COMPOSITION" (a copy-paste
+    from the persistent suite) while its own preconditions/flow test
+    deletion of a non-existent COMPOSITION.
+  source: "CNF platform_test_schedule master07 (delete_composition-non_existent Description cell vs its flow)"
+  handling: >-
+    The catalogue case carries the flow-derived description ("Delete
+    non-existent COMPOSITION"); the flow cells are the ground. Upstream
+    editorial fix proposed.
+  disposition: editorial

@@ -31,3 +31,4 @@ flow:
     call: has_composition
     with: { ehr_id: "${ehr_id}", version_uid: "${version_uid}" }
     expect: ok                            # positive: "The result must be TRUE"
+ambiguities: [AMB-48]

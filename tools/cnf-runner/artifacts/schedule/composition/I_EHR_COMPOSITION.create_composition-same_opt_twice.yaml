@@ -4,9 +4,8 @@
 # (AMB-5, report_only): the verdict is reported but excluded from profile
 # computation until resolved.
 # NOTE: the ITS-REST composition_create OAS assigns no status code to the
-# persistent-uniqueness conflict, and the frozen create_composition binding maps
-# no `conflict` outcome — see schedule/composition/REQUIREMENTS.md (binding
-# extension + ambiguity candidate).
+# persistent-uniqueness conflict; the create_composition binding maps
+# conflict -> 409 per AMB-21 (the create-side unassigned-code family).
 id: I_EHR_COMPOSITION.create_composition-same_opt_twice
 kind: functional
 component: EHR_COMPOSITION
@@ -43,4 +42,4 @@ flow:
 postconditions:
   - { assert: version, count: 1 }        # only the first create succeeded
   - { assert: version, of: "${version_uid}", change_type: CREATE }
-ambiguities: [AMB-5]
+ambiguities: [AMB-5, AMB-21]

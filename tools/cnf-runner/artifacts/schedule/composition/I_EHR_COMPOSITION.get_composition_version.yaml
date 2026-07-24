@@ -3,7 +3,7 @@
 # so its version id is known.
 # Schedule heading "get_composition_version" maps to the resolvable SM
 # operation get_composition_at_version (the SM I_EHR_COMPOSITION interface has no
-# get_composition_version — AMB-13 precedent; see REQUIREMENTS.md).
+# get_composition_version — AMB-49 (AMB-13 precedent)).
 id: I_EHR_COMPOSITION.get_composition_version
 kind: functional
 component: EHR_COMPOSITION
@@ -37,3 +37,4 @@ flow:
     assert:
       - { assert: instance_of, rm_type: COMPOSITION }
       - { assert: equivalent, to: committed, ignoring: server_assigned }
+ambiguities: [AMB-49]

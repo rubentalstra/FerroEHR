@@ -18,9 +18,9 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 requires:
   server: any
-  templates: [cnf.opt.minimal_event, cnf.opt.vitals]   # both OPTs exist on the server
+  templates: [cnf.opt.minimal_event, cnf.opt.minimal_persistent]   # both OPTs exist on the server
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_event.wrong_template]
+data_sets: [cnf.composition.minimal_event.v1, cnf.composition.minimal_persistent.v1]
 flow:
   - step: 1
     call: create_composition
@@ -33,7 +33,7 @@ flow:
     call: update_composition
     with:
       ehr_id: "${ehr_id}"
-      composition: "${ds:cnf.composition.minimal_event.wrong_template}"   # references cnf.vitals, not cnf.minimal_event
+      composition: "${ds:cnf.composition.minimal_persistent.v1}"   # a VALID composition of the OTHER OPT (persistent_minimal.en.v1): the only rejectable defect is the template mismatch (master07: a valid COMPOSITION of the other existing OPT)
       versioned_object_uid: "${versioned_object_uid}"
       preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
     expect: template_mismatch             # "error related to the template_id mismatch"
