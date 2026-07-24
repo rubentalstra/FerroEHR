@@ -11,11 +11,25 @@
 # Docs: https://docs.github.com/en/code-security/code-scanning
 name: CodeQL
 
+# Push/PR runs are path-filtered to Rust-relevant changes — a docs/CI/artifact
+# -only change has nothing for the rust analyzer to scan. The weekly scheduled
+# run has no filter, so full-tree coverage is never lost. (CodeQL is not a
+# required status check, so a skipped run cannot block a merge.)
 on:
   push:
     branches: [develop]
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/codeql.yml"
   pull_request:
     branches: [develop]
+    paths:
+      - "**/*.rs"
+      - "**/Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/codeql.yml"
   schedule:
     - cron: "23 5 * * 1" # Mondays 05:23 UTC (off-the-hour to dodge load spikes)
 
