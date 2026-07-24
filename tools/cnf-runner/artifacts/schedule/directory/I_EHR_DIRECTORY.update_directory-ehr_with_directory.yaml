@@ -44,3 +44,4 @@ flow:
 postconditions:
   - assert: state
     text: "The EHR ehr_id has an updated directory structure (verified by step 3)"
+ambiguities: [AMB-3]

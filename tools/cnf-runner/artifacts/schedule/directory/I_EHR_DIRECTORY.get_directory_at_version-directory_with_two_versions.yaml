@@ -51,3 +51,4 @@ flow:
     assert:
       - { assert: instance_of, rm_type: FOLDER }
       - { assert: equivalent, to: "${ds:cnf.directory.v2}", ignoring: server_assigned }
+ambiguities: [AMB-3]

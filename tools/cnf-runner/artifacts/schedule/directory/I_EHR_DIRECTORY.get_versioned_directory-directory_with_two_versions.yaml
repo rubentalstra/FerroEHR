@@ -42,3 +42,4 @@ flow:
     expect: ok
     assert:
       - { assert: instance_of, rm_type: VERSIONED_FOLDER }
+ambiguities: [AMB-3]

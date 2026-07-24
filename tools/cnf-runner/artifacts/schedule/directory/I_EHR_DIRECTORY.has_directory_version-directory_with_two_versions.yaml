@@ -47,3 +47,4 @@ flow:
     with: { ehr_id: "${ehr_id}", version_uid: "${v2_uid}" }
     expect: ok                            # second version exists -> true
     assert: [ { assert: returns, equals: true } ]
+ambiguities: [AMB-3]

@@ -69,7 +69,15 @@ AMB-8:
     an EHR without one "should return an empty structure ... could be an
     error status instead".
   source: "CNF platform_test_schedule master09 (F.1/G.1/L.1)"
-  handling: "Sibling cases with option tags; the ICS declares the behaviour. Upstream clarification candidate."
+  handling: >-
+    Sibling cases with option tags; the ICS declares the behaviour.
+    On ITS-REST 1.1.0 only the ERROR option is realizable: the OAS defines
+    no empty-structure representation for a never-created directory and its
+    404 response explicitly covers "a directory does not exist at the
+    specified version_at_time" — so the its-rest binding fixes the error
+    branch and no directory-empty-structure sibling exists for this ITS
+    (the option pair stands for future ITS bindings). Upstream
+    clarification candidate.
   disposition: option_select
   options: [directory-empty-structure, directory-empty-error]
 AMB-9:
@@ -249,7 +257,16 @@ AMB-26:
     unknown-ehr 404 — the OAS assigns no distinct code to the
     missing-directory precondition.
   source: "ITS-REST specifications/operations/directory_update.yaml + directory_delete.yaml vs CNF platform_test_schedule master09 (update/delete on an EHR without a directory)"
-  handling: "Bind not_found -> 404 for the missing-directory precondition; kind distinguished by the case's provisioned state."
+  handling: >-
+    Bind not_found -> 404 for the missing-directory precondition; kind
+    distinguished by the case's provisioned state. Supplied-stale-If-Match
+    precedence: the directory update/delete wire REQUIRES If-Match, so the
+    empty-EHR cases send a synthetic value; the overview's If-Match-false
+    MUST-412 does not fire because HTTP conditional-request precedence
+    (RFC 9110 §13.2.2) ignores received preconditions when the response to
+    the same request without them would be neither 2xx nor 412 — the
+    missing directory answers 404 unconditioned, so 404 stands (a 412
+    here is the non-conformant reading).
   disposition: fixed_handling
 AMB-27:
   ambiguity: >-
@@ -619,4 +636,24 @@ AMB-46:
     declarative until the terminology-binding synthesis lands (the #255
     instrument lane); the rm_schema rows are unaffected. Flips to rejected
     only if a future AM release defines commit-time binding enforcement.
+  disposition: fixed_handling
+AMB-47:
+  ambiguity: >-
+    The master09 has_path folder-structure data set diverges from the
+    OFFICIAL Robot realization of the same chapter: the table cells print
+    hyphenated names (episode-x, summary-composition-x) and the D.2 NOTE
+    calls '/' "the default name for the root FOLDER", while the official
+    Robot runner and its data set use underscore names (episode_x,
+    summary_compo_x), a root FOLDER named "root", and an extra
+    special-characters folder.
+  source: >-
+    CNF platform_test_schedule master09 (§has_path-folder_structure data
+    set, §has_path-ehr_root_directory NOTE) vs
+    CNF/tests/platform/robot/_resources/test_data_sets/directory/
+    subfolders_in_directory.json + has_path-folder_structure.robot
+  handling: >-
+    The catalogue fixture and probes follow the official Robot data set
+    (provenance-stamped in corpus/MANIFEST.yaml), preserving the official
+    true/false probe pattern exactly. Upstream editorial-alignment
+    candidate (table cells vs the chapter's own reference runner).
   disposition: fixed_handling

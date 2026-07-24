@@ -5,7 +5,7 @@
 # sub-FOLDER: 200 = the path exists (TRUE), 404 = the path does not exist, or
 # the EHR does not exist (FALSE / error). The `a_path` flow argument maps to the
 # `path` query parameter (parameters/query/path.yaml). The boolean is carried by
-# the ok/not_found outcome kind (schedule/directory/REQUIREMENTS.md).
+# the ok/not_found outcome kind (no dedicated existence endpoint in ITS-REST 1.1.0).
 # Sources: specifications/operations/directory_get_at_time.yaml (200/404),
 # parameters/query/path.yaml, responses/200_FOLDER_retrieved.yaml,
 # 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml.
