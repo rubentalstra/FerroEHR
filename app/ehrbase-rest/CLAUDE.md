@@ -35,4 +35,7 @@ terminology / management / tenant / event-subscription surfaces). Entry point:
   `.claude/rules/serialization.md`.
 - Gates: `cargo clippy -p ehrbase-rest --all-targets` +
   `cargo nextest run -p ehrbase-rest` green; wire changes re-verified by a CNF
-  pipeline run (`bash scripts/conformance.sh`) with zero drift.
+  pipeline run (`bash scripts/conformance.sh`) with zero drift. A red row is
+  attributed spec-first (`.claude/rules/cnf-triage.md`): the wire spec decides,
+  this server is never assumed correct, and the catalogue/runner are never bent
+  to match it.

@@ -37,11 +37,17 @@ Systematic conformance audit: our code vs the normative text. The output is a
 4. **Report**: findings ranked by severity (wire-visible divergence > missing
    behaviour > internal), each with the spec citation
    (`docs/specs/openehr/<file>` + heading, or CNF test-case id) and the code
-   location. State coverage honestly — list the spec chapters *not* audited.
-5. **Record**: for real divergences, offer to file them as tracker issues
-   (`gh issue create`, typed + `spec:*`-labelled per the CLAUDE.md issue
-   workflow; plus the owning plan file, if one exists) — never silently
-   fix-and-forget; for spec-silent findings, suggest the `// NOTE:` text.
+   location. State coverage honestly at TWO levels: the spec chapters *not*
+   audited, AND — within audited chapters — the specific behaviours/edge cases
+   (status-code branches, conditional headers, negotiation variants, error
+   families) that no CNF case yet exercises. An untested spec behaviour is a
+   COVERAGE GAP finding in its own right (`.claude/rules/testing.md` §CNF
+   coverage), not merely an omission from the report.
+5. **Record**: for real divergences AND coverage gaps, offer to file them as
+   tracker issues (`gh issue create`, typed + `spec:*`/`spec:CNF`-labelled per
+   the CLAUDE.md issue workflow; link them into the relevant program with
+   `scripts/gh-rel.sh`) — never silently fix-and-forget; for spec-silent
+   findings, suggest the `// NOTE:` text.
 
 ## Rules
 

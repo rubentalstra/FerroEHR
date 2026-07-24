@@ -78,9 +78,36 @@ the code it tests. If an internals test grows large, that is a design signal
 to test through the public seam, not to split the tests into a src file.
 Do not invent a third location.
 
+## CNF coverage (breadth is a mandate, not just pass rate)
+
+A green pipeline over a thin catalogue proves almost nothing — the real
+acceptance bar is COVERAGE. The CNF catalogue (`tools/cnf-runner/artifacts`)
+must exercise EVERYTHING the spec defines on the wire: every SM operation,
+every status-code branch (200/201/204/400/404/409/412/422/…), every
+required/conditional header (`ETag`, `Location`, `Last-Modified`, `Prefer`,
+`If-Match`), content-negotiation variants (JSON + XML, `Accept` q-values),
+precondition and error families, and every RM/AQL behaviour — each as its own
+small, ISOLATED case so a red row localizes to one behaviour. Every small
+use-case counts; the goal is total behavioural coverage.
+
+- **A spec-defined wire behaviour with no case is a COVERAGE GAP, never an
+  acceptable omission.** Close it (a new spec-cited case) — or, only where the
+  spec genuinely puts a behaviour off-wire, record the honest boundary
+  (statement-declared capability / an `artifacts/registers/` entry). Silence is
+  not coverage.
+- **Coverage only ratchets up.** Cases are added, never removed to go green;
+  narrowing coverage needs an adjudicated, spec-cited reason.
+- **One behaviour per case** — many small isolated cases beat one broad case,
+  because a failure then names exactly one defect (which is also what makes the
+  attribution law tractable, `.claude/rules/cnf-triage.md`).
+- Same completeness discipline the vendored corpora carry (100% exercised,
+  coverage-gated — never partial coverage that silently narrows the claim).
+
 ## Target
 
 A green CNF pipeline is the standing bar (CORE + STANDARD PASS) —
-every change preserves it; the baseline only ratchets upward. Every phase
-ships compiling, clippy-clean, tested increments — this whole rule is fully
-active at all times.
+every change preserves it; the baseline only ratchets upward, and green comes
+ONLY from fixing the guilty component after spec-adjudicated attribution
+(`.claude/rules/cnf-triage.md`), NEVER from bending the catalogue or runner to
+match this server. Every phase ships compiling, clippy-clean, tested
+increments — this whole rule is fully active at all times.

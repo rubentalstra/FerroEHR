@@ -44,4 +44,6 @@ module.**
 - Gates: `cargo clippy -p ehrbase --all-targets` +
   `cargo nextest run -p ehrbase` green before commit; the CNF pipeline
   (`bash scripts/conformance.sh`) must show zero drift vs the committed baseline
-  at phase close.
+  at phase close. A red row is attributed spec-first
+  (`.claude/rules/cnf-triage.md`): this server is a suspect, never assumed
+  correct — never bend the catalogue/runner to match it.
