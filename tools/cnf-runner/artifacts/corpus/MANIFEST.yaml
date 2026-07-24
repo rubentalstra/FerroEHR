@@ -217,6 +217,13 @@ cnf.opt.obs_admin:
   validity: { verdict: valid }
   template_id: "obs_admin.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22"
+cnf.opt.obs_admin.v2:
+  source: fixtures/opt/valid/obs_admin.v2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "obs_admin.en.v2"
+  provenance: "derived from cnf.opt.obs_admin by bumping only the template_id version suffix (obs_admin.en.v1 -> obs_admin.en.v2) so the commit-flow contribution case owns a template_id distinct from the master04 validate_opt-valid_opt DEFINITION exemplar, which owns the canonical obs_admin.en.v1; mirrors the cnf.opt.versioned.v3/v4 precedent (each upload-flow case owns a fresh id under the shared-SUT run model)"
 cnf.opt.obs_eva:
   source: fixtures/opt/valid/obs_eva.opt
   format: opt-xml
@@ -259,6 +266,13 @@ cnf.opt.time_series:
   validity: { verdict: valid }
   template_id: "time_series.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22"
+cnf.opt.time_series.v2:
+  source: fixtures/opt/valid/time_series.v2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "time_series.en.v2"
+  provenance: "derived from cnf.opt.time_series by bumping only the template_id version suffix (time_series.en.v1 -> time_series.en.v2) so the commit-flow contribution case owns a template_id distinct from the master04 upload_opt-valid_opt DEFINITION exemplar, which owns the canonical time_series.en.v1; mirrors the cnf.opt.versioned.v3/v4 precedent (each upload-flow case owns a fresh id under the shared-SUT run model)"
 cnf.opt.vital_signs:
   source: fixtures/opt/valid/vital_signs.opt
   format: opt-xml
@@ -399,7 +413,7 @@ cnf.composition.time_series:
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  template_id: "time_series.en.v1"
+  template_id: "time_series.en.v2"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official time_series.contribution.json (versions[0].data — OBSERVATION with a multi-event HISTORY, the master08 B.2.d time-series row) and normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
 cnf.composition.alternative_types:
   source: fixtures/contribution/composition.alternative_types.json
@@ -413,14 +427,14 @@ cnf.composition.coded_text_on_text:
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  template_id: "obs_admin.en.v1"
+  template_id: "obs_admin.en.v2"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.altdvcodedtext.json (versions[0].data — a DV_CODED_TEXT instance on the OPT's DV_TEXT node at0004, the master08 B.2.f row) and normalized to the literal RM ENTRY Is_archetype_root invariant"
 cnf.composition.null_flavour:
   source: fixtures/contribution/composition.obs_admin.null_flavour.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  template_id: "obs_admin.en.v1"
+  template_id: "obs_admin.en.v2"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.null_flavour.json (versions[0].data — empty ELEMENT.value with null_flavour |no information|, the master08 B.2.g row; RM data_structures ELEMENT Inv_null_flavour_indicated holds) and normalized to the literal RM ENTRY Is_archetype_root invariant"
 cnf.composition.persistent_2.v1:
   source: fixtures/contribution/composition.persistent_2.v1.json
