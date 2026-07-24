@@ -434,12 +434,14 @@ impl<'a> HttpDriver<'a> {
     /// mode-agnostic; `verifiable` reconstructs the agreed canonical form and
     /// verifies per the ixit `signing` posture (RM common master06 §Digital
     /// Signature; [`crate::exec::signature`]).
+    #[allow(clippy::too_many_arguments)] // one parameter per declared signature fact — mirrors the assertion shape
     fn eval_signature_assertion(
         &mut self,
         body: &Value,
         present: Option<bool>,
         verifiable: Option<bool>,
         equals: Option<&crate::model::value::TemplatedValue>,
+        distinct_from: Option<&crate::model::value::TemplatedValue>,
         vars: &VarStore,
     ) -> Result<(), AssertionFailure> {
         let signature = body.get("signature").and_then(Value::as_str);
@@ -448,6 +450,39 @@ impl<'a> HttpDriver<'a> {
                 "signature: expected present, the ORIGINAL_VERSION envelope carries no signature"
                     .into(),
             ));
+        }
+        if let Some(other) = distinct_from {
+            // Distinct-signature-per-version: the canonical form the signature
+            // is computed over includes `uid`, so two distinct versions carry
+            // distinct signatures (RM common master06 §Digital Signature +
+            // version.adoc `canonical_form`: all attributes except signature).
+            // Both sides must be non-empty — an absent signature satisfies
+            // nothing, and an empty comparand means the earlier capture failed.
+            let want = self
+                .resolver
+                .resolve_value(other, vars)
+                .map_err(|e| AssertionFailure(e.to_string()))?;
+            let want = want
+                .as_str()
+                .map_or_else(|| want.to_string(), ToOwned::to_owned);
+            let Some(sig) = signature.filter(|s| !s.is_empty()) else {
+                return Err(AssertionFailure(
+                    "signature: distinct_from requested but the envelope carries no signature"
+                        .into(),
+                ));
+            };
+            if want.is_empty() {
+                return Err(AssertionFailure(
+                    "signature: distinct_from comparand is empty (the earlier signature capture failed)"
+                        .into(),
+                ));
+            }
+            if sig == want {
+                return Err(AssertionFailure(
+                    "signature: identical to the compared version's signature — the signature must be a function of the version's canonical content (RM common master06 §Digital Signature)"
+                        .into(),
+                ));
+            }
         }
         if let Some(expected) = equals {
             let want = self
@@ -618,12 +653,14 @@ impl<'a> HttpDriver<'a> {
                     present,
                     verifiable,
                     equals,
+                    distinct_from,
                     ..
                 } => self.eval_signature_assertion(
                     body,
                     *present,
                     *verifiable,
                     equals.as_ref(),
+                    distinct_from.as_ref(),
                     vars,
                 ),
                 // The version family still needs a versioned-object read the

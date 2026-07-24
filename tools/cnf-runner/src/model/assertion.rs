@@ -205,6 +205,16 @@ pub enum Assertion {
         /// storage rule for imported/committed signed versions).
         #[serde(default)]
         equals: Option<TemplatedValue>,
+        /// The stored signature differs from a known (non-empty) value — the
+        /// distinct-signature-per-version fact: the signature is computed over
+        /// the version's canonical form, which includes `uid`, so two distinct
+        /// versions necessarily carry distinct signatures (RM common
+        /// `master06-change_control_package.adoc` §Digital Signature — "the
+        /// entire Version object (… the signature attribute will be Void …)"
+        /// is serialised and hashed; `version.adoc` `canonical_form`: "all
+        /// attributes except signature").
+        #[serde(default)]
+        distinct_from: Option<TemplatedValue>,
     },
     /// RM versioning facts.
     Version {
@@ -338,15 +348,20 @@ impl Assertion {
                 present,
                 verifiable,
                 equals,
+                distinct_from,
             } => {
                 if of.is_some() == for_each.is_some() {
                     return Err(
                         "signature assertion needs exactly one of `of` | `for_each`".to_owned()
                     );
                 }
-                if present.is_none() && verifiable.is_none() && equals.is_none() {
+                if present.is_none()
+                    && verifiable.is_none()
+                    && equals.is_none()
+                    && distinct_from.is_none()
+                {
                     return Err(
-                        "signature assertion carries no fact (present | verifiable | equals)"
+                        "signature assertion carries no fact (present | verifiable | equals | distinct_from)"
                             .to_owned(),
                     );
                 }
@@ -453,6 +468,7 @@ pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
             of,
             for_each,
             equals,
+            distinct_from,
             ..
         } => {
             if let Some(SingleRef(r)) = of {
@@ -462,6 +478,9 @@ pub fn assertion_refs(assertion: &Assertion) -> Vec<ValueRef> {
                 out.push(r.clone());
             }
             if let Some(v) = equals {
+                out.extend(v.refs().into_iter().cloned());
+            }
+            if let Some(v) = distinct_from {
                 out.extend(v.refs().into_iter().cloned());
             }
         }
@@ -517,6 +536,26 @@ mod tests {
             "columns": [{ "name": "uid" }]
         }));
         assert!(a.check_invariants().is_ok());
+    }
+
+    #[test]
+    fn signature_distinct_from_is_a_fact() {
+        // `distinct_from` alone satisfies the carries-a-fact invariant, and its
+        // reference participates in reference collection (the capture feeding
+        // it is validated like any other).
+        let a = parse(serde_json::json!({
+            "assert": "signature", "of": "${v2_uid}", "distinct_from": "${sig_first}"
+        }));
+        assert!(a.check_invariants().is_ok());
+        assert!(
+            assertion_refs(&a).iter().any(
+                |r| matches!(r, ValueRef::Capture { name, .. } if name.as_str() == "sig_first")
+            )
+        );
+
+        // A signature assertion with no fact at all still bites.
+        let a = parse(serde_json::json!({ "assert": "signature", "of": "${v}" }));
+        assert!(a.check_invariants().is_err());
     }
 
     #[test]

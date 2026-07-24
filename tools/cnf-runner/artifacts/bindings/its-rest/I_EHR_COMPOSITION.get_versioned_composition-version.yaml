@@ -31,3 +31,9 @@ outcomes:
     status: 200                           # overview §HTTP status codes (200 OK — payload = the ORIGINAL_VERSION)
     headers: { Content-Type: negotiated }
   not_found: { status: 404 }              # overview §HTTP status codes (404 — target resource not found)
+captures:
+  # The envelope's stored signature (RM common master06 §Digital Signature:
+  # ORIGINAL_VERSION.signature) — capturable so a later step can compare
+  # signatures across versions (the distinct-per-version fact).
+  signature:
+    from: body "signature"
