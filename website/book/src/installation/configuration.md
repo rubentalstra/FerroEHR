@@ -337,7 +337,8 @@ loggers = "off"
 
 ## `[signing]`
 
-VERSION signing. On by default in `digest` mode.
+VERSION signing. On by default in `digest` mode, with read-time verification of
+the server's own signatures **strict** by default.
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -345,7 +346,18 @@ VERSION signing. On by default in `digest` mode.
 | `mode` | enum{digest,pgp} | `digest` | SHA-256 integrity digest, or an OpenPGP (RFC 4880) detached signature. |
 | `key_path` | path | unset | Armored secret key; **required for `pgp`**. |
 | `key_passphrase` / `key_passphrase_file` | secret / path | unset | Key passphrase. |
-| `verify_on_read` | enum{off,warn,strict} | `off` | Read-time recompute-and-compare policy. |
+| `verify_on_read` | enum{off,warn,strict} | `strict` when signing is enabled | Read-time recompute-and-compare policy for the server's own signatures. |
+
+> [!NOTE]
+> **`verify_on_read` defaults to `strict` when signing is enabled.** On every
+> read the server recomputes the signature of a version it signed and, on a
+> mismatch, returns a `500` integrity fault rather than silently serving a
+> provably corrupt record. Set it explicitly to `warn` (log + emit
+> `version_signature_invalid_total`, still serve) or `off` (never check) to opt
+> out. **Client-supplied signatures** — an author's own signature, or one
+> carried by an imported version — are always stored verbatim and **never
+> re-verified** (the author may have signed a different agreed serialization),
+> regardless of this setting.
 
 > [!WARNING]
 > `pgp` mode **fails closed at boot** if the key is missing or unusable — the

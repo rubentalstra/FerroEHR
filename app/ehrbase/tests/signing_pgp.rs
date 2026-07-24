@@ -58,7 +58,7 @@ fn pgp_signer(armored_key: &str, passphrase: Option<&str>) -> Result<Signer, Sig
         key_path: Some(temp_file(armored_key)),
         key_passphrase: passphrase.map(ehrbase::config::secret::Secret::new),
         key_passphrase_file: None,
-        verify_on_read: VerifyOnRead::Strict,
+        verify_on_read: Some(VerifyOnRead::Strict),
     };
     Signer::from_config(&config)
 }
@@ -117,7 +117,7 @@ fn boot_fails_when_key_path_missing() {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
-        verify_on_read: VerifyOnRead::Off,
+        verify_on_read: Some(VerifyOnRead::Off),
     };
     assert!(matches!(
         Signer::from_config(&config),
@@ -155,7 +155,7 @@ fn boot_fails_on_missing_key_file() {
         key_path: Some(PathBuf::from("/nonexistent/ehrbase-signing/key.asc")),
         key_passphrase: None,
         key_passphrase_file: None,
-        verify_on_read: VerifyOnRead::Off,
+        verify_on_read: Some(VerifyOnRead::Off),
     };
     assert!(matches!(
         Signer::from_config(&config),
@@ -172,7 +172,7 @@ fn digest_mode_verify_matches_and_mismatches() {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
-        verify_on_read: VerifyOnRead::Strict,
+        verify_on_read: Some(VerifyOnRead::Strict),
     };
     let signer = Signer::from_config(&config).expect("digest signer");
     let sig = signer.sign(CANONICAL).expect("sign");

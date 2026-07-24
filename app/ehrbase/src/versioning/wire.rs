@@ -142,9 +142,11 @@ pub(crate) async fn versioned_object(
 /// An `ORIGINAL_VERSION` wrapping a loaded version, with read-time signature
 /// verification (RM common master06 §Version subtypes / §Digital Signature).
 ///
-/// When `verify_on_read` is not `off`, the served version's signature is checked
-/// against its recomputed `canonical_form`: a `warn` mismatch logs + meters, a
-/// `strict` mismatch is a 5xx integrity failure.
+/// When `verify_on_read` is not `off` and the signature is server-generated
+/// (not client-supplied), the served version's signature is checked against its
+/// recomputed `canonical_form`: a `warn` mismatch logs + meters, a `strict`
+/// mismatch is a 5xx integrity failure. A client-supplied signature is stored
+/// verbatim and never re-verified (master06 §Digital Signature).
 ///
 /// # Errors
 /// [`ServiceError::Signing`] when `verify_on_read = strict` and the stored
@@ -164,7 +166,12 @@ pub(crate) fn original_version(read: &VersionRead, signer: &Signer) -> Result<Va
         &read.canonical,
         read.signature.as_deref(),
     );
-    integrity::verify_on_read(signer, &ov, read.signature.as_deref())?;
+    integrity::verify_on_read(
+        signer,
+        &ov,
+        read.signature.as_deref(),
+        read.signature_client_supplied,
+    )?;
     // ORIGINAL_VERSION.attestations (RM common master06 §Attestation). Appended
     // AFTER verify_on_read: attestations "can be added at any time after
     // committal", so they are not part of the signed/verified canonical form

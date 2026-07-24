@@ -201,8 +201,12 @@ config:
     enabled: true
     # digest | pgp
     mode: digest
-    # off | warn | strict
-    verify_on_read: "off"
+    # off | warn | strict — read-time verification of OUR OWN signatures.
+    # Defaults to strict when signing is enabled (a served version whose stored
+    # signature no longer recomputes is a 5xx integrity fault); set warn (log +
+    # meter, still serve) or off (never check) to opt out. Client-supplied
+    # signatures are always stored verbatim and never re-verified.
+    verify_on_read: "strict"
 
   # [audit] — the IHE ATNA audit trail. ON by default with only the local
   # store active (records stay in PostgreSQL, queryable via the ITI-81 FHIR

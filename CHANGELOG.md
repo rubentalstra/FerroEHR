@@ -35,6 +35,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Version-signature read verification is now `strict` by default (#273)**:
+  with signing enabled and `signing.verify_on_read` unset, the server now
+  recomputes the signature of every version it served and returns a `500`
+  integrity fault on a mismatch, instead of the previous silent-pass (`off`)
+  default that signed every version and then never checked it. Set
+  `signing.verify_on_read` explicitly to `warn` (log + meter, still serve) or
+  `off` (never check) to opt out. **Client-supplied signatures** (an author's
+  own signature, or one carried by an imported version) are tracked as such and
+  are always stored verbatim and never re-verified, so strict-by-default never
+  rejects a legitimately-stored foreign signature. Our-own-design integrity
+  hardening — no openEHR spec governs server-side verify-on-read timing (RM
+  common master06 §Digital Signature).
+
 - **CNF catalogue audited case-by-case against the official spec text
   (#231)**: every case in every chapter re-verified across grounds,
   expectations, citations, fixtures, captures, and register linkage, with
