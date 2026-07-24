@@ -47,6 +47,7 @@ Options declared: adl14-duplicate-conflict, directory-empty-error
 | CORE | FAIL |
 | STANDARD | FAIL |
 | OPTIONS | not claimed |
+| Performance class POC | not earned |
 
 ## Attestation
 

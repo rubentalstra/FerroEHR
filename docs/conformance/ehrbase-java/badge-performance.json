@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "openEHR CNF performance",
-  "message": "not measured",
-  "color": "lightgrey"
+  "message": "class POC not earned",
+  "color": "red"
 }

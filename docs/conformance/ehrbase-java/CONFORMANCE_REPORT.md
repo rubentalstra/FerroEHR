@@ -1,7 +1,7 @@
 # Conformance Report
 
 SUT: ehrbase-java 2.34.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.7.0 · verification pack: passed
+Runner: cnf-runner 3.8.0 · verification pack: passed
 
 ## Summary
 
@@ -37,6 +37,44 @@ Runner: cnf-runner 3.7.0 · verification pack: passed
 | SEC | 4 | 0 | 1 | 0 | 0 |
 | SF | 5 | 42 | 2 | 0 | 2 |
 | SIG | 3 | 1 | 0 | 0 | 0 |
+
+## Performance measurements
+
+### PERF-hospital_sim-class_POC — class POC · not earned
+
+Offered load sustained: 2.03/s over 3600 s (after 300 s warmup) · environment: ci-runner (4 cores, 16 GB, ssd, single-node docker compose (docker/sut-ehrbase-java.yml, ehrbase/ehrbase:2.34.0 + ehrbase-v2-postgres:16.2; no readonly principal — EHRbase Basic auth carries one clinical user and one admin user))
+
+| Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |
+| --- | --- | --- | --- | --- | --- |
+| adhoc_query | 953 | 0 | 43.6 | 90.3 | 145.0 |
+| composition_commit | 315 | 0 | 72.6 | 154.4 | 272.1 |
+| composition_delete | 4 | 0 | 36.4 | 56.2 | 56.2 |
+| composition_read | 1906 | 0 | 19.1 | 28.7 | 56.9 |
+| composition_read_current | 1072 | 0 | 24.2 | 40.8 | 80.0 |
+| composition_revision_history | 1029 | 0 | 22.4 | 35.8 | 56.8 |
+| composition_update | 77 | 77 | 52.1 | 93.3 | 157.8 |
+| contribution_commit | 52 | 0 | 90.0 | 227.7 | 300.0 |
+| contribution_read | 110 | 0 | 23.2 | 37.1 | 52.7 |
+| directory_create | 13 | 0 | 25.3 | 46.8 | 62.1 |
+| directory_read | 967 | 0 | 17.7 | 27.0 | 55.8 |
+| directory_update | 13 | 0 | 43.4 | 84.7 | 117.4 |
+| ehr_create | 13 | 0 | 35.6 | 50.0 | 50.9 |
+| ehr_read | 98 | 0 | 20.0 | 29.4 | 41.0 |
+| ehr_status_read | 26 | 0 | 26.9 | 40.2 | 51.3 |
+| ehr_status_update | 26 | 26 | 36.2 | 62.8 | 74.2 |
+| stored_query_execute | 204 | 0 | 38.1 | 56.0 | 75.6 |
+| tags_put | 34 | 34 | 29.5 | 47.7 | 52.0 |
+| tags_read | 34 | 34 | 27.6 | 42.1 | 62.2 |
+| template_get | 85 | 3 | 60.1 | 92.5 | 201.2 |
+| template_list | 85 | 0 | 17.6 | 24.0 | 33.6 |
+| ward_query | 204 | 0 | 7962.6 | 9338.9 | 10887.2 |
+
+Violations:
+
+- ward_query LatencyP99 10887.167ms > max 1000ms
+- error_rate 0.023770491803278688 > max 0
+
+Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.
 
 ## Honesty
 
