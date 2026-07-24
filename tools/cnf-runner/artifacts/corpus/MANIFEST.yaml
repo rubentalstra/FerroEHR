@@ -910,56 +910,56 @@ cnf.tpl.ecc_composition_content_cardinality:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_composition_content_cardinality"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-COMPOSITION-content_cardinality (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master15 CONT-COMP-content_card_*-context_any family + the CONT-COMPOSITION-content_cardinality_count6 extension (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_composition_context_existence:
   source: templates/cnf.tpl.ecc_composition_context_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_composition_context_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-COMPOSITION-context_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master15 CONT-COMP-content_card_any-context_mand case + the CONT-COMPOSITION-context_existence realization complement (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_observation_state_protocol_existence:
   source: templates/cnf.tpl.ecc_observation_state_protocol_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_observation_state_protocol_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-OBSERVATION-state_protocol_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-OBS-state_ex_*-protocol_ex_* family (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_history_events_cardinality:
   source: templates/cnf.tpl.ecc_history_events_cardinality.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_history_events_cardinality"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-HISTORY-events_cardinality (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-HIST-events_card_*-summary_ex_opt family + the CONT-HISTORY-events_cardinality_count6 extension (AM 1.4 C_MULTIPLE_ATTRIBUTE.cardinality); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_history_summary_existence:
   source: templates/cnf.tpl.ecc_history_summary_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_history_summary_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-HISTORY-summary_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-HIST-events_card_1plus-summary_ex_{opt,mand} cases (AM 1.4 C_ATTRIBUTE.existence; the synthesized events cardinality is fixed 1..*); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_event_state_existence:
   source: templates/cnf.tpl.ecc_event_state_existence.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_event_state_existence"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-EVENT-state_existence (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-EVENT-state_ex_{opt,mand} cases (AM 1.4 C_ATTRIBUTE.existence); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_event_type_narrowing:
   source: templates/cnf.tpl.ecc_event_type_narrowing.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_event_type_narrowing"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-EVENT-type_narrowing (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-EVENT-type_{any,point_event,interval_event} cases (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
 cnf.tpl.ecc_item_structure_type_narrowing:
   source: templates/cnf.tpl.ecc_item_structure_type_narrowing.opt
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "cnf.tpl.ecc_item_structure_type_narrowing"
-  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-ITEM_STRUCTURE-type_narrowing (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
+  provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per the official master16 CONT-ITEM_STR-type_* family (AM 1.4 C_OBJECT.rm_type_name); validated against the SUT 2026-07-21"
 # Corpus additions for the CNF master11 (QUERY) schedule cases. Same entry
 # schema as MANIFEST.yaml; the validate harness concatenates this into
 # corpus/MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
