@@ -1,8 +1,6 @@
 # The governed corpus manifest: verdict + defect live HERE, never only in a
 # filename; generated sets are committed deterministic recipe contracts
 # (corpus/recipes/*.md, digest-pinned).
-# TODO: replace the structural placeholder payloads with the spine-first
-#       authored corpus when the catalogue authoring lands (#202).
 cnf.opt.invalid.empty_file:
   source: fixtures/opt/invalid/empty_file.opt
   format: opt-xml
@@ -173,11 +171,10 @@ cnf.ehr_status.with_subject.alt:
 # schema as MANIFEST.yaml; the orchestrator concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
 #
-# All payloads are structural placeholders modeled on
-# corpus/templates/minimal_event.opt, pending the spine-first authored corpus
-# (#202). The invalid-OPT and minimal-event valid sets already live in
-# MANIFEST.yaml and are reused by the cases; only the new valid OPTs are
-# declared here.
+# NOTE: the valid OPTs below are real OPT 1.4 artefacts (openEHR CNF Robot
+# corpus, re-adjudicated to spec-text-only evidence per entry). The invalid-OPT
+# and minimal-event valid sets already live in MANIFEST.yaml and are reused by
+# the cases; only the new valid OPTs are declared here.
 #
 # NOTE (master05 stored-query texts): the simple stored-query texts stay
 # inline in the flow `with:` payloads; reusable/invalid AQL texts are corpus
@@ -296,8 +293,6 @@ cnf.opt.versioned.v4:
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22; derived from the official versioned family by bumping the template_id version suffix (test_versioned.en.v2 -> test_versioned.en.v4) so the upload-flow case owns a fresh pair"
 # Corpus additions for the master07 (COMPOSITION) schedule cases.
 # Merged into corpus/MANIFEST.yaml at verify time; entries here ONLY.
-# TODO: replace the structural placeholder payloads with the spine-first
-#       authored corpus when the catalogue authoring lands (#202).
 cnf.opt.minimal_persistent:
   source: templates/minimal_persistent.opt
   format: opt-xml
@@ -333,10 +328,9 @@ cnf.composition.minimal_persistent.invalid_structure:
 # entry schema as MANIFEST.yaml; the validate harness concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).
 #
-# All payloads are structural placeholders modeled on
-# corpus/fixtures/composition/minimal_event.v1.json and corpus/fixtures/ehr/,
-# pending the spine-first authored corpus (#202). The master08 cases also reuse
-# the already-declared valid/invalid COMPOSITION and EHR_STATUS sets
+# NOTE: the payloads are real COMPOSITION / EHR_STATUS / FOLDER instances
+# (openEHR CNF Robot corpus, re-adjudicated per entry). The master08 cases also
+# reuse the already-declared valid/invalid COMPOSITION and EHR_STATUS sets
 # (cnf.composition.minimal_event.v1/.v2/.invalid_structure,
 # cnf.ehr_status.with_subject) and the OPT sets (cnf.opt.minimal_event,
 # cnf.opt.maximal) that live in MANIFEST.yaml; only the new sets are declared
@@ -444,10 +438,9 @@ cnf.composition.persistent_2.v1:
   template_id: "persistent_minimal_2.en.v1"
   provenance: "derived 2026-07-24 from cnf.composition.persistent.v1 by re-pointing archetype_details.template_id to persistent_minimal_2.en.v1 (the official persistent_minimal_2.opt shares the identical archetype set, so the instance stays conformant) — the second-persistent-OPT member of the master08 multi-version combination B"
 # Corpus additions for the CNF master09 (DIRECTORY) schedule cases.
-# FOLDER payloads / provisioned directory trees. Structural placeholders — the
-# spine-first authored corpus lands with the catalogue authoring (#202).
-# TODO: replace the placeholder FOLDER payloads with spec-authored canonical
-#       FOLDER structures when the catalogue authoring lands (#202).
+# NOTE: FOLDER payloads / provisioned directory trees — real canonical FOLDER
+# structures (openEHR CNF Robot corpus, re-adjudicated to spec-text-only
+# evidence per entry; RM ehr §FOLDER).
 cnf.directory.root_only:
   source: fixtures/directory/root_only.json
   format: canonical-json
@@ -474,12 +467,10 @@ cnf.directory.v2:
 # Each entry is the OPT that carries the C_* constraint context under test for
 # a master17.3 content decision table. Constant constraints are baked into the
 # stub's <concept> comment; where the constraint varies per data set the
-# decision table carries it as columns and the stub names the constraint shape.
-# All payloads are structural placeholders modeled on
-# corpus/templates/quantity_property_units_mag.opt, pending the spine-first
-# authored corpus (#202).
-# TODO: replace the structural placeholder OPTs with the spine-first authored
-#       corpus when the catalogue authoring lands (#202).
+# decision table carries it as columns and the OPT names the constraint shape.
+# NOTE: the payloads are real OPT 1.4 artefacts generated from the openEHR CNF
+# Robot minimal_observation.opt skeleton (AM 1.4 C_* constraint contexts, cited
+# per entry).
 cnf.tpl.ordinal_open:
   source: templates/ordinal_open.opt
   format: opt-xml
@@ -804,8 +795,10 @@ cnf.tpl.interval_proportion_ratio_range:
   provenance: "generated from the openEHR CNF Robot minimal_observation.opt skeleton by generate_content_opts.py; constraint per CONT-DV_INTERVAL_DV_PROPORTION-validate_ratio_range (AM 1.4 C_INTEGER + C_REAL, both limits); validated against the SUT 2026-07-21"
 # Corpus manifest additions for the content data-type cases of CNF
 # master17.1 (basic), .2 (text), .4 (date_time), .6 (encapsulated), .7 (uri).
-# Concatenated into corpus/MANIFEST.yaml at load. Structural placeholder OPTs
-# pending corpus authoring (#202).
+# Concatenated into corpus/MANIFEST.yaml at load.
+# NOTE: the payloads are real OPT 1.4 artefacts generated from the openEHR CNF
+# Robot minimal_observation.opt skeleton (AM 1.4 C_* constraint contexts, cited
+# per entry).
 cnf.tpl.dv_boolean_c_boolean:
   source: templates/dt_boolean_c_boolean.opt
   format: opt-xml
@@ -968,11 +961,11 @@ cnf.tpl.dv_ehr_uri_c_string:
 # Each entry is the OPT that carries the AOM1.4 C_* constraint context under
 # test for one structural seam. The constraint that VARIES per decision-table
 # row (cardinality interval, existence 0..1 vs 1..1, rm_type_name subtype) is
-# carried by the case's decision-table columns; the stub's <concept> comment
-# names the constraint shape. All payloads are structural placeholders modeled
-# on corpus/templates/quantity_property_units_mag.opt.
-# TODO: replace the structural placeholder OPTs with the spine-first authored
-#       corpus when the catalogue authoring lands (#202).
+# carried by the case's decision-table columns; the OPT's <concept> comment
+# names the constraint shape.
+# NOTE: the payloads are real OPT 1.4 artefacts generated from the openEHR CNF
+# Robot minimal_observation.opt skeleton (AM 1.4 C_* constraint contexts, cited
+# per entry).
 cnf.tpl.ecc_composition_content_cardinality:
   source: templates/cnf.tpl.ecc_composition_content_cardinality.opt
   format: opt-xml
@@ -1128,16 +1121,15 @@ cnf.aql.invalid.terminology_in_select:
 #
 # The FLAT/STRUCTURED payloads mirror the exemplar's cnf.flat.vitals.minimal_ctx
 # (vital-signs body_temperature) so the whole SF seed exercises one template.
-# All payloads are structural placeholders pending the spine-first authored
-# corpus (#202); the invalid sets carry the master04 defect + spec citation.
-# TODO: replace the structural placeholder payloads with the spine-first
-#       authored corpus when the catalogue authoring lands (#202).
+# NOTE: the payloads are spec-authored FLAT/STRUCTURED instances (ITS-REST
+# Simplified Formats master04-basic_concepts, cited per entry); the invalid sets
+# carry the master04 defect + spec citation.
 cnf.structured.vitals.minimal:
   source: fixtures/sf/structured.vitals.minimal.json
   format: wt-structured
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE Simplified Formats spec; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE ITS-REST Simplified Formats spec (master04-basic_concepts §Structured format; master05-rm_mapping §DV_QUANTITY) — a valid STRUCTURED body_temperature instance"
 cnf.flat.vitals.unknown_field:
   source: fixtures/sf/flat.vitals.unknown_field.json
   format: wt-flat
@@ -1146,7 +1138,7 @@ cnf.flat.vitals.unknown_field:
     verdict: invalid
     defect: "field identifier resolves to no Web Template node (this_field_is_not_in_the_template)"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (field identifiers match WT metadata structure)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE Simplified Formats spec; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE ITS-REST Simplified Formats spec (master04-basic_concepts §Validation — field identifiers match the Web Template node structure)"
 cnf.flat.vitals.other_with_code:
   source: fixtures/sf/flat.vitals.other_with_code.json
   format: wt-flat
@@ -1155,7 +1147,7 @@ cnf.flat.vitals.other_with_code:
     verdict: invalid
     defect: "|other combined with |code/|value on one coded leaf (mutually exclusive)"
     spec_ref: "ITS-REST simplified_formats master04 §Open Value-Sets and the |other Suffix (servers MUST reject combinations)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE Simplified Formats spec; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC simplified-formats battery against the STABLE ITS-REST Simplified Formats spec (master04-basic_concepts §Open Value-Sets and the |other Suffix — |other is mutually exclusive with |code/|value on one leaf)"
 cnf.ehr_status.invalid.missing-is-queryable:
   source: fixtures/ehr/invalid/ehr_status.missing_is_queryable.json
   format: canonical-json
@@ -1201,8 +1193,8 @@ cnf.ehr_status.invalid.invalid-other-details:
 # sets (cnf.opt.minimal_event, cnf.composition.minimal_event.v1/.v2); only the
 # Signing client-verbatim case needs a new set.
 #
-# The payload is a structural placeholder modeled on the existing composition
-# fixtures, pending the spine-first authored corpus (#202).
+# NOTE: the payload is a real ORIGINAL_VERSION<COMPOSITION> carrying a
+# client-supplied signature attribute (RM common master06 §change_control).
 cnf.security.signed_version:
   source: fixtures/security/signed_version.v1.json
   format: canonical-json
@@ -1211,30 +1203,29 @@ cnf.security.signed_version:
   provenance: >-
     authored 2026-07-21, data re-anchored 2026-07-22 to the official Robot
     minimal_evaluation composition — an ORIGINAL_VERSION<COMPOSITION> carrying a
-    client-supplied signature attribute (RM common §change_control:
+    client-supplied signature attribute (RM common master06 §change_control:
     ORIGINAL_VERSION.signature), used by SIG-VERSION-client_supplied_verbatim to
-    exercise verbatim storage of a client signature; structural placeholder
-    pending corpus authoring
+    exercise verbatim storage of a client signature
   views:
     signature:
       select: "$.signature"
 # DEMOGRAPHIC (master10) corpus additions — concatenated into MANIFEST.yaml by
-# the verify harness. Canonical-JSON PERSON / PARTY_RELATIONSHIP stubs for the
+# the verify harness. Canonical-JSON PERSON / PARTY_RELATIONSHIP payloads for the
 # I_DEMOGRAPHIC_SERVICE / I_PARTY / I_PARTY_RELATIONSHIP cases. master10 defines
 # no data sets (every case is TBD), so these are authored from the RM demographic
-# class semantics as structural placeholders pending corpus authoring (#202).
+# class model (§PERSON; §PARTY Identities_valid; §PARTY_RELATIONSHIP source/target).
 cnf.demographic.person.v1:
   source: fixtures/demographic/person.v1.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PERSON, first content state); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the RM demographic class model (§PERSON; §PARTY Identities_valid: identities non-empty) — first content state"
 cnf.demographic.person.v2:
   source: fixtures/demographic/person.v2.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PERSON, updated content state); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the RM demographic class model (§PERSON; §PARTY Identities_valid) — updated content state (amended identity value)"
 cnf.demographic.person.invalid:
   source: fixtures/demographic/person.invalid.json
   format: canonical-json
@@ -1242,20 +1233,20 @@ cnf.demographic.person.invalid:
   validity:
     verdict: invalid
     defect: "identities is empty — PARTY requires at least one PARTY_IDENTITY"
-    spec_ref: "RM demographic §PARTY (identities: List<PARTY_IDENTITY> [1..*])"
-  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (content_invalid PERSON); structural placeholder pending corpus authoring"
+    spec_ref: "RM demographic party.adoc §Invariants (Identities_valid: not identities.is_empty; identities 1..1 List<PARTY_IDENTITY>)"
+  provenance: "authored 2026-07-21 from the RM demographic class model — a PERSON violating §PARTY Identities_valid (empty identities list)"
 cnf.demographic.party_relationship.v1:
   source: fixtures/demographic/party_relationship.v1.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PARTY_RELATIONSHIP, first content state); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the RM demographic class model (§PARTY_RELATIONSHIP source/target PARTY_REF) — first content state"
 cnf.demographic.party_relationship.v2:
   source: fixtures/demographic/party_relationship.v2.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (PARTY_RELATIONSHIP, updated content state); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the RM demographic class model (§PARTY_RELATIONSHIP) — updated content state (target ref changed)"
 cnf.demographic.party_relationship.invalid:
   source: fixtures/demographic/party_relationship.invalid.json
   format: canonical-json
@@ -1264,41 +1255,42 @@ cnf.demographic.party_relationship.invalid:
     verdict: invalid
     defect: "target is absent — PARTY_RELATIONSHIP requires both source and target"
     spec_ref: "RM demographic §PARTY_RELATIONSHIP (source, target: PARTY_REF)"
-  provenance: "authored 2026-07-21 from the CNF master10 data-set descriptions (content_invalid PARTY_RELATIONSHIP); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the RM demographic class model — a PARTY_RELATIONSHIP missing the mandatory target PARTY_REF"
 # MESSAGING (master13) corpus additions — concatenated into MANIFEST.yaml by
 # the verify harness. Canonical-JSON EXTRACT / EXTRACT_SPEC and TDD (XML)
-# payload stubs for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases. master13
-# defines no data sets (every case is TBD), so these are authored from the RM
-# EHR Extract IM class semantics as structural placeholders pending corpus
-# authoring (#202). The ADMIN (master12) cases need no corpus: they are
-# runner-provisioned (requires: ehr/server) or use literal identifiers.
+# payloads for the I_EHR_EXTRACT_SERVICE / I_TDD_SERVICE cases. These services
+# have no ITS-REST 1.1.0 wire (AMB-33), so the payloads are DOCUMENTARY — never
+# committed to a live SUT — and are shaped from the RM EHR Extract IM
+# (§EXTRACT / §EXTRACT_SPEC) and SM I_TDD_SERVICE §import_tdd. The ADMIN
+# (master12) cases need no corpus: they are runner-provisioned (requires:
+# ehr/server) or use literal identifiers.
 cnf.messaging.ehr_extract.v1:
   source: fixtures/messaging/ehr_extract.v1.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the RM EHR Extract IM (EXTRACT); structural placeholder pending corpus authoring"
+  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a spec-shaped EXTRACT authored from the RM ehr_extract IM (§EXTRACT: mandatory time_created, system_id, sequence_nr>=1, plus LOCATABLE name/archetype_node_id)"
 cnf.messaging.ehr_extract.invalid:
   source: fixtures/messaging/ehr_extract.invalid.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
-    defect: "subject absent — EXTRACT requires a subject PARTY_(IDENTIFIED|REF)"
-    spec_ref: "RM ehr_extract §EXTRACT (subject)"
-  provenance: "authored 2026-07-21 from the RM EHR Extract IM (content_invalid EXTRACT); structural placeholder pending corpus authoring"
+    defect: "mandatory attributes absent — EXTRACT requires time_created, system_id and sequence_nr (none present)"
+    spec_ref: "RM ehr_extract extract.adoc §Attributes (time_created 1..1, system_id 1..1, sequence_nr 1..1) + §Invariants (Sequence_nr_valid: sequence_nr >= 1)"
+  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); an invalid EXTRACT authored against the RM ehr_extract IM (§EXTRACT) — carries none of the mandatory time_created / system_id / sequence_nr"
 cnf.messaging.extract_spec.v1:
   source: fixtures/messaging/extract_spec.v1.json
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the RM EHR Extract IM (EXTRACT_SPEC); structural placeholder pending corpus authoring"
+  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a spec-shaped EXTRACT_SPEC authored from the RM ehr_extract IM (§EXTRACT_SPEC: mandatory manifest, extract_type openehr::803 'openEHR EHR' per TERM extract_content_type, include_multimedia, priority, link_depth)"
 cnf.messaging.tdd.v1:
   source: fixtures/messaging/tdd.v1.xml
   format: canonical-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 as a Template Data Document (TDD) XML stub for the master13 import_tdd cases; structural placeholder pending corpus authoring"
+  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a well-formed Template Data Document (TDD) in the ITS-XML namespace authored from SM I_TDD_SERVICE §import_tdd (TDD is an opaque String conforming to the template-derived TDS; AM OPT2 master02-overview §Purpose of the OPT)"
 cnf.messaging.tdd.invalid:
   source: fixtures/messaging/tdd.invalid.xml
   format: canonical-xml
@@ -1307,22 +1299,20 @@ cnf.messaging.tdd.invalid:
     verdict: invalid
     defect: "not well-formed XML (unclosed element) — a TDD must be a well-formed Template Data Document"
     spec_ref: "SM openehr_platform §I_TDD_SERVICE.import_tdd (tdd must be a valid TDD)"
-  provenance: "authored 2026-07-21 as a malformed TDD XML stub for the master13 import_tdd invalid case; structural placeholder pending corpus authoring"
+  provenance: "documentary fixture — no ITS-REST 1.1.0 wire (AMB-33); a malformed (not-well-formed, unclosed element) TDD authored against SM I_TDD_SERVICE §import_tdd"
 # Corpus additions for the DEFINITION_ADL2 (I_DEFINITION_ADL2) chapter.
 # Merged into corpus/MANIFEST.yaml at verify time; entries live here ONLY.
 #
 # FORMAT NOTE: ADL2 operational templates and archetypes are `text/plain`
 # ADL2 SOURCE; these entries carry the dedicated `adl2-text` CorpusFormat
 # (tools/cnf-runner/src/vocab.rs — added with the ADL2 chapter wave).
-# TODO: replace the structural placeholder payloads with the spine-first
-#       authored ADL2 corpus.
 
 cnf.adl2.opt.minimal:
   source: fixtures/adl2/opt/minimal.adls
   format: adl2-text
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics + the ITS-REST definition_template_adl2_upload example; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics + the ITS-REST definition_template_adl2_upload example; ADL2 operational_template SOURCE (adl_version 2.0.6)"
 cnf.adl2.opt.minimal_e:
   source: fixtures/adl2/opt/minimal_e.adls
   format: adl2-text
@@ -1363,7 +1353,7 @@ cnf.adl2.opt.vitals:
   format: adl2-text
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics; second valid OPT for list/count coverage; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics; second valid OPT for list/count coverage; ADL2 operational_template SOURCE (adl_version 2.0.6)"
 cnf.adl2.archetype.count_a:
   source: fixtures/adl2/archetype/cnf_count_a.adls
   format: adl2-text
@@ -1398,7 +1388,7 @@ cnf.adl2.opt.invalid.unparseable:
     verdict: invalid
     defect: "unparseable ADL2 source (malformed cADL block)"
     spec_ref: "AM ADL2 (cADL/ADL2 grammar: a well-formed artefact must parse)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-003 row against AM ADL2 grammar; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-003 row against the AM ADL2/cADL grammar; ADL2 operational_template SOURCE with a malformed cADL block"
 cnf.adl2.opt.invalid.missing_description:
   source: fixtures/adl2/opt/invalid/missing_description.adls
   format: adl2-text
@@ -1407,7 +1397,7 @@ cnf.adl2.opt.invalid.missing_description:
     verdict: invalid
     defect: "missing mandatory description (RESOURCE_DESCRIPTION) section"
     spec_ref: "AM AOM2 (AUTHORED_RESOURCE.description is mandatory)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-004 row against AM AOM2 authored-resource validity; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2-004 row against AM AOM2 authored-resource validity (AUTHORED_RESOURCE.description mandatory); ADL2 operational_template SOURCE"
 cnf.adl2.opt.invalid.missing_definition:
   source: fixtures/adl2/opt/invalid/missing_definition.adls
   format: adl2-text
@@ -1416,7 +1406,7 @@ cnf.adl2.opt.invalid.missing_definition:
     verdict: invalid
     defect: "missing mandatory definition (root C_COMPLEX_OBJECT) section"
     spec_ref: "AM AOM2 (ARCHETYPE.definition is mandatory)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM AOM2 archetype validity; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM AOM2 archetype validity (ARCHETYPE.definition mandatory); ADL2 operational_template SOURCE"
 cnf.adl2.opt.invalid.empty:
   source: fixtures/adl2/opt/invalid/empty.adls
   format: adl2-text
@@ -1425,7 +1415,7 @@ cnf.adl2.opt.invalid.empty:
     verdict: invalid
     defect: "empty artefact (no ADL2 source)"
     spec_ref: "AM ADL2 (an artefact must declare artefact type + identifier + definition)"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM ADL2 artefact structure; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "re-adjudicated 2026-07-21 from the retired ECC-ADL2 invalid battery against AM ADL2 artefact structure (an artefact must declare artefact type + identifier + definition); empty ADL2 SOURCE"
 # Documentary only: a valid ADL2 ARCHETYPE (not an OPT). ITS-REST 1.1.0
 # surfaces no ADL2 archetype-provisioning wire (only OPTs upload under
 # /definition/template/adl2), so no case references this key today — it stages
@@ -1435,17 +1425,16 @@ cnf.adl2.archetype.minimal:
   format: adl2-text
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from AM ADL2 archetype structure; documents the ADL2 archetype-provisioning gap (no ITS-REST wire, AMB-37); ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from AM ADL2 archetype structure; documents the ADL2 archetype-provisioning gap (no ITS-REST wire, AMB-37); ADL2 archetype SOURCE (adl_version 2.0.6)"
 # Corpus additions for the simplified-formats DEEPENING (categories 2-10 of the
 # SF chapter, #202). Same entry schema as MANIFEST.yaml; the validate harness
 # concatenates this into MANIFEST.yaml at integration (never edit MANIFEST.yaml
 # directly here). All payloads are FLAT/STRUCTURED on the vitals template
 # (cnf.opt.vitals — body_temperature), matching the existing SF seed so the
-# whole SF corpus exercises one template. All payloads are structural
-# placeholders pending the spine-first authored corpus (#202); the invalid sets
-# carry the master04/master05 defect + spec citation.
-# TODO: replace the structural placeholder payloads with the spine-first
-#       authored corpus when the catalogue authoring lands (#202).
+# whole SF corpus exercises one template.
+# NOTE: the payloads are spec-authored FLAT/STRUCTURED instances (ITS-REST
+# Simplified Formats master04/master05/master06, cited per entry); the invalid
+# sets carry the master04/master05 defect + spec citation.
 
 cnf.flat.vitals.composer_self:
   source: fixtures/flat/vitals.composer_self.json
@@ -1479,14 +1468,14 @@ cnf.sf.flat.raw_no_type:
     verdict: invalid
     defect: "|raw embedded canonical object omits the mandatory _type property"
     spec_ref: "ITS-REST simplified_formats master04 §Raw canonical JSON (the raw JSON value must include the _type property)"
-  provenance: "authored 2026-07-21 by removing _type from the master04 |raw example; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Raw canonical JSON example by removing the mandatory _type from the |raw embedded object"
 
 cnf.sf.structured.raw_quantity:
   source: fixtures/sf/structured.raw_quantity.json
   format: wt-structured
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 as the STRUCTURED counterpart of the master04 §Raw canonical JSON example; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 as the STRUCTURED counterpart of the ITS-REST Simplified Formats master04-basic_concepts §Raw canonical JSON example (a |raw DV_QUANTITY carrying _type)"
 
 cnf.sf.flat.missing_territory:
   source: fixtures/sf/flat.missing_territory.json
@@ -1496,14 +1485,14 @@ cnf.sf.flat.missing_territory:
     verdict: invalid
     defect: "mandatory ctx field territory is absent (COMPOSITION.territory cannot be populated)"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (mandatory context fields language, territory are present)"
-  provenance: "authored 2026-07-21 by removing ctx/territory from a minimal FLAT commit; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Validation (mandatory context fields language, territory) by removing ctx/territory from a minimal FLAT commit"
 
 cnf.sf.flat.multi_event:
   source: fixtures/sf/flat.multi_event.json
   format: wt-flat
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
-  provenance: "authored 2026-07-21 from the ITS-REST simplified_formats master04 §Instance Indexing multiple-events example (any_event:0 + any_event:1); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Instance Indexing multiple-events example (any_event:0 + any_event:1)"
 
 cnf.sf.flat.index_semantics:
   source: fixtures/sf/flat.index_semantics.json
@@ -1545,7 +1534,7 @@ cnf.sf.flat.other_closed_list:
     verdict: invalid
     defect: "|other applied to a closed-list (listOpen:false) coded leaf"
     spec_ref: "ITS-REST simplified_formats master04 §Open Value-Sets and the |other Suffix (|other MUST be rejected when the constraint is closed)"
-  provenance: "authored 2026-07-21 by applying |other to a closed-list coded leaf; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Open Value-Sets and the |other Suffix by applying |other to a closed-list (listOpen:false) coded leaf"
 
 cnf.sf.flat.datatype_mismatch:
   source: fixtures/sf/flat.datatype_mismatch.json
@@ -1555,7 +1544,7 @@ cnf.sf.flat.datatype_mismatch:
     verdict: invalid
     defect: "DV_QUANTITY |magnitude carries a non-numeric string, violating the OPT DECIMAL input type"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (data types match expected types from the OPT)"
-  provenance: "authored 2026-07-21 by setting |magnitude to a string; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Validation (data types match the OPT) by setting a DV_QUANTITY |magnitude to a non-numeric string"
 
 cnf.sf.flat.adl2_valid:
   source: fixtures/sf/flat.adl2_valid.json
@@ -1582,7 +1571,7 @@ cnf.sf.flat.cardinality_violation:
     verdict: invalid
     defect: "second indexed instance (:1) supplied for a max=1 node"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (cardinality constraints are satisfied)"
-  provenance: "authored 2026-07-21 by adding a second Temperature ELEMENT instance (temperature:1) to the max=1 Temperature node (body_temperature is 0..*); structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Validation (cardinality constraints are satisfied) by adding a second Temperature ELEMENT instance (temperature:1) to the max=1 Temperature node (body_temperature is 0..*)"
 
 cnf.sf.flat.binding_violation:
   source: fixtures/sf/flat.binding_violation.json
@@ -1592,7 +1581,7 @@ cnf.sf.flat.binding_violation:
     verdict: invalid
     defect: "DV_CODED_TEXT |code (at9999) is outside the bound closed value set"
     spec_ref: "ITS-REST simplified_formats master04 §Validation (terminology bindings are valid)"
-  provenance: "authored 2026-07-21 with an out-of-value-set coded value; structural placeholder pending corpus authoring"
+  provenance: "authored 2026-07-21 from the ITS-REST Simplified Formats master04-basic_concepts §Validation (terminology bindings are valid) with an out-of-value-set coded value (body_exposure|code at9999)"
 cnf.scale.10k:
   generated_by: { recipe: scale_ladder, digest: "sha256:954bb3def445f55af7dbbe47c42c43ce11546d7e20658c7761bfca7745b8e6d0" }
   format: canonical-json

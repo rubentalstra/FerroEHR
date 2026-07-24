@@ -1,14 +1,9 @@
 {
   "_type": "EXTRACT",
+  "name": { "_type": "DV_TEXT", "value": "CNF EHR Extract" },
+  "archetype_node_id": "openEHR-EHR-EXTRACT.extract.v1",
   "system_id": { "_type": "HIER_OBJECT_ID", "value": "cnf.example.org" },
-  "subject": {
-    "_type": "PARTY_IDENTIFIED",
-    "external_ref": {
-      "_type": "PARTY_REF",
-      "namespace": "DEMOGRAPHIC",
-      "type": "PERSON",
-      "id": { "_type": "GENERIC_ID", "value": "cnf-subject-1", "scheme": "cnf" }
-    }
-  },
+  "time_created": { "_type": "DV_DATE_TIME", "value": "2026-07-21T00:00:00Z" },
+  "sequence_nr": 1,
   "chapters": []
 }
