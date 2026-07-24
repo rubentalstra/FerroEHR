@@ -22,7 +22,9 @@ optional:
   `[Unreleased]`, update the link references at the bottom, bump the
   workspace `version` in the root `Cargo.toml` (+ `Cargo.lock` via a
   `cargo check`, + Helm `appVersion`, golden renders via
-  `deploy/helm/validate.sh --update`), merge the release PR, then tag
+  `deploy/helm/validate.sh --update`, + `CITATION.cff` `version` and
+  `date-released` — the `citation-guard` CI job enforces the version
+  match), merge the release PR, then tag
   `vX.Y.Z` on the merge commit. The release workflow publishes the GitHub
   Release from the matching changelog section and **fails if the section or
   version match is missing**. Releases stay `prerelease: true` until the
