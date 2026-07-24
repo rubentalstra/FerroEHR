@@ -246,16 +246,19 @@ fn build_node(
     parent_path: &str,
 ) -> WebTemplateNode {
     // A `C_ARCHETYPE_ROOT` switches the terminology scope to its constituent's
-    // (OPT2 master03 §Terminology); its own name is looked up in the new scope,
-    // falling back to the parent scope for the slot-level rubric.
-    let (child_term, is_root) = match co {
+    // for its CHILDREN (OPT2 master03 §Terminology). The root node's OWN rubric
+    // is the slot-level term the introducing artefact defines (ADL2 requires
+    // the artefact that introduces a node id to define it — AOM2 master03
+    // §Validity Rules), so it resolves in the OUTER scope first; the component
+    // scope is only a last resort. Resolving the slot id in the component scope
+    // first can false-positive on the constituent's own unrelated id codes.
+    let child_term = match co {
         CObject::CComplexObject(CComplexObject::CArchetypeRoot(r)) => {
-            (ctx.scope(&r.archetype_ref).unwrap_or(term), true)
+            ctx.scope(&r.archetype_ref).unwrap_or(term)
         }
-        _ => (term, false),
+        _ => term,
     };
-    let name_term = if is_root { child_term } else { term };
-    let mut node = create_node(ctx, name_term, term, attr_name, co, parent_path);
+    let mut node = create_node(ctx, term, child_term, attr_name, co, parent_path);
     build_children(ctx, child_term, co, &mut node);
     node
 }
@@ -284,8 +287,11 @@ fn create_node(
 
     let code = object_node_id(co);
     if !code.is_empty() {
-        // Resolve the rubric name in the node's own scope, falling back to the
-        // parent scope (a filler root's slot code lives in the parent).
+        // Resolve the rubric in the introducing artefact's scope first (for a
+        // filler root that is the OUTER template terminology, which ADL2
+        // obliges to define the slot code — AOM2 master03 §Validity Rules),
+        // falling back to the component scope only when the outer one is
+        // silent.
         node.name = rubric_text(name_term, code, &ctx.default_language)
             .or_else(|| rubric_text(parent_term, code, &ctx.default_language));
         node.localized_name.clone_from(&node.name);

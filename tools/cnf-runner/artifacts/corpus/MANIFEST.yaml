@@ -1364,20 +1364,32 @@ cnf.adl2.opt.vitals:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics; second valid OPT for list/count coverage; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.archetype.count_a:
+  source: fixtures/adl2/archetype/cnf_count_a.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "authored 2026-07-24 spine-first as the constrained OBSERVATION archetype behind the FLAT-over-ADL2 cases (AM AOM2 §C_ATTRIBUTE cardinality): items cardinality 1..1 + ELEMENT occurrences 1..1 give the FLAT reject row a real archetype constraint to violate"
+cnf.adl2.archetype.count_b:
+  source: fixtures/adl2/archetype/cnf_count_b.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  provenance: "derived 2026-07-24 from cnf.adl2.archetype.count_a by renaming the archetype HRID — each ADL2 upload-flow case owns a fresh logical artefact on a shared world"
 cnf.adl2.opt.flat_a:
   source: fixtures/adl2/opt/flat_parity_a.adls
   format: adl2-text
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0"
-  provenance: "authored 2026-07-24 spine-first as the constrained ADL2 operational template for the FLAT-over-ADL2 commit cases (AM ADL2 §Templates; ITS-REST simplified_formats master04): items cardinality 1..1 + ELEMENT occurrences 1..1 give the FLAT reject row a real archetype constraint to violate"
+  provenance: "authored 2026-07-24 spine-first as the ADL2 template for the FLAT-over-ADL2 commit cases: its content is a use_archetype fill of cnf.adl2.archetype.count_a (AOM2 master06 §Templates — an ENTRY under content must be an archetype root, RM composition entry.adoc §Invariants Is_archetype_root; the constraint under test lives in the filled archetype)"
 cnf.adl2.opt.flat_b:
   source: fixtures/adl2/opt/flat_parity_b.adls
   format: adl2-text
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_flat_b.v1.0.0"
-  provenance: "derived 2026-07-24 from cnf.adl2.opt.flat_a by renaming the archetype HRID — each ADL2 upload-flow case owns a fresh logical artefact on a shared world"
+  provenance: "derived 2026-07-24 from cnf.adl2.opt.flat_a by renaming the template + filled-archetype HRIDs (fills cnf.adl2.archetype.count_b) — each ADL2 upload-flow case owns a fresh logical artefact on a shared world"
 cnf.adl2.opt.invalid.unparseable:
   source: fixtures/adl2/opt/invalid/unparseable.adls
   format: adl2-text

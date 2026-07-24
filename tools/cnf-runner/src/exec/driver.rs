@@ -1165,17 +1165,37 @@ impl HttpDriver<'_> {
                             }
                         }
                         crate::model::binding::FormatHeaderReq::Required => {
-                            // openehr-template-id: the manifest's declared
-                            // template identity for the case's template
-                            // (falling back to the corpus key for entries
-                            // that predate the metadata).
-                            if let Some(key) = case.requires.templates.first() {
-                                let template_id = set
-                                    .corpus
-                                    .as_ref()
-                                    .and_then(|(_, m)| m.get(key))
-                                    .and_then(|e| e.template_id.clone())
-                                    .unwrap_or_else(|| key.to_string());
+                            // openehr-template-id: the committed payload's own
+                            // manifest-declared template identity wins — the
+                            // step's `${ds:…}` body names the data set, and its
+                            // corpus entry carries the authoritative
+                            // `template_id` (this also serves cases that
+                            // provision their template IN-FLOW, e.g. via
+                            // I_DEFINITION_ADL2.upload_artefact, where
+                            // `requires.templates` is rightly empty). Fallback:
+                            // the case's provisioned template list (corpus key
+                            // itself for entries that predate the metadata).
+                            let body_ds_template_id =
+                                step.with_entries().iter().find_map(|(_, v)| {
+                                    v.refs().iter().find_map(|r| match r {
+                                        crate::refgrammar::ValueRef::DataSet { key, .. } => set
+                                            .corpus
+                                            .as_ref()
+                                            .and_then(|(_, m)| m.get(key))
+                                            .and_then(|e| e.template_id.clone()),
+                                        _ => None,
+                                    })
+                                });
+                            let template_id = body_ds_template_id.or_else(|| {
+                                case.requires.templates.first().map(|key| {
+                                    set.corpus
+                                        .as_ref()
+                                        .and_then(|(_, m)| m.get(key))
+                                        .and_then(|e| e.template_id.clone())
+                                        .unwrap_or_else(|| key.to_string())
+                                })
+                            });
+                            if let Some(template_id) = template_id {
                                 headers.insert(name.clone(), template_id);
                             }
                         }

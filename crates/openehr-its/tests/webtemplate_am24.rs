@@ -432,3 +432,124 @@ fn am24_archetype_conformance_walk_enforces_cardinality() {
             .collect::<Vec<_>>()
     );
 }
+
+/// The template-with-filler seam: an ADL2 `template` whose content is a
+/// `use_archetype` C_ARCHETYPE_ROOT fill of a separately-held archetype must
+/// project a WebTemplate that CONTAINS the filler's flattened subtree — the
+/// normal ADL2 composition case (AOM2 master06 §Templates: slot fills;
+/// OPT2 master03: the created OPT inlines every filler). Regression for the
+/// live defect where the projected WT carried no content nodes and every FLAT
+/// path under the fill was "unknown simplified path".
+const FILLER_ARCHETYPE: &str = r#"archetype (adl_version=2.0.6; rm_release=1.0.2; generated)
+    openEHR-EHR-OBSERVATION.cnf_count_a.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"openEHR CNF">
+    >
+
+definition
+    OBSERVATION[id1] matches {    -- Observation one
+        data matches {
+            HISTORY[id2] matches {
+                events cardinality matches {1..*; unordered} matches {
+                    POINT_EVENT[id3] occurrences matches {0..*} matches {
+                        data matches {
+                            ITEM_TREE[id4] matches {
+                                items cardinality matches {1..1; unordered} matches {
+                                    ELEMENT[id5] occurrences matches {1..1} matches {
+                                        value matches {
+                                            DV_COUNT[id6]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <text = <"Observation one">; description = <"A constrained observation">>
+            ["id2"] = <text = <"History">; description = <"Event history">>
+            ["id3"] = <text = <"Any event">; description = <"A point event">>
+            ["id4"] = <text = <"Tree">; description = <"Item tree">>
+            ["id5"] = <text = <"Count item">; description = <"A count element">>
+            ["id6"] = <text = <"Count value">; description = <"The count value">>
+        >
+    >
+"#;
+
+const FILLER_TEMPLATE: &str = r#"template (adl_version=2.0.6; rm_release=1.0.2; generated)
+    openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0
+
+language
+    original_language = <[ISO_639-1::en]>
+
+description
+    lifecycle_state = <"unmanaged">
+    original_author = <
+        ["name"] = <"openEHR CNF">
+    >
+
+definition
+    COMPOSITION[id1] matches {    -- Adl2 flat
+        content cardinality matches {1..*; unordered} matches {
+            use_archetype OBSERVATION[id2, openEHR-EHR-OBSERVATION.cnf_count_a.v1.0.0]
+        }
+    }
+
+terminology
+    term_definitions = <
+        ["en"] = <
+            ["id1"] = <text = <"Adl2 flat">; description = <"ADL2 FLAT-parity encounter">>
+            ["id2"] = <text = <"Observation one">; description = <"The filled observation">>
+        >
+    >
+"#;
+
+#[test]
+fn am24_template_filler_subtree_reaches_the_web_template() {
+    let mut repo = ArchetypeRepository::new();
+    repo.insert(parse_artefact(FILLER_ARCHETYPE).expect("parse filler archetype"));
+    let template = parse_artefact(FILLER_TEMPLATE).expect("parse template");
+    let opt = create_opt(&template, &repo).expect("create_opt inlines the filler");
+    let wt = build_web_template_am24(&opt).expect("build am24 web template");
+
+    let mut observations = Vec::new();
+    collect_typed(&wt.tree, "OBSERVATION", &mut observations);
+    assert!(
+        !observations.is_empty(),
+        "the filled OBSERVATION must appear in the projected WebTemplate; tree rm types: {:?}",
+        rm_types(&wt.tree)
+    );
+    let count = find(&wt.tree, "count_item").unwrap_or_else(|| {
+        panic!(
+            "count_item leaf missing; tree rm types: {:?}",
+            rm_types(&wt.tree)
+        )
+    });
+    // The shared shape pass compacts an ELEMENT to its value type (the Better
+    // WebTemplate convention, identical to the OPT 1.4 front end).
+    assert_eq!(count.rm_type, "DV_COUNT");
+    // The generated Complete example must realize the mandatory leaf, and it
+    // must satisfy its own template (the FLAT commit path depends on both).
+    let comp = example_composition(&wt, DetailLevel::Complete);
+    assert!(
+        comp.pointer("/content/0/archetype_details").is_some(),
+        "the filled ENTRY must be an archetype root (RM composition entry.adoc §Invariants Is_archetype_root)"
+    );
+    let msgs = validate_archetype_conformance(&comp, &wt);
+    assert!(
+        msgs.is_empty(),
+        "the Complete example must satisfy its own template, got {msgs:?}"
+    );
+}
