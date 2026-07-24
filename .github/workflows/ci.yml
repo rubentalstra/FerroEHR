@@ -328,7 +328,34 @@ jobs:
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
           chmod +x /usr/local/bin/tailwindcss
           tailwindcss --help | head -1
+      # The compose stack's app image is the expensive (cargo-chef) build. Build
+      # it here with an EXPORTED GHA layer cache so a cold runner reuses the
+      # cooked-dependency layer across runs (issue #282 F2/D1) — the canonical
+      # GitHub Actions cache pattern (docs.docker.com/build/ci/github-actions/cache).
+      # The docker-container driver (setup-buildx-action default) is what enables
+      # the type=gha exporter; `load: true` puts the result in the docker store
+      # so the compose `--no-build` below finds it.
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the app image (from-source; exported GHA cache)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          target: runtime-from-source
+          load: true
+          tags: ehrbase-rs:ui-e2e
+          build-args: |
+            REVISION=${{ github.sha }}
+          cache-from: type=gha,scope=ui-e2e-app
+          cache-to: type=gha,mode=max,scope=ui-e2e-app
+      - name: Build the postgres image (COPY-only, seconds)
+        run: docker buildx build --load -t ehrbase-rs-postgres:ui-e2e docker/postgres
       - name: Run the E2E journey battery
+        # UI_E2E_NO_BUILD makes ui-e2e.sh `up --no-build` the pre-built images.
+        env:
+          UI_E2E_NO_BUILD: "1"
+          EHRBASE_IMAGE: ehrbase-rs:ui-e2e
+          EHRBASE_POSTGRES_IMAGE: ehrbase-rs-postgres:ui-e2e
         run: bash scripts/ui-e2e.sh
       - name: Upload journey screenshots
         if: always()

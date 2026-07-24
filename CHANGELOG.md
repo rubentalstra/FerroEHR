@@ -40,6 +40,34 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Docker / Compose deployment rework (#282)**: a from-the-ground-up rebuild
+  of the container surface for smaller images, faster builds, and a
+  production-grade posture on every build.
+  - **One Dockerfile per image, two targets, zero drift**: `docker/Dockerfile`
+    and `docker/admin-ui/Dockerfile` now each expose `runtime-from-source`
+    (what `docker compose build` uses) and `runtime-prebuilt` (what CI uses),
+    both sharing a single runtime stage — so the compose-built and published
+    images can no longer diverge. The separate `*.runtime` Dockerfiles are
+    removed.
+  - **Faster rebuilds**: dependency compilation is split into its own
+    `cargo-chef` layer, so editing application code no longer recompiles
+    dependencies, and CI now reuses that layer across runs via an exported
+    build cache.
+  - **Debian 13 + digest pinning**: builder and runtime moved to Debian 13
+    ("trixie"); the runtime is `distroless/cc-debian13` (non-root user 65532).
+    Every base image is now pinned by immutable digest, and the bundled
+    versions are refreshed — PostgreSQL 18.4, Keycloak 26.7.0, SeaweedFS 4.40,
+    Grafana otel-lgtm 0.29.2.
+  - **Compose**: the optional services are now opt-in behind profiles
+    (`--profile s3` for SeaweedFS, `--profile keycloak` for Keycloak); every
+    service declares memory/CPU limits mirroring the Helm chart; Keycloak has a
+    real healthcheck; and there is no hard-coded project name, so the dev,
+    conformance, and E2E stacks no longer collide.
+  - **Build provenance** no longer reads `.git` from the build context (which
+    is now excluded, shrinking the context and stabilising the cache): the
+    `/management/info` commit SHA flows through the standard `REVISION` build
+    argument (the same value as the `org.opencontainers.image.revision` label)
+    and degrades to `unknown` when unset — never a failed build.
 - **Simplified Formats folded into `openehr-its` (#268)**: the FLAT /
   STRUCTURED / Web-Template implementation moved from the standalone
   `openehr-flat` crate into `openehr-its` as the `openehr_its::flat` module,

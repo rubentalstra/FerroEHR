@@ -4,17 +4,15 @@
 #
 #   1. The `ehrbase` binary is compiled OUTSIDE Docker, natively per
 #      architecture (amd64 on ubuntu-26.04, arm64 on ubuntu-26.04-arm — no
-#      QEMU emulation anywhere), inside a rust:*-slim-bookworm job container
-#      so the binary links against the same glibc (Debian 12 / 2.36) as the
-#      distroless cc-debian12 runtime image. Swatinem/rust-cache makes warm
+#      QEMU emulation anywhere), inside a rust:*-slim-trixie job container
+#      so the binary links against the same glibc (Debian 13 / 2.41) as the
+#      distroless cc-debian13 runtime image. Swatinem/rust-cache makes warm
 #      builds incremental.
-#   2. The image build itself is a COPY-only packaging step
-#      (docker/Dockerfile.runtime) — a multi-arch buildx push that takes
-#      seconds because no code runs inside the build.
+#   2. The image build itself is a COPY-only packaging step — `docker/Dockerfile`
+#      built with `--target runtime-prebuilt` (the same file compose builds with
+#      `--target runtime-from-source`; ONE runtime stage, zero drift — issue #282
+#      D5). A multi-arch buildx push takes seconds because no code runs inside.
 #   3. The smoke test pulls the pushed image by digest instead of rebuilding.
-#
-# docker/Dockerfile (multi-stage, from-source) remains the local/compose path;
-# CI does not use it.
 name: Containers
 
 on:
@@ -66,10 +64,10 @@ jobs:
             runner: ubuntu-26.04
           - platform: arm64
             runner: ubuntu-26.04-arm
-    # Debian 12 (bookworm) container so the produced binary targets glibc 2.36,
-    # matching gcr.io/distroless/cc-debian12 exactly. The tag must equal the
+    # Debian 13 (trixie) container so the produced binary targets glibc 2.41,
+    # matching gcr.io/distroless/cc-debian13 exactly. The tag must equal the
     # rust-toolchain.toml channel — verified below, never assumed.
-    container: rust:1.96.1-slim-bookworm
+    container: rust:1.96.1-slim-trixie
     steps:
       - uses: actions/checkout@v7
 
@@ -98,6 +96,12 @@ jobs:
         # The binary is produced by the ehrbase-server package (bin name
         # `ehrbase`) since the crate consolidation; `-p ehrbase` is the
         # platform LIBRARY and yields no binary to strip.
+        # build.rs stamps the REVISION value into /management/info; passing
+        # github.sha here (an env, never interpolated into a shell) makes the
+        # provenance explicit and does not depend on git being present in the
+        # slim job container (it is not). Empty/absent degrades to `unknown`.
+        env:
+          REVISION: ${{ github.sha }}
         run: cargo build --release --locked -p ehrbase-server
 
       - name: Strip
@@ -156,15 +160,20 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/Dockerfile.runtime
+          file: docker/Dockerfile
+          target: runtime-prebuilt
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # REVISION is the OCI-standard git-SHA arg (org.opencontainers.image.revision).
+          # runtime-prebuilt is COPY-only, so it only sets the label here; the
+          # binary's own /management/info SHA was stamped in the compile job below.
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
-          provenance: true
+          # Full provenance attestation (docs.docker.com/build/metadata/attestations).
+          provenance: mode=max
           sbom: true
 
   # ── Admin console: server binary per arch + the arch-independent site ───────
@@ -182,7 +191,7 @@ jobs:
             runner: ubuntu-26.04
           - platform: arm64
             runner: ubuntu-26.04-arm
-    container: rust:1.96.1-slim-bookworm
+    container: rust:1.96.1-slim-trixie
     steps:
       - uses: actions/checkout@v7
 
@@ -295,7 +304,8 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/admin-ui/Dockerfile.runtime
+          file: docker/admin-ui/Dockerfile
+          target: runtime-prebuilt
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -303,7 +313,8 @@ jobs:
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
             REVISION=${{ github.sha }}
-          provenance: true
+          # Full provenance attestation (docs.docker.com/build/metadata/attestations).
+          provenance: mode=max
           sbom: true
 
   # ── PostgreSQL image (only on docker/postgres changes or tags; multi-arch) ──
@@ -346,7 +357,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          provenance: true
+          # Full provenance attestation (docs.docker.com/build/metadata/attestations).
+          provenance: mode=max
           sbom: true
 
   # ── Smoke test (amd64): pull the pushed image, compose up, exercise the API ──
