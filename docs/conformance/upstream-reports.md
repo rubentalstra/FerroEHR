@@ -400,3 +400,24 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   Events_valid regardless of any archetype events cardinality.
 - **Ask:** Correct the two cells to rejected (violation `rm_invariant(Events_valid)`)
   per RM history.adoc.
+
+### UPR-23 — commit_contribution mismatched-change_type rejection has no assigned status code
+
+- **Register entry:** AMB-54
+- **Channel:** ITS-REST
+- **Status:** draft
+- **Spec citation:** RM common `master06-change_control_package.adoc` §Change
+  Control (addition = a first ORIGINAL_VERSION, `preceding_version_uid` Void,
+  `change_type 249|creation|`; modification = a new ORIGINAL_VERSION on an
+  existing VERSIONED_OBJECT, `change_type 251|modification|`) requires the
+  rejection; ITS-REST `overview/Requests_and_responses.md` §HTTP status codes
+  assigns no specific code (permits 400 generic or 422 semantic); the ITS-REST
+  docs text has no CONTRIBUTION status-code table.
+- **Problem:** Committing a CONTRIBUTION whose `change_type` mismatches the
+  version state (a `251|modification|` as the first version; a `249|creation|`
+  naming a `preceding_version_uid`) must be rejected per RM change-control, but
+  the released ITS-REST spec assigns no status code — servers may return 400 or
+  422, so conformance cannot gate a single code.
+- **Ask:** Assign a specific status code (400 or 422) to the
+  mismatched-`change_type` rejection on contribution commit in the ITS-REST
+  spec (docs text + OAS), so the behaviour is gateable.

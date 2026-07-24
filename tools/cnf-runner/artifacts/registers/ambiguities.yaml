@@ -477,3 +477,29 @@ AMB-51:
     relaxes Events_valid.
   disposition: editorial
   upstream_ref: "UPR-22"
+AMB-54:
+  ambiguity: >-
+    commit_contribution rejection of a mismatched change_type has no assigned
+    status code: a 251|modification| committed as the FIRST version of a
+    VERSIONED_OBJECT (nothing to modify), or a 249|creation| naming a
+    preceding_version_uid, violates RM change-control and MUST be rejected —
+    but the released ITS-REST docs text assigns no code, and the overview
+    permits either 400 (generic client error) or 422 (semantic).
+  source: >-
+    RM common master06-change_control_package.adoc §Change Control (addition =
+    a first ORIGINAL_VERSION with preceding_version_uid Void, change_type
+    249|creation|; modification = a new ORIGINAL_VERSION on an EXISTING
+    VERSIONED_OBJECT, change_type 251|modification|) — the rejection of a
+    mismatched change_type is REQUIRED. The ITS-REST docs text
+    (specifications/docs/) assigns NO status code to a change_type mismatch
+    (confirmed silent first-hand); ITS-REST overview Requests_and_responses.md
+    §HTTP status codes permits 400 (generic client-side error, "used when no
+    other 4xx error code is appropriate") or 422 (semantic) — the exact code is
+    unassigned.
+  handling: >-
+    commit_contribution's validation_failed carries BOTH semantic content
+    invalidity (422, exact) AND this mismatched-change_type rejection
+    (spec-unassigned code); the binding accepts 422 with alt_status [400] for
+    the latter. Pure semantic-content cases stay 422.
+  disposition: fixed_handling
+  upstream_ref: "UPR-23"
