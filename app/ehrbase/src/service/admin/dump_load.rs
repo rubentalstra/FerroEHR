@@ -144,6 +144,11 @@ struct VersionRecord {
     audit_id: Uuid,
     template_id: Option<String>,
     signature: Option<String>,
+    /// Whether `signature` was client-supplied (foreign — never re-verified at
+    /// read; master06 §Digital Signature). `#[serde(default)]` so archives dumped
+    /// before this field existed load as server-generated.
+    #[serde(default)]
+    signature_client_supplied: bool,
     creating_system_id: String,
     /// The reassembled canonical openEHR JSON, or `Value::Null` for a deleted
     /// version (which stores no node rows).
@@ -503,7 +508,7 @@ impl EhrbaseService {
             "SELECT vo_id, kind, sys_version, trunk_version, branch_number, branch_version, \
              preceding_version_uid, other_input_version_uids, lower(sys_period)::text AS lo, \
              upper(sys_period)::text AS hi, lifecycle_state, contribution_id, audit_id, \
-             template_id, signature, creating_system_id \
+             template_id, signature, signature_client_supplied, creating_system_id \
              FROM vo_version WHERE ehr_id = $1 ORDER BY vo_id, sys_version",
         )
         .bind(ehr_id)
@@ -536,6 +541,7 @@ impl EhrbaseService {
                 audit_id: r.try_get("audit_id")?,
                 template_id: r.try_get("template_id")?,
                 signature: r.try_get("signature")?,
+                signature_client_supplied: r.try_get("signature_client_supplied")?,
                 creating_system_id: r.try_get("creating_system_id")?,
                 body,
             });
@@ -764,6 +770,7 @@ async fn insert_version(
             audit_id: v.audit_id,
             template_id: v.template_id.as_deref(),
             signature: v.signature.as_deref(),
+            signature_client_supplied: v.signature_client_supplied,
             creating_system_id: &v.creating_system_id,
         },
     )

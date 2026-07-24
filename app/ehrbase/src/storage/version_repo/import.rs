@@ -51,14 +51,18 @@ pub async fn insert_imported_vo_version(
     row: &ImportedVersionRow<'_>,
 ) -> Result<(), StorageError> {
     let other_input = optional_json_array(row.other_input_version_uids);
+    // An IMPORTED_VERSION carries its origin's signature verbatim (RM common
+    // master06 §Copying) — foreign to this server, so signature_client_supplied
+    // is always true (never re-verified at read).
     sqlx::query(
         "INSERT INTO vo_version \
          (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, branch_version, \
           sys_period, lifecycle_state, creating_system_id, preceding_version_uid, \
-          other_input_version_uids, contribution_id, audit_id, template_id, signature) \
+          other_input_version_uids, contribution_id, audit_id, template_id, signature, \
+          signature_client_supplied) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, \
                  tstzrange($8::timestamptz, $9::timestamptz, '[)'), \
-                 $10, $11, $12, $13, $14, $15, NULL, $16)",
+                 $10, $11, $12, $13, $14, $15, NULL, $16, true)",
     )
     .bind(row.vo_id)
     .bind(row.kind)
@@ -107,6 +111,10 @@ pub struct VerbatimVersionRow<'a> {
     pub audit_id: Uuid,
     pub template_id: Option<&'a str>,
     pub signature: Option<&'a str>,
+    /// Whether `signature` was client-supplied (foreign — never re-verified at
+    /// read; master06 §Digital Signature); preserved verbatim across the
+    /// dump/load round-trip.
+    pub signature_client_supplied: bool,
     pub creating_system_id: &'a str,
 }
 
@@ -124,9 +132,10 @@ pub async fn insert_version_verbatim(
     sqlx::query(
         "INSERT INTO vo_version (vo_id, kind, ehr_id, sys_version, trunk_version, branch_number, \
          branch_version, preceding_version_uid, other_input_version_uids, sys_period, \
-         lifecycle_state, contribution_id, audit_id, template_id, signature, creating_system_id) \
+         lifecycle_state, contribution_id, audit_id, template_id, signature, \
+         signature_client_supplied, creating_system_id) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, \
-         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17)",
+         tstzrange($10::timestamptz, $11::timestamptz, '[)'), $12, $13, $14, $15, $16, $17, $18)",
     )
     .bind(row.vo_id)
     .bind(row.kind)
@@ -144,6 +153,7 @@ pub async fn insert_version_verbatim(
     .bind(row.audit_id)
     .bind(row.template_id)
     .bind(row.signature)
+    .bind(row.signature_client_supplied)
     .bind(row.creating_system_id)
     .execute(&mut *tx)
     .await?;

@@ -289,7 +289,12 @@ async fn contribution_versions_are_signed() {
 #[tokio::test]
 async fn client_supplied_signature_is_stored_verbatim() {
     // A CONTRIBUTION creation version carrying an author-generated signature —
-    // stored verbatim, never re-signed (design §3.3).
+    // stored verbatim, never re-signed (RM common master06 §Digital Signature).
+    // The read runs under the STRICT default (EhrbaseService::new): a foreign
+    // client signature is marked client-supplied at commit, so read-time
+    // verification skips it (never recomputes a foreign canonical form) and the
+    // strict read still succeeds — proving strict-by-default (#273) does not
+    // reject legitimately-stored client signatures.
     const CLIENT_SIG: &str =
         "-----BEGIN PGP SIGNATURE-----\nauthored-elsewhere\n-----END PGP SIGNATURE-----";
     let db = testkit::db().await.expect("testkit database");
@@ -339,7 +344,7 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
-        verify_on_read: VerifyOnRead::Strict,
+        verify_on_read: Some(VerifyOnRead::Strict),
     };
     let signer = Signer::from_config(&config).expect("strict signer");
     let svc = EhrbaseService::new(pool.clone()).with_signer(Arc::new(signer));
@@ -381,6 +386,100 @@ async fn strict_verify_on_read_rejects_a_tampered_row() {
         ),
         "strict verify_on_read must 5xx a tampered signature, got {tampered:?}"
     );
+}
+
+#[tokio::test]
+async fn default_verify_on_read_is_strict_and_rejects_a_tampered_row() {
+    // #273: with signing enabled and verify_on_read UNSET, the effective default
+    // is strict — the "sign but silently never check" default is gone. This uses
+    // the plain service default (EhrbaseService::new → Signer::digest_default),
+    // no explicit signing config, to prove the DEFAULT posture.
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = EhrbaseService::new(pool.clone());
+    let ehr_id = create_ehr(&svc).await;
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+    let ovid = svc
+        .create_composition(ehr_uuid, uv(composition("tamper-default"), "249", None))
+        .await
+        .expect("create_composition")
+        .version_uid();
+
+    // A clean read verifies fine under the strict default.
+    svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .await
+        .expect("clean read verifies under the strict default");
+
+    // Tamper the stored (server-generated) signature.
+    sqlx::query(
+        "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
+    )
+    .execute(&pool)
+    .await
+    .expect("tamper");
+
+    let tampered = svc
+        .composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+        .await;
+    assert!(
+        matches!(
+            tampered,
+            Err(SmError {
+                status: CallStatusType::Exception,
+                ..
+            })
+        ),
+        "the strict default must 5xx a tampered signature, got {tampered:?}"
+    );
+}
+
+/// Build a digest-mode service with an explicit `verify_on_read` policy.
+fn service_with_verify(pool: PgPool, policy: VerifyOnRead) -> EhrbaseService {
+    let config = SigningConfig {
+        enabled: true,
+        mode: Mode::Digest,
+        key_path: None,
+        key_passphrase: None,
+        key_passphrase_file: None,
+        verify_on_read: Some(policy),
+    };
+    let signer = Signer::from_config(&config).expect("signer");
+    EhrbaseService::new(pool).with_signer(Arc::new(signer))
+}
+
+#[tokio::test]
+async fn warn_and_off_verify_on_read_serve_a_tampered_row() {
+    // The other two poles of the policy (#273): `warn` logs + meters a mismatch
+    // but still serves; explicit `off` never even checks. Neither is a 5xx —
+    // together with the strict tests this proves the default is no longer the
+    // silent-pass state, and the opt-outs remain reachable.
+    for policy in [VerifyOnRead::Warn, VerifyOnRead::Off] {
+        let db = testkit::db().await.expect("testkit database");
+        let pool = db.pool();
+        let svc = service_with_verify(pool.clone(), policy);
+        let ehr_id = create_ehr(&svc).await;
+        let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+
+        let ovid = svc
+            .create_composition(ehr_uuid, uv(composition("tamper-nonstrict"), "249", None))
+            .await
+            .expect("create_composition")
+            .version_uid();
+
+        sqlx::query(
+            "UPDATE vo_version SET signature = 'sha256:dGFtcGVyZWQ=' WHERE kind = 'COMPOSITION'",
+        )
+        .execute(&pool)
+        .await
+        .expect("tamper");
+
+        svc.composition_original_version(ehr_uuid, ovid.parse().expect("ovid"))
+            .await
+            .unwrap_or_else(|e| {
+                panic!("verify_on_read = {policy:?} must serve, not reject: {e:?}")
+            });
+    }
 }
 
 #[tokio::test]
@@ -441,7 +540,7 @@ fn signing_disabled(pool: PgPool) -> EhrbaseService {
         key_path: None,
         key_passphrase: None,
         key_passphrase_file: None,
-        verify_on_read: VerifyOnRead::Off,
+        verify_on_read: Some(VerifyOnRead::Off),
     };
     let signer = Signer::from_config(&config).expect("disabled signer");
     EhrbaseService::new(pool).with_signer(Arc::new(signer))

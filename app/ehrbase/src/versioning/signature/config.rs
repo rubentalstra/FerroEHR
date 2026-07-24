@@ -30,13 +30,21 @@ pub enum Mode {
     Pgp,
 }
 
-/// Recompute-and-compare policy at read/reassembly time.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+/// Recompute-and-compare policy at read/reassembly time — for our OWN
+/// signatures only (a client-supplied signature is stored verbatim and never
+/// re-verified; RM common master06 §Digital Signature).
+///
+/// Left unset in `[signing]`, the effective policy is resolved by
+/// [`SigningConfig::effective_verify_on_read`]: **`strict` when signing is
+/// enabled** and `off` when signing is disabled. No openEHR spec governs
+/// read-time (re-)verification timing — master06 frames verification as the
+/// reader/receiver's role and marks the exact canonical serialisation "To Be
+/// Determined" — so this is our own integrity-hardening design, not conformance.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum VerifyOnRead {
     /// Serve the stored signature untouched (RM common master06 §Digital
     /// Signature models it as a stored fact).
-    #[default]
     Off,
     /// Log + meter a mismatch (`version_signature_invalid_total`); still serve.
     Warn,
@@ -45,7 +53,8 @@ pub enum VerifyOnRead {
 }
 
 /// Version-signing configuration. Every field has a default, so an all-defaults
-/// value is valid: signing **on**, `digest` mode, verification off.
+/// value is valid: signing **on**, `digest` mode, and — with signing enabled —
+/// read-time verification **strict** (see [`Self::effective_verify_on_read`]).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SigningConfig {
@@ -63,8 +72,11 @@ pub struct SigningConfig {
     /// File-based indirection for [`Self::key_passphrase`] (K8s/Docker secrets).
     /// Exactly one of the pair may be set; the loader reads and trims the file.
     pub key_passphrase_file: Option<PathBuf>,
-    /// Read-time verification policy: `off` | `warn` | `strict`.
-    pub verify_on_read: VerifyOnRead,
+    /// Read-time verification policy: `off` | `warn` | `strict`. **Unset**
+    /// (the default) resolves via [`Self::effective_verify_on_read`] to `strict`
+    /// when signing is enabled — the explicit "sign but never check" state is
+    /// reachable only by deliberately setting `off`.
+    pub verify_on_read: Option<VerifyOnRead>,
 }
 
 impl Default for SigningConfig {
@@ -75,7 +87,31 @@ impl Default for SigningConfig {
             key_path: None,
             key_passphrase: None,
             key_passphrase_file: None,
-            verify_on_read: VerifyOnRead::default(),
+            verify_on_read: None,
+        }
+    }
+}
+
+impl SigningConfig {
+    /// The effective read-time verification policy, resolving the enabled-
+    /// dependent default of an unset [`Self::verify_on_read`].
+    ///
+    /// - unset + signing enabled → [`VerifyOnRead::Strict`] (our-own-design
+    ///   integrity hardening: a served version whose stored server signature no
+    ///   longer recomputes is provably corrupt, so it fails loud rather than
+    ///   being silently served);
+    /// - unset + signing disabled → [`VerifyOnRead::Off`] (there are no server
+    ///   signatures to verify);
+    /// - explicit `off` / `warn` / `strict` → honoured as configured.
+    ///
+    /// No openEHR spec governs read-time verification timing (RM common master06
+    /// §Digital Signature) — our own design.
+    #[must_use]
+    pub fn effective_verify_on_read(&self) -> VerifyOnRead {
+        match self.verify_on_read {
+            Some(policy) => policy,
+            None if self.enabled => VerifyOnRead::Strict,
+            None => VerifyOnRead::Off,
         }
     }
 }
@@ -91,12 +127,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn defaults_sign_on_digest_verify_off() {
+    fn defaults_sign_on_digest_verify_strict_when_enabled() {
         let c = SigningConfig::default();
         assert!(c.enabled);
         assert_eq!(c.mode, Mode::Digest);
-        assert_eq!(c.verify_on_read, VerifyOnRead::Off);
+        // The raw field is unset (None), but the effective policy resolves to
+        // strict for a signing-enabled server (#273 — our-own-design hardening).
+        assert_eq!(c.verify_on_read, None);
+        assert_eq!(c.effective_verify_on_read(), VerifyOnRead::Strict);
         assert!(c.key_path.is_none());
+    }
+
+    #[test]
+    fn effective_verify_on_read_resolves_the_enabled_dependent_default() {
+        // unset + disabled → off (nothing to verify).
+        let disabled = SigningConfig {
+            enabled: false,
+            ..SigningConfig::default()
+        };
+        assert_eq!(disabled.effective_verify_on_read(), VerifyOnRead::Off);
+        // explicit off / warn are honoured even with signing enabled.
+        for policy in [VerifyOnRead::Off, VerifyOnRead::Warn, VerifyOnRead::Strict] {
+            let c = SigningConfig {
+                verify_on_read: Some(policy),
+                ..SigningConfig::default()
+            };
+            assert_eq!(c.effective_verify_on_read(), policy);
+        }
     }
 
     #[test]
