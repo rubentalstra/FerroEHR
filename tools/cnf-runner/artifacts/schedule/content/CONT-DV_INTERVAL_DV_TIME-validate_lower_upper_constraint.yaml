@@ -29,3 +29,4 @@ decision_table:
     - ["10:00:00", "11:00:00", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", rejected, ["constraint(millisecond_validity): millisecond component required for lower", "constraint(timezone_validity): timezone component required for lower", "constraint(millisecond_validity): millisecond component required for upper", "constraint(timezone_validity): timezone component required for upper"]]
     - ["10:00:00.5", "11:00:00.5", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", rejected, ["constraint(timezone_validity): timezone component required for lower", "constraint(timezone_validity): timezone component required for upper"]]
     - ["10:00:00.5Z", "11:00:00.5Z", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", "mandatory", accepted, []]
+ambiguities: [AMB-44]

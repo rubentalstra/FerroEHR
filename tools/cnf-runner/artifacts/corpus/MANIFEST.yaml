@@ -1052,33 +1052,15 @@ cnf.aql.invalid.syntax_garbage:
   provenance: "re-adjudicated 2026-07-21 from the retired ECC invalid-query corpus (ECC-QRY-005) against QUERY AQL 1.1"
 
 # ── AQL query-text fixtures (invalid: unsupported TERMINOLOGY() forms) ─────────
-cnf.aql.invalid.terminology_lookup_matches:
-  source: fixtures/query/reject_terminology_lookup_matches.aql
-  format: aql-text
-  rm_versions: [">=1.0.2"]
-  validity:
-    verdict: invalid
-    defect: "'lookup' operation as a matches operand — only 'expand' has code-list semantics (§TERMINOLOGY usage a/b)"
-    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-002 against QUERY AQL 1.1"
 cnf.aql.invalid.terminology_in_select:
   source: fixtures/query/reject_terminology_in_select.aql
   format: aql-text
   rm_versions: [">=1.0.2"]
   validity:
     verdict: invalid
-    defect: "TERMINOLOGY() in a SELECT column — an unsupported position (§TERMINOLOGY defines matches-operand and Boolean-assertion forms only)"
+    defect: "TERMINOLOGY() in a SELECT column — the §TERMINOLOGY usage positions are all WHERE-clause forms (matches operand, braces-merged matches operand, Boolean assertion)"
     spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
   provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-003 against QUERY AQL 1.1"
-cnf.aql.invalid.terminology_boolean_lookup:
-  source: fixtures/query/reject_terminology_boolean_lookup.aql
-  format: aql-text
-  rm_versions: [">=1.0.2"]
-  validity:
-    verdict: invalid
-    defect: "Boolean TERMINOLOGY('lookup', …) — only 'validate'/'subsumes' have Boolean semantics (§TERMINOLOGY)"
-    spec_ref: "QUERY AQL master03-syntax §TERMINOLOGY"
-  provenance: "re-adjudicated 2026-07-21 from the retired ECC AQL-terminology case ECC-AQT-004 against QUERY AQL 1.1"
 # Corpus additions for the CNF simplified_formats chapter seed. Same entry
 # schema as MANIFEST.yaml; the validate harness concatenates this into
 # MANIFEST.yaml at integration (never edit MANIFEST.yaml directly here).

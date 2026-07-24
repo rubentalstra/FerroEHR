@@ -4,7 +4,7 @@ component: CONTENT
 rm_class: DV_TEXT
 capabilities: [ArchetypeValidation]
 profiles: [CORE]
-test_purpose: "A committed DV_TEXT is accepted when value is present and satisfies the C_STRING constraint; a runtime DV_CODED_TEXT value must still comply. Merges the schedule's two duplicate-heading validate_open tables (open, then C_STRING.pattern) \u2014 see REQUIREMENTS-rest.md."
+test_purpose: "A committed DV_TEXT is accepted when value is present and satisfies the C_STRING constraint; a runtime DV_CODED_TEXT value must still comply. Merges the schedule's two duplicate-heading validate_open tables (open, then C_STRING.pattern) \u2014 see AMB-28."
 description: "DV_TEXT open ({*}) and against a C_STRING.pattern"
 spec_refs:
   - "CNF platform_test_schedule master17.2 \u00a7CONT-DV_TEXT-validate_open"
@@ -23,3 +23,4 @@ decision_table:
     - [null, "XYZ", null, "rejected", ["rm_schema: value is mandatory"]]
     - ["ABC", "XYZ", null, "rejected", ["constraint(C_STRING.pattern): value does not match the C_STRING.pattern constraint"]]
     - ["XYZ", "XYZ", null, "accepted", []]
+ambiguities: [AMB-28]

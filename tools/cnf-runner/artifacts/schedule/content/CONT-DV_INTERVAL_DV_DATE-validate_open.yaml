@@ -18,8 +18,8 @@ test_purpose: >-
   A committed DV_INTERVAL<DV_DATE> against an open constraint ({*}) is accepted
   whenever the BASE Interval invariants that the RM actually defines hold
   (Lower/Upper_included_valid, Limits_consistent). The RM defines no
-  value-present-when-bounded invariant and does not pin strictly_comparable for
-  partial dates of differing precision, so those rows are accepted.
+  value-present-when-bounded invariant (AMB-43). The mixed-precision bound
+  pair lives in the report_only sibling case (AMB-29).
 description: "DV_INTERVAL<DV_DATE> open ({*}): the RM-defined interval invariants"
 spec_refs:
   - "CNF platform_test_schedule master17.3 §CONT-DV_INTERVAL_DV_DATE-validate_open"
@@ -39,5 +39,5 @@ decision_table:
     - ["2021", "2022", false, false, true, true, accepted, []]
     - ["2021-01", "2022-08", false, false, true, true, accepted, []]
     - ["2021-01-20", "2022-08-11", false, false, true, true, accepted, []]
-    - ["2021", "2021-10", false, false, true, true, accepted, []]
     - [null, null, true, true, false, false, accepted, []]
+ambiguities: [AMB-43]

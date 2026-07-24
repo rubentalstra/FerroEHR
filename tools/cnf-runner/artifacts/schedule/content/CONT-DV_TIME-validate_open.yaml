@@ -41,3 +41,4 @@ decision_table:
     - ["10:30:47.333333-03:00", "accepted", []]
     - ["10.5", "rejected", ["iso8601(no_fractional_hours): openEHR does not allow fractional hours in partial time expressions"]]
     - ["10:05.5", "rejected", ["iso8601(no_fractional_minutes): openEHR does not allow fractional minutes in partial time expressions"]]
+ambiguities: [AMB-44]
