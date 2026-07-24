@@ -54,12 +54,17 @@ applies to every crate — generated and hand-written alike.
   (`docs/conformance/ehrbase-rs/results.json` + `verdicts.json`); the
   baseline only ratchets upward. (The ECC harness retired 2026-07-22; the
   reviewed cutover comparison lives in git history.)
-- **The vendored CNF text is the oracle the instrument derives from:**
-  `docs/specs/openehr/CNF/docs/platform_test_schedule/` defines what a
-  conformant server must do; the upstream Robot suites under
-  `CNF/tests/platform/robot/` are reference material, and their official
-  DATA fixtures are adopted into the runner corpus as provenance-stamped
-  re-adjudications (never blind imports).
+- **The vendored CNF text is the STALLED structural GUIDE the instrument's
+  COVERAGE derives from — NOT the correctness oracle** (owner ruling
+  2026-07-24; openEHR CNF never released a stable version):
+  `docs/specs/openehr/CNF/docs/platform_test_schedule/` names WHICH behaviours
+  to exercise, but the CORRECT behaviour is derived from the RELEASED spec
+  components (RM / BASE / AM / QUERY / TERM / ITS-XML / SM / ITS-REST docs text) —
+  where the schedule and a released spec conflict, the released spec wins. The
+  upstream Robot suites under `CNF/tests/platform/robot/` are stalled reference
+  material; their official DATA fixtures are adopted into the runner corpus only
+  as provenance-stamped re-adjudications (never blind imports, never as an
+  oracle).
 - Golden vectors: openEHR conformance corpora, the vendored canonical-JSON
   corpus, Better's `web-template-tests`, openEHR reference archetypes.
   Prefer an existing golden vector over a hand-written fixture. A test that

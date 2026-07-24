@@ -31,6 +31,17 @@ SUT-observed), attribute to ONE suspect, fix only that (delegate to the
   negotiation variant, precondition/error family, RM/AQL) as its own small
   isolated case; a behaviour with no case is a gap to close or an honest
   boundary to register, never silent.
+- **Only the RELEASED spec components are the oracle; the OAS, the CNF
+  schedule, and the Robot suites are all STALLED guides** (owner 2026-07-24):
+  adjudicate from the released components (RM / BASE / AM / QUERY / TERM /
+  ITS-XML / SM / ITS-REST **docs text** — SM anchors operations + naming,
+  ITS-REST the wire; an SM op the released ITS-REST doesn't realize is an
+  SM↔ITS gap, not a REFUTE). The OAS is `emit-rest` codegen input only;
+  the CNF Platform Conformance Test Schedule (never released stable) says WHICH
+  behaviour to test, not the correct answer; the Robot suites/data sets are
+  stalled/broken (e.g. AMB-47). Where any conflicts with a released component,
+  the released component wins — which is precisely why we build the first
+  *enforceable* CNF framework. See [[served-openapi-is-native]].
 
 **How it is enforced:** the always-loaded root CLAUDE.md CNF hard rule;
 `.claude/rules/cnf-triage.md` (the attribution law) + the `cnf-triage` agent;

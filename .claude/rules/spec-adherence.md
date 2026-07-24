@@ -17,11 +17,22 @@ intuition.
   relevant vendored spec section first** — grep the class/attribute/endpoint
   name under the owning component dir (map in `docs/specs/openehr/README.md`),
   or run `/spec-lookup <topic>`.
-- **Cross-check the CNF schedule:** if the behaviour is covered by
-  `docs/specs/openehr/CNF/docs/platform_test_schedule/` (or the Robot suites
-  under `CNF/tests/platform/robot/`), the implementation must satisfy those
-  test cases — exact status codes, headers, and payload shapes. When in doubt,
-  the CNF test case wins over a plausible reading of prose.
+- **The CNF schedule + Robot suites are STALLED GUIDES, not the oracle (owner
+  ruling 2026-07-24).** openEHR CNF never released a stable version, and the
+  Robot suites/data sets are stalled/broken, so
+  `docs/specs/openehr/CNF/docs/platform_test_schedule/` and
+  `CNF/tests/platform/robot/` tell you WHICH behaviours to cover — they are NOT
+  authority for the correct answer. Derive every enforceable expectation from
+  the RELEASED spec component (RM / BASE / AM / QUERY / TERM / ITS-XML / SM /
+  ITS-REST docs text); where the schedule or a Robot data set conflicts with a
+  released spec, the RELEASED SPEC WINS, and an expectation with no
+  released-spec ground is not enforceable.
+- **The ITS-REST docs text is the wire oracle, NOT the OAS (owner ruling
+  2026-07-24).** The vendored ITS-REST OAS is **stalled** — it is `emit-rest`
+  codegen input only, never a behavioural oracle. Read
+  `docs/specs/openehr/ITS-REST/` prose (esp. overview `Requests_and_responses`)
+  for required wire behaviour; where the OAS and the docs text disagree, the
+  docs text wins.
 - **CNF red-run triage is spec-adjudicated** (`.claude/rules/cnf-triage.md`;
   the `cnf-triage` agent): when the CNF runner and the application disagree,
   the vendored spec text decides — it is always right and never a suspect.
