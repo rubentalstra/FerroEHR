@@ -30,3 +30,8 @@ captures:
     fallback: header Location last-segment
   version_uids:
     from: body "versions[*].id.value"     # list capture: one element per committed VERSION
+  first_version_uid:
+    from: body "versions[0].id.value"     # scalar: the first committed VERSION (single-version contributions)
+  first_versioned_object_uid:
+    from: capture first_version_uid
+    transform: root-uid                    # the versioned_object_uid of the first VERSION (for a version-envelope read)
