@@ -80,11 +80,11 @@ text { fill: #c3c2b7; }
 
 <text x="472.1818181818182" y="285" class="seg-label" text-anchor="middle">123</text><text x="778.3636363636364" y="285" class="muted">123</text>
 <text x="166" y="319" text-anchor="end">Simplified formats</text>
-<rect x="174" y="302" width="252.12121212121212" height="26" class="bar-passed"/>
+<rect x="174" y="302" width="261.8181818181818" height="26" class="bar-passed"/>
 
-<text x="300.06060606060606" y="319" class="seg-label" text-anchor="middle">52</text><rect x="426.1212121212121" y="302" width="4.848484848484849" height="26" class="bar-na"/>
+<text x="304.9090909090909" y="319" class="seg-label" text-anchor="middle">54</text><rect x="435.8181818181818" y="302" width="4.848484848484849" height="26" class="bar-na"/>
 
-<text x="438.969696969697" y="319" class="muted">53</text>
+<text x="448.6666666666667" y="319" class="muted">55</text>
 <text x="166" y="353" text-anchor="end">Security &amp; privacy</text>
 <rect x="174" y="336" width="24.242424242424242" height="26" class="bar-passed"/>
 
