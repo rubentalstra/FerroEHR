@@ -90,7 +90,7 @@ text { fill: #c3c2b7; }
 
 <text x="186.12121212121212" y="353" class="seg-label" text-anchor="middle">5</text><text x="206.24242424242425" y="353" class="muted">5</text>
 <text x="166" y="387" text-anchor="end">Signing</text>
-<rect x="174" y="370" width="19.393939393939394" height="26" class="bar-passed"/>
+<rect x="174" y="370" width="24.242424242424242" height="26" class="bar-passed"/>
 
-<text x="201.3939393939394" y="387" class="muted">4</text>
+<text x="186.12121212121212" y="387" class="seg-label" text-anchor="middle">5</text><text x="206.24242424242425" y="387" class="muted">5</text>
 </svg>
