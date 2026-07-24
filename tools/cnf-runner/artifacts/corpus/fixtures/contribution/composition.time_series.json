@@ -12,7 +12,7 @@
     },
     "template_id": {
       "_type": "TEMPLATE_ID",
-      "value": "time_series.en.v1"
+      "value": "time_series.en.v2"
     },
     "rm_version": "1.0.2"
   },

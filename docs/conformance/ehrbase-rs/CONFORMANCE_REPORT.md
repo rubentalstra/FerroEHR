@@ -7,18 +7,18 @@ Runner: cnf-runner 3.8.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 326 |
+| passed | 370 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 67 |
-| total | 393 |
+| total | 437 |
 
 ## By chapter
 
 | Chapter | passed | failed | errored | skipped | not_applicable |
 | --- | --- | --- | --- | --- | --- |
-| CONT | 88 | 0 | 0 | 0 | 0 |
+| CONT | 123 | 0 | 0 | 0 | 0 |
 | I_ADMIN_ARCHIVE | 0 | 0 | 0 | 0 | 4 |
 | I_ADMIN_DUMP_LOAD | 0 | 0 | 0 | 0 | 2 |
 | I_ADMIN_SERVICE | 2 | 0 | 0 | 0 | 10 |
@@ -27,7 +27,7 @@ Runner: cnf-runner 3.8.0 · verification pack: passed
 | I_DEFINITION_QUERY | 10 | 0 | 0 | 0 | 0 |
 | I_DEMOGRAPHIC_SERVICE | 12 | 0 | 0 | 0 | 12 |
 | I_EHR_COMPOSITION | 32 | 0 | 0 | 0 | 0 |
-| I_EHR_CONTRIBUTION | 27 | 0 | 0 | 0 | 5 |
+| I_EHR_CONTRIBUTION | 36 | 0 | 0 | 0 | 5 |
 | I_EHR_DIRECTORY | 34 | 0 | 0 | 0 | 3 |
 | I_EHR_EXTRACT_SERVICE | 0 | 0 | 0 | 0 | 10 |
 | I_EHR_SERVICE | 12 | 0 | 0 | 0 | 0 |
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 326 of 393 selected cases driven.
+Coverage: 370 of 437 selected cases driven.
 
 Not-executed verdicts (each cited):
 

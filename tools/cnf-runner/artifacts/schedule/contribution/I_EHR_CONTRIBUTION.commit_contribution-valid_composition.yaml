@@ -27,9 +27,9 @@ requires:
   templates:
     - cnf.opt.minimal_event
     - cnf.opt.maximal
-    - cnf.opt.time_series
+    - cnf.opt.time_series.v2       # fresh-id copy; the canonical time_series.en.v1 is owned by the master04 upload_opt DEFINITION exemplar
     - cnf.opt.alternative_types
-    - cnf.opt.obs_admin
+    - cnf.opt.obs_admin.v2         # fresh-id copy; the canonical obs_admin.en.v1 is owned by the master04 validate_opt DEFINITION exemplar
   ehr: { commits: none }                 # mints ${ehr_id}
 parameters:
   iteration: reset_per_row
