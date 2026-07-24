@@ -26,4 +26,3 @@ flow:
       q: "SELECT TOP 5 e/ehr_id/value FROM EHR e"
       fetch: 10                             # the mandated conflict: fetch + TOP together
     expect: invalid_query
-ambiguities: [AMB-6]

@@ -1,8 +1,7 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.delete_party_relationship() —
 # the schedule entry is TBD; authored as the success/happy path from the SM
 # operation semantics (Post_relationship_deleted: not has_party_relationship).
-# Resolvable SM operation is I_PARTY_RELATIONSHIP.delete_party_relationship (the
-# AMB-13 rule). ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource —
+# Resolvable SM operation is I_PARTY_RELATIONSHIP.delete_party_relationship. ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource —
 # unrealized binding (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa
 kind: functional

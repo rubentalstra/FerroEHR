@@ -6,7 +6,7 @@
 # preceding_version_uid realization pattern as delete_composition (ITS-REST overview §If-Match). PERSON
 # is the representative concrete PARTY subtype.
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY.delete_party (the AMB-13 rule).
+# operation is I_PARTY.delete_party.
 # Sources: specifications/operations/person_delete.yaml (204/400/404/409),
 # responses/204_version_deleted.yaml, 400_already_deleted.yaml,
 # 409_PERSON_with_uid_based_id.yaml; parameters/path/uid_based_id_as_version_uid.yaml.

@@ -4,7 +4,7 @@
 # by-value in the source PARTY's relationships attribute). Explicit unrealized
 # declaration (AMB-17/22/24 precedent); register entry AMB-32.
 # master10 anchors the case under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY_RELATIONSHIP.delete_party_relationship (AMB-13 rule).
+# operation is I_PARTY_RELATIONSHIP.delete_party_relationship.
 sm_operation: I_PARTY_RELATIONSHIP.delete_party_relationship
 its: its-rest
 unrealized:

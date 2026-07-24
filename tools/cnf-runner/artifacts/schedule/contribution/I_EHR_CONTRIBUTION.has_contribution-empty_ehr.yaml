@@ -1,6 +1,6 @@
 # G.2 — has_contribution on an EHR with no CONTRIBUTIONs, probing a random
 # CONTRIBUTION uid, reports the CONTRIBUTION does not exist (FALSE) — realized as
-# a 404 (not_found) of the CONTRIBUTION GET (the registered AMB-23 realization).
+# a 404 (not_found) of the CONTRIBUTION GET (the registered realization).
 # "A random CONTRIBUTION uid" is a fixed arbitrary UUID literal that cannot
 # exist on an EHR with no commits.
 id: I_EHR_CONTRIBUTION.has_contribution-empty_ehr
@@ -27,4 +27,3 @@ flow:
       ehr_id: "${ehr_id}"
       contribution_uid: "11111111-1111-4111-8111-111111111111"
     expect: not_found                     # negative: "The result must be FALSE"
-ambiguities: [AMB-23]

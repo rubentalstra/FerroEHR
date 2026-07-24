@@ -4,7 +4,7 @@
 # committed at t1. The commit instants are captured; the closed temporal forms
 # fix the queried instants.
 # Schedule heading "get_composition_at_times" maps to the resolvable SM
-# operation get_composition_at_time (AMB-49, the AMB-13 rule — official id unchanged).
+# operation get_composition_at_time (official id unchanged).
 id: I_EHR_COMPOSITION.get_composition_at_times
 kind: functional
 component: EHR_COMPOSITION

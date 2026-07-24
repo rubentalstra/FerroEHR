@@ -2,7 +2,7 @@
 # ITS-REST has no field-level setter: the SM set_ehr_queryable is realized as a
 # read-modify-write of the whole EHR_STATUS (step 1 reads the current version
 # for If-Match; step 2 PUTs the modified status; step 3 verifies) — see
-# AMB-15 (the SM-setter read-modify-write realization) and ITS-REST overview §If-Match for the
+# the SM-setter read-modify-write realization and ITS-REST overview §If-Match for the
 # preceding_version_uid -> If-Match realization.
 id: I_EHR_STATUS.set_ehr_queryable-existing_ehr
 kind: functional

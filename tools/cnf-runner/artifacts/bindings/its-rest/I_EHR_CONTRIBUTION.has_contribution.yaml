@@ -5,8 +5,7 @@
 # the has_composition binding — the check is realized as
 # GET /ehr/{ehr_id}/contribution/{contribution_uid}:
 # 200 = the CONTRIBUTION exists (TRUE), 404 = it does not exist, or the EHR does
-# not exist (FALSE / error). The realization is registered as AMB-23 (the
-# AMB-19/AMB-48 existence-probe family).
+# not exist (FALSE / error). The realization is registered (the existence-probe family).
 # Sources: specifications/operations/contribution_get.yaml (200/404),
 # responses/200_CONTRIBUTION.yaml, responses/404_CONTRIBUTION.yaml.
 sm_operation: I_EHR_CONTRIBUTION.has_contribution

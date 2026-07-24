@@ -1,7 +1,7 @@
 # master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.delete_party_relationship() —
 # the schedule entry is TBD; authored as the primary declared-error path from the
 # SM operation semantics (.Errors: versioned_object_does_not_exist). Resolvable SM
-# operation is I_PARTY_RELATIONSHIP.delete_party_relationship (the AMB-13 rule).
+# operation is I_PARTY_RELATIONSHIP.delete_party_relationship.
 # ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding
 # (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.delete_party_relationship-bbbb

@@ -25,4 +25,3 @@ flow:
       query: "SELECT FROM WHERE CONTAINS"   # not a valid AQL instance of the formalism
       query_type: "AQL"
     expect: validation_failed            # invalid formalism -> Pre_valid_query fails, rejected
-ambiguities: [AMB-18]

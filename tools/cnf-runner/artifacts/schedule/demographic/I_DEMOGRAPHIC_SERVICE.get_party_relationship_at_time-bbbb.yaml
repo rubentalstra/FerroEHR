@@ -2,7 +2,7 @@
 # — the schedule entry is TBD; authored as the primary declared-error path from
 # the SM operation semantics (.Errors: versioned_object_does_not_exist).
 # Resolvable SM operation is I_PARTY_RELATIONSHIP.get_party_relationship_at_time
-# (the AMB-13 rule). ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource —
+#. ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource —
 # unrealized binding (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-bbbb
 kind: functional

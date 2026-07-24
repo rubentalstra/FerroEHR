@@ -33,4 +33,3 @@ flow:
     expect: ok
     assert:
       - { assert: returns, equals: true }   # has_query: Boolean True for a registered query
-ambiguities: [AMB-19]
