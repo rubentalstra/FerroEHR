@@ -1,4 +1,4 @@
-operational_template (adl_version=2.0.6; rm_release=1.0.2; generated)
+template (adl_version=2.0.6; rm_release=1.0.2; generated)
     openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0
 
 
@@ -14,27 +14,7 @@ description
 definition
     COMPOSITION[id1] matches {    -- Adl2 flat
         content cardinality matches {1..*; unordered} matches {
-            OBSERVATION[id2] occurrences matches {0..*} matches {
-                data matches {
-                    HISTORY[id3] matches {
-                        events cardinality matches {1..*; unordered} matches {
-                            POINT_EVENT[id4] occurrences matches {0..*} matches {
-                                data matches {
-                                    ITEM_TREE[id5] matches {
-                                        items cardinality matches {1..1; unordered} matches {
-                                            ELEMENT[id6] occurrences matches {1..1} matches {
-                                                value matches {
-                                                    DV_COUNT[id7]
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            use_archetype OBSERVATION[id2, openEHR-EHR-OBSERVATION.cnf_count_a.v1.0.0]
         }
     }
 
@@ -42,11 +22,6 @@ terminology
     term_definitions = <
         ["en"] = <
             ["id1"] = <text = <"Adl2 flat">; description = <"ADL2 FLAT-parity encounter">>
-            ["id2"] = <text = <"Observation one">; description = <"A constrained observation">>
-            ["id3"] = <text = <"History">; description = <"Event history">>
-            ["id4"] = <text = <"Any event">; description = <"A point event">>
-            ["id5"] = <text = <"Tree">; description = <"Item tree">>
-            ["id6"] = <text = <"Count item">; description = <"A count element — exactly one per event (items cardinality 1..1, occurrences 1..1)">>
-            ["id7"] = <text = <"Count value">; description = <"The count value">>
+            ["id2"] = <text = <"Observation one">; description = <"The constrained observation filling the content slot">>
         >
     >

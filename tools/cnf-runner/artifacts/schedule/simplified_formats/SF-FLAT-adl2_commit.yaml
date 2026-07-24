@@ -31,13 +31,17 @@ applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
 requires:
   server: any
   ehr: { commits: none }                 # mints ${ehr_id}
-data_sets: [cnf.adl2.opt.flat_a, cnf.sf.flat.adl2_valid]
+data_sets: [cnf.adl2.archetype.count_a, cnf.adl2.opt.flat_a, cnf.sf.flat.adl2_valid]
 flow:
   - step: 1
     call: I_DEFINITION_ADL2.upload_artefact
-    with: { opt_adl2: "${ds:cnf.adl2.opt.flat_a}" }
+    with: { opt_adl2: "${ds:cnf.adl2.archetype.count_a}" }
     expect: created
   - step: 2
+    call: I_DEFINITION_ADL2.upload_artefact
+    with: { opt_adl2: "${ds:cnf.adl2.opt.flat_a}" }
+    expect: created
+  - step: 3
     call: create_composition
     format: wt-flat                       # binding adds openehr-template-id (from the data set's declared template_id)
     with: { ehr_id: "${ehr_id}", composition: "${ds:cnf.sf.flat.adl2_valid}" }

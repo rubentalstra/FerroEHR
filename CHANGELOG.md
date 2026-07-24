@@ -48,6 +48,23 @@ workflow refuses a tag that has no matching section here.
   the REST contract this crate already houses). Pure packaging refactor — no
   change to the FLAT/STRUCTURED/Web-Template wire behaviour.
 
+### Fixed
+
+- **ADL2 filler-root naming in the projected WebTemplate**: a
+  `use_archetype`-filled archetype root resolved its display rubric in the
+  component (filled archetype) terminology first, so the template-side slot id
+  could false-positively match an unrelated internal id of the constituent
+  (e.g. a filled OBSERVATION surfacing as "history"). The slot rubric now
+  resolves in the introducing template's own terminology first (ADL2 obliges
+  the introducing artefact to define its node ids), with the component scope
+  as last resort — FLAT paths over filled ADL2 templates carry the
+  template-declared names.
+- **CNF runner: `openehr-template-id` for in-flow-provisioned templates**: the
+  simplified-format commit header now resolves from the committed data set's
+  own manifest-declared `template_id` (falling back to the case's provisioned
+  template list), so cases that upload their template inside the flow (the
+  ADL2 FLAT pair) drive the commit correctly instead of omitting the header.
+
 ## [3.9.0] - 2026-07-24
 
 ### Added
