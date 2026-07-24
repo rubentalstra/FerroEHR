@@ -90,7 +90,9 @@ text { fill: #c3c2b7; }
 
 <text x="186.12121212121212" y="353" class="seg-label" text-anchor="middle">5</text><text x="206.24242424242425" y="353" class="muted">5</text>
 <text x="166" y="387" text-anchor="end">Signing</text>
-<rect x="174" y="370" width="24.242424242424242" height="26" class="bar-passed"/>
+<rect x="174" y="370" width="29.090909090909093" height="26" class="bar-passed"/>
 
-<text x="186.12121212121212" y="387" class="seg-label" text-anchor="middle">5</text><text x="206.24242424242425" y="387" class="muted">5</text>
+<text x="188.54545454545456" y="387" class="seg-label" text-anchor="middle">6</text><rect x="203.0909090909091" y="370" width="9.696969696969697" height="26" class="bar-na"/>
+
+<text x="220.78787878787878" y="387" class="muted">8</text>
 </svg>

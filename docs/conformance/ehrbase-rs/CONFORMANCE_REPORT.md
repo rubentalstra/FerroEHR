@@ -7,12 +7,12 @@ Runner: cnf-runner 3.9.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 373 |
+| passed | 374 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
-| not_applicable | 67 |
-| total | 440 |
+| not_applicable | 69 |
+| total | 443 |
 
 ## By chapter
 
@@ -36,7 +36,7 @@ Runner: cnf-runner 3.9.0 · verification pack: passed
 | I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
 | SEC | 5 | 0 | 0 | 0 | 0 |
 | SF | 52 | 0 | 0 | 0 | 1 |
-| SIG | 5 | 0 | 0 | 0 | 0 |
+| SIG | 6 | 0 | 0 | 0 | 2 |
 
 ## Performance measurements
 
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 373 of 440 selected cases driven.
+Coverage: 374 of 443 selected cases driven.
 
 Not-executed verdicts (each cited):
 
@@ -146,3 +146,5 @@ Not-executed verdicts (each cited):
 | I_TDD_SERVICE.import_tdds-bulk_invalid | I_TDD_SERVICE.import_tdds: AMB-34 |
 | I_TDD_SERVICE.import_tdds-bulk_valid | I_TDD_SERVICE.import_tdds: AMB-34 |
 | SF-DEPRECATED-media_supported | option sf-deprecated-types-supported: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection |
+| SIG-VERSION-directory_signature_present | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |
+| SIG-VERSION-directory_verifiable | I_EHR_DIRECTORY.get_versioned_directory: AMB-24 |

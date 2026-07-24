@@ -2389,6 +2389,26 @@
       "rows_total": 1
     },
     {
+      "case": "SIG-VERSION-directory_signature_present",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "I_EHR_DIRECTORY.get_versioned_directory: AMB-24"
+    },
+    {
+      "case": "SIG-VERSION-directory_verifiable",
+      "status": "not_applicable",
+      "rows_driven": 0,
+      "rows_total": 1,
+      "citation": "I_EHR_DIRECTORY.get_versioned_directory: AMB-24"
+    },
+    {
+      "case": "SIG-VERSION-distinct_per_version",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SIG-VERSION-ehr_status_signature",
       "status": "passed",
       "rows_driven": 1,
