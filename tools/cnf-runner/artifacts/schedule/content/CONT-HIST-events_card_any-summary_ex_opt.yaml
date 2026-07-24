@@ -5,14 +5,14 @@
 # AMB-51: the official table verdicts "no events | absent | accepted", but the
 # RM invariant Events_valid ((events /= Void and then not events.is_empty) or
 # summary /= Void) forces rejection of a HISTORY with zero events and no
-# summary — the row follows the RM-derivable verdict.
-# Realization (HISTORY x cardinality synth family): summary is never committed
-# by this family, so the rows realize the official summary-absent block; the
-# archetype leaves summary unconstrained (= RM existence 0..1, this case's
-# summary_ex_opt).
-# TODO: encode the official summary-present rows once the content synth
-#       vocabulary drives the summary data axis alongside the events
-#       cardinality constraint.
+# summary — the row follows the RM-derivable verdict. Full official table
+# (both summary blocks) encoded 2026-07-24 via the summary_committed data
+# axis on the cardinality synth family.
+# Realization (HISTORY x cardinality synth family): the archetype leaves
+# summary unconstrained (= RM existence 0..1, this case's summary_ex_opt);
+# the summary_committed axis drives the committed instance — the
+# summary-present rows commit a valid ITEM_TREE summary, satisfying
+# Events_valid via its second disjunct even at zero events.
 id: CONT-HIST-events_card_any-summary_ex_opt
 kind: content
 component: CONTENT
@@ -23,8 +23,9 @@ profiles: [CORE]
 test_purpose: >-
   HISTORY events cardinality 0..*, summary existence 0..1: with summary absent,
   one or three events are accepted; zero events reject on the RM Events_valid
-  invariant (the official cell's `accepted` is the registered AMB-51 defect).
-description: "HISTORY.events count under an unconstrained (0..*) cardinality, summary optional and absent"
+  invariant (the official cell's `accepted` is the registered AMB-51 defect);
+  with summary present, every event count (0, 1, 3) is accepted.
+description: "HISTORY.events count under an unconstrained (0..*) cardinality, summary optional"
 spec_refs:
   - "CNF platform_test_schedule master16 §Test Case CONT-HIST-events_card_any-summary_ex_opt"
   - "AM AOM1.4 §C_MULTIPLE_ATTRIBUTE (cardinality) — container membership bounds"
@@ -43,3 +44,6 @@ decision_table:
     - ["any", "absent", 0, rejected, ["rm_invariant(Events_valid): no events and no summary"]]
     - ["any", "absent", 1, accepted, []]
     - ["any", "absent", 3, accepted, []]
+    - ["any", "present", 0, accepted, []]
+    - ["any", "present", 1, accepted, []]
+    - ["any", "present", 3, accepted, []]
