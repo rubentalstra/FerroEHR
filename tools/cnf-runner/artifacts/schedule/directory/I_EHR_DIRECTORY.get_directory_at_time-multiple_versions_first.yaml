@@ -42,3 +42,4 @@ flow:
     expect: ok                            # after the first version, before the second
     assert:
       - { assert: equivalent, to: "${ds:cnf.directory.root_only}", ignoring: server_assigned }
+ambiguities: [AMB-3]

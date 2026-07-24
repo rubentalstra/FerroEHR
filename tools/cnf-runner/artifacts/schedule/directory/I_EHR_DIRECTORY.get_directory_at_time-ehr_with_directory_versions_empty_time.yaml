@@ -39,3 +39,4 @@ flow:
     expect: ok
     assert:
       - { assert: equivalent, to: "${ds:cnf.directory.v2}", ignoring: server_assigned }
+ambiguities: [AMB-3]

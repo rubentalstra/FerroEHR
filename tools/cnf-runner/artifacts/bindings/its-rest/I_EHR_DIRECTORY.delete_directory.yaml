@@ -20,4 +20,4 @@ outcomes:
     status: 412                           # 412_directory.yaml (stale If-Match)
     headers: { ETag: latest-version-uid }
   precondition_missing: { status: 400 }   # If-Match absent when required -> 400.yaml
-  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to delete (404_unknown_ehr_id.yaml); the absent-directory overload is the AMB-26 proposal (schedule/directory/REQUIREMENTS.md)
+  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to delete (404_unknown_ehr_id.yaml); the absent-directory overload is AMB-26

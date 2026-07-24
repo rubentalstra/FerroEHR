@@ -1,7 +1,9 @@
 # has_path over the master09 reference FOLDER structure: each existing path
 # returns true (GET path -> 200), each fully- or partly-missing path returns
 # false (GET path -> 404). The 12 probes are the schedule's $path/$result data
-# set, verbatim (existing paths, partial paths, and a random top-level path).
+# set as realized by the OFFICIAL Robot data set (underscore folder names —
+# the master09 table cells print hyphenated names; AMB-47), preserving the
+# official true/false pattern (existing paths, partial paths, a random path).
 id: I_EHR_DIRECTORY.has_path-folder_structure
 kind: functional
 component: EHR_DIRECTORY
@@ -76,3 +78,4 @@ flow:
     call: has_path
     with: { ehr_id: "${ehr_id}", a_path: "random-d4" }         # random() -> false
     expect: not_found
+ambiguities: [AMB-47]

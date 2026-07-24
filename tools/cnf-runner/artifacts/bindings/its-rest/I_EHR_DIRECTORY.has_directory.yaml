@@ -5,7 +5,7 @@
 # GET /ehr/{ehr_id}/directory: 200 = a directory exists (TRUE), 404 = no
 # directory, or the EHR does not exist (FALSE / error). ITS-REST provides no
 # 200-with-boolean-body probe, so the boolean is carried by the ok/not_found
-# outcome kind rather than a response body (see schedule/directory/REQUIREMENTS.md).
+# outcome kind rather than a response body (no dedicated existence endpoint in ITS-REST 1.1.0).
 # Sources: specifications/operations/directory_get_at_time.yaml (200/404),
 # responses/200_FOLDER_retrieved.yaml,
 # 404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml.
