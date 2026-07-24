@@ -7,10 +7,11 @@
 # this sibling is the sf-deprecated-types-supported branch — a FLAT commit sent
 # with a deprecated media type is accepted. ECC-SF-004/005 ground.
 #
-# TODO: the flow-step `variant` (deprecated_media_type) is not yet consumed by
-#       the interpreter; the deprecated Content-Type override for this case
-#       depends on interpreter support for `variant` (same gap as
-#       SF-FLAT-missing_template_id).
+# NOTE: `variant: deprecated_media_type` selects the create_composition
+#       deprecated_media binding (Content-Type application/openehr.wt.flat.schema+json).
+#       This SUPPORTED branch is option-gated (option: sf-deprecated-types-supported,
+#       AMB-39): N/A unless the statement declares it — the correct posture for a
+#       SUT that does not accept the deprecated media type.
 id: SF-DEPRECATED-media_supported
 kind: functional
 component: SIMPLIFIED_FORMATS

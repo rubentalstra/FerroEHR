@@ -19,7 +19,12 @@ constraint_context:
   template: cnf.tpl.interval_time_field_validity
   path: "/content[openEHR-EHR-OBSERVATION.minimal.v1]/data/events/data/items/value"
   constraint_columns: ["minute_validity_lower", "second_validity_lower", "millisecond_validity_lower", "timezone_validity_lower", "minute_validity_upper", "second_validity_upper", "millisecond_validity_upper", "timezone_validity_upper"]
-# TODO: schedule marks further validity combinations TBD (CNF master17.3)
+# NOTE: the covered lower/upper x validity-component combinations are grounded in
+#       the RELEASED spec (AM AOM1.4 §C_TIME existence + RM data_types §DV_INTERVAL);
+#       the CNF schedule (master17.3) marks "further validity combinations TBD",
+#       but the schedule is a stalled guide, not the oracle — an untabled
+#       combination has no released-spec ground and is therefore not enforceable
+#       (spec-adherence: the released spec wins).
 # time literals corrected 2026-07-22: ISO 8601 / BASE foundation_types time syntax carries no leading T designator (T marks the date-time separator and duration components only)
 decision_table:
   columns: [lower, upper, minute_validity_lower, second_validity_lower, millisecond_validity_lower, timezone_validity_lower, minute_validity_upper, second_validity_upper, millisecond_validity_upper, timezone_validity_upper, expected, violates]
