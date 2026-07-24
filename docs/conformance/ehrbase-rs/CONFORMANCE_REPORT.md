@@ -1,7 +1,7 @@
 # Conformance Report
 
-SUT: ehrbase-rs 3.7.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.7.0 · verification pack: passed
+SUT: ehrbase-rs 3.8.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.8.0 · verification pack: passed
 
 ## Summary
 
@@ -46,28 +46,28 @@ Offered load sustained: 2.03/s over 3600 s (after 300 s warmup) · environment: 
 
 | Operation | Requests | Errors | p50 (ms) | p90 (ms) | p99 (ms) |
 | --- | --- | --- | --- | --- | --- |
-| adhoc_query | 953 | 0 | 29.6 | 35.9 | 46.4 |
-| composition_commit | 315 | 0 | 35.5 | 75.0 | 95.2 |
-| composition_delete | 4 | 0 | 19.1 | 25.2 | 25.2 |
-| composition_read | 1906 | 0 | 18.2 | 23.8 | 29.3 |
-| composition_read_current | 1072 | 0 | 18.6 | 24.6 | 35.0 |
-| composition_revision_history | 1029 | 0 | 12.5 | 17.3 | 22.0 |
-| composition_update | 77 | 0 | 32.8 | 44.2 | 60.2 |
-| contribution_commit | 52 | 0 | 37.1 | 92.1 | 103.3 |
-| contribution_read | 110 | 0 | 15.6 | 20.7 | 22.5 |
-| directory_create | 13 | 0 | 12.9 | 16.0 | 24.0 |
-| directory_read | 967 | 0 | 12.9 | 18.1 | 22.9 |
-| directory_update | 13 | 0 | 20.3 | 28.7 | 31.7 |
-| ehr_create | 13 | 0 | 19.3 | 24.3 | 24.4 |
-| ehr_read | 98 | 0 | 13.8 | 20.9 | 33.2 |
-| ehr_status_read | 26 | 0 | 14.2 | 18.4 | 19.3 |
-| ehr_status_update | 26 | 0 | 20.5 | 27.8 | 29.4 |
-| stored_query_execute | 204 | 0 | 30.0 | 36.8 | 44.7 |
-| tags_put | 34 | 0 | 17.7 | 25.1 | 31.0 |
-| tags_read | 34 | 0 | 13.5 | 16.8 | 19.5 |
-| template_get | 85 | 0 | 44.7 | 76.5 | 104.7 |
-| template_list | 85 | 0 | 43.3 | 59.8 | 73.7 |
-| ward_query | 204 | 0 | 173.7 | 247.6 | 436.2 |
+| adhoc_query | 953 | 0 | 23.1 | 29.3 | 41.3 |
+| composition_commit | 315 | 0 | 38.0 | 74.6 | 101.4 |
+| composition_delete | 4 | 0 | 21.0 | 28.3 | 28.3 |
+| composition_read | 1906 | 0 | 18.7 | 24.8 | 31.8 |
+| composition_read_current | 1072 | 0 | 18.3 | 24.1 | 31.6 |
+| composition_revision_history | 1029 | 0 | 13.8 | 17.8 | 25.6 |
+| composition_update | 77 | 0 | 32.8 | 46.7 | 56.0 |
+| contribution_commit | 52 | 0 | 61.1 | 93.6 | 108.1 |
+| contribution_read | 110 | 0 | 16.3 | 20.4 | 23.3 |
+| directory_create | 13 | 0 | 14.7 | 17.7 | 20.4 |
+| directory_read | 967 | 0 | 14.0 | 18.5 | 25.7 |
+| directory_update | 13 | 0 | 21.3 | 25.2 | 26.8 |
+| ehr_create | 13 | 0 | 18.6 | 27.8 | 29.9 |
+| ehr_read | 98 | 0 | 13.7 | 19.2 | 22.0 |
+| ehr_status_read | 26 | 0 | 17.4 | 20.7 | 22.8 |
+| ehr_status_update | 26 | 0 | 25.7 | 34.1 | 39.5 |
+| stored_query_execute | 204 | 0 | 29.3 | 35.6 | 44.7 |
+| tags_put | 34 | 0 | 19.3 | 24.4 | 32.8 |
+| tags_read | 34 | 0 | 14.9 | 18.5 | 20.6 |
+| template_get | 85 | 0 | 50.3 | 76.8 | 95.9 |
+| template_list | 85 | 0 | 43.8 | 62.2 | 80.4 |
+| ward_query | 204 | 0 | 23.0 | 30.1 | 41.3 |
 
 Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is recomputed from them by the verdict pipeline, never trusted from this table.
 
