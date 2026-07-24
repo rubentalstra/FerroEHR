@@ -1,10 +1,10 @@
 # C.10 — commit a COMPOSITION that references an OPT not loaded on the server:
 # rejected with an error about the missing OPT; nothing is created.
-# NOTE: the precise outcome is template_not_found ("information about the
-# non-existent OPT"), but the commit_contribution binding (unmodifiable) wires
-# only 201/400/404/409 and does not distinctly map template_not_found, so the
-# missing-OPT reject realizes as validation_failed (400 unprocessable content).
-# See REQUIREMENTS.md (existing-binding extension need).
+# NOTE: the commit_contribution binding maps template_not_found distinctly
+# (400, alt_status [422] per AMB-40 — ITS-REST 422.yaml names "the underlying
+# template is not known" verbatim); the kind is distinguished by the fixture
+# (the AMB-2 pattern: cnf.composition.unknown_template references the
+# reserved-absent id cnf.absent_template.v99).
 id: I_EHR_CONTRIBUTION.commit_contribution-non_exiting_opt
 kind: functional
 component: EHR_CONTRIBUTION
@@ -30,6 +30,6 @@ flow:
       ehr_id: "${ehr_id}"
       versions:
         - { data: "${ds:cnf.composition.unknown_template}", change_type: creation }
-    expect: template_not_found             # missing-OPT reject (see NOTE / REQUIREMENTS.md)
+    expect: template_not_found             # missing-OPT reject (ITS-REST 422.yaml: "the underlying template is not known"; AMB-40 alt_status on the binding)
 postconditions:
   - { assert: version, count: 0 }

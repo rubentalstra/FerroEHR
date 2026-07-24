@@ -1,11 +1,13 @@
 # C.9 — commit a persistent COMPOSITION, then a second CONTRIBUTION with
 # change_type = creation against the same COMPOSITION: rejected for the wrong
 # change type (only one create is allowed for a persistent COMPOSITION; further
-# operations must be modification). Only the first VERSION remains.
-# NOTE: the rejected outcome is a versioning-state conflict (409 conflict) — the
-# object already exists, so a second creation is invalid; `already_exists` is not
-# wired distinctly by the commit_contribution binding (see REQUIREMENTS.md).
-# commit 1 commits one VERSION, so ${v1_uids} is the single precedent uid (AMB-3).
+# operations must be modification — master08 C.9 NOTE). Only the first VERSION
+# remains. The rejection realizes as validation_failed: 400_CONTRIBUTION names
+# the ground verbatim ("the modification type does not match the operation"),
+# and a creation member naming a preceding version is exactly that mismatch.
+# commit 1 commits one VERSION, so ${v1_uids} is the single precedent uid; the
+# contribution wire carries it IN the member body (SM update_version.adoc:
+# UPDATE_VERSION.preceding_version_uid; OAS UpdateVersion.preceding_version_uid).
 id: I_EHR_CONTRIBUTION.commit_contribution-two_commits_second_creation
 kind: functional
 component: EHR_CONTRIBUTION
@@ -25,7 +27,7 @@ spec_refs:
 applies: { rm: ">=1.0.2" }
 requires:
   server: any
-  templates: [cnf.opt.minimal_event]
+  templates: [cnf.opt.minimal_persistent]   # provides persistent_minimal.en.v1 — the template both persistent data sets reference
   ehr: { commits: none }                 # mints ${ehr_id}
 data_sets: [cnf.composition.persistent.v1, cnf.composition.persistent.v2]
 flow:
@@ -45,8 +47,7 @@ flow:
       versions:
         - data: "${ds:cnf.composition.persistent.v2}"
           change_type: creation                 # wrong: the object already exists
-          preceding_version_uid: "${v1_uids}"   # ITS-REST: If-Match (AMB-3)
+          preceding_version_uid: "${v1_uids}"   # body property: OAS UpdateVersion.preceding_version_uid
     expect: validation_failed             # 400_CONTRIBUTION verbatim: "the modification type does not match the operation - i.e. first version of a MODIFICATION" (a creation member naming a preceding version is that mismatch)
 postconditions:
   - { assert: version, count: 1 }        # only the first VERSION remains
-ambiguities: [AMB-3]

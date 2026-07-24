@@ -289,6 +289,7 @@ cnf.opt.minimal_persistent:
   format: opt-xml
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
+  template_id: "persistent_minimal.en.v1"
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-21 to spec-text-only evidence"
 cnf.composition.minimal_persistent.v1:
   source: fixtures/composition/minimal_persistent.v1.json
@@ -374,6 +375,60 @@ cnf.folder.updated:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); re-adjudicated 2026-07-22"
+# master08 coverage additions (2026-07-24, catalogue audit #231): the official
+# B.2 valid-COMPOSITION variant data sets (time series, alternative types,
+# DV_CODED_TEXT on a DV_TEXT node, null_flavour) and the second persistent OPT
+# the multi-version combination B requires ("both COMPOSITIONs reference
+# different persistent OPTs" — CNF master08 §Combinations of data sets, B).
+cnf.opt.alternative_types:
+  source: fixtures/opt/valid/alternative_types.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "alternative_types.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); adopted 2026-07-24 for the master08 B.2.e valid variant (ELEMENT with alternative value types)"
+cnf.opt.persistent_minimal_2:
+  source: fixtures/opt/valid/persistent_minimal_2.opt
+  format: opt-xml
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "persistent_minimal_2.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); adopted 2026-07-24 as the second persistent OPT the master08 multi-version combination B mandates (its NOTE: both COMPOSITIONs reference different persistent OPTs)"
+cnf.composition.time_series:
+  source: fixtures/contribution/composition.time_series.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "time_series.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official time_series.contribution.json (versions[0].data — OBSERVATION with a multi-event HISTORY, the master08 B.2.d time-series row) and normalized to the literal RM ENTRY Is_archetype_root invariant (archetype_details added at archetype-id nodes; the upstream instance predates that strictness)"
+cnf.composition.alternative_types:
+  source: fixtures/contribution/composition.alternative_types.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "alternative_types.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official alternative_types.contribution.json (versions[0].data — the DV_COUNT alternative on the multi-type ELEMENT, the master08 B.2.e row) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+cnf.composition.coded_text_on_text:
+  source: fixtures/contribution/composition.obs_admin.coded_text_on_text.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "obs_admin.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.altdvcodedtext.json (versions[0].data — a DV_CODED_TEXT instance on the OPT's DV_TEXT node at0004, the master08 B.2.f row) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+cnf.composition.null_flavour:
+  source: fixtures/contribution/composition.obs_admin.null_flavour.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "obs_admin.en.v1"
+  provenance: "openEHR CNF Robot corpus (vendored docs/specs/openehr/CNF/tests/platform/robot @ the CNF pin); extracted 2026-07-24 from the official obs_admin.contribution.null_flavour.json (versions[0].data — empty ELEMENT.value with null_flavour |no information|, the master08 B.2.g row; RM data_structures ELEMENT Inv_null_flavour_indicated holds) and normalized to the literal RM ENTRY Is_archetype_root invariant"
+cnf.composition.persistent_2.v1:
+  source: fixtures/contribution/composition.persistent_2.v1.json
+  format: canonical-json
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "persistent_minimal_2.en.v1"
+  provenance: "derived 2026-07-24 from cnf.composition.persistent.v1 by re-pointing archetype_details.template_id to persistent_minimal_2.en.v1 (the official persistent_minimal_2.opt shares the identical archetype set, so the instance stays conformant) — the second-persistent-OPT member of the master08 multi-version combination B"
 # Corpus additions for the CNF master09 (DIRECTORY) schedule cases.
 # FOLDER payloads / provisioned directory trees. Structural placeholders — the
 # spine-first authored corpus lands with the catalogue authoring (#202).
