@@ -19,10 +19,13 @@ definitions behind the generated contract) and
 REST API realizes). The CNF chapters
 `docs/specs/openehr/CNF/docs/platform_test_schedule/master06`-`master12`
 (EHR / COMPOSITION / CONTRIBUTION / DIRECTORY / demographic / querying /
-admin) + the Robot suites under `CNF/tests/platform/robot/<API_GROUP>/` give
-the exact request/response pairs a conformant server must produce — when the
-prose feels ambiguous, the CNF test case wins. Cite sections
-(spec-adherence.md; `/spec-lookup`).
+admin) + the Robot suites under `CNF/tests/platform/robot/<API_GROUP>/` are a
+STALLED structural GUIDE to which request/response behaviours to cover (openEHR
+CNF never released a stable version; the Robot suites are stalled/broken) — NOT
+the oracle. The correct wire behaviour comes from the RELEASED ITS-REST docs
+text + RM; where the CNF schedule or a Robot data set conflicts with a released
+spec, the released spec wins (owner ruling 2026-07-24). Cite the released
+sections (spec-adherence.md; `/spec-lookup`).
 
 ## Rules
 
@@ -42,8 +45,9 @@ prose feels ambiguous, the CNF test case wins. Cite sections
   openEHR error body shape the spec defines.
 - **OpenAPI:** `ehrbase-rest` serves its own `utoipa`-generated OpenAPI +
   Swagger UI; the vendored OAS is the `emit-rest` codegen input for the
-  ITS-REST contract and the behavioural oracle, not a served document (owner
-  ruling, 2026-07-17).
+  ITS-REST contract (NOT a behavioural oracle — owner ruling 2026-07-24: the
+  OAS is stalled; the ITS-REST docs text is the oracle and wins over it), not a
+  served document (owner ruling, 2026-07-17).
 - **Admin** (`/rest/admin`) lives in `ehrbase-rest`, reusing the same service
   layer. (There is no EhrScape adapter — that surface was cut; the FLAT /
   STRUCTURED / Web-Template simplified formats are served through the standard

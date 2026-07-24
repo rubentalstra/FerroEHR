@@ -43,10 +43,13 @@ test suite that presumes our code and questions the tests.
 1. Read the observed wire exchange (results.json / transcript — what was
    actually sent, received, classified).
 2. Read the case core + operation binding (what the catalogue expects, and
-   its cited spec/OAS source).
-3. Read the governing spec text FIRST-HAND (`/spec-lookup`; CNF schedule,
-   ITS-REST + overview `Requests_and_responses`, SM interface, RM/QUERY).
-   Never adjudicate from memory or from EHRbase behaviour.
+   its cited spec-text source — the OAS is stalled and is NOT an oracle).
+3. Read the governing RELEASED spec text FIRST-HAND (`/spec-lookup`; the
+   ITS-REST docs text + overview `Requests_and_responses`, SM interface,
+   RM/QUERY/BASE/AM/TERM/ITS-XML). The CNF schedule is only a GUIDE to WHICH
+   behaviour to check — re-derive the correct answer from the released
+   component, never from the schedule's own assertion, the OAS, the Robot set,
+   memory, or EHRbase behaviour.
 4. Derive independently what a conformant server must return for that
    exchange; compare three-way: spec-required vs catalogue-expected vs
    SUT-observed. The mismatching side is the defect.
@@ -60,10 +63,36 @@ test suite that presumes our code and questions the tests.
 
 - **Never edit `docs/specs/openehr/**` or adjust a catalogue expectation to
   match observed SUT behaviour** — expectations trace to spec text only.
+- **Only the RELEASED spec components are the oracle — the OAS, the CNF
+  schedule, and the Robot suites are all STALLED (owner ruling 2026-07-24).**
+  Adjudicate ONLY against the released components (RM / BASE / AM / QUERY /
+  TERM / ITS-XML / **SM** / ITS-REST **docs text**). NEVER treat as authority:
+  the vendored OAS (`crates/openehr-its/vendor/rest-oas/`, ITS-REST `*.yaml` /
+  `Error.yaml` / response enumerations — `emit-rest` codegen input only); the
+  CNF Platform Conformance Test Schedule (never released stable — a GUIDE to
+  which behaviour to test, not the correct answer); or the Robot suites/data
+  sets (stalled/broken, e.g. AMB-47). Where any of these conflicts with a
+  released component, the released component wins. An "ambiguity" that exists
+  ONLY because a stalled source is stale/incomplete/self-contradictory — with
+  no released-component ground — is not a spec gap: re-ground it on a released
+  component, or drop it and make the case gating. **SM and the ITS-REST docs
+  text are BOTH oracles** (owner ruling 2026-07-24) — SM anchors the operation
+  + the naming the case cores use, ITS-REST binds it to the wire; an SM
+  operation the released ITS-REST does not yet realize is a genuine SM↔ITS
+  realization gap (verdict N/A-with-citation on this ITS + an upstream
+  alignment candidate), NOT a REFUTE.
 - **A red run is not presumptive evidence of an app bug** (the first live
   triage attributed 7/7 defects to the runner) — nor of a runner bug.
   Every row gets the full derivation; no attribution without a citation.
 - Transport faults / step-resolution failures classify as inconclusive
   runner-side rows, never SUT failures.
+- **Ambiguity-register entries are spec-PROVEN, never assumed.** Every
+  `artifacts/registers/ambiguities.yaml` entry is CONFIRMED first-hand against
+  the vendored spec (the register is a suspect like any catalogue artifact) —
+  re-adjudicate before trusting one or attaching an upstream report. A claimed
+  ambiguity the spec actually DEFINES is a catalogue defect: remove the entry
+  and make the case gating; do NOT report it upstream. `report_only` and
+  `editorial` entries MUST carry an `upstream_ref` (schema-enforced) so a
+  carried divergence is always reported to openEHR, never silently absorbed.
 - Standing test discipline applies: never weaken a test or expectation to
   go green (`.claude/rules/testing.md`).

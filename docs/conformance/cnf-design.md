@@ -360,7 +360,12 @@ Honest implications:
 1. **Machine-readable normative source, generated prose.** Like BMM → RM and
    OpenAPI → REST, the Schedule's normative form is data; the published spec
    pages are rendered from it. A test case that isn't in the catalogue doesn't
-   exist; a catalogue entry without spec citations doesn't build.
+   exist; a catalogue entry without spec citations doesn't build — and the
+   citation must be to a **RELEASED** spec component (RM / BASE / AM / QUERY /
+   TERM / ITS-XML / SM / ITS-REST docs text). The frozen CNF schedule, the OAS, and
+   the Robot suites are STALLED structural guides (which behaviours to cover),
+   never the correctness oracle — this framework earns its authority from the
+   released components, which is precisely why it is the first *enforceable* CNF.
 2. **SM anchors semantics; ITS bindings execute — structurally.** Every case
    is a protocol-neutral core (SM operation / content constraint, spec
    citations, pre/postconditions, logical outcomes); wire specifics live in
@@ -372,18 +377,24 @@ Honest implications:
 4. **Verdicts are computed, never asserted.** Profile verdicts derive
    mechanically from the results file. A certificate row a human typed is a
    defect.
-5. **Honesty is structural.** Coverage bounds printed, N/A adjudications
-   cited, corpus defects adjudicated in a register rather than silently
-   edited, both directions published when comparing products, registry rows
-   labelled by attestation level so self-declaration is never mistaken for
-   certification.
+5. **Honesty is structural.** Coverage is a mandate, not a pass rate — every
+   wire behaviour the spec defines is its own case, and the bounds + honest
+   boundaries are printed, never silent (§8.5, §11). N/A adjudications are
+   cited; spec silences/defects are adjudicated in the ambiguity register
+   rather than silently edited, and **every carried divergence is reported back
+   upstream** (`upstream_ref` → §13), never absorbed. Both directions are
+   published when comparing products; registry rows are labelled by attestation
+   level so self-declaration is never mistaken for certification.
 6. **Vendor neutrality is testable.** No vendor image names, endpoints, auth
    flows, or behavioural quirks in normative artifacts; fixtures carry spec
    citations, not `EhrBase ref:` markers; reference expectations are
    adjudicated against spec text, never against whichever SUT emitted them.
    (Red-run triage from the SUT side applies the same law: the vendored spec is
    the sole oracle and the application, runner, and catalogue are all suspects,
-   none presumed correct — `.claude/rules/cnf-triage.md`.)
+   none presumed correct — `.claude/rules/cnf-triage.md`.) The wire oracle is
+   the ITS-REST **docs text**, never the (stalled) OAS — the OAS is `emit-rest`
+   codegen input only, and where it and the docs text disagree, the text wins
+   (owner ruling 2026-07-24).
    CI enforces what it can; the maintainer charter (§12) enforces the rest.
 7. **Versioned like every other component.** Cases pin spec-version
    applicability ranges; a statement names the schedule release + tech profile
@@ -929,8 +940,17 @@ only *used* kinds.) Cases speak ONLY these kinds. Bindings map each kind to wire
 OAS). A kind a binding cannot map is a CI error.
 
 **The ambiguity register** (`registers/ambiguities.yaml`) — every entry is a
-real, verified divergence or silence, with the normative handling a runner
-must apply. Seeded from this extraction:
+real divergence or silence **CONFIRMED first-hand against the vendored spec
+before it may exist** (the register is a suspect like any artifact we wrote; a
+claimed ambiguity the spec actually DEFINES is a catalogue defect — the entry
+is removed and the case made gating, never excused), with the normative
+handling a runner must apply AND the outbound openEHR report it was raised as. Each entry carries
+`ambiguity`, `source` (the first-hand spec citation), `handling`, a
+machine-readable `disposition`, and an **`upstream_ref`** — the SPECPR /
+SPECQUERY / editorial key (or a `UPR-<n>` draft id in
+`docs/conformance/upstream-reports.md`) that pushes the fix back upstream. The
+register is a living artifact; **the file is authoritative** — it has grown
+well beyond the seed extraction shown below. Representative entries:
 
 | Id | Ambiguity (source) | Normative handling |
 |---|---|---|
@@ -948,14 +968,33 @@ must apply. Seeded from this extraction:
 | AMB-12 | **master06 mislabels its provided-status table "1.a"** against its own class list (1.a = no EHR_STATUS, line 40 vs line 45 caption). | Pilot 1 encodes both classes; conversion records the caption defect; editorial fix upstream. |
 
 Each entry carries a machine-readable **`disposition`** the pipeline
-branches on (closed enum): `loose_assert` (AMB-1) · `fixed_handling` —
-handling encoded directly in bindings/cases (AMB-2, AMB-3, AMB-6, AMB-7,
-AMB-11) · `option_select` — sibling cases + ICS options (AMB-4, AMB-8) ·
-`report_only` — verdicts reported, never gating (AMB-5, AMB-9) ·
-`statement_declared` (AMB-10) · `editorial` (AMB-12).
+branches on (closed enum): `loose_assert` (assert only what the spec pins) ·
+`fixed_handling` (handling encoded directly in bindings/cases) ·
+`option_select` (sibling cases + ICS options) · `report_only` (verdicts
+reported, never gating — reserved for genuinely open-upstream behaviour) ·
+`statement_declared` · `editorial` (the schedule/spec text is itself defective;
+the catalogue encodes the spec-derivable reading with a citation).
+
+**Transparency is enforced, not optional.** The register never *absorbs* a
+divergence — it documents it and reports it back. Every `report_only` and
+`editorial` entry MUST carry an `upstream_ref` (enforced by the schema and by
+`AmbiguityEntry::check_invariants`), so a gating suspension or a corrected spec
+defect always has an outbound openEHR report attached (§13). This is
+deliberate: a behaviour the spec leaves unassertable is more valuable
+shown-and-reported than hidden — it is precisely where the spec needs fixing.
+`report_only` is not a way to make red rows disappear; it is a cited,
+upstream-linked suspension that reverts to gating when the upstream item
+resolves.
 
 The register is normative: a runner that "resolves" an ambiguity privately is
-non-conformant to the schedule.
+non-conformant to the schedule. It is **NOT an exclusion list** — every case
+still runs; the register only governs how a spec-silent expectation is derived
+and whether a genuinely-open-upstream behaviour gates the certificate. (Deleting
+it in favour of "just let it fail" would be the opposite of honest: where the
+spec assigns no value, an invented expectation fails every conformant server
+and reports nothing useful; and an SM operation with no ITS-REST wire cannot be
+"failed" at all. The register turns each such gap into a cited, actionable
+upstream report instead.)
 
 ### 8.6 The assertion vocabulary
 
@@ -2142,6 +2181,17 @@ the difference between "nice idea, same risk" and "resourced program".
    §6.5 (track the Art 36/15 implementing acts; revisit the EEHRxF-seam
    profile when they land in 2027).
 
+**Outbound spec-defect reports (the ambiguity register → openEHR).** Building
+and running the catalogue against the real spec surfaces where the spec itself
+is silent, self-contradictory, or misaligned across SM / ITS / CNF. Every such
+finding is a register entry with an `upstream_ref` (§8.5), each drafted as a
+concrete openEHR report in `docs/conformance/upstream-reports.md` — grouped by
+channel (SPECPR / SPECQUERY / editorial / ITS-REST / ITS-XML / TERM / SEC) —
+for a maintainer to file, replacing the `UPR-<n>` draft id with the returned
+key. This is a first-class deliverable of the framework, not a side effect: an
+instrument that exercises the whole spec is exactly the instrument that finds
+the spec's own defects, and reporting them back is how the standard improves.
+
 Success measures: SEC adopts the schedule + charter; ≥2 independent runners
 pass the §8.12 verification pack; the AQL chapter ships with normative
 equivalence rules; ≥3 products on the public registry; CNF Release 1.0.0
@@ -2161,7 +2211,7 @@ acceptance gate:
 
 | PR | Content | Acceptance gate |
 |---|---|---|
-| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, vocabularies incl. the capability matrix, corpus manifest, ambiguity register seeded with AMB-1…12) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
+| U1 | The five schedule-artifact schema families (§8.2 #1–5: case cores, bindings, vocabularies incl. the capability matrix, corpus manifest, ambiguity register — a living artifact, each carried divergence linked via `upstream_ref` to its outbound report) + the §8.13 CI workflow | Schemas validate the §8.9 pilot files; CI runs on the repo |
 | U2 | master06 (EHR) converted: all 21 cases as case cores + the its-rest bindings for the EHR operations + corpus manifest over the existing EHR fixtures | Generated prose semantically equivalent to the current chapter (human-reviewed diff); zero information loss against the AsciiDoc tables |
 | U3 | master07/08/09 (COMPOSITION/CONTRIBUTION/DIRECTORY) conversion + bindings | Same gate; the versioning cases (§8.9 pilot 4 shape) round-trip |
 | U4 | Content chapters (master15–17) conversion — decision tables as data + the literal grammar + generation recipes | Every existing table row preserved verbatim; grammar parses 100% of existing literals |
