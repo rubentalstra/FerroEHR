@@ -19,14 +19,14 @@
 
 | | ehrbase-rs | upstream (Java) |
 |---|---|---|
-| Product | ehrbase-rs 3.8.0 | ehrbase-java 2.34.0 |
+| Product | ehrbase-rs 3.9.0 | ehrbase-java 2.34.0 |
 | Run date | 2026-07-24 | 2026-07-24 |
 | Party statement | `tools/cnf-runner/party/ehrbase-rs/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (393 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (440 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
@@ -52,7 +52,7 @@ runner, each with its own committed party statement.
 
 | | executed | passed | failed | errored | skipped | N/A |
 |---|---|---|---|---|---|---|
-| **ehrbase-rs** | 393 | 326 | 0 | 0 | 0 | 67 |
+| **ehrbase-rs** | 440 | 373 | 0 | 0 | 0 | 67 |
 | **upstream (Java)** | 393 | 159 | 128 | 38 | 0 | 68 |
 
 An **errored** row is inconclusive (the wire answered outside the operation's
@@ -141,7 +141,7 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 
 | Case | Format | Upstream failure | ehrbase-rs outcome |
 |---|---|---|---|
-| CONT-COMPOSITION-content_cardinality | — | expected `validation_failed`, observed `created` | passed |
+| CONT-COMPOSITION-content_cardinality | — | expected `validation_failed`, observed `created` | — |
 | CONT-DV_CODED_TEXT-validate_local_codes | — | expected `validation_failed`, observed `created` | passed |
 | CONT-DV_DATE-validate_constraint | — | expected `validation_failed`, observed `created` | passed |
 | CONT-DV_DATE-validate_range | — | expected `validation_failed`, observed `created` | passed |
@@ -185,9 +185,9 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 | CONT-DV_URI-validate_list | — | expected `validation_failed`, observed `created` | passed |
 | CONT-DV_URI-validate_open | — | expected `validation_failed`, observed `created` | passed |
 | CONT-DV_URI-validate_pattern | — | expected `validation_failed`, observed `created` | passed |
-| CONT-EVENT-type_narrowing | — | expected `validation_failed`, observed `created` | passed |
-| CONT-HISTORY-events_cardinality | — | expected `created`, observed `validation_failed` | passed |
-| CONT-ITEM_STRUCTURE-type_narrowing | — | expected `created`, observed `validation_failed` | passed |
+| CONT-EVENT-type_narrowing | — | expected `validation_failed`, observed `created` | — |
+| CONT-HISTORY-events_cardinality | — | expected `created`, observed `validation_failed` | — |
+| CONT-ITEM_STRUCTURE-type_narrowing | — | expected `created`, observed `validation_failed` | — |
 | I_ADMIN_SERVICE.physical_ehr_delete-delete_existing | — | expected `ok_empty`, observed `not_found` | passed |
 | I_DEFINITION_ADL14.get_opt-retrieve_single | — | equivalent: retrieved content differs from committed (modulo the normative ignore-set); go | passed |
 | I_DEFINITION_ADL2.get_artefact-example | canonical-json | expected `ok`, observed `not_acceptable` | passed |
@@ -271,3 +271,39 @@ case ran), **no_cases**, or **not claimed** (absent from that party's ICS).
 | SIG-VERSION-across_version_kinds | — | expected `updated`, observed `precondition_missing` | passed |
 
 </details>
+
+## Upstream measured-window error classes (adjudicated)
+
+The upstream measured record is honest as measured — errors are observations.
+Every class below was reproduced against a freshly composed upstream and
+adjudicated three-way against the RELEASED ITS-REST docs text before any
+narrative: the driver payloads are spec-correct (the identical exchanges
+succeed 0-error against ehrbase-rs in the committed record), and each class
+attributes to the upstream implementation. No expectation was bent either way.
+
+| Operation | errors/requests (measured window) |
+|---|---|
+| `composition_update` | 77/77 |
+| `ehr_status_update` | 26/26 |
+| `tags_put` | 34/34 |
+| `tags_read` | 34/34 |
+| `template_get` | 3/85 |
+
+- **`composition_update` + `ehr_status_update` (wire 400, deterministic)** —
+  one shared root cause: upstream rejects the RFC-9110-quoted `If-Match`
+  entity-tag form with `400 "UUID string too large"`. The released docs text
+  itself mandates the quoted form (ITS-REST overview `Requests_and_responses.md`
+  §"If-Match and accidental overwrites": `If-Match: "8849182c-…::openEHRSys.example.com::2"`),
+  and upstream 400s even its own returned `ETag` echoed back verbatim; it
+  succeeds only on the non-standard unquoted form. Upstream non-conformance;
+  the record stands.
+- **`tags_put` + `tags_read` (wire 404, deterministic)** — the item-tag paths
+  (`/ehr/{ehr_id}/tags`, `/ehr/{ehr_id}/composition/{uid}/tags`, …) are members
+  of the STABLE EHR API in released ITS-REST 1.1.0 (RM grounding:
+  `RM/docs/common/master07-tags.adoc`); upstream serves no such routes
+  ("No resource found at path"). A released-STABLE surface absent upstream is
+  non-conformance, not a citable N/A; the record stands.
+- **`template_get` (partial)** — the endpoint is fully functional when
+  reproduced (200 for JSON and XML); the small error share sits in a load
+  window whose `ward_query` p99 was ~10.9 s. Load-window transient, no defect
+  on either side; honest error observation.
