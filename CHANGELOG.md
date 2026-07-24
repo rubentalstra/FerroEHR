@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **ADL2/OPT2 templates are full FLAT/STRUCTURED peers of OPT 1.4 (#269)**: a
+  FLAT (`application/openehr.wt.flat+json`) or STRUCTURED
+  (`application/openehr.wt.structured+json`) composition **commit** keyed to an
+  ADL2-registered template now resolves and is validated against that template's
+  archetype constraints, exactly as an ADL 1.4 commit is. Two behaviours were
+  brought to parity: the am24 (OPT2) Web-Template builder now populates the
+  archetype-conformance constraints (existence, cardinality, closed-attribute
+  sibling sets, archetype slots, structural stubs) that composition validation
+  reads — so an ADL2-template instance is archetype-constraint-checked, not only
+  RM- and terminology-checked — and the runtime template resolver falls back to
+  the ADL2/OPT2 store when a template id is not an ADL 1.4 template (previously a
+  commit against an ADL2-registered template returned **422 "operational template
+  not known"**).
 - **Citation metadata (`CITATION.cff`)**: the repository is now citable in
   research papers — GitHub renders a "Cite this repository" button (APA +
   BibTeX) from the new CFF 1.2.0 file (author with ORCID, Apache-2.0,
@@ -34,6 +47,23 @@ workflow refuses a tag that has no matching section here.
   STABLE ITS-REST 1.1.0 sub-specification, alongside canonical JSON, XML, and
   the REST contract this crate already houses). Pure packaging refactor — no
   change to the FLAT/STRUCTURED/Web-Template wire behaviour.
+
+### Fixed
+
+- **ADL2 filler-root naming in the projected WebTemplate**: a
+  `use_archetype`-filled archetype root resolved its display rubric in the
+  component (filled archetype) terminology first, so the template-side slot id
+  could false-positively match an unrelated internal id of the constituent
+  (e.g. a filled OBSERVATION surfacing as "history"). The slot rubric now
+  resolves in the introducing template's own terminology first (ADL2 obliges
+  the introducing artefact to define its node ids), with the component scope
+  as last resort — FLAT paths over filled ADL2 templates carry the
+  template-declared names.
+- **CNF runner: `openehr-template-id` for in-flow-provisioned templates**: the
+  simplified-format commit header now resolves from the committed data set's
+  own manifest-declared `template_id` (falling back to the case's provisioned
+  template list), so cases that upload their template inside the flow (the
+  ADL2 FLAT pair) drive the commit correctly instead of omitting the header.
 
 ## [3.9.0] - 2026-07-24
 

@@ -150,6 +150,9 @@ Send the matching `Content-Type` when committing, or the matching `Accept` when
 retrieving, and the server converts between the flat/structured form and the
 canonical composition. These formats are a Better/EHRbase interoperability
 convenience; the canonical JSON and XML remain the openEHR-standard wire format.
+They work against both ADL 1.4 and ADL2 templates: a FLAT or STRUCTURED commit
+keyed to an ADL2-registered template resolves and is validated against that
+template's archetype constraints exactly as an ADL 1.4 commit is.
 
 > [!NOTE]
 > The FLAT and STRUCTURED formats are always relative to a template — the paths
