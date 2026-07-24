@@ -22,7 +22,7 @@
 //! by [`openehr_term::bundle`], TERM 3.1.0). Two presentation adapters consume
 //! it: [`validate_rm_terminology`] (this crate's dispatcher — the authoritative
 //! enforcement point, emitting archie-style [`InvariantViolation`]s) and the
-//! `openehr-flat` composition validator's terminology pass (its own
+//! `openehr_its::flat` composition validator's terminology pass (its own
 //! `ValidationKind::Terminology` message rendering). Neither re-derives the
 //! bindings.
 //!
@@ -93,7 +93,7 @@ impl Group {
         }
     }
 
-    /// A human-readable label for the group (the `openehr-flat` message text).
+    /// A human-readable label for the group (the `openehr_its::flat` message text).
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
@@ -155,7 +155,7 @@ impl CodeSet {
         }
     }
 
-    /// A human-readable label for the code set (the `openehr-flat` message text).
+    /// A human-readable label for the code set (the `openehr_its::flat` message text).
     #[must_use]
     pub fn label(self) -> &'static str {
         match self {
@@ -205,7 +205,7 @@ pub struct Slot {
 
 /// The coded slots fixed by an owning RM `_type`, with the invariant + vocabulary
 /// each realizes. The single source of the terminology binding table; both this
-/// crate's [`validate_rm_terminology`] and the `openehr-flat` terminology pass
+/// crate's [`validate_rm_terminology`] and the `openehr_its::flat` terminology pass
 /// resolve against it.
 ///
 /// Scoping follows the BMM: `null_flavour` is `ELEMENT`-scoped and `normal_status`
@@ -449,7 +449,7 @@ pub fn slot_is_violated(slot: &Slot, node: &Value) -> bool {
 ///
 /// This is the authoritative dispatcher-level enforcement of the RM
 /// terminology/code-set invariants ([`crate::rm_validate::validate_rm_value`]
-/// runs it as a post-core check); the `openehr-flat` composition validator
+/// runs it as a post-core check); the `openehr_its::flat` composition validator
 /// resolves the same [`slots_for`] table for its own message rendering.
 pub fn validate_rm_terminology(ty: &str, value: &Value, out: &mut Vec<InvariantViolation>) {
     for slot in slots_for(ty) {

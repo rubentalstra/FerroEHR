@@ -1,5 +1,5 @@
 //! Derived-runtime resolution: the cached [`WebTemplate`] and example
-//! COMPOSITION surfaces, thin over `openehr-flat`.
+//! COMPOSITION surfaces, thin over `openehr_its::flat`.
 //!
 //! # Spec basis
 //!
@@ -17,8 +17,8 @@
 //!
 //! NOTE (`WebTemplate` format is spec-silent): the concrete
 //! `WebTemplate` JSON shape is **not openEHR-normative** — it is the Better
-//! `web-template` SDT format and lives entirely in `openehr-flat` (a
-//! hand-written spec-adjacent crate). This module only *stores, resolves, and
+//! `web-template` SDT format and lives entirely in `openehr_its::flat` (a
+//! hand-written spec-adjacent module). This module only *stores, resolves, and
 //! caches* it; it never presents `WebTemplate` as canonical openEHR, and the
 //! builder's own id-sanitisation is a **vendor** rule, distinct from the
 //! §Composite Identifiers and Case identity law applied to the cache key here
@@ -26,8 +26,8 @@
 
 use std::sync::Arc;
 
-use openehr_flat::example::{DetailLevel, ExampleType};
-use openehr_flat::webtemplate::WebTemplate;
+use openehr_its::flat::example::{DetailLevel, ExampleType};
+use openehr_its::flat::webtemplate::WebTemplate;
 use serde_json::Value;
 
 use super::identity;
@@ -100,7 +100,7 @@ impl EhrbaseService {
     /// NOTE: example generation is **not spec-mandated** — it is a
     /// convenience surface. The example is produced from the template's (cached)
     /// [`WebTemplate`] by
-    /// [`example_composition`](openehr_flat::example::example_composition) at the
+    /// [`example_composition`](openehr_its::flat::example::example_composition) at the
     /// requested [`DetailLevel`], with a deterministic `uid` populated for
     /// the `output` ([`ExampleType::Output`]) form.
     ///
@@ -137,9 +137,9 @@ impl EhrbaseService {
             self.build_cached_web_template(&key, template_id, &xml)
                 .await?
         };
-        let mut composition = openehr_flat::example::example_composition(&wt, level);
+        let mut composition = openehr_its::flat::example::example_composition(&wt, level);
         if kind == ExampleType::Output {
-            openehr_flat::example::apply_output_uid(&mut composition, template_id);
+            openehr_its::flat::example::apply_output_uid(&mut composition, template_id);
         }
         Ok(composition)
     }
@@ -165,8 +165,8 @@ impl EhrbaseService {
         self.web_templates
             .get_or_build(key, || {
                 let opt = openehr_its::opt14::from_xml(xml)
-                    .map_err(|e| openehr_flat::error::FlatError::OptParse(e.to_string()))?;
-                openehr_flat::webtemplate::build_web_template(&opt)
+                    .map_err(|e| openehr_its::flat::error::FlatError::OptParse(e.to_string()))?;
+                openehr_its::flat::webtemplate::build_web_template(&opt)
             })
             .await
             .map_err(|e| {

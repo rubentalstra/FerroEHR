@@ -88,7 +88,7 @@ impl EhrbaseService {
     /// wrong").
     ///
     /// The template lookup goes through `web_template_for` and the passes
-    /// through `openehr_flat::validation::validate_*`.
+    /// through `openehr_its::flat::validation::validate_*`.
     ///
     /// # Errors
     /// [`ServiceError::ValidationFailed`] carrying every RM/terminology/
@@ -99,7 +99,7 @@ impl EhrbaseService {
         composition: &Value,
         incomplete: bool,
     ) -> Result<(), ServiceError> {
-        let mut messages = openehr_flat::validation::validate_rm_and_terminology(composition);
+        let mut messages = openehr_its::flat::validation::validate_rm_and_terminology(composition);
         let rm_terminology_failures = messages.len();
         if let Some(template_id) = composition
             .pointer("/archetype_details/template_id/value")
@@ -107,12 +107,12 @@ impl EhrbaseService {
         {
             let wt = self.web_template_for(template_id).await?;
             messages.extend(if incomplete {
-                openehr_flat::validation::validate_archetype_conformance_incomplete(
+                openehr_its::flat::validation::validate_archetype_conformance_incomplete(
                     composition,
                     &wt,
                 )
             } else {
-                openehr_flat::validation::validate_archetype_conformance(composition, &wt)
+                openehr_its::flat::validation::validate_archetype_conformance(composition, &wt)
             });
         }
         let template_failures = messages.len() - rm_terminology_failures;

@@ -229,7 +229,7 @@ flowchart TB
     specs["openEHR machine-readable specs<br/>(BMM · XSD · OpenAPI — vendored + pinned)"]
 
     subgraph crates ["crates/* — the specification layer (generated where the specs are machine-readable)"]
-        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser) · openehr-flat (WebTemplate · FLAT · STRUCTURED)"]
+        openehr["openehr-base · openehr-rm · openehr-am · openehr-term · openehr-lang (BMM · ODIN · BEL)<br/>openehr-its (native canonical JSON/XML codecs + ITS-REST contract + Simplified Formats: WebTemplate · FLAT · STRUCTURED)<br/>openehr-adl (ADL 1.4 + 2.4 engine: parser · AOM2 validation · flattener · OPT2)<br/>openehr-query (AQL parser)"]
     end
 
     subgraph app ["app/* — the application (four crates, four roles)"]

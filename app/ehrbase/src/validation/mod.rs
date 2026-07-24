@@ -19,7 +19,7 @@
 //!   recursive top-down data-conformance function ("the key function of an
 //!   archetype-enabled kernel", `AM/docs/AOM1.4/master04-constraint_model_
 //!   package.adoc` §`Valid_value`) runs at commit time over the compacted
-//!   `WebTemplate`. It lives in `openehr-flat` (a spec crate) and is invoked from
+//!   `WebTemplate`. It lives in `openehr_its::flat` (a spec-layer module) and is invoked from
 //!   the EHR commit choke point (`service::ehr::composition_validate`). Its
 //!   closed-world semantics are recorded as a spec-cited NOTE below.
 //! - **Surface C — per-kind RM structural validators (a seam, NOT here).** The
@@ -51,8 +51,8 @@
 //!   party-relationship) to its per-kind RM validator, so no commit path
 //!   bypasses validation (single seam).
 //! - **NOTE — surface-B closed-world semantics.** The
-//!   closed-world check lives in `openehr-flat::validation` (a spec crate,
-//!   outside this crate's ownership). AOM 1.4 defines only the positive
+//!   closed-world check lives in `openehr_its::flat::validation` (a spec-layer
+//!   module, outside this crate's ownership). AOM 1.4 defines only the positive
 //!   `valid_value` cascade (`AM/docs/AOM1.4/master04-constraint_model_package.adoc`
 //!   §`Valid_value`, silent on present-but-unmatched nodes); closure — reject
 //!   unmatched *archetyped* siblings, tolerate RM-permitted metadata, tolerate

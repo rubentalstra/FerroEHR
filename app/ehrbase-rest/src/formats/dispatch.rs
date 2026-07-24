@@ -3,7 +3,7 @@
 //!
 //! This is the wire seam between the negotiation core
 //! ([`crate::overview::negotiate`], which classifies the media type) and the
-//! `openehr-flat` conversion engine. It handles, in both directions, the
+//! `openehr_its::flat` conversion engine. It handles, in both directions, the
 //! FLAT (`application/openehr.wt.flat+json`) and STRUCTURED
 //! (`application/openehr.wt.structured+json`) representations of a versioned
 //! object:
@@ -81,7 +81,7 @@ fn missing_template_id() -> RestError {
 /// but does not conform to the target template's simplified-data-template shape
 /// — well-formed-but-semantically-invalid client content → `422`
 /// (`Requests_and_responses.md §HTTP status codes`, row `422`).
-fn flat_input_err(e: &openehr_flat::error::FlatError) -> RestError {
+fn flat_input_err(e: &openehr_its::flat::error::FlatError) -> RestError {
     RestError(ApiError::Unprocessable(format!(
         "Simplified-Format conversion failed: {e}"
     )))
@@ -92,7 +92,7 @@ fn flat_input_err(e: &openehr_flat::error::FlatError) -> RestError {
 /// form. Stored data is the server's own and should always convert, so this is
 /// a server fault → `500` (`Requests_and_responses.md §HTTP status codes`, row
 /// `500`).
-fn flat_output_err(e: &openehr_flat::error::FlatError) -> RestError {
+fn flat_output_err(e: &openehr_its::flat::error::FlatError) -> RestError {
     RestError(ApiError::Internal(format!(
         "Simplified-Format conversion failed: {e}"
     )))
@@ -115,7 +115,8 @@ pub(crate) async fn composition_from_flat(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_flat::convert::composition_from_flat(&flat, &wt, &now()).map_err(|e| flat_input_err(&e))
+    openehr_its::flat::convert::composition_from_flat(&flat, &wt, &now())
+        .map_err(|e| flat_input_err(&e))
 }
 
 /// Parse a STRUCTURED request body into a canonical-JSON COMPOSITION.
@@ -135,7 +136,7 @@ pub(crate) async fn composition_from_structured(
         .web_template(&template_id)
         .await
         .map_err(RestError::from)?;
-    openehr_flat::convert::composition_from_structured(&structured, &wt, &now())
+    openehr_its::flat::convert::composition_from_structured(&structured, &wt, &now())
         .map_err(|e| flat_input_err(&e))
 }
 
@@ -171,10 +172,10 @@ pub(crate) async fn composition_flat_response(
 pub(crate) fn composition_flat_response_with(
     status: StatusCode,
     comp: &Value,
-    wt: &openehr_flat::webtemplate::WebTemplate,
+    wt: &openehr_its::flat::webtemplate::WebTemplate,
 ) -> Result<Response, RestError> {
-    let flat =
-        openehr_flat::convert::composition_to_flat(comp, wt).map_err(|e| flat_output_err(&e))?;
+    let flat = openehr_its::flat::convert::composition_to_flat(comp, wt)
+        .map_err(|e| flat_output_err(&e))?;
     let json =
         serde_json::to_string(&flat).map_err(|e| internal(format!("FLAT serialization: {e}")))?;
     Ok(negotiate::flat_json_body(status, json))
@@ -200,9 +201,9 @@ pub(crate) async fn composition_structured_response(
 pub(crate) fn composition_structured_response_with(
     status: StatusCode,
     comp: &Value,
-    wt: &openehr_flat::webtemplate::WebTemplate,
+    wt: &openehr_its::flat::webtemplate::WebTemplate,
 ) -> Result<Response, RestError> {
-    let structured = openehr_flat::convert::composition_to_structured(comp, wt)
+    let structured = openehr_its::flat::convert::composition_to_structured(comp, wt)
         .map_err(|e| flat_output_err(&e))?;
     let json = serde_json::to_string(&structured)
         .map_err(|e| internal(format!("STRUCTURED serialization: {e}")))?;
@@ -261,10 +262,10 @@ pub(crate) async fn contribution_from_simplified(
                         "a FLAT CONTRIBUTION versions[].data must be a JSON object".to_owned(),
                     ))
                 })?;
-                openehr_flat::convert::composition_from_flat(map, &wt, &now)
+                openehr_its::flat::convert::composition_from_flat(map, &wt, &now)
             }
             WireFormat::Structured => {
-                openehr_flat::convert::composition_from_structured(data, &wt, &now)
+                openehr_its::flat::convert::composition_from_structured(data, &wt, &now)
             }
             _ => {
                 return Err(internal(
@@ -314,10 +315,10 @@ pub(crate) async fn contribution_to_simplified(
                 .map_err(RestError::from)?;
             let simplified = match format {
                 WireFormat::Flat => {
-                    openehr_flat::convert::composition_to_flat(&data, &wt).map(Value::Object)
+                    openehr_its::flat::convert::composition_to_flat(&data, &wt).map(Value::Object)
                 }
                 WireFormat::Structured => {
-                    openehr_flat::convert::composition_to_structured(&data, &wt)
+                    openehr_its::flat::convert::composition_to_structured(&data, &wt)
                 }
                 _ => {
                     return Err(internal(
@@ -413,7 +414,7 @@ mod tests {
     /// §HTTP status codes).
     #[test]
     fn input_conversion_failure_maps_to_422() {
-        let e = openehr_flat::error::FlatError::Conversion("bad leaf".to_owned());
+        let e = openehr_its::flat::error::FlatError::Conversion("bad leaf".to_owned());
         let status = flat_input_err(&e).into_response().status();
         assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     }
@@ -421,7 +422,7 @@ mod tests {
     /// An output conversion failure (rendering stored server data) stays `500`.
     #[test]
     fn output_conversion_failure_stays_500() {
-        let e = openehr_flat::error::FlatError::Conversion("bad leaf".to_owned());
+        let e = openehr_its::flat::error::FlatError::Conversion("bad leaf".to_owned());
         let status = flat_output_err(&e).into_response().status();
         assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
     }

@@ -18,7 +18,7 @@
 //!
 //! These tests assert the typed envelope rejections (malformed payload, wrong
 //! namespace, unknown EHR, unknown template) and the full happy path: a
-//! well-formed TDD for a provisioned template is converted (`openehr_flat::tdd::from_tdd`)
+//! well-formed TDD for a provisioned template is converted (`openehr_its::flat::tdd::from_tdd`)
 //! and committed through the validated `create_composition` path, then read back
 //! via the composition surface.
 #![allow(clippy::expect_used, clippy::unwrap_used)]
@@ -125,7 +125,7 @@ async fn tdd_import_rejects_unknown_template() {
 }
 
 /// A well-formed TDD for a **provisioned** template is converted (OPT-guided
-/// body walk, `openehr_flat::tdd::from_tdd`) and committed through the validated
+/// body walk, `openehr_its::flat::tdd::from_tdd`) and committed through the validated
 /// `create_composition` path, then read back via the composition surface.
 ///
 /// This upgrades the former `..._body_deferred` expectation: the OPT-guided

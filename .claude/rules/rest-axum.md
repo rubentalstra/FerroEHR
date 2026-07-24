@@ -51,7 +51,7 @@ sections (spec-adherence.md; `/spec-lookup`).
 - **Admin** (`/rest/admin`) lives in `ehrbase-rest`, reusing the same service
   layer. (There is no EhrScape adapter — that surface was cut; the FLAT /
   STRUCTURED / Web-Template simplified formats are served through the standard
-  openEHR endpoints via `openehr-flat`.)
+  openEHR endpoints via `openehr_its::flat`.)
 
 Behaviour is verified by the **CNF pipeline** (`tools/cnf-runner` — the CNF
 schedule text is the oracle it derives from), never by mirroring another

@@ -28,6 +28,12 @@ indexmap.workspace = true
 async-trait.workspace = true
 axum.workspace = true
 http.workspace = true
+# ITS-REST Formats (the `flat` module): the WebTemplate cache (`moka::future`)
+# and the field-identifier / node-id regex machinery (`regex` +
+# `fancy-regex` for the cADL backreference cases).
+moka.workspace = true
+regex.workspace = true
+fancy-regex.workspace = true
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
 # RM/BASE spec types, so these are real (non-dev) deps.
 openehr-base = { path = "../openehr-base" }
@@ -43,6 +49,13 @@ openehr-term = { path = "../openehr-term" }
 serde_json.workspace = true
 insta.workspace = true   # canonical-output determinism snapshots (the contract gate)
 sha2.workspace = true    # corpus manifest hashing for the determinism gate
+# The `flat` module's async WebTemplate cache tests (`flat::cache`) run under a
+# tokio runtime.
+tokio = { workspace = true, features = ["macros", "rt"] }
+# The am24 Web-Template builder tests turn real ADL2 corpus sources into
+# operational templates (dev-only; the production am24 front end takes an
+# already-created OPT as input).
+openehr-adl = { path = "../openehr-adl" }
 
 [lints]
 workspace = true
