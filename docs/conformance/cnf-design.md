@@ -950,22 +950,31 @@ machine-readable `disposition`, and an **`upstream_ref`** — the SPECPR /
 SPECQUERY / editorial key (or a `UPR-<n>` draft id in
 `docs/conformance/upstream-reports.md`) that pushes the fix back upstream. The
 register is a living artifact; **the file is authoritative** — it has grown
-well beyond the seed extraction shown below. Representative entries:
+well beyond the seed extraction. Entry categories (the authoritative, current
+set — with citations, dispositions, and `upstream_ref`s — is the file itself,
+so no per-id table is reproduced here to rot):
 
-| Id | Ambiguity (source) | Normative handling |
-|---|---|---|
-| AMB-1 | **Error body shape diverges inside ITS-REST 1.1.0**: prose says `{message, code, errors[DV_CODED_TEXT]}` under `Prefer: return=representation` (`Requests_and_responses.md` §Error handling); the OAS `Error.yaml` says `{message, validationErrors[string]}` and is wired only into 400. Most 4xx bodies are undefined. | `error_loose`: assert only `message` present (when Prefer representation); never assert either full shape. SEC decision item: pick one shape in ITS-REST 1.2.0. |
-| AMB-2 | **EHR create enumerates no 422** — EHR_STATUS validation failure has no assigned code (`ehr_create.yaml` responses = 201/400/409). | Bind `validation_failed` → 400 on EHR create; flag for upstream clarification. |
-| AMB-3 | **SM does not say where `preceding_version_uid` lives for update** (`master07` preamble, verbatim spec-ambiguity note). | Case speaks `preceding_version_uid` abstractly; ITS-REST binding realizes it as `If-Match`. SPECPR candidate. |
-| AMB-4 | **ADL 1.4 templates have no formal versioning** — duplicate `template_id` handling is implementation-defined: conflict vs version-parameter (master04 NOTE). | The two sibling cases carry `option:` tags; the ICS `options` declaration selects which applies (§8.11 step 2b) — at least the declared behaviour MUST pass; the undeclared sibling is `not-applicable`. |
-| AMB-5 | **Persistent-COMPOSITION uniqueness per EHR is under SEC debate** (master07 NOTE). | Affected cases carry the flag; verdicts on them are reported but excluded from profile computation until resolved. |
-| AMB-6 | **`fetch` default is implementation-defined**; `fetch` cannot combine with AQL `TOP` (`query/Request.md`). | Cases always pass `fetch` explicitly; the TOP+fetch rejection is its own case. |
-| AMB-7 | **Additional non-conflicting status codes are permitted** (`Requests_and_responses.md` §HTTP status codes). | Bindings assert the expected code exactly for the expected outcome; they never enumerate-reject other codes for other situations. |
-| AMB-8 | **Empty-directory retrieval is empty-vs-error ambiguous** — master09 F.1/G.1/L.1: get_directory on an EHR without one "should return an empty structure … could be an error status instead". | Sibling cases with `option:` tags; ICS declares the behaviour. Upstream clarification candidate. |
-| AMB-9 | **EHR_STATUS `incomplete` lifecycle_state** — master08 references SPECPR-368 (open upstream problem report). | Affected cases report but do not gate until SPECPR-368 resolves. |
-| AMB-10 | **Deleting a VERSIONED_OBJECT is under-specified** — master08: "needs further specification at the openEHR Service Model". | No normative cases; statement-declared behaviour only. |
-| AMB-11 | **`openehr::523\|deleted\|` as a lifecycle_state code** — the schedule reproduces it (master07), but the code assignment warrants terminology verification. | Cases assert the schedule's value; register flags it for TERM cross-check. |
-| AMB-12 | **master06 mislabels its provided-status table "1.a"** against its own class list (1.a = no EHR_STATUS, line 40 vs line 45 caption). | Pilot 1 encodes both classes; conversion records the caption defect; editorial fix upstream. |
+- **Released-spec silence** — a released component leaves a behaviour undefined
+  (persistent-COMPOSITION uniqueness per EHR; reduced-precision temporal
+  comparability; physical VERSIONED_OBJECT deletion). The case is `report_only`
+  (reported, never gating) and the silence is reported upstream.
+- **Released-spec contradiction / schedule defect** — a CNF-schedule row or data
+  set contradicts a released component (e.g. a HISTORY row versus the RM
+  `Events_valid` invariant; a range row versus the BASE `Interval` invariant
+  set). The catalogue encodes the released-derivable reading (`editorial`) and
+  proposes the upstream fix.
+- **SM↔ITS realization gap** — the SM (an oracle) defines an operation the
+  released ITS-REST does not yet realize (OPT delete, contribution-collection
+  GET, versioned-directory, demographic relationships, admin/message ops). The
+  case verdicts N/A-with-citation and an SM/ITS alignment report is filed.
+- **Realization / naming note** (`fixed_handling`) — the released ITS-REST
+  realizes an SM operation under a different shape or name (a whole-resource PUT
+  for field-setters; a list GET for an existence probe; an SM name the schedule
+  spells differently). Internal; no upstream report.
+
+Every `report_only` and `editorial` entry carries an `upstream_ref` (§13); the
+authoritative set is `registers/ambiguities.yaml` and the drafted outbound
+reports are `docs/conformance/upstream-reports.md`.
 
 Each entry carries a machine-readable **`disposition`** the pipeline
 branches on (closed enum): `loose_assert` (assert only what the spec pins) ·

@@ -12,7 +12,7 @@ capabilities: [PartyRelationshipOperations]
 profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
-  - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
+  - "authored from SM I_DEMOGRAPHIC_SERVICE / I_PARTY_RELATIONSHIP operation semantics (declared meaning + Errors) + released ITS-REST demographic docs; master10 (DEMOGRAPHIC) is a stalled schedule stub (all cases TBD aaaa/bbbb) — a coverage guide only, not the authority"
   - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (AMB-32)"
 test_purpose: >-
   delete_party_relationship for an unknown PARTY_RELATIONSHIP id is rejected
