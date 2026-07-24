@@ -4,7 +4,7 @@ component: CONTENT
 rm_class: DV_TIME
 capabilities: [ArchetypeValidation]
 profiles: [CORE]
-test_purpose: "A committed DV_TIME is accepted iff it falls within the C_TIME range. The single schedule 'C_TIME.range' interval cell is decomposed into inclusive range.lower / range.upper columns (null = unbounded) because the literal grammar's range production requires numeric bounds \u2014 see REQUIREMENTS-rest.md."
+test_purpose: "A committed DV_TIME is accepted iff it falls within the C_TIME range. The single schedule 'C_TIME.range' interval cell is decomposed into inclusive range.lower / range.upper columns (null = unbounded) because the literal grammar's range production requires numeric bounds."
 description: "DV_TIME against C_TIME range constraints (closed and open-ended)"
 spec_refs:
   - "CNF platform_test_schedule master17.4 \u00a7CONT-DV_TIME-validate_range"
@@ -211,3 +211,4 @@ decision_table:
     - ["10:30:47.5-03:00", null, "09:59-03:00", "rejected", ["constraint(C_TIME.range): value falls outside the C_TIME.range interval"]]
     - ["10:30:47.5-03:00", null, "09:59:59-03:00", "rejected", ["constraint(C_TIME.range): value falls outside the C_TIME.range interval"]]
     - ["10:30:47.5-03:00", null, "09:59:59.999-03:00", "rejected", ["constraint(C_TIME.range): value falls outside the C_TIME.range interval"]]
+ambiguities: [AMB-44]

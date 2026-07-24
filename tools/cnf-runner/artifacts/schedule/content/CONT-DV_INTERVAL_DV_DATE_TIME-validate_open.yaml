@@ -55,3 +55,4 @@ decision_table:
     - ["2021-10-24T05:30:47.333333", "2022-01-15T10:45:13.555555", false, false, true, true, accepted, []]
     - ["2021-10-24T05:30:47Z", "2022-01-15T10:45:13Z", false, false, true, true, accepted, []]
     - ["2021-10-24T05:30:47-03:00", "2022-01-15T10:45:13-03:00", false, false, true, true, accepted, []]
+ambiguities: [AMB-43]

@@ -41,3 +41,4 @@ decision_table:
     - ["P1M5DT3H", "P10M", false, false, true, true, accepted, []]
     - ["P2M", "P1M", false, false, true, true, rejected, ["rm_invariant(Limits_consistent): lower (P2M) > upper (P1M) — BASE foundation_types §Interval; DV_DURATION magnitude order, RM data_types §DV_DURATION"]]
     - ["P10M", "P1M5DT3H", false, false, true, true, rejected, ["rm_invariant(Limits_consistent): lower (P10M) > upper (P1M5DT3H) — BASE foundation_types §Interval; DV_DURATION magnitude order, RM data_types §DV_DURATION"]]
+ambiguities: [AMB-43]

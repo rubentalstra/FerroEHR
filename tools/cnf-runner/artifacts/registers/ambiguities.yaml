@@ -260,14 +260,20 @@ AMB-27:
     type=0 (ratio) proportion with unitary wording; the integer_fraction
     prose says type [3] while the data column says [4]; several
     interval-of-date/time/duration rows carry a forum-style "IMO should
-    fail" note instead of a normative verdict.
+    fail" note instead of a normative verdict; the DV_INTERVAL<DV_TIME>
+    range table verdicts a domain-constraint rejection (C_TIME.range on
+    lower) for a row whose lower bound is absent with lower_unbounded=true
+    — underivable, since no AOM clause makes a domain constraint bite on an
+    absent optional attribute (AOM1.4 master04 §existence: the existence
+    constraint alone says whether the object is there at all).
   source: "CNF platform_test_schedule master17.3 (quantity decision tables)"
   handling: >-
     Rows are encoded verbatim where the verdict is unambiguous; the
     contradiction rows follow the data column (verdict cell wins over
     prose); the forum-note rows keep the stated verdict with the note kept
-    as case commentary. Upstream editorial fixes proposed with the chapter
-    conversion.
+    as case commentary; the constraint-on-absent-unbounded-bound row is
+    corrected to accepted with the AOM citation. Upstream editorial fixes
+    proposed with the chapter conversion.
   disposition: editorial
 AMB-28:
   ambiguity: >-
@@ -280,7 +286,9 @@ AMB-28:
   source: "CNF platform_test_schedule master17.1/17.2/17.4 (basic/text/date_time decision tables)"
   handling: >-
     Rows encoded verbatim where the verdict is unambiguous; the inconsistent
-    DV_BOOLEAN row follows the verdict cell; the duplicate DV_TEXT heading is
+    DV_BOOLEAN row resolves to the AOM-derivable verdict (rejected — AOM1.4
+    C_BOOLEAN.true_valid=false disallows true; the violates cell wins over
+    the verdict cell there); the duplicate DV_TEXT heading is
     one case with the two tables merged (distinguished by the pattern
     column). Upstream editorial fixes proposed with the chapter conversion.
   disposition: editorial
@@ -548,4 +556,67 @@ AMB-43:
     then vacuous). The affected content rows expect accepted with this
     citation. The rows flip to rejected if a future BASE release restores
     the bound-required invariant.
+  disposition: fixed_handling
+AMB-44:
+  ambiguity: >-
+    DV_TIME literal form diverges between the CNF schedule and BASE: the
+    master17.4 §DV_TIME NOTE says "our test data sets all include the T
+    time marker" (and the master17.3 interval-of-time tables print
+    T-prefixed literals), while BASE Iso8601_time defines the value syntax
+    as hh:mm:ss[(,|.)sss][Z|±hh[:mm]] (extended) or hhmmss… (compact) —
+    no leading T in either form. DV_TIME.value's type oracle is the BASE
+    class.
+  source: >-
+    CNF platform_test_schedule master17.4 (§DV_TIME NOTE) + master17.3
+    (interval-of-time tables) vs BASE
+    docs/UML/classes/org.openehr.base.foundation_types.iso8601_time.adoc
+    §Description
+  handling: >-
+    Time literals in the catalogue take the BASE Iso8601_time form: the
+    schedule's T-prefixed time data sets are transcribed WITHOUT the
+    leading marker (the T marks the date-time separator and duration
+    designators only). The affected DV_TIME/interval-of-time cases tag
+    this entry. Flips back if a future BASE release admits the T-prefixed
+    time form.
+  disposition: fixed_handling
+AMB-45:
+  ambiguity: >-
+    The master17.4 DV_DATE_TIME range table's T-precision block tests values
+    anchored at 2021-10-24 (e.g. 2021-10-24T10) against ranges anchored at
+    1900-03-13 yet expects accepted — arithmetically impossible under BASE
+    Interval total-order containment and under the chapter's own
+    full-interval interpretation of reduced-precision limits.
+  source: >-
+    CNF platform_test_schedule master17.4 (§CONT-DV_DATE_TIME-validate_range,
+    the T-precision block) vs BASE foundation_types interval.adoc §has()
+  handling: >-
+    The catalogue re-anchors the block's values to the ranges' 1900-03-13
+    date (preserving each row's precision axis and verdict), making every
+    row derivable. Upstream editorial fix proposed with the chapter
+    conversion.
+  disposition: editorial
+AMB-46:
+  ambiguity: >-
+    Commit-time enforcement of a CONSTRAINT_REF (C_CODE_REFERENCE) against
+    the instance's terminology_id is not derivable from AOM1.4: master04
+    §Reference Objects defines CONSTRAINT_REF as a proxy whose actual
+    constraint definition lives OUTSIDE the archetype, in the
+    constraint_bindings query into an external service (a terminology
+    service) — no clause mandates rejecting a committed instance whose
+    terminology no binding covers (the VATDF/VACDF codes validate the
+    ARCHETYPE/TEMPLATE, not committed data). The schedule's
+    validate_ext_term row 4 nevertheless verdicts rejected
+    (constraint_binding: terminology_id not found).
+  source: >-
+    AM AOM1.4 master04-constraint_model_package.adoc §Reference Objects
+    (C_REFERENCE_OBJECT) vs CNF platform_test_schedule master17.2
+    (§CONT-DV_CODED_TEXT-validate_ext_term row 4)
+  handling: >-
+    The unmatched-terminology row asserts acceptance with the AOM citation
+    (rejection is not derivable). Instrument note: the declared
+    constraint_bindings axis is not yet realized by the OPT synthesizer
+    (no binding is emitted into the synthesized template) — the axis is
+    declarative until the terminology-binding synthesis lands (the #255
+    instrument lane); the rm_schema rows are unaffected. Flips to rejected
+    only if a future AM release defines commit-time binding enforcement.
   disposition: fixed_handling

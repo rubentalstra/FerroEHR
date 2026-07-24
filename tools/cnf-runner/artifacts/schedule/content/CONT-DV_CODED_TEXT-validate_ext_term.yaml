@@ -28,3 +28,4 @@ decision_table:
     # acceptance (VATDF/VACDF constrain the TEMPLATE, not the data).
     - ["ABC", "local", "ac0001", "[SNOMED_CT]", "accepted", []]
     - ["82272006", "SNOMED-CT", "ac0001", "[SNOMED_CT]", "accepted", []]
+ambiguities: [AMB-46]
