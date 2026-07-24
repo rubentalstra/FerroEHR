@@ -336,10 +336,23 @@ impl<'a> HttpDriver<'a> {
                 }
                 WireFrom::Body { path } => {
                     let body = exchange.body.as_ref()?;
-                    // dotted body paths (`ehr_id.value`)
+                    // dotted body paths with optional array indices
+                    // (`ehr_id.value`, `versions[0].id.value`).
                     let mut current = body;
                     for seg in path.split('.') {
-                        current = current.get(seg)?;
+                        let (attr, index) = match seg.split_once('[') {
+                            Some((a, rest)) => (
+                                a,
+                                rest.strip_suffix(']').and_then(|i| i.parse::<usize>().ok()),
+                            ),
+                            None => (seg, None),
+                        };
+                        if !attr.is_empty() {
+                            current = current.get(attr)?;
+                        }
+                        if let Some(i) = index {
+                            current = current.get(i)?;
+                        }
                     }
                     match current {
                         Value::String(s) => Some(s.clone()),

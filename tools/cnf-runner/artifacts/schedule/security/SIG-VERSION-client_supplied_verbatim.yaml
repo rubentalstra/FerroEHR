@@ -6,12 +6,9 @@
 # carries its own signature signifying the act of importing an ORIGINAL_VERSION
 # created elsewhere). The committed content is supplied as an ORIGINAL_VERSION
 # envelope that already carries the client signature.
-# Byte-for-byte verbatim storage cannot be asserted with the current bindings +
-# typed assertions (no operation returns ORIGINAL_VERSION.signature); the
-# lineage is asserted with the `version` family and the verbatim fact is carried
-# as a `state` postcondition.
-# TODO: wire-assert the byte-verbatim signature once the `signature`
-#       assertion family + version-read binding exist.
+# Wire-asserted: the committed ORIGINAL_VERSION envelope is read back
+# (get_versioned_composition variant:version) and the `signature` assertion
+# checks its `signature` member equals the client-supplied value byte-for-byte.
 id: SIG-VERSION-client_supplied_verbatim
 kind: functional
 component: SECURITY
@@ -45,9 +42,17 @@ flow:
     expect: created
     capture:
       version_uids: created.version_uids[]
+      version_uid: created.first_version_uid                # scalar: the single committed VERSION
+      versioned_object_uid: created.first_versioned_object_uid
     assert:
       - { assert: version, for_each: "${version_uids}", change_type: CREATE }
-postconditions:
-  - assert: signature
-    for_each: "${version_uids}"
-    equals: "${ds:cnf.security.signed_version#signature}"   # stored byte-for-byte
+  - step: 2
+    call: I_EHR_COMPOSITION.get_versioned_composition   # cross-interface: read the committed COMPOSITION's version envelope
+    variant: version                          # -> /versioned_composition/{vo}/version/{vuid} (ORIGINAL_VERSION envelope)
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${version_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${version_uid}", equals: "${ds:cnf.security.signed_version#signature}" }  # stored byte-for-byte
