@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Version-signature conformance breadth (CNF)**: a distinct-signature-per-
+  version case (the signature is computed over the version's canonical form,
+  which includes `uid` — two versions can never share a signature; RM common
+  master06 §Digital Signature), backed by a new `distinct_from` fact on the
+  runner's signature assertion and a `signature` capture on the
+  version-envelope read binding. DIRECTORY (FOLDER) version-signature cases
+  land SM-anchored as N/A-with-citation on ITS-REST 1.1.0 (no
+  `versioned_directory` resource — AMB-24), activating automatically if a
+  later ITS release adds the endpoint. The runner's binding-completeness gate
+  now mirrors the interpreter's variant-based binding selection.
+
 - **ADL2/OPT2 templates are full FLAT/STRUCTURED peers of OPT 1.4 (#269)**: a
   FLAT (`application/openehr.wt.flat+json`) or STRUCTURED
   (`application/openehr.wt.structured+json`) composition **commit** keyed to an
