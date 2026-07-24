@@ -462,6 +462,20 @@
     }
   },
   {
+    "case": "SIG-VERSION-directory_signature_present",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "I_EHR_DIRECTORY.get_versioned_directory: AMB-24"
+    }
+  },
+  {
+    "case": "SIG-VERSION-directory_verifiable",
+    "exception": {
+      "kind": "unrealized",
+      "detail": "I_EHR_DIRECTORY.get_versioned_directory: AMB-24"
+    }
+  },
+  {
     "case": "SF-DEPRECATED-media_supported",
     "exception": {
       "kind": "unrealized",
