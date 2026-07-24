@@ -23,8 +23,12 @@ use openehr_adl::assemble::parse_artefact;
 use openehr_adl::opt::create_opt;
 use openehr_adl::validate::ArchetypeRepository;
 use openehr_its::flat::example::{DetailLevel, ExampleType, example_composition};
-use openehr_its::flat::validation::validate_rm_and_terminology;
-use openehr_its::flat::webtemplate::{WebTemplate, WebTemplateNode, build_web_template_am24};
+use openehr_its::flat::validation::{
+    ValidationKind, validate_archetype_conformance, validate_rm_and_terminology,
+};
+use openehr_its::flat::webtemplate::{
+    WebTemplate, WebTemplateCardinality, WebTemplateNode, build_web_template_am24,
+};
 
 const OBS_UPGRADE: &str =
     "upgrade/upgrade_from_14/openEHR-EHR-OBSERVATION.upgrade_add_use_nodes.v1.0.0.adls";
@@ -335,4 +339,96 @@ fn collect_ids(node: &WebTemplateNode, out: &mut Vec<String>) {
     for c in &node.children {
         collect_ids(c, out);
     }
+}
+
+// ── archetype-conformance validation (#269): the am24 builder now populates the
+//    validation-only constraint fields the walk reads, symmetric with OPT 1.4 ──
+
+/// Every `card_all` entry in the tree (depth-first).
+fn collect_card_all<'a>(node: &'a WebTemplateNode, out: &mut Vec<&'a WebTemplateCardinality>) {
+    out.extend(node.card_all.iter());
+    for c in &node.children {
+        collect_card_all(c, out);
+    }
+}
+
+/// Pad every `items` container currently holding 1..=6 members up to 8 by cloning
+/// its first member — exceeding an AOM2 `items cardinality {1..6}` upper bound.
+fn pad_items(v: &mut serde_json::Value) {
+    match v {
+        serde_json::Value::Array(a) => {
+            for item in a.iter_mut() {
+                pad_items(item);
+            }
+        }
+        serde_json::Value::Object(o) => {
+            let keys: Vec<String> = o.keys().cloned().collect();
+            for k in keys {
+                if let Some(val) = o.get_mut(&k) {
+                    pad_items(val);
+                }
+            }
+            if let Some(serde_json::Value::Array(items)) = o.get_mut("items")
+                && !items.is_empty()
+                && items.len() <= 6
+            {
+                let proto = items[0].clone();
+                while items.len() < 8 {
+                    items.push(proto.clone());
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+#[test]
+fn am24_populates_archetype_conformance_constraints() {
+    // The apgar OBSERVATION source carries `events cardinality {1..*}` and
+    // `items cardinality {1..6}` (AOM2 §C_ATTRIBUTE cardinality). The am24 front
+    // end now captures EVERY constraining cardinality into `card_all` for the
+    // validation walk, exactly as the OPT-1.4 front end does — so
+    // `validate_archetype_conformance` runs identically for both dialects.
+    let wt = web_template(OBS_APGAR);
+    let mut cards = Vec::new();
+    collect_card_all(&wt.tree, &mut cards);
+    assert!(
+        cards.iter().any(|c| c.max == 6),
+        "the `items {{1..6}}` bounded cardinality is captured, got {:?}",
+        cards.iter().map(|c| (c.min, c.max)).collect::<Vec<_>>()
+    );
+    assert!(
+        cards.iter().any(|c| c.min == Some(1) && c.max == -1),
+        "the `events {{1..*}}` cardinality is captured, got {:?}",
+        cards.iter().map(|c| (c.min, c.max)).collect::<Vec<_>>()
+    );
+}
+
+#[test]
+fn am24_archetype_conformance_walk_enforces_cardinality() {
+    let wt = web_template(OBS_APGAR);
+    // A self-consistent example carries no cardinality violation against its own
+    // ADL2 template (symmetric with the OPT-1.4 front end, whose generated
+    // examples validate clean — `crates/openehr-its/tests/validation.rs`).
+    let comp = example_composition(&wt, DetailLevel::Complete);
+    let baseline = validate_archetype_conformance(&comp, &wt);
+    assert!(
+        !baseline
+            .iter()
+            .any(|m| m.kind == ValidationKind::Cardinality),
+        "baseline example must have no cardinality violation, got {baseline:?}"
+    );
+    // Padding a constrained `items` container beyond its `{1..6}` upper bound is
+    // rejected with the SAME typed outcome the OPT-1.4 path produces
+    // (`ValidationKind::Cardinality`).
+    let mut bad = comp;
+    pad_items(&mut bad);
+    let msgs = validate_archetype_conformance(&bad, &wt);
+    assert!(
+        msgs.iter().any(|m| m.kind == ValidationKind::Cardinality),
+        "expected a Cardinality violation after exceeding `items {{1..6}}`, got {:?}",
+        msgs.iter()
+            .map(|m| (m.kind, m.path.clone()))
+            .collect::<Vec<_>>()
+    );
 }

@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **ADL2/OPT2 templates are full FLAT/STRUCTURED peers of OPT 1.4 (#269)**: a
+  FLAT (`application/openehr.wt.flat+json`) or STRUCTURED
+  (`application/openehr.wt.structured+json`) composition **commit** keyed to an
+  ADL2-registered template now resolves and is validated against that template's
+  archetype constraints, exactly as an ADL 1.4 commit is. Two behaviours were
+  brought to parity: the am24 (OPT2) Web-Template builder now populates the
+  archetype-conformance constraints (existence, cardinality, closed-attribute
+  sibling sets, archetype slots, structural stubs) that composition validation
+  reads — so an ADL2-template instance is archetype-constraint-checked, not only
+  RM- and terminology-checked — and the runtime template resolver falls back to
+  the ADL2/OPT2 store when a template id is not an ADL 1.4 template (previously a
+  commit against an ADL2-registered template returned **422 "operational template
+  not known"**).
 - **Citation metadata (`CITATION.cff`)**: the repository is now citable in
   research papers — GitHub renders a "Cite this repository" button (APA +
   BibTeX) from the new CFF 1.2.0 file (author with ORCID, Apache-2.0,
