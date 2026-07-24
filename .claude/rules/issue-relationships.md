@@ -95,6 +95,36 @@ from the issue's **Relationships** panel → **Security alerts**. Requires write
 access. When an alert relates to tracked work, link it so remediation is visible
 alongside normal issues; otherwise this relationship stays idle by design.
 
+## No duplication — a relationship lives in exactly ONE place
+
+A relationship is GitHub metadata with its own panel. **Never also write it into
+an issue body.** A body copy has no backlink, is not updated when the edge
+changes, and rots into a contradiction the first time a child is added, closed,
+reparented, or a dependency shifts. This decays fast and silently — it is the
+single most likely way this system goes stale. Concretely:
+
+- **A parent's body never lists its sub-issues.** The native **Sub-issues**
+  panel and its `{k/n}` progress bar are the single source of truth. Do not
+  enumerate child `#numbers` in the body, and do not write a body checklist that
+  mirrors the children (`- [ ] #231 …`) — that double-books the progress bar and
+  is exactly the duplication that shows the same children twice.
+- **An issue's body never lists its blockers or what it blocks.** The
+  **Dependencies** panel is canonical.
+- **A parent's exit criteria are OUTCOMES, not a roll-call of children.** "Every
+  sub-issue closed" is already tracked by the progress bar — state the outcome
+  the program must reach, and (if useful) point at the panel without naming
+  individual children.
+- **Prose may name an issue only when it is NOT a native edge** — e.g.
+  "supersedes #X", "context in #Y", "adjudicated in #Z (closed)". If the
+  reference *is* a parent/child or blocking edge, set the real relationship with
+  `scripts/gh-rel.sh` and leave it out of the body entirely.
+
+Review-enforced (there is no CI parser for body prose). The structural safeguard
+is that `scripts/gh-rel.sh` only ever touches metadata, never issue bodies — so
+the only way an edge lands in a body is someone typing it, which this rule
+forbids. When you create a parent issue, its body describes the *program /
+contract*; the children are the panel.
+
 ## Reading relationships
 
 - `scripts/gh-rel.sh tree <n>` — parent, sub-issues, blocked-by, blocking (all
@@ -112,8 +142,8 @@ alongside normal issues; otherwise this relationship stays idle by design.
 - **`/phase-done`** checks the closing issue's sub-issues: do not close a parent
   with open children (finish or re-parent them first); closing a blocker
   unblocks its dependents automatically.
-- Relationships are GitHub metadata, not issue-body prose — never restate an
-  edge in the body where it will go stale; set the real relationship instead.
+- Relationships live in their native panels, never in issue-body prose (§No
+  duplication above) — set the real edge, never restate it in the body.
 
 ## Official documentation (durable citations)
 
