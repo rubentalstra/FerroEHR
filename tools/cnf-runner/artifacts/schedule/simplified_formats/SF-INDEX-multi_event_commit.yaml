@@ -4,11 +4,10 @@
 # body_temperature observation round-trips to canonical JSON with two EVENT
 # entries under the observation history — proving the zero-based per-level index
 # expands to distinct RM instances.
-# TODO: re-verify this flow once live against the composed SUT. cnf.opt.vitals
-#       (re-authored 2026-07-22) is the body_temperature carrier whose EVENT
-#       at0002 is unbounded, so the cnf.sf.flat.multi_event any_event:0/:1 expand
-#       to two distinct EVENTs; the `created` and mapping expectations are
-#       spec-derivable and need no change.
+# NOTE: cnf.opt.vitals is the body_temperature carrier whose EVENT at0002 is
+#       unbounded, so cnf.sf.flat.multi_event any_event:0/:1 expand to two
+#       distinct EVENTs; verified live against the composed SUT (the step-2
+#       events[1]/time/value field assertion is the proof).
 id: SF-INDEX-multi_event_commit
 kind: functional
 component: SIMPLIFIED_FORMATS

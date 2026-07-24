@@ -4,11 +4,11 @@
 # `|raw` property of the leaf's array element. This functional case commits a
 # STRUCTURED composition with a |raw DV_QUANTITY, reads it back as canonical
 # JSON, and asserts the embedded object decomposed onto the RM leaf.
-# TODO: re-verify this flow once live against the composed SUT. The
-#       cnf.sf.structured.raw_quantity fixture targets
-#       vitals/body_temperature/any_event/temperature paths that exist in the
-#       re-authored cnf.opt.vitals carrier; the |raw embedding + mapping
-#       expectations are spec-derivable and need no change.
+# NOTE: the cnf.sf.structured.raw_quantity fixture targets
+#       vitals/body_temperature/any_event/temperature paths in the cnf.opt.vitals
+#       carrier; verified live against the composed SUT (the step-2
+#       value/magnitude field assertion proves the |raw object decomposed onto
+#       the RM leaf).
 id: SF-RAW-structured_embedding
 kind: functional
 component: SIMPLIFIED_FORMATS
