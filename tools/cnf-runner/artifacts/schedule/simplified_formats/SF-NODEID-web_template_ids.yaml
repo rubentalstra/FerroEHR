@@ -6,7 +6,7 @@
 # document (Accept application/openehr.wt+json), and asserts the tree carries
 # generated node ids — the read-side counterpart of the SF-NODEID worked
 # examples. Anchored to I_DEFINITION_ADL14.get_opt with the intrinsic `wt`
-# format role (AMB-31: the web-template representation rides the negotiated
+# format role (the web-template representation rides the negotiated
 # get_opt binding).
 id: SF-NODEID-web_template_ids
 kind: functional
@@ -14,7 +14,6 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_DEFINITION_ADL14.get_opt
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
-ambiguities: [AMB-31]         # web-template representation has no dedicated SM operation
 test_purpose: >-
   Retrieving a provisioned OPT as a Web Template JSON document returns a tree
   whose nodes carry generated node ids (the master04 node-id algorithm output),

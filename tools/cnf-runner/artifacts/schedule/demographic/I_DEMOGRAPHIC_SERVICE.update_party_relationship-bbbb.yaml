@@ -1,7 +1,7 @@
 # master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.update_party_relationship() —
 # the schedule entry is TBD; authored as the primary versioning-error path from
 # the SM operation semantics (.Errors: object_version_does_not_exist). Resolvable
-# SM operation is I_PARTY_RELATIONSHIP.update_party_relationship (the AMB-13 rule).
+# SM operation is I_PARTY_RELATIONSHIP.update_party_relationship.
 # ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding
 # (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.update_party_relationship-bbbb

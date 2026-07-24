@@ -1,6 +1,6 @@
 # Official master04 case — the read side of the upload_opt-invalid_opt
 # verified_by link. Case id keeps the schedule's get_opts family while the
-# SM anchor is the resolvable list_opts (AMB-13).
+# SM anchor is the resolvable list_opts.
 id: I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts
 kind: functional
 component: DEFINITION_ADL14
@@ -20,4 +20,3 @@ flow:
     expect: ok
     assert:
       - { assert: returns, equals: [] }  # "should return an empty set and should not fail"
-ambiguities: [AMB-13]

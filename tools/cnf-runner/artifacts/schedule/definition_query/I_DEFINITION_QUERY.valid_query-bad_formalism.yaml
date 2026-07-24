@@ -25,4 +25,3 @@ flow:
       query: "//ehr[*]"                  # not AQL
       query_type: "XPATH"                # unsupported formalism (a_type)
     expect: validation_failed
-ambiguities: [AMB-18]

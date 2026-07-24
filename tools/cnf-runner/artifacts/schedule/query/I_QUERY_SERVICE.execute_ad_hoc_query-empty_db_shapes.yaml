@@ -35,7 +35,7 @@ flow:
     with:
       ehr_id: "${ehr_id}"                  # single-EHR execution context
       q: "${ds:fixture}"
-      fetch: 100                            # AMB-6: fetch always explicit
+      fetch: 100                            # fetch always explicit
     expect: "${fixture.expected}"
     assert:
       - assert: result_set

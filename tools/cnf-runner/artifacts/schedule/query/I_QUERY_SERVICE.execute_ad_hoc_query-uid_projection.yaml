@@ -36,7 +36,7 @@ flow:
         SELECT c/uid/value AS uid
         FROM EHR e[ehr_id/value='${ehr_id}'] CONTAINS COMPOSITION c
         ORDER BY c/uid/value ASC
-      fetch: 100                            # AMB-6: fetch always explicit
+      fetch: 100                            # fetch always explicit
     expect: ok
     assert:
       - assert: result_set

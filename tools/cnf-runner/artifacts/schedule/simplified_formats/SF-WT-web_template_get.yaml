@@ -34,4 +34,3 @@ flow:
     assert:
       - { assert: field, path: "templateId", exists: true }
       - { assert: field, path: "tree", exists: true }
-ambiguities: [AMB-31]

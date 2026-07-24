@@ -4,7 +4,7 @@
 # archetypes_count/delete_*/get_archetype/get_opt/has_*/list_*/opts_count/
 # upload_*/valid_* only), so this surface is anchored to the closest genuine
 # SM operation, get_opt (both key on template_id and return template-derived
-# content), per the AMB-31 precedent (sm_operation carries the resolvable
+# content), with sm_operation carrying the resolvable
 # anchor even when the CNF/wire realization diverges from the SM name).
 #
 # This is a SECOND realization of I_DEFINITION_ADL14.get_opt (the plain

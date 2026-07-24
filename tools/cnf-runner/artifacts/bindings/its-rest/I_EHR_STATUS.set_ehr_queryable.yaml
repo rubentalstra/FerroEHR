@@ -3,7 +3,7 @@
 # realized as a read-modify-write of the whole EHR_STATUS via
 # PUT /ehr/{ehr_id}/ehr_status, with the current version_uid in If-Match
 # (the SM preceding_version_uid, ITS-REST overview §If-Match). The runner reads the current
-# EHR_STATUS, flips is_queryable, and PUTs it back (AMB-15 — the SM setter
+# EHR_STATUS, flips is_queryable, and PUTs it back (the SM setter
 # vs ITS-REST whole-resource-update divergence).
 # Sources: specifications/operations/ehr_status_update.yaml,
 # responses/200_EHR_STATUS_updated.yaml, 204_version_updated.yaml,
@@ -14,7 +14,7 @@ its: its-rest
 request:
   method: PUT
   path: /ehr/{ehr_id}/ehr_status
-  body: { from_capture: status_body, set: { is_queryable: true } }   # read-modify-write per AMB-15                          # modified EHR_STATUS (is_queryable set true; runner read-modify-write)
+  body: { from_capture: status_body, set: { is_queryable: true } }   # read-modify-write                          # modified EHR_STATUS (is_queryable set true; runner read-modify-write)
   headers:
     If-Match: '"${preceding_version_uid}"'  # REQUIRED (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
     Prefer: "return=representation"

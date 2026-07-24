@@ -1,7 +1,7 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.get_party_relationship() — the
 # schedule entry is TBD; authored as the success/happy path from the SM operation
 # semantics. Resolvable SM operation is I_PARTY_RELATIONSHIP.get_party_relationship
-# (the AMB-13 rule). ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so
+#. ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource, so
 # the binding is unrealized (AMB-32) and this case is not-applicable on
 # ITS-REST 1.1.0 — the "existing relationship" precondition is unprovisionable
 # over the wire until a later ITS release adds it.

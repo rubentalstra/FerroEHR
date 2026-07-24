@@ -35,7 +35,7 @@ outcomes:
     body: error_loose
   missing_template_id: { status: 422 }    # simplified commit without openehr-template-id
   conflict: { status: 409 }               # persistent-COMPOSITION uniqueness rejection — ITS-REST overview §HTTP status codes: 409 = conflict
-  unsupported_media: { status: 415 }      # overview negotiation rules (AMB-7 layering)
+  unsupported_media: { status: 415 }      # overview negotiation rules
 captures:
   version_uid:
     from: header ETag

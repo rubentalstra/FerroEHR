@@ -27,4 +27,3 @@ flow:
       query: "SELECT c FROM EHR e CONTAINS COMPOSITION c"
       query_type: "AQL"
     expect: stored                       # valid formalism -> Pre_valid_query holds, query stored
-ambiguities: [AMB-18]

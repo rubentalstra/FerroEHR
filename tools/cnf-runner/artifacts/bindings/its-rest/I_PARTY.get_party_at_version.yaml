@@ -7,7 +7,7 @@
 # {version_uid} is the VERSIONED_PARTY-resource alternative but returns a
 # VERSION<PARTY> wrapper rather than the PARTY the SM returns.
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY.get_party_at_version (the AMB-13 rule).
+# operation is I_PARTY.get_party_at_version.
 # Sources: specifications/operations/person_get.yaml (200/404),
 # responses/200_PERSON_retrieved.yaml, 404_not_found_or_no_version_at_time.yaml;
 # parameters/path/uid_based_id_as_version_uid.yaml.

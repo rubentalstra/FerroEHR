@@ -31,11 +31,10 @@ flow:
         WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude >= $mag
         ORDER BY c/uid/value ASC
       query_parameters: { mag: 140 }
-      fetch: 100               # AMB-6: fetch always explicit
+      fetch: 100               # fetch always explicit
     expect: ok
     assert:
       - assert: result_set
         match: ordered
         rows: { from: "${ds:cnf.set.bp-10#magnitude_ge_140_by_uid}" }
         columns: [{ name: uid }]
-ambiguities: [AMB-6]

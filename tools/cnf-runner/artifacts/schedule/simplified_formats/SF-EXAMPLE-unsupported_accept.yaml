@@ -4,7 +4,7 @@
 # representation, NOT a LOCATABLE instance representation, so the example
 # endpoint cannot satisfy it -> not_acceptable. This is the spec-grounded
 # unsupported-negotiation case (Resources.md 406 MUST rule) — asserted for a
-# genuinely-unacceptable Accept, per the AMB-7 discipline (assert the expected
+# genuinely-unacceptable Accept, per the assert-expected-code discipline (assert the expected
 # code for the expected outcome, never enumerate-reject).
 id: SF-EXAMPLE-unsupported_accept
 kind: functional
@@ -12,7 +12,6 @@ component: SIMPLIFIED_FORMATS
 sm_operation: I_DEFINITION_ADL14.get_opt
 capabilities: [SimplifiedFormats]
 profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
-ambiguities: [AMB-31, AMB-7, AMB-13]  # negotiation latitude (AMB-7); CNF<->SM example-op divergence (AMB-13)
 test_purpose: >-
   Retrieving a template example with Accept application/openehr.wt+json (the
   Web Template document media type, not a LOCATABLE instance representation) is

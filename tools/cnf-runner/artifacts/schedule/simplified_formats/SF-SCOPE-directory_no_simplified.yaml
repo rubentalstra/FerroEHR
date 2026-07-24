@@ -27,4 +27,3 @@ flow:
     format: wt-flat                      # the forbidden cell of the media-type matrix
     with: { ehr_id: "${ehr_id}" }
     expect: not_acceptable
-ambiguities: [AMB-7]
