@@ -1364,6 +1364,20 @@ cnf.adl2.opt.vitals:
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "authored 2026-07-21 from the SM I_DEFINITION_ADL2 operation semantics; second valid OPT for list/count coverage; ADL2 source represented as opt-xml pending the adl2-text CorpusFormat addition; structural placeholder pending corpus authoring"
+cnf.adl2.opt.flat_a:
+  source: fixtures/adl2/opt/flat_parity_a.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0"
+  provenance: "authored 2026-07-24 spine-first as the constrained ADL2 operational template for the FLAT-over-ADL2 commit cases (AM ADL2 §Templates; ITS-REST simplified_formats master04): items cardinality 1..1 + ELEMENT occurrences 1..1 give the FLAT reject row a real archetype constraint to violate"
+cnf.adl2.opt.flat_b:
+  source: fixtures/adl2/opt/flat_parity_b.adls
+  format: adl2-text
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_flat_b.v1.0.0"
+  provenance: "derived 2026-07-24 from cnf.adl2.opt.flat_a by renaming the archetype HRID — each ADL2 upload-flow case owns a fresh logical artefact on a shared world"
 cnf.adl2.opt.invalid.unparseable:
   source: fixtures/adl2/opt/invalid/unparseable.adls
   format: adl2-text
@@ -1531,6 +1545,23 @@ cnf.sf.flat.datatype_mismatch:
     spec_ref: "ITS-REST simplified_formats master04 §Validation (data types match expected types from the OPT)"
   provenance: "authored 2026-07-21 by setting |magnitude to a string; structural placeholder pending corpus authoring"
 
+cnf.sf.flat.adl2_valid:
+  source: fixtures/sf/flat.adl2_valid.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity: { verdict: valid }
+  template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_flat_a.v1.0.0"
+  provenance: "authored 2026-07-24 against cnf.adl2.opt.flat_a — a single count_item instance satisfying the 1..1 items cardinality (ITS-REST simplified_formats master04 §Flat Format; DV_COUNT as a bare number per master05 per-type table)"
+cnf.sf.flat.adl2_cardinality_violation:
+  source: fixtures/sf/flat.adl2_cardinality_violation.json
+  format: wt-flat
+  rm_versions: [">=1.0.2"]
+  validity:
+    verdict: invalid
+    defect: "second indexed instance (:1) supplied for a node whose ADL2 template pins items cardinality 1..1 and ELEMENT occurrences 1..1"
+    spec_ref: "ITS-REST simplified_formats master04 §Validation (cardinality constraints are satisfied); AM AOM2 §C_ATTRIBUTE (cardinality) via cnf.adl2.opt.flat_b"
+  template_id: "openEHR-EHR-COMPOSITION.cnf_adl2_flat_b.v1.0.0"
+  provenance: "authored 2026-07-24 against cnf.adl2.opt.flat_b by adding count_item:1 beyond the 1..1 cardinality — the ADL2 mirror of cnf.sf.flat.cardinality_violation"
 cnf.sf.flat.cardinality_violation:
   source: fixtures/sf/flat.cardinality_violation.json
   format: wt-flat

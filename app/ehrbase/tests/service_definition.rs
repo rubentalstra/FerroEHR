@@ -1001,3 +1001,76 @@ async fn adl2_template_upload_wire_conflicts_on_duplicate() {
         "got {bad:?}"
     );
 }
+
+// ── ADL2/OPT2 FLAT parity: commit-path resolver fallback (#269) ───────────────
+
+/// The runtime `WebTemplate` resolver (`web_template`/`web_template_for`) falls
+/// back to the ADL2/OPT2 store when a template id is not an ADL 1.4 template, so a
+/// FLAT/STRUCTURED composition **commit** keyed to an ADL2-registered template
+/// resolves and is validated — the ADL2 twin of the OPT 1.4 commit path. Before
+/// #269 this 422'd "operational template not known" (the resolver read only the
+/// OPT 1.4 `template_store`).
+///
+/// Validation runs through the same choke point every commit uses
+/// (`content_valid` → `validate_for_commit` → `web_template_for` →
+/// `validate_archetype_conformance`), so this also exercises the am24
+/// archetype-conformance capture end-to-end.
+#[tokio::test]
+async fn adl2_template_resolves_on_the_commit_path_and_validates() {
+    use serde_json::Value;
+
+    const HRID: &str = "openEHR-EHR-COMPOSITION.commit_resolver.v1.0.0";
+
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let opt = adl2_source("operational_template", HRID, None);
+    svc.upload_artefact(opt).await.expect("upload ADL2 OPT");
+
+    // Gap 2: the runtime resolver used by the FLAT/STRUCTURED commit path now
+    // resolves the ADL2 template (before #269: `ServiceError::Unprocessable`).
+    let wt = svc
+        .web_template(HRID)
+        .await
+        .expect("the ADL2 template resolves on the commit path");
+    assert_eq!(wt.template_id, HRID);
+    assert_eq!(
+        wt.sem_ver.as_deref(),
+        Some("1.0.0"),
+        "resolved through the am24 (OPT2) front end, which carries semVer"
+    );
+
+    // A composition declaring that template validates end-to-end through the same
+    // per-commit choke point.
+    let mut comp = openehr_its::flat::example::example_composition(
+        &wt,
+        openehr_its::flat::example::DetailLevel::Complete,
+    );
+    assert_eq!(
+        comp.pointer("/archetype_details/template_id/value")
+            .and_then(Value::as_str),
+        Some(HRID),
+        "the example declares the ADL2 template id"
+    );
+    assert!(
+        svc.definitions_valid(&comp)
+            .await
+            .expect("definitions_valid"),
+        "the declared ADL2 template is now known to the definitions service"
+    );
+    assert!(
+        svc.content_valid(&comp).await.expect("content_valid"),
+        "a self-consistent instance validates clean against the ADL2 template"
+    );
+
+    // A structurally RM-broken instance is rejected — proving the validation
+    // passes actually run against the ADL2-resolved template
+    // (COMPOSITION.composer [1], RM common `composition.adoc`).
+    comp.as_object_mut()
+        .expect("composition object")
+        .remove("composer");
+    assert!(
+        !svc.content_valid(&comp).await.expect("content_valid"),
+        "an RM-invalid instance is rejected on the ADL2-resolved commit path"
+    );
+}

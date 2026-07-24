@@ -1057,8 +1057,13 @@ chain: composition dispatcher → `composition_from_flat` / `composition_from_st
 `EhrbaseService::web_template` (the one shared moka WebTemplate cache) →
 `openehr_its::flat::validate_flat_other` + `from_flat`/`from_structured` → the normal
 composition commit
-sql: 0–1 round trips of its own — WebTemplate cache hit = 0, miss = 1 SELECT
-template_store (then the underlying composition operation's SQL)
+sql: 0–2 round trips of its own — WebTemplate cache hit = 0; miss = 1 SELECT
+template_store, and (when the id is not an ADL 1.4 template) a fall-back to the
+ADL2/OPT2 store (`web_template_adl2_cached` → `adl2_resolve`/`adl2_get`, cached
+under a dialect-namespaced key), so a commit keyed to an ADL2-registered template
+also resolves + archetype-conformance-validates (`build_web_template_am24` carries
+the same constraints); only after both stores miss is it the 422 "operational
+template not known" (then the underlying composition operation's SQL)
 notes: template id from `template_id`/`templateId` query param or the
 `openEHR-TEMPLATE_ID` header (a FLAT body carries none) — absent → 400; invalid JSON →
 400; well-formed-but-non-conformant simSDT/structSDT → **422** (ITS-REST
