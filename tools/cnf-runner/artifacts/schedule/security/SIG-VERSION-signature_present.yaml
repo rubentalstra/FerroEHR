@@ -4,13 +4,11 @@
 # signature over the version data's canonical form (RM common: at committal a
 # digital signature of the serialised Version object can be made and written
 # back into the signature attribute).
-# The ECC digest wire format (sha256:+base64) is an ENGINE EXTENSION and is NOT
-# asserted here; the spec-groundable fact is that a signature is present on the
-# committed VERSION. Reading ORIGINAL_VERSION.signature back is not expressible
-# with the current bindings + typed assertions, so the presence check is carried
-# as a `state` postcondition.
-# TODO: add a `signature` assertion family + a version-read binding so the
-#       presence check is wire-asserted instead of a state postcondition.
+# The presence fact is mode-agnostic (digest OR openPGP), so this case asserts
+# only that a signature is present; the verifiable fact is SIG-VERSION-verifiable.
+# Wire-asserted: the committed ORIGINAL_VERSION envelope is read back
+# (get_versioned_composition variant:version) and the `signature` assertion
+# runs against its `signature` member.
 id: SIG-VERSION-signature_present
 kind: functional
 component: SECURITY
@@ -46,5 +44,13 @@ flow:
       versioned_object_uid: created.versioned_object_uid
     assert:
       - { assert: version, of: "${version_uid}", change_type: CREATE }
-postconditions:
-  - { assert: signature, of: "${version_uid}", present: true }
+  - step: 2
+    call: get_versioned_composition          # RM VERSIONED_OBJECT.version_with_id
+    variant: version                          # -> /versioned_composition/{vo}/version/{vuid} (ORIGINAL_VERSION envelope)
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${version_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${version_uid}", present: true }

@@ -47,6 +47,16 @@ flow:
     assert:
       - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - step: 2
+    call: get_versioned_composition          # read the creation VERSION envelope
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${preceding_version_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${preceding_version_uid}", present: true }
+  - step: 3
     call: update_composition
     with:
       ehr_id: "${ehr_id}"
@@ -57,15 +67,32 @@ flow:
     capture: { v2_uid: updated.version_uid }
     assert:
       - { assert: version, of: "${v2_uid}", change_type: MODIFY }
-  - step: 3
+  - step: 4
+    call: get_versioned_composition          # read the modification VERSION envelope
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${v2_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${v2_uid}", present: true }
+  - step: 5
     call: delete_composition
     with: { ehr_id: "${ehr_id}", preceding_version_uid: "${v2_uid}" }
     expect: deleted
     capture: { deleted_uid: deleted.version_uid }
     assert:
       - { assert: version, of: "${deleted_uid}", change_type: DELETED, lifecycle_state: "openehr::523|deleted|" }
+  - step: 6
+    call: get_versioned_composition          # read the deletion VERSION envelope (ORIGINAL_VERSION, data Void, still signed)
+    variant: version
+    with:
+      ehr_id: "${ehr_id}"
+      versioned_object_uid: "${versioned_object_uid}"
+      version_uid: "${deleted_uid}"
+    expect: ok
+    assert:
+      - { assert: signature, of: "${deleted_uid}", present: true }
 postconditions:
   - { assert: version, count: 3 }
-  - { assert: signature, of: "${preceding_version_uid}", present: true }
-  - { assert: signature, of: "${v2_uid}", present: true }
-  - { assert: signature, of: "${deleted_uid}", present: true }

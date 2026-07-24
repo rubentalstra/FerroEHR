@@ -20,15 +20,20 @@ use base64::Engine as _;
 use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 
-/// The IXIT-declared signing posture of the SUT (`signing` block). `present`/
-/// `equals` are mode-agnostic; `verifiable` dispatches on this.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// The IXIT-declared signing posture of the SUT (the `signing` block, tagged by
+/// `mode`). `present`/`equals` are mode-agnostic; `verifiable` dispatches on
+/// this. Deserialized directly from the IXIT so the framework tests whatever
+/// mode a given deployment runs (RM common master06 §Digital Signature: a
+/// deployment runs digest OR openPGP, one at a time).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize)]
+#[serde(tag = "mode", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SigningMode {
     /// Plain digest (no PKI): the wire form is `<prefix><encoding(hash(bytes))>`,
     /// self-described by the SUT's declared algorithm/encoding/prefix.
     Digest {
         algorithm: String,
         encoding: String,
+        #[serde(default)]
         prefix: String,
     },
     /// openPGP (RFC 4880): a detached armored signature over the canonical
