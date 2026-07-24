@@ -1,0 +1,124 @@
+# Issue relationships (GitHub native sub-issues + dependencies)
+
+The tracker is GitHub Issues (`CLAUDE.md` §Issue workflow). GitHub exposes four
+native issue relationships; we use them as first-class tracker structure rather
+than describing structure in prose. This file is the **policy** (when to use
+each) and the **canonical commands** (how, with zero guessing). It is
+machine-adjacent: the one sanctioned write path is `scripts/gh-rel.sh`.
+
+## Two facts that dictate everything below
+
+1. **`gh` has no native subcommand** for sub-issues or dependencies (verified,
+   gh 2.88.1). Every relationship goes through `gh api` — or, preferably,
+   `scripts/gh-rel.sh`, which wraps the correct endpoints.
+2. **Write endpoints take the issue's database `id`, not its `#number`.** The
+   sub-issue/dependency POST/DELETE bodies want `sub_issue_id` / `issue_id` =
+   the numeric database id (e.g. `4946992792`), which is NOT the `#231` you see
+   in the UI. `scripts/gh-rel.sh` resolves `#number → id` for you and fails loud
+   on a bad number, so **always prefer it over raw `gh api` for writes.** Reads
+   are `#number`-keyed and need no resolution.
+
+## The one sanctioned command surface — `scripts/gh-rel.sh`
+
+| Intent | Command |
+|---|---|
+| Make #child a sub-issue of #parent | `scripts/gh-rel.sh parent <child> <parent>` |
+| Move #child to a new parent (it already has one) | `scripts/gh-rel.sh parent <child> <parent> --replace` |
+| Detach #child from its parent | `scripts/gh-rel.sh unparent <child>` |
+| #n is blocked by #blocker | `scripts/gh-rel.sh blocked-by <n> <blocker>` |
+| Remove "#n blocked-by #blocker" | `scripts/gh-rel.sh unblock <n> <blocker>` |
+| #n blocks #blocked | `scripts/gh-rel.sh blocking <n> <blocked>` |
+| Remove "#n blocking #blocked" | `scripts/gh-rel.sh unblocking <n> <blocked>` |
+| Show every relationship of #n | `scripts/gh-rel.sh tree <n>` |
+| Print the database id of #n | `scripts/gh-rel.sh id <n>` |
+
+Each write prints a one-line `ok: …` confirmation. Run `scripts/gh-rel.sh` with
+no args for the full usage banner.
+
+## The four relationships and when to use each
+
+### 1. Parent / sub-issue — "Add parent" (decomposition)
+
+A parent issue breaks into sub-issues; children roll up into a parent progress
+bar (visible in the SessionStart dump, `/phase-status`, and Projects). Limits:
+**≤100 sub-issues per parent, ≤8 nesting levels, one parent per issue** (reparent
+with `--replace`).
+
+**Use it** to decompose a genuinely multi-part issue into individually
+trackable, individually closeable work items — e.g. a "ranked backlog of N
+items" issue → one child per item; a "audit every chapter" issue → one child per
+chapter. Each child is a real issue with its own contract + exit criteria.
+
+**Do NOT** use sub-issues to duplicate release grouping. **Milestones remain the
+release spine** (`changelog.md`: a release cuts when its milestone hits zero open
+issues) — do not create per-release "epic" parent issues (owner ruling
+2026-07-24: that double-books what the milestone already groups and muddies the
+cut trigger). Sub-issues express *decomposition*, milestones express *release*.
+
+When new work is discovered en route, its new issue (`gh issue create`) is
+**linked** — as a sub-issue of the issue it decomposes, or a dependency of the
+issue it sequences — not left as a prose "see also".
+
+### 2. Blocked-by — "Mark as blocked by" (sequencing)
+
+#n cannot start/finish until its blockers close. GitHub marks blocked issues
+with a "Blocked" badge on the Issues page and Projects. Limit: **≤50 issues per
+direction.**
+
+**Use it** for real in-repo sequencing: #A must merge before #B is workable.
+`scripts/gh-rel.sh blocked-by B A`.
+
+**Do NOT** use it for upstream waits. An issue waiting on openEHR to publish
+normative text is `blocked-upstream` (a **label**, no milestone) — you cannot be
+`blocked_by` a Jira ticket, and there is no in-repo issue to point at. Keep the
+label for upstream; use `blocked-by` only for issue→issue dependencies.
+
+### 3. Blocking — "Mark as blocking" (the mirror direction)
+
+The inverse of blocked-by: #n blocks #other. GitHub stores this as the *other*
+issue's `blocked_by` (the only writable direction), so `scripts/gh-rel.sh
+blocking n other` posts to #other under the hood — read it back on either side
+with `tree`. Use whichever direction reads more naturally at the moment; they
+describe the same edge.
+
+### 4. Security alerts — "Add security alert" (UI-only)
+
+Links a **code-scanning alert** to an issue so a security fix shows up in
+planning. This is **public preview and UI-only — there is no REST/GraphQL/`gh`
+API**, so it cannot be scripted and `scripts/gh-rel.sh` does not cover it.
+Prerequisite: code scanning must be enabled (this repo runs CodeQL via
+`.github/workflows/codeql.yml`).
+
+**Flow (manual, in the browser):** Security tab → Code scanning → the alert →
+**Tracking** → *Create issue* (new) or *Add existing GitHub issue* (link). Or
+from the issue's **Relationships** panel → **Security alerts**. Requires write
+access. When an alert relates to tracked work, link it so remediation is visible
+alongside normal issues; otherwise this relationship stays idle by design.
+
+## Reading relationships
+
+- `scripts/gh-rel.sh tree <n>` — parent, sub-issues, blocked-by, blocking (all
+  with state + title).
+- The **SessionStart** dump and **`/phase-status`** surface, per open issue, its
+  sub-issue progress (`k/n`), whether it is **blocked** (and by which open
+  issues), and what it blocks — computed in one batched GraphQL call
+  (`Issue.parent` / `subIssuesSummary` / `blockedBy` / `blocking`). A blocked
+  issue is not a candidate for `/next-task` until its blockers close.
+
+## Interaction with the rest of the workflow
+
+- **`/next-task`** skips issues with open blockers (unless the user names one)
+  and, for a parent issue, points at the next open child.
+- **`/phase-done`** checks the closing issue's sub-issues: do not close a parent
+  with open children (finish or re-parent them first); closing a blocker
+  unblocks its dependents automatically.
+- Relationships are GitHub metadata, not issue-body prose — never restate an
+  edge in the body where it will go stale; set the real relationship instead.
+
+## Official documentation (durable citations)
+
+- Sub-issues REST API — https://docs.github.com/en/rest/issues/sub-issues
+- Issue dependencies REST API — https://docs.github.com/en/rest/issues/issue-dependencies
+- Adding sub-issues — https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues
+- Creating issue dependencies — https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies
+- Linking code-scanning alerts to issues — https://docs.github.com/en/enterprise-cloud@latest/code-security/how-tos/manage-security-alerts/manage-code-scanning-alerts/linking-code-scanning-alerts-to-github-issues

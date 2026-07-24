@@ -28,6 +28,12 @@ does not decide the work is done on your behalf.
    reflect real, verified state (e.g. "workspace builds" means someone
    actually ran `cargo build --workspace` and it succeeded). Tick verified
    boxes in the issue body via `gh issue edit <n> --body-file`.
+2a. **Relationships check** (`scripts/gh-rel.sh tree <n>`;
+   `.claude/rules/issue-relationships.md`): if the issue is a **parent** with
+   **open sub-issues**, do NOT close it — finish or re-parent the children
+   first (a parent's job is done only when its decomposition is). Closing this
+   issue auto-unblocks anything it was `blocking`, which is expected; note any
+   dependents that become workable so the handoff comment can point at them.
 3. **Spec-adherence check:** for work that shipped spec-facing behaviour,
    confirm a conformance pass happened (`/spec-audit` findings addressed or
    filed as new issues). If it never happened, stop and say so — that is an

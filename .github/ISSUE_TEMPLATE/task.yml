@@ -22,3 +22,12 @@ body:
       label: Further information
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: >
+        **Relationships** are GitHub metadata, not body text. After filing, link
+        this issue as a **sub-issue** (`Add parent`) if it decomposes a larger
+        issue, or with **blocked-by / blocking** for real sequencing — a
+        maintainer sets these with `scripts/gh-rel.sh`
+        (policy: `.claude/rules/issue-relationships.md`). Milestones, not epics,
+        group a release.
