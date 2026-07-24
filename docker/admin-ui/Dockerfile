@@ -1,73 +1,147 @@
 # syntax=docker/dockerfile:1
 #
-# From-source multi-stage build for the `ehrbase-admin-ui` console (the third
-# OCI image, next to the app + postgres images). The console is a standalone
-# Leptos SSR binary + WASM/CSS assets built by cargo-leptos; at runtime it is
-# a pure ITS-REST client of the CDR — no database.
+# The single Dockerfile for the `ehrbase-admin-ui` console image (issue #282
+# D1/D5) — the third OCI image next to the app + postgres images. The console
+# is a standalone Leptos SSR binary + WASM/CSS assets built by cargo-leptos; at
+# runtime it is a pure ITS-REST client of the CDR — no database.
 #
-#   builder : rust:${RUST_VERSION}-slim-bookworm + wasm32 target +
-#             cargo-leptos + the Tailwind v4 standalone binary (no Node/npm).
-#   runtime : gcr.io/distroless/cc-debian12:nonroot serving the binary and
-#             the built site assets.
+# Same two-target shape as docker/Dockerfile (docs.docker.com/build/building/multi-stage):
 #
-# The toolchain is single-sourced from rust-toolchain.toml; RUST_VERSION must
-# equal its `channel`.
+#   runtime-from-source  compose/local — cargo-chef cooks the workspace deps,
+#                         then `cargo leptos build --release` reuses the compiled
+#                         target and adds only the console's own crates + WASM.
+#   runtime-prebuilt     CI — COPY-only packaging of a context-provided native
+#                         binary (bin/${TARGETARCH}/ehrbase-admin-ui) + the
+#                         arch-independent site bundle (site/); no RUN, no QEMU.
+#
+# Both share ONE runtime-base stage, so the compose-built and CI-published
+# images cannot drift (D5 — the F8 divergence where only the CI image baked a
+# HEALTHCHECK is closed: the shared base bakes it once).
+#
+# RUST_VERSION is single-sourced from rust-toolchain.toml. The build TOOLS are
+# fetched as PREBUILT release binaries, never `cargo install cargo-leptos`
+# (that compiles a vendored OpenSSL C tree — ~10 min per cold build); the same
+# prebuilt path the CI workflows use.
 
 ARG RUST_VERSION=1.96.1
+ARG CARGO_CHEF_VERSION=0.1.77
 ARG CARGO_LEPTOS_VERSION=0.3.7
 ARG WASM_BINDGEN_VERSION=0.2.126
 ARG TAILWIND_VERSION=v4.3.3
 
-# ── builder ──────────────────────────────────────────────────────────────────
-FROM rust:${RUST_VERSION}-slim-bookworm AS builder
+# ── chef: builder toolchain + cargo-chef (cached base for planner/builder) ─────
+# Digest-pinned rust:1.96.1-slim-trixie (Debian 13, glibc 2.41), resolved
+# 2026-07-24 — same base + rationale as docker/Dockerfile
+# (docs.docker.com/build/building/best-practices — pin by digest).
+FROM rust:${RUST_VERSION}-slim-trixie@sha256:31ee7fc65186be7e0e0ccb3f2ca305f14e4739e7642a1ae65753aa5d7b874523 AS chef
+ARG CARGO_CHEF_VERSION
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    cargo install cargo-chef --version ${CARGO_CHEF_VERSION} --locked
+WORKDIR /app
+
+# ── planner: distil the dependency recipe from the workspace manifests ─────────
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
+
+# ── builder: tools + cooked deps (cached), then cargo-leptos build ─────────────
+FROM chef AS builder
 ARG CARGO_LEPTOS_VERSION
 ARG WASM_BINDGEN_VERSION
 ARG TAILWIND_VERSION
 # amd64 | arm64 — provided by buildx/compose.
 ARG TARGETARCH
-WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
       pkg-config curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 RUN rustup target add wasm32-unknown-unknown
-# The build TOOLS install as PREBUILT release binaries — never `cargo
-# install`: cargo-leptos-from-source compiles a vendored OpenSSL C tree and
-# alone costs ~10 minutes of every cold image build (found live 2026-07-18;
-# the CI workflows use the same prebuilt path). cargo-leptos resolves
-# wasm-bindgen + Tailwind from PATH before its own downloader.
-RUN set -eu; \
+# Prebuilt tool binaries fetched behind a cache mount (F13): the downloaded
+# artifacts persist across builds keyed by version, so a rebuild that did not
+# bump a tool version re-uses them instead of re-downloading
+# (docs.docker.com/build/cache/optimize — RUN --mount=type=cache). cargo-leptos
+# resolves wasm-bindgen + Tailwind from PATH before its own downloader.
+RUN --mount=type=cache,target=/opt/tool-cache,sharing=locked \
+    set -eu; \
     case "${TARGETARCH}" in \
       amd64) triple=x86_64-unknown-linux-gnu; tw=x64 ;; \
       arm64) triple=aarch64-unknown-linux-gnu; tw=arm64 ;; \
       *) echo "unsupported TARGETARCH ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    curl -sSfL "https://github.com/leptos-rs/cargo-leptos/releases/download/v${CARGO_LEPTOS_VERSION}/cargo-leptos-${triple}.tar.gz" \
-      | tar -xz -C /usr/local/bin --strip-components=1 "cargo-leptos-${triple}/cargo-leptos"; \
-    curl -sSfL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-${triple}.tar.gz" \
-      | tar -xz -C /usr/local/bin --strip-components=1 \
-        "wasm-bindgen-${WASM_BINDGEN_VERSION}-${triple}/wasm-bindgen"; \
-    curl -sSfL -o /usr/local/bin/tailwindcss \
-      "https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-linux-${tw}"; \
-    chmod +x /usr/local/bin/cargo-leptos /usr/local/bin/wasm-bindgen /usr/local/bin/tailwindcss
+    cache="/opt/tool-cache/${triple}"; mkdir -p "$cache"; \
+    if [ ! -f "$cache/cargo-leptos-${CARGO_LEPTOS_VERSION}" ]; then \
+      curl -sSfL "https://github.com/leptos-rs/cargo-leptos/releases/download/v${CARGO_LEPTOS_VERSION}/cargo-leptos-${triple}.tar.gz" \
+        | tar -xz -O "cargo-leptos-${triple}/cargo-leptos" > "$cache/cargo-leptos-${CARGO_LEPTOS_VERSION}"; \
+    fi; \
+    if [ ! -f "$cache/wasm-bindgen-${WASM_BINDGEN_VERSION}" ]; then \
+      curl -sSfL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/wasm-bindgen-${WASM_BINDGEN_VERSION}-${triple}.tar.gz" \
+        | tar -xz -O "wasm-bindgen-${WASM_BINDGEN_VERSION}-${triple}/wasm-bindgen" > "$cache/wasm-bindgen-${WASM_BINDGEN_VERSION}"; \
+    fi; \
+    if [ ! -f "$cache/tailwindcss-${TAILWIND_VERSION}" ]; then \
+      curl -sSfL -o "$cache/tailwindcss-${TAILWIND_VERSION}" \
+        "https://github.com/tailwindlabs/tailwindcss/releases/download/${TAILWIND_VERSION}/tailwindcss-linux-${tw}"; \
+    fi; \
+    install -m0755 "$cache/cargo-leptos-${CARGO_LEPTOS_VERSION}" /usr/local/bin/cargo-leptos; \
+    install -m0755 "$cache/wasm-bindgen-${WASM_BINDGEN_VERSION}" /usr/local/bin/wasm-bindgen; \
+    install -m0755 "$cache/tailwindcss-${TAILWIND_VERSION}" /usr/local/bin/tailwindcss
+COPY --from=planner /app/recipe.json recipe.json
+# Cook the console's server-side (ssr) dependency graph into a cache-hittable
+# image layer (same rationale as docker/Dockerfile: no target cache mount so the
+# cooked deps materialise in the layer and export via the GHA backend). The
+# WASM/hydrate deps are the smaller share and compile in the leptos build below.
+RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
+    cargo chef cook --release --locked --no-default-features --features ssr \
+      -p ehrbase-admin-ui --recipe-path recipe.json
 COPY . .
+# The console has no provenance build.rs, so it carries no compile-time SHA env;
+# its image provenance is the OCI-standard REVISION LABEL on the shared runtime
+# stage below (docs.docker.com/build/building/best-practices).
 ENV LEPTOS_TAILWIND_VERSION=${TAILWIND_VERSION}
 RUN --mount=type=cache,target=/usr/local/cargo/registry,sharing=locked \
-    --mount=type=cache,target=/app/target,sharing=locked \
     cd app/ehrbase-admin-ui \
     && cargo leptos build --release \
     && mkdir -p /out \
     && cp /app/target/release/ehrbase-admin-ui /out/ \
     && cp -r /app/target/site /out/site
 
-# ── runtime ──────────────────────────────────────────────────────────────────
-FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
-COPY --from=builder /out/ehrbase-admin-ui /usr/local/bin/ehrbase-admin-ui
-COPY --from=builder /out/site /site
-
+# ── runtime-base: the SHARED final base (digest-pinned distroless, non-root) ───
+# gcr.io/distroless/cc-debian13:nonroot, digest-pinned, resolved 2026-07-24 —
+# same base + `cc`-not-base-nossl rationale (libgcc_s.so.1) as docker/Dockerfile.
+# The HEALTHCHECK the previous split baked ONLY into the CI image (F8) is baked
+# here once, so both targets carry it identically.
+FROM gcr.io/distroless/cc-debian13:nonroot@sha256:d97bc0a941b8d4be647dc0ee75b264ddbb772f1ac5ba690a4309c00723b23775 AS runtime-base
 ENV LEPTOS_SITE_ROOT=/site \
     LEPTOS_SITE_ADDR=0.0.0.0:3000 \
     LEPTOS_OUTPUT_NAME=ehrbase-admin-ui
-
 EXPOSE 3000
-
+# Shell-less image: the healthcheck is the binary's own subcommand, which probes
+# its own /login and exits 0 (2xx/3xx) / 1 otherwise.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["/usr/local/bin/ehrbase-admin-ui", "healthcheck"]
 ENTRYPOINT ["/usr/local/bin/ehrbase-admin-ui"]
+# OCI image labels. CI (docker/metadata-action) overrides source/revision/
+# version/created at build time; these are sensible static defaults.
+ARG VERSION="0.1.0"
+ARG REVISION=""
+LABEL org.opencontainers.image.title="ehrbase-rs-admin-ui" \
+      org.opencontainers.image.description="Admin console for openEHR ITS-REST CDRs — pure-Rust Leptos web app (template manager, visual AQL query builder, EHR browser)" \
+      org.opencontainers.image.source="https://github.com/rubentalstra/ehrbase-rs" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}"
+
+# ── runtime-from-source: compose/local (COPY the in-image build) ───────────────
+FROM runtime-base AS runtime-from-source
+COPY --from=builder /out/ehrbase-admin-ui /usr/local/bin/ehrbase-admin-ui
+COPY --from=builder /out/site /site
+
+# ── runtime-prebuilt: CI (COPY the context-provided native binary + site) ──────
+# The server binary is built natively per architecture on the CI runners
+# (rust:*-slim-trixie → Debian 13 glibc 2.41, matching this base) and lands in
+# the context as bin/${TARGETARCH}/ehrbase-admin-ui; the site bundle (WASM + JS
+# glue + CSS) is architecture-independent, built once, and lands as site/. No
+# RUN executes, so a multi-arch buildx needs no QEMU.
+FROM runtime-base AS runtime-prebuilt
+# amd64 | arm64 — supplied by buildx per platform.
+ARG TARGETARCH
+COPY --chmod=0755 bin/${TARGETARCH}/ehrbase-admin-ui /usr/local/bin/ehrbase-admin-ui
+COPY site /site

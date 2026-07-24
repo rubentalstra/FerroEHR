@@ -69,11 +69,20 @@ STATEMENT="${CONF_STATEMENT:-$PARTY/statement.json}"
 # (which carries the verifying public key for SIG-VERSION verifiable). Default:
 # digest. Only meaningful for CONF_SUT=ehrbase-rs.
 SIGNING_MODE="${CONF_SIGNING_MODE:-digest}"
-EHRBASE_RS_COMPOSE=(docker compose)
+# The ehrbase-rs SUT composes as its OWN project (docs.docker.com/compose/how-tos/project-name)
+# so it coexists with — and never tears down — a running dev stack (which
+# defaults to the directory-name project `ehrbase-rs`). Its `down -v` is thus
+# scoped to `ehrbase-rs-cnf` only (issue #282 D3/F7).
+EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf)
 if [ "$SIGNING_MODE" = "pgp" ] && [ "$SUT" = "ehrbase-rs" ]; then
-  EHRBASE_RS_COMPOSE=(docker compose -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-signing-pgp.yml")
+  EHRBASE_RS_COMPOSE=(docker compose -p ehrbase-rs-cnf -f "$REPO_ROOT/docker-compose.yml" -f "$REPO_ROOT/docker/sut-signing-pgp.yml")
   [ -n "${CONF_IXIT:-}" ] || IXIT="$PARTY/ixit.pgp.json"
 fi
+
+# Build provenance for compose-built images: the OCI-standard REVISION arg (the
+# compose build.args block forwards it; the server Dockerfile bridges it into
+# build.rs). Degrades to `unknown` (never a broken run) outside a git checkout.
+export REVISION="${REVISION:-$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD 2>/dev/null || echo unknown)}"
 
 # The dev-compose credentials (docker/ehrbase.dev.toml); override for byo.
 export SUT_USER="${SUT_USER:-ehrbase}"

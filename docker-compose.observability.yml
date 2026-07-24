@@ -36,8 +36,11 @@ services:
         condition: service_started
 
   otel-lgtm:
-    # Single-container LGTM dev stack. Pin a digest/tag in production.
-    image: grafana/otel-lgtm:latest
+    # Single-container LGTM dev stack (OTLP collector + Prometheus + Tempo +
+    # Loki + Grafana). Digest-pinned grafana/otel-lgtm:0.29.2 (current release),
+    # resolved 2026-07-24; no `:latest`
+    # (docs.docker.com/build/building/best-practices — pin by digest).
+    image: grafana/otel-lgtm:0.29.2@sha256:af7242c1a9608faf6d26e6f235392fd0c32b67258228f9a3cfc96e724974930c
     environment:
       # Keep collected data in the container's lifetime (dev).
       - ENABLE_LOGS_ALL=true
