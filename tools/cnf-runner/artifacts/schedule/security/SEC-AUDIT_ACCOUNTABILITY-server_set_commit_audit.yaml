@@ -23,10 +23,10 @@ spec_refs:
   - "SM openehr_platform §I_EHR_CONTRIBUTION.commit_contribution"
   - "RM common §change_control (Committal and Audits: AUDIT_DETAILS.committer, time_committed computed on the server)"
   - "ITS-REST overview Requests_and_responses (openehr-audit-details: client MAY supply change_type/description/committer/system_id; time_committed is server-set)"
-  - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Audit accountability)"
+  - "CNF 2.0 security schedule §SEC-BASIC Audit accountability (this proposal; 2017 schedule Security BASIC lineage)"
 applies: { rm: ">=1.0.2" }
 guards:
-  - "applies only when the SUT declares the SEC-BASIC security profile — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy)"
+  - "applies only when the SUT declares the SEC-BASIC security tier — CNF 2.0 security schedule (this proposal; 2017 schedule Security BASIC lineage)"
 requires:
   server: any
   templates: [cnf.opt.minimal_event]

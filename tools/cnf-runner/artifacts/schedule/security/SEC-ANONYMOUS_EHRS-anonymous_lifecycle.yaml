@@ -21,7 +21,7 @@ spec_refs:
   - "CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy: Anonymous EHRs)"
 applies: { rm: ">=1.0.2", aql: ">=1.1" }
 guards:
-  - "applies only when the SUT declares the SEC-BASIC security profile — CNF profiles master03-profiles.adoc §Non-Functional (Security & Privacy)"
+  - "applies only when the SUT declares the SEC-BASIC security tier — CNF 2.0 security schedule (this proposal; 2017 schedule Security BASIC lineage)"
 requires:
   server: any
   templates: [cnf.opt.minimal_event]
