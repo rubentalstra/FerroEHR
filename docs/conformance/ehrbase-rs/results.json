@@ -15,7 +15,7 @@
       "canonical-json"
     ]
   },
-  "ixit_digest": "f902513124f7e8de",
+  "ixit_digest": "2c397b7d62e12a09",
   "outcomes": [
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
@@ -2389,6 +2389,12 @@
       "rows_total": 1
     },
     {
+      "case": "SIG-VERSION-ehr_status_signature",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SIG-VERSION-signature_present",
       "status": "passed",
       "rows_driven": 1,
@@ -2686,14 +2692,14 @@
     {
       "case": "SF-STRUCT-empty_object_omission",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-STRUCT-style_rules",
       "status": "passed",
-      "rows_driven": 6,
-      "rows_total": 6
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "SF-STRUCTURED-commit_roundtrip",
