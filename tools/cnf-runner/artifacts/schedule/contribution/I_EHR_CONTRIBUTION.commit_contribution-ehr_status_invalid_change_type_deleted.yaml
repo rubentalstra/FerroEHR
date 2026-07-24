@@ -3,10 +3,10 @@
 # SUT can adjudicate it — and the adjudication is a CONFLICT: EHR.ehr_status
 # is mandatory (RM ehr, EHR class, 1..1), so the status cannot be deleted
 # (master08 reject case 1: "the EHR_STATUS can't be deleted once created").
-# The 409 code for that rejection is unassigned by the OAS (the generic 409
-# covers only "already exists") — registered as AMB-53. The delete member is
-# data-less per RM master06 §2.4 (Void data), contradicting the OAS
-# UpdateVersion required-list — registered as AMB-52.
+# The rejection binds to 409 (ITS-REST overview §HTTP status codes: 409 =
+# conflict with the current state of the resource). The delete member is
+# data-less per RM common master06 §2.4 (Void data) — the RM-correct data-less
+# deletion.
 id: I_EHR_CONTRIBUTION.commit_contribution-ehr_status_invalid_change_type_deleted
 kind: functional
 component: EHR_CONTRIBUTION
@@ -38,7 +38,6 @@ flow:
       versions:
         - change_type: deleted
           preceding_version_uid: "${status_version_uid}"
-    expect: conflict                       # the mandatory status cannot be deleted (409 per the state-conflict family — AMB-53)
+    expect: conflict                       # the mandatory status cannot be deleted (ITS-REST overview §HTTP status codes: 409 = conflict)
 postconditions:
   - { assert: version, count: 1 }          # only the pre-existing default EHR_STATUS remains
-ambiguities: [AMB-52, AMB-53]

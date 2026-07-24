@@ -27,7 +27,7 @@ outcomes:
     body: prefer_conditional
   validation_failed:
     status: 422                           # 422.yaml — content_invalid / definition_unknown
-    body: error_loose                     # AMB-1
+    body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
 captures:
   version_uid:
     from: header ETag

@@ -52,7 +52,7 @@ flow:
       ehr_id: "${ehr_id}"
       composition: "${ds:cnf.composition.minimal_event.v2}"
       versioned_object_uid: "${versioned_object_uid}"
-      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (AMB-3)
+      preceding_version_uid: "${preceding_version_uid}"   # ITS-REST: If-Match (ITS-REST overview §If-Match)
     expect: updated
     capture: { v2_uid: updated.version_uid }
     assert:
@@ -69,4 +69,3 @@ postconditions:
   - { assert: signature, of: "${preceding_version_uid}", present: true }
   - { assert: signature, of: "${v2_uid}", present: true }
   - { assert: signature, of: "${deleted_uid}", present: true }
-ambiguities: [AMB-3]

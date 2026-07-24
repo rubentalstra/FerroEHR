@@ -46,6 +46,10 @@
           "type": "string",
           "pattern": "^[a-z0-9_-]+$"
         }
+      },
+      "upstream_ref": {
+        "type": "string",
+        "minLength": 1
       }
     },
     "allOf": [
@@ -77,6 +81,26 @@
               "maxItems": 0
             }
           }
+        }
+      },
+      {
+        "if": {
+          "properties": {
+            "disposition": {
+              "enum": [
+                "report_only",
+                "editorial"
+              ]
+            }
+          },
+          "required": [
+            "disposition"
+          ]
+        },
+        "then": {
+          "required": [
+            "upstream_ref"
+          ]
         }
       }
     ]

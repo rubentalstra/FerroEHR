@@ -2,7 +2,7 @@
 # The SM delete_composition(ehr_id, a_version_uid) logically deletes a
 # COMPOSITION; a_version_uid identifies the current top VERSION and is realized
 # as the path `uid_based_id` (OBJECT_VERSION_ID form) — the same
-# preceding_version_uid realization pattern as update_composition (AMB-3).
+# preceding_version_uid realization pattern as update_composition (ITS-REST overview §If-Match).
 # Sources: specifications/operations/composition_delete.yaml (204/400/404/409),
 # responses/204_version_deleted.yaml, 400_already_deleted.yaml,
 # 404_unknown_ehr_id_or_uid_based_id.yaml, 409_COMPOSITION_with_uid_based_id.yaml;

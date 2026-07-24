@@ -1,7 +1,7 @@
 # Delete an event COMPOSITION: a logical delete creating a second VERSION whose
 # change_type and lifecycle_state are openehr::523|deleted| (master07 NOTE — the
 # delete behaves like an update adding a deleted VERSION). The
-# preceding_version_uid is realized as the path uid_based_id (AMB-3).
+# preceding_version_uid is realized as the path uid_based_id (ITS-REST overview §If-Match).
 id: I_EHR_COMPOSITION.delete_composition-event
 kind: functional
 component: EHR_COMPOSITION
@@ -40,4 +40,3 @@ postconditions:
   - { assert: version, count: 2 }
   - { assert: version, of: "${preceding_version_uid}", change_type: CREATE }
   - { assert: version, of: "${deleted_uid}", change_type: DELETED, lifecycle_state: "openehr::523|deleted|" }
-ambiguities: [AMB-3, AMB-11]

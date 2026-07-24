@@ -2,7 +2,7 @@
 # The SM update_directory(ehr_id, a_dir_struct) replaces the directory with a
 # new complete FOLDER; realized as PUT /ehr/{ehr_id}/directory. The existing
 # latest version_uid (SM preceding_version_uid) is the required `If-Match`
-# header (AMB-3); it is omitted only for the empty-EHR / bad-EHR cases where no
+# header (ITS-REST overview §If-Match); it is omitted only for the empty-EHR / bad-EHR cases where no
 # directory version exists to match.
 # Sources: specifications/operations/directory_update.yaml (200/204/400/404/412),
 # responses/200_directory_updated.yaml, 204_version_updated.yaml,
@@ -15,7 +15,7 @@ request:
   path: /ehr/{ehr_id}/directory
   body: directory
   headers:
-    If-Match: '"${preceding_version_uid?}"'   # REQUIRED when a directory exists (If-Match.yaml); realizes SM preceding_version_uid (AMB-3)
+    If-Match: '"${preceding_version_uid?}"'   # REQUIRED when a directory exists (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
     Prefer: "return=representation"
 formats: [canonical-json, canonical-xml]
 outcomes:
@@ -27,7 +27,7 @@ outcomes:
     status: 412                           # 412_directory.yaml (stale If-Match)
     headers: { ETag: latest-version-uid }
   precondition_missing: { status: 400 }   # If-Match absent when required -> 400.yaml (overview Requests_and_responses)
-  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to update (404_unknown_ehr_id.yaml); the absent-directory overload is AMB-26
+  not_found: { status: 404 }              # unknown ehr_id, or an EHR with no directory to update (RM ehr §EHR.directory 0..1) — ITS-REST overview §HTTP status codes: 404 = target resource not found; If-Match precedence per RFC 9110 §13.2.2
 captures:
   version_uid:
     from: header ETag

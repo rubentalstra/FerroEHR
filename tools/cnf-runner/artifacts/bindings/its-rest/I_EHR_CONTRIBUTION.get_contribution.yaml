@@ -16,7 +16,7 @@ outcomes:
     body: present
   not_found:
     status: 404                           # 404_CONTRIBUTION.yaml — absent CONTRIBUTION or absent EHR
-    body: error_loose                     # AMB-1
+    body: error_loose                     # ITS-REST overview §HTTP status codes — for 4xx/5xx, services MAY return additional error details if Prefer: return=representation
 # The CONTRIBUTION carries server-assigned identity + the server-set audit time
 # (contribution_create.yaml: "audit.time_committed: server will always set it").
 server_assigned: [uid, "audit.time_committed"]

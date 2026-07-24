@@ -21,8 +21,7 @@ outcomes:
     headers: { ETag: "present?", Location: "present?" }
     body: prefer_conditional
   validation_failed:
-    status: 400                            # AMB-2: no 422 enumerated on EHR create
-    alt_status: [422]                      # AMB-40: semantic EHR_STATUS rejection — overview-permitted non-conflicting 422
+    status: 422                           # ITS-REST overview §HTTP status codes — 422 = semantic errors
   already_exists: { status: 409 }          # an EHR with the id exists
 captures:
   ehr_id:

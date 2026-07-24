@@ -28,4 +28,3 @@ flow:
     call: create_directory
     with: { ehr_id: "${ehr_id}", directory: "${ds:cnf.directory.root_only}" }
     expect: already_exists                # "the EHR directory already exists" (SM Pre_no_directory)
-ambiguities: [AMB-25]
