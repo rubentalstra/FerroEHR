@@ -56,9 +56,10 @@ flow:
     expect: ok
     assert:
       - { assert: equivalent, to: "${flat_readback}", ignoring: [] }   # FLAT<->STRUCTURED value-equality (master04)
-# TODO: the step-3 committed-equivalence assertion needs either leaf-only
-#       comparison or evaluator ctx normalisation before it can pass: ctx/ input
-#       defaults read back as RM paths (EVENT_CONTEXT participations /
-#       health_care_facility) that are not covered by the registered ctx_defaults
-#       ignore-set (start_time / setting / composer only). To be resolved with a
-#       live run. The assertion itself is unchanged.
+# NOTE: the step-3 committed-equivalence assertion is reconciled by the evaluator
+#       ctx normalisation in `fold_flat_ctx` (assertions.rs, ITS-REST
+#       simplified_formats master06 §Context Information): ctx/participation_* and
+#       ctx/health_care_facility|* fold onto their read-back RM-path forms and are
+#       matched by value, while the pure default-setters (ctx/time ->
+#       context/start_time, ctx/setting, ctx/composer) are covered by the
+#       ctx_defaults ignore-set. Verified live green against the composed SUT.
