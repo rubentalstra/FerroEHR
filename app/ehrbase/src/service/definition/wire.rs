@@ -10,7 +10,7 @@
 use regex::Regex;
 use serde_json::Value;
 
-use openehr_flat::example::{DetailLevel, ExampleType};
+use openehr_its::flat::example::{DetailLevel, ExampleType};
 
 use crate::service::EhrbaseService;
 use crate::service::definition::types::TemplateListFilter;

@@ -50,3 +50,29 @@ are content-negotiated on the SAME EHR/composition routes (no separate
 endpoints); path syntax rules in `docs/simplified_formats/master04` (see
 [[flat-structured-format-location]]). Template upload dup → 409; template GET
 XML vs `application/openehr.wt+json` web-template.
+
+**Versioned-update ops (composition_update / ehr_status_update):** documented
+status set for `operations/composition_update.yaml` = {200,204,400,404,412,422};
+`operations/ehr_status_update.yaml` = {200,204,400,404,412} — **NO 422 branch
+listed for ehr_status update** (OAS silence; overview general table still defines
+422). **Neither update op lists 409** — 409 is NOT a documented branch for
+versioned PUT updates (409 appears only on create/duplicate ops: 409_EHR,
+409_*_with_uid_based_id, 409_template_already_exists). Branch conditions (verbatim
+in `responses/*.yaml` descriptions): 400 = "could not be parsed or is invalid
+(malformed URL, missing required header/param, syntactically invalid
+header/param/content)"; 422 = "content type and syntax correct, could be converted
+to a resource, but semantic validation errors, such as the underlying template is
+not known or is not validating"; 412 = "If-Match doesn't match the latest version"
+(+ ETag latest version_uid); 404 = unknown ehr_id or uid_based_id. Missing-If-Match-
+when-expected → SHOULD 400 (overview §If-Match). If-Match `required:true` in
+`parameters/header/If-Match.yaml`.
+
+**ITEM_TAG surface IS in RELEASED 1.1.0** (STABLE EHR API): routes in
+`ehr.openapi.yaml` L95-113 — `/ehr/{ehr_id}/tags` (get),
+`.../composition/{uid_based_id}/tags` (get/put) + `/tags/{key}` (delete),
+`.../ehr_status/{uid_based_id}/tags` (get/put) + `/tags/{key}` (delete); ops
+`{composition,ehr_status,ehr}_tags_*.yaml`; also the `openehr-item-tag`/
+`openehr-version-item-tag` request/response headers (overview
+`Requests_and_responses.md` §openehr-item-tag). RM grounding =
+`RM/docs/common/master07-tags.adoc` (Tags Package, ITEM_TAG class). Demographic
+tags exist too but Demographic API is DEVELOPMENT-status.

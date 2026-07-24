@@ -23,9 +23,9 @@ path = "src/main.rs"
 [dependencies]
 openehr-query = { path = "../../crates/openehr-query" }
 
-# spec crates used BFF-side only (OPT parsing + WebTemplate building for the
-# query-builder path catalog) — ssr-gated to keep them out of the WASM bundle
-openehr-flat = { path = "../../crates/openehr-flat", optional = true }
+# spec crate used BFF-side only (OPT parsing + WebTemplate building via
+# `openehr_its::flat` for the query-builder path catalog) — ssr-gated to keep
+# it out of the WASM bundle
 openehr-its = { path = "../../crates/openehr-its", optional = true }
 
 leptos.workspace = true
@@ -118,7 +118,6 @@ ssr = [
     "dep:csv",
     "dep:openidconnect",
     "dep:http",
-    "dep:openehr-flat",
     "dep:openehr-its",
 ]
 

@@ -23,12 +23,19 @@
 //! - [`bmm`] — **ITS-BMM**: BMM serialization. The vendored BMM meta-model that
 //!   drives code generation lives in `openehr-codegen/vendor/bmm`; the generated
 //!   runtime BMM object model is `openehr-lang`.
+//! - [`flat`] — **ITS-REST Formats**: openEHR Simplified Formats
+//!   (FLAT / STRUCTURED data instances + the Web Template model). The
+//!   *Formats* specification is a STABLE ITS-REST 1.1.0 sub-specification
+//!   (`docs/specs/openehr/ITS-REST/docs/simplified_formats/`), so it lives
+//!   here alongside the other ITS surfaces; hand-written (BMM has no
+//!   simplified-format model), unlike the emitted JSON/XML/REST codecs.
 //!
 //! Serialization here is native codec machinery: the canonical-JSON `ToJson`/
 //! `FromJson` codec and the canonical-XML codec are generated over hand-written
 //! runtimes, so the spec crates carry no serde derive.
 
 pub mod bmm;
+pub mod flat;
 pub mod json;
 pub mod json_codec;
 pub mod opt14;

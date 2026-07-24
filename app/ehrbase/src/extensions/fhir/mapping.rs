@@ -14,9 +14,9 @@
 //! template. Its `entries` each read a value out of the incoming FHIR resource
 //! (a **`FHIRPath`-lite** dot-path — see [`resolve`]) and write it to a
 //! template-relative **openEHR FLAT path** (the `id[:i]/…|suffix` key
-//! `openehr-flat` consumes, ITS-REST `simplified_formats` master04 §Field
+//! `openehr_its::flat` consumes, ITS-REST `simplified_formats` master04 §Field
 //! Identifiers). The resulting flat map is handed to
-//! [`composition_from_flat`](openehr_flat::convert::composition_from_flat) with
+//! [`composition_from_flat`](openehr_its::flat::convert::composition_from_flat) with
 //! the template's `WebTemplate` to build a canonical COMPOSITION, which then
 //! commits through the platform's NORMAL validated path. This module is
 //! protocol-free and DB-free: it is the deterministic transform, unit tested
@@ -390,8 +390,8 @@ pub(super) fn extract_subject(
 mod tests {
     use std::path::PathBuf;
 
-    use openehr_flat::convert::composition_from_flat;
-    use openehr_flat::webtemplate::{WebTemplate, build_web_template};
+    use openehr_its::flat::convert::composition_from_flat;
+    use openehr_its::flat::webtemplate::{WebTemplate, build_web_template};
     use openehr_its::opt14;
     use serde_json::json;
 

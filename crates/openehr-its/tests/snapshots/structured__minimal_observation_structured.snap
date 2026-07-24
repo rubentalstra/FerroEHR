@@ -1,0 +1,55 @@
+---
+source: crates/openehr-its/tests/structured.rs
+expression: structured
+---
+{
+  "ctx": {
+    "language": "en",
+    "territory": "UY",
+    "composer_name": "Dr. House",
+    "composer_id": "1f31861a-b5fd-4052-b00b-32893371fcd4",
+    "id_namespace": "DEMOGRAPHIC",
+    "time": "2019-01-28T21:22:19,501+00:00",
+    "setting": "229"
+  },
+  "minimal": {
+    "_uid": [
+      "__THIS_SHOULD_BE_MODIFIED_BY_THE_TEST_::ehrbase.org::1"
+    ],
+    "context": [
+      {
+        "_participation": [
+          {
+            "|function": "legal guardian",
+            "|mode": "not specified",
+            "|name": "Martha Stewart",
+            "relationship": [
+              {
+                "|value": "mother",
+                "|code": "10",
+                "|terminology": "openehr"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "minimal": [
+      {
+        "text": [
+          "original value"
+        ],
+        "history_origin": [
+          "2019-01-28T21:22:19,552+00:00"
+        ]
+      }
+    ],
+    "category": [
+      {
+        "|value": "event",
+        "|code": "433",
+        "|terminology": "openehr"
+      }
+    ]
+  }
+}

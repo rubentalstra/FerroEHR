@@ -43,9 +43,9 @@ const VO_ID: &str = "8849182c-82ad-4088-a07f-48ead4180515";
 fn opt_xml() -> String {
     std::fs::read_to_string(
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../crates/openehr-flat/tests/fixtures/sdk/ips.v0.opt"),
+            .join("../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt"),
     )
-    .expect("ips.v0.opt vendored in openehr-flat")
+    .expect("ips.v0.opt vendored in openehr-its")
 }
 
 fn canonical_composition() -> Value {

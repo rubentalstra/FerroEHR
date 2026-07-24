@@ -23,8 +23,8 @@ use openehr_adl::validate::{
 use openehr_am::am24::aom2::archetype::archetype::Archetype;
 use openehr_am::am24::aom2::archetype::authored_archetype::AuthoredArchetype;
 use openehr_am::am24::aom2::archetype::operational_template::OperationalTemplate;
-use openehr_flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
-use openehr_flat::webtemplate::{WebTemplate, build_web_template_am24};
+use openehr_its::flat::example::{DetailLevel, ExampleType, apply_output_uid, example_composition};
+use openehr_its::flat::webtemplate::{WebTemplate, build_web_template_am24};
 use openehr_its::rest::runtime::ValidationError;
 use serde_json::Value;
 use sqlx::Row;
@@ -484,7 +484,7 @@ impl EhrbaseService {
     /// The stored source is resolved (`template_id` → HRID), parsed, compiled to
     /// its operational template (`create_opt`), turned into a `WebTemplate` by
     /// the am24 front end
-    /// ([`build_web_template_am24`](openehr_flat::webtemplate::build_web_template_am24)),
+    /// ([`build_web_template_am24`](openehr_its::flat::webtemplate::build_web_template_am24)),
     /// and walked into a canonical example COMPOSITION at the requested
     /// [`DetailLevel`] — the same shared generator the ADL 1.4 example endpoint
     /// uses (`ITS-REST simplified_formats master04 §"Web Template Metadata"` is
@@ -494,7 +494,7 @@ impl EhrbaseService {
     /// Example generation is not spec-mandated (a convenience surface); a
     /// generated example is self-consistent with its `WebTemplate` by construction
     /// and validated by the template-independent RM-invariant + terminology pass
-    /// ([`openehr_flat::validation::validate_rm_and_terminology`]).
+    /// ([`openehr_its::flat::validation::validate_rm_and_terminology`]).
     ///
     /// # Errors
     ///
@@ -521,7 +521,7 @@ impl EhrbaseService {
     /// The [`WebTemplate`] of a stored ADL2 template: resolve `template_id` →
     /// HRID, fetch the source, compile it to its operational template, and build
     /// the Web Template with the am24 front end
-    /// ([`build_web_template_am24`](openehr_flat::webtemplate::build_web_template_am24)).
+    /// ([`build_web_template_am24`](openehr_its::flat::webtemplate::build_web_template_am24)).
     /// The ADL2 twin of [`web_template`](Self::web_template) (which reads the
     /// ADL 1.4 OPT store), used by the example endpoint's FLAT/STRUCTURED
     /// negotiation.

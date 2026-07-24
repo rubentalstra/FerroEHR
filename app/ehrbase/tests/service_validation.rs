@@ -9,12 +9,12 @@
 //! path is validated against its operational template *before* persistence.
 //!
 //! Oracle + fixtures: the vendored Apache-2.0 openEHR SDK corpus — the IPS
-//! operational template (`openehr-flat/tests/fixtures/sdk/ips.v0.opt`,
+//! operational template (`openehr-its/tests/fixtures/sdk/ips.v0.opt`,
 //! `template_id` "International Patient Summary") paired with its canonical-JSON
 //! compositions (`openehr-its/tests/vendor/openehr_sdk/composition/…`):
 //! `ips_canonical.json` (valid) and `ips_invalid.json` (out-of-range magnitudes
-//! and coded values outside the value set). Same pairing the `openehr-flat`
-//! validator's own corpus tests use (`openehr-flat/tests/validation.rs`).
+//! and coded values outside the value set). Same pairing the `openehr_its::flat`
+//! validator's own corpus tests use (`openehr-its/tests/validation.rs`).
 //!
 //! Spec: openEHR ITS-REST 1.1.0 —
 //! `docs/specs/openehr/ITS-REST/specifications/responses/422_COMPOSITION.yaml`
@@ -80,7 +80,7 @@ fn composition(name: &str) -> Value {
     serde_json::from_str(&fixture(&rel)).unwrap_or_else(|e| panic!("parse {name}: {e}"))
 }
 
-const IPS_OPT: &str = "../../crates/openehr-flat/tests/fixtures/sdk/ips.v0.opt";
+const IPS_OPT: &str = "../../crates/openehr-its/tests/fixtures/sdk/ips.v0.opt";
 
 /// Count the persisted COMPOSITION versions (kind discriminator on `vo_version`).
 async fn composition_versions(pool: &PgPool) -> i64 {

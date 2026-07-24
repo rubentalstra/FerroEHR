@@ -126,8 +126,9 @@ shipped RBAC/ABAC `access` module in `ehrbase-rest`.
 OPT 1.4 XML ingestion → `openehr-am`; WebTemplate builder (`moka`-cached);
 composition validation (walker over WebTemplate + RM invariants + terminology
 binding via `openehr-term`); FLAT/STRUCTURED/Web-Template JSON in
-`openehr-flat` (Better `web-template` semantics; quirks behind a feature
-flag).
+`openehr_its::flat` (Better `web-template` semantics; quirks behind a feature
+flag). Simplified Formats is a STABLE ITS-REST 1.1.0 sub-specification, so it
+lives in `openehr-its` beside the other ITS surfaces.
 
 ## Spec version policy
 
@@ -203,10 +204,9 @@ The service layer realizes the openEHR **SM Platform Service Model**
 | `openehr-am` | AM 1.4 + 2.4 (`am14`/`am24`) | generated |
 | `openehr-term` | TERM classes + terminology bundle | generated + hand-written |
 | `openehr-lang` | BMM/P_BMM object model | generated |
-| `openehr-its` | Canonical JSON/XML + ITS-REST contract + runtimes + gates | generated + hand-written |
+| `openehr-its` | Canonical JSON/XML + ITS-REST contract + runtimes + gates + Simplified Formats (`flat`: FLAT / STRUCTURED / Web Template) | generated + hand-written |
 | `openehr-query` | AQL 1.1 lexer + parser + AST | hand-written |
 | `openehr-adl` | ADL 2.4 engine: ADL2/cADL/ODIN parser, AOM2 validation, flattener, OPT2, ADL 1.4→2 conversion | hand-written |
-| `openehr-flat` | FLAT / STRUCTURED / Web Template | hand-written |
 | `openehr-codegen` | BMM/XSD/OAS → Rust generator (+ `emit-rm-model`) | tooling |
 | `ehrbase-rest` | ITS-REST protocol adapter (axum) + auth + ATNA audit middleware; `access` module = RBAC/ABAC authz; calls the concrete `EhrbaseService` | application |
 | `ehrbase` | The platform library: storage, service layer (one module per SM chapter), AQL engine, versioning, the full config tree, telemetry, `signing` + `system_log` | application |

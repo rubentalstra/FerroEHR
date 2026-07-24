@@ -388,13 +388,13 @@ sql: 1 round trip — INSERT INTO template_store … ON CONFLICT (lower(template
 notes: parse + two validation passes are the CPU stages, all pre-insert (only validated templates are stored — AM OPT2 master02 §Purpose of the OPT); no WebTemplate-cache invalidation needed (create-only insert); handler builds `Location`, weak `ETag`, and the `Prefer`-negotiated body (representation = the OPT XML, identifier = `{"template_id":…}` JSON).
 
 ### GET /definition/template/adl1.4/{template_id}
-chain: handler `…::definition_template_adl1_4_get` → `template_adl14.rs::get`: `negotiate_accept` first (outside `Accept_Template` → 406, before touching storage) → `EhrbaseService::template_adl14_get` (`app:service/definition/wire.rs`) → `opt_get_by_template_id` (`app:service/definition/adl14.rs`, case-insensitive; the existence probe **and** the canonical body). XML branch: respond directly. `wt+json`/JSON branch: `template_adl14.rs::web_template_response` → `EhrbaseService::web_template` (`app:service/mod.rs`) → `web_template_for` (`app:templates/runtime.rs`): moka WebTemplate-cache hit, or miss → `get_template_xml` + `openehr_flat::build_web_template` (single-flighted `get_or_build`)
+chain: handler `…::definition_template_adl1_4_get` → `template_adl14.rs::get`: `negotiate_accept` first (outside `Accept_Template` → 406, before touching storage) → `EhrbaseService::template_adl14_get` (`app:service/definition/wire.rs`) → `opt_get_by_template_id` (`app:service/definition/adl14.rs`, case-insensitive; the existence probe **and** the canonical body). XML branch: respond directly. `wt+json`/JSON branch: `template_adl14.rs::web_template_response` → `EhrbaseService::web_template` (`app:service/mod.rs`) → `web_template_for` (`app:templates/runtime.rs`): moka WebTemplate-cache hit, or miss → `get_template_xml` + `openehr_its::flat::build_web_template` (single-flighted `get_or_build`)
 spine: standard api/** dispatch
 sql: 1 round trip (XML, or wt+json with a warm cache) — SELECT content FROM template_store; +1 identical SELECT on a wt+json cold-cache build
-notes: WebTemplate cache (`openehr_flat::cache::WebTemplateCache`, moka, keyed on the identity-canonical template_id); serving wt+json on this endpoint is a deliberate EHRbase-compatible extension (ITS-REST returns only the OPT); weak `ETag` keyed on template_id (`headers/ETag_Template_adl1_4.yaml`).
+notes: WebTemplate cache (`openehr_its::flat::cache::WebTemplateCache`, moka, keyed on the identity-canonical template_id); serving wt+json on this endpoint is a deliberate EHRbase-compatible extension (ITS-REST returns only the OPT); weak `ETag` keyed on template_id (`headers/ETag_Template_adl1_4.yaml`).
 
 ### GET /definition/template/adl1.4/{template_id}/example
-chain: handler `…::definition_template_adl1_4_example_get` → `template_adl14.rs::example_get` → `EhrbaseService::template_adl14_example` (`app:service/definition/wire.rs`; `detail_level`/`type` enum parse → 400) → `EhrbaseService::template_example` (`app:templates/runtime.rs`): `get_template_xml` (unconditional — the existence probe doubles as the cold-build source; unknown id → 404, unlike the commit-path 422) → WebTemplate cache hit or `build_cached_web_template` → **example generator** `openehr_flat::example_composition(&wt, level)` (+ `openehr_flat::apply_output_uid` for `type=output`) → response negotiated across the four `Accept_LOCATABLE` forms: FLAT/STRUCTURED via the shared converter seam `rest:formats/dispatch.rs::composition_{flat,structured}_response`, else canonical JSON/XML via `negotiate::respond_rm::<Composition>`
+chain: handler `…::definition_template_adl1_4_example_get` → `template_adl14.rs::example_get` → `EhrbaseService::template_adl14_example` (`app:service/definition/wire.rs`; `detail_level`/`type` enum parse → 400) → `EhrbaseService::template_example` (`app:templates/runtime.rs`): `get_template_xml` (unconditional — the existence probe doubles as the cold-build source; unknown id → 404, unlike the commit-path 422) → WebTemplate cache hit or `build_cached_web_template` → **example generator** `openehr_its::flat::example_composition(&wt, level)` (+ `openehr_its::flat::apply_output_uid` for `type=output`) → response negotiated across the four `Accept_LOCATABLE` forms: FLAT/STRUCTURED via the shared converter seam `rest:formats/dispatch.rs::composition_{flat,structured}_response`, else canonical JSON/XML via `negotiate::respond_rm::<Composition>`
 spine: standard api/** dispatch
 sql: 1 round trip — SELECT content FROM template_store
 notes: example generation is not spec-mandated (a convenience surface); the WebTemplate build is the only heavy CPU stage and is cached; the FLAT/STRUCTURED renderings re-resolve the same cached WebTemplate.
@@ -418,7 +418,7 @@ sql: 1–2 round trips — SELECT hrid (exact) or SELECT hrid[] (partial-resolve
 notes: `text/plain` = the stored source verbatim (`200_Template_adl2_retrieved.yaml`); `application/json` = the `OperationalTemplateV2` canonical JSON (opaque `type: object` in the OAS → the AOM2 OPT JSON satisfies it, built via `openehr_adl::opt::create_opt` for non-OPT kinds); `application/xml` has no declared response body → 406. Unknown HRID → 404.
 
 ### GET /definition/template/adl2/{template_id}/example
-chain: handler `…::definition_template_adl2_example_get` → `template_adl2.rs::example_get` → `EhrbaseService::template_adl2_example` → `adl2_resolve` (HRID) → `adl2_get` (source) → `openehr_adl::opt::create_opt` → `openehr_flat::webtemplate::build_web_template_am24` (am24 → Web Template) → `openehr_flat::example::example_composition` → `Accept_LOCATABLE` negotiation (canonical JSON/XML + FLAT/STRUCTURED); 400 (bad `type`/`detail_level`), 404 (unknown template), 406 (unsupported Accept)
+chain: handler `…::definition_template_adl2_example_get` → `template_adl2.rs::example_get` → `EhrbaseService::template_adl2_example` → `adl2_resolve` (HRID) → `adl2_get` (source) → `openehr_adl::opt::create_opt` → `openehr_its::flat::webtemplate::build_web_template_am24` (am24 → Web Template) → `openehr_its::flat::example::example_composition` → `Accept_LOCATABLE` negotiation (canonical JSON/XML + FLAT/STRUCTURED); 400 (bad `type`/`detail_level`), 404 (unknown template), 406 (unsupported Accept)
 spine: standard api/** dispatch
 sql: 0 round trips
 notes: needs an example generator over an `am24`-OPT WebTemplate (the same generator issue #94 builds); ADL2 is OPTIONAL for CNF.
@@ -980,7 +980,7 @@ Service: `app/ehrbase/src/extensions/fhir/mod.rs` (table `fhir_mapping`).
 ### POST /fhir/r4/{resource_type}
 chain: `fhir_ingest` → spine → `fhir::run` → `ingest` → `EhrbaseService::fhir_ingest` —
 resolve mapping → resolve-or-create EHR from the resource's subject → WebTemplate →
-`openehr_flat::from_flat` → FEEDER_AUDIT stamp → `create_composition` (the NORMAL
+`openehr_its::flat::from_flat` → FEEDER_AUDIT stamp → `create_composition` (the NORMAL
 validated commit path)
 sql: 3–4 reads + the standard composition-commit transaction —
   - SELECT fhir_mapping (resource_type + profile match, NULL-profile default fallback; none → 404)
@@ -1050,12 +1050,12 @@ sql: 1 round trip — DELETE FROM fhir_mapping WHERE id (0 rows → 404)
 Not separate endpoints: content-negotiation glue on the standard COMPOSITION
 endpoints (create/update/get), engaged when `Content-Type`/`Accept` is
 `application/openehr.wt.flat+json` or `.wt.structured+json` (Better/EHRbase interop
-formats, `openehr-flat`).
+formats, `openehr_its::flat`).
 
 ### input path (FLAT/STRUCTURED body on composition create/update)
 chain: composition dispatcher → `composition_from_flat` / `composition_from_structured` →
 `EhrbaseService::web_template` (the one shared moka WebTemplate cache) →
-`openehr_flat::validate_flat_other` + `from_flat`/`from_structured` → the normal
+`openehr_its::flat::validate_flat_other` + `from_flat`/`from_structured` → the normal
 composition commit
 sql: 0–1 round trips of its own — WebTemplate cache hit = 0, miss = 1 SELECT
 template_store (then the underlying composition operation's SQL)
@@ -1068,7 +1068,7 @@ notes: template id from `template_id`/`templateId` query param or the
 ### output path (FLAT/STRUCTURED Accept on composition get/create/update echo)
 chain: composition dispatcher → `composition_flat_response` / `composition_structured_response`
 → `web_template` (template id read from the stored `archetype_details/template_id`) →
-`openehr_flat::to_flat` / `to_structured`
+`openehr_its::flat::to_flat` / `to_structured`
 sql: 0–1 round trips (WebTemplate cache miss only)
 notes: an output conversion failure is a server fault → 500 (stored data is the server's
 own and must always convert).

@@ -127,7 +127,7 @@ curl -sf -X PUT -H "Authorization: Bearer $KC_TOKEN" -H "Content-Type: applicati
 #        by construction; no hand-built fixture).
 echo "── seeding an EHR + a two-version composition"
 CDR_V1="$CDR_URL/ehrbase/rest/openehr/v1"
-SEED_OPT="crates/openehr-flat/tests/fixtures/sdk/minimal_evaluation.opt"
+SEED_OPT="crates/openehr-its/tests/fixtures/sdk/minimal_evaluation.opt"
 SEED_TEMPLATE="minimal_evaluation.en.v1"
 # Template upload is idempotent for the harness: 201 (created) or 409 (there).
 opt_status=$(curl -s -o /dev/null -w "%{http_code}" -u ehrbase:ehrbase -X POST \

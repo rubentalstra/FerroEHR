@@ -2,7 +2,7 @@
 //!
 //! This module owns the platform crate's template surface: OPT 1.4 XML
 //! ingestion, the `template_store` repository access, and the cached derived
-//! [`WebTemplate`](openehr_flat::webtemplate::WebTemplate) runtime form. It is decomposed
+//! [`WebTemplate`](openehr_its::flat::webtemplate::WebTemplate) runtime form. It is decomposed
 //! the way the spec itself layers the material — **resource identity →
 //! operational form → derived runtime artefact**:
 //!
@@ -22,7 +22,7 @@
 //!   (`BASE/docs/architecture_overview/master10-archetypes.adoc`
 //!   §Archetypes and Templates at Runtime, §Deploying Archetypes and
 //!   Templates), `moka`-cached; the `WebTemplate` *format* is
-//!   spec-silent and stays in `openehr-flat`.
+//!   spec-silent and stays in `openehr_its::flat`.
 //!
 //! # The inherent-method surface on `EhrbaseService`
 //!
@@ -39,7 +39,7 @@
 //! # NOTE residue
 //!
 //! - The `WebTemplate` JSON *format* is the Better `web-template`
-//!   SDT format, **not** openEHR-normative; kept in `openehr-flat`, never
+//!   SDT format, **not** openEHR-normative; kept in `openehr_its::flat`, never
 //!   presented as canonical (see [`runtime`]).
 //! - An unknown template on a *commit* path is a `422`
 //!   (ITS-REST `responses/422.yaml`: "the underlying template is not known")

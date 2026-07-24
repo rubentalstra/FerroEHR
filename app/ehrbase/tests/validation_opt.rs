@@ -84,7 +84,7 @@ fn valid_minimal_passes() {
 #[test]
 fn corpus_all_valid_opts_pass() {
     // The service knowledge corpus is the upload-surface oracle. (The
-    // openehr-flat Better/SDK fixtures are deliberately NOT swept: they are
+    // openehr-its Better/SDK fixtures are deliberately NOT swept: they are
     // serialization-test material and include artefacts that genuinely violate
     // the AOM validity rules — e.g. `sdk/section_cardinality.opt` breaks VCOC
     // with mandatory-occurrence sums exceeding the container cardinality — so

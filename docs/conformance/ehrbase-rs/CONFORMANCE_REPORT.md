@@ -1,7 +1,7 @@
 # Conformance Report
 
-SUT: ehrbase-rs 3.8.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.8.0 · verification pack: passed
+SUT: ehrbase-rs 3.9.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.9.0 · verification pack: passed
 
 ## Summary
 
