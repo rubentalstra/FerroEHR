@@ -1,8 +1,7 @@
 # Official master05 case (id verbatim, including the schedule's -xxx suffix).
 # The master05 test-case cells are TBD placeholders (Description/Pre/Post/Flow
 # all "xx"), so this case is status: draft — validated in shape but never
-# verdict-bearing — until the upstream schedule authors the specifics (recorded
-# in REQUIREMENTS.md). The flow is derived from the SM has_query (Boolean:
+# verdict-bearing — until the upstream schedule authors the specifics (AMB-38). The flow is derived from the SM has_query (Boolean:
 # "True if the query identified by a_query_name is registered") and realized
 # via the stored-query definitions REST API: a query is registered (store),
 # then its presence is checked.

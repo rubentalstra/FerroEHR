@@ -1,7 +1,7 @@
 # Official master12 case (chapter is TBD: the vendored master12 lists this SM
 # operation with two placeholder test cases `aaaa`/`bbbb` and no content, so
-# the id is a NATURAL family id derived from the resolvable SM operation — see
-# schedule/admin/REQUIREMENTS.md). ITS-REST 1.1.0 surfaces no wire for
+# the id is a NATURAL family id derived from the resolvable SM operation —
+# AMB-33). ITS-REST 1.1.0 surfaces no wire for
 # I_ADMIN_SERVICE.list_contributions (the only admin_* operations are
 # admin_ehr_delete / admin_ehr_delete_all), so the its-rest binding declares
 # the operation unrealized (AMB-33) and this case is not-applicable with

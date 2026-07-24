@@ -1,4 +1,4 @@
-# Official master05 case. Cells are TBD placeholders ("xx") -> # (REQUIREMENTS.md). valid_query is realized via store_query (SM
+# Official master05 case. Cells are TBD placeholders ("xx" — AMB-38). valid_query is realized via store_query (SM
 # Pre_valid_query): a syntactically invalid AQL text fails the formalism check
 # and is rejected.
 id: I_DEFINITION_QUERY.valid_query-invalid

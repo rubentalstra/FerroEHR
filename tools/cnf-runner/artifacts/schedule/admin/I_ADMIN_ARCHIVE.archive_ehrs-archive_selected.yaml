@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # ITS-REST 1.1.0 has no archive wire, so I_ADMIN_ARCHIVE.archive_ehrs is
 # declared unrealized (AMB-33). archive_ehrs moves selected EHRs to archival
 # storage — a fulfilled operation returning no resource body (ok).

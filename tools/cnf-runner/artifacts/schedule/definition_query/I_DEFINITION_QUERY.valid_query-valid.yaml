@@ -1,5 +1,5 @@
 # Official master05 case. The master05 cells are TBD placeholders ("xx"), so
-# this case is status: draft (recorded in REQUIREMENTS.md). ITS-REST 1.1.0 has
+# this case is status: draft (AMB-38). ITS-REST 1.1.0 has
 # no dedicated query-validation endpoint; the SM valid_query is realized via
 # store_query (SM Pre_valid_query: is_valid_query(a_query_text)) — a valid AQL
 # text is accepted and stored.

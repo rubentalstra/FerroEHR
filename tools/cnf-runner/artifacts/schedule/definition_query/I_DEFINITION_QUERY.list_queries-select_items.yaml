@@ -1,8 +1,8 @@
-# Official master05 case. Cells are TBD placeholders ("xx") -> # (REQUIREMENTS.md). The SM list_queries carries item_offset/items_to_fetch
+# Official master05 case. Cells are TBD placeholders ("xx" — AMB-38). The SM list_queries carries item_offset/items_to_fetch
 # pagination, but ITS-REST 1.1.0 definition_query_list exposes no offset/fetch
 # query parameters (specifications/operations/definition_query_list.yaml), so
 # item-selection is not wire-realizable on ITS-REST 1.1.0; the draft flow lists
-# without pagination. The wire gap is recorded in REQUIREMENTS.md.
+# without pagination. The wire gap is AMB-20.
 id: I_DEFINITION_QUERY.list_queries-select_items
 kind: functional
 component: DEFINITION_QUERY

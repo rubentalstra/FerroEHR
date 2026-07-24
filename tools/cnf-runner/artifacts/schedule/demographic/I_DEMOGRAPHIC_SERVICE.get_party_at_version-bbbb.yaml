@@ -1,7 +1,7 @@
 # master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.get_party_at_version() — the
 # schedule entry is TBD; authored as the primary declared-error path from the SM
 # operation semantics (.Errors: object_version_does_not_exist). Resolvable SM
-# operation is I_PARTY.get_party_at_version (the AMB-13 rule; see REQUIREMENTS.md).
+# operation is I_PARTY.get_party_at_version (the AMB-13 rule).
 id: I_DEMOGRAPHIC_SERVICE.get_party_at_version-bbbb
 kind: functional
 component: DEMOGRAPHIC

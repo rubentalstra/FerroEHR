@@ -8,8 +8,9 @@
 # asserted here; the spec-groundable fact is that a signature is present on the
 # committed VERSION. Reading ORIGINAL_VERSION.signature back is not expressible
 # with the current bindings + typed assertions, so the presence check is carried
-# as a `state` postcondition and recorded in REQUIREMENTS.md as a `signature`
-# assertion-family + version-read binding candidate.
+# as a `state` postcondition.
+# TODO: add a `signature` assertion family + a version-read binding so the
+#       presence check is wire-asserted instead of a state postcondition.
 id: SIG-VERSION-signature_present
 kind: functional
 component: SECURITY

@@ -1,6 +1,6 @@
 # Official master06 case — clear_ehr_modifiable on a non-existent EHR fails.
 # "A random ehr_id" is a fixed arbitrary UUID literal absent on an empty server
-# (see the schedule/ehr REQUIREMENTS.md judgment call).
+#.
 id: I_EHR_STATUS.clear_ehr_modifiable-bad_ehr
 kind: functional
 component: EHR

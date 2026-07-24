@@ -2,8 +2,8 @@
 # — the schedule entry is TBD; authored as the success/happy path from the SM
 # operation semantics. Resolvable SM operation is
 # I_PARTY_RELATIONSHIP.get_party_relationship_at_time (the AMB-13 rule). ITS-REST
-# 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding (proposed
-# AMB-32); not-applicable on ITS-REST 1.1.0. (See REQUIREMENTS.md.)
+# 1.1.0 surfaces no PARTY_RELATIONSHIP resource — unrealized binding
+# (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.get_party_relationship_at_time-aaaa
 kind: functional
 component: DEMOGRAPHIC
@@ -13,7 +13,7 @@ profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
   - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
-  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (AMB-32)"
 test_purpose: >-
   get_party_relationship_at_time for an existing versioned PARTY_RELATIONSHIP
   returns the version current at the supplied time.

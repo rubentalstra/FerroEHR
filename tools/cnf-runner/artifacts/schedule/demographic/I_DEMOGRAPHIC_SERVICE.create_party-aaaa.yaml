@@ -1,7 +1,7 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.create_party() — the schedule
 # entry is TBD; authored as the success/happy path from the SM operation
 # semantics. create_party is genuinely on I_DEMOGRAPHIC_SERVICE; the abstract
-# PARTY is realized via the concrete PERSON endpoint (see REQUIREMENTS.md).
+# PARTY is realized via the concrete PERSON endpoint (the binding NOTE is the record).
 id: I_DEMOGRAPHIC_SERVICE.create_party-aaaa
 kind: functional
 component: DEMOGRAPHIC

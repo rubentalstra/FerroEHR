@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # The SM versioned_composition_count carries an optional time_interval.
 # Unrealized on ITS-REST 1.1.0 (AMB-33).
 id: I_ADMIN_SERVICE.versioned_composition_count-time_range

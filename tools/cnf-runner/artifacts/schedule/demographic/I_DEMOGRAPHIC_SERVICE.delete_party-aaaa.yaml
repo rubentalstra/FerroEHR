@@ -1,7 +1,7 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.delete_party() — the schedule
 # entry is TBD; authored as the success/happy path from the SM operation
 # semantics (Post_party_deleted: not has_party). Resolvable SM operation is
-# I_PARTY.delete_party (the AMB-13 rule; see REQUIREMENTS.md). delete_party
+# I_PARTY.delete_party (the AMB-13 rule). delete_party
 # realizes the preceding_version_uid as the path uid_based_id (AMB-3); the
 # ITS-REST person_delete is a logical delete adding a deleted VERSION, so the
 # result is verified by the RM change_control version facts (the delete_composition

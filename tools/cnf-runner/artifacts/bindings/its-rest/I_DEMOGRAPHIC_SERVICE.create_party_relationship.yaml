@@ -8,8 +8,7 @@
 # delete_opt / AMB-22 list_contributions / AMB-24 get_versioned_directory
 # precedent) so the master10 create_party_relationship cases are not-applicable
 # WITH CITATION on this ITS and activate when a later ITS release adds the wire.
-# The proposed register entry (AMB-32) is documented in
-# schedule/demographic/REQUIREMENTS.md.
+# Register entry: AMB-32.
 sm_operation: I_DEMOGRAPHIC_SERVICE.create_party_relationship
 its: its-rest
 unrealized:

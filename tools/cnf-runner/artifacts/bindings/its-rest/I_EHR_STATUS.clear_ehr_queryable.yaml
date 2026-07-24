@@ -3,8 +3,8 @@
 # is realized as a read-modify-write of the whole EHR_STATUS via
 # PUT /ehr/{ehr_id}/ehr_status, with the current version_uid in If-Match
 # (the SM preceding_version_uid, AMB-3). The runner reads the current
-# EHR_STATUS, flips is_queryable, and PUTs it back (see the schedule/ehr
-# REQUIREMENTS.md — SM setter vs ITS-REST whole-resource-update divergence).
+# EHR_STATUS, flips is_queryable, and PUTs it back (AMB-15 — the SM setter
+# vs ITS-REST whole-resource-update divergence).
 # Sources: specifications/operations/ehr_status_update.yaml,
 # responses/200_EHR_STATUS_updated.yaml, 204_version_updated.yaml,
 # 412_EHR_STATUS.yaml, 400.yaml, 404_unknown_ehr_id.yaml; If-Match per

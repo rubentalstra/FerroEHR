@@ -1,4 +1,4 @@
-# Official master12 case (chapter TBD; NATURAL family id — see REQUIREMENTS.md).
+# Official master12 case (chapter TBD — AMB-33; NATURAL family ids).
 # Unrealized on ITS-REST 1.1.0 (AMB-33). Exercises the optional logical/
 # compression/encoding format enums of the SM export_ehrs signature.
 id: I_ADMIN_DUMP_LOAD.export_ehrs-export_formats

@@ -3,8 +3,7 @@
 # operation semantics (Post_relationship_deleted: not has_party_relationship).
 # Resolvable SM operation is I_PARTY_RELATIONSHIP.delete_party_relationship (the
 # AMB-13 rule). ITS-REST 1.1.0 surfaces no PARTY_RELATIONSHIP resource —
-# unrealized binding (proposed AMB-32); not-applicable on ITS-REST 1.1.0. (See
-# REQUIREMENTS.md.)
+# unrealized binding (AMB-32); not-applicable on ITS-REST 1.1.0.
 id: I_DEMOGRAPHIC_SERVICE.delete_party_relationship-aaaa
 kind: functional
 component: DEMOGRAPHIC
@@ -14,7 +13,7 @@ profiles: [OPTIONS]
 guards:
   - "DEMOGRAPHIC API is DEVELOPMENT-stage in ITS-REST 1.1.0 — CNF profiles (Demographic Persistence, OPTIONS); ITS-REST demographic (DEVELOPMENT lifecycle)"
   - "master10 (DEMOGRAPHIC) is a schedule stub — every test case is TBD (aaaa/bbbb); this case is authored from the SM operation semantics (declared meaning + Errors)"
-  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (proposed AMB-32; see REQUIREMENTS.md)"
+  - "PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire — not-applicable via the unrealized binding (AMB-32)"
 test_purpose: >-
   delete_party_relationship on an existing PARTY_RELATIONSHIP succeeds; the
   relationship is afterwards no longer retrievable

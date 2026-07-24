@@ -3,8 +3,8 @@
 # PARTY; ITS-REST 1.1.0 surfaces only per-concrete-subtype create endpoints
 # (person/organisation/role/group/agent). This binding realizes create_party via
 # the PERSON endpoint as the representative concrete subtype — a conformant
-# server exposing any concrete PARTY subtype passes. (See the polymorphism note
-# in schedule/demographic/REQUIREMENTS.md.)
+# server exposing any concrete PARTY subtype passes (this binding NOTE is the
+# polymorphism record).
 # Sources: specifications/operations/person_create.yaml,
 # responses/201_PERSON.yaml, 422.yaml; ETag.yaml, Location_PERSON.yaml,
 # ContentType_LOCATABLE.yaml.

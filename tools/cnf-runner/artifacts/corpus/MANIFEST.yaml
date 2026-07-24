@@ -179,11 +179,9 @@ cnf.ehr_status.with_subject.alt:
 # MANIFEST.yaml and are reused by the cases; only the new valid OPTs are
 # declared here.
 #
-# NOTE (master05 stored-query texts): AQL query text has no representable
-# CorpusFormat variant (canonical-json | canonical-xml | wt-flat |
-# wt-structured | opt-xml), so the master05 cases carry their AQL inline in
-# the flow `with:` payloads rather than as corpus data sets. See the master05
-# REQUIREMENTS.md for the proposed `aql-text` CorpusFormat addition.
+# NOTE (master05 stored-query texts): the simple stored-query texts stay
+# inline in the flow `with:` payloads; reusable/invalid AQL texts are corpus
+# entries with the `aql-text` CorpusFormat (added with the AQL corpus wave).
 cnf.opt.minimal_all_entries:
   source: fixtures/opt/valid/minimal_all_entries.opt
   format: opt-xml
@@ -1244,18 +1242,11 @@ cnf.messaging.tdd.invalid:
 # Corpus additions for the DEFINITION_ADL2 (I_DEFINITION_ADL2) chapter.
 # Merged into corpus/MANIFEST.yaml at verify time; entries live here ONLY.
 #
-# FORMAT CAVEAT (forcing item, see schedule/definition_adl2/REQUIREMENTS.md):
-# ADL2 operational templates and archetypes are `text/plain` ADL2 SOURCE, not
-# XML. `CorpusFormat` (tools/cnf-runner/src/vocab.rs) has no `adl2-text` /
-# `adl2-opt` variant yet, so these entries carry `format: adl2-text` as the
-# closest existing operational-template role. This misnames the wire encoding
-# (opt-xml = ADL 1.4 OPT XML) and MUST be replaced by a dedicated `adl2-text`
-# (source) / `adl2-opt` (operational template) CorpusFormat once the enum is
-# extended. The same stopgap+propose pattern the master05 chapter used for
-# `aql-text`.
-# TODO: switch these entries to `adl2-text` once CorpusFormat gains the ADL2
-#       source variant, and replace the structural placeholder payloads with
-#       the spine-first authored ADL2 corpus (#202).
+# FORMAT NOTE: ADL2 operational templates and archetypes are `text/plain`
+# ADL2 SOURCE; these entries carry the dedicated `adl2-text` CorpusFormat
+# (tools/cnf-runner/src/vocab.rs — added with the ADL2 chapter wave).
+# TODO: replace the structural placeholder payloads with the spine-first
+#       authored ADL2 corpus.
 
 cnf.adl2.opt.minimal:
   source: fixtures/adl2/opt/minimal.adls
@@ -1343,7 +1334,7 @@ cnf.adl2.opt.invalid.empty:
 # Documentary only: a valid ADL2 ARCHETYPE (not an OPT). ITS-REST 1.1.0
 # surfaces no ADL2 archetype-provisioning wire (only OPTs upload under
 # /definition/template/adl2), so no case references this key today — it stages
-# the eventual Adl2ArchetypeProvisioning coverage (AMB-37; see REQUIREMENTS.md).
+# the eventual Adl2ArchetypeProvisioning coverage (AMB-37).
 cnf.adl2.archetype.minimal:
   source: fixtures/adl2/archetype/minimal.adls
   format: adl2-text

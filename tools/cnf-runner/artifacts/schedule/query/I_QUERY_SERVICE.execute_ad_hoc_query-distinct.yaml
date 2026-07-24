@@ -2,8 +2,8 @@
 # AQL corpus (the corpus exercises projections but no dedicated DISTINCT case).
 # AQL is bag-semantics absent DISTINCT (QUERY master03 §DISTINCT); the 10 loaded
 # compositions share one template name, so SELECT DISTINCT c/name/value collapses
-# the ten identical projected rows to a single row. Recorded as a judgment-call
-# addition in REQUIREMENTS.md §DISTINCT. `ecc-` id namespace pending upstream
+# the ten identical projected rows to a single row. A judgment-call catalogue
+# addition (this authoring comment is the record). `ecc-` id namespace pending upstream
 # adoption.
 id: I_QUERY_SERVICE.execute_ad_hoc_query-distinct
 kind: functional

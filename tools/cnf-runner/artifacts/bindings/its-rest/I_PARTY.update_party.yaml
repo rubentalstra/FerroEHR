@@ -6,7 +6,7 @@
 # preceding_version_uid realization as update_composition (AMB-3). PERSON is the
 # representative concrete PARTY subtype.
 # master10 anchors the cases under I_DEMOGRAPHIC_SERVICE; the resolvable SM
-# operation is I_PARTY.update_party (the AMB-13 rule; see REQUIREMENTS.md).
+# operation is I_PARTY.update_party (the AMB-13 rule).
 # Sources: specifications/operations/person_update.yaml (200/204/400/404/412/422),
 # responses/200_PERSON_updated.yaml, 204_version_updated.yaml, 412_PERSON.yaml,
 # 422.yaml; parameters/header/If-Match.yaml.

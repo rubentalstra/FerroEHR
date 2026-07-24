@@ -1,7 +1,7 @@
 # master10 case "aaaa" under I_DEMOGRAPHIC_SERVICE.get_party_at_time() — the
 # schedule entry is TBD; authored as the success/happy path from the SM operation
 # semantics. Resolvable SM operation is I_PARTY.get_party_at_time (the AMB-13
-# rule; see REQUIREMENTS.md). The versioned party is created in-flow.
+# rule). The versioned party is created in-flow.
 id: I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
 kind: functional
 component: DEMOGRAPHIC

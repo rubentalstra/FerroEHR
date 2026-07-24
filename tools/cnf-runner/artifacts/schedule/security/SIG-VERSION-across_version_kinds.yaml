@@ -7,7 +7,9 @@
 # Signature presence per kind is not expressible with the current bindings +
 # typed assertions (no operation returns ORIGINAL_VERSION.signature); the
 # lineage is asserted with the `version` family and the per-kind signature fact
-# is carried as a `state` postcondition — see REQUIREMENTS.md.
+# is carried as a `state` postcondition.
+# TODO: wire-assert per-kind signature presence once the `signature`
+#       assertion family + version-read binding exist.
 id: SIG-VERSION-across_version_kinds
 kind: functional
 component: SECURITY

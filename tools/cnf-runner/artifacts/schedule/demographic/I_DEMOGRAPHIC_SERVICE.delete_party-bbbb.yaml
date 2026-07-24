@@ -1,7 +1,7 @@
 # master10 case "bbbb" under I_DEMOGRAPHIC_SERVICE.delete_party() — the schedule
 # entry is TBD; authored as the primary declared-error path from the SM operation
 # semantics (.Errors: versioned_object_does_not_exist). Resolvable SM operation is
-# I_PARTY.delete_party (the AMB-13 rule; see REQUIREMENTS.md).
+# I_PARTY.delete_party (the AMB-13 rule).
 id: I_DEMOGRAPHIC_SERVICE.delete_party-bbbb
 kind: functional
 component: DEMOGRAPHIC
