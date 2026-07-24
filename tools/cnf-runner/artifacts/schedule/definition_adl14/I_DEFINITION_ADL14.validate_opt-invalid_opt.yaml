@@ -1,6 +1,6 @@
 # Official master04 case. sm_operation carries the resolvable valid_opt (the
-# schedule anchors validate_opt(), which the vendored SM does not define — see
-# REQUIREMENTS.md, AMB-13 precedent). Validation is realized via upload per the
+# schedule anchors validate_opt(), which the vendored SM does not define —
+# AMB-16, AMB-13 precedent). Validation is realized via upload per the
 # master04 §validate_opt NOTE: an invalid OPT is rejected and nothing loads, so
 # the state-unchanged post-condition is verifiable via get_opts on the empty
 # server.
