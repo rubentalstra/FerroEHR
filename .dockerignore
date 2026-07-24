@@ -1,0 +1,12 @@
+# Keep the docker build context small: both server images build with
+# `context: .` + `COPY . .` (docker/Dockerfile, docker/admin-ui/Dockerfile),
+# so without this file every image build ships the entire working tree —
+# observed 53 GB of context transfer once target/ grew (2026-07-24).
+# `.git` stays IN the context deliberately: app/ehrbase/build.rs derives the
+# /management/info git SHA from it (best-effort, no build arg wired).
+target/
+docs-dist/
+.claude/worktrees/
+**/node_modules/
+*.log
+.DS_Store
