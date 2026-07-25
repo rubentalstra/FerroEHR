@@ -5,6 +5,7 @@
 //! and voids, and `toast` reports every mutation outcome.
 
 pub mod brand;
+pub mod confirm_dialog;
 pub mod data_table;
 pub mod empty_state;
 pub mod field;

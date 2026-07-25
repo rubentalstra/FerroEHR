@@ -17,12 +17,18 @@ use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
 
+use crate::admin::AdminAvailability;
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
 use crate::components::empty_state::EmptyState;
-use crate::components::field::INPUT;
+use crate::components::field::{BTN_DANGER, INPUT};
 use crate::components::page_header::PageHeader;
-use crate::components::toast::toast_success;
+use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
+
+/// The template-delete action: the id it was dispatched with, paired with the
+/// CDR's answer, so both the success and the failure toast can name the exact
+/// template (rules §6 — the action's value IS the mutation report).
+type TemplateDeleteAction = Action<String, (String, Result<(), AdminUiError>)>;
 
 /// One row of the template list, distilled from the ITS-REST Definition list
 /// shape (`template_id` / `concept` / `created_timestamp`). Shared across both
@@ -132,8 +138,14 @@ pub async fn upload_template(opt_xml: String) -> Result<String, AdminUiError> {
 ///
 /// The filter is a private client-side `contains` over already-loaded rows (a
 /// bound signal, per the screen spec — no server round-trip, so URL state
-/// would add nothing here). A successful upload bumps the upload action's
-/// version, which is the list resource's source, refetching it.
+/// would add nothing here). A successful upload or delete bumps its action's
+/// version, both of which are the list resource's source, refetching it.
+///
+/// The per-row delete is admin-gated: it renders only when the
+/// [`admin_gate`](crate::admin::admin_gate) probe finds the CDR advertising its
+/// Admin API (discover-and-hide — no admin group, no buttons). Whether the
+/// session may USE it is the CDR's per-request answer, surfaced as actionable
+/// copy on refusal.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn TemplatesPage() -> impl IntoView {
@@ -143,8 +155,21 @@ pub fn TemplatesPage() -> impl IntoView {
         let opt_xml = opt_xml.clone();
         async move { upload_template(opt_xml).await }
     });
+    // The admin probe, and the delete action it gates. Both live in setup so
+    // the gated view can re-render without re-creating them (rules §4).
+    let gate = crate::admin::admin_gate();
+    let delete: TemplateDeleteAction = Action::new(|template_id: &String| {
+        let template_id = template_id.clone();
+        async move {
+            let outcome = crate::admin::admin_delete_template(template_id.clone()).await;
+            (template_id, outcome)
+        }
+    });
+    // The template awaiting confirmation in the modal (`None` = no dialog).
+    // ONE dialog serves every row — the signal is both "which row" and "open".
+    let pending_delete = RwSignal::new(Option::<String>::None);
     let list: Resource<Result<Vec<TemplateRow>, AdminUiError>> = Resource::new(
-        move || upload.version().get(),
+        move || (upload.version().get(), delete.version().get()),
         |_| async move { list_templates().await },
     );
 
@@ -162,9 +187,27 @@ pub fn TemplatesPage() -> impl IntoView {
         }
     });
 
+    // The delete outcome is reported as a toast naming the template: success
+    // plainly, failure with the actionable copy (the CDR's in-use `409`
+    // diagnostic included).
+    Effect::new(move |_| match delete.value().get() {
+        Some((template_id, Ok(()))) => toast_success(
+            toaster,
+            "Template deleted",
+            &format!("{template_id} was removed from the CDR."),
+        ),
+        Some((template_id, Err(error))) => toast_error(
+            toaster,
+            "Delete failed",
+            &crate::admin::delete_failure_copy(&format!("Template {template_id}"), &error),
+        ),
+        None => {}
+    });
+
     let action_slot = upload_trigger(upload);
     let feedback = upload_feedback(upload);
-    let table_section = templates_table(filter, list);
+    let table_section = templates_table(filter, list, gate, delete, pending_delete);
+    let confirm = delete_dialog(pending_delete, delete);
 
     view! {
         <Title text="Templates" />
@@ -186,8 +229,48 @@ pub fn TemplatesPage() -> impl IntoView {
             </div>
             {feedback}
             {table_section}
+            {confirm}
         </div>
     }
+}
+
+/// The screen's ONE delete-confirmation modal, driven by `pending_delete`
+/// (which row triggered it). Rendered once outside the table, so a list
+/// refetch never re-creates it; it is inert (nothing in the DOM) while no row
+/// is pending, which is also why it needs no admin gate of its own — only an
+/// admin-gated trigger can set the signal.
+fn delete_dialog(
+    pending_delete: RwSignal<Option<String>>,
+    delete: TemplateDeleteAction,
+) -> AnyView {
+    let message = Signal::derive(move || {
+        pending_delete
+            .get()
+            .map_or_else(String::new, |template_id| {
+                format!(
+                    "Permanently delete the operational template “{template_id}” from the CDR? \
+                 This cannot be undone. The CDR refuses the delete while a committed version \
+                 still references the template."
+                )
+            })
+    });
+    view! {
+        <crate::components::confirm_dialog::ConfirmDialog
+            open=Signal::derive(move || pending_delete.get().is_some())
+            title="Delete template"
+            message=message
+            confirm_label="Delete template"
+            confirm_id="template-delete-confirm"
+            on_cancel=Callback::new(move |()| pending_delete.set(None))
+            on_confirm=Callback::new(move |()| {
+                if let Some(template_id) = pending_delete.get_untracked() {
+                    delete.dispatch(template_id);
+                }
+                pending_delete.set(None);
+            })
+        />
+    }
+    .into_any()
 }
 
 /// The upload trigger for the page-header action slot: a [`thaw::Upload`] whose
@@ -254,15 +337,23 @@ fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyV
 /// current rows visible while a refetch runs — rules §6), resolving its
 /// `Result` inside the transition (an SSR'd `ErrorBoundary` fallback mismatches
 /// at hydration in leptos 0.8), then the filtered rows.
+///
+/// The admin probe is awaited in the SAME `Suspend` as the list (rules §6 —
+/// several resources awaited in one suspend, no nested `Option` matching), so
+/// the header row and the rows agree on whether the delete column exists.
 fn templates_table(
     filter: RwSignal<String>,
     list: Resource<Result<Vec<TemplateRow>, AdminUiError>>,
+    gate: Resource<Result<AdminAvailability, AdminUiError>>,
+    delete: TemplateDeleteAction,
+    pending_delete: RwSignal<Option<String>>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
+                let admin = crate::admin::renders_admin_ops(&gate.await);
                 match list.await {
-                    Ok(rows) => rows_view(rows, filter),
+                    Ok(rows) => rows_view(rows, filter, admin, delete, pending_delete),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -282,8 +373,15 @@ fn table_skeleton() -> impl IntoView {
     }
 }
 
-/// Render the loaded rows: the empty-catalogue state, or a filterable table.
-fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
+/// Render the loaded rows: the empty-catalogue state, or a filterable table
+/// (with the admin delete column when `admin`).
+fn rows_view(
+    rows: Vec<TemplateRow>,
+    filter: RwSignal<String>,
+    admin: bool,
+    delete: TemplateDeleteAction,
+    pending_delete: RwSignal<Option<String>>,
+) -> AnyView {
     if rows.is_empty() {
         return view! {
             <EmptyState
@@ -318,13 +416,19 @@ fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
                 each_rows.iter().filter(|&row| matches(row, &needle)).cloned().collect::<Vec<_>>()
             }
             key=|row| row.template_id.clone()
-            children=row_view
+            children=move |row| row_view(row, admin, delete, pending_delete)
         />
     }
     .into_any();
 
+    let headers: &[&str] = if admin {
+        &["Template ID", "Concept", "Archetype ID", "Created", ""]
+    } else {
+        &["Template ID", "Concept", "Archetype ID", "Created"]
+    };
+
     view! {
-        {table_shell(&["Template ID", "Concept", "Archetype ID", "Created"], body)}
+        {table_shell(headers, body)}
         <Show when=none_match>
             <p class="mt-3 text-sm text-ink-muted">"No templates match the filter."</p>
         </Show>
@@ -348,9 +452,20 @@ fn detail_href(template_id: &str) -> String {
 }
 
 /// One table row: the template id links to the detail route; concept and
-/// created are plain cells.
-fn row_view(row: TemplateRow) -> impl IntoView {
+/// created are plain cells; the admin delete cell renders only when the probe
+/// said so.
+fn row_view(
+    row: TemplateRow,
+    admin: bool,
+    delete: TemplateDeleteAction,
+    pending_delete: RwSignal<Option<String>>,
+) -> impl IntoView {
     let href = detail_href(&row.template_id);
+    let action = if admin {
+        delete_cell(&row.template_id, delete, pending_delete)
+    } else {
+        ().into_any()
+    };
     view! {
         <tr class=ROW>
             <td class=CELL_MONO>
@@ -361,8 +476,36 @@ fn row_view(row: TemplateRow) -> impl IntoView {
             <td class=CELL>{row.concept}</td>
             <td class=CELL_MONO>{row.archetype_id}</td>
             <td class=CELL_MONO>{row.created}</td>
+            {action}
         </tr>
     }
+}
+
+/// The admin delete cell for one row: the danger button that opens the screen's
+/// confirmation modal for THIS template (it only sets `pending_delete`; the
+/// dialog owns the confirm). `data-template-delete` is the stable hook the E2E
+/// journeys select on.
+fn delete_cell(
+    template_id: &str,
+    delete: TemplateDeleteAction,
+    pending_delete: RwSignal<Option<String>>,
+) -> AnyView {
+    let id_for_click = template_id.to_owned();
+    let on_click = move |_| pending_delete.set(Some(id_for_click.clone()));
+    view! {
+        <td class=format!("{CELL} text-right")>
+            <button
+                type="button"
+                class=BTN_DANGER
+                data-template-delete=template_id.to_owned()
+                disabled=Signal::derive(move || delete.pending().get())
+                on:click=on_click
+            >
+                "Delete"
+            </button>
+        </td>
+    }
+    .into_any()
 }
 
 #[cfg(test)]

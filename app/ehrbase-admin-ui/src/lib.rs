@@ -7,6 +7,7 @@
 //! every `#[server]` fn is a publicly reachable endpoint that enforces the
 //! console's own session auth itself.
 
+pub mod admin;
 pub mod app;
 pub mod auth;
 pub mod builder;
@@ -15,6 +16,7 @@ pub mod error;
 pub mod format;
 pub mod pages;
 pub mod queries_api;
+pub mod system_api;
 pub mod theme;
 
 #[cfg(feature = "ssr")]

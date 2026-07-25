@@ -5,8 +5,9 @@
 //! The stored-query surface is the ITS-REST Definition/Query API
 //! (`docs/specs/openehr/ITS-REST/docs/definition/`); groups are console-local
 //! (no ITS-REST resource exists for them). All data flows through the
-//! [`crate::queries_api`] server fns — each guards the session itself; this
-//! screen adds no new server fn.
+//! [`crate::queries_api`] server fns plus the admin gate + stored-query delete
+//! in [`crate::admin`] — each guards the session itself; this screen declares
+//! no server fn of its own.
 //!
 //! Discipline (rules §1/§4/§6/§8): the view is composed from `.into_any()`-
 //! erased section locals; the stored-query list is a `<For>` keyed by
@@ -21,6 +22,7 @@ use leptos_meta::Title;
 use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
+use crate::admin::AdminAvailability;
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT};
@@ -35,29 +37,51 @@ use crate::queries_api::{
     QueryGroup, StoredQueryRow, fetch_stored_query, list_groups, list_stored_queries, save_group,
 };
 
+/// The stored-query delete action: the `(name, version)` it was dispatched
+/// with, paired with the CDR's answer, so both toasts can name the exact
+/// query. This deletes from the **CDR's** stored-query store — never the
+/// console-local groups (see [`groups_panel`]).
+type CdrQueryDelete = Action<(String, String), ((String, String), Result<(), AdminUiError>)>;
+
 /// The `/queries` screen: a stored-queries table with an on-demand AQL detail,
 /// alongside the console-local query-group editor.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn QueriesPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
-    // Stored queries load once and feed both the table (left) and the group
-    // form's member checkboxes (right); a Resource is Copy so both read it.
-    let stored = Resource::new(|| (), |()| async move { list_stored_queries().await });
+    // The admin probe and the CDR stored-query delete it gates (discover-and-hide:
+    // no advertised admin group, no delete affordance). Created in setup so the
+    // gated view can re-render without re-creating them (rules §4).
+    let gate = crate::admin::admin_gate();
+    let cdr_delete: CdrQueryDelete = Action::new(|key: &(String, String)| {
+        let key = key.clone();
+        async move {
+            let outcome =
+                crate::admin::admin_delete_stored_query(key.0.clone(), key.1.clone()).await;
+            (key, outcome)
+        }
+    });
+    // Stored queries feed both the table (left) and the group form's member
+    // checkboxes (right); a Resource is Copy so both read it. A CDR delete
+    // bumps the action's version, which is the resource's source (rules §6).
+    let stored = Resource::new(
+        move || cdr_delete.version().get(),
+        |_| async move { list_stored_queries().await },
+    );
     // The group save/delete action; its version drives the groups refetch.
     let save = Action::new(|input: &(String, Vec<String>)| {
         let (name, members) = input.clone();
         async move { save_group(name, members).await }
     });
     // Records the last mutation's intent so the completion toast reads
-    // correctly ("Group saved" vs "Group deleted"); set at each dispatch site.
+    // correctly ("Group saved" vs "Group removed"); set at each dispatch site.
     let save_intent = RwSignal::new("save");
     // Report each mutation's outcome as a toast (rules: Effect = sync with the
     // outside world; no signal is written here). Runs client-side only.
     Effect::new(move |_| match save.value().get() {
         Some(Ok(())) => {
             let title = if save_intent.get_untracked() == "delete" {
-                "Group deleted"
+                "Group removed"
             } else {
                 "Group saved"
             };
@@ -66,8 +90,23 @@ pub fn QueriesPage() -> impl IntoView {
         Some(Err(error)) => toast_error(toaster, "Save failed", &error.to_string()),
         None => {}
     });
+    // The CDR stored-query delete reports separately — its copy names the
+    // query, and a failure carries the actionable next action.
+    Effect::new(move |_| match cdr_delete.value().get() {
+        Some(((name, version), Ok(()))) => toast_success(
+            toaster,
+            "Stored query deleted",
+            &format!("{name} v{version} was removed from the CDR."),
+        ),
+        Some(((name, version), Err(error))) => toast_error(
+            toaster,
+            "Delete failed",
+            &crate::admin::delete_failure_copy(&format!("Stored query {name} v{version}"), &error),
+        ),
+        None => {}
+    });
 
-    let table = stored_queries_panel(stored);
+    let table = stored_queries_panel(stored, gate, cdr_delete);
     let groups = groups_panel(stored, save, save_intent);
 
     view! {
@@ -93,7 +132,11 @@ pub fn QueriesPage() -> impl IntoView {
 
 /// The stored-queries panel: the list table plus the single-select AQL detail
 /// shown below it.
-fn stored_queries_panel(stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>) -> AnyView {
+fn stored_queries_panel(
+    stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>,
+    gate: Resource<Result<AdminAvailability, AdminUiError>>,
+    cdr_delete: CdrQueryDelete,
+) -> AnyView {
     // The row (name, version) whose AQL detail is currently expanded.
     let selected = RwSignal::new(Option::<(String, String)>::None);
     // The selected query's AQL, fetched on demand; `None` source → no call.
@@ -106,32 +149,85 @@ fn stored_queries_panel(stored: Resource<Result<Vec<StoredQueryRow>, AdminUiErro
             }
         },
     );
-    let table = stored_table(stored, selected);
+    // The `(name, version)` awaiting confirmation in the modal (`None` = no
+    // dialog). ONE dialog serves every row — the signal is both "which row" and
+    // "open".
+    let pending_delete = RwSignal::new(Option::<(String, String)>::None);
+    let table = stored_table(stored, selected, gate, cdr_delete, pending_delete);
     let detail_view = stored_detail(detail);
+    let confirm = cdr_delete_dialog(pending_delete, cdr_delete);
     view! {
         <section class="space-y-3">
             <h2 class=CARD_TITLE>"Stored queries"</h2>
             {table}
             {detail_view}
+            {confirm}
         </section>
     }
     .into_any()
 }
 
-/// The stored-queries table, read under `<Suspense>` (loads once).
+/// The panel's ONE CDR-delete confirmation modal, driven by `pending_delete`
+/// (which stored-query version triggered it). Rendered once outside the table so
+/// a list refetch never re-creates it, and inert while nothing is pending —
+/// which is why it needs no admin gate of its own: only an admin-gated trigger
+/// can set the signal. The copy is explicit that this is the CDR's store, not a
+/// console-local grouping.
+fn cdr_delete_dialog(
+    pending_delete: RwSignal<Option<(String, String)>>,
+    cdr_delete: CdrQueryDelete,
+) -> AnyView {
+    let message = Signal::derive(move || {
+        pending_delete
+            .get()
+            .map_or_else(String::new, |(name, version)| {
+                format!(
+                    "Permanently delete stored query “{name}” version {version} from the CDR? \
+                     Every client loses that version — this is not the console-local group \
+                     removal, and it cannot be undone."
+                )
+            })
+    });
+    view! {
+        <crate::components::confirm_dialog::ConfirmDialog
+            open=Signal::derive(move || pending_delete.get().is_some())
+            title="Delete stored query from the CDR"
+            message=message
+            confirm_label="Delete from CDR"
+            confirm_id="stored-query-delete-confirm"
+            on_cancel=Callback::new(move |()| pending_delete.set(None))
+            on_confirm=Callback::new(move |()| {
+                if let Some(key) = pending_delete.get_untracked() {
+                    cdr_delete.dispatch(key);
+                }
+                pending_delete.set(None);
+            })
+        />
+    }
+    .into_any()
+}
+
+/// The stored-queries table, read under `<Transition>` (a CDR delete refetches
+/// the list — keep the current rows visible instead of flashing the skeleton,
+/// rules §6). The admin probe is awaited in the SAME `Suspend` as the list, so
+/// every row agrees on whether the delete affordance exists.
 fn stored_table(
     stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>,
     selected: RwSignal<Option<(String, String)>>,
+    gate: Resource<Result<AdminAvailability, AdminUiError>>,
+    cdr_delete: CdrQueryDelete,
+    pending_delete: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     view! {
-        <Suspense fallback=table_skeleton>
+        <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
+                let admin = crate::admin::renders_admin_ops(&gate.await);
                 match stored.await {
-                    Ok(rows) => stored_rows_view(rows, selected),
+                    Ok(rows) => stored_rows_view(rows, selected, admin, cdr_delete, pending_delete),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
-        </Suspense>
+        </Transition>
     }
     .into_any()
 }
@@ -141,6 +237,9 @@ fn stored_table(
 fn stored_rows_view(
     rows: Vec<StoredQueryRow>,
     selected: RwSignal<Option<(String, String)>>,
+    admin: bool,
+    cdr_delete: CdrQueryDelete,
+    pending_delete: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     if rows.is_empty() {
         return view! {
@@ -154,7 +253,7 @@ fn stored_rows_view(
     }
     let body = view! {
         <For each=move || rows.clone() key=|row| format!("{}@{}", row.name, row.version) let:row>
-            {stored_row(row, selected)}
+            {stored_row(row, selected, admin, cdr_delete, pending_delete)}
         </For>
     }
     .into_any();
@@ -163,7 +262,13 @@ fn stored_rows_view(
 
 /// One stored-query row. Clicking it toggles the single-select detail below the
 /// table (`on:click` is a Rust listener — zero authored JS, rules §0).
-fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>) -> impl IntoView {
+fn stored_row(
+    row: StoredQueryRow,
+    selected: RwSignal<Option<(String, String)>>,
+    admin: bool,
+    cdr_delete: CdrQueryDelete,
+    pending_delete: RwSignal<Option<(String, String)>>,
+) -> impl IntoView {
     let key_for_class = (row.name.clone(), row.version.clone());
     let key_for_click = (row.name.clone(), row.version.clone());
     let is_selected = move || selected.with(|current| current.as_ref() == Some(&key_for_class));
@@ -183,6 +288,11 @@ fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>)
     // delegation reached, the browser does a plain navigation to the fresh page.
     // `name@version` is percent-encoded as one value.
     let load_href = crate::pages::query_aql::load_href(&row.name, &row.version);
+    let delete_button = if admin {
+        cdr_delete_button(&row.name, &row.version, cdr_delete, pending_delete)
+    } else {
+        ().into_any()
+    };
     view! {
         <tr
             class=format!("{ROW} cursor-pointer")
@@ -193,12 +303,51 @@ fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>)
             <td class=CELL_MONO>{row.version}</td>
             <td class=format!("{CELL} text-xs text-ink-muted")>{row.saved}</td>
             <td class=format!("{CELL} text-right")>
-                <a href=load_href class=BTN_SECONDARY on:click=|ev| ev.stop_propagation()>
-                    "Open in editor"
-                </a>
+                // `whitespace-nowrap`: the panel is half-width, so without it the
+                // action labels wrap mid-phrase ("Delete from / CDR"). The row
+                // stacks the two actions instead.
+                <div class="flex flex-wrap items-center justify-end gap-2 whitespace-nowrap">
+                    <a href=load_href class=BTN_SECONDARY on:click=|ev| ev.stop_propagation()>
+                        "Open in editor"
+                    </a>
+                    {delete_button}
+                </div>
             </td>
         </tr>
     }
+}
+
+/// The admin **Delete from CDR** button for one stored-query version: it opens
+/// the panel's confirmation modal for THIS `(name, version)` (only the dialog's
+/// confirm dispatches). Deliberately labelled to distinguish it from the groups
+/// panel's console-local "Remove group" — this one removes the query VERSION
+/// from the CDR's stored-query store for every client, not a local grouping.
+/// The click never bubbles to the row's detail toggle.
+/// `data-query-delete` (`name@version`) is the stable E2E hook.
+fn cdr_delete_button(
+    name: &str,
+    version: &str,
+    cdr_delete: CdrQueryDelete,
+    pending_delete: RwSignal<Option<(String, String)>>,
+) -> AnyView {
+    let key = format!("{name}@{version}");
+    let target = (name.to_owned(), version.to_owned());
+    let on_click = move |ev: leptos::ev::MouseEvent| {
+        ev.stop_propagation();
+        pending_delete.set(Some(target.clone()));
+    };
+    view! {
+        <button
+            type="button"
+            class=BTN_DANGER
+            data-query-delete=key
+            disabled=Signal::derive(move || cdr_delete.pending().get())
+            on:click=on_click
+        >
+            "Delete from CDR"
+        </button>
+    }
+    .into_any()
 }
 
 /// The AQL detail below the table: the selected query's AQL in a
@@ -268,16 +417,19 @@ fn groups_panel(
     // Form state, shared between the form and the per-group Edit buttons.
     let name = RwSignal::new(String::new());
     let selected = RwSignal::new(Vec::<String>::new());
-    // Which existing group is awaiting a delete confirmation (second click).
+    // Which existing group is awaiting confirmation in the modal (`None` = no
+    // dialog): both "which group" and "open", one signal.
     let pending_delete = RwSignal::new(Option::<String>::None);
 
     let form = group_form(stored, save, save_intent, name, selected);
-    let list = groups_list(groups, save, save_intent, name, selected, pending_delete);
+    let list = groups_list(groups, name, selected, pending_delete);
+    let confirm = group_remove_dialog(pending_delete, save, save_intent);
     view! {
         <section class="space-y-3">
             <h2 class=CARD_TITLE>"Groups"</h2>
             {form}
             {list}
+            {confirm}
         </section>
     }
     .into_any()
@@ -390,8 +542,6 @@ fn member_checkbox(row: &StoredQueryRow, selected: RwSignal<Vec<String>>) -> Any
 /// The existing groups, read under `<Transition>` (refetched on save).
 fn groups_list(
     groups: Resource<Result<Vec<QueryGroup>, AdminUiError>>,
-    save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
-    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
     pending_delete: RwSignal<Option<String>>,
@@ -402,9 +552,7 @@ fn groups_list(
         }>
             {move || Suspend::new(async move {
                 match groups.await {
-                    Ok(loaded) => {
-                        groups_list_view(loaded, save, save_intent, name, selected, pending_delete)
-                    }
+                    Ok(loaded) => groups_list_view(loaded, name, selected, pending_delete),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -416,8 +564,6 @@ fn groups_list(
 /// Render the group cards (or the empty state).
 fn groups_list_view(
     groups: Vec<QueryGroup>,
-    save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
-    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
     pending_delete: RwSignal<Option<String>>,
@@ -434,18 +580,21 @@ fn groups_list_view(
     }
     let cards = groups
         .into_iter()
-        .map(|group| group_card(&group, save, save_intent, name, selected, pending_delete))
+        .map(|group| group_card(&group, name, selected, pending_delete))
         .collect::<Vec<_>>();
     view! { <div class="flex flex-col gap-2">{cards}</div> }.into_any()
 }
 
 /// One group card: the name, member chips, an Edit button (loads the group into
-/// the form) and a Delete button that requires a second confirming click before
-/// dispatching a delete (a [`save_group`] with no members).
+/// the form) and a "Remove group" button that opens the panel's confirmation
+/// modal for THIS group (the dialog dispatches the removal — a [`save_group`]
+/// with no members).
+///
+/// The label says *group* on purpose: this removes only the console-local
+/// grouping — the stored queries themselves stay in the CDR, which is what the
+/// stored-query rows' "Delete from CDR" does instead.
 fn group_card(
     group: &QueryGroup,
-    save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
-    save_intent: RwSignal<&'static str>,
     name: RwSignal<String>,
     selected: RwSignal<Vec<String>>,
     pending_delete: RwSignal<Option<String>>,
@@ -475,19 +624,7 @@ fn group_card(
     };
 
     let name_for_delete = group.name.clone();
-    let is_pending = {
-        let name_for_pending = group.name.clone();
-        move || pending_delete.with(|p| p.as_deref() == Some(name_for_pending.as_str()))
-    };
-    let on_delete = move |_| {
-        if pending_delete.with(|p| p.as_deref() == Some(name_for_delete.as_str())) {
-            save_intent.set("delete");
-            save.dispatch((name_for_delete.clone(), Vec::new()));
-            pending_delete.set(None);
-        } else {
-            pending_delete.set(Some(name_for_delete.clone()));
-        }
-    };
+    let on_delete = move |_| pending_delete.set(Some(name_for_delete.clone()));
 
     view! {
         <div class=CARD_PAD>
@@ -497,13 +634,54 @@ fn group_card(
                     <button type="button" class=BTN_SECONDARY on:click=on_edit>
                         "Edit"
                     </button>
-                    <button type="button" class=BTN_DANGER on:click=on_delete>
-                        {move || if is_pending() { "Confirm delete" } else { "Delete" }}
+                    <button
+                        type="button"
+                        class=BTN_DANGER
+                        data-group-remove=group.name.clone()
+                        on:click=on_delete
+                    >
+                        "Remove group"
                     </button>
                 </div>
             </div>
             <div class="flex flex-wrap gap-1">{chips}</div>
         </div>
+    }
+    .into_any()
+}
+
+/// The groups panel's ONE removal-confirmation modal, driven by
+/// `pending_delete` (which group card triggered it). Its copy is explicit that
+/// only the console-local grouping goes — the member queries stay in the CDR.
+fn group_remove_dialog(
+    pending_delete: RwSignal<Option<String>>,
+    save: Action<(String, Vec<String>), Result<(), AdminUiError>>,
+    save_intent: RwSignal<&'static str>,
+) -> AnyView {
+    let message = Signal::derive(move || {
+        pending_delete.get().map_or_else(String::new, |group| {
+            format!(
+                "Remove the query group “{group}” from this console? The stored queries it \
+                 grouped stay in the CDR — only the grouping (and its dashboard tile) goes."
+            )
+        })
+    });
+    view! {
+        <crate::components::confirm_dialog::ConfirmDialog
+            open=Signal::derive(move || pending_delete.get().is_some())
+            title="Remove query group"
+            message=message
+            confirm_label="Remove group"
+            confirm_id="group-remove-confirm"
+            on_cancel=Callback::new(move |()| pending_delete.set(None))
+            on_confirm=Callback::new(move |()| {
+                if let Some(group) = pending_delete.get_untracked() {
+                    save_intent.set("delete");
+                    save.dispatch((group, Vec::new()));
+                }
+                pending_delete.set(None);
+            })
+        />
     }
     .into_any()
 }

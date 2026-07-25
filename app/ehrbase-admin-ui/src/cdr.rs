@@ -55,11 +55,42 @@ impl CdrClient {
         )
     }
 
+    /// The ITS-REST v1 base path itself, with NO trailing slash — the System
+    /// API's conformance-manifest resource (`OPTIONS {base_path}`). The server
+    /// mounts that route at the exact base path above its normalization layer,
+    /// so the trailing slash `rest_v1("")` would add must not be sent.
+    #[must_use]
+    pub fn rest_v1_root(&self) -> String {
+        format!("{}/ehrbase/rest/openehr/v1", self.origin)
+    }
+
     /// A URL directly under the CDR origin (`/ehrbase/rest/status`,
     /// `/.well-known/smart-configuration`, the served `openapi.json`).
     #[must_use]
     pub fn origin_url(&self, path: &str) -> String {
         format!("{}/{}", self.origin, path.trim_start_matches('/'))
+    }
+
+    /// `OPTIONS url` with no credential, asking for `accept`.
+    ///
+    /// The System API's conformance manifest is served above the CORS layer and
+    /// outside authentication (ITS-REST System API — `security: []`), so this
+    /// probe carries no credential.
+    ///
+    /// # Errors
+    /// [`AdminUiError::CdrUnreachable`] on transport failure; the response
+    /// itself (any status) is returned for the caller to interpret.
+    pub async fn options_public(
+        &self,
+        url: &str,
+        accept: &str,
+    ) -> Result<CdrResponse, AdminUiError> {
+        Self::finish(
+            self.http
+                .request(http::Method::OPTIONS, url)
+                .header(http::header::ACCEPT, accept),
+        )
+        .await
     }
 
     /// GET `url` as `credential`, asking for `accept`.

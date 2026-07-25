@@ -35,7 +35,10 @@ use leptos_meta::Title;
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
+use crate::components::field::BTN_DANGER;
 use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::toast::{toast_error, toast_success};
+use crate::error::AdminUiError;
 use crate::pages::ehr_detail::compositions::compositions_section;
 use crate::pages::ehr_detail::contributions::contributions_section;
 use crate::pages::ehr_detail::directory::directory_section;
@@ -93,6 +96,7 @@ pub fn EhrDetailPage() -> impl IntoView {
     });
 
     let tabs = tab_bar(ehr_id, selected);
+    let delete_action = delete_section(ehr_id);
 
     view! {
         <Title text="EHR detail · ehrbase-admin" />
@@ -102,6 +106,7 @@ pub fn EhrDetailPage() -> impl IntoView {
                 crumbs=vec![Crumb::new("EHRs", "/ehrs")]
                 mono=true
             />
+            {delete_action}
             {tabs}
             <div class="mt-4">
                 <div class:hidden=move || selected.get() != "status">{status}</div>
@@ -113,6 +118,90 @@ pub fn EhrDetailPage() -> impl IntoView {
             </div>
         </div>
     }
+}
+
+/// The admin **Delete EHR** affordance above the tab bar.
+///
+/// Probe-gated (`crate::admin::when_admin_usable` — nothing renders unless the
+/// CDR advertises its Admin API as mounted). The click opens the
+/// shared confirmation modal
+/// ([`ConfirmDialog`](crate::components::confirm_dialog::ConfirmDialog)), whose
+/// copy spells out the full EHR id and what the delete destroys, because this is
+/// the CDR's PHYSICAL delete (SM `I_ADMIN_SERVICE.physical_ehr_delete` —
+/// `docs/specs/openehr/SM/docs/UML/classes/i_admin_service.adoc`), not the
+/// openEHR logical delete: the versions, contributions and audit trail go with
+/// it. On success the console returns to `/ehrs` (this screen's subject is
+/// gone) with a toast naming the deleted id.
+fn delete_section(ehr_id: Signal<String>) -> AnyView {
+    let toaster = thaw::ToasterInjection::expect_context();
+    let gate = crate::admin::admin_gate();
+    let delete: Action<String, (String, Result<(), AdminUiError>)> = Action::new(|id: &String| {
+        let id = id.clone();
+        async move {
+            let outcome = crate::admin::admin_delete_ehr(id.clone()).await;
+            (id, outcome)
+        }
+    });
+    // Whether the confirmation modal is open (one deletable object per screen,
+    // so a bool IS the "which object" state).
+    let confirming = RwSignal::new(false);
+
+    let navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| match delete.value().get() {
+        Some((id, Ok(()))) => {
+            toast_success(
+                toaster,
+                "EHR deleted",
+                &format!("EHR {id} and all of its data were removed from the CDR."),
+            );
+            navigate("/ehrs", leptos_router::NavigateOptions::default());
+        }
+        Some((id, Err(error))) => toast_error(
+            toaster,
+            "Delete failed",
+            &crate::admin::delete_failure_copy(&format!("EHR {id}"), &error),
+        ),
+        None => {}
+    });
+
+    let message = Signal::derive(move || {
+        format!(
+            "Permanently delete EHR {} — every composition, contribution and audit record in \
+             it? This is the CDR's physical delete: nothing stays readable afterwards, and it \
+             cannot be undone.",
+            ehr_id.get()
+        )
+    });
+
+    crate::admin::when_admin_usable(gate, move || {
+        view! {
+            <div class="mb-4 flex flex-wrap items-center justify-end gap-3">
+                <button
+                    id="ehr-delete"
+                    type="button"
+                    class=BTN_DANGER
+                    disabled=Signal::derive(move || delete.pending().get())
+                    on:click=move |_| confirming.set(true)
+                >
+                    <leptos_icons::Icon icon=icondata_lu::LuTrash width="14" height="14" />
+                    "Delete EHR"
+                </button>
+                <crate::components::confirm_dialog::ConfirmDialog
+                    open=confirming
+                    title="Delete EHR"
+                    message=message
+                    confirm_label="Delete EHR"
+                    confirm_id="ehr-delete-confirm"
+                    on_cancel=Callback::new(move |()| confirming.set(false))
+                    on_confirm=Callback::new(move |()| {
+                        delete.dispatch(ehr_id.get_untracked());
+                        confirming.set(false);
+                    })
+                />
+            </div>
+        }
+        .into_any()
+    })
 }
 
 /// The URL-driven tab bar: four pill anchors (`?tab=…`) replacing the thaw
