@@ -169,12 +169,36 @@ pub async fn fetch_example(
     Ok(crate::cdr::CdrClient::expect_success(response)?.body)
 }
 
+/// The self-link back to this screen with a different `?tab=` selected.
+///
+/// `template_id` arrives percent-DEcoded from the route param, so the path
+/// segment is re-encoded with the `urlencoding` crate (owner rule: all
+/// percent-coding goes through that crate); without it a tab click on a
+/// template id containing `/`, `#`, `?` or `%` would navigate off-route. The
+/// `tab` value is one of the three fixed literals below and is encoded for the
+/// same reason the segment is — no call site is trusted to be URL-safe.
+/// NOTE: no openEHR spec governs an admin UI's internal links — our own
+/// design/extension.
+fn tab_href(template_id: &str, tab: &str) -> String {
+    format!(
+        "/templates/{}?tab={}",
+        urlencoding::encode(template_id),
+        urlencoding::encode(tab)
+    )
+}
+
 /// The template detail screen: a header with a back link + tab bar, then the
 /// WT / OPT / Example panes (all mounted, toggled by visibility so switching a
 /// tab preserves each pane's loaded state).
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn TemplateDetailPage() -> impl IntoView {
+    // NOTE: the route param arrives ALREADY percent-decoded on both targets —
+    // `leptos_router`'s `ParamsMap::insert` runs every value through
+    // `Url::unescape` (`percent_encoding::percent_decode_str` under `ssr`,
+    // `js_sys::decode_uri_component` in the browser). So the encode that
+    // builds the link (`crate::pages::templates::detail_href`) is the whole
+    // round trip and a decode here would be a second, corrupting one.
     let params = use_params_map();
     let template_id =
         Signal::derive(move || params.with(|map| map.get("template_id").unwrap_or_default()));
@@ -251,7 +275,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
                 format!("{base} text-ink-muted hover:bg-sunken")
             }
         };
-        let href = move || format!("/templates/{}?tab={value}", template_id.get());
+        let href = move || tab_href(&template_id.get(), value);
         view! {
             <leptos_router::components::A href=href attr:class=class>
                 {label}
@@ -710,4 +734,56 @@ fn example_tab(
         </div>
     }
     .into_any()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::pages::template_detail::tab_href;
+
+    #[test]
+    fn tab_href_leaves_a_url_safe_template_id_alone() {
+        assert_eq!(
+            tab_href("Vital signs-v2.0_TEST~x", "wt"),
+            "/templates/Vital%20signs-v2.0_TEST~x?tab=wt"
+        );
+    }
+
+    #[test]
+    fn tab_href_re_encodes_the_decoded_route_param() {
+        // The param arrived decoded, so the reserved characters are literal
+        // again and must be re-escaped to land back on the same route.
+        assert_eq!(tab_href("a/b", "opt"), "/templates/a%2Fb?tab=opt");
+        assert_eq!(tab_href("a#b", "opt"), "/templates/a%23b?tab=opt");
+        assert_eq!(tab_href("a%2Fb", "opt"), "/templates/a%252Fb?tab=opt");
+        assert_eq!(
+            tab_href("temperatur-°C", "example"),
+            "/templates/temperatur-%C2%B0C?tab=example"
+        );
+    }
+
+    #[test]
+    fn tab_href_round_trips_through_the_router_unescape() {
+        // `leptos_router::location::Url::unescape` under `ssr` is
+        // `percent_encoding::percent_decode_str(..).decode_utf8_lossy()`;
+        // `ParamsMap::insert` applies it to every param, so decoding the
+        // segment this builder emits must return the original id.
+        for id in [
+            "a/b",
+            "a#b",
+            "a%2Fb",
+            "temperatur-°C",
+            "a b/c?d#e%f&g=h+i",
+            "openEHR-EHR-COMPOSITION.encounter.v1",
+        ] {
+            let href = tab_href(id, "wt");
+            let segment = href
+                .strip_prefix("/templates/")
+                .and_then(|rest| rest.split('?').next())
+                .expect("the builder always emits /templates/<segment>?tab=…");
+            assert_eq!(
+                urlencoding::decode(segment).expect("valid UTF-8 percent-encoding"),
+                id
+            );
+        }
+    }
 }
