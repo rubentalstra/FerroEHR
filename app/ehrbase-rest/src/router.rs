@@ -4,8 +4,8 @@
 //! `Requests_and_responses.md`): every ITS-REST resource path is relative to the
 //! configured API base path (`cfg.base_path`, default
 //! `/ehrbase/rest/openehr/v1`). The generated API surface ([`crate::api`]) is
-//! therefore nested under that base path; `/rest/status` (+ its
-//! `/rest/status/health` alias) hangs off the `/ehrbase/rest` root, the
+//! therefore nested under that base path; the `/rest/status` document hangs off
+//! the `/ehrbase/rest` root, the
 //! always-on health family (`/health`, `/health/liveness`,
 //! `/health/readiness`) answers at the process root, and the System Options
 //! manifest answers at the base-path root itself.
