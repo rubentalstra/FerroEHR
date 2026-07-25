@@ -27,6 +27,21 @@ workflow refuses a tag that has no matching section here.
   rows client-side; the footer counts what the filter left. Deleting the last row
   of the last page lands on rows rather than on a blank table, and a hand-typed
   window size is clamped to a sane range.
+- **Admin console: a real document viewer** (#297). Every pane that shows a
+  wire document — the composition viewer, the EHR status tab, the directory raw
+  mode, a contribution, a template's OPT and example tabs, a stored query — now
+  offers three views of it plus a **Copy** button. **Highlighted** (the default)
+  shows the byte-exact document with JSON/XML syntax highlighting from a
+  pure-Rust tokenizer (no JavaScript, no new dependency; a very large document
+  is shown unstyled instead of tokenized), **Raw** shows the same text
+  unstyled, and **Rendered** shows a template-free clinical reading of a
+  canonical openEHR JSON document: RM section headings with their type and
+  archetype node id, and one label/value row per `ELEMENT` — quantities with
+  their units, coded text with its terminology code, a null-flavoured leaf
+  saying so. The rendered view needs no operational template, so a composition
+  whose template was since removed still reads normally; it folds away the
+  bookkeeping (language, territory, category, uid) that the raw views keep in
+  full, and is read-only — nothing is stored anywhere.
 
 - **Admin console: stored-query versions are reachable** (#336). Both save
   surfaces (the point-and-click builder and the raw AQL editor) now carry an

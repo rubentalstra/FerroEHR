@@ -37,6 +37,19 @@
   --warn-subtle: #fef3c7;
   --danger: #dc2626;
   --danger-subtle: #fee2e2;
+
+  /* Document-viewer syntax tokens: the ONLY colours the document pane's
+     highlighter may use (one per semantic token class from
+     src/highlight.rs). Restrained hues on the sunken pane background,
+     redefined below for dark mode like every other token. */
+  --syntax-key: #1d4ed8; /* JSON member name */
+  --syntax-string: #15803d; /* string literal / XML attribute value */
+  --syntax-number: #b45309; /* JSON number */
+  --syntax-keyword: #be123c; /* true / false / null */
+  --syntax-punctuation: #64748b; /* structural punctuation */
+  --syntax-tag: #0e7490; /* XML element name */
+  --syntax-attribute: #7c3aed; /* XML attribute name */
+  --syntax-comment: #94a3b8; /* XML comment / DOCTYPE / CDATA */
 }
 
 .dark {
@@ -59,6 +72,15 @@
   --warn-subtle: #78350f;
   --danger: #f87171;
   --danger-subtle: #7f1d1d;
+
+  --syntax-key: #93c5fd;
+  --syntax-string: #86efac;
+  --syntax-number: #fcd34d;
+  --syntax-keyword: #fda4af;
+  --syntax-punctuation: #94a3b8;
+  --syntax-tag: #67e8f9;
+  --syntax-attribute: #c4b5fd;
+  --syntax-comment: #64748b;
 }
 
 /* ── Semantic utilities (bg-surface, text-ink, border-edge, …) ─────────── */
@@ -82,6 +104,14 @@
   --color-warn-subtle: var(--warn-subtle);
   --color-danger: var(--danger);
   --color-danger-subtle: var(--danger-subtle);
+  --color-syntax-key: var(--syntax-key);
+  --color-syntax-string: var(--syntax-string);
+  --color-syntax-number: var(--syntax-number);
+  --color-syntax-keyword: var(--syntax-keyword);
+  --color-syntax-punctuation: var(--syntax-punctuation);
+  --color-syntax-tag: var(--syntax-tag);
+  --color-syntax-attribute: var(--syntax-attribute);
+  --color-syntax-comment: var(--syntax-comment);
 
   /* Shape + elevation: 8px cards, 6px controls, ONE soft shadow level. */
   --radius-card: 0.5rem;
