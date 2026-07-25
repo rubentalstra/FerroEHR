@@ -121,9 +121,12 @@ pub(super) fn damerau_levenshtein(a: &str, b: &str) -> usize {
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
+    clippy::expect_used,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 mod tests {
+    use std::path::{Path, PathBuf};
+
     use super::*;
 
     #[test]
@@ -177,5 +180,170 @@ mod tests {
             .join("\n");
         assert_eq!(errs.len(), 1, "{joined}");
         assert!(joined.contains("EHRBASE__DB__URL"), "suggestion: {joined}");
+    }
+
+    // ── The shipped Compose artifacts must pass this very sweep ───────────────
+    //
+    // A Compose file that spells a reserved-namespace variable any other way
+    // produces a container that CANNOT BOOT, and the failure surfaces only at
+    // `docker compose up` — which is how a single-`_` env block once shipped in
+    // the observability overlay. This guard walks the committed YAML and runs
+    // the real sweep over every variable the CDR service sets, so the drift
+    // fails in the test suite instead. No openEHR spec governs configuration or
+    // Compose — our own design.
+
+    /// The compose service that runs the CDR binary this crate configures.
+    /// Every other service (the database, the admin console with its own
+    /// `EHRBASE_ADMIN__…` namespace, an upstream SUT) is unrelated.
+    const CDR_SERVICE: &str = "ehrbase";
+
+    /// The repository root — this crate lives at `app/ehrbase`.
+    fn repo_root() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+    }
+
+    fn is_yaml(path: &Path) -> bool {
+        matches!(
+            Path::extension(path).and_then(std::ffi::OsStr::to_str),
+            Some("yml" | "yaml")
+        )
+    }
+
+    /// Whether the file is a Compose file at all (as opposed to a Prometheus /
+    /// Grafana asset living beside one).
+    fn declares_services(path: &Path) -> bool {
+        std::fs::read_to_string(path)
+            .is_ok_and(|yaml| yaml.lines().any(|line| line.trim_end() == "services:"))
+    }
+
+    /// Every committed Compose artifact: the root `docker-compose*.yml` files
+    /// plus every `services:`-bearing YAML under `docker/`.
+    fn compose_files() -> Vec<PathBuf> {
+        let root = repo_root();
+        let mut files = Vec::new();
+        for entry in std::fs::read_dir(&root).expect("read repo root").flatten() {
+            let path = entry.path();
+            let is_root_compose = path
+                .file_name()
+                .and_then(std::ffi::OsStr::to_str)
+                .is_some_and(|name| name.starts_with("docker-compose"));
+            if is_root_compose && is_yaml(&path) {
+                files.push(path);
+            }
+        }
+        let mut dirs = vec![root.join("docker")];
+        while let Some(dir) = dirs.pop() {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                continue;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if is_yaml(&path) && declares_services(&path) {
+                    files.push(path);
+                }
+            }
+        }
+        files.sort();
+        files
+    }
+
+    /// `(service, 1-based line, variable name)` for every `environment:` entry
+    /// in a Compose file. Parsed by indentation, which is all this guard needs:
+    /// these files are uniformly two-space indented, so a service name sits at
+    /// indent 2, its `environment:` key at 4, and the entries below that — in
+    /// either the mapping (`NAME: value`) or the list (`- NAME=value`) form
+    /// (docs.docker.com/reference/compose-file/services/#environment).
+    fn env_entries(yaml: &str) -> Vec<(String, usize, String)> {
+        let mut out = Vec::new();
+        let mut in_services = false;
+        let mut service = String::new();
+        let mut in_env = false;
+        for (index, raw) in yaml.lines().enumerate() {
+            let line = raw.trim_end();
+            let body = line.trim_start();
+            if body.is_empty() || body.starts_with('#') {
+                continue;
+            }
+            match line.len() - body.len() {
+                0 => {
+                    in_services = body == "services:";
+                    service.clear();
+                    in_env = false;
+                }
+                2 => {
+                    service = body.trim_end_matches(':').to_owned();
+                    in_env = false;
+                }
+                4 => in_env = body == "environment:",
+                _ => {
+                    if in_services && in_env && !service.is_empty() {
+                        if let Some(name) = entry_name(body) {
+                            out.push((service.clone(), index + 1, name));
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// The variable name of one `environment:` entry, in either form.
+    fn entry_name(entry: &str) -> Option<String> {
+        let name = match entry.strip_prefix("- ") {
+            // List form: `- NAME=value`, or a bare `- NAME` host pass-through.
+            Some(item) => item.trim().split_once('=').map_or(item.trim(), |(n, _)| n),
+            // Mapping form: `NAME: value`.
+            None => entry.split_once(':')?.0,
+        };
+        let name = name.trim();
+        if name.is_empty() {
+            None
+        } else {
+            Some(name.to_owned())
+        }
+    }
+
+    #[test]
+    fn shipped_compose_env_passes_the_strict_sweep() {
+        let files = compose_files();
+        assert!(
+            files.len() >= 2,
+            "no Compose artifacts discovered — the guard is blind: {files:?}"
+        );
+
+        let mut cdr_entries = Vec::new();
+        for path in &files {
+            let yaml = std::fs::read_to_string(path).expect("read compose file");
+            for (service, line, name) in env_entries(&yaml) {
+                if service == CDR_SERVICE {
+                    cdr_entries.push((path.clone(), line, name));
+                }
+            }
+        }
+
+        assert!(
+            cdr_entries
+                .iter()
+                .any(|(_, _, name)| name == "EHRBASE__DB__URL"),
+            "the CDR service's DSN variable was not extracted — the guard is \
+             blind (Compose layout or service name drift): {cdr_entries:?}"
+        );
+
+        let mut failures = Vec::new();
+        for (path, line, name) in &cdr_entries {
+            let mut one = HashMap::new();
+            one.insert(name.clone(), String::new());
+            for error in strict_env(&one) {
+                failures.push(format!("{}:{line}: {error}", path.display()));
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "Compose sets variables the boot-time sweep rejects, so the \
+             composed server cannot start:\n{}",
+            failures.join("\n")
+        );
     }
 }

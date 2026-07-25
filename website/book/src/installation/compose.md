@@ -129,6 +129,17 @@ docker compose -f docker-compose.yml -f docker-compose.observability.yml up --bu
 # Grafana → http://localhost:3000
 ```
 
+The overlay reconfigures the server for that stack: it exports traces over
+OTLP/gRPC (`EHRBASE__TELEMETRY__OTLP_ENDPOINT`), switches stdout to JSON lines
+(`EHRBASE__LOG__FORMAT=json`), and enables the management surface on its own
+internal port 9464 (`EHRBASE__MANAGEMENT__ENABLED`, `EHRBASE__MANAGEMENT__PORT`)
+with `info`, `metrics`, and `prometheus` set to `public` so the bundled
+Prometheus can scrape `/management/prometheus` without credentials. That port is
+only reachable on the Compose network — Grafana's 3000 is the sole published
+port. Every variable uses the same `EHRBASE__…` grammar as the rest of the
+[configuration reference](configuration.md); a single-underscore spelling is
+rejected at startup, not ignored.
+
 This is the easiest way to see the server's metrics and traces without wiring
 up a collector by hand. See [Operations](../operations.md) for what the server
 exports and how to consume it in production.

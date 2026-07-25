@@ -87,6 +87,21 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The observability Compose overlay boots again** (#321). Every server
+  variable in `docker-compose.observability.yml` was written in a
+  single-underscore form (`EHRBASE_MANAGEMENT_*`, `EHRBASE_OTEL_*`,
+  `EHRBASE_LOG_FORMAT`) that the strict boot-time sweep of the reserved
+  `EHRBASE_` namespace rejects, so `docker compose -f docker-compose.yml -f
+  docker-compose.observability.yml up` failed at startup with unknown-variable
+  errors instead of starting the server. The overlay now uses the documented
+  `EHRBASE__…` grammar (`EHRBASE__TELEMETRY__OTLP_ENDPOINT`,
+  `EHRBASE__LOG__FORMAT`, `EHRBASE__MANAGEMENT__ENABLED`,
+  `EHRBASE__MANAGEMENT__PORT`, `EHRBASE__MANAGEMENT__ENDPOINTS__{INFO,METRICS,PROMETHEUS}`),
+  with unchanged intent: OTLP traces to the bundled collector, JSON logs, and
+  the management surface public on internal port 9464 for the bundled Prometheus
+  to scrape. A test now runs the real sweep over every variable the shipped
+  Compose files set on the server service, so this class of drift fails in the
+  test suite rather than at `docker compose up`.
 - **Admin console: find-an-EHR-by-id works without JavaScript** (#301). The
   finder is now a plain `GET` form: submitting it before (or without) the
   browser app loading redirects to the EHR's detail screen server-side, and
