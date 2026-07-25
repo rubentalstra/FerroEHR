@@ -310,11 +310,45 @@ jobs:
     needs: changes
     if: needs.changes.outputs.admin_ui == 'true'
     runs-on: ubuntu-latest
+    # Least privilege, scoped to THIS job: the workflow declares no top-level
+    # `permissions`, so every other job keeps the repository default and only
+    # ui-e2e gains the write scope it needs (job-level settings override
+    # workflow-level ones —
+    # docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#permissions).
+    # `contents: read` for the checkout, `packages: write` to export the buildx
+    # layer cache to GHCR below
+    # (docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions).
+    # A pull_request from a FORK is downgraded to a read-only token regardless
+    # of what is declared here — hence the cache-to guard further down.
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           target: wasm32-unknown-unknown
+          # sccache (installed next) owns Rust compilation caching for this
+          # job, so rust-cache stops caching `target` and keeps only the cargo
+          # registry/bin cache (`cache-targets: false` — "If false, only the
+          # cargo registry will be cached", github.com/Swatinem/rust-cache).
+          # Why: rust-cache's key hashes every Cargo.lock/Cargo.toml, so any
+          # lockfile change rotates the whole target archive and the job pays a
+          # full cold build; sccache is keyed per compilation unit and degrades
+          # to partial hits instead. Keeping both would also have the two
+          # caches compete for the same 10 GB/repo Actions cache budget, whose
+          # least-recently-accessed eviction is the very pressure this job hit
+          # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching
+          # — "the limit is 10 GB per repository" … "deleting the caches in
+          # order of last access date"). The registry cache stays: sccache does
+          # not cache crate *downloads*.
+          cache-targets: false
+      # sccache with the GitHub Actions cache backend, installed BEFORE any
+      # cargo invocation so every later compile can reach it
+      # (github.com/mozilla-actions/sccache-action). RUSTC_WRAPPER +
+      # SCCACHE_GHA_ENABLED are set on the compiling step, not job-wide, so the
+      # tool-install step below cannot accidentally depend on the wrapper.
+      - uses: mozilla-actions/sccache-action@v0.0.10
       - uses: taiki-e/install-action@v2
         with:
           # wasm-bindgen pinned to the workspace's wasm-bindgen version;
@@ -329,14 +363,45 @@ jobs:
           chmod +x /usr/local/bin/tailwindcss
           tailwindcss --help | head -1
       # The compose stack's app image is the expensive (cargo-chef) build. Build
-      # it here with an EXPORTED GHA layer cache so a cold runner reuses the
-      # cooked-dependency layer across runs (issue #282 F2/D1) — the canonical
-      # GitHub Actions cache pattern (docs.docker.com/build/ci/github-actions/cache).
-      # The docker-container driver (setup-buildx-action default) is what enables
-      # the type=gha exporter; `load: true` puts the result in the docker store
-      # so the compose `--no-build` below finds it.
+      # it here with an EXPORTED layer cache so a cold runner reuses the
+      # cooked-dependency layer across runs; `load: true` puts the result in the
+      # docker store so the compose `--no-build` below finds it, and the
+      # docker-container driver (setup-buildx-action default) is what allows a
+      # cache exporter at all.
+      #
+      # The cache backend is the REGISTRY exporter, not type=gha
+      # (docs.docker.com/build/cache/backends/registry;
+      # docs.docker.com/build/ci/github-actions/cache §Registry cache — the
+      # login-action + setup-buildx-action + cache-from/cache-to sequence below
+      # follows that page's example). Reason: the Actions cache is capped at
+      # "10 GB per repository" and evicts by "last access date"
+      # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching),
+      # so a mode=max export of a big Rust release image was routinely evicted
+      # and every eviction cost a full in-Docker cold build. A registry cache has
+      # no such cap, and registry is the backend the docs single out as able to
+      # "efficiently cache multi-stage builds in `max` mode, instead of only the
+      # final stage" — which is the whole point here: mode=min would export only
+      # the final-stage layers and drop the `cargo chef cook` layer that the
+      # cache exists for. Hence mode=max (docs.docker.com/build/cache/backends
+      # — `mode`: min | max).
+      #
+      # The in-image build (docker/Dockerfile `builder` stage) is deliberately
+      # NOT sccache-wrapped: sccache's Actions-cache backend "will need tokens
+      # like `ACTIONS_RESULTS_URL` and `ACTIONS_RUNTIME_TOKEN` to work"
+      # (github.com/mozilla/sccache docs/GHA.md), which exist only in the runner
+      # process and would have to be secret-mounted into every RUN — short-lived
+      # credentials plumbed through the Dockerfile for a stage that the registry
+      # cache already returns as a layer HIT rather than a recompile.
       - uses: docker/setup-buildx-action@v4
-      - name: Build the app image (from-source; exported GHA cache)
+      # Authenticate to GHCR for the cache image. Kept unconditional: on a fork
+      # PR the token is read-only, which is still enough to IMPORT the cache
+      # (docs.docker.com/build/ci/github-actions/cache §Registry cache).
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Build the app image (from-source; exported GHCR layer cache)
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -346,8 +411,17 @@ jobs:
           tags: ehrbase-rs:ui-e2e
           build-args: |
             REVISION=${{ github.sha }}
-          cache-from: type=gha,scope=ui-e2e-app
-          cache-to: type=gha,mode=max,scope=ui-e2e-app
+          # Import always; the cache image lives under this repository's GHCR
+          # namespace and, being published by GITHUB_TOKEN, "inherits the
+          # visibility and permissions model of the repository where the workflow
+          # is run" — i.e. public, readable by fork-PR runs.
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/build-cache:ui-e2e
+          # Export only when the run actually holds a write token: a
+          # pull_request from a fork gets a read-only GITHUB_TOKEN, and an
+          # unguarded cache-to would fail the build for external contributors.
+          # `format()` because a ${{ }} expression cannot nest another one
+          # (docs.github.com/en/actions/reference/workflows-and-actions/expressions#format).
+          cache-to: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && format('type=registry,ref=ghcr.io/{0}/build-cache:ui-e2e,mode=max', github.repository) || '' }}
       - name: Build the postgres image (COPY-only, seconds)
         run: docker buildx build --load -t ehrbase-rs-postgres:ui-e2e docker/postgres
       - name: Run the E2E journey battery
@@ -356,7 +430,29 @@ jobs:
           UI_E2E_NO_BUILD: "1"
           EHRBASE_IMAGE: ehrbase-rs:ui-e2e
           EHRBASE_POSTGRES_IMAGE: ehrbase-rs-postgres:ui-e2e
+          # The HOST Rust build lives inside this script (cargo-leptos for the
+          # console + cargo-nextest for the e2e binaries), so the sccache
+          # wrapper is set here — the two variables the action documents for
+          # Rust (github.com/mozilla-actions/sccache-action#rust).
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: sccache
+          # "Incrementally compiled crates cannot be cached. By default, in the
+          # debug profile Cargo will use incremental compilation" (the sccache
+          # README, github.com/mozilla/sccache#known-caveats) — and the debug
+          # profile is exactly what cargo-leptos and nextest build here. Set
+          # explicitly rather than relying on rust-cache also setting it.
+          CARGO_INCREMENTAL: "0"
         run: bash scripts/ui-e2e.sh
+      # Cache-hit visibility in the job log. `${SCCACHE_PATH}` is exported by
+      # the action; `--show-stats` "will print a summary of cache statistics"
+      # (github.com/mozilla/sccache). `always()` so a failed battery still
+      # reports whether the compile was warm.
+      - name: sccache statistics
+        if: always()
+        shell: bash
+        env:
+          SCCACHE_GHA_ENABLED: "true"
+        run: ${SCCACHE_PATH} --show-stats
       - name: Upload journey screenshots
         if: always()
         uses: actions/upload-artifact@v7
