@@ -85,11 +85,14 @@ services:
     # Resource ceilings (docs.docker.com/reference/compose-file/deploy;
     # docs.docker.com/engine/containers/resource_constraints) — the DB gets
     # headroom above the app for shared_buffers (1GB) + /dev/shm (1gb).
+    # Overridable so the measured-record lanes can match the party ixit's
+    # documented environment envelope (the committed measurement records are
+    # environment-bound; production limits live in the Helm values).
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 2G
+          cpus: "${EHRBASE_DB_CPUS:-4}"
+          memory: ${EHRBASE_DB_MEM:-4G}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_INIT_USER:-ehrbase} -d ${PG_INIT_DB:-ehrbase}"]
       interval: 5s
@@ -142,12 +145,16 @@ services:
       - ./docker/ehrbase.dev.toml:/etc/ehrbase/ehrbase.toml:ro
     ports:
       - "${EHRBASE_PORT:-8080}:8080"
-    # Mirrors deploy/helm/ehrbase-rs/values.yaml resources.limits exactly.
+    # Default sized to the party ixit's documented measurement envelope (the
+    # committed measured records are environment-bound to the 8-CPU/8GB
+    # docker VM; a 2cpu/1Gi cap halved the measured knee). Production limits
+    # are the Helm values' concern (deploy/helm/ehrbase-rs/values.yaml);
+    # override via env for a constrained profile.
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 1G
+          cpus: "${EHRBASE_CPUS:-4}"
+          memory: ${EHRBASE_MEM:-4G}
     healthcheck:
       test: ["CMD", "/usr/local/bin/ehrbase", "healthcheck"]
       interval: 10s

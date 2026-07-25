@@ -52,21 +52,21 @@ text { fill: #c3c2b7; }
 <line x1="90" y1="220.2" x2="700" y2="220.2" class="grid"/><text x="82.0" y="224.2" class="muted" text-anchor="end">100 ms</text>
 <line x1="90" y1="150.4" x2="700" y2="150.4" class="grid"/><text x="82.0" y="154.4" class="muted" text-anchor="end">1000 ms</text>
 <line x1="90" y1="150.4" x2="700" y2="150.4" class="slo"/><text x="696.0" y="144.4" class="slotext" text-anchor="end">p99 budget</text>
-<path d="M138.6,219.5 L187.2,220.0 L235.8,220.3 L284.4,226.2 L333.0,218.8 L381.6,231.0 L430.2,235.2 L478.8,239.8 L527.4,205.6 L535.7,151.5 L543.1,123.1 L555.9,161.5 L576.0,131.9" class="curve"/>
+<path d="M138.6,218.5 L187.2,223.7 L235.8,213.4 L284.4,220.7 L333.0,218.5 L381.6,225.4 L430.2,227.9 L478.8,238.1 L527.4,211.3 L535.7,204.4 L543.1,186.5 L555.9,170.8 L576.0,135.3" class="curve"/>
 <path d="M90.0,96.0 L90.0,96.0 L90.0,96.0 L138.6,96.0" class="cmp"/>
-<circle cx="138.6" cy="219.5" r="5" class="measured"/>
-<circle cx="187.2" cy="220.0" r="5" class="measured"/>
-<circle cx="235.8" cy="220.3" r="5" class="measured"/>
-<circle cx="284.4" cy="226.2" r="5" class="measured"/>
-<circle cx="333.0" cy="218.8" r="5" class="measured"/>
-<circle cx="381.6" cy="231.0" r="5" class="measured"/>
-<circle cx="430.2" cy="235.2" r="5" class="measured"/>
-<circle cx="478.8" cy="239.8" r="5" class="measured"/>
-<circle cx="527.4" cy="205.6" r="5" class="measured"/>
-<path d="M530.7,146.5 L540.7,156.5 M530.7,156.5 L540.7,146.5" class="slo" stroke-width="2"/>
-<path d="M538.1,118.1 L548.1,128.1 M538.1,128.1 L548.1,118.1" class="slo" stroke-width="2"/>
-<path d="M550.9,156.5 L560.9,166.5 M550.9,166.5 L560.9,156.5" class="slo" stroke-width="2"/>
-<path d="M571.0,126.9 L581.0,136.9 M571.0,136.9 L581.0,126.9" class="slo" stroke-width="2"/>
+<circle cx="138.6" cy="218.5" r="5" class="measured"/>
+<circle cx="187.2" cy="223.7" r="5" class="measured"/>
+<circle cx="235.8" cy="213.4" r="5" class="measured"/>
+<circle cx="284.4" cy="220.7" r="5" class="measured"/>
+<circle cx="333.0" cy="218.5" r="5" class="measured"/>
+<circle cx="381.6" cy="225.4" r="5" class="measured"/>
+<circle cx="430.2" cy="227.9" r="5" class="measured"/>
+<circle cx="478.8" cy="238.1" r="5" class="measured"/>
+<circle cx="527.4" cy="211.3" r="5" class="measured"/>
+<path d="M530.7,199.4 L540.7,209.4 M530.7,209.4 L540.7,199.4" class="slo" stroke-width="2"/>
+<path d="M538.1,181.5 L548.1,191.5 M538.1,191.5 L548.1,181.5" class="slo" stroke-width="2"/>
+<path d="M550.9,165.8 L560.9,175.8 M550.9,175.8 L560.9,165.8" class="slo" stroke-width="2"/>
+<path d="M571.0,130.3 L581.0,140.3 M571.0,140.3 L581.0,130.3" class="slo" stroke-width="2"/>
 <path d="M85.0,91.0 L95.0,101.0 M85.0,101.0 L95.0,91.0" class="slo" stroke-width="2"/>
 <path d="M85.0,91.0 L95.0,101.0 M85.0,101.0 L95.0,91.0" class="slo" stroke-width="2"/>
 <path d="M85.0,91.0 L95.0,101.0 M85.0,101.0 L95.0,91.0" class="slo" stroke-width="2"/>

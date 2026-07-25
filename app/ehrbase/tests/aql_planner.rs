@@ -1093,16 +1093,26 @@ fn limit_without_order_by_streams() {
         sql.contains(r#"FROM "vo_version" AS "v"#),
         "the version spine drives: {sql}"
     );
+    // The dead-root elision (the post-streaming ladder's rung 1): this query
+    // reads nothing from the COMPOSITION root's node row (`c/uid/value` is
+    // synthesized from the spine) and pins no root condition beyond the RM
+    // type the spine's `kind` already filters — so NO root lateral is
+    // emitted, and the OBSERVATION lateral binds directly on the spine's
+    // `(vo_id, sys_version)`.
     assert_eq!(
         sql.matches("JOIN LATERAL").count(),
-        3,
-        "one lateral per node source (root + observation) plus the correlated predicate probe: {sql}"
+        2,
+        "one lateral for the observation source plus the correlated predicate probe (no dead root lateral): {sql}"
+    );
+    assert!(
+        !sql.contains(r#""num" = "#),
+        "no root `num = 0` probe survives the dead-root elision: {sql}"
     );
     // sea-query binds the fence's 0 as a parameter — the pull-up block is
     // syntactic (an OFFSET clause of any value), so the fence holds.
     assert_eq!(
         sql.matches("OFFSET $").count(),
-        3,
+        2,
         "every lateral carries the pull-up fence: {sql}"
     );
     // The multi-valued-path predicate stays a CORRELATED probe: the EXISTS
@@ -1121,6 +1131,36 @@ fn limit_without_order_by_streams() {
     assert!(
         !sql.contains(r#""audit""#),
         "no audit join without an audit-field projection: {sql}"
+    );
+}
+
+/// The dead-root elision is CONDITIONAL: a root that carries its own node
+/// condition (an archetype predicate) or is read by a data path keeps its
+/// lateral — only a genuinely unreferenced root is elided.
+#[test]
+fn referenced_streaming_root_keeps_its_lateral() {
+    // An archetype predicate on the root pins the root node row.
+    let sql = build_sql_limited(
+        "SELECT e/ehr_id/value, c/uid/value \
+         FROM EHR e CONTAINS COMPOSITION c [openEHR-EHR-COMPOSITION.encounter.v1] \
+         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
+         WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude > 130",
+    );
+    assert_eq!(
+        sql.matches("JOIN LATERAL").count(),
+        3,
+        "an archetype-constrained root keeps its lateral: {sql}"
+    );
+    // A projected data path from the root pins the root node row too.
+    let sql = build_sql_limited(
+        "SELECT c/context/start_time/value \
+         FROM EHR e CONTAINS COMPOSITION c \
+         CONTAINS OBSERVATION o [openEHR-EHR-OBSERVATION.blood_pressure.v2] \
+         WHERE o/data[at0001]/events[at0006]/data[at0003]/items[at0004]/value/magnitude > 130",
+    );
+    assert!(
+        sql.matches("JOIN LATERAL").count() >= 3,
+        "a root-projecting query keeps the root lateral: {sql}"
     );
 }
 
@@ -1198,10 +1238,13 @@ fn streaming_shape_keeps_the_population_gate() {
         linked.contains(r#""e0"."is_queryable" = $"#),
         "the gate sits on the EHR alias: {linked}"
     );
+    // A bare VO root projecting only `uid/value` needs no node row at all
+    // (dead-root elision): the whole query is the spine + the gate join —
+    // still the streaming shape (the spine drives), now with zero laterals.
     let bare = build_sql_limited("SELECT c/uid/value FROM COMPOSITION c");
     assert!(
-        bare.contains("JOIN LATERAL"),
-        "a bare VO root still streams: {bare}"
+        bare.contains(r#"FROM "vo_version""#) && !bare.contains("JOIN LATERAL"),
+        "a bare uid-only VO root streams as the spine alone: {bare}"
     );
     assert!(
         bare.contains(r#""is_queryable" = $"#),
