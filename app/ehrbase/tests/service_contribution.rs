@@ -557,7 +557,8 @@ async fn contribution_listing_count_and_ehr_summary() {
 /// The EHR contribution-list extension (`GET /ehr/{ehr_id}/contribution`, no
 /// uid) — OUR OWN EXTENSION (no openEHR spec governs it). Asserts the
 /// newest-first order, the `{rows, total}` shape (uid / `time_committed` /
-/// committer / `change_type`), pagination, and the unknown-EHR 404.
+/// committer / `change_type` / `change_type_rubric`), pagination, and the
+/// unknown-EHR 404.
 #[tokio::test]
 async fn ehr_contribution_list_page_extension() {
     let db = testkit::db().await.expect("testkit database");
@@ -600,9 +601,11 @@ async fn ehr_contribution_list_page_extension() {
     assert_eq!(page["total"], 3);
     let rows = page["rows"].as_array().expect("rows array").clone();
     assert_eq!(rows.len(), 3, "three contribution rows");
-    // The latest commit (the composition) is first: change_type 249, its
-    // committer name, a UUID uid, and an ISO-8601 time_committed.
+    // The latest commit (the composition) is first: change_type 249 with its
+    // bundle-resolved rubric, its committer name, a UUID uid, and an ISO-8601
+    // time_committed.
     assert_eq!(rows[0]["change_type"], "249");
+    assert_eq!(rows[0]["change_type_rubric"], "creation");
     assert_eq!(rows[0]["committer"], "conformance tester");
     assert!(
         rows[0]["uid"]
