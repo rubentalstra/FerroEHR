@@ -70,9 +70,7 @@ pub fn FormatSelector(
             .into_any()
         })
         .collect::<Vec<_>>();
-    view! {
-        <div class=SEGMENTED>{buttons}</div>
-    }
+    view! { <div class=SEGMENTED>{buttons}</div> }
 }
 
 /// Which view of the document the pane is showing.
@@ -134,12 +132,7 @@ pub fn DocumentPane(
                 .map_or_else(|| highlighted_pane(tokens), rendered_pane)
         }),
     };
-    view! {
-        <div class="flex flex-col gap-2">
-            {toolbar}
-            {content}
-        </div>
-    }
+    view! { <div class="flex flex-col gap-2">{toolbar} {content}</div> }
 }
 
 /// The pane toolbar: the view tabs (left) and the copy affordance with its
@@ -162,15 +155,12 @@ fn pane_toolbar(
         if buttons.is_empty() {
             return ().into_any();
         }
-        view! {
-            <div class=SEGMENTED>{buttons}</div>
-        }
+        view! { <div class=SEGMENTED>{buttons}</div> }
         .into_any()
     };
     view! {
         <div class="flex flex-wrap items-center justify-between gap-2">
-            {tabs}
-            {copy_button(body)}
+            {tabs} {copy_button(body)}
         </div>
     }
     .into_any()
@@ -249,9 +239,7 @@ fn copy_button(body: Signal<String>) -> AnyView {
 
 /// The document text, unstyled.
 fn raw_pane(body: Signal<String>) -> AnyView {
-    view! {
-        <pre class=PANE>{move || body.get()}</pre>
-    }
+    view! { <pre class=PANE>{move || body.get()}</pre> }
     .into_any()
 }
 
@@ -301,9 +289,7 @@ fn token_class(kind: TokenKind) -> &'static str {
 /// The template-free clinical rendering of a canonical openEHR document.
 fn rendered_pane(document: &RenderedSection) -> AnyView {
     let section = section_view(document.clone());
-    view! {
-        <div class=RENDERED_PANE>{section}</div>
-    }
+    view! { <div class=RENDERED_PANE>{section}</div> }
     .into_any()
 }
 
@@ -321,9 +307,7 @@ fn section_view(section: RenderedSection) -> AnyView {
         children,
     } = section;
     let archetype = archetype_node_id.map(|id| {
-        view! {
-            <span class="font-mono text-[10px] text-ink-faint">{id}</span>
-        }
+        view! { <span class="font-mono text-[10px] text-ink-faint">{id}</span> }
     });
     // A childless node (an empty ITEM_TREE, a bare SECTION) renders its heading
     // alone rather than an empty indent rule.
@@ -371,9 +355,7 @@ fn row_view(row: RenderedRow) -> AnyView {
         code,
     } = row;
     let code_chip = code.map(|code| {
-        view! {
-            <span class="font-mono text-[10px] text-ink-faint">{code}</span>
-        }
+        view! { <span class="font-mono text-[10px] text-ink-faint">{code}</span> }
     });
     view! {
         <div
