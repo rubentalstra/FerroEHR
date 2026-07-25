@@ -4,9 +4,12 @@
     clippy::print_stderr,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
-//! Integration tests for the management surface (binding doc §6): the
-//! access-level matrix, the Prometheus exposition + route-template label +
-//! cardinality guard, and separate-port isolation.
+//! Integration tests for the management surface: the access-level matrix, the
+//! Prometheus exposition + route-template label + cardinality guard,
+//! separate-port isolation, and the boundary that the surface carries no health
+//! route at all (the probes are the always-on public `/health` family).
+//!
+//! No openEHR spec governs the management surface — our own operational design.
 
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
@@ -155,6 +158,65 @@ async fn admin_only_401_403_200() {
     );
 }
 
+/// The management surface hosts NO health route any more: with the surface
+/// enabled and its one configurable endpoint public, every former
+/// `/management/health*` path is a plain `404`, while the public health family
+/// answers on the same app. (Test adapted to the routing this split
+/// deliberately changed — the aggregate-health view is now the
+/// `/health/readiness` indicator body.)
+#[tokio::test]
+async fn management_serves_no_health_route() {
+    let app = app_with(AccessLevel::Public, None).await;
+    for gone in [
+        "/management/health",
+        "/management/health/liveness",
+        "/management/health/readiness",
+    ] {
+        assert_eq!(
+            status_of(app.clone(), get(gone)).await,
+            StatusCode::NOT_FOUND,
+            "{gone} must no longer be routed"
+        );
+    }
+    for public in ["/health", "/health/liveness", "/health/readiness"] {
+        assert_eq!(
+            status_of(app.clone(), get(public)).await,
+            StatusCode::OK,
+            "{public} must answer unauthenticated"
+        );
+    }
+}
+
+/// The public health family does not depend on the management surface at all:
+/// with `management.enabled = false` (the default posture) the three probes
+/// still answer, and `/management/info` is absent.
+#[tokio::test]
+async fn health_family_survives_management_disabled() {
+    let config = AppConfig {
+        server: ServerConfig {
+            swagger_ui: false,
+            ..Default::default()
+        },
+        auth: auth_config(None),
+        ..Default::default()
+    };
+    let (_pg, service) = common::test_service().await;
+    let app = ehrbase_rest::build_full(config, service, None, Observability::default())
+        .expect("build with management disabled");
+
+    for public in ["/health", "/health/liveness", "/health/readiness"] {
+        assert_eq!(
+            status_of(app.clone(), get(public)).await,
+            StatusCode::OK,
+            "{public} must answer with the management surface disabled"
+        );
+    }
+    assert_eq!(
+        status_of(app, get("/management/info")).await,
+        StatusCode::NOT_FOUND
+    );
+}
+
 /// A process-wide Prometheus recorder (installed once; the global `metrics`
 /// facade the HTTP layer emits through requires a single global recorder).
 fn recorder() -> &'static PrometheusHandle {
@@ -282,7 +344,6 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
         management: ManagementConfig {
             enabled: true,
             port: Some(9099),
-            probes_enabled: true,
             endpoints: EndpointLevels {
                 info: AccessLevel::Public,
                 ..EndpointLevels::default()
@@ -296,7 +357,17 @@ async fn separate_port_mode_keeps_management_off_the_main_app() {
 
     // …the main app 404s the management route.
     assert_eq!(
-        status_of(main_app, get("/management/info")).await,
+        status_of(main_app.clone(), get("/management/info")).await,
         StatusCode::NOT_FOUND
     );
+    // …but the health family is a sibling of the API tree, not part of the
+    // management surface, so it stays on the MAIN port (which is what the
+    // orchestrator probes point at).
+    for public in ["/health", "/health/liveness", "/health/readiness"] {
+        assert_eq!(
+            status_of(main_app.clone(), get(public)).await,
+            StatusCode::OK,
+            "{public} must stay on the main listener in separate-port mode"
+        );
+    }
 }

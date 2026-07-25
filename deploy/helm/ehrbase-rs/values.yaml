@@ -12,8 +12,11 @@
 #
 # Every feature below defaults to the SAME state as the binary (all optional
 # integrations OFF), with one deliberate deployment exception: the management
-# surface + its liveness/readiness probes are ON, because Kubernetes needs HTTP
-# probes to schedule the workload (the probe routes are public and carry no PHI).
+# surface's master switch is ON, so enabling Prometheus scraping is a one-key
+# change (config.management.endpoints.prometheus: public). Every management
+# endpoint still defaults to `off`, so nothing is actually exposed. The health
+# probes do NOT depend on it: /health, /health/liveness and /health/readiness are
+# always served on the HTTP port.
 #
 # The env-mapping grammar for overrides is EHRBASE_ + the TOML path upper-cased
 # with `__` between segments (e.g. config.db.max_connections ⇔
@@ -116,7 +119,7 @@ secrets:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Prometheus scraping. When enabled the chart adds the prometheus.io scrape pod
-# annotations (management.enabled + probes required). Set the endpoint itself to
+# annotations (requires config.management.enabled). Set the endpoint itself to
 # `public` via config.management.endpoints.prometheus.
 # ─────────────────────────────────────────────────────────────────────────────
 metrics:
@@ -175,19 +178,19 @@ config:
     enabled: false
     claim: tenant
 
-  # [management] — management/observability surface. ON here (unlike the bare
-  # binary) so the cluster gets HTTP probes; probe routes are public, no PHI. All
-  # DATA endpoints stay off; set prometheus=public + metrics.enabled to scrape.
+  # [management] — ops-introspection surface (info / prometheus / metrics / env /
+  # loggers). The master switch is ON here (unlike the bare binary) so scraping is
+  # a one-key change; every endpoint below stays off, so nothing is exposed until
+  # you opt in (set prometheus=public + metrics.enabled to scrape). Health probes
+  # are NOT part of this surface — /health, /health/liveness and /health/readiness
+  # are always served on the HTTP port, whatever this section says.
   management:
     enabled: true
     base_path: /management
     # off | admin_only | private | public
     access_default: admin_only
-    # Public /health/liveness + /health/readiness — required by the httpGet probes.
-    probes_enabled: true
     endpoints:
       # off | public | private | admin_only
-      health: "off"
       info: "off"
       metrics: "off"
       prometheus: "off"
@@ -343,10 +346,10 @@ resources:
     memory: 1Gi
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Probes. httpGet against the public management probe routes
-# (config.management.enabled + config.management.probes_enabled required). Set
-# exec.enabled to use the binary's `healthcheck` subcommand instead (works even
-# with management off).
+# Probes. httpGet against the always-on public health family on the HTTP port
+# (/health/liveness + /health/readiness) — no configuration prerequisite. Set
+# exec.enabled to use the binary's `healthcheck` subcommand instead (e.g. when
+# the HTTP port is not reachable from the kubelet).
 # ─────────────────────────────────────────────────────────────────────────────
 probes:
   # -- Use `ehrbase healthcheck` exec probes instead of httpGet.

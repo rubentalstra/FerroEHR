@@ -147,16 +147,17 @@ scopes_supported = []
 #? revocation_endpoint = "https://as.example/revoke"
 #? management_endpoint = "https://as.example/manage"
 
-# ── [management] — management/observability surface ───────────────────────────
+# ── [management] — ops-introspection surface ───────────────────────────────────
+# Introspection only (info / prometheus / metrics / env / loggers), off by
+# default. Health probes are NOT here: /health, /health/liveness and
+# /health/readiness are always mounted and public, whatever this section says.
 [management]
 enabled = false
 base_path = "/management"
 #? port = 9100                # separate listener; must differ from server.bind port
 access_default = "admin_only" # off | admin_only | private | public
-probes_enabled = false
 
 [management.endpoints]
-health = "off"
 info = "off"
 metrics = "off"
 prometheus = "off"

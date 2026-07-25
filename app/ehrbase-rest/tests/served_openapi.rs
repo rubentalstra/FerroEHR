@@ -176,7 +176,7 @@ async fn every_operation_documents_an_error_outcome() {
         // Probes and the status surface: 200-only by design (liveness never
         // errors at the application layer; readiness declares its 503).
         "/health",
-        "/management/health/liveness",
+        "/health/liveness",
         "/ehrbase/rest/status",
         "/ehrbase/rest/status/health",
         // List endpoints whose OAS contract is 200-only (an unmatched

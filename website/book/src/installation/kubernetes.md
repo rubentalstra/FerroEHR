@@ -4,8 +4,8 @@ The `deploy/helm/ehrbase-rs` chart deploys EHRbase-rs as a hardened,
 production-shaped Kubernetes workload: non-root, read-only root filesystem,
 default-deny ingress, connecting to an **external** PostgreSQL 18. This chapter
 covers installing the chart, the database role model it expects, the security
-posture it enforces, health probes, and the optional integrations. It assumes a
-cluster at Kubernetes 1.25 or newer.
+posture it enforces, the health probes, and the optional integrations. It
+assumes a cluster at Kubernetes 1.25 or newer.
 
 > [!IMPORTANT]
 > There is **no in-chart PostgreSQL**. A CDR stores PHI, so its database must be
@@ -92,27 +92,29 @@ chart references them but cannot enforce them. See
 
 ## Health probes
 
-Probes use the management surface's public, unauthenticated, PHI-free health
-routes:
+Probes use the always-on, unauthenticated, PHI-free health routes on the main
+HTTP port. They need no configuration at all — no management surface, no
+access level, nothing to forget:
 
 | Probe | Route | Contract |
 |---|---|---|
-| liveness | `{management.basePath}/health/liveness` | 200 while the process is up |
-| readiness | `{management.basePath}/health/readiness` | 200 (UP/DEGRADED) or 503 (DOWN): checks DB ping, migrations applied, audit sender, events — each 1s-bounded |
-| startup | liveness route | gates a slow first boot |
+| liveness | `/health/liveness` | 200 while the process is up; touches no dependency |
+| readiness | `/health/readiness` | 200 (UP/DEGRADED) or 503 (DOWN): checks DB ping, migrations applied, audit sender, events — each 1s-bounded |
+| startup | `/health/liveness` | gates a slow first boot |
 
-Because the bare binary ships the management surface **off**, the chart turns it
-on (`management.enabled=true`, `management.probesEnabled=true`) as a deliberate
-deployment deviation — the probe routes carry no PHI. Set `management.port` to
-serve the management surface on its own internal listener, so `/management` is
-never reachable on the clinical API port. To probe without HTTP (management
-off), set `probes.exec.enabled=true` to use the binary's `healthcheck`
-subcommand instead.
+That split is deliberate: a database outage must fail *readiness* (the pod stops
+receiving traffic) and never liveness (which would restart the container in a
+loop). If the kubelet cannot reach the HTTP port, set `probes.exec.enabled=true`
+to use the binary's `healthcheck` subcommand instead.
 
-Set `metrics.enabled=true` to expose `{management.basePath}/prometheus`
-(access level `public`) with the `prometheus.io/*` scrape annotations. The
-JSON `/management/metrics`, `/info`, `/env`, and `/loggers` endpoints stay
-`admin_only` or off unless you opt in.
+The management surface is independent of the probes and stays ops-only
+(`/management/info`, `/prometheus`, `/metrics`, `/env`, `/loggers`). Set
+`metrics.enabled=true` to expose `{management.basePath}/prometheus` (access
+level `public`) with the `prometheus.io/*` scrape annotations; the other
+endpoints stay `admin_only` or off unless you opt in. Set `management.port` to
+serve the surface on its own internal listener, so `/management` is never
+reachable on the clinical API port — the health probes stay on the main port
+regardless.
 
 ## Optional integrations
 

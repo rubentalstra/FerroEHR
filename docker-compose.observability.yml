@@ -20,12 +20,12 @@ services:
       EHRBASE_OTEL_ENVIRONMENT: dev
       EHRBASE_OTEL_TRACES_SAMPLE_RATIO: "1.0"
       EHRBASE_LOG_FORMAT: json
-      # Management surface on an internal-only port; public within the compose
-      # network so the bundled Prometheus can scrape without credentials.
+      # Ops-introspection surface on an internal-only port; public within the
+      # compose network so the bundled Prometheus can scrape without credentials.
+      # (The health probes need none of this — /health, /health/liveness and
+      # /health/readiness are always served on the main API port.)
       EHRBASE_MANAGEMENT_ENABLED: "true"
       EHRBASE_MANAGEMENT_PORT: "9464"
-      EHRBASE_MANAGEMENT_PROBES_ENABLED: "true"
-      EHRBASE_MANAGEMENT_ENDPOINTS_HEALTH: "public"
       EHRBASE_MANAGEMENT_ENDPOINTS_INFO: "public"
       EHRBASE_MANAGEMENT_ENDPOINTS_METRICS: "public"
       EHRBASE_MANAGEMENT_ENDPOINTS_PROMETHEUS: "public"

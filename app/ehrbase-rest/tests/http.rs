@@ -204,6 +204,36 @@ async fn health_endpoint_is_public() {
     assert_eq!(body, "OK");
 }
 
+/// The whole health family is mounted unconditionally and ungated: these apps
+/// run with authentication ENABLED and the management surface at its default
+/// (disabled), and all three probes still answer without credentials.
+/// `/health/liveness` is a byte-identical alias of `/health`; `/health/readiness`
+/// renders the indicator aggregate (empty registry in a test build → `UP`).
+#[tokio::test]
+async fn health_family_is_public_without_the_management_surface() {
+    let (_pg, app) = app(true).await;
+    for path in ["/health", "/health/liveness"] {
+        let (status, _h, body) = send(app.clone(), get(path)).await;
+        assert_eq!(status, StatusCode::OK, "{path}");
+        assert_eq!(body, "OK", "{path}");
+    }
+
+    let (status, headers, body) = send(app.clone(), get("/health/readiness")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "application/json"
+    );
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["status"], "UP");
+    assert!(v.get("components").is_some(), "indicator body: {body}");
+
+    // The REST-root compatibility alias is unchanged.
+    let (status, _h, body) = send(app, get("/ehrbase/rest/status/health")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body, "OK");
+}
+
 #[tokio::test]
 async fn valid_basic_reaches_handler() {
     // RE-TARGET: the old Mock backend answered a blanket `501`; the real EHR

@@ -4,9 +4,11 @@
 //! `Requests_and_responses.md`): every ITS-REST resource path is relative to the
 //! configured API base path (`cfg.base_path`, default
 //! `/ehrbase/rest/openehr/v1`). The generated API surface ([`crate::api`]) is
-//! therefore nested under that base path; the public operational endpoints
-//! (`/rest/status`, health) hang off the `/ehrbase/rest` root, and the System
-//! Options manifest answers at the base-path root itself.
+//! therefore nested under that base path; `/rest/status` (+ its
+//! `/rest/status/health` alias) hangs off the `/ehrbase/rest` root, the
+//! always-on health family (`/health`, `/health/liveness`,
+//! `/health/readiness`) answers at the process root, and the System Options
+//! manifest answers at the base-path root itself.
 //!
 //! **Layer order** (innermost → outermost, over the nested API): authentication ·
 //! ATNA audit (SM System Log, wraps auth so it observes auth rejections) · HTTP
@@ -23,11 +25,11 @@
 //!
 //! **Overload shedding is scoped to the API subtree only** (the openEHR API +
 //! its extensions, nested under the base path): the public operational
-//! endpoints — `/rest/status`, health, SMART discovery, and the management
-//! surface — are siblings, so they are never shed and an operator can always
-//! probe an overloaded server. The bound is `cfg.max_in_flight` (default 1024);
-//! `0` installs no layer. No openEHR spec governs server overload — our own
-//! design (RFC 9110 §15.6.4).
+//! endpoints — the health family, `/rest/status`, SMART discovery, and the
+//! management surface — are siblings, so they are never shed and an operator
+//! (or an orchestrator probe) can always reach an overloaded server. The bound
+//! is `cfg.max_in_flight` (default 1024); `0` installs no layer. No openEHR spec
+//! governs server overload — our own design (RFC 9110 §15.6.4).
 //!
 //! `NormalizePathLayer` is applied at serve time (it must wrap the router to run
 //! before routing); see [`crate::serve_with`].
@@ -54,6 +56,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::api::system;
 use crate::extensions::access::authn::{self, Authenticator};
+use crate::extensions::health;
 use crate::extensions::management::{self, ManagementState};
 use crate::extensions::openapi;
 use crate::overview::{error, status};
@@ -66,9 +69,9 @@ const REQUEST_BODY_LIMIT: usize = 16 * 1024 * 1024;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Assemble the full application router: the ITS-REST API (behind the auth
-/// layer) nested under the base path, the public status/health + SMART-discovery
-/// endpoints, the System Options manifest, the optional Swagger UI, and the
-/// shared `tower-http` middleware stack.
+/// layer) nested under the base path, the always-on public health family, the
+/// status + SMART-discovery endpoints, the System Options manifest, the optional
+/// Swagger UI, and the shared `tower-http` middleware stack.
 pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     let cfg = state.config().clone();
     let observability = state.observability().clone();
@@ -129,7 +132,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
     // `503 Service Unavailable` + `Retry-After` rather than queueing them until
     // it runs out of memory. Being outermost on this subtree, a shed request
     // never reaches auth, audit, or the request body; scoped here so the public
-    // status/health/discovery/management endpoints are never shed. No openEHR
+    // health/status/discovery/management endpoints are never shed. No openEHR
     // spec governs server overload — our own design (RFC 9110 §15.6.4).
     let api = crate::overload::shed_layer(api, cfg.server.max_in_flight);
 
@@ -234,11 +237,20 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
     .into_response()
 }
 
-/// Mount the public, pre-auth surface around the API tree: status/health,
-/// the config-gated SMART `/.well-known/smart-configuration` document (served
-/// pre-auth, SMART master04 §Service Discovery; an empty router when SMART is
-/// disabled, so the merge is a no-op and the path is absent), and the
-/// config-gated Swagger UI + `OpenAPI` documents.
+/// Mount the public, pre-auth surface around the API tree: the always-on health
+/// family, the REST-root status surface, the config-gated SMART
+/// `/.well-known/smart-configuration` document (served pre-auth, SMART master04
+/// §Service Discovery; an empty router when SMART is disabled, so the merge is a
+/// no-op and the path is absent), and the config-gated Swagger UI + `OpenAPI`
+/// documents.
+///
+/// NOTE: no openEHR spec governs this — our own operational surface; disposition
+/// recorded on issue #305. The health family (`/health`, `/health/liveness`,
+/// `/health/readiness` — [`crate::extensions::health`]) is mounted
+/// **unconditionally and ungated** here, deliberately outside the API subtree:
+/// an orchestrator must be able to probe the server without credentials, without
+/// any configuration having been enabled, and without the overload-shed layer
+/// being able to shed the probe.
 fn mount_public_surface(
     cfg: &crate::config::AppConfig,
     api: Router<AppState>,
@@ -250,6 +262,7 @@ fn mount_public_surface(
 
     let mut inner = Router::new()
         .nest(&cfg.server.base_path, api)
+        .merge(health::router())
         .merge(status::router(rest_root))
         .merge(discovery);
 

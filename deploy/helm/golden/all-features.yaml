@@ -221,10 +221,8 @@ data:
       base_path = "/management"
       enabled = true
       port = 9100.0
-      probes_enabled = true
       [management.endpoints]
         env = "admin_only"
-        health = "private"
         info = "admin_only"
         loggers = "admin_only"
         metrics = "admin_only"
@@ -335,7 +333,7 @@ spec:
     metadata:
       annotations:
         # Roll pods when the rendered ehrbase.toml changes.
-        checksum/config: a89e96a6b8f1d33506cc8bbbde22308273eaf4a9f5531b47562eed28fcd604f8
+        checksum/config: 42de50ea4906d9ea2f7833cc6ad5381c8be73deb84fa3a929012a6410904c7f4
         prometheus.io/scrape: "true"
         prometheus.io/port: "9100"
         prometheus.io/path: "/management/prometheus"
@@ -418,24 +416,24 @@ spec:
                   key: EHRBASE__MULTIMEDIA__SECRET_ACCESS_KEY
           livenessProbe:
             httpGet:
-              path: /management/health/liveness
-              port: management
+              path: /health/liveness
+              port: http
             failureThreshold: 3
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 3
           readinessProbe:
             httpGet:
-              path: /management/health/readiness
-              port: management
+              path: /health/readiness
+              port: http
             failureThreshold: 3
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
           startupProbe:
             httpGet:
-              path: /management/health/liveness
-              port: management
+              path: /health/liveness
+              port: http
             initialDelaySeconds: 5
             periodSeconds: 5
             timeoutSeconds: 3
