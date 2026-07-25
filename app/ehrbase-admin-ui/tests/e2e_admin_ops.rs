@@ -222,19 +222,24 @@ async fn admin_saves_groups_and_deletes_a_stored_query() {
     h.goto("/queries/aql").await;
     let mut saved = false;
     for _ in 0..5 {
-        h.wait_css("#aql-editor")
-            .await
+        // Clear before (re)typing: `send_keys` APPENDS, so a retry after a
+        // not-yet-hydrated first pass would otherwise double every field's
+        // content and save a mangled query.
+        let editor = h.wait_css("#aql-editor").await;
+        editor.clear().await.expect("clear the AQL");
+        editor
             .send_keys("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c")
             .await
             .expect("type the AQL");
-        h.wait_css("#aql-save-namespace")
-            .await
+        let namespace = h.wait_css("#aql-save-namespace").await;
+        namespace.clear().await.expect("clear the namespace");
+        namespace
             .send_keys(QUERY_NAMESPACE)
             .await
             .expect("type the stored-query namespace");
-        h.wait_css("#aql-save-name")
-            .await
-            .send_keys(QUERY_BARE_NAME)
+        let name = h.wait_css("#aql-save-name").await;
+        name.clear().await.expect("clear the name");
+        name.send_keys(QUERY_BARE_NAME)
             .await
             .expect("type the stored-query name");
         let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
@@ -246,6 +251,12 @@ async fn admin_saves_groups_and_deletes_a_stored_query() {
         tokio::time::sleep(Duration::from_millis(300)).await;
     }
     assert!(saved, "the Save button never enabled (typing never took)");
+    // The dispatch is an in-flight fetch the next navigation would ABORT —
+    // wait for the save's own outcome (the success toast) before leaving the
+    // page, so the journey never races its own mutation. A failed save shows
+    // the failure toast instead and this wait times out with a screenshot.
+    h.wait_xpath("//*[contains(normalize-space(.), 'Query saved')]")
+        .await;
 
     // The row appears on /queries with its admin delete affordance (the CDR
     // assigns the version, so match the name prefix) — which also proves the
@@ -291,6 +302,10 @@ async fn admin_versions_a_stored_query() {
     // storable triple, so its enabling is the hydration + validity signal.
     let stored = save_query_version(&h, "1.0.0", true).await;
     assert!(stored, "the Save button never enabled for version 1.0.0");
+    // Wait for the save's own outcome before navigating — navigation aborts
+    // the in-flight server-fn fetch (same hardening as the delete journey).
+    h.wait_xpath("//*[contains(normalize-space(.), 'Query saved')]")
+        .await;
     let v1 = format!("[data-query-delete=\"{VERSIONED_QUERY_NAME}@1.0.0\"]");
     h.goto("/queries").await;
     h.wait_css(&v1).await;
@@ -309,6 +324,8 @@ async fn admin_versions_a_stored_query() {
     h.goto("/queries/aql").await;
     let bumped = save_query_version(&h, "1.1.0", true).await;
     assert!(bumped, "the Save button never enabled for version 1.1.0");
+    h.wait_xpath("//*[contains(normalize-space(.), 'Query saved')]")
+        .await;
     let v2 = format!("[data-query-delete=\"{VERSIONED_QUERY_NAME}@1.1.0\"]");
     h.goto("/queries").await;
     h.wait_css(&v1).await;
