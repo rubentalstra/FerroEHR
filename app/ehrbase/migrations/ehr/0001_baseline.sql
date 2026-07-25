@@ -406,7 +406,8 @@ CREATE TABLE node (
     -- naming a parent matches a specialisation child via a `concept-%` prefix
     -- scan within the same entity + major, the major boundary being hard (AM
     -- master07 §Querying). Stored lowercased for case-insensitive comparison
-    -- (master05 §"Composite Identifiers and Case"); archetype/data stay canonical.
+    -- (master05 §"Composite Identifiers and Case"), as is `archetype` itself
+    -- (case-folded at write by storage::codec); `data` stays canonical.
     arch_entity  text,
     arch_concept text,
     arch_major   integer,
@@ -442,12 +443,13 @@ CREATE TABLE node (
         REFERENCES vo_version (vo_id, sys_version) ON DELETE CASCADE
         DEFERRABLE INITIALLY IMMEDIATE
 );
+-- The archetype column is case-folded AT WRITE (storage::codec): composite
+-- identifiers compare case-insensitively (BASE base_types master05
+-- §"Composite Identifiers and Case"), so AQL archetype equality is plain
+-- indexed equality on this composite index — no functional lower() index,
+-- honest planner statistics (the canonical `data` fragment keeps original
+-- casing).
 CREATE INDEX idx_node_type_archetype ON node (rm_type, archetype);
--- Composite identifiers compare case-insensitively (BASE base_types master05
--- §"Composite Identifiers and Case"): AQL archetype predicates fold case, so
--- the comparison is served by this functional index (storage stays
--- case-preserving).
-CREATE INDEX idx_node_archetype_lower ON node (lower(archetype));
 -- Archetype-subsumption scan (BASE architecture_overview master10 §Design-time
 -- Relationships; AM master07 §Querying): a parent-archetype predicate resolves
 -- to arch_entity = $entity AND arch_major = $major AND (arch_concept = $concept
