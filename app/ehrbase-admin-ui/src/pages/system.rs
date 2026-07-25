@@ -1,7 +1,8 @@
-//! The `/system` screen: a four-card operational panel
-//! over the CDR — server status, SMART service-discovery, the CDR's own
-//! served `OpenAPI` document (rendered by our own grouped-endpoint component,
-//! never a Swagger embed), and the activity log.
+//! The `/system` screen: an operational panel over the CDR — server status,
+//! SMART service-discovery, repository usage, the CDR's own served `OpenAPI`
+//! document (rendered by our own grouped-endpoint component, never a Swagger
+//! embed), the redacted runtime configuration, and a link into the `/audit`
+//! activity browser.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound: the SMART discovery document follows
@@ -20,7 +21,9 @@ use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
 
-use crate::components::empty_state::EmptyState;
+use leptos_router::components::A;
+
+use crate::components::field::BTN_SECONDARY;
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
@@ -168,7 +171,7 @@ pub fn SystemPage() -> impl IntoView {
         <div class="p-6">
             <PageHeader
                 title="System"
-                subtitle="CDR status, SMART discovery, and the served OpenAPI surface."
+                subtitle="CDR status, SMART discovery, repository usage, the served OpenAPI surface, and the redacted runtime configuration."
             />
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 {status} {smart} {usage} {openapi} {config} {activity}
@@ -568,24 +571,26 @@ fn openapi_body(doc: &serde_json::Value) -> AnyView {
     view! { <div class="overflow-x-auto max-h-96 overflow-y-auto">{sections}</div> }.into_any()
 }
 
-/// Activity log card. The CDR exposes no system-log read surface today, so
-/// this renders an informative placeholder rather than inventing an endpoint.
+/// Activity-log card: a compact pointer into the `/audit` screen, which is
+/// the console's real activity browser (the CDR's local Audit Record
+/// Repository over the RESTful-ATNA ITI-81 retrieval). This card deliberately
+/// fetches nothing — duplicating a filterable, paged browser inside a panel
+/// tile would be a second, worse audit surface.
 fn activity_log_card() -> AnyView {
-    // TODO: the CDR has no system-log / ATNA read endpoint — audit is a
-    // write-side concern (ATNA audit middleware in `app/ehrbase-rest`) and
-    // audit rows are folded into version reads, with no GET surface listing
-    // recent events. When a read-only system-log endpoint lands, add a
-    // `fetch_activity_log` #[server] fn and render events in a `thaw::Table`
-    // here (with an explicit `<tbody>`).
     let body = view! {
-        <EmptyState
-            icon=icondata_lu::LuActivity
-            message="The CDR does not expose a system-log read endpoint yet"
-            hint="ATNA audit is captured on the write path; there is currently no endpoint to list recent events."
-        />
+        <div class="flex flex-col items-start gap-3">
+            <p class="text-sm text-ink-muted">
+                "Who accessed what, with what outcome: the ATNA security audit trail, "
+                "filterable by time window, patient, principal, outcome and action."
+            </p>
+            <A href="/audit" attr:class=BTN_SECONDARY>
+                <leptos_icons::Icon icon=icondata_lu::LuActivity width="14" height="14" />
+                " Open audit browser"
+            </A>
+        </div>
     }
     .into_any();
-    card_shell("Activity log", true, body)
+    card_shell("Audit log", false, body)
 }
 
 /// Every top-level scalar field of a JSON object as `(key, text)`, sorted by

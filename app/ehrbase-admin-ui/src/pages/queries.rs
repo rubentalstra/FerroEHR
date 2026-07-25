@@ -87,7 +87,9 @@ pub fn QueriesPage() -> impl IntoView {
             };
             toast_success(toaster, title, "");
         }
-        Some(Err(error)) => toast_error(toaster, "Save failed", &error.to_string()),
+        Some(Err(error)) => {
+            crate::feedback::toast_write_failure(toaster, "Save failed", "the query group", &error);
+        }
         None => {}
     });
     // The CDR stored-query delete reports separately — its copy names the

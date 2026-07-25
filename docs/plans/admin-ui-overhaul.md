@@ -92,13 +92,17 @@ Do not re-plan these — the audit confirmed each in code:
 - [ ] **T10** i18n groundwork: keys-not-literals with a single `en`
   catalog (no translations yet). All strings are inline English today
   (`<html lang="en">` fixed, `app.rs:18`).
-- [ ] **T11** System-page activity-log placeholder
+- [x] **T11** System-page activity-log placeholder
   (`system.rs:571-589` + its TODO): ITI-81 landed and `/audit` is the
   read surface — fold the card into a link/summary onto `/audit` or drop
   it; delete the stale TODO either way.
-- [ ] **T12** EHR finder no-JS fallback (`ehrs.rs:510` TODO): a GET
-  `<Form>` to a redirect route so find-by-id works pre-WASM.
-- [ ] **T13** Error-feedback pattern unified: most CDR failures render
+- [x] **T12** EHR finder no-JS fallback (`ehrs.rs:510` TODO): a GET
+  `<Form>` to a redirect route so find-by-id works pre-WASM. Landed as a
+  PLAIN `<form method="GET" action="/ehrs">` + `?find=` → `<Redirect>` on the
+  same screen: the router's `<Form method="GET">` would navigate to the same
+  path, and a same-path navigation only updates the search query without
+  re-running the route component, so the hydrated lookup would no-op.
+- [x] **T13** Error-feedback pattern unified: most CDR failures render
   inline only (toast_error is wired solely on group actions). Rule:
   validation/document errors stay inline verbatim; action failures
   (delete/save/commit transport errors) also toast. Apply everywhere.
