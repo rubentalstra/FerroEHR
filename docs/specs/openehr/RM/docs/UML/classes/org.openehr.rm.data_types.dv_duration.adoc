@@ -46,7 +46,7 @@ a|Difference of this Duration and `_other_`.
 
 h|*1..1 +
 (redefined)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
 ): `<<_dv_duration_class,DV_DURATION>>`
 a|Product of this Duration and `_factor_`.

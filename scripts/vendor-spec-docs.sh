@@ -24,7 +24,7 @@ INCLUDE_EXT=(adoc md txt csv json yaml yml robot xml opt)
 # already vendored for codegen.
 COMPONENTS=(
   "BASE|specifications-BASE|master (BASE 1.3.0)|e48795762a0648cbe5701be58d42ec5df0c701a7"
-  "RM|specifications-RM|master (RM 1.2.0)|c52de2b80503f3e8613dd4b7455b1b60336e9fac"
+  "RM|specifications-RM|master (RM 1.2.0)|66d3ac45587e4532a94d5fd27ca24bcf049f5bf3"
   "AM|specifications-AM|master (AM 2.4.0 + ADL/AOM/OPT 1.4)|da06d63297e8549a351c854d8b1c45cd9f1d577c"
   "TERM|specifications-TERM|master (TERM 3.1.0)|007d0dddcdd77648711681878b54ace021b2fbd5"
   "LANG|specifications-LANG|master (LANG 1.1.0)|201b647034f7b1ddfe207e4c3c6f52f6878869b8"
