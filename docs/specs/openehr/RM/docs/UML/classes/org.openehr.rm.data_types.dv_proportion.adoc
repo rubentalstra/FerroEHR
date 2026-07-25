@@ -81,7 +81,7 @@ a|Return True if this `DV_AMOUNT` is considered equal to `_other_`.
 
 h|*1..1 +
 (redefined)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
 ): `<<_dv_proportion_class,DV_PROPORTION>>`
 a|Product of this Proportion and `_factor_`.

@@ -70,7 +70,7 @@ other: `<<_dv_amount_class,DV_AMOUNT>>[1]` +
 a|Return True if this `DV_AMOUNT` is considered equal to `_other_`.
 
 h|*1..1*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
 ): `<<_dv_amount_class,DV_AMOUNT>>`
 a|Product of this Amount and `_factor_`.
