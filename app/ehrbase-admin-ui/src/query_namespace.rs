@@ -105,12 +105,75 @@ pub fn qualify(namespace: &str, name: &str) -> String {
 /// VERSION (the raw editor's `?load=` hand-off carries it) — the openEHR REST
 /// API keeps the two as separate path segments, so this pairing is our
 /// design/extension, not a spec form.
+///
+/// NOTE: the version is OPAQUE text here — never parsed, compared, or
+/// normalized. A stored-query version is SEMVER-style `major.minor.patch`, and
+/// a partial or absent version is resolved by the CDR to "the latest `version`
+/// with the supplied prefix" (ITS-REST
+/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name),
+/// so prefix resolution is the server's job; a client-side semver assumption
+/// about a reference would be wrong. [`is_full_semver`] and [`next_minor`] do
+/// read the structure, but only where a STORE demands an exact version.
 #[must_use]
 pub fn split_query_ref(reference: &str) -> Option<(String, String)> {
     reference
         .rsplit_once('@')
         .filter(|(name, version)| !name.is_empty() && !version.is_empty())
         .map(|(name, version)| (name.to_owned(), version.to_owned()))
+}
+
+/// Does `version` carry all three SEMVER parts (`major.minor.patch`, each a
+/// plain non-negative integer)?
+///
+/// A stored-query version "is in the format specified by SEMVER style (i.e.
+/// `major.minor.patch`)", and a PARTIAL pattern (`{major}` or
+/// `{major}.{minor}`) means "the latest query version matching supplied
+/// prefix" (ITS-REST `specifications/docs/query/Qualified_query_name.md`
+/// §Qualified query name). Prefix RESOLUTION is a read concept: storing at a
+/// prefix would file a query under a version string that later prefix lookups
+/// would treat as a resolvable pattern rather than a concrete version, so the
+/// save screens require all three parts and leave prefixes to reads.
+///
+/// NOTE: rejecting a prefix ON STORE is our own guard — the spec describes the
+/// prefix form for the shared path parameter without saying what storing at one
+/// means; nothing in the console interprets a version beyond this check and
+/// [`next_minor`].
+#[must_use]
+pub fn is_full_semver(version: &str) -> bool {
+    let mut parts = version.split('.');
+    let three = [parts.next(), parts.next(), parts.next()];
+    parts.next().is_none()
+        && three.iter().all(|part| {
+            part.is_some_and(|part| {
+                !part.is_empty()
+                    && part.bytes().all(|byte| byte.is_ascii_digit())
+                    && part.parse::<u64>().is_ok()
+            })
+        })
+}
+
+/// The next MINOR version after `version` (`1.4.2` → `1.5.0`), or `None` when
+/// `version` is not a full SEMVER triple or its minor part cannot be
+/// incremented.
+///
+/// Used to pre-fill the save screens after loading a stored query, so editing
+/// a loaded definition proposes a NEW version instead of colliding with the
+/// immutable one it came from (an explicit `(name, version)` pair is never
+/// overwritten — ITS-REST `operations/definition_query_version_store.yaml`
+/// answers `409` for an existing pair).
+///
+/// NOTE: which part to bump is our own UX choice — no openEHR spec governs an
+/// admin UI, and the SEMVER-style version says nothing about which change to a
+/// query definition warrants which increment. The field stays editable.
+#[must_use]
+pub fn next_minor(version: &str) -> Option<String> {
+    if !is_full_semver(version) {
+        return None;
+    }
+    let mut parts = version.split('.');
+    let major = parts.next()?;
+    let minor: u64 = parts.next()?.parse().ok()?;
+    Some(format!("{major}.{}.0", minor.checked_add(1)?))
 }
 
 /// Group a stored-query listing by the namespace of each name: namespaced
@@ -157,8 +220,8 @@ pub fn group_label(namespace: Option<&str>) -> &str {
 mod tests {
     use crate::queries_api::StoredQueryRow;
     use crate::query_namespace::{
-        UNQUALIFIED_LABEL, bare_name_of, group_by_namespace, group_label, namespace_of, qualify,
-        split_qualified, split_query_ref,
+        UNQUALIFIED_LABEL, bare_name_of, group_by_namespace, group_label, is_full_semver,
+        namespace_of, next_minor, qualify, split_qualified, split_query_ref,
     };
 
     /// A listing row with only the fields the grouping reads.
@@ -257,11 +320,16 @@ mod tests {
 
     #[test]
     fn split_and_qualify_round_trip() {
+        // Every qualified name the SPEC admits survives split → qualify
+        // unchanged: `[{namespace}::]{query-name}` where `query-name` is
+        // matched by `[a-zA-Z0-9_.-]` (ITS-REST
+        // `specifications/docs/query/Qualified_query_name.md` §Qualified query
+        // name), so a spec-valid bare name can never itself contain `::` and
+        // can never collide with the typed-prefix rule.
         for name in [
             "org.openehr::my_compositions",
             "my_compositions",
             "ehr::all_influenza_vacc_candidates",
-            "a::b::c",
             "ns::",
             "::name",
             "",
@@ -270,6 +338,24 @@ mod tests {
             let (namespace, bare) = split_qualified(name);
             assert_eq!(qualify(&namespace, &bare), name, "round trip of `{name}`");
         }
+    }
+
+    #[test]
+    fn a_second_double_colon_normalizes_to_the_last_segment_pair() {
+        // `a::b::c` is NOT a spec-valid qualified name — the bare name would
+        // have to contain `::`, which the `query-name` charset excludes — so it
+        // cannot round-trip through two fields, and no requirement says it
+        // should. Split reads the FIRST `::` (namespace `a`), and re-composing
+        // applies the documented typed-prefix rule, which yields `b::c`.
+        //
+        // This is deliberately NOT silent: the save screens render the composed
+        // name ("Saves as …") before the click, so an operator who opened such a
+        // malformed name sees exactly what a save would write. Preserving it
+        // instead would mean composing another invalid identifier.
+        let (namespace, bare) = split_qualified("a::b::c");
+        assert_eq!(namespace, "a");
+        assert_eq!(bare, "b::c");
+        assert_eq!(qualify(&namespace, &bare), "b::c");
     }
 
     #[test]
@@ -329,5 +415,50 @@ mod tests {
     fn group_label_names_the_namespace_or_the_bucket() {
         assert_eq!(group_label(Some("org.example")), "org.example");
         assert_eq!(group_label(None), UNQUALIFIED_LABEL);
+    }
+
+    #[test]
+    fn full_semver_needs_three_numeric_parts() {
+        assert!(is_full_semver("1.0.0"));
+        assert!(is_full_semver("0.0.0"));
+        assert!(is_full_semver("10.20.30"));
+        // Partial patterns are the READ form (prefix resolution), never a
+        // store version.
+        assert!(!is_full_semver("1"));
+        assert!(!is_full_semver("1.0"));
+        assert!(!is_full_semver("1.0.0.0"));
+        // Non-numeric, empty, signed, and pre-release/build forms all fail:
+        // the console stores only a concrete triple.
+        assert!(!is_full_semver(""));
+        assert!(!is_full_semver("1.0."));
+        assert!(!is_full_semver(".0.0"));
+        assert!(!is_full_semver("1.0.x"));
+        assert!(!is_full_semver("1.-1.0"));
+        assert!(!is_full_semver("1.0.0-rc.1"));
+        assert!(!is_full_semver("1.0.0+build"));
+        assert!(!is_full_semver(" 1.0.0"));
+        // Numeric but unrepresentable parts are rejected rather than silently
+        // truncated.
+        assert!(!is_full_semver("1.99999999999999999999.0"));
+    }
+
+    #[test]
+    fn next_minor_bumps_the_middle_part_and_resets_the_patch() {
+        assert_eq!(next_minor("1.0.0").as_deref(), Some("1.1.0"));
+        assert_eq!(next_minor("1.4.2").as_deref(), Some("1.5.0"));
+        assert_eq!(next_minor("0.9.9").as_deref(), Some("0.10.0"));
+        // The major part is carried verbatim, never re-formatted.
+        assert_eq!(next_minor("07.1.0").as_deref(), Some("07.2.0"));
+    }
+
+    #[test]
+    fn next_minor_declines_what_it_cannot_bump() {
+        assert_eq!(next_minor("1.0"), None);
+        assert_eq!(next_minor("latest"), None);
+        assert_eq!(next_minor(""), None);
+        assert_eq!(next_minor("1.0.0-rc.1"), None);
+        // A saturated minor cannot be incremented, so no version is proposed
+        // rather than a wrong one.
+        assert_eq!(next_minor(&format!("1.{}.0", u64::MAX)), None);
     }
 }

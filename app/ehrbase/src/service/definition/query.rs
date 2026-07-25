@@ -375,11 +375,15 @@ impl EhrbaseService {
     ///
     /// - **With an explicit `version`**, the `(name, version)` pair is
     ///   **immutable**: an already-existing pair (case-insensitive) is a
-    ///   `Conflict` (→ ITS-REST `409`), never an overwrite
-    ///   (`409_StoredQuery_version.yaml`).
+    ///   `Conflict` (→ ITS-REST `409`), never an overwrite — the versioned
+    ///   store "Stores a query, at a specified `version`" and a duplicate is a
+    ///   conflict per the ITS-REST docs text
+    ///   (`specifications/docs/overview/Requests_and_responses.md` §status
+    ///   codes: `409` is "the request could not be processed because it might
+    ///   generate a duplicate or a conflict").
     /// - **Without a version**, the query is stored (or updated) at
-    ///   [`DEFAULT_QUERY_VERSION`] (`definition_query_store`: "stores a new
-    ///   query, or updates an existing query"; response set `200/400`).
+    ///   [`DEFAULT_QUERY_VERSION`]: the unversioned store "stores a new query,
+    ///   or updates an existing query".
     ///
     /// Identity is case-insensitive but storage case-preserving (BASE master05
     /// §Composite Identifiers and Case).

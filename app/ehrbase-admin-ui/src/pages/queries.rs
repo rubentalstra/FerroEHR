@@ -106,7 +106,9 @@ pub fn QueriesPage() -> impl IntoView {
                     "Raw AQL"
                 </a>
             </PageHeader>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">{table} {namespaces}</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                {table} {namespaces}
+            </div>
         </div>
     }
 }

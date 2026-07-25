@@ -134,6 +134,15 @@ pub struct NamespaceTile {
     pub members: u32,
 }
 
+/// How many member stored queries a namespace tile runs at once. Bounded so a
+/// large query store cannot open an unbounded burst of CDR requests from one
+/// dashboard load, and small enough to stay polite to a shared CDR — the tiles
+/// are a summary, not a latency-critical path.
+///
+/// NOTE: no openEHR spec governs an admin dashboard — our own design/extension.
+#[cfg(feature = "ssr")]
+const TILE_CONCURRENCY: usize = 8;
+
 /// The dashboard's per-namespace match tiles: the CDR's stored queries grouped
 /// by the namespace of their qualified name
 /// ([`group_by_namespace`](crate::query_namespace::group_by_namespace)), each
@@ -150,32 +159,53 @@ pub struct NamespaceTile {
 /// all); a failing member RUN is confined to its own tile's `matches: None`.
 #[server]
 pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
+    use futures::stream::StreamExt;
+
     crate::session::require_session().await?;
     let rows = crate::queries_api::list_stored_queries().await?;
     let mut tiles = Vec::new();
-    // TODO(perf): this runs EVERY stored query once per dashboard load — the
-    // tiles are derived, so there is no stored member list to narrow by — and
-    // does so serially. Cap or cache it if a deployment with many stored
-    // queries measures the dashboard as slow (a bounded concurrent fan-out plus
-    // a short-lived per-session cache is the obvious first step).
     for group in crate::query_namespace::group_by_namespace(&rows) {
+        // Every member runs, because the grouping is DERIVED — there is no
+        // stored member list to narrow by (and storing one is exactly what the
+        // console does not do). The runs therefore fan out with a bounded
+        // concurrency (`TILE_CONCURRENCY`) instead of a serial await chain: the
+        // tile row costs one slow query, not the sum of every query, and the
+        // bound keeps a large query store from opening an unbounded burst of
+        // CDR requests. `buffered` preserves order, which nothing here relies
+        // on, but keeps the log deterministic.
+        // The identifiers are collected into owned pairs BEFORE the stream: an
+        // async block that borrows out of `group` is not general enough over
+        // lifetimes for the server-fn future (a higher-ranked-lifetime error at
+        // the `#[server]` boundary), and cloning two short strings per member is
+        // free next to the request each one makes.
+        let members: Vec<(String, String)> = group
+            .members
+            .iter()
+            .map(|member| (member.name.clone(), member.version.clone()))
+            .collect();
+        let counts = futures::stream::iter(members.into_iter().map(|(name, version)| async move {
+            let counted = crate::queries_api::run_stored_count(name.clone(), version.clone())
+                .await
+                .ok();
+            (name, version, counted)
+        }))
+        .buffered(TILE_CONCURRENCY)
+        .collect::<Vec<_>>()
+        .await;
         let mut matches: Option<i64> = Some(0);
-        for member in &group.members {
-            let counted =
-                crate::queries_api::run_stored_count(member.name.clone(), member.version.clone())
-                    .await;
-            let Ok(count) = counted else {
+        for (name, version, counted) in counts {
+            let Some(count) = counted else {
                 // Identifiers only, never the diagnostic: a CDR error body can
                 // quote the query text, and query text can carry clinical
                 // values — logs name shapes, not payloads. Naming the query is
                 // enough for an operator to run it and read the CDR's answer.
                 tracing::warn!(
-                    query = %member.name,
-                    version = %member.version,
+                    query = %name,
+                    version = %version,
                     "stored query failed to run for its dashboard namespace tile"
                 );
                 matches = None;
-                break;
+                continue;
             };
             matches = matches.map(|total| total.saturating_add(count));
         }
