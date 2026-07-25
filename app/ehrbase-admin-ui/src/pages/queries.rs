@@ -182,11 +182,7 @@ fn stored_row(row: StoredQueryRow, selected: RwSignal<Option<(String, String)>>)
     // toggle handler (so a click here never expands the detail); with no router
     // delegation reached, the browser does a plain navigation to the fresh page.
     // `name@version` is percent-encoded as one value.
-    let qualified_ref = format!("{}@{}", row.name, row.version);
-    let load_href = format!(
-        "/queries/aql?load={}",
-        crate::urlq::encode_query_value(&qualified_ref)
-    );
+    let load_href = crate::pages::query_aql::load_href(&row.name, &row.version);
     view! {
         <tr
             class=format!("{ROW} cursor-pointer")
@@ -233,11 +229,10 @@ fn detail_panel(aql: String) -> AnyView {
     let navigate = use_navigate();
     let aql_for_run = aql.clone();
     let on_run = move |_| {
-        let href = format!(
-            "/queries/aql?aql={}",
-            crate::urlq::encode_query_value(&aql_for_run)
+        navigate(
+            &crate::pages::query_aql::aql_href(&aql_for_run),
+            NavigateOptions::default(),
         );
-        navigate(&href, NavigateOptions::default());
     };
     let body = Signal::derive(move || aql.clone());
     view! {
@@ -511,20 +506,4 @@ fn group_card(
         </div>
     }
     .into_any()
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn encode_query_value_passes_unreserved_and_escapes_the_rest() {
-        assert_eq!(crate::urlq::encode_query_value("Aa0-_.~"), "Aa0-_.~");
-        assert_eq!(crate::urlq::encode_query_value("a b"), "a%20b");
-        assert_eq!(
-            crate::urlq::encode_query_value("c/name/value"),
-            "c%2Fname%2Fvalue"
-        );
-        // Multi-byte UTF-8 escapes per byte, uppercase hex.
-        assert_eq!(crate::urlq::encode_query_value("é"), "%C3%A9");
-    }
 }
