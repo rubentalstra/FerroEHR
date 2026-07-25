@@ -352,12 +352,15 @@ fn paging_step(href: Option<String>, step: Step) -> AnyView {
 /// One page-size choice: a link that re-pages the table at that window size
 /// from its first page, or the marked current size.
 fn size_choice(base: &str, paging: TablePaging, choice: u32, current: u32) -> AnyView {
+    // Two bindings: the view! macro moves child text before evaluating
+    // attribute clones, so one String cannot serve both positions.
+    let hook = choice.to_string();
     let label = choice.to_string();
     if choice == current {
         return view! {
             <span
                 class="rounded-control bg-accent-subtle px-2 py-0.5 font-medium text-accent-ink"
-                data-page-size=label.clone()
+                data-page-size=hook
                 aria-current="true"
             >
                 {label}
@@ -369,7 +372,7 @@ fn size_choice(base: &str, paging: TablePaging, choice: u32, current: u32) -> An
         <a
             href=paging.href(base, 0, choice)
             class="rounded-control px-2 py-0.5 text-accent hover:underline"
-            data-page-size=label.clone()
+            data-page-size=hook
         >
             {label}
         </a>
