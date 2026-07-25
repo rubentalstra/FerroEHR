@@ -57,8 +57,8 @@ pub struct StatementCost {
     pub calls: u64,
     pub mean_ms: f64,
     pub total_ms: f64,
-    /// Planning share (`pg_stat_statements.track_planning`; PostgreSQL docs
-    /// §pg_stat_statements): mean/total time spent in the planner, separated
+    /// Planning share (`pg_stat_statements.track_planning`; `PostgreSQL` docs
+    /// section `pg_stat_statements`): mean/total planner time, separated
     /// from execution so a re-plan-heavy statement (unnamed statements re-plan
     /// every execution) is attributable. Zero when the probe could not enable
     /// `track_planning`.
