@@ -61,5 +61,5 @@ h|
 2+a|__Is_branch_validity__: `is_branch xor branch_number = Void`
 
 h|
-2+a|__Is_first_validity__: `not is_first xor trunk_version.is_equal(“1”)`
+2+a|__Is_first_validity__: `not is_first xor trunk_version.is_equal("1")`
 |===

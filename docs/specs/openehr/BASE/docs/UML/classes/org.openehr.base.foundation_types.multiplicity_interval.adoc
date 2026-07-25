@@ -20,7 +20,7 @@ h|*1..1*
 a|Marker to use in string form of interval between limits.
 
 h|*1..1*
-|*Multiplicity_unbounded_marker*: `<<_character_class,Character>>{nbsp}={nbsp}'&#42;'`
+|*Multiplicity_unbounded_marker*: `<<_character_class,Character>>{nbsp}={nbsp}'*'`
 a|Symbol to use to indicate upper limit unbounded.
 
 h|*Functions*

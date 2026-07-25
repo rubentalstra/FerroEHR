@@ -48,7 +48,7 @@ h|*Invariants*
 2+a|__Original_language_valid__: `code_set (Code_set_id_languages).has_code (original_language.as_string)`
 
 h|
-2+a|__Translations_valid__: `translations /= Void implies (not translations.is_empty and not translations.has (orginal_language.code_string))`
+2+a|__Translations_valid__: `translations /= Void implies (not translations.is_empty and not translations.has (original_language.code_string))`
 
 h|
 2+a|__Description_valid__: `translations /= Void implies (description.details.for_all (d &#124;

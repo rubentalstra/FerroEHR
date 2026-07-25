@@ -1,0 +1,11 @@
+= Terminology Package
+
+== Overview
+
+The `base.base_types.terminology` package defines the `CODE_PHRASE` type. It represents a fully coordinated term obtained from a terminology service, identified by a `TERMINOLOGY_ID` (from the `identification` package) together with a `code_string`.
+
+NOTE: `CODE_PHRASE` is retained for legacy purposes only, while the ADL 1.4 / AOM 1.4 model requires it. New models should instead use the `Terminology_code` and `Terminology_term` types defined in the {openehr_foundation_types}[Foundation Types^] specification.
+
+== Class Definitions
+
+include::{uml_export_dir}/classes/{pkg}code_phrase.adoc[]

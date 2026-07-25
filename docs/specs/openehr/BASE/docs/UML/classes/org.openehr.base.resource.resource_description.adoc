@@ -39,7 +39,7 @@ a|Reference to owning resource.
 
 h|*1..1*
 |*lifecycle_state*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
-a|Lifecycle state of the resource, typically including states such as: initial, in_development, in_review, published, superseded, obsolete.
+a|Lifecycle state of the resource, typically using macro-states such as: unmanaged, in_development, release_candidate, published, rejected, deprecated.
 
 h|*0..1*
 |*custodian_namespace*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
@@ -95,4 +95,13 @@ a|Details of all parts of resource description that are natural language-depende
 h|*0..1*
 |*other_details*: `link:/releases/BASE/{base_release}/foundation_types.html#_hash_class[Hash^]<link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^],link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]>`
 a|Additional non-language-sensitive resource meta-data, as a list of name/value pairs.
+
+h|*Invariants*
+2+a|__Original_author_valid__: `not original_author.is_empty`
+
+h|
+2+a|__Lifecycle_state_valid__: `not lifecycle_state.is_empty`
+
+h|
+2+a|__Parent_resource_valid__: `parent_resource /= Void implies parent_resource.description = self`
 |===

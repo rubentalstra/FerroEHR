@@ -58,6 +58,7 @@ include::master02-overview.adoc[leveloffset=+1]
 include::master03-definitions_package.adoc[leveloffset=+1]
 include::master04-builtins_package.adoc[leveloffset=+1]
 include::master05-identification_package.adoc[leveloffset=+1]
+include::master06-terminology_package.adoc[leveloffset=+1]
 
 
 //

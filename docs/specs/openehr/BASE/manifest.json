@@ -65,10 +65,11 @@
     ],
     "expressions": [
         {
-            "id": "openEHR_UML-BASE.mdzip",
-            "type": "uml",
-            "title": "Base UML",
-            "description": "UML file for openEHR Base classes, as MagicDraw 19. Contains UML 2.5 standard XMI file."
+            "id": "ITS-BMM-BASE",
+            "type": "url",
+            "title": "Base BMM",
+            "description": "BMM files for openEHR Base classes",
+            "link": "https://github.com/openEHR/specifications-ITS-BMM/tree/master/components/BASE"
         }
     ],
     "jira": {
