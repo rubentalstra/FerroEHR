@@ -35,7 +35,7 @@ a|Real number subtraction.
 
 h|*1..1 +
 (effected)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 other: `<<_real_class,Real>>[1]` +
 ): `<<_real_class,Real>>`
 a|Real number multiplication.

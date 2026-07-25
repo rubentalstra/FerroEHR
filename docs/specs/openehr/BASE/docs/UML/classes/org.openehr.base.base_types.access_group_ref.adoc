@@ -13,5 +13,5 @@ h|*Inherit*
 
 
 h|*Invariants*
-2+a|__Type_validity__: `type.is_equal (“ACCESS_GROUP”)`
+2+a|__Type_validity__: `type.is_equal ("ACCESS_GROUP")`
 |===

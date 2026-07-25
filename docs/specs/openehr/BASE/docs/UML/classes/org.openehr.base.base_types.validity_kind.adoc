@@ -6,7 +6,7 @@ h|*Enumeration*
 2+^h|*VALIDITY_KIND*
 
 h|*Description*
-2+a|An enumeration of three values that may commonly occur in constraint models.
+2+a|An enumeration of three values (plus a deprecated synonym) that may commonly occur in constraint models.
 
 Use as the type of any attribute within this model, which expresses constraint on some attribute in a class in a reference model. For example to indicate validity
 of Date/Time fields.

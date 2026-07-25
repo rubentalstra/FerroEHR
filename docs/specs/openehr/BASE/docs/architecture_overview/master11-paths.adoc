@@ -452,7 +452,7 @@ The second way to identify a top-level structure is by using an exact Version id
 ehr:/347a5490-55ee-4da9-b91a-9bba710f730e/compositions/87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2
 ----
 
-This URI identifies a top-level item whose version identifier is `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`, i.e. the second trunk version of the Versioned Object identified by the GUID, created at an EHR system identified by `net.nhs.rmh`. Note that the mention of a system in the version identifier does not imply that the requested EHR is at that system, only that the top-level object being sought was created at that system.
+This URI identifies a top-level item whose version identifier is `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`, i.e. the second trunk version of the Versioned Object identified by the GUID, created at an EHR system identified by `uk.nhs.ehr1`. Note that the mention of a system in the version identifier does not imply that the requested EHR is at that system, only that the top-level object being sought was created at that system.
  
 ==== Item URIs
 

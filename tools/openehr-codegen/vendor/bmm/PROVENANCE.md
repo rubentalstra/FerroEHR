@@ -4,6 +4,20 @@ Source: https://github.com/openEHR/specifications-ITS-BMM
 Pinned commit: `37b317396eb9b5f03c4c422296a15bdd665028dd` (master)
 Fetched: 2026-07-04 · Layout: **verbatim upstream `components/`** mirror.
 
+**Exception — BASE 1.3.0 json (2026-07-25):**
+`components/BASE/json/openehr_base_1.3.0.bmm.json` is vendored verbatim from
+the component repo https://github.com/openEHR/specifications-BASE
+(`computable/BMM/openehr_base_1.3.0.bmm.json` @
+`e48795762a0648cbe5701be58d42ec5df0c701a7`, master), because ITS-BMM had not
+republished the 2026-07 BASE corrections (SPECBASE-48 invariants, SPECAM-82
+CODE_PHRASE package move, SPECPR-426/386/460 fixes) at our ITS-BMM pin. The
+component repo is the upstream source ITS-BMM redistributes from. Fold back
+to a plain ITS-BMM pin at the next ITS-BMM bump. One knock-on: ITS-BMM had
+independently fixed a doc typo (`senstive`→`sensitive`) in
+`RESOURCE_DESCRIPTION_ITEM.other_details` (see the 2026-07-04 note below);
+the specifications-BASE file still carries the typo, so the generated doc
+comment regresses to authentic component-repo text.
+
 The entire ITS-BMM `components/` tree is vendored under `components/` here —
 all released versions in all three serializations (**json**, **odin**, **yaml**:
 18 files each). The `json` files are upstream's source of truth (`odin`/`yaml`

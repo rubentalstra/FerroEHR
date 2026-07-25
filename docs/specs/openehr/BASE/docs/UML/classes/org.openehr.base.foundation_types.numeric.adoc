@@ -31,7 +31,7 @@ a|Result of subtracting `_other_`. Actual type of result depends on arithmetic b
 
 h|*1..1 +
 (abstract)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 other: `<<_numeric_class,Numeric>>[1]` +
 ): `<<_numeric_class,Numeric>>`
 a|Product by `_other_`. Actual type of result depends on arithmetic balancing rules.

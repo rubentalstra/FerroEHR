@@ -38,10 +38,6 @@ __Pre__: `not day_unknown`
 a|Extract the day part of the date as an Integer, or return 0 if not present.
 
 h|*1..1*
-|*timezone* (): `<<_iso8601_timezone_class,Iso8601_timezone>>`
-a|Timezone; may be Void.
-
-h|*1..1*
 |*month_unknown* (): `<<_boolean_class,Boolean>>`
 a|Indicates whether month in year is unknown. If so, the date is of the form `"YYYY"`.
 

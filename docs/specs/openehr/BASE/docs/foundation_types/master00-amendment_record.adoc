@@ -4,12 +4,39 @@
 |===
 |Issue|Details|Raiser|Completed
 
+4+^h|*BASE Release 1.3.0 (unreleased)*
 
-|[[latest_issue]]1.3.0
+|[[latest_issue]]1.3.5
+| Clarify how `Iso8601_duration._to_seconds()_` converts durations containing years and months to seconds -- add the explicit conversion formula and a cross-reference to the `Time_Definitions` 'average' day-count constants ({spec_tickets}/SPECPR-386[SPECPR-386^]).
+|P Pazos, +
+S Iancu
+|[[latest_issue_date]]24 Jul 2026
+
+|1.3.4
+| Remove the `_timezone_` function from `Iso8601_date`: an ISO 8601 date does not carry a timezone (the time shift applies only to the time part), so the accessor -- carried over from `Iso8601_date_time` / `Iso8601_time` -- is removed ({spec_tickets}/SPECPR-426[SPECPR-426^]).
+|J Mewes
+|24 Jul 2026
+
+|1.3.3
+| Correct documentation typos in the Overview and Time types, and remove the repeated meaning text in the `Interval` `_intersects_` and `_contains_` function documentation ({spec_tickets}/SPECPR-458[SPECPR-458^], {spec_tickets}/SPECPR-459[SPECPR-459^], {spec_tickets}/SPECPR-460[SPECPR-460^]).
+|R Kavanagh
+|23 Jul 2026
+
+|1.3.2
+| Type the `test` argument of the `Container` predicate functions (`there_exists`, `for_all`, `matching`, `select`) as `FUNCTION<TUPLE1<T>, Boolean>` instead of the undefined `Operation` type -- a UML-to-BMM omission in {spec_tickets}/SPECBASE-48[SPECBASE-48^].
+|S Iancu
+|23 Jul 2026
+
+|1.3.1
+| Add BMM definition of BASE and render class asciidoc files ({spec_tickets}/SPECBASE-48[SPECBASE-48^]).
+|S Iancu
+|11 May 2026
+
+|1.3.0
 | Documentation fixes and typos (including {spec_tickets}/SPECPR-391[SPECPR-391^]).
 |S Iancu, +
 P Pazos
-|[[latest_issue_date]]10 Jan 2025
+|10 Jan 2025
 
 |
 |{spec_tickets}/SPECBASE-32[SPECBASE-32^]: Improve Types cross-reference table in Foundation types.

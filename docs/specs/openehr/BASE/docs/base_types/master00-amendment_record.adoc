@@ -4,12 +4,17 @@
 |===
 |Issue|Details|Raiser|Completed
 
-4+^h|*BASE Release 1.3.0*
+4+^h|*BASE Release 1.3.0 (unreleased)*
 
-|[[latest_issue]]1.3.1
+|[[latest_issue]]1.3.2
+| Add BMM definition of BASE and render class asciidoc files ({spec_tickets}/SPECBASE-48[SPECBASE-48^]).
+|S Iancu
+|[[latest_issue_date]]11 May 2026
+
+|1.3.1
 | Adding deprecated VALIDITY_KIND.disallowed (including {spec_tickets}/SPECPR-378[SPECPR-378^] and {spec_tickets}/SPECPR-387[SPECPR-387^]).
 |P Pazos
-|[[latest_issue_date]]07 Mar 2025
+|07 Mar 2025
 
 |
 | Improving definition of ARCHETYPE_ID ({spec_tickets}/SPECBASE-35[SPECBASE-35^]).

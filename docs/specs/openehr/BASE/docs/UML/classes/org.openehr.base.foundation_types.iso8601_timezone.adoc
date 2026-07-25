@@ -47,7 +47,7 @@ a|True if this time zone is partial, i.e. if minutes is missing.
 h|*1..1 +
 (effected)*
 |*is_extended* (): `<<_boolean_class,Boolean>>`
-a|True if this time-zone uses ‘:’ separators.
+a|True if this time-zone uses ':' separators.
 
 h|*1..1*
 |*is_gmt* (): `<<_boolean_class,Boolean>>`

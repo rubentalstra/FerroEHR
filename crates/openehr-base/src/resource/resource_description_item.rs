@@ -18,6 +18,6 @@ pub struct ResourceDescriptionItem {
     pub misuse: Option<String>,
     /// URIs of original clinical document(s) or description of which resource is a formalisation, in the language of this description item; keyed by meaning.
     pub original_resource_uri: Option<std::collections::BTreeMap<String, String>>,
-    /// Additional language-sensitive resource metadata, as a list of name/value pairs.
+    /// Additional language-senstive resource metadata, as a list of name/value pairs.
     pub other_details: Option<std::collections::BTreeMap<String, String>>,
 }
