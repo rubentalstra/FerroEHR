@@ -20,13 +20,13 @@
 | | ehrbase-rs | upstream (Java) |
 |---|---|---|
 | Product | ehrbase-rs 3.9.0 | ehrbase-java 2.34.0 |
-| Run date | 2026-07-24 | 2026-07-24 |
+| Run date | 2026-07-25 | 2026-07-24 |
 | Party statement | `tools/cnf-runner/party/ehrbase-rs/` | `tools/cnf-runner/party/ehrbase-java/` |
 | Stack | root compose, built from the current sources | `docker/sut-ehrbase-java.yml` (official images) |
 
 ## Methodology
 
-Both systems execute the **same committed CNF 2.0 catalogue** (440 case-by-format
+Both systems execute the **same committed CNF 2.0 catalogue** (445 case-by-format
 executions) through the same reference runner (`tools/cnf-runner`), each on
 fresh volumes with its own committed party set: the ixit names the reachable
 instances (upstream declares no readonly principal), and the statement (the
@@ -46,13 +46,13 @@ with a citation, never as silent skips. Verdicts are pure functions of
 
 ## Outcome totals
 
-Runs compared: **ehrbase-rs** (run of 2026-07-24) vs **upstream EHRbase
+Runs compared: **ehrbase-rs** (run of 2026-07-25) vs **upstream EHRbase
 2.34.0** (run of 2026-07-24) — the SAME catalogue through the same
 runner, each with its own committed party statement.
 
 | | executed | passed | failed | errored | skipped | N/A |
 |---|---|---|---|---|---|---|
-| **ehrbase-rs** | 440 | 373 | 0 | 0 | 0 | 67 |
+| **ehrbase-rs** | 445 | 376 | 0 | 0 | 0 | 69 |
 | **upstream (Java)** | 393 | 159 | 128 | 38 | 0 | 68 |
 
 An **errored** row is inconclusive (the wire answered outside the operation's
