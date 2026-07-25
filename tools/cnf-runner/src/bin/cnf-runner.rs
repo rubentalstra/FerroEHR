@@ -59,7 +59,7 @@ use cnf_runner::load::compile_schema;
 use cnf_runner::party::{Results, Statement};
 use cnf_runner::render::{render_certificate, render_report, render_statement};
 use cnf_runner::schema::{emit_all, render, results_schema, statement_schema};
-use cnf_runner::validate::{Context, validate};
+use cnf_runner::validate::{Context, render_coverage_report, validate};
 use cnf_runner::verdict::compute;
 
 #[derive(Parser)]
@@ -426,6 +426,25 @@ fn validate_command(root: &std::path::Path, specs: Option<&std::path::Path>) -> 
     });
     for finding in &findings {
         println!("{finding}");
+    }
+    // Refresh the deterministic wire-surface coverage report when the vendored
+    // spec tree is supplied (it feeds the Axis-1 SM-operation enumeration). The
+    // report lives beside the committed conformance artifacts
+    // (docs/conformance/), derived from the `--specs` path; a write failure is
+    // a warning, never a gate failure.
+    if let Some(specs) = specs
+        && let Some(docs) = specs.parent().and_then(std::path::Path::parent)
+    {
+        let report_path = docs.join("conformance/coverage-report.md");
+        let body = render_coverage_report(&loaded.set, Some(specs));
+        match report_path
+            .parent()
+            .map_or(Ok(()), std::fs::create_dir_all)
+            .and_then(|()| std::fs::write(&report_path, body))
+        {
+            Ok(()) => println!("wrote {}", report_path.display()),
+            Err(e) => eprintln!("warning: cannot write {}: {e}", report_path.display()),
+        }
     }
     println!(
         "{} case(s), {} binding(s), {} finding(s)",

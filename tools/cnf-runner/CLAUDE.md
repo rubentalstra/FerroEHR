@@ -56,7 +56,13 @@ the dev-compose defaults are exported by `scripts/conformance.sh`.
   family, and RM/AQL behaviour), each as its own small isolated case; a
   spec-defined behaviour with no case is a gap to close or an honest boundary
   to register, never a silent omission (`.claude/rules/testing.md` §CNF
-  coverage).
+  coverage). This is MACHINE-ENFORCED by the `surface-coverage` gate
+  (`validate.rs`, issue #271): it enumerates the wire surface from the RELEASED
+  sources only (the SM platform interfaces × their ITS-REST-docs branches —
+  never the OAS) and fails on any SM operation, realized-binding
+  outcome/format branch, or cross-cutting behaviour with neither a covering
+  case nor a cited `artifacts/vocab/wire_surface.yaml` exception; `validate
+  --specs` refreshes `docs/conformance/coverage-report.md`.
 - **Verdicts are computed, never asserted** — pure functions of
   (statement, results, catalogue, capability matrix).
 - **The measurement machinery is conformance-by-measurement** (`perf.rs`,

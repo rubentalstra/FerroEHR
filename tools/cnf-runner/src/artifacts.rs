@@ -24,6 +24,7 @@ use crate::model::case::CaseCore;
 use crate::model::corpus::CorpusManifest;
 use crate::model::register::AmbiguityRegister;
 use crate::model::vocab_files::{OutcomesVocab, SelectorsVocab};
+use crate::model::wire_surface::WireSurface;
 use crate::schema;
 
 /// The fully-typed artifact set (files that failed to load are absent; their
@@ -43,6 +44,10 @@ pub struct ArtifactSet {
     pub journeys: Option<(PathBuf, crate::perf::JourneyCatalogue)>,
     pub corpus: Option<(PathBuf, CorpusManifest)>,
     pub register: Option<(PathBuf, AmbiguityRegister)>,
+    /// The wire-surface coverage register (`vocab/wire_surface.yaml`) — the
+    /// authored, spec-cited exceptions + cross-cutting elements the
+    /// `surface-coverage` gate measures the catalogue against.
+    pub wire_surface: Option<(PathBuf, WireSurface)>,
     /// The corpus manifest's directory (source paths resolve against it).
     pub corpus_dir: Option<PathBuf>,
 }
@@ -122,6 +127,8 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
         &schema::journey_catalogue_schema(),
         "journey-catalogue.schema.json",
     )?;
+    let wire_surface_schema =
+        compile_schema(&schema::wire_surface_schema(), "wire-surface.schema.json")?;
 
     let mut loaded = Loaded::default();
 
@@ -211,6 +218,16 @@ pub fn load_root(root: &Path) -> Result<Loaded, LoadError> {
         &mut |path, p| match load_artifact::<AmbiguityRegister>(p, &register_schema) {
             Ok(v) => {
                 loaded.set.register = Some((path, v));
+                None
+            }
+            Err(e) => Some(e),
+        },
+    );
+    singleton(
+        "vocab/wire_surface.yaml",
+        &mut |path, p| match load_artifact::<WireSurface>(p, &wire_surface_schema) {
+            Ok(v) => {
+                loaded.set.wire_surface = Some((path, v));
                 None
             }
             Err(e) => Some(e),

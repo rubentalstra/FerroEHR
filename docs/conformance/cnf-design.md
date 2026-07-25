@@ -1742,6 +1742,17 @@ community PRs without a bottleneck maintainer — and it is ECC's
 coverage-guard discipline (`tools/conformance/tests/coverage.rs`),
 generalized.
 
+The **`surface-coverage` gate** (issue #271) closes the loop on breadth: it
+enumerates the spec-defined wire surface from the RELEASED sources only — the
+SM platform interfaces (`docs/specs/openehr/SM/`) × their ITS-REST-docs-text
+wire branches, never the OAS — and fails on any behaviour (an SM operation,
+a realized binding's outcome/format branch, or a cross-cutting header/
+negotiation/error-family element) with neither a covering case nor an
+adjudicated `vocab/wire_surface.yaml` exception. Silence is not coverage;
+coverage only ratchets up. `cnf-runner validate --specs …` refreshes the
+deterministic per-interface/per-binding coverage report at
+`docs/conformance/coverage-report.md`.
+
 ### 8.14 The performance & volumetrics schedule
 
 Performance conformance is its own dimension with its own machine-readable
