@@ -287,17 +287,14 @@ fn section(value: &Value, label: Option<&str>, key: String) -> RenderedSection {
 /// Walk one attribute of an RM object, expanding a list into one child per
 /// item (the index goes into the path key, keeping keys unique).
 fn push_attribute(out: &mut Vec<RenderedNode>, attribute: &str, value: &Value, parent: &str) {
-    match value {
-        Value::Array(items) => {
-            for (index, item) in items.iter().enumerate() {
-                let key = format!("{parent}/{attribute}[{index}]");
-                out.push(node(item, attribute, key));
-            }
+    if let Value::Array(items) = value {
+        for (index, item) in items.iter().enumerate() {
+            let key = format!("{parent}/{attribute}[{index}]");
+            out.push(node(item, attribute, key));
         }
-        _ => {
-            let key = format!("{parent}/{attribute}");
-            out.push(node(value, attribute, key));
-        }
+    } else {
+        let key = format!("{parent}/{attribute}");
+        out.push(node(value, attribute, key));
     }
 }
 
