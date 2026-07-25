@@ -7,13 +7,12 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
-use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_SECONDARY, INPUT, LABEL};
 use crate::components::format_view::DocumentPane;
 use crate::components::surface::CARD_PAD;
 use crate::error::AdminUiError;
-use crate::pages::ehrs::table_skeleton;
 
 /// Rows fetched per page of the contribution list (fixed, per the tab's
 /// prev/next paging).

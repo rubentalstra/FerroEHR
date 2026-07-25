@@ -89,6 +89,18 @@ bearer tokens never reach the browser.
   registry, and runtime log control. Appears only when the CDR serves its
   management surface. See [Operations panel](operations.md).
 
+### Paging
+
+Every listing is paged, and the page lives in the **URL** — a page is
+shareable and bookmarkable, a reload lands on the same rows, and the browser's
+back and forward buttons walk the pages. The tables the console holds in full
+(**Templates**, **Queries**) share one footer under the table: which rows are on
+screen out of how many (`26–50 of 137 templates`), previous/next, and a
+rows-per-page choice of 25/50/100 — `?page=` and `?size=`. The AQL-backed
+listings (EHRs, an EHR's compositions) page through `?offset=` links, and the
+audit browser through `?page=` beside its filters. Every one of these controls
+is a plain link, so paging works before the page's WebAssembly loads.
+
 ## Audit log
 
 The **Audit log** screen browses the CDR's security audit trail — who

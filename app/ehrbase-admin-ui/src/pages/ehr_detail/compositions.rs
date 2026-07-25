@@ -9,13 +9,13 @@ use serde_json::Value;
 #[cfg(feature = "ssr")]
 use crate::pages::ehr_detail::commit_version_uid;
 
-use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::field::{BTN_PRIMARY, INPUT, LABEL, SELECT, TEXTAREA};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
-use crate::pages::ehrs::{ResultPage, cell_text, paging_controls, table_skeleton};
+use crate::pages::ehrs::{ResultPage, cell_text, paging_controls};
 // Server-side helpers, compiled only where the #[server] bodies exist.
 #[cfg(feature = "ssr")]
 use crate::pages::ehrs::{aql_request_body, parse_result_set};

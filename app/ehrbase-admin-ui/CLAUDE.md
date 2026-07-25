@@ -33,6 +33,15 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
 - **Views are built in `.into_any()`-erased sections** (rules §1): plain cargo
   builds have no `erase_components`, and monolithic thaw view trees blow rustc's
   layout-recursion depth in `cargo test` codegen.
+- **Every listing table comes from ONE kit — `components::data_table`**: the
+  table shell, the loading skeleton (`table_skeleton`; never re-declare a
+  per-screen copy), the console-wide `PAGE_SIZE`, and the pagination footer
+  (`table_footer`) whose page + window size are URL state (`?page=`/`?size=`,
+  read in SETUP via `paging_from_url` — never inside a `Suspend`, so paging
+  re-renders the window without refetching). The footer's row math
+  (`page_window`/`page_rows`) is pure and unit-tested; the AQL-windowed tables
+  (EHRs, compositions, results) keep their offset controls until the wire
+  reports a total.
 
 ## Error feedback: toast vs inline (one rule, 2026-07-25)
 

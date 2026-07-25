@@ -63,6 +63,11 @@ editor to run it.
 
 ![Stored queries](img/queries/queries.png)
 
+The table is paged by the shared footer under it — rows on screen out of how
+many, previous/next, and 25/50/100 rows per page, all in the URL (see
+[Paging](index.md#paging)). The namespace panel beside it is derived from the
+same listing and shows every namespace, whichever page you are on.
+
 Each stored query row also offers **Open in editor**, which loads that
 version's query text into the raw AQL editor and pre-fills the namespace,
 name, and version fields — with the version set to the *next* one, so

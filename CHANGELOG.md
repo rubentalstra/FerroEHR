@@ -17,6 +17,17 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: the stored-query and template tables are paged** (#298). Both
+  listings now carry the console's shared pagination footer — which rows are on
+  screen out of how many (`26–50 of 137 templates`), previous/next, and a
+  rows-per-page choice (25/50/100). The page and the window size live in the
+  address bar (`?page=`/`?size=`), so a page is shareable and survives a reload,
+  the browser's back/forward walk the pages, and the controls work before the
+  console's WebAssembly bundle has loaded. The templates filter still narrows the
+  rows client-side; the footer counts what the filter left. Deleting the last row
+  of the last page lands on rows rather than on a blank table, and a hand-typed
+  window size is clamped to a sane range.
+
 - **Admin console: stored-query versions are reachable** (#336). Both save
   surfaces (the point-and-click builder and the raw AQL editor) now carry an
   optional **Version** field beside the namespace and name, and state under the

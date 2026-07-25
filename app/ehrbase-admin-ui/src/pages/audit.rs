@@ -23,14 +23,11 @@ use leptos::{component, server};
 use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
 
-use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::data_table::{CELL, CELL_MONO, PAGE_SIZE, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::INPUT;
 use crate::components::page_header::PageHeader;
 use crate::error::AdminUiError;
-
-/// Rows per page (`_count`).
-const PAGE_SIZE: u32 = 25;
 
 /// One distilled audit record: the promoted facts the table shows plus the
 /// full stored `AuditEvent` JSON for the raw view. Client-safe fields only
@@ -421,17 +418,6 @@ fn audit_table(
         </Transition>
     }
     .into_any()
-}
-
-/// The `<Transition>` fallback while a page loads.
-fn table_skeleton() -> impl IntoView {
-    view! {
-        <thaw::Skeleton>
-            <thaw::SkeletonItem class="h-6 mb-2" />
-            <thaw::SkeletonItem class="h-6 mb-2" />
-            <thaw::SkeletonItem class="h-6" />
-        </thaw::Skeleton>
-    }
 }
 
 /// Render one loaded page: the store-disabled state, the empty state, or the

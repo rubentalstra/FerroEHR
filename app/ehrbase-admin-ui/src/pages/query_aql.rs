@@ -20,12 +20,13 @@ use leptos::prelude::*;
 use leptos_meta::Title;
 use leptos_router::hooks::use_query_map;
 
+use crate::components::data_table::table_skeleton;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, TEXTAREA};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::CARD_PAD;
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
-use crate::pages::ehrs::{ResultPage, table_skeleton};
+use crate::pages::ehrs::ResultPage;
 use crate::pages::query_builder::{
     SaveAction, SaveFields, export_forms, paging_buttons, results_view, save_as_fields,
 };
