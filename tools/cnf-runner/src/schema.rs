@@ -13,6 +13,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 
 use crate::model::vocab_files::{BODY_SELECTOR_TOKENS, HEADER_MATCHER_FORMS};
+use crate::model::wire_surface::SurfaceReason;
 use crate::party::{OutcomeStatus, VerificationPackStatus};
 use crate::vocab::{
     CaseKind, CaseStatus, Component, CorpusFormat, Disposition, FormatName, HttpMethod, Iteration,
@@ -1209,6 +1210,89 @@ pub fn journey_catalogue_schema() -> Value {
     })
 }
 
+/// `vocab/wire_surface.yaml` — the wire-surface coverage register (the
+/// `surface-coverage` gate's authored, spec-cited exceptions + cross-cutting
+/// elements). Every `source` is a released-spec / ITS-REST-docs citation,
+/// never the vendored OAS (owner ruling 2026-07-24).
+#[must_use]
+pub fn wire_surface_schema() -> Value {
+    let reason = json!({ "enum": tokens(SurfaceReason::ALL) });
+    json!({
+        "$schema": DRAFT,
+        "$id": urn("wire-surface"),
+        "title": "CNF 2.0 wire-surface coverage register",
+        "description": "The authored, spec-cited record of the wire surface the catalogue is measured against for TOTAL coverage (issue #271): Axis-1 SM operations with no its-rest binding, Axis-2 per-binding outcome/format branches no case exercises, and Axis-3 cross-cutting wire behaviours mapped to cases or an adjudicated exception. Every source is a released spec component / ITS-REST docs text, never the vendored OAS.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+            "sm_operations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["operation", "reason", "source"],
+                    "properties": {
+                        "operation": { "type": "string", "pattern": SM_OPERATION_PATTERN },
+                        "reason": reason.clone(),
+                        "source": { "type": "string", "minLength": 1 },
+                        "note": { "type": "string", "minLength": 1 }
+                    }
+                }
+            },
+            "branches": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["binding", "reason", "source"],
+                    "oneOf": [
+                        { "required": ["outcome"], "not": { "required": ["format"] } },
+                        { "required": ["format"], "not": { "required": ["outcome"] } }
+                    ],
+                    "properties": {
+                        "binding": { "type": "string", "pattern": SM_OPERATION_PATTERN },
+                        "variant": { "type": "string", "minLength": 1 },
+                        "outcome": { "enum": tokens(OutcomeKind::ALL) },
+                        "format": { "enum": tokens(FormatName::ALL) },
+                        "reason": reason.clone(),
+                        "source": { "type": "string", "minLength": 1 },
+                        "note": { "type": "string", "minLength": 1 }
+                    }
+                }
+            },
+            "elements": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["id", "description", "source"],
+                    "oneOf": [
+                        { "required": ["covered_by"], "not": { "required": ["exception"] },
+                          "properties": { "covered_by": { "minItems": 1 } } },
+                        { "required": ["exception"], "not": { "required": ["covered_by"] } }
+                    ],
+                    "properties": {
+                        "id": { "type": "string", "pattern": OPTION_TAG_PATTERN },
+                        "description": { "type": "string", "minLength": 1 },
+                        "source": { "type": "string", "minLength": 1 },
+                        "covered_by": string_array(Some(CASE_ID_PATTERN)),
+                        "exception": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["reason"],
+                            "properties": {
+                                "reason": reason.clone(),
+                                "register": { "type": "string", "pattern": AMBIGUITY_ID_PATTERN },
+                                "note": { "type": "string", "minLength": 1 }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
 /// The runner-verification transcript (pack part 1).
 #[must_use]
 pub fn transcript_schema() -> Value {
@@ -1293,6 +1377,7 @@ pub fn emit_all() -> Vec<(&'static str, Value)> {
         ("ixit.schema.json", ixit_schema()),
         ("performance-case.schema.json", performance_case_schema()),
         ("journey-catalogue.schema.json", journey_catalogue_schema()),
+        ("wire-surface.schema.json", wire_surface_schema()),
         ("stress.schema.json", stress_schema()),
         ("aql-probe.schema.json", aql_probe_schema()),
         ("transcript.schema.json", transcript_schema()),

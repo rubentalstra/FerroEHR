@@ -9,3 +9,4 @@ pub(crate) mod de;
 pub mod register;
 pub mod value;
 pub mod vocab_files;
+pub mod wire_surface;

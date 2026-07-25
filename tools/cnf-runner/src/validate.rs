@@ -9,7 +9,7 @@
 //! tree for the two resolution checks); every violation is one typed
 //! [`Finding`].
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use crate::artifacts::ArtifactSet;
@@ -17,9 +17,11 @@ use crate::ids::{CaseId, CorpusKey, SmOperationRef, ViewName};
 use crate::literal::{Literal, ViolationRef};
 use crate::load::LoadError;
 use crate::model::assertion::{Assertion, EquivalentTarget, assertion_refs};
-use crate::model::case::{CaseCore, ExpectSpec, MatrixCell, Parameters};
+use crate::model::binding::OperationBinding;
+use crate::model::case::{CaseCore, ExpectSpec, FlowStep, MatrixCell, Parameters};
+use crate::model::wire_surface::WireSurface;
 use crate::refgrammar::{CaptureField, TimeExpr, ValueRef};
-use crate::vocab::{CaseKind, Iteration, OutcomeKind};
+use crate::vocab::{CaseKind, FormatName, Iteration, OutcomeKind};
 
 /// The check taxonomy (one id per machine gate).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -56,6 +58,12 @@ pub enum CheckId {
     /// reconciliation of every performance workload (write share inside the
     /// 10:1..50:1 derivation band; stage templates resolve in the corpus).
     JourneyEnvelope,
+    /// Total wire-surface coverage (issue #271): every spec-defined wire
+    /// behaviour — SM operations (Axis 1), per-binding outcome/format branches
+    /// (Axis 2), cross-cutting behaviours (Axis 3) — is exercised by ≥ 1 case
+    /// or carries an adjudicated `vocab/wire_surface.yaml` exception. Silence
+    /// is not coverage.
+    SurfaceCoverage,
 }
 
 impl CheckId {
@@ -78,6 +86,7 @@ impl CheckId {
             Self::CapabilityTier => "capability-tier",
             Self::VocabDrift => "vocab-drift",
             Self::JourneyEnvelope => "journey-envelope",
+            Self::SurfaceCoverage => "surface-coverage",
         }
     }
 }
@@ -164,6 +173,7 @@ pub fn validate(ctx: &Context<'_>) -> Vec<Finding> {
     check_corpus_integrity(ctx.set, &mut findings);
     check_vocab_drift(ctx.set, &mut findings);
     check_journey_envelope(ctx.set, &mut findings);
+    check_surface_coverage(ctx.set, ctx.spec_root, &mut findings);
 
     findings
 }
@@ -1172,5 +1182,653 @@ fn check_vocab_drift(set: &ArtifactSet, findings: &mut Vec<Finding>) {
                 );
             }
         }
+    }
+}
+
+// ── surface coverage (issue #271) ───────────────────────────────────────────
+
+/// The platform interfaces the CNF catalogue speaks — the Axis-1 SM-operation
+/// enumeration domain. The set is the openEHR SM Platform Service Model's
+/// platform interfaces (`docs/specs/openehr/SM/docs/UML/classes/`), which
+/// anchor the operation identities the case cores use; it is NOT derived from
+/// the vendored OAS (owner ruling 2026-07-24, `.claude/rules/spec-adherence.md`
+/// — the OAS is `emit-rest` codegen input, never a surface source). Every
+/// listed interface has a vendored `i_*.adoc` class export (a missing file is
+/// itself a `surface-coverage` finding).
+///
+/// Interfaces are pinned even when the catalogue binds none of their operations
+/// (`I_EHR_INDEX`, `I_TERMINOLOGY_SERVICE`, `I_VALIDITY_CHECKER`,
+/// `I_SUBJECT_PROXY_SERVICE`, `I_DATA_BINDING`, `I_MESSAGE_SERVICE`,
+/// `I_SYSTEM_LOG`): ITS-REST 1.1.0 surfaces no wire for those SM interfaces, so
+/// their operations become explicit, individually cited `off_wire` entries in
+/// `vocab/wire_surface.yaml` — a visible, ratchetable boundary, never a silent
+/// omission. `I_ADMIN_ARCHIVE` / `I_ADMIN_DUMP_LOAD` are pinned alongside
+/// `I_ADMIN_SERVICE` because the catalogue binds them (unrealized) as the SM
+/// Admin surface. Sub-interface navigation accessors (return type an
+/// interface — `i_ehr`, `i_party`, `i_party_relationship`) are not service
+/// operations and are excluded by [`sm_interface_operations`].
+const PLATFORM_INTERFACES: &[&str] = &[
+    "I_EHR_SERVICE",
+    "I_EHR_STATUS",
+    "I_EHR_COMPOSITION",
+    "I_EHR_DIRECTORY",
+    "I_EHR_CONTRIBUTION",
+    "I_DEFINITION_ADL14",
+    "I_DEFINITION_ADL2",
+    "I_DEFINITION_QUERY",
+    "I_QUERY_SERVICE",
+    "I_DEMOGRAPHIC_SERVICE",
+    "I_PARTY",
+    "I_PARTY_RELATIONSHIP",
+    "I_VALIDITY_CHECKER",
+    "I_ADMIN_SERVICE",
+    "I_ADMIN_ARCHIVE",
+    "I_ADMIN_DUMP_LOAD",
+    "I_EHR_INDEX",
+    "I_TERMINOLOGY_SERVICE",
+    "I_MESSAGE_SERVICE",
+    "I_EHR_EXTRACT_SERVICE",
+    "I_TDD_SERVICE",
+    "I_SUBJECT_PROXY_SERVICE",
+    "I_DATA_BINDING",
+    "I_SYSTEM_LOG",
+];
+
+/// Parse the service operations of an SM interface from its vendored UML class
+/// export — the same table shape [`resolve_sm_operation`] resolves against.
+/// Operation rows are `|*<name>* (` (a lower-snake signature name followed by
+/// its parameter list); sub-interface navigation accessors (`i_*`) are
+/// excluded (they return an interface, not a service result).
+///
+/// # Errors
+/// Returns a message when the interface has no vendored class export.
+fn sm_interface_operations(spec_root: &Path, interface: &str) -> Result<Vec<String>, String> {
+    let file = sm_class_file(spec_root, interface);
+    let text = std::fs::read_to_string(&file).map_err(|_| {
+        format!(
+            "interface {interface} has no vendored SM class export ({})",
+            file.display()
+        )
+    })?;
+    let mut ops: Vec<String> = Vec::new();
+    for line in text.lines() {
+        let Some(rest) = line.strip_prefix("|*") else {
+            continue;
+        };
+        let Some((name, tail)) = rest.split_once("* ") else {
+            continue;
+        };
+        if !tail.starts_with('(') || name.starts_with("i_") {
+            continue;
+        }
+        let lower_snake = name.chars().next().is_some_and(|c| c.is_ascii_lowercase())
+            && name
+                .chars()
+                .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+        if lower_snake && !ops.iter().any(|o| o == name) {
+            ops.push(name.to_owned());
+        }
+    }
+    Ok(ops)
+}
+
+/// The three coverage axes (Axis 1 needs the vendored SM tree; Axes 2 & 3 are
+/// pure over the artifact set). An absent `wire_surface.yaml` is treated as an
+/// empty register — so every gap surfaces as a finding rather than passing
+/// silently.
+fn check_surface_coverage(
+    set: &ArtifactSet,
+    spec_root: Option<&Path>,
+    findings: &mut Vec<Finding>,
+) {
+    let empty = WireSurface::default();
+    let wire_surface = set.wire_surface.as_ref().map_or(&empty, |(_, w)| w);
+    if let Some(spec_root) = spec_root {
+        check_surface_sm_operations(set, spec_root, wire_surface, findings);
+    }
+    check_binding_branch_coverage(set, wire_surface, findings);
+    check_wire_surface_elements(set, wire_surface, findings);
+}
+
+/// Axis 1 — every SM operation of a pinned platform interface has an `its-rest`
+/// binding (realized or unrealized) or a cited `sm_operations` exception.
+fn check_surface_sm_operations(
+    set: &ArtifactSet,
+    spec_root: &Path,
+    wire_surface: &WireSurface,
+    findings: &mut Vec<Finding>,
+) {
+    for interface in PLATFORM_INTERFACES {
+        let ops = match sm_interface_operations(spec_root, interface) {
+            Ok(ops) => ops,
+            Err(message) => {
+                push(findings, CheckId::SurfaceCoverage, interface, message);
+                continue;
+            }
+        };
+        for name in ops {
+            let Ok(op) = SmOperationRef::parse(&format!("{interface}.{name}")) else {
+                continue;
+            };
+            let bound = set.bindings.iter().any(|(_, b)| b.sm_operation == op);
+            if bound || wire_surface.sm_exception(&op).is_some() {
+                continue;
+            }
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                &op.to_string(),
+                "SM operation has no its-rest binding and no wire_surface.yaml sm_operations \
+                 exception — add a binding (realized or unrealized) or a cited \
+                 off_wire/variant_of/coverage_gap entry"
+                    .to_owned(),
+            );
+        }
+    }
+    // Ratchet: an sm_operations exception for an operation that now HAS a
+    // binding is stale and must be removed (coverage only ratchets up).
+    for ex in &wire_surface.sm_operations {
+        if set
+            .bindings
+            .iter()
+            .any(|(_, b)| b.sm_operation == ex.operation)
+        {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                &ex.operation.to_string(),
+                "wire_surface.yaml sm_operations exception is redundant — the operation now has \
+                 an its-rest binding; remove the exception"
+                    .to_owned(),
+            );
+        }
+    }
+}
+
+/// The `(operation, variant)` key identifying a binding realization.
+type BranchKey = (SmOperationRef, Option<String>);
+
+/// Mirror the interpreter's binding selection (`exec::driver::binding_for_variant`):
+/// a step's `variant` selects the binding declaring it, else the variant-less
+/// binding for the operation.
+fn select_binding_for_step<'a>(
+    set: &'a ArtifactSet,
+    case: &CaseCore,
+    step: &FlowStep,
+) -> Option<&'a OperationBinding> {
+    let op = if step.call.contains('.') {
+        SmOperationRef::parse(&step.call).ok()?
+    } else {
+        case.sm_operation.as_ref()?.sibling(&step.call)
+    };
+    if let Some(v) = &step.variant
+        && let Some((_, b)) = set
+            .bindings
+            .iter()
+            .find(|(_, b)| b.sm_operation == op && b.variant.as_deref() == Some(v.as_str()))
+    {
+        return Some(b);
+    }
+    set.bindings
+        .iter()
+        .find(|(_, b)| b.sm_operation == op && b.variant.is_none())
+        .map(|(_, b)| b)
+}
+
+/// The effective wire format a step exercises: its explicit `format`, else the
+/// case's format axis, else the canonical-JSON default the driver falls back to
+/// when neither is set (`exec::driver` sets no `Content-Type`/`Accept`).
+fn step_format(case: &CaseCore, step: &FlowStep) -> FormatName {
+    step.format
+        .or_else(|| case.formats.first().copied())
+        .unwrap_or(FormatName::CanonicalJson)
+}
+
+/// Compute, per realized binding, the outcome kinds and formats the catalogue
+/// exercises — the inverse of `check_binding_completeness`.
+fn exercised_branches(
+    set: &ArtifactSet,
+) -> BTreeMap<BranchKey, (BTreeSet<OutcomeKind>, BTreeSet<FormatName>)> {
+    let mut map: BTreeMap<BranchKey, (BTreeSet<OutcomeKind>, BTreeSet<FormatName>)> =
+        BTreeMap::new();
+    for (_, case) in &set.cases {
+        for step in &case.flow {
+            let Some(binding) = select_binding_for_step(set, case, step) else {
+                continue;
+            };
+            if binding.is_unrealized() {
+                continue;
+            }
+            let key = (binding.sm_operation.clone(), binding.variant.clone());
+            let entry = map.entry(key).or_default();
+            for kind in step_observable_kinds(case, step) {
+                entry.0.insert(kind);
+            }
+            entry.1.insert(step_format(case, step));
+        }
+    }
+    map
+}
+
+/// A binding's label for findings/report (`I_X.op` or `I_X.op#variant`).
+fn binding_label(binding: &OperationBinding) -> String {
+    match &binding.variant {
+        Some(v) => format!("{}#{v}", binding.sm_operation),
+        None => binding.sm_operation.to_string(),
+    }
+}
+
+/// The published token of a format (matches `vocab/wire_surface.yaml`).
+fn format_token(format: FormatName) -> &'static str {
+    match format {
+        FormatName::CanonicalJson => "canonical-json",
+        FormatName::CanonicalXml => "canonical-xml",
+        FormatName::WtFlat => "wt-flat",
+        FormatName::WtStructured => "wt-structured",
+        FormatName::Wt => "wt",
+    }
+}
+
+/// The route-table-wide outcome tokens (mapped once in `vocab/selectors.yaml`,
+/// exempt from per-binding coverage).
+fn universal_outcome_tokens(set: &ArtifactSet) -> Vec<&str> {
+    set.selectors
+        .as_ref()
+        .and_then(|(_, s)| s.universal_outcomes.as_deref())
+        .unwrap_or_default()
+        .iter()
+        .map(|(k, _)| k.as_str())
+        .collect()
+}
+
+/// Axis 2 — every realized binding's declared outcome key and format is
+/// exercised by ≥ 1 case step or carries a cited `branches` exception (universal
+/// outcomes exempt).
+fn check_binding_branch_coverage(
+    set: &ArtifactSet,
+    wire_surface: &WireSurface,
+    findings: &mut Vec<Finding>,
+) {
+    let exercised = exercised_branches(set);
+    let universal = universal_outcome_tokens(set);
+    for (_, binding) in &set.bindings {
+        if binding.is_unrealized() {
+            continue;
+        }
+        let variant = binding.variant.as_deref();
+        let key = (binding.sm_operation.clone(), binding.variant.clone());
+        let done = exercised.get(&key);
+        let outcomes_done = done.map(|d| &d.0);
+        let formats_done = done.map(|d| &d.1);
+        let who = binding_label(binding);
+        for (okey, _) in binding.outcomes.as_deref().unwrap_or_default() {
+            let kind = okey.0;
+            if universal.contains(&kind.token())
+                || outcomes_done.is_some_and(|s| s.contains(&kind))
+                || wire_surface
+                    .outcome_exception(&binding.sm_operation, variant, kind)
+                    .is_some()
+            {
+                continue;
+            }
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                &who,
+                format!(
+                    "outcome `{}` is declared by the binding but no case exercises it and no \
+                     wire_surface.yaml branch exception covers it",
+                    kind.token()
+                ),
+            );
+        }
+        for format in &binding.formats {
+            if formats_done.is_some_and(|s| s.contains(format))
+                || wire_surface
+                    .format_exception(&binding.sm_operation, variant, *format)
+                    .is_some()
+            {
+                continue;
+            }
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                &who,
+                format!(
+                    "format `{}` is declared by the binding but no case exercises it and no \
+                     wire_surface.yaml branch exception covers it",
+                    format_token(*format)
+                ),
+            );
+        }
+    }
+}
+
+/// Axis 3 — every cross-cutting wire-surface element resolves (its `covered_by`
+/// cases exist; its exception cites a real register entry), plus register
+/// self-consistency (element shapes, stale branch exceptions).
+fn check_wire_surface_elements(
+    set: &ArtifactSet,
+    wire_surface: &WireSurface,
+    findings: &mut Vec<Finding>,
+) {
+    if let Err(messages) = wire_surface.check_invariants() {
+        for message in messages {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                "vocab/wire_surface.yaml",
+                message,
+            );
+        }
+    }
+    let case_ids: BTreeSet<&str> = set.cases.iter().map(|(_, c)| c.id.as_str()).collect();
+    for element in &wire_surface.elements {
+        for cid in &element.covered_by {
+            if !case_ids.contains(cid.as_str()) {
+                push(
+                    findings,
+                    CheckId::SurfaceCoverage,
+                    &element.id,
+                    format!("covered_by case {cid} does not exist"),
+                );
+            }
+        }
+        if let Some(ex) = &element.exception
+            && let Some(reg) = &ex.register
+            && set
+                .register
+                .as_ref()
+                .is_none_or(|(_, r)| r.get(reg).is_none())
+        {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                &element.id,
+                format!("exception cites {reg} which is not in the ambiguity register"),
+            );
+        }
+    }
+    // Ratchet: a branch exception matching no realized binding is stale.
+    for branch in &wire_surface.branches {
+        let matches = set.bindings.iter().any(|(_, b)| {
+            !b.is_unrealized()
+                && b.sm_operation == branch.binding
+                && (branch.variant.is_none() || b.variant.as_deref() == branch.variant.as_deref())
+        });
+        if !matches {
+            push(
+                findings,
+                CheckId::SurfaceCoverage,
+                &branch.binding.to_string(),
+                "wire_surface.yaml branch exception matches no realized binding (stale)".to_owned(),
+            );
+        }
+    }
+}
+
+/// Render the deterministic coverage report (`docs/conformance/coverage-report.md`):
+/// per-interface SM-operation status, per-binding outcome/format coverage, and
+/// the cross-cutting wire-surface table. Stable ordering, no timestamps — the
+/// same inputs always render byte-identical output.
+///
+/// Axis 1 (the per-interface section) renders only when `spec_root` is
+/// supplied (it reads the vendored SM tree).
+#[must_use]
+#[allow(clippy::too_many_lines)] // one deterministic report-rendering seam
+pub fn render_coverage_report(set: &ArtifactSet, spec_root: Option<&Path>) -> String {
+    use std::fmt::Write;
+
+    let empty = WireSurface::default();
+    let wire_surface = set.wire_surface.as_ref().map_or(&empty, |(_, w)| w);
+
+    let mut out = String::new();
+    out.push_str(
+        "# CNF wire-surface coverage report\n\n\
+         Generated by `cnf-runner validate --specs …` (the `surface-coverage` gate, issue #271). \
+         Deterministic — regenerated in place, never hand-edited. The wire surface is enumerated \
+         from the RELEASED spec components (the SM platform interfaces + the ITS-REST docs text), \
+         never the vendored OAS. Every un-exercised behaviour is either a covering case or a \
+         cited `vocab/wire_surface.yaml` exception; silence is not coverage.\n\n",
+    );
+
+    // ── Axis 1 ──
+    if let Some(spec_root) = spec_root {
+        out.push_str("## Axis 1 — SM-operation coverage (per platform interface)\n\n");
+        out.push_str("| Interface | Operations | Realized | Unrealized | Off-wire / exception |\n");
+        out.push_str("|---|--:|--:|--:|--:|\n");
+        for interface in PLATFORM_INTERFACES {
+            let Ok(ops) = sm_interface_operations(spec_root, interface) else {
+                let _ = writeln!(out, "| {interface} | (no vendored SM class export) | | | |");
+                continue;
+            };
+            let (mut realized, mut unrealized, mut excepted) = (0_usize, 0_usize, 0_usize);
+            for name in &ops {
+                let Ok(op) = SmOperationRef::parse(&format!("{interface}.{name}")) else {
+                    continue;
+                };
+                let binding = set.bindings.iter().find(|(_, b)| b.sm_operation == op);
+                match binding {
+                    Some((_, b)) if b.is_unrealized() => unrealized += 1,
+                    Some(_) => realized += 1,
+                    None if wire_surface.sm_exception(&op).is_some() => excepted += 1,
+                    None => {}
+                }
+            }
+            let _ = writeln!(
+                out,
+                "| {interface} | {} | {realized} | {unrealized} | {excepted} |",
+                ops.len()
+            );
+        }
+        out.push('\n');
+    }
+
+    // ── Axis 2 ──
+    out.push_str("## Axis 2 — per-binding outcome/format coverage\n\n");
+    out.push_str("| Binding | Outcomes covered | Formats covered |\n");
+    out.push_str("|---|---|---|\n");
+    let exercised = exercised_branches(set);
+    let universal = universal_outcome_tokens(set);
+    let mut realized: Vec<&OperationBinding> = set
+        .bindings
+        .iter()
+        .map(|(_, b)| b)
+        .filter(|b| !b.is_unrealized())
+        .collect();
+    realized.sort_by_key(|b| binding_label(b));
+    for binding in realized {
+        let variant = binding.variant.as_deref();
+        let key = (binding.sm_operation.clone(), binding.variant.clone());
+        let done = exercised.get(&key);
+        let (mut ocov, mut oexc, mut ogap) = (0_usize, 0_usize, 0_usize);
+        for (okey, _) in binding.outcomes.as_deref().unwrap_or_default() {
+            let kind = okey.0;
+            if universal.contains(&kind.token()) {
+                continue;
+            }
+            if done.is_some_and(|d| d.0.contains(&kind)) {
+                ocov += 1;
+            } else if wire_surface
+                .outcome_exception(&binding.sm_operation, variant, kind)
+                .is_some()
+            {
+                oexc += 1;
+            } else {
+                ogap += 1;
+            }
+        }
+        let (mut fcov, mut fexc, mut fgap) = (0_usize, 0_usize, 0_usize);
+        for format in &binding.formats {
+            if done.is_some_and(|d| d.1.contains(format)) {
+                fcov += 1;
+            } else if wire_surface
+                .format_exception(&binding.sm_operation, variant, *format)
+                .is_some()
+            {
+                fexc += 1;
+            } else {
+                fgap += 1;
+            }
+        }
+        let _ = writeln!(
+            out,
+            "| `{}` | {ocov} exercised / {oexc} excepted / {ogap} gap | {fcov} exercised / {fexc} excepted / {fgap} gap |",
+            binding_label(binding)
+        );
+    }
+    out.push('\n');
+
+    // ── Axis 3 ──
+    out.push_str("## Axis 3 — cross-cutting wire-surface behaviours\n\n");
+    out.push_str("| Element | Coverage |\n|---|---|\n");
+    for element in &wire_surface.elements {
+        let coverage = if let Some(ex) = &element.exception {
+            match &ex.register {
+                Some(reg) => format!("exception: {} ({reg})", ex.reason.token()),
+                None => format!("exception: {}", ex.reason.token()),
+            }
+        } else {
+            format!("{} case(s)", element.covered_by.len())
+        };
+        let _ = writeln!(out, "| `{}` | {coverage} |", element.id);
+    }
+    out.push('\n');
+    out
+}
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::panic, clippy::expect_used)] // test assertions/fixtures
+mod surface_tests {
+    use super::*;
+
+    /// The Axis-1 enumeration source is the vendored SM class tree, never the
+    /// OAS (exit criterion 5, issue #271; owner ruling 2026-07-24). The path
+    /// [`sm_class_file`] builds is under `SM/docs/UML/classes/` and names no
+    /// OAS artifact.
+    #[test]
+    fn sm_operation_source_is_the_sm_tree_never_the_oas() {
+        let file = sm_class_file(Path::new("/root"), "I_EHR_SERVICE");
+        let text = file.to_string_lossy();
+        assert!(
+            text.ends_with("SM/docs/UML/classes/i_ehr_service.adoc"),
+            "{text}"
+        );
+        assert!(!text.contains("oas") && !text.contains("rest-oas") && !text.contains("openapi"));
+        // Every pinned interface is an SM `I_`-prefixed interface name.
+        assert!(PLATFORM_INTERFACES.iter().all(|i| i.starts_with("I_")));
+    }
+
+    #[test]
+    fn sm_interface_operations_parses_service_ops_only() {
+        // A minimal SM class export: operation rows (`|*name* (`), a
+        // sub-interface accessor (`|*i_ehr* (`), and non-operation header
+        // cells (`h|*…*`, an uppercase interface cell) that must be ignored.
+        let adoc = "\
+|===\n\
+h|*Interface*\n\
+2+^h|*I_FIXTURE*\n\
+h|*Functions*\n\
+^h|*Signature*\n\
+h|*1..1*\n\
+|*create_thing* ( +\n\
+    x: STRING +\n\
+): THING\n\
+h|*1..1*\n\
+|*get_thing* ( +\n\
+): THING\n\
+h|*1..1*\n\
+|*i_ehr* ( +\n\
+): I_EHR\n\
+|===\n";
+        let dir = assert_fs::TempDir::new().unwrap();
+        let classes = dir.path().join("SM/docs/UML/classes");
+        std::fs::create_dir_all(&classes).unwrap();
+        std::fs::write(classes.join("i_fixture.adoc"), adoc).unwrap();
+
+        let ops = sm_interface_operations(dir.path(), "I_FIXTURE").unwrap();
+        assert_eq!(ops, vec!["create_thing".to_owned(), "get_thing".to_owned()]);
+        // A missing class export is an error, not an empty list.
+        assert!(sm_interface_operations(dir.path(), "I_ABSENT").is_err());
+    }
+
+    fn build_set(with_exception: bool) -> ArtifactSet {
+        let binding: OperationBinding = serde_json::from_value(serde_json::json!({
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "its": "its-rest",
+            "request": { "method": "POST", "path": "/ehr" },
+            "formats": ["canonical-json"],
+            "outcomes": { "created": { "status": 201 }, "already_exists": { "status": 409 } }
+        }))
+        .unwrap();
+        let case: CaseCore = serde_json::from_value(serde_json::json!({
+            "id": "T-1", "kind": "functional", "component": "EHR",
+            "sm_operation": "I_EHR_SERVICE.create_ehr",
+            "test_purpose": "t", "description": "d", "spec_refs": ["SM i_ehr_service.adoc"],
+            "capabilities": [],
+            "flow": [ { "step": 1, "call": "create_ehr", "expect": "created" } ]
+        }))
+        .unwrap();
+        let mut set = ArtifactSet::default();
+        set.bindings.push((PathBuf::from("b.yaml"), binding));
+        set.cases.push((PathBuf::from("c.yaml"), case));
+        if with_exception {
+            let wire: WireSurface = serde_json::from_value(serde_json::json!({
+                "branches": [ {
+                    "binding": "I_EHR_SERVICE.create_ehr", "outcome": "already_exists",
+                    "reason": "coverage_gap",
+                    "source": "ITS-REST Requests_and_responses.md §HTTP status codes"
+                } ]
+            }))
+            .unwrap();
+            set.wire_surface = Some((PathBuf::from("wire_surface.yaml"), wire));
+        }
+        set
+    }
+
+    #[test]
+    fn axis2_flags_unexercised_outcome_then_exception_suppresses_it() {
+        // `created` is exercised by the case; `already_exists` is declared but
+        // never exercised → a surface-coverage finding.
+        let set = build_set(false);
+        let empty = WireSurface::default();
+        let mut findings = Vec::new();
+        check_binding_branch_coverage(&set, &empty, &mut findings);
+        assert!(
+            findings.iter().any(
+                |f| f.check == CheckId::SurfaceCoverage && f.message.contains("already_exists")
+            ),
+            "expected an already_exists gap, got: {findings:?}"
+        );
+
+        // A branch exception for the same outcome suppresses the finding.
+        let set = build_set(true);
+        let wire = set.wire_surface.as_ref().map(|(_, w)| w).unwrap();
+        let mut findings = Vec::new();
+        check_binding_branch_coverage(&set, wire, &mut findings);
+        assert!(
+            findings.is_empty(),
+            "the branch exception should suppress the gap, got: {findings:?}"
+        );
+    }
+
+    #[test]
+    fn axis3_element_covered_by_must_resolve() {
+        let set = build_set(false);
+        let wire: WireSurface = serde_json::from_value(serde_json::json!({
+            "elements": [ {
+                "id": "x", "description": "d",
+                "source": "ITS-REST Requests_and_responses.md §Location",
+                "covered_by": ["NO-SUCH-CASE"]
+            } ]
+        }))
+        .unwrap();
+        let mut findings = Vec::new();
+        check_wire_surface_elements(&set, &wire, &mut findings);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.check == CheckId::SurfaceCoverage && f.message.contains("NO-SUCH-CASE")),
+            "expected an unresolved covered_by finding, got: {findings:?}"
+        );
     }
 }

@@ -165,6 +165,11 @@ const DEFECTS: &[(&str, &str, &str)] = &[
         "vocab/outcomes.yaml",
         "vocab-drift",
     ),
+    (
+        "wire-surface-empty.yaml",
+        "vocab/wire_surface.yaml",
+        "surface-coverage",
+    ),
 ];
 
 fn copy_tree(from: &std::path::Path, to: &std::path::Path) {
