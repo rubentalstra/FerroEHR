@@ -21,8 +21,10 @@ use leptos_meta::Title;
 use leptos_router::hooks::{use_params_map, use_query_map};
 
 use crate::builder::catalog::CatalogNode;
+use crate::components::field::BTN_DANGER;
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
+use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
 
@@ -260,6 +262,7 @@ pub fn TemplateDetailPage() -> impl IntoView {
     let opt_pane = opt_tab(opt);
     let example_pane = example_tab(example, example_format);
     let meta_card = meta_section(meta);
+    let delete_action = delete_section(template_id);
 
     // The tabs are URL-driven pill links (rules §9): a static-Tailwind anchor
     // per view, the active one styled from the `selected_tab` Memo. No thaw
@@ -291,7 +294,9 @@ pub fn TemplateDetailPage() -> impl IntoView {
                 title=template_id
                 crumbs=vec![Crumb::new("Templates", "/templates")]
                 mono=true
-            />
+            >
+                {delete_action}
+            </PageHeader>
             {meta_card}
             <nav aria-label="Template views" class="flex gap-1 mb-4">
                 {tab_link("wt", "WT")}
@@ -305,6 +310,90 @@ pub fn TemplateDetailPage() -> impl IntoView {
             </div>
         </div>
     }
+}
+
+/// The admin **Delete template** affordance for the page-header action slot.
+///
+/// Probe-gated: it renders only when the CDR advertises its Admin API as
+/// mounted (`crate::admin::when_admin_usable` — no admin group, no button).
+/// The click opens the shared confirmation modal
+/// ([`ConfirmDialog`](crate::components::confirm_dialog::ConfirmDialog)); only
+/// the dialog's confirm dispatches. On success it toasts and returns to the
+/// list, because the screen it was invoked from now describes a template that
+/// no longer exists; on failure the actionable copy names this template and the
+/// next action (the CDR refuses a template still referenced by a committed
+/// version with `409`).
+fn delete_section(template_id: Signal<String>) -> AnyView {
+    let toaster = thaw::ToasterInjection::expect_context();
+    let gate = crate::admin::admin_gate();
+    let delete: Action<String, (String, Result<(), AdminUiError>)> = Action::new(|id: &String| {
+        let id = id.clone();
+        async move {
+            let outcome = crate::admin::admin_delete_template(id.clone()).await;
+            (id, outcome)
+        }
+    });
+    // Whether the confirmation modal is open (this screen has exactly one
+    // deletable object, so a bool IS the "which object" state).
+    let confirming = RwSignal::new(false);
+
+    // Toast + navigation are side-effects on the outside world (the thaw
+    // toaster, the router), so an Effect is their correct home (rules §2); it
+    // never runs on the server pass.
+    let navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| match delete.value().get() {
+        Some((id, Ok(()))) => {
+            toast_success(
+                toaster,
+                "Template deleted",
+                &format!("{id} was removed from the CDR."),
+            );
+            navigate("/templates", leptos_router::NavigateOptions::default());
+        }
+        Some((id, Err(error))) => toast_error(
+            toaster,
+            "Delete failed",
+            &crate::admin::delete_failure_copy(&format!("Template {id}"), &error),
+        ),
+        None => {}
+    });
+
+    let message = Signal::derive(move || {
+        format!(
+            "Permanently delete the operational template “{}” from the CDR? This cannot be \
+             undone. The CDR refuses the delete while a committed version still references the \
+             template.",
+            template_id.get()
+        )
+    });
+
+    crate::admin::when_admin_usable(gate, move || {
+        view! {
+            <button
+                id="template-delete"
+                type="button"
+                class=BTN_DANGER
+                disabled=Signal::derive(move || delete.pending().get())
+                on:click=move |_| confirming.set(true)
+            >
+                <leptos_icons::Icon icon=icondata_lu::LuTrash width="14" height="14" />
+                "Delete template"
+            </button>
+            <crate::components::confirm_dialog::ConfirmDialog
+                open=confirming
+                title="Delete template"
+                message=message
+                confirm_label="Delete template"
+                confirm_id="template-delete-confirm"
+                on_cancel=Callback::new(move |()| confirming.set(false))
+                on_confirm=Callback::new(move |()| {
+                    delete.dispatch(template_id.get_untracked());
+                    confirming.set(false);
+                })
+            />
+        }
+        .into_any()
+    })
 }
 
 /// The identity/metadata card: template id, concept, version, UID, and

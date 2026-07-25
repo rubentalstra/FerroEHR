@@ -67,3 +67,23 @@ lightweight cohort counters.
 Each stored query row also offers **Open in editor**, which loads the
 query text into the raw AQL editor (pre-filling the save name, so saving
 again publishes the next version).
+
+### Removing a group vs deleting a stored query
+
+The two are deliberately different actions:
+
+- **Remove group** (on a group card) deletes only the console-local
+  grouping. The stored queries keep living in the CDR.
+- **Delete from CDR** (on a stored-query row) deletes *that version* of the
+  query from the CDR's stored-query store, for every client. It appears only
+  when the CDR's admin API is enabled (`admin.enabled` /
+  `EHRBASE__ADMIN__ENABLED`, off by default — see
+  [`[admin]`](../installation/configuration.md#admin)); the delete itself
+  additionally needs the ADMIN role, and a session without it is refused with
+  a message naming what is missing.
+
+Both open a confirmation dialog that names the exact object before anything
+is sent, and a refused delete is reported with the CDR's own diagnostic and
+the next action to take.
+
+![Stored-query delete](img/queries/queries-admin-delete.png)
