@@ -44,6 +44,7 @@ use crate::pages::ehrs::{PAGE_SIZE, ResultPage, cell_text, table_skeleton};
 use crate::pages::template_detail::fetch_template_catalog;
 use crate::pages::templates::list_templates;
 use crate::queries_api::{run_aql, store_query};
+use crate::query_namespace::{is_full_semver, qualify};
 
 /// The shared, all-`Copy` signal bundle the builder's recursive views thread
 /// through instead of a long argument list. `struct_ver` is bumped only on
@@ -83,7 +84,14 @@ pub fn QueryBuilderPage() -> impl IntoView {
     };
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<String>);
+    // The two halves of the stored query's qualified name (`namespace::name`,
+    // the namespace optional — see `crate::query_namespace`).
+    let save_namespace = RwSignal::new(String::new());
     let save_name = RwSignal::new(String::new());
+    // The optional store version: empty means "let the server assign it"
+    // (the unversioned store), a `major.minor.patch` triple means "store this
+    // immutable version" — see `store_query`.
+    let save_version = RwSignal::new(String::new());
 
     let templates: Resource<Result<Vec<crate::pages::templates::TemplateRow>, AdminUiError>> =
         Resource::new(|| (), |()| async move { list_templates().await });
@@ -107,11 +115,10 @@ pub fn QueryBuilderPage() -> impl IntoView {
             }
         },
     );
-    let save_action: Action<(String, String), Result<(), AdminUiError>> =
-        Action::new(|input: &(String, String)| {
-            let (name, aql) = input.clone();
-            async move { store_query(name, aql).await }
-        });
+    let save_action: SaveAction = Action::new(|input: &SaveInput| {
+        let (name, version, aql) = input.clone();
+        async move { store_query(name, version, aql).await }
+    });
     // Both outcomes toast (rules: Effect = sync with the outside world; no
     // signal is written — and the console's mutation-feedback rule, crate
     // CLAUDE.md). The CDR's diagnostic ALSO stays inline (save_feedback),
@@ -137,7 +144,17 @@ pub fn QueryBuilderPage() -> impl IntoView {
     let picker = picker_section(ctx, catalog);
     let criteria = criteria_section(ctx);
     let output = output_section(ctx);
-    let preview_run = preview_run_section(preview, ran, offset, save_name, save_action);
+    let preview_run = preview_run_section(
+        preview,
+        ran,
+        offset,
+        SaveFields {
+            namespace: save_namespace,
+            name: save_name,
+            version: save_version,
+        },
+        save_action,
+    );
     // Export tracks the live AQL preview (empty while it is a `BuilderError`);
     // the builder binds no parameters, so its parameter payload is `{}`.
     let export_aql = Signal::derive(move || preview.with(|r| r.clone().unwrap_or_default()));
@@ -1400,6 +1417,49 @@ fn limit_editor(ctx: BuilderCtx, limit: Option<u32>) -> AnyView {
 // Preview + run + save
 // ---------------------------------------------------------------------------
 
+/// One store request as both save screens assemble it: the qualified name, the
+/// optional explicit version (`None` = let the server assign it), and the AQL.
+/// Mirrors [`store_query`]'s parameters so the action is a thin pass-through.
+pub(crate) type SaveInput = (String, Option<String>, String);
+
+/// The save action both screens drive. Named because the type appears in three
+/// signatures and a bare `Action<(String, Option<String>, String), …>` reads as
+/// noise at each one.
+pub(crate) type SaveAction = Action<SaveInput, Result<(), AdminUiError>>;
+
+/// The three bound save fields, passed as one bundle so the version cannot be
+/// forgotten at a call site (all `Copy`, like the rest of the screen's signal
+/// bundles).
+#[derive(Clone, Copy)]
+pub(crate) struct SaveFields {
+    /// The optional namespace half of the qualified name.
+    pub namespace: RwSignal<String>,
+    /// The bare query name.
+    pub name: RwSignal<String>,
+    /// The optional store version, empty for the server-assigned one.
+    pub version: RwSignal<String>,
+}
+
+impl SaveFields {
+    /// The store version to send: `None` for the unversioned store, `Some` for
+    /// an explicit immutable version. Reads untracked — it is called from a
+    /// click handler, never from a render.
+    pub(crate) fn version_arg(self) -> Option<String> {
+        let version = self.version.get_untracked().trim().to_owned();
+        (!version.is_empty()).then_some(version)
+    }
+
+    /// Is the version field filled in with something that is NOT a storable
+    /// `major.minor.patch` triple? Blocks the save before a request is made, so
+    /// a prefix pattern never reaches the CDR as a version to file under.
+    pub(crate) fn version_is_unstorable(self) -> bool {
+        self.version.with(|version| {
+            let version = version.trim();
+            !version.is_empty() && !is_full_semver(version)
+        })
+    }
+}
+
 /// The live AQL preview and the run/save surface. The preview reads the whole
 /// query through [`to_aql`]; on `Ok` it shows the AQL and enables Run/Save, on
 /// `Err` it shows the [`BuilderError`] inline and disables them.
@@ -1407,12 +1467,14 @@ fn preview_run_section(
     preview: Memo<Result<String, BuilderError>>,
     ran: RwSignal<Option<String>>,
     offset: RwSignal<u32>,
-    save_name: RwSignal<String>,
-    save_action: Action<(String, String), Result<(), AdminUiError>>,
+    fields: SaveFields,
+    save_action: SaveAction,
 ) -> AnyView {
     let disabled = Signal::derive(move || preview.with(Result::is_err));
     let save_disabled = Signal::derive(move || {
-        preview.with(Result::is_err) || save_name.with(std::string::String::is_empty)
+        preview.with(Result::is_err)
+            || fields.name.with(std::string::String::is_empty)
+            || fields.version_is_unstorable()
     });
     let run_click = move |_| {
         if let Ok(aql) = preview.get_untracked() {
@@ -1422,9 +1484,17 @@ fn preview_run_section(
     };
     let save_click = move |_| {
         if let Ok(aql) = preview.get_untracked() {
-            save_action.dispatch((save_name.get_untracked(), aql));
+            save_action.dispatch((
+                qualify(
+                    &fields.namespace.get_untracked(),
+                    &fields.name.get_untracked(),
+                ),
+                fields.version_arg(),
+                aql,
+            ));
         }
     };
+    let save_fields = save_as_fields("qb", fields);
 
     view! {
         <section class=CARD_PAD>
@@ -1465,27 +1535,15 @@ fn preview_run_section(
                     <button type="button" class=BTN_PRIMARY disabled=disabled on:click=run_click>
                         "Run"
                     </button>
-                    <div class="flex items-end gap-2">
-                        <label class="flex flex-col gap-0.5 text-xs">
-                            <span class="text-ink-muted">"Save as (namespace::name)"</span>
-                            <input
-                                id="qb-save-name"
-                                type="text"
-                                placeholder="org::my_query"
-                                class="rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm w-56 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent"
-                                prop:value=move || save_name.get()
-                                on:input:target=move |ev| save_name.set(ev.target().value())
-                            />
-                        </label>
-                        <button
-                            type="button"
-                            class=BTN_PRIMARY
-                            disabled=save_disabled
-                            on:click=save_click
-                        >
-                            "Save"
-                        </button>
-                    </div>
+                    {save_fields}
+                    <button
+                        type="button"
+                        class=BTN_PRIMARY
+                        disabled=save_disabled
+                        on:click=save_click
+                    >
+                        "Save"
+                    </button>
                 </div> {save_feedback(save_action)}
             </div>
         </section>
@@ -1496,7 +1554,7 @@ fn preview_run_section(
 /// The save action's inline feedback: a pending hint and the CDR error verbatim.
 /// Success is reported as a toast (dispatched from the page component), so it
 /// renders nothing here.
-fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>) -> AnyView {
+fn save_feedback(save_action: SaveAction) -> AnyView {
     view! {
         <div class="text-sm">
             <Show when=move || save_action.pending().get()>
@@ -1505,6 +1563,124 @@ fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>
             {move || match save_action.value().get() {
                 Some(Err(error)) => crate::components::format_view::inline_error(&error),
                 Some(Ok(())) | None => ().into_any(),
+            }}
+        </div>
+    }
+    .into_any()
+}
+
+/// The shared **Save as** fields both query screens use: the optional
+/// **namespace** beside the query **name**, plus the effective qualified name
+/// the save will write.
+///
+/// The namespace is first-class because it is what the console groups by: a
+/// stored query's identifier is `[{namespace}::]{query-name}`, and the
+/// namespace exists precisely to separate stored queries "by teams, companies,
+/// etc." (ITS-REST `specifications/docs/query/Qualified_query_name.md`
+/// §Qualified query name). Typing a `namespace::` prefix into the NAME field
+/// still works — [`qualify`] lets it win — and the "Saves as" line always
+/// shows the exact name that will be written.
+///
+/// The **version** field beside them is what makes the spec's versioning
+/// reachable: filled in, the save targets
+/// `PUT definition/query/{name}/{version}` — an immutable `(name, version)`
+/// pair (`409` if it exists); left empty, it targets
+/// `PUT definition/query/{name}`, where the server assigns the version and
+/// replaces what is stored at it (ITS-REST
+/// `operations/definition_query_version_store.yaml` /
+/// `operations/definition_query_store.yaml`). The line under the fields always
+/// states which of the two a click will do, so an overwrite is never a
+/// surprise.
+///
+/// `id_prefix` scopes the three field ids (`{id_prefix}-save-namespace` /
+/// `-save-name` / `-save-version`) so the two screens keep distinct, stable
+/// hooks.
+pub(crate) fn save_as_fields(id_prefix: &str, fields: SaveFields) -> AnyView {
+    let SaveFields {
+        namespace,
+        name,
+        version,
+    } = fields;
+    let namespace_id = format!("{id_prefix}-save-namespace");
+    let name_id = format!("{id_prefix}-save-name");
+    let version_id = format!("{id_prefix}-save-version");
+    // The name that will actually be stored, shown only once there is one.
+    let qualified = Signal::derive(move || {
+        let composed = qualify(&namespace.get(), &name.get());
+        (!composed.is_empty()).then_some(composed)
+    });
+    // What the version field currently means for the save: an explicit
+    // immutable version, the server-assigned one, or a pattern that cannot be
+    // stored at (blocked before any request — `SaveFields::version_is_unstorable`).
+    let version_note = Signal::derive(move || {
+        version.with(|version| {
+            let version = version.trim();
+            if version.is_empty() {
+                Ok("the server assigns the version, replacing the query stored at it".to_owned())
+            } else if is_full_semver(version) {
+                Ok(format!("a new immutable version {version}"))
+            } else {
+                Err(format!(
+                    "{version} is not a version to store at — use major.minor.patch, \
+                     for example 1.0.0"
+                ))
+            }
+        })
+    });
+    let field = "rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent";
+    view! {
+        <div class="flex flex-col gap-1">
+            <div class="flex items-end gap-2">
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"Namespace (optional)"</span>
+                    <input
+                        id=namespace_id
+                        type="text"
+                        placeholder="org.example"
+                        class=format!("{field} w-40")
+                        prop:value=move || namespace.get()
+                        on:input:target=move |ev| namespace.set(ev.target().value())
+                    />
+                </label>
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"Query name"</span>
+                    <input
+                        id=name_id
+                        type="text"
+                        placeholder="my_query"
+                        class=format!("{field} w-56")
+                        prop:value=move || name.get()
+                        on:input:target=move |ev| name.set(ev.target().value())
+                    />
+                </label>
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"Version (optional)"</span>
+                    <input
+                        id=version_id
+                        type="text"
+                        placeholder="1.0.0"
+                        class=format!("{field} w-28")
+                        prop:value=move || version.get()
+                        on:input:target=move |ev| version.set(ev.target().value())
+                    />
+                </label>
+            </div>
+            {move || {
+                qualified
+                    .get()
+                    .map(|composed| {
+                        let note = version_note.get();
+                        let (note_class, note_text) = match note {
+                            Ok(text) => ("text-ink-muted", text),
+                            Err(text) => ("text-danger", text),
+                        };
+                        view! {
+                            <span class="text-xs text-ink-muted">
+                                "Saves as " <span class="font-mono text-ink">{composed}</span>
+                                " — " <span class=note_class>{note_text}</span>
+                            </span>
+                        }
+                    })
             }}
         </div>
     }

@@ -73,6 +73,9 @@ reqwest = { workspace = true, optional = true }
 config = { workspace = true, optional = true }
 tower-sessions = { workspace = true, optional = true, features = ["memory-store"] }
 csv = { workspace = true, optional = true }
+# Bounded concurrent fan-out for the dashboard namespace tiles (ssr only —
+# the client never runs the tile queries).
+futures = { workspace = true, optional = true }
 openidconnect = { workspace = true, optional = true }
 # Percent-encoding is ALWAYS the `urlencoding` crate (owner hard rule —
 # never hand-rolled). Non-optional: the audit screen builds
@@ -113,6 +116,7 @@ ssr = [
     "dep:tracing-subscriber",
     "dep:anyhow",
     "dep:reqwest",
+    "dep:futures",
     "dep:config",
     "dep:tower-sessions",
     "dep:csv",

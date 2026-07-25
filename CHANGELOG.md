@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: stored-query versions are reachable** (#336). Both save
+  surfaces (the point-and-click builder and the raw AQL editor) now carry an
+  optional **Version** field beside the namespace and name, and state under the
+  fields exactly which store a click will perform: leaving it empty stores at the
+  server-assigned version and replaces what is there, while a
+  `major.minor.patch` version stores a new **immutable** version and is refused
+  with the CDR's own message if that pair already exists. **Open in editor** now
+  keeps the version it loaded and proposes the next minor one, so editing a
+  stored query publishes a new version instead of colliding with the one it came
+  from, and a partial pattern (`1`, `1.0`) is refused in the save field with an
+  explanation — that form selects the latest matching version when *reading* a
+  query, and is not something to file a definition under.
+
 - **Admin console: an Operations panel** (`/operations`) over the CDR's
   operational surfaces — dependency health, build and specification provenance,
   the metric registry, and runtime log control. The health card reads the public
@@ -101,6 +114,25 @@ workflow refuses a tag that has no matching section here.
   line (template validation, a rejected composition body) it also stays on
   screen beside the form as before. Previously a failed write showed a quiet
   inline message that was easy to miss after a run of green success toasts.
+- **Admin console: query groups are now derived from the stored-query
+  namespace** instead of being named sets kept in a console-local file. A
+  stored query is identified by a qualified name — `namespace::name`, the
+  namespace optional and, per the openEHR REST specification, a reverse domain
+  name whose purpose is separation of stored queries by team or organisation —
+  so the console groups by exactly that: the **Queries** screen's right-hand
+  panel and the **Dashboard**'s cohort tiles are both derived live from
+  `GET /definition/query`, and queries saved without a namespace collect under
+  *unqualified*. The grouping consequently lives in the CDR: it is visible to
+  every openEHR client, survives a console restart, needs no backup, and is
+  identical across console replicas. The group create/edit/remove controls are
+  gone — a query joins a group by being saved under that namespace — and both
+  save surfaces (the query builder and the raw AQL editor) now offer a
+  first-class **Namespace** field beside the query name, showing the exact
+  qualified name the save will write. Existing local groups are not migrated:
+  re-save a query under the namespace you want it grouped by.
+- **Admin console: the EHR Directory tab creates an empty root folder**, then
+  the structured tree editor builds the hierarchy. The console no longer ships
+  or stores named folder shapes to start from.
 
 ### Removed
 
@@ -120,6 +152,20 @@ workflow refuses a tag that has no matching section here.
   or `EHRBASE__MANAGEMENT__PROBES_ENABLED` / `…__ENDPOINTS__HEALTH` environment
   variable still setting them **fails at boot** with an unknown-key error —
   delete the keys; the probes are always on.
+- **Admin console: folder templates are removed.** The named FOLDER-tree shapes
+  the Directory tab could start from (and their `admin-ui-folder-templates.json`
+  store) are gone; create the empty root and build the hierarchy in the tree
+  editor, which commits it as ordinary directory versions the CDR owns.
+- **Admin console: both console-local JSON stores are removed** —
+  `admin-ui-groups.json` (query groups) and `admin-ui-folder-templates.json`
+  (folder templates). The console now keeps **no local domain state at all**:
+  it has no database and writes no files, so every fact it shows lives in the
+  CDR and reads the same for every client and every replica. Delete the files;
+  nothing reads them.
+- **The admin console's `groups_file` configuration key**
+  (`EHRBASE_ADMIN__GROUPS_FILE`) is removed. Console configuration is strict,
+  so a config file or environment variable still setting it **fails at boot**
+  with an unknown-key error — delete it.
 
 ### Fixed
 

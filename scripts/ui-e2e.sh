@@ -68,6 +68,28 @@ DRIVER_PORT=9515
 SHOTS_DIR="$ROOT/target/ui-e2e/screenshots"
 mkdir -p "$SHOTS_DIR"
 
+# ── Working-tree residue guard ──────────────────────────────────────────────
+# A battery run must not change tracked files. The screenshot pass is the one
+# legitimate writer (it regenerates website/book/src/admin-ui/img), so it is
+# excluded from the comparison; everything else must match the state we started
+# from — a pre-existing dirty tree is fine, NEW residue is not.
+# Tolerates a non-checkout (no git, no repo): both samples come back empty and
+# the comparison is trivially satisfied — there are no tracked files to dirty.
+git_tree_state() {
+  git -C "$ROOT" status --porcelain -- . ':(exclude)website/book/src/admin-ui/img' 2>/dev/null || true
+}
+TREE_STATE_BEFORE="$(git_tree_state)"
+assert_no_tree_residue() {
+  local after
+  after="$(git_tree_state)"
+  if [ "$after" != "$TREE_STATE_BEFORE" ]; then
+    echo "FATAL: the e2e run left residue in the working tree:" >&2
+    diff <(printf '%s\n' "$TREE_STATE_BEFORE") <(printf '%s\n' "$after") >&2 || true
+    return 1
+  fi
+  echo "── working tree clean of run residue"
+}
+
 CONSOLE_PID=""
 DRIVER_PID=""
 cleanup() {
@@ -286,5 +308,8 @@ if [ -n "${UI_E2E_DOCS_SHOTS:-}" ]; then
   UI_E2E_DOCS_SHOTS=1 \
     cargo nextest run -p ehrbase-admin-ui --features ssr -j 1 -E 'binary(e2e_docs_shots)'
 fi
+
+# ── 7. Nothing may have leaked into the checkout ─────────────────────────────
+assert_no_tree_residue
 
 echo "── e2e complete; screenshots in $SHOTS_DIR"

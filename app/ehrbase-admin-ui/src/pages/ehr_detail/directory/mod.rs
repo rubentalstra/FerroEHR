@@ -2,8 +2,8 @@
 //! ITS-REST DIRECTORY API — a structured `FOLDER` tree editor (add / rename /
 //! delete folders, add / remove item references), an advanced raw-JSON mode,
 //! version history with time-travel and restore, a `version_at_time` view, a
-//! `?path=` subtree query, and directory deletion — plus the create-from-
-//! template path for an EHR that has no directory yet.
+//! `?path=` subtree query, and directory deletion — plus the create-empty path
+//! for an EHR that has no directory yet.
 //!
 //! No openEHR spec governs an admin UI (our own design / product extension);
 //! the wire it reads/writes IS spec-bound: the DIRECTORY operations
@@ -33,7 +33,7 @@ use serde_json::{Value, json};
 use crate::pages::ehr_detail::commit_version_uid;
 
 use crate::error::AdminUiError;
-use crate::pages::ehr_detail::directory::create::{CreateState, create_section};
+use crate::pages::ehr_detail::directory::create::create_section;
 use crate::pages::ehr_detail::directory::panels::directory_toolbar;
 use crate::pages::ehr_detail::directory::tree::{EditorState, seed, tree_editor};
 use crate::pages::ehrs::{ResultPage, table_skeleton};
@@ -95,18 +95,6 @@ pub enum DirectorySubtree {
     Found(String),
     /// No sub-FOLDER exists at the requested path.
     Missing,
-}
-
-/// One named console-local folder template: a display name (the key) plus the
-/// canonical FOLDER JSON tree it commits. No openEHR spec governs an admin-UI
-/// convenience like this — our own design/extension; the FOLDER shape it
-/// carries IS spec-bound (ITS-REST `specifications/schemas/ehr/Folder.yaml`).
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct FolderTemplate {
-    /// Display name (also the template key).
-    pub name: String,
-    /// The canonical FOLDER JSON tree (root FOLDER, no `uid`).
-    pub folder: Value,
 }
 
 /// The standard openEHR directory root archetype id (the FOLDER example in
@@ -461,51 +449,6 @@ pub async fn fetch_directory_subtree(
     Ok(DirectorySubtree::Found(body))
 }
 
-/// List the console-local folder templates (built-in defaults when the store
-/// file is absent — see [`crate::folder_templates`]).
-///
-/// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Internal`] on an unreadable templates file.
-#[server]
-pub async fn list_folder_templates() -> Result<Vec<FolderTemplate>, AdminUiError> {
-    crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
-    let path = crate::folder_templates::templates_path(&state.config.groups_file());
-    // File I/O off the async runtime (reliability rule: no sync I/O on it).
-    tokio::task::spawn_blocking(move || crate::folder_templates::read_templates(&path))
-        .await
-        .map_err(|e| AdminUiError::Internal(format!("folder-templates task: {e}")))?
-}
-
-/// Save a console-local folder template `name` from a canonical FOLDER JSON
-/// `folder_body` (e.g. the EHR's current directory). Upserts by name.
-///
-/// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Invalid`] on an empty name or non-JSON body;
-/// [`AdminUiError::Internal`] on an unwritable templates file.
-#[server]
-pub async fn save_folder_template(name: String, folder_body: String) -> Result<(), AdminUiError> {
-    crate::session::require_session().await?;
-    let name = name.trim().to_owned();
-    if name.is_empty() {
-        return Err(AdminUiError::Invalid(
-            "the folder template needs a name".to_owned(),
-        ));
-    }
-    let folder: Value = serde_json::from_str(&folder_body).map_err(|e| {
-        AdminUiError::Invalid(format!("the folder template is not valid JSON: {e}"))
-    })?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
-    let path = crate::folder_templates::templates_path(&state.config.groups_file());
-    tokio::task::spawn_blocking(move || {
-        crate::folder_templates::write_template(&path, &name, folder)
-    })
-    .await
-    .map_err(|e| AdminUiError::Internal(format!("folder-templates task: {e}")))?
-}
-
 /// Split an `OBJECT_VERSION_ID` into its `object_id::system` prefix and its
 /// integer version tree number (`abc::sys::3` → `("abc::sys", 3)`). Returns
 /// `None` for a branched (non-integer) version tree id.
@@ -544,8 +487,8 @@ fn summarize_directory_version(body: &str, number: i32, is_latest: bool) -> Dire
 
 /// Directory tab: the toolbar (history / time / path / delete), the main
 /// content (the structured tree editor for an existing directory, or the
-/// create-from-template section when the CDR 404s), and the history /
-/// time-travel / path panels. The directory resource depends on every write
+/// create-empty section when the CDR 404s), and the history / time-travel /
+/// path panels. The directory resource depends on every write
 /// action's version, so a successful create/update/delete/restore refetches it
 /// (rules §6 — never fetch-in-effect). Every read resource is created ONCE
 /// here (never inside a `Suspend` — rules §4) and gated on the active tab plus
@@ -592,15 +535,15 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     // version") — part of the directory resource's source.
     let reload = RwSignal::new(0u32);
 
-    // The directory editor's + create flow's long-lived reactive state, created
-    // ONCE here — ABOVE the `<Transition>`/`Suspend` — and (for the editor)
-    // re-seeded idempotently per loaded version. Creating these signals INSIDE
-    // the Suspend is the rules §4 disposal defect this fixes: a Suspend re-runs
-    // on every resource notification (every write refetches the directory) and
-    // disposes the previous run's owner, leaving mounted DOM handlers / icon
-    // views pointing at dead signals (panic on the next interaction).
+    // The directory editor's long-lived reactive state, created ONCE here —
+    // ABOVE the `<Transition>`/`Suspend` — and re-seeded idempotently per
+    // loaded version. Creating these signals INSIDE the Suspend is the rules §4
+    // disposal defect this fixes: a Suspend re-runs on every resource
+    // notification (every write refetches the directory) and disposes the
+    // previous run's owner, leaving mounted DOM handlers / icon views pointing
+    // at dead signals (panic on the next interaction). The create-empty section
+    // needs no state of its own.
     let editor = EditorState::new(update);
-    let create_state = CreateState::new();
 
     // Toast EVERY write outcome (outside-world side-effect — rules §2; the
     // console's mutation-feedback rule, crate CLAUDE.md): a `412` conflict
@@ -723,15 +666,6 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
             }
         },
     );
-    let templates = Resource::new(
-        move || (selected.get() == "directory").then_some(()),
-        |active| async move {
-            match active {
-                Some(()) => list_folder_templates().await.map(Some),
-                None => Ok(None),
-            }
-        },
-    );
 
     // Composition picker source for "add item" — created here (outside the
     // Suspend), gated on the target being set, and read inside the editor.
@@ -827,19 +761,7 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
                             Err(e) => crate::components::format_view::inline_error(&e),
                         }
                     }
-                    Ok(None) => {
-                        match templates.await {
-                            Ok(list) => {
-                                create_section(
-                                    create_state,
-                                    list.unwrap_or_default(),
-                                    ehr_id,
-                                    create,
-                                )
-                            }
-                            Err(e) => crate::components::format_view::inline_error(&e),
-                        }
-                    }
+                    Ok(None) => create_section(ehr_id, create),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}

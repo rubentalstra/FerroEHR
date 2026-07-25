@@ -9,8 +9,9 @@
 // harness module is per-test-binary (the corpus.rs test-file precedent)
 //! End-to-end journeys over the console's **admin destructive operations**:
 //! template delete (from the list row and from the detail screen), stored-query
-//! delete against the CDR store, and physical EHR delete — each a
-//! create → delete → assert-gone round trip through the real UI.
+//! save + namespace grouping + delete against the CDR store, and physical EHR
+//! delete — each a create → delete → assert-gone round trip through the real
+//! UI.
 //!
 //! Every affordance is gated on the CDR advertising `/admin` in its System API
 //! conformance manifest, and the deletes themselves need the ADMIN role, so
@@ -50,8 +51,23 @@ const DETAIL_FIXTURE: &str = "minimal_instruction.opt";
 /// The template id of [`DETAIL_FIXTURE`].
 const DETAIL_TEMPLATE_ID: &str = "minimal_instruction.en.v1";
 
-/// The qualified stored-query name this battery saves and then deletes.
+/// The namespace half of the qualified stored-query name this battery saves.
+/// It is typed into its OWN field and is what the console groups by (a query's
+/// group IS its namespace).
+const QUERY_NAMESPACE: &str = "org.example";
+/// The bare name half, typed into the query-name field.
+const QUERY_BARE_NAME: &str = "e2e-admin-delete";
+/// The qualified stored-query name the two fields must compose to — the name
+/// the CDR stores and the row is keyed by.
 const QUERY_NAME: &str = "org.example::e2e-admin-delete";
+
+/// The bare name of the query the VERSIONING journey stores twice (once per
+/// version), kept apart from the delete journey's so the two can run in any
+/// order against the same CDR.
+const VERSIONED_BARE_NAME: &str = "e2e-admin-versioned";
+
+/// Its qualified name — `{QUERY_NAMESPACE}::{VERSIONED_BARE_NAME}`.
+const VERSIONED_QUERY_NAME: &str = "org.example::e2e-admin-versioned";
 
 /// The template `scripts/ui-e2e.sh` seeds (with compositions committed against
 /// it), used only by the REFUSED-delete journey — the CDR protects it both by
@@ -180,10 +196,18 @@ async fn admin_deletes_a_template_from_the_detail_screen() {
     h.finish().await;
 }
 
-/// Stored-query delete: save a query through the raw-AQL editor, then delete
-/// that version from the CDR store on `/queries` and the row is gone.
+/// Stored-query save + delete: save a query through the raw-AQL editor's
+/// namespace + name fields, see it listed AND grouped under its namespace on
+/// `/queries`, then delete that version from the CDR store and the row is gone.
+///
+/// Retargeted from the console-local query-group journey this replaced: the
+/// grouping is no longer created through a group form, it is DERIVED from the
+/// namespace the save composed, so the journey asserts the derived card
+/// (`data-query-namespace`) appears for the namespace it typed. Nothing was
+/// dropped — the delete half is unchanged and the save half now additionally
+/// proves the two fields compose the spec's `namespace::name`.
 #[tokio::test]
-async fn admin_deletes_a_stored_query() {
+async fn admin_saves_groups_and_deletes_a_stored_query() {
     let Some(h) = Harness::start("admin-stored-query-delete").await else {
         return;
     };
@@ -191,8 +215,10 @@ async fn admin_deletes_a_stored_query() {
     login_basic_as(&h, &user, &pass).await;
 
     // Save the query through the real editor (its Save button stays disabled
-    // until both fields hold text, which is also the hydration signal — retry
-    // the typing until it enables, the login-submit precedent).
+    // until the AQL and the query name hold text, which is also the hydration
+    // signal — retry the typing until it enables, the login-submit precedent).
+    // The namespace goes into its own field; the console composes the qualified
+    // name from the two.
     h.goto("/queries/aql").await;
     let mut saved = false;
     for _ in 0..5 {
@@ -201,9 +227,14 @@ async fn admin_deletes_a_stored_query() {
             .send_keys("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c")
             .await
             .expect("type the AQL");
+        h.wait_css("#aql-save-namespace")
+            .await
+            .send_keys(QUERY_NAMESPACE)
+            .await
+            .expect("type the stored-query namespace");
         h.wait_css("#aql-save-name")
             .await
-            .send_keys(QUERY_NAME)
+            .send_keys(QUERY_BARE_NAME)
             .await
             .expect("type the stored-query name");
         let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
@@ -217,10 +248,15 @@ async fn admin_deletes_a_stored_query() {
     assert!(saved, "the Save button never enabled (typing never took)");
 
     // The row appears on /queries with its admin delete affordance (the CDR
-    // assigns the version, so match the name prefix).
+    // assigns the version, so match the name prefix) — which also proves the
+    // two fields composed exactly `namespace::name`.
     let selector = format!("[data-query-delete^=\"{QUERY_NAME}@\"]");
     h.goto("/queries").await;
     h.wait_css(&selector).await;
+    // …and the derived grouping shows the namespace it was saved under, with no
+    // group having been created by hand anywhere.
+    h.wait_css(&format!("[data-query-namespace=\"{QUERY_NAMESPACE}\"]"))
+        .await;
     h.shot(1, "stored-query-listed").await;
 
     confirm_in_dialog(&h, &selector, "stored-query-delete-confirm").await;
@@ -230,6 +266,143 @@ async fn admin_deletes_a_stored_query() {
     h.assert_console_clean(&["401", "Failed to load resource"])
         .await;
     h.finish().await;
+}
+
+/// Stored-query VERSIONING end to end: store an explicit version, prove the
+/// `(name, version)` pair is immutable, store a second version beside it, and
+/// prove that loading a version proposes the next one instead of a collision.
+///
+/// This is the console half of the spec's versioning model: a qualified name is
+/// `[{namespace}::]{query-name}` and its version is SEMVER-style, with an
+/// explicit `(name, version)` store being immutable (ITS-REST
+/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name,
+/// `operations/definition_query_version_store.yaml`). Both versions are deleted
+/// again, so the journey is self-cleaning like its siblings.
+#[tokio::test]
+async fn admin_versions_a_stored_query() {
+    let Some(h) = Harness::start("admin-stored-query-versions").await else {
+        return;
+    };
+    let (user, pass) = admin_credentials();
+    login_basic_as(&h, &user, &pass).await;
+    h.goto("/queries/aql").await;
+
+    // Store version 1.0.0. The Save button also gates on the version being a
+    // storable triple, so its enabling is the hydration + validity signal.
+    let stored = save_query_version(&h, "1.0.0", true).await;
+    assert!(stored, "the Save button never enabled for version 1.0.0");
+    let v1 = format!("[data-query-delete=\"{VERSIONED_QUERY_NAME}@1.0.0\"]");
+    h.goto("/queries").await;
+    h.wait_css(&v1).await;
+    h.shot(1, "stored-query-v1").await;
+
+    // Re-storing the SAME pair is refused: the pair is immutable, so the CDR
+    // answers 409 and the console surfaces it inline (role="alert") beside the
+    // editor. The listing must still hold exactly the one version.
+    h.goto("/queries/aql").await;
+    let retried = save_query_version(&h, "1.0.0", true).await;
+    assert!(retried, "the Save button never enabled for the retry");
+    h.wait_css("[role=\"alert\"]").await;
+    h.shot(2, "stored-query-version-conflict").await;
+
+    // A different version stores beside it rather than replacing it.
+    h.goto("/queries/aql").await;
+    let bumped = save_query_version(&h, "1.1.0", true).await;
+    assert!(bumped, "the Save button never enabled for version 1.1.0");
+    let v2 = format!("[data-query-delete=\"{VERSIONED_QUERY_NAME}@1.1.0\"]");
+    h.goto("/queries").await;
+    h.wait_css(&v1).await;
+    h.wait_css(&v2).await;
+    h.shot(3, "stored-query-two-versions").await;
+
+    // Loading a version into the editor proposes the NEXT version, so an edit
+    // saves as a new version instead of colliding with the immutable one it
+    // came from.
+    h.goto(&format!("/queries/aql?load={VERSIONED_QUERY_NAME}@1.0.0"))
+        .await;
+    let version_field = h.wait_css("#aql-save-version").await;
+    let mut proposed = String::new();
+    for _ in 0..20 {
+        proposed = version_field
+            .prop("value")
+            .await
+            .expect("read the version field")
+            .unwrap_or_default();
+        if proposed == "1.1.0" {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+    assert_eq!(
+        proposed, "1.1.0",
+        "loading version 1.0.0 must propose 1.1.0 in the version field"
+    );
+    let name_field = h.wait_css("#aql-save-name").await;
+    assert_eq!(
+        name_field
+            .prop("value")
+            .await
+            .expect("read the name field")
+            .unwrap_or_default(),
+        VERSIONED_BARE_NAME,
+        "the loaded name must split back into the bare-name field"
+    );
+    h.shot(4, "stored-query-load-proposes-next-version").await;
+
+    // Self-cleaning: both versions go.
+    h.goto("/queries").await;
+    confirm_in_dialog(&h, &v1, "stored-query-delete-confirm").await;
+    wait_css_absent(&h, &v1).await;
+    confirm_in_dialog(&h, &v2, "stored-query-delete-confirm").await;
+    wait_css_absent(&h, &v2).await;
+    h.shot(5, "stored-query-versions-deleted").await;
+
+    h.assert_console_clean(&["401", "409", "Failed to load resource"])
+        .await;
+    h.finish().await;
+}
+
+/// Type the versioning journey's query into the raw editor at `version` and
+/// click Save, retrying the typing until the button enables (the hydration
+/// precedent from the sibling journeys). `fresh` clears the fields first, which
+/// is what a re-visit of the screen needs.
+async fn save_query_version(h: &Harness, version: &str, fresh: bool) -> bool {
+    for _ in 0..5 {
+        let editor = h.wait_css("#aql-editor").await;
+        let namespace = h.wait_css("#aql-save-namespace").await;
+        let name = h.wait_css("#aql-save-name").await;
+        let version_field = h.wait_css("#aql-save-version").await;
+        if fresh {
+            // Load-bearing on a RETRY: without it a second typing pass appends
+            // to what the first one left, producing a doubled name. The results
+            // are handled rather than dropped (the `let_underscore_drop` rule).
+            for field in [&editor, &namespace, &name, &version_field] {
+                field.clear().await.expect("clear a save field");
+            }
+        }
+        editor
+            .send_keys("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c")
+            .await
+            .expect("type the AQL");
+        namespace
+            .send_keys(QUERY_NAMESPACE)
+            .await
+            .expect("type the namespace");
+        name.send_keys(VERSIONED_BARE_NAME)
+            .await
+            .expect("type the query name");
+        version_field
+            .send_keys(version)
+            .await
+            .expect("type the version");
+        let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
+        if save.is_enabled().await.unwrap_or(false) {
+            save.click().await.expect("save the query");
+            return true;
+        }
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+    false
 }
 
 /// Physical EHR delete: create an EHR through the UI, delete it from its detail

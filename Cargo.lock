@@ -2373,6 +2373,7 @@ dependencies = [
  "config",
  "console_error_panic_hook",
  "csv",
+ "futures",
  "http",
  "icondata_core",
  "icondata_lu",
