@@ -57,6 +57,15 @@ pub struct StatementCost {
     pub calls: u64,
     pub mean_ms: f64,
     pub total_ms: f64,
+    /// Planning share (`pg_stat_statements.track_planning`; PostgreSQL docs
+    /// §pg_stat_statements): mean/total time spent in the planner, separated
+    /// from execution so a re-plan-heavy statement (unnamed statements re-plan
+    /// every execution) is attributable. Zero when the probe could not enable
+    /// `track_planning`.
+    #[serde(default)]
+    pub mean_plan_ms: f64,
+    #[serde(default)]
+    pub total_plan_ms: f64,
     pub shared_blks_hit: u64,
     pub shared_blks_read: u64,
 }
@@ -157,9 +166,10 @@ fn read_statements(db_container: &str) -> Result<Vec<StatementCost>, String> {
     let json = db_sql(
         db_container,
         "SELECT COALESCE(json_agg(t),'[]'::json) FROM (SELECT calls, mean_exec_time, \
-         total_exec_time, shared_blks_hit, shared_blks_read, query FROM pg_stat_statements \
+         total_exec_time, mean_plan_time, total_plan_time, shared_blks_hit, \
+         shared_blks_read, query FROM pg_stat_statements \
          WHERE query NOT ILIKE '%pg_stat_statements%' AND query NOT ILIKE 'VACUUM%' \
-         ORDER BY total_exec_time DESC LIMIT 8) t;",
+         ORDER BY total_exec_time + total_plan_time DESC LIMIT 8) t;",
     )?;
     let rows: Vec<serde_json::Value> =
         serde_json::from_str(json.trim()).map_err(|e| format!("statement JSON: {e}"))?;
@@ -171,6 +181,16 @@ fn read_statements(db_container: &str) -> Result<Vec<StatementCost>, String> {
                 calls: row.get("calls")?.as_u64()?,
                 mean_ms: row.get("mean_exec_time")?.as_f64()?,
                 total_ms: row.get("total_exec_time")?.as_f64()?,
+                // Planning columns are zero (never NULL) while track_planning
+                // is off (PostgreSQL docs §pg_stat_statements).
+                mean_plan_ms: row
+                    .get("mean_plan_time")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0),
+                total_plan_ms: row
+                    .get("total_plan_time")
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0),
                 shared_blks_hit: row
                     .get("shared_blks_hit")
                     .and_then(serde_json::Value::as_u64)
@@ -225,9 +245,29 @@ pub fn run_probe(
     };
 
     // Attribution capability: pg_stat_statements through the DB container.
+    // `track_planning` separates planner time from executor time per
+    // statement (PostgreSQL docs §pg_stat_statements) — the planning-share
+    // attribution the optimization ladder decides rung admissions on. The GUC
+    // is settable at runtime (ALTER SYSTEM + reload; no restart needed for a
+    // pg_stat_statements tracking knob).
     let attribution_db = containers.and_then(|c| {
         match db_sql(&c.db, "CREATE EXTENSION IF NOT EXISTS pg_stat_statements;") {
-            Ok(_) => Some(c.db.clone()),
+            Ok(_) => {
+                // Two separate calls: `ALTER SYSTEM` refuses to run inside a
+                // transaction block, and a multi-statement simple query is one
+                // implicit transaction (PostgreSQL docs §ALTER SYSTEM).
+                let armed = db_sql(
+                    &c.db,
+                    "ALTER SYSTEM SET pg_stat_statements.track_planning = on;",
+                )
+                .and_then(|_| db_sql(&c.db, "SELECT pg_reload_conf();"));
+                if let Err(e) = armed {
+                    progress(format!(
+                        "track_planning unavailable (plan share reads 0): {e}"
+                    ));
+                }
+                Some(c.db.clone())
+            }
             Err(e) => {
                 progress(format!("statement attribution unavailable: {e}"));
                 None

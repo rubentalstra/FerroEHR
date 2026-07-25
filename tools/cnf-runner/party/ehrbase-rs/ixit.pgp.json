@@ -32,8 +32,8 @@
     }
   },
   "containers": {
-    "sut": "ehrbase-rs-ehrbase-1",
-    "db": "ehrbase-rs-ehrbase-postgres-1"
+    "sut": "ehrbase-rs-cnf-ehrbase-1",
+    "db": "ehrbase-rs-cnf-ehrbase-postgres-1"
   },
   "signing": {
     "mode": "pgp",
