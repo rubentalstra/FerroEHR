@@ -19,9 +19,6 @@ use crate::extensions::access::authz::engine::{AuthzError, PolicyEngine};
 use crate::extensions::access::authz::request::{AuthzRequest, Combination, Decision};
 use ehrbase::config::authz::{AbacConfig, AbacParam, PolicyRule};
 
-/// `metrics` counter incremented once per PDP HTTP call (`result` = permit/deny).
-pub const METRIC_REMOTE_CALLS: &str = "authz_remote_pdp_calls_total";
-
 /// The v1-compatible remote policy-decision-point client.
 #[derive(Debug)]
 pub struct RemotePdp {
@@ -105,10 +102,18 @@ impl PolicyEngine for RemotePdp {
         };
         for combo in req.combinations() {
             if !self.permits(rule, &combo).await? {
-                metrics::counter!(METRIC_REMOTE_CALLS, "result" => "deny").increment(1);
+                metrics::counter!(
+                    ehrbase::telemetry::prometheus::AUTHZ_REMOTE_PDP_CALLS,
+                    "result" => "deny"
+                )
+                .increment(1);
                 return Ok(Decision::Deny);
             }
-            metrics::counter!(METRIC_REMOTE_CALLS, "result" => "permit").increment(1);
+            metrics::counter!(
+                ehrbase::telemetry::prometheus::AUTHZ_REMOTE_PDP_CALLS,
+                "result" => "permit"
+            )
+            .increment(1);
         }
         Ok(Decision::Permit)
     }

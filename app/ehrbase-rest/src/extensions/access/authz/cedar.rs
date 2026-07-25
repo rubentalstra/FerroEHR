@@ -41,9 +41,6 @@ use crate::extensions::access::authz::request::{
     AccessMode, AuthzRequest, Combination, Decision, ResourceKind,
 };
 
-/// `metrics` counter incremented once per Cedar decision (`result` = permit/deny).
-pub const METRIC_CEDAR_DECISIONS: &str = "authz_cedar_decisions_total";
-
 /// Every resource kind, for schema construction.
 const KINDS: [ResourceKind; 6] = [
     ResourceKind::Ehr,
@@ -184,9 +181,17 @@ impl PolicyEngine for CedarEngine {
     async fn decide(&self, req: &AuthzRequest<'_>) -> Result<Decision, AuthzError> {
         for combo in req.combinations() {
             if self.permits(req, &combo)? {
-                metrics::counter!(METRIC_CEDAR_DECISIONS, "result" => "permit").increment(1);
+                metrics::counter!(
+                    ehrbase::telemetry::prometheus::AUTHZ_CEDAR_DECISIONS,
+                    "result" => "permit"
+                )
+                .increment(1);
             } else {
-                metrics::counter!(METRIC_CEDAR_DECISIONS, "result" => "deny").increment(1);
+                metrics::counter!(
+                    ehrbase::telemetry::prometheus::AUTHZ_CEDAR_DECISIONS,
+                    "result" => "deny"
+                )
+                .increment(1);
                 return Ok(Decision::Deny);
             }
         }

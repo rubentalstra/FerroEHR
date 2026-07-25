@@ -130,9 +130,10 @@ patient is possible only through the
   by route template, never by a path containing ids.
 - **Metrics** are exposed for Prometheus to scrape at `/management/prometheus`
   (OTLP metrics push is an option). The catalogue includes HTTP request
-  duration and active requests, authentication failures, database pool state,
-  AQL query counts and latency, compositions committed, validation failures,
-  and the audit pipeline's health.
+  duration and active requests, authentication failures and authorization
+  decisions, database pool state, AQL query counts and latency, compositions
+  committed (by openEHR audit change type), validation failures, and the audit
+  pipeline's health.
 
 The telemetry environment variables:
 
