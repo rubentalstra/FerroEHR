@@ -766,8 +766,9 @@ whole tree under the shared tower-http stack (request-id, trace, catch-panic, CO
 16 MiB body limit, 30 s timeout, compression) (`app/ehrbase-rest/src/router.rs`).
 
 **Surfaces OUTSIDE auth + overload shedding** (siblings of the API nest, never shed, so an
-operator can always probe an overloaded server): `/ehrbase/rest/status`, `/health`,
-`/ehrbase/rest/status/health`, the SMART discovery document, the Swagger UI + OpenAPI JSON
+operator can always probe an overloaded server): the always-on health family (`/health`,
+`/health/liveness`, `/health/readiness`), `/ehrbase/rest/status` (+ its
+`/ehrbase/rest/status/health` alias), the SMART discovery document, the Swagger UI + OpenAPI JSON
 documents, and the whole `/management/*` surface (which carries its own per-endpoint
 access-level guard and may live on a separate port). The System `OPTIONS` manifest sits
 **above even the CORS layer** (CORS would eat `OPTIONS` as a preflight).
@@ -1144,34 +1145,37 @@ timestamp}` — the ITS-REST version is the shared provenance identity (the rele
 Release-1.1.0). No openEHR spec governs a status endpoint — our own surface. This is also
 the URL the container `ehrbase healthcheck` subcommand probes.
 
-### GET /health · GET /ehrbase/rest/status/health
-chain: `root_health` / `status_health` — static `200 OK` text
-sql: 0 round trips
-notes: outside auth/overload; pure process-liveness probes.
+### Health family — `extensions/health.rs` (always mounted, never gated)
 
-### Management surface — `extensions/management/` (gate: `management.enabled`, each endpoint opt-in via its own access level; optionally on a separate internal port)
+The three probe routes are mounted unconditionally by `router::mount_public_surface`,
+outside the API subtree — so outside auth, ATNA audit, and the overload-shed layer, and
+independent of every configuration switch (an orchestrator can probe a server whose whole
+`[management]` section is off). No openEHR spec governs health probes — our own
+operational surface (the ITS-REST System API defines only `OPTIONS /`).
+
+### GET /health · GET /health/liveness · GET /ehrbase/rest/status/health
+chain: `health::root_health` / `health::liveness` / `overview::status::status_health` —
+static `200 OK` text (`/health/liveness` is a byte-identical alias of `/health`;
+`/ehrbase/rest/status/health` is the REST-root compatibility alias)
+sql: 0 round trips
+notes: outside auth/overload; pure process liveness — no dependency is touched, so a DB
+outage never gets the container killed.
+
+### GET /health/readiness
+chain: `health::readiness` → `HealthRegistry::evaluate` — indicators: `DbHealth`
+(SELECT 1 ping), `MigrationsHealth` (one `to_regclass(...)` schema probe),
+`AuditHealth` / `EventsHealth` (in-memory flags)
+sql: 2 round trips (db ping + migrations probe); the rest is in-memory
+notes: 200 UP/DEGRADED, 503 DOWN (a required indicator down); body = the aggregate plus
+each indicator's contribution.
+
+### Management surface — `extensions/management/` (ops introspection only; gate: `management.enabled`, each endpoint opt-in via its own access level; optionally on a separate internal port)
 
 Every mounted route carries a per-route access-level layer (`Off` = not mounted,
 `Public`, `Private`, `AdminOnly` — reusing the shared `Authenticator`; AdminOnly
 additionally requires the configured admin scope → 403). Sits outside the API-subtree
-auth/overload layers. No openEHR spec governs this — our own operational surface.
-
-### GET /management/health
-chain: `aggregate_health` → `HealthRegistry::evaluate` — indicators: `DbHealth`
-(SELECT 1 ping), `MigrationsHealth` (one `to_regclass(...)` schema probe),
-`AuditHealth` / `EventsHealth` (in-memory flags)
-sql: 2 round trips (db ping + migrations probe); the rest is in-memory
-notes: 200 UP/DEGRADED, 503 DOWN.
-
-### GET /management/health/liveness
-chain: `liveness` — constant UP body, **no I/O** (reaching the handler = alive)
-sql: 0 round trips
-notes: public when `probes_enabled` (no access layer).
-
-### GET /management/health/readiness
-chain: `readiness` → the same registry evaluate as aggregate health
-sql: 2 round trips (as above)
-notes: public when `probes_enabled`; 503 when not ready.
+auth/overload layers. There is **no health route here**: the probes are the always-on
+public family above. No openEHR spec governs this — our own operational surface.
 
 ### GET /management/info
 chain: `info_view` → `BuildInfo` (build/git/spec provenance, captured at boot)
@@ -1295,4 +1299,4 @@ notes: DB pool acquire-wait histograms are recorded inline on hot paths by the
 Counts: ADMIN 2 · terminology 6 · event-subscription 5 · tenant 5 · FHIR 7 ·
 FLAT/STRUCTURED 2 glue paths (input/output, on the COMPOSITION endpoints) · SMART 1 ·
 OpenAPI/docs 2 + 12 family documents + the UI asset route · public/operational: OPTIONS
-(2 mounts) + status/health 3 + management 11 operations · background paths 5.
+(2 mounts) + health 3 + status 2 + management 8 operations · background paths 5.

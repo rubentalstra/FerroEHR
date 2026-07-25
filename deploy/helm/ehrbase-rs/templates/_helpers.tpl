@@ -61,9 +61,10 @@ ServiceAccount name.
 {{- end }}
 
 {{/*
-The container port the management surface (health probes / prometheus) is
-reachable on. When management.port is set the surface runs on its own listener;
-otherwise it shares the main API port.
+The container port the ops-introspection surface (prometheus / metrics / info /
+env / loggers) is reachable on. When management.port is set the surface runs on
+its own listener; otherwise it shares the main API port. The health probes are
+never on this port-selection path: they are always served on the main HTTP port.
 */}}
 {{- define "ehrbase-rs.managementPort" -}}
 {{- if .Values.config.management.port }}

@@ -15,6 +15,48 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **Public health probes (`/health/liveness`, `/health/readiness`)**: the
+  server now always serves a complete health family on its main HTTP port,
+  unauthenticated and independent of every configuration switch —
+  `GET /health` (unchanged: constant `200 OK`, plain-text `OK`),
+  `GET /health/liveness` (an identical alias under the
+  orchestrator-conventional path), and `GET /health/readiness` (the
+  indicator-backed probe: database ping, migrations applied and the in-memory
+  component flags, `200` when the aggregate is UP/DEGRADED, `503` when a
+  required component is DOWN, with the full per-indicator JSON body). They are
+  mounted outside the API's authentication and overload-shedding layers, so
+  they answer without credentials and are never shed on a saturated server.
+  `GET /ehrbase/rest/status/health` is unchanged.
+
+### Changed
+
+- **Readiness moved from `/management/health/readiness` to the public
+  `/health/readiness`** (and liveness to `/health/liveness`). Database-backed
+  readiness no longer hides behind `management.enabled` + a probe switch —
+  nothing has to be enabled for an orchestrator to probe the server. Point
+  existing probes at the new paths.
+- **Helm probes use the public paths on the main HTTP port**: the chart's
+  `httpGet` liveness/startup probes hit `/health/liveness` and readiness hits
+  `/health/readiness` on the `http` port, with no prerequisite — the previous
+  render-time failure demanding `config.management.enabled=true` +
+  `config.management.probes_enabled=true` is gone. Prometheus scrape
+  annotations still point at the management surface (and its separate port when
+  configured), unchanged.
+
+### Removed
+
+- **`/management/health`, `/management/health/liveness`, and
+  `/management/health/readiness`** are removed; the management surface is now
+  ops introspection only (info, prometheus, metrics, env, loggers). The
+  aggregate component view is the body of the public `/health/readiness`.
+- **The `management.probes_enabled` and `management.endpoints.health`
+  configuration keys** are removed. Configuration is strict, so a config file
+  or `EHRBASE__MANAGEMENT__PROBES_ENABLED` / `…__ENDPOINTS__HEALTH` environment
+  variable still setting them **fails at boot** with an unknown-key error —
+  delete the keys; the probes are always on.
+
 ## [3.10.0] - 2026-07-25
 
 ### Added

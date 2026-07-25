@@ -158,9 +158,12 @@ pub async fn serve_full(
     let state = AppState::with_parts(config, backend, authz, observability);
     let main_app = router(state.clone(), authenticator.clone());
 
-    // Separate-port management listener (§2): its own axum server task. It
-    // stays plain HTTP even with `[server.tls]` on — an internal surface
-    // (health/metrics probes), never exposed beyond the pod/host boundary.
+    // Separate-port management listener: its own axum server task. It stays
+    // plain HTTP even with `[server.tls]` on — an internal ops-introspection
+    // surface (metrics/info/env/loggers), never exposed beyond the pod/host
+    // boundary. The health probes are not here: they are always on the main
+    // listener (`extensions::health`), so a separate-port deployment does not
+    // move them.
     let management_task = if management_enabled && let Some(port) = management_port {
         let management_app = management_router(&state, authenticator);
         let management_bind = format!("0.0.0.0:{port}");
