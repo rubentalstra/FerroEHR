@@ -53,6 +53,18 @@ impl EhrbaseService {
     /// globs (`*` wildcard) and cursored by `offset`/`fetch`
     /// (`operations/definition_template_adl1.4_list.yaml`).
     ///
+    /// NOTE (adjudicated): the ITS-REST docs text does not define
+    /// `filter_version` at all (the parameter exists only in the stalled OAS,
+    /// which is codegen input, never a behavioural oracle) — an ABSENT
+    /// `filter_version` therefore applies no version filtering and the list
+    /// carries every stored template; there is no implicit latest-only
+    /// collapse. The version value itself derives from the `template_id`'s
+    /// `.vN` axis (`crate::templates::identity::template_version`), which is
+    /// also the template's whole version/lifecycle mechanism — no parallel
+    /// lifecycle-state model exists or is planned (adjudicated 2026-07-25:
+    /// that would re-model what the id already carries). Our own
+    /// spec-silence reading, flagged as such.
+    ///
     /// # Errors
     ///
     /// A database failure (`exception` → `500`).

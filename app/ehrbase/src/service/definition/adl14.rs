@@ -304,11 +304,20 @@ impl EhrbaseService {
     /// `an_opt_id` (a `UUID`), evicting its derived-runtime (`WebTemplate`)
     /// cache entry.
     ///
+    /// NOTE: the in-use refusal below is our own integrity design — the SM
+    /// operation (`i_definition_adl14.adoc` §`delete_opt`) defines only
+    /// `Pre_has_opt` and the `invalid_template` error and is silent on
+    /// committed data referencing the template; a physical delete must never
+    /// orphan the compositions built on it, so this path refuses exactly like
+    /// the admin wire delete ([`Self::admin_template_delete`]).
+    ///
     /// # Errors
     ///
     /// - `an_opt_id` is not a parseable `UUID` → `precondition_violation`
     ///   (`400`).
     /// - No OPT with that id → `template_does_not_exist` (`404`).
+    /// - A committed version still references the template →
+    ///   `ServiceError::Conflict` (`409`), naming the reference count.
     /// - A database failure (`exception` → `500`).
     pub async fn delete_opt(&self, an_opt_id: String) -> Result<(), SmError> {
         Ok(self.opt_delete(&an_opt_id).await?)
@@ -520,23 +529,47 @@ impl EhrbaseService {
 
     /// Delete an OPT by `an_opt_id` (a `UUID`), evicting the deleted
     /// template's `WebTemplate` cache entry; absent →
-    /// `template_does_not_exist` (`404`); unparseable UUID → `400`.
+    /// `template_does_not_exist` (`404`); still referenced by committed
+    /// versions → `Conflict` (`409`, with the reference count); unparseable
+    /// UUID → `400`.
     async fn opt_delete(&self, an_opt_id: &str) -> Result<(), ServiceError> {
         let id = parse_opt_uuid(an_opt_id)?;
-        // `RETURNING template_id` gives us the wire id of the deleted row so we
-        // can drop its derived-runtime (`WebTemplate`) cache entry in the same
-        // operation. Absent row → `None` → 404.
-        let deleted_template_id: Option<String> =
-            sqlx::query_scalar("DELETE FROM template_store WHERE id = $1 RETURNING template_id")
+        // Resolve, count references, and delete in ONE transaction so the
+        // friendly 409 is consistent with the delete (mirroring the admin
+        // wire delete, `delete_template_by_id`); the `vo_version.template_id`
+        // foreign key (`0001_baseline.sql`, NO ACTION) remains the underlying
+        // integrity guard even under a concurrent commit. Absent row → 404.
+        let mut tx = self.pool.begin().await?;
+        let template_id: Option<String> =
+            sqlx::query_scalar("SELECT template_id FROM template_store WHERE id = $1")
                 .bind(id)
-                .fetch_optional(&self.pool)
+                .fetch_optional(&mut *tx)
                 .await?;
-        let Some(template_id) = deleted_template_id else {
+        let Some(template_id) = template_id else {
             return Err(ServiceError::sm(
                 CallStatusType::TemplateDoesNotExist,
                 format!("OPT {an_opt_id}"),
             ));
         };
+        // Physical deletes never orphan clinical data (no openEHR spec governs
+        // the in-use refusal — our own integrity design; the SM operation
+        // defines only `Pre_has_opt`/`invalid_template`).
+        let refs: i64 =
+            sqlx::query_scalar("SELECT count(*) FROM vo_version WHERE template_id = $1")
+                .bind(&template_id)
+                .fetch_one(&mut *tx)
+                .await?;
+        if refs > 0 {
+            return Err(ServiceError::Conflict(format!(
+                "template '{template_id}' is still referenced by {refs} committed version(s); \
+                 delete those compositions before deleting the template"
+            )));
+        }
+        sqlx::query("DELETE FROM template_store WHERE id = $1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        tx.commit().await?;
         // Delete is the only mutation that ends a stored template's lifetime
         // (uploads are create-only — `store_template`'s `ON CONFLICT DO NOTHING`
         // never overwrites, and `web_template_for` never caches a negative

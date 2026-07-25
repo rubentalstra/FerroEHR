@@ -87,6 +87,16 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Contribution list shows the change type's display rubric** (#304). The
+  EHR contribution-list extension (`GET /ehr/{ehr_id}/contribution`) now
+  carries `change_type_rubric` beside the raw `change_type` group code —
+  resolved from the openEHR `audit_change_type` terminology group by the CDR
+  itself, so clients never maintain a local code table. The admin console's
+  contributions tab displays the rubric (code on hover). The SM-catalog
+  `delete_opt` service path now also refuses with the same friendly
+  409-and-reference-count as the admin template delete while committed
+  versions still reference the template, instead of relying on the raw
+  foreign-key error.
 - **openEHR BASE spec pin refreshed** (#341). The vendored BASE 1.3.0 spec
   text and BMM codegen input now track upstream `specifications-BASE` master
   `e4879576` (24 commits: the SPECBASE-48 RESOURCE_DESCRIPTION invariants,
