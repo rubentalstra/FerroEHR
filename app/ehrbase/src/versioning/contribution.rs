@@ -589,6 +589,12 @@ pub(crate) async fn commit_version_set(
     }
     tx.commit().await?;
 
+    // Meter the COMPOSITION versions this CONTRIBUTION landed, after the commit
+    // (a rolled-back contribution counts nothing).
+    for c in &committed {
+        change::meter_committed(c);
+    }
+
     // An EHR_ACCESS version changes the EHR's access-control policy (the
     // settings are change-controlled — RM ehr master04 §EHR Access), so drop the
     // cached settings the access gate consults per request.

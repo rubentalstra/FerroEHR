@@ -138,6 +138,19 @@ workflow refuses a tag that has no matching section here.
   to scrape. A test now runs the real sweep over every variable the shipped
   Compose files set on the server service, so this class of drift fails in the
   test suite rather than at `docker compose up`.
+- **The `compositions_committed_total` metric now counts** (#332). The counter
+  was declared and scraped but never incremented, so dashboards over it
+  rendered a permanently empty series. Every commit route that lands a
+  COMPOSITION version — create, update, delete, and a CONTRIBUTION commit —
+  now increments it once per committed version, labelled `change_type` with the
+  openEHR `audit_change_type` code recorded on that version's audit
+  (`249`/`251`/`523`/…). The increment happens after the transaction commits, so
+  a rolled-back write is never counted. In the same audit of the metric
+  registry, five metrics that were emitted but not registered
+  (`version_signature_invalid_total`, `authz_cedar_decisions_total`,
+  `authz_remote_pdp_calls_total`, `atna_audit_rejected_total`,
+  `atna_audit_reaped_total`) now carry their `# HELP`/`# TYPE` descriptions in
+  the `/management/prometheus` exposition.
 - **Admin console: find-an-EHR-by-id works without JavaScript** (#301). The
   finder is now a plain `GET` form: submitting it before (or without) the
   browser app loading redirects to the EHR's detail screen server-side, and
