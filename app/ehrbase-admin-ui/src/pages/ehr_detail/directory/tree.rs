@@ -8,15 +8,17 @@
 //!
 //! The working tree is one `RwSignal<serde_json::Value>` seeded from the
 //! loaded FOLDER, then stamped with an ephemeral, client-only `_key` identity
-//! on every folder ([`super::edit::stamp_keys`]); every mutation goes through
-//! the pure [`super::edit`] helpers, and every rendered datum reads the tree
-//! reactively. `<For>` rows and the collapse / rename / picker UI state are
-//! keyed by that stable, data-derived `_key` (never a positional path — rules
-//! §4), so a folder keeps its own state and row after a sibling delete shifts
-//! indices; a folder's positional path is re-derived from its `_key`
-//! ([`super::edit::find_path_by_key`]) for each read and mutation. The `_key`
-//! is stripped ([`super::edit::strip_keys`]) from every body sent to the CDR
-//! and from the advanced-JSON view — it never leaves the console.
+//! on every folder and every item reference ([`super::edit::stamp_keys`]);
+//! every mutation goes through the pure [`super::edit`] helpers, and every
+//! rendered datum reads the tree reactively. `<For>` rows and the collapse /
+//! rename / picker UI state are keyed by that stable, data-derived `_key`
+//! (never a positional path or index — rules §4), so a node keeps its own
+//! state and row after a sibling delete shifts indices; the live position is
+//! re-derived from the `_key` for each read and mutation (a folder's path with
+//! [`super::edit::find_path_by_key`], an item's index within its folder with
+//! [`super::edit::find_item_index`]). The `_key` is stripped
+//! ([`super::edit::strip_keys`]) from every body sent to the CDR and from the
+//! advanced-JSON view — it never leaves the console.
 
 use leptos::prelude::*;
 use serde_json::Value;
@@ -27,9 +29,9 @@ use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
 use crate::pages::ehr_detail::directory::edit::{
-    add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_path_by_key,
-    item_count, item_summary, node_key_at, node_name, object_ref, remove_item, rename_folder,
-    stamp_keys, strip_keys, versioned_object_id,
+    add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_item_index,
+    find_path_by_key, item_count, item_node_keys, item_summary, node_key_at, node_name, object_ref,
+    remove_item, rename_folder, stamp_keys, strip_keys, versioned_object_id,
 };
 use crate::pages::ehr_detail::directory::{DirectoryState, PickerResource};
 use crate::pages::ehrs::cell_text;
@@ -66,7 +68,8 @@ fn strip_keys_to_string(tree: &Value) -> String {
 #[derive(Clone, Copy)]
 pub(in crate::pages::ehr_detail::directory) struct EditorState {
     /// The working FOLDER tree (mutated in place; the single source of truth).
-    /// Every folder carries an ephemeral `_key` identity (see the module doc).
+    /// Every folder and item reference carries an ephemeral `_key` identity
+    /// (see the module doc).
     tree: RwSignal<Value>,
     /// The pristine baseline the working tree is compared against for `dirty`
     /// (the same stamped copy `tree` is seeded from).
@@ -83,8 +86,9 @@ pub(in crate::pages::ehr_detail::directory) struct EditorState {
     json_draft: RwSignal<String>,
     /// The advanced-mode parse error, if the draft is not valid JSON.
     json_error: RwSignal<Option<String>>,
-    /// The next free `_key` ordinal, advanced as folders are added (see
-    /// [`super::edit::stamp_keys`]); reset to the fresh stamp count on seed.
+    /// The next free `_key` ordinal, advanced as folders and item references
+    /// are added (see [`super::edit::stamp_keys`]); reset to the fresh stamp
+    /// count on seed.
     counter: StoredValue<u64>,
     /// The loaded version's `uid.value` (`OBJECT_VERSION_ID`) — the `If-Match`
     /// value the save sends.
@@ -160,11 +164,11 @@ impl EditorState {
 /// loaded version (rules §4 — the state lives above the Suspend, so a Suspend
 /// re-run for the same version must NOT re-parse over the user's edits). On a
 /// new version it parses the body, stamps a fresh ephemeral `_key` on every
-/// folder (see [`super::edit::stamp_keys`]), and resets the working tree +
-/// pristine baseline (the SAME stamped copy, so `dirty` stays a plain equality
-/// compare), the counter, `version_uid`, collapse/rename state, the parse
-/// error, the advanced-JSON draft (from the stripped new body), and the
-/// conflict baseline; `advanced` is left as the user set it. Every write runs
+/// folder and item reference (see [`super::edit::stamp_keys`]), and resets the
+/// working tree + pristine baseline (the SAME stamped copy, so `dirty` stays a
+/// plain equality compare), the counter, `version_uid`, collapse/rename state,
+/// the parse error, the advanced-JSON draft (from the stripped new body), and
+/// the conflict baseline; `advanced` is left as the user set it. Every write runs
 /// during a render pass, so plain `.set()`/`.set_value()` is correct.
 ///
 /// # Errors
@@ -209,7 +213,8 @@ pub(in crate::pages::ehr_detail::directory) fn seed(
 #[derive(Clone, Copy)]
 struct TreeEditor {
     /// The working FOLDER tree (mutated in place; the single source of truth).
-    /// Every folder carries an ephemeral `_key` identity (see the module doc).
+    /// Every folder and item reference carries an ephemeral `_key` identity
+    /// (see the module doc).
     tree: RwSignal<Value>,
     /// Ephemeral `_key`s of collapsed folders (expanded unless listed).
     collapsed: RwSignal<std::collections::HashSet<String>>,
@@ -217,8 +222,9 @@ struct TreeEditor {
     renaming: RwSignal<Option<String>>,
     /// The in-progress rename text.
     rename_draft: RwSignal<String>,
-    /// The next free `_key` ordinal, advanced as folders are added (see
-    /// [`super::edit::stamp_keys`]); persisted across clicks for uniqueness.
+    /// The next free `_key` ordinal, advanced as folders and item references
+    /// are added (see [`super::edit::stamp_keys`]); persisted across clicks for
+    /// uniqueness.
     counter: StoredValue<u64>,
     /// The picker modal's manual-entry `OBJECT_REF` namespace (long-lived —
     /// see [`EditorState`]).
@@ -457,8 +463,10 @@ fn tree_view(ed: TreeEditor) -> AnyView {
 /// Render one FOLDER node, identified by its ephemeral `_key` (`node_key`).
 /// Its live positional `path` is re-derived from that `_key` on every reactive
 /// read and mutation ([`find_path_by_key`]) so the row stays correct after a
-/// sibling delete shifts indices; `<For>` rows and the collapse / rename UI
-/// state key on `node_key`, never a positional path (rules §4).
+/// sibling delete shifts indices; the collapse / rename UI state and the child
+/// folder `<For>` key on `node_key`, and the item `<For>` keys on each item's
+/// own ephemeral `_key` ([`item_node_keys`]) — never a positional path or index
+/// (rules §4).
 fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
     let key_collapsed = node_key.clone();
     let is_collapsed = move || ed.collapsed.with(|c| c.contains(&key_collapsed));
@@ -508,7 +516,8 @@ fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
     let actions = folder_actions(ed, node_key.clone(), is_root);
 
     let key_children = node_key.clone();
-    let key_items = node_key;
+    let key_items = node_key.clone();
+    let key_item_rows = node_key;
 
     view! {
         <li class="py-0.5">
@@ -539,15 +548,15 @@ fn render_folder(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
                     each=move || {
                         ed.tree
                             .with(|t| {
-                                let count = find_path_by_key(t, &key_items)
-                                    .map_or(0, |p| item_count(t, &p));
-                                (0..count).map(|i| (key_items.clone(), i)).collect::<Vec<_>>()
+                                find_path_by_key(t, &key_items)
+                                    .map(|p| item_node_keys(t, &p))
+                                    .unwrap_or_default()
                             })
                     }
-                    key=|(parent, idx): &(String, usize)| format!("{parent}#{idx}")
-                    let:item
+                    key=|k: &String| k.clone()
+                    let:item_key
                 >
-                    {render_item(ed, item.0, item.1)}
+                    {render_item(ed, key_item_rows.clone(), item_key)}
                 </For>
             </ul>
         </li>
@@ -707,21 +716,25 @@ fn folder_actions(ed: TreeEditor, node_key: String, is_root: bool) -> AnyView {
 }
 
 /// One item reference row: the ref type + id value, with a remove button.
-/// Keyed by the owning folder's ephemeral `_key` plus the item index (items
-/// carry no per-row state, so a positional index is a fine tiebreaker — rules
-/// §4). The folder path is re-derived from `parent_key` for the reactive read
-/// and the remove mutation.
-fn render_item(ed: TreeEditor, parent_key: String, idx: usize) -> AnyView {
-    let summary_key = parent_key.clone();
+/// Identified by the item's OWN ephemeral `_key` (`item_key`) inside the owning
+/// folder's `_key` (`parent_key`) — never the item's position, which every
+/// removal of an earlier sibling shifts, handing this row the next item's
+/// identity (rules §4). Both live positions are re-derived per use: the folder
+/// path from `parent_key` ([`find_path_by_key`]), the item index from
+/// `item_key` ([`find_item_index`]).
+fn render_item(ed: TreeEditor, parent_key: String, item_key: String) -> AnyView {
+    let summary_folder = parent_key.clone();
+    let summary_item = item_key.clone();
     let (ref_type, id) = ed.tree.with(|t| {
-        find_path_by_key(t, &summary_key).map_or_else(
-            || ("OBJECT".to_owned(), "(ref)".to_owned()),
-            |p| item_summary(t, &p, idx),
-        )
+        find_path_by_key(t, &summary_folder)
+            .and_then(|p| find_item_index(t, &p, &summary_item).map(|i| item_summary(t, &p, i)))
+            .unwrap_or_else(|| ("OBJECT".to_owned(), "(ref)".to_owned()))
     });
     let on_remove = move |_| {
         ed.tree.update(|t| {
-            if let Some(p) = find_path_by_key(t, &parent_key) {
+            if let Some(p) = find_path_by_key(t, &parent_key)
+                && let Some(idx) = find_item_index(t, &p, &item_key)
+            {
                 remove_item(t, &p, idx);
             }
         });
@@ -768,10 +781,15 @@ fn picker_modal(ed: TreeEditor) -> AnyView {
                 manual_id_type.get().trim(),
                 manual_id.get().trim(),
             );
-            ed.tree.update(|t| {
-                if let Some(p) = find_path_by_key(t, &key) {
-                    add_item(t, &p, item);
-                }
+            // Append the reference, then stamp the (only) unstamped node with a
+            // fresh `_key` so the new item row gets a stable identity too.
+            ed.counter.update_value(|c| {
+                ed.tree.update(|t| {
+                    if let Some(p) = find_path_by_key(t, &key) {
+                        add_item(t, &p, item);
+                        stamp_keys(t, c);
+                    }
+                });
             });
             ed.collapsed.update(|c| {
                 c.remove(&key);
@@ -893,10 +911,15 @@ fn composition_choice(ed: TreeEditor, row: &[Value]) -> AnyView {
     let on_add = move |_| {
         if let Some(key) = ed.picker_target.get() {
             let item = object_ref("local", "COMPOSITION", "HIER_OBJECT_ID", &object_id);
-            ed.tree.update(|t| {
-                if let Some(p) = find_path_by_key(t, &key) {
-                    add_item(t, &p, item);
-                }
+            // Stamp the appended reference so its row has a stable identity
+            // (the same discipline as the manual-entry path above — rules §4).
+            ed.counter.update_value(|c| {
+                ed.tree.update(|t| {
+                    if let Some(p) = find_path_by_key(t, &key) {
+                        add_item(t, &p, item);
+                        stamp_keys(t, c);
+                    }
+                });
             });
             ed.collapsed.update(|c| {
                 c.remove(&key);
