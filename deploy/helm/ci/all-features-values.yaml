@@ -74,9 +74,7 @@ config:
     base_path: /management
     port: 9100
     access_default: admin_only
-    probes_enabled: true
     endpoints:
-      health: private
       info: admin_only
       metrics: admin_only
       prometheus: public

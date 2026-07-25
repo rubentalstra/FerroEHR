@@ -72,6 +72,10 @@ fn extensions_doc_is_non_empty() {
     // Representative paths from each documented extension group must be present.
     for expected in [
         "/ehrbase/rest/status",
+        // The always-on public health family (never config-gated).
+        "/health",
+        "/health/liveness",
+        "/health/readiness",
         "/management/info",
         "/ehrbase/rest/.well-known/smart-configuration",
         "/ehrbase/rest/api-docs/openapi.json",
@@ -316,7 +320,6 @@ fn app_config() -> AppConfig {
 async fn full_app() -> Router {
     let config = app_config();
     let public = EndpointLevels {
-        health: AccessLevel::Public,
         info: AccessLevel::Public,
         metrics: AccessLevel::Public,
         prometheus: AccessLevel::Public,
@@ -326,7 +329,6 @@ async fn full_app() -> Router {
     let observability = Observability {
         management: ManagementConfig {
             enabled: true,
-            probes_enabled: true,
             endpoints: public,
             ..ManagementConfig::default()
         },

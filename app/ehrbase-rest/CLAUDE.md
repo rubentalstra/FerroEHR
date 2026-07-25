@@ -6,9 +6,16 @@ Modules (`src/`): `api` (one impl group per API area —
 ehr/definition/demographic/query/admin/system), `router`, `state`, `formats`
 (content negotiation), `overview`, `overload` (shed), `config`, `system_log`
 (ATNA audit middleware), `smart` (SMART App Launch resource-server role), and
-`extensions` (`access` = the RBAC/ABAC authn+authz PEP, plus fhir /
+`extensions` (`access` = the RBAC/ABAC authn+authz PEP, plus health / fhir /
 terminology / management / tenant / event-subscription surfaces). Entry point:
 `serve_full`.
+
+- **The health family is always-on and ungated** (`extensions::health`:
+  `/health`, `/health/liveness`, `/health/readiness`), mounted outside the API
+  subtree — no auth, no audit, no overload shed, no config switch. The
+  `/management` surface is ops introspection only (info/prometheus/metrics/env/
+  loggers) and carries no health route. No openEHR spec governs either — our own
+  operational surface.
 
 - **The wire is the spec:** status codes, headers (`ETag`, `Location`,
   `Last-Modified`, `Prefer`, committal merge), and content negotiation

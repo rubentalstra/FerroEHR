@@ -7,13 +7,20 @@
 //! [`AccessLevel::Off`] (→ `404`). The surface only exists once a deployment
 //! opts each piece in explicitly.
 //!
+//! The surface is **ops introspection only** — build info, Prometheus, the
+//! metric views, the redacted effective config, and the live log-filter
+//! control. Health probes are NOT configured here: the `/health`,
+//! `/health/liveness`, and `/health/readiness` endpoints are always-on and
+//! public, so an orchestrator can probe a server that has this whole section
+//! switched off.
+//!
 //! No openEHR spec governs configuration or the management surface — our own
 //! design.
 
 use serde::{Deserialize, Serialize};
 
 /// The access level of a single management endpoint. Maps onto the existing
-/// authentication layer (binding doc §2).
+/// authentication layer (the same authenticator the API surface uses).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum AccessLevel {
@@ -42,9 +49,6 @@ impl AccessLevel {
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct EndpointLevels {
-    /// `/management/health` (aggregate).
-    #[serde(default)]
-    pub health: AccessLevel,
     /// `/management/info`.
     #[serde(default)]
     pub info: AccessLevel,
@@ -78,18 +82,12 @@ pub struct ManagementConfig {
     #[serde(default)]
     pub port: Option<u16>,
     /// The global default access level (documented fallback; the concrete
-    /// per-endpoint level in [`Self::endpoints`] wins). Also the access level of
-    /// the aggregate `/health` when its endpoint level is left unset.
+    /// per-endpoint level in [`Self::endpoints`] wins).
     #[serde(default = "defaults::access_default")]
     pub access_default: AccessLevel,
     /// Per-endpoint access levels.
     #[serde(default)]
     pub endpoints: EndpointLevels,
-    /// When `true`, the K8s-style `/health/liveness` and `/health/readiness`
-    /// probes are mounted as [`AccessLevel::Public`] (unauthenticated), so
-    /// orchestrator probes need no credentials.
-    #[serde(default)]
-    pub probes_enabled: bool,
 }
 
 impl Default for ManagementConfig {
@@ -100,18 +98,7 @@ impl Default for ManagementConfig {
             port: None,
             access_default: defaults::access_default(),
             endpoints: EndpointLevels::default(),
-            probes_enabled: false,
         }
-    }
-}
-
-impl ManagementConfig {
-    /// The access level for the aggregate `/health` endpoint: its explicit
-    /// per-endpoint level, or [`Self::access_default`] when left `Off` but the
-    /// surface is otherwise enabled with probes.
-    #[must_use]
-    pub fn health_level(&self) -> AccessLevel {
-        self.endpoints.health
     }
 }
 
@@ -131,6 +118,7 @@ mod defaults {
     clippy::panic,
     clippy::print_stdout,
     clippy::print_stderr,
+    clippy::expect_used,
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 mod tests {
@@ -144,6 +132,26 @@ mod tests {
         assert!(c.port.is_none());
         assert_eq!(c.access_default, AccessLevel::AdminOnly);
         assert_eq!(c.endpoints.prometheus, AccessLevel::Off);
-        assert!(!c.probes_enabled);
+        assert_eq!(c.endpoints.info, AccessLevel::Off);
+    }
+
+    /// The health probes are not part of this section any more (they are the
+    /// always-on public `/health` family), so a config still carrying the
+    /// removed keys must fail loudly at boot rather than be silently ignored
+    /// (`deny_unknown_fields`).
+    #[test]
+    fn removed_probe_keys_are_rejected() {
+        let err = toml::from_str::<ManagementConfig>("probes_enabled = true")
+            .expect_err("probes_enabled must be an unknown field");
+        assert!(
+            err.to_string().contains("probes_enabled"),
+            "the error must name the offending key: {err}"
+        );
+        let err = toml::from_str::<EndpointLevels>("health = \"public\"")
+            .expect_err("endpoints.health must be an unknown field");
+        assert!(
+            err.to_string().contains("health"),
+            "the error must name the offending key: {err}"
+        );
     }
 }

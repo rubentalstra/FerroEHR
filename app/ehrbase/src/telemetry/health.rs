@@ -1,12 +1,12 @@
-//! Health indicators + registry + the liveness/readiness/aggregate semantics
-//! (binding doc §2).
+//! Health indicators + registry + the readiness-aggregation semantics.
 //!
 //! A [`HealthIndicator`] is a named, async, bounded check (e.g. "ping the DB").
 //! This module owns the trait, the registry, and the aggregation rules; the
 //! concrete indicators live in [`crate::telemetry::indicators`] and the HTTP
-//! probe handlers in the protocol adapter (`ehrbase-rest`). The registry runs
-//! every indicator concurrently, each bounded to [`CHECK_TIMEOUT`], so a
-//! wedged dependency cannot hang a probe.
+//! probe handlers in the protocol adapter (`ehrbase-rest`, the always-on
+//! public `/health` family). The registry runs every indicator concurrently,
+//! each bounded to [`CHECK_TIMEOUT`], so a wedged dependency cannot hang a
+//! probe.
 //!
 //! No openEHR spec governs health probes — our own operational design.
 
@@ -19,8 +19,9 @@ use http::StatusCode;
 use serde::Serialize;
 use tokio::task::JoinSet;
 
-/// The upper bound on a single indicator check (binding doc: "DB ping 1s
-/// bounded"). A check that exceeds it is reported [`HealthStatus::Down`].
+/// The upper bound on a single indicator check: a probe must answer promptly
+/// even when a dependency is wedged. A check that exceeds it is reported
+/// [`HealthStatus::Down`].
 pub const CHECK_TIMEOUT: Duration = Duration::from_secs(1);
 
 /// The status of a single component or of the aggregate.
@@ -94,8 +95,8 @@ pub trait HealthIndicator: Send + Sync + std::fmt::Debug {
     }
 }
 
-/// The set of indicators evaluated for the aggregate `/health` and the
-/// `/health/readiness` probe. Cheaply cloneable (`Arc` of indicator handles).
+/// The set of indicators evaluated by the public `/health/readiness` probe.
+/// Cheaply cloneable (`Arc` of indicator handles).
 #[derive(Clone, Default, Debug)]
 pub struct HealthRegistry {
     indicators: Arc<Vec<Arc<dyn HealthIndicator>>>,
