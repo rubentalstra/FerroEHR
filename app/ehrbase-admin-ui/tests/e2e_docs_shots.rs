@@ -446,5 +446,50 @@ async fn capture_documentation_screenshots() {
         .await;
     shot_to(&h, &dir, "audit/audit-empty").await;
 
+    // ── The ADMIN destructive operations. They are probe-gated on the CDR's
+    //    admin API, so they render only for this ADMIN session — never in the
+    //    plain-user pass above, which is exactly why they are captured here.
+    capture(
+        &h,
+        &dir,
+        "/templates",
+        "templates/templates-admin-delete",
+        Some("[data-template-delete]"),
+    )
+    .await;
+    // The stored-query row's CDR delete needs a stored query on the stack (the
+    // pass above seeds two over the Definition API).
+    h.goto("/queries").await;
+    h.wait_css("footer").await;
+    if h.driver.find(By::Css("[data-query-delete]")).await.is_ok() {
+        shot_to(&h, &dir, "queries/queries-admin-delete").await;
+    } else {
+        println!("SKIP docs-shots: no stored query on the stack to show the CDR delete on");
+    }
+    if let Some(ehr_id) = env("UI_E2E_SEEDED_EHR_ID") {
+        // Captured with the confirmation MODAL open (the trigger click only —
+        // never the dialog's confirm): the dialog is the informative state, it
+        // spells out the EHR id and what the physical delete destroys.
+        h.goto(&format!("/ehrs/{ehr_id}")).await;
+        h.wait_css("#ehr-delete")
+            .await
+            .click()
+            .await
+            .expect("open the EHR delete dialog");
+        // thaw's dialog is never removed from the DOM (CSSTransition hides it
+        // with `display: none`), so wait for VISIBILITY — presence would let the
+        // capture race the open.
+        let confirm = h.wait_css("#ehr-delete-confirm").await;
+        for _ in 0..75 {
+            if confirm.is_displayed().await.unwrap_or(false) {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        }
+        shot_to(&h, &dir, "ehrs/ehr-admin-delete").await;
+    } else {
+        println!("SKIP docs-shots: the EHR delete needs UI_E2E_SEEDED_EHR_ID");
+    }
+
     h.finish().await;
 }
