@@ -76,6 +76,31 @@ impl Committed {
     }
 }
 
+/// Meter a just-committed version on the
+/// [`COMPOSITIONS_COMMITTED`](crate::telemetry::prometheus::COMPOSITIONS_COMMITTED)
+/// counter; kinds other than COMPOSITION are ignored.
+///
+/// Every commit route calls this **after** its transaction has committed, so a
+/// rolled-back write is never counted — which is why the increment cannot live
+/// in [`apply_change`] (it runs inside the commit transaction).
+///
+/// NOTE: no openEHR spec governs telemetry — our own design/extension. The
+/// `change_type` label carries the numeric openEHR `audit_change_type` group
+/// code recorded on the version's audit (`249`/`251`/`523`/…), never its English
+/// rubric: the code is the value the RM stores
+/// (`AUDIT_DETAILS.Change_type_valid`, RM common master04 §Audit Details) and
+/// the value the contribution-list surface already returns, so the series stays
+/// stable when terminology display text changes.
+pub(crate) fn meter_committed(committed: &Committed) {
+    if committed.kind == Kind::Composition {
+        metrics::counter!(
+            crate::telemetry::prometheus::COMPOSITIONS_COMMITTED,
+            "change_type" => committed.change_type.clone(),
+        )
+        .increment(1);
+    }
+}
+
 /// One change applied within a CONTRIBUTION — the openEHR change-set unit
 /// (RM common master06 §Contributions).
 ///
@@ -373,8 +398,9 @@ struct ResolvedWrite {
 ///   RM ehr `versioned_composition.adoc`), before a COMPOSITION modify;
 /// - `CommitEnv::post_status_commit` — the EHR promoted-subject-column sync,
 ///   after an `EHR_STATUS` version;
-/// - the `compositions_committed_total` metric — a cross-cutting service-layer
-///   concern, not a storage write.
+/// - [`meter_committed`] — the `compositions_committed_total` metric, a
+///   cross-cutting service-layer concern (and one that must only count work
+///   that actually committed), not a storage write.
 ///
 /// # Errors
 /// The [`next_version`] placement errors (`NotFound` / `VersionConflict`) on

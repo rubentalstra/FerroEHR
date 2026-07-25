@@ -1,22 +1,29 @@
 //! The Prometheus recorder: install, bucket ladders, metric catalog, and the
-//! `build_info` / `process_start_time` gauges (binding doc §1.2).
+//! `build_info` / `process_start_time` gauges.
 //!
 //! The [`catalog`] is the single source of truth for every application metric
 //! — its names, kinds, units, and (for histograms) explicit bucket ladders. It
 //! drives both the recorder's bucket configuration and the `describe_*`
 //! registrations, and a snapshot test pins it so a rename is always deliberate.
+//! That holds across crates: a metric the protocol adapter emits (the `http_*`,
+//! `auth_*`, `authz_*` families) declares its NAME here too, so an emitted
+//! series is never missing its `# HELP`/`# TYPE` registration — and, in the
+//! other direction, a catalog entry no code emits would render a permanently
+//! dead series, so every entry has at least one emitting call site.
 //!
 //! The `metrics` facade emits at the call sites; the recorder renders the
 //! exposition text served at `/management/prometheus`.
 
 use crate::system_log::sender::{
-    METRIC_DROPPED, METRIC_EMITTED, METRIC_SEND_FAILED, METRIC_SENT, METRIC_SERIALIZE_FAILED,
+    METRIC_DROPPED, METRIC_EMITTED, METRIC_REAPED, METRIC_REJECTED, METRIC_SEND_FAILED,
+    METRIC_SENT, METRIC_SERIALIZE_FAILED,
 };
 use crate::telemetry::build_info::BuildInfo;
 use metrics_exporter_prometheus::{BuildError, Matcher, PrometheusBuilder, PrometheusHandle};
 
-// HTTP-surface metric names (recorded by the protocol adapter's middleware,
-// registered here so the exporter and the recorder share one vocabulary).
+// Metric names the protocol adapter (`ehrbase-rest`) records — the HTTP
+// surface and the auth/authz decisions — declared here so the exporter and the
+// recorder share one vocabulary.
 /// HTTP request-duration histogram (`http_route`, `http_request_method`,
 /// `status_class`).
 pub const HTTP_REQUEST_DURATION: &str = "http_server_request_duration_seconds";
@@ -34,9 +41,17 @@ pub const HTTP_RESPONSE_BODY_SIZE: &str = "http_server_response_body_size_bytes"
 /// middleware.
 pub const AUTH_FAILURES: &str = "auth_failures_total";
 
-// ── Metric names emitted from this crate (§1.2). The http_* / auth_* names
-//    are emitted by `ehrbase-rest`; the atna_* names by
-//    `crate::system_log::sender`. ─────────────────────────────────────────────
+/// Cedar authorization-decision counter (`result` = permit/deny), emitted by
+/// the protocol adapter's `access::authz` Cedar engine.
+pub const AUTHZ_CEDAR_DECISIONS: &str = "authz_cedar_decisions_total";
+
+/// Remote-PDP authorization-call counter (`result` = permit/deny), emitted by
+/// the protocol adapter's `access::authz` remote decision point.
+pub const AUTHZ_REMOTE_PDP_CALLS: &str = "authz_remote_pdp_calls_total";
+
+// ── Metric names emitted from this crate (the http_* / auth_* / authz_* names
+//    above are emitted by `ehrbase-rest`; the atna_* names below by
+//    `crate::system_log::sender`). ────────────────────────────────────────────
 
 /// DB pool connection gauge (`state` = `idle/in_use`).
 pub const DB_POOL_CONNECTIONS: &str = "db_pool_connections";
@@ -52,7 +67,11 @@ pub const AQL_QUERY_DURATION: &str = "aql_query_duration_seconds";
 /// lowered query plans keyed on the query text (no openEHR spec governs
 /// this, our own performance design).
 pub const AQL_PLAN_CACHE_EVENTS: &str = "aql_plan_cache_events_total";
-/// Committed-composition counter (`change_type`).
+/// Committed-composition counter (`change_type` = the numeric openEHR
+/// `audit_change_type` group code — `249`/`251`/`523`/…), incremented by
+/// [`crate::versioning::change::meter_committed`] once per COMPOSITION version
+/// that a commit route actually committed (the direct create/update/delete
+/// routes and the CONTRIBUTION commit).
 pub const COMPOSITIONS_COMMITTED: &str = "compositions_committed_total";
 /// Validation-failure counter (`pass` = `rm_invariant/terminology/template`).
 pub const VALIDATION_FAILURES: &str = "validation_failures_total";
@@ -76,7 +95,7 @@ pub const TOKIO_GLOBAL_QUEUE_DEPTH: &str = "tokio_global_queue_depth";
 /// Tokio runtime alive-task count gauge.
 pub const TOKIO_ALIVE_TASKS: &str = "tokio_alive_tasks";
 
-// ── Histogram bucket ladders (§1.2), defined once. ──────────────────────────
+// ── Histogram bucket ladders, defined once. ─────────────────────────────────
 
 /// HTTP request duration: 5ms … 10s log ladder.
 pub const HTTP_DURATION_BUCKETS: &[f64] = &[
@@ -161,7 +180,7 @@ const fn histogram(
     }
 }
 
-/// The full application metric catalog (§1.2). Ordered for a stable snapshot.
+/// The full application metric catalog. Ordered for a stable snapshot.
 #[must_use]
 pub fn catalog() -> Vec<MetricSpec> {
     vec![
@@ -186,6 +205,14 @@ pub fn catalog() -> Vec<MetricSpec> {
             AUTH_FAILURES,
             "Authentication failures by mechanism and status",
         ),
+        counter(
+            AUTHZ_CEDAR_DECISIONS,
+            "Cedar authorization decisions by result",
+        ),
+        counter(
+            AUTHZ_REMOTE_PDP_CALLS,
+            "Remote-PDP authorization calls by result",
+        ),
         // Database.
         gauge(DB_POOL_CONNECTIONS, "Connection pool connections by state"),
         histogram(
@@ -208,6 +235,10 @@ pub fn catalog() -> Vec<MetricSpec> {
             "Committed compositions by change type",
         ),
         counter(VALIDATION_FAILURES, "Validation failures by pass"),
+        counter(
+            VERSION_SIGNATURE_INVALID,
+            "Version signature verification failures by verdict",
+        ),
         counter(WEBTEMPLATE_CACHE_EVENTS, "WebTemplate cache events"),
         // Contribution-outbox eventing.
         counter(
@@ -217,12 +248,17 @@ pub fn catalog() -> Vec<MetricSpec> {
         // ATNA audit (emitted by crate::system_log::sender).
         counter(METRIC_EMITTED, "ATNA audit records enqueued"),
         counter(METRIC_DROPPED, "ATNA audit records dropped"),
+        counter(
+            METRIC_REJECTED,
+            "Auditable operations rejected under fail_mode = closed",
+        ),
         counter(METRIC_SENT, "ATNA audit records sent to transport"),
         counter(METRIC_SEND_FAILED, "ATNA audit transport send failures"),
         counter(
             METRIC_SERIALIZE_FAILED,
             "ATNA audit record serialization failures (record dropped)",
         ),
+        counter(METRIC_REAPED, "ATNA audit rows reaped by the retention job"),
         // Process / build / runtime.
         gauge(PROCESS_START_TIME, "Process start time (unix seconds)"),
         gauge(
@@ -235,7 +271,7 @@ pub fn catalog() -> Vec<MetricSpec> {
     ]
 }
 
-/// Install the global Prometheus recorder with the §1.2 bucket ladders, then
+/// Install the global Prometheus recorder with the catalog bucket ladders, then
 /// register descriptions and emit the `build_info` / `process_start_time`
 /// gauges. Returns the render handle for `/management/prometheus`.
 ///
@@ -325,6 +361,8 @@ mod tests {
             HTTP_REQUEST_DURATION,
             HTTP_ACTIVE_REQUESTS,
             AUTH_FAILURES,
+            AUTHZ_CEDAR_DECISIONS,
+            AUTHZ_REMOTE_PDP_CALLS,
             DB_POOL_CONNECTIONS,
             DB_POOL_ACQUIRE_DURATION,
             DB_TRANSACTIONS,
@@ -333,8 +371,12 @@ mod tests {
             AQL_PLAN_CACHE_EVENTS,
             COMPOSITIONS_COMMITTED,
             VALIDATION_FAILURES,
+            VERSION_SIGNATURE_INVALID,
             WEBTEMPLATE_CACHE_EVENTS,
+            EVENTS_PUBLISHED,
             METRIC_SENT,
+            METRIC_REJECTED,
+            METRIC_REAPED,
             BUILD_INFO,
             PROCESS_START_TIME,
             TOKIO_WORKERS,

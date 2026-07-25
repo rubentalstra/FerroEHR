@@ -85,6 +85,7 @@ impl EhrbaseService {
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
+        crate::versioning::change::meter_committed(&committed);
 
         // The write result is the committed version identity itself — a
         // representation response re-reads at the protocol layer.
@@ -368,6 +369,7 @@ impl EhrbaseService {
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
+        crate::versioning::change::meter_committed(&committed);
 
         Ok(committed)
     }
@@ -509,6 +511,7 @@ impl EhrbaseService {
         tx.commit().await?;
         metrics::counter!(crate::telemetry::prometheus::DB_TRANSACTIONS, "outcome" => "commit")
             .increment(1);
+        crate::versioning::change::meter_committed(&committed);
         // 204_COMPOSITION_deleted: the (now deleted) version identity.
         Ok(committed)
     }
