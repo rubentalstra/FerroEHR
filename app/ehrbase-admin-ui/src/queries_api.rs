@@ -1,8 +1,10 @@
 //! The query surfaces' shared server API: ad-hoc AQL execution, BFF-local
-//! validation, stored-query CRUD (the ITS-REST Definition/Query APIs), and
-//! the console-local query groups (no ITS-REST resource exists for groups —
-//! no openEHR spec governs them; our own design/extension, persisted to a
-//! small JSON file next to the console).
+//! validation, and stored-query CRUD over the ITS-REST Definition/Query APIs.
+//!
+//! The console persists nothing of its own here (nor anywhere): a stored
+//! query's grouping is derived from the namespace in its qualified name
+//! (`crate::query_namespace`), so it lives in the CDR and reads identically
+//! for every API client.
 
 use leptos::server;
 use serde::{Deserialize, Serialize};
@@ -21,16 +23,6 @@ pub struct StoredQueryRow {
     pub query: String,
     /// Saved timestamp as reported.
     pub saved: String,
-}
-
-/// One console-local query group: a named set of stored queries whose match
-/// counts the dashboard tiles show.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct QueryGroup {
-    /// Display name (also the group key).
-    pub name: String,
-    /// Member stored queries as `name@version` references.
-    pub members: Vec<String>,
 }
 
 /// Validate AQL text BFF-locally through the real grammar — no CDR round
@@ -178,8 +170,14 @@ pub async fn fetch_stored_query(name: String, version: String) -> Result<String,
 }
 
 /// Store (create or version-bump) a query
-/// (`PUT definition/query/{name}` with the AQL as `text/plain`). The name
-/// must be a qualified query name (`namespace::name`); the AQL is validated
+/// (`PUT definition/query/{name}` with the AQL as `text/plain`).
+///
+/// `name` is the qualified query name — `[{namespace}::]{query-name}`, the
+/// namespace optional (ITS-REST
+/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name).
+/// The save screens compose it from their namespace + name fields with
+/// [`qualify`](crate::query_namespace::qualify); the whole value is one path
+/// segment here, percent-encoded via `urlencoding`. The AQL is validated
 /// BFF-locally first so an invalid query never reaches the CDR.
 ///
 /// # Errors
@@ -207,43 +205,8 @@ pub async fn store_query(name: String, aql: String) -> Result<(), AdminUiError> 
     Ok(())
 }
 
-/// List the console-local query groups.
-///
-/// # Errors
-/// [`AdminUiError::Unauthenticated`] without a session;
-/// [`AdminUiError::Internal`] on an unreadable groups file.
-#[server]
-pub async fn list_groups() -> Result<Vec<QueryGroup>, AdminUiError> {
-    crate::session::require_session().await?;
-    let state: crate::state::AppState = leptos::prelude::expect_context();
-    let path = state.config.groups_file();
-    // File I/O off the async runtime (reliability rule: no sync I/O on it).
-    tokio::task::spawn_blocking(move || crate::groups::read_groups(&path))
-        .await
-        .map_err(|e| AdminUiError::Internal(format!("groups task: {e}")))?
-}
-
-/// Create/replace a console-local query group (empty `members` deletes it).
-///
-/// # Errors
-/// [`AdminUiError::Unauthenticated`] without a session;
-/// [`AdminUiError::Invalid`] for an empty name;
-/// [`AdminUiError::Internal`] on an unwritable groups file.
-#[server]
-pub async fn save_group(name: String, members: Vec<String>) -> Result<(), AdminUiError> {
-    crate::session::require_session().await?;
-    if name.trim().is_empty() {
-        return Err(AdminUiError::Invalid("the group needs a name".to_owned()));
-    }
-    let state: crate::state::AppState = leptos::prelude::expect_context();
-    let path = state.config.groups_file();
-    tokio::task::spawn_blocking(move || crate::groups::write_group(&path, &name, members))
-        .await
-        .map_err(|e| AdminUiError::Internal(format!("groups task: {e}")))?
-}
-
 /// Run one stored query (`GET query/{name}/{version}`) and return its match
-/// count — the dashboard/group tile primitive. The count is the RESULT_SET
+/// count — the dashboard namespace-tile primitive. The count is the RESULT_SET
 /// row count of a `fetch`-limited run when the query has no aggregate;
 /// tiles built from `SELECT COUNT(*)` queries read the single cell.
 ///

@@ -1,8 +1,0 @@
-[
-  {
-    "name": "Cohort watch",
-    "members": [
-      "org.example::quantity-series@1.0.0"
-    ]
-  }
-]

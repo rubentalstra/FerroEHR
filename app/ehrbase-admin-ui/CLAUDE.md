@@ -53,6 +53,25 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   and never a toast. A first-class empty/absent state (`Ok(None)` from a
   `404`) is not an error at all.
 
+## No console-local domain state (owner ruling, 2026-07-25)
+
+- **The console stores NOTHING of its own** — no database, no JSON store beside
+  the binary, no state directory. Its only state is the in-process session
+  store. Every fact a screen shows is read from the CDR over ITS-REST, so it is
+  visible to other clients, survives a restart, is covered by the CDR's backups,
+  and is identical across replicas. The two former stores (`groups.rs` →
+  `admin-ui-groups.json`, `folder_templates.rs` →
+  `admin-ui-folder-templates.json`) were deleted for exactly those reasons —
+  **do not reintroduce a local store in any form** (file, embedded DB, cookie
+  payload); if a grouping or preset is worth keeping, find it in the wire
+  contract or drop the feature.
+- **Grouping derives from the wire, not from us.** Stored-query grouping is the
+  namespace of the qualified name (`crate::query_namespace`, which cites
+  ITS-REST `specifications/docs/query/Qualified_query_name.md`); the directory
+  create flow commits an empty root and the tree editor builds structure. Any
+  future "grouping"/"favourites"/"preset" feature must be derived from CDR data
+  the same way, or not exist.
+
 ## One reader per claim (owner adjudication, 2026-07-25)
 
 - **No two console surfaces may read the same claim from two endpoints.** Where

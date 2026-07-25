@@ -25,10 +25,10 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::CARD_PAD;
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
-use crate::pages::dashboard::split_query_ref;
 use crate::pages::ehrs::{ResultPage, table_skeleton};
-use crate::pages::query_builder::{export_forms, paging_buttons, results_view};
+use crate::pages::query_builder::{export_forms, paging_buttons, results_view, save_as_fields};
 use crate::queries_api::{fetch_stored_query, run_aql, store_query, validate_aql};
+use crate::query_namespace::{qualify, split_qualified, split_query_ref};
 
 /// Build the link INTO this screen that pre-fills the editor with `aql`.
 ///
@@ -71,6 +71,9 @@ pub fn QueryAqlPage() -> impl IntoView {
     let initial_aql = query_map.with_untracked(|m| m.get("aql").unwrap_or_default());
     let aql = RwSignal::new(initial_aql);
     let params = RwSignal::new(String::new());
+    // The two halves of the stored query's qualified name (`namespace::name`,
+    // the namespace optional — see `crate::query_namespace`).
+    let save_namespace = RwSignal::new(String::new());
     let save_name = RwSignal::new(String::new());
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<(String, String)>);
@@ -97,7 +100,9 @@ pub fn QueryAqlPage() -> impl IntoView {
     // only while the editor is still untouched so back-navigation never
     // clobbers edits. This is the async-load-into-editable-local-state case
     // (rules §2); the one-shot `StoredValue` guard keeps it from re-firing.
-    // Loading the qualified name into the save field versions it on re-save.
+    // Loading the qualified name back into the save fields versions the query
+    // on re-save: it is SPLIT into its namespace + bare name, which is what
+    // pre-fills the namespace field from a `namespace::` prefix.
     let seeded = StoredValue::new(false);
     Effect::new(move |_| {
         if seeded.get_value() {
@@ -107,7 +112,9 @@ pub fn QueryAqlPage() -> impl IntoView {
             if aql.with_untracked(std::string::String::is_empty) {
                 aql.set(text);
             }
-            save_name.set(qualified);
+            let (namespace, name) = split_qualified(&qualified);
+            save_namespace.set(namespace);
+            save_name.set(name);
             seeded.set_value(true);
         }
     });
@@ -155,7 +162,15 @@ pub fn QueryAqlPage() -> impl IntoView {
     };
     let editor = editor_section(aql, validate_action);
     let parameters = parameters_section(params);
-    let run_save = run_save_section(aql, params, save_name, save_action, ran, offset);
+    let run_save = run_save_section(
+        aql,
+        params,
+        save_namespace,
+        save_name,
+        save_action,
+        ran,
+        offset,
+    );
     // Export tracks the editor + parameter panes — the same signals Run uses.
     let export_aql = Signal::derive(move || aql.get());
     let export_params = Signal::derive(move || params.get());
@@ -297,16 +312,20 @@ fn parameters_section(params: RwSignal<String>) -> AnyView {
 }
 
 /// The Run + Save surface: Run executes the AQL with the parameter bindings at
-/// the first page; Save stores it as a namespaced stored query.
+/// the first page; Save stores it under the qualified name composed from the
+/// namespace + name fields ([`save_as_fields`]).
 fn run_save_section(
     aql: RwSignal<String>,
     params: RwSignal<String>,
+    save_namespace: RwSignal<String>,
     save_name: RwSignal<String>,
     save_action: Action<(String, String), Result<(), AdminUiError>>,
     ran: RwSignal<Option<(String, String)>>,
     offset: RwSignal<u32>,
 ) -> AnyView {
     let empty_aql = Signal::derive(move || aql.with(std::string::String::is_empty));
+    // The namespace stays optional (the spec makes it optional), so only the
+    // AQL and the query name gate the Save button.
     let save_disabled = Signal::derive(move || {
         aql.with(std::string::String::is_empty) || save_name.with(std::string::String::is_empty)
     });
@@ -315,36 +334,27 @@ fn run_save_section(
         offset.set(0);
     };
     let save_click = move |_| {
-        save_action.dispatch((save_name.get_untracked(), aql.get_untracked()));
+        save_action.dispatch((
+            qualify(&save_namespace.get_untracked(), &save_name.get_untracked()),
+            aql.get_untracked(),
+        ));
     };
+    let save_fields = save_as_fields("aql", save_namespace, save_name);
     view! {
         <section class=CARD_PAD>
             <div class="space-y-3">
                 <div class="flex flex-wrap items-end gap-3">
                     <button type="button" class=BTN_PRIMARY disabled=empty_aql on:click=run_click>
                         "Run"
+                    </button> {save_fields}
+                    <button
+                        type="button"
+                        class=BTN_PRIMARY
+                        disabled=save_disabled
+                        on:click=save_click
+                    >
+                        "Save"
                     </button>
-                    <div class="flex items-end gap-2">
-                        <label class="flex flex-col gap-0.5 text-xs">
-                            <span class="text-ink-muted">"Save as (namespace::name)"</span>
-                            <input
-                                id="aql-save-name"
-                                type="text"
-                                placeholder="org::my_query"
-                                class="rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm w-56 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent"
-                                prop:value=move || save_name.get()
-                                on:input:target=move |ev| save_name.set(ev.target().value())
-                            />
-                        </label>
-                        <button
-                            type="button"
-                            class=BTN_PRIMARY
-                            disabled=save_disabled
-                            on:click=save_click
-                        >
-                            "Save"
-                        </button>
-                    </div>
                 </div>
                 {save_feedback(save_action)}
             </div>
@@ -411,8 +421,8 @@ fn results_section(
 
 #[cfg(test)]
 mod tests {
-    use crate::pages::dashboard::split_query_ref;
     use crate::pages::query_aql::{aql_href, load_href};
+    use crate::query_namespace::split_query_ref;
 
     #[test]
     fn load_href_leaves_an_unreserved_qualified_ref_alone() {

@@ -44,6 +44,7 @@ use crate::pages::ehrs::{PAGE_SIZE, ResultPage, cell_text, table_skeleton};
 use crate::pages::template_detail::fetch_template_catalog;
 use crate::pages::templates::list_templates;
 use crate::queries_api::{run_aql, store_query};
+use crate::query_namespace::qualify;
 
 /// The shared, all-`Copy` signal bundle the builder's recursive views thread
 /// through instead of a long argument list. `struct_ver` is bumped only on
@@ -83,6 +84,9 @@ pub fn QueryBuilderPage() -> impl IntoView {
     };
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<String>);
+    // The two halves of the stored query's qualified name (`namespace::name`,
+    // the namespace optional — see `crate::query_namespace`).
+    let save_namespace = RwSignal::new(String::new());
     let save_name = RwSignal::new(String::new());
 
     let templates: Resource<Result<Vec<crate::pages::templates::TemplateRow>, AdminUiError>> =
@@ -137,7 +141,8 @@ pub fn QueryBuilderPage() -> impl IntoView {
     let picker = picker_section(ctx, catalog);
     let criteria = criteria_section(ctx);
     let output = output_section(ctx);
-    let preview_run = preview_run_section(preview, ran, offset, save_name, save_action);
+    let preview_run =
+        preview_run_section(preview, ran, offset, save_namespace, save_name, save_action);
     // Export tracks the live AQL preview (empty while it is a `BuilderError`);
     // the builder binds no parameters, so its parameter payload is `{}`.
     let export_aql = Signal::derive(move || preview.with(|r| r.clone().unwrap_or_default()));
@@ -1407,6 +1412,7 @@ fn preview_run_section(
     preview: Memo<Result<String, BuilderError>>,
     ran: RwSignal<Option<String>>,
     offset: RwSignal<u32>,
+    save_namespace: RwSignal<String>,
     save_name: RwSignal<String>,
     save_action: Action<(String, String), Result<(), AdminUiError>>,
 ) -> AnyView {
@@ -1422,9 +1428,13 @@ fn preview_run_section(
     };
     let save_click = move |_| {
         if let Ok(aql) = preview.get_untracked() {
-            save_action.dispatch((save_name.get_untracked(), aql));
+            save_action.dispatch((
+                qualify(&save_namespace.get_untracked(), &save_name.get_untracked()),
+                aql,
+            ));
         }
     };
+    let save_fields = save_as_fields("qb", save_namespace, save_name);
 
     view! {
         <section class=CARD_PAD>
@@ -1464,28 +1474,15 @@ fn preview_run_section(
                 }} <div class="flex flex-wrap items-end gap-3">
                     <button type="button" class=BTN_PRIMARY disabled=disabled on:click=run_click>
                         "Run"
+                    </button> {save_fields}
+                    <button
+                        type="button"
+                        class=BTN_PRIMARY
+                        disabled=save_disabled
+                        on:click=save_click
+                    >
+                        "Save"
                     </button>
-                    <div class="flex items-end gap-2">
-                        <label class="flex flex-col gap-0.5 text-xs">
-                            <span class="text-ink-muted">"Save as (namespace::name)"</span>
-                            <input
-                                id="qb-save-name"
-                                type="text"
-                                placeholder="org::my_query"
-                                class="rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm w-56 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent"
-                                prop:value=move || save_name.get()
-                                on:input:target=move |ev| save_name.set(ev.target().value())
-                            />
-                        </label>
-                        <button
-                            type="button"
-                            class=BTN_PRIMARY
-                            disabled=save_disabled
-                            on:click=save_click
-                        >
-                            "Save"
-                        </button>
-                    </div>
                 </div> {save_feedback(save_action)}
             </div>
         </section>
@@ -1505,6 +1502,75 @@ fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>
             {move || match save_action.value().get() {
                 Some(Err(error)) => crate::components::format_view::inline_error(&error),
                 Some(Ok(())) | None => ().into_any(),
+            }}
+        </div>
+    }
+    .into_any()
+}
+
+/// The shared **Save as** fields both query screens use: the optional
+/// **namespace** beside the query **name**, plus the effective qualified name
+/// the save will write.
+///
+/// The namespace is first-class because it is what the console groups by: a
+/// stored query's identifier is `[{namespace}::]{query-name}`, and the
+/// namespace exists precisely to separate stored queries "by teams, companies,
+/// etc." (ITS-REST `specifications/docs/query/Qualified_query_name.md`
+/// §Qualified query name). Typing a `namespace::` prefix into the NAME field
+/// still works — [`qualify`] lets it win — and the "Saves as" line always
+/// shows the exact name that will be written.
+///
+/// `id_prefix` scopes the two field ids (`{id_prefix}-save-namespace` /
+/// `{id_prefix}-save-name`) so the two screens keep distinct, stable hooks.
+pub(crate) fn save_as_fields(
+    id_prefix: &str,
+    namespace: RwSignal<String>,
+    name: RwSignal<String>,
+) -> AnyView {
+    let namespace_id = format!("{id_prefix}-save-namespace");
+    let name_id = format!("{id_prefix}-save-name");
+    // The name that will actually be stored, shown only once there is one.
+    let qualified = Signal::derive(move || {
+        let composed = qualify(&namespace.get(), &name.get());
+        (!composed.is_empty()).then_some(composed)
+    });
+    let field = "rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent";
+    view! {
+        <div class="flex flex-col gap-1">
+            <div class="flex items-end gap-2">
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"Namespace (optional)"</span>
+                    <input
+                        id=namespace_id
+                        type="text"
+                        placeholder="org.example"
+                        class=format!("{field} w-40")
+                        prop:value=move || namespace.get()
+                        on:input:target=move |ev| namespace.set(ev.target().value())
+                    />
+                </label>
+                <label class="flex flex-col gap-0.5 text-xs">
+                    <span class="text-ink-muted">"Query name"</span>
+                    <input
+                        id=name_id
+                        type="text"
+                        placeholder="my_query"
+                        class=format!("{field} w-56")
+                        prop:value=move || name.get()
+                        on:input:target=move |ev| name.set(ev.target().value())
+                    />
+                </label>
+            </div>
+            {move || {
+                qualified
+                    .get()
+                    .map(|composed| {
+                        view! {
+                            <span class="text-xs text-ink-muted">
+                                "Saves as " <span class="font-mono text-ink">{composed}</span>
+                            </span>
+                        }
+                    })
             }}
         </div>
     }

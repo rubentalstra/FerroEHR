@@ -9,8 +9,9 @@
 // harness module is per-test-binary (the corpus.rs test-file precedent)
 //! End-to-end journeys over the console's **admin destructive operations**:
 //! template delete (from the list row and from the detail screen), stored-query
-//! delete against the CDR store, and physical EHR delete — each a
-//! create → delete → assert-gone round trip through the real UI.
+//! save + namespace grouping + delete against the CDR store, and physical EHR
+//! delete — each a create → delete → assert-gone round trip through the real
+//! UI.
 //!
 //! Every affordance is gated on the CDR advertising `/admin` in its System API
 //! conformance manifest, and the deletes themselves need the ADMIN role, so
@@ -50,7 +51,14 @@ const DETAIL_FIXTURE: &str = "minimal_instruction.opt";
 /// The template id of [`DETAIL_FIXTURE`].
 const DETAIL_TEMPLATE_ID: &str = "minimal_instruction.en.v1";
 
-/// The qualified stored-query name this battery saves and then deletes.
+/// The namespace half of the qualified stored-query name this battery saves.
+/// It is typed into its OWN field and is what the console groups by (a query's
+/// group IS its namespace).
+const QUERY_NAMESPACE: &str = "org.example";
+/// The bare name half, typed into the query-name field.
+const QUERY_BARE_NAME: &str = "e2e-admin-delete";
+/// The qualified stored-query name the two fields must compose to — the name
+/// the CDR stores and the row is keyed by.
 const QUERY_NAME: &str = "org.example::e2e-admin-delete";
 
 /// The template `scripts/ui-e2e.sh` seeds (with compositions committed against
@@ -180,10 +188,18 @@ async fn admin_deletes_a_template_from_the_detail_screen() {
     h.finish().await;
 }
 
-/// Stored-query delete: save a query through the raw-AQL editor, then delete
-/// that version from the CDR store on `/queries` and the row is gone.
+/// Stored-query save + delete: save a query through the raw-AQL editor's
+/// namespace + name fields, see it listed AND grouped under its namespace on
+/// `/queries`, then delete that version from the CDR store and the row is gone.
+///
+/// Retargeted from the console-local query-group journey this replaced: the
+/// grouping is no longer created through a group form, it is DERIVED from the
+/// namespace the save composed, so the journey asserts the derived card
+/// (`data-query-namespace`) appears for the namespace it typed. Nothing was
+/// dropped — the delete half is unchanged and the save half now additionally
+/// proves the two fields compose the spec's `namespace::name`.
 #[tokio::test]
-async fn admin_deletes_a_stored_query() {
+async fn admin_saves_groups_and_deletes_a_stored_query() {
     let Some(h) = Harness::start("admin-stored-query-delete").await else {
         return;
     };
@@ -191,8 +207,10 @@ async fn admin_deletes_a_stored_query() {
     login_basic_as(&h, &user, &pass).await;
 
     // Save the query through the real editor (its Save button stays disabled
-    // until both fields hold text, which is also the hydration signal — retry
-    // the typing until it enables, the login-submit precedent).
+    // until the AQL and the query name hold text, which is also the hydration
+    // signal — retry the typing until it enables, the login-submit precedent).
+    // The namespace goes into its own field; the console composes the qualified
+    // name from the two.
     h.goto("/queries/aql").await;
     let mut saved = false;
     for _ in 0..5 {
@@ -201,9 +219,14 @@ async fn admin_deletes_a_stored_query() {
             .send_keys("SELECT c/uid/value FROM EHR e CONTAINS COMPOSITION c")
             .await
             .expect("type the AQL");
+        h.wait_css("#aql-save-namespace")
+            .await
+            .send_keys(QUERY_NAMESPACE)
+            .await
+            .expect("type the stored-query namespace");
         h.wait_css("#aql-save-name")
             .await
-            .send_keys(QUERY_NAME)
+            .send_keys(QUERY_BARE_NAME)
             .await
             .expect("type the stored-query name");
         let save = h.wait_xpath("//button[normalize-space(.)='Save']").await;
@@ -217,10 +240,15 @@ async fn admin_deletes_a_stored_query() {
     assert!(saved, "the Save button never enabled (typing never took)");
 
     // The row appears on /queries with its admin delete affordance (the CDR
-    // assigns the version, so match the name prefix).
+    // assigns the version, so match the name prefix) — which also proves the
+    // two fields composed exactly `namespace::name`.
     let selector = format!("[data-query-delete^=\"{QUERY_NAME}@\"]");
     h.goto("/queries").await;
     h.wait_css(&selector).await;
+    // …and the derived grouping shows the namespace it was saved under, with no
+    // group having been created by hand anywhere.
+    h.wait_css(&format!("[data-query-namespace=\"{QUERY_NAMESPACE}\"]"))
+        .await;
     h.shot(1, "stored-query-listed").await;
 
     confirm_in_dialog(&h, &selector, "stored-query-delete-confirm").await;

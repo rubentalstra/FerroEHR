@@ -2,7 +2,8 @@
 //! `EHRBASE_ADMIN__…` environment overrides, mirroring the CDR's
 //! one-file/strict/env-grammar convention. No openEHR spec governs
 //! configuration — our own design. The console is stateless bar its
-//! in-process session store; there is no database.
+//! in-process session store: no database, and no local store of domain state
+//! either — every fact it shows lives in the CDR and is read over ITS-REST.
 
 use serde::Deserialize;
 
@@ -16,22 +17,6 @@ pub struct AdminUiConfig {
     pub auth: AuthConfig,
     /// Session behaviour.
     pub session: SessionConfig,
-    /// Path of the console-local query-groups JSON store (empty = the
-    /// default `./admin-ui-groups.json`). No openEHR spec governs query
-    /// groups — our own design/extension.
-    pub groups_file: String,
-}
-
-impl AdminUiConfig {
-    /// The query-groups store path (the configured value or the default).
-    #[must_use]
-    pub fn groups_file(&self) -> String {
-        if self.groups_file.is_empty() {
-            "admin-ui-groups.json".to_owned()
-        } else {
-            self.groups_file.clone()
-        }
-    }
 }
 
 /// Where and how to reach the CDR.

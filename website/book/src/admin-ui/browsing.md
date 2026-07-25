@@ -80,11 +80,13 @@ FLAT document (FLAT requires the template id, sent as the
 `openehr-template-id` header) and the CDR's validation diagnostics are
 shown verbatim on rejection.
 
-### Directory editing & folder templates
+### Directory editing
 
-The Directory tab creates the EHR's FOLDER directory when none exists —
-from an empty root or a console-local **folder template** (two built-ins
-ship: episodes-by-year and clinical-areas).
+The Directory tab creates the EHR's FOLDER directory when none exists: it
+commits the empty root folder, which the tree editor then fills. There is no
+console-side library of folder shapes — the console stores nothing of its own,
+and every folder you build is an ordinary directory version the CDR owns and
+every other openEHR client can see.
 
 ![Directory create](img/ehrs/directory/create.png)
 
