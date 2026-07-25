@@ -63,9 +63,11 @@ editor to run it.
 
 ![Stored queries](img/queries/queries.png)
 
-Each stored query row also offers **Open in editor**, which loads the
-query text into the raw AQL editor (pre-filling the namespace and name
-fields, so saving again publishes the next version).
+Each stored query row also offers **Open in editor**, which loads that
+version's query text into the raw AQL editor and pre-fills the namespace,
+name, and version fields — with the version set to the *next* one, so
+saving again publishes a new version instead of colliding with the one you
+opened (see [Versions](#versions)).
 
 ### Grouping is the namespace
 
@@ -86,6 +88,31 @@ Both save surfaces (the builder and the raw editor) therefore offer the
 **Namespace** field beside the **Query name**, and show the exact qualified
 name the save will write. Typing the whole `namespace::name` into the name
 field works too.
+
+### Versions
+
+A stored query is identified by its qualified name **and a version**, and the
+version is SEMVER-style — `major.minor.patch`. The save surfaces expose it as
+an optional **Version** field, and the line under the fields always states
+which of the two openEHR store operations a click will perform:
+
+| Version field | What a save does |
+| --- | --- |
+| empty | `PUT /definition/query/{name}` — the server assigns the version and **replaces** the query stored at it |
+| `1.2.0` | `PUT /definition/query/{name}/{version}` — stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the console says so |
+
+Because an explicit version is immutable, **Open in editor** proposes the next
+minor version (opening `1.0.0` fills the field with `1.1.0`) — edit, save, and
+both versions are then listed side by side. Which part to bump is yours to
+change; the field is free text and only checks that a version you type is a
+complete triple.
+
+A shorter pattern like `1` or `1.0` is a **read** form, not a store form: when
+*fetching or executing* a stored query, openEHR resolves a partial version to
+the latest one matching that prefix, and omitting the version entirely means
+the latest of all. The console therefore refuses a partial version in the save
+field (with an explanation) rather than filing a definition under a string that
+later lookups would treat as a pattern.
 
 ### Deleting a stored query
 

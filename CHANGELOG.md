@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: stored-query versions are reachable** (#336). Both save
+  surfaces (the point-and-click builder and the raw AQL editor) now carry an
+  optional **Version** field beside the namespace and name, and state under the
+  fields exactly which store a click will perform: leaving it empty stores at the
+  server-assigned version and replaces what is there, while a
+  `major.minor.patch` version stores a new **immutable** version and is refused
+  with the CDR's own message if that pair already exists. **Open in editor** now
+  keeps the version it loaded and proposes the next minor one, so editing a
+  stored query publishes a new version instead of colliding with the one it came
+  from, and a partial pattern (`1`, `1.0`) is refused in the save field with an
+  explanation — that form selects the latest matching version when *reading* a
+  query, and is not something to file a definition under.
+
 - **Admin console: an Operations panel** (`/operations`) over the CDR's
   operational surfaces — dependency health, build and specification provenance,
   the metric registry, and runtime log control. The health card reads the public
