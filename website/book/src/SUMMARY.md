@@ -30,6 +30,7 @@
 - [Admin console](admin-ui/index.md)
   - [Dashboard & queries](admin-ui/queries.md)
   - [Templates & EHR browsing](admin-ui/browsing.md)
+  - [Operations panel](admin-ui/operations.md)
 - [Operations](operations.md)
 - [Conformance](conformance.md)
 - [Performance](performance.md)

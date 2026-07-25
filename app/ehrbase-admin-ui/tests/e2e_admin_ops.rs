@@ -35,7 +35,7 @@ mod common;
 
 use std::time::Duration;
 
-use common::{Harness, env, login_basic, login_basic_as};
+use common::{Harness, confirm_in_dialog, env, login_basic, login_basic_as};
 use thirtyfour::prelude::*;
 
 /// A fixture OPT no other journey touches, and its template id — deleted from
@@ -124,75 +124,6 @@ async fn wait_css_absent(h: &Harness, css: &str) {
     }
     let url = h.driver.current_url().await.expect("current url");
     panic!("`{css}` was still present after the delete (at {url})");
-}
-
-/// Whether `css` matches a currently VISIBLE element.
-///
-/// thaw's dialog is never removed from the DOM: `leptos_transition_group`'s
-/// `CSSTransition` hides it with `display: none`, so a closed dialog is still
-/// findable. Openness is therefore visibility, never mere presence.
-async fn is_visible(h: &Harness, css: &str) -> bool {
-    match h.driver.find(By::Css(css)).await {
-        Ok(element) => element.is_displayed().await.unwrap_or(false),
-        Err(_) => false,
-    }
-}
-
-/// Poll until `css` is no longer visible.
-///
-/// # Panics
-/// When it is still visible after 15 s.
-async fn wait_hidden(h: &Harness, css: &str) {
-    for _ in 0..75 {
-        if !is_visible(h, css).await {
-            return;
-        }
-        tokio::time::sleep(Duration::from_millis(200)).await;
-    }
-    let url = h.driver.current_url().await.expect("current url");
-    panic!("`{css}` never hid (at {url})");
-}
-
-/// Drive one destructive action through its confirmation MODAL: click the
-/// trigger, wait for the dialog to become visible, then click its confirm
-/// button. Explicit conditions, never a sleep.
-///
-/// The trigger click carries a bounded retry (the login-submit precedent): a
-/// click landing before hydration attaches the listener is simply lost, and
-/// re-clicking is safe precisely because the dialog is not open yet.
-///
-/// # Panics
-/// When the dialog never opens.
-async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str) {
-    // A visible toast overlays the bottom-right corner and intercepts clicks.
-    h.wait_toasts_cleared().await;
-    let trigger = h.wait_css(trigger_css).await;
-    let confirm_css = format!("#{confirm_id}");
-    let mut opened = false;
-    for _ in 0..10 {
-        trigger.click().await.expect("open the confirmation dialog");
-        for _ in 0..10 {
-            if is_visible(h, &confirm_css).await {
-                opened = true;
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(200)).await;
-        }
-        if opened {
-            break;
-        }
-    }
-    assert!(
-        opened,
-        "`{trigger_css}` never opened the `{confirm_css}` dialog (pre-hydration clicks exhausted)"
-    );
-    h.wait_css(&confirm_css)
-        .await
-        .click()
-        .await
-        .expect("confirm in the dialog");
-    // The dialog hides on confirm — that it hid proves the click landed.
-    wait_hidden(h, &confirm_css).await;
 }
 
 /// Template delete from the list row: upload a fixture OPT, delete it through
