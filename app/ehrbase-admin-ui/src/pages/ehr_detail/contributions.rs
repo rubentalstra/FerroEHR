@@ -21,7 +21,7 @@ const CONTRIBUTION_FETCH: u32 = 20;
 
 /// One row of the EHR's contribution list. Fixed-size-safe strings (rules §1);
 /// the shape is the CDR's contribution-list contract
-/// (`{uid, time_committed, committer, change_type}`).
+/// (`{uid, time_committed, committer, change_type, change_type_rubric}`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ContributionRow {
     /// The CONTRIBUTION uid.
@@ -30,8 +30,11 @@ pub struct ContributionRow {
     pub time_committed: String,
     /// `AUDIT_DETAILS.committer` name.
     pub committer: String,
-    /// `AUDIT_DETAILS.change_type` value.
+    /// `AUDIT_DETAILS.change_type` group code (e.g. `249`).
     pub change_type: String,
+    /// The CDR-resolved display rubric for the code (e.g. `creation`) — the
+    /// console never maps codes locally; empty when the CDR sent none.
+    pub change_type_rubric: String,
 }
 
 /// One page of an EHR's contributions: the rows plus the total count (for
@@ -107,6 +110,7 @@ fn contribution_row(value: &Value) -> ContributionRow {
         time_committed: contribution_field(value, "time_committed"),
         committer: contribution_field(value, "committer"),
         change_type: contribution_field(value, "change_type"),
+        change_type_rubric: contribution_field(value, "change_type_rubric"),
     }
 }
 
@@ -240,14 +244,23 @@ fn contributions_table(page: &ContributionPage, offset: RwSignal<u32>) -> AnyVie
     .into_any()
 }
 
-/// One contribution row: the uid (mono) plus its commit metadata.
+/// One contribution row: the uid (mono) plus its commit metadata. The change
+/// type shows the CDR-resolved rubric (falling back to the raw group code for
+/// an older CDR that sends none), with the code kept as the hover title.
 fn contribution_row_view(row: &ContributionRow) -> AnyView {
+    let change_type = if row.change_type_rubric.is_empty() {
+        row.change_type.clone()
+    } else {
+        row.change_type_rubric.clone()
+    };
     view! {
         <tr class=ROW>
             <td class=CELL_MONO>{row.uid.clone()}</td>
             <td class=CELL>{row.time_committed.clone()}</td>
             <td class=CELL>{row.committer.clone()}</td>
-            <td class=CELL>{row.change_type.clone()}</td>
+            <td class=CELL title=row.change_type.clone()>
+                {change_type}
+            </td>
         </tr>
     }
     .into_any()
@@ -339,7 +352,8 @@ mod tests {
                     "uid": "c1::sys::1",
                     "time_committed": "2026-07-12T10:00:00Z",
                     "committer": "Dr Bob",
-                    "change_type": "creation"
+                    "change_type": "249",
+                    "change_type_rubric": "creation"
                 },
                 {"uid": "c2::sys::1"}
             ],
@@ -351,12 +365,14 @@ mod tests {
         assert_eq!(page.rows[0].uid, "c1::sys::1");
         assert_eq!(page.rows[0].time_committed, "2026-07-12T10:00:00Z");
         assert_eq!(page.rows[0].committer, "Dr Bob");
-        assert_eq!(page.rows[0].change_type, "creation");
+        assert_eq!(page.rows[0].change_type, "249");
+        assert_eq!(page.rows[0].change_type_rubric, "creation");
         // A row missing fields reads as empty strings, never a parse failure.
         assert_eq!(page.rows[1].uid, "c2::sys::1");
         assert_eq!(page.rows[1].time_committed, "");
         assert_eq!(page.rows[1].committer, "");
         assert_eq!(page.rows[1].change_type, "");
+        assert_eq!(page.rows[1].change_type_rubric, "");
     }
 
     #[test]

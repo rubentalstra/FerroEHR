@@ -60,8 +60,12 @@ pub(crate) fn change_type_code(token: &str) -> Option<String> {
 }
 
 /// The rubric (English display text) for an `audit_change_type` code; falls
-/// back to the code itself if the code is unknown to the bundle.
-fn change_type_rubric(code: &str) -> String {
+/// back to the code itself if the code is unknown to the bundle. The single
+/// code→rubric mapping every presentation surface uses (the by-uid
+/// CONTRIBUTION rendering and the contribution-list extension) — consumers
+/// never hardcode a rubric table (RM common master04 §Audit Details; the
+/// `audit_change_type` group, TERM 3.1.0).
+pub(crate) fn change_type_rubric(code: &str) -> String {
     openehr()
         .rubric(AUDIT_CHANGE_TYPE, code, "en")
         .unwrap_or(code)
