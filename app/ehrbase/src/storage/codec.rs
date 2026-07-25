@@ -63,10 +63,17 @@ fn walk(
         .and_then(Value::as_str)
         .unwrap_or_default()
         .to_owned();
+    // Case-folded at write: openEHR identifiers are defined "to be
+    // case-insensitive - two identifiers identical apart from case are
+    // considered to be identical" (BASE `base_types` master05
+    // §Composite Identifiers and Case), so the promoted predicate column stores the
+    // lowercase form and AQL archetype equality is plain indexed equality
+    // with honest statistics (no `LOWER()` on the column). The canonical
+    // `data` fragment keeps the original casing.
     let archetype = json
         .get("archetype_node_id")
         .and_then(Value::as_str)
-        .map(str::to_owned);
+        .map(str::to_ascii_lowercase);
     // Parse a full archetype HRID into the promoted subsumption columns
     // (lowercased); at/id-code nodes leave them NULL (BASE `base_types` master05
     // §Archetype Identifiers; querying per master10 §Design-time Relationships).
@@ -83,7 +90,8 @@ fn walk(
     // archetype id itself, else inherited).
     let child_citem = if archetype
         .as_deref()
-        .is_some_and(|a| a.starts_with("openEHR-"))
+        .is_some_and(|a| a.starts_with("openehr-"))
+    // the column is case-folded at write (above)
     {
         Some(num)
     } else {

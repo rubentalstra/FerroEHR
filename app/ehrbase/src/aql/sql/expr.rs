@@ -228,11 +228,13 @@ pub(super) fn archetype_predicate(node: &str, value: &str) -> Expr {
     }
 }
 
-/// Case-folded equality on the verbatim `archetype` column (the non-HRID
-/// fallback: at/id-codes and arbitrary strings). BASE `base_types` master05
-/// §"Composite Identifiers and Case".
+/// Case-insensitive equality on the `archetype` column (the non-HRID
+/// fallback: at/id-codes and arbitrary strings). The column is case-folded
+/// at write (`storage::codec` — BASE `base_types` master05 §"Composite
+/// Identifiers and Case"), so folding the BIND VALUE alone yields plain
+/// indexed column equality with honest planner statistics.
 fn archetype_equality(node: &str, value: &str) -> Expr {
-    Expr::expr(Func::lower(col(node, "archetype"))).eq(Func::lower(Expr::val(value.to_owned())))
+    col(node, "archetype").eq(Expr::val(value.to_ascii_lowercase()))
 }
 
 /// Escape the SQL `LIKE` metacharacters (`%`, `_`, `\`) in a literal prefix.
@@ -327,12 +329,17 @@ mod tests {
             "further-specialisation prefix: {child}"
         );
 
-        // An at-code is not a full HRID → case-folded equality on `archetype`, no
-        // subsumption columns.
-        let at_code = archetype_predicate_sql("at0001");
+        // An at-code is not a full HRID → plain equality on the write-folded
+        // `archetype` column (no LOWER() on either side — the column is
+        // lowercased at write, the bind value here), no subsumption columns.
+        let at_code = archetype_predicate_sql("AT0001");
         assert!(
-            at_code.contains("LOWER") && at_code.contains(r#""n"."archetype""#),
-            "at-code keeps case-folded equality: {at_code}"
+            !at_code.contains("LOWER") && at_code.contains(r#""n"."archetype""#),
+            "at-code compares as plain equality on the write-folded column: {at_code}"
+        );
+        assert!(
+            at_code.contains("'at0001'"),
+            "the bind value is case-folded on the way in: {at_code}"
         );
         assert!(
             !at_code.contains("arch_entity"),
