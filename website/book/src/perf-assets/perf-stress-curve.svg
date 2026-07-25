@@ -51,19 +51,19 @@ text { fill: #c3c2b7; }
 <line x1="90" y1="197.7" x2="700" y2="197.7" class="grid"/><text x="82.0" y="201.7" class="muted" text-anchor="end">100 ms</text>
 <line x1="90" y1="131.5" x2="700" y2="131.5" class="grid"/><text x="82.0" y="135.5" class="muted" text-anchor="end">1000 ms</text>
 <line x1="90" y1="131.5" x2="700" y2="131.5" class="slo"/><text x="696.0" y="125.5" class="slotext" text-anchor="end">p99 budget</text>
-<path d="M138.6,197.0 L187.2,197.4 L235.8,197.7 L284.4,203.3 L333.0,196.3 L381.6,207.9 L430.2,211.8 L478.8,216.2 L527.4,183.8 L535.7,132.5 L543.1,105.7 L555.9,142.1 L576.0,114.0" class="curve"/>
-<circle cx="138.6" cy="197.0" r="5" class="measured"/>
-<circle cx="187.2" cy="197.4" r="5" class="measured"/>
-<circle cx="235.8" cy="197.7" r="5" class="measured"/>
-<circle cx="284.4" cy="203.3" r="5" class="measured"/>
-<circle cx="333.0" cy="196.3" r="5" class="measured"/>
-<circle cx="381.6" cy="207.9" r="5" class="measured"/>
-<circle cx="430.2" cy="211.8" r="5" class="measured"/>
-<circle cx="478.8" cy="216.2" r="5" class="measured"/>
-<circle cx="527.4" cy="183.8" r="5" class="measured"/>
-<path d="M530.7,127.5 L540.7,137.5 M530.7,137.5 L540.7,127.5" class="slo" stroke-width="2"/>
-<path d="M538.1,100.7 L548.1,110.7 M538.1,110.7 L548.1,100.7" class="slo" stroke-width="2"/>
-<path d="M550.9,137.1 L560.9,147.1 M550.9,147.1 L560.9,137.1" class="slo" stroke-width="2"/>
-<path d="M571.0,109.0 L581.0,119.0 M571.0,119.0 L581.0,109.0" class="slo" stroke-width="2"/>
+<path d="M138.6,196.0 L187.2,200.9 L235.8,191.2 L284.4,198.1 L333.0,196.0 L381.6,202.5 L430.2,204.9 L478.8,214.6 L527.4,189.2 L535.7,182.7 L543.1,165.7 L555.9,150.8 L576.0,117.2" class="curve"/>
+<circle cx="138.6" cy="196.0" r="5" class="measured"/>
+<circle cx="187.2" cy="200.9" r="5" class="measured"/>
+<circle cx="235.8" cy="191.2" r="5" class="measured"/>
+<circle cx="284.4" cy="198.1" r="5" class="measured"/>
+<circle cx="333.0" cy="196.0" r="5" class="measured"/>
+<circle cx="381.6" cy="202.5" r="5" class="measured"/>
+<circle cx="430.2" cy="204.9" r="5" class="measured"/>
+<circle cx="478.8" cy="214.6" r="5" class="measured"/>
+<circle cx="527.4" cy="189.2" r="5" class="measured"/>
+<path d="M530.7,177.7 L540.7,187.7 M530.7,187.7 L540.7,177.7" class="slo" stroke-width="2"/>
+<path d="M538.1,160.7 L548.1,170.7 M538.1,170.7 L548.1,160.7" class="slo" stroke-width="2"/>
+<path d="M550.9,145.8 L560.9,155.8 M550.9,155.8 L560.9,145.8" class="slo" stroke-width="2"/>
+<path d="M571.0,112.2 L581.0,122.2 M571.0,122.2 L581.0,112.2" class="slo" stroke-width="2"/>
 <line x1="527.4" y1="80" x2="527.4" y2="330" class="knee"/><text x="521.4" y="320.0" class="earned" text-anchor="end">max sustainable 512/s</text>
 </svg>
