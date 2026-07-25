@@ -124,6 +124,25 @@ type) is shown alongside.
 
 ![Composition viewer](img/ehrs/compositions/viewer.png)
 
+Every document pane in the console — the composition viewer, the EHR status
+tab, the directory raw mode, a contribution, a template's OPT and example
+tabs — is the same viewer:
+
+- **Highlighted** (the default): the document exactly as the CDR returned it,
+  with JSON and XML syntax highlighting. The highlighter is pure Rust, like
+  everything else in the console; very large documents are shown unstyled
+  rather than tokenized.
+- **Raw**: the same text with no highlighting.
+- **Rendered**: a template-free clinical reading of a canonical openEHR JSON
+  document — RM section headings with their type and archetype node id, and
+  one label/value row per `ELEMENT` (quantities with their units, coded text
+  with its terminology code, a null-flavoured leaf saying so). It needs no
+  operational template, so a composition whose template has since been
+  removed still reads normally. The tab appears only for canonical JSON;
+  bookkeeping (language, territory, category, uid) is folded away — the raw
+  views remain the complete record.
+- **Copy** puts the raw document text on the clipboard.
+
 **Edit as new version** opens the currently displayed canonical JSON in
 an editor and commits it as the next version (`If-Match` on the latest
 version — a concurrent change is reported instead of overwritten).
