@@ -16,7 +16,6 @@ pub mod format;
 pub mod pages;
 pub mod queries_api;
 pub mod theme;
-pub mod urlq;
 
 #[cfg(feature = "ssr")]
 pub mod groups;

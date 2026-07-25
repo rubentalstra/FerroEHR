@@ -57,6 +57,16 @@ workflow refuses a tag that has no matching section here.
   variable still setting them **fails at boot** with an unknown-key error —
   delete the keys; the probes are always on.
 
+### Fixed
+
+- **Admin console: template links and query-string values are now
+  percent-encoded via the standard codec** (#293); template ids containing
+  reserved characters no longer produce broken links. The console's
+  hand-rolled percent encoder is gone — every internal link (the template
+  detail link and its tab links, the stored-query "Open in editor" link, and
+  the query builder's "Open in raw editor" link) builds its path segment and
+  query-string values with the `urlencoding` crate.
+
 ## [3.10.0] - 2026-07-25
 
 ### Added

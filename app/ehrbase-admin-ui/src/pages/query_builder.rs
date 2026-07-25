@@ -1423,10 +1423,7 @@ fn preview_run_section(
             <div class="space-y-3">
                 {move || match preview.get() {
                     Ok(aql) => {
-                        let href = format!(
-                            "/queries/aql?aql={}",
-                            crate::urlq::encode_query_value(&aql),
-                        );
+                        let href = crate::pages::query_aql::aql_href(&aql);
                         view! {
                             <div class="space-y-2">
                                 <pre class=format!(
@@ -2208,18 +2205,42 @@ mod tests {
     }
 
     #[test]
-    fn encoder_keeps_unreserved_and_escapes_the_rest() {
-        assert_eq!(
-            crate::urlq::encode_query_value("abcXYZ012-._~"),
-            "abcXYZ012-._~"
+    fn open_in_raw_editor_link_percent_encodes_the_generated_aql() {
+        // The exact text this screen's preview produces (`to_aql` over a
+        // quantity-range criterion), carrying every URL-hostile character
+        // generated AQL actually contains: spaces, `/` on every path segment,
+        // `'` around literals, `=`, and a non-ASCII unit.
+        let mut query = BuilderQuery::new("vitals.v1".to_owned());
+        query.criteria = Some(CriterionNode::Leaf(Criterion {
+            aql_path: "content[openEHR-EHR-OBSERVATION.body_temperature.v2]/data[at0002]\
+                       /events[at0003]/data[at0001]/items[at0004]/value"
+                .to_owned(),
+            negated: false,
+            kind: CriterionKind::QuantityRange {
+                min: Some(36.0),
+                max: Some(38.5),
+                units: "°C".to_owned(),
+            },
+        }));
+        let aql = crate::builder::lower::to_aql(&query).expect("the fixture query lowers");
+        assert!(aql.contains(' ') && aql.contains('/') && aql.contains('\'') && aql.contains("°C"));
+
+        let href = crate::pages::query_aql::aql_href(&aql);
+        let value = href
+            .strip_prefix("/queries/aql?aql=")
+            .expect("the builder always emits /queries/aql?aql=<value>");
+        // Nothing left that could end the value early or forge a parameter.
+        assert!(!value.contains(['?', '&', '=', '/', ' ', '#', '\'']));
+        assert!(
+            value.is_ascii(),
+            "the non-ASCII unit must be escaped: {value}"
         );
-        // Space, ampersand, equals, percent, hash, question mark, plus.
+        // And the raw editor gets the query back byte-for-byte (the router
+        // percent-decodes `?aql=` before reading it).
         assert_eq!(
-            crate::urlq::encode_query_value(" &=%#?+"),
-            "%20%26%3D%25%23%3F%2B"
+            urlencoding::decode(value).expect("valid UTF-8 percent-encoding"),
+            aql
         );
-        // Multi-byte UTF-8 is encoded byte-by-byte (°C).
-        assert_eq!(crate::urlq::encode_query_value("°C"), "%C2%B0C");
     }
 
     #[test]
