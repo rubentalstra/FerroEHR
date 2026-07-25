@@ -42,6 +42,17 @@ pub struct CdrConfig {
     /// ITS-REST base path `/ehrbase/rest/openehr/v1` is appended by the
     /// client.
     pub base_url: String,
+    /// Base URL of the CDR's management surface **including its base path**
+    /// (e.g. `http://cdr.internal:9464/management`). Empty = derive it from
+    /// [`Self::base_url`] with the CDR's default `/management` base path.
+    ///
+    /// One knob covers both ways a deployment can move that surface: the CDR
+    /// can serve it from its own internal listener (`management.port`) and can
+    /// rename its base path (`management.base_path`), so the console takes the
+    /// whole prefix rather than guessing a port and a path separately. No
+    /// openEHR spec governs a management surface — our own operational
+    /// extension.
+    pub management_base_url: String,
     /// Per-request timeout in seconds.
     pub request_timeout_secs: u64,
 }
@@ -50,7 +61,23 @@ impl Default for CdrConfig {
     fn default() -> Self {
         Self {
             base_url: "http://localhost:8080".to_owned(),
+            management_base_url: String::new(),
             request_timeout_secs: 30,
+        }
+    }
+}
+
+impl CdrConfig {
+    /// The management-surface base URL with no trailing slash: the configured
+    /// value, or `{base_url}/management` (the CDR's default base path) when it
+    /// is empty.
+    #[must_use]
+    pub fn management_base(&self) -> String {
+        let configured = self.management_base_url.trim_end_matches('/');
+        if configured.is_empty() {
+            format!("{}/management", self.base_url.trim_end_matches('/'))
+        } else {
+            configured.to_owned()
         }
     }
 }
@@ -197,4 +224,36 @@ pub fn load() -> Result<AdminUiConfig, ConfigError> {
     }
 
     Ok(cfg)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CdrConfig;
+
+    #[test]
+    fn management_base_defaults_to_the_cdr_origin() {
+        let cfg = CdrConfig::default();
+        assert_eq!(cfg.management_base(), "http://localhost:8080/management");
+    }
+
+    #[test]
+    fn a_configured_management_base_wins_and_may_move_host_port_and_path() {
+        // The whole prefix is configurable: a separate internal listener
+        // (`management.port` CDR-side) and a renamed `management.base_path`
+        // are the same one knob here.
+        let cfg = CdrConfig {
+            management_base_url: "http://cdr.internal:9464/ops/".to_owned(),
+            ..CdrConfig::default()
+        };
+        assert_eq!(cfg.management_base(), "http://cdr.internal:9464/ops");
+    }
+
+    #[test]
+    fn a_trailing_slash_on_the_cdr_base_url_does_not_double_up() {
+        let cfg = CdrConfig {
+            base_url: "http://cdr:8080/".to_owned(),
+            ..CdrConfig::default()
+        };
+        assert_eq!(cfg.management_base(), "http://cdr:8080/management");
+    }
 }

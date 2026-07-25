@@ -53,6 +53,7 @@ overrides:
 |---|---|---|
 | `cdr.base_url` | `http://localhost:8080` | The CDR origin (the ITS-REST base path is appended). |
 | `cdr.request_timeout_secs` | `30` | Per-request timeout toward the CDR. |
+| `cdr.management_base_url` | `{cdr.base_url}/management` | The CDR's management surface, base path included — set it when the CDR serves management on its own internal listener (`management.port`) or under a renamed base path. Drives the [Operations panel](operations.md). |
 | `auth.basic_enabled` | `true` | Offer the username/password form (validated against the CDR; held server-side). |
 | `auth.oidc.enabled` | `false` | Offer OIDC login (authorization code + PKCE). |
 | `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the console's externally visible origin for the redirect URI. |
@@ -79,6 +80,9 @@ bearer tokens never reach the browser.
 - **System** — CDR status, SMART discovery, repository usage, the server's own
   OpenAPI document, the redacted runtime configuration, and a shortcut into
   the audit browser. ![System](img/system/system.png)
+- **Operations** — dependency health, build and spec provenance, the metric
+  registry, and runtime log control. Appears only when the CDR serves its
+  management surface. See [Operations panel](operations.md).
 
 ## Audit log
 

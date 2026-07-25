@@ -17,6 +17,35 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: an Operations panel** (`/operations`) over the CDR's
+  operational surfaces — dependency health, build and specification provenance,
+  the metric registry, and runtime log control. The health card reads the public
+  readiness probe (`GET /health/readiness`) and renders the aggregate plus one
+  row per indicator, explaining on screen how that differs from the topbar
+  status pill; the build card reports the CDR's version, git commit, `rustc`,
+  PostgreSQL target and openEHR specification pins; the metrics card shows four
+  headline tiles plus a browser over the whole registry, with the selected
+  metric in the URL so a view is shareable; and the log card changes the live
+  log filter (and resets it to the boot value) behind a confirmation dialog that
+  names the consequence, re-reading the CDR's answer so the panel shows what the
+  server confirmed. The screen appears in the sidebar **only when the CDR serves
+  its management surface** (the console probes `GET /management/info`); a
+  deployment with it switched off sees no Operations entry at all, and an
+  individual endpoint left off renders as a stated absence rather than an error.
+  The redacted effective configuration is deliberately not duplicated here — the
+  CDR serves the same snapshot on both its management surface and its admin API,
+  so the panel links to the one viewer on the System screen.
+- **Admin console setting `cdr.management_base_url`**
+  (`EHRBASE_ADMIN__CDR__MANAGEMENT_BASE_URL`): the CDR's management surface
+  including its base path, for deployments that serve it on a separate internal
+  listener (`management.port`) or under a renamed `management.base_path`.
+  Unset, the console derives `{cdr.base_url}/management`.
+- **The compose quickstart enables the CDR's management surface**
+  (`docker/ehrbase.dev.toml`): `info`/`metrics` at `private`, `prometheus`
+  `public`, `env`/`loggers` `admin_only` — so the console's Operations panel
+  works out of the box on the dev stack. The surface remains off by default on
+  the bare binary and in the Helm chart.
+
 - **Admin console: delete templates, stored queries and EHRs** when the CDR's
   admin API is enabled. The Template Manager list rows and the template detail
   screen can delete an operational template; the stored-query rows can delete a
@@ -41,7 +70,7 @@ workflow refuses a tag that has no matching section here.
   required component is DOWN, with the full per-indicator JSON body). They are
   mounted outside the API's authentication and overload-shedding layers, so
   they answer without credentials and are never shed on a saturated server.
-  `GET /ehrbase/rest/status/health` is unchanged.
+  This family is now the only health surface (see **Removed**).
 
 ### Changed
 
@@ -75,6 +104,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **`GET /ehrbase/rest/status/health`** is removed. It was a third name for the
+  constant liveness answer already served at `/health` and `/health/liveness`,
+  with no consumer anywhere in the product (no probe, no client, no
+  documentation pointed at it). Point any caller at `/health` (load balancers,
+  container `HEALTHCHECK`) or `/health/liveness` (orchestrator probes);
+  `GET /ehrbase/rest/status` — the product status document, a different contract
+  — is unchanged.
 - **`/management/health`, `/management/health/liveness`, and
   `/management/health/readiness`** are removed; the management surface is now
   ops introspection only (info, prometheus, metrics, env, loggers). The

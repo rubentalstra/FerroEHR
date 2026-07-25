@@ -209,6 +209,8 @@ async fn health_endpoint_is_public() {
 /// (disabled), and all three probes still answer without credentials.
 /// `/health/liveness` is a byte-identical alias of `/health`; `/health/readiness`
 /// renders the indicator aggregate (empty registry in a test build → `UP`).
+/// This family is also the ONLY health surface — the retired REST-root
+/// `/ehrbase/rest/status/health` name answers `404`.
 #[tokio::test]
 async fn health_family_is_public_without_the_management_surface() {
     let (_pg, app) = app(true).await;
@@ -228,10 +230,10 @@ async fn health_family_is_public_without_the_management_surface() {
     assert_eq!(v["status"], "UP");
     assert!(v.get("components").is_some(), "indicator body: {body}");
 
-    // The REST-root compatibility alias is unchanged.
-    let (status, _h, body) = send(app, get("/ehrbase/rest/status/health")).await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(body, "OK");
+    // There is no second name for health under the REST root: the retired
+    // `/ehrbase/rest/status/health` alias is not routed at all.
+    let (status, _h, _body) = send(app, get("/ehrbase/rest/status/health")).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

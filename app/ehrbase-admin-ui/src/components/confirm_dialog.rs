@@ -35,6 +35,11 @@ pub fn ConfirmDialog(
     message: Signal<String>,
     /// The confirming button's label.
     confirm_label: &'static str,
+    /// The confirming button's icon. Defaults to the trash glyph (the
+    /// destructive-delete case this dialog was built for); a non-delete
+    /// consequence — swapping a live log filter — passes its own.
+    #[prop(optional, into)]
+    confirm_icon: Option<icondata_core::Icon>,
     /// The confirming button's DOM id — the stable E2E hook.
     confirm_id: &'static str,
     /// Dismissal (Cancel, Esc, backdrop click): clear the caller's target
@@ -46,6 +51,7 @@ pub fn ConfirmDialog(
     // `thaw::Dialog` wants a WRITABLE open model; back it with the caller's
     // derived signal plus a setter that only ever dismisses — the dialog never
     // opens itself, so this stays one piece of state.
+    let icon = confirm_icon.unwrap_or(icondata_lu::LuTrash);
     let dismissal = SignalSetter::map(move |value: bool| {
         if !value {
             on_cancel.run(());
@@ -73,7 +79,7 @@ pub fn ConfirmDialog(
                             class=BTN_DANGER
                             on:click=move |_| on_confirm.run(())
                         >
-                            <leptos_icons::Icon icon=icondata_lu::LuTrash width="14" height="14" />
+                            <leptos_icons::Icon icon width="14" height="14" />
                             {confirm_label}
                         </button>
                     </thaw::DialogActions>

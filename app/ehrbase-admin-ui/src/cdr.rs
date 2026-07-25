@@ -23,6 +23,11 @@ pub struct CdrClient {
     http: reqwest::Client,
     /// scheme://host:port — no trailing slash.
     origin: String,
+    /// The management surface's base URL including its base path — no trailing
+    /// slash. Derived from the configuration
+    /// ([`CdrConfig::management_base`](crate::config::CdrConfig::management_base)),
+    /// so it may point at a different host/port than [`Self::origin`].
+    management_base: String,
 }
 
 impl CdrClient {
@@ -40,6 +45,7 @@ impl CdrClient {
         Ok(Self {
             http,
             origin: cfg.base_url.trim_end_matches('/').to_owned(),
+            management_base: cfg.management_base(),
         })
     }
 
@@ -69,6 +75,18 @@ impl CdrClient {
     #[must_use]
     pub fn origin_url(&self, path: &str) -> String {
         format!("{}/{}", self.origin, path.trim_start_matches('/'))
+    }
+
+    /// A URL under the CDR's **management** surface (`info`, `metrics`,
+    /// `metrics/{name}`, `env`, `loggers`).
+    ///
+    /// NOTE: no openEHR spec governs a management surface — our own operational
+    /// extension. It is a separate base URL because the CDR may serve it from
+    /// its own internal listener; `path` is appended to the configured prefix,
+    /// which already carries the CDR's `management.base_path`.
+    #[must_use]
+    pub fn management_url(&self, path: &str) -> String {
+        format!("{}/{}", self.management_base, path.trim_start_matches('/'))
     }
 
     /// `OPTIONS url` with no credential, asking for `accept`.
@@ -351,6 +369,36 @@ mod tests {
         );
         assert_eq!(diagnostic_of(&response(418, "teapot")), "teapot");
         assert_eq!(diagnostic_of(&response(502, "")), "HTTP 502");
+    }
+
+    #[test]
+    fn management_urls_hang_off_their_own_configurable_prefix() {
+        let default = CdrClient::new(&crate::config::CdrConfig::default()).expect("client");
+        assert_eq!(
+            default.management_url("info"),
+            "http://localhost:8080/management/info"
+        );
+        // A leading slash on the path is not a second separator.
+        assert_eq!(
+            default.management_url("/metrics/aql_queries_total"),
+            "http://localhost:8080/management/metrics/aql_queries_total"
+        );
+        // The surface may live on its own internal listener, unrelated to the
+        // API origin the rest of the console talks to.
+        let split = CdrClient::new(&crate::config::CdrConfig {
+            base_url: "http://cdr:8080".to_owned(),
+            management_base_url: "http://cdr:9464/management".to_owned(),
+            ..crate::config::CdrConfig::default()
+        })
+        .expect("client");
+        assert_eq!(
+            split.management_url("loggers"),
+            "http://cdr:9464/management/loggers"
+        );
+        assert_eq!(
+            split.rest_v1("query/aql"),
+            "http://cdr:8080/ehrbase/rest/openehr/v1/query/aql"
+        );
     }
 
     #[test]

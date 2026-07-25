@@ -15,6 +15,7 @@ pub mod components;
 pub mod error;
 pub mod feedback;
 pub mod format;
+pub mod management;
 pub mod pages;
 pub mod queries_api;
 pub mod system_api;
