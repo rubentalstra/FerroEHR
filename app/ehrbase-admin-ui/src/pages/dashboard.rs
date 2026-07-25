@@ -1,5 +1,5 @@
-//! The `/` dashboard: headline stat tiles, per-group match tiles, and a
-//! commit-activity trend chart.
+//! The `/` dashboard: headline stat tiles, per-namespace stored-query match
+//! tiles, and a commit-activity trend chart.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound: every count and the trend run against
@@ -23,6 +23,7 @@ use leptos_chartistry::{
 };
 use leptos_meta::Title;
 use leptos_router::components::A;
+use serde::{Deserialize, Serialize};
 
 use crate::components::empty_state::EmptyState;
 use crate::components::field::BTN_SECONDARY;
@@ -30,7 +31,6 @@ use crate::components::page_header::PageHeader;
 use crate::components::stat_card::StatCard;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
-use crate::queries_api::QueryGroup;
 
 /// Total EHRs — a fixed count AQL. Validated by [`tests::dashboard_aql_consts_parse`].
 #[cfg(feature = "ssr")]
@@ -94,17 +94,6 @@ fn bucket_by_day(times: &[String]) -> Vec<(String, u32)> {
     counts.into_iter().collect()
 }
 
-/// Split a `name@version` group-member reference into its qualified name and
-/// version, or `None` when it lacks the `@version` suffix. Splits on the LAST
-/// `@` so a qualified name is never mistaken for the version. Shared with the
-/// stored-queries screen's member chips.
-pub(crate) fn split_query_ref(reference: &str) -> Option<(String, String)> {
-    reference
-        .rsplit_once('@')
-        .filter(|(name, version)| !name.is_empty() && !version.is_empty())
-        .map(|(name, version)| (name.to_owned(), version.to_owned()))
-}
-
 /// The dashboard's three headline counts: total EHRs, total compositions, and
 /// the number of stored operational templates.
 ///
@@ -128,25 +117,75 @@ pub async fn dashboard_counts() -> Result<(i64, i64, u32), AdminUiError> {
     Ok((ehrs, compositions, templates))
 }
 
-/// Sum the match counts of a group's member stored queries. Each member is a
-/// `name@version` reference; a member that is not `name@version` (e.g. a query
-/// deleted from the CDR) is skipped so a stale reference never fails the whole
-/// tile.
+/// One dashboard namespace tile: the derived group's heading, the summed match
+/// count of its member stored queries, and how many members that sum covers.
+/// Fixed-size ints only, so it is WASM-safe over the server-fn boundary
+/// (rules §1).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct NamespaceTile {
+    /// The namespace, or the label for the bucket of names that carry none
+    /// ([`group_label`](crate::query_namespace::group_label)).
+    pub label: String,
+    /// The summed match count of the member queries, or `None` when a member
+    /// failed to run — the tile then reads as an error instead of showing a
+    /// silently short count.
+    pub matches: Option<i64>,
+    /// How many member stored queries the group holds.
+    pub members: u32,
+}
+
+/// The dashboard's per-namespace match tiles: the CDR's stored queries grouped
+/// by the namespace of their qualified name
+/// ([`group_by_namespace`](crate::query_namespace::group_by_namespace)), each
+/// group's members run through
+/// [`run_stored_count`](crate::queries_api::run_stored_count) and summed.
+///
+/// One round trip for the whole tile row (and no per-tile resource created
+/// inside a `Suspend` — rules §4). A member query the CDR refuses degrades
+/// only its own tile.
 ///
 /// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors
-/// normalized for any member query that fails to run.
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR errors from
+/// the stored-query LISTING normalized (a failure there means no grouping at
+/// all); a failing member RUN is confined to its own tile's `matches: None`.
 #[server]
-pub async fn group_count(members: Vec<String>) -> Result<i64, AdminUiError> {
+pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
     crate::session::require_session().await?;
-    let mut total: i64 = 0;
-    for member in &members {
-        if let Some((name, version)) = split_query_ref(member) {
-            total =
-                total.saturating_add(crate::queries_api::run_stored_count(name, version).await?);
+    let rows = crate::queries_api::list_stored_queries().await?;
+    let mut tiles = Vec::new();
+    // TODO(perf): this runs EVERY stored query once per dashboard load — the
+    // tiles are derived, so there is no stored member list to narrow by — and
+    // does so serially. Cap or cache it if a deployment with many stored
+    // queries measures the dashboard as slow (a bounded concurrent fan-out plus
+    // a short-lived per-session cache is the obvious first step).
+    for group in crate::query_namespace::group_by_namespace(&rows) {
+        let mut matches: Option<i64> = Some(0);
+        for member in &group.members {
+            let counted =
+                crate::queries_api::run_stored_count(member.name.clone(), member.version.clone())
+                    .await;
+            let Ok(count) = counted else {
+                // Identifiers only, never the diagnostic: a CDR error body can
+                // quote the query text, and query text can carry clinical
+                // values — logs name shapes, not payloads. Naming the query is
+                // enough for an operator to run it and read the CDR's answer.
+                tracing::warn!(
+                    query = %member.name,
+                    version = %member.version,
+                    "stored query failed to run for its dashboard namespace tile"
+                );
+                matches = None;
+                break;
+            };
+            matches = matches.map(|total| total.saturating_add(count));
         }
+        tiles.push(NamespaceTile {
+            label: crate::query_namespace::group_label(group.namespace.as_deref()).to_owned(),
+            matches,
+            members: u32::try_from(group.members.len()).unwrap_or(u32::MAX),
+        });
     }
-    Ok(total)
+    Ok(tiles)
 }
 
 /// The recent commit-activity trend as `(day, count)` pairs ascending. Pulls
@@ -189,14 +228,14 @@ pub async fn commit_trend() -> Result<Vec<(String, u32)>, AdminUiError> {
     Ok(bucket_by_day(&times))
 }
 
-/// The `/` dashboard: headline counts, per-group match tiles, and a
-/// commit-activity trend — each an independently-failing section.
+/// The `/` dashboard: headline counts, per-namespace stored-query match tiles,
+/// and a commit-activity trend — each an independently-failing section.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn DashboardPage() -> impl IntoView {
     let counts = counts_section();
     let stored = stored_queries_tile();
-    let groups = groups_section();
+    let namespaces = namespaces_section();
     let trend = trend_section();
 
     view! {
@@ -208,8 +247,8 @@ pub fn DashboardPage() -> impl IntoView {
             />
             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">{counts} {stored}</div>
             <section class=format!("{CARD_PAD} mb-6")>
-                <h2 class=CARD_TITLE>"Query groups"</h2>
-                {groups}
+                <h2 class=CARD_TITLE>"Query namespaces"</h2>
+                {namespaces}
             </section>
             <section class=CARD_PAD>
                 <h2 class=CARD_TITLE>"Commit activity"</h2>
@@ -327,17 +366,16 @@ fn stored_queries_tile() -> AnyView {
     .into_any()
 }
 
-/// The per-group match-count tiles, each linking to the stored-queries screen.
-fn groups_section() -> AnyView {
-    let resource = Resource::new(
-        || (),
-        |()| async move { crate::queries_api::list_groups().await },
-    );
+/// The per-namespace match-count tiles, each linking to the stored-queries
+/// screen. ONE round trip builds the whole row ([`namespace_tiles`]), so no
+/// resource is created inside the `Suspend` (rules §4).
+fn namespaces_section() -> AnyView {
+    let resource = Resource::new(|| (), |()| async move { namespace_tiles().await });
     view! {
         <Transition fallback=tile_skeleton>
             {move || Suspend::new(async move {
                 match resource.await {
-                    Ok(groups) => groups_tiles(groups),
+                    Ok(tiles) => namespace_tiles_view(tiles),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -346,14 +384,14 @@ fn groups_section() -> AnyView {
     .into_any()
 }
 
-/// Render the group tiles, or the empty-state hint.
-fn groups_tiles(groups: Vec<QueryGroup>) -> AnyView {
-    if groups.is_empty() {
+/// Render the namespace tiles, or the empty-state hint.
+fn namespace_tiles_view(tiles: Vec<NamespaceTile>) -> AnyView {
+    if tiles.is_empty() {
         return view! {
             <EmptyState
                 icon=icondata_lu::LuSearchCode
-                message="No query groups yet"
-                hint="Group related stored queries to track cohorts at a glance."
+                message="No stored queries yet"
+                hint="Save a query as namespace::name — each namespace becomes a cohort tile here."
             >
                 <A href="/queries" attr:class=BTN_SECONDARY>
                     "Go to stored queries"
@@ -362,48 +400,38 @@ fn groups_tiles(groups: Vec<QueryGroup>) -> AnyView {
         }
         .into_any();
     }
-    let tiles = groups.into_iter().map(group_tile).collect::<Vec<_>>();
+    let tiles = tiles.into_iter().map(namespace_tile).collect::<Vec<_>>();
     view! { <div class="grid grid-cols-2 md:grid-cols-4 gap-3">{tiles}</div> }.into_any()
 }
 
-/// One group tile: the group name, its summed member match count (its own
-/// [`group_count`] round trip), and a link to the stored-queries screen. The
-/// whole tile is an `<A>` styled as a design-system card (block content only,
-/// so the anchor stays valid HTML — rules §8).
-fn group_tile(group: QueryGroup) -> AnyView {
-    let members = group.members.clone();
-    let count = Resource::new(
-        || (),
-        move |()| {
-            let members = members.clone();
-            async move { group_count(members).await }
-        },
+/// One namespace tile: the namespace (or the unqualified-bucket label), the
+/// summed match count of its stored queries, and a link to the stored-queries
+/// screen. The whole tile is an `<A>` styled as a design-system card (block
+/// content only, so the anchor stays valid HTML — rules §8). A group whose
+/// member query the CDR refused shows "error" instead of a short count.
+/// `data-namespace-tile` is the stable E2E hook.
+fn namespace_tile(tile: NamespaceTile) -> AnyView {
+    let value = tile.matches.map_or_else(
+        || view! { <span class="text-sm text-danger">"error"</span> }.into_any(),
+        |total| view! { <span>{total.to_string()}</span> }.into_any(),
     );
-    let member_count = group.members.len();
+    let hook = tile.label.clone();
+    let members = tile.members;
+    let summary = if members == 1 {
+        "1 query".to_owned()
+    } else {
+        format!("{members} queries")
+    };
     view! {
         <A
             href="/queries"
             attr:class=format!("block {CARD_PAD} transition-colors hover:border-accent")
         >
-            <div class="font-medium truncate text-ink">{group.name}</div>
-            <div class="text-2xl font-semibold tabular-nums mt-1 text-ink">
-                <Suspense fallback=|| {
-                    view! { <span class="text-ink-faint">"…"</span> }
-                }>
-                    {move || Suspend::new(async move {
-                        match count.await {
-                            Ok(total) => total.to_string().into_any(),
-                            Err(_) => {
-                                // Resolve inside the Suspense: an SSR'd ErrorBoundary
-                                // fallback mismatches at hydration in leptos 0.8.
-                                view! { <span class="text-sm text-danger">"error"</span> }
-                                    .into_any()
-                            }
-                        }
-                    })}
-                </Suspense>
+            <div class="font-mono font-medium truncate text-ink" data-namespace-tile=hook>
+                {tile.label}
             </div>
-            <div class="text-xs text-ink-muted mt-1">{format!("{member_count} members")}</div>
+            <div class="text-2xl font-semibold tabular-nums mt-1 text-ink">{value}</div>
+            <div class="text-xs text-ink-muted mt-1">{summary}</div>
         </A>
     }
     .into_any()
@@ -471,27 +499,8 @@ fn trend_chart(pairs: &[(String, u32)]) -> AnyView {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::split_query_ref;
-    #[cfg(feature = "ssr")]
     use super::{COMPOSITION_COUNT_AQL, EHR_COUNT_AQL, TREND_AQL, bucket_by_day};
 
-    #[test]
-    fn split_query_ref_parses_name_at_version() {
-        assert_eq!(
-            split_query_ref("org.example::vitals@1.2.3"),
-            Some(("org.example::vitals".to_owned(), "1.2.3".to_owned()))
-        );
-        assert_eq!(split_query_ref("no_at_sign"), None);
-        assert_eq!(split_query_ref("trailing@"), None);
-        assert_eq!(split_query_ref("@leading"), None);
-        // Splits on the LAST '@' so a name is never mistaken for the version.
-        assert_eq!(
-            split_query_ref("weird@name@2.0.0"),
-            Some(("weird@name".to_owned(), "2.0.0".to_owned()))
-        );
-    }
-
-    #[cfg(feature = "ssr")]
     #[test]
     fn dashboard_aql_consts_parse() {
         for aql in [EHR_COUNT_AQL, COMPOSITION_COUNT_AQL, TREND_AQL] {
@@ -499,7 +508,6 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "ssr")]
     #[test]
     fn bucket_by_day_counts_date_prefix_ascending() {
         let times = vec![

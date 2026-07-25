@@ -201,8 +201,8 @@ pub async fn admin_delete_template(template_id: String) -> Result<(), AdminUiErr
 }
 
 /// Delete ONE version of a stored query from the CDR
-/// (`DELETE admin/query/{name}/{version}`) — the CDR store, not the
-/// console-local query groups.
+/// (`DELETE admin/query/{name}/{version}`) — the CDR's own store, so every
+/// client loses that version.
 ///
 /// Both segments are percent-encoded (the qualified name carries `::`).
 ///
