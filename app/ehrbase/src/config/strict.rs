@@ -278,10 +278,12 @@ mod tests {
                 }
                 4 => in_env = body == "environment:",
                 _ => {
-                    if in_services && in_env && !service.is_empty() {
-                        if let Some(name) = entry_name(body) {
-                            out.push((service.clone(), index + 1, name));
-                        }
+                    if in_services
+                        && in_env
+                        && !service.is_empty()
+                        && let Some(name) = entry_name(body)
+                    {
+                        out.push((service.clone(), index + 1, name));
                     }
                 }
             }
