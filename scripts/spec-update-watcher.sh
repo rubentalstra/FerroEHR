@@ -207,10 +207,12 @@ while IFS= read -r issue; do
   # A rejected/duplicate resolution means NOTHING changed in the spec — no
   # triage material. Skip with a note (still deduped later if it ever flips).
   # "Rejected" was missing from this list, which is how SPECTERM-30
-  # (resolution: Rejected) got filed as tracker work (issue #175 / bug #340).
+  # (resolution: Rejected) got filed as tracker work (issue #175 / bug #340);
+  # "Superseded" likewise (SPECPR-124 → issue #347): the successor ticket is
+  # detected on its own resolution, the superseded one itself lands nothing.
   resolution=$(echo "$issue" | jq -r '.fields.resolution.name // "unresolved"')
   case "$resolution" in
-    "Rejected"|"Won't Do"|"Won't Fix"|"Duplicate"|"Cannot Reproduce"|"Declined"|"Abandoned"|"Not a Bug")
+    "Rejected"|"Superseded"|"Won't Do"|"Won't Fix"|"Duplicate"|"Cannot Reproduce"|"Declined"|"Abandoned"|"Not a Bug")
       echo "  $key: resolution '$resolution' — no spec change, skipped"
       continue ;;
   esac
