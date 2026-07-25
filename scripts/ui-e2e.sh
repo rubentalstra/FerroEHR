@@ -43,6 +43,13 @@ cd "$ROOT"
 # `down -v` teardown — to `ehrbase-rs-e2e`, so it can never wipe a running dev
 # (`ehrbase-rs`) or conformance (`ehrbase-rs-cnf`) stack (issue #282 D3/F7).
 export COMPOSE_PROJECT_NAME=ehrbase-rs-e2e
+# Profiles are exported, never passed per-invocation: a service in a profile is
+# excluded from the compose model of every call that does not enable it
+# (docs.docker.com/compose/how-tos/profiles), so an inline `--profile keycloak`
+# on the `up` left the trap's `down -v` blind to keycloak and leaked the
+# container on every run. COMPOSE_PROFILES scopes EVERY compose call below —
+# `up`, `stop` and the teardown alike. Comma-separate any profile added here.
+export COMPOSE_PROFILES=keycloak
 # Build provenance for the compose-built images: the OCI-standard REVISION arg
 # (forwarded by the compose build.args block, bridged into build.rs by the
 # server Dockerfile). Degrades to `unknown` off-checkout.
@@ -70,7 +77,9 @@ cleanup() {
   fi
   [ -n "$DRIVER_PID" ] && kill "$DRIVER_PID" 2>/dev/null || true
   if [ -z "${UI_E2E_NO_COMPOSE:-}" ] && [ -z "${UI_E2E_KEEP_UP:-}" ]; then
-    docker compose down -v >/dev/null 2>&1 || true
+    # --remove-orphans: belt-and-braces against a future profiled/renamed
+    # service surviving the teardown the way keycloak used to.
+    docker compose down -v --remove-orphans >/dev/null 2>&1 || true
   fi
 }
 trap cleanup EXIT
@@ -89,11 +98,12 @@ wait_http() { # url, tries
 # ── 1. The composed stack: postgres + CDR + Keycloak ────────────────────────
 if [ -z "${UI_E2E_NO_COMPOSE:-}" ]; then
   echo "── compose up (postgres + ehrbase + keycloak)"
-  # keycloak is behind the `keycloak` profile (docs.docker.com/compose/how-tos/profiles);
-  # enable it so the OIDC journeys have an issuer.
+  # keycloak is behind the `keycloak` profile, enabled for every call in this
+  # lane by the COMPOSE_PROFILES export above, so the OIDC journeys have an
+  # issuer AND the teardown can see the container.
   BUILD_ARGS=(--build)
   [ -n "${UI_E2E_NO_BUILD:-}" ] && BUILD_ARGS=(--no-build)
-  docker compose --profile keycloak up -d "${BUILD_ARGS[@]}" ehrbase-postgres ehrbase keycloak
+  docker compose up -d "${BUILD_ARGS[@]}" ehrbase-postgres ehrbase keycloak
 fi
 wait_http "$CDR_URL/ehrbase/rest/status" 150
 wait_http "$KEYCLOAK_URL/auth/realms/ehrbase/.well-known/openid-configuration" 90
