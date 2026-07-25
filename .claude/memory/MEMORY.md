@@ -28,3 +28,4 @@ here. (The ADR layer referenced in the original note was deleted 2026-07-17.)
 - [Benchmark crate retires into cnf-runner](benchmark-crate-retires-into-cnf-runner.md) — DONE 2026-07-23: lab deleted; NOTHING consumes cnf-runner as a lib, ever; all measurement = cnf-runner subcommands, always fresh-seeded
 - [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
 - [Signature verify-on-read provenance](signature-verify-on-read-provenance.md) — #273: verify-on-read defaults strict-when-enabled + judges ONLY server-generated sigs; client-supplied sigs stored verbatim + never re-verified via a vo_version provenance bit (RM master06); format heuristics are leaky in pgp mode
+- [Measurement environment discipline](measurement-environment-discipline.md) — idle box + envelope-matched limits for measured runs; ixit containers blocks track lane renames
