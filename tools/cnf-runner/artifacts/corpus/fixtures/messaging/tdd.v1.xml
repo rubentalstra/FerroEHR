@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<template_data xmlns="http://schemas.openehr.org/v1" template_id="cnf.minimal_event">
-  <!-- Structural placeholder Template Data Document (TDD) for the master13
-       import_tdd cases; pending corpus authoring. -->
+<!-- Documentary Template Data Document (TDD): a well-formed template-data XML
+     instance in the ITS-XML namespace (http://schemas.openehr.org/v1) naming
+     the template it fills. I_TDD_SERVICE.import_tdd takes the TDD as an opaque
+     String conforming to the template-derived Template Data Schema (TDS, "a
+     kind of XSD" per AM OPT2 master02-overview §Purpose of the OPT); the
+     released spec text does not normatively fix the TDS element structure, so
+     the body is a minimal composition node only. No ITS-REST 1.1.0 wire binds
+     I_TDD_SERVICE (AMB-33), so this fixture is never committed to a live SUT. -->
+<template_data xmlns="http://schemas.openehr.org/v1" template_id="minimal_evaluation.en.v1">
+  <composition archetype_node_id="openEHR-EHR-COMPOSITION.minimal.v1">
+    <name>Minimal</name>
+  </composition>
 </template_data>

@@ -375,6 +375,16 @@ fn build_simple(rm_class: &str, row: &RowView<'_>) -> Value {
 
 /// RM `data_types` §`DV_CODED_TEXT` — `value` (the display text, mandatory) plus a
 /// `defining_code` `CODE_PHRASE` (`terminology_id` + `code_string`, both mandatory).
+///
+/// The `value` axis is a genuine instance column: when the decision table
+/// carries a `value` column it drives `DV_CODED_TEXT.value` verbatim — including
+/// an empty string, which must fire the sole value invariant (RM
+/// `dv_text.adoc` §Invariants — `Valid_value: not value.is_empty`). No RM
+/// invariant requires `value` to equal the coded rubric (the "value must be the
+/// rubric" text is `dv_coded_text.adoc` Description prose, not an invariant —
+/// see AMB-55), so an arbitrary non-empty value is accepted. Absent the column,
+/// value defaults to a non-empty placeholder so the value dimension is not
+/// exercised on cases that do not test it.
 fn build_coded_text(row: &RowView<'_>) -> Value {
     let code = row.text("code_string");
     let term = row.text("terminology_id");
@@ -392,7 +402,8 @@ fn build_coded_text(row: &RowView<'_>) -> Value {
         if let Some(c) = code {
             cp.insert("code_string".to_owned(), Value::String(c.to_owned()));
         }
-        map.insert("value".to_owned(), Value::String("coded".to_owned()));
+        let rubric = row.text("value").unwrap_or("coded");
+        map.insert("value".to_owned(), Value::String(rubric.to_owned()));
         map.insert("defining_code".to_owned(), Value::Object(cp));
     }
     Value::Object(map)
@@ -1051,6 +1062,50 @@ mod tests {
         assert_eq!(dv["_type"], json!("DV_CODED_TEXT"));
         assert!(dv.get("defining_code").is_none());
         assert!(dv.get("value").is_none());
+    }
+
+    #[test]
+    fn coded_text_value_column_drives_value_verbatim() {
+        // The `value` column, when present, drives DV_CODED_TEXT.value verbatim
+        // (RM dv_text.adoc §Attributes value) — an arbitrary non-empty label,
+        // and an empty string (which must fire Valid_value); absent the column
+        // it defaults to a non-empty placeholder.
+        let c = cols(&["code_string", "terminology_id", "value", "expected"]);
+        let with_value = |v: Value| {
+            value_of(&content_instance(
+                "DV_CODED_TEXT",
+                "t",
+                &c,
+                &[
+                    MatrixCell::Literal(json!("ABC")),
+                    MatrixCell::Literal(json!("local")),
+                    MatrixCell::Literal(v),
+                    MatrixCell::Literal(json!("accepted")),
+                ],
+            ))
+            .clone()
+        };
+        assert_eq!(
+            with_value(json!("Rubric for ABC"))["value"],
+            json!("Rubric for ABC")
+        );
+        assert_eq!(with_value(json!("ABC"))["value"], json!("ABC"));
+        // Empty value is committed verbatim so the SUT's Valid_value check fires.
+        assert_eq!(with_value(json!(""))["value"], json!(""));
+        // A null value cell defaults to the non-empty placeholder.
+        let defaulted = value_of(&content_instance(
+            "DV_CODED_TEXT",
+            "t",
+            &c,
+            &[
+                MatrixCell::Literal(json!("ABC")),
+                MatrixCell::Literal(json!("local")),
+                MatrixCell::Null,
+                MatrixCell::Literal(json!("accepted")),
+            ],
+        ))
+        .clone();
+        assert_eq!(defaulted["value"], json!("coded"));
     }
 
     #[test]
