@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # openEHR spec-update watcher (tracker issue #137; design dossier: recorded on tracker issue #137
-# — every mechanism live-verified 2026-07-20). Two detection sources, ONE
-# GitHub issue per completed upstream spec change:
+# — every mechanism live-verified 2026-07-20). Three detection sources; A and B
+# file ONE GitHub issue per completed upstream spec change, C maintains ONE
+# rolling issue per component:
 #
 #   A. Jira poll — anonymous search of openehr.atlassian.net for SPEC* issues
 #      newly Resolved/Closed inside the window. Uses the enhanced
@@ -13,11 +14,20 @@
 #      amendment record (default branch) but absent from the vendored copy
 #      under docs/specs/openehr/ (paths mirror the upstream repos 1:1; pins
 #      live in scripts/vendor-spec-docs.sh).
+#   C. Commits-ahead cross-check — per MASTER-pinned component repo, the
+#      default branch's distance ahead of the vendored pin commit. A and B are
+#      key-granular and blind to raw commits (a key adopted once dedups away
+#      every later commit under it; the amendment diff sees only NEW keys and
+#      never computable/BMM/**) — which is how 24 BASE commits accumulated
+#      silently (issue #341). One rolling issue per component: created when
+#      ahead, body updated in place as the delta grows, auto-closed when a
+#      re-vendor catches the pin up.
 #
 # Dedup / watermark: the issue board itself — a key already present in ANY
 # issue title (open or closed, searched with `--state all`) is never
 # re-filed; a closed issue means "already triaged/implemented". No state
-# file, no repo variables.
+# file, no repo variables. (C dedups by its stable per-component title, open
+# issues only — closed means caught-up, and a new delta reopens a fresh one.)
 #
 # Failure honesty: any non-2xx (one bounded retry on 429), unexpected JSON
 # shape, or missing amendment path exits non-zero — the run goes RED. Only a
@@ -196,9 +206,11 @@ while IFS= read -r issue; do
   fi
   # A rejected/duplicate resolution means NOTHING changed in the spec — no
   # triage material. Skip with a note (still deduped later if it ever flips).
+  # "Rejected" was missing from this list, which is how SPECTERM-30
+  # (resolution: Rejected) got filed as tracker work (issue #175 / bug #340).
   resolution=$(echo "$issue" | jq -r '.fields.resolution.name // "unresolved"')
   case "$resolution" in
-    "Won't Do"|"Won't Fix"|"Duplicate"|"Cannot Reproduce"|"Declined"|"Abandoned"|"Not a Bug")
+    "Rejected"|"Won't Do"|"Won't Fix"|"Duplicate"|"Cannot Reproduce"|"Declined"|"Abandoned"|"Not a Bug")
       echo "  $key: resolution '$resolution' — no spec change, skipped"
       continue ;;
   esac
@@ -261,7 +273,81 @@ while IFS= read -r local_path; do
   fi
 done <<< "$amendment_files"
 
-# ── C+D. Dedup by key against the issue board (open AND closed), create ─────
+# ── C. Commits-ahead cross-check (master-pinned components) ─────────────────
+# Release-tag pins (e.g. QUERY, ITS-REST) are deliberately excluded: master
+# being ahead of a release tag is the normal state between releases, and new
+# releases are the release watcher's job (spec-release-watcher.yml).
+echo "spec-update-watcher: commits-ahead cross-check against the vendored pins"
+ahead_created=0 ahead_updated=0 ahead_closed=0
+while IFS='|' read -r comp repo ref sha; do
+  [ -n "$comp" ] || continue
+  case "$ref" in master*) ;; *) continue ;; esac
+  default=$(gh api "repos/openEHR/$repo" --jq '.default_branch') ||
+    { echo "spec-update-watcher: failed to read openEHR/$repo default branch" >&2; exit 1; }
+  ahead=$(gh api "repos/openEHR/$repo/compare/${sha}...${default}" --jq '.ahead_by') ||
+    { echo "spec-update-watcher: failed to compare ${sha}...${default} for openEHR/$repo" >&2; exit 1; }
+  head_sha=$(gh api "repos/openEHR/$repo/branches/$default" --jq '.commit.sha') ||
+    { echo "spec-update-watcher: failed to read openEHR/$repo $default head" >&2; exit 1; }
+  title="[spec-update] $comp spec repo is ahead of the vendored pin"
+  num=$(gh issue list --state open --search "\"$title\" in:title" --json number,title \
+        --jq "[.[] | select(.title == \"$title\")][0].number // empty")
+  if [ "$ahead" -gt 0 ]; then
+    count_line="**Commits ahead of the pin:** $ahead (pin \`${sha:0:9}\`, upstream $default @ \`${head_sha:0:9}\`)"
+    cat > "$tmp/ahead-body.md" <<EOF
+Upstream \`openEHR/$repo\` ($comp) has moved past our vendored pin — commit-delta triage needed (the per-commit triage pattern that closed #341).
+
+$count_line
+- **Compare:** https://github.com/openEHR/$repo/compare/${sha}...${default}
+- **Vendored pin:** \`scripts/vendor-spec-docs.sh\` (docs text); where this component feeds codegen, also the machine-readable vendor dirs (\`tools/openehr-codegen/vendor/bmm/\`, \`crates/openehr-its/{vendor,schemas}/\`)
+
+### Triage checklist
+
+- [ ] Baseline: full regen + drift check green against the CURRENT pin before changing inputs
+- [ ] Triage every commit in the delta: prose / class-table / machine-readable codegen input
+- [ ] Verify each behaviour-relevant item against the implementation (several may already be satisfied)
+- [ ] Re-vendor + re-pin + regenerate; review the generated diff line by line
+- [ ] CNF zero-drift + changelog + \`docs/VERSIONS.md\` if anything is wire-visible
+
+_Maintained automatically by the spec-update watcher: the count above updates in place as the delta grows, and the issue closes when a re-vendor catches the pin up._
+EOF
+    if [ -n "$num" ]; then
+      if gh issue view "$num" --json body --jq '.body' | grep -qF "$count_line"; then
+        continue # unchanged since the last run
+      fi
+      if [ "$DRY_RUN" = "1" ]; then
+        echo "DRY-RUN would update #$num: $title ($ahead ahead)"
+      else
+        gh issue edit "$num" --body-file "$tmp/ahead-body.md" >/dev/null
+        echo "updated #$num: $comp now $ahead commit(s) ahead"
+      fi
+      ahead_updated=$((ahead_updated + 1))
+    else
+      label_args=(--label spec-update)
+      lbl=$(label_for_component "$comp" || true)
+      [ -n "${lbl:-}" ] && label_args+=(--label "$lbl")
+      if [ "$DRY_RUN" = "1" ]; then
+        echo "DRY-RUN would create: $title ($ahead ahead)  [${label_args[*]}]"
+        sed 's/^/    │ /' "$tmp/ahead-body.md"
+      else
+        gh issue create --title "$title" "${label_args[@]}" --body-file "$tmp/ahead-body.md" >/dev/null
+        echo "created: $title ($ahead ahead)"
+      fi
+      ahead_created=$((ahead_created + 1))
+    fi
+  elif [ -n "$num" ]; then
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "DRY-RUN would close #$num: $title (pin caught up)"
+    else
+      gh issue comment "$num" --body "Auto-close (spec-update watcher): the vendored pin has caught up with upstream \`openEHR/$repo\` $default — 0 commits ahead." >/dev/null
+      gh issue close "$num" >/dev/null
+      echo "closed #$num: $comp pin caught up"
+    fi
+    ahead_closed=$((ahead_closed + 1))
+  fi
+done < <(grep -E '^  "[A-Z-]+\|' scripts/vendor-spec-docs.sh | sed -e 's/^  "//' -e 's/"$//')
+echo "spec-update-watcher: commits-ahead — $ahead_created created, $ahead_updated updated, $ahead_closed closed"
+
+# ── D. Dedup by key against the issue board (open AND closed), create ───────
 # Sort so the richer Jira-sourced row wins over an amendment duplicate.
 sort -t"$US" -k1,1 -k4,4r "$CANDIDATES" | awk -F"$US" '!seen[$1]++' > "$tmp/unique.tsv"
 
