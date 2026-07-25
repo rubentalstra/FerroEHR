@@ -76,8 +76,9 @@ bearer tokens never reach the browser.
 - **EHRs** — browse EHRs, folders, compositions, and version history. See
   [Templates & EHR browsing](browsing.md).
 - **Audit log** — browse the CDR's ATNA security audit trail (see below).
-- **System** — CDR status, SMART discovery, and the server's own OpenAPI
-  document. ![System](img/system/system.png)
+- **System** — CDR status, SMART discovery, repository usage, the server's own
+  OpenAPI document, the redacted runtime configuration, and a shortcut into
+  the audit browser. ![System](img/system/system.png)
 
 ## Audit log
 

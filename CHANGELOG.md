@@ -57,6 +57,21 @@ workflow refuses a tag that has no matching section here.
   `config.management.probes_enabled=true` is gone. Prometheus scrape
   annotations still point at the management surface (and its separate port when
   configured), unchanged.
+- **Admin console: the System screen's activity tile now links to the audit
+  browser** (#301) instead of stating that the CDR exposes no audit read
+  surface — it does (the IHE ITI-81 retrieval the `/audit` screen has been
+  browsing all along). The tile carries a one-line description of the trail and
+  an **Open audit browser** button.
+- **Admin console: every write now reports its failure as prominently as its
+  success** (#301). Uploading a template, creating an EHR, committing or
+  updating a composition, saving a stored query or query group, and creating,
+  saving, restoring or deleting a directory all raise a failure notification
+  naming the object, what the CDR objected to (its diagnostic verbatim), and
+  the next action to take — a stale version to reload, a role to sign in with,
+  an unreachable CDR to check. Where the diagnostic is worth reading line by
+  line (template validation, a rejected composition body) it also stays on
+  screen beside the form as before. Previously a failed write showed a quiet
+  inline message that was easy to miss after a run of green success toasts.
 
 ### Removed
 
@@ -72,6 +87,11 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Admin console: find-an-EHR-by-id works without JavaScript** (#301). The
+  finder is now a plain `GET` form: submitting it before (or without) the
+  browser app loading redirects to the EHR's detail screen server-side, and
+  `/ehrs?find=<ehr_id>` is a shareable shortcut to any EHR. With the app loaded
+  the lookup is unchanged — one client-side navigation, no page reload.
 - **Admin console: template links and query-string values are now
   percent-encoded via the standard codec** (#293); template ids containing
   reserved characters no longer produce broken links. The console's

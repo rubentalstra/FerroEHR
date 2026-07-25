@@ -173,18 +173,25 @@ pub fn TemplatesPage() -> impl IntoView {
         |_| async move { list_templates().await },
     );
 
-    // Success feedback is a transient toast (the CDR-diagnostic failure path
-    // keeps its inline MessageBar). Dispatching a toast is a side-effect on the
-    // outside world (the thaw toaster), so an Effect is its correct home
-    // (rules §2); it never runs on the server pass.
-    Effect::new(move |_| {
-        if let Some(Ok(_)) = upload.value().get() {
-            toast_success(
-                toaster,
-                "Template uploaded",
-                "The operational template was accepted by the CDR.",
-            );
-        }
+    // Both outcomes toast (the console's mutation-feedback rule — crate
+    // CLAUDE.md); the CDR's validation diagnostic ALSO keeps its inline
+    // MessageBar, because an OPT rejection is a list worth reading line by
+    // line. Dispatching a toast is a side-effect on the outside world (the
+    // thaw toaster), so an Effect is its correct home (rules §2); it never
+    // runs on the server pass.
+    Effect::new(move |_| match upload.value().get() {
+        Some(Ok(_)) => toast_success(
+            toaster,
+            "Template uploaded",
+            "The operational template was accepted by the CDR.",
+        ),
+        Some(Err(error)) => crate::feedback::toast_write_failure(
+            toaster,
+            "Upload failed",
+            "the operational template",
+            &error,
+        ),
+        None => {}
     });
 
     // The delete outcome is reported as a toast naming the template: success
@@ -309,8 +316,9 @@ fn upload_trigger(upload: Action<String, Result<String, AdminUiError>>) -> AnyVi
 }
 
 /// The upload action's inline state: a pending hint plus the CDR diagnostic on
-/// failure (verbatim — an error payload worth reading stays inline). Success is
-/// reported by a toast (see [`TemplatesPage`]).
+/// failure (verbatim — a validation payload worth reading line by line stays
+/// inline ALONGSIDE the failure toast). Both outcomes also toast (see
+/// [`TemplatesPage`]).
 fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyView {
     view! {
         <div class="text-sm mb-3">

@@ -20,7 +20,7 @@
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
-use leptos_router::components::A;
+use leptos_router::components::{A, Redirect};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -276,10 +276,64 @@ pub async fn find_ehr_by_subject(
     parse_ehr_id(&response.body).map(Some)
 }
 
+/// The detail-route href for one EHR id. The id is user- or CDR-supplied, so
+/// the path segment is percent-encoded with `urlencoding` (owner rule: all
+/// percent-coding goes through it) — an id carrying `/`, `#`, `?` or `%`
+/// would otherwise address a different route.
+///
+/// Encoding is also what keeps the `?find=` redirect safe: the returned path
+/// becomes a `Location` header value server-side, and `urlencoding::encode`
+/// emits only unreserved ASCII plus `%XX`, so a submitted id carrying a
+/// control character or a non-ASCII byte can never reach the header builder
+/// (trimming alone would not stop an interior newline). Never interpolate a
+/// raw request parameter into a redirect path.
+#[must_use]
+pub(crate) fn ehr_detail_href(ehr_id: &str) -> String {
+    format!("/ehrs/{}", urlencoding::encode(ehr_id))
+}
+
+/// The `?find=` value the no-JS finder form submits, trimmed. Empty (or
+/// absent) means "no lookup requested".
+fn find_from_url() -> String {
+    leptos_router::hooks::use_query_map()
+        .with_untracked(|q| q.get("find").unwrap_or_default())
+        .trim()
+        .to_owned()
+}
+
 /// The `/ehrs` screen: a lookup form over a URL-paged recent-EHRs table.
+///
+/// `?find=<ehr_id>` — what the finder's GET form submits when WASM has not
+/// loaded — short-circuits the whole screen into a [`Redirect`] to that EHR's
+/// detail route, so find-by-id is a plain HTML round-trip with no JavaScript
+/// at all (`Redirect` sets the response redirect server-side; the
+/// authenticated routes render `SsrMode::Async`, so the header is still
+/// settable when the decision is made). Read untracked at setup: the
+/// parameter is a submitted request, not reactive screen state, and this way
+/// the redirect case creates no resources and issues no AQL.
+///
+/// Untracked is sound only because every route that can carry `?find=` is
+/// entered as a fresh render of this component: the hydrated form never
+/// navigates to `?find=` (it goes straight to the detail route), no in-app
+/// link carries the parameter, and an address-bar/pasted URL is a full
+/// document load. A same-path client-side navigation would NOT re-run this
+/// body (the router updates only the search query when the path is unchanged),
+/// so anything that adds an in-app `/ehrs?find=…` link — or swaps the plain
+/// form for the router's `<Form method="GET">` — must make this decision
+/// reactive (a `Memo` over `use_query_map()` around the `<Redirect>`, keeping
+/// the resource-free branch) instead.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn EhrsPage() -> impl IntoView {
+    let find = find_from_url();
+    if !find.is_empty() {
+        return view! {
+            <Title text="EHRs · ehrbase-admin" />
+            <Redirect path=ehr_detail_href(&find) />
+        }
+        .into_any();
+    }
+
     let toaster = thaw::ToasterInjection::expect_context();
     let create = create_ehr_section(toaster);
     let finder = finder_section();
@@ -298,14 +352,15 @@ pub fn EhrsPage() -> impl IntoView {
             {table}
         </div>
     }
+    .into_any()
 }
 
 /// The Create-EHR card: an optional subject id + namespace (both or neither),
 /// a Create button dispatching the [`create_ehr`] action, and — on success —
-/// a toast plus client-side navigation to the new EHR's detail route. The
-/// both-or-neither rule is validated client-side (inline) before dispatch and
-/// re-checked server-side; a CDR validation diagnostic surfaces inline
-/// verbatim.
+/// a toast plus client-side navigation to the new EHR's detail route. A
+/// failure toasts as well, with actionable copy. The both-or-neither rule is
+/// validated client-side (inline) before dispatch and re-checked server-side;
+/// a CDR validation diagnostic also surfaces inline verbatim.
 #[allow(clippy::too_many_lines)] // one erased section: the create card's inputs + validation + action wiring (rules §1)
 fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
     // UNCONTROLLED inputs, read at dispatch (rules §5) — a controlled input
@@ -320,19 +375,25 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
         async move { create_ehr(id, ns).await }
     });
 
-    // Navigate to the new EHR + toast on success. Both are outside-world
-    // side-effects (the router, the thaw toaster), so an Effect is their
-    // correct home (rules §2); it never runs on the server pass. The route
-    // instance unmounts on navigation, cleaning the Effect up.
+    // Report the outcome and, on success, navigate to the new EHR. Both are
+    // outside-world side-effects (the router, the thaw toaster), so an Effect
+    // is their correct home (rules §2); it never runs on the server pass. The
+    // route instance unmounts on navigation, cleaning the Effect up. Failure
+    // toasts too (the console's mutation-feedback rule — crate CLAUDE.md); the
+    // CDR's validation diagnostic also stays inline below the form.
     let navigate = leptos_router::hooks::use_navigate();
-    Effect::new(move |_| {
-        if let Some(Ok(new_id)) = create.value().get() {
+    Effect::new(move |_| match create.value().get() {
+        Some(Ok(new_id)) => {
             toast_success(toaster, "EHR created", &format!("New EHR {new_id}"));
             navigate(
-                &format!("/ehrs/{new_id}"),
+                &ehr_detail_href(&new_id),
                 leptos_router::NavigateOptions::default(),
             );
         }
+        Some(Err(error)) => {
+            crate::feedback::toast_write_failure(toaster, "Create failed", "the new EHR", &error);
+        }
+        None => {}
     });
 
     let on_click = move |_| {
@@ -441,22 +502,34 @@ fn offset_from_url() -> Signal<u32> {
     })
 }
 
-/// The finder: two modes in one card. Mode 1 is the by-id jump (`#ehr-lookup`
-/// unchanged), a pure client-side navigate. Mode 2 is the subject lookup —
-/// `subject_id` + `subject_namespace` dispatched to [`find_ehr_by_subject`],
-/// navigating to the detail route when found and surfacing an inline
-/// not-found note on a `404`. Both navigations are client-side
-/// (`use_navigate`) — no page reload.
+/// The finder: two modes in one card. Mode 1 is the by-id jump — a plain
+/// `<form method="GET" action="/ehrs">` whose `find` field the page reads and
+/// redirects on, so it works with no JavaScript at all; once hydrated, its
+/// `on:submit` handler cancels the round-trip and navigates client-side
+/// instead (identical UX, one hop instead of two). Mode 2 is the subject
+/// lookup — `subject_id` + `subject_namespace` dispatched to
+/// [`find_ehr_by_subject`], navigating to the detail route when found and
+/// surfacing an inline not-found note on a `404`.
 #[allow(clippy::too_many_lines)] // two finder modes assembled as one erased section (rules §1) — splitting would separate a mode from its state
 fn finder_section() -> AnyView {
     // ── Mode 1: jump by EHR id ──────────────────────────────────────────────
-    // UNCONTROLLED inputs, read at dispatch (rules §5): a controlled
+    // A PLAIN <form>, not the router's <Form>: pre-WASM the browser submits it
+    // natively (GET /ehrs?find=…, which the page turns into a server-side
+    // redirect), and post-hydration our own `on:submit` listener prevents the
+    // default and navigates straight to the detail route — the uncontrolled
+    // NodeRef + `ev.prevent_default()` pattern (rules §5). The router only
+    // intercepts its own <Form>/<ActionForm> components and anchor clicks, so
+    // the native submission is untouched while WASM is absent.
+    //
+    // UNCONTROLLED input, read at submit (rules §5): a controlled
     // (signal-driven) input resets to its empty signal at hydration, wiping
     // anything typed before the WASM loaded — the login form's proven fix,
     // applied here after the finder e2e journey caught the same wipe live.
     let lookup_ref = NodeRef::<leptos::html::Input>::new();
     let by_id_navigate = leptos_router::hooks::use_navigate();
-    let on_lookup = move |_| {
+    let on_lookup = move |ev: leptos::ev::SubmitEvent| {
+        // Hydrated: cancel the full-page GET and navigate client-side.
+        ev.prevent_default();
         let id = lookup_ref
             .get_untracked()
             .map(|el| el.value())
@@ -465,7 +538,7 @@ fn finder_section() -> AnyView {
             .to_owned();
         if !id.is_empty() {
             by_id_navigate(
-                &format!("/ehrs/{id}"),
+                &ehr_detail_href(&id),
                 leptos_router::NavigateOptions::default(),
             );
         }
@@ -484,7 +557,7 @@ fn finder_section() -> AnyView {
     Effect::new(move |_| {
         if let Some(Ok(Some(id))) = find.value().get() {
             by_subject_navigate(
-                &format!("/ehrs/{id}"),
+                &ehr_detail_href(&id),
                 leptos_router::NavigateOptions::default(),
             );
         }
@@ -507,32 +580,35 @@ fn finder_section() -> AnyView {
         }
     };
 
-    // TODO: offer a no-JS fallback (a <Form method="GET"> that posts the id to
-    // a route which redirects to /ehrs/{id}) so the finder works before WASM
-    // loads; the button+navigate path covers the hydrated case for now.
     view! {
         <section class=format!("{CARD_PAD} mb-6")>
             <h2 class=CARD_TITLE>"Find an EHR"</h2>
-            <div class="flex flex-wrap items-end gap-3">
-                <div class="flex flex-col gap-1">
-                    // Plain label + explicit stable input id keep the SSR↔hydration
-                    // association deterministic (rules §8) and preserve the E2E
-                    // contract (`#ehr-lookup`).
-                    <label class=LABEL r#for="ehr-lookup">
-                        "EHR id"
-                    </label>
-                    <input
-                        id="ehr-lookup"
-                        type="text"
-                        class=INPUT
-                        placeholder="ehr_id (UUID)"
-                        node_ref=lookup_ref
-                    />
+            // method=GET + action=/ehrs: the no-JS submission lands on
+            // /ehrs?find=<id>, which EhrsPage answers with a redirect to the
+            // detail route (rules §9 — lookup state travels in the URL).
+            <form method="GET" action="/ehrs" on:submit=on_lookup>
+                <div class="flex flex-wrap items-end gap-3">
+                    <div class="flex flex-col gap-1">
+                        // Plain label + explicit stable input id keep the SSR↔hydration
+                        // association deterministic (rules §8) and preserve the E2E
+                        // contract (`#ehr-lookup`).
+                        <label class=LABEL r#for="ehr-lookup">
+                            "EHR id"
+                        </label>
+                        <input
+                            id="ehr-lookup"
+                            name="find"
+                            type="text"
+                            class=INPUT
+                            placeholder="ehr_id (UUID)"
+                            node_ref=lookup_ref
+                        />
+                    </div>
+                    <button id="ehr-find" type="submit" class=BTN_PRIMARY>
+                        "Find"
+                    </button>
                 </div>
-                <button id="ehr-find" type="button" class=BTN_PRIMARY on:click=on_lookup>
-                    "Find"
-                </button>
-            </div>
+            </form>
             <div class="mt-3 flex flex-wrap items-end gap-3">
                 <div class="flex flex-col gap-1">
                     <label class=LABEL r#for="ehr-subject-id">
@@ -650,7 +726,7 @@ fn ehrs_row(row: &[Value]) -> AnyView {
         .map(|(i, value)| {
             let text = cell_text(value);
             if i == 0 {
-                let href = format!("/ehrs/{id}");
+                let href = ehr_detail_href(&id);
                 view! {
                     <td class=CELL_MONO>
                         <A href=href attr:class="text-accent hover:underline">
