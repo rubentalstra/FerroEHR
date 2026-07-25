@@ -1,17 +1,14 @@
-//! The public status surface hanging off the REST root: `/rest/status` and its
-//! `/rest/status/health` liveness alias. Both are mounted outside the
-//! authentication layer.
+//! The public status surface hanging off the REST root: the `/rest/status`
+//! product status document, mounted outside the authentication layer.
 //!
 //! NOTE: no openEHR spec governs an operational status or health endpoint —
-//! our own operational surface. The process-root health family
-//! (`/health`, `/health/liveness`, `/health/readiness`) lives in
-//! [`crate::extensions::health`]; the alias here is the same constant liveness
-//! answer, kept because it is a published path.
+//! our own operational surface. Health is a separate contract with its own
+//! clients and lives entirely in the process-root family (`/health`,
+//! `/health/liveness`, `/health/readiness` — [`crate::extensions::health`]);
+//! this module serves only the status document.
 
-use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::{Json, Router};
-use http::StatusCode;
 use serde::Serialize;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_axum::routes;
@@ -54,36 +51,16 @@ async fn status() -> Json<ServerStatus> {
     })
 }
 
-/// Liveness probe under the REST root
-/// (`GET /ehrbase/rest/status/health`) — the compatibility alias of `/health`
-/// ([`crate::extensions::health`]).
-///
-/// OUR OWN SURFACE — no openEHR spec governs a health endpoint. Returns the
-/// plain-text body `OK`. Unauthenticated (mounted outside the auth layer).
-#[utoipa::path(
-    get, path = "/ehrbase/rest/status/health", tag = "status",
-    responses(
-        (status = 200, description = "Server process alive; plain-text `OK`.",
-         body = String)
-    )
-)]
-async fn status_health() -> impl IntoResponse {
-    (StatusCode::OK, "OK")
-}
-
 pub(crate) fn router(rest_root: &str) -> Router<AppState> {
-    Router::new()
-        .route(&format!("{rest_root}/status"), get(status))
-        .route(&format!("{rest_root}/status/health"), get(status_health))
+    Router::new().route(&format!("{rest_root}/status"), get(status))
 }
 
-/// The public status surface's `OpenAPI` document (paths at the default REST
-/// root; a non-default base path shifts them uniformly). These endpoints are
+/// The public status surface's `OpenAPI` document (the path is at the default
+/// REST root; a non-default base path shifts it uniformly). The operation is
 /// unauthenticated (mounted outside the auth layer). No openEHR spec governs an
-/// operational status/health endpoint — our own surface.
+/// operational status endpoint — our own surface.
 pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
     OpenApiRouter::<AppState>::new()
         .routes(routes!(status))
-        .routes(routes!(status_health))
         .into_openapi()
 }

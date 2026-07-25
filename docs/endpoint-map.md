@@ -767,8 +767,8 @@ whole tree under the shared tower-http stack (request-id, trace, catch-panic, CO
 
 **Surfaces OUTSIDE auth + overload shedding** (siblings of the API nest, never shed, so an
 operator can always probe an overloaded server): the always-on health family (`/health`,
-`/health/liveness`, `/health/readiness`), `/ehrbase/rest/status` (+ its
-`/ehrbase/rest/status/health` alias), the SMART discovery document, the Swagger UI + OpenAPI JSON
+`/health/liveness`, `/health/readiness`), `/ehrbase/rest/status`,
+the SMART discovery document, the Swagger UI + OpenAPI JSON
 documents, and the whole `/management/*` surface (which carries its own per-endpoint
 access-level guard and may live on a separate port). The System `OPTIONS` manifest sits
 **above even the CORS layer** (CORS would eat `OPTIONS` as a preflight).
@@ -1153,10 +1153,10 @@ independent of every configuration switch (an orchestrator can probe a server wh
 `[management]` section is off). No openEHR spec governs health probes — our own
 operational surface (the ITS-REST System API defines only `OPTIONS /`).
 
-### GET /health · GET /health/liveness · GET /ehrbase/rest/status/health
-chain: `health::root_health` / `health::liveness` / `overview::status::status_health` —
-static `200 OK` text (`/health/liveness` is a byte-identical alias of `/health`;
-`/ehrbase/rest/status/health` is the REST-root compatibility alias)
+### GET /health · GET /health/liveness
+chain: `health::root_health` / `health::liveness` — static `200 OK` text
+(`/health/liveness` is a byte-identical alias of `/health`). These two names are
+the whole liveness surface: there is no third name for it under the REST root.
 sql: 0 round trips
 notes: outside auth/overload; pure process liveness — no dependency is touched, so a DB
 outage never gets the container killed.

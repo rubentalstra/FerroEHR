@@ -213,8 +213,11 @@ its own probes.
 | `GET /ehrbase/rest/status` | product status document: server version, ITS-REST version, timestamp | version/identity checks; the URL the container's `ehrbase healthcheck` subcommand probes |
 | `GET /management/*` | ops introspection — see below | operators, off by default, enable deliberately |
 
-`GET /ehrbase/rest/status/health` is kept as an alias of `/health` for
-compatibility.
+There is exactly one health surface — the `/health` family above. `/health` and
+`/health/liveness` are two conventional names for the same constant answer (a
+load balancer wants the bare path, an orchestrator wants the `liveness`/
+`readiness` pair); `/ehrbase/rest/status` is a different contract, and no health
+endpoint exists under the REST root.
 
 > [!IMPORTANT]
 > Liveness and readiness are deliberately different: liveness never touches a

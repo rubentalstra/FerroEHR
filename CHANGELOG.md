@@ -41,7 +41,7 @@ workflow refuses a tag that has no matching section here.
   required component is DOWN, with the full per-indicator JSON body). They are
   mounted outside the API's authentication and overload-shedding layers, so
   they answer without credentials and are never shed on a saturated server.
-  `GET /ehrbase/rest/status/health` is unchanged.
+  This family is now the only health surface (see **Removed**).
 
 ### Changed
 
@@ -75,6 +75,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Removed
 
+- **`GET /ehrbase/rest/status/health`** is removed. It was a third name for the
+  constant liveness answer already served at `/health` and `/health/liveness`,
+  with no consumer anywhere in the product (no probe, no client, no
+  documentation pointed at it). Point any caller at `/health` (load balancers,
+  container `HEALTHCHECK`) or `/health/liveness` (orchestrator probes);
+  `GET /ehrbase/rest/status` — the product status document, a different contract
+  — is unchanged.
 - **`/management/health`, `/management/health/liveness`, and
   `/management/health/readiness`** are removed; the management surface is now
   ops introspection only (info, prometheus, metrics, env, loggers). The

@@ -178,7 +178,6 @@ async fn every_operation_documents_an_error_outcome() {
         "/health",
         "/health/liveness",
         "/ehrbase/rest/status",
-        "/ehrbase/rest/status/health",
         // List endpoints whose OAS contract is 200-only (an unmatched
         // filter/prefix yields an empty list, never an error):
         // definition_query_list.yaml / definition_template_adl*_list.yaml.

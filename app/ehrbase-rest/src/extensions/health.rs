@@ -22,11 +22,11 @@
 //! | `GET /health/liveness` | the same constant `OK` (path alias) | container/orchestrator liveness probe |
 //! | `GET /health/readiness` | the indicator registry evaluated per call (DB ping, migrations applied, …); `200` UP/DEGRADED, `503` DOWN | orchestrator readiness probe, ops |
 //!
-//! `GET /ehrbase/rest/status/health` (the REST-root alias of `/health`, kept
-//! for compatibility) lives with the status surface it hangs off,
-//! [`crate::overview::status`]. The management surface
-//! ([`crate::extensions::management`]) carries **no** health route: it is ops
-//! introspection only.
+//! This family is the ONE health surface: there is no second name for it
+//! anywhere. `GET /ehrbase/rest/status` ([`crate::overview::status`]) is a
+//! different contract — the product status/version document — and the
+//! management surface ([`crate::extensions::management`]) carries no health
+//! route at all: it is ops introspection only.
 
 use axum::Router;
 use axum::extract::State;
