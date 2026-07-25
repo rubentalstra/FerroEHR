@@ -213,8 +213,11 @@ its own probes.
 | `GET /ehrbase/rest/status` | product status document: server version, ITS-REST version, timestamp | version/identity checks; the URL the container's `ehrbase healthcheck` subcommand probes |
 | `GET /management/*` | ops introspection — see below | operators, off by default, enable deliberately |
 
-`GET /ehrbase/rest/status/health` is kept as an alias of `/health` for
-compatibility.
+There is exactly one health surface — the `/health` family above. `/health` and
+`/health/liveness` are two conventional names for the same constant answer (a
+load balancer wants the bare path, an orchestrator wants the `liveness`/
+`readiness` pair); `/ehrbase/rest/status` is a different contract, and no health
+endpoint exists under the REST root.
 
 > [!IMPORTANT]
 > Liveness and readiness are deliberately different: liveness never touches a
@@ -255,6 +258,11 @@ The ops endpoints:
 > [!WARNING]
 > `{base}/env` and `{base}/loggers` expose and change server internals — keep
 > them `admin_only`, and prefer binding the surface to an internal-only port.
+
+With the surface enabled, the admin console grows an **Operations** screen over
+it — dependency health, build provenance, the metric registry, and runtime log
+control — which appears only while the CDR serves `{base}/info`. See
+[Admin console → Operations panel](admin-ui/operations.md).
 
 For the full list of configuration keys across every subsystem, see
 [Installation → Configuration reference](installation/configuration.md); to

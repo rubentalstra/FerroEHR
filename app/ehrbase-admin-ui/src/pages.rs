@@ -8,6 +8,7 @@ pub mod dashboard;
 pub mod ehr_detail;
 pub mod ehrs;
 pub mod login;
+pub mod operations;
 pub mod queries;
 pub mod query_aql;
 pub mod query_builder;

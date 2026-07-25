@@ -25,7 +25,7 @@ use leptos_router::components::A;
 
 use crate::components::field::BTN_SECONDARY;
 use crate::components::page_header::PageHeader;
-use crate::components::surface::{CARD_PAD, CARD_TITLE};
+use crate::components::surface::titled_card;
 use crate::error::AdminUiError;
 
 /// The CDR's SMART service-discovery document, or `None` when the CDR
@@ -230,7 +230,7 @@ fn usage_card() -> AnyView {
         </Suspense>
     }
     .into_any();
-    card_shell("Repository usage", false, body)
+    titled_card("Repository usage", false, body)
 }
 
 /// The runtime-configuration card: the CDR's redacted effective config
@@ -280,24 +280,7 @@ fn config_card() -> AnyView {
         </Suspense>
     }
     .into_any();
-    card_shell("Runtime configuration (redacted)", true, body)
-}
-
-/// A uniform card shell: a titled design-system card wrapping an already-erased
-/// body. `full_width` spans both grid columns.
-fn card_shell(title: &'static str, full_width: bool, body: AnyView) -> AnyView {
-    let class = if full_width {
-        format!("{CARD_PAD} lg:col-span-2")
-    } else {
-        CARD_PAD.to_owned()
-    };
-    view! {
-        <section class=class>
-            <h2 class=CARD_TITLE>{title}</h2>
-            {body}
-        </section>
-    }
-    .into_any()
+    titled_card("Runtime configuration (redacted)", true, body)
 }
 
 /// The `<Suspense>` fallback shared by every data-backed card.
@@ -340,7 +323,7 @@ fn status_card() -> AnyView {
         </Suspense>
     }
     .into_any();
-    card_shell("Status", false, body)
+    titled_card("Status", false, body)
 }
 
 /// The uniform card error state: the domain-error message in an error
@@ -411,7 +394,7 @@ fn smart_card() -> AnyView {
         </Suspense>
     }
     .into_any();
-    card_shell("SMART", false, body)
+    titled_card("SMART", false, body)
 }
 
 /// Render the SMART discovery document. `None` is the neutral disabled state;
@@ -531,7 +514,7 @@ fn openapi_card() -> AnyView {
         </Suspense>
     }
     .into_any();
-    card_shell("Served OpenAPI", true, body)
+    titled_card("Served OpenAPI", true, body)
 }
 
 /// Render the served `OpenAPI` document as a grouped, scrollable endpoint list.
@@ -590,7 +573,7 @@ fn activity_log_card() -> AnyView {
         </div>
     }
     .into_any();
-    card_shell("Audit log", false, body)
+    titled_card("Audit log", false, body)
 }
 
 /// Every top-level scalar field of a JSON object as `(key, text)`, sorted by

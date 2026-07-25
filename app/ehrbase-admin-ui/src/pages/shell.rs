@@ -45,6 +45,8 @@ fn nav_key(path: &str) -> &'static str {
         "/audit"
     } else if path.starts_with("/system") {
         "/system"
+    } else if path.starts_with("/operations") {
+        "/operations"
     } else {
         "/"
     }
@@ -87,6 +89,10 @@ fn apply_dark(theme: RwSignal<thaw::Theme>, dark: bool) {
 pub fn AppShell() -> impl IntoView {
     let session = Resource::new(|| (), |()| current_session());
     let status = Resource::new(|| (), |()| fetch_status());
+    // The management probe is created HERE, in component setup — never inside a
+    // Suspend closure, which re-runs and would re-create the resource
+    // (rules §4). It gates the operations nav entry.
+    let management = crate::management::management_gate();
     let theme = thaw::ConfigInjection::expect_context().theme;
     let is_dark = RwSignal::new(false);
     let nav_open = RwSignal::new(false);
@@ -140,7 +146,16 @@ pub fn AppShell() -> impl IntoView {
                     })
                 }}
             </Suspense>
-            <AuthedChrome session status theme is_dark nav_open scopes_open logout_action />
+            <AuthedChrome
+                session
+                status
+                management
+                theme
+                is_dark
+                nav_open
+                scopes_open
+                logout_action
+            />
         </thaw::ToasterProvider>
     }
 }
@@ -153,6 +168,10 @@ fn AuthedChrome(
     session: Resource<Result<Option<SessionInfo>, crate::error::AdminUiError>>,
     /// The CDR health resource (the topbar chip).
     status: Resource<Result<String, crate::error::AdminUiError>>,
+    /// The management-surface probe (gates the operations nav entry).
+    management: Resource<
+        Result<crate::management::ManagementAvailability, crate::error::AdminUiError>,
+    >,
     /// The thaw widget theme signal.
     theme: RwSignal<thaw::Theme>,
     /// Dark-mode state.
@@ -167,6 +186,7 @@ fn AuthedChrome(
     authed_shell(
         session,
         status,
+        management,
         theme,
         is_dark,
         nav_open,
@@ -174,6 +194,11 @@ fn AuthedChrome(
         logout_action,
     )
 }
+
+/// The probe-gated sidebar entry: the operations panel renders only when the
+/// CDR serves its management surface (see [`crate::management`]).
+const OPERATIONS_ITEM: (&str, &str, &icondata_core::IconData) =
+    ("/operations", "Operations", icondata_lu::LuGauge);
 
 /// One sidebar entry: route, label, Lucide icon.
 const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 6] = [
@@ -185,6 +210,35 @@ const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 6] = [
     ("/system", "System", icondata_lu::LuServer),
 ];
 
+/// One sidebar `<li>`: the link, its active styling, and its icon. Shared by the
+/// static [`NAV_ITEMS`] and the probe-gated operations entry so both look
+/// identical and only one place styles a nav link.
+fn nav_entry(
+    active: Memo<String>,
+    href: &'static str,
+    label: &'static str,
+    icon: &'static icondata_core::IconData,
+) -> impl IntoView {
+    let is_active = move || active.get() == href;
+    view! {
+        <li>
+            <a
+                href=href
+                aria-current=move || if is_active() { Some("page") } else { None }
+                class="group flex items-center gap-2.5 rounded-control px-3 py-2 text-sm font-medium"
+                class=(["bg-accent-subtle", "text-accent-ink"], is_active)
+                class=(
+                    ["text-ink-muted", "hover:bg-sunken", "hover:text-ink"],
+                    move || !is_active(),
+                )
+            >
+                <Icon icon width="16" height="16" />
+                {label}
+            </a>
+        </li>
+    }
+}
+
 /// Builds the authenticated chrome (topbar, nav, footer, scopes drawer) around
 /// the routed `<Outlet/>`. Split out of the component body so each section is a
 /// `.into_any()`-erased local (the section-boundary erasure rule, §1) and so
@@ -194,6 +248,9 @@ const NAV_ITEMS: [(&str, &str, &icondata_core::IconData); 6] = [
 fn authed_shell(
     session: Resource<Result<Option<SessionInfo>, crate::error::AdminUiError>>,
     status: Resource<Result<String, crate::error::AdminUiError>>,
+    management: Resource<
+        Result<crate::management::ManagementAvailability, crate::error::AdminUiError>,
+    >,
     theme: RwSignal<thaw::Theme>,
     is_dark: RwSignal<bool>,
     nav_open: RwSignal<bool>,
@@ -399,34 +456,28 @@ fn authed_shell(
     // pre-hydration paint; see the module doc).
     let nav_links = NAV_ITEMS
         .into_iter()
-        .map(|(href, label, icon)| {
-            let is_active = move || active.get() == href;
-            view! {
-                <li>
-                    <a
-                        href=href
-                        aria-current=move || if is_active() { Some("page") } else { None }
-                        class="group flex items-center gap-2.5 rounded-control px-3 py-2 text-sm font-medium"
-                        class=(["bg-accent-subtle", "text-accent-ink"], is_active)
-                        class=(
-                            ["text-ink-muted", "hover:bg-sunken", "hover:text-ink"],
-                            move || !is_active(),
-                        )
-                    >
-                        <Icon icon width="16" height="16" />
-                        {label}
-                    </a>
-                </li>
-            }
-        })
+        .map(|(href, label, icon)| nav_entry(active, href, label, icon))
         .collect_view();
+    // The operations panel is probe-gated: the CDR's management surface is off
+    // by default, so the entry appears only for a deployment that serves it —
+    // never a nav link to a screen whose cards would all read "not available"
+    // (the `crate::admin` discover-and-hide pattern, one surface further).
+    let operations_link = crate::management::when_management_usable(management, move || {
+        nav_entry(
+            active,
+            OPERATIONS_ITEM.0,
+            OPERATIONS_ITEM.1,
+            OPERATIONS_ITEM.2,
+        )
+        .into_any()
+    });
     let nav = view! {
         <aside
             class="w-52 shrink-0 border-r border-edge bg-raised md:block"
             class:hidden=move || !nav_open.get()
         >
             <nav aria-label="Main" class="p-3">
-                <ul class="flex flex-col gap-1">{nav_links}</ul>
+                <ul class="flex flex-col gap-1">{nav_links} {operations_link}</ul>
             </nav>
         </aside>
     }
@@ -501,6 +552,11 @@ mod tests {
         assert_eq!(nav_key("/audit"), "/audit");
         assert_eq!(nav_key("/audit?patient=p-1"), "/audit");
         assert_eq!(nav_key("/system"), "/system");
+        assert_eq!(nav_key("/operations"), "/operations");
+        assert_eq!(
+            nav_key("/operations?metric=aql_queries_total"),
+            "/operations"
+        );
         assert_eq!(nav_key("/unknown"), "/");
     }
 }

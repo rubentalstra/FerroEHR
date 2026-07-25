@@ -53,6 +53,25 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   and never a toast. A first-class empty/absent state (`Ok(None)` from a
   `404`) is not an error at all.
 
+## One reader per claim (owner adjudication, 2026-07-25)
+
+- **No two console surfaces may read the same claim from two endpoints.** Where
+  the CDR exposes one fact on more than one endpoint, the console picks ONE
+  reader and every other screen cross-links to it. Live cases: the topbar pill
+  reads the status document (`/ehrbase/rest/status` — API up + version) while
+  the operations panel's health card reads `/health/readiness` (dependency
+  indicators), and the screen states the split; the redacted effective
+  configuration is served identically by `/management/env` and `/admin/config`,
+  so the ONE viewer lives on `/system` (the API base URL is always configured;
+  the management surface may sit on an unreachable internal port) and
+  `/operations` links to it.
+- **Optional CDR surfaces are probe-and-hide.** An affordance for a surface the
+  CDR may not serve is gated on a probe (`crate::admin` for the admin group via
+  the System API manifest, `crate::management` for the management surface via
+  `GET /management/info`): a `404` hides the affordance/nav entry entirely, and
+  every other answer counts as present — capability is not authorization, so a
+  `401`/`403` refusal surfaces as actionable copy on the screen that asked.
+
 ## Gates
 
 `/ui-gates`: clippy on **native and wasm32** targets, `cargo nextest run -p
