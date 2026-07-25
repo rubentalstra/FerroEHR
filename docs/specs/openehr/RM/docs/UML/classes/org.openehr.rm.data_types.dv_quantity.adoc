@@ -80,7 +80,7 @@ a|Difference of this `DV_QUANTITY` and `_other_`.
 
 h|*1..1 +
 (redefined)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
 ): `<<_dv_quantity_class,DV_QUANTITY>>`
 a|Product of this `DV_QUANTITY` and `_factor_`.

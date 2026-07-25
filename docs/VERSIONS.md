@@ -73,7 +73,7 @@ pin accepts every valid older-minor instance.
 | Component | Our pin | Latest official release | Upstream WIP | Notes |
 |---|---|---|---|---|
 | BASE (Foundation + Base Types) | **1.3.0** (pre-release generation; text + BMM refreshed 2026-07-25 @ `e4879576` — SPECBASE-48 invariants, SPECAM-82 CODE_PHRASE move, SPECPR-426/386/460) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
-| RM (Reference Model) | **1.2.0** (development generation) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
+| RM (Reference Model) | **1.2.0** (development generation; text + BMM refreshed 2026-07-26 @ `66d3ac45` — asterisk-entity normalization only, zero generated-output change) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
 | AM (Archetype Model) | **1.4 + 2.4.0** (1.4 released; 2.4.0 WIP generation) | 2.3.0 (20-Mar-2024) | 2.4.0, **3.0.0** | generated → `openehr-am`, both majors side by side as `am14` (ADL 1.4) + `am24` (ADL 2) — the spec-mandated dual-generation case |
 | QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
 | LANG (BMM / ODIN / EL) | master snapshot beyond 1.0.0 (development toward 1.1.0) | 1.0.0 (11-May-2020) | dev | `openehr-lang` — the ODIN + BMM reader that feeds codegen; the crate carries 1.0.0 as its spec version |

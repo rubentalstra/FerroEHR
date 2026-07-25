@@ -28,7 +28,7 @@ h|*1..1*
 |*action_archetype_id*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
 a|Perl-compliant regular expression pattern, enclosed in  '//' delimiters, indicating the valid identifiers of archetypes for Actions corresponding to this Activity specification. 
 
-Defaults to  `/.&#42;/`, meaning any archetype.
+Defaults to  `/.*/`, meaning any archetype.
 
 h|*1..1*
 |*description*: `link:/releases/RM/{rm_release}/data_structures.html#_item_structure_class[ITEM_STRUCTURE^]`

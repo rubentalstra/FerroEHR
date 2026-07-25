@@ -51,7 +51,7 @@ a|Difference of this `DV_COUNT` and `_other_`.
 
 h|*1..1 +
 (redefined)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 factor: `link:/releases/BASE/{base_release}/foundation_types.html#_real_class[Real^][1]` +
 ): `<<_dv_count_class,DV_COUNT>>`
 a|Product of this `DV_COUNT` and `_factor_`.
