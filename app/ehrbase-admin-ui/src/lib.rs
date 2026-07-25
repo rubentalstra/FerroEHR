@@ -18,14 +18,9 @@ pub mod format;
 pub mod management;
 pub mod pages;
 pub mod queries_api;
+pub mod query_namespace;
 pub mod system_api;
 pub mod theme;
-
-#[cfg(feature = "ssr")]
-pub mod groups;
-
-#[cfg(feature = "ssr")]
-pub mod folder_templates;
 
 #[cfg(feature = "ssr")]
 pub mod cdr;

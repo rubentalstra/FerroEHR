@@ -7,12 +7,20 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end DIRECTORY journeys — the structured tree editor (add a
-//! subfolder + save with `If-Match`), version history with restore, and the
-//! two-step directory delete with the create state coming back. Each journey
-//! creates its OWN anonymous EHR through the console (never the seeded one —
-//! these journeys mutate/delete the directory) and fails on any browser
-//! console error (the standing hydration gate).
+//! End-to-end DIRECTORY journeys — the create-empty flow, the structured tree
+//! editor (add a subfolder + save with `If-Match`), version history with
+//! restore, and the two-step directory delete with the create state coming
+//! back. Each journey creates its OWN anonymous EHR through the console (never
+//! the seeded one — these journeys mutate/delete the directory) and fails on
+//! any browser console error (the standing hydration gate).
+//!
+//! Retargeted with the removal of the console-local folder-template store:
+//! every journey used to seed its tree from the richest built-in template, and
+//! now creates the empty root and builds structure in the editor instead. The
+//! assertions are unchanged in strength — the same `If-Match` save, the same
+//! version-history restore, the same delete-and-recreate — and the editor path
+//! they exercise is now the ONLY way directory structure is built, so the
+//! coverage went up, not down.
 
 mod common;
 
@@ -48,20 +56,17 @@ async fn create_ehr(h: &Harness) -> String {
     panic!("EHR creation never navigated to a detail route (last url {url})");
 }
 
-/// Create the directory from the LAST folder-template option (the richest
-/// built-in tree) and wait for the edit view.
-async fn create_directory_from_template(h: &Harness, ehr_id: &str) {
+/// Create the EHR's directory through the create-empty flow — the ONLY create
+/// path now that the console keeps no folder-shape library of its own — and
+/// wait for the edit view. Structure is built afterwards in the tree editor,
+/// which is exactly what each journey below exercises.
+async fn create_empty_directory(h: &Harness, ehr_id: &str) {
     h.goto(&format!("/ehrs/{ehr_id}?tab=directory")).await;
-    h.wait_css("#folder-template option:last-child")
-        .await
-        .click()
-        .await
-        .expect("pick a folder template");
     h.wait_css("#directory-create")
         .await
         .click()
         .await
-        .expect("create the directory");
+        .expect("create the empty directory");
     h.wait_css("#directory-edit").await;
 }
 
@@ -74,7 +79,7 @@ async fn directory_tree_edit_journey() {
     };
     login_basic(&h).await;
     let ehr_id = create_ehr(&h).await;
-    create_directory_from_template(&h, &ehr_id).await;
+    create_empty_directory(&h, &ehr_id).await;
 
     // Add a subfolder at the root ("New folder"), which marks the tree dirty.
     h.wait_css("[aria-label='Add subfolder']")
@@ -109,7 +114,7 @@ async fn directory_history_and_restore_journey() {
     };
     login_basic(&h).await;
     let ehr_id = create_ehr(&h).await;
-    create_directory_from_template(&h, &ehr_id).await;
+    create_empty_directory(&h, &ehr_id).await;
 
     // v2: add a subfolder and save.
     h.wait_css("[aria-label='Add subfolder']")
@@ -164,7 +169,7 @@ async fn directory_delete_and_recreate_journey() {
     };
     login_basic(&h).await;
     let ehr_id = create_ehr(&h).await;
-    create_directory_from_template(&h, &ehr_id).await;
+    create_empty_directory(&h, &ehr_id).await;
 
     // Two-step delete: the danger button opens the inline confirmation.
     h.wait_xpath("//button[contains(normalize-space(.), 'Delete directory')]")
@@ -179,7 +184,7 @@ async fn directory_delete_and_recreate_journey() {
         .expect("confirm the delete");
 
     // The tab falls back to the create state (no live directory)…
-    h.wait_css("#folder-template").await;
+    h.wait_css("#directory-create").await;
 
     // …and a NEW directory can be created (the deleted container remains,
     // the slot is vacant — proven at the wire by directory_http). The delete

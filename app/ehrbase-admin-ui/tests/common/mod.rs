@@ -345,7 +345,15 @@ pub async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str)
     let trigger = h.wait_css(trigger_css).await;
     let confirm_css = format!("#{confirm_id}");
     let mut opened = false;
-    for _ in 0..10 {
+    for attempt in 0..10 {
+        // Retries exist for a pre-hydration click that does nothing. Once a
+        // dialog surface is actually up, clicking the trigger again would be
+        // swallowed by the modal and surface as `ElementClickIntercepted` — a
+        // confusing report for what is really "the dialog opened, but not with
+        // the confirm id this call expects". Stop and let the assertion say so.
+        if attempt > 0 && is_visible(h, ".thaw-dialog-surface").await {
+            break;
+        }
         trigger.click().await.expect("open the confirmation dialog");
         for _ in 0..10 {
             if is_visible(h, &confirm_css).await {
@@ -360,7 +368,9 @@ pub async fn confirm_in_dialog(h: &Harness, trigger_css: &str, confirm_id: &str)
     }
     assert!(
         opened,
-        "`{trigger_css}` never opened the `{confirm_css}` dialog (pre-hydration clicks exhausted)"
+        "`{trigger_css}` never opened the `{confirm_css}` dialog — either the click \
+         never landed (pre-hydration) or a dialog opened whose confirm id is not \
+         `{confirm_id}`"
     );
     h.wait_css(&confirm_css)
         .await

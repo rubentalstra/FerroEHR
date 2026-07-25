@@ -439,7 +439,7 @@ notes: the name is a case-insensitive **prefix** (empty ⇒ wildcard), all versi
 chain: handler `…::definition_query_store_yaml` (op id `definition_query_store.yaml`) → `stored_query.rs::store` (text body; `query_type` default `AQL`) → `EhrbaseService::query_store(name, None, …)` (`app:service/definition/wire.rs`; non-AQL formalism → typed 400) → `store_query_version` (`app:service/definition/query.rs`): store-time AQL parse (`openehr_query::parser::parse_str`, CPU — invalid → 400) → transactional upsert at the fixed default version `1.0.0` → back in the handler, `stored_version_of` recovers the assigned version through `query_list` for the `Location` header
 spine: standard api/** dispatch
 sql: 1 tx + 1 SELECT — BEGIN / DELETE (case-insensitive, semver 1.0.0) + INSERT INTO stored_query / COMMIT; then the prefix-list SELECT to rebuild `Location`
-notes: success is `200 OK` with `Location`, not 201/204 (`200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`); the no-version store is an upsert at `1.0.0` (the "stores or updates" semantics), PORT-NOTEd; a failed version-recovery degrades to a Location-less 200 rather than failing the already-committed store.
+notes: success is `200 OK` with `Location`, not 201/204 (`200_StoredQuery_stored.yaml` + `headers/Location_Query.yaml`); the no-version store is an upsert at `1.0.0` (the "stores or updates" semantics of `definition_query_store.yaml`); a failed version-recovery degrades to a Location-less 200 rather than failing the already-committed store.
 
 ### GET /definition/query/{qualified_query_name}/{version}
 chain: handler `…::definition_query_version_get` → `stored_query.rs::version_get` → `EhrbaseService::query_version_get` (`app:service/definition/wire.rs`) → `get_stored_query(name, Some(version))` (`app:service/definition/query.rs`; exact SEMVER, or `{major}`/`{major}.{minor}` prefix → highest match)
@@ -882,11 +882,11 @@ notes: doubles as the `has_terminology` existence check (404 on unknown).
 ### GET /terminology/{terminology_id}/term/{code}?at_date=
 chain: `terminology_get_term` → spine → `run` → `get_term` (bundle, else FHIR `CodeSystem/$lookup`)
 sql: 0 round trips — 1 HTTPS round trip to the external FHIR TS when routed there
-notes: the SM `attributes` allow-list is not surfaced on the wire (PORT-NOTEd, passed `None`).
+notes: the SM `attributes` allow-list is not surfaced on the wire (passed `None`).
 
 ### GET /terminology/{terminology_id}/subsumes?ref_code=&candidate=
 chain: `terminology_subsumes` → spine → `run` → `subsumes` (bundle: always `false` — flat
-bundle, PORT-NOTEd; hierarchical answers via FHIR `CodeSystem/$subsumes`)
+bundle; hierarchical answers via FHIR `CodeSystem/$subsumes`)
 sql: 0 SQL — 1 HTTPS round trip when routed to the FHIR TS
 notes: missing required query param → 400.
 
@@ -931,7 +931,7 @@ notes: `name` immutable (the queue key).
 ### DELETE /admin/event_subscription/{subscription_id}
 chain: `event_subscription_delete` → spine → `run` → `event_subscription_delete`
 sql: 1 round trip — DELETE FROM event_subscription WHERE id (0 rows → 404)
-notes: the bound broker queue is NOT torn down (service is broker-free; PORT-NOTEd —
+notes: the bound broker queue is NOT torn down (service is broker-free —
 operators reap orphaned durable queues out of band); the publisher loop re-syncs bindings.
 
 ### 2.3 Tenant admin extension (5) — `extensions/tenant_routes.rs`
@@ -1004,7 +1004,7 @@ sql: per request — 0–1 SELECT ehr.subject_id (when `patient` is an EHR UUID)
 WebTemplate (cache; miss +1) + 1 AQL SELECT; then **per result row**: the versioned read
 (vo_version + node reads for one version).
 notes: `patient` is mandatory (400 — explicit scope only, never generic FHIR Search);
-returns a `searchset` Bundle; `total` = returned page size, no paging links (PORT-NOTEd);
+returns a `searchset` Bundle; `total` = returned page size, no paging links;
 type with no enabled mapping → empty Bundle, not an error.
 
 ### GET /fhir/r4/AuditEvent (ITI-81, the audit surface — not the connector)
@@ -1265,7 +1265,7 @@ reverse-map failures) are retried 5 passes then **parked** — dead-lettered to 
 `error` and skipped by advancing the cursor — so one bad mapping never head-of-line-blocks
 later commits; broker/DB failures are transient and never park. Template id is read from
 the COMPOSITION body itself (the envelope's/`vo_version.template_id` column is NULL on the
-commit path — PORT-NOTEd). EHR_STATUS/FOLDER versions and logical deletes are skipped.
+commit path). EHR_STATUS/FOLDER versions and logical deletes are skipped.
 
 ### background: ATNA audit drain
 trigger: `atna.enabled`; spawned at boot (fail-open: a transport boot failure logs an

@@ -59,7 +59,12 @@ overrides:
 | `auth.oidc.issuer` / `client_id` / `client_secret` (`_file`) / `public_base_url` / `scopes` | — | The OIDC client registration; `public_base_url` is the console's externally visible origin for the redirect URI. |
 | `session.idle_minutes` | `60` | Session idle expiry. |
 | `session.cookie_secure` | `false` | Set behind TLS. |
-| `groups_file` | `admin-ui-groups.json` | Where console-local query groups persist (a small JSON file — the console has no database). |
+
+The console is **stateless apart from its in-process session store**: it has
+no database and keeps no local files of its own. Everything it shows —
+including how stored queries are grouped, which is derived from the namespace
+in each query's qualified name — lives in the CDR and is read over ITS-REST,
+so two console replicas always agree and nothing needs backing up.
 
 Login and sessions live in the console's backend; CDR credentials and
 bearer tokens never reach the browser.
@@ -68,7 +73,7 @@ bearer tokens never reach the browser.
 
 ## The screens
 
-- **Dashboard** — record counts, per-group match-count tiles, and a
+- **Dashboard** — record counts, per-namespace stored-query match tiles, and a
   commit-activity trend. See [Dashboard & queries](queries.md).
 - **Templates** — upload and inspect operational templates. See
   [Templates & EHR browsing](browsing.md).

@@ -25,10 +25,18 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::CARD_PAD;
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
-use crate::pages::dashboard::split_query_ref;
 use crate::pages::ehrs::{ResultPage, table_skeleton};
-use crate::pages::query_builder::{export_forms, paging_buttons, results_view};
+use crate::pages::query_builder::{
+    SaveAction, SaveFields, export_forms, paging_buttons, results_view, save_as_fields,
+};
 use crate::queries_api::{fetch_stored_query, run_aql, store_query, validate_aql};
+use crate::query_namespace::{next_minor, qualify, split_qualified, split_query_ref};
+
+/// One stored query as `?load=` fetched it: its qualified name, the version it
+/// was read at, and its AQL. Named because the resource, its status section,
+/// and the seeding effect all speak it — and because the version is a
+/// first-class member of it, not an afterthought that can be dropped.
+type LoadedQuery = (String, String, String);
 
 /// Build the link INTO this screen that pre-fills the editor with `aql`.
 ///
@@ -71,7 +79,19 @@ pub fn QueryAqlPage() -> impl IntoView {
     let initial_aql = query_map.with_untracked(|m| m.get("aql").unwrap_or_default());
     let aql = RwSignal::new(initial_aql);
     let params = RwSignal::new(String::new());
+    // The two halves of the stored query's qualified name (`namespace::name`,
+    // the namespace optional — see `crate::query_namespace`).
+    let save_namespace = RwSignal::new(String::new());
     let save_name = RwSignal::new(String::new());
+    // The store version (empty = server-assigned). Seeding it from a loaded
+    // query is what makes "load, edit, save" produce a NEW version instead of
+    // colliding with the immutable one it came from.
+    let save_version = RwSignal::new(String::new());
+    let save_fields = SaveFields {
+        namespace: save_namespace,
+        name: save_name,
+        version: save_version,
+    };
     let offset = RwSignal::new(0_u32);
     let ran = RwSignal::new(None::<(String, String)>);
 
@@ -80,47 +100,17 @@ pub fn QueryAqlPage() -> impl IntoView {
     // the server pass and the client hydration (hydration-safe), so the status
     // section only renders when the param is actually present.
     let has_load = query_map.with_untracked(|m| m.get("load").is_some_and(|s| !s.is_empty()));
-    let load_resource: Resource<Result<Option<(String, String)>, AdminUiError>> = Resource::new(
-        move || query_map.with(|m| m.get("load").unwrap_or_default()),
-        |load| async move {
-            match split_query_ref(&load) {
-                Some((name, version)) => {
-                    let text = fetch_stored_query(name.clone(), version).await?;
-                    Ok(Some((name, text)))
-                }
-                None => Ok(None),
-            }
-        },
-    );
-    // Seed the editor from the loaded query exactly once, client-side (Effects
-    // never run on the server, so there is no SSR/hydration divergence), and
-    // only while the editor is still untouched so back-navigation never
-    // clobbers edits. This is the async-load-into-editable-local-state case
-    // (rules §2); the one-shot `StoredValue` guard keeps it from re-firing.
-    // Loading the qualified name into the save field versions it on re-save.
-    let seeded = StoredValue::new(false);
-    Effect::new(move |_| {
-        if seeded.get_value() {
-            return;
-        }
-        if let Some(Ok(Some((qualified, text)))) = load_resource.get() {
-            if aql.with_untracked(std::string::String::is_empty) {
-                aql.set(text);
-            }
-            save_name.set(qualified);
-            seeded.set_value(true);
-        }
-    });
+    let load_resource = loaded_query_resource(query_map);
+    seed_editor_from_loaded_query(load_resource, aql, save_fields);
 
     let validate_action: Action<String, Result<(), AdminUiError>> = Action::new(|aql: &String| {
         let aql = aql.clone();
         async move { validate_aql(aql).await }
     });
-    let save_action: Action<(String, String), Result<(), AdminUiError>> =
-        Action::new(|input: &(String, String)| {
-            let (name, aql) = input.clone();
-            async move { store_query(name, aql).await }
-        });
+    let save_action: SaveAction = Action::new(|input: &crate::pages::query_builder::SaveInput| {
+        let (name, version, aql) = input.clone();
+        async move { store_query(name, version, aql).await }
+    });
     // Both outcomes toast (rules: Effect = sync with the outside world; no
     // signal is written — and the console's mutation-feedback rule, crate
     // CLAUDE.md). The CDR's diagnostic ALSO stays inline (save_feedback),
@@ -155,7 +145,7 @@ pub fn QueryAqlPage() -> impl IntoView {
     };
     let editor = editor_section(aql, validate_action);
     let parameters = parameters_section(params);
-    let run_save = run_save_section(aql, params, save_name, save_action, ran, offset);
+    let run_save = run_save_section(aql, params, save_fields, save_action, ran, offset);
     // Export tracks the editor + parameter panes — the same signals Run uses.
     let export_aql = Signal::derive(move || aql.get());
     let export_params = Signal::derive(move || params.get());
@@ -180,9 +170,72 @@ pub fn QueryAqlPage() -> impl IntoView {
 
 /// The `?load=` hand-off status: a house-pattern `<Transition>` reporting the
 /// loaded query (or the CDR error inline). The editor itself is seeded by the
+/// The `?load=name@version` fetch: the stored query the hand-off from
+/// `/queries` names, or `None` when the parameter is absent or malformed.
+///
+/// The version is CARRIED through, never dropped — re-saving a loaded query has
+/// to be able to address a version, and the version it came from is what the
+/// proposed next one is derived from
+/// ([`seed_editor_from_loaded_query`]).
+fn loaded_query_resource(
+    query_map: Memo<leptos_router::params::ParamsMap>,
+) -> Resource<Result<Option<LoadedQuery>, AdminUiError>> {
+    Resource::new(
+        move || query_map.with(|m| m.get("load").unwrap_or_default()),
+        |load| async move {
+            match split_query_ref(&load) {
+                Some((name, version)) => {
+                    let text = fetch_stored_query(name.clone(), version.clone()).await?;
+                    Ok(Some((name, version, text)))
+                }
+                None => Ok(None),
+            }
+        },
+    )
+}
+
+/// Seed the editor and the save fields from a loaded stored query, exactly once
+/// and client-side.
+///
+/// Effects never run on the server, so this cannot diverge at hydration; the
+/// one-shot `StoredValue` guard keeps it from re-firing, and the editor is only
+/// filled while it is still untouched so back-navigation never clobbers edits
+/// (the async-load-into-editable-local-state case, rules §2).
+///
+/// The qualified name is SPLIT back into namespace + bare name (which is what
+/// pre-fills the namespace field), and the version field is seeded with the
+/// NEXT version rather than the loaded one: an explicit `(name, version)` pair
+/// is immutable, so re-saving at the loaded version is a `409` by design
+/// (ITS-REST `operations/definition_query_version_store.yaml`). A loaded
+/// version that is not a bumpable triple leaves the field empty — the
+/// server-assigned store is then the honest default, and the field's own note
+/// says so.
+fn seed_editor_from_loaded_query(
+    load_resource: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
+    aql: RwSignal<String>,
+    fields: SaveFields,
+) {
+    let seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if seeded.get_value() {
+            return;
+        }
+        if let Some(Ok(Some((qualified, version, text)))) = load_resource.get() {
+            if aql.with_untracked(std::string::String::is_empty) {
+                aql.set(text);
+            }
+            let (namespace, name) = split_qualified(&qualified);
+            fields.namespace.set(namespace);
+            fields.name.set(name);
+            fields.version.set(next_minor(&version).unwrap_or_default());
+            seeded.set_value(true);
+        }
+    });
+}
+
 /// one-shot effect in the page component; this only surfaces load progress.
 fn load_status_section(
-    load_resource: Resource<Result<Option<(String, String)>, AdminUiError>>,
+    load_resource: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
 ) -> AnyView {
     view! {
         <Transition fallback=move || {
@@ -190,11 +243,14 @@ fn load_status_section(
         }>
             {move || Suspend::new(async move {
                 match load_resource.await {
-                    Ok(Some((qualified, _))) => {
+                    Ok(Some((qualified, version, _))) => {
                         view! {
                             <p class="text-sm text-ink-muted">
                                 "Loaded stored query "
-                                <span class="font-mono text-ink">{qualified}</span> "."
+                                <span class="font-mono text-ink">{qualified}</span> " at version "
+                                <span class="font-mono text-ink">{version}</span>
+                                ". Saving stores the version in the field below — that version is "
+                                "immutable, so the next one is proposed."
                             </p>
                         }
                             .into_any()
@@ -297,26 +353,39 @@ fn parameters_section(params: RwSignal<String>) -> AnyView {
 }
 
 /// The Run + Save surface: Run executes the AQL with the parameter bindings at
-/// the first page; Save stores it as a namespaced stored query.
+/// the first page; Save stores it under the qualified name composed from the
+/// namespace + name fields ([`save_as_fields`]).
 fn run_save_section(
     aql: RwSignal<String>,
     params: RwSignal<String>,
-    save_name: RwSignal<String>,
-    save_action: Action<(String, String), Result<(), AdminUiError>>,
+    fields: SaveFields,
+    save_action: SaveAction,
     ran: RwSignal<Option<(String, String)>>,
     offset: RwSignal<u32>,
 ) -> AnyView {
     let empty_aql = Signal::derive(move || aql.with(std::string::String::is_empty));
+    // The namespace stays optional (the spec makes it optional), so only the
+    // AQL and the query name gate the Save button.
     let save_disabled = Signal::derive(move || {
-        aql.with(std::string::String::is_empty) || save_name.with(std::string::String::is_empty)
+        aql.with(std::string::String::is_empty)
+            || fields.name.with(std::string::String::is_empty)
+            || fields.version_is_unstorable()
     });
     let run_click = move |_| {
         ran.set(Some((aql.get_untracked(), params.get_untracked())));
         offset.set(0);
     };
     let save_click = move |_| {
-        save_action.dispatch((save_name.get_untracked(), aql.get_untracked()));
+        save_action.dispatch((
+            qualify(
+                &fields.namespace.get_untracked(),
+                &fields.name.get_untracked(),
+            ),
+            fields.version_arg(),
+            aql.get_untracked(),
+        ));
     };
+    let save_fields = save_as_fields("aql", fields);
     view! {
         <section class=CARD_PAD>
             <div class="space-y-3">
@@ -324,27 +393,15 @@ fn run_save_section(
                     <button type="button" class=BTN_PRIMARY disabled=empty_aql on:click=run_click>
                         "Run"
                     </button>
-                    <div class="flex items-end gap-2">
-                        <label class="flex flex-col gap-0.5 text-xs">
-                            <span class="text-ink-muted">"Save as (namespace::name)"</span>
-                            <input
-                                id="aql-save-name"
-                                type="text"
-                                placeholder="org::my_query"
-                                class="rounded-control border border-edge-strong bg-raised px-2 py-1 text-sm w-56 text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-accent"
-                                prop:value=move || save_name.get()
-                                on:input:target=move |ev| save_name.set(ev.target().value())
-                            />
-                        </label>
-                        <button
-                            type="button"
-                            class=BTN_PRIMARY
-                            disabled=save_disabled
-                            on:click=save_click
-                        >
-                            "Save"
-                        </button>
-                    </div>
+                    {save_fields}
+                    <button
+                        type="button"
+                        class=BTN_PRIMARY
+                        disabled=save_disabled
+                        on:click=save_click
+                    >
+                        "Save"
+                    </button>
                 </div>
                 {save_feedback(save_action)}
             </div>
@@ -356,7 +413,7 @@ fn run_save_section(
 /// The Save action's inline feedback: a pending hint and the CDR error verbatim.
 /// Success is reported as a toast (dispatched from the page component), so it
 /// renders nothing here.
-fn save_feedback(save_action: Action<(String, String), Result<(), AdminUiError>>) -> AnyView {
+fn save_feedback(save_action: SaveAction) -> AnyView {
     view! {
         <div class="text-sm">
             <Show when=move || save_action.pending().get()>
@@ -411,8 +468,8 @@ fn results_section(
 
 #[cfg(test)]
 mod tests {
-    use crate::pages::dashboard::split_query_ref;
     use crate::pages::query_aql::{aql_href, load_href};
+    use crate::query_namespace::split_query_ref;
 
     #[test]
     fn load_href_leaves_an_unreserved_qualified_ref_alone() {

@@ -130,8 +130,10 @@ async fn capture_documentation_screenshots() {
     }
 
     // Stored queries: FIRST the true empty state (fresh database), then the
-    // populated screen — two stored queries seeded over the Definition API
-    // plus a query group built through the real UI.
+    // populated screen — three stored queries seeded over the Definition API
+    // under TWO different namespaces, so the derived namespace grouping (and
+    // the dashboard's namespace tiles) have something real to show. Nothing is
+    // created through a group form any more: a query's group IS its namespace.
     if let (Some(cdr), Some(user), Some(pass)) = (
         env("UI_E2E_CDR_URL"),
         env("UI_E2E_BASIC_USER"),
@@ -144,6 +146,7 @@ async fn capture_documentation_screenshots() {
         for name in [
             "org.example::recent-compositions",
             "org.example::quantity-series",
+            "ehr.demo::cohort-watch",
         ] {
             let status = http
                 .delete(format!(
@@ -169,6 +172,12 @@ async fn capture_documentation_screenshots() {
                 "org.example::quantity-series",
                 "SELECT c/context/start_time/value AS time,                  c/content[openEHR-EHR-EVALUATION.minimal.v1]/data[at0001]/items[at0002]/value/magnitude AS magnitude                  FROM EHR e CONTAINS COMPOSITION c",
             ),
+            // A SECOND namespace, so the grouping renders more than one card
+            // (`ehr::…` is one of the spec's own qualified-name examples).
+            (
+                "ehr.demo::cohort-watch",
+                "SELECT COUNT(*) AS cohort FROM EHR e CONTAINS COMPOSITION c",
+            ),
         ] {
             let status = http
                 .put(format!(
@@ -183,28 +192,21 @@ async fn capture_documentation_screenshots() {
                 .status();
             assert!(status.is_success(), "stored-query seed -> {status}");
         }
-        // Build one query group through the real UI, then capture the
-        // populated screen (rows + open-in-editor links + the group card).
+        // Capture the populated screen: rows + open-in-editor links on the
+        // left, and the DERIVED namespace cards on the right (both seeded
+        // namespaces present — no group was created by hand).
         h.goto("/queries").await;
         h.wait_css("a[href^='/queries/aql?load=']").await;
-        h.wait_css("input[placeholder='group name']")
-            .await
-            .send_keys("Cohort watch")
-            .await
-            .expect("group name");
-        h.wait_css("input[type=checkbox]")
-            .await
-            .click()
-            .await
-            .expect("pick a member");
-        h.wait_xpath("//button[contains(., 'Save group')]")
-            .await
-            .click()
-            .await
-            .expect("save the group");
-        // The saved group card renders with the group's name.
-        h.wait_xpath("//*[contains(., 'Cohort watch')]").await;
+        h.wait_css("[data-query-namespace=\"org.example\"]").await;
+        h.wait_css("[data-query-namespace=\"ehr.demo\"]").await;
         shot_to(&h, &dir, "queries/queries").await;
+        // Re-capture the DASHBOARD now that stored queries exist: its namespace
+        // tiles are derived from this same listing, and the first pass (before
+        // seeding) could only show the empty state.
+        h.goto("/").await;
+        h.wait_css("footer").await;
+        h.wait_css("[data-namespace-tile]").await;
+        shot_to(&h, &dir, "dashboard/dashboard").await;
     } else {
         capture(&h, &dir, "/queries", "queries/queries-empty", None).await;
         println!("SKIP docs-shots: stored-query seeding needs UI_E2E_CDR_URL/UI_E2E_BASIC_*");
@@ -304,32 +306,40 @@ async fn capture_documentation_screenshots() {
             Some("table tbody"),
         )
         .await;
-        // EHR detail: the directory tab (the create-from-template state —
-        // the seeded EHR has no directory).
+        // EHR detail: the directory tab (the create-empty state — the seeded
+        // EHR has no directory).
         capture(
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}?tab=directory"),
             "ehrs/directory/create",
-            Some("#folder-template"),
+            Some("#directory-create"),
         )
         .await;
-        // EHR detail: the POPULATED directory view — create the directory
-        // from a NAMED built-in folder template (the last select option; the
-        // richest tree — an empty root would make a bare screenshot) and
-        // wait for the edit view (owner directive: every possible view,
-        // including directory both before and after it exists).
-        h.wait_css("#folder-template option:last-child")
-            .await
-            .click()
-            .await
-            .expect("pick a folder template");
+        // EHR detail: the POPULATED directory view — create the empty root
+        // (the only create path), then build one sub-folder in the tree editor
+        // and commit it, so the published shot shows a real tree rather than a
+        // bare root (owner directive: every possible view, including directory
+        // both before and after it exists).
         h.wait_css("#directory-create")
             .await
             .click()
             .await
-            .expect("create the directory");
+            .expect("create the empty directory");
         h.wait_css("#directory-edit").await;
+        h.wait_css("[aria-label='Add subfolder']")
+            .await
+            .click()
+            .await
+            .expect("add a subfolder at the root");
+        h.wait_css("#directory-save")
+            .await
+            .click()
+            .await
+            .expect("commit the subfolder");
+        // The toast overlays the bottom-right corner; let it clear before the
+        // shot and before the history panel click below.
+        h.wait_toasts_cleared().await;
         shot_to(&h, &dir, "ehrs/directory/directory").await;
         // The version-history panel open (the new read-side toolbar).
         h.wait_xpath("//button[contains(normalize-space(.), 'Version history')]")
