@@ -15,12 +15,13 @@
 //! gate + stored-query delete in [`crate::admin`] — each guards the session
 //! itself; this screen declares no server fn of its own.
 //!
-//! Discipline (rules §1/§4/§6/§8): the view is composed from `.into_any()`-
+//! Discipline (rules §1/§4/§6/§8/§9): the view is composed from `.into_any()`-
 //! erased section locals; the stored-query list is a `<For>` keyed by
-//! `name@version`; refetched data (the listing, the on-demand AQL detail)
-//! reads under `<Transition>`; the table emits an explicit `<tbody>`; internal
-//! navigation uses `<A>`; there is zero authored JavaScript (`on:` Rust
-//! listeners only).
+//! `name@version`, windowed by the shared pagination footer whose page state
+//! lives in the URL (`?page=`/`?size=`); refetched data (the listing, the
+//! on-demand AQL detail) reads under `<Transition>`; the table emits an
+//! explicit `<tbody>`; internal navigation uses `<A>`; there is zero authored
+//! JavaScript (`on:` Rust listeners only).
 
 use leptos::component;
 use leptos::prelude::*;
@@ -29,7 +30,10 @@ use leptos_router::NavigateOptions;
 use leptos_router::hooks::use_navigate;
 
 use crate::admin::AdminAvailability;
-use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::data_table::{
+    CELL, CELL_MONO, ROW, TablePaging, page_rows, page_window, paging_from_url, row_total,
+    table_footer, table_shell, table_skeleton,
+};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY};
 use crate::components::format_view::DocumentPane;
@@ -37,7 +41,6 @@ use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
-use crate::pages::ehrs::table_skeleton;
 use crate::queries_api::{StoredQueryRow, fetch_stored_query, list_stored_queries};
 use crate::query_namespace::{QueryNamespaceGroup, bare_name_of, group_by_namespace, group_label};
 
@@ -122,6 +125,10 @@ fn stored_queries_panel(
     gate: Resource<Result<AdminAvailability, AdminUiError>>,
     cdr_delete: CdrQueryDelete,
 ) -> AnyView {
+    // The table's page window, read from the URL here in SETUP — never inside
+    // the `Suspend` that awaits the listing (rules §4). Turning the page
+    // therefore re-renders the row window without refetching the listing.
+    let paging = paging_from_url();
     // The row (name, version) whose AQL detail is currently expanded.
     let selected = RwSignal::new(Option::<(String, String)>::None);
     // The selected query's AQL, fetched on demand; `None` source → no call.
@@ -138,7 +145,7 @@ fn stored_queries_panel(
     // dialog). ONE dialog serves every row — the signal is both "which row" and
     // "open".
     let pending_delete = RwSignal::new(Option::<(String, String)>::None);
-    let table = stored_table(stored, selected, gate, cdr_delete, pending_delete);
+    let table = stored_table(stored, selected, paging, gate, cdr_delete, pending_delete);
     let detail_view = stored_detail(detail);
     let confirm = cdr_delete_dialog(pending_delete, cdr_delete);
     view! {
@@ -198,6 +205,7 @@ fn cdr_delete_dialog(
 fn stored_table(
     stored: Resource<Result<Vec<StoredQueryRow>, AdminUiError>>,
     selected: RwSignal<Option<(String, String)>>,
+    paging: TablePaging,
     gate: Resource<Result<AdminAvailability, AdminUiError>>,
     cdr_delete: CdrQueryDelete,
     pending_delete: RwSignal<Option<(String, String)>>,
@@ -207,7 +215,9 @@ fn stored_table(
             {move || Suspend::new(async move {
                 let admin = crate::admin::renders_admin_ops(&gate.await);
                 match stored.await {
-                    Ok(rows) => stored_rows_view(rows, selected, admin, cdr_delete, pending_delete),
+                    Ok(rows) => {
+                        stored_rows_view(rows, selected, paging, admin, cdr_delete, pending_delete)
+                    }
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -216,11 +226,16 @@ fn stored_table(
     .into_any()
 }
 
-/// Render the stored-query rows (or the empty state). The row list is a `<For>`
-/// keyed by `name@version` (rules §4 — a stable, data-derived key).
+/// Render the stored-query rows (or the empty state): one page of the listing
+/// plus the shared pagination footer. The row list is a `<For>` keyed by
+/// `name@version` (rules §4 — a stable, data-derived key), and its `each`
+/// closure is what tracks the URL's page window, so paging re-renders the rows
+/// without touching the listing resource. `data-stored-query` is the stable
+/// E2E hook for a row.
 fn stored_rows_view(
     rows: Vec<StoredQueryRow>,
     selected: RwSignal<Option<(String, String)>>,
+    paging: TablePaging,
     admin: bool,
     cdr_delete: CdrQueryDelete,
     pending_delete: RwSignal<Option<(String, String)>>,
@@ -235,13 +250,33 @@ fn stored_rows_view(
         }
         .into_any();
     }
+    // The CDR returned the whole listing, so the total is known and the window
+    // is pure view state: total is fixed for this render, page/size reactive.
+    let total = row_total(rows.len());
     let body = view! {
-        <For each=move || rows.clone() key=|row| format!("{}@{}", row.name, row.version) let:row>
+        <For
+            each=move || {
+                let window = page_window(total, paging.page.get(), paging.size.get());
+                page_rows(&rows, window)
+            }
+            key=|row| format!("{}@{}", row.name, row.version)
+            let:row
+        >
             {stored_row(row, selected, admin, cdr_delete, pending_delete)}
         </For>
     }
     .into_any();
-    table_shell(&["Name", "Version", "Saved", ""], body)
+    let footer = table_footer(
+        "/queries",
+        "stored queries",
+        paging,
+        Signal::derive(move || total),
+    );
+    view! {
+        {table_shell(&["Name", "Version", "Saved", ""], body)}
+        {footer}
+    }
+    .into_any()
 }
 
 /// One stored-query row. Clicking it toggles the single-select detail below the
@@ -277,10 +312,12 @@ fn stored_row(
     } else {
         ().into_any()
     };
+    let row_hook = format!("{}@{}", row.name, row.version);
     view! {
         <tr
             class=format!("{ROW} cursor-pointer")
             class=("bg-accent-subtle", is_selected)
+            data-stored-query=row_hook
             on:click=on_click
         >
             <td class=CELL_MONO>{row.name}</td>

@@ -24,7 +24,7 @@ use leptos_router::components::{A, Redirect};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::data_table::{CELL, CELL_MONO, PAGE_SIZE, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL};
 use crate::components::format_view::inline_error;
@@ -39,9 +39,6 @@ use crate::error::AdminUiError;
 /// input.
 const LIST_EHRS_AQL: &str =
     "SELECT e/ehr_id/value, e/time_created/value FROM EHR e ORDER BY e/time_created/value DESC";
-
-/// Rows fetched per page across every AQL-backed table in the console.
-pub(crate) const PAGE_SIZE: u32 = 25;
 
 /// One page of an AQL `RESULT_SET`, flattened for rendering: the column
 /// headers, the raw row cells, and the offset that produced it (so the view
@@ -769,17 +766,6 @@ pub(crate) fn paging_controls(offset: u32, row_count: usize, base: &str) -> AnyV
     view! { <div class="mt-3 flex gap-2">{prev}{next}</div> }.into_any()
 }
 
-/// The `<Transition>` fallback shared by the AQL tables: three skeleton bars.
-pub(crate) fn table_skeleton() -> impl IntoView {
-    view! {
-        <thaw::Skeleton>
-            <thaw::SkeletonItem class="h-4 mb-2" />
-            <thaw::SkeletonItem class="h-4 mb-2" />
-            <thaw::SkeletonItem class="h-4" />
-        </thaw::Skeleton>
-    }
-}
-
 /// Render one raw AQL cell value as display text: strings verbatim, JSON null
 /// as empty, anything else as compact JSON.
 pub(crate) fn cell_text(value: &Value) -> String {
@@ -793,9 +779,10 @@ pub(crate) fn cell_text(value: &Value) -> String {
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{
-        LIST_EHRS_AQL, PAGE_SIZE, aql_request_body, cell_text, parse_ehr_id, parse_result_set,
+        LIST_EHRS_AQL, aql_request_body, cell_text, parse_ehr_id, parse_result_set,
         subject_ehr_status,
     };
+    use crate::components::data_table::PAGE_SIZE;
 
     #[test]
     fn fixed_aql_parses() {
