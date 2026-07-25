@@ -22,6 +22,11 @@ ehrbase = { path = "../../app/ehrbase" }
 sqlx = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+# The startup sweep reports what it reclaimed and why a drop was skipped;
+# libraries speak `tracing`, never stdio (the workspace lints deny both print
+# macros). No subscriber is installed by the harness — a test binary that wants
+# the sweep's log installs one.
+tracing = { workspace = true }
 uuid = { workspace = true }
 # `reusable-containers` (experimental upstream) keeps ONE named PG container
 # alive across nextest's process-per-test model and across whole runs.

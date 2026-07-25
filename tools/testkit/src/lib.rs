@@ -15,9 +15,10 @@
 //!    previous run left it — via `testcontainers`' reusable-containers
 //!    support, tuned with the non-durable settings the `PostgreSQL` docs
 //!    describe for throwaway data (`fsync=off`, `synchronous_commit=off`,
-//!    `full_page_writes=off`; `PostgreSQL` docs § "Non-Durable Settings").
-//!    The container is deliberately left running across runs — reclaim it
-//!    with `docker rm -f ehrbase-testkit-pg18`.
+//!    `full_page_writes=off`; `PostgreSQL` docs § "Non-Durable Settings")
+//!    and an explicit shared-memory size (`SHM_SIZE_BYTES`). The container is
+//!    deliberately left running across runs — reclaim it with
+//!    `docker rm -f ehrbase-testkit-pg18`.
 //!
 //! The template database (`ehrbase_tk_tpl_<fingerprint>`) is created and
 //! migrated exactly once per migration fingerprint, guarded by a `PostgreSQL`
@@ -25,9 +26,14 @@
 //! test) converge on a single build. Completion is stamped as the database
 //! comment, readable via `shobj_description` without connecting to the
 //! template — connections to a template block cloning (`PostgreSQL` docs
-//! § CREATE DATABASE). Clones are named `ehrbase_tk_<secs>_<rand>`; stale
-//! clones and outdated templates are swept opportunistically under an
-//! advisory try-lock.
+//! § CREATE DATABASE). Clones are named `ehrbase_tk_<secs>_<rand>`.
+//!
+//! Every test process sweeps stale clones and outdated templates **once at
+//! initialization, before it hands out any database** — the drops are
+//! force-free, so a clone another process is still using is skipped as benign
+//! (see [`sweep_stale`]). Unused clones therefore cannot accumulate across
+//! runs, which matters: thousands of databases inflate the server's
+//! cumulative-statistics area until dynamic shared memory is exhausted.
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -47,17 +53,51 @@ const DB_PREFIX: &str = "ehrbase_tk_";
 /// The fixed name of the reusable local `PostgreSQL` container.
 const CONTAINER_NAME: &str = "ehrbase-testkit-pg18";
 
+/// Explicit shared-memory (`/dev/shm`) size for the reusable container, in
+/// bytes — one gibibyte.
+///
+/// The official `postgres` image documents setting this limit explicitly
+/// (<https://hub.docker.com/_/postgres>, "set shared memory limit when using
+/// docker compose": `shm_size`), because the container default is 64 MB while
+/// `PostgreSQL` allocates its cumulative-statistics area and every
+/// parallel-query segment from *dynamic* shared memory — POSIX shared memory
+/// under `/dev/shm` on Linux (`dynamic_shared_memory_type = posix`;
+/// `PostgreSQL` docs § Resource Consumption). Once that fills, EVERY dynamic
+/// allocation fails with
+/// `could not resize shared memory segment ...: No space left on device`
+/// and every database-backed test in the workspace goes red — observed at
+/// ~62 MB used by a server carrying ~3000 leaked clone databases.
+///
+/// The size is applied at container CREATION only: `ReuseDirective::Always`
+/// adopts an existing container as-is, so an already-running 64 MB container
+/// must be reclaimed (`docker rm -f ehrbase-testkit-pg18`) for a changed value
+/// to take effect.
+const SHM_SIZE_BYTES: u64 = 1024 * 1024 * 1024;
+
+/// `SQLSTATE` 55006 `object_in_use` — what `PostgreSQL` reports when
+/// `DROP DATABASE` is refused because sessions are still connected
+/// (`PostgreSQL` docs § DROP DATABASE; § Appendix A "`PostgreSQL` Error
+/// Codes", class 55 "Object Not In Prerequisite State").
+const SQLSTATE_OBJECT_IN_USE: &str = "55006";
+
 /// Environment variable naming an externally provided server (CI, local dev).
 const ENV_URL: &str = "EHRBASE_TEST_PG_URL";
 
 /// Advisory-lock key serializing template builds across test processes.
 const TEMPLATE_LOCK_KEY: i64 = 0x0EB2_7E57_0001;
 
-/// Advisory-lock key electing the (single, opportunistic) sweeper.
+/// Advisory-lock key electing the single startup sweeper.
 const SWEEP_LOCK_KEY: i64 = 0x0EB2_7E57_0002;
 
-/// Clones and outdated templates older than this are swept.
-const SWEEP_AGE: Duration = Duration::from_hours(2);
+/// Clones younger than this grace window are never swept.
+///
+/// A running test's clone can momentarily have NO session on it — the clone
+/// pools run `min_connections = 0` and `sqlx` closes idle connections — so
+/// connectedness alone cannot tell "live" from "leaked"; the name-embedded
+/// creation time can. The window is deliberately short: it is the bound on
+/// how long a leaked clone (a process killed before its `Drop` cleanup landed)
+/// can linger before the next process's startup sweep reclaims it.
+const SWEEP_GRACE: Duration = Duration::from_mins(30);
 
 /// Failures of the harness itself (server acquisition, template build,
 /// cloning). Test call sites `.expect()` on these — a testkit error always
@@ -121,6 +161,11 @@ impl Drop for TestDb {
         // Best-effort immediate cleanup on a detached thread — `Drop` cannot
         // await, and the test process may exit before this lands; the init
         // sweep is the durable backstop.
+        //
+        // NOTE: `WITH (FORCE)` is correct HERE and wrong in the sweep: this is
+        // our own clone, whose own pool may still hold connections, so the
+        // connections being terminated are ours. The sweep drops OTHER
+        // processes' leftovers and must never terminate a live test's sessions.
         let admin_url = self.admin_url.clone();
         let name = self.name.clone();
         drop(std::thread::Builder::new().spawn(move || {
@@ -220,21 +265,34 @@ static CONTAINER: OnceCell<ContainerAsync<Postgres>> = OnceCell::const_new();
 /// advisory lock inside, once per server across processes).
 static TEMPLATE: OnceCell<String> = OnceCell::const_new();
 
+/// The shared server's admin DSN, acquired once per test process. Acquisition
+/// includes the readiness wait and the startup sweep, so no caller can be
+/// handed a clone before stale ones have been reclaimed.
 async fn server() -> Result<&'static str, TestkitError> {
     SERVER
         .get_or_try_init(|| async {
-            if let Ok(url) = std::env::var(ENV_URL) {
-                return Ok(url);
-            }
-            let container = CONTAINER.get_or_try_init(start_container).await?;
-            let host = container.get_host().await?.to_string();
-            let port = container.get_host_port_ipv4(5432).await?;
-            Ok(format!(
-                "postgres://postgres:postgres@{host}:{port}/postgres"
-            ))
+            let url = resolve_server_url().await?;
+            let mut admin = connect_ready(&url).await?;
+            startup_sweep(&mut admin).await;
+            drop(admin.close().await);
+            Ok(url)
         })
         .await
         .map(String::as_str)
+}
+
+/// The admin DSN of the externally provided server, or of the reusable
+/// container (started or adopted).
+async fn resolve_server_url() -> Result<String, TestkitError> {
+    if let Ok(url) = std::env::var(ENV_URL) {
+        return Ok(url);
+    }
+    let container = CONTAINER.get_or_try_init(start_container).await?;
+    let host = container.get_host().await?.to_string();
+    let port = container.get_host_port_ipv4(5432).await?;
+    Ok(format!(
+        "postgres://postgres:postgres@{host}:{port}/postgres"
+    ))
 }
 
 /// Start — or adopt — the reusable named `PostgreSQL` 18 container. Concurrent
@@ -264,6 +322,11 @@ async fn start_container() -> Result<ContainerAsync<Postgres>, TestkitError> {
                 "-c",
                 "max_connections=200",
             ])
+            // Never leave /dev/shm at the image default (see SHM_SIZE_BYTES):
+            // 64 MB is exhausted by the cumulative-statistics area of a server
+            // carrying many databases, after which every dynamic-shared-memory
+            // allocation fails and the whole DB-backed suite goes red.
+            .with_shm_size(SHM_SIZE_BYTES)
             .with_container_name(CONTAINER_NAME)
             .with_reuse(ReuseDirective::Always);
         match request.start().await {
@@ -321,8 +384,9 @@ async fn ensure_template(admin_url: &str) -> Result<String, TestkitError> {
     // Fast path: a completed template is stamped as the database comment,
     // readable without connecting to it (connections to a template block
     // `CREATE DATABASE … TEMPLATE`; PostgreSQL docs § CREATE DATABASE).
+    // The sweep is NOT run here: it already ran once for this process while
+    // the server was acquired, before any clone could be handed out.
     if template_complete(&mut admin, &template, &stamp).await? {
-        sweep(&mut admin, &template).await;
         drop(admin.close().await);
         return Ok(template);
     }
@@ -410,10 +474,7 @@ async fn build_template(
 /// A unique clone name embedding its creation time (hex seconds) for the
 /// sweep: `ehrbase_tk_<secs-hex>_<rand>`.
 fn fresh_name() -> String {
-    let secs = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO)
-        .as_secs();
+    let secs = now_secs();
     let rand = uuid::Uuid::new_v4().simple().to_string();
     let short = rand.get(..12).unwrap_or(rand.as_str());
     format!("{DB_PREFIX}{secs:x}_{short}")
@@ -463,15 +524,61 @@ fn redacted(url: &str) -> String {
     url.rsplit('@').next().unwrap_or("<unparseable>").to_owned()
 }
 
+/// Wall-clock seconds since the Unix epoch — the time base embedded in every
+/// clone name and read back by the sweep.
+fn now_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or(Duration::ZERO)
+        .as_secs()
+}
+
 // ---------------------------------------------------------------------------
 // Sweep
 // ---------------------------------------------------------------------------
 
-/// Opportunistically drop stale harness databases: clones older than
-/// [`SWEEP_AGE`] and templates other than the current one. Elected by an
-/// advisory try-lock; every failure is ignored — the sweep is hygiene, not
+/// What one sweep pass did — the startup log line, and the seam the harness's
+/// own tests assert on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SweepReport {
+    /// Stale databases the pass selected for dropping.
+    pub candidates: usize,
+    /// Databases actually dropped.
+    pub dropped: usize,
+    /// Databases another test process was still connected to, so the
+    /// force-free drop was refused and the database left alone — the benign,
+    /// expected outcome under a parallel run.
+    pub in_use: usize,
+}
+
+/// Reclaim stale harness databases (and stale harness roles) now.
+///
+/// The harness sweeps once per test process at initialization, before it hands
+/// out any database; this is the explicit entry point for a manual reclaim and
+/// for the harness's own tests. It is safe to call at any time: the drops are
+/// force-free, so a database some other process is still connected to is
+/// skipped, never torn out from under it.
+///
+/// # Errors
+///
+/// Returns [`TestkitError`] when the shared server cannot be acquired or
+/// connected to. Individual drops never fail the call — a database another
+/// process is using is counted as [`SweepReport::in_use`], and any other drop
+/// failure is logged and ignored, because the sweep is hygiene, not
 /// correctness.
-async fn sweep(admin: &mut PgConnection, current_template: &str) {
+pub async fn sweep_stale() -> Result<SweepReport, TestkitError> {
+    let server = server().await?;
+    let mut admin = connect_ready(server).await?;
+    let report = sweep(&mut admin).await;
+    drop(admin.close().await);
+    Ok(report)
+}
+
+/// The once-per-process sweep run while the server is acquired, elected by an
+/// advisory try-lock: under a fully parallel nextest run exactly one process
+/// sweeps at a time and the losers skip it, since the winner is already
+/// reclaiming the very same set.
+async fn startup_sweep(admin: &mut PgConnection) {
     let elected: Result<Option<bool>, sqlx::Error> =
         sqlx::query_scalar("SELECT pg_try_advisory_lock($1)")
             .bind(SWEEP_LOCK_KEY)
@@ -481,50 +588,13 @@ async fn sweep(admin: &mut PgConnection, current_template: &str) {
         return;
     }
 
-    let names: Vec<String> = sqlx::query_scalar(
-        "SELECT datname FROM pg_database WHERE datname LIKE $1 AND NOT datistemplate",
-    )
-    .bind(format!("{DB_PREFIX}%"))
-    .fetch_all(&mut *admin)
-    .await
-    .unwrap_or_default();
-
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO)
-        .as_secs();
-    for name in names {
-        if !stale(&name, current_template, now) {
-            continue;
-        }
-        let sql = format!("DROP DATABASE IF EXISTS {name} WITH (FORCE)");
-        drop(
-            sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
-                .execute(&mut *admin)
-                .await,
-        );
-    }
-
-    // Roles are cluster-global: tests that must create login roles name them
-    // `<clone-db-name>_<suffix>` so the same staleness parse applies (their
-    // owned objects lived in the already-dropped clone).
-    let roles: Vec<String> =
-        sqlx::query_scalar("SELECT rolname FROM pg_roles WHERE rolname LIKE $1")
-            .bind(format!("{DB_PREFIX}%"))
-            .fetch_all(&mut *admin)
-            .await
-            .unwrap_or_default();
-    for role in roles {
-        if !stale(&role, current_template, now) {
-            continue;
-        }
-        let sql = format!("DROP ROLE IF EXISTS {role}");
-        drop(
-            sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
-                .execute(&mut *admin)
-                .await,
-        );
-    }
+    let report = sweep(&mut *admin).await;
+    let candidates = report.candidates;
+    let dropped = report.dropped;
+    let in_use = report.in_use;
+    tracing::info!(
+        "testkit startup sweep: {candidates} stale database(s), {dropped} dropped, {in_use} in use"
+    );
 
     drop(
         sqlx::query("SELECT pg_advisory_unlock($1)")
@@ -534,9 +604,109 @@ async fn sweep(admin: &mut PgConnection, current_template: &str) {
     );
 }
 
+/// Drop every stale harness database — clones older than [`SWEEP_GRACE`], and
+/// templates other than the current migration fingerprint's — plus the stale
+/// harness roles.
+///
+/// The drops are deliberately **force-free**: `DROP DATABASE` fails while any
+/// session is connected unless `FORCE` is used (`PostgreSQL` docs
+/// § DROP DATABASE), reporting [`SQLSTATE_OBJECT_IN_USE`]. That refusal means
+/// exactly "another test process owns this clone", so it is skipped as benign.
+/// Together with the grace window — which spares a clone whose owner currently
+/// holds no pooled connection — this is what makes the sweep safe to run at the
+/// start of every test process against one shared server.
+///
+/// Every failure is swallowed (logged): the sweep is hygiene, not correctness.
+async fn sweep(admin: &mut PgConnection) -> SweepReport {
+    let mut report = SweepReport {
+        candidates: 0,
+        dropped: 0,
+        in_use: 0,
+    };
+    // The live template is derived, not passed in: the sweep runs before the
+    // template is ensured, and the fingerprint is a pure function of the
+    // migrations compiled into this binary.
+    let current_template = format!("{DB_PREFIX}tpl_{}", db::migration_fingerprint());
+    let now = now_secs();
+
+    let listed: Result<Vec<String>, sqlx::Error> = sqlx::query_scalar(
+        "SELECT datname FROM pg_database WHERE datname LIKE $1 AND NOT datistemplate",
+    )
+    .bind(format!("{DB_PREFIX}%"))
+    .fetch_all(&mut *admin)
+    .await;
+    let names = match listed {
+        Ok(names) => names,
+        Err(error) => {
+            tracing::warn!("testkit sweep: cannot list harness databases: {error}");
+            Vec::new()
+        }
+    };
+
+    for name in names {
+        if !stale(&name, &current_template, now) {
+            continue;
+        }
+        report.candidates += 1;
+        // No `WITH (FORCE)`: a clone with live sessions belongs to a test
+        // process that is still running and must survive this sweep.
+        let sql = format!("DROP DATABASE IF EXISTS {name}");
+        match sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
+            .execute(&mut *admin)
+            .await
+        {
+            Ok(_) => report.dropped += 1,
+            Err(error) => {
+                if refusal_is_benign(sqlstate(&error).as_deref()) {
+                    report.in_use += 1;
+                    tracing::debug!("testkit sweep: {name} is in use, skipped");
+                } else {
+                    tracing::warn!("testkit sweep: dropping {name} failed: {error}");
+                }
+            }
+        }
+    }
+
+    // Roles are cluster-global: tests that must create login roles name them
+    // `<clone-db-name>_<suffix>` so the same staleness parse applies (their
+    // owned objects lived in the already-dropped clone).
+    let listed_roles: Result<Vec<String>, sqlx::Error> =
+        sqlx::query_scalar("SELECT rolname FROM pg_roles WHERE rolname LIKE $1")
+            .bind(format!("{DB_PREFIX}%"))
+            .fetch_all(&mut *admin)
+            .await;
+    for role in listed_roles.unwrap_or_default() {
+        if !stale(&role, &current_template, now) {
+            continue;
+        }
+        let sql = format!("DROP ROLE IF EXISTS {role}");
+        if let Err(error) = sqlx::raw_sql(sqlx::AssertSqlSafe(sql))
+            .execute(&mut *admin)
+            .await
+        {
+            tracing::debug!("testkit sweep: dropping role {role} failed: {error}");
+        }
+    }
+
+    report
+}
+
+/// The `SQLSTATE` a failure carries, when it was reported by the server at all
+/// (a transport or pool failure carries none).
+fn sqlstate(error: &sqlx::Error) -> Option<String> {
+    let code = sqlx::error::DatabaseError::code(error.as_database_error()?)?;
+    Some(code.into_owned())
+}
+
+/// Whether a refused sweep drop is the benign "another test process is still
+/// connected to this database" outcome rather than a broken-harness signal.
+fn refusal_is_benign(code: Option<&str>) -> bool {
+    code == Some(SQLSTATE_OBJECT_IN_USE)
+}
+
 /// Whether a harness database is stale: an outdated template (any
 /// `…tpl_…` other than the current one) or a clone whose name-embedded
-/// creation time is older than [`SWEEP_AGE`].
+/// creation time is older than [`SWEEP_GRACE`].
 fn stale(name: &str, current_template: &str, now_secs: u64) -> bool {
     let Some(rest) = name.strip_prefix(DB_PREFIX) else {
         return false;
@@ -550,12 +720,15 @@ fn stale(name: &str, current_template: &str, now_secs: u64) -> bool {
     let Ok(created) = u64::from_str_radix(secs_hex, 16) else {
         return false;
     };
-    now_secs.saturating_sub(created) >= SWEEP_AGE.as_secs()
+    now_secs.saturating_sub(created) >= SWEEP_GRACE.as_secs()
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{DB_PREFIX, SWEEP_AGE, clone_url, fresh_name, redacted, stale};
+    use super::{
+        DB_PREFIX, SQLSTATE_OBJECT_IN_USE, SWEEP_GRACE, clone_url, fresh_name, redacted,
+        refusal_is_benign, stale,
+    };
 
     #[test]
     fn clone_url_replaces_database_segment() {
@@ -586,8 +759,49 @@ mod tests {
         assert!(stale("ehrbase_tk_tpl_old0", current, now));
         let young = format!("{DB_PREFIX}{:x}_aaaa", now - 10);
         assert!(!stale(&young, current, now));
-        let old = format!("{DB_PREFIX}{:x}_aaaa", now - SWEEP_AGE.as_secs() - 1);
+        let old = format!("{DB_PREFIX}{:x}_aaaa", now - SWEEP_GRACE.as_secs() - 1);
         assert!(stale(&old, current, now));
         assert!(!stale("unrelated_db", current, now));
+    }
+
+    /// The live template is excluded from the sweep at every age: it carries no
+    /// creation time in its name and must survive arbitrarily long runs, since
+    /// every clone is made from it.
+    #[test]
+    fn stale_never_sweeps_the_live_template() {
+        let current = "ehrbase_tk_tpl_deadbeef";
+        for now in [0u64, 0x1000_0000, u64::MAX] {
+            assert!(
+                !stale(current, current, now),
+                "live template swept at {now}"
+            );
+        }
+        // A template built from any OTHER migration fingerprint is stale.
+        assert!(stale("ehrbase_tk_tpl_0", current, 0));
+        assert!(stale("ehrbase_tk_tpl_feedface", current, 0));
+    }
+
+    /// A clone name whose embedded creation time does not parse is never swept:
+    /// an unknown age is not evidence of staleness.
+    #[test]
+    fn stale_spares_unparseable_clone_names() {
+        let current = "ehrbase_tk_tpl_abcd";
+        let now = 0x1000_0000u64;
+        assert!(!stale("ehrbase_tk_notahexnumber_x", current, now));
+        assert!(!stale("ehrbase_tk_nounderscore", current, now));
+    }
+
+    /// `PostgreSQL` refuses a force-free `DROP DATABASE` on a database with
+    /// live sessions with SQLSTATE 55006 (`object_in_use`) — for the sweep that
+    /// is a benign "another test process owns this clone", not a harness
+    /// failure. Any other SQLSTATE, or none at all, is not benign.
+    #[test]
+    fn only_object_in_use_is_a_benign_sweep_refusal() {
+        assert_eq!(SQLSTATE_OBJECT_IN_USE, "55006");
+        assert!(refusal_is_benign(Some(SQLSTATE_OBJECT_IN_USE)));
+        assert!(!refusal_is_benign(Some("55000"))); // object_not_in_prerequisite_state
+        assert!(!refusal_is_benign(Some("42501"))); // insufficient_privilege
+        assert!(!refusal_is_benign(Some("3D000"))); // invalid_catalog_name
+        assert!(!refusal_is_benign(None)); // transport/pool failure
     }
 }
