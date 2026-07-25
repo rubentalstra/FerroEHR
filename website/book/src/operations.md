@@ -5,8 +5,8 @@ binary: the database must be backed up and least-privileged, traffic must be
 encrypted, upgrades must be safe while the service stays up, and you need to
 see what the system is doing. This chapter is a production checklist —
 database roles, TLS, backup and point-in-time recovery, upgrades and
-migrations, observability, health probes, and the management surface — drawn
-from how the container image and Helm chart are built to run.
+migrations, observability, the health probes, and the management surface —
+drawn from how the container image and Helm chart are built to run.
 
 <!-- toc -->
 
@@ -194,14 +194,46 @@ and is classed under admin authorization (the `ADMIN` role).
 > is no confirmation step and no undo. Keep the admin API disabled unless a
 > workflow needs it, and gate the `ADMIN` role tightly.
 
-## Health probes and the management surface
+## Health probes
 
-The management surface — health, info, metrics, and runtime log control — is
+The health endpoints are **always served, on the main API port, without
+authentication**. There is nothing to enable and nothing to remember: they are
+mounted outside the API's authentication and overload-shedding layers, so an
+orchestrator can probe a server whose management surface, admin API, and every
+optional integration are switched off — and a saturated server still answers
+its own probes.
+
+### Choosing a health endpoint
+
+| Endpoint | Contract | Use it for |
+|---|---|---|
+| `GET /health` | constant `200 OK` (plain text `OK`), touches nothing | load balancers, `docker` `HEALTHCHECK`, anything that must never be auth-gated |
+| `GET /health/liveness` | identical to `/health` — the same constant answer under the orchestrator-conventional path | Kubernetes `livenessProbe` and `startupProbe` |
+| `GET /health/readiness` | `200` when the aggregate is up or degraded, `503` when a required component is down; JSON body with every indicator (database ping, migrations applied, audit sender, events), each bounded to one second | Kubernetes `readinessProbe`, ops dashboards |
+| `GET /ehrbase/rest/status` | product status document: server version, ITS-REST version, timestamp | version/identity checks; the URL the container's `ehrbase healthcheck` subcommand probes |
+| `GET /management/*` | ops introspection — see below | operators, off by default, enable deliberately |
+
+`GET /ehrbase/rest/status/health` is kept as an alias of `/health` for
+compatibility.
+
+> [!IMPORTANT]
+> Liveness and readiness are deliberately different: liveness never touches a
+> dependency, so a database outage takes the instance out of rotation
+> (readiness `503`) instead of getting the container killed and restarted in a
+> loop. Wire `livenessProbe` and `startupProbe` to `/health/liveness` and
+> `readinessProbe` to `/health/readiness`. The Helm chart does exactly this out
+> of the box; `probes.exec.enabled=true` switches to the container's
+> `ehrbase healthcheck` subcommand if the kubelet cannot reach the HTTP port.
+
+## The management surface
+
+The management surface is **ops introspection only** — build info, Prometheus,
+the metric views, the effective configuration, and runtime log control. It is
 **off by default** on the bare binary, and each endpoint is independently
 opt-in with an access level (`admin_only`, `private`, or `public`). It can be
 bound to its own internal port so it never appears on the public API listener.
-The Helm chart turns the health probes on by default because they carry no
-PHI.
+Keeping it off costs you nothing operationally: the health probes above do not
+depend on it.
 
 | Environment variable | Default | Meaning |
 |---|---|---|
@@ -209,28 +241,20 @@ PHI.
 | `EHRBASE__MANAGEMENT__BASE_PATH` | `/management` | base path for the surface |
 | `EHRBASE__MANAGEMENT__PORT` | unset (main listener) | serve management on its own port |
 | `EHRBASE__MANAGEMENT__ACCESS_DEFAULT` | `admin_only` | default access level |
-| `EHRBASE__MANAGEMENT__PROBES_ENABLED` | `false` | expose the liveness/readiness probes as public |
 
-The probe and ops endpoints:
+The ops endpoints:
 
 | Endpoint | Purpose | Default access |
 |---|---|---|
-| `GET {base}/health/liveness` | process is up (`200`), no I/O | public when probes enabled |
-| `GET {base}/health/readiness` | `200` (up/degraded) or `503` (down): database ping, migrations applied, audit sender, events — each bounded to one second | public when probes enabled |
-| `GET {base}/health` | aggregate component health | `admin_only` |
 | `GET {base}/info` | build, version, and pinned spec versions | `admin_only` |
 | `GET {base}/prometheus` | Prometheus text exposition | `admin_only` (re-expose to the scraper via network policy) |
 | `GET {base}/metrics` | JSON registry view | `admin_only` |
 | `GET {base}/env` | effective configuration, with secrets redacted | `admin_only` |
 | `GET`/`POST`/`DELETE` `{base}/loggers` | read and change the log level at runtime | `admin_only` |
 
-> [!NOTE]
-> Under Kubernetes, wire liveness and startup to the liveness route and
-> readiness to the readiness route; readiness reports `503` when the database
-> is unreachable or migrations are not applied, so a pod is only sent traffic
-> once it can serve. If you keep the management surface off, the container's
-> `ehrbase healthcheck` subcommand can back an exec probe instead. The public
-> `/rest/status` product endpoint remains available regardless.
+> [!WARNING]
+> `{base}/env` and `{base}/loggers` expose and change server internals — keep
+> them `admin_only`, and prefer binding the surface to an internal-only port.
 
 For the full list of configuration keys across every subsystem, see
 [Installation → Configuration reference](installation/configuration.md); to

@@ -12,13 +12,13 @@ Reach it locally:
   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "ehrbase-rs.fullname" . }} 8080:{{ .Values.service.port }}
   curl -i http://127.0.0.1:8080{{ .Values.config.server.base_path | trimSuffix "/openehr/v1" }}/status
 
-{{ if .Values.config.management.enabled -}}
-Health probes (public):  {{ .Values.config.management.base_path }}/health/liveness | /health/readiness
-{{ if .Values.metrics.enabled -}}
+Health probes (public, always on):  /health | /health/liveness | /health/readiness
+{{ if and .Values.config.management.enabled .Values.metrics.enabled -}}
 Prometheus (public):     {{ .Values.config.management.base_path }}/prometheus  (scrape annotations added)
 {{ end -}}
-{{ else -}}
-NOTE: config.management.enabled=false — HTTP probes are unavailable; probes.exec must be on.
+{{ if not .Values.config.management.enabled -}}
+NOTE: config.management.enabled=false — the ops-introspection surface (info,
+      prometheus, metrics, env, loggers) is absent. Health probes are unaffected.
 {{ end }}
 ────────────────────────────────────────────────────────────────────────────
 DATABASE / MIGRATIONS (ADR-013)

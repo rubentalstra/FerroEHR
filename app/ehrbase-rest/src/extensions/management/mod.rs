@@ -1,7 +1,14 @@
-//! The management surface: health, info, Prometheus, metrics, env, and loggers.
+//! The management surface: **ops introspection only** — info, Prometheus,
+//! metrics, env, and loggers.
 //!
-//! **No openEHR spec governs this — our own operational surface** (pure
-//! ops, spec-silent by design).
+//! NOTE: no openEHR spec governs this — our own operational surface;
+//! disposition recorded on issue #305. That disposition also draws the line
+//! this module now respects: **health probes do not live here.** `/health`,
+//! `/health/liveness`, and `/health/readiness` are always-on and public
+//! ([`crate::extensions::health`]) precisely because they must not depend on an
+//! operator remembering to enable an introspection surface, while the endpoints
+//! that remain here (the redacted effective config, the live log-filter
+//! control, the metric views) are sensitive and stay off by default.
 //!
 //! Every endpoint is **off by default**, each opt-in via [`ManagementConfig`],
 //! gated by its own access-level layer (reusing the authentication primitives),
@@ -18,7 +25,6 @@
 //! and the caller lacks the configured admin scope.
 
 mod env;
-mod health_routes;
 pub mod http_metrics;
 mod info_routes;
 mod logger_routes;
@@ -59,8 +65,6 @@ pub struct ManagementState {
     pub prometheus: Option<PrometheusHandle>,
     /// The runtime log-filter control (present iff the reloadable filter is set).
     pub log_reload: Option<LogReload>,
-    /// The health-indicator registry.
-    pub health: HealthRegistry,
     /// Build/spec provenance for `/info` and the build-info gauge.
     pub build_info: BuildInfo,
     /// The effective configuration snapshot for `/env` (redacted at render).
@@ -73,14 +77,16 @@ impl std::fmt::Debug for ManagementState {
             .field("config", &self.config)
             .field("prometheus", &self.prometheus.is_some())
             .field("log_reload", &self.log_reload.is_some())
-            .field("health_indicators", &!self.health.is_empty())
             .finish_non_exhaustive()
     }
 }
 
 impl ManagementState {
     /// Assemble the management state from the observability bundle the binary
-    /// built and the shared authenticator.
+    /// built and the shared authenticator. The bundle's health registry is not
+    /// part of it: the probes are the always-on public family
+    /// ([`crate::extensions::health`]), which reads the registry from
+    /// [`AppState`](crate::state::AppState).
     #[must_use]
     pub fn from_observability(obs: Observability, authenticator: Arc<Authenticator>) -> Self {
         Self {
@@ -88,7 +94,6 @@ impl ManagementState {
             authenticator,
             prometheus: obs.prometheus,
             log_reload: obs.log_reload,
-            health: obs.health,
             build_info: obs.build_info,
             env_snapshot: obs.env_snapshot,
         }
@@ -170,21 +175,6 @@ pub fn router(state: ManagementState) -> Router {
         )
     };
 
-    // ── Health (aggregate) ──────────────────────────────────────────────────
-    if cfg.endpoints.health.is_mounted() {
-        router = router.route(
-            &format!("{base}/health"),
-            get(aggregate_health).route_layer(mk(cfg.endpoints.health)),
-        );
-    }
-
-    // ── Liveness / readiness probes (public when enabled) ───────────────────
-    if cfg.probes_enabled {
-        router = router
-            .route(&format!("{base}/health/liveness"), get(liveness))
-            .route(&format!("{base}/health/readiness"), get(readiness));
-    }
-
     // ── Info ─────────────────────────────────────────────────────────────────
     if cfg.endpoints.info.is_mounted() {
         router = router.route(
@@ -249,9 +239,6 @@ pub fn router(state: ManagementState) -> Router {
 #[must_use]
 pub fn openapi() -> utoipa::openapi::OpenApi {
     OpenApiRouter::<ManagementState>::new()
-        .routes(routes!(aggregate_health))
-        .routes(routes!(liveness))
-        .routes(routes!(readiness))
         .routes(routes!(info_view))
         .routes(routes!(prometheus_text))
         .routes(routes!(metrics_list))
@@ -263,56 +250,9 @@ pub fn openapi() -> utoipa::openapi::OpenApi {
 
 // ── Handlers ────────────────────────────────────────────────────────────────
 
-/// Aggregate health — all registered indicators (`GET /management/health`).
-///
-/// Access-level gated by the `health` endpoint's configured [`AccessLevel`];
-/// absent (a router `404`) unless the endpoint is opted in. Body: the aggregate
-/// status plus each indicator's contribution.
-#[utoipa::path(
-    get, path = "/management/health", tag = "management",
-    responses(
-        (status = 200, description = "Aggregate health UP or DEGRADED.", body = serde_json::Value),
-        (status = 401, description = "Authentication required (access level Private/AdminOnly with auth enabled).", body = serde_json::Value),
-        (status = 403, description = "Caller lacks the configured admin scope (access level AdminOnly).", body = serde_json::Value),
-        (status = 503, description = "Aggregate health DOWN (one or more indicators DOWN).", body = serde_json::Value)
-    )
-)]
-async fn aggregate_health(State(s): State<ManagementState>) -> Response {
-    health_routes::aggregate(s.health).await
-}
-
 // The handlers below have no I/O of their own but must be `async` — axum only
 // implements `Handler` for async functions; the `unused_async` allow records
 // that the work is synchronous and the async is the framework contract.
-
-/// Kubernetes-style liveness probe (`GET /management/health/liveness`).
-///
-/// Public (no access-level layer) and always `200` while the process is alive;
-/// absent (a router `404`) unless `probes_enabled` is set.
-#[utoipa::path(
-    get, path = "/management/health/liveness", tag = "management",
-    responses((status = 200, description = "Process alive.", body = serde_json::Value))
-)]
-#[allow(clippy::unused_async)]
-async fn liveness() -> Response {
-    health_routes::liveness()
-}
-
-/// Kubernetes-style readiness probe (`GET /management/health/readiness`).
-///
-/// Public (no access-level layer); absent (a router `404`) unless
-/// `probes_enabled` is set. `200` when every readiness indicator is up, `503`
-/// otherwise.
-#[utoipa::path(
-    get, path = "/management/health/readiness", tag = "management",
-    responses(
-        (status = 200, description = "Ready to serve (all readiness indicators up).", body = serde_json::Value),
-        (status = 503, description = "Not ready (one or more readiness indicators down).", body = serde_json::Value)
-    )
-)]
-async fn readiness(State(s): State<ManagementState>) -> Response {
-    health_routes::readiness(s.health).await
-}
 
 /// Build/spec provenance — version, git, spec pins (`GET /management/info`).
 ///

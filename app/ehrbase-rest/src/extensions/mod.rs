@@ -13,11 +13,14 @@
 //!   (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
 //!   §Authentication and authorization); the `401`/`403`/`WWW-Authenticate`
 //!   discipline there IS normative and is cited at the authn layer.
-//! - [`management`] — health/metrics/info/env/loggers, a pure operational
+//! - [`health`] — the always-on public `/health`, `/health/liveness`,
+//!   `/health/readiness` family (no openEHR spec governs health probes; the
+//!   ITS-REST System API defines only `OPTIONS /`).
+//! - [`management`] — metrics/info/env/loggers, a pure ops-introspection
 //!   surface (no openEHR spec governs it). Hosts the single spec-version
 //!   [`provenance`] source below.
-//! - [`openapi`] — serves the vendored **development-edition** ITS-REST OAS
-//!   (the authoritative contract), not an API the spec itself defines.
+//! - [`openapi`] — serves the server's OWN `utoipa`-generated document (never a
+//!   vendored OAS), not an API the spec itself defines.
 //! - [`terminology`] — the `/terminology` wire: `I_TERMINOLOGY_SERVICE` is SM
 //!   `master12`; the development-edition OAS set defines no terminology API, so
 //!   the operation semantics are cited from SM and the wire shape is our own.
@@ -32,6 +35,7 @@
 pub mod access;
 pub mod event_subscription;
 pub mod fhir;
+pub mod health;
 pub mod management;
 pub mod openapi;
 pub mod tenant_routes;

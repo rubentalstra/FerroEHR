@@ -12,7 +12,8 @@
 //!   ([`crate::api::api_doc`]);
 //! - the own-design extension groups (terminology, `PARTY_RELATIONSHIP`,
 //!   event-subscription, multi-tenancy, FHIR connector);
-//! - the operational endpoints (`/status`, health), the management surface, the
+//! - the always-on public health family (`/health`, `/health/liveness`,
+//!   `/health/readiness`), the `/status` endpoints, the management surface, the
 //!   SMART discovery document, and these `OpenAPI` endpoints.
 //!
 //! Route and `OpenAPI` path are single-sourced from one `#[utoipa::path]` handler —
@@ -28,8 +29,8 @@
 //! when auth is disabled — so the Swagger "Authorize" dialog and the per-endpoint
 //! padlocks match the running server. The lock is applied to the authenticated
 //! surfaces (the API-nested extension groups + the management surface); the
-//! public endpoints (`/status`, health, SMART discovery, these OAS endpoints)
-//! carry no requirement.
+//! public endpoints (the health family, `/status`, SMART discovery, these OAS
+//! endpoints) carry no requirement.
 //!
 //! The UI assets are served through [`utoipa_swagger_ui::serve`] directly rather
 //! than [`utoipa_swagger_ui::SwaggerUi`]'s router: the router answers the bare
@@ -54,6 +55,7 @@ use utoipa_axum::routes;
 use utoipa_swagger_ui::{Config, SwaggerFile, Url};
 
 use crate::config::AppConfig;
+use crate::extensions::health;
 use crate::extensions::management;
 use crate::overview::status;
 use crate::smart::discovery as smart_discovery;
@@ -78,7 +80,7 @@ const SECURITY_SCHEME: &str = "openehr_auth";
                        CONTRIBUTION / DIRECTORY / DEMOGRAPHIC / DEFINITION / QUERY / ADMIN), the \
                        own-design extensions (terminology, PARTY_RELATIONSHIP, event-subscription, \
                        multi-tenancy, FHIR connector), and the operational endpoints \
-                       (status/health, management, SMART discovery, the OpenAPI endpoints)."
+                       (health, status, management, SMART discovery, the OpenAPI endpoints)."
     ),
     tags(
         // ITS-REST resource tags (categorised exactly as the vendored group OAS
@@ -98,10 +100,10 @@ const SECURITY_SCHEME: &str = "openehr_auth";
         (name = "ADL1.4", description = "Management of AOM/ADL 1.4 operational templates."),
         (name = "ADL2", description = "Management of AOM2/ADL 2 templates."),
         (name = "Query", description = "Ad-hoc + stored AQL execution and stored-query definitions (ITS-REST)."),
-        (name = "status", description = "Public operational status + health (unauthenticated)."),
+        (name = "status", description = "Public operational status + the always-on health family (unauthenticated, never config-gated)."),
         (name = "smart", description = "SMART App Launch service discovery (config-gated: EHRBASE_REST_SMART__ENABLED)."),
         (name = "openapi", description = "`OpenAPI` document + Swagger UI discoverability (config-gated: EHRBASE_REST_SWAGGER_UI)."),
-        (name = "management", description = "Operational management surface (config-gated: EHRBASE_REST_MANAGEMENT__*); each endpoint opt-in via its access level."),
+        (name = "management", description = "Ops-introspection surface — info/prometheus/metrics/env/loggers (config-gated: EHRBASE__MANAGEMENT__*); each endpoint opt-in via its access level. Health probes are NOT here: see the `status` tag."),
         (name = "terminology", description = "Terminology extension wire — SM I_TERMINOLOGY_SERVICE (config-gated: EHRBASE_REST_TERMINOLOGY__ENABLED)."),
         (name = "demographic-relationship", description = "PARTY_RELATIONSHIP demographic extension (SM-3; no ITS-REST contract)."),
         (name = "event-subscription", description = "Event-subscription CRUD extension (config-gated: EHRBASE_REST_EVENT_SUBSCRIPTION__ENABLED)."),
@@ -115,17 +117,19 @@ struct ExtensionsInfo;
 /// Compose the served extension-surface `OpenAPI` document from the per-area
 /// `utoipa-axum` routers, then declare the config-appropriate security scheme.
 ///
-/// Public surfaces (status/health, SMART discovery, these OAS endpoints) carry
-/// no auth requirement; the authenticated surfaces (the API-nested extension
-/// groups + the management surface) get the single `openehr_auth` requirement
-/// (a per-endpoint padlock) whenever authentication is enabled. The scheme kind
+/// Public surfaces (the health family, status, SMART discovery, these OAS
+/// endpoints) carry no auth requirement; the authenticated surfaces (the
+/// API-nested extension groups + the management surface) get the single
+/// `openehr_auth` requirement (a per-endpoint padlock) whenever authentication
+/// is enabled. The scheme kind
 /// (bearer JWT vs HTTP Basic) is chosen by [`advertised_scheme`].
 #[must_use]
 pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     let mut doc = ExtensionsInfo::openapi();
 
-    // Public (no lock): operational status/health, SMART discovery, the OAS
-    // meta-endpoints.
+    // Public (no lock): the always-on health family, operational status, SMART
+    // discovery, the OAS meta-endpoints.
+    doc.merge(health::openapi());
     doc.merge(status::openapi());
     doc.merge(smart_discovery::openapi());
     doc.merge(meta_openapi());

@@ -145,28 +145,27 @@ spec:
             failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           {{- end }}
           {{- else }}
-          {{- if not (and .Values.config.management.enabled .Values.config.management.probes_enabled) }}
-          {{- fail "httpGet probes require config.management.enabled=true and config.management.probes_enabled=true; otherwise set probes.exec.enabled=true" }}
-          {{- end }}
+          {{- /* The health family is always mounted on the main HTTP port and
+                 never gated by config, so httpGet probes need no prerequisite. */}}
           livenessProbe:
             httpGet:
-              path: {{ printf "%s/health/liveness" (.Values.config.management.base_path | trimSuffix "/") }}
-              port: {{ ternary "management" "http" (ne (toString .Values.config.management.port) "") }}
+              path: /health/liveness
+              port: http
             {{- with .Values.probes.liveness }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           readinessProbe:
             httpGet:
-              path: {{ printf "%s/health/readiness" (.Values.config.management.base_path | trimSuffix "/") }}
-              port: {{ ternary "management" "http" (ne (toString .Values.config.management.port) "") }}
+              path: /health/readiness
+              port: http
             {{- with .Values.probes.readiness }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- if .Values.probes.startup.enabled }}
           startupProbe:
             httpGet:
-              path: {{ printf "%s/health/liveness" (.Values.config.management.base_path | trimSuffix "/") }}
-              port: {{ ternary "management" "http" (ne (toString .Values.config.management.port) "") }}
+              path: /health/liveness
+              port: http
             initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.startup.periodSeconds }}
             timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}

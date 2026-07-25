@@ -305,18 +305,22 @@ the discovery document); `token_endpoint_auth_methods_supported`,
 
 ## `[management]`
 
-The management / observability surface. Off in the bare binary; the Helm chart
-turns it on for probes.
+The ops-introspection surface (build info, Prometheus, metric views, effective
+config, runtime log control). Off in the bare binary and every endpoint off
+individually.
+
+The **health probes are not configured here**: `/health`, `/health/liveness`,
+and `/health/readiness` are always served on the main API port without
+authentication, whatever this section says (see
+[Operations → Health probes](../operations.md#health-probes)).
 
 ```toml
 [management]
 enabled = false
 base_path = "/management"
 access_default = "admin_only"
-probes_enabled = false
 
 [management.endpoints]
-health = "off"
 info = "off"
 metrics = "off"
 prometheus = "off"
@@ -330,10 +334,14 @@ loggers = "off"
 | `base_path` | string | `/management` | Base path for the management endpoints. |
 | `port` | int | unset ⇒ share the main listener | Serve management on its own listener/port. Must differ from the `server.bind` port. |
 | `access_default` | enum{off,admin_only,private,public} | `admin_only` | Global default access level (a per-endpoint level wins). |
-| `probes_enabled` | bool | `false` | Mount the public `/health/liveness` + `/health/readiness` probes. |
 
-`[management.endpoints]` — `health`, `info`, `metrics`, `prometheus`, `env`,
-`loggers`, each enum{off,admin_only,private,public}, default `off`.
+`[management.endpoints]` — `info`, `metrics`, `prometheus`, `env`, `loggers`,
+each enum{off,admin_only,private,public}, default `off`.
+
+> [!WARNING]
+> `probes_enabled` and `endpoints.health` were **removed**. Configuration is
+> strict, so a file or environment variable still setting either one fails at
+> boot with an unknown-key error — delete the key; the probes are always on.
 
 ## `[signing]`
 
