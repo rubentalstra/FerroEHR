@@ -47,11 +47,11 @@ a|Timezone; may be Void.
 
 h|*1..1*
 |*minute_unknown* (): `<<_boolean_class,Boolean>>`
-a|Indicates whether minute is unknown. If so, the time is of the form “hh”.
+a|Indicates whether minute is unknown. If so, the time is of the form "hh".
 
 h|*1..1*
 |*second_unknown* (): `<<_boolean_class,Boolean>>`
-a|Indicates whether second is unknown. If so and month is known, the time is of the form `"hh:mm"` or `"hhmm"`.
+a|Indicates whether second is unknown. If so and minute is known, the time is of the form `"hh:mm"` or `"hhmm"`.
 
 h|*1..1*
 |*is_decimal_sign_comma* (): `<<_boolean_class,Boolean>>`

@@ -57,14 +57,14 @@ h|*1..1 +
 |*intersects* ( +
 other: `<<_interval_class,Interval>>[1]` +
 ): `<<_boolean_class,Boolean>>`
-a|True if there is any overlap between intervals represented by Current and `_other_`. True if at least one limit of `_other_` is strictly inside the limits of this interval.
+a|True if there is any overlap between intervals represented by Current and `_other_`, i.e. at least one limit of `_other_` is strictly inside the limits of this interval.
 
 h|*1..1 +
 (abstract)*
 |*contains* ( +
 other: `<<_interval_class,Interval>>[1]` +
 ): `<<_boolean_class,Boolean>>`
-a|True if current interval properly contains `_other_`? True if all points of `_other_` are inside the current interval.
+a|True if current interval properly contains `_other_`, i.e. all points of `_other_` are inside the current interval.
 
 h|*1..1 +
 (abstract)*

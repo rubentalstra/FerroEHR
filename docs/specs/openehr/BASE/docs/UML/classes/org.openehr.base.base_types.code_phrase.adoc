@@ -15,15 +15,15 @@ h|*Attributes*
 ^h|*Meaning*
 
 h|*1..1*
-|*terminology_id*: `link:/releases/BASE/{base_release}/base_types.html#_terminology_id_class[TERMINOLOGY_ID^]`
+|*terminology_id*: `<<_terminology_id_class,TERMINOLOGY_ID>>`
 a|Identifier of the distinct terminology from which the code_string (or its elements) was extracted.
 
 h|*1..1*
-|*code_string*: `<<_string_class,String>>`
+|*code_string*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
 a|The key used by the terminology service to identify a concept or coordination of concepts. This string is most likely parsable inside the terminology service, but nothing can be assumed about its syntax outside that context.
 
 h|*0..1*
-|*preferred_term*: `<<_string_class,String>>`
+|*preferred_term*: `link:/releases/BASE/{base_release}/foundation_types.html#_string_class[String^]`
 a|Optional attribute to carry preferred term corresponding to the code or expression in `_code_string_`. Typical use in integration situations which create mappings, and representing data for which both a (non-preferred) actual term and a preferred term are both required.
 
 h|*Invariants*

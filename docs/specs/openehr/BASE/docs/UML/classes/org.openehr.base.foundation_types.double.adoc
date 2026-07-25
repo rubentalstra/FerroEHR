@@ -35,7 +35,7 @@ a|Double-precision real number subtraction.
 
 h|*1..1 +
 (effected)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 other: `<<_double_class,Double>>[1]` +
 ): `<<_double_class,Double>>`
 a|Double-precision real number multiplication.

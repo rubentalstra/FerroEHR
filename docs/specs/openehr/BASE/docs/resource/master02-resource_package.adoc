@@ -10,7 +10,7 @@ image::{uml_diagrams_uri}/BASE-resource.svg[id=resource_package, align="center"]
 
 === Natural Languages and Translation
 
-Authored resources contain natural language elements, and are therefore created in some original language, recorded in the `_orginal_language_` attribute of the `AUTHORED_RESOURCE` class. Information about translations is included in the translations attribute, which allows for one or more sets of translation details to be recorded. A resource is translated by doing the following:
+Authored resources contain natural language elements, and are therefore created in some original language, recorded in the `_original_language_` attribute of the `AUTHORED_RESOURCE` class. Information about translations is included in the translations attribute, which allows for one or more sets of translation details to be recorded. A resource is translated by doing the following:
 
 * translating every language-dependent element to the new language;
 * adding a new `TRANSLATION_DETAILS` instance to translations, containing details about the translator, organisation, quality assurance and so on.

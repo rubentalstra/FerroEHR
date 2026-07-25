@@ -31,7 +31,7 @@ a|Integer subtraction.
 
 h|*1..1 +
 (effected)*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 other: `<<_integer_class,Integer>>[1]` +
 ): `<<_integer_class,Integer>>`
 a|Integer multiplication.

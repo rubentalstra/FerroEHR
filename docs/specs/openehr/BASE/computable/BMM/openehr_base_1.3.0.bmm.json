@@ -51,6 +51,12 @@
                         "Math",
                         "Quantity_converter"
                     ]
+                },
+                "terminology": {
+                    "name": "terminology",
+                    "classes": [
+                        "CODE_PHRASE"
+                    ]
                 }
             }
         },
@@ -123,8 +129,7 @@
                     "name": "terminology",
                     "classes": [
                         "Terminology_code",
-                        "Terminology_term",
-                        "CODE_PHRASE"
+                        "Terminology_term"
                     ]
                 }
             },
@@ -345,9 +350,22 @@
                     "documentation": "Existential quantifier applied to container, taking one agent argument `_test_` whose signature is `(v:T): Boolean`.",
                     "parameters": {
                         "test": {
-                            "_type": "P_BMM_SINGLE_FUNCTION_PARAMETER",
+                            "_type": "P_BMM_GENERIC_FUNCTION_PARAMETER",
                             "name": "test",
-                            "type": "Operation"
+                            "type_def": {
+                                "_type": "P_BMM_GENERIC_TYPE",
+                                "root_type": "FUNCTION",
+                                "generic_parameters": [
+                                    {
+                                        "_type": "P_BMM_GENERIC_TYPE",
+                                        "root_type": "TUPLE1",
+                                        "generic_parameters": [
+                                            "T"
+                                        ]
+                                    },
+                                    "Boolean"
+                                ]
+                            }
                         }
                     },
                     "result": {
@@ -364,9 +382,22 @@
                     "documentation": "Universal quantifier applied to container, taking one agent argument `_test_` whose signature is `(v:T): Boolean`.",
                     "parameters": {
                         "test": {
-                            "_type": "P_BMM_SINGLE_FUNCTION_PARAMETER",
+                            "_type": "P_BMM_GENERIC_FUNCTION_PARAMETER",
                             "name": "test",
-                            "type": "Operation"
+                            "type_def": {
+                                "_type": "P_BMM_GENERIC_TYPE",
+                                "root_type": "FUNCTION",
+                                "generic_parameters": [
+                                    {
+                                        "_type": "P_BMM_GENERIC_TYPE",
+                                        "root_type": "TUPLE1",
+                                        "generic_parameters": [
+                                            "T"
+                                        ]
+                                    },
+                                    "Boolean"
+                                ]
+                            }
                         }
                     },
                     "result": {
@@ -379,9 +410,22 @@
                     "documentation": "Return a List all items matching the predicate function `_test_` which has signature `(v:T): Boolean`. If no matches, an empty List is returned.",
                     "parameters": {
                         "test": {
-                            "_type": "P_BMM_SINGLE_FUNCTION_PARAMETER",
+                            "_type": "P_BMM_GENERIC_FUNCTION_PARAMETER",
                             "name": "test",
-                            "type": "Operation"
+                            "type_def": {
+                                "_type": "P_BMM_GENERIC_TYPE",
+                                "root_type": "FUNCTION",
+                                "generic_parameters": [
+                                    {
+                                        "_type": "P_BMM_GENERIC_TYPE",
+                                        "root_type": "TUPLE1",
+                                        "generic_parameters": [
+                                            "T"
+                                        ]
+                                    },
+                                    "Boolean"
+                                ]
+                            }
                         }
                     },
                     "result": {
@@ -396,9 +440,22 @@
                     "documentation": "Return first item matching the predicate function `_test_` which has signature `(v:T): Boolean`, or Void if no match.",
                     "parameters": {
                         "test": {
-                            "_type": "P_BMM_SINGLE_FUNCTION_PARAMETER",
+                            "_type": "P_BMM_GENERIC_FUNCTION_PARAMETER",
                             "name": "test",
-                            "type": "Operation"
+                            "type_def": {
+                                "_type": "P_BMM_GENERIC_TYPE",
+                                "root_type": "FUNCTION",
+                                "generic_parameters": [
+                                    {
+                                        "_type": "P_BMM_GENERIC_TYPE",
+                                        "root_type": "TUPLE1",
+                                        "generic_parameters": [
+                                            "T"
+                                        ]
+                                    },
+                                    "Boolean"
+                                ]
+                            }
                         }
                     },
                     "result": {
@@ -552,7 +609,7 @@
                 "multiply": {
                     "name": "multiply",
                     "aliases": [
-                        "&#42;"
+                        "*"
                     ],
                     "documentation": "Integer multiplication.",
                     "parameters": {
@@ -743,7 +800,7 @@
                 "multiply": {
                     "name": "multiply",
                     "aliases": [
-                        "&#42;"
+                        "*"
                     ],
                     "documentation": "Double-precision real number multiplication.",
                     "parameters": {
@@ -910,7 +967,7 @@
                 "multiply": {
                     "name": "multiply",
                     "aliases": [
-                        "&#42;"
+                        "*"
                     ],
                     "documentation": "Product by `_other_`. Actual type of result depends on arithmetic balancing rules.",
                     "is_abstract": true,
@@ -1294,7 +1351,7 @@
                 "multiply": {
                     "name": "multiply",
                     "aliases": [
-                        "&#42;"
+                        "*"
                     ],
                     "documentation": "Real number multiplication.",
                     "parameters": {
@@ -1458,7 +1515,7 @@
                 "multiply": {
                     "name": "multiply",
                     "aliases": [
-                        "&#42;"
+                        "*"
                     ],
                     "documentation": "Large integer multiplication.",
                     "parameters": {
@@ -2050,7 +2107,7 @@
                 },
                 "to_seconds": {
                     "name": "to_seconds",
-                    "documentation": "Total number of seconds equivalent (including fractional) of entire duration. Where non-definite elements such as year and month (i.e. 'Y' and 'M') are included, the corresponding 'average' durations from `Time_definitions` are used to compute the result.",
+                    "documentation": "Total number of seconds equivalent (including fractional) of entire duration. Where non-definite elements such as year and month (i.e. 'Y' and 'M') are included, the corresponding 'average' durations from `<<_time_definitions_class,Time_definitions>>` are used to compute the result. Using the constants defined there, the computation is `to_seconds = years × Average_days_in_year × spd + months × Average_days_in_month × spd + weeks × Days_in_week × spd + days × spd + hours × Minutes_in_hour × Seconds_in_minute + minutes × Seconds_in_minute + seconds + fractional_seconds`, where `spd = Hours_in_day × Minutes_in_hour × Seconds_in_minute` is the number of seconds in a day (86400).",
                     "result": {
                         "_type": "P_BMM_SIMPLE_TYPE",
                         "type": "Real"
@@ -2103,7 +2160,7 @@
                 "multiply": {
                     "name": "multiply",
                     "aliases": [
-                        "&#42;"
+                        "*"
                     ],
                     "documentation": "Arithmetic multiplication a duration by a number.",
                     "parameters": {
@@ -2211,7 +2268,7 @@
                 },
                 "minute_unknown": {
                     "name": "minute_unknown",
-                    "documentation": "Indicates whether minute is unknown. If so, the time is of the form \u201chh\u201d.",
+                    "documentation": "Indicates whether minute is unknown. If so, the time is of the form \"hh\".",
                     "result": {
                         "_type": "P_BMM_SIMPLE_TYPE",
                         "type": "Boolean"
@@ -2219,7 +2276,7 @@
                 },
                 "second_unknown": {
                     "name": "second_unknown",
-                    "documentation": "Indicates whether second is unknown. If so and month is known, the time is of the form `\"hh:mm\"` or `\"hhmm\"`.",
+                    "documentation": "Indicates whether second is unknown. If so and minute is known, the time is of the form `\"hh:mm\"` or `\"hhmm\"`.",
                     "result": {
                         "_type": "P_BMM_SIMPLE_TYPE",
                         "type": "Boolean"
@@ -2403,14 +2460,6 @@
                         "type": "Integer"
                     }
                 },
-                "timezone": {
-                    "name": "timezone",
-                    "documentation": "Timezone; may be Void.",
-                    "result": {
-                        "_type": "P_BMM_SIMPLE_TYPE",
-                        "type": "Iso8601_timezone"
-                    }
-                },
                 "month_unknown": {
                     "name": "month_unknown",
                     "documentation": "Indicates whether month in year is unknown. If so, the date is of the form `\"YYYY\"`.",
@@ -2574,7 +2623,7 @@
                     "name": "Multiplicity_unbounded_marker",
                     "documentation": "Symbol to use to indicate upper limit unbounded.",
                     "type": "Character",
-                    "value": "'&#42;'"
+                    "value": "'*'"
                 }
             },
             "functions": {
@@ -2689,7 +2738,7 @@
                 },
                 "intersects": {
                     "name": "intersects",
-                    "documentation": "True if there is any overlap between intervals represented by Current and `_other_`. True if at least one limit of `_other_` is strictly inside the limits of this interval.",
+                    "documentation": "True if there is any overlap between intervals represented by Current and `_other_`, i.e. at least one limit of `_other_` is strictly inside the limits of this interval.",
                     "is_abstract": true,
                     "parameters": {
                         "other": {
@@ -2705,7 +2754,7 @@
                 },
                 "contains": {
                     "name": "contains",
-                    "documentation": "True if current interval properly contains `_other_`? True if all points of `_other_` are inside the current interval.",
+                    "documentation": "True if current interval properly contains `_other_`, i.e. all points of `_other_` are inside the current interval.",
                     "is_abstract": true,
                     "parameters": {
                         "other": {
@@ -3065,7 +3114,7 @@
                 "OBJECT_REF"
             ],
             "invariants": {
-                "Type_validity": "type.is_equal(\u201cPERSON\u201d) or type.is_equal(\u201cORGANISATION\u201d) or type.is_equal(\u201cGROUP\u201d) or type.is_equal(\u201cAGENT\u201d)or type.is_equal(\u201cROLE\u201d) or type.is_equal(\u201cPARTY\u201d) or type.is_equal(\u201cACTOR\u201d)"
+                "Type_validity": "type.is_equal(\"PERSON\") or type.is_equal(\"ORGANISATION\") or type.is_equal(\"GROUP\") or type.is_equal(\"AGENT\") or type.is_equal(\"ROLE\") or type.is_equal(\"PARTY\") or type.is_equal(\"ACTOR\")"
             }
         },
         "TERMINOLOGY_ID": {
@@ -3154,7 +3203,7 @@
                 "Branch_version_valid": "branch_version \/= Void implies branch_version.is_integer and then branch_version.as_integer >= 1",
                 "Branch_validity": "(branch_number = Void and branch_version = Void ) xor (branch_number \/= Void and branch_version \/= Void )",
                 "Is_branch_validity": "is_branch xor branch_number = Void",
-                "Is_first_validity": "not is_first xor trunk_version.is_equal(\u201c1\u201d)"
+                "Is_first_validity": "not is_first xor trunk_version.is_equal(\"1\")"
             }
         },
         "UID_BASED_ID": {
@@ -3246,7 +3295,7 @@
                 "OBJECT_REF"
             ],
             "invariants": {
-                "Type_validity": "type.is_equal (\u201cACCESS_GROUP\u201d)"
+                "Type_validity": "type.is_equal (\"ACCESS_GROUP\")"
             }
         },
         "OPENEHR_DEFINITIONS": {
@@ -3288,7 +3337,7 @@
                 "Regex_any_pattern": {
                     "name": "Regex_any_pattern",
                     "type": "String",
-                    "value": "\".&#42;\""
+                    "value": "\".*\""
                 },
                 "Default_encoding": {
                     "name": "Default_encoding",
@@ -3305,7 +3354,7 @@
         "VALIDITY_KIND": {
             "_type": "P_BMM_ENUMERATION_STRING",
             "name": "VALIDITY_KIND",
-            "documentation": "An enumeration of three values that may commonly occur in constraint models.\n\nUse as the type of any attribute within this model, which expresses constraint on some attribute in a class in a reference model. For example to indicate validity\nof Date\/Time fields.",
+            "documentation": "An enumeration of three values (plus a deprecated synonym) that may commonly occur in constraint models.\n\nUse as the type of any attribute within this model, which expresses constraint on some attribute in a class in a reference model. For example to indicate validity\nof Date\/Time fields.",
             "ancestors": [
                 "String"
             ],
@@ -3801,7 +3850,7 @@
                 },
                 "is_extended": {
                     "name": "is_extended",
-                    "documentation": "True if this time-zone uses \u2018:\u2019 separators.",
+                    "documentation": "True if this time-zone uses ':' separators.",
                     "result": {
                         "_type": "P_BMM_SIMPLE_TYPE",
                         "type": "Boolean"
@@ -4293,7 +4342,7 @@
             },
             "invariants": {
                 "Original_language_valid": "code_set (Code_set_id_languages).has_code (original_language.as_string)",
-                "Translations_valid": "translations \/= Void implies (not translations.is_empty and not translations.has (orginal_language.code_string))",
+                "Translations_valid": "translations \/= Void implies (not translations.is_empty and not translations.has (original_language.code_string))",
                 "Description_valid": "translations \/= Void implies (description.details.for_all (d &#124;\ntranslations.has_key (d.language.code_string)))",
                 "Languages_available_valid": "languages_available.has (original_language)"
             }
@@ -4357,7 +4406,7 @@
                 "lifecycle_state": {
                     "_type": "P_BMM_SINGLE_PROPERTY",
                     "name": "lifecycle_state",
-                    "documentation": "Lifecycle state of the resource, typically including states such as: initial, in_development, in_review, published, superseded, obsolete. ",
+                    "documentation": "Lifecycle state of the resource, typically using macro-states such as: unmanaged, in_development, release_candidate, published, rejected, deprecated.",
                     "is_mandatory": true,
                     "type": "String"
                 },
@@ -4451,6 +4500,11 @@
                         ]
                     }
                 }
+            },
+            "invariants": {
+                "Original_author_valid": "not original_author.is_empty",
+                "Lifecycle_state_valid": "not lifecycle_state.is_empty",
+                "Parent_resource_valid": "parent_resource \/= Void implies parent_resource.description = self"
             }
         },
         "TRANSLATION_DETAILS": {

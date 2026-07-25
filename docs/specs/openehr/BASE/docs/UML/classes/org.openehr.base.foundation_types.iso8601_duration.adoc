@@ -67,7 +67,7 @@ a|True if this time has a decimal part indicated by ',' (comma) rather than '.' 
 
 h|*1..1*
 |*to_seconds* (): `<<_real_class,Real>>`
-a|Total number of seconds equivalent (including fractional) of entire duration. Where non-definite elements such as year and month (i.e. 'Y' and 'M') are included, the corresponding 'average' durations from `Time_definitions` are used to compute the result.
+a|Total number of seconds equivalent (including fractional) of entire duration. Where non-definite elements such as year and month (i.e. 'Y' and 'M') are included, the corresponding 'average' durations from `<<_time_definitions_class,Time_definitions>>` are used to compute the result. Using the constants defined there, the computation is `to_seconds = years × Average_days_in_year × spd + months × Average_days_in_month × spd + weeks × Days_in_week × spd + days × spd + hours × Minutes_in_hour × Seconds_in_minute + minutes × Seconds_in_minute + seconds + fractional_seconds`, where `spd = Hours_in_day × Minutes_in_hour × Seconds_in_minute` is the number of seconds in a day (86400).
 
 h|*1..1*
 |*as_string* (): `<<_string_class,String>>`
@@ -86,7 +86,7 @@ a_val: `<<_iso8601_duration_class,Iso8601_duration>>[1]` +
 a|Arithmetic subtraction of a duration from a duration, via conversion to seconds, using `Time_definitions._Average_days_in_year_` and `Time_definitions._Average_days_in_month_`
 
 h|*1..1*
-|*multiply* __alias__ "&#42;" ( +
+|*multiply* __alias__ "*" ( +
 a_val: `<<_real_class,Real>>[1]` +
 ): `<<_iso8601_duration_class,Iso8601_duration>>`
 a|Arithmetic multiplication a duration by a number.
