@@ -13,5 +13,5 @@ h|*Inherit*
 
 
 h|*Invariants*
-2+a|__Type_validity__: `type.is_equal(“PERSON”) or type.is_equal(“ORGANISATION”) or type.is_equal(“GROUP”) or type.is_equal(“AGENT”)or type.is_equal(“ROLE”) or type.is_equal(“PARTY”) or type.is_equal(“ACTOR”)`
+2+a|__Type_validity__: `type.is_equal("PERSON") or type.is_equal("ORGANISATION") or type.is_equal("GROUP") or type.is_equal("AGENT") or type.is_equal("ROLE") or type.is_equal("PARTY") or type.is_equal("ACTOR")`
 |===

@@ -23,7 +23,7 @@ INCLUDE_EXT=(adoc md txt csv json yaml yml robot xml opt)
 # live on master. SHAs chosen 2026-07-06 to match the ITS-BMM/ITS-JSON pins
 # already vendored for codegen.
 COMPONENTS=(
-  "BASE|specifications-BASE|master (BASE 1.3.0)|49f5bbe10992a645d7bd1e90c86d188b9587d13b"
+  "BASE|specifications-BASE|master (BASE 1.3.0)|e48795762a0648cbe5701be58d42ec5df0c701a7"
   "RM|specifications-RM|master (RM 1.2.0)|c52de2b80503f3e8613dd4b7455b1b60336e9fac"
   "AM|specifications-AM|master (AM 2.4.0 + ADL/AOM/OPT 1.4)|da06d63297e8549a351c854d8b1c45cd9f1d577c"
   "TERM|specifications-TERM|master (TERM 3.1.0)|007d0dddcdd77648711681878b54ace021b2fbd5"

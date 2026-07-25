@@ -72,7 +72,7 @@ pin accepts every valid older-minor instance.
 
 | Component | Our pin | Latest official release | Upstream WIP | Notes |
 |---|---|---|---|---|
-| BASE (Foundation + Base Types) | **1.3.0** (pre-release generation) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
+| BASE (Foundation + Base Types) | **1.3.0** (pre-release generation; text + BMM refreshed 2026-07-25 @ `e4879576` — SPECBASE-48 invariants, SPECAM-82 CODE_PHRASE move, SPECPR-426/386/460) | 1.2.0 (09-Apr-2021) | 1.3.0 | generated → `openehr-base` (foundation + base types; `openehr-foundation` folded in) |
 | RM (Reference Model) | **1.2.0** (development generation) | 1.1.0 (29-Sep-2020) | dev | generated → `openehr-rm` |
 | AM (Archetype Model) | **1.4 + 2.4.0** (1.4 released; 2.4.0 WIP generation) | 2.3.0 (20-Mar-2024) | 2.4.0, **3.0.0** | generated → `openehr-am`, both majors side by side as `am14` (ADL 1.4) + `am24` (ADL 2) — the spec-mandated dual-generation case |
 | QUERY (AQL) | 1.1.0 (= the release) | 1.1.0 (14-May-2021) | 1.2.0 | `openehr-query`; grammar-driven (AqlLexer/Parser `.g4`), not BMM |
@@ -81,7 +81,7 @@ pin accepts every valid older-minor instance.
 | ITS-XML (XSDs) | 1.0.2 target (2.0.0 TRIAL vendored) | 2.0.0 TRIAL (26-Apr-2021) | 2.1.0 | canonical XML in `openehr-its`; namespace `http://schemas.openehr.org/v1`; both bundles vendored at `crates/openehr-its/schemas/xml/`. |
 | ITS-REST (REST API) | **Release-1.1.0** @ `24058992d` | 1.1.0 (19-Jul-2026) | 1.2.0 | policy: single version, always the latest released; spec text at `docs/specs/openehr/ITS-REST/` and the OAS at `crates/openehr-its/vendor/rest-oas/` are the **same commit** (tag Release-1.1.0). Per-API lifecycle within the release: Overview/System/EHR/Query/Definition/Formats **STABLE**; Demographic/Admin/SMART **DEVELOPMENT** (the OAS bundle artifacts are marked TRIAL) — all 7 API groups vendored |
 | ITS-JSON (JSON Schemas) | development @ `5acae056` | (1.0.0 itself still WIP) | dev | validation oracle for the fidelity gate; `openehr_rm_1.1.0_all.json` vendored at `crates/openehr-its/schemas/json/` |
-| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | per-schema | — | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance |
+| ITS-BMM (BMM meta-model, JSON) | per-component (see above) | per-schema | — | **the codegen input**; vendored `*.bmm.json` at `tools/openehr-codegen/vendor/bmm/` with provenance. Exception: the BASE 1.3.0 json is taken from `specifications-BASE` @ `e4879576` (2026-07-25) pending ITS-BMM republication — see that PROVENANCE.md |
 | SM (Service Model) | master snapshot | 1.1.0 | dev | vendored spec text only (the service layer's design authority) |
 | CNF (Conformance) | master snapshot | 1.0.0 | dev | vendored spec text + CNF test schedule (the conformance oracle) |
 

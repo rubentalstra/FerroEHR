@@ -15,6 +15,17 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **openEHR BASE spec pin refreshed** (#341). The vendored BASE 1.3.0 spec
+  text and BMM codegen input now track upstream `specifications-BASE` master
+  `e4879576` (24 commits: the SPECBASE-48 RESOURCE_DESCRIPTION invariants,
+  the SPECAM-82 CODE_PHRASE package move into base_types, SPECPR-426/386/460
+  corrections). No wire or validation behaviour changes: every
+  behaviour-relevant item was verified already satisfied by the
+  implementation; the regenerated crates differ only in documentation text
+  and the CODE_PHRASE module location.
+
 ### Added
 
 - **Admin console: stored-query versions are reachable** (#336). Both save

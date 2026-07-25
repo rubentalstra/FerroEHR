@@ -17,7 +17,7 @@ pub struct ResourceDescription {
     /// Other contributors to the resource, each listed in "name <email>"  form.
     pub other_contributors: Vec<String>,
     // NOTE: `parent_resource` (BMM-mandatory back-reference) omitted — BASE resource resource_description (parent_resource: Reference to owning resource). A back-reference is not forward-owned data and never appears on the canonical wire; emitting it as an owning field would make this type non-constructible.
-    /// Lifecycle state of the resource, typically including states such as: initial, in_development, in_review, published, superseded, obsolete.
+    /// Lifecycle state of the resource, typically using macro-states such as: unmanaged, in_development, release_candidate, published, rejected, deprecated.
     pub lifecycle_state: String,
     /// Namespace in reverse internet id form, of current custodian organisation.
     pub custodian_namespace: Option<String>,
