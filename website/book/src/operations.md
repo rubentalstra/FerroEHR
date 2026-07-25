@@ -259,6 +259,11 @@ The ops endpoints:
 > `{base}/env` and `{base}/loggers` expose and change server internals — keep
 > them `admin_only`, and prefer binding the surface to an internal-only port.
 
+With the surface enabled, the admin console grows an **Operations** screen over
+it — dependency health, build provenance, the metric registry, and runtime log
+control — which appears only while the CDR serves `{base}/info`. See
+[Admin console → Operations panel](admin-ui/operations.md).
+
 For the full list of configuration keys across every subsystem, see
 [Installation → Configuration reference](installation/configuration.md); to
 explore the API itself, open the API reference at `/ehrbase-rs/api/` (also

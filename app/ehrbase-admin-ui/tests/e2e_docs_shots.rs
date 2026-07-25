@@ -228,6 +228,30 @@ async fn capture_documentation_screenshots() {
     capture(&h, &dir, "/ehrs", "ehrs/ehrs", Some("#ehr-lookup")).await;
     capture(&h, &dir, "/system", "system/system", None).await;
 
+    // The operations panel: the base view (dependency health, build provenance,
+    // the metric tiles, log control), then the metric browser showing one
+    // metric's samples. Probe-gated on the CDR's management surface, which the
+    // composed stack enables (docker/ehrbase.dev.toml).
+    capture(
+        &h,
+        &dir,
+        "/operations",
+        "operations/operations",
+        Some("#ops-build-info"),
+    )
+    .await;
+    h.goto("/operations?metric=db_pool_connections").await;
+    h.wait_css("footer").await;
+    let detail = h.wait_css("#ops-metric-detail").await;
+    // The metrics card sits below the fold on the capture window, and a
+    // screenshot is the VIEWPORT: scroll the samples table into view or the
+    // published shot shows the top of the page twice.
+    detail
+        .scroll_into_view()
+        .await
+        .expect("scroll to the metric samples");
+    shot_to(&h, &dir, "operations/operations-metric").await;
+
     // The ehr-detail and composition-viewer screens render the EHR + the
     // two-version composition scripts/ui-e2e.sh seeds over REST.
     if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
@@ -489,6 +513,49 @@ async fn capture_documentation_screenshots() {
         shot_to(&h, &dir, "ehrs/ehr-admin-delete").await;
     } else {
         println!("SKIP docs-shots: the EHR delete needs UI_E2E_SEEDED_EHR_ID");
+    }
+
+    // The operations panel's log-filter confirmation modal — the informative
+    // state: it spells out that logging changes immediately for every request.
+    // The trigger click only; the dialog is NEVER confirmed, so the stack's log
+    // filter is untouched.
+    h.goto("/operations").await;
+    h.wait_css("#ops-log-filter")
+        .await
+        .send_keys("ehrbase=debug,sqlx=warn")
+        .await
+        .expect("type the filter directives");
+    // The dialog surface is absent from the DOM until it opens, so the confirm
+    // button is looked up AFTER each click — and the click is retried, because
+    // one landing before hydration attaches the listener is simply lost and
+    // would otherwise publish a screenshot of the closed screen.
+    let mut opened = false;
+    for _ in 0..10 {
+        h.wait_css("#ops-log-apply")
+            .await
+            .click()
+            .await
+            .expect("open the log-filter dialog");
+        for _ in 0..10 {
+            if let Ok(confirm) = h.driver.find(By::Css("#ops-log-apply-confirm")).await
+                && confirm.is_displayed().await.unwrap_or(false)
+            {
+                opened = true;
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        }
+        if opened {
+            break;
+        }
+    }
+    if opened {
+        shot_to(&h, &dir, "operations/operations-log-filter").await;
+    } else {
+        println!(
+            "TODO docs-shots: operations/operations-log-filter not captured — the confirmation \
+             dialog never opened (pre-hydration clicks exhausted)"
+        );
     }
 
     h.finish().await;
