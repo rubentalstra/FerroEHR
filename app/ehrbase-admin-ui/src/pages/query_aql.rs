@@ -30,6 +30,37 @@ use crate::pages::ehrs::{ResultPage, table_skeleton};
 use crate::pages::query_builder::{export_forms, paging_buttons, results_view};
 use crate::queries_api::{fetch_stored_query, run_aql, store_query, validate_aql};
 
+/// Build the link INTO this screen that pre-fills the editor with `aql`.
+///
+/// The AQL becomes one query-string value, percent-encoded with the
+/// `urlencoding` crate (owner rule: all percent-coding goes through that
+/// crate). AQL is full of URL-reserved characters — a space, the `/` in every
+/// path, `#`, `&`, `=`, `'`, `%` — any one of which would truncate the value or
+/// split it into extra parameters. The router percent-DEcodes query params
+/// (`ParamsMap::insert` → `Url::unescape`), which is why
+/// [`QueryAqlPage`]'s `?aql=` read needs no decode of its own.
+/// NOTE: no openEHR spec governs an admin UI's internal links — our own
+/// design/extension.
+pub(crate) fn aql_href(aql: &str) -> String {
+    format!("/queries/aql?aql={}", urlencoding::encode(aql))
+}
+
+/// Build the link INTO this screen that seeds the editor from the stored query
+/// `name@version` (the `?load=` hand-off, parsed back by
+/// [`split_query_ref`]).
+///
+/// The qualified reference is ONE query-string value, so it is encoded as a
+/// whole: a stored-query name may carry `/`, `&`, `=` or `#`, which would
+/// otherwise truncate the value or forge extra parameters.
+/// NOTE: no openEHR spec governs an admin UI's internal links — our own
+/// design/extension.
+pub(crate) fn load_href(name: &str, version: &str) -> String {
+    format!(
+        "/queries/aql?load={}",
+        urlencoding::encode(&format!("{name}@{version}"))
+    )
+}
+
 /// The raw AQL editor screen.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
@@ -367,4 +398,82 @@ fn results_section(
         </Transition>
     }
     .into_any()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::pages::dashboard::split_query_ref;
+    use crate::pages::query_aql::{aql_href, load_href};
+
+    #[test]
+    fn load_href_leaves_an_unreserved_qualified_ref_alone() {
+        assert_eq!(
+            load_href("my_query", "1.0.0"),
+            "/queries/aql?load=my_query%401.0.0"
+        );
+    }
+
+    #[test]
+    fn load_href_escapes_the_qualified_ref_as_one_value() {
+        // A qualified stored-query name carries `/` and `::`.
+        assert_eq!(
+            load_href("org.example::c/name/value", "1.2.3"),
+            "/queries/aql?load=org.example%3A%3Ac%2Fname%2Fvalue%401.2.3"
+        );
+        // A `&` or `=` in the name must not become an extra parameter.
+        assert_eq!(load_href("a&b=c", "1"), "/queries/aql?load=a%26b%3Dc%401");
+    }
+
+    #[test]
+    fn load_href_round_trips_back_through_split_query_ref() {
+        // The router decodes `?load=` before this screen reads it, so decoding
+        // the emitted value must hand `split_query_ref` the original pair.
+        for (name, version) in [
+            ("my_query", "1.0.0"),
+            ("org.example::c/name/value", "1.2.3"),
+            ("a&b=c", "1"),
+            ("blodtryk_målinger", "2.0.0"),
+        ] {
+            let href = load_href(name, version);
+            let value = href
+                .strip_prefix("/queries/aql?load=")
+                .expect("the builder always emits /queries/aql?load=<value>");
+            let decoded = urlencoding::decode(value).expect("valid UTF-8 percent-encoding");
+            assert_eq!(
+                split_query_ref(&decoded),
+                Some((name.to_owned(), version.to_owned()))
+            );
+        }
+    }
+
+    #[test]
+    fn aql_href_escapes_every_reserved_character_in_the_query_text() {
+        assert_eq!(aql_href("Aa0-_.~"), "/queries/aql?aql=Aa0-_.~");
+        // Space, ampersand, equals, percent, hash, question mark, plus, slash.
+        assert_eq!(
+            aql_href(" &=%#?+/"),
+            "/queries/aql?aql=%20%26%3D%25%23%3F%2B%2F"
+        );
+        // Multi-byte UTF-8 escapes per byte, uppercase hex.
+        assert_eq!(aql_href("é"), "/queries/aql?aql=%C3%A9");
+    }
+
+    #[test]
+    fn aql_href_round_trips_a_real_query() {
+        let aql = "SELECT c/uid/value FROM COMPOSITION c WHERE c/name/value = 'a b'";
+        let href = aql_href(aql);
+        assert_eq!(
+            href,
+            "/queries/aql?aql=SELECT%20c%2Fuid%2Fvalue%20FROM%20COMPOSITION%20c%20WHERE%20c%2Fname%2Fvalue%20%3D%20%27a%20b%27"
+        );
+        let value = href
+            .strip_prefix("/queries/aql?aql=")
+            .expect("the builder always emits /queries/aql?aql=<value>");
+        // Nothing that could truncate the value or forge a second parameter.
+        assert!(!value.contains(['?', '&', '=', '/', ' ', '#']));
+        assert_eq!(
+            urlencoding::decode(value).expect("valid UTF-8 percent-encoding"),
+            aql
+        );
+    }
 }

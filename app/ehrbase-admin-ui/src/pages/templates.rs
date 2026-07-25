@@ -332,13 +332,25 @@ fn rows_view(rows: Vec<TemplateRow>, filter: RwSignal<String>) -> AnyView {
     .into_any()
 }
 
+/// The `/templates/{template_id}` detail-route link for one template id.
+///
+/// The id is a CDR-supplied string, so the path segment is percent-encoded
+/// with the `urlencoding` crate: reserved characters (`/`, `#`, `?`, `%`) and
+/// non-ASCII bytes would otherwise split the segment or truncate the URL.
+/// `leptos_router` percent-DEcodes route params on both targets
+/// (`ParamsMap::insert` → `Url::unescape`), so `use_params_map` in
+/// [`crate::pages::template_detail`] reads the original id back — the encode
+/// here is the whole round trip, and no decode belongs on the read side.
+/// NOTE: no openEHR spec governs an admin UI's internal links — our own
+/// design/extension.
+fn detail_href(template_id: &str) -> String {
+    format!("/templates/{}", urlencoding::encode(template_id))
+}
+
 /// One table row: the template id links to the detail route; concept and
 /// created are plain cells.
 fn row_view(row: TemplateRow) -> impl IntoView {
-    // TODO: template ids in the corpus are URL-safe path segments; an id with
-    // reserved characters (`/`, `#`, `?`) would need percent-escaping of this
-    // segment on the client. Add it when the CDR corpus proves such an id.
-    let href = format!("/templates/{}", row.template_id);
+    let href = detail_href(&row.template_id);
     view! {
         <tr class=ROW>
             <td class=CELL_MONO>
@@ -350,5 +362,38 @@ fn row_view(row: TemplateRow) -> impl IntoView {
             <td class=CELL_MONO>{row.archetype_id}</td>
             <td class=CELL_MONO>{row.created}</td>
         </tr>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::pages::templates::detail_href;
+
+    #[test]
+    fn detail_href_leaves_a_url_safe_template_id_alone() {
+        assert_eq!(
+            detail_href("Vital signs-v2.0_TEST~x"),
+            "/templates/Vital%20signs-v2.0_TEST~x"
+        );
+    }
+
+    #[test]
+    fn detail_href_percent_encodes_reserved_and_non_ascii_bytes() {
+        // A slash would otherwise split the segment and route elsewhere.
+        assert_eq!(detail_href("a/b"), "/templates/a%2Fb");
+        // A hash would otherwise truncate the URL into a fragment.
+        assert_eq!(detail_href("a#b"), "/templates/a%23b");
+        // A literal percent must survive as `%25`, not be read as an escape.
+        assert_eq!(detail_href("a%2Fb"), "/templates/a%252Fb");
+        // Non-ASCII is escaped per UTF-8 byte, uppercase hex.
+        assert_eq!(
+            detail_href("temperatur-°C"),
+            "/templates/temperatur-%C2%B0C"
+        );
+        // Every reserved character at once.
+        assert_eq!(
+            detail_href("a b/c?d#e%f&g=h+i"),
+            "/templates/a%20b%2Fc%3Fd%23e%25f%26g%3Dh%2Bi"
+        );
     }
 }
