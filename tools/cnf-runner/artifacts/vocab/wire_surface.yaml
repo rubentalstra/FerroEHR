@@ -1,0 +1,733 @@
+# The wire-surface coverage register (issue #271) — the authored,
+# spec-cited record of the wire surface the CNF catalogue is measured
+# against for TOTAL coverage. The `surface-coverage` gate
+# (tools/cnf-runner/src/validate.rs) fails on any spec-defined wire
+# behaviour with neither a covering case nor an entry here — silence is
+# not coverage (.claude/rules/testing.md §CNF coverage).
+#
+# ORACLE (owner ruling 2026-07-24): every `source` cites a RELEASED
+# component — the SM platform interfaces + the ITS-REST docs text — never
+# the vendored OAS. `reason` vocabulary: off_wire (ITS-REST 1.1.0 exposes
+# no wire), variant_of (realized as another binding/variant), accessor
+# (sub-interface navigation — excluded upstream, none here), coverage_gap
+# (on the wire, not yet exercised — a NEW-CASE candidate that ratchets
+# out when a case lands), statement_declared (an off-wire declared
+# capability).
+
+# Axis 1 — SM operations of the pinned platform interfaces with no
+# its-rest binding.
+sm_operations:
+  - operation: I_ADMIN_DUMP_LOAD.load_ehrs
+    reason: off_wire
+    source: "SM i_admin_dump_load.adoc vs released ITS-REST 1.1.0 — no dump/load wire; only physical EHR deletion is realized (register AMB-33)"
+  - operation: I_DATA_BINDING.get_frame
+    reason: off_wire
+    source: "SM i_data_binding.adoc — data binding is an internal SUBJECT_PROXY concern; released ITS-REST 1.1.0 surfaces no data-binding resource"
+  - operation: I_DEFINITION_ADL14.archetypes_count
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.delete_archetype
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.get_archetype
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.has_archetype
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.has_opt
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
+  - operation: I_DEFINITION_ADL14.list_matching_archetypes
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.list_matching_opts
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
+  - operation: I_DEFINITION_ADL14.opts_count
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
+  - operation: I_DEFINITION_ADL14.upload_archetype
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.valid_archetype
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT-only wire under /definition/template/adl1.4; no ADL 1.4 archetype endpoint (register AMB-41)"
+  - operation: I_DEFINITION_ADL14.valid_opt
+    reason: off_wire
+    source: "SM i_definition_adl14.adoc vs released ITS-REST 1.1.0 — OPT GET/list/delete wire only; no has/count/valid/list-matching OPT wire"
+  - operation: I_DEFINITION_ADL2.valid_artefact
+    reason: variant_of
+    source: "SM i_definition_adl2.adoc + register AMB-37 — valid_artefact realizes via upload_artefact (commit-time validation), no separate validate wire"
+    note: "realized via I_DEFINITION_ADL2.upload_artefact"
+  - operation: I_DEFINITION_QUERY.delete_query
+    reason: off_wire
+    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+  - operation: I_DEFINITION_QUERY.list_matching_queries
+    reason: off_wire
+    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+  - operation: I_DEFINITION_QUERY.queries_count
+    reason: off_wire
+    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+  - operation: I_DEFINITION_QUERY.store_query_set
+    reason: off_wire
+    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+  - operation: I_DEFINITION_QUERY.valid_query
+    reason: off_wire
+    source: "SM i_definition_query.adoc vs released ITS-REST 1.1.0 stored-query API — store (PUT)/list/get/has wire only; no delete, count, list-matching, store-set, or validate wire"
+  - operation: I_EHR_CONTRIBUTION.contribution_count
+    reason: off_wire
+    source: "SM i_ehr_contribution.adoc vs released ITS-REST 1.1.0 — no contribution-count wire (single-CONTRIBUTION GET only; cf. register AMB-22 for list_contributions)"
+  - operation: I_EHR_INDEX.add_ehr_subject
+    reason: off_wire
+    source: "SM i_ehr_index.adoc — the EHR index is an internal locator service; released ITS-REST 1.1.0 surfaces no EHR-index resource"
+  - operation: I_EHR_INDEX.remove_ehr_subject
+    reason: off_wire
+    source: "SM i_ehr_index.adoc — the EHR index is an internal locator service; released ITS-REST 1.1.0 surfaces no EHR-index resource"
+  - operation: I_EHR_INDEX.remove_subject
+    reason: off_wire
+    source: "SM i_ehr_index.adoc — the EHR index is an internal locator service; released ITS-REST 1.1.0 surfaces no EHR-index resource"
+  - operation: I_EHR_INDEX.update_ehr_subject_loc_desc
+    reason: off_wire
+    source: "SM i_ehr_index.adoc — the EHR index is an internal locator service; released ITS-REST 1.1.0 surfaces no EHR-index resource"
+  - operation: I_EHR_INDEX.update_ehr_subject_status
+    reason: off_wire
+    source: "SM i_ehr_index.adoc — the EHR index is an internal locator service; released ITS-REST 1.1.0 surfaces no EHR-index resource"
+  - operation: I_EHR_SERVICE.create_ehr_for_subject
+    reason: variant_of
+    source: "SM i_ehr_service.adoc + released ITS-REST 1.1.0 — subject supplied in EHR_STATUS.subject on POST /ehr; no separate for-subject endpoint"
+    note: "realized via I_EHR_SERVICE.create_ehr (subject in EHR_STATUS.subject)"
+  - operation: I_EHR_SERVICE.create_ehr_for_subject_with_id
+    reason: variant_of
+    source: "SM i_ehr_service.adoc + released ITS-REST 1.1.0 — subject in EHR_STATUS.subject on PUT /ehr/{ehr_id}"
+    note: "realized via I_EHR_SERVICE.create_ehr (subject in EHR_STATUS.subject + PUT with id)"
+  - operation: I_EHR_SERVICE.create_ehr_with_id
+    reason: variant_of
+    source: "SM i_ehr_service.adoc + released ITS-REST 1.1.0 EHR create-with-id (PUT /ehr/{ehr_id})"
+    note: "realized as the with_ehr_id variant of I_EHR_SERVICE.create_ehr"
+  - operation: I_EHR_STATUS.get_ehr_status_at_time
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 EHR_STATUS retrieval — version_at_time query parameter on GET /ehr/{ehr_id}/ehr_status"
+    note: "realized as the version_at_time query variant of I_EHR_STATUS.get_ehr_status"
+  - operation: I_EHR_STATUS.get_ehr_status_at_version
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — GET /ehr/{ehr_id}/versioned_ehr_status/version/{version_uid}"
+    note: "realized via I_EHR_STATUS.get_versioned_ehr_status"
+  - operation: I_EHR_STATUS.has_ehr_status_version
+    reason: off_wire
+    source: "SM i_ehr_status.adoc vs released ITS-REST 1.1.0 — no has-version wire on versioned_ehr_status (version existence is GET 200/404)"
+  - operation: I_EHR_STATUS.update_other_details
+    reason: coverage_gap
+    source: "SM i_ehr_status.adoc + released ITS-REST 1.1.0 PUT /ehr/{ehr_id}/ehr_status — EHR_STATUS.other_details is updated by the whole-status PUT; on the wire, not yet exercised (NEW-CASE candidate)"
+  - operation: I_PARTY.has_party
+    reason: variant_of
+    source: "SM i_party.adoc + released ITS-REST 1.1.0 demographic API — PARTY existence via GET 200/404"
+    note: "realized via I_PARTY.get_party (existence = GET 200/404)"
+  - operation: I_PARTY.has_party_version_id
+    reason: variant_of
+    source: "SM i_party.adoc + released ITS-REST 1.1.0 demographic API — versioned-PARTY existence via GET 200/404"
+    note: "realized via I_PARTY.get_party_at_version (existence = GET 200/404)"
+  - operation: I_PARTY_RELATIONSHIP.has_party_relationship
+    reason: off_wire
+    source: "SM i_party_relationship.adoc — register AMB-32: PARTY_RELATIONSHIP has no ITS-REST 1.1.0 wire"
+  - operation: I_SUBJECT_PROXY_SERVICE.add_binding_frame
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.add_subject_variable
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.get_data_set
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.get_variable
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.get_variable_defs
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.has_application
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.has_binding
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.has_subject
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.register_application_data_set
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.register_binding
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.register_subject
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.remove_application
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.remove_application_data_set
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_SUBJECT_PROXY_SERVICE.remove_subject
+    reason: off_wire
+    source: "SM i_subject_proxy_service.adoc — the SMART/subject-proxy API is DEVELOPMENT status, not part of released ITS-REST 1.1.0 (docs/VERSIONS.md §openEHR specification matrix, ITS-REST row: SMART DEVELOPMENT)"
+  - operation: I_TERMINOLOGY_SERVICE.get_term
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.get_terminology_description
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.get_terminology_ids
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.get_value_set
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.has_term
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.has_terminology
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.has_value_set
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.subsumes
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_TERMINOLOGY_SERVICE.value_set_validate
+    reason: off_wire
+    source: "SM i_terminology_service.adoc — released ITS-REST 1.1.0 surfaces no terminology REST resource (terminology access is the TERM component, not a wire API)"
+  - operation: I_VALIDITY_CHECKER.content_valid
+    reason: off_wire
+    source: "SM i_validity_checker.adoc — validity checking is an internal service; released ITS-REST 1.1.0 exposes no validity-checker resource (validation happens at commit)"
+  - operation: I_VALIDITY_CHECKER.definitions_valid
+    reason: off_wire
+    source: "SM i_validity_checker.adoc — validity checking is an internal service; released ITS-REST 1.1.0 exposes no validity-checker resource (validation happens at commit)"
+
+# Axis 2 — realized-binding outcome/format branches no case exercises.
+branches:
+  - binding: I_DEFINITION_ADL14.get_opt
+    variant: example
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_DEFINITION_ADL14.get_opt binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_DEFINITION_ADL14.get_opt
+    variant: example_deprecated_accept
+    outcome: ok
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the ok branch is exercised on the variant-less I_DEFINITION_ADL14.get_opt binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_DEFINITION_ADL14.get_opt
+    variant: example_deprecated_accept
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_DEFINITION_ADL14.get_opt binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_DEFINITION_ADL14.get_opt
+    outcome: not_acceptable
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_acceptable branch of I_DEFINITION_ADL14.get_opt is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_DEFINITION_ADL2.get_artefact
+    variant: example
+    outcome: not_acceptable
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_acceptable branch is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_DEFINITION_ADL2.get_artefact
+    variant: version
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: deprecated_media_type
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: deprecated_media_type
+    outcome: validation_failed
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: deprecated_media_type
+    outcome: template_not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the template_not_found branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: deprecated_media_type
+    outcome: missing_template_id
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the missing_template_id branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: deprecated_media_type
+    outcome: conflict
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the conflict branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: no_template_id
+    outcome: created
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the created branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: no_template_id
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: no_template_id
+    outcome: validation_failed
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: no_template_id
+    outcome: template_not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the template_not_found branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: no_template_id
+    outcome: conflict
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the conflict branch is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    outcome: missing_template_id
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the missing_template_id branch of I_EHR_COMPOSITION.create_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.delete_composition
+    outcome: already_deleted
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the already_deleted branch of I_EHR_COMPOSITION.delete_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.delete_composition
+    outcome: conflict
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the conflict branch of I_EHR_COMPOSITION.delete_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.get_composition_at_time
+    outcome: ok_empty
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_COMPOSITION.get_composition_at_time is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.get_composition_at_version
+    outcome: ok_empty
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_COMPOSITION.get_composition_at_version is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.get_composition_latest
+    outcome: ok_empty
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_COMPOSITION.get_composition_latest is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.get_versioned_composition
+    variant: version
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_EHR_COMPOSITION.get_versioned_composition binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_COMPOSITION.update_composition
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.update_composition
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.update_composition
+    outcome: version_not_found
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the version_not_found branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_COMPOSITION.update_composition
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_COMPOSITION.update_composition is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_CONTRIBUTION.commit_contribution
+    outcome: not_found
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_found branch of I_EHR_CONTRIBUTION.commit_contribution is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_DIRECTORY.create_directory
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_DIRECTORY.create_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_DIRECTORY.delete_directory
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_DIRECTORY.delete_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_DIRECTORY.delete_directory
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_DIRECTORY.delete_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_DIRECTORY.get_directory_at_time
+    outcome: ok_empty
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_EHR_DIRECTORY.get_directory_at_time is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_DIRECTORY.update_directory
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_DIRECTORY.update_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_DIRECTORY.update_directory
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_DIRECTORY.update_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_SERVICE.create_ehr
+    variant: with_ehr_id
+    outcome: created
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the created branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_SERVICE.create_ehr
+    variant: with_ehr_id
+    outcome: validation_failed
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_SERVICE.create_ehr
+    variant: with_ehr_id
+    outcome: already_exists
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the already_exists branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.clear_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.get_versioned_ehr_status
+    variant: version
+    outcome: not_found
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the not_found branch is exercised on the variant-less I_EHR_STATUS.get_versioned_ehr_status binding; this variant scopes only its distinctive negotiation/rejection branch"
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.set_ehr_modifiable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.set_ehr_queryable
+    outcome: precondition_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_failed branch of I_EHR_STATUS.set_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.set_ehr_queryable
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_STATUS.set_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_EHR_STATUS.set_ehr_queryable
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_EHR_STATUS.set_ehr_queryable is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.delete_party
+    outcome: already_deleted
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the already_deleted branch of I_PARTY.delete_party is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.delete_party
+    outcome: conflict
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the conflict branch of I_PARTY.delete_party is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.get_party_at_time
+    outcome: ok_empty
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the ok_empty branch of I_PARTY.get_party_at_time is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.update_party
+    outcome: precondition_missing
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_PARTY.update_party is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.update_party
+    outcome: not_found
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_found branch of I_PARTY.update_party is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.update_party
+    outcome: version_not_found
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the version_not_found branch of I_PARTY.update_party is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_PARTY.update_party
+    outcome: validation_failed
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the validation_failed branch of I_PARTY.update_party is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_QUERY_SERVICE.execute_ad_hoc_query
+    outcome: timeout
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the timeout branch of I_QUERY_SERVICE.execute_ad_hoc_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_QUERY_SERVICE.execute_stored_query
+    outcome: invalid_query
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the invalid_query branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_QUERY_SERVICE.execute_stored_query
+    outcome: not_found
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the not_found branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_QUERY_SERVICE.execute_stored_query
+    outcome: timeout
+    reason: coverage_gap
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes — the timeout branch of I_QUERY_SERVICE.execute_stored_query is declared by the binding but not yet exercised (NEW-CASE candidate)"
+  - binding: I_DEFINITION_ADL2.get_artefact
+    variant: example
+    format: canonical-xml
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the canonical-xml representation is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes its distinctive branch"
+  - binding: I_DEFINITION_ADL2.get_artefact
+    variant: example
+    format: wt-flat
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the wt-flat representation is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes its distinctive branch"
+  - binding: I_DEFINITION_ADL2.get_artefact
+    variant: example
+    format: wt-structured
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_DEFINITION_ADL2.get_artefact binding; this variant scopes its distinctive branch"
+  - binding: I_DEMOGRAPHIC_SERVICE.create_party
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_DEMOGRAPHIC_SERVICE.create_party is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: deprecated_media_type
+    format: wt-structured
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes its distinctive branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    variant: no_template_id
+    format: wt-structured
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the wt-structured representation is exercised on the variant-less I_EHR_COMPOSITION.create_composition binding; this variant scopes its distinctive branch"
+  - binding: I_EHR_COMPOSITION.create_composition
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.create_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_at_time
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_composition_at_time is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_at_time
+    format: wt-flat
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the wt-flat representation of I_EHR_COMPOSITION.get_composition_at_time is declared but the catalogue exercises canonical-json; the wt-flat variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_at_time
+    format: wt-structured
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the wt-structured representation of I_EHR_COMPOSITION.get_composition_at_time is declared but the catalogue exercises canonical-json; the wt-structured variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_at_version
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_composition_at_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_latest
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_composition_latest is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_latest
+    format: wt-flat
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the wt-flat representation of I_EHR_COMPOSITION.get_composition_latest is declared but the catalogue exercises canonical-json; the wt-flat variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_composition_latest
+    format: wt-structured
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the wt-structured representation of I_EHR_COMPOSITION.get_composition_latest is declared but the catalogue exercises canonical-json; the wt-structured variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.get_versioned_composition
+    variant: version
+    format: canonical-xml
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the canonical-xml representation is exercised on the variant-less I_EHR_COMPOSITION.get_versioned_composition binding; this variant scopes its distinctive branch"
+  - binding: I_EHR_COMPOSITION.get_versioned_composition
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.get_versioned_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.has_composition
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.has_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.update_composition
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_COMPOSITION.update_composition is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.update_composition
+    format: wt-flat
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the wt-flat representation of I_EHR_COMPOSITION.update_composition is declared but the catalogue exercises canonical-json; the wt-flat variant is a NEW-CASE candidate"
+  - binding: I_EHR_COMPOSITION.update_composition
+    format: wt-structured
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the wt-structured representation of I_EHR_COMPOSITION.update_composition is declared but the catalogue exercises canonical-json; the wt-structured variant is a NEW-CASE candidate"
+  - binding: I_EHR_CONTRIBUTION.commit_contribution
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.commit_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_CONTRIBUTION.get_contribution
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.get_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_CONTRIBUTION.has_contribution
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_CONTRIBUTION.has_contribution is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.create_directory
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.create_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.get_directory
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.get_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.get_directory_at_time
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.get_directory_at_time is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.get_directory_at_version
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.get_directory_at_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.has_directory
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.has_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.has_directory_version
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.has_directory_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.has_path
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.has_path is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_DIRECTORY.update_directory
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.update_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.create_ehr
+    variant: with_ehr_id
+    format: canonical-json
+    reason: coverage_gap
+    source: "released ITS-REST 1.1.0 — the create-EHR-with-id path (PUT /ehr/{ehr_id}) is unexercised in canonical-json; a create-EHR-with-id case is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.create_ehr
+    variant: with_ehr_id
+    format: canonical-xml
+    reason: coverage_gap
+    source: "released ITS-REST 1.1.0 — the create-EHR-with-id path (PUT /ehr/{ehr_id}) is unexercised in canonical-xml; a create-EHR-with-id case is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.create_ehr
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.create_ehr is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.get_ehr
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.get_ehr is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.get_ehrs_for_subject
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.get_ehrs_for_subject is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.has_ehr
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.has_ehr is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_SERVICE.has_ehr_for_subject
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_SERVICE.has_ehr_for_subject is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_STATUS.clear_ehr_modifiable
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.clear_ehr_modifiable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_STATUS.clear_ehr_queryable
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.clear_ehr_queryable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_STATUS.get_ehr_status
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.get_ehr_status is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_STATUS.get_versioned_ehr_status
+    variant: version
+    format: canonical-xml
+    reason: variant_of
+    source: "released ITS-REST 1.1.0 — the canonical-xml representation is exercised on the variant-less I_EHR_STATUS.get_versioned_ehr_status binding; this variant scopes its distinctive branch"
+  - binding: I_EHR_STATUS.set_ehr_modifiable
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.set_ehr_modifiable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_EHR_STATUS.set_ehr_queryable
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_STATUS.set_ehr_queryable is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_PARTY.get_party
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.get_party is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_PARTY.get_party_at_time
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.get_party_at_time is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_PARTY.get_party_at_version
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.get_party_at_version is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+  - binding: I_PARTY.update_party
+    format: canonical-xml
+    reason: coverage_gap
+    source: "ITS-REST §content negotiation — the canonical-xml representation of I_PARTY.update_party is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
+
+# Axis 3 — cross-cutting wire-surface behaviours (populated below).
+elements:
+  # Conditional / versioning headers (ITS-REST Requests_and_responses.md).
+  - id: header-etag-on-create
+    description: "ETag returned on resource creation carrying the new version/object uid (optimistic concurrency)."
+    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (ETag taken from VERSION.uid / EHR.ehr_id, changes on each new version)"
+    covered_by: [I_EHR_COMPOSITION.create_composition-event, I_EHR_SERVICE.create_ehr-main]
+  - id: header-etag-weak-prefix
+    description: "ETag carries the weak-type W/ prefix (format-independent version identity)."
+    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (ETag is weak-type; should carry the W/ weakness indicator)"
+    covered_by: [I_EHR_COMPOSITION.create_composition-event]
+  - id: header-location-on-create
+    description: "Location header on 201 Created pointing at the new resource URL."
+    source: "ITS-REST Requests_and_responses.md §Location (used in 201 Created; MUST NOT indicate an alternate representation)"
+    covered_by: [I_EHR_COMPOSITION.create_composition-event, I_EHR_SERVICE.create_ehr-main]
+  - id: header-last-modified
+    description: "Last-Modified response header on versioned resources (from VERSION.commit_audit.time_committed)."
+    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (Last-Modified SHOULD be included for VERSION/VERSIONED_OBJECT responses)"
+    exception:
+      reason: coverage_gap
+      note: "NEW-CASE candidate: assert Last-Modified on a versioned GET (get_composition_at_version / get_ehr_status). SHOULD-level per the docs text; not yet exercised."
+  - id: header-prefer-return-representation
+    description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."
+    source: "ITS-REST Requests_and_responses.md §Prefer + §Representation details negotiation (default return=minimal; return=representation returns the full resource)"
+    covered_by: [I_EHR_COMPOSITION.create_composition-event]
+  - id: header-if-match-412
+    description: "If-Match precondition on a state-changing method evaluates false → 412 Precondition Failed, latest version_uid echoed in ETag; absent when required → 400."
+    source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (412 on false condition; 400 when the service expects If-Match and it is absent)"
+    exception:
+      reason: coverage_gap
+      note: "NEW-CASE candidate: a stale-If-Match update (update_composition / update_directory / update_party) expecting 412 + latest version_uid in ETag. Consistent with the Axis-2 precondition_failed/precondition_missing gaps on those bindings."
+  # Content negotiation (ITS-REST Requests_and_responses.md §HTTP status codes + Representation details negotiation).
+  - id: negotiation-canonical-json
+    description: "Canonical-JSON representation negotiated and returned (the default representation)."
+    source: "ITS-REST Requests_and_responses.md §Representation details negotiation (Accept/Content-Type negotiation of the resource representation)"
+    covered_by: [I_EHR_COMPOSITION.get_composition_latest]
+  - id: negotiation-canonical-xml
+    description: "Canonical-XML representation negotiated via Accept: application/xml."
+    source: "ITS-REST Requests_and_responses.md §Representation details negotiation (the alternative XML representation)"
+    covered_by: [SF-EXAMPLE-accept_forms]
+  - id: negotiation-406-not-acceptable
+    description: "Accept names a representation the resource cannot produce → 406 Not Acceptable."
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (406 Not Acceptable: no acceptable representation for the target resource)"
+    covered_by: [SF-EXAMPLE-unsupported_accept]
+  - id: negotiation-415-unsupported-media
+    description: "Request payload media type unsupported by the method on the target resource → 415 Unsupported Media Type."
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (415 Unsupported Media Type)"
+    covered_by: [SF-DEPRECATED-media_unsupported]
+  # Error-body + deprecated-media families.
+  - id: error-body-family
+    description: "For 4xx/5xx, services MAY return additional error details ({message, code, errors[]}) when Prefer: return=representation is present; the runner asserts at most a message string (loose)."
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (4xx/5xx MAY carry additional error details under Prefer: return=representation)"
+    covered_by: [I_EHR_COMPOSITION.create_composition-invalid_event, I_EHR_CONTRIBUTION.commit_contribution-full_ehr_status]
+  - id: deprecated-media-conditional
+    description: "Support for the deprecated pre-1.1.0 SDT-era simplified-format media types is implementation-defined (supported → commit succeeds; unsupported → 415)."
+    source: "ITS-REST simplified_formats master02-overview.adoc §MIME Types + §Overview (SDT superseded at 1.1.0); register AMB-39"
+    covered_by: [SF-DEPRECATED-media_supported, SF-DEPRECATED-media_unsupported]

@@ -17,6 +17,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **CNF total wire-surface coverage gate (#271)**: a new `surface-coverage`
+  machine gate in the CNF runner (`cnf-runner validate`) fails on any
+  spec-defined wire behaviour with no covering case and no adjudicated
+  exception — enforcing breadth, not just pass rate (`.claude/rules/testing.md`
+  §CNF coverage). It measures three axes against the RELEASED spec sources only
+  (the SM platform interfaces + the ITS-REST docs text, never the vendored
+  OAS): (1) every SM operation of the platform interfaces has an `its-rest`
+  binding or a cited boundary; (2) every realized binding's declared outcome
+  and format branch is exercised by a case or excepted; (3) the cross-cutting
+  wire behaviours (conditional headers `ETag`/`Location`/`Last-Modified`/
+  `Prefer`/`If-Match`, JSON+XML negotiation, the 406/415 families, the error-body
+  and deprecated-media families) map to covering cases or exceptions. The
+  authored, spec-cited exception ledger is a new committed artifact
+  (`tools/cnf-runner/artifacts/vocab/wire_surface.yaml`, with a published JSON
+  Schema); `cnf-runner validate --specs …` refreshes a deterministic coverage
+  report at `docs/conformance/coverage-report.md`. Coverage only ratchets up.
 - **CNF catalogue content deepening (coded-text value dimension, deferred
   grounds, spec-authored corpus) (#278)**: the coded-text content cases
   (`CONT-DV_CODED_TEXT-validate_local_codes` / `-validate_ext_term`) gain an
