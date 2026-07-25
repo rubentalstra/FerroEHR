@@ -396,12 +396,13 @@ pub fn CompositionPage() -> impl IntoView {
         },
     );
 
-    // Toast the new version uid on success (an outside-world side-effect —
-    // rules §2); the resources refetch via `update.version()` in their
-    // sources above, and the failure diagnostic stays inline in the editor.
+    // Both outcomes toast (an outside-world side-effect — rules §2; the
+    // console's mutation-feedback rule — crate CLAUDE.md); the resources
+    // refetch via `update.version()` in their sources above, and the CDR's
+    // diagnostic ALSO stays inline in the editor, next to the edited body.
     let toaster = thaw::ToasterInjection::expect_context();
-    Effect::new(move |_| {
-        if let Some(Ok(uid)) = update.value().get() {
+    Effect::new(move |_| match update.value().get() {
+        Some(Ok(uid)) => {
             let detail = if uid.is_empty() {
                 "A new version was committed.".to_owned()
             } else {
@@ -409,6 +410,13 @@ pub fn CompositionPage() -> impl IntoView {
             };
             toast_success(toaster, "New version committed", &detail);
         }
+        Some(Err(error)) => crate::feedback::toast_write_failure(
+            toaster,
+            "Commit failed",
+            "the new composition version",
+            &error,
+        ),
+        None => {}
     });
 
     // Sync a successful at-time resolution into the shared selection. This is

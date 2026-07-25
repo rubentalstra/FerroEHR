@@ -34,6 +34,25 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   builds have no `erase_components`, and monolithic thaw view trees blow rustc's
   layout-recursion depth in `cargo test` codegen.
 
+## Error feedback: toast vs inline (one rule, 2026-07-25)
+
+- **A mutation toasts on success AND on failure.** Every action that writes to
+  the CDR (create / commit / update / save / upload / delete) reports both
+  outcomes as a toast. The failure toast carries the **actionable** copy —
+  name the object, name what went wrong (the CDR's own diagnostic verbatim),
+  name the next action: `feedback::write_failure_copy` for writes,
+  `admin::delete_failure_copy` for the destructive admin ops.
+- **A detailed inline `MessageBar` may stay BESIDE the failure toast** where
+  the diagnostic is worth reading line by line (template-upload validation, a
+  rejected composition body, the directory conflict banner) — the toast is
+  the notification, the inline bar is the detail. Never inline-only: a
+  transient success toast paired with a silent failure below the fold reads
+  as "nothing happened".
+- **Pure reads render inline errors only** — `format_view::inline_error` in
+  the section whose data failed (a screen says so where the data would be),
+  and never a toast. A first-class empty/absent state (`Ok(None)` from a
+  `404`) is not an error at all.
+
 ## Gates
 
 `/ui-gates`: clippy on **native and wasm32** targets, `cargo nextest run -p
