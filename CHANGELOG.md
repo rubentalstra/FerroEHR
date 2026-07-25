@@ -66,6 +66,11 @@ workflow refuses a tag that has no matching section here.
   detail link and its tab links, the stored-query "Open in editor" link, and
   the query builder's "Open in raw editor" link) builds its path segment and
   query-string values with the `urlencoding` crate.
+- **Admin console: deleting a document reference from a directory folder no
+  longer risks row state attaching to the wrong sibling** (#292). The item
+  rows of the directory tree editor are now identified by a stable per-item
+  identity instead of their position in the folder, so removing one reference
+  leaves every remaining row bound to its own reference.
 
 ## [3.10.0] - 2026-07-25
 

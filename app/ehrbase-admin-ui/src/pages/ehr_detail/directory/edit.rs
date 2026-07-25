@@ -16,38 +16,49 @@
 //! ## Ephemeral node identity (`_key`)
 //!
 //! `<For>` rows and the collapse / rename / picker UI state MUST be keyed by a
-//! stable, unique, data-derived identity — never a positional path — or a
-//! sibling that shifts into a deleted slot inherits the vacated row's state and
-//! `<For>` view (rules §4, `view/04_iteration`). To give each FOLDER such an
-//! identity, the working copy stamps every folder object with a `_key` string
-//! ([`stamp_keys`]). This is a **client-only artifact of the in-memory editing
-//! tree**: it is assigned after load, preserved across edits, and STRIPPED
-//! ([`strip_keys`]) from every body serialized for the CDR and from the
-//! advanced-JSON view — it never appears on the wire and no openEHR spec
-//! governs it (our own design/extension). A folder's positional path is then
-//! re-derived from its `_key` on demand ([`find_path_by_key`]) so mutations
-//! keep targeting `&[usize]` paths that stay correct after indices shift.
+//! stable, unique, data-derived identity — never a positional path or index — or
+//! a sibling that shifts into a deleted slot inherits the vacated row's state
+//! and `<For>` view (rules §4, `view/04_iteration`). To give each node such an
+//! identity, the working copy stamps every FOLDER object **and every `items`
+//! `OBJECT_REF`** with a `_key` string ([`stamp_keys`]), all drawn from one
+//! counter so folder and item keys share a namespace and can never collide.
+//! This is a **client-only artifact of the in-memory editing tree**: it is
+//! assigned after load, preserved across edits, and STRIPPED ([`strip_keys`])
+//! from every body serialized for the CDR and from the advanced-JSON view — it
+//! never appears on the wire and no openEHR spec governs it (our own
+//! design/extension). Positions are then re-derived from the `_key` on demand
+//! (a folder's path with [`find_path_by_key`], an item's index within its
+//! folder with [`find_item_index`]) so mutations keep targeting the `&[usize]`
+//! path + index pair, which stays correct after siblings shift.
 
 use serde_json::{Value, json};
 
 use crate::pages::ehr_detail::directory::{FOLDER_NODE_ID, folder_json};
 
-/// Stamp every FOLDER in `tree` (the root included) with an ephemeral,
-/// client-only `_key` identity string (`"n0"`, `"n1"`, …) drawn from
-/// `counter`, inserting one only where absent — so it is idempotent and
-/// preserves the keys already carried by surviving folders. The key is the
-/// stable, data-derived node identity that `<For>` rows and per-folder UI
-/// state key on (rules §4). It is a console-local artifact of the working
-/// copy: never persisted to the CDR (see [`strip_keys`]), never rendered, and
-/// no openEHR spec governs it (our own design/extension). Determinism: a plain
-/// monotonic counter, no randomness or clock — hydration never observes these
-/// values (they are not emitted into the DOM), but keeping them deterministic
-/// costs nothing.
+/// Stamp every node in `tree` — the root FOLDER, every descendant FOLDER, and
+/// every `items` `OBJECT_REF` — with an ephemeral, client-only `_key` identity
+/// string (`"n0"`, `"n1"`, …) drawn from `counter`, inserting one only where
+/// absent — so it is idempotent and preserves the keys already carried by
+/// surviving nodes. The key is the stable, data-derived node identity that
+/// `<For>` rows and per-folder UI state key on (rules §4); folders and items
+/// draw from the same `counter`, so no item can ever be handed a folder's key.
+/// It is a console-local artifact of the working copy: never persisted to the
+/// CDR (see [`strip_keys`]), never rendered, and no openEHR spec governs it
+/// (our own design/extension). Determinism: a plain monotonic counter, no
+/// randomness or clock — hydration never observes these values (they are not
+/// emitted into the DOM), but keeping them deterministic costs nothing.
 pub(super) fn stamp_keys(tree: &mut Value, counter: &mut u64) {
     if let Some(obj) = tree.as_object_mut() {
         if !obj.contains_key("_key") {
             obj.insert("_key".to_owned(), Value::String(format!("n{counter}")));
             *counter = counter.saturating_add(1);
+        }
+        // An `OBJECT_REF` carries no `folders`/`items` of its own, so the same
+        // recursion stamps items without descending any further.
+        if let Some(list) = obj.get_mut("items").and_then(Value::as_array_mut) {
+            for item in list {
+                stamp_keys(item, counter);
+            }
         }
         if let Some(list) = obj.get_mut("folders").and_then(Value::as_array_mut) {
             for child in list {
@@ -57,13 +68,19 @@ pub(super) fn stamp_keys(tree: &mut Value, counter: &mut u64) {
     }
 }
 
-/// Remove the ephemeral `_key` identity from every FOLDER in `tree` (the root
-/// included), recursively — the inverse of [`stamp_keys`]. Applied to the body
-/// serialized for every save path and to the advanced-JSON view so the
-/// console-local identity never reaches the CDR or the user.
+/// Remove the ephemeral `_key` identity from every node in `tree` (the root
+/// FOLDER, every descendant FOLDER, and every `items` `OBJECT_REF`),
+/// recursively — the inverse of [`stamp_keys`]. Applied to the body serialized
+/// for every save path and to the advanced-JSON view so the console-local
+/// identity never reaches the CDR or the user.
 pub(super) fn strip_keys(tree: &mut Value) {
     if let Some(obj) = tree.as_object_mut() {
         obj.remove("_key");
+        if let Some(list) = obj.get_mut("items").and_then(Value::as_array_mut) {
+            for item in list {
+                strip_keys(item);
+            }
+        }
         if let Some(list) = obj.get_mut("folders").and_then(Value::as_array_mut) {
             for child in list {
                 strip_keys(child);
@@ -169,6 +186,52 @@ pub(crate) fn item_count(root: &Value, path: &[usize]) -> usize {
         .map_or(0, Vec::len)
 }
 
+/// The ephemeral identity of the `idx`-th entry of a folder's `items` array:
+/// its stamped `_key`, or — for an entry [`stamp_keys`] could not stamp because
+/// it is not a JSON object (reachable only by hand-typing the advanced JSON, a
+/// body the CDR rejects on save) — a positional fallback that cannot collide
+/// with a stamped `"n…"` key, so the `<For>` keys stay unique either way.
+fn item_key(item: &Value, idx: usize) -> String {
+    item.get("_key")
+        .and_then(Value::as_str)
+        .map_or_else(|| format!("#{idx}"), str::to_owned)
+}
+
+/// The ephemeral identity keys of the item references of the folder at `path`,
+/// in order — the stable, data-derived `<For>` keys for the item rows
+/// (rules §4). Every item in the working copy is stamped ([`stamp_keys`]), so
+/// each entry is a real identity that survives a sibling removal shifting the
+/// remaining items down.
+#[must_use]
+pub(crate) fn item_node_keys(root: &Value, path: &[usize]) -> Vec<String> {
+    folder_at(root, path)
+        .and_then(|f| f.get("items"))
+        .and_then(Value::as_array)
+        .map(|list| {
+            list.iter()
+                .enumerate()
+                .map(|(i, item)| item_key(item, i))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// The live index, within the `items` array of the folder at `path`, of the
+/// item carrying the ephemeral identity `key` (`None` if no item there carries
+/// it). The `_key` is the durable identity; the index is re-derived from it for
+/// every reactive read and mutation so an item row stays correct after a
+/// sibling removal shifts indices (rules §4) — the item-side counterpart of
+/// [`find_path_by_key`].
+#[must_use]
+pub(crate) fn find_item_index(root: &Value, path: &[usize], key: &str) -> Option<usize> {
+    folder_at(root, path)?
+        .get("items")?
+        .as_array()?
+        .iter()
+        .enumerate()
+        .find_map(|(i, item)| (item_key(item, i) == key).then_some(i))
+}
+
 /// The `(type, id-value)` summary of the `idx`-th item of the folder at
 /// `path`, for row display.
 #[must_use]
@@ -242,7 +305,9 @@ pub(crate) fn add_item(root: &mut Value, path: &[usize], item: Value) {
     }
 }
 
-/// Remove the `idx`-th item from the folder at `path`.
+/// Remove the `idx`-th item from the folder at `path`. Callers re-derive `idx`
+/// from the row's ephemeral item identity ([`find_item_index`]) at click time,
+/// so a shifted index can never remove the wrong sibling (rules §4).
 pub(crate) fn remove_item(root: &mut Value, path: &[usize], idx: usize) {
     if let Some(list) = folder_at_mut(root, path)
         .and_then(|f| f.get_mut("items"))
@@ -328,12 +393,13 @@ pub(crate) fn normalize_datetime(input: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Value;
+    use serde_json::{Value, json};
 
     use super::{
-        add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_path_by_key,
-        item_count, item_summary, node_key_at, node_name, normalize_datetime, object_ref,
-        remove_item, rename_folder, stamp_keys, strip_keys, versioned_object_id,
+        add_item, add_subfolder, child_node_keys, count_tree, delete_folder, find_item_index,
+        find_path_by_key, item_count, item_node_keys, item_summary, node_key_at, node_name,
+        normalize_datetime, object_ref, remove_item, rename_folder, stamp_keys, strip_keys,
+        versioned_object_id,
     };
     use crate::pages::ehr_detail::directory::{DIRECTORY_ARCHETYPE, folder_json};
 
@@ -346,6 +412,20 @@ mod tests {
                 folder_json("at0001", "b", &[]),
             ],
         )
+    }
+
+    /// A root whose first child folder holds three item references (`x`, `y`,
+    /// `z`), for the item-identity assertions.
+    fn root_with_items() -> Value {
+        let mut tree = root();
+        for id in ["x", "y", "z"] {
+            add_item(
+                &mut tree,
+                &[0],
+                object_ref("local", "COMPOSITION", "HIER_OBJECT_ID", id),
+            );
+        }
+        tree
     }
 
     /// Collect every folder's `_key` (root first, depth-first) for assertions.
@@ -378,6 +458,29 @@ mod tests {
     }
 
     #[test]
+    fn stamp_assigns_a_unique_key_to_every_item_too() {
+        let mut tree = root_with_items();
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        // 4 folders + 3 item references, each stamped once from ONE counter.
+        assert_eq!(counter, 7);
+        let item_keys = item_node_keys(&tree, &[0]);
+        assert_eq!(item_keys.len(), 3);
+        let mut all = item_keys.clone();
+        collect_keys(&tree, &mut all);
+        let unique: std::collections::HashSet<_> = all.iter().collect();
+        assert_eq!(
+            unique.len(),
+            7,
+            "folder and item keys share one namespace and never collide"
+        );
+        // Idempotent for items as well: a second pass re-stamps nothing.
+        stamp_keys(&mut tree, &mut counter);
+        assert_eq!(counter, 7);
+        assert_eq!(item_node_keys(&tree, &[0]), item_keys);
+    }
+
+    #[test]
     fn strip_is_the_inverse_of_stamp() {
         let before = root();
         let mut after = before.clone();
@@ -385,6 +488,20 @@ mod tests {
         stamp_keys(&mut after, &mut counter);
         strip_keys(&mut after);
         assert_eq!(after, before, "stripped tree equals the pre-stamp tree");
+    }
+
+    #[test]
+    fn strip_removes_item_keys_too() {
+        let before = root_with_items();
+        let mut after = before.clone();
+        let mut counter = 0u64;
+        stamp_keys(&mut after, &mut counter);
+        assert_ne!(after, before, "stamping did mark the items");
+        strip_keys(&mut after);
+        assert_eq!(
+            after, before,
+            "no item _key survives into the body sent to the CDR"
+        );
     }
 
     #[test]
@@ -479,6 +596,49 @@ mod tests {
         );
         remove_item(&mut tree, &[0], 0);
         assert_eq!(item_count(&tree, &[0]), 0);
+    }
+
+    #[test]
+    fn item_identity_key_survives_a_sibling_removal() {
+        let mut tree = root_with_items();
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        let before = item_node_keys(&tree, &[0]);
+        assert_eq!(find_item_index(&tree, &[0], &before[2]), Some(2));
+        assert_eq!(find_item_index(&tree, &[0], "nope"), None);
+        // Remove the MIDDLE item, addressing it by identity (what the row's
+        // remove button does) rather than by a captured positional index.
+        let doomed = find_item_index(&tree, &[0], &before[1]).unwrap();
+        remove_item(&mut tree, &[0], doomed);
+        // The regression this pins: the surviving items keep exactly the keys
+        // (and therefore the `<For>` rows) they had — only positions shift.
+        assert_eq!(
+            item_node_keys(&tree, &[0]),
+            vec![before[0].clone(), before[2].clone()]
+        );
+        assert_eq!(find_item_index(&tree, &[0], &before[1]), None);
+        assert_eq!(find_item_index(&tree, &[0], &before[2]), Some(1));
+        // …and each surviving key still resolves to its OWN reference, never
+        // the removed sibling's slot.
+        for (key, id) in [(&before[0], "x"), (&before[2], "z")] {
+            let idx = find_item_index(&tree, &[0], key).unwrap();
+            assert_eq!(item_summary(&tree, &[0], idx).1, id);
+        }
+    }
+
+    #[test]
+    fn item_keys_stay_unique_for_unstampable_entries() {
+        let mut tree = root_with_items();
+        // Advanced-JSON mode can hand the working tree `items` entries that are
+        // not JSON objects and therefore cannot carry a `_key`; the positional
+        // fallback keeps the `<For>` keys unique (such a body is rejected by the
+        // CDR on save, so this is only about not corrupting the row identity).
+        tree["folders"][0]["items"] = json!([1, 2]);
+        let mut counter = 0u64;
+        stamp_keys(&mut tree, &mut counter);
+        let keys = item_node_keys(&tree, &[0]);
+        assert_eq!(keys, vec!["#0".to_owned(), "#1".to_owned()]);
+        assert_eq!(find_item_index(&tree, &[0], "#1"), Some(1));
     }
 
     #[test]
