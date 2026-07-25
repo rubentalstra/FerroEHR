@@ -17,6 +17,27 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **CNF catalogue content deepening (coded-text value dimension, deferred
+  grounds, spec-authored corpus) (#278)**: the coded-text content cases
+  (`CONT-DV_CODED_TEXT-validate_local_codes` / `-validate_ext_term`) gain an
+  acceptance-direction `value` dimension — value = the bound rubric, value ≠
+  rubric (an arbitrary label), and value = the raw code are all **accepted**
+  (no RM invariant requires `value` to equal the coded rubric — the "must be
+  the rubric" text is `dv_coded_text.adoc` Description prose, registered as
+  AMB-55), while an **empty** value is rejected (the sole value invariant, RM
+  `dv_text.adoc` §Invariants `Valid_value: not value.is_empty`); the
+  synthesized OPTs now bind component-ontology rubrics for their local
+  constraint codes. New functional coverage: a **template-example round-trip**
+  (the generated example commits back cleanly) and a **deprecated-media Accept
+  → 406** response-side case (the ICS-conditional companion to the existing
+  request-side 415, under AMB-39). Registered as spec-silent boundaries:
+  **Accept q-value negotiation strictness** (AMB-56 — ITS-REST defines only
+  "unfulfillable Accept → 406", nothing about q-value weighting) and a
+  **simplified-inner-data CONTRIBUTION surface** (AMB-57 — ITS-REST 1.1.0
+  commits CONTRIBUTIONs canonical-only). All remaining corpus-manifest
+  "structural placeholder" markers are replaced with spec-authored fixtures or
+  cited boundaries.
+
 - **Version-signature conformance breadth (CNF)**: a distinct-signature-per-
   version case (the signature is computed over the version's canonical form,
   which includes `uid` — two versions can never share a signature; RM common
