@@ -65,15 +65,14 @@ Rankings, higher = better. `cost` is relative spend, `intelligence` is how hard 
 |-----------|------|--------------|-------|
 | fable-5   | 2    | 9            | 9     |
 | opus-5    | 4    | 8            | 8     |
-| sonnet-5  | 5    | 5            | 7     |
-| haiku-4.5 | 1    | 4            | 3     |
+
+Only these two models are used: Fable 5 orchestrates (and takes the rare top-intelligence delegation), Opus 5 is the worker tier for everything else. Sonnet and Haiku are not used in this project — never pass them to `Agent`/`Workflow`, even for mechanical passes.
 
 How to apply (these are defaults, not limits — override when the output doesn't meet the bar; intelligence > taste > cost when axes conflict for anything that ships):
 
 - **Orchestrator (Fable 5, high):** owns the phase loop, architecture and design decisions, spec-conformance judgement, and the hard bespoke logic (AQL IR→SQL, versioning, validation, the node codec). Keeps these in-context rather than delegating — they need top intelligence + taste and are the project's critical path.
 - **Delegate to Opus-5 subagents:** bulk/parallelizable implementation on a clear spec (wiring handlers, DTO/trait impls against the generated ITS-REST contract, migrations, sqlx/sea-query query building, test scaffolding), file-heavy investigation, and codebase analysis — anything that would otherwise burn the orchestrator's context. Fan out several concurrently in one message (still max 2 implementation workers — owner cap). Opus 5's 1M-token window means one worker can hold a whole crate/subsystem — prefer one worker with the full spec up front over splitting a coherent task. Prompt-tune for Opus 5: it self-verifies, so drop "double-check/verify your work" scaffolding from worker prompts; it also delegates onward more readily than 4.8, so tell workers NOT to spawn their own subagents.
 - **Fable-5 subagents:** use when a delegated task still needs top intelligence/taste (a tricky algorithm port, an API-shape decision) but you want it off the main context.
-- **sonnet-5:** cheap mechanical passes where correctness is easy to verify (mechanical refactors, boilerplate). **Never use Haiku for substantive work.**
 - **Reviews:** the `spec-conformance-reviewer` agent (read-only, Opus), as an independent perspective before committing a subsystem — especially spec/wire conformance and the AQL engine. Spec questions / requirements extraction go to `spec-researcher`; bounded implementation to `implementer`; **every red CNF run goes to `cnf-triage`** (the spec-adjudicated attribution law — see the hard rule below) — all defined in `.claude/agents/`, all handed the governing `docs/specs/openehr/...` paths in the prompt.
 - Effort: keep Fable on `high` (xhigh is token-hungry; max/extra is a furnace for worse output). Use `effort: 'low'` for cheap mechanical worker stages, higher tiers only for the hardest verify/judge stages.
 
