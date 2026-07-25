@@ -15,7 +15,7 @@
       "canonical-json"
     ]
   },
-  "ixit_digest": "2c397b7d62e12a09",
+  "ixit_digest": "911ec784dff4ca9b",
   "outcomes": [
     {
       "case": "I_DEFINITION_ADL14.get_opts-retrieve_all_no_opts",
