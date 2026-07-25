@@ -4,10 +4,10 @@ use leptos::prelude::*;
 use leptos::server;
 use serde_json::Value;
 
+use crate::components::data_table::table_skeleton;
 use crate::components::format_view::DocumentPane;
 use crate::components::surface::CARD_PAD;
 use crate::error::AdminUiError;
-use crate::pages::ehrs::table_skeleton;
 
 /// The EHR's `EHR_STATUS` resource, raw canonical JSON.
 ///
