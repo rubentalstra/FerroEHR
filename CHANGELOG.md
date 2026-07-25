@@ -17,6 +17,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: delete templates, stored queries and EHRs** when the CDR's
+  admin API is enabled. The Template Manager list rows and the template detail
+  screen can delete an operational template; the stored-query rows can delete a
+  query version from the CDR store (labelled "Delete from CDR", clearly
+  separate from the console-local "Remove group"); and the EHR detail screen can
+  physically delete an EHR, returning to the EHR list on success. Every action
+  confirms in a modal dialog naming the exact object (the query-group removal
+  now does too), and every failure names the object and the next action — a
+  template still referenced by a committed version, or a session without the
+  ADMIN role, is refused by the CDR and reported as such. The console first
+  asks the CDR which API groups it serves (the openEHR System API conformance
+  manifest, `OPTIONS` on the API base path) and renders **no** delete
+  affordance at all when the admin group is not among them.
 - **Public health probes (`/health/liveness`, `/health/readiness`)**: the
   server now always serves a complete health family on its main HTTP port,
   unauthenticated and independent of every configuration switch —
