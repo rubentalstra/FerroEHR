@@ -10,7 +10,7 @@
 //! End-to-end journeys over the seeded EHR + two-version composition
 //! (`scripts/ui-e2e.sh` seeds them over REST): the EHR detail tabs, the
 //! composition viewer's format toggle + version history, and the no-JS
-//! progressive-enhancement contract.
+//! progressive-enhancement contracts (Basic login, the EHR finder).
 
 mod common;
 
@@ -166,6 +166,69 @@ async fn login_works_with_javascript_disabled() {
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
     }
     panic!("the authenticated shell never appeared in the no-JS response");
+}
+
+/// Progressive enhancement: with JavaScript disabled the EHR finder's by-id
+/// lookup still works. Typing an EHR id and clicking **Find** submits the
+/// plain `GET` form natively, the server answers `/ehrs?find=<id>` with a
+/// redirect, and the browser lands on that EHR's detail route — no WASM, no
+/// listener, no client router. The same URL is then requested directly, which
+/// is the shareable-shortcut case.
+///
+/// The authenticated routes render `SsrMode::Async` (one complete document, no
+/// streamed `<template>` fragments), which is what makes the SSR'd form real,
+/// clickable DOM without JavaScript.
+#[tokio::test]
+async fn ehr_finder_by_id_works_with_javascript_disabled() {
+    let Some(h) = Harness::start_without_javascript("no-js-ehr-finder").await else {
+        return;
+    };
+    let Some((ehr_id, _)) = seeded() else {
+        h.finish().await;
+        return;
+    };
+    let user = env("UI_E2E_BASIC_USER").unwrap_or_else(|| "ehrbase".to_owned());
+    let pass = env("UI_E2E_BASIC_PASS").unwrap_or_else(|| "ehrbase".to_owned());
+    h.goto("/login").await;
+    h.wait_css("#login-username")
+        .await
+        .send_keys(&user)
+        .await
+        .expect("type user");
+    h.wait_css("#login-password")
+        .await
+        .send_keys(&pass)
+        .await
+        .expect("type pass");
+    h.wait_css("button[type=submit]")
+        .await
+        .click()
+        .await
+        .expect("submit (plain form POST)");
+    h.wait_url_not_contains("/login").await;
+
+    // Fill the SSR'd finder and submit it natively — no JavaScript involved.
+    h.goto("/ehrs").await;
+    h.wait_css("#ehr-lookup")
+        .await
+        .send_keys(&ehr_id)
+        .await
+        .expect("type the seeded EHR id");
+    h.shot(1, "ehr-finder-no-js").await;
+    h.wait_css("#ehr-find")
+        .await
+        .click()
+        .await
+        .expect("submit the finder (plain form GET)");
+    h.wait_url_contains(&format!("/ehrs/{ehr_id}")).await;
+    h.shot(2, "ehr-finder-no-js-redirected").await;
+
+    // The same request as a shareable shortcut: /ehrs?find=<id> is a link
+    // anyone can paste, and it redirects the same way.
+    h.goto(&format!("/ehrs?find={ehr_id}")).await;
+    h.wait_url_contains(&format!("/ehrs/{ehr_id}")).await;
+    h.shot(3, "ehr-finder-no-js-shortcut").await;
+    h.finish().await;
 }
 
 /// Poll the first `<pre>` until it contains `needle`.

@@ -112,13 +112,22 @@ pub fn QueryBuilderPage() -> impl IntoView {
             let (name, aql) = input.clone();
             async move { store_query(name, aql).await }
         });
-    // A successful store fires a toast (rules: Effect = sync with the outside
-    // world; no signal is written). The CDR error stays inline (save_feedback).
+    // Both outcomes toast (rules: Effect = sync with the outside world; no
+    // signal is written — and the console's mutation-feedback rule, crate
+    // CLAUDE.md). The CDR's diagnostic ALSO stays inline (save_feedback),
+    // beside the AQL it rejected.
     let toaster = thaw::ToasterInjection::expect_context();
-    Effect::new(move |_| {
-        if let Some(Ok(())) = save_action.value().get() {
-            toast_success(toaster, "Query saved", "");
+    Effect::new(move |_| match save_action.value().get() {
+        Some(Ok(())) => toast_success(toaster, "Query saved", ""),
+        Some(Err(error)) => {
+            crate::feedback::toast_write_failure(
+                toaster,
+                "Save failed",
+                "the stored query",
+                &error,
+            );
         }
+        None => {}
     });
 
     // The live AQL / validation, recomputed from the whole state on any change.

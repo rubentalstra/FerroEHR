@@ -139,10 +139,12 @@ pub(super) fn compositions_section(
             async move { commit_composition(ehr_id, format, template_id, body).await }
         },
     );
-    // Toast the outcome on success (an outside-world side-effect — rules §2);
-    // the failure diagnostic stays inline in the form.
-    Effect::new(move |_| {
-        if let Some(Ok(uid)) = commit.value().get() {
+    // Both outcomes toast (an outside-world side-effect — rules §2; the
+    // console's mutation-feedback rule — crate CLAUDE.md); the CDR's
+    // validation diagnostic ALSO stays inline in the form, where the pasted
+    // body is.
+    Effect::new(move |_| match commit.value().get() {
+        Some(Ok(uid)) => {
             let detail = if uid.is_empty() {
                 "The composition was committed.".to_owned()
             } else {
@@ -150,6 +152,13 @@ pub(super) fn compositions_section(
             };
             toast_success(toaster, "Composition committed", &detail);
         }
+        Some(Err(error)) => crate::feedback::toast_write_failure(
+            toaster,
+            "Commit failed",
+            "the composition",
+            &error,
+        ),
+        None => {}
     });
     let resource = Resource::new(
         move || {

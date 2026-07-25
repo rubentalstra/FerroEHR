@@ -43,7 +43,9 @@ any of them.
 
 Find an EHR by id (or browse the most recent), then work through its tabs:
 EHR status, the folder directory, the composition list, and contribution
-lookup.
+lookup. Find-by-id is a plain form: it works in a browser with JavaScript
+disabled, and `/ehrs?find=<ehr_id>` is a shareable shortcut straight to an
+EHR.
 
 ![EHRs](img/ehrs/ehrs.png)
 

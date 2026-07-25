@@ -602,21 +602,37 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
     let editor = EditorState::new(update);
     let create_state = CreateState::new();
 
-    // Toast each write's success (outside-world side-effect — rules §2); a
-    // `412` conflict gets a distinct "reload" toast, other failures stay
-    // inline in the relevant feedback pane.
-    write_toast(toaster, create, "Directory created", directory_toast_detail);
-    write_toast(toaster, update, "Directory updated", directory_toast_detail);
+    // Toast EVERY write outcome (outside-world side-effect — rules §2; the
+    // console's mutation-feedback rule, crate CLAUDE.md): a `412` conflict
+    // gets the distinct "reload or save anyway" toast, any other failure the
+    // shared actionable copy. The CDR diagnostic ALSO stays inline in the
+    // relevant feedback pane, beside the folder tree it refused.
+    write_toast(
+        toaster,
+        create,
+        "Directory created",
+        "Create failed",
+        directory_toast_detail,
+    );
+    write_toast(
+        toaster,
+        update,
+        "Directory updated",
+        "Save failed",
+        directory_toast_detail,
+    );
     write_toast(
         toaster,
         restore,
         "Directory restored",
+        "Restore failed",
         directory_toast_detail,
     );
     write_toast(
         toaster,
         force_save,
         "Directory updated",
+        "Save failed",
         directory_toast_detail,
     );
     Effect::new(move |_| match delete.value().get() {
@@ -626,7 +642,15 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
             "The directory was deleted.",
         ),
         Some(Err(error)) if is_conflict(&error) => conflict_toast(toaster),
-        _ => {}
+        Some(Err(error)) => {
+            crate::feedback::toast_write_failure(
+                toaster,
+                "Delete failed",
+                DIRECTORY_OBJECT,
+                &error,
+            );
+        }
+        None => {}
     });
 
     // A version bump on any SUCCESSFUL write is the shared refetch trigger.
@@ -827,18 +851,27 @@ pub(super) fn directory_section(ehr_id: Signal<String>, selected: Memo<String>) 
         .into_any()
 }
 
-/// Toast a write action's success (with the shared detail formatter) and its
-/// `412` conflict; other failures are left to the caller's inline feedback.
+/// The noun phrase every directory-write failure toast is built around.
+const DIRECTORY_OBJECT: &str = "the EHR's directory";
+
+/// Toast a write action's outcome: success with the shared detail formatter, a
+/// `412` conflict with the distinct reload/save-anyway toast, and every other
+/// failure with the shared actionable copy under `failure_title`. The inline
+/// feedback pane keeps the verbatim diagnostic as well.
 fn write_toast<I: Send + Sync + 'static>(
     toaster: thaw::ToasterInjection,
     action: Action<I, Result<String, AdminUiError>>,
     title: &'static str,
+    failure_title: &'static str,
     detail: fn(&str) -> String,
 ) {
     Effect::new(move |_| match action.value().get() {
         Some(Ok(uid)) => crate::components::toast::toast_success(toaster, title, &detail(&uid)),
         Some(Err(error)) if is_conflict(&error) => conflict_toast(toaster),
-        _ => {}
+        Some(Err(error)) => {
+            crate::feedback::toast_write_failure(toaster, failure_title, DIRECTORY_OBJECT, &error);
+        }
+        None => {}
     });
 }
 
