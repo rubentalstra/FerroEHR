@@ -134,7 +134,7 @@ fn collect_contained(
 /// Whether an identified path must read the streaming ROOT source's node row.
 /// The one root-sourced shape the version spine serves without the node row is
 /// the direct `uid/value` synthesis (`version_uid_expr`: no structure hop, no
-/// predicates — the OBJECT_VERSION_ID is composed from `vo_version` columns per
+/// predicates — the `OBJECT_VERSION_ID` is composed from `vo_version` columns per
 /// RM common master06 §Version Identification). Everything else — promoted
 /// columns, fragment reads, whole-object projection (empty fragment), any
 /// predicate along the path — reads `node`. The bare-`uid` object projection is
@@ -271,48 +271,7 @@ impl Builder<'_> {
             self.ehr_alias.insert(esid, e);
         }
 
-        // The root node lateral is DEAD WEIGHT when (a) the root source
-        // carries no node-level condition beyond its RM type — which the
-        // spine's `kind` filter already pins: a versioned object's `num = 0`
-        // row has `rm_type = kind` by construction — and (b) no identified
-        // path reads the root's node row. The lateral is then one wasted
-        // `pk_node` probe per spine row: it yields exactly one row per
-        // version (every stored version has its root node), so dropping it
-        // preserves row multiplicity, and the root's subtree interval spans
-        // the whole versioned object, so first-level containment reduces to
-        // sharing the version — `vo_id = v.vo_id AND sys_version =
-        // v.sys_version`, no `BETWEEN`. Semantics identical; measured as the
-        // post-streaming ladder's rung 1. No openEHR spec governs the join
-        // mechanics — our own design.
-        let root_node_needed = root.archetype.is_some()
-            || root.name.is_some()
-            || !root.standard.is_empty()
-            || root_node_referenced(self.ir, plan.root);
-        let group_root = if root_node_needed {
-            let root_alias = format!("n{}", plan.root);
-            let mut sub = Query::select();
-            sub.column(Asterisk)
-                .from(Node::Table)
-                .and_where(Expr::col(Alias::new("vo_id")).eq(col(&v, "vo_id")))
-                .and_where(Expr::col(Alias::new("sys_version")).eq(col(&v, "sys_version")))
-                .and_where(Expr::col(Alias::new("num")).eq(Expr::val(0)))
-                .offset(0);
-            self.q.join_lateral(
-                JoinType::Join,
-                sub,
-                Alias::new(root_alias.as_str()),
-                Expr::val(true),
-            );
-            for cond in self.rm_conds(&root_alias, &root)? {
-                self.q.and_where(cond);
-            }
-            self.node_alias.insert(plan.root, root_alias.clone());
-            root_alias
-        } else {
-            // The spine stands in for the root in the scope/gate machinery —
-            // it carries the `ehr_id` those gates filter on.
-            v.clone()
-        };
+        let group_root = self.stream_root(plan, &root, &v)?;
         self.vo_alias.insert(plan.root, v.clone());
         self.group_roots.push(group_root.clone());
         self.group_vos.push(v.clone());
@@ -365,6 +324,54 @@ impl Builder<'_> {
             self.node_alias.insert(*sid, alias);
         }
         Ok(())
+    }
+
+    /// Emit the streaming root's node lateral — or elide it. The lateral is
+    /// DEAD WEIGHT when (a) the root source carries no node-level condition
+    /// beyond its RM type — which the spine's `kind` filter already pins: a
+    /// versioned object's `num = 0` row has `rm_type = kind` by construction —
+    /// and (b) no identified path reads the root's node row
+    /// ([`root_node_referenced`]). It is then one wasted `pk_node` probe per
+    /// spine row: it yields exactly one row per version (every stored version
+    /// has its root node), so dropping it preserves row multiplicity, and the
+    /// root's subtree interval spans the whole versioned object, so
+    /// first-level containment reduces to sharing the version. Measured as
+    /// the post-streaming ladder's rung 1. No openEHR spec governs the join
+    /// mechanics — our own design. Returns the alias the scope/gate machinery
+    /// group-tracks (the node alias, or the spine when elided — it carries
+    /// the `ehr_id` those gates filter on).
+    fn stream_root(
+        &mut self,
+        plan: &StreamPlan,
+        root: &RmSource,
+        v: &str,
+    ) -> Result<String, AqlError> {
+        let root_node_needed = root.archetype.is_some()
+            || root.name.is_some()
+            || !root.standard.is_empty()
+            || root_node_referenced(self.ir, plan.root);
+        if !root_node_needed {
+            return Ok(v.to_owned());
+        }
+        let root_alias = format!("n{}", plan.root);
+        let mut sub = Query::select();
+        sub.column(Asterisk)
+            .from(Node::Table)
+            .and_where(Expr::col(Alias::new("vo_id")).eq(col(v, "vo_id")))
+            .and_where(Expr::col(Alias::new("sys_version")).eq(col(v, "sys_version")))
+            .and_where(Expr::col(Alias::new("num")).eq(Expr::val(0)))
+            .offset(0);
+        self.q.join_lateral(
+            JoinType::Join,
+            sub,
+            Alias::new(root_alias.as_str()),
+            Expr::val(true),
+        );
+        for cond in self.rm_conds(&root_alias, root)? {
+            self.q.and_where(cond);
+        }
+        self.node_alias.insert(plan.root, root_alias.clone());
+        Ok(root_alias)
     }
 
     /// The single-source node conditions of an RM source (type, archetype,
