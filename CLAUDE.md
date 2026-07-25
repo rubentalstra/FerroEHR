@@ -55,7 +55,7 @@ change.
 
 ## Model orchestration (workflows & subagents)
 
-**When the session runs on Fable 5 (effort `high`), Fable is the orchestrator, not the implementer.** Fable plans, coordinates, reviews, and does the taste- and intelligence-heavy work itself; it fans implementation out to subagents via the `Agent` tool (`model: 'opus'`) or a `Workflow` (per-agent `model`). The main loop does not auto-delegate — this section is the standing instruction that it should.
+**When the session runs on Fable 5 (effort `high`), Fable is the orchestrator, not the implementer.** Fable plans, coordinates, reviews, and does the taste- and intelligence-heavy work itself; it fans implementation out to subagents via the `Agent` tool (`model: 'opus'` — the alias resolves to the newest Opus, currently **Claude Opus 5**, `claude-opus-5`: 1M-token context, 128K output, Opus 4.8 pricing; the `.claude/agents/*` defs with `model: opus` pick it up automatically) or a `Workflow` (per-agent `model`). The main loop does not auto-delegate — this section is the standing instruction that it should.
 
 Why this split (not "spin everything to a cheaper worker"): the win is **context isolation, parallelism, and sparing the orchestrator's capacity** — keep Fable's context clean and let Opus workers grind through file-heavy implementation in parallel. It is *not* an intelligence upgrade (see the table — Fable outranks Opus on both intelligence and cost), so delegate by the *nature of the work*, never reflexively.
 
@@ -64,14 +64,14 @@ Rankings, higher = better. `cost` is relative spend, `intelligence` is how hard 
 | model     | cost | intelligence | taste |
 |-----------|------|--------------|-------|
 | fable-5   | 2    | 9            | 9     |
-| opus-4.8  | 4    | 7            | 8     |
+| opus-5    | 4    | 8            | 8     |
 | sonnet-5  | 5    | 5            | 7     |
 | haiku-4.5 | 1    | 4            | 3     |
 
 How to apply (these are defaults, not limits — override when the output doesn't meet the bar; intelligence > taste > cost when axes conflict for anything that ships):
 
 - **Orchestrator (Fable 5, high):** owns the phase loop, architecture and design decisions, spec-conformance judgement, and the hard bespoke logic (AQL IR→SQL, versioning, validation, the node codec). Keeps these in-context rather than delegating — they need top intelligence + taste and are the project's critical path.
-- **Delegate to Opus-4.8 subagents:** bulk/parallelizable implementation on a clear spec (wiring handlers, DTO/trait impls against the generated ITS-REST contract, migrations, sqlx/sea-query query building, test scaffolding), file-heavy investigation, and codebase analysis — anything that would otherwise burn the orchestrator's context. Fan out several concurrently in one message.
+- **Delegate to Opus-5 subagents:** bulk/parallelizable implementation on a clear spec (wiring handlers, DTO/trait impls against the generated ITS-REST contract, migrations, sqlx/sea-query query building, test scaffolding), file-heavy investigation, and codebase analysis — anything that would otherwise burn the orchestrator's context. Fan out several concurrently in one message (still max 2 implementation workers — owner cap). Opus 5's 1M-token window means one worker can hold a whole crate/subsystem — prefer one worker with the full spec up front over splitting a coherent task. Prompt-tune for Opus 5: it self-verifies, so drop "double-check/verify your work" scaffolding from worker prompts; it also delegates onward more readily than 4.8, so tell workers NOT to spawn their own subagents.
 - **Fable-5 subagents:** use when a delegated task still needs top intelligence/taste (a tricky algorithm port, an API-shape decision) but you want it off the main context.
 - **sonnet-5:** cheap mechanical passes where correctness is easy to verify (mechanical refactors, boilerplate). **Never use Haiku for substantive work.**
 - **Reviews:** the `spec-conformance-reviewer` agent (read-only, Opus), as an independent perspective before committing a subsystem — especially spec/wire conformance and the AQL engine. Spec questions / requirements extraction go to `spec-researcher`; bounded implementation to `implementer`; **every red CNF run goes to `cnf-triage`** (the spec-adjudicated attribution law — see the hard rule below) — all defined in `.claude/agents/`, all handed the governing `docs/specs/openehr/...` paths in the prompt.
