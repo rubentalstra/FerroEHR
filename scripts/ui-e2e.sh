@@ -18,8 +18,8 @@
 #   UI_E2E_NO_BUILD     if set, `up --no-build` the compose stack (use images
 #                       already present as the `*_IMAGE` refs) instead of
 #                       building from source. CI pre-builds the app image with
-#                       an exported GHA layer cache and sets this, so the cold
-#                       runner does not pay the full compile (issue #282 F2/D1).
+#                       a layer cache exported to GHCR and sets this, so the
+#                       cold runner does not pay the full compile.
 #   UI_E2E_KEEP_UP      if set, skip teardown (local debugging).
 #   UI_E2E_SHOTS_ONLY   if set, skip the journeys entirely (capture pass only).
 #   UI_E2E_DOCS_SHOTS   if set, also run the --docs-shots capture pass
