@@ -320,6 +320,69 @@ async fn opt_upload_has_get_list_match_delete() {
     assert_eq!(svc.opts_count_adl14().await.unwrap(), 0);
 }
 
+/// The SM `delete_opt` path refuses (409) while a committed version still
+/// references the template — the same integrity guard as the admin wire
+/// delete, so a physical delete never orphans clinical data. The SM operation
+/// itself (`i_definition_adl14.adoc` §`delete_opt`) defines only
+/// `Pre_has_opt`/`invalid_template` and is silent here — the refusal is our
+/// own integrity design. Pointing an existing `vo_version` at the template
+/// exercises the FK-reference guard directly (lighter than a full validated
+/// commit, which the guard does not need).
+#[tokio::test]
+async fn opt_delete_refuses_while_referenced() {
+    let db = testkit::db().await.expect("testkit database");
+    let pool = db.pool();
+    let svc = EhrbaseService::new(pool.clone());
+
+    svc.upload_opt(fixture(OPT_REL)).await.expect("upload opt");
+    let opts = svc.list_opts_adl14(Page::all()).await.unwrap();
+    assert_eq!(opts.len(), 1);
+    let uuid = opts[0].clone();
+
+    // Reference the template from a committed version row.
+    let ehr: uuid::Uuid = svc.create_ehr(None).await.expect("ehr").into();
+    let referenced = sqlx::query("UPDATE vo_version SET template_id = $1 WHERE ehr_id = $2")
+        .bind(OPT_TEMPLATE_ID)
+        .bind(ehr)
+        .execute(&pool)
+        .await
+        .expect("reference template")
+        .rows_affected();
+    assert!(
+        referenced >= 1,
+        "a vo_version must now reference the template"
+    );
+
+    // Referenced → refused with the friendly 409 naming the count.
+    let res = svc.delete_opt(uuid.clone()).await;
+    match res {
+        Err(SmError {
+            status: CallStatusType::CompositionAlreadyExists,
+            ref message,
+            ..
+        }) => {
+            assert!(
+                message.contains(&format!("referenced by {referenced} committed version")),
+                "the 409 names the reference count ({referenced}), got {message:?}"
+            );
+        }
+        other => panic!("referenced template must be refused (409), got {other:?}"),
+    }
+    assert!(
+        svc.has_opt(uuid.clone()).await.unwrap(),
+        "a refused delete leaves the template in place"
+    );
+
+    // Dereference → the delete succeeds (Post_opt_removed).
+    sqlx::query("UPDATE vo_version SET template_id = NULL WHERE ehr_id = $1")
+        .bind(ehr)
+        .execute(&pool)
+        .await
+        .expect("dereference template");
+    svc.delete_opt(uuid.clone()).await.expect("delete opt");
+    assert!(!svc.has_opt(uuid).await.unwrap());
+}
+
 /// The ITS-REST `definition_template_adl1.4_list` filter + pagination params
 /// (`operations/definition_template_adl1.4_list.yaml`;
 /// `parameters/query/filter_template_id.yaml` — "supports wildcards `*`";

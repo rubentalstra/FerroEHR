@@ -192,7 +192,8 @@ impl EhrbaseService {
 
     /// The EHR contribution-list extension (`GET /ehr/{ehr_id}/contribution`,
     /// no uid): the EHR's CONTRIBUTIONs newest-first, paged, as
-    /// `{ "rows": [ { uid, time_committed, committer, change_type } ], "total" }`.
+    /// `{ "rows": [ { uid, time_committed, committer, change_type,
+    /// change_type_rubric } ], "total" }`.
     ///
     /// NOTE: OUR OWN EXTENSION — no openEHR spec governs it. The ITS-REST
     /// contract defines only the by-uid CONTRIBUTION GET
@@ -200,7 +201,10 @@ impl EhrbaseService {
     /// part of the openEHR REST API. `committer` is the audit committer
     /// `PARTY_PROXY`'s `name` — the name OF the party the by-uid GET returns in
     /// full (a summary string, not the same rendering); `change_type` is the
-    /// stored `audit.change_type` code. `offset`/`fetch` are already clamped
+    /// stored `audit.change_type` code and `change_type_rubric` its display
+    /// rubric from the `audit_change_type` group (the same bundle mapping the
+    /// by-uid GET's `DV_CODED_TEXT.value` carries — one rubric source,
+    /// consumers never map codes locally). `offset`/`fetch` are already clamped
     /// by the protocol adapter (defaults 0/20, `fetch` capped at 100).
     ///
     /// # Errors
@@ -224,6 +228,8 @@ impl EhrbaseService {
                     "uid": r.uid.to_string(),
                     "time_committed": r.time_committed.to_string(),
                     "committer": r.committer,
+                    "change_type_rubric":
+                        crate::versioning::audit::change_type_rubric(&r.change_type),
                     "change_type": r.change_type,
                 })
             })

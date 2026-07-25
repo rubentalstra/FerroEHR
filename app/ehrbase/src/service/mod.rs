@@ -92,6 +92,11 @@ pub struct EhrbaseService {
     system_id: String,
     /// Cache of `WebTemplate`s built from stored OPTs, used by composition
     /// validation on create/update. Cheaply cloneable (moka-backed).
+    ///
+    /// NOTE: cache health is telemetry only — no wire introspection endpoint
+    /// exists or is planned (adjudicated 2026-07-25 on the tracker: an
+    /// internal optimisation's state is a metric, not a REST surface; no
+    /// openEHR spec governs the cache — our own design).
     pub(crate) web_templates: WebTemplateCache,
     /// Version signer (`VERSION.signature`, RM common master06 §Digital
     /// Signature). Defaults to server-side `digest` signing; the binary wires
