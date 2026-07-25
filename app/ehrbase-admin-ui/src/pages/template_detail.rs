@@ -805,9 +805,7 @@ fn example_tab(
                             );
                             // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                             // mismatches at hydration in leptos 0.8 (E2E console gate).
-                            view! {
-                                <crate::components::format_view::DocumentPane body=pretty />
-                            }
+                            view! { <crate::components::format_view::DocumentPane body=pretty /> }
                                 .into_any()
                         }
                         Err(e) => catalog_error_view(&e),
