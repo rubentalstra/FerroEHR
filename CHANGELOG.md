@@ -51,6 +51,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **AQL engine: post-streaming optimization rungs** (measured, one change per
+  rung): the streaming shape's dead root LATERAL is elided when the root is
+  unreferenced (one fewer `pk_node` probe per version row; a bare
+  `uid/value` projection now runs with zero node probes), and the
+  `archetype` predicate column is case-folded at write (BASE base_types
+  master05 §Composite Identifiers and Case) so archetype equality is plain
+  indexed equality — `LOWER()` disappears from every containment hop.
+  Measured on the seeded 10k bench: ward statement execution −11.3%,
+  buffer reads −10.7%, planning −10.3%; stress knee re-measured at the
+  committed 512 arrivals/s. The aql-probe instrument now attributes
+  planner time per statement (`pg_stat_statements.track_planning`).
+
+
 - **Docker / Compose deployment rework (#282)**: a from-the-ground-up rebuild
   of the container surface for smaller images, faster builds, and a
   production-grade posture on every build.
