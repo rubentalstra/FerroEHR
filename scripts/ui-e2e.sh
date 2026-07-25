@@ -277,6 +277,9 @@ echo "── running e2e journeys"
 # The docs-screenshot binary (e2e_docs_shots) matches `binary(/^e2e_/)` too, so
 # exclude it here (nextest set-difference `-`); it runs only in the gated pass
 # below. An explicit FILTER arg scopes by test name and never picks it up.
+# UI_E2E_CDR_URL is exported to the journeys too: a journey that needs a listing
+# of its own (table paging) seeds and removes its fixtures over ITS-REST rather
+# than through the UI, whose own paths have their own journeys.
 NEXTEST_FILTER=(-E 'binary(/^e2e_/) - binary(e2e_docs_shots)')
 [ -n "$FILTER" ] && NEXTEST_FILTER=(-E "test($FILTER)")
 UI_E2E_BASE_URL="$CONSOLE_URL" \
@@ -284,6 +287,7 @@ UI_E2E_WEBDRIVER_URL="http://127.0.0.1:$DRIVER_PORT" \
 UI_E2E_SHOTS_DIR="$SHOTS_DIR" \
 UI_E2E_BASIC_USER="ehrbase" \
 UI_E2E_BASIC_PASS="ehrbase" \
+UI_E2E_CDR_URL="$CDR_URL" \
 UI_E2E_OIDC_USER="ehrbase-admin" \
 UI_E2E_OIDC_PASS="E2ePass-admin1!" \
 UI_E2E_SEEDED_EHR_ID="$SEEDED_EHR_ID" \

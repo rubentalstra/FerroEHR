@@ -34,13 +34,13 @@ use crate::builder::model::{
 };
 use leptos_chartistry::IntoInner;
 
-use crate::components::data_table::{CELL, ROW, table_shell};
+use crate::components::data_table::{CELL, PAGE_SIZE, ROW, table_shell, table_skeleton};
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, SELECT};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
-use crate::pages::ehrs::{PAGE_SIZE, ResultPage, cell_text, table_skeleton};
+use crate::pages::ehrs::{ResultPage, cell_text};
 use crate::pages::template_detail::fetch_template_catalog;
 use crate::pages::templates::list_templates;
 use crate::queries_api::{run_aql, store_query};

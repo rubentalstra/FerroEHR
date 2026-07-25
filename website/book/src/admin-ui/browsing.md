@@ -14,6 +14,12 @@ format.
 
 ![Template detail](img/templates/template-detail.png)
 
+The list filters by id, concept, or archetype id as you type, and is paged by
+the shared footer under the table — rows on screen out of how many,
+previous/next, and 25/50/100 rows per page, all in the URL (see
+[Paging](index.md#paging)). The filter narrows the rows; the footer counts what
+the filter left.
+
 The list also shows each template's root **archetype id**, and the detail
 screen opens with an identity card — concept, version, default language,
 languages, and the template **UID** — read from the operational template

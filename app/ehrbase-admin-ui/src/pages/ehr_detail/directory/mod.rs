@@ -32,11 +32,12 @@ use serde_json::{Value, json};
 #[cfg(feature = "ssr")]
 use crate::pages::ehr_detail::commit_version_uid;
 
+use crate::components::data_table::table_skeleton;
 use crate::error::AdminUiError;
 use crate::pages::ehr_detail::directory::create::create_section;
 use crate::pages::ehr_detail::directory::panels::directory_toolbar;
 use crate::pages::ehr_detail::directory::tree::{EditorState, seed, tree_editor};
-use crate::pages::ehrs::{ResultPage, table_skeleton};
+use crate::pages::ehrs::ResultPage;
 
 /// The EHR's directory as its canonical FOLDER JSON body plus the current
 /// version uid (the FOLDER's `uid.value`, an `OBJECT_VERSION_ID`). The uid is

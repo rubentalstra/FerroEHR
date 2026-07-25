@@ -5,20 +5,24 @@
 //! diagnostics verbatim. No openEHR spec governs an admin UI — our own design /
 //! product extension; the wire it reads/writes is the ITS-REST Definition API.
 //!
-//! Discipline (rules §0/§1/§6/§8): the two `#[server]` fns guard the session
+//! Discipline (rules §0/§1/§6/§8/§9): the two `#[server]` fns guard the session
 //! first (a server fn is a public HTTP endpoint) and never let a CDR credential
 //! reach client-visible state; the view is composed from `.into_any()`-erased
 //! section locals; async is a [`Resource`] read under `<Transition>` and an
 //! [`Action`] for the mutating upload (refetch the list on the action's
 //! version); the table is the shared [`table_shell`], which emits an explicit
-//! `<tbody>` (hydration correctness — rules §8).
+//! `<tbody>` (hydration correctness — rules §8), paged by the shared
+//! [`table_footer`] whose page state lives in the URL.
 
 use leptos::prelude::*;
 use leptos::{component, server};
 use leptos_meta::Title;
 
 use crate::admin::AdminAvailability;
-use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell};
+use crate::components::data_table::{
+    CELL, CELL_MONO, ROW, TablePaging, page_rows, page_window, paging_from_url, row_total,
+    table_footer, table_shell, table_skeleton,
+};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_DANGER, INPUT};
 use crate::components::page_header::PageHeader;
@@ -138,7 +142,9 @@ pub async fn upload_template(opt_xml: String) -> Result<String, AdminUiError> {
 ///
 /// The filter is a private client-side `contains` over already-loaded rows (a
 /// bound signal, per the screen spec — no server round-trip, so URL state
-/// would add nothing here). A successful upload or delete bumps its action's
+/// would add nothing here); the PAGE the filtered rows are windowed at does
+/// live in the URL (`?page=`/`?size=`, rules §9), so a reload or a shared link
+/// lands on the same rows. A successful upload or delete bumps its action's
 /// version, both of which are the list resource's source, refetching it.
 ///
 /// The per-row delete is admin-gated: it renders only when the
@@ -151,6 +157,9 @@ pub async fn upload_template(opt_xml: String) -> Result<String, AdminUiError> {
 pub fn TemplatesPage() -> impl IntoView {
     let toaster = thaw::ToasterInjection::expect_context();
     let filter = RwSignal::new(String::new());
+    // The table's page window, read from the URL in SETUP (never inside the
+    // suspense that fetches the list — rules §4).
+    let paging = paging_from_url();
     let upload = Action::new(|opt_xml: &String| {
         let opt_xml = opt_xml.clone();
         async move { upload_template(opt_xml).await }
@@ -213,7 +222,7 @@ pub fn TemplatesPage() -> impl IntoView {
 
     let action_slot = upload_trigger(upload);
     let feedback = upload_feedback(upload);
-    let table_section = templates_table(filter, list, gate, delete, pending_delete);
+    let table_section = templates_table(filter, paging, list, gate, delete, pending_delete);
     let confirm = delete_dialog(pending_delete, delete);
 
     view! {
@@ -351,6 +360,7 @@ fn upload_feedback(upload: Action<String, Result<String, AdminUiError>>) -> AnyV
 /// the header row and the rows agree on whether the delete column exists.
 fn templates_table(
     filter: RwSignal<String>,
+    paging: TablePaging,
     list: Resource<Result<Vec<TemplateRow>, AdminUiError>>,
     gate: Resource<Result<AdminAvailability, AdminUiError>>,
     delete: TemplateDeleteAction,
@@ -361,7 +371,7 @@ fn templates_table(
             {move || Suspend::new(async move {
                 let admin = crate::admin::renders_admin_ops(&gate.await);
                 match list.await {
-                    Ok(rows) => rows_view(rows, filter, admin, delete, pending_delete),
+                    Ok(rows) => rows_view(rows, filter, paging, admin, delete, pending_delete),
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -370,22 +380,17 @@ fn templates_table(
     .into_any()
 }
 
-/// The `<Transition>` fallback while the list loads.
-fn table_skeleton() -> impl IntoView {
-    view! {
-        <thaw::Skeleton>
-            <thaw::SkeletonItem class="h-6 mb-2" />
-            <thaw::SkeletonItem class="h-6 mb-2" />
-            <thaw::SkeletonItem class="h-6" />
-        </thaw::Skeleton>
-    }
-}
-
-/// Render the loaded rows: the empty-catalogue state, or a filterable table
-/// (with the admin delete column when `admin`).
+/// Render the loaded rows: the empty-catalogue state, or a filterable, paged
+/// table (with the admin delete column when `admin`).
+///
+/// The filtered listing is a [`Memo`], so the rendered window and the footer's
+/// total are computed from ONE derivation of the filter and can never disagree
+/// (rules §2 — a derived value, not an effect writing a signal). The window
+/// itself comes from the URL, so paging never re-runs the enclosing suspense.
 fn rows_view(
     rows: Vec<TemplateRow>,
     filter: RwSignal<String>,
+    paging: TablePaging,
     admin: bool,
     delete: TemplateDeleteAction,
     pending_delete: RwSignal<Option<String>>,
@@ -401,27 +406,30 @@ fn rows_view(
         .into_any();
     }
 
-    // Shared, cheaply-cloned backing store for the reactive filter closures.
-    let rows = std::sync::Arc::new(rows);
-    let each_rows = std::sync::Arc::clone(&rows);
-    let empty_rows = std::sync::Arc::clone(&rows);
-
-    let matches = |row: &TemplateRow, needle: &str| {
-        row.template_id.to_lowercase().contains(needle)
-            || row.concept.to_lowercase().contains(needle)
-            || row.archetype_id.to_lowercase().contains(needle)
-    };
-
+    let matched = Memo::new(move |_| {
+        let needle = filter.read().to_lowercase();
+        rows.iter()
+            .filter(|&row| matches_filter(row, &needle))
+            .cloned()
+            .collect::<Vec<_>>()
+    });
+    // `.read()` guards, never `.get()`: the filtered listing is a collection
+    // and cloning it per read would be wasted work (rules §2).
+    let total = Signal::derive(move || row_total(matched.read().len()));
     let none_match = move || {
-        let needle = filter.get().to_lowercase();
-        !needle.is_empty() && !empty_rows.iter().any(|row| matches(row, &needle))
+        // Two statements on purpose: the filter guard must be released before
+        // `matched` is read, because recomputing the memo reads the filter
+        // again (rules §2 — never hold one signal's guard across another read
+        // that depends on it).
+        let filtering = !filter.read().is_empty();
+        filtering && matched.read().is_empty()
     };
 
     let body = view! {
         <For
             each=move || {
-                let needle = filter.get().to_lowercase();
-                each_rows.iter().filter(|&row| matches(row, &needle)).cloned().collect::<Vec<_>>()
+                let window = page_window(total.get(), paging.page.get(), paging.size.get());
+                matched.with(|rows| page_rows(rows, window))
             }
             key=|row| row.template_id.clone()
             children=move |row| row_view(row, admin, delete, pending_delete)
@@ -434,14 +442,25 @@ fn rows_view(
     } else {
         &["Template ID", "Concept", "Archetype ID", "Created"]
     };
+    let footer = table_footer("/templates", "templates", paging, total);
 
     view! {
         {table_shell(headers, body)}
+        {footer}
         <Show when=none_match>
             <p class="mt-3 text-sm text-ink-muted">"No templates match the filter."</p>
         </Show>
     }
     .into_any()
+}
+
+/// Whether one row matches the screen's client-side filter: a case-insensitive
+/// `contains` over the id, the concept, and the archetype id. `needle` is
+/// already lowercased.
+fn matches_filter(row: &TemplateRow, needle: &str) -> bool {
+    row.template_id.to_lowercase().contains(needle)
+        || row.concept.to_lowercase().contains(needle)
+        || row.archetype_id.to_lowercase().contains(needle)
 }
 
 /// The `/templates/{template_id}` detail-route link for one template id.
