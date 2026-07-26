@@ -132,6 +132,9 @@ pub fn extensions_document(cfg: &AppConfig) -> utoipa::openapi::OpenApi {
     doc.merge(health::openapi());
     doc.merge(status::openapi());
     doc.merge(smart_discovery::openapi());
+    // The System API's OPTIONS operation — a closure route mounted outside
+    // OpenApiRouter (above CORS), documented via its twin (#418).
+    doc.merge(crate::api::system::options::openapi());
     doc.merge(meta_openapi());
 
     // Authenticated: the management surface + the entire API surface (every

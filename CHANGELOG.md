@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Served OpenAPI: the System API's `OPTIONS` operation is now documented**
+  (#418). The Options-and-Conformance endpoint (`OPTIONS` on the API base
+  path) was served but absent from the generated OpenAPI document and
+  Swagger UI, because its route mounts outside the documenting router (above
+  the CORS layer, deliberately). A documented twin now carries the full
+  operation description — the `Options` manifest schema with field
+  documentation and example, the `Allow`/`Content-Type` response headers,
+  and the `406` negotiation branch.
+
 - **`version_at_time` now accepts a datetime without a timezone, interpreting
   it in the server's local timezone** (#401). ITS-REST
   `docs/overview/Resources.md` §"Datetime format" requires the extended

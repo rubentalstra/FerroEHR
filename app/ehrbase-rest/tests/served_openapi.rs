@@ -262,3 +262,32 @@ async fn versioned_writes_document_if_match_and_412() {
         findings.join("\n")
     );
 }
+
+/// The System API's one operation appears in the served document, fully
+/// described (#418): a closure route mounted outside `OpenApiRouter` still
+/// belongs to the composed `OpenAPI` — the served document describes the
+/// whole served surface (ITS-REST System API, `operations/options.yaml`).
+#[tokio::test]
+async fn system_options_operation_is_documented() {
+    let doc = served_document().await;
+    let op = doc["paths"]["/ehrbase/rest/openehr/v1"]["options"].clone();
+    assert!(
+        op.is_object(),
+        "OPTIONS on the API base path must be documented"
+    );
+    assert_eq!(op["operationId"], "options");
+    let ok = &op["responses"]["200"];
+    assert!(
+        ok["headers"]["Allow"].is_object(),
+        "the 200 documents the Allow header (200_options.yaml): {op}"
+    );
+    assert!(
+        op["responses"]["406"].is_object(),
+        "the exclusively-XML Accept branch is documented"
+    );
+    // The Options schema rode along into components.
+    assert!(
+        doc["components"]["schemas"]["Options"].is_object(),
+        "the Options manifest schema is registered"
+    );
+}
