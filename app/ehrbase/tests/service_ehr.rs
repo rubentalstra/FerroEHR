@@ -317,13 +317,45 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // bare id cannot be constructed as an argument; that decode + 400 moved to
     // the protocol adapter (`ehrbase-rest`), where it is exercised.
 
-    // The correct latest version_uid deletes; the returned uid names the new
-    // (deleted) version (204_COMPOSITION_deleted ETag/Location).
-    let comp_ovid_v2_id: ObjectVersionId = comp_ovid_v2.parse().expect("ovid");
+    // A fabricated creating_system_id names NO version here — the version_uid
+    // identity is the full three-part tuple (ITS-REST overview Resources.md
+    // §Identifier types; RM common master06 §Distributed Versioning), so the
+    // delete must refuse (409), and a version READ addressed with it is 404.
+    let fabricated = {
+        let mut parts: Vec<&str> = comp_ovid_v2.split("::").collect();
+        parts[1] = "totally.bogus.system";
+        parts.join("::")
+    };
+    let fabricated_id: ObjectVersionId = fabricated.parse().expect("ovid");
+    assert!(
+        matches!(
+            svc.delete_composition(ehr_uuid, &fabricated_id).await,
+            Err(ServiceError::Conflict(_))
+        ),
+        "a fabricated creating_system_id must not delete"
+    );
+    let ghost_read = svc
+        .get_composition_at_version(ehr_uuid, fabricated_id.clone())
+        .await;
+    assert!(
+        ghost_read.is_err(),
+        "a fabricated creating_system_id must not read a version, got {ghost_read:?}"
+    );
+
+    // The correct latest version_uid deletes — addressed with a CASE-VARIANT
+    // creating_system_id, which is the same identifier (BASE master05
+    // §Composite Identifiers and Case).
+    let case_variant = {
+        let mut parts: Vec<&str> = comp_ovid_v2.split("::").collect();
+        let upper = parts[1].to_ascii_uppercase();
+        parts[1] = &upper;
+        parts.join("::")
+    };
+    let comp_ovid_v2_id: ObjectVersionId = case_variant.parse().expect("ovid");
     let deleted = svc
         .delete_composition(ehr_uuid, &comp_ovid_v2_id)
         .await
-        .expect("composition_delete")
+        .expect("composition_delete (case-variant creating_system_id)")
         .version_uid();
     assert!(
         deleted.ends_with("::3"),

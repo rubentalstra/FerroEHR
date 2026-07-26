@@ -74,6 +74,28 @@ fn committed_meta(
         .ok_or_else(|| SmError::exception("write produced no version metadata"))
 }
 
+/// Verify a version-addressed READ returned the VERSION the caller named:
+/// the addressed `OBJECT_VERSION_ID` must equal the served version's full
+/// three-part identity — `object_id :: creating_system_id ::
+/// version_tree_id` (ITS-REST overview `Resources.md` §Identifier types:
+/// the `version_uid` "uniquely identifies a VERSION") — compared
+/// case-insensitively (BASE `base_types` master05 §"Composite Identifiers
+/// and Case"). A tree-id-only fetch would satisfy a fabricated
+/// `creating_system_id`; that names no VERSION in this repository → 404.
+fn ensure_addressed_version(
+    addressed: &openehr_base::prelude::ObjectVersionId,
+    served_uid: &str,
+) -> Result<(), crate::service::error::ServiceError> {
+    if served_uid.eq_ignore_ascii_case(&addressed.value) {
+        Ok(())
+    } else {
+        Err(crate::service::error::ServiceError::sm(
+            crate::service::status::CallStatusType::ObjectVersionDoesNotExist,
+            format!("version {}", addressed.value),
+        ))
+    }
+}
+
 /// Enforce the full-`OBJECT_VERSION_ID` `If-Match` precondition: the client's `preceding_version_uid` MUST equal the resource's
 /// current latest `version_uid` **in full** (`object_id` + creating-system id +
 /// version), not merely the trunk number (ITS-REST `parameters/If-Match`). A
@@ -87,7 +109,10 @@ fn ensure_if_match(
         return Ok(());
     };
     match latest {
-        Some(meta) if meta.uid == pre.value => Ok(()),
+        // Composite identifiers compare case-INsensitively (BASE
+        // base_types master05 §"Composite Identifiers and Case": two
+        // identifiers identical apart from case identify the same thing).
+        Some(meta) if meta.uid.eq_ignore_ascii_case(&pre.value) => Ok(()),
         Some(meta) => Err(crate::service::error::ServiceError::VersionConflict(
             format!(
                 "If-Match {:?} does not match the current latest version {:?}",
