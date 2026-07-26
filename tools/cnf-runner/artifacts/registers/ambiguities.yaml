@@ -732,8 +732,10 @@ AMB-60:
     reading and is the one outcome this entry forbids. Not executable in the
     catalogue today: the binding request model's method vocabulary is closed to
     {GET, POST, PUT, DELETE, HEAD} (no seam for a wrong-but-known or arbitrary
-    method on a known path), the outcome taxonomy has no method_not_allowed
-    kind, and header matchers are parsed but never evaluated — so the boundary
+    method on a known path) and the outcome taxonomy has no
+    method_not_allowed kind — the assertion half is no longer a blocker
+    (header matchers and body selectors are both EXECUTED assertions now,
+    exec/headers.rs and exec/bodies.rs), so the boundary
     is carried as the cited vocab/wire_surface.yaml elements
     method-405-allow-header and method-501-unrecognized-method-deviation.
     Revisits if a future ITS-REST release raises either sentence to a MUST or

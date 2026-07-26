@@ -15,6 +15,7 @@
 //! reqwest driver and the verification-pack transcript player.
 
 pub mod assertions;
+pub mod bodies;
 pub mod content_synth;
 pub mod driver;
 pub mod headers;
