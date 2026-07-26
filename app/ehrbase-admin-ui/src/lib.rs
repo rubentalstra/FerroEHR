@@ -11,6 +11,7 @@ pub mod admin;
 pub mod app;
 pub mod auth;
 pub mod builder;
+pub mod chart_model;
 pub mod clinical;
 pub mod components;
 pub mod error;
