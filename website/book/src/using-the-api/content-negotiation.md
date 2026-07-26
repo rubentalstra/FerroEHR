@@ -277,7 +277,39 @@ Errors use conventional HTTP status codes (see the summary in
   ```
 
   This shape is used consistently — including for `405 Method Not Allowed`
-  and `501 Not Implemented`, which some servers leave bodyless.
+  and `501 Not Implemented`, which some servers leave bodyless, and for the
+  two refusals that come from the transport layer rather than a handler:
+  `408 Request Timeout` (the request exceeded the server's execution limit)
+  and `413 Payload Too Large` (the request body exceeds the accepted size).
 
 Match on the HTTP status first; read the body for the human-readable detail and,
 for validation, the per-node list.
+
+### `405` always names the allowed methods
+
+Every `405 Method Not Allowed` carries an `Allow` header listing the methods
+the target resource currently supports, as
+[RFC 9110 §15.5.6](https://www.rfc-editor.org/rfc/rfc9110.html#section-15.5.6)
+requires — so a client can discover the right method without guessing:
+
+```http
+HTTP/1.1 405 Method Not Allowed
+Allow: GET,HEAD,PUT
+Content-Type: application/json
+
+{ "error": "Method Not Allowed", "message": "the request method is not allowed on this resource" }
+```
+
+When a resource is switched off by configuration — the
+[admin API](../operations.md#the-admin-api-physical-deletion) with
+`EHRBASE__ADMIN__ENABLED=false` — the header is present but **empty**, which
+[RFC 9110 §10.2.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.1)
+defines as "the resource allows no methods": nothing you can send to that path
+will be served until the gate is opened.
+
+A method the server does not recognize at all is answered `405` as well (with
+`Allow`), not `501`. The openEHR spec suggests `501` there, but the two rules
+it states overlap for any method outside its own list, and a blanket `501`
+would also mislabel requests to paths that simply do not exist and are owed a
+`404`. `501 Not Implemented` remains reserved for a recognized operation this
+server does not implement.

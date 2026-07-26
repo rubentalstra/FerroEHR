@@ -17,7 +17,10 @@
 //! before auth, audit, or reading the request body — [`crate::overload`]). The
 //! whole tree is then wrapped in the shared `tower-http` request stack
 //! (request-id, tracing, CORS, body limit, timeout, compression), so a shed
-//! `503` still carries a request id and is traced. The System Options `OPTIONS`
+//! `503` still carries a request id and is traced. Between the CORS layer and
+//! the body-limit/timeout pair sits [`align_transport_error_body`], which
+//! re-renders the two responses those layers produce on their own (`408`,
+//! `413`) in the openEHR `{ error, message }` shape. The System Options `OPTIONS`
 //! endpoint is mounted **above** the CORS layer — `CorsLayer` treats every
 //! `OPTIONS` as a CORS preflight and would short-circuit a conformance probe —
 //! so it lives on the outer router with the CORS-wrapped application as its
@@ -42,7 +45,7 @@ use axum::Router;
 use axum::middleware::from_fn_with_state;
 use axum::response::{IntoResponse, Response};
 use http::StatusCode;
-use http::header::AUTHORIZATION;
+use http::header::{AUTHORIZATION, CONTENT_TYPE};
 use openehr_its::rest::runtime::ApiError;
 use tower::ServiceBuilder;
 use tower_http::catch_panic::CatchPanicLayer;
@@ -83,13 +86,33 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         .to_owned();
 
     // ── The generated ITS-REST surface, gated by authentication ──────────────
-    // A known resource path called with a disallowed method renders `405` with
-    // the openEHR `{ error, message }` body (overview §HTTP Methods), not axum's
-    // bare text 405. (The paired `501` for a recognised-but-unimplemented
-    // operation is produced at dispatch level via `ApiError::NotImplemented` —
-    // see [`crate::overview::error::not_implemented_handler`]; axum routes by
-    // path+method and offers no distinct "unrecognised method" seam, so a blanket
-    // `501` fallback would wrongly convert genuine `404`s.)
+    // A known resource path called with a method it does not serve renders
+    // `405` with the openEHR `{ error, message }` body (overview §HTTP
+    // Methods), not axum's bare text `405`. The mandatory `Allow` header
+    // (RFC 9110 §15.5.6) is added by axum itself from the matched route's
+    // registered method set — precisely because
+    // `crate::overview::error::method_not_allowed_handler` does not set one of
+    // its own (axum only fills `Allow` in when the fallback response leaves it
+    // absent). A `405` raised from a *matched* handler skips that machinery
+    // entirely and states its own `Allow`
+    // (`crate::overview::error::method_not_allowed_response`, used by the
+    // config-gated admin group).
+    //
+    // NOTE (settled deviation, registered as `AMB-60` in
+    // `tools/cnf-runner/artifacts/registers/ambiguities.yaml`): the overview's
+    // paired SHOULD — "A server receiving an unrecognized or unimplemented
+    // method SHOULD respond with the `501 Not Implemented` status code"
+    // (`Requests_and_responses.md` §HTTP Methods) — is answered `405` here as
+    // well. axum routes by path+method and exposes no "unrecognized method"
+    // seam, so the only way to reach a blanket `501` would be a catch-all
+    // fallback, which would also swallow every genuinely unknown *path* and
+    // report it `501` instead of `404`. `405` is a predefined code in the
+    // spec's own status table and so cannot conflict with it
+    // (`Requests_and_responses.md` §HTTP status codes: "Additional status codes
+    // MAY be used as long as they do not conflict with the predefined codes").
+    // `501` is still emitted where the spec's other half applies — a
+    // recognised but unimplemented *operation* — through
+    // `ApiError::NotImplemented`.
     let api =
         crate::api::api_router().method_not_allowed_fallback(error::method_not_allowed_handler);
     // Tenant resolution sits inside the auth layer so it runs *after*
@@ -146,7 +169,28 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
 
     // Wrap the whole inner tree in the shared request stack and bind the state,
     // yielding a protocol-complete, state-less service.
+    //
+    // The stack is applied in two halves with [`align_transport_error_body`]
+    // between them: `TimeoutLayer` and `RequestBodyLimitLayer` render their own
+    // responses without ever reaching [`crate::overview::error`], so the
+    // mapping must sit OUTSIDE both to observe and re-render them. Splitting the
+    // application is also what makes the mapping expressible — `Router::layer`
+    // normalizes the response body back to `axum::body::Body` at each
+    // application, so the mapper takes a plain [`Response`] rather than the
+    // layer stack's nested body type. The relative order of the layers
+    // themselves is unchanged (outermost → innermost: request-id, tracing,
+    // catch-panic, CORS, body limit, timeout, compression).
     let inner: Router = inner
+        .layer(
+            ServiceBuilder::new()
+                .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
+                .layer(TimeoutLayer::with_status_code(
+                    StatusCode::REQUEST_TIMEOUT,
+                    REQUEST_TIMEOUT,
+                ))
+                .layer(CompressionLayer::new()),
+        )
+        .layer(axum::middleware::map_response(align_transport_error_body))
         .layer(
             ServiceBuilder::new()
                 .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
@@ -156,13 +200,7 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
                 )))
                 .layer(TraceLayer::new_for_http())
                 .layer(CatchPanicLayer::custom(handle_panic))
-                .layer(cors)
-                .layer(RequestBodyLimitLayer::new(REQUEST_BODY_LIMIT))
-                .layer(TimeoutLayer::with_status_code(
-                    StatusCode::REQUEST_TIMEOUT,
-                    REQUEST_TIMEOUT,
-                ))
-                .layer(CompressionLayer::new()),
+                .layer(cors),
         )
         .with_state(state);
 
@@ -237,6 +275,48 @@ fn handle_panic(err: Box<dyn Any + Send + 'static>) -> Response {
     .into_response()
 }
 
+/// Align the two **transport-layer** error responses the `tower-http` stack
+/// renders on its own onto the openEHR `{ error, message }` body every other
+/// error path emits ([`crate::overview::error`]).
+///
+/// `TimeoutLayer` builds its `408` as a bare status with an empty body
+/// (`tower_http::timeout`) and `RequestBodyLimitLayer` builds its `413` as
+/// `text/plain; charset=utf-8` (`tower_http::limit`); neither passes through
+/// [`crate::overview::error::RestError`], so without this mapping the two would
+/// be the only error responses on the server in a foreign shape. `408` is a
+/// predefined status in the spec's table (ITS-REST `Requests_and_responses.md`
+/// §HTTP status codes — "Request maximum execution time is reached, therefore
+/// the server aborted the request"); `413` is one of the additional codes the
+/// same section permits ("Additional status codes MAY be used as long as they
+/// do not conflict with the predefined codes"). The error BODY itself is only a
+/// MAY there, so this is consistency across our own surface rather than a
+/// conformance requirement.
+///
+/// A response that already carries a JSON body was produced by a handler (the
+/// AQL query-execution timeout renders its own `408` through `RestError`) and
+/// is passed through untouched.
+async fn align_transport_error_body(response: Response) -> Response {
+    let status = response.status();
+    let message = match status {
+        StatusCode::REQUEST_TIMEOUT => {
+            "the request exceeded the maximum execution time and was aborted"
+        }
+        StatusCode::PAYLOAD_TOO_LARGE => {
+            "the request body exceeds the maximum size accepted by this server"
+        }
+        _ => return response,
+    };
+    let already_rendered = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .is_some_and(|value| value.starts_with("application/json"));
+    if already_rendered {
+        return response;
+    }
+    error::status_error_response(status, message)
+}
+
 /// Mount the public, pre-auth surface around the API tree: the always-on health
 /// family, the REST-root status surface, the config-gated SMART
 /// `/.well-known/smart-configuration` document (served pre-auth, SMART master04
@@ -290,10 +370,11 @@ pub fn management_router(state: &AppState, authenticator: Arc<Authenticator>) ->
 )] // test assertions/diagnostics/fixtures
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
-    use axum::body::to_bytes;
+    use axum::body::{Body, to_bytes};
+    use axum::response::Response;
     use http::StatusCode;
 
-    use super::handle_panic;
+    use super::{align_transport_error_body, handle_panic};
 
     /// a panicked handler renders the standard openEHR `{ error, message }`
     /// JSON 500 body (never tower-http's default text/plain), and the panic
@@ -314,5 +395,92 @@ mod tests {
             !message.contains("secret panic detail"),
             "panic payload must not leak into the response body"
         );
+    }
+
+    async fn json_body(resp: Response) -> (StatusCode, serde_json::Value) {
+        let status = resp.status();
+        assert_eq!(
+            resp.headers().get(http::header::CONTENT_TYPE).unwrap(),
+            "application/json"
+        );
+        let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        (status, serde_json::from_slice(&bytes).unwrap())
+    }
+
+    /// The `tower-http` `TimeoutLayer` renders `408` as a bare status with an
+    /// empty body; the alignment re-renders it in the openEHR
+    /// `{ error, message }` shape. `408` is a predefined status in the spec's
+    /// own table (ITS-REST `Requests_and_responses.md` §HTTP status codes —
+    /// "Request maximum execution time is reached, therefore the server aborted
+    /// the request"), so only the body shape is ours to choose.
+    #[tokio::test]
+    async fn layer_produced_408_is_rendered_as_the_openehr_error_body() {
+        let mut bare = Response::new(Body::empty());
+        *bare.status_mut() = StatusCode::REQUEST_TIMEOUT;
+        let (status, body) = json_body(align_transport_error_body(bare).await).await;
+        assert_eq!(status, StatusCode::REQUEST_TIMEOUT);
+        assert_eq!(body["error"], "Request Timeout");
+        assert!(
+            body.get("message")
+                .and_then(serde_json::Value::as_str)
+                .is_some()
+        );
+    }
+
+    /// The `RequestBodyLimitLayer` renders `413` as `text/plain`; the alignment
+    /// re-renders it in the openEHR `{ error, message }` shape. `413` is not in
+    /// the spec's status table but is permitted as an additional,
+    /// non-conflicting code (`Requests_and_responses.md` §HTTP status codes).
+    #[tokio::test]
+    async fn layer_produced_413_is_rendered_as_the_openehr_error_body() {
+        let mut bare = Response::new(Body::from("length limit exceeded"));
+        *bare.status_mut() = StatusCode::PAYLOAD_TOO_LARGE;
+        bare.headers_mut().insert(
+            http::header::CONTENT_TYPE,
+            http::HeaderValue::from_static("text/plain; charset=utf-8"),
+        );
+        let (status, body) = json_body(align_transport_error_body(bare).await).await;
+        assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+        assert_eq!(body["error"], "Payload Too Large");
+        assert!(
+            body["message"]
+                .as_str()
+                .is_some_and(|m| !m.contains("length limit exceeded")),
+            "the tower-http text body must be replaced, not embedded"
+        );
+    }
+
+    /// A handler-produced `408` (the AQL query-execution timeout, rendered
+    /// through `RestError`) already carries the openEHR body and must pass
+    /// through the alignment untouched — its message names the real cause.
+    #[tokio::test]
+    async fn handler_produced_408_passes_through_unchanged() {
+        let original = crate::overview::error::status_error_response(
+            StatusCode::REQUEST_TIMEOUT,
+            "query aborted after 5000ms",
+        );
+        let (status, body) = json_body(align_transport_error_body(original).await).await;
+        assert_eq!(status, StatusCode::REQUEST_TIMEOUT);
+        assert_eq!(body["message"], "query aborted after 5000ms");
+    }
+
+    /// Every other status is returned byte-for-byte: the alignment is scoped to
+    /// the two layer-produced transport errors and must never touch a success
+    /// or another error path.
+    #[tokio::test]
+    async fn other_statuses_are_untouched() {
+        let mut ok = Response::new(Body::from("hello"));
+        ok.headers_mut().insert(
+            http::header::CONTENT_TYPE,
+            http::HeaderValue::from_static("text/plain"),
+        );
+        let resp = align_transport_error_body(ok).await;
+        assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers().get(http::header::CONTENT_TYPE).unwrap(),
+            "text/plain"
+        );
+        let bytes = to_bytes(resp.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(bytes.as_ref(), b"hello");
     }
 }

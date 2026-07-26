@@ -62,9 +62,19 @@ async fn run(
     // (`operations/admin_ehr_delete_all.yaml`: "may be disabled in production
     // environments, in which case server may respond with 405", with
     // `responses/405.yaml` enumerated), rendered with the openEHR error body.
+    //
+    // This `405` comes from a MATCHED handler, so axum's allow-header machinery
+    // (which only decorates a *method fallback*) never runs and the `Allow`
+    // RFC 9110 §15.5.6 makes mandatory must be stated here. The value is the
+    // EMPTY field value, which is exactly what RFC 9110 §10.2.1 defines for
+    // this situation: "An empty Allow field value indicates that the resource
+    // allows no methods, which might occur in a 405 response if the resource
+    // has been temporarily disabled by configuration." While `admin.enabled` is
+    // off the resource serves no method at all, so no non-empty list would be
+    // truthful.
     if !state.config().admin.enabled {
-        return Ok(crate::overview::error::status_error_response(
-            http::StatusCode::METHOD_NOT_ALLOWED,
+        return Ok(crate::overview::error::method_not_allowed_response(
+            "",
             "the admin API is disabled on this server",
         ));
     }

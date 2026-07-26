@@ -156,9 +156,12 @@ The telemetry environment variables:
 
 Normal openEHR deletes are *logical* — history is retained. The admin API is
 the exception: **physical, irreversible** removal, for legal erasure requests
-and test-data cleanup. It is mounted only when
-`EHRBASE__ADMIN__ENABLED=true` (otherwise its routes are plain `404`s)
-and is classed under admin authorization (the `ADMIN` role).
+and test-data cleanup. It is enabled only by
+`EHRBASE__ADMIN__ENABLED=true` and is classed under admin authorization (the
+`ADMIN` role). While it is disabled every admin route answers
+**405 Method Not Allowed** with an empty `Allow` header — the resource exists
+but currently serves no method (see
+[Error bodies](using-the-api/content-negotiation.md#405-always-names-the-allowed-methods)).
 
 - `DELETE {base}/admin/ehr/{ehr_id}` — physically delete one EHR and
   everything in it. **204** on success, **404** for an unknown id.

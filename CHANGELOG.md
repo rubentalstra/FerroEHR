@@ -17,6 +17,31 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Every `405 Method Not Allowed` now carries an `Allow` header, and the
+  `408`/`413` transport refusals use the openEHR error body** (#400). ITS-REST
+  `docs/overview/Requests_and_responses.md` §"HTTP Methods" answers a method a
+  resource does not serve with `405`, over RFC 9110 — the authority that
+  section names — whose §15.5.6 requires that "the origin server MUST generate
+  an Allow header field in a 405 response containing a list of the target
+  resource's currently supported methods". The router's `405` already carried
+  it; the `405` returned when the **admin API is disabled** did not, because it
+  comes from a matched handler and so never reached the router's allow-header
+  machinery. It now sends the empty field value RFC 9110 §10.2.1 defines for
+  exactly this case ("An empty Allow field value indicates that the resource
+  allows no methods, which might occur in a 405 response if the resource has
+  been temporarily disabled by configuration"). Separately, a request that
+  times out (`408`) or declares a body over the 16 MiB limit (`413`) was
+  answered by the middleware with an empty or `text/plain` body; both now
+  render the same `{ "error", "message" }` JSON every other error path emits.
+  Finally, the deviation behind all of this is now recorded rather than
+  silent: the same spec section *also* SHOULDs `501 Not Implemented` for an
+  unrecognized method, and we answer `405` there too — the two SHOULDs overlap
+  for any method outside the tabulated subset, `405` is a predefined
+  non-conflicting code in the spec's own status table, and a blanket `501`
+  fallback would misreport unknown **paths** that are owed `404`. `501` is
+  still returned for a recognized but unimplemented operation. Adjudicated in
+  the conformance ambiguity register as `AMB-60`, with the wire-surface
+  boundary registered alongside it.
 - **The `openehr-ehr-id` request header now scopes `GET` query execution too,
   and a scope named twice must agree** (#399). ITS-REST
   `docs/query/Request.md` §"About the `ehr_id` parameter" lets clients supply
