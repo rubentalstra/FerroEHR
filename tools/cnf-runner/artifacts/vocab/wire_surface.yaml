@@ -717,19 +717,33 @@ elements:
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (ETag taken from VERSION.uid / EHR.ehr_id, changes on each new version)"
     covered_by: [I_EHR_COMPOSITION.create_composition-event, I_EHR_SERVICE.create_ehr-main]
   - id: header-etag-weak-prefix
-    description: "ETag carries the weak-type W/ prefix (format-independent version identity)."
-    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (ETag is weak-type; should carry the W/ weakness indicator)"
-    covered_by: [I_EHR_COMPOSITION.create_composition-event]
+    description: "Every ETag holding a resource identifier carries the weak-type W/ weakness indicator — on EHR, COMPOSITION, EHR_STATUS, FOLDER, CONTRIBUTION and VERSION responses alike, whatever identifier the service chose to put inside it."
+    source: "ITS-REST Requests_and_responses.md §Deprecated headers (\"The `ETag` response header was used without a weakness indicator `W/`. This is now deprecated, all `ETag` headers that hold a resource identifier MUST include a weakness indicator `W/`\") + §ETag and Last-Modified (the weak-type rationale and the `ETag: W/\"…::…::2\"` shape; the identifier inside is a choice — \"usually taken from e.g. VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value\")"
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-event
+      - I_EHR_COMPOSITION.get_composition_latest
+      - I_EHR_SERVICE.create_ehr-main
+      - I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id
+      - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+      - I_EHR_STATUS.set_ehr_queryable-existing_ehr
+      - I_EHR_DIRECTORY.create_directory-empty_ehr
+      - I_EHR_DIRECTORY.update_directory-ehr_with_directory
+      - I_EHR_CONTRIBUTION.commit_contribution-valid_composition
+      - SIG-VERSION-signature_present
   - id: header-location-on-create
     description: "Location header on 201 Created pointing at the new resource URL."
     source: "ITS-REST Requests_and_responses.md §Location (used in 201 Created; MUST NOT indicate an alternate representation)"
     covered_by: [I_EHR_COMPOSITION.create_composition-event, I_EHR_SERVICE.create_ehr-main]
   - id: header-last-modified
     description: "Last-Modified response header on versioned resources (from VERSION.commit_audit.time_committed)."
-    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (Last-Modified SHOULD be included for VERSION/VERSIONED_OBJECT responses)"
-    exception:
-      reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#396, app/ehrbase-rest/tests/headers.rs): Last-Modified is now emitted on every VERSION read, on the COMPOSITION / EHR_STATUS reads and writes, and on the EHR create, with the value pinned byte-equal to the IMF-fixdate rendering of the served VERSION.commit_audit.time_committed. The presence is DECLARED as `Last-Modified: present` on those binding outcomes. NEW-CASE candidate blocked on the runner capability tracked in #403: `outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified (tools/cnf-runner/src/exec/outcome.rs) — so no executable header assertion exists yet; this gap closes when #403 lands header-matcher evaluation."
+    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (\"Both `ETag` and `Last-Modified` SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\"; \"For openEHR resources, this value should be derived from VERSION.commit_audit.time_committed.value\")"
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-event
+      - I_EHR_COMPOSITION.get_composition_latest
+      - I_EHR_COMPOSITION.get_composition_at_time
+      - I_EHR_SERVICE.create_ehr-main
+      - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+      - SIG-VERSION-signature_present
   - id: header-prefer-return-representation
     description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."
     source: "ITS-REST Requests_and_responses.md §Prefer + §Representation details negotiation (default return=minimal; return=representation returns the full resource)"
@@ -737,15 +751,13 @@ elements:
   - id: header-prefer-return-identifier
     description: "Prefer: return=identifier is honored — the body is the identifier of the affected resource only, at a 201/200 status, never 204 No Content."
     source: "ITS-REST Requests_and_responses.md §Prefer only identifier (\"a variant of preference that implies minimal response semantics, but with a non-empty response body (i.e. the status will be `201 Created` or `200 OK`, never `204 No Content`)\"; \"when application/json is requested … the response body will be a single JSON object with a single uid attribute\")"
-    exception:
-      reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#398, app/ehrbase-rest/src/overview/negotiate.rs unit matrix + app/ehrbase-rest/tests/headers.rs `ehr_status_update_identifier_is_never_204` + tests/directory_http.rs `create_identifier_returns_uid_only` + tests/demographic_http.rs `person_create_identifier_returns_the_uid_body`): the identifier branch is unreachable without an identifier to render, so it can no longer degrade into the 204 minimal body, and the EHR_STATUS PUT — whose minimal outcome IS 204 — answers 200 with the `{uid}` body. NEW-CASE candidate: every binding fixes one `Prefer` value in its request headers, so an identifier variant needs its own variant binding, and its assertion needs the header-matcher evaluation tracked in #403 (`outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified, tools/cnf-runner/src/exec/outcome.rs)."
+    covered_by: [I_EHR_COMPOSITION.create_composition-return_identifier]
   - id: header-preference-applied
     description: "Preference-Applied on a write response names the return preference the response actually applied (return=minimal | return=identifier | return=representation), including the applied default when no Prefer was sent."
     source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#398, app/ehrbase-rest/tests/{headers,demographic_http,flat_http,definition_adl2_http}.rs): every write path — canonical/JSON RM writes, demographic party/relationship/contribution writes, both template uploads, the ITEM_TAG collection writes, and the Simplified-Formats COMPOSITION commit — declares the preference it applied through one seam, and never claims an unapplied preference. The presence is DECLARED as `Preference-Applied: present?` (a MAY) on the create_composition / update_composition binding outcomes. NEW-CASE candidate blocked on the runner capability tracked in #403: `outcomes.*.headers` matchers are parsed but never evaluated."
+      note: "server behaviour fixed + DB-tested (#398, app/ehrbase-rest/tests/{headers,demographic_http,flat_http,definition_adl2_http}.rs): every write path — canonical/JSON RM writes, demographic party/relationship/contribution writes, both template uploads, the ITEM_TAG collection writes, and the Simplified-Formats COMPOSITION commit — declares the preference it applied through one seam, and never claims an unapplied preference. The presence is DECLARED as `Preference-Applied: present?` on the create_composition / update_composition / create_composition#return_identifier binding outcomes, and those declarations now EXECUTE (#403, tools/cnf-runner/src/exec/headers.rs). What is still not assertable is the header itself: the released text makes it a MAY (\"The service MAY include a `Preference-Applied` header\"), and the closed matcher vocabulary offers no if-present-then-equals form — `present?` never fails and a literal/pattern fails on absence, so asserting either the presence or the value would over-claim the MAY. Closes when the matcher vocabulary gains a conditional-value form (extension only by schedule release) — the same closed-vocabulary precedent as method-405-allow-header."
   - id: header-if-match-412
     description: "If-Match precondition on a state-changing method evaluates false → 412 Precondition Failed, latest version_uid echoed in ETag; absent when required → 400."
     source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (412 on false condition; 400 when the service expects If-Match and it is absent)"
@@ -786,15 +798,30 @@ elements:
   - id: header-location-only-on-create
     description: "Location is emitted ONLY on resource creation (and redirects): reads, deletes, and 4xx error responses carry no Location; the version identity travels in the weak ETag."
     source: "ITS-REST Requests_and_responses.md §Location (\"It MUST NOT be used to indicate an alternate representation of an existing resource (e.g. via GET method)\"; \"The Location header MUST ONLY be used for resource creation (e.g., 201 Created) or redirect responses\") + §Deprecated headers (Location deprecated on GET and DELETE responses)"
-    exception:
-      reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#394); the absence is DECLARED as `Location: absent` on the get_party / get_party_at_time / get_party_at_version / delete_party / update_party binding outcomes. NEW-CASE candidate blocked on a runner capability: `outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified (tools/cnf-runner/src/exec/outcome.rs), so no header assertion (present/absent/pattern) executes today."
+    covered_by:
+      - I_EHR_COMPOSITION.get_composition_latest
+      - I_EHR_COMPOSITION.get_composition_at_time
+      - I_EHR_COMPOSITION.get_versioned_composition
+      - I_EHR_COMPOSITION.delete_composition-event
+      - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+      - I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id
+      - I_EHR_DIRECTORY.get_directory-ehr_root_directory
+      - I_EHR_DIRECTORY.delete_directory-ehr_with_directory
+      - I_EHR_CONTRIBUTION.get_contribution-existing
+      - I_DEMOGRAPHIC_SERVICE.get_party-aaaa
+      - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
+      - I_DEMOGRAPHIC_SERVICE.delete_party-aaaa
   - id: header-etag-on-versioned-object-read
     description: "A VERSIONED_OBJECT / VERSION read carries the weak ETag (VERSIONED_OBJECT.uid.value or VERSION.uid.value) and, where the commit instant is available, Last-Modified."
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (\"Both ETag and Last-Modified SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\"; the ETag \"is usually taken from e.g. VERSIONED_OBJECT.uid.value, VERSION.uid.value\", Last-Modified \"derived from VERSION.commit_audit.time_committed.value\")"
-    exception:
-      reason: coverage_gap
-      note: "server behaviour fixed + DB-tested for the demographic versioned reads (#394) and for the EHR-group VERSION / COMPOSITION / EHR_STATUS reads (#396, app/ehrbase-rest/tests/headers.rs); the presence is DECLARED as `ETag` + `Last-Modified` on those binding outcomes. NEW-CASE candidate blocked on two runner capabilities: header matchers are not evaluated (see header-location-only-on-create; tracked as #403), and the /demographic/versioned_party/** resource has no binding of its own — the SM versioned-party reads are realized through I_PARTY.get_party_at_version on /demographic/person/{version_uid}."
+    covered_by:
+      - SIG-VERSION-signature_present
+      - SIG-VERSION-ehr_status_signature
+      - I_EHR_COMPOSITION.delete_composition-audit_headers
+      - I_EHR_COMPOSITION.update_composition-audit_amendment
+      - I_EHR_COMPOSITION.get_composition_version
+      - I_DEMOGRAPHIC_SERVICE.get_party_at_version-aaaa
+      - I_DEMOGRAPHIC_SERVICE.versioned_party_version_read
   # Content negotiation (ITS-REST Requests_and_responses.md §HTTP status codes + Representation details negotiation).
   - id: negotiation-canonical-json
     description: "Canonical-JSON representation negotiated and returned (the default representation)."
@@ -810,8 +837,12 @@ elements:
     covered_by: [SF-EXAMPLE-unsupported_accept]
   - id: negotiation-415-unsupported-media
     description: "Request payload media type unsupported by the method on the target resource → 415 Unsupported Media Type."
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes (415 Unsupported Media Type) + Resources.md §XML Format (\"If the service cannot process the request payload as XML format, it MUST respond with HTTP status code 415 Unsupported Media Type\") and the symmetric §JSON Format sentence"
-    covered_by: [SF-DEPRECATED-media_unsupported, I_DEFINITION_ADL14.upload_opt-wrong_media]
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (415 Unsupported Media Type) + Resources.md §XML Format (\"If the service cannot process the request payload as XML format, it MUST respond with HTTP status code 415 Unsupported Media Type\") and the symmetric §JSON Format sentence (\"If the service cannot process the request payload as JSON format, it MUST respond with HTTP status code 415 Unsupported Media Type\") + §Simplified Formats (the same MUST for the simplified types)"
+    covered_by:
+      - SF-DEPRECATED-media_unsupported
+      - SF-LEGACY-nc_flat_media_unsupported
+      - I_DEFINITION_ADL14.upload_opt-wrong_media
+      - I_EHR_COMPOSITION.create_composition-wrong_media
   - id: negotiation-json-accept-on-template-get
     description: "Accept: application/json on the ADL 1.4 OPT GET is fulfilled with the Web Template JSON document (the only JSON template representation the released text defines), not refused."
     source: "ITS-REST Resources.md §JSON Format (an Accept the service cannot fulfil is 406, so a fulfilled one returns a body) + §Simplified Formats (application/openehr.wt+json = the Operational Template as Web Template JSON); the representation itself rests on register AMB-58 (the released source enumerates application/json on this operation without declaring a schema for it)"
@@ -819,9 +850,12 @@ elements:
   - id: negotiation-response-content-type-mirrors-accept
     description: "The response Content-Type is the media type the client negotiated — a read accepted as application/json is answered application/json, never in another type the client did not accept."
     source: "ITS-REST Resources.md §JSON Format (\"Proper header Content-Type: application/json MUST be present in the response of the service unless the response has no content body\") + §XML Format (the same MUST for application/xml)"
-    exception:
-      reason: coverage_gap
-      note: "server behaviour fixed + HTTP-tested (#397, app/ehrbase-rest/tests/template_adl14_http.rs: the ADL 1.4 template GET now answers Accept: application/json with Content-Type: application/json and keeps application/openehr.wt+json for the wt Accept); the presence is DECLARED as `Content-Type: negotiated` on the get_opt binding outcome. NEW-CASE candidate blocked on the runner capability tracked in #403: `outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified (tools/cnf-runner/src/exec/outcome.rs) — so no executable Content-Type assertion exists yet; this gap closes when #403 lands header-matcher evaluation."
+    covered_by:
+      - SF-WT-web_template_json_accept
+      - I_EHR_COMPOSITION.get_composition_latest
+      - I_EHR_COMPOSITION.create_composition-event
+      - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
+      - I_EHR_CONTRIBUTION.get_contribution-existing
   # Error-body + deprecated-media families.
   - id: error-body-family
     description: "For 4xx/5xx, services MAY return additional error details ({message, code, errors[]}) when Prefer: return=representation is present; the runner asserts at most a message string (loose)."
@@ -860,7 +894,7 @@ elements:
     exception:
       reason: coverage_gap
       register: AMB-60
-      note: "server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/http.rs `recognized_but_unallowed_method_is_405_with_allow` / `unrecognized_method_is_405_with_allow` for the router fallback, app/ehrbase-rest/tests/admin_http.rs `disabled_admin_is_405_and_never_deletes` / `disabled_admin_config_is_405` for the handler-produced 405 of the config-gated admin group, plus the unit matrix in app/ehrbase-rest/src/overview/error.rs). Not authorable as a case today for TWO independent model reasons: the binding request model's method vocabulary is closed to {GET, POST, PUT, DELETE, HEAD} (tools/cnf-runner/src/vocab.rs `HttpMethod`), so a deliberately wrong-but-known or arbitrary method on a known path cannot be expressed, and the closed outcome taxonomy (vocab/outcomes.yaml) has no method_not_allowed kind — the same shape as the case-transform precedent. The Allow assertion additionally needs the header-matcher evaluation tracked in #403 (`outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified, tools/cnf-runner/src/exec/outcome.rs). Closes when the method vocabulary and the outcome taxonomy gain those members (extension only by schedule release) and #403 lands."
+      note: "server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/http.rs `recognized_but_unallowed_method_is_405_with_allow` / `unrecognized_method_is_405_with_allow` for the router fallback, app/ehrbase-rest/tests/admin_http.rs `disabled_admin_is_405_and_never_deletes` / `disabled_admin_config_is_405` for the handler-produced 405 of the config-gated admin group, plus the unit matrix in app/ehrbase-rest/src/overview/error.rs). Not authorable as a case today for TWO independent model reasons: the binding request model's method vocabulary is closed to {GET, POST, PUT, DELETE, HEAD} (tools/cnf-runner/src/vocab.rs `HttpMethod`), so a deliberately wrong-but-known or arbitrary method on a known path cannot be expressed, and the closed outcome taxonomy (vocab/outcomes.yaml) has no method_not_allowed kind — the same shape as the case-transform precedent. The Allow assertion itself is now expressible — header matchers execute since #403 (tools/cnf-runner/src/exec/headers.rs) — so the only remaining blockers are the two closed vocabularies. Closes when the method vocabulary and the outcome taxonomy gain those members (extension only by schedule release)."
   - id: method-501-unrecognized-method-deviation
     description: "An unrecognized method is answered 405 (with Allow) rather than the 501 the overview SHOULDs, while 501 stays the answer for a recognized-but-unimplemented operation."
     source: "ITS-REST Requests_and_responses.md §HTTP Methods states two SHOULDs whose antecedents overlap for any method outside the tabulated subset (unrecognized AND not allowed for the target resource) and gives no precedence — adjudicated in register AMB-60; 405 is a predefined row of §HTTP status codes and so cannot conflict with it (\"Additional status codes MAY be used as long as they do not conflict with the predefined codes\"), while a blanket 501 fallback would also swallow unrouted paths owed the 404 of the same table"
@@ -868,3 +902,68 @@ elements:
       reason: coverage_gap
       register: AMB-60
       note: "the deviation is registered, not silent, and its 405 half is exercised by the app tests listed on method-405-allow-header. Not authorable as a case today for the same closed-vocabulary reasons (no arbitrary method in the binding request model, no method_not_allowed outcome kind); the 501 half that IS realized — a recognized but unimplemented operation — has no ITS-REST 1.1.0 operation on this SUT that reaches it, since every mounted operation is implemented."
+  # Authentication challenge (ITS-REST Requests_and_responses.md §Authentication
+  # and authorization).
+  - id: header-www-authenticate-401
+    description: "A 401 refusal carries the WWW-Authenticate response header — the authentication challenge, not a bare status."
+    source: "ITS-REST Requests_and_responses.md §Authentication and authorization (\"If authentication and authorization are required, services MUST properly use the `WWW-Authenticate` and/or `Proxy-Authenticate` response headers, returning `403 Forbidden`, `401 Unauthorized` or `407 Proxy Authentication` as applicable\") + §HTTP status codes (row 401) over RFC 9110, the authority §HTTP headers names for the standard headers (§15.5.2: \"The server generating a 401 response MUST send a WWW-Authenticate header field … containing at least one challenge applicable to the target resource\"; `Proxy-Authenticate` is the 407 counterpart, §15.5.8)"
+    covered_by: [SEC-AUTHENTICATED_ACCESS-www_authenticate_challenge]
+  # Canonical-JSON serialization discipline (ITS-REST Resources.md §JSON Format).
+  - id: json-null-empty-list-absent
+    description: "RM attributes that are Null or an empty list are absent from the canonical-JSON representation — never rendered as a JSON null or an empty array, even for required attributes."
+    source: "ITS-REST Resources.md §JSON Format (\"The RM attributes (even required ones) that are `Null` or an empty list (array) SHOULD be absent when serialized as JSON\")"
+    covered_by: [I_EHR_COMPOSITION.create_composition-null_empty_absent]
+  # Datetime handling (ITS-REST Resources.md §Datetime format).
+  - id: datetime-body-lexical-preservation
+    description: "A date/datetime/time value inside a request body is stored and read back in the client's own lexical form — offset and fractional-second precision unchanged, never normalized to UTC or reformatted."
+    source: "ITS-REST Resources.md §Datetime format (\"Any date, datetime or time value provided as part of the HTTP message body, when creating or updating a resource (e.g. a DV_DATE_TIME value inside the COMPOSITION content), will be preserved as it was sent by the client, and passed to the underlying backend engine as is\"; \"Retrieval or querying those resources SHOULD return date, datetime, or time values in the (original) format provided by underlying backend engine, avoiding any format change\")"
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-datetime_lexical
+      - SF-MAP-temporal
+  - id: datetime-param-timezone-offset-full
+    description: "A datetime request parameter supplied in the extended ISO 8601 form WITH a timezone designator (the `Z`/±hh:mm branch of the general form) is accepted and resolved at that instant — the offset-bearing half of the version_at_time / time_range parameter grammar."
+    source: "ITS-REST Resources.md §Datetime format (\"HTTP query parameters and path segments that are dates, datetimes, or times, MUST always use the _extended_ ISO 8601 format. The general form of a datetime is `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`\") — the bracketed designator is the branch this element covers; the offset-LESS branch (\"Timezone SHOULD be only supplied when needed, otherwise the local timezone is assumed\") is the separate datetime-param-timezone-optional element"
+    covered_by:
+      - I_EHR_COMPOSITION.get_composition_at_time
+      - I_EHR_COMPOSITION.get_composition_at_times
+      - I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory
+      - I_EHR_DIRECTORY.get_directory_at_time-ehr_with_directory_versions
+      - I_DEMOGRAPHIC_SERVICE.get_party_at_time-aaaa
+  # Legacy / experimental alternative data formats (ITS-REST Resources.md
+  # §Alternative data formats).
+  - id: media-legacy-alternative-formats
+    description: "The legacy/experimental alternative media types (application/openehr.nc.flat+json, application/openehr.tds2+xml) are MAY-level: a server that does not support them refuses an unprocessable payload 415 and an unfulfillable Accept 406, on both the request and the response side."
+    source: "ITS-REST Resources.md §Alternative data formats (\"Legacy or experimental formats: `application/openehr.nc.flat+json` based on the ECISFLAT format, `application/openehr.tds2+xml` for TDS simplification of RM as XML\") + §Data representation (\"other alternative formats MAY be supported as well, depending on the use case\") + §Simplified Formats / §XML Format / §JSON Format (the 415 and 406 MUSTs); the MAY-level support is adjudicated in register AMB-61 (option_select)"
+    covered_by:
+      - SF-LEGACY-nc_flat_media_unsupported
+      - SF-LEGACY-tds2_accept_unsupported
+  # openehr-uri response header (ITS-REST Requests_and_responses.md §openehr-uri).
+  - id: header-openehr-uri-declined-may
+    description: "The openehr-uri response header advertising a DV_EHR_URI form of the resource is a service-level MAY that this catalogue declines to require: the released text conditions it on the service supporting DV_EHR_URI generation at all, and defines neither an operation set nor an obligation, so neither presence nor absence is assertable."
+    source: "ITS-REST Requests_and_responses.md §openehr-uri (\"If the service supports generating resource URIs in the format defined by the DV_EHR_URI class, it MAY include the openehr-uri response header for applicable openEHR resources\") — a doubly-conditional MAY (\"if the service supports\" + \"MAY\" + \"applicable\" resources left unenumerated); RM data_types §DV_EHR_URI defines the URI form itself but assigns no HTTP behaviour"
+    exception:
+      reason: statement_declared
+      note: "An honest declined boundary, not a coverage gap: there is no conformance obligation to test. `present` would over-claim a MAY on a capability the text lets a service lack entirely, and `absent` would forbid what the text explicitly permits — the closed matcher vocabulary has no if-present-then-well-formed form. A service that does emit the header declares that capability in its ICS; the shape it must then carry is the DV_EHR_URI lexical form (RM data_types), which no ITS-REST sentence binds to any operation. Revisits if a future ITS-REST release enumerates the applicable resources or raises the MAY."
+  # Prefer object-reference resolution (ITS-REST Requests_and_responses.md
+  # §Prefer resolving Object references).
+  - id: header-prefer-resolve-refs
+    description: "Prefer: return=representation, resolve_refs asks the service to resolve OBJECT_REFs into full or partial representations."
+    source: "ITS-REST Requests_and_responses.md §Prefer resolving Object references (\"Clients MAY request that object references (e.g., OBJECT_REF) be resolved into full or partial representations by specifying: `Prefer: return=representation, resolve_refs`\"; \"This is particularly useful when retrieving lists of COMPOSITION resources within an EHR, where the default behavior is to return only reference links\")"
+    exception:
+      reason: coverage_gap
+      note: "The released text states the CLIENT side only — what a client may ask for. It assigns the service no obligation to honour the token, names no status, no `Preference-Applied` value, no failure mode, and no resource on which resolution is defined (the one worked example, \"lists of COMPOSITION resources within an EHR\", is not an ITS-REST 1.1.0 operation). There is therefore no docs-text sentence that assigns an observable outcome to a resolve_refs request, and asserting one — even 'the read still succeeds' — would be catalogue invention rather than a spec expectation. Registered as an honest boundary rather than covered by a case that pins nothing; the sibling preferences ARE covered (header-prefer-return-representation, header-prefer-return-identifier). Closes when a future ITS-REST release states a server obligation for the token."
+  # Deprecated custom-header spellings (ITS-REST Requests_and_responses.md
+  # §Deprecated headers — the five-row rename table). Each deprecated name is a
+  # genuinely DIFFERENT HTTP field name after case-insensitive folding (the
+  # openEHR-* rows carry underscores where the Release-1.1.0 names carry
+  # hyphens), so a server reading only the new name silently ignores the old.
+  - id: header-deprecated-template-id-spelling
+    description: "The deprecated committal header name openEHR-TEMPLATE_ID still identifies the template of a Simplified-Format COMPOSITION commit."
+    source: "ITS-REST Requests_and_responses.md §Deprecated headers (the openEHR-TEMPLATE_ID -> openehr-template-id table row; \"While the deprecated headers remain available for backward compatibility, their use is strongly discouraged\") + §openehr-template-id (\"The `openehr-template-id` request header MUST be used whenever committing COMPOSITION (via `PUT` or `POST` methods) using a Simplified Format …\")"
+    covered_by: [I_EHR_COMPOSITION.create_composition-deprecated_template_id]
+  - id: header-deprecated-version-and-ehr-id-spellings
+    description: "The remaining deprecated request-header spellings — openEHR-VERSION (the committal VERSION metadata) and openEHR-EHR-id (the query EHR-scope header) — are still accepted under their Release-1.1.0 semantics."
+    source: "ITS-REST Requests_and_responses.md §Deprecated headers (the openEHR-VERSION -> openehr-version and openEHR-EHR-id -> openehr-ehr-id table rows; \"the deprecated headers remain available for backward compatibility\") + §openehr-version and openehr-audit-details (the VERSION metadata the first row carries) + query Request.md §About the ehr_id parameter (the EHR-scope header the last row carries)"
+    exception:
+      reason: coverage_gap
+      note: "NEW-CASE candidates, one variant binding each: an update_composition variant sending `openEHR-VERSION: lifecycle_state.code_string=\"532\"` (asserting the lifecycle_state reaches the committed VERSION, the way update_composition-audit_bare_deprecated does for openEHR-AUDIT_DETAILS), and an ad-hoc-query variant sending `openEHR-EHR-id` (asserting the single-EHR scoping the query-ehr-id-request-header element covers under the new name). Both spellings are already exercised INDIRECTLY — the mechanism is the same case-insensitive-name fallback the openEHR-AUDIT_DETAILS and openEHR-TEMPLATE_ID rows pin with real cases — but indirect coverage is not coverage, so the two rows are registered here rather than left silent. The fifth table row, openEHR-uri, is a RESPONSE header and is a declined MAY (header-openehr-uri-declined-may), not a gap."

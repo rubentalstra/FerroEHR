@@ -739,3 +739,49 @@ AMB-60:
     Revisits if a future ITS-REST release raises either sentence to a MUST or
     states a precedence.
   disposition: fixed_handling
+AMB-61:
+  ambiguity: >-
+    Whether a service accepts or serves the LEGACY / experimental alternative
+    data formats is implementation-defined. ITS-REST 1.1.0 enumerates them
+    ("Legacy or experimental formats: application/openehr.nc.flat+json based on
+    the ECISFLAT format, application/openehr.tds2+xml for TDS simplification of
+    RM as XML, …") but mandates none of them: "Services MUST support at least
+    one of the openEHR XML or JSON canonical formats for resource
+    representation. Additionally, the Simplified Formats format SHOULD be
+    supported, while other alternative formats MAY be supported as well,
+    depending on the use case." The released text also warns the set is
+    unstable — "Some of these formats might not be supported once they become
+    obsolete or superseded by newer formats" — so neither support nor refusal
+    can be asserted unconditionally. What the text DOES fix is the refusal
+    shape once a service does not support a type: an unprocessable request
+    payload is 415 and an unfulfillable Accept is 406.
+  source: >-
+    ITS-REST specifications/docs/overview/Resources.md §Alternative data
+    formats (the legacy/experimental list) + §Data representation (canonical
+    MUST, Simplified SHOULD, "other alternative formats MAY be supported as
+    well") + §Simplified Formats ("If the service cannot process the request
+    payload as the simplified format is not supported, it MUST respond with
+    HTTP status code 415 Unsupported Media Type"; "If the service cannot
+    fulfil this aspect of the request, it MUST respond with HTTP status code
+    406 Not Acceptable") + §XML Format / §JSON Format (the same 415/406 MUSTs
+    for the canonical types) — MAY-level support and MUST-level refusal shape
+    CONFIRMED first-hand.
+  handling: >-
+    Sibling cases carry option tags; the ICS options declaration selects which
+    applies — the declared behaviour MUST pass, the undeclared sibling is
+    not-applicable. The legacy-alt-formats-unsupported branch is executable
+    today: SF-LEGACY-nc_flat_media_unsupported expects unsupported_media (415)
+    for a commit declaring application/openehr.nc.flat+json, and
+    SF-LEGACY-tds2_accept_unsupported expects not_acceptable (406) for an
+    Accept of application/openehr.tds2+xml. The legacy-alt-formats-supported
+    branch has no case: the released text defines neither a canonical mapping
+    nor a schema for either legacy representation ("based on the ECISFLAT
+    format" / "see this wiki page" are the only pointers, both outside the
+    specification), so there is nothing spec-grounded to assert about a
+    successful exchange — the tag exists so a supporting SUT declares itself
+    out of the unsupported branch rather than failing it. Distinct from AMB-39,
+    which governs the DEPRECATED pre-1.1.0 SDT-era .schema+json types
+    (superseded equivalents of a CURRENT format, not legacy formats of their
+    own).
+  disposition: option_select
+  options: [legacy-alt-formats-supported, legacy-alt-formats-unsupported]

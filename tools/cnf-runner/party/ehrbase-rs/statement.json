@@ -74,6 +74,7 @@
   "options": [
     "adl14-duplicate-conflict",
     "directory-empty-error",
+    "legacy-alt-formats-unsupported",
     "sf-deprecated-types-unsupported"
   ],
   "performance": {
