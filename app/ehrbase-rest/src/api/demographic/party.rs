@@ -47,7 +47,14 @@ pub(super) async fn run(
             // (overview::error::sm_api_error) — `?` routes each to its status.
             let mut resp = state
                 .backend()
-                .party_create(kind, body, crate::overview::committal::committal_audit(h))
+                .party_create(
+                    kind,
+                    body,
+                    crate::overview::committal::committal_audit(
+                        h,
+                        crate::api::ehr::committer_proxy(),
+                    ),
+                )
                 .await?;
             // the incoming `openehr-item-tag` request header (person_create.yaml)
             // carries ITEM_TAGs to persist. The party must exist first
@@ -92,7 +99,10 @@ pub(super) async fn run(
                     // OBJECT_VERSION_ID (overview §"`ETag` and Last-Modified").
                     super::if_match_token(&p.if_match),
                     body,
-                    crate::overview::committal::committal_audit(h),
+                    crate::overview::committal::committal_audit(
+                        h,
+                        crate::api::ehr::committer_proxy(),
+                    ),
                 )
                 .await
             {
@@ -197,7 +207,7 @@ async fn run_delete(
             kind,
             preceding.clone(),
             super::if_match_of(h),
-            crate::overview::committal::committal_audit(h),
+            crate::overview::committal::committal_audit(h, crate::api::ehr::committer_proxy()),
         )
         .await
     {

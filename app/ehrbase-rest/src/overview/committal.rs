@@ -143,16 +143,17 @@ fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, Str
 /// headers accepted on `PUT`, `POST` **and** `DELETE`). `None` when no
 /// committal header is present, so a plain request keeps the server-default
 /// attribution path.
-// TODO: seed this merge with the request's authenticated committer the way
-// `committal_commit` does — a request that supplies only `description`
-// currently attributes the commit to `UpdateVersion::direct`'s system
-// placeholder instead of the principal, which overwrites a default the client
-// never supplied (overview §"openehr-version and openehr-audit-details":
-// only "whatever is provided" is merged).
+/// Seeded with the request's authenticated committer (the same seed
+/// `committal_commit` takes), so a header set that supplies only
+/// `description` keeps the PRINCIPAL as committer — the merge only replaces
+/// "whatever is provided" (overview §"openehr-version and
+/// openehr-audit-details"); the `UpdateVersion::direct` system placeholder
+/// is never a default the client chose.
 pub(crate) fn committal_audit(
     headers: &HeaderMap,
+    committer: openehr_rm::prelude::PartyProxy,
 ) -> Option<ehrbase::service::version_update::UpdateAudit> {
-    merged_committal(headers, None).map(|c| c.audit)
+    merged_committal(headers, Some(committer)).map(|c| c.audit)
 }
 
 /// The full committal metadata — merged `UPDATE_AUDIT` **and** the VERSION
@@ -484,15 +485,38 @@ mod tests {
     #[test]
     fn committal_audit_blanks_the_placeholder_change_type() {
         let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
-        let audit = committal_audit(&h).expect("headers present");
+        let audit = committal_audit(
+            &h,
+            openehr_its::json::from_canonical_value(
+                &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "principal" }),
+            )
+            .expect("committer"),
+        )
+        .expect("headers present");
         assert_eq!(audit.change_type.code_string, "");
         assert_eq!(audit.description.as_deref(), Some("why"));
 
         let h = headers(&[(H_AUDIT_DETAILS, "change_type.code_string=\"250\"")]);
-        let audit = committal_audit(&h).expect("headers present");
+        let audit = committal_audit(
+            &h,
+            openehr_its::json::from_canonical_value(
+                &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "principal" }),
+            )
+            .expect("committer"),
+        )
+        .expect("headers present");
         assert_eq!(audit.change_type.code_string, "250");
 
-        assert!(committal_audit(&HeaderMap::new()).is_none());
+        assert!(
+            committal_audit(
+                &HeaderMap::new(),
+                openehr_its::json::from_canonical_value(
+                    &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": "principal" })
+                )
+                .expect("committer")
+            )
+            .is_none()
+        );
     }
 
     // ── development-edition form (the worked example, lines 85–91) ───────────
@@ -581,6 +605,34 @@ mod tests {
         ]);
         merge_committal_headers(&mut uv, &h);
         assert_eq!(uv.audit.change_type.code_string, "251");
+    }
+
+    /// A header set supplying only `description` keeps the SEEDED principal
+    /// as committer — the merge replaces "whatever is provided", never the
+    /// default (overview §"openehr-version and openehr-audit-details").
+    #[test]
+    fn committal_audit_keeps_the_seeded_principal_committer() {
+        let seed = openehr_its::json::from_canonical_value(&serde_json::json!({
+            "_type": "PARTY_IDENTIFIED", "name": "dr-alice"
+        }))
+        .expect("committer");
+        let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
+        let audit = committal_audit(&h, seed).expect("headers present");
+        let committer = openehr_its::json::to_canonical_value(&audit.committer);
+        assert_eq!(
+            committer["name"], "dr-alice",
+            "principal survives a partial header set"
+        );
+
+        // A header-supplied committer still wins over the seed.
+        let seed = openehr_its::json::from_canonical_value(&serde_json::json!({
+            "_type": "PARTY_IDENTIFIED", "name": "dr-alice"
+        }))
+        .expect("committer");
+        let h = headers(&[(H_AUDIT_DETAILS, "committer.name=\"Locum\"")]);
+        let audit = committal_audit(&h, seed).expect("headers present");
+        let committer = openehr_its::json::to_canonical_value(&audit.committer);
+        assert_eq!(committer["name"], "Locum");
     }
 
     /// `committal_commit` carries BOTH halves of the merge from ONE parse: the

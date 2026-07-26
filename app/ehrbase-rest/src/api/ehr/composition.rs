@@ -282,7 +282,8 @@ pub(super) async fn run(
             // request headers are accepted and merged here too (overview
             // §"openehr-version and openehr-audit-details": PUT, POST and
             // DELETE).
-            let update_audit = crate::overview::committal::committal_audit(h);
+            let update_audit =
+                crate::overview::committal::committal_audit(h, super::committer_proxy());
             match state
                 .backend()
                 .delete_composition(ehr_id, &ovid, update_audit.as_ref())

@@ -278,6 +278,7 @@ async fn versioned_writes_document_if_match_and_412() {
 /// `406` MUST. `Requests_and_responses.md` §Location confines `Location` to
 /// creation responses, so a read MUST NOT declare it.
 #[tokio::test]
+#[allow(clippy::too_many_lines)] // one regression test per audited group keeps the pins together
 async fn ehr_resource_operations_are_fully_documented() {
     const EHR: &str = "/ehrbase/rest/openehr/v1/ehr";
     const EHR_BY_ID: &str = "/ehrbase/rest/openehr/v1/ehr/{ehr_id}";
