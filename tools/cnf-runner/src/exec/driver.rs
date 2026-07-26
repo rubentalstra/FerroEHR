@@ -1279,6 +1279,37 @@ impl HttpDriver<'_> {
 }
 
 impl HttpDriver<'_> {
+    /// Execute the wire expectation's declared header matchers (#403,
+    /// `exec/headers.rs`) and body selector (#415, `exec/bodies.rs`) against
+    /// the exchange. `prefer_conditional`/`error_loose` branch on the
+    /// `Prefer` this request actually sent, so the sent value travels with
+    /// the negotiated `Accept`.
+    fn eval_wire_expectation(
+        &self,
+        expectation: &crate::model::binding::WireExpectation,
+        exchange: &Exchange,
+        sent_headers: &BTreeMap<String, String>,
+        vars: &VarStore,
+    ) -> Vec<String> {
+        let header_ctx = crate::exec::headers::RequestContext {
+            accept: sent_headers.get("Accept").map(String::as_str),
+            last_version_uid: self.last_version_uid.as_deref(),
+        };
+        let mut failures =
+            crate::exec::headers::evaluate(expectation, &exchange.headers, &header_ctx, vars);
+        let body_ctx = crate::exec::bodies::RequestContext {
+            accept: sent_headers.get("Accept").map(String::as_str),
+            prefer: sent_headers.get("Prefer").map(String::as_str),
+        };
+        failures.extend(crate::exec::bodies::evaluate(
+            expectation,
+            exchange.body.as_ref(),
+            &exchange.headers,
+            &body_ctx,
+        ));
+        failures
+    }
+
     /// Remember the newest `version_uid` a SUCCESS outcome's binding capture
     /// yields on this row — the `latest-version-uid` header matcher's
     /// comparison source. Only success-class outcomes advance it (an error
@@ -1696,21 +1727,18 @@ impl StepDriver for HttpDriver<'_> {
         // aborts otherwise, law b) — evaluate optimistically here.
         let mut assertion_failures =
             self.eval_assertions(case, binding, &step.assertions, &exchange, vars);
-        // The expected outcome's declared header matchers are executed
-        // assertions too (issue #403 — they were parsed but never
-        // evaluated). Evaluated only when the observation IS the expected
-        // kind: the declarations belong to that outcome's wire expectation.
+        // The expected outcome's declared header matchers and body selector
+        // are executed assertions too (issues #403 + #415 — both were parsed
+        // but never evaluated). Evaluated only when the observation IS the
+        // expected kind: the declarations belong to that outcome's wire
+        // expectation.
         if observation == Observation::Kind(expected)
             && let Some(expectation) = binding.outcome(expected)
         {
-            let ctx = crate::exec::headers::RequestContext {
-                accept: headers.get("Accept").map(String::as_str),
-                last_version_uid: self.last_version_uid.as_deref(),
-            };
-            assertion_failures.extend(crate::exec::headers::evaluate(
+            assertion_failures.extend(self.eval_wire_expectation(
                 expectation,
-                &exchange.headers,
-                &ctx,
+                &exchange,
+                &headers,
                 vars,
             ));
         }
