@@ -27,8 +27,6 @@ request:
 # HRID, not the addressed (possibly partial) template_id.
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
-# declaration is the authored contract, not an executed assertion — it becomes
-# executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
   created:
     status: 201                                   # 201_Template_adl2_upload.yaml

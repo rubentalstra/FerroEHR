@@ -12,8 +12,16 @@ request:
   method: GET
   path: /ehr/{ehr_id}/versioned_composition/{versioned_object_uid}
 formats: [canonical-json, canonical-xml]
+# `Location` MUST BE ABSENT on this outcome — ITS-REST overview
+# `Requests_and_responses.md` §Location: "It MUST NOT be used to indicate an
+# alternate representation of an existing resource (e.g. via `GET` method)" /
+# "The `Location` header MUST ONLY be used for resource creation (e.g.,
+# `201 Created`) or redirect responses"; §Deprecated headers deprecates it on
+# `GET` and `DELETE` responses alike.
 outcomes:
   ok:
     status: 200                           # 200_VERSIONED_COMPOSITION.yaml
-    headers: { Content-Type: negotiated }
+    headers:
+      Content-Type: negotiated
+      Location: absent                    # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # unknown ehr_id or versioned_object_uid (404_unknown_ehr_id_or_versioned_object_uid.yaml)

@@ -14,11 +14,20 @@ request:
   headers:
     Prefer: "return=representation"
 formats: [canonical-json, canonical-xml]
+# The `ETag` weakness indicator is a MUST, not a style note — ITS-REST overview
+# `Requests_and_responses.md` §Deprecated headers: "The `ETag` response header
+# was used without a weakness indicator `W/`. This is now deprecated, all
+# `ETag` headers that hold a resource identifier MUST include a weakness
+# indicator `W/`" (§"ETag and Last-Modified" gives the shape:
+# `ETag: W/"8849182c-…::openEHRSys.example.com::2"`). The matcher asserts the
+# weak entity-tag envelope only; the identifier INSIDE it is left unconstrained
+# because the same section makes the source a choice ("usually taken from e.g.
+# VERSIONED_OBJECT.uid.value, VERSION.uid.value, EHR.ehr_id.value, etc.").
 outcomes:
   created:
     status: 201                           # 201_directory.yaml
     headers:
-      ETag: present                        # ETag_FOLDER.yaml (weak, W/"<version_uid>")
+      ETag: 'pattern:W/"[^"]+"'          # ETag_FOLDER.yaml (weak, W/"<version_uid>")
       Location: present                    # Location_directory.yaml
       Content-Type: negotiated
     body: prefer_conditional

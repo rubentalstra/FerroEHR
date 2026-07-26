@@ -31,13 +31,18 @@ formats: [canonical-json, canonical-xml]
 # should be derived from `VERSION.commit_audit.time_committed.value`".
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
-# declaration is the authored contract, not an executed assertion — it becomes
-# executable when #403 wires header-matcher evaluation into the step judgement.
+# `Location` MUST BE ABSENT on this outcome — ITS-REST overview
+# `Requests_and_responses.md` §Location: "It MUST NOT be used to indicate an
+# alternate representation of an existing resource (e.g. via `GET` method)" /
+# "The `Location` header MUST ONLY be used for resource creation (e.g.,
+# `201 Created`) or redirect responses"; §Deprecated headers deprecates it on
+# `GET` and `DELETE` responses alike.
 outcomes:
   ok:
     status: 200                           # overview §HTTP status codes (200 OK — payload = the ORIGINAL_VERSION)
     headers:
       Content-Type: negotiated
-      ETag: present
+      ETag: 'pattern:W/"[^"]+"'           # the weakness indicator is a MUST — overview §Deprecated headers
       Last-Modified: present
+      Location: absent                    # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # overview §HTTP status codes (404 — target resource not found)

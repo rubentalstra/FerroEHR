@@ -34,8 +34,6 @@ formats: [canonical-json, canonical-xml]
 # should be derived from `VERSION.commit_audit.time_committed.value`".
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
-# declaration is the authored contract, not an executed assertion — it becomes
-# executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
   ok:
     status: 200                           # overview §HTTP status codes (200 OK — payload = the ORIGINAL_VERSION)
@@ -43,6 +41,7 @@ outcomes:
       Content-Type: negotiated
       ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
       Last-Modified: present
+      Location: absent                    # read — overview §Location / §Deprecated headers
   not_found: { status: 404 }              # overview §HTTP status codes (404 — target resource not found)
 captures:
   # The envelope's stored signature (RM common master06 §Digital Signature:

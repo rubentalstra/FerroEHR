@@ -14,8 +14,17 @@ request:
   path: /ehr/{ehr_id}/directory
   headers:
     If-Match: '"${preceding_version_uid?}"'   # REQUIRED when a directory exists (If-Match.yaml); realizes SM preceding_version_uid (ITS-REST overview §If-Match)
+# `Location` MUST BE ABSENT on this outcome — ITS-REST overview
+# `Requests_and_responses.md` §Location: "It MUST NOT be used to indicate an
+# alternate representation of an existing resource (e.g. via `GET` method)" /
+# "The `Location` header MUST ONLY be used for resource creation (e.g.,
+# `201 Created`) or redirect responses"; §Deprecated headers deprecates it on
+# `GET` and `DELETE` responses alike.
 outcomes:
-  deleted: { status: 204 }                # 204_deleted.yaml — logical delete performed
+  deleted:
+    status: 204                           # 204_deleted.yaml — logical delete performed
+    headers:
+      Location: absent                    # DELETE — overview §Deprecated headers
   precondition_failed:
     status: 412                           # 412_directory.yaml (stale If-Match)
     headers: { ETag: latest-version-uid }
