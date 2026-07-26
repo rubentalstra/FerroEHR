@@ -42,6 +42,15 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   (`page_window`/`page_rows`) is pure and unit-tested; the AQL-windowed tables
   (EHRs, compositions, results) keep their offset controls until the wire
   reports a total.
+- **Every AQL result set is charted by ONE kit — `components::results_chart`**
+  (both query screens' results panes call it). What the chart shows is decided by
+  the component-free, unit-tested `chart_model`: one series per mostly-numeric
+  column, every ISO-8601 column offered as a real time axis with the row order as
+  the fallback, and the tick-label granularity. Keep that derivation pure (it is
+  what makes the chart hydration-safe) and keep the view thin: a legend-hidden
+  series is drawn as `f64::NAN` — chartistry's missing-data marker — rather than
+  by rebuilding the chart, and each line pins its palette colour by index so
+  hiding one never recolours the others.
 
 ## Error feedback: toast vs inline (one rule, 2026-07-25)
 
