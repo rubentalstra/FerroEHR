@@ -162,11 +162,15 @@ pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
 // This module owns only the header parse/emit; the dispatch call sites live
 // outside `overview/`. The EHR group consumes them: on a change-controlled
 // `PUT`/`POST` `crate::api::ehr::apply_item_tag_headers` calls
-// `parse_item_tag_header` for both header names and forwards the entries to the
-// ITEM_TAG service for the target VERSION/VERSIONED_OBJECT (empty value ⇒
-// delete all), and `crate::api::ehr::echo_item_tags` optionally echoes the
-// stored tags with `emit_item_tag_header` on the response. The demographic
-// group does not yet emit these wrapper headers (a pending service seam).
+// `parse_item_tag_header` for both header names and forwards each header's
+// entries to the ITEM_TAG service for the target that header applies to —
+// `openehr-item-tag` → the VERSIONED_OBJECT, `openehr-version-item-tag` → the
+// committed VERSION (empty value ⇒ delete all) — and
+// `crate::api::ehr::echo_item_tags` optionally echoes each target's stored
+// list under its own header name with `emit_item_tag_header`. The demographic
+// group emits both headers from one set on reads/creates
+// (`crate::api::demographic`), because demographic tags are stored against the
+// VERSIONED_OBJECT only, so the two targets' lists coincide there.
 
 /// The canonical HTTP header names for the two `ITEM_TAG` wrapper headers.
 pub(crate) const H_ITEM_TAG: &str = "openehr-item-tag";

@@ -265,6 +265,11 @@ fn respond_party(
 /// `ETag`/`Last-Modified` + the `Location` of the version this write committed
 /// (overview §Location — creation/redirect only; §"Prefer minimal…" — "the
 /// newly created or updated resource").
+///
+/// The body + `Preference-Applied` go through the shared
+/// [`negotiate::write_negotiated`] seam, so a demographic write honours the
+/// full `Prefer` triad (representation / identifier / minimal) and declares
+/// the preference it applied exactly like every other write route.
 fn write_party(
     kind: PartyKind,
     h: &HeaderMap,
@@ -273,11 +278,13 @@ fn write_party(
     repr_status: StatusCode,
     resp: &ServiceResponse,
 ) -> Response {
-    let mut out = if negotiate::prefers_representation(h) {
-        respond_party(kind, h, repr_status, &resp.body)
-    } else {
-        negotiate::empty(minimal_status)
-    };
+    let mut out = negotiate::write_negotiated(
+        h,
+        minimal_status,
+        repr_status,
+        resp.meta.as_ref().map(|m| m.uid.as_str()),
+        |status| respond_party(kind, h, status, &resp.body),
+    );
     super::set_write_headers(&mut out, base, kind.segment(), resp.meta.as_ref());
     out
 }

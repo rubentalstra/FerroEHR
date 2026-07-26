@@ -692,7 +692,7 @@ elements:
     source: "RM common master07-tags.adoc ITEM_TAG.target (may be a VERSIONED_OBJECT<T> or a VERSION<T>); ITS-REST Requests_and_responses.md §item-tag headers"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
+      note: "server behaviour fixed + DB-tested (#365); the disjointness now also holds through the wrapper-header write/echo path (#398, app/ehrbase-rest/tests/headers.rs reads both collections back through composition_tags_get after a two-header write); runner tag verbs land with the #288 derivation fix"
   - id: item-tag-rm-target-shape
     description: "ITEM_TAG.target is emitted as the RM UID_BASED_ID (HIER_OBJECT_ID container / OBJECT_VERSION_ID version), never an OBJECT_REF wrapper."
     source: "RM common master07-tags.adoc ITEM_TAG (target: UID_BASED_ID); the RELEASED RM wins over the stalled OAS ItemTag schema"
@@ -706,11 +706,11 @@ elements:
       reason: coverage_gap
       note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
   - id: item-tag-wrapper-headers-distinct-collections
-    description: "openehr-item-tag replaces the container collection and openehr-version-item-tag the committed VERSION's collection on a change-controlled write; an absent header leaves its collection untouched."
-    source: "ITS-REST Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag §Usage in Requests"
+    description: "openehr-item-tag replaces the container collection and openehr-version-item-tag the committed VERSION's collection on a change-controlled write; an absent header leaves its collection untouched, and the RESPONSE echo confirms each target's stored list under its own header only."
+    source: "ITS-REST Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag (\"openehr-item-tag applies to VERSIONED_OBJECT targets\"; \"openehr-version-item-tag applies to a specific target VERSION within a VERSIONED_OBJECT\") §Usage in Requests + §Usage in Responses (\"Servers MAY include the openehr-item-tag or openehr-version-item-tag header in responses to confirm the actual list of ITEM_TAGs stored on the server side\")"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
+      note: "server behaviour fixed + DB-tested: the request side in #365, and the RESPONSE echo in #398 (app/ehrbase-rest/tests/headers.rs) — the two collections are kept separate through the write seam so openehr-item-tag echoes only the VERSIONED_OBJECT's stored list and openehr-version-item-tag only the VERSION's (previously both headers carried the merged union), and a header the request did not send is not echoed at all. runner tag verbs land with the #288 derivation fix"
   # Conditional / versioning headers (ITS-REST Requests_and_responses.md).
   - id: header-etag-on-create
     description: "ETag returned on resource creation carrying the new version/object uid (optimistic concurrency)."
@@ -734,6 +734,18 @@ elements:
     description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."
     source: "ITS-REST Requests_and_responses.md §Prefer + §Representation details negotiation (default return=minimal; return=representation returns the full resource)"
     covered_by: [I_EHR_COMPOSITION.create_composition-event]
+  - id: header-prefer-return-identifier
+    description: "Prefer: return=identifier is honored — the body is the identifier of the affected resource only, at a 201/200 status, never 204 No Content."
+    source: "ITS-REST Requests_and_responses.md §Prefer only identifier (\"a variant of preference that implies minimal response semantics, but with a non-empty response body (i.e. the status will be `201 Created` or `200 OK`, never `204 No Content`)\"; \"when application/json is requested … the response body will be a single JSON object with a single uid attribute\")"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#398, app/ehrbase-rest/src/overview/negotiate.rs unit matrix + app/ehrbase-rest/tests/headers.rs `ehr_status_update_identifier_is_never_204` + tests/directory_http.rs `create_identifier_returns_uid_only` + tests/demographic_http.rs `person_create_identifier_returns_the_uid_body`): the identifier branch is unreachable without an identifier to render, so it can no longer degrade into the 204 minimal body, and the EHR_STATUS PUT — whose minimal outcome IS 204 — answers 200 with the `{uid}` body. NEW-CASE candidate: every binding fixes one `Prefer` value in its request headers, so an identifier variant needs its own variant binding, and its assertion needs the header-matcher evaluation tracked in #403 (`outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified, tools/cnf-runner/src/exec/outcome.rs)."
+  - id: header-preference-applied
+    description: "Preference-Applied on a write response names the return preference the response actually applied (return=minimal | return=identifier | return=representation), including the applied default when no Prefer was sent."
+    source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#398, app/ehrbase-rest/tests/{headers,demographic_http,flat_http,definition_adl2_http}.rs): every write path — canonical/JSON RM writes, demographic party/relationship/contribution writes, both template uploads, the ITEM_TAG collection writes, and the Simplified-Formats COMPOSITION commit — declares the preference it applied through one seam, and never claims an unapplied preference. The presence is DECLARED as `Preference-Applied: present?` (a MAY) on the create_composition / update_composition binding outcomes. NEW-CASE candidate blocked on the runner capability tracked in #403: `outcomes.*.headers` matchers are parsed but never evaluated."
   - id: header-if-match-412
     description: "If-Match precondition on a state-changing method evaluates false → 412 Precondition Failed, latest version_uid echoed in ETag; absent when required → 400."
     source: "ITS-REST Requests_and_responses.md §If-Match and accidental overwrites (412 on false condition; 400 when the service expects If-Match and it is absent)"

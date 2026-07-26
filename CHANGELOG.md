@@ -17,6 +17,38 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`Prefer` / representation polish: `return=identifier` is structurally
+  never `204`, item-tag echoes are per-target, and `Preference-Applied` is
+  emitted from one seam** (#398). Three divergences from ITS-REST overview
+  `Requests_and_responses.md`:
+  - `Prefer: return=identifier` could fall through to the empty (possibly
+    `204 No Content`) minimal response while still claiming
+    `Preference-Applied: return=identifier`. The identifier branch now
+    carries the identifier it renders, so it is unreachable without one —
+    §"Prefer only identifier": "the status will be `201 Created` or `200 OK`,
+    never `204 No Content`". A write that genuinely produces no identifier
+    applies, and declares, the default `return=minimal` instead of claiming
+    an unapplied preference.
+  - The `openehr-item-tag` and `openehr-version-item-tag` **response** echoes
+    on a change-controlled write merged both targets' tags into one list and
+    repeated it under both header names. Each header now confirms only its
+    own target's stored list — §"openehr-item-tag and
+    openehr-version-item-tag": "`openehr-item-tag` applies to
+    *VERSIONED_OBJECT* targets" while "`openehr-version-item-tag` applies to a
+    specific target *VERSION*", each confirming "the actual list of
+    `ITEM_TAGs` stored". A header the request did not send is not echoed.
+    (The demographic surface still emits both headers from one set, because
+    its tags are stored against the `VERSIONED_OBJECT` only, so the two
+    targets coincide there.)
+  - `Preference-Applied` was emitted only by the canonical RM / JSON write
+    helpers. It is now declared by every write path through the same seam —
+    the demographic party, relationship and CONTRIBUTION writes, both ADL 1.4
+    and ADL 2 template uploads, the `ITEM_TAG` collection writes, and the
+    Simplified-Formats (FLAT/STRUCTURED) COMPOSITION commit — always naming
+    the preference the response actually applied, including the applied
+    default `return=minimal` when no `Prefer` was sent. Demographic party
+    writes additionally honour `Prefer: return=identifier` (`{uid}` body),
+    which they previously ignored.
 - **ADL 1.4 template negotiation: the response type mirrors `Accept`, and a
   non-XML OPT upload is `415`** (#397). Two divergences from ITS-REST overview
   `Resources.md`:

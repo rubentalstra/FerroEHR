@@ -253,46 +253,40 @@ pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String
 /// [`ItemTagAdapter`](ehrbase::service::ItemTagAdapter) `target_tags_replace` seam
 /// (the same seam the dedicated `*_tags_*` operations use).
 ///
-/// Returns the present header name(s) + the stored list (for the optional
-/// response echo) when either wrapper header was present, or `None` when
-/// neither was — an absent header leaves the target's tags untouched. This
-/// server supports `ITEM_TAGs`; a server that did not would ignore the headers
-/// (spec: "these headers will also be unsupported").
+/// Returns the stored list **per header**, because the two headers address
+/// distinct targets ([`StoredItemTags`]); a header the request did not carry
+/// leaves its target's tags untouched and echoes nothing. This server supports
+/// `ITEM_TAGs`; a server that did not would ignore the headers (spec: "these
+/// headers will also be unsupported").
 pub(super) async fn apply_item_tag_headers(
     state: &AppState,
     ehr_id: EhrId,
     target_type: &str,
     version_uid: &str,
     headers: &HeaderMap,
-) -> Result<Option<(Vec<&'static str>, Vec<Value>)>, RestError> {
+) -> Result<StoredItemTags, RestError> {
     // `None` = header absent (leave tags intact); `Some(empty)` = empty header
     // value (clear all tags) — the parse helper draws the distinction.
     let object_tags = parse_item_tag_header(headers, H_ITEM_TAG);
     let version_tags = parse_item_tag_header(headers, H_VERSION_ITEM_TAG);
-    if object_tags.is_none() && version_tags.is_none() {
-        return Ok(None);
-    }
-    let mut present: Vec<&'static str> = Vec::new();
-    if object_tags.is_some() {
-        present.push(H_ITEM_TAG);
-    }
-    if version_tags.is_some() {
-        present.push(H_VERSION_ITEM_TAG);
-    }
     // The two wrappers address DISTINCT collections (Requests_and_responses.md
-    // §item-tag headers): `openehr-item-tag` replaces the VERSIONED_OBJECT
-    // container's tags (addressed by the bare object id), and
-    // `openehr-version-item-tag` replaces the just-committed VERSION's own
-    // tags (addressed by the full version_uid). An absent header leaves its
-    // collection untouched. The echo returns whatever was stored, container
-    // tags first.
+    // §"openehr-item-tag and openehr-version-item-tag": "`openehr-item-tag`
+    // applies to *VERSIONED_OBJECT* targets" while "`openehr-version-item-tag`
+    // applies to a specific target *VERSION* within a VERSIONED_OBJECT"):
+    // `openehr-item-tag` replaces the VERSIONED_OBJECT container's tags
+    // (addressed by the bare object id), and `openehr-version-item-tag`
+    // replaces the just-committed VERSION's own tags (addressed by the full
+    // version_uid). An absent header leaves its collection untouched, and each
+    // stored collection stays separate all the way to its own response header
+    // — the echo confirms "the actual list of ITEM_TAGs stored" for the target
+    // the header names, so the two lists are never merged.
     let container_uid = version_uid
         .split_once("::")
         .map_or(version_uid, |(object_id, _)| object_id);
-    let mut stored: Vec<Value> = Vec::new();
+    let mut stored = StoredItemTags::default();
     if let Some(entries) = object_tags {
         let tags = entries.iter().map(entry_to_value).collect();
-        stored.extend(
+        stored.object = Some(
             state
                 .backend()
                 .target_tags_replace(ehr_id, container_uid.to_owned(), target_type, tags)
@@ -301,14 +295,29 @@ pub(super) async fn apply_item_tag_headers(
     }
     if let Some(entries) = version_tags {
         let tags = entries.iter().map(entry_to_value).collect();
-        stored.extend(
+        stored.version = Some(
             state
                 .backend()
                 .target_tags_replace(ehr_id, version_uid.to_owned(), target_type, tags)
                 .await?,
         );
     }
-    Ok(Some((present, stored)))
+    Ok(stored)
+}
+
+/// The `ITEM_TAG` collections an item-tag write-wrapper request stored, kept
+/// one per header because `openehr-item-tag` and `openehr-version-item-tag`
+/// "apply to" different targets — a `VERSIONED_OBJECT` and a specific VERSION
+/// within it (`Requests_and_responses.md` §"openehr-item-tag and
+/// openehr-version-item-tag"). `None` = the request carried no such header, so
+/// that target was not written and nothing is echoed for it; `Some(list)` =
+/// the list now stored on that target (empty confirms a clear).
+#[derive(Debug, Default)]
+pub(super) struct StoredItemTags {
+    /// The `VERSIONED_OBJECT` container's stored tags (`openehr-item-tag`).
+    object: Option<Vec<Value>>,
+    /// The committed VERSION's own stored tags (`openehr-version-item-tag`).
+    version: Option<Vec<Value>>,
 }
 
 /// One parsed `ITEM_TAG` header entry → the `ITEM_TAG` JSON the storage seam takes.
@@ -326,19 +335,34 @@ fn entry_to_value(entry: &ItemTagHeaderEntry) -> Value {
     t
 }
 
-/// Echo the stored `ITEM_TAG` list onto a create/update response under the
-/// wrapper header name(s) the request used — MAY-level confirmation
-/// (`Requests_and_responses.md §…§Usage in Responses`: "Servers MAY include the
-/// `openehr-item-tag` … header in responses to confirm the actual list of
-/// `ITEM_TAGs` stored on the server side"). Rendered via
+/// Echo the stored `ITEM_TAG` lists onto a create/update response — MAY-level
+/// confirmation (`Requests_and_responses.md §…§Usage in Responses`: "Servers
+/// MAY include the `openehr-item-tag` or `openehr-version-item-tag` header in
+/// responses to confirm the actual list of `ITEM_TAGs` stored on the server
+/// side").
+///
+/// **Each header carries its own target's collection and nothing else**: the
+/// confirmed list is "the actual list … stored" for the target that header
+/// applies to (§"openehr-item-tag and openehr-version-item-tag" — the
+/// `VERSIONED_OBJECT` for `openehr-item-tag`, the VERSION for
+/// `openehr-version-item-tag`), so a response never repeats one target's tags
+/// under the other target's name. A header the request did not carry is not
+/// echoed at all. Rendered via
 /// [`crate::overview::params::emit_item_tag_header`]; an empty list confirms a
 /// clear.
-pub(super) fn echo_item_tags(resp: &mut Response, names: &[&'static str], tags: &[Value]) {
-    let entries: Vec<ItemTagHeaderEntry> = tags.iter().filter_map(value_to_entry).collect();
-    let value = emit_item_tag_header(&entries);
-    for &name in names {
-        resp.headers_mut()
-            .insert(HeaderName::from_static(name), value.clone());
+pub(super) fn echo_item_tags(resp: &mut Response, stored: &StoredItemTags) {
+    for (name, tags) in [
+        (H_ITEM_TAG, stored.object.as_deref()),
+        (H_VERSION_ITEM_TAG, stored.version.as_deref()),
+    ] {
+        let Some(tags) = tags else {
+            continue;
+        };
+        let entries: Vec<ItemTagHeaderEntry> = tags.iter().filter_map(value_to_entry).collect();
+        resp.headers_mut().insert(
+            HeaderName::from_static(name),
+            emit_item_tag_header(&entries),
+        );
     }
 }
 

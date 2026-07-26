@@ -61,6 +61,12 @@ pub(super) async fn run(
 /// A create response for a JSON-only payload (CONTRIBUTION), honouring `Prefer`
 /// and setting the demographic `ETag` + the creation `Location` (overview
 /// §Location — `201 Created` is exactly the case it scopes the header to).
+///
+/// The body + `Preference-Applied` go through the shared
+/// [`negotiate::write_negotiated`] seam: `return=representation` → the
+/// CONTRIBUTION, `return=identifier` → the `{uid}` body at a `201`/`200`
+/// (never `204`, §"Prefer only identifier"), otherwise the applied default
+/// `return=minimal`.
 fn write_shared(
     h: &http::HeaderMap,
     base: &str,
@@ -69,11 +75,13 @@ fn write_shared(
     repr_status: StatusCode,
     resp: &ServiceResponse,
 ) -> Response {
-    let mut out = if negotiate::prefers_representation(h) {
-        negotiate::respond(h, repr_status, &resp.body)
-    } else {
-        negotiate::empty(minimal_status)
-    };
+    let mut out = negotiate::write_negotiated(
+        h,
+        minimal_status,
+        repr_status,
+        resp.meta.as_ref().map(|m| m.uid.as_str()),
+        |status| negotiate::respond(h, status, &resp.body),
+    );
     super::set_write_headers(&mut out, base, segment, resp.meta.as_ref());
     out
 }
