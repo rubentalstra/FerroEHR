@@ -26,6 +26,25 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Both EHR creates now accept and merge the committal request headers**
+  (#422). ITS-REST `docs/overview/Requests_and_responses.md` §"openehr-version
+  and openehr-audit-details" makes it a MUST that a service accept
+  `openehr-version` / `openehr-audit-details` on the direct `PUT`/`POST`/
+  `DELETE` commits of change-controlled resources and merge "whatever is
+  provided … with the default VERSION and VERSION.audit_details attributes on
+  commit runtime". Creating an EHR commits its EHR_STATUS and EHR_ACCESS in a
+  contribution (RM ehr master04 §EHR Creation), but `POST /ehr` and
+  `PUT /ehr/{ehr_id}` ignored both headers — while the served OpenAPI already
+  claimed they were merged. They now are: the supplied `description`,
+  `committer`, and `system_id` land on the creating contribution and on both
+  committed versions' `commit_audit`, and `openehr-version:
+  lifecycle_state.code_string` sets the new EHR_STATUS version's lifecycle
+  state. `change_type` is constrained to `249|creation|` (a create commits a
+  first version): restating `249` is accepted, another group code is `400`,
+  and a token outside the `audit_change_type` group is `422`. The OpenAPI
+  document now also lists both headers as documented parameters on the two
+  create operations.
+
 - **Served OpenAPI: the System API's `OPTIONS` operation is now documented**
   (#418). The Options-and-Conformance endpoint (`OPTIONS` on the API base
   path) was served but absent from the generated OpenAPI document and

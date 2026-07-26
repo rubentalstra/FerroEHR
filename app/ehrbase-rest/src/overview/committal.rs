@@ -4,8 +4,11 @@
 //! (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
 //! lines 72–96) makes it a **MUST** that a service accept these custom request
 //! headers on the direct-commit change-controlled writes (COMPOSITION /
-//! `EHR_STATUS` / directory FOLDER `POST`/`PUT`/`DELETE`) and merge whatever is
-//! provided with the server's default VERSION + `commit_audit` attributes:
+//! `EHR_STATUS` / directory FOLDER `POST`/`PUT`/`DELETE` — EHR creation
+//! included, since it commits the bootstrap `EHR_STATUS` + `EHR_ACCESS` in a
+//! CONTRIBUTION, RM ehr `master04-ehr_package.adoc` §EHR Creation) and merge
+//! whatever is provided with the server's default VERSION + `commit_audit`
+//! attributes:
 //!
 //! > "None of these headers are mandatory, but whatever is provided it MUST be
 //! >  merged with the default VERSION and VERSION.audit_details attributes on
@@ -104,8 +107,13 @@ fn openehr_code(code: &str) -> TerminologyCode {
 /// set by the caller. Absent headers leave the defaults intact; the new form
 /// wins over the deprecated form on conflict.
 pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMap) {
-    let attrs = collect_attrs(headers);
+    apply_attrs(uv, &collect_attrs(headers));
+}
 
+/// Overlay already-collected committal attributes onto a commit envelope —
+/// the merge itself, split from the header collection so a caller that needs
+/// to know whether ANY attribute was supplied parses the headers exactly once.
+fn apply_attrs(uv: &mut UpdateVersion, attrs: &IndexMap<String, Vec<(String, String)>>) {
     if let Some(code) = attrs.get(T_LIFECYCLE).and_then(|p| pair(p, "code_string")) {
         uv.lifecycle_state = openehr_code(&code);
     }
@@ -135,22 +143,70 @@ pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMa
 /// headers accepted on `PUT`, `POST` **and** `DELETE`). `None` when no
 /// committal header is present, so a plain request keeps the server-default
 /// attribution path.
+// TODO: seed this merge with the request's authenticated committer the way
+// `committal_commit` does — a request that supplies only `description`
+// currently attributes the commit to `UpdateVersion::direct`'s system
+// placeholder instead of the principal, which overwrites a default the client
+// never supplied (overview §"openehr-version and openehr-audit-details":
+// only "whatever is provided" is merged).
 pub(crate) fn committal_audit(
     headers: &HeaderMap,
 ) -> Option<ehrbase::service::version_update::UpdateAudit> {
-    if collect_attrs(headers).is_empty() {
+    merged_committal(headers, None).map(|c| c.audit)
+}
+
+/// The full committal metadata — merged `UPDATE_AUDIT` **and** the VERSION
+/// `lifecycle_state` — of a request that commits a change-controlled resource
+/// whose `UPDATE_VERSION` envelope never travels in the body: the bare EHR
+/// creates (`POST /ehr`, `PUT /ehr/{ehr_id}`), whose only committal channel is
+/// these headers (overview §"openehr-version and openehr-audit-details":
+/// "services MUST accept `openehr-version` and `openehr-audit-details` custom
+/// request headers" on the direct `PUT`/`POST`/`DELETE` commits, and
+/// "whatever is provided it MUST be merged with the default VERSION and
+/// `VERSION.audit_details` attributes on commit runtime").
+///
+/// `committer` is the server default the merge starts from — the request's
+/// authenticated principal — so an unsupplied `committer` keeps it rather than
+/// being clobbered. `None` when the request carried no committal header at
+/// all, leaving the service on its own default attribution path.
+pub(crate) fn committal_commit(
+    headers: &HeaderMap,
+    committer: PartyProxy,
+) -> Option<ehrbase::service::version_update::Committal> {
+    merged_committal(headers, Some(committer))
+}
+
+/// One header parse, both halves of the merge. `committer` seeds the audit's
+/// server default; `None` keeps [`UpdateVersion::direct`]'s system
+/// placeholder (the historical [`committal_audit`] behaviour).
+fn merged_committal(
+    headers: &HeaderMap,
+    committer: Option<PartyProxy>,
+) -> Option<ehrbase::service::version_update::Committal> {
+    let attrs = collect_attrs(headers);
+    if attrs.is_empty() {
         return None;
     }
     let mut uv = UpdateVersion::direct(serde_json::Value::Null);
-    // The direct() placeholder change type (`249|creation|`) must not read as
-    // a client-supplied value: blank it so only a header-carried `change_type`
-    // survives the merge — the service merges a NON-empty code verbatim
-    // (after group + operation validation) and falls back to the operation's
-    // default on empty (`versioning::audit`, overview §"openehr-version and
-    // openehr-audit-details": "whatever is provided it MUST be merged").
+    if let Some(committer) = committer {
+        uv.audit.committer = committer;
+    }
+    // The direct() placeholder change type (`249|creation|`) and lifecycle
+    // state (`532|complete|`) must not read as client-supplied values: blank
+    // them so only a header-carried code survives the merge — the service
+    // merges a NON-empty code verbatim (after group + operation validation)
+    // and falls back to the operation's default on empty
+    // (`versioning::audit`, `versioning::lifecycle`; overview
+    // §"openehr-version and openehr-audit-details": "whatever is provided it
+    // MUST be merged").
     uv.audit.change_type.code_string = String::new();
-    merge_committal_headers(&mut uv, headers);
-    Some(uv.audit)
+    uv.lifecycle_state.code_string = String::new();
+    apply_attrs(&mut uv, &attrs);
+    let lifecycle_state = Some(uv.lifecycle_state.code_string).filter(|c| !c.is_empty());
+    Some(ehrbase::service::version_update::Committal {
+        audit: uv.audit,
+        lifecycle_state,
+    })
 }
 
 /// Collect all committal-header attributes into `target → [(subkey, value)]`,
@@ -525,6 +581,53 @@ mod tests {
         ]);
         merge_committal_headers(&mut uv, &h);
         assert_eq!(uv.audit.change_type.code_string, "251");
+    }
+
+    /// `committal_commit` carries BOTH halves of the merge from ONE parse: the
+    /// `UPDATE_AUDIT` attributes and the VERSION `lifecycle_state` the
+    /// `openehr-version` header supplied (the worked example's
+    /// `lifecycle_state.code_string` line).
+    #[test]
+    fn committal_commit_carries_audit_and_lifecycle() {
+        let h = headers(&[
+            (H_VERSION, "lifecycle_state.code_string=\"553\""),
+            (H_AUDIT_DETAILS, "description.value=\"why\""),
+        ]);
+        let committal = committal_commit(&h, party("principal")).expect("headers present");
+        assert_eq!(committal.lifecycle_state.as_deref(), Some("553"));
+        assert_eq!(committal.audit.description.as_deref(), Some("why"));
+        // No client `change_type` ⇒ empty, so the service applies the
+        // operation's default.
+        assert_eq!(committal.audit.change_type.code_string, "");
+    }
+
+    /// An unsupplied attribute keeps the SERVER default: the seeded committer
+    /// survives a header set that names no `committer`, and an absent
+    /// `openehr-version` leaves `lifecycle_state` unset (the service default
+    /// `532|complete|` stands). "Whatever is provided it MUST be merged" —
+    /// nothing more.
+    #[test]
+    fn committal_commit_keeps_unsupplied_defaults() {
+        let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
+        let committal = committal_commit(&h, party("principal")).expect("headers present");
+        assert_eq!(committal.lifecycle_state, None);
+        let committer = openehr_its::json::to_canonical_value(&committal.audit.committer);
+        assert_eq!(committer["name"], "principal");
+
+        // A supplied committer overrides the seed.
+        let h = headers(&[(H_AUDIT_DETAILS, "committer.name=\"Dr Chart\"")]);
+        let committal = committal_commit(&h, party("principal")).expect("headers present");
+        let committer = openehr_its::json::to_canonical_value(&committal.audit.committer);
+        assert_eq!(committer["name"], "Dr Chart");
+
+        assert!(committal_commit(&HeaderMap::new(), party("principal")).is_none());
+    }
+
+    fn party(name: &str) -> PartyProxy {
+        openehr_its::json::from_canonical_value(
+            &serde_json::json!({ "_type": "PARTY_IDENTIFIED", "name": name }),
+        )
+        .unwrap()
     }
 
     #[test]

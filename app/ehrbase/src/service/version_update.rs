@@ -179,6 +179,33 @@ impl UpdateVersion {
     }
 }
 
+/// The client-supplied committal metadata of a **direct** commit whose
+/// `UPDATE_VERSION` envelope never travels in the request body — the bare
+/// `POST`/`PUT`/`DELETE` writes on a change-controlled resource, where the
+/// only channel for it is the `openehr-version` / `openehr-audit-details`
+/// request headers.
+///
+/// ITS-REST overview `Requests_and_responses.md` §"openehr-version and
+/// openehr-audit-details": "services MUST accept `openehr-version` and
+/// `openehr-audit-details` custom request headers", and "None of these headers
+/// are mandatory, but whatever is provided it MUST be merged with the default
+/// VERSION and `VERSION.audit_details` attributes on commit runtime." This type
+/// carries the two halves of that merge — the `UPDATE_AUDIT` attributes and
+/// the VERSION `lifecycle_state` — for the commit paths whose arguments are
+/// the bare RM content (EHR creation) rather than a full envelope.
+#[derive(Debug, Clone)]
+pub struct Committal {
+    /// The merged `UPDATE_AUDIT` attributes (`change_type`, `description`,
+    /// `committer`, `system_id`), already seeded with the server defaults the
+    /// client did not override.
+    pub audit: UpdateAudit,
+    /// `UPDATE_VERSION.lifecycle_state` as its numeric
+    /// `version_lifecycle_state` code, when the client supplied one through
+    /// `openehr-version`; `None` leaves the server default (`532|complete|`,
+    /// RM common master06 §Version Lifecycle).
+    pub lifecycle_state: Option<String>,
+}
+
 #[cfg(test)]
 #[allow(
     clippy::panic,

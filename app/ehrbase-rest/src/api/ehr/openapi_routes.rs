@@ -106,14 +106,32 @@ pub(crate) async fn ehr_get_by_subject(
 /// Create a new EHR with an auto-generated id (`POST /ehr`).
 ///
 /// The committal headers `openehr-version` / `openehr-audit-details` are
-/// accepted and merged into the `EHR_STATUS` commit
-/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
+/// accepted and merged into the creating CONTRIBUTION and its `EHR_STATUS`
+/// version (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     post, path = "/ehr", tag = "EHR",
     params(
         ("Prefer" = Option<String>, Header,
          description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`.")
+                        or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Committal metadata for the EHR_STATUS VERSION the \
+                        creation commits, as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. Merged with the \
+                        server defaults."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Committal AUDIT_DETAILS for the creating CONTRIBUTION, \
+                        as an attribute-path list; the header MAY repeat — e.g. \
+                        `description.value=\"EHR opened at triage\"`, \
+                        `committer.name=\"John Doe\",\
+                        committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\",\
+                        committer.external_ref.namespace=\"demographic\",\
+                        committer.external_ref.type=\"PERSON\"`, \
+                        `system_id=\"example.openehr.systemid\"`. \
+                        `change_type` is constrained to `249|creation|` (a \
+                        create commits a first version); `time_committed` is \
+                        always server-set, and an omitted `system_id` defaults \
+                        to the server's configured identifier.")
     ),
     request_body(content = serde_json::Value,
                  description = "Optional EHR_STATUS for the new EHR; when \
@@ -126,11 +144,18 @@ pub(crate) async fn ehr_get_by_subject(
                                       Body per `Prefer` (representation or \
                                       identifier; empty for minimal).",
          body = serde_json::Value),
-        (status = 400, description = "The supplied EHR_STATUS is invalid or the \
-                                      request could not be parsed.",
+        (status = 400, description = "The request could not be parsed, or a \
+                                      committal `change_type` names a legal \
+                                      audit_change_type code that contradicts a \
+                                      creation.",
          body = serde_json::Value),
         (status = 409, description = "An EHR already exists for the subject \
                                       id/namespace of the supplied EHR_STATUS.",
+         body = serde_json::Value),
+        (status = 422, description = "The supplied EHR_STATUS is semantically \
+                                      invalid, or a committal \
+                                      `change_type`/`lifecycle_state` is not a \
+                                      member of its openEHR terminology group.",
          body = serde_json::Value)
     )
 )]
@@ -180,8 +205,8 @@ pub(crate) async fn ehr_get_by_id(
 ///
 /// `ehr_id` must be a valid `HIER_OBJECT_ID` (a UUID is strongly recommended).
 /// The committal headers `openehr-version` / `openehr-audit-details` are
-/// accepted and merged into the `EHR_STATUS` commit
-/// (`Requests_and_responses.md` §openehr-version-and-audit-details).
+/// accepted and merged into the creating CONTRIBUTION and its `EHR_STATUS`
+/// version (`Requests_and_responses.md` §openehr-version-and-audit-details).
 #[utoipa::path(
     put, path = "/ehr/{ehr_id}", tag = "EHR",
     params(
@@ -190,7 +215,25 @@ pub(crate) async fn ehr_get_by_id(
                         a UUID is strongly recommended)."),
         ("Prefer" = Option<String>, Header,
          description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`.")
+                        or `return=identifier`."),
+        ("openehr-version" = Option<String>, Header,
+         description = "Committal metadata for the EHR_STATUS VERSION the \
+                        creation commits, as an attribute-path list — e.g. \
+                        `lifecycle_state.code_string=\"532\"`. Merged with the \
+                        server defaults."),
+        ("openehr-audit-details" = Option<String>, Header,
+         description = "Committal AUDIT_DETAILS for the creating CONTRIBUTION, \
+                        as an attribute-path list; the header MAY repeat — e.g. \
+                        `description.value=\"EHR opened at triage\"`, \
+                        `committer.name=\"John Doe\",\
+                        committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\",\
+                        committer.external_ref.namespace=\"demographic\",\
+                        committer.external_ref.type=\"PERSON\"`, \
+                        `system_id=\"example.openehr.systemid\"`. \
+                        `change_type` is constrained to `249|creation|` (a \
+                        create commits a first version); `time_committed` is \
+                        always server-set, and an omitted `system_id` defaults \
+                        to the server's configured identifier.")
     ),
     request_body(content = serde_json::Value,
                  description = "Optional EHR_STATUS for the new EHR; when \
@@ -203,10 +246,18 @@ pub(crate) async fn ehr_get_by_id(
                                       `Prefer` (representation or identifier; \
                                       empty for minimal).",
          body = serde_json::Value),
-        (status = 400, description = "`ehr_id` is not a valid `HIER_OBJECT_ID` or \
-                                      the supplied EHR_STATUS is invalid.",
+        (status = 400, description = "`ehr_id` is not a valid `HIER_OBJECT_ID`, \
+                                      the request could not be parsed, or a \
+                                      committal `change_type` names a legal \
+                                      audit_change_type code that contradicts a \
+                                      creation.",
          body = serde_json::Value),
         (status = 409, description = "An EHR already exists with this `ehr_id`.",
+         body = serde_json::Value),
+        (status = 422, description = "The supplied EHR_STATUS is semantically \
+                                      invalid, or a committal \
+                                      `change_type`/`lifecycle_state` is not a \
+                                      member of its openEHR terminology group.",
          body = serde_json::Value)
     )
 )]
