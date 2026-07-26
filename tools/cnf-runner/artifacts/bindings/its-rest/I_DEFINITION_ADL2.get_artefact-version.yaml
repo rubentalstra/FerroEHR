@@ -24,8 +24,8 @@ request:
 # unique state identifier is its versioned ARCHETYPE_HRID (AM am24 —
 # `release_version` is the artefact's SEMVER), so the ETag names the RESOLVED
 # HRID, not the addressed (possibly partial) template_id.
-# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
-# status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
+# NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
+# violated declaration is a red row.
 # declaration is the authored contract, not an executed assertion — it becomes
 # executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:

@@ -90,11 +90,19 @@ pub enum StripRule {
     WeakQuotes,
 }
 
-/// Post-extraction transform: reduce an `OBJECT_VERSION_ID` to its root uid.
+/// Post-extraction transform: reduce an `OBJECT_VERSION_ID` to its root uid,
+/// or flip the captured value's ASCII case. `uppercase` exists so a case can
+/// author a case-VARIANT of a captured identifier (e.g. an `If-Match` naming
+/// the same version in different case — BASE `master05` §"Composite
+/// Identifiers and Case" makes two identifiers "identical apart from case …
+/// identify the same thing"), which the reference grammar itself cannot
+/// express (issue #403).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 pub enum TransformRule {
     #[serde(rename = "root-uid")]
     RootUid,
+    #[serde(rename = "uppercase")]
+    Uppercase,
 }
 
 /// One logical-capture wire mapping with optional modifiers.

@@ -36,8 +36,8 @@ request:
     If-Match: 'W/"${preceding_version_uid}"'   # the weak form the server itself emits (overview §ETag and Last-Modified)
     Prefer: "return=representation"
 formats: [canonical-json]
-# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
-# status is classified, tools/cnf-runner/src/exec/outcome.rs), so the `ETag` /
+# NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
+# violated declaration is a red row.
 # `Location` declarations below are the authored contract, not an executed
 # assertion — wire header-matcher evaluation into the step judgement.
 outcomes:

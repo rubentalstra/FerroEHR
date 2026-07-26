@@ -342,7 +342,7 @@ pub fn operation_binding_schema() -> Value {
                     "properties": {
                         "from": { "type": "string" },
                         "strip": { "enum": ["weak-quotes"] },
-                        "transform": { "enum": ["root-uid"] },
+                        "transform": { "enum": ["root-uid", "uppercase"] },
                         "fallback": { "type": "string" }
                     }
                 }
