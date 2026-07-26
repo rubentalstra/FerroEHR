@@ -55,7 +55,7 @@ Capabilities claimed:
 - AuditAccountability
 - AnonymousEhrs
 
-Options declared: adl14-duplicate-conflict, directory-empty-error, sf-deprecated-types-unsupported
+Options declared: adl14-duplicate-conflict, directory-empty-error, legacy-alt-formats-unsupported, sf-deprecated-types-unsupported
 
 ## Verdicts
 
