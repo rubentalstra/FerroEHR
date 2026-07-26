@@ -156,12 +156,32 @@ async fn composition_viewer_highlights_and_renders_the_document() {
 
     // Rendered: the template-free clinical view, with at least one
     // label/value row (the seeded EVALUATION's leaves, plus the composition's
-    // own composer/template facts).
-    h.wait_xpath("//button[contains(., 'Rendered')]")
-        .await
-        .click()
-        .await
-        .expect("switch to the rendered clinical view");
+    // own composer/template facts). The tab's `on:click` only wires at
+    // hydration, so a single early click can be lost on the inert SSR button —
+    // re-click until the rendered rows appear (the save-button retry
+    // precedent).
+    let mut rendered = false;
+    for _ in 0..10 {
+        h.wait_xpath("//button[contains(., 'Rendered')]")
+            .await
+            .click()
+            .await
+            .expect("switch to the rendered clinical view");
+        if h.driver
+            .query(By::Css("[data-doc-row]"))
+            .wait(
+                std::time::Duration::from_secs(2),
+                std::time::Duration::from_millis(200),
+            )
+            .exists()
+            .await
+            .unwrap_or(false)
+        {
+            rendered = true;
+            break;
+        }
+    }
+    assert!(rendered, "the Rendered tab never took effect");
     let row = h.wait_css("[data-doc-row]").await;
     let row_text = row.text().await.expect("the first rendered row's text");
     assert!(
