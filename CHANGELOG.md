@@ -207,6 +207,12 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **`ETag`/`Last-Modified` on every versioned read** (#368). The
+  VERSIONED_COMPOSITION and VERSIONED_EHR_STATUS container reads, the
+  VERSION-by-id reads, and both revision-history reads now carry the
+  versioning headers (container/version uid as the `ETag`; the commit
+  instant as `Last-Modified` where the body carries one) — previously only
+  the at-time variants did.
 - **Unqualified stored-query names are one identity everywhere** (#366). A
   query stored without a namespace (`PUT /definition/query/my_bp/1.0.0`) now
   lands under the openEHR-assumed `misc` namespace — the same identity the
