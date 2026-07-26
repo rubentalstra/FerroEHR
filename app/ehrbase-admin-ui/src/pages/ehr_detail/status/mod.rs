@@ -20,11 +20,11 @@
 //! and its `VERSIONED_COMPOSITION`.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
-//! The wire it reads and writes IS spec-bound: the EHR_STATUS +
-//! VERSIONED_EHR_STATUS operations
-//! (`docs/specs/openehr/ITS-REST/specifications/operations/ehr_status_*.yaml`
-//! and `versioned_ehr_status_*.yaml`) over the `EHR_STATUS` schema
-//! (`specifications/schemas/ehr/EhrStatus.yaml`). Path segments are
+//! The wire it reads and writes IS spec-bound: the `EHR_STATUS` +
+//! `VERSIONED_EHR_STATUS` operations
+//! (the ITS-REST EHR API's `EHR_STATUS` + `VERSIONED_EHR_STATUS` families) over
+//! the RM `EHR_STATUS` (`docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc`
+//! §`EHR_STATUS`). Path segments are
 //! percent-encoded server-side; every `#[server]` fn below authenticates the
 //! console session first (rules §0), and the CDR credential never reaches
 //! client-visible state.
@@ -46,7 +46,7 @@ use crate::error::AdminUiError;
 use crate::pages::composition::VersionEntry;
 use crate::pages::ehr_detail::status::edit::{StatusEdit, StatusForm, edit_form, seed};
 
-/// The noun phrase every EHR_STATUS write-failure toast is built around
+/// The noun phrase every `EHR_STATUS` write-failure toast is built around
 /// ([`crate::feedback::write_failure_copy`]).
 const STATUS_OBJECT: &str = "the EHR's status";
 
@@ -57,10 +57,11 @@ const STATUS_OBJECT: &str = "the EHR's status";
 ///
 /// The attributes are the RM `EHR_STATUS` class's own
 /// (`docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr_status.adoc`):
-/// `is_queryable`, `is_modifiable`, the `subject` PARTY_PROXY, and the optional
-/// `other_details` ITEM_STRUCTURE. `uid` is the `OBJECT_VERSION_ID` of the
-/// served version — `EHR_STATUS` is VERSIONABLE
-/// (`specifications/schemas/ehr/EhrStatus.yaml` → `common/Versionable.yaml`) —
+/// `is_queryable`, `is_modifiable`, the `subject` `PARTY_PROXY`, and the optional
+/// `other_details` `ITEM_STRUCTURE`. `uid` is the `OBJECT_VERSION_ID` of the
+/// served version — `EHR_STATUS` is `VERSIONABLE`
+/// (RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`; the served
+/// document carries its `OBJECT_VERSION_ID` as `uid`) —
 /// and that value is the `If-Match` an update must carry.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct EhrStatusState {
@@ -144,8 +145,8 @@ pub async fn fetch_ehr_status(ehr_id: String) -> Result<EhrStatusState, AdminUiE
 
 /// One VERSION of the EHR's `EHR_STATUS`, pretty-printed for the document pane
 /// (`GET /ehr/{ehr_id}/ehr_status/{version_uid}` — "retrieves a particular
-/// version of the EHR_STATUS identified by `version_uid`",
-/// `specifications/operations/ehr_status_get_by_version_id.yaml`).
+/// version of the `EHR_STATUS` identified by `version_uid`",
+/// `GET ehr/{ehr_id}/ehr_status/{version_uid}` — the ITS-REST EHR API).
 ///
 /// `version_uid` is a full `OBJECT_VERSION_ID`; the history tab only ever passes
 /// ids the CDR itself reported.
@@ -196,18 +197,22 @@ pub async fn fetch_ehr_status_version(
 ///
 /// `current_version_uid` is the loaded version's `OBJECT_VERSION_ID` and travels
 /// quoted in `If-Match`: the spec requires "the existing latest `version_uid` of
-/// EHR_STATUS resource (i.e. the `preceding_version_uid`)" in that header, whose
+/// `EHR_STATUS` resource (i.e. the `preceding_version_uid`)" in that header, whose
 /// format "is always an `version_uid` identifier enclosed by double quotes"
-/// (`specifications/operations/ehr_status_update.yaml`,
-/// `specifications/parameters/header/If-Match.yaml`). A stale value is answered
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §If-Match and accidental overwrites — a version_uid enclosed in double
+/// quotes). A stale value is answered
 /// `412 Precondition Failed` — "returned when `If-Match` request header doesn't
 /// match the latest version on the service side"
-/// (`specifications/responses/412_EHR_STATUS.yaml`) — which reaches the UI as
+/// (the same §If-Match prose: the service MUST answer `412 Precondition
+/// Failed`) — which reaches the UI as
 /// [`AdminUiError::Cdr`] with status `412` and gets its own toast.
 ///
 /// `Prefer: return=representation` asks for the updated resource, whose
 /// `uid.value` is the new version; the operation also allows a bare `204`
-/// (`specifications/responses/204_version_updated.yaml`), so an empty answer is
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §Representation-negotiation: without `Prefer: return=representation` the
+/// update answers `204`), so an empty answer is
 /// a success with no uid to name.
 ///
 /// # Errors
@@ -301,12 +306,12 @@ pub async fn fetch_status_revision_history(
 /// Read the `VERSIONED_EHR_STATUS` container and one of its VERSIONS.
 ///
 /// Two reads, one resource: `GET /ehr/{ehr_id}/versioned_ehr_status` for the
-/// container (`specifications/operations/versioned_ehr_status_get.yaml`) and the
+/// container (`GET ehr/{ehr_id}/versioned_ehr_status`) and the
 /// VERSION read for the envelope — `…/version/{version_uid}` for an explicitly
-/// selected version (`versioned_ehr_status_version_get_by_id.yaml`) or
+/// selected version (`…/versioned_ehr_status/version/{version_uid}`) or
 /// `…/version` for the current one when nothing is selected: with no
 /// `version_at_time`, that operation "retrieves the _latest_ VERSION"
-/// (`versioned_ehr_status_version_get_at_time.yaml` §description).
+/// (`…/versioned_ehr_status/version?version_at_time=` — latest when omitted).
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
@@ -354,7 +359,7 @@ pub async fn fetch_versioned_status(
 /// `at_time` (a browser `datetime-local` value):
 /// `GET /ehr/{ehr_id}/versioned_ehr_status/version?version_at_time=…` — "if
 /// `version_at_time` is supplied, retrieves the VERSION extant _at specified
-/// time_" (`specifications/operations/versioned_ehr_status_version_get_at_time.yaml`).
+/// time_" (the at-time read defaults to the latest version when the parameter is omitted).
 /// The `200` body is a VERSION envelope whose `uid.value` is the
 /// `OBJECT_VERSION_ID` (RM common — a VERSION's `uid` IS an
 /// `OBJECT_VERSION_ID`); that string is returned so the caller can pin it.
@@ -690,7 +695,7 @@ mod tests {
     use super::{parse_status_state, parse_versioned_status, status_toast_detail};
 
     /// A canonical `EHR_STATUS` as the wire carries it — the shape of the
-    /// example in ITS-REST `specifications/schemas/ehr/EhrStatus.yaml`.
+    /// example shape of RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`.
     const STATUS: &str = r#"{
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",

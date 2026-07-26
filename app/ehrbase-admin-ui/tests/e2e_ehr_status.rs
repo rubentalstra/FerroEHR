@@ -7,7 +7,7 @@
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
-//! End-to-end journeys over the console's **EHR_STATUS write path** — the
+//! End-to-end journeys over the console's **`EHR_STATUS` write path** — the
 //! openEHR operation every client has (`PUT /ehr/{ehr_id}/ehr_status` with
 //! `If-Match`), plus the `VERSIONED_EHR_STATUS` history it produces:
 //!
@@ -250,7 +250,7 @@ async fn wait_text_suffix(h: &Harness, css: &str, suffix: &str) {
     panic!("`{css}` never ended in `{suffix}` (last text: `{last}`)");
 }
 
-/// The EHR_STATUS edit round trip: unticking `is_queryable` commits a new
+/// The `EHR_STATUS` edit round trip: unticking `is_queryable` commits a new
 /// version, the badge flips, and the Status-history tab lists version 2 and
 /// opens its document by `OBJECT_VERSION_ID`.
 #[tokio::test]
