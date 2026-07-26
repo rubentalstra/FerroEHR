@@ -108,6 +108,7 @@ base_path = "/ehrbase/rest/openehr/v1"
 max_in_flight = 256
 swagger_ui = true
 cors_permissive = false
+system_id = "ehrbase-rs.local"
 ```
 
 | Key | Type | Default | Description |
@@ -117,6 +118,47 @@ cors_permissive = false
 | `max_in_flight` | int | `256` | Concurrent-request admission cap (not per second). Requests beyond it are shed immediately with `503` + `Retry-After` — never queued — so offered load beyond capacity cannot exhaust memory. Status/health/discovery routes are never limited. `0` disables shedding. |
 | `swagger_ui` | bool | `true` | Serve Swagger UI + the OpenAPI JSON at the REST root. Consider `false` in production. |
 | `cors_permissive` | bool | `false` | Permissive (development) CORS. Production configures explicit origins. |
+| `system_id` | string | `ehrbase-rs.local` | **This deployment's own openEHR system identifier** — see below. Set a stable, deployment-unique name in production (`EHRBASE__SERVER__SYSTEM_ID`). |
+
+### `system_id`: the data-authoring identity
+
+`system_id` is the identifier this CDR stamps into the data it authors. It
+appears on the wire in three places:
+
+- **`EHR.system_id`**, recorded when an EHR is created. The openEHR RM
+  (`EHR Information Model`, *EHR Identifier Allocation*) says the
+  `EHR.system_id` "should be set to the value that would normally be used for
+  locally created EHRs" — i.e. a value the deployment chooses, not a product
+  constant.
+- **`AUDIT_DETAILS.system_id`** on every commit for which the client did not
+  supply one through the `openehr-audit-details` header. The openEHR REST API
+  requires that "when `system_id` is not provided by the client, the server
+  MUST set it to its own configured system identifier".
+- **`OBJECT_VERSION_ID.creating_system_id`** — the middle segment of every
+  version identifier the server mints
+  (`<object_id>::<creating_system_id>::<version>`).
+
+Practical notes:
+
+- **Choose it before going live and keep it stable.** The value is stored with
+  each EHR and each version; changing it later affects only *newly* authored
+  data — existing EHR ids, audit rows, and version identifiers are never
+  rewritten, and previously issued `OBJECT_VERSION_ID`s stay valid.
+- **Make it unique per system**, so data exchanged between openEHR systems
+  keeps unambiguous provenance. A DNS-style host name (`cdr.hospital.example`)
+  is the common convention.
+- **With multi-tenancy on** (`[tenancy]`), a tenant's own `system_id` takes
+  precedence over this value for requests resolved to that tenant.
+- **Validated at boot.** An empty value is refused (the RM requires a
+  non-empty `AUDIT_DETAILS.system_id`), as is one containing `::` — that is
+  the `OBJECT_VERSION_ID` field separator, so it would make version
+  identifiers unparseable.
+- **`system_id` is not `[server.identity]`.** `system_id` says *which system
+  authored the data*; `[server.identity]` below is the *display* identity of
+  the `OPTIONS` System-Options manifest (product, version, vendor, advertised
+  profile). Rebranding changes the manifest and nothing in stored data;
+  changing `system_id` changes what new data says about its origin and leaves
+  the manifest alone. They are set independently.
 
 ### `[server.tls]` — native TLS + mutual-TLS client authentication
 
@@ -140,7 +182,9 @@ The separate-port management listener always stays plain HTTP.
 The System-Options manifest identity (`OPTIONS` on the API base path, e.g.
 `OPTIONS /ehrbase/rest/openehr/v1` — the System API's one location). Defaults
 are measured, not asserted — the manifest never out-claims the last
-conformance verdict.
+conformance verdict. This is the deployment's *display* identity only; the
+identifier stamped into authored data is
+[`server.system_id`](#system_id-the-data-authoring-identity).
 
 | Key | Type | Default | Description |
 |---|---|---|---|
@@ -547,6 +591,9 @@ For production, set at least:
 - **an auth mechanism** — a Basic user store and/or `[auth.oidc]`.
 - **`log.format = "json"`** for cluster log collectors.
 - **`server.cors_permissive`** stays `false`; **`server.swagger_ui`** per posture.
+- **`server.system_id`** — this deployment's own openEHR system identifier
+  (default `ehrbase-rs.local`). Choose it before the first EHR is created: it
+  is stored with every EHR, audit entry, and version identifier.
 - **`management.*`** per posture (a dedicated `port` is recommended so
   `/management` is never reachable on the clinical listener).
 - **TLS everywhere a transport supports it** — `audit.syslog.transport = "tls"`,
