@@ -32,8 +32,8 @@ formats: [canonical-json, canonical-xml]
 # VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
 # state identifiers", and "For openEHR resources, this value [Last-Modified]
 # should be derived from `VERSION.commit_audit.time_committed.value`".
-# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
-# status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
+# NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
+# violated declaration is a red row.
 # declaration is the authored contract, not an executed assertion — it becomes
 # executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
