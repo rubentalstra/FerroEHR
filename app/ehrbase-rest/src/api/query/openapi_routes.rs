@@ -8,9 +8,12 @@
 //! ## Prose-vs-OAS reconciliations (documented real wire)
 //!
 //! - **`ehr_id` scope** (`docs/query/Request.md` §About the `ehr_id`
-//!   parameter): every operation accepts the EHR scope as the `ehr_id` query
-//!   parameter OR the `openEHR-EHR-id` request header; the query parameter wins.
-//!   A well-formed-but-absent `ehr_id` is a `404`, a malformed UUID a `400`.
+//!   parameter): every operation — `GET` and `POST` alike — accepts the EHR
+//!   scope as the `ehr_id` query parameter OR the `openehr-ehr-id` request
+//!   header. Supplying both is only accepted when they name the same EHR; a
+//!   conflict is a `400` (the released text is silent on precedence — register
+//!   `AMB-59`). A well-formed-but-absent `ehr_id` is a `404`, a malformed UUID
+//!   a `400`.
 //! - **JSON-only response** (`200_Query.yaml` declares `application/json`; the
 //!   `RESULT_SET` has no canonical-XML shape): an exclusively-XML `Accept`
 //!   negotiates to `406` on every operation — documented below as our real wire
@@ -55,9 +58,16 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
     params(
         ("q" = String, Query,
          description = "The AQL query text to execute. Required."),
+        ("openehr-ehr-id" = Option<String>, Header,
+         description = "Alternative form of the `ehr_id` EHR scope (ITS-REST \
+                        `docs/query/Request.md` §About the `ehr_id` parameter). \
+                        Accepted alongside the `ehr_id` query parameter only \
+                        when both name the same EHR; a conflict is a 400."),
         ("ehr_id" = Option<String>, Query,
          description = "Optional EHR (UUID) to scope the query to; may instead be \
-                        supplied as the `openEHR-EHR-id` header (query wins)."),
+                        supplied as the `openehr-ehr-id` header. Supplying both \
+                        is accepted only when they name the same EHR; a \
+                        conflict is a 400."),
         ("offset" = Option<i64>, Query,
          description = "Row offset into the result set (`0`-based, default `0`)."),
         ("fetch" = Option<i64>, Query,
@@ -102,10 +112,16 @@ pub(crate) async fn query_execute_adhoc_query(
 #[utoipa::path(
     post, path = "/query/aql", tag = "Query",
     params(
+        ("openehr-ehr-id" = Option<String>, Header,
+         description = "Alternative form of the `ehr_id` EHR scope (ITS-REST \
+                        `docs/query/Request.md` §About the `ehr_id` parameter). \
+                        Accepted alongside the `ehr_id` query parameter only \
+                        when both name the same EHR; a conflict is a 400."),
         ("ehr_id" = Option<String>, Query,
          description = "Optional EHR (UUID) scope; may instead be supplied as the \
-                        `openEHR-EHR-id` header (query wins). The body carries \
-                        `q`/`offset`/`fetch`/`query_parameters`.")
+                        `openehr-ehr-id` header (both are accepted only when \
+                        they name the same EHR; a conflict is a 400). The body \
+                        carries `q`/`offset`/`fetch`/`query_parameters`.")
     ),
     request_body(content((serde_json::Value = "application/json")),
                  description = "An `AdhocQueryExecute`: `q` (required) plus \
@@ -153,9 +169,16 @@ pub(crate) async fn query_execute_adhoc_query_body(
          description = "The qualified stored-query name \
                         (`[{namespace}::]{query-name}`); executed at its latest \
                         version."),
+        ("openehr-ehr-id" = Option<String>, Header,
+         description = "Alternative form of the `ehr_id` EHR scope (ITS-REST \
+                        `docs/query/Request.md` §About the `ehr_id` parameter). \
+                        Accepted alongside the `ehr_id` query parameter only \
+                        when both name the same EHR; a conflict is a 400."),
         ("ehr_id" = Option<String>, Query,
          description = "Optional EHR (UUID) scope; may instead be supplied as the \
-                        `openEHR-EHR-id` header (query wins)."),
+                        `openehr-ehr-id` header. Supplying both is accepted \
+                        only when they name the same EHR; a conflict is a \
+                        400."),
         ("offset" = Option<i64>, Query,
          description = "Row offset into the result set (`0`-based, default `0`)."),
         ("fetch" = Option<i64>, Query,
@@ -205,9 +228,16 @@ pub(crate) async fn query_execute_stored_query(
          description = "The qualified stored-query name \
                         (`[{namespace}::]{query-name}`); executed at its latest \
                         version."),
+        ("openehr-ehr-id" = Option<String>, Header,
+         description = "Alternative form of the `ehr_id` EHR scope (ITS-REST \
+                        `docs/query/Request.md` §About the `ehr_id` parameter). \
+                        Accepted alongside the `ehr_id` query parameter only \
+                        when both name the same EHR; a conflict is a 400."),
         ("ehr_id" = Option<String>, Query,
          description = "Optional EHR (UUID) scope; may instead be supplied as the \
-                        `openEHR-EHR-id` header (query wins).")
+                        `openehr-ehr-id` header. Supplying both is accepted \
+                        only when they name the same EHR; a conflict is a \
+                        400.")
     ),
     request_body(content((serde_json::Value = "application/json")),
                  description = "A `Query`: optional `offset`, `fetch`, and \
@@ -257,9 +287,16 @@ pub(crate) async fn query_execute_stored_query_body(
         ("version" = String, Path,
          description = "A SEMVER version (exact, or a `{major}`/`{major}.{minor}` \
                         prefix resolving to the highest matching version)."),
+        ("openehr-ehr-id" = Option<String>, Header,
+         description = "Alternative form of the `ehr_id` EHR scope (ITS-REST \
+                        `docs/query/Request.md` §About the `ehr_id` parameter). \
+                        Accepted alongside the `ehr_id` query parameter only \
+                        when both name the same EHR; a conflict is a 400."),
         ("ehr_id" = Option<String>, Query,
          description = "Optional EHR (UUID) scope; may instead be supplied as the \
-                        `openEHR-EHR-id` header (query wins)."),
+                        `openehr-ehr-id` header. Supplying both is accepted \
+                        only when they name the same EHR; a conflict is a \
+                        400."),
         ("offset" = Option<i64>, Query,
          description = "Row offset into the result set (`0`-based, default `0`)."),
         ("fetch" = Option<i64>, Query,
@@ -311,9 +348,16 @@ pub(crate) async fn query_execute_stored_query_version(
         ("version" = String, Path,
          description = "A SEMVER version (exact, or a `{major}`/`{major}.{minor}` \
                         prefix resolving to the highest matching version)."),
+        ("openehr-ehr-id" = Option<String>, Header,
+         description = "Alternative form of the `ehr_id` EHR scope (ITS-REST \
+                        `docs/query/Request.md` §About the `ehr_id` parameter). \
+                        Accepted alongside the `ehr_id` query parameter only \
+                        when both name the same EHR; a conflict is a 400."),
         ("ehr_id" = Option<String>, Query,
          description = "Optional EHR (UUID) scope; may instead be supplied as the \
-                        `openEHR-EHR-id` header (query wins).")
+                        `openehr-ehr-id` header. Supplying both is accepted \
+                        only when they name the same EHR; a conflict is a \
+                        400.")
     ),
     request_body(content((serde_json::Value = "application/json")),
                  description = "A `Query`: optional `offset`, `fetch`, and \

@@ -1,0 +1,47 @@
+# Wire realization of I_QUERY_SERVICE.execute_stored_query, variant
+# `ehr_id_header`: stored-query execution at the latest version with the
+# single-EHR scope carried by the `openehr-ehr-id` REQUEST HEADER instead of the
+# `ehr_id` query parameter.
+#
+# Every expectation below is assigned by the ITS-REST DOCS TEXT, quoted:
+#
+# - the header realization of the EHR scope — docs/query/Request.md §"About the
+#   ehr_id parameter": "Depending on the needs, clients MAY supply it as a query
+#   parameter `ehr_id` or alternatively as a request header named
+#   `openehr-ehr-id`." §"Common Headers and Query Parameters" opens with "All
+#   query execution requests SHOULD support at least the following parameters"
+#   and lists `openehr-ehr-id` under "Related request headers" — ALL execution
+#   requests, so stored execution is covered exactly as ad-hoc is.
+#   docs/query/Query_types.md §"Single EHR queries" repeats the pair, and
+#   §"Stored queries" places stored execution in the same query family.
+# - `offset` / `fetch` — docs/query/Request.md §"Common Headers and Query
+#   Parameters" (the same "All query execution requests SHOULD support"
+#   sentence).
+# - `200` — docs/overview/Requests_and_responses.md §"HTTP status codes", row
+#   `200 OK`: "The request succeeded, payload sent in a 200 response depends on
+#   the request method".
+# - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
+#   "Related response headers: `ETag` - A unique identifier of the resultSet".
+#
+# Identical to the variant-less stored binding except for where the scope
+# travels, so a red row localizes to the header realization alone. `ehr_id` is
+# deliberately ABSENT from `query` — the header alone must scope the execution.
+sm_operation: I_QUERY_SERVICE.execute_stored_query
+its: its-rest
+variant: ehr_id_header
+request:
+  method: GET
+  path: /query/{qualified_query_name}
+  query:
+    offset: "${offset?}"                     # Request.md §Common Headers and Query Parameters
+    fetch: "${fetch?}"                       # Request.md §Common Headers and Query Parameters
+    query_parameters: "${query_parameters?}" # Request.md §Query parameters
+  headers:
+    openehr-ehr-id: "${ehr_id}"              # Request.md §About the ehr_id parameter
+    Accept: application/json
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200                              # Requests_and_responses.md §HTTP status codes, row 200
+    headers: { ETag: "present?" }            # Request.md §Common Headers and Query Parameters (related response headers)
+    body: result_set_body

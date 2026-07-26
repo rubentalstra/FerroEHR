@@ -827,3 +827,18 @@ elements:
     description: "Support for the deprecated pre-1.1.0 SDT-era simplified-format media types is implementation-defined (supported → commit succeeds; unsupported → 415)."
     source: "ITS-REST simplified_formats master02-overview.adoc §MIME Types + §Overview (SDT superseded at 1.1.0); register AMB-39"
     covered_by: [SF-DEPRECATED-media_supported, SF-DEPRECATED-media_unsupported]
+  # Query EHR-scope request header (ITS-REST docs/query/Request.md).
+  - id: query-ehr-id-request-header
+    description: "The openehr-ehr-id request header alone scopes a query execution to one EHR — on ad-hoc GET, ad-hoc POST, and stored execution — exactly as the ehr_id query parameter does."
+    source: "ITS-REST query Request.md §About the ehr_id parameter (\"clients MAY supply it as a query parameter `ehr_id` or alternatively as a request header named `openehr-ehr-id`\") + §Common Headers and Query Parameters (\"All query execution requests SHOULD support at least the following parameters\"; \"Related request headers: `openehr-ehr-id` - used to execute the query within a single EHR context\") + Query_types.md §Single EHR queries — no HTTP method and no execution form is carved out"
+    covered_by:
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_get
+      - I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_post
+      - I_QUERY_SERVICE.execute_stored_query-ehr_id_header
+  - id: query-ehr-id-parameter-header-conflict
+    description: "A query execution carrying BOTH the ehr_id query parameter and the openehr-ehr-id header is executed when they name the same EHR and rejected 400 when they name different EHRs."
+    source: "ITS-REST query Request.md §About the ehr_id parameter offers the two forms as alternatives and never defines the both-supplied case — the released text is SILENT, adjudicated in register AMB-59 (400 per Requests_and_responses.md §HTTP status codes, row 400 / generic client-side error)"
+    exception:
+      reason: coverage_gap
+      register: AMB-59
+      note: "server behaviour fixed + HTTP-tested (app/ehrbase-rest/tests/query_ehr_id_header.rs: matching forms execute, conflicting forms are 400, on GET and POST, ad-hoc and stored). Not authorable as a case today: the rejection is a self-contradictory REQUEST, and the closed outcome taxonomy (vocab/outcomes.yaml) has no kind for it — `invalid_query` means malformed AQL, which this is not. Closes when the outcome vocabulary gains a malformed-request kind (extension only by schedule release)."
