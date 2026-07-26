@@ -39,7 +39,7 @@ impl EhrbaseService {
     /// write (overview `Requests_and_responses.md` §"openehr-version and
     /// openehr-audit-details": the headers MUST be accepted on `PUT`, `POST`
     /// and `DELETE`, and "whatever is provided it MUST be merged with the
-    /// default VERSION and VERSION.audit_details attributes on commit
+    /// default VERSION and `VERSION.audit_details` attributes on commit
     /// runtime"). `None` keeps the server-default attribution.
     ///
     /// # Errors

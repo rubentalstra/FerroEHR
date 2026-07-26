@@ -1,8 +1,11 @@
 ---
 name: cnf-spec-oracle-attribution
-description: Owner ruling 2026-07-24 — on a red CNF run the vendored spec is the ONLY oracle; the app is NEVER assumed correct; never "fix the CNF" or "check the SUT" to decide expectations; the catalogue must have TOTAL wire coverage
-metadata:
+description: "Owner ruling 2026-07-24 — on a red CNF run the vendored spec is the ONLY oracle; the app is NEVER assumed correct; never \"fix the CNF\" or \"check the SUT\" to decide expectations; the catalogue must have TOTAL wire coverage"
+metadata: 
+  node_type: memory
   type: feedback
+  originSessionId: 871531fb-1884-468e-9033-ae616ae2eb2b
+  modified: 2026-07-26T18:49:42.185Z
 ---
 
 Owner ruling (2026-07-24, emphatic — "we run into this very very often"): when
@@ -42,6 +45,15 @@ SUT-observed), attribute to ONE suspect, fix only that (delegate to the
   stalled/broken (e.g. AMB-47). Where any conflicts with a released component,
   the released component wins — which is precisely why we build the first
   *enforceable* CNF framework. See [[served-openapi-is-native]].
+- **An OAS-vs-docs-text disagreement is NEVER an ambiguity (owner ruling
+  2026-07-26, group-3 audit):** no `ambiguities.yaml` entry may exist whose
+  only conflict is the stalled OAS disagreeing with (or omitting from) the
+  released text — the docs text wins SILENTLY, and citing the OAS even as one
+  half of a "conflict" launders a non-oracle into the record. A register
+  entry is legitimate only for released-vs-released conflicts (e.g. RM vs
+  ITS docs text) or genuine released-text silence. Seven such pseudo-AMBs
+  were withdrawn from the #379 findings the day this was ruled; audit
+  findings must cite the released sentence alone.
 
 **How it is enforced:** the always-loaded root CLAUDE.md CNF hard rule;
 `.claude/rules/cnf-triage.md` (the attribution law) + the `cnf-triage` agent;

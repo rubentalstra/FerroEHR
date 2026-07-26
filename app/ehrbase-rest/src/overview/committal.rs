@@ -163,7 +163,7 @@ pub(crate) fn committal_audit(
 /// "services MUST accept `openehr-version` and `openehr-audit-details` custom
 /// request headers" on the direct `PUT`/`POST`/`DELETE` commits, and
 /// "whatever is provided it MUST be merged with the default VERSION and
-/// VERSION.audit_details attributes on commit runtime").
+/// `VERSION.audit_details` attributes on commit runtime").
 ///
 /// `committer` is the server default the merge starts from — the request's
 /// authenticated principal — so an unsupplied `committer` keeps it rather than

@@ -105,13 +105,13 @@ pub(super) async fn run(
 /// EHR creation is a commit on change-controlled content: "the result should
 /// be a root EHR object, an EHR Status object, and an EHR Access object …
 /// created and committed in a Contribution" (RM ehr `master04-ehr_package.adoc`
-/// §EHR Creation), and the EHR_STATUS is one of the change-controlled
+/// §EHR Creation), and the `EHR_STATUS` is one of the change-controlled
 /// resources the merge rule names. So the ITS-REST MUST applies to `POST /ehr`
 /// and `PUT /ehr/{ehr_id}` exactly as it does to a COMPOSITION write
 /// (`Requests_and_responses.md` §"openehr-version and openehr-audit-details":
 /// the headers MUST be accepted on `PUT`, `POST` and `DELETE`, and "whatever
 /// is provided it MUST be merged with the default VERSION and
-/// VERSION.audit_details attributes on commit runtime").
+/// `VERSION.audit_details` attributes on commit runtime").
 ///
 /// The merge starts from the authenticated principal as the committer, so an
 /// unsupplied `committer` keeps the server default instead of being
