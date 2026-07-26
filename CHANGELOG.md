@@ -113,6 +113,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Admin console: accessibility and empty-state polish** (#302). Table header
+  cells are now announced as column headers by screen readers, and every
+  icon-only control in the query builder (the catalog's expand/collapse
+  chevrons, the remove buttons on conditions, groups, columns and sort rules)
+  plus the unlabelled column-alias, sort-path and sort-direction controls state
+  what they do. Data regions that used to come back as a line of grey text —
+  template usage, the served OpenAPI list, the commit-activity chart, an EHR's
+  compositions, the directory version history, a version's audit, the query
+  builder's conditions and result rows, and a template filter that matches
+  nothing — now render the console's standard empty state: an icon, what is
+  empty, and what to do about it. The user menu's popover matches the rest of
+  the console's panels instead of the widget kit's stock chrome, and the modal
+  backdrop is a theme token, so it dims correctly in dark mode.
 - **Contribution list shows the change type's display rubric** (#304). The
   EHR contribution-list extension (`GET /ehr/{ehr_id}/contribution`) now
   carries `change_type_rubric` beside the raw `change_type` group code —

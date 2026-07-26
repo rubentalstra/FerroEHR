@@ -816,7 +816,7 @@ fn picker_modal(ed: TreeEditor) -> AnyView {
 
     view! {
         <div
-            class="fixed inset-0 z-40 flex items-start justify-center bg-black/40 p-4 sm:items-center"
+            class="fixed inset-0 z-40 flex items-start justify-center bg-scrim p-4 sm:items-center"
             class:hidden=move || ed.picker_target.with(Option::is_none)
         >
             <div class="max-h-[85vh] w-full max-w-xl overflow-auto rounded-card border border-edge bg-raised p-4 shadow-card">
@@ -886,6 +886,10 @@ fn picker_modal(ed: TreeEditor) -> AnyView {
 /// target folder.
 fn composition_choices(ed: TreeEditor, rows: &[Vec<Value>]) -> AnyView {
     if rows.is_empty() {
+        // An inline hint, not an EmptyState: this is one half of a compact
+        // picker overlay whose other half ("or enter a reference manually")
+        // remains fully usable, so the region is not a void — and a dashed box
+        // inside a modal reads as a second, broken dialog.
         return view! { <p class="text-sm text-ink-muted">"No compositions in this EHR yet."</p> }
             .into_any();
     }

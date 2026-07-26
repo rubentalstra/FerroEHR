@@ -49,13 +49,22 @@ const PAGE_SIZE_CHOICES: [u32; 3] = [PAGE_SIZE, 50, 100];
 /// otherwise, breaking DOM↔view correspondence — rules §8). `body` is the
 /// collected `<tr>` views; build cells with [`CELL`]/[`CELL_MONO`] and
 /// rows with [`ROW`].
+///
+/// Every header cell carries `scope="col"`, so a screen reader announces the
+/// column name with each body cell it reads (WAI-ARIA Authoring Practices,
+/// "Table" pattern; the HTML `th` `scope` attribute) — the console's tables
+/// are all simple column-headed grids, which is exactly the case `scope`
+/// covers.
 #[must_use]
 pub fn table_shell(headers: &[&str], body: AnyView) -> AnyView {
     let head = headers
         .iter()
         .map(|h| {
             view! {
-                <th class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                <th
+                    scope="col"
+                    class="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted"
+                >
                     {h.to_string()}
                 </th>
             }

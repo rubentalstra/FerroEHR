@@ -495,8 +495,14 @@ fn trend_section() -> AnyView {
 /// placeholder), so the structure is hydration-stable (rules §8).
 fn trend_chart(pairs: &[(String, u32)]) -> AnyView {
     if pairs.is_empty() {
-        return view! { <p class="text-sm text-ink-muted">"No commit activity to chart yet."</p> }
-            .into_any();
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuChartLine
+                message="No commit activity yet"
+                hint="Commit a composition and the trend appears here from the next day onward."
+            />
+        }
+        .into_any();
     }
     let data: Vec<(f64, f64)> = pairs
         .iter()

@@ -25,6 +25,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
+use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA};
 use crate::components::format_view::{DocumentPane, FormatSelector};
 use crate::components::page_header::{Crumb, PageHeader};
@@ -630,7 +631,11 @@ fn toolbar_section(
         }
     };
     // A 404 (no version at that time) is a neutral note; any other failure
-    // renders through the normal inline-error path.
+    // renders through the normal inline-error path. Deliberately NOT an
+    // EmptyState: this is the answer to the time-travel control standing right
+    // beside it, not a data region that came back empty — nothing was replaced
+    // by a void, and the kit's dashed box would read as a broken panel wedged
+    // into a toolbar row.
     let note = move || match version_at_time.value().get() {
         Some(Err(AdminUiError::Cdr { status: 404, .. })) => view! {
             <p class="mt-2 text-sm text-ink-muted">
@@ -878,11 +883,17 @@ fn audit_section(
     .into_any()
 }
 
-/// Render the audit metadata for one version as a card, or a neutral note when
+/// Render the audit metadata for one version as a card, or the empty state when
 /// no matching version is found.
 fn audit_card(entry: Option<&VersionEntry>) -> AnyView {
     let Some(entry) = entry else {
-        return view! { <p class="text-sm text-ink-muted">"No audit for the selected version."</p> }
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuShieldCheck
+                message="No audit for the selected version"
+                hint="Pick another version above — every committed version carries its own audit."
+            />
+        }
         .into_any();
     };
     let version_id = entry.version_id.clone();

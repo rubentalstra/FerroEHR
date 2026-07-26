@@ -10,6 +10,7 @@ use serde_json::Value;
 use crate::pages::ehr_detail::commit_version_uid;
 
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
+use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, INPUT, LABEL, SELECT, TEXTAREA};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::toast_success;
@@ -323,8 +324,14 @@ fn format_from_value(value: &str) -> ReprFormat {
 /// suffix stripped for the link, the full uid kept visible), plus paging.
 fn compositions_table(page: &ResultPage, ehr_id: &str) -> AnyView {
     if page.rows.is_empty() {
-        return view! { <p class="text-sm text-ink-muted">"No compositions in this EHR."</p> }
-            .into_any();
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuFileText
+                message="No compositions in this EHR"
+                hint="Commit one with the form above, or through the CDR's REST API."
+            />
+        }
+        .into_any();
     }
     let rows = page.rows.clone();
     let ehr_id_owned = ehr_id.to_owned();

@@ -182,9 +182,11 @@ pub(in crate::pages::ehr_detail::directory) fn history_panel(
                     match versions.await {
                         Ok(list) if list.is_empty() => {
                             view! {
-                                <p class="text-sm text-ink-muted">
-                                    "No versions — this EHR has no directory."
-                                </p>
+                                <EmptyState
+                                    icon=icondata_lu::LuHistory
+                                    message="No versions yet"
+                                    hint="This EHR has no directory — create one and its versions are listed here."
+                                />
                             }
                                 .into_any()
                         }
