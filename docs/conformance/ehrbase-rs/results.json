@@ -2117,16 +2117,28 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_SERVICE.create_ehr-committal_headers",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_SERVICE.create_ehr-invalid_status",
       "status": "passed",
-      "rows_driven": 4,
-      "rows_total": 4
+      "rows_driven": 5,
+      "rows_total": 5
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-main",
       "status": "passed",
       "rows_driven": 18,
       "rows_total": 18
+    },
+    {
+      "case": "I_EHR_SERVICE.create_ehr-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-same_ehr_twice",
@@ -2136,6 +2148,18 @@
     },
     {
       "case": "I_EHR_SERVICE.create_ehr-two_ehrs_same_patient",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_SERVICE.create_ehr-with_ehr_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_SERVICE.create_ehr-with_ehr_id_subject_taken",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2220,6 +2244,12 @@
     },
     {
       "case": "I_EHR_STATUS.get_ehr_status-get_by_ehr_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_STATUS.get_versioned_ehr_status-contained_uid_form",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

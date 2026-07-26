@@ -7,12 +7,12 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 
 | Status | Count |
 | --- | --- |
-| passed | 398 |
+| passed | 403 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 69 |
-| total | 467 |
+| total | 472 |
 
 ## By chapter
 
@@ -30,8 +30,8 @@ Runner: cnf-runner 3.11.0 · verification pack: passed
 | I_EHR_CONTRIBUTION | 36 | 0 | 0 | 0 | 5 |
 | I_EHR_DIRECTORY | 34 | 0 | 0 | 0 | 3 |
 | I_EHR_EXTRACT_SERVICE | 0 | 0 | 0 | 0 | 10 |
-| I_EHR_SERVICE | 12 | 0 | 0 | 0 | 0 |
-| I_EHR_STATUS | 10 | 0 | 0 | 0 | 0 |
+| I_EHR_SERVICE | 16 | 0 | 0 | 0 | 0 |
+| I_EHR_STATUS | 11 | 0 | 0 | 0 | 0 |
 | I_QUERY_SERVICE | 18 | 0 | 0 | 0 | 0 |
 | I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
 | SEC | 6 | 0 | 0 | 0 | 0 |
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 398 of 467 selected cases driven.
+Coverage: 403 of 472 selected cases driven.
 
 Not-executed verdicts (each cited):
 
