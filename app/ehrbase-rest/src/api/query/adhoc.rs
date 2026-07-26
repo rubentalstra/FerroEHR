@@ -38,11 +38,19 @@ pub(super) async fn execute(
         // GET /query/aql — `q` + paging/scope in the query string.
         "query_execute_adhoc_query" => {
             let p = params::build::<QueryExecuteAdhocQueryParams>(&parts.path, q, h)?;
+            // Named parameter binds per Request.md §Query parameters (the
+            // documented GET form); the JSON-object `query_parameters` stays
+            // an accepted superset.
+            let parameters = params::named_query_parameters(
+                q,
+                p.query_parameters.unwrap_or_default(),
+                params::QUERY_RESERVED_KEYS,
+            );
             let request = scope.apply(AqlQueryRequest {
                 ehr_ids: p.ehr_id.into_iter().collect(),
                 offset: p.offset,
                 fetch: p.fetch,
-                parameters: p.query_parameters.unwrap_or_default(),
+                parameters,
                 ..Default::default()
             });
             Ok(state.backend().execute_ad_hoc_query(p.q, request).await?)
