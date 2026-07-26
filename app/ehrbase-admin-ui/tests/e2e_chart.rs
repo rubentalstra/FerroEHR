@@ -3,7 +3,8 @@
     clippy::expect_used,
     clippy::print_stdout,
     unreachable_pub,
-    dead_code // each test binary uses a subset of the shared harness methods
+    dead_code, // each test binary uses a subset of the shared harness methods
+    clippy::too_many_lines // one linear journey: seed, run, assert legend/axis/toggle
 )]
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)

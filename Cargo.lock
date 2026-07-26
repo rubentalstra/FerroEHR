@@ -2378,6 +2378,7 @@ dependencies = [
  "icondata_core",
  "icondata_lu",
  "indexmap 2.14.0",
+ "jiff",
  "leptos",
  "leptos-chartistry",
  "leptos-use 0.19.0",

@@ -297,7 +297,9 @@ fn any_series_plottable(series_count: usize, points: &[ChartRow]) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// ISO 8601 <-> epoch seconds (pure arithmetic — no dependency added)
+// ISO 8601 <-> epoch seconds (jiff — the workspace's ISO 8601 crate; only
+// pure parsing/formatting is used, so no clock and no tzdb, which is what
+// keeps it wasm-clean)
 // ---------------------------------------------------------------------------
 
 /// Seconds since the Unix epoch for an ISO 8601 date or date/time, or `None`
@@ -312,176 +314,29 @@ fn any_series_plottable(series_count: usize, points: &[ChartRow]) -> bool {
 #[must_use]
 pub fn iso_epoch_seconds(text: &str) -> Option<f64> {
     let text = text.trim();
-    let (date, time) = match text.split_once('T') {
-        Some((date, rest)) => (date, Some(rest)),
-        None => match text.split_once(' ') {
-            Some((date, rest)) => (date, Some(rest)),
-            None => (text, None),
-        },
+    // Reject bare years / year-month early: jiff's `Date` parser demands a full
+    // date too, but a plain number ("37") must not fall through to any parser
+    // that could read it as something else.
+    let seconds = if let Ok(timestamp) = text.parse::<jiff::Timestamp>() {
+        // A full instant (offset present, `Z` / `±hh:mm` / `±hhmm`).
+        timestamp.as_second()
+    } else if let Ok(datetime) = text.parse::<jiff::civil::DateTime>() {
+        // Offset-less date/time — read as UTC (uniform shift, order-preserving).
+        jiff::tz::TimeZone::UTC
+            .to_timestamp(datetime)
+            .ok()?
+            .as_second()
+    } else if let Ok(date) = text.parse::<jiff::civil::Date>() {
+        // Date only — midnight UTC.
+        jiff::tz::TimeZone::UTC
+            .to_timestamp(date.at(0, 0, 0, 0))
+            .ok()?
+            .as_second()
+    } else {
+        return None;
     };
-    let mut fields = date.split('-');
-    let year_text = fields.next()?;
-    if year_text.len() != 4 {
-        return None;
-    }
-    let year = ascii_number(year_text)?;
-    let month = ascii_number(fields.next()?)?;
-    let day = ascii_number(fields.next()?)?;
-    if fields.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
-        return None;
-    }
-    let mut seconds = days_from_civil(year, month, day).checked_mul(86_400)?;
-    if let Some(time) = time {
-        let (clock, offset) = split_offset(time)?;
-        seconds = seconds.checked_add(clock_seconds(clock)?)?;
-        seconds = seconds.checked_sub(offset)?;
-    }
     #[allow(clippy::cast_precision_loss)] // instants are inside f64's exact integer range
     Some(seconds as f64)
-}
-
-/// Parse a run of ASCII digits (rejecting signs, spaces, and empty text).
-fn ascii_number(text: &str) -> Option<i64> {
-    if text.is_empty() || !text.bytes().all(|byte| byte.is_ascii_digit()) {
-        return None;
-    }
-    text.parse::<i64>().ok()
-}
-
-/// Split an ISO time-of-day from its trailing zone designator, returning the
-/// clock text and the zone offset in seconds east of UTC.
-fn split_offset(time: &str) -> Option<(&str, i64)> {
-    if let Some(clock) = time.strip_suffix('Z').or_else(|| time.strip_suffix('z')) {
-        return Some((clock, 0));
-    }
-    if let Some((clock, offset)) = time.split_once('+') {
-        return Some((clock, zone_seconds(offset)?));
-    }
-    if let Some((clock, offset)) = time.split_once('-') {
-        return Some((clock, zone_seconds(offset)?.checked_neg()?));
-    }
-    Some((time, 0))
-}
-
-/// The magnitude of a `hh[:mm]` (or `hhmm`) zone offset, in seconds.
-fn zone_seconds(offset: &str) -> Option<i64> {
-    let (hours, minutes) = match offset.split_once(':') {
-        Some((hours, minutes)) => (ascii_number(hours)?, ascii_number(minutes)?),
-        None if offset.len() == 4 => {
-            let (hours, minutes) = offset.split_at(2);
-            (ascii_number(hours)?, ascii_number(minutes)?)
-        }
-        None => (ascii_number(offset)?, 0),
-    };
-    if !(0..=23).contains(&hours) || !(0..=59).contains(&minutes) {
-        return None;
-    }
-    hours
-        .checked_mul(3_600)?
-        .checked_add(minutes.checked_mul(60)?)
-}
-
-/// Seconds since midnight for an `hh:mm[:ss[.fraction]]` clock reading.
-fn clock_seconds(clock: &str) -> Option<i64> {
-    let mut fields = clock.split(':');
-    let hours = ascii_number(fields.next()?)?;
-    let minutes = fields.next().map_or(Some(0), ascii_number)?;
-    let seconds = match fields.next() {
-        Some(text) => {
-            // A fraction must still be digits; its value is then dropped.
-            let (whole, fraction) = match text.split_once('.') {
-                Some((whole, fraction)) => (whole, Some(fraction)),
-                None => (text, None),
-            };
-            if let Some(fraction) = fraction
-                && ascii_number(fraction).is_none()
-            {
-                return None;
-            }
-            ascii_number(whole)?
-        }
-        None => 0,
-    };
-    if fields.next().is_some()
-        || !(0..=23).contains(&hours)
-        || !(0..=59).contains(&minutes)
-        || !(0..=60).contains(&seconds)
-    {
-        return None;
-    }
-    hours
-        .checked_mul(3_600)?
-        .checked_add(minutes.checked_mul(60)?)?
-        .checked_add(seconds)
-}
-
-/// Days from the Unix epoch to a proleptic-Gregorian civil date.
-///
-/// Howard Hinnant's `days_from_civil`
-/// (<https://howardhinnant.github.io/date_algorithms.html>) — the reference
-/// implementation behind C++20's `std::chrono` civil calendar: exact for every
-/// year an instant can carry, and inverted branch-for-branch by
-/// [`civil_from_days`].
-fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
-    let year = if month <= 2 { year - 1 } else { year };
-    let era = if year >= 0 { year } else { year - 399 } / 400;
-    let year_of_era = year - era * 400;
-    let month_shift = if month > 2 { month - 3 } else { month + 9 };
-    let day_of_year = (153 * month_shift + 2) / 5 + day - 1;
-    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
-    era * 146_097 + day_of_era - 719_468
-}
-
-/// The inverse of [`days_from_civil`] (Hinnant's `civil_from_days`).
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let shifted = days + 719_468;
-    let era = if shifted >= 0 {
-        shifted
-    } else {
-        shifted - 146_096
-    } / 146_097;
-    let day_of_era = shifted - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_shift = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_shift + 2) / 5 + 1;
-    let month = if month_shift < 10 {
-        month_shift + 3
-    } else {
-        month_shift - 9
-    };
-    (if month <= 2 { year + 1 } else { year }, month, day)
-}
-
-/// A civil date and clock reading — what a time-axis tick label renders from.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Civil {
-    /// Proleptic-Gregorian year.
-    year: i64,
-    /// Month of year, 1–12.
-    month: i64,
-    /// Day of month, 1–31.
-    day: i64,
-    /// Hour of day, 0–23.
-    hour: i64,
-    /// Minute of hour, 0–59.
-    minute: i64,
-}
-
-/// The civil breakdown of an instant given as seconds since the Unix epoch.
-/// Euclidean division keeps pre-1970 instants correct (no negative clocks).
-fn civil_from_epoch(seconds: i64) -> Civil {
-    let (year, month, day) = civil_from_days(seconds.div_euclid(86_400));
-    let in_day = seconds.rem_euclid(86_400);
-    Civil {
-        year,
-        month,
-        day,
-        hour: in_day / 3_600,
-        minute: (in_day % 3_600) / 60,
-    }
 }
 
 /// Label one tick of a time axis whose visible span is `span_seconds` wide.
@@ -489,29 +344,35 @@ fn civil_from_epoch(seconds: i64) -> Civil {
 /// The span picks the granularity, so a single day of readings reads as clock
 /// times, a few months as `MM-DD hh:mm`, and a multi-year series as dates — a
 /// label never repeats what the axis already makes obvious. A tick that is not
-/// a finite instant renders as `-`, the same placeholder chartistry's own float
-/// formatter uses.
+/// a finite instant (or is outside jiff's representable range, ±9999 years)
+/// renders as `-`, the same placeholder chartistry's own float formatter uses.
 #[must_use]
 pub fn time_tick_label(seconds: f64, span_seconds: f64) -> String {
-    // 10^12 s is ~30 000 years: beyond that the value is not a clinical
-    // instant, and the cast below would be the only questionable step.
     if !seconds.is_finite() || seconds.abs() > 1e12 {
         return "-".to_owned();
     }
     #[allow(clippy::cast_possible_truncation)] // range-guarded immediately above
-    let Civil {
-        year,
-        month,
-        day,
-        hour,
-        minute,
-    } = civil_from_epoch(seconds as i64);
+    let Ok(timestamp) = jiff::Timestamp::from_second(seconds as i64) else {
+        return "-".to_owned();
+    };
+    let civil = jiff::tz::TimeZone::UTC.to_datetime(timestamp);
     if span_seconds <= DAY {
-        format!("{hour:02}:{minute:02}")
+        format!("{:02}:{:02}", civil.hour(), civil.minute())
     } else if span_seconds <= DAY * 366.0 {
-        format!("{month:02}-{day:02} {hour:02}:{minute:02}")
+        format!(
+            "{:02}-{:02} {:02}:{:02}",
+            civil.month(),
+            civil.day(),
+            civil.hour(),
+            civil.minute()
+        )
     } else {
-        format!("{year:04}-{month:02}-{day:02}")
+        format!(
+            "{:04}-{:02}-{:02}",
+            civil.year(),
+            civil.month(),
+            civil.day()
+        )
     }
 }
 
