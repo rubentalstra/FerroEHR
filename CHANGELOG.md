@@ -17,6 +17,22 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: EHR_STATUS editing and a status version history** (#306). The
+  EHR detail screen's **Status** tab is no longer read-only: an **Edit status**
+  card toggles `is_queryable` and `is_modifiable` and edits `other_details`
+  (canonical-JSON `ITEM_STRUCTURE`; blank removes it), committing a new
+  `EHR_STATUS` version conditionally on the version the screen loaded. Every
+  other attribute — the subject included — is sent back exactly as the CDR served
+  it, so an edit can never drop what the form does not show; a non-object
+  `other_details` is refused before anything is sent, and a rejected document
+  keeps the CDR's own diagnostic on screen beside the form. If another client
+  committed a new status meanwhile, the write is refused rather than overwriting
+  it, and the console says so with what to do next. A new **Status history** tab
+  adds the versioned view: the `VERSIONED_EHR_STATUS` container plus the selected
+  version's envelope facts, the revision history newest-first, a date-and-time
+  lookup that resolves the version extant at that instant, and any version's
+  document opened by its own `OBJECT_VERSION_ID`. A non-queryable EHR's warning
+  now points at the toggle that fixes it.
 - **Admin console: grouped multi-series result charts** (#296). The results pane
   (both the point-and-click builder and the raw AQL editor) now charts **every**
   numeric result column instead of only the first one: one line per column, named

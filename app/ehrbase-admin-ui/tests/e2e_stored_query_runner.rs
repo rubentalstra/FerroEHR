@@ -276,15 +276,24 @@ async fn stored_query_runs_with_parameters_in_every_resolution_form() {
     h.wait_url_contains("/queries/stored").await;
 
     // The link's version seeds the EXACT form, and the query's one placeholder
-    // is prompted by name.
+    // is prompted by name. `prop:value` lands at hydration, so poll like the
+    // versioning journey's proposed-version read — asserting immediately races
+    // the WASM load on a full-page navigation.
     let version_field = h.wait_css("#stored-run-version").await;
-    assert_eq!(
-        version_field
+    let mut seeded = String::new();
+    for _ in 0..20 {
+        seeded = version_field
             .prop("value")
             .await
             .expect("read the version field")
-            .unwrap_or_default(),
-        "1.0.0",
+            .unwrap_or_default();
+        if seeded == "1.0.0" {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+    assert_eq!(
+        seeded, "1.0.0",
         "the runner must open at the version the link named"
     );
     h.wait_css("[data-stored-param=\"template\"]").await;
