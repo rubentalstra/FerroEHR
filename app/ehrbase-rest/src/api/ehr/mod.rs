@@ -150,7 +150,7 @@ fn term(code: &str) -> TerminologyCode {
 /// published by the auth middleware (system identity when none). The SM service
 /// impl re-derives the committer from the same principal, so this rides in the
 /// [`UpdateVersion`] envelope for completeness.
-fn committer_proxy() -> PartyProxy {
+pub(crate) fn committer_proxy() -> PartyProxy {
     let value = match crate::extensions::access::authn::current_principal() {
         Some(principal) => {
             let id_type = match principal.method {
