@@ -137,8 +137,10 @@ The separate-port management listener always stays plain HTTP.
 
 ### `[server.identity]`
 
-The `OPTIONS /` System-Options manifest identity. Defaults are measured, not
-asserted — the manifest never out-claims the last conformance verdict.
+The System-Options manifest identity (`OPTIONS` on the API base path, e.g.
+`OPTIONS /ehrbase/rest/openehr/v1` — the System API's one location). Defaults
+are measured, not asserted — the manifest never out-claims the last
+conformance verdict.
 
 | Key | Type | Default | Description |
 |---|---|---|---|

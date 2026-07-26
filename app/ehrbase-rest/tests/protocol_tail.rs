@@ -150,14 +150,17 @@ async fn commit_ips_composition(app: &Router) -> (String, String) {
     (ehr_id, etag_uid(&h))
 }
 
-// ── OPTIONS / (R32) ────────────────────────────────────────────────────────
+// ── OPTIONS on the API base path (the System API's one location) ──────────
 
 #[tokio::test]
 async fn options_root_is_system_options_and_conformance() {
     let (_pg, app) = app().await;
+    // The System API mounts at the API base-path root ONLY
+    // (`system.openapi.yaml` servers `{baseUrl}/v1`, path `/`); the former
+    // bare-`/` alias was our own duplication and is gone.
     let req = Request::builder()
         .method("OPTIONS")
-        .uri("/")
+        .uri(BASE)
         .body(Body::empty())
         .unwrap();
     let (status, h, body) = send(&app, req).await;

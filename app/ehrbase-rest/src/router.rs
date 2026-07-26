@@ -223,17 +223,16 @@ pub fn router(state: AppState, authenticator: Arc<Authenticator>) -> Router {
         endpoints,
     ));
 
-    // Mount at the API base-path root (System API) and keep a bare-`/` alias
-    // for naive root probes; every other request falls through to the
-    // CORS-wrapped application. Both sit above CORS so `OPTIONS` is not eaten as
-    // a preflight; real per-resource CORS preflights are on sub-paths and reach
-    // the CORS layer via the fallback.
+    // Mount at the API base-path root — the ONE location the System API
+    // defines (`system.openapi.yaml`: servers `{baseUrl}/v1`, path `/` — the
+    // operation lives at the API root, nowhere else; the former bare-`/`
+    // alias was our own duplication and is removed, #420). Every other
+    // request falls through to the CORS-wrapped application. The mount sits
+    // above CORS so `OPTIONS` is not eaten as a preflight; real per-resource
+    // CORS preflights are on sub-paths and reach the CORS layer via the
+    // fallback.
     let app: Router = Router::new()
-        .route(
-            &cfg.server.base_path,
-            system::options::route(manifest.clone()),
-        )
-        .route("/", system::options::route(manifest))
+        .route(&cfg.server.base_path, system::options::route(manifest))
         .fallback_service(inner);
 
     // Merge the management surface only when enabled AND not bound to a separate
