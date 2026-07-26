@@ -10,9 +10,11 @@
 //! `class:hidden`, keeping the server and client view structure identical
 //! (rules §8 — no `cfg!`-branched structure).
 //!
-//! This module owns the [`EhrDetailPage`] shell, the shared [`tab_bar`] strip,
-//! and the `commit_version_uid` helper shared by the directory and composition
-//! commit paths.
+//! This module owns the [`EhrDetailPage`] shell, the EHR summary header (the
+//! one read of the EHR resource itself — `GET /ehr/{ehr_id}`, so an unknown id
+//! fails once at the top of the screen instead of once per tab), the shared
+//! [`tab_bar`] strip, and the `commit_version_uid` helper shared by the
+//! directory and composition commit paths.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound (ITS-REST EHR + Query APIs). User input
@@ -29,14 +31,16 @@ pub mod contributions;
 pub mod directory;
 pub mod status;
 
-use leptos::component;
 use leptos::prelude::*;
+use leptos::{component, server};
 use leptos_meta::Title;
+use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
 use crate::components::field::BTN_DANGER;
 use crate::components::page_header::{Crumb, PageHeader};
+use crate::components::surface::CARD_PAD;
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 use crate::pages::ehr_detail::compositions::compositions_section;
@@ -59,6 +63,176 @@ fn commit_version_uid(body: &str) -> String {
                 .map(str::to_owned)
         })
         .unwrap_or_default()
+}
+
+/// The EHR resource's own summary facts, flattened for the detail header.
+///
+/// All fields are plain strings (no `usize`), so the type is safe across the
+/// server-fn boundary on the 32-bit WASM target (rules §1).
+///
+/// The attributes are the RM `EHR` class's own: `system_id` ("the identifier of
+/// the logical EHR management system in which this EHR was created"),
+/// `time_created`, and the `ehr_status` reference — an `OBJECT_REF` whose `id`
+/// addresses the CURRENT `EHR_STATUS` version and whose `type` names the
+/// versioned container (invariant `Ehr_status_valid`:
+/// `ehr_status.type.is_equal("VERSIONED_EHR_STATUS")`) — all from
+/// `docs/specs/openehr/RM/docs/UML/classes/org.openehr.rm.ehr.ehr.adoc`
+/// §`EHR Class`.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct EhrSummary {
+    /// `EHR.ehr_id.value` as the CDR reports it.
+    pub ehr_id: String,
+    /// `EHR.system_id.value` — recorded at creation, immutable thereafter.
+    pub system_id: String,
+    /// `EHR.time_created.value`.
+    pub time_created: String,
+    /// `EHR.ehr_status.id.value` — the current `EHR_STATUS` version.
+    pub ehr_status_uid: String,
+    /// `EHR.ehr_status.type` — the referenced versioned container's RM type.
+    pub ehr_status_type: String,
+}
+
+/// Read the EHR resource itself (`GET /ehr/{ehr_id}`) for the detail header.
+///
+/// This is the console's ONE reader of the EHR resource: an unknown or
+/// mistyped id surfaces here, once, at the top of the screen — the tabs read
+/// their own sub-resources.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
+/// errors pass through; a non-2xx CDR answer (the `404` for an unknown
+/// `ehr_id` included) normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
+/// [`AdminUiError::Internal`] when the body is not valid JSON.
+#[server]
+pub async fn fetch_ehr_summary(ehr_id: String) -> Result<EhrSummary, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let url = state
+        .cdr
+        .rest_v1(&format!("ehr/{}", urlencoding::encode(&ehr_id)));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    parse_ehr_summary(&response.body)
+}
+
+#[cfg(feature = "ssr")]
+/// Flatten an `EHR` resource body into an [`EhrSummary`]. Defensive throughout —
+/// a missing attribute reads as empty rather than failing, so a header still
+/// renders what the CDR did send.
+///
+/// # Errors
+/// [`AdminUiError::Internal`] when the body is not valid JSON.
+fn parse_ehr_summary(body: &str) -> Result<EhrSummary, AdminUiError> {
+    let doc: Value =
+        serde_json::from_str(body).map_err(|e| AdminUiError::Internal(format!("EHR JSON: {e}")))?;
+    Ok(EhrSummary {
+        ehr_id: json_path(&doc, &["ehr_id", "value"]),
+        system_id: json_path(&doc, &["system_id", "value"]),
+        time_created: json_path(&doc, &["time_created", "value"]),
+        ehr_status_uid: json_path(&doc, &["ehr_status", "id", "value"]),
+        ehr_status_type: json_path(&doc, &["ehr_status", "type"]),
+    })
+}
+
+#[cfg(feature = "ssr")]
+/// Follow a chain of object keys to a string leaf, or an empty string when any
+/// hop is absent or not a string.
+fn json_path(value: &Value, path: &[&str]) -> String {
+    let mut current = value;
+    for key in path {
+        match current.get(*key) {
+            Some(next) => current = next,
+            None => return String::new(),
+        }
+    }
+    current.as_str().unwrap_or_default().to_owned()
+}
+
+/// The EHR summary header: the EHR resource's own facts above the tabs.
+///
+/// One resource, created in setup and read inside a `<Suspense>` that resolves
+/// its `Result` there (an SSR'd `ErrorBoundary` fallback mismatches at
+/// hydration in leptos 0.8 — rules §4). A `404` renders as the explicit
+/// "no such EHR" state: this is where a mistyped id is reported, once.
+fn summary_section(ehr_id: Signal<String>) -> AnyView {
+    let resource = Resource::new(
+        move || ehr_id.get(),
+        |id| async move { fetch_ehr_summary(id).await },
+    );
+    view! {
+        <div class="mb-4">
+            <Suspense fallback=|| {
+                view! {
+                    <thaw::Skeleton>
+                        <thaw::SkeletonItem class="h-16" />
+                    </thaw::Skeleton>
+                }
+            }>
+                {move || Suspend::new(async move {
+                    match resource.await {
+                        Ok(summary) => summary_card(&summary),
+                        Err(AdminUiError::Cdr { status: 404, .. }) => {
+                            view! {
+                                <div
+                                    role="alert"
+                                    id="ehr-not-found"
+                                    class="rounded-card border border-danger/40 bg-danger-subtle px-3 py-2 text-sm text-danger"
+                                >
+                                    "The CDR holds no EHR with this id — check the id, or create it on the EHRs screen."
+                                </div>
+                            }
+                                .into_any()
+                        }
+                        Err(e) => crate::components::format_view::inline_error(&e),
+                    }
+                })}
+            </Suspense>
+        </div>
+    }
+    .into_any()
+}
+
+/// Render the EHR summary as a compact fact card.
+fn summary_card(summary: &EhrSummary) -> AnyView {
+    let status_label = if summary.ehr_status_type.is_empty() {
+        "ehr_status".to_owned()
+    } else {
+        format!("ehr_status ({})", summary.ehr_status_type)
+    };
+    let facts = vec![
+        summary_fact("ehr_id".to_owned(), summary.ehr_id.clone()),
+        summary_fact("system_id".to_owned(), summary.system_id.clone()),
+        summary_fact("time_created".to_owned(), summary.time_created.clone()),
+        summary_fact(status_label, summary.ehr_status_uid.clone()),
+    ];
+    view! {
+        <section class=CARD_PAD id="ehr-summary">
+            <div class="grid grid-cols-1 sm:grid-cols-2 items-start gap-x-4 gap-y-2 text-sm">
+                {facts}
+            </div>
+        </section>
+    }
+    .into_any()
+}
+
+/// One label/value line of the summary card (an absent value shows an em dash).
+fn summary_fact(label: String, value: String) -> AnyView {
+    let shown = if value.is_empty() {
+        "—".to_owned()
+    } else {
+        value
+    };
+    view! {
+        <div>
+            <span class="font-medium text-ink-muted mr-1">{label}":"</span>
+            <span class="font-mono break-all text-ink">{shown}</span>
+        </div>
+    }
+    .into_any()
 }
 
 /// The `/ehrs/{ehr_id}` screen: the tab bar plus four always-mounted,
@@ -95,6 +269,7 @@ pub fn EhrDetailPage() -> impl IntoView {
         format!("EHR {short}…")
     });
 
+    let summary = summary_section(ehr_id);
     let tabs = tab_bar(ehr_id, selected);
     let delete_action = delete_section(ehr_id);
 
@@ -107,6 +282,7 @@ pub fn EhrDetailPage() -> impl IntoView {
                 mono=true
             />
             {delete_action}
+            {summary}
             {tabs}
             <div class="mt-4">
                 <div class:hidden=move || selected.get() != "status">{status}</div>
@@ -235,7 +411,41 @@ fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::commit_version_uid;
+    use super::{commit_version_uid, parse_ehr_summary};
+
+    #[test]
+    fn parses_the_ehr_resources_summary_attributes() {
+        // The RM `EHR` wire shape: `system_id`/`ehr_id` HIER_OBJECT_IDs, a
+        // DV_DATE_TIME `time_created`, and the `ehr_status` OBJECT_REF whose id
+        // is the CURRENT EHR_STATUS OBJECT_VERSION_ID.
+        let body = r#"{
+            "_type": "EHR",
+            "system_id": {"_type": "HIER_OBJECT_ID", "value": "example.ehrbase.org"},
+            "ehr_id": {"_type": "HIER_OBJECT_ID", "value": "7d44aa01-0f9e-4a2c-9a0f-2a6a5f9b1c3d"},
+            "ehr_status": {
+                "_type": "OBJECT_REF",
+                "namespace": "local",
+                "type": "VERSIONED_EHR_STATUS",
+                "id": {"_type": "OBJECT_VERSION_ID", "value": "8849182c::example.ehrbase.org::1"}
+            },
+            "time_created": {"_type": "DV_DATE_TIME", "value": "2026-07-12T10:00:00Z"}
+        }"#;
+        let summary = parse_ehr_summary(body).expect("valid EHR resource");
+        assert_eq!(summary.ehr_id, "7d44aa01-0f9e-4a2c-9a0f-2a6a5f9b1c3d");
+        assert_eq!(summary.system_id, "example.ehrbase.org");
+        assert_eq!(summary.time_created, "2026-07-12T10:00:00Z");
+        assert_eq!(summary.ehr_status_uid, "8849182c::example.ehrbase.org::1");
+        assert_eq!(summary.ehr_status_type, "VERSIONED_EHR_STATUS");
+    }
+
+    #[test]
+    fn a_sparse_ehr_body_reads_as_empty_facts_and_a_bad_body_errors() {
+        let summary = parse_ehr_summary("{}").expect("an empty object parses");
+        assert_eq!(summary.ehr_id, "");
+        assert_eq!(summary.system_id, "");
+        assert_eq!(summary.ehr_status_uid, "");
+        assert!(parse_ehr_summary("not json").is_err());
+    }
 
     #[test]
     fn commit_version_uid_reads_uid_value_or_empty() {

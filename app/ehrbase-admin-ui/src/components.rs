@@ -2,9 +2,11 @@
 //! Screens compose these instead of hand-rolling markup: `PageHeader`
 //! opens every route, `table_shell` renders every listing, the `field`
 //! constants style every control, `StatCard`/`EmptyState` cover metrics
-//! and voids, `results_chart` draws every AQL result set, and `toast`
-//! reports every mutation outcome.
+//! and voids, `results_chart` draws every AQL result set, `activity_chart`
+//! draws every events-per-day timeline, and `toast` reports every mutation
+//! outcome.
 
+pub mod activity_chart;
 pub mod brand;
 pub mod confirm_dialog;
 pub mod data_table;

@@ -30,6 +30,27 @@ workflow refuses a tag that has no matching section here.
   every non-empty result set, and a result set with nothing to chart (no numeric
   column, or a single row) explains that in the chart pane instead of showing a
   blank box.
+- **Admin console: EHR-detail and System-panel completions** (#315). The EHR
+  detail screen now opens with a **summary header** read from the EHR resource
+  itself (id, creating system, creation time, current EHR-status reference), so
+  an unknown or mistyped EHR id is reported once at the top of the screen
+  instead of once per tab. The **Create EHR** card takes an optional **EHR id**:
+  supply a UUID to create that exact EHR (a non-UUID is refused before anything
+  is sent, and an id already in use comes back as the CDR's own conflict with
+  what to do next), or leave it blank as before. The composition viewer gains
+  **Delete composition** — the openEHR *logical* delete of the latest version
+  behind a confirmation dialog, which returns to the EHR's composition list on
+  success and, if the version moved on meanwhile, says so instead of deleting
+  the wrong one — and a **Versioned object** card reading the versioned
+  composition and the selected version directly (lifecycle state, preceding
+  version, contribution, signature, whether the version still carries content).
+  The contributions tab opens with a **contribution activity** timeline of
+  writes per day. On **System**, a **conformance manifest** card shows what the
+  CDR advertises about itself through the openEHR System API (product, vendor,
+  claimed conformance profile, and the API groups it actually mounts), and the
+  served-OpenAPI card gains a **per-family document selector** whose choice
+  lives in the URL (`/system?openapi=query`), so a family document is
+  shareable and survives a reload.
 
 - **Admin console: the stored-query and template tables are paged** (#298). Both
   listings now carry the console's shared pagination footer — which rows are on

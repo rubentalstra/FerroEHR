@@ -83,6 +83,54 @@ pub fn write_failure_copy(object: &str, error: &AdminUiError) -> String {
     }
 }
 
+/// Actionable copy for a refused openEHR **logical delete** — the versioned
+/// delete of a COMPOSITION or a directory, which is a normal write on the
+/// versioned object (not the destructive admin delete
+/// [`delete_failure_copy`](crate::admin::delete_failure_copy) covers).
+///
+/// The concurrency family gets its own next action: a `409` is returned "when
+/// supplied `uid_based_id` doesn't match the latest version"
+/// (`docs/specs/openehr/ITS-REST/specifications/responses/409_COMPOSITION_with_uid_based_id.yaml`)
+/// and a `412` is the `If-Match` precondition on the preceding version
+/// evaluating to false
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §"If-Match and accidental overwrites") — the same cause, so one next
+/// action: reload the history and delete the version that is now latest.
+/// Everything else falls through to [`write_failure_copy`].
+#[must_use]
+pub fn logical_delete_failure_copy(object: &str, error: &AdminUiError) -> String {
+    match error {
+        AdminUiError::Cdr {
+            status: 409 | 412,
+            message,
+        } => format!(
+            "{object} moved on in the CDR since this screen loaded, so nothing was deleted \
+             ({message}). Reload the version history and delete the version that is latest now."
+        ),
+        // `400_already_deleted` on the COMPOSITION delete: the version is
+        // already logically deleted, so there is nothing left to do.
+        AdminUiError::Cdr {
+            status: 400,
+            message,
+        } => format!(
+            "The CDR refused to delete {object}: {message}. It may already be deleted — reload \
+             this screen to see the current history."
+        ),
+        AdminUiError::Cdr {
+            status: 404,
+            message,
+        } => format!(
+            "{object} is not in the CDR ({message}) — it may have been deleted meanwhile. Reload \
+             this screen."
+        ),
+        AdminUiError::Forbidden(message) => format!(
+            "This session may not delete {object} ({message}). Sign in with an account that \
+             carries the required role and retry."
+        ),
+        other => write_failure_copy(object, other),
+    }
+}
+
 /// Toast a failed write with [`write_failure_copy`] — the failure half of the
 /// rule this module records. `title` is the short outcome ("Upload failed",
 /// "Commit failed"); `object` is the noun phrase the copy is built around.
@@ -97,8 +145,65 @@ pub fn toast_write_failure(
 
 #[cfg(test)]
 mod tests {
-    use super::write_failure_copy;
+    use super::{logical_delete_failure_copy, write_failure_copy};
     use crate::error::AdminUiError;
+
+    #[test]
+    fn a_logical_delete_conflict_says_reload_the_history() {
+        // 409 (path uid is not the latest version) and 412 (If-Match failed)
+        // are the same cause and share one next action.
+        for status in [409_u16, 412] {
+            let copy = logical_delete_failure_copy(
+                "this composition version",
+                &AdminUiError::Cdr {
+                    status,
+                    message: "latest is ::3".to_owned(),
+                },
+            );
+            assert!(copy.contains("this composition version"), "{copy}");
+            assert!(copy.contains("latest is ::3"), "{copy}");
+            assert!(copy.contains("Reload the version history"), "{copy}");
+            assert!(copy.contains("nothing was deleted"), "{copy}");
+        }
+    }
+
+    #[test]
+    fn an_already_deleted_version_and_a_refusal_read_as_deletes() {
+        let already = logical_delete_failure_copy(
+            "this composition version",
+            &AdminUiError::Cdr {
+                status: 400,
+                message: "already deleted".to_owned(),
+            },
+        );
+        assert!(
+            already.contains("already deleted") && already.contains("reload"),
+            "{already}"
+        );
+
+        let refused = logical_delete_failure_copy(
+            "this composition version",
+            &AdminUiError::Forbidden("insufficient scope".to_owned()),
+        );
+        assert!(
+            refused.contains("may not delete") && refused.contains("insufficient scope"),
+            "{refused}"
+        );
+
+        // Anything outside the delete-specific family keeps the shared write
+        // copy rather than inventing a second vocabulary.
+        let down = logical_delete_failure_copy(
+            "this composition version",
+            &AdminUiError::CdrUnreachable("connection refused".to_owned()),
+        );
+        assert_eq!(
+            down,
+            write_failure_copy(
+                "this composition version",
+                &AdminUiError::CdrUnreachable("connection refused".to_owned())
+            )
+        );
+    }
 
     #[test]
     fn cdr_validation_rejection_names_the_object_the_diagnostic_and_the_next_action() {
