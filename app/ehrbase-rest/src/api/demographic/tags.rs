@@ -44,12 +44,14 @@ pub(super) async fn run(
                 .await?;
             // person_tags_update.yaml — 200 (200_PERSON_ItemTagList_updated)
             // with the tag list on `Prefer: return=representation`; 204
-            // (204_updated) when `Prefer` is missing or `return=minimal`.
-            if negotiate::prefers_representation(h) {
-                Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
-            } else {
-                Ok(negotiate::empty(StatusCode::NO_CONTENT))
-            }
+            // (204_updated) when `Prefer` is missing or `return=minimal`,
+            // with `Preference-Applied` declaring which.
+            Ok(negotiate::write_collection(
+                h,
+                StatusCode::NO_CONTENT,
+                StatusCode::OK,
+                &resp.body,
+            ))
         }
         "tags_delete" => {
             let p = params::build::<AgentTagsDeleteParams>(&parts.path, q, h)?;

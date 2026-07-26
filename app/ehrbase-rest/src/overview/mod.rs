@@ -43,17 +43,25 @@
 //!   are not `uid`-versioned, so their identifier body is
 //!   `{ "template_id": … }` (`schemas/others/TemplateIdentifier.yaml`), rendered
 //!   in that group's handlers.
-//! - **`Preference-Applied` — DONE.** Emitted on write responses echoing
-//!   the honoured `return=` preference ([`negotiate`], a MAY).
+//! - **`Preference-Applied` — DONE.** Every write path declares the preference
+//!   it actually applied through the one seam
+//!   ([`negotiate::set_preference_applied`], a MAY): the canonical/JSON writes
+//!   via [`negotiate::write_negotiated`], plus the demographic writes, the
+//!   template uploads, the `ITEM_TAG` collection writes, and the
+//!   Simplified-Formats commit. A request with no `Prefer` gets the applied
+//!   default, `return=minimal`.
 //! - **Item-tag headers — DONE (EHR group).** The parse/emit helpers
 //!   ([`params::parse_item_tag_header`] / [`params::emit_item_tag_header`]) are
 //!   consumed by the EHR/COMPOSITION dispatch:
 //!   [`apply_item_tag_headers`](crate::api::ehr::apply_item_tag_headers) folds
 //!   the request wrapper headers onto the `ITEM_TAG` service on change-controlled
 //!   writes (empty value ⇒ delete all) and
-//!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes the stored tags
-//!   on the response. (The demographic group does not yet emit these — a pending
-//!   service seam.)
+//!   [`echo_item_tags`](crate::api::ehr::echo_item_tags) echoes each stored
+//!   collection under ITS OWN header — `openehr-item-tag` confirms the
+//!   `VERSIONED_OBJECT`'s tags, `openehr-version-item-tag` the VERSION's, never
+//!   merged. The demographic group emits both headers from the same set by
+//!   design (its tags are `VERSIONED_OBJECT`-scoped only — see
+//!   `crate::api::demographic`).
 //! - **Method status — DONE.** [`error::method_not_allowed_handler`]
 //!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
 //!   (`crate::router::router`), so a known path called with a disallowed method renders

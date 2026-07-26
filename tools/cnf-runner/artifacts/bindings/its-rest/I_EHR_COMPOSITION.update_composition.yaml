@@ -18,6 +18,13 @@ formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
 # VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
 # state identifiers", and "For openEHR resources, this value [Last-Modified]
 # should be derived from `VERSION.commit_audit.time_committed.value`".
+# The request above sends `Prefer: return=representation`, so §Representation
+# details negotiation also applies: "The service MAY include a
+# `Preference-Applied` header in the response, such as `Preference-Applied:
+# return=minimal` or `Preference-Applied: return=representation`, to indicate
+# that the client's preference has been honored." Presence is a MAY, so the
+# declaration is the optional matcher — the docs text fixes only the VALUE (the
+# honoured preference token) when the header is sent, never that it must be.
 # TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
 # status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
 # declaration is the authored contract, not an executed assertion — it becomes
@@ -28,6 +35,7 @@ outcomes:
     headers:
       ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
       Last-Modified: present
+      Preference-Applied: "present?"
     body: prefer_conditional
   precondition_failed:
     status: 412                           # 412_COMPOSITION.yaml, MUST

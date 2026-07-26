@@ -551,15 +551,17 @@ fn write_relationship(
     resp: &ServiceResponse,
 ) -> Response {
     // The full `Prefer` triad (overview §Prefer): representation → the RM
-    // body; identifier → `{uid}` only; minimal (default) → empty.
-    let uid = resp.meta.as_ref().map(|m| m.uid.clone());
-    let mut out = if negotiate::prefers_representation(h) {
-        negotiate::respond_rm::<PartyRelationship>(h, repr_status, &resp.body, "party_relationship")
-    } else if let (true, Some(uid)) = (negotiate::prefers_identifier(h), uid.as_deref()) {
-        negotiate::identifier_response(h, repr_status, uid)
-    } else {
-        negotiate::empty(minimal_status)
-    };
+    // body; identifier → `{uid}` only, never `204`; minimal (default) → empty.
+    // One seam for all three, and for the `Preference-Applied` declaration.
+    let mut out = negotiate::write_negotiated(
+        h,
+        minimal_status,
+        repr_status,
+        resp.meta.as_ref().map(|m| m.uid.as_str()),
+        |status| {
+            negotiate::respond_rm::<PartyRelationship>(h, status, &resp.body, "party_relationship")
+        },
+    );
     super::set_write_headers(&mut out, base, segment, resp.meta.as_ref());
     out
 }

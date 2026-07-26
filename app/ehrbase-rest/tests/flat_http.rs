@@ -556,3 +556,40 @@ async fn update_flat_representation_carries_etag_and_location() {
         format!("{BASE}/ehr/{ehr}/composition/{new_uid}")
     );
 }
+
+/// A Simplified-Formats commit answers with the committed COMPOSITION in the
+/// negotiated FLAT form — the `Accept` decides the body here, so the applied
+/// preference is `return=representation`, and the response declares it through
+/// the same seam as the canonical path ("The service MAY include a
+/// `Preference-Applied` header in the response … to indicate that the client's
+/// preference has been honored", `Requests_and_responses.md` §Representation
+/// details negotiation).
+#[tokio::test]
+async fn post_flat_declares_the_applied_preference() {
+    let (_pg, app, ehr) = app_with_ehr().await;
+    let wt = web_template();
+    let flat =
+        openehr_its::flat::convert::composition_to_flat(&canonical_composition(), &wt).unwrap();
+    let flat_map: serde_json::Map<String, Value> = flat.into_iter().collect();
+
+    let (status, h, body) = send(
+        &app,
+        Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr/{ehr}/composition"))
+            .header(header::CONTENT_TYPE, FLAT_MIME)
+            .header(header::ACCEPT, FLAT_MIME)
+            .header("prefer", "return=representation")
+            .header(TEMPLATE_ID_HEADER, TEMPLATE_ID)
+            .body(Body::from(serde_json::to_string(&flat_map).unwrap()))
+            .unwrap(),
+    )
+    .await;
+
+    assert_eq!(status, StatusCode::CREATED, "flat commit: {body}");
+    assert_eq!(
+        h.get("preference-applied").and_then(|v| v.to_str().ok()),
+        Some("return=representation"),
+        "the Simplified-Formats commit declares the preference it applied"
+    );
+}
