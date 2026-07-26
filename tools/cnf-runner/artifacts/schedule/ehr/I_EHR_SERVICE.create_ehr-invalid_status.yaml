@@ -26,6 +26,7 @@ parameters:
     - { data_set: cnf.ehr_status.invalid.missing-is-modifiable, expected: validation_failed, defect: "RM/Schema: is_modifiable is mandatory" }
     - { data_set: cnf.ehr_status.invalid.missing-subject, expected: validation_failed, defect: "RM/Schema: subject is mandatory" }
     - { data_set: cnf.ehr_status.invalid.invalid-other-details, expected: validation_failed, defect: "EHR_STATUS carries no _type discriminator" }
+    - { data_set: cnf.ehr_status.invalid.missing-archetype-details, expected: validation_failed, defect: "RM: archetype root without archetype_details (Archetyped_valid)" }
 flow:
   - step: 1
     call: create_ehr

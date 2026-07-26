@@ -409,6 +409,12 @@ fn ehr_status(queryable: bool) -> Value {
     json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": { "_type": "PARTY_SELF" },
         "is_queryable": queryable,
@@ -1046,6 +1052,12 @@ async fn create_composition_gate_error_surface_survives_the_writability_fold() {
     let deactivated = json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": { "_type": "PARTY_SELF" },
         "is_queryable": true,

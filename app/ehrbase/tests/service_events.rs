@@ -331,6 +331,12 @@ async fn rolled_back_commit_writes_no_outbox_row() {
     let status = json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": {
             "_type": "PARTY_SELF",
