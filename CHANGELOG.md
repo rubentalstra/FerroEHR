@@ -15,6 +15,19 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`EHR.ehr_status` references the version container by its
+  `HIER_OBJECT_ID`** (#426). The served EHR body's `ehr_status` OBJECT_REF
+  (typed `VERSIONED_EHR_STATUS` per the RM invariant) previously carried an
+  `OBJECT_VERSION_ID` naming one version — inconsistent with the sibling
+  `ehr_access` ref and with the RM's container semantics (`OBJECT_REF.id` is
+  the id of the referenced object; the referenced object is the
+  VERSIONED_EHR_STATUS, whose uid is a `HIER_OBJECT_ID`). Both refs now
+  carry the container id. Clients that read the current EHR_STATUS version
+  uid from the EHR body must fetch `GET /ehr/{ehr_id}/ehr_status` and use
+  its own `uid` instead.
+
 ### Added
 
 - **`[server] system_id` — the deployment's own openEHR system identifier is
