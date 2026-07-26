@@ -14,8 +14,27 @@ formats: [canonical-json, canonical-xml]
 # should be derived from `VERSION.commit_audit.time_committed.value`".
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
-# declaration is the authored contract, not an executed assertion — it becomes
-# executable when #403 wires header-matcher evaluation into the step judgement.
+#
+# The `unauthenticated` outcome is one of the route-table-wide universal
+# outcomes (vocab/selectors.yaml), mapped once for every operation; it is
+# declared HERE, on one representative read, purely so its response-header
+# discipline becomes an executable assertion — the universal mapping carries a
+# status only, and `exec/headers.rs` evaluates the matchers of the binding's
+# own wire expectation for the expected kind. Decisive docs-text sentence
+# (ITS-REST overview `Requests_and_responses.md` §Authentication and
+# authorization): "If authentication and authorization are required, services
+# MUST properly use the `WWW-Authenticate` and/or `Proxy-Authenticate`
+# response headers, returning `403 Forbidden`, `401 Unauthorized` or `407
+# Proxy Authentication` as applicable." Which of the two headers is
+# "applicable" is fixed by the status the same section pairs them with, over
+# RFC 9110 — the authority §HTTP headers names for the standard headers
+# ("Standard HTTP request and response headers are defined by RFC 9110 …
+# This section outlines the subset of these headers used in the openEHR API"):
+# RFC 9110 §15.5.2 (401 Unauthorized) — "The server generating a 401 response
+# MUST send a WWW-Authenticate header field (Section 11.6.1) containing at
+# least one challenge applicable to the target resource." `Proxy-Authenticate`
+# is the 407 counterpart (RFC 9110 §15.5.8), so it is not the applicable
+# header on a 401 from the origin service.
 outcomes:
   ok:
     status: 200
@@ -24,3 +43,8 @@ outcomes:
       ETag: 'pattern:W/"<ehr_id>"'        # the section's own example source: "EHR.ehr_id.value"
       Location: absent                    # GET — overview §Location
   not_found: { status: 404 }              # 404.yaml (unknown ehr_id)
+  unauthenticated:
+    status: 401                           # overview §HTTP status codes (401 — "lacks valid authentication credentials for the target resource")
+    headers:
+      WWW-Authenticate: present           # overview §Authentication and authorization MUST, over RFC 9110 §15.5.2
+      Location: absent                    # error response — overview §Location (creation/redirect only)
