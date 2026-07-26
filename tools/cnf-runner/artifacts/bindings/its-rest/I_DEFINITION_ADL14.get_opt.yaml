@@ -11,6 +11,17 @@ request:
   path: /definition/template/adl1.4/{template_id}   # definition_template_adl1.4_get.yaml
   headers:
     Accept: application/xml                          # Accept_Template.yaml (canonical OPT XML)
+# `Content-Type: negotiated` is the ITS-REST overview Resources.md rule — the
+# response carries the media type the client negotiated ("Proper header
+# `Content-Type: application/json` MUST be present in the response of the
+# service unless the response has no content body", and the same MUST for
+# application/xml in §XML Format). A step's `format:` chooses that type: the
+# canonical OPT XML (binding-pinned Accept), the Web Template document
+# (`format: wt`), or `format: canonical-json` (the AMB-58 fixed handling).
+# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only
+# the status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
+# declaration is the authored contract, not an executed assertion — it becomes
+# executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
   ok: { status: 200, headers: { Content-Type: negotiated } }  # 200_Template_adl1_4_retrieved.yaml
   not_found: { status: 404 }                         # 404_unknown_template_id.yaml

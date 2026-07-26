@@ -1,0 +1,51 @@
+# The `Accept: application/json` sibling of SF-WT-web_template_get. The
+# released ITS-REST 1.1.0 source is internally inconsistent about this Accept
+# on the OPT GET (operation description: XML + wt+json only; Accept_Template /
+# ContentType_Template: application/json enumerated; 200 content map: no
+# application/json schema) — adjudicated in the register as AMB-58, fixed
+# handling: the Accept is fulfilled with the Web Template document, the only
+# JSON template representation the spec defines, and the response carries the
+# NEGOTIATED type. Decisive docs-text sentence (ITS-REST overview Resources.md
+# §JSON Format): "Proper header `Content-Type: application/json` MUST be
+# present in the response of the service unless the response has no content
+# body" — so answering this request with application/openehr.wt+json (a type
+# the client never accepted) is a defect.
+#
+# Executable today: the status branch + the body identity of the returned
+# document. TODO: the response Content-Type is DECLARED on the get_opt binding
+# outcome (`Content-Type: negotiated`) but not asserted — the runner parses
+# `outcomes.*.headers` matchers and never evaluates them (only the status is
+# classified, tools/cnf-runner/src/exec/outcome.rs); this case's
+# Content-Type half becomes executable when #403 wires header-matcher
+# evaluation into the step judgement.
+id: SF-WT-web_template_json_accept
+kind: functional
+component: SIMPLIFIED_FORMATS
+sm_operation: I_DEFINITION_ADL14.get_opt
+capabilities: [SimplifiedFormats]
+profiles: [OPTIONS]           # SHOULD-level per ITS-REST — never gates CORE/STANDARD
+ambiguities: [AMB-58]
+test_purpose: >-
+  Retrieving a loaded OPT with Accept application/json is fulfilled with the
+  Web Template JSON document (the only JSON template representation the spec
+  defines), not refused and not answered in a type the client did not accept.
+description: "GET a template with Accept: application/json"
+spec_refs:
+  - "ITS-REST overview Resources.md §JSON Format"
+  - "ITS-REST overview Resources.md §Simplified Formats"
+  - "SM openehr_platform §I_DEFINITION_ADL14.get_opt"
+applies: { rm: ">=1.0.2", its_rest: ">=1.1.0" }
+guards:
+  - "The application/json representation of the OPT GET rests on the AMB-58 fixed handling — ITS-REST parameters/header/Accept_Template.yaml + headers/ContentType_Template.yaml enumerate application/json while the operation (definition_template_adl1.4_get.yaml) declares no schema for it; ITS-REST overview Resources.md §JSON Format binds the response Content-Type to the negotiated type. The wt+json representation is the spec-named one and is exercised by SF-WT-web_template_get"
+requires:
+  server: any
+  templates: [cnf.opt.minimal_action]    # provisioned as precondition (idempotent; 409 tolerated)
+flow:
+  - step: 1
+    call: get_opt
+    format: canonical-json                # Accept: application/json
+    with: { template_id: "minimal_action.en.v1" }   # the template_id of cnf.opt.minimal_action
+    expect: ok
+    assert:
+      - { assert: field, path: "templateId", exists: true }
+      - { assert: field, path: "tree", exists: true }

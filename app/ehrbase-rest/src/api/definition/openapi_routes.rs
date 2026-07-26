@@ -123,10 +123,17 @@ pub(crate) async fn definition_template_adl1_4_list(
 /// Upload an ADL 1.4 operational template
 /// (`POST /definition/template/adl1.4`).
 ///
-/// The template arrives as canonical OPT XML (`Content-Type: application/xml`).
+/// The template arrives as canonical OPT XML (`Content-Type: application/xml`);
+/// a request declaring another payload type is `415`
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §XML Format).
 #[utoipa::path(
     post, path = "/definition/template/adl1.4", tag = "ADL1.4",
     params(
+        ("Content-Type" = Option<String>, Header,
+         description = "`application/xml` (or `text/xml`) — the operation's only \
+                        payload format. Any other declared type is `415`; an \
+                        absent header reads as XML."),
         ("Prefer" = Option<String>, Header,
          description = "`return=minimal` (default; empty body), \
                         `return=representation` (the stored OPT XML), or \
@@ -146,6 +153,9 @@ pub(crate) async fn definition_template_adl1_4_list(
          body = serde_json::Value),
         (status = 409, description = "A template with the same `template_id` is \
                                       already stored.",
+         body = serde_json::Value),
+        (status = 415, description = "The request declares a payload media type \
+                                      the service cannot process as XML.",
          body = serde_json::Value),
         (status = 422, description = "OUR WIRE — the OPT XML parsed as XML but is \
                                       structurally invalid (the OAS folds this \
@@ -179,13 +189,17 @@ pub(crate) async fn definition_template_adl1_4_upload(
          description = "`application/xml` (the canonical OPT; also the default \
                         for absent/`*/*`), or `application/openehr.wt+json` / \
                         `application/json` (the Web Template document — the only \
-                        JSON projection of an OPT).")
+                        JSON projection of an OPT). The response `Content-Type` \
+                        is always the negotiated type.")
     ),
     responses(
         (
             status = 200, description = "The template; `ETag` (weak `W/` form) \
                                         carries the `template_id`. Body per \
-                                        `Accept`: OPT XML, or the Web Template.",
+                                        `Accept`: OPT XML, or the Web Template \
+                                        (served as `application/openehr.wt+json` \
+                                        or `application/json`, whichever was \
+                                        negotiated).",
             content((serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt+json"), (serde_json::Value = "application/json"))
         ),
         (status = 404, description = "No template with `template_id`.",
