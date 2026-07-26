@@ -55,7 +55,7 @@ intuition.
   never a citable authority — a plan or design file is deleted in the same PR
   that implements it, and the durable record is the closed issues + PR descriptions,
   `CHANGELOG.md`, git history, and the living reference docs
-  (`docs/architecture.md`, `docs/endpoint-map.md`, `docs/VERSIONS.md`). Where
+  (`docs/architecture.md`, `docs/VERSIONS.md`). Where
   the specs are SILENT on a decision (storage mechanics, indexing, infra,
   extension features), flag it explicitly: "no openEHR spec governs this — our
   own design/extension". Scrub any ADR or internal-doc citation from a file you
