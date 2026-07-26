@@ -17,6 +17,7 @@
 pub mod assertions;
 pub mod content_synth;
 pub mod driver;
+pub mod headers;
 pub mod opt_synth;
 pub mod outcome;
 pub mod player;
