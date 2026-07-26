@@ -1,5 +1,5 @@
-//! The EHR-detail Contributions tab: the paged contribution list plus the
-//! by-uid CONTRIBUTION lookup box.
+//! The EHR-detail Contributions tab: the per-EHR activity timeline, the paged
+//! contribution list, and the by-uid CONTRIBUTION lookup box.
 
 use leptos::prelude::*;
 use leptos::server;
@@ -7,16 +7,26 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "ssr")]
 use serde_json::Value;
 
+use crate::activity::ActivityPoint;
+use crate::components::activity_chart::activity_chart;
 use crate::components::data_table::{CELL, CELL_MONO, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_SECONDARY, INPUT, LABEL};
 use crate::components::format_view::DocumentPane;
-use crate::components::surface::CARD_PAD;
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 
 /// Rows fetched per page of the contribution list (fixed, per the tab's
 /// prev/next paging).
 const CONTRIBUTION_FETCH: u32 = 20;
+
+/// Contributions read for the activity timeline before day-bucketing. The
+/// timeline answers a different question than the list ("when was this EHR
+/// written to", not "which contributions are on this page"), so it reads its own
+/// window of the SAME endpoint — one reader per claim, never a second endpoint
+/// for the same fact (crate `CLAUDE.md` §One reader per claim).
+#[cfg(feature = "ssr")]
+const ACTIVITY_FETCH: u32 = 200;
 
 /// One row of the EHR's contribution list. Fixed-size-safe strings (rules §1);
 /// the shape is the CDR's contribution-list contract
@@ -123,6 +133,39 @@ fn contribution_field(value: &Value, key: &str) -> String {
         .to_owned()
 }
 
+/// The EHR's contribution activity, one [`ActivityPoint`] per calendar day
+/// ascending (`GET /ehr/{ehr_id}/contribution?offset=0&fetch` over
+/// [`ACTIVITY_FETCH`], bucketed BFF-side by
+/// [`bucket_by_day`](crate::activity::bucket_by_day) on each contribution's
+/// `AUDIT_DETAILS.time_committed`).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
+/// errors pass through; a non-2xx CDR answer normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
+/// [`AdminUiError::Internal`] when the page is not valid JSON.
+#[server]
+pub async fn contribution_activity(ehr_id: String) -> Result<Vec<ActivityPoint>, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let url = state.cdr.rest_v1(&format!(
+        "ehr/{}/contribution?offset=0&fetch={ACTIVITY_FETCH}",
+        urlencoding::encode(&ehr_id),
+    ));
+    let response = state
+        .cdr
+        .get(&session.credential, &url, "application/json")
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    let page = parse_contributions(&response.body)?;
+    let times: Vec<String> = page
+        .rows
+        .into_iter()
+        .map(|row| row.time_committed)
+        .collect();
+    Ok(crate::activity::bucket_by_day(&times))
+}
+
 /// Look up a single CONTRIBUTION by uid
 /// (`GET /ehr/{ehr_id}/contribution/{contribution_uid}`) — the by-uid lookup
 /// box the Contributions tab keeps below its list (see
@@ -152,11 +195,60 @@ pub async fn fetch_contribution(
     Ok(crate::cdr::CdrClient::expect_success(response)?.body)
 }
 
-/// Contributions tab: a paged list of the EHR's contributions
-/// (`list_contributions` → `GET /ehr/{ehr_id}/contribution?offset&fetch`) under
-/// a `<Transition>`, plus the by-uid lookup box kept below it. An older CDR
-/// that lacks the list route (a `404`/`405`) renders inline via the normal
-/// error path — the lookup box still works.
+/// The per-EHR activity timeline: contributions per day, drawn with the shared
+/// [`activity_chart`] kit (the same chart the dashboard's commit trend uses).
+/// Its resource is created in setup and gated on the tab being active, so it
+/// fetches only when shown (rules §6 — never fetch-in-effect).
+fn activity_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
+    let resource = Resource::new(
+        move || (selected.get() == "contributions").then(|| ehr_id.get()),
+        |active| async move {
+            match active {
+                Some(id) => contribution_activity(id).await.map(Some),
+                None => Ok(None),
+            }
+        },
+    );
+    let body = view! {
+        <Suspense fallback=|| {
+            view! {
+                <thaw::Skeleton>
+                    <thaw::SkeletonItem class="h-40" />
+                </thaw::Skeleton>
+            }
+        }>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(Some(points)) => {
+                        activity_chart(
+                            &points,
+                            "contributions",
+                            "No contribution activity yet",
+                            "Every write to this EHR is a contribution; the timeline fills as they are committed.",
+                        )
+                    }
+                    Ok(None) => ().into_any(),
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
+        </Suspense>
+    }
+    .into_any();
+    view! {
+        <section class=CARD_PAD>
+            <h2 class=CARD_TITLE>"Contribution activity"</h2>
+            {body}
+        </section>
+    }
+    .into_any()
+}
+
+/// Contributions tab: the activity timeline, a paged list of the EHR's
+/// contributions (`list_contributions` → `GET
+/// /ehr/{ehr_id}/contribution?offset&fetch`) under a `<Transition>`, plus the
+/// by-uid lookup box kept below it. An older CDR that lacks the list route (a
+/// `404`/`405`) renders inline via the normal error path — the lookup box still
+/// works.
 pub(super) fn contributions_section(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     // Paging state is a local signal — the tab itself is already URL-state.
     let offset = RwSignal::new(0_u32);
@@ -181,8 +273,9 @@ pub(super) fn contributions_section(ehr_id: Signal<String>, selected: Memo<Strin
         </Transition>
     }
     .into_any();
+    let activity = activity_section(ehr_id, selected);
     let lookup = contribution_lookup(ehr_id, selected);
-    view! { <div class="flex flex-col gap-4">{table} {lookup}</div> }.into_any()
+    view! { <div class="flex flex-col gap-4">{activity} {table} {lookup}</div> }.into_any()
 }
 
 /// Render one page of contributions as the shared [`table_shell`] plus

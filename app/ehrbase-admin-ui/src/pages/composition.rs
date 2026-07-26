@@ -1,11 +1,20 @@
 //! The `/ehrs/{ehr_id}/compositions/{uid}` screen — the composition viewer.
 //!
-//! A read-only view of one COMPOSITION: a format toggle (canonical JSON/XML
-//! and the Simplified FLAT/STRUCTURED renderings — the CDR converts, the BFF
-//! forwards and pretty-prints), a version selector fed by the versioned
-//! object's revision history, and a per-version audit card. The document
-//! resource is keyed on `(version, format)` so either switch refetches, under
-//! a `<Transition>` (old document stays visible — rules §6).
+//! A view of one COMPOSITION: a format toggle (canonical JSON/XML and the
+//! Simplified FLAT/STRUCTURED renderings — the CDR converts, the BFF forwards
+//! and pretty-prints), a version selector fed by the versioned object's
+//! revision history, a per-version audit card, the `VERSIONED_COMPOSITION`
+//! container + selected-VERSION envelope card, and the two write paths (commit
+//! a new version, logically delete the latest one). The document resource is
+//! keyed on `(version, format)` so either switch refetches, under a
+//! `<Transition>` (old document stays visible — rules §6).
+//!
+//! One reader per claim (crate `CLAUDE.md`): the document CONTENT comes from
+//! the COMPOSITION resource (the only one that negotiates the simplified
+//! formats), the commit history from the revision history, and the VERSION's
+//! own envelope facts — lifecycle state, preceding version, contribution,
+//! signature — from the `VERSIONED_COMPOSITION` version read. No fact is read
+//! twice from two endpoints.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
 //! The wire it reads IS spec-bound: `Accept` negotiation follows the ITS-REST
@@ -26,11 +35,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::components::empty_state::EmptyState;
-use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA};
+use crate::components::field::{
+    BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, SELECT, TEXTAREA,
+};
 use crate::components::format_view::{DocumentPane, FormatSelector};
 use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
-use crate::components::toast::toast_success;
+use crate::components::toast::{toast_error, toast_success};
 // Server-side pretty-printing happens in the #[server] body only.
 #[cfg(feature = "ssr")]
 use crate::components::format_view::pretty_body;
@@ -114,10 +125,10 @@ pub async fn fetch_composition(
     Ok(pretty_body(&response.body, format))
 }
 
-/// Resolve the `OBJECT_VERSION_ID` of the VERSION of a VERSIONED_COMPOSITION
+/// Resolve the `OBJECT_VERSION_ID` of the VERSION of a `VERSIONED_COMPOSITION`
 /// that was extant at `at_time` (a browser `datetime-local` value):
 /// `GET /ehr/{ehr}/versioned_composition/{uid}/version?version_at_time=…`
-/// (ITS-REST VERSIONED_COMPOSITION API `versioned_composition_version_get_at_time`
+/// (ITS-REST `VERSIONED_COMPOSITION` API `versioned_composition_version_get_at_time`
 /// — "if `version_at_time` is supplied, retrieves the VERSION extant at
 /// specified time"). The 200 body is a VERSION envelope whose `uid.value` is
 /// the `OBJECT_VERSION_ID` (RM common — a VERSION's `uid` is an
@@ -269,6 +280,192 @@ pub async fn update_composition(
     Ok(new_version_uid(&response.body))
 }
 
+/// Logically delete a COMPOSITION
+/// (`DELETE /ehr/{ehr_id}/composition/{version_uid}`).
+///
+/// `version_uid` MUST be a full `OBJECT_VERSION_ID`: the spec requires the path
+/// id to be "in a form of an OBJECT_VERSION_ID identifier taken from the last
+/// (most recent) VERSION.uid.value, representing the `preceding_version_uid` to
+/// be deleted"
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/composition_delete.yaml`),
+/// so a bare versioned-object id is rejected here rather than sent.
+///
+/// The same value also travels quoted in `If-Match`. The header is not
+/// *required* on this operation — it is required only "when the
+/// `preceding_version_uid` is not part of the endpoint path segment", and here
+/// it is — but a client "SHOULD" send `If-Match` with a state-changing method,
+/// and a service that evaluates it must then answer `412 Precondition Failed`
+/// rather than delete a version that is no longer the latest
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Requests_and_responses.md`
+/// §"If-Match and accidental overwrites"). A `204` is the success answer; a
+/// `409` is "supplied `uid_based_id` doesn't match the latest version".
+///
+/// This is the openEHR LOGICAL delete: a new deleted-lifecycle version is
+/// committed and the history stays readable — not the admin physical delete.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] when no full `OBJECT_VERSION_ID` is known; CDR
+/// transport errors pass through; a non-2xx CDR answer (the `409`/`412`
+/// concurrency family and the `400` for an already-deleted version included)
+/// normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
+#[server]
+pub async fn delete_composition(ehr_id: String, version_uid: String) -> Result<(), AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let version_uid = version_uid.trim();
+    if version_uid.is_empty() || !version_uid.contains("::") {
+        return Err(AdminUiError::Invalid(
+            "the latest version's full OBJECT_VERSION_ID is required to delete a composition — \
+             reload this screen and retry"
+                .to_owned(),
+        ));
+    }
+    let if_match = format!("\"{version_uid}\"");
+    let url = state.cdr.rest_v1(&format!(
+        "ehr/{}/composition/{}",
+        urlencoding::encode(&ehr_id),
+        urlencoding::encode(version_uid)
+    ));
+    let response = state
+        .cdr
+        .delete(
+            &session.credential,
+            &url,
+            &[("If-Match", if_match.as_str())],
+        )
+        .await?;
+    crate::cdr::CdrClient::expect_success(response)?;
+    Ok(())
+}
+
+/// The `VERSIONED_COMPOSITION` container plus the selected VERSION's envelope
+/// facts, flattened for the versioned-object card. All fields fixed-size-safe
+/// (rules §1).
+///
+/// The attributes are the RM classes' own (files under
+/// `docs/specs/openehr/RM/docs/UML/classes/`): `VERSIONED_OBJECT._uid_`,
+/// `_owner_id_` and `_time_created_` (`org.openehr.rm.common.versioned_object.adoc`);
+/// `VERSION._contribution_` and `_signature_` ("`OpenPGP` digital signature or
+/// digest of content committed in this Version") plus
+/// `_preceding_version_uid_`, whose invariant
+/// `Preceding_version_uid_validity` makes it absent exactly for a first
+/// version (`org.openehr.rm.common.version.adoc`); and
+/// `ORIGINAL_VERSION._lifecycle_state_`
+/// (`org.openehr.rm.common.original_version.adoc`).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct VersionedCompositionDetails {
+    /// `VERSIONED_OBJECT.uid.value` — the versioned-object id.
+    pub object_uid: String,
+    /// `VERSIONED_OBJECT.owner_id.id.value` — the owning EHR.
+    pub owner_id: String,
+    /// `VERSIONED_OBJECT.time_created.value` — when the object's first version
+    /// was committed.
+    pub time_created: String,
+    /// The read VERSION's `uid.value` (`OBJECT_VERSION_ID`).
+    pub version_id: String,
+    /// `ORIGINAL_VERSION.lifecycle_state.value` (the coded text's rubric).
+    pub lifecycle_state: String,
+    /// `VERSION.preceding_version_uid.value` — empty for a first version.
+    pub preceding_version_uid: String,
+    /// `VERSION.contribution.id.value` — the CONTRIBUTION this version was
+    /// committed under.
+    pub contribution_uid: String,
+    /// Whether the VERSION carries a `signature`.
+    pub signed: bool,
+    /// Whether the VERSION carries `data` — a logically deleted version does
+    /// not (`docs/specs/openehr/RM/docs/common/master06-change_control_package.adoc`
+    /// §Logical Deletion).
+    pub has_data: bool,
+}
+
+/// Read the `VERSIONED_COMPOSITION` container and one of its VERSIONS.
+///
+/// Two reads, one resource: `GET /ehr/{ehr}/versioned_composition/{uid}` for the
+/// container (`versioned_composition_get`) and the direct VERSION read for the
+/// envelope — `…/version/{version_uid}` for an explicitly selected version
+/// (`versioned_composition_version_get_by_id`) or `…/version` for the current
+/// one when the selector says "Latest": with no `version_at_time`, that
+/// operation "retrieves the _latest_ VERSION"
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/versioned_composition_version_get_at_time.yaml`
+/// §description).
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
+/// errors pass through; a non-2xx CDR answer (a `404` for an unknown
+/// object/version included) normalizes via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success);
+/// [`AdminUiError::Internal`] when either body is not valid JSON.
+#[server]
+pub async fn fetch_versioned_composition(
+    ehr_id: String,
+    versioned_object_uid: String,
+    version_uid: String,
+) -> Result<VersionedCompositionDetails, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    let ehr = urlencoding::encode(&ehr_id);
+    let object = urlencoding::encode(&versioned_object_uid);
+    let object_url = state
+        .cdr
+        .rest_v1(&format!("ehr/{ehr}/versioned_composition/{object}"));
+    let object_response = state
+        .cdr
+        .get(&session.credential, &object_url, "application/json")
+        .await?;
+    let object_body = crate::cdr::CdrClient::expect_success(object_response)?.body;
+
+    let version_uid = version_uid.trim();
+    let version_url = if version_uid.is_empty() {
+        state
+            .cdr
+            .rest_v1(&format!("ehr/{ehr}/versioned_composition/{object}/version"))
+    } else {
+        state.cdr.rest_v1(&format!(
+            "ehr/{ehr}/versioned_composition/{object}/version/{}",
+            urlencoding::encode(version_uid)
+        ))
+    };
+    let version_response = state
+        .cdr
+        .get(&session.credential, &version_url, "application/json")
+        .await?;
+    let version_body = crate::cdr::CdrClient::expect_success(version_response)?.body;
+    parse_versioned_details(&object_body, &version_body)
+}
+
+#[cfg(feature = "ssr")]
+/// Flatten a `VERSIONED_COMPOSITION` body plus a VERSION body into
+/// [`VersionedCompositionDetails`]. Defensive throughout — an absent attribute
+/// reads as empty rather than failing the card.
+///
+/// # Errors
+/// [`AdminUiError::Internal`] when either body is not valid JSON.
+fn parse_versioned_details(
+    object_body: &str,
+    version_body: &str,
+) -> Result<VersionedCompositionDetails, AdminUiError> {
+    let object: Value = serde_json::from_str(object_body)
+        .map_err(|e| AdminUiError::Internal(format!("versioned composition JSON: {e}")))?;
+    let version: Value = serde_json::from_str(version_body)
+        .map_err(|e| AdminUiError::Internal(format!("version JSON: {e}")))?;
+    Ok(VersionedCompositionDetails {
+        object_uid: json_str(&object, &["uid", "value"]),
+        owner_id: json_str(&object, &["owner_id", "id", "value"]),
+        time_created: json_str(&object, &["time_created", "value"]),
+        version_id: json_str(&version, &["uid", "value"]),
+        lifecycle_state: json_str(&version, &["lifecycle_state", "value"]),
+        preceding_version_uid: json_str(&version, &["preceding_version_uid", "value"]),
+        contribution_uid: json_str(&version, &["contribution", "id", "value"]),
+        signed: version
+            .get("signature")
+            .and_then(Value::as_str)
+            .is_some_and(|signature| !signature.is_empty()),
+        has_data: version.get("data").is_some_and(|data| !data.is_null()),
+    })
+}
+
 #[cfg(feature = "ssr")]
 /// Parse a `REVISION_HISTORY` body (either the canonical `{ "items": [...] }`
 /// wrapper or a bare array) into version entries. Defensive throughout — a
@@ -377,9 +574,32 @@ pub fn CompositionPage() -> impl IntoView {
         },
     );
 
+    // The logical-delete action + its confirmation state. Created before the
+    // resources for the same reason as `update`: its version() is a refetch
+    // trigger, so a delete that keeps the screen mounted still re-reads.
+    let confirming_delete = RwSignal::new(false);
+    let delete = Action::new(|(ehr_id, version_uid): &(String, String)| {
+        let ehr_id = ehr_id.clone();
+        let version_uid = version_uid.clone();
+        async move { delete_composition(ehr_id, version_uid).await }
+    });
+
     let versions = Resource::new(
         move || (ehr_id.get(), uid.get(), update.version().get()),
         |(ehr_id, uid, _)| async move { fetch_versions(ehr_id, uid).await },
+    );
+    let versioned = Resource::new(
+        move || {
+            (
+                ehr_id.get(),
+                uid.get(),
+                selected_version.get(),
+                update.version().get(),
+            )
+        },
+        |(ehr_id, uid, version_uid, _)| async move {
+            fetch_versioned_composition(ehr_id, uid, version_uid).await
+        },
     );
     let document = Resource::new(
         move || {
@@ -420,6 +640,38 @@ pub fn CompositionPage() -> impl IntoView {
         None => {}
     });
 
+    // The logical delete's outcomes: both toast (the console's
+    // mutation-feedback rule — crate CLAUDE.md), and a success leaves this
+    // screen for the EHR's compositions tab, whose list then reloads with the
+    // deleted composition gone. Navigation is an outside-world side-effect, so
+    // an Effect is its correct home (rules §2); it never runs on the server.
+    let navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| match delete.value().get() {
+        Some(Ok(())) => {
+            toast_success(
+                toaster,
+                "Composition deleted",
+                "The composition was logically deleted — its version history stays readable.",
+            );
+            // The route param is percent-encoded through the shared href
+            // builder — never interpolated raw into a path (owner rule: all
+            // percent-coding goes through `urlencoding`).
+            navigate(
+                &format!(
+                    "{}?tab=compositions",
+                    crate::pages::ehrs::ehr_detail_href(&ehr_id.get_untracked())
+                ),
+                leptos_router::NavigateOptions::default(),
+            );
+        }
+        Some(Err(error)) => toast_error(
+            toaster,
+            "Delete failed",
+            &crate::feedback::logical_delete_failure_copy("this composition", &error),
+        ),
+        None => {}
+    });
+
     // Sync a successful at-time resolution into the shared selection. This is
     // the async-load-into-local-state case (rules §2 — the one-directional
     // pattern the AQL editor uses to seed from a loaded query): the Effect
@@ -455,6 +707,8 @@ pub fn CompositionPage() -> impl IntoView {
     );
     let timeline = timeline_section(versions, selected_version);
     let audit = audit_section(versions, selected_version);
+    let versioned_card = versioned_section(versioned);
+    let delete_action = delete_section(ehr_id, versions, confirming_delete, delete);
 
     let title = Signal::derive(move || {
         let short: String = uid.get().chars().take(8).collect();
@@ -474,13 +728,169 @@ pub fn CompositionPage() -> impl IntoView {
         <Title text="Composition · ehrbase-admin" />
         <div class="p-6">
             <PageHeader title=Signal::derive(move || title.get()) crumbs=crumbs mono=true />
+            {delete_action}
             {toolbar}
             {body}
             {edit}
             {timeline}
             {audit}
+            {versioned_card}
         </div>
     }
+}
+
+/// The **Delete composition** affordance: the openEHR logical delete of the
+/// LATEST version, behind the shared confirmation modal
+/// ([`ConfirmDialog`](crate::components::confirm_dialog::ConfirmDialog)) whose
+/// copy says what a logical delete does and does not destroy.
+///
+/// Not admin-gated: this is the ordinary COMPOSITION API operation every
+/// openEHR client has, unlike the physical EHR delete on the EHR-detail screen.
+/// The version it deletes is always the newest one the revision history reports
+/// (the `preceding_version_uid` the spec requires in the path), never the
+/// version the selector happens to be showing — a muted hint says so.
+fn delete_section(
+    ehr_id: Signal<String>,
+    versions: Resource<Result<Vec<VersionEntry>, AdminUiError>>,
+    confirming: RwSignal<bool>,
+    delete: Action<(String, String), Result<(), AdminUiError>>,
+) -> AnyView {
+    // Reading a resource in an EVENT HANDLER is untracked — it takes the value
+    // already loaded for the version selector (the same pattern the editor's
+    // If-Match uses). Deliberately NOT read into the dialog copy: a resource
+    // read in a rendered signal would differ between the server pass and
+    // hydration (rules §4/§8), so the copy names the object structurally
+    // instead — this screen IS that composition, and its header carries the id.
+    let latest = move || {
+        versions
+            .get()
+            .and_then(Result::ok)
+            .and_then(|entries| entries.first().map(|entry| entry.version_id.clone()))
+            .unwrap_or_default()
+    };
+    let message = Signal::derive(|| {
+        "Logically delete the latest version of this composition? The CDR commits a deleted \
+         version on top of it: the composition stops resolving as current, while every earlier \
+         version and its audit trail stay readable. It cannot be undone."
+            .to_owned()
+    });
+    view! {
+        <div class="mb-4 flex flex-wrap items-center justify-end gap-3">
+            <span class="text-xs text-ink-muted">"Deletes the latest version."</span>
+            <button
+                id="composition-delete"
+                type="button"
+                class=BTN_DANGER
+                disabled=Signal::derive(move || delete.pending().get())
+                on:click=move |_| confirming.set(true)
+            >
+                <leptos_icons::Icon icon=icondata_lu::LuTrash width="14" height="14" />
+                "Delete composition"
+            </button>
+            <crate::components::confirm_dialog::ConfirmDialog
+                open=confirming
+                title="Delete composition"
+                message=message
+                confirm_label="Delete composition"
+                confirm_id="composition-delete-confirm"
+                on_cancel=Callback::new(move |()| confirming.set(false))
+                on_confirm=Callback::new(move |()| {
+                    delete.dispatch((ehr_id.get_untracked(), latest()));
+                    confirming.set(false);
+                })
+            />
+        </div>
+    }
+    .into_any()
+}
+
+/// The versioned-object card: the `VERSIONED_COMPOSITION` container's own facts
+/// (uid, owning EHR, first-version time) plus the SELECTED version's envelope
+/// facts read directly from the VERSION resource — lifecycle state, preceding
+/// version, contribution, whether it is signed, and whether it still carries
+/// data (a logically deleted version does not).
+///
+/// A pure read under a `<Transition>` (the previous version's facts stay
+/// visible while another version loads — rules §6), resolving its `Result`
+/// INSIDE the transition: a failure renders inline where the data would be (the
+/// console's feedback rule), never through an `<ErrorBoundary>`, whose SSR'd
+/// fallback mismatches at hydration in leptos 0.8 (rules §4).
+fn versioned_section(
+    versioned: Resource<Result<VersionedCompositionDetails, AdminUiError>>,
+) -> AnyView {
+    view! {
+        <div class="mt-3">
+            <Transition fallback=|| {
+                view! {
+                    <thaw::Skeleton>
+                        <thaw::SkeletonItem class="h-24" />
+                    </thaw::Skeleton>
+                }
+            }>
+                {move || Suspend::new(async move {
+                    match versioned.await {
+                        Ok(details) => versioned_card(&details),
+                        Err(e) => crate::components::format_view::inline_error(&e),
+                    }
+                })}
+            </Transition>
+        </div>
+    }
+    .into_any()
+}
+
+/// Render the versioned-object + version-envelope facts as a card.
+fn versioned_card(details: &VersionedCompositionDetails) -> AnyView {
+    let content = if details.has_data {
+        "present".to_owned()
+    } else {
+        "none (deleted version)".to_owned()
+    };
+    let signature = if details.signed {
+        "present".to_owned()
+    } else {
+        "none".to_owned()
+    };
+    view! {
+        <section class=CARD_PAD id="versioned-composition">
+            <h2 class=CARD_TITLE>"Versioned object"</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 items-start gap-x-4 gap-y-2 text-sm">
+                {versioned_row("versioned object", "object-uid", details.object_uid.clone())}
+                {versioned_row("owner EHR", "owner", details.owner_id.clone())}
+                {versioned_row("created", "created", details.time_created.clone())}
+                {versioned_row("version", "version", details.version_id.clone())}
+                {versioned_row("lifecycle", "lifecycle", details.lifecycle_state.clone())}
+                {versioned_row(
+                    "preceding version",
+                    "preceding",
+                    details.preceding_version_uid.clone(),
+                )} {versioned_row("contribution", "contribution", details.contribution_uid.clone())}
+                {versioned_row("signature", "signature", signature)}
+                {versioned_row("content", "content", content)}
+            </div>
+        </section>
+    }
+    .into_any()
+}
+
+/// One label/value line of the versioned-object card. `hook` is the row's
+/// `data-versioned-fact` value — the stable E2E hook; an absent value shows an
+/// em dash.
+fn versioned_row(label: &'static str, hook: &'static str, value: String) -> AnyView {
+    let shown = if value.is_empty() {
+        "—".to_owned()
+    } else {
+        value
+    };
+    view! {
+        <div>
+            <span class="font-medium text-ink-muted mr-1">{label}":"</span>
+            <span class="font-mono break-all text-ink" data-versioned-fact=hook>
+                {shown}
+            </span>
+        </div>
+    }
+    .into_any()
 }
 
 /// The "Edit as new version" affordance: a toggle button opening a
@@ -938,7 +1348,72 @@ fn short_version(version_id: &str) -> String {
 
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{datetime_local_to_rfc3339, new_version_uid, parse_versions, short_version};
+    use super::{
+        datetime_local_to_rfc3339, new_version_uid, parse_versioned_details, parse_versions,
+        short_version,
+    };
+
+    /// A `VERSIONED_COMPOSITION` container body, as the wire carries it.
+    const VERSIONED_OBJECT: &str = r#"{
+        "_type": "VERSIONED_COMPOSITION",
+        "uid": {"_type": "HIER_OBJECT_ID", "value": "7d44aa01"},
+        "owner_id": {
+            "_type": "OBJECT_REF",
+            "namespace": "local",
+            "type": "EHR",
+            "id": {"_type": "HIER_OBJECT_ID", "value": "e1"}
+        },
+        "time_created": {"_type": "DV_DATE_TIME", "value": "2026-07-12T10:00:00Z"}
+    }"#;
+
+    #[test]
+    fn parses_the_versioned_object_and_its_version_envelope() {
+        let version = r#"{
+            "_type": "ORIGINAL_VERSION",
+            "uid": {"_type": "OBJECT_VERSION_ID", "value": "7d44aa01::sys::2"},
+            "contribution": {
+                "_type": "OBJECT_REF",
+                "id": {"_type": "HIER_OBJECT_ID", "value": "c9"}
+            },
+            "lifecycle_state": {"_type": "DV_CODED_TEXT", "value": "complete"},
+            "preceding_version_uid": {"_type": "OBJECT_VERSION_ID", "value": "7d44aa01::sys::1"},
+            "signature": "-----BEGIN PGP SIGNATURE-----",
+            "data": {"_type": "COMPOSITION"}
+        }"#;
+        let details = parse_versioned_details(VERSIONED_OBJECT, version).expect("valid bodies");
+        assert_eq!(details.object_uid, "7d44aa01");
+        assert_eq!(details.owner_id, "e1");
+        assert_eq!(details.time_created, "2026-07-12T10:00:00Z");
+        assert_eq!(details.version_id, "7d44aa01::sys::2");
+        assert_eq!(details.lifecycle_state, "complete");
+        assert_eq!(details.preceding_version_uid, "7d44aa01::sys::1");
+        assert_eq!(details.contribution_uid, "c9");
+        assert!(details.signed);
+        assert!(details.has_data);
+    }
+
+    #[test]
+    fn a_deleted_first_version_carries_no_data_no_preceding_and_no_signature() {
+        // RM common master06 §Logical Deletion: the deleted version has no
+        // `data`; a first version has no `preceding_version_uid`.
+        let version = r#"{
+            "_type": "ORIGINAL_VERSION",
+            "uid": {"_type": "OBJECT_VERSION_ID", "value": "7d44aa01::sys::1"},
+            "lifecycle_state": {"_type": "DV_CODED_TEXT", "value": "deleted"}
+        }"#;
+        let details = parse_versioned_details(VERSIONED_OBJECT, version).expect("valid bodies");
+        assert_eq!(details.lifecycle_state, "deleted");
+        assert_eq!(details.preceding_version_uid, "");
+        assert_eq!(details.contribution_uid, "");
+        assert!(!details.signed);
+        assert!(!details.has_data);
+    }
+
+    #[test]
+    fn versioned_details_reject_a_non_json_body_on_either_side() {
+        assert!(parse_versioned_details("not json", "{}").is_err());
+        assert!(parse_versioned_details(VERSIONED_OBJECT, "not json").is_err());
+    }
 
     #[test]
     fn datetime_local_completes_to_rfc3339_utc() {
