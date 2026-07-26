@@ -18,6 +18,13 @@ base_path = "/ehrbase/rest/openehr/v1"
 max_in_flight = 256          # concurrent-request admission cap; 0 disables shedding
 swagger_ui = true            # PROD: consider false
 cors_permissive = false      # PROD: keep false; configure explicit origins
+# This CDR's own openEHR system identifier: stamped into EHR.system_id, the
+# AUDIT_DETAILS.system_id server default, and every
+# OBJECT_VERSION_ID.creating_system_id. PROD: set a stable, deployment-unique
+# name (a DNS-style host name is the common convention). Changing it never
+# rewrites identifiers already committed. Distinct from [server.identity],
+# which is only the OPTIONS manifest's display identity.
+system_id = "ehrbase-rs.local"
 
 # [server.tls] — native TLS + client-certificate (mutual-TLS) authentication
 # on the main listener (the IHE ATNA ITI-19 node-authentication posture;

@@ -243,8 +243,14 @@ async fn serve(config_path: Option<&Path>, overrides: &[(String, String)]) -> an
         "version signing configured"
     );
 
+    // The data-authoring identity every commit stamps into `EHR.system_id`,
+    // `AUDIT_DETAILS.system_id`, and `OBJECT_VERSION_ID.creating_system_id`
+    // (`[server] system_id`) — logged so an operator can see the key took.
+    tracing::info!(system_id = %config.server.system_id, "openEHR system identifier");
+
     let audit_enabled = audit_sender.is_some();
     let mut service = EhrbaseService::new(pool.clone())
+        .with_system_id(config.server.system_id.clone())
         .with_signer(signer)
         .with_outbox_enabled(outbox_enabled)
         .with_query_config(&config.query);
