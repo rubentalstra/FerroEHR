@@ -91,16 +91,24 @@ response body. Its default is `return=minimal`:
 |---|---|
 | `return=minimal` (default) | Empty body; the identifier is in `ETag`/`Location`. Status **204** on update, **201** on create. |
 | `return=representation` | The full created/updated resource in the body, status **200**/**201**. |
-| `return=identifier` | Just the resource identifier object. |
+| `return=identifier` | Just the resource identifier object — `{"uid": "…"}` (templates: `{"template_id": "…"}`). Status **200**/**201**, never 204. |
 
 Use `return=representation` when you want the server-completed object back
 (with its assigned version id and any server-set audit fields); use
 `return=minimal` for throughput when you only need the id.
 
-The response echoes the preference the server actually honoured in a
+`return=identifier` always comes back with a body, so it never uses 204 —
+an update that would answer 204 under `return=minimal` answers **200** with
+the identifier object instead.
+
+Every write response names the preference the server actually applied in a
 **`Preference-Applied`** header (`return=representation`,
 `return=identifier`, or `return=minimal`), so a client can tell what it got
-without sniffing the body.
+without sniffing the body. The header reports what the response *did*: a
+request with no `Prefer` gets `return=minimal` (the default behaviour), and
+in the rare case where an identifier cannot be produced, the server applies
+and reports `return=minimal` rather than claiming an identifier response it
+did not send.
 
 ### `Prefer: resolve_refs`
 
@@ -232,8 +240,14 @@ openehr-version-item-tag: key="diagnosis",value="confirmed",target_path="/conten
 
 They are accepted on the EHR-group change-controlled writes (composition
 create/update, EHR_STATUS update, directory create/update) and on demographic
-party writes, and the stored tags are echoed back in the same headers on the
-response. Sending the header with an **empty value** removes all tags.
+party writes. Sending the header with an **empty value** removes all tags.
+
+The two headers address **different targets**, so the response echo keeps
+them apart: `openehr-item-tag` confirms the tags now stored on the versioned
+object, `openehr-version-item-tag` those stored on the version just
+committed, and a header you did not send is not echoed at all. (Demographic
+parties store tags against the versioned object only, so both headers carry
+the same list there.)
 
 ## Error responses
 

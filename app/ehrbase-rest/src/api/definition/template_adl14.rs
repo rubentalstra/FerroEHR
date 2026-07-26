@@ -22,7 +22,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
 use crate::api::RequestParts;
-use crate::negotiate::WireFormat;
+use crate::negotiate::{AppliedPreference, WireFormat};
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -219,34 +219,44 @@ fn set_template_etag(resp: &mut Response, template_id: &str) {
 /// `return=representation` → the OPT XML; `return=identifier` → the JSON
 /// `TemplateIdentifier` object `{"template_id": <id>}`
 /// (`schemas/others/TemplateIdentifier.yaml`); missing / `return=minimal` → an
-/// empty body. `Location` + the weak `ETag` are set on every case.
+/// empty body. `Location` + the weak `ETag` are set on every case, and the
+/// applied preference is declared through the shared
+/// [`negotiate::set_preference_applied`] seam.
+///
+/// A template is not `uid`-versioned, so the identifier body is the
+/// `template_id` object rather than the generic `{uid}` of
+/// [`negotiate::write_negotiated`]; the preference resolution and the
+/// never-`204` identifier status are the same rule (`Requests_and_responses.md`
+/// §"Prefer only identifier"), here trivially satisfied because every upload
+/// outcome is `201 Created`.
 fn upload_response(
     headers: &HeaderMap,
     location: &str,
     template_id: &str,
     opt_xml: &str,
 ) -> Response {
-    let prefer = headers
-        .get("prefer")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    let has = |token: &str| {
-        prefer
-            .split(',')
-            .any(|t| t.trim().eq_ignore_ascii_case(token))
-    };
-    let mut resp = if has("return=representation") {
-        negotiate::xml_body(StatusCode::CREATED, opt_xml.to_owned())
-    } else if has("return=identifier") {
-        let body = serde_json::json!({ "template_id": template_id });
-        (StatusCode::CREATED, axum::Json(body)).into_response()
+    let applied = if negotiate::prefers_representation(headers) {
+        AppliedPreference::Representation
+    } else if negotiate::prefers_identifier(headers) {
+        AppliedPreference::Identifier(template_id)
     } else {
-        StatusCode::CREATED.into_response()
+        AppliedPreference::Minimal
+    };
+    let mut resp = match applied {
+        AppliedPreference::Representation => {
+            negotiate::xml_body(StatusCode::CREATED, opt_xml.to_owned())
+        }
+        AppliedPreference::Identifier(id) => {
+            let body = serde_json::json!({ "template_id": id });
+            (StatusCode::CREATED, axum::Json(body)).into_response()
+        }
+        AppliedPreference::Minimal => StatusCode::CREATED.into_response(),
     };
     if let Ok(v) = HeaderValue::from_str(location) {
         resp.headers_mut().insert(header::LOCATION, v);
     }
     set_template_etag(&mut resp, template_id);
+    negotiate::set_preference_applied(&mut resp, applied);
     resp
 }
 

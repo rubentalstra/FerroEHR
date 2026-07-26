@@ -100,6 +100,14 @@ async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMa
     )
 }
 
+/// The `Preference-Applied` field value, which every write path declares —
+/// "The service MAY include a `Preference-Applied` header in the response …
+/// to indicate that the client's preference has been honored" (ITS-REST
+/// overview `Requests_and_responses.md` §Representation details negotiation).
+fn preference_applied(h: &header::HeaderMap) -> Option<&str> {
+    h.get("preference-applied").and_then(|v| v.to_str().ok())
+}
+
 fn upload_req(prefer: Option<&str>) -> Request<Body> {
     let mut b = Request::builder()
         .method("POST")
@@ -124,6 +132,12 @@ async fn upload_minimal_returns_201_and_location_only() {
         body.is_empty(),
         "return=minimal has an empty body: {body:?}"
     );
+    assert_eq!(
+        preference_applied(&headers),
+        Some("return=minimal"),
+        "no Prefer was sent, so the applied preference is the default \
+         (overview §Representation details negotiation)"
+    );
 }
 
 #[tokio::test]
@@ -141,6 +155,7 @@ async fn upload_representation_returns_source_text() {
     );
     assert!(headers.contains_key(header::LOCATION));
     assert_eq!(body, source(), "representation echoes the OPT source");
+    assert_eq!(preference_applied(&headers), Some("return=representation"));
 }
 
 #[tokio::test]
@@ -151,6 +166,7 @@ async fn upload_identifier_returns_template_id_json() {
     assert!(headers.contains_key(header::LOCATION));
     let v: Value = serde_json::from_str(&body).unwrap();
     assert_eq!(v.get("template_id").and_then(Value::as_str), Some(HRID));
+    assert_eq!(preference_applied(&headers), Some("return=identifier"));
 }
 
 #[tokio::test]

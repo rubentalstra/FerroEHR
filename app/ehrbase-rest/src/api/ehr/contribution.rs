@@ -10,7 +10,7 @@ use openehr_its::rest::generated::ehr::{ContributionCreateParams, ContributionGe
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::RequestParts;
-use crate::negotiate::WireFormat;
+use crate::negotiate::{AppliedPreference, WireFormat};
 use crate::overview::error::RestError;
 use crate::overview::version_id::{parse_ehr_id, parse_uuid};
 use crate::state::AppState;
@@ -102,6 +102,12 @@ pub(super) async fn run(
                             meta,
                         );
                     }
+                    // This branch is `want_repr` only, so the applied
+                    // preference is the representation the client asked for —
+                    // declared through the same seam as the canonical path
+                    // (`Requests_and_responses.md` §Representation details
+                    // negotiation).
+                    negotiate::set_preference_applied(&mut out, AppliedPreference::Representation);
                     Ok(out)
                 }
                 _ => Ok(negotiate::write_json(
