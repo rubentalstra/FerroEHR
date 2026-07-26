@@ -32,9 +32,23 @@ impl EhrbaseService {
     /// object, and an EHR Access object … created and committed in a
     /// Contribution". Shared by `POST /ehr` and `PUT /ehr/{ehr_id}`.
     ///
+    /// `committal` carries the client's `openehr-version` /
+    /// `openehr-audit-details` request-header metadata when the request
+    /// supplied any: EHR creation commits change-controlled content, so the
+    /// ITS-REST merge MUST applies here exactly as it does to a COMPOSITION
+    /// write (overview `Requests_and_responses.md` §"openehr-version and
+    /// openehr-audit-details": the headers MUST be accepted on `PUT`, `POST`
+    /// and `DELETE`, and "whatever is provided it MUST be merged with the
+    /// default VERSION and `VERSION.audit_details` attributes on commit
+    /// runtime"). `None` keeps the server-default attribution.
+    ///
     /// # Errors
     /// [`ServiceError::Unprocessable`] when the supplied `EHR_STATUS` is
-    /// structurally invalid; [`ServiceError::Conflict`] when the EHR already
+    /// structurally invalid, or a committal `change_type`/`lifecycle_state`
+    /// is outside its openEHR terminology group;
+    /// [`ServiceError::BadRequest`] when a committal `change_type` is a legal
+    /// group code that contradicts a creation (only `249|creation|` commits a
+    /// first version); [`ServiceError::Conflict`] when the EHR already
     /// exists or the subject already owns another EHR (`ehr_subject_uq`, kept
     /// in sync by [`Self::sync_ehr_subject`] → 409, ITS-REST `409_EHR.yaml`;
     /// CNF `create_ehr-two_ehrs_same_patient`); [`ServiceError::Database`] on
@@ -43,11 +57,31 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         status: Value,
+        committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<ServiceResponse, ServiceError> {
         // The supplied EHR_STATUS must be a structurally valid RM instance
         // before the EHR is created (CNF master06 §Test Data Sets INVALID
         // class 2).
         super::validation::validate_ehr_status(&status)?;
+
+        // The creation commit's AUDIT_DETAILS: the server default, or — when
+        // the request carried committal headers — the merge of the client's
+        // attributes over it. Built BEFORE the transaction so an illegal
+        // client `change_type` is a plain 400/422 without a storage round
+        // trip (the same ordering as the EHR_STATUS validation above).
+        // `from_update` constrains the code to `249|creation|`: a create
+        // commits a first version, so a restated 249 passes and any other
+        // group code is a change-control mismatch (RM common master06
+        // §Contributions).
+        let audit = match committal {
+            Some(c) => crate::versioning::audit::AuditInput::from_update(
+                &c.audit,
+                change_type::CREATION,
+                "EHR creation",
+                &self.effective_system_id(),
+            )?,
+            None => self.audit(change_type::CREATION, "EHR creation"),
+        };
 
         let mut tx = self.pool.begin().await?;
 
@@ -88,7 +122,6 @@ impl EhrbaseService {
             Err(e) => return Err(e.into()),
         };
 
-        let audit = self.audit(change_type::CREATION, "EHR creation");
         let (_contribution_id, committed) = commit_contribution(
             &mut tx,
             Some(ehr_id),
@@ -102,7 +135,21 @@ impl EhrbaseService {
                         canonical: status.clone(),
                         template_id: None,
                         signature: None,
-                        lifecycle_state: None,
+                        // A client-supplied `openehr-version:
+                        // lifecycle_state.code_string=…` targets the content
+                        // THIS request carried — the bootstrap EHR_STATUS.
+                        // NOTE (spec-silent): the released text states the
+                        // merge against "the default VERSION" (singular) and
+                        // says nothing about a create that commits two
+                        // versions at once, so the server-generated
+                        // EHR_ACCESS below keeps the server default
+                        // (`532|complete|`) rather than inheriting a
+                        // lifecycle the client never described — no openEHR
+                        // spec governs the split, our own design (ITS-REST
+                        // overview §"openehr-version and
+                        // openehr-audit-details"; RM ehr master04 §EHR
+                        // Creation).
+                        lifecycle_state: committal.and_then(|c| c.lifecycle_state.clone()),
                         attestations: Vec::new(),
                     },
                 ),
@@ -416,7 +463,7 @@ impl EhrbaseService {
         // a 0..1 `PARTY_SELF` (RM ehr master04 §EHR Status), and the CDR treats
         // a supplied anonymous-or-identified subject as the EHR's subject
         // rather than rejecting it. Recorded, not silently guessed.
-        Ok(self.create_ehr_meta(an_ehr_status).await?.0)
+        Ok(self.create_ehr_meta(an_ehr_status, None).await?.0)
     }
 
     /// SM `I_EHR_SERVICE.create_ehr_with_id` — create an EHR under the
@@ -430,13 +477,21 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         an_ehr_status: Option<Value>,
     ) -> Result<EhrId, SmError> {
-        self.create_ehr_with_id_meta(an_ehr_id, an_ehr_status)
+        self.create_ehr_with_id_meta(an_ehr_id, an_ehr_status, None)
             .await?;
         Ok(an_ehr_id)
     }
 
     /// SM `I_EHR_SERVICE.create_ehr_for_subject` — create an EHR whose
     /// `EHR_STATUS.subject` names the given subject.
+    ///
+    /// NOTE: no committal argument. ITS-REST 1.1.0 binds EHR creation to
+    /// exactly two operations — `ehr_create` (`POST /ehr`) and
+    /// `ehr_create_with_id` (`PUT /ehr/{ehr_id}`), both of which route through
+    /// [`Self::create_ehr_meta`] / [`Self::create_ehr_with_id_meta`]; the
+    /// subject-scoped SM creates have no wire binding and therefore no
+    /// request headers to merge (the in-process caller is the FHIR ingest
+    /// path, which commits under the server's own attribution).
     ///
     /// # Errors
     /// [`SmError`] when the subject already owns an EHR (409-equivalent), the
@@ -451,12 +506,15 @@ impl EhrbaseService {
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
         );
-        self.commit_new_ehr(ehr_id, status).await?;
+        self.commit_new_ehr(ehr_id, status, None).await?;
         Ok(ehr_id)
     }
 
     /// SM `I_EHR_SERVICE.create_ehr_for_subject_with_id` — subject-scoped
     /// creation under a caller-supplied EHR id.
+    ///
+    /// No committal argument, for the reason given on
+    /// [`Self::create_ehr_for_subject`].
     ///
     /// # Errors
     /// [`SmError`] when the EHR already exists, the subject already owns an
@@ -471,7 +529,7 @@ impl EhrbaseService {
             an_ehr_status.unwrap_or_else(default_ehr_status),
             &a_subject_id,
         );
-        self.commit_new_ehr(an_ehr_id, status).await?;
+        self.commit_new_ehr(an_ehr_id, status, None).await?;
         Ok(an_ehr_id)
     }
 
@@ -577,32 +635,46 @@ impl EhrbaseService {
     /// created EHR's [`ResourceMeta`] (the `ETag`/`Location` id + the creation
     /// instant).
     ///
+    /// `committal` is the `POST /ehr` request's `openehr-version` /
+    /// `openehr-audit-details` metadata (see [`Self::commit_new_ehr`]).
+    ///
     /// # Errors
     /// [`SmError`] when the status is structurally invalid (422-equivalent),
-    /// the subject already owns an EHR (409-equivalent), or storage fails.
+    /// a committal `change_type`/`lifecycle_state` is illegal for a creation
+    /// (400/422-equivalent), the subject already owns an EHR
+    /// (409-equivalent), or storage fails.
     pub async fn create_ehr_meta(
         &self,
         an_ehr_status: Option<Value>,
+        committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<(EhrId, ResourceMeta), SmError> {
         let ehr_id = EhrId::new();
-        let meta = self.create_ehr_with_id_meta(ehr_id, an_ehr_status).await?;
+        let meta = self
+            .create_ehr_with_id_meta(ehr_id, an_ehr_status, committal)
+            .await?;
         Ok((ehr_id, meta))
     }
 
     /// [`Self::create_ehr_with_id`] returning the created EHR's
     /// [`ResourceMeta`].
     ///
+    /// `committal` is the `PUT /ehr/{ehr_id}` request's `openehr-version` /
+    /// `openehr-audit-details` metadata (see [`Self::commit_new_ehr`]).
+    ///
     /// # Errors
     /// [`SmError`] when the EHR already exists (409-equivalent), the status is
-    /// invalid, the subject already owns an EHR, or storage fails.
+    /// invalid, a committal `change_type`/`lifecycle_state` is illegal for a
+    /// creation (400/422-equivalent), the subject already owns an EHR, or
+    /// storage fails.
     pub async fn create_ehr_with_id_meta(
         &self,
         an_ehr_id: EhrId,
         an_ehr_status: Option<Value>,
+        committal: Option<&crate::service::version_update::Committal>,
     ) -> Result<ResourceMeta, SmError> {
         // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
         let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        let created = self.commit_new_ehr(an_ehr_id, status).await?;
+        let created = self.commit_new_ehr(an_ehr_id, status, committal).await?;
         created.meta.ok_or_else(|| {
             SmError::exception(format!(
                 "EHR {an_ehr_id} was created without resource metadata"

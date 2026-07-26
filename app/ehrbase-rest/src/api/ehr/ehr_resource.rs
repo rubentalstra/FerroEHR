@@ -60,16 +60,21 @@ pub(super) async fn run(
             // The service returns the created EHR's own resource metadata
             // (ehr_id + creation instant) — the write path never rebuilds a
             // metadata-less envelope, so `Last-Modified` survives to the wire.
-            let (ehr_id, meta) = state.backend().create_ehr_meta(status).await?;
+            let committal = create_committal(h);
+            let (ehr_id, meta) = state
+                .backend()
+                .create_ehr_meta(status, committal.as_ref())
+                .await?;
             ehr_write_response(&state, h, &base, ehr_id, meta).await
         }
         "ehr_create_with_id" => {
             let p = params::build::<EhrCreateWithIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let status = negotiate::optional_rm_value::<EhrStatus>(h, &parts.body)?;
+            let committal = create_committal(h);
             let meta = state
                 .backend()
-                .create_ehr_with_id_meta(ehr_id, status)
+                .create_ehr_with_id_meta(ehr_id, status, committal.as_ref())
                 .await?;
             ehr_write_response(&state, h, &base, ehr_id, meta).await
         }
@@ -92,6 +97,29 @@ pub(super) async fn run(
             "unrouted ehr operation: {other}"
         )))),
     }
+}
+
+/// The committal metadata of an EHR create, when the request carried the
+/// `openehr-version` / `openehr-audit-details` headers.
+///
+/// EHR creation is a commit on change-controlled content: "the result should
+/// be a root EHR object, an EHR Status object, and an EHR Access object …
+/// created and committed in a Contribution" (RM ehr `master04-ehr_package.adoc`
+/// §EHR Creation), and the `EHR_STATUS` is one of the change-controlled
+/// resources the merge rule names. So the ITS-REST MUST applies to `POST /ehr`
+/// and `PUT /ehr/{ehr_id}` exactly as it does to a COMPOSITION write
+/// (`Requests_and_responses.md` §"openehr-version and openehr-audit-details":
+/// the headers MUST be accepted on `PUT`, `POST` and `DELETE`, and "whatever
+/// is provided it MUST be merged with the default VERSION and
+/// `VERSION.audit_details` attributes on commit runtime").
+///
+/// The merge starts from the authenticated principal as the committer, so an
+/// unsupplied `committer` keeps the server default instead of being
+/// overwritten.
+fn create_committal(
+    headers: &http::HeaderMap,
+) -> Option<ehrbase::service::version_update::Committal> {
+    crate::overview::committal::committal_commit(headers, super::committer_proxy())
 }
 
 /// Render an EHR read (`200_EHR`) with the weak `ETag` carrying

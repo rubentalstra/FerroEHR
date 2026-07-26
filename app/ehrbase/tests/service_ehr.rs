@@ -27,7 +27,7 @@ use ehrbase::service::error::ServiceError;
 use ehrbase::service::status::{CallStatusType, SmError};
 use ehrbase::versioning::change::Committed;
 
-use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
+use ehrbase::service::version_update::{Committal, UpdateAudit, UpdateVersion};
 
 /// The `uid.value` (`OBJECT_VERSION_ID`) of a versioned-object body.
 fn uid(v: &Value) -> &str {
@@ -583,6 +583,117 @@ async fn creating_an_ehr_with_an_existing_id_conflicts() {
         .expect("first create");
     let again = svc.create_ehr_with_id(id, None).await;
     assert!(again.is_err(), "duplicate EHR id must conflict");
+}
+
+/// EHR creation commits change-controlled content — "the result should be a
+/// root EHR object, an EHR Status object, and an EHR Access object … created
+/// and committed in a Contribution" (RM ehr master04 §EHR Creation) — so the
+/// committal metadata the ITS-REST overview lets a client supply
+/// (§"openehr-version and openehr-audit-details": "whatever is provided it
+/// MUST be merged with the default VERSION and VERSION.audit_details
+/// attributes on commit runtime") reaches BOTH the creating CONTRIBUTION's
+/// audit and the `EHR_STATUS` version's `commit_audit`. `change_type` is not
+/// supplied here, so the operation default `249|creation|` stands (a create
+/// commits a first version — RM common master06 §Contributions).
+#[tokio::test]
+async fn ehr_creation_merges_the_committal_metadata() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let committal = Committal {
+        audit: UpdateAudit {
+            // Empty = the client supplied no change_type (what the header
+            // layer produces), so the operation default applies.
+            change_type: term(""),
+            description: Some("EHR opened at triage".to_owned()),
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Chart" }),
+            )
+            .expect("committer"),
+            system_id: Some("example.openehr.systemid".to_owned()),
+        },
+        // `553|incomplete|` — a legal first-version lifecycle state (master06
+        // §Incomplete Content), so the merge is visible against the
+        // `532|complete|` default.
+        lifecycle_state: Some("553".to_owned()),
+    };
+    let (ehr_id, _meta) = svc
+        .create_ehr_meta(None, Some(&committal))
+        .await
+        .expect("create_ehr with committal metadata");
+
+    let version = svc
+        .ehr_status_version_at_time(ehr_id, None)
+        .await
+        .expect("EHR_STATUS version");
+    assert_eq!(version["_type"], "ORIGINAL_VERSION");
+    assert_eq!(
+        version["lifecycle_state"]["defining_code"]["code_string"], "553",
+        "the supplied lifecycle_state is merged into the EHR_STATUS version: {version}"
+    );
+    let audit = &version["commit_audit"];
+    assert_eq!(audit["description"]["value"], "EHR opened at triage");
+    assert_eq!(audit["committer"]["name"], "Dr Chart");
+    assert_eq!(audit["system_id"], "example.openehr.systemid");
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"], "249",
+        "a create commits a first version: {version}"
+    );
+
+    // The same merged audit is the creating CONTRIBUTION's audit (one
+    // CONTRIBUTION per change set — RM common master06 §Contributions).
+    let contribution_uid = version["contribution"]["id"]["value"]
+        .as_str()
+        .expect("contribution ref")
+        .to_owned();
+    let contribution = svc
+        .get_contribution(ehr_id, contribution_uid.parse().expect("contrib uuid"))
+        .await
+        .expect("contribution_get");
+    assert_eq!(
+        contribution["audit"]["description"]["value"],
+        "EHR opened at triage"
+    );
+    assert_eq!(contribution["audit"]["committer"]["name"], "Dr Chart");
+    assert_eq!(
+        contribution["audit"]["system_id"],
+        "example.openehr.systemid"
+    );
+}
+
+/// The committal `change_type` is constrained by the operation: a create
+/// commits a FIRST version, so only `249|creation|` is compatible (RM common
+/// master06 §Contributions — the same operation-compatibility rule the
+/// CONTRIBUTION path applies). A restated `249` passes; a legal-but-divergent
+/// group code and an out-of-group token are both rejected.
+#[tokio::test]
+async fn ehr_creation_rejects_a_change_type_that_is_not_a_creation() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let committal = |code: &str| Committal {
+        audit: UpdateAudit {
+            change_type: term(code),
+            description: None,
+            committer: openehr_its::json::from_canonical_value::<PartyProxy>(
+                &json!({ "_type": "PARTY_IDENTIFIED", "name": "Dr Chart" }),
+            )
+            .expect("committer"),
+            system_id: None,
+        },
+        lifecycle_state: None,
+    };
+
+    for code in ["250", "523", "999"] {
+        let rejected = svc.create_ehr_meta(None, Some(&committal(code))).await;
+        assert!(
+            rejected.is_err(),
+            "change_type {code} on an EHR create must be rejected, got {rejected:?}"
+        );
+    }
+    svc.create_ehr_meta(None, Some(&committal("249")))
+        .await
+        .expect("a restated creation change_type is accepted");
 }
 
 #[tokio::test]
