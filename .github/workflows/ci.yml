@@ -362,46 +362,27 @@ jobs:
             https://github.com/tailwindlabs/tailwindcss/releases/download/v4.3.3/tailwindcss-linux-x64
           chmod +x /usr/local/bin/tailwindcss
           tailwindcss --help | head -1
-      # The compose stack's app image is the expensive (cargo-chef) build. Build
-      # it here with an EXPORTED layer cache so a cold runner reuses the
-      # cooked-dependency layer across runs; `load: true` puts the result in the
-      # docker store so the compose `--no-build` below finds it, and the
-      # docker-container driver (setup-buildx-action default) is what allows a
-      # cache exporter at all.
+      # The compose stack's app image is the expensive (cargo-chef) build;
+      # `load: true` puts the result in the docker store so the compose
+      # `--no-build` below finds it.
       #
-      # The cache backend is the REGISTRY exporter, not type=gha
-      # (docs.docker.com/build/cache/backends/registry;
-      # docs.docker.com/build/ci/github-actions/cache §Registry cache — the
-      # login-action + setup-buildx-action + cache-from/cache-to sequence below
-      # follows that page's example). Reason: the Actions cache is capped at
-      # "10 GB per repository" and evicts by "last access date"
-      # (docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching),
-      # so a mode=max export of a big Rust release image was routinely evicted
-      # and every eviction cost a full in-Docker cold build. A registry cache has
-      # no such cap, and registry is the backend the docs single out as able to
-      # "efficiently cache multi-stage builds in `max` mode, instead of only the
-      # final stage" — which is the whole point here: mode=min would export only
-      # the final-stage layers and drop the `cargo chef cook` layer that the
-      # cache exists for. Hence mode=max (docs.docker.com/build/cache/backends
-      # — `mode`: min | max).
+      # NO layer-cache backend, deliberately (owner call 2026-07-26): the
+      # registry exporter published a non-product `build-cache` package into
+      # GHCR beside the three product images, and its measured value was ~32 s
+      # per run (issue #335: the cacheable `cargo chef cook` layer is not the
+      # bottleneck — the first-party release build after `COPY . .` is, and
+      # every ui-e2e trigger invalidates that layer by construction, so no
+      # layer cache can serve it). GHCR stays product-images-only
+      # (ehrbase-rs, ehrbase-rs-postgres, ehrbase-rs-admin-ui); the real
+      # ui-e2e speed-up is #335's app-layer work.
       #
       # The in-image build (docker/Dockerfile `builder` stage) is deliberately
       # NOT sccache-wrapped: sccache's Actions-cache backend "will need tokens
       # like `ACTIONS_RESULTS_URL` and `ACTIONS_RUNTIME_TOKEN` to work"
       # (github.com/mozilla/sccache docs/GHA.md), which exist only in the runner
-      # process and would have to be secret-mounted into every RUN — short-lived
-      # credentials plumbed through the Dockerfile for a stage that the registry
-      # cache already returns as a layer HIT rather than a recompile.
+      # process and would have to be secret-mounted into every RUN.
       - uses: docker/setup-buildx-action@v4
-      # Authenticate to GHCR for the cache image. Kept unconditional: on a fork
-      # PR the token is read-only, which is still enough to IMPORT the cache
-      # (docs.docker.com/build/ci/github-actions/cache §Registry cache).
-      - uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-      - name: Build the app image (from-source; exported GHCR layer cache)
+      - name: Build the app image (from-source)
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -411,17 +392,6 @@ jobs:
           tags: ehrbase-rs:ui-e2e
           build-args: |
             REVISION=${{ github.sha }}
-          # Import always; the cache image lives under this repository's GHCR
-          # namespace and, being published by GITHUB_TOKEN, "inherits the
-          # visibility and permissions model of the repository where the workflow
-          # is run" — i.e. public, readable by fork-PR runs.
-          cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/build-cache:ui-e2e
-          # Export only when the run actually holds a write token: a
-          # pull_request from a fork gets a read-only GITHUB_TOKEN, and an
-          # unguarded cache-to would fail the build for external contributors.
-          # `format()` because a ${{ }} expression cannot nest another one
-          # (docs.github.com/en/actions/reference/workflows-and-actions/expressions#format).
-          cache-to: ${{ (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository) && format('type=registry,ref=ghcr.io/{0}/build-cache:ui-e2e,mode=max', github.repository) || '' }}
       - name: Build the postgres image (COPY-only, seconds)
         run: docker buildx build --load -t ehrbase-rs-postgres:ui-e2e docker/postgres
       - name: Run the E2E journey battery
