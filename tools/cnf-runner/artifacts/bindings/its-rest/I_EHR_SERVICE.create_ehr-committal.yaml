@@ -22,11 +22,11 @@
 # the persisted EHR_STATUS ORIGINAL_VERSION.commit_audit.
 #
 # Identical to the variant-less I_EHR_SERVICE.create_ehr binding except the
-# added committal header and the EHR_STATUS version capture, so a red row
-# localizes to the create-time merge alone. `Prefer: return=representation`
-# (already the base binding's request) yields the RM EHR body whose
-# `ehr_status` OBJECT_REF carries the committed version's OBJECT_VERSION_ID —
-# the read-back handle for step 2.
+# added committal header, so a red row localizes to the create-time merge
+# alone. The EHR body's `ehr_status` OBJECT_REF names the version CONTAINER
+# (a HIER_OBJECT_ID — RM ehr `Ehr_status_valid` + BASE master05
+# `OBJECT_REF.id`), so the case fetches the committed VERSION uid from the
+# served EHR_STATUS itself (`I_EHR_STATUS.get_ehr_status` step 2).
 sm_operation: I_EHR_SERVICE.create_ehr
 its: its-rest
 variant: committal
@@ -52,8 +52,4 @@ captures:
   ehr_id:
     from: body "ehr_id.value"
     fallback: header Location last-segment
-  # The OBJECT_VERSION_ID of the EHR_STATUS version the creation committed
-  # (RM ehr master04 §EHR Creation) — the EHR body's ehr_status OBJECT_REF.
-  status_version_uid:
-    from: body "ehr_status.id.value"
 server_assigned: [ehr_id, system_id, time_created, ehr_status/uid, ehr_access]

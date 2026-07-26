@@ -21,7 +21,6 @@ use crate::service::error::ServiceError;
 use crate::versioning::Kind;
 use crate::versioning::audit::change_type;
 use crate::versioning::change::{Change, commit_contribution};
-use crate::versioning::object_version_id::{TreeId, object_version_id};
 
 use super::status_for_subject;
 
@@ -214,14 +213,15 @@ impl EhrbaseService {
             .iter()
             .find(|c| c.kind == Kind::EhrStatus)
             .map(|c| {
+                // The container ref: HIER_OBJECT_ID of the VERSIONED_EHR_STATUS
+                // (RM ehr `Ehr_status_valid` + BASE master05 OBJECT_REF.id —
+                // the referenced object IS the container), matching the read
+                // path and the ehr_access ref.
                 json!({
                     "_type": "OBJECT_REF",
                     "namespace": "local",
                     "type": "VERSIONED_EHR_STATUS",
-                    "id": {
-                        "_type": "OBJECT_VERSION_ID",
-                        "value": object_version_id(c.vo_id, &c.creating_system_id, c.tree)
-                    }
+                    "id": { "_type": "HIER_OBJECT_ID", "value": c.vo_id.to_string() }
                 })
             });
         let mut body = json!({
@@ -302,28 +302,24 @@ impl EhrbaseService {
                 format!("EHR_STATUS for EHR {ehr_id}"),
             )
         })?;
-        let status_version = TreeId::from_columns(
-            status.trunk_version,
-            status.branch_number,
-            status.branch_version,
-        );
-        let status_ovid =
-            object_version_id(status.vo_id, &status.creating_system_id, status_version);
-
         let mut body = json!({
             "_type": "EHR",
             "system_id": { "_type": "HIER_OBJECT_ID", "value": stored_system_id },
             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": ehr_id.to_string() },
             // Ehr_status_valid: ehr_status.type.is_equal("VERSIONED_EHR_STATUS")
-            // (RM ehr `ehr.adoc` invariants — normative). NOTE (spec
-            // defect): the non-normative ITS-REST example shows `type:
-            // EHR_STATUS`; the RM invariant wins for `type`, the id keeps the
-            // OBJECT_VERSION_ID form clients use to address the current version.
+            // (RM ehr `ehr.adoc` invariants — normative): the ref names the
+            // version CONTAINER, so its `id` is the container's
+            // HIER_OBJECT_ID (BASE master05: OBJECT_REF.id is the "Globally
+            // unique id of an object" — here the VERSIONED_EHR_STATUS, whose
+            // uid is a HIER_OBJECT_ID), consistent with the `ehr_access` ref
+            // below. NOTE (spec defect): the non-normative ITS-REST example
+            // shows `type: EHR_STATUS` with an OBJECT_VERSION_ID id — the
+            // stalled OAS reading; the RM wins on both counts.
             "ehr_status": {
                 "_type": "OBJECT_REF",
                 "namespace": "local",
                 "type": "VERSIONED_EHR_STATUS",
-                "id": { "_type": "OBJECT_VERSION_ID", "value": status_ovid }
+                "id": { "_type": "HIER_OBJECT_ID", "value": status.vo_id.to_string() }
             },
             "time_created": { "_type": "DV_DATE_TIME", "value": time_created.to_string() }
         });

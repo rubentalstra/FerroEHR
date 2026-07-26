@@ -46,8 +46,17 @@ flow:
     expect: created
     capture:
       new_ehr_id: created.ehr_id
-      status_version_uid: created.status_version_uid
+  # The EHR body's ehr_status ref names the CONTAINER (RM ehr
+  # `Ehr_status_valid`; BASE master05 OBJECT_REF.id), so the committed
+  # VERSION uid is read from the served EHR_STATUS.
   - step: 2
+    call: I_EHR_STATUS.get_ehr_status
+    with:
+      ehr_id: "${new_ehr_id}"
+    expect: ok
+    capture:
+      status_version_uid: ok.status_version_uid
+  - step: 3
     call: I_EHR_STATUS.get_versioned_ehr_status
     variant: version
     with:
