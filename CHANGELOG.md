@@ -17,6 +17,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **The `openehr-ehr-id` request header now scopes `GET` query execution too,
+  and a scope named twice must agree** (#399). ITS-REST
+  `docs/query/Request.md` §"About the `ehr_id` parameter" lets clients supply
+  the single-EHR scope "as a query parameter `ehr_id` or alternatively as a
+  request header named `openehr-ehr-id`", and §"Common Headers and Query
+  Parameters" applies that to "all query execution requests". Only the `POST`
+  forms honoured the header: `GET /query/aql`, `GET /query/{name}` and
+  `GET /query/{name}/{version}` read the scope from the query string alone, so
+  a header-scoped `GET` silently ran as a **population query** across every
+  EHR. All six execution operations now resolve the scope through one seam.
+  The released text never says what a request carrying *both* forms means, so
+  the handling is adjudicated and registered (ambiguity register `AMB-59`):
+  both forms naming the **same** EHR execute normally, and both forms naming
+  **different** EHRs are rejected `400 Bad Request` rather than silently
+  picking one — a request that names two EHRs cannot be answered correctly
+  (`docs/overview/Requests_and_responses.md` §"HTTP status codes", row `400`).
+  An empty header value carries no identifier and neither scopes nor
+  conflicts. The deprecated `openEHR-EHR-id` spelling keeps working (HTTP
+  field names are case-insensitive). The header is now also declared on every
+  query operation in the served OpenAPI.
 - **`Prefer` / representation polish: `return=identifier` is structurally
   never `204`, item-tag echoes are per-target, and `Preference-Applied` is
   emitted from one seam** (#398). Three divergences from ITS-REST overview

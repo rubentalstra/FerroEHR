@@ -22,9 +22,11 @@ use crate::params;
 use crate::state::AppState;
 
 /// Execute the two ad-hoc operations. The single wire `ehr_id` (query parameter
-/// or `openEHR-EHR-id` header) is collected into the one-element
-/// [`AqlQueryRequest::ehr_ids`] scope (the SM `List<UUID>` is realized as an
-/// extension; the conformant wire binds one `ehr_id`).
+/// or `openehr-ehr-id` header — resolved for both methods by
+/// [`response::ehr_id_from_request`], `Request.md` §About the `ehr_id`
+/// parameter) is collected into the one-element [`AqlQueryRequest::ehr_ids`]
+/// scope (the SM `List<UUID>` is realized as an extension; the conformant wire
+/// binds one `ehr_id`).
 pub(super) async fn execute(
     state: &AppState,
     op: &str,
@@ -47,7 +49,9 @@ pub(super) async fn execute(
                 params::QUERY_RESERVED_KEYS,
             );
             let request = scope.apply(AqlQueryRequest {
-                ehr_ids: p.ehr_id.into_iter().collect(),
+                ehr_ids: response::ehr_id_from_request(p.ehr_id, h)?
+                    .into_iter()
+                    .collect(),
                 offset: p.offset,
                 fetch: p.fetch,
                 parameters,
@@ -60,7 +64,9 @@ pub(super) async fn execute(
         "query_execute_adhoc_query_body" => {
             let body: AdhocQueryExecute = response::decode_body(h, &parts.body)?;
             let request = scope.apply(AqlQueryRequest {
-                ehr_ids: response::ehr_id_from_request(q, h).into_iter().collect(),
+                ehr_ids: response::ehr_id_from_request(params::query_param(q, "ehr_id"), h)?
+                    .into_iter()
+                    .collect(),
                 offset: body.offset,
                 fetch: body.fetch,
                 parameters: body.query_parameters.unwrap_or_default(),
