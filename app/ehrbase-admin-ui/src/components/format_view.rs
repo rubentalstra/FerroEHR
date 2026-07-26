@@ -155,8 +155,7 @@ fn pane_toolbar(
         if buttons.is_empty() {
             return ().into_any();
         }
-        view! { <div class=SEGMENTED>{buttons}</div> }
-        .into_any()
+        view! { <div class=SEGMENTED>{buttons}</div> }.into_any()
     };
     view! {
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -239,8 +238,7 @@ fn copy_button(body: Signal<String>) -> AnyView {
 
 /// The document text, unstyled.
 fn raw_pane(body: Signal<String>) -> AnyView {
-    view! { <pre class=PANE>{move || body.get()}</pre> }
-    .into_any()
+    view! { <pre class=PANE>{move || body.get()}</pre> }.into_any()
 }
 
 /// The document text with one `<span>` per syntax token.
@@ -289,8 +287,7 @@ fn token_class(kind: TokenKind) -> &'static str {
 /// The template-free clinical rendering of a canonical openEHR document.
 fn rendered_pane(document: &RenderedSection) -> AnyView {
     let section = section_view(document.clone());
-    view! { <div class=RENDERED_PANE>{section}</div> }
-    .into_any()
+    view! { <div class=RENDERED_PANE>{section}</div> }.into_any()
 }
 
 /// One RM node as a titled section: heading, type chip, archetype chip, and its
