@@ -679,3 +679,63 @@ AMB-59:
     a loud failure. Revisits only if a future ITS-REST release states a
     precedence.
   disposition: fixed_handling
+AMB-60:
+  ambiguity: >-
+    ITS-REST 1.1.0 states two adjacent method SHOULDs whose antecedents overlap
+    on the wire and gives no precedence between them: "A server receiving an
+    unrecognized or unimplemented method SHOULD respond with the 501 Not
+    Implemented status code. If a method is recognized but not allowed for the
+    target resource, the response SHOULD be 405 Method Not Allowed status code."
+    A request naming any method outside the six-method subset the same section
+    tabulates satisfies BOTH antecedents at once — the method is unrecognized by
+    the service AND not allowed for the target resource — so the released text
+    licenses either code and states no tie-break. It also never says which
+    applies when the method is unrecognized on a path the service does not
+    route at all (404 vs 501), nor whether the target-resource test is even
+    decidable before routing.
+  source: >-
+    ITS-REST specifications/docs/overview/Requests_and_responses.md §HTTP
+    Methods (the method table listing GET/HEAD/POST/PUT/DELETE/OPTIONS as "the
+    following subset is used in this specification", followed by the two
+    quoted SHOULD sentences, with no precedence, no unknown-path rule, and no
+    MUST on either branch) + §HTTP status codes (rows 404 "The origin service
+    did not find the target resource", 405 "The method received in the
+    request-line is known by the origin service but not supported by the target
+    resource", 501 "The service does not support the functionality required to
+    fulfill the request", and "Additional status codes MAY be used as long as
+    they do not conflict with the predefined codes") — overlap and silence
+    CONFIRMED first-hand. The section's own cited authority for method
+    semantics is RFC 9110 (§15.5.6: "The origin server MUST generate an Allow
+    header field in a 405 response containing a list of the target resource's
+    currently supported methods"; §10.2.1: "An empty Allow field value
+    indicates that the resource allows no methods, which might occur in a 405
+    response if the resource has been temporarily disabled by configuration").
+  handling: >-
+    Fixed handling: a request to a KNOWN resource path whose method that
+    resource does not serve is answered 405 Method Not Allowed with the openEHR
+    error body, for EVERY method — recognized (TRACE, PATCH, an unrouted
+    GET/POST/PUT/DELETE) and unrecognized (an arbitrary token) alike — and the
+    405 always carries the Allow header RFC 9110 §15.5.6 makes mandatory, either
+    the matched path's served-method list or, for a resource turned off by
+    configuration, the empty field value of RFC 9110 §10.2.1. The 501 branch is
+    NOT abandoned: it is emitted for the other half of the same section, a
+    recognized operation the service does not implement. Grounds for choosing
+    405 over 501 on the overlap: both sentences are SHOULD, so neither is
+    violated by satisfying the other; an unrecognized method IS also "not
+    allowed for the target resource", so 405 is a direct reading of the second
+    sentence; 405 is a predefined code in the same document's status table and
+    therefore cannot conflict with it; and the only mechanism that could reach
+    a blanket 501 — a catch-all method fallback ahead of path routing — would
+    equally capture requests to paths the service does not route at all and
+    report them 501, contradicting the 404 row for a resource the origin
+    service "did not find". A 405 without Allow is non-conformant under either
+    reading and is the one outcome this entry forbids. Not executable in the
+    catalogue today: the binding request model's method vocabulary is closed to
+    {GET, POST, PUT, DELETE, HEAD} (no seam for a wrong-but-known or arbitrary
+    method on a known path), the outcome taxonomy has no method_not_allowed
+    kind, and header matchers are parsed but never evaluated — so the boundary
+    is carried as the cited vocab/wire_surface.yaml elements
+    method-405-allow-header and method-501-unrecognized-method-deviation.
+    Revisits if a future ITS-REST release raises either sentence to a MUST or
+    states a precedence.
+  disposition: fixed_handling

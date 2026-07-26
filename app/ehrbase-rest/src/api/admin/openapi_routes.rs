@@ -20,7 +20,11 @@
 //!   every admin route answers `405` with the openEHR error body — the
 //!   status the OAS itself declares for a disabled admin operation
 //!   (`admin_ehr_delete_all.yaml` + `responses/405.yaml`), applied
-//!   uniformly across the group (`admin/dispatch.rs`).
+//!   uniformly across the group (`admin/dispatch.rs`). Because that `405`
+//!   comes from a MATCHED handler it carries its own `Allow` header (RFC
+//!   9110 §15.5.6 makes it mandatory on every `405`), with the EMPTY field
+//!   value RFC 9110 §10.2.1 defines for a resource "temporarily disabled by
+//!   configuration".
 //! - **Synchronous deletes → `204`** (never `202`): the OAS permits an async
 //!   `202 Accepted`, but every delete here is synchronous, so success is always
 //!   `204 No Content` (bodyless); the `202` path is not produced.
@@ -79,7 +83,11 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
                                       server (the status the OAS declares for \
                                       a disabled admin operation: \
                                       `admin_ehr_delete_all.yaml` + \
-                                      `responses/405.yaml`).",
+                                      `responses/405.yaml`). Carries the \
+                                      mandatory `Allow` header (RFC 9110 \
+                                      §15.5.6) with the EMPTY field value \
+                                      RFC 9110 §10.2.1 defines for a resource \
+                                      disabled by configuration.",
          body = serde_json::Value)
     )
 )]
@@ -114,7 +122,11 @@ pub(crate) async fn admin_config(
                                       server (the status the OAS declares for \
                                       a disabled admin operation: \
                                       `admin_ehr_delete_all.yaml` + \
-                                      `responses/405.yaml`).",
+                                      `responses/405.yaml`). Carries the \
+                                      mandatory `Allow` header (RFC 9110 \
+                                      §15.5.6) with the EMPTY field value \
+                                      RFC 9110 §10.2.1 defines for a resource \
+                                      disabled by configuration.",
          body = serde_json::Value)
     )
 )]
@@ -151,7 +163,11 @@ pub(crate) async fn admin_ehr_delete_all(
                                       server (the status the OAS declares for \
                                       a disabled admin operation: \
                                       `admin_ehr_delete_all.yaml` + \
-                                      `responses/405.yaml`).",
+                                      `responses/405.yaml`). Carries the \
+                                      mandatory `Allow` header (RFC 9110 \
+                                      §15.5.6) with the EMPTY field value \
+                                      RFC 9110 §10.2.1 defines for a resource \
+                                      disabled by configuration.",
          body = serde_json::Value)
     )
 )]
@@ -188,7 +204,11 @@ pub(crate) async fn admin_ehr_delete(
                                       server (the status the OAS declares for \
                                       a disabled admin operation: \
                                       `admin_ehr_delete_all.yaml` + \
-                                      `responses/405.yaml`).",
+                                      `responses/405.yaml`). Carries the \
+                                      mandatory `Allow` header (RFC 9110 \
+                                      §15.5.6) with the EMPTY field value \
+                                      RFC 9110 §10.2.1 defines for a resource \
+                                      disabled by configuration.",
          body = serde_json::Value)
     )
 )]
@@ -230,7 +250,11 @@ pub(crate) async fn admin_template_delete(
                                       server (the status the OAS declares for \
                                       a disabled admin operation: \
                                       `admin_ehr_delete_all.yaml` + \
-                                      `responses/405.yaml`).",
+                                      `responses/405.yaml`). Carries the \
+                                      mandatory `Allow` header (RFC 9110 \
+                                      §15.5.6) with the EMPTY field value \
+                                      RFC 9110 §10.2.1 defines for a resource \
+                                      disabled by configuration.",
          body = serde_json::Value)
     )
 )]
