@@ -77,7 +77,9 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
                         EHR_STATUS.subject.external_ref.namespace). Required.")
     ),
     responses(
-        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`).",
+        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`); \
+                                      `ETag` (weak `W/` form) carries \
+                                      `EHR.ehr_id.value`.",
          body = serde_json::Value),
         (status = 400, description = "A required subject query parameter is \
                                       missing or malformed.",
@@ -119,7 +121,8 @@ pub(crate) async fn ehr_get_by_subject(
                                 is_modifiable=true, PARTY_SELF subject) is used."),
     responses(
         (status = 201, description = "Created; `ETag` (weak `W/` form) carries \
-                                      the new `ehr_id`, `Location` the EHR URL. \
+                                      the new `ehr_id`, `Last-Modified` the \
+                                      creation instant, `Location` the EHR URL. \
                                       Body per `Prefer` (representation or \
                                       identifier; empty for minimal).",
          body = serde_json::Value),
@@ -151,7 +154,9 @@ pub(crate) async fn ehr_create(
     params(("ehr_id" = String, Path,
             description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
     responses(
-        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`).",
+        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`); \
+                                      `ETag` (weak `W/` form) carries \
+                                      `EHR.ehr_id.value`.",
          body = serde_json::Value),
         (status = 404, description = "No EHR exists with `ehr_id`.",
          body = serde_json::Value)
@@ -193,8 +198,9 @@ pub(crate) async fn ehr_get_by_id(
                                 is_modifiable=true, PARTY_SELF subject) is used."),
     responses(
         (status = 201, description = "Created; `ETag` (weak `W/` form) carries \
-                                      the `ehr_id`, `Location` the EHR URL. Body \
-                                      per `Prefer` (representation or identifier; \
+                                      the `ehr_id`, `Last-Modified` the creation \
+                                      instant, `Location` the EHR URL. Body per \
+                                      `Prefer` (representation or identifier; \
                                       empty for minimal).",
          body = serde_json::Value),
         (status = 400, description = "`ehr_id` is not a valid `HIER_OBJECT_ID` or \
@@ -330,11 +336,13 @@ pub(crate) async fn ehr_status_get_at_time(
         (status = 200, description = "Updated; body per `Prefer` \
                                       (representation or identifier). `ETag` \
                                       (weak `W/` form) + `Location` carry the \
-                                      new version.",
+                                      new version, `Last-Modified` its commit \
+                                      time.",
          body = serde_json::Value),
         (status = 204, description = "Updated (`Prefer: return=minimal`); `ETag` \
                                       (weak `W/` form) + `Location` carry the \
-                                      new version."),
+                                      new version, `Last-Modified` its commit \
+                                      time."),
         (status = 400, description = "Invalid EHR_STATUS, or `If-Match` expected \
                                       but missing/malformed.",
          body = serde_json::Value),
@@ -433,7 +441,9 @@ pub(crate) async fn versioned_ehr_status_revision_history(
     responses(
         (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
                                       (canonical JSON/XML); `ETag` (weak `W/` \
-                                      form) carries the version uid.",
+                                      form) carries the version uid, \
+                                      `Last-Modified` its `commit_audit` \
+                                      `time_committed`.",
          body = serde_json::Value),
         (status = 400, description = "Malformed `version_at_time`.",
          body = serde_json::Value),
@@ -470,7 +480,9 @@ pub(crate) async fn versioned_ehr_status_version_get_at_time(
     responses(
         (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
                                       identified by `version_uid` (canonical \
-                                      JSON/XML).",
+                                      JSON/XML); `ETag` (weak `W/` form) carries \
+                                      the version uid, `Last-Modified` its \
+                                      `commit_audit` `time_committed`.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id`, or no VERSION with \
                                       `version_uid`.",
@@ -529,8 +541,9 @@ pub(crate) async fn versioned_ehr_status_version_get_by_id(
     responses(
         (
             status = 201, description = "Created; `ETag` (weak `W/` form) carries \
-                                        the new version uid, `Location` the \
-                                        COMPOSITION version URL. Body per `Prefer` \
+                                        the new version uid, `Last-Modified` its \
+                                        commit time, `Location` the COMPOSITION \
+                                        version URL. Body per `Prefer` \
                                         (representation or identifier; empty for \
                                         minimal). Item tags MAY be echoed in the \
                                         `openehr-item-tag`/\
@@ -656,14 +669,15 @@ pub(crate) async fn composition_get(
             status = 200, description = "Updated; body per `Prefer` \
                                         (representation or identifier). `ETag` \
                                         (weak `W/` form) + `Location` carry the \
-                                        new version. Item tags MAY be echoed in \
+                                        new version, `Last-Modified` its commit \
+                                        time. Item tags MAY be echoed in \
                                         the `openehr-item-tag`/\
                                         `openehr-version-item-tag` response headers.",
             content((serde_json::Value = "application/json"), (serde_json::Value = "application/xml"), (serde_json::Value = "application/openehr.wt.flat+json"), (serde_json::Value = "application/openehr.wt.structured+json"))
         ),
         (status = 204, description = "Updated (`Prefer: return=minimal`); `ETag` \
                                       (weak `W/` form) + `Location` carry the new \
-                                      version."),
+                                      version, `Last-Modified` its commit time."),
         (status = 400, description = "The COMPOSITION could not be parsed, a body \
                                       uid mismatches the path, or `If-Match` is \
                                       missing/malformed.",
@@ -713,7 +727,8 @@ pub(crate) async fn composition_update(
     responses(
         (status = 204, description = "Logically deleted (a new deleted version \
                                       is committed); `ETag` carries the deleted \
-                                      version uid."),
+                                      version uid and `Last-Modified` its commit \
+                                      time."),
         (status = 400, description = "`uid_based_id` is not an OBJECT_VERSION_ID, \
                                       or the COMPOSITION is already deleted.",
          body = serde_json::Value),
@@ -829,7 +844,9 @@ pub(crate) async fn versioned_composition_revision_history(
     responses(
         (status = 200, description = "The ORIGINAL_VERSION of the COMPOSITION \
                                       (canonical JSON/XML); `ETag` (weak `W/` \
-                                      form) carries the version uid.",
+                                      form) carries the version uid, \
+                                      `Last-Modified` its `commit_audit` \
+                                      `time_committed`.",
          body = serde_json::Value),
         (status = 400, description = "Malformed `version_at_time`.",
          body = serde_json::Value),
@@ -871,7 +888,9 @@ pub(crate) async fn versioned_composition_version_get_at_time(
     responses(
         (status = 200, description = "The ORIGINAL_VERSION of the COMPOSITION \
                                       identified by `version_uid` (canonical \
-                                      JSON/XML).",
+                                      JSON/XML); `ETag` (weak `W/` form) carries \
+                                      the version uid, `Last-Modified` its \
+                                      `commit_audit` `time_committed`.",
          body = serde_json::Value),
         (status = 404, description = "Unknown `ehr_id` or `versioned_object_uid`, \
                                       or no VERSION with `version_uid`.",

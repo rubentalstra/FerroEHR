@@ -577,12 +577,20 @@ pub(crate) fn resource_etag(uid: &str) -> Option<HeaderValue> {
     HeaderValue::from_str(&format!("W/\"{uid}\"")).ok()
 }
 
+/// Set the weak `ETag` of a resource identifier on a response (overview
+/// §"`ETag` and Last-Modified" — the value "is usually taken from e.g.
+/// `VERSIONED_OBJECT.uid.value`, `VERSION.uid.value`, `EHR.ehr_id.value`").
+/// The single place the `W/"…"` header is written.
+pub(crate) fn set_etag(resp: &mut Response, uid: &str) {
+    if let Some(etag) = resource_etag(uid) {
+        resp.headers_mut().insert(header::ETAG, etag);
+    }
+}
+
 /// Set the versioning headers on a response: the weak `ETag` and — when the
 /// metadata carries a commit time — `Last-Modified`. No `Location`.
 pub(crate) fn set_versioning_headers(resp: &mut Response, meta: &ResourceMeta) {
-    if let Some(etag) = resource_etag(&meta.uid) {
-        resp.headers_mut().insert(header::ETAG, etag);
-    }
+    set_etag(resp, &meta.uid);
     if let Some(at) = meta.last_modified
         && let Ok(lm) = HeaderValue::from_str(&http_date(at))
     {

@@ -315,10 +315,11 @@ pub(crate) async fn definition_template_adl2_list(
     request_body(content((String = "text/plain")),
                  description = "The ADL2 operational-template source."),
     responses(
-        (status = 201, description = "Stored; `Location` addresses the template. \
-                                      Body per `Prefer` (representation → ADL2 \
-                                      source; identifier → `{template_id}`; empty \
-                                      for minimal).",
+        (status = 201, description = "Stored; `Location` addresses the template \
+                                      and `ETag` (weak `W/` form) carries its \
+                                      `ARCHETYPE_HRID`. Body per `Prefer` \
+                                      (representation → ADL2 source; identifier \
+                                      → `{template_id}`; empty for minimal).",
          body = serde_json::Value),
         (status = 400, description = "The request body is not valid UTF-8 text.",
          body = serde_json::Value),
@@ -368,7 +369,9 @@ pub(crate) async fn definition_template_adl2_upload(
     responses(
         (status = 200, description = "The operational template — `text/plain` \
                                       ADL2 source or `application/json` \
-                                      `OperationalTemplateV2`.",
+                                      `OperationalTemplateV2`; `ETag` (weak `W/` \
+                                      form) carries the RESOLVED \
+                                      `ARCHETYPE_HRID` of the served artefact.",
          content((String = "text/plain"), (serde_json::Value = "application/json"))),
         (status = 404, description = "No template with `template_id`.",
          body = serde_json::Value),
@@ -470,7 +473,10 @@ pub(crate) async fn definition_template_adl2_example_get(
     responses(
         (status = 200, description = "The operational template at `version` — \
                                       `text/plain` ADL2 source or \
-                                      `application/json` `OperationalTemplateV2`.",
+                                      `application/json` `OperationalTemplateV2`; \
+                                      `ETag` (weak `W/` form) carries the \
+                                      RESOLVED `ARCHETYPE_HRID`, not the \
+                                      addressed prefix.",
          content((String = "text/plain"), (serde_json::Value = "application/json"))),
         (status = 404, description = "No template with `template_id` at `version`.",
          body = serde_json::Value),

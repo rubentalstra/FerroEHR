@@ -452,3 +452,78 @@ async fn upload_invalid_source_is_422_with_rule_codes() {
         "the rule code VARD is reported in the 422 body: {errors:?}"
     );
 }
+
+/// ITS-REST overview `Requests_and_responses.md` §"`ETag` and Last-Modified":
+/// "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+/// VERSION, `VERSIONED_OBJECT`, or other resources that have versioning or
+/// unique state identifiers", and the `ETag` "is considered to be of weak-type
+/// and should have a weakness indicator `W/` prefix". An ADL2 operational
+/// template's unique state identifier is its versioned `ARCHETYPE_HRID`, so
+/// the upload `201` and every retrieval carry `W/"<hrid>"` — the ADL 1.4
+/// sibling's behaviour, which the ADL2 routes previously omitted.
+///
+/// A partially addressed template (`…/{concept_family}/1`) resolves to a
+/// concrete artefact, so the `ETag` names the RESOLVED full HRID, not the
+/// addressed prefix — otherwise one `ETag` would span two different versions.
+#[tokio::test]
+async fn etag_is_the_resolved_hrid_on_upload_and_every_get() {
+    let (_pg, app) = app().await;
+    let expected = format!("W/\"{HRID}\"");
+
+    let (status, headers, _b) = send(&app, upload_req(None)).await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(
+        headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
+        Some(expected.as_str()),
+        "overview §\"ETag and Last-Modified\": the weak ETag SHOULD accompany a \
+         resource with a unique state identifier (the template HRID)"
+    );
+
+    // text/plain source GET.
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/definition/template/adl2/{HRID}"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, _b) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
+        Some(expected.as_str()),
+        "overview §\"ETag and Last-Modified\": the source GET carries the weak ETag"
+    );
+
+    // application/json OperationalTemplateV2 GET — the ETag "is independent of
+    // its resource serialization format" (same section).
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!("{BASE}/definition/template/adl2/{HRID}"))
+        .header(header::ACCEPT, "application/json")
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, _b) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
+        Some(expected.as_str()),
+        "overview §\"ETag and Last-Modified\": the ETag is serialization-independent"
+    );
+
+    // The partial-version GET resolves to the concrete artefact; the ETag is
+    // the resolved HRID, never the addressed `…/1` prefix.
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/definition/template/adl2/openEHR-EHR-COMPOSITION.t_clinical_info/1"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, _b) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(
+        headers.get(header::ETAG).and_then(|v| v.to_str().ok()),
+        Some(expected.as_str()),
+        "the ETag names the resolved artefact — it must change when the served \
+         version changes (overview §\"ETag and Last-Modified\")"
+    );
+}
