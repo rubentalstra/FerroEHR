@@ -3,8 +3,8 @@
 //! opens every route, `table_shell` renders every listing, the `field`
 //! constants style every control, `StatCard`/`EmptyState` cover metrics
 //! and voids, `results_chart` draws every AQL result set, `activity_chart`
-//! draws every events-per-day timeline, and `toast` reports every mutation
-//! outcome.
+//! draws every events-per-day timeline, `scope_grants` renders every SMART
+//! scope string, and `toast` reports every mutation outcome.
 
 pub mod activity_chart;
 pub mod brand;
@@ -15,6 +15,7 @@ pub mod field;
 pub mod format_view;
 pub mod page_header;
 pub mod results_chart;
+pub mod scope_grants;
 pub mod stat_card;
 pub mod surface;
 pub mod toast;

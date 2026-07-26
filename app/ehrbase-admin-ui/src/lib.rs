@@ -24,6 +24,7 @@ pub mod management;
 pub mod pages;
 pub mod queries_api;
 pub mod query_namespace;
+pub mod scopes;
 pub mod system_api;
 pub mod theme;
 
