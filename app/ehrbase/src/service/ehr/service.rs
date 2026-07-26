@@ -404,14 +404,34 @@ impl EhrbaseService {
 
 /// The default `EHR_STATUS` for a new EHR (queryable, modifiable,
 /// `PARTY_SELF`) — RM ehr master04 §EHR Creation.
+///
+/// `archetype_details` is mandatory here: `EHR_STATUS` is unconditionally an
+/// archetype root (RM ehr `ehr_status.adoc` invariant `Is_archetype_root`),
+/// and RM common `locatable.adoc` `Archetyped_valid: is_archetype_root xor
+/// archetype_details = Void` makes a root without `archetype_details`
+/// RM-invalid; at a root, `archetype_node_id` "is always the stringified
+/// form of the `archetype_id` found in the `archetype_details` object"
+/// (`locatable.adoc` §`archetype_node_id`).
 pub(in crate::service) fn default_ehr_status() -> Value {
     json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": archetyped("openEHR-EHR-EHR_STATUS.generic.v1"),
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": { "_type": "PARTY_SELF" },
         "is_queryable": true,
         "is_modifiable": true
+    })
+}
+
+/// A root `ARCHETYPED` block for a server-minted LOCATABLE (RM common
+/// `archetyped.adoc`: `archetype_id` 1..1, `rm_version` 1..1 — the RM
+/// release this server implements, `docs/VERSIONS.md`).
+pub(in crate::service) fn archetyped(archetype_id: &str) -> Value {
+    json!({
+        "_type": "ARCHETYPED",
+        "archetype_id": { "_type": "ARCHETYPE_ID", "value": archetype_id },
+        "rm_version": "1.2.0"
     })
 }
 

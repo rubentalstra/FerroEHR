@@ -15,6 +15,21 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **EHR creation mints RM-valid EHR_STATUS and EHR_ACCESS objects; the RM
+  archetype-root invariants are enforced on client bodies** (#423). The
+  bootstrap defaults carried an archetype-HRID `archetype_node_id` with no
+  `archetype_details` — violating RM `Is_archetype_root` (unconditional on
+  both classes) with `Archetyped_valid` ("is_archetype_root xor
+  archetype_details = Void"). Both defaults now carry the `ARCHETYPED` block
+  (archetype_id = the node id, rm_version 1.2.0), and a client-supplied
+  EHR_STATUS/EHR_ACCESS violating `Archetyped_valid` (a root without
+  `archetype_details`, or a mismatching `archetype_id`) or `Links_valid`
+  (an explicit empty `links` list) is rejected with `422`. Clients that
+  previously committed root objects without `archetype_details` must now
+  supply it.
+
 ### Removed
 
 - **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
