@@ -599,3 +599,50 @@ AMB-57:
     candidate.
   disposition: statement_declared
   upstream_ref: "UPR-26"
+AMB-58:
+  ambiguity: >-
+    The ADL 1.4 OPT GET (/definition/template/adl1.4/{template_id}) is
+    internally inconsistent about Accept: application/json. The operation
+    description names exactly two representations — the canonical XML OPT
+    (Accept: application/xml) and the web template (Accept:
+    application/openehr.wt+json) — while the operation's own Accept parameter
+    and the 200 response's Content-Type header both ENUMERATE
+    application/json, for which the 200 content map declares no schema. So the
+    source both offers and does not offer a canonical-JSON template
+    representation, and no released docs-text sentence says what an
+    application/json read of an OPT returns.
+  source: >-
+    ITS-REST specifications/operations/definition_template_adl1.4_get.yaml
+    §description ("either the original (canonical) XML based OPT format ... as
+    well as the simplified JSON-based 'web template' format") vs
+    specifications/parameters/header/Accept_Template.yaml and
+    specifications/headers/ContentType_Template.yaml (both enum
+    [application/json, application/xml, application/openehr.wt+json]) vs
+    responses/200_Template_adl1_4_retrieved.yaml (no application/json content
+    entry) — inconsistency CONFIRMED first-hand. The governing RELEASED
+    docs-text rules are ITS-REST overview Resources.md §JSON Format ("The
+    client SHOULD use the Accept: application/json request header to specify
+    the expected JSON response format. If the service cannot fulfil this aspect
+    of the request, it MUST respond with HTTP status code 406 Not Acceptable" +
+    "Proper header Content-Type: application/json MUST be present in the
+    response of the service unless the response has no content body") and
+    §Simplified Formats ("application/openehr.wt+json for the Operational
+    Template definition as Web Template JSON format").
+  handling: >-
+    Fixed handling: Accept: application/json on the OPT GET is FULFILLED, with
+    the Web Template document — the only JSON representation of an operational
+    template the released text defines — and the response carries
+    Content-Type: application/json, the type the client negotiated
+    (Resources.md §JSON Format MUST). A 406 disposition is rejected: it would
+    contradict the two explicit application/json enum entries in the same
+    released source. The wt+json Accept keeps its own type and body
+    (SF-WT-web_template_get); the application/json branch is
+    SF-WT-web_template_json_accept, tagged with this entry and kept at OPTIONS
+    (never gating) because the representation rests on this adjudication, not
+    on a docs-text assignment. Flips to a canonical-JSON OPERATIONAL_TEMPLATE
+    body, or to 406, only if a future ITS-REST release resolves the
+    inconsistency. No upstream_ref: the offering half of the inconsistency
+    lives only in the OpenAPI source fragments, which are a stalled non-oracle
+    (owner ruling 2026-07-24) and are out of scope for the outbound
+    docs-text report ledger.
+  disposition: fixed_handling

@@ -250,6 +250,25 @@ pub(crate) fn structured_json_body(status: StatusCode, json: String) -> Response
     resp
 }
 
+/// Serve a pre-serialized JSON document as `application/json`.
+///
+/// The `application/json` sibling of [`wt_json_body`] / [`flat_json_body`] /
+/// [`structured_json_body`]: the same body under the canonical JSON media
+/// type, for an endpoint whose negotiated `Accept` was `application/json`
+/// (`Resources.md` §JSON Format: "Proper header `Content-Type:
+/// application/json` MUST be present in the response of the service unless the
+/// response has no content body"). Payloads that are serialized here rather
+/// than by the RM codec use [`respond`]; this builder takes the already-formed
+/// document.
+pub(crate) fn json_body(status: StatusCode, json: String) -> Response {
+    let mut resp = (status, json).into_response();
+    resp.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(APPLICATION_JSON),
+    );
+    resp
+}
+
 /// Serve a pre-serialized Web Template document as `application/openehr.wt+json`.
 pub(crate) fn wt_json_body(status: StatusCode, json: String) -> Response {
     let mut resp = (status, json).into_response();
@@ -311,17 +330,6 @@ pub(crate) fn text_body(body: &Bytes) -> Result<String, ApiError> {
         .map_err(|e| ApiError::BadRequest(format!("body is not UTF-8: {e}")))
 }
 
-/// Decode a body the contract types as `Value` but which may arrive as another
-/// text format (e.g. an ADL/OPT XML template upload): parsed as JSON when it is
-/// JSON, otherwise wrapped as a JSON string so the (untyped) handler still
-/// receives the bytes.
-pub(crate) fn lenient_value(body: &Bytes) -> Result<serde_json::Value, ApiError> {
-    if let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) {
-        return Ok(v);
-    }
-    Ok(serde_json::Value::String(text_body(body)?))
-}
-
 /// Decode an RM-typed body from canonical JSON or XML into the canonical JSON
 /// `Value` the trait expects. `T` is the concrete `openehr-rm` payload type.
 ///
@@ -370,6 +378,36 @@ fn require_json(headers: &HeaderMap) -> Result<(), ApiError> {
         _ => Err(ApiError::UnsupportedMediaType(format!(
             "this operation accepts application/json only, got {}",
             header_str(headers, header::CONTENT_TYPE).unwrap_or_else(|| "<none>".to_owned())
+        ))),
+    }
+}
+
+/// Refuse a request whose `Content-Type` DECLARES a media type outside
+/// `allowed`. `expected` names the accepted type(s) in the error message.
+///
+/// An ABSENT `Content-Type` is accepted: `Resources.md` §XML Format and §JSON
+/// Format both make the header a client MAY ("A client MAY use the header
+/// `Content-Type: application/xml` in the requests to specify the XML payload
+/// format"), so its absence declares nothing to refuse and the operation's own
+/// single body type applies.
+///
+/// # Errors
+/// [`ApiError::UnsupportedMediaType`] when the declared media type is not one
+/// of `allowed` (`Resources.md` §XML Format: "If the service cannot process
+/// the request payload as XML format, it MUST respond with HTTP status code
+/// `415 Unsupported Media Type`" — and the symmetric §JSON Format sentence).
+pub(crate) fn require_content_type(
+    headers: &HeaderMap,
+    allowed: &[WireFormat],
+    expected: &str,
+) -> Result<(), ApiError> {
+    let Some(declared) = header_str(headers, header::CONTENT_TYPE) else {
+        return Ok(());
+    };
+    match classify_media(&media_token(&declared).to_ascii_lowercase()) {
+        Some(fmt) if allowed.contains(&fmt) => Ok(()),
+        _ => Err(ApiError::UnsupportedMediaType(format!(
+            "this operation accepts {expected} only, got {declared}"
         ))),
     }
 }
@@ -967,6 +1005,51 @@ mod tests {
         );
     }
 
+    /// `Resources.md` §XML Format: a request payload the service cannot
+    /// process as XML MUST be answered `415`; the header itself is a client
+    /// MAY, so an absent `Content-Type` is not a refusal.
+    #[test]
+    fn require_content_type_refuses_only_a_declared_foreign_type() {
+        let xml_only = &[WireFormat::CanonicalXml];
+        assert!(
+            require_content_type(&HeaderMap::new(), xml_only, "application/xml").is_ok(),
+            "an absent Content-Type declares nothing to refuse (Resources.md \
+             §XML Format: a client MAY use the header)"
+        );
+        for accepted in [
+            "application/xml",
+            "text/xml",
+            "application/xml; charset=utf-8",
+        ] {
+            assert!(
+                require_content_type(
+                    &headers(&[("content-type", accepted)]),
+                    xml_only,
+                    "application/xml"
+                )
+                .is_ok(),
+                "{accepted} is the XML payload format"
+            );
+        }
+        for refused in [
+            "application/json",
+            "text/plain",
+            "application/openehr.wt+json",
+        ] {
+            let err = require_content_type(
+                &headers(&[("content-type", refused)]),
+                xml_only,
+                "application/xml",
+            )
+            .expect_err("refused");
+            assert!(
+                matches!(err, ApiError::UnsupportedMediaType(_)),
+                "Resources.md §XML Format: a payload the service cannot process as \
+                 XML MUST be 415, got {err:?} for {refused}"
+            );
+        }
+    }
+
     #[test]
     fn rm_value_rejects_simplified_content_type() {
         use openehr_rm::prelude::DvText;
@@ -1006,15 +1089,14 @@ mod tests {
         assert_eq!(from_json["value"], "hello");
     }
 
+    /// The OPT 1.4 upload reads its XML body verbatim; the retired
+    /// `lenient_value` JSON-or-string wrapper (which let a JSON-declared
+    /// payload reach the parser and fail `400` instead of `415`) is gone.
     #[test]
-    fn lenient_value_wraps_non_json_text() {
+    fn text_body_reads_an_xml_payload_verbatim() {
         assert_eq!(
-            lenient_value(&Bytes::from_static(b"<template/>")).unwrap(),
-            serde_json::Value::String("<template/>".to_owned())
-        );
-        assert_eq!(
-            lenient_value(&Bytes::from_static(br#"{"a":1}"#)).unwrap(),
-            serde_json::json!({"a": 1})
+            text_body(&Bytes::from_static(b"<template/>")).unwrap(),
+            "<template/>"
         );
     }
 

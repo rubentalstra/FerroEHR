@@ -42,6 +42,21 @@ const EXAMPLE_FORMATS: &[WireFormat] = &[
 /// `200_Template_adl1_4_retrieved`): the canonical OPT is `application/xml`;
 /// `application/openehr.wt+json` (and a bare `application/json`, the only JSON
 /// projection the server holds) return the Web Template document.
+///
+/// NOTE: the released ITS-REST 1.1.0 source is internally inconsistent about
+/// `application/json` here. `operations/definition_template_adl1.4_get.yaml`
+/// names exactly two representations (canonical XML OPT and the
+/// `application/openehr.wt+json` web template), while
+/// `parameters/header/Accept_Template.yaml` and `headers/ContentType_Template.yaml`
+/// both enumerate `application/json` — for which the 200 response declares no
+/// schema. Settled handling: `application/json` is honoured (a `406` would
+/// contradict those two enumerations) and served with the only JSON template
+/// representation the spec defines, the Web Template document, under
+/// `Content-Type: application/json` — the type the client actually negotiated
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §JSON Format: "Proper header `Content-Type: application/json` MUST be
+/// present in the response of the service unless the response has no content
+/// body").
 const TEMPLATE_DEF_FORMATS: &[WireFormat] = &[
     WireFormat::CanonicalXml,
     WireFormat::WebTemplate,
@@ -73,18 +88,17 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     params::build::<DefinitionTemplateAdl14UploadParams>(&parts.path, parts.query.as_deref(), h)?;
-    // The OPT 1.4 template arrives as canonical XML; the lenient reader hands it
-    // back as a JSON string, which the service parses (opt14).
-    let body = negotiate::lenient_value(&parts.body)?;
-    let xml = body.as_str().ok_or_else(|| {
-        RestError(ApiError::BadRequest(
-            "expected an OPT 1.4 XML template body".to_owned(),
-        ))
-    })?;
-    let meta = state
-        .backend()
-        .template_adl14_upload(xml.to_owned())
-        .await?;
+    // The OPT 1.4 template arrives as canonical XML — the operation's single
+    // body type. A payload DECLARING another media type cannot be processed as
+    // XML, so it is refused before parsing
+    // (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+    // §XML Format: "If the service cannot process the request payload as XML
+    // format, it MUST respond with HTTP status code `415 Unsupported Media
+    // Type`"). An absent `Content-Type` declares nothing to refuse (the same
+    // section makes the header a client MAY), so it reads as the XML body type.
+    negotiate::require_content_type(h, &[WireFormat::CanonicalXml], "application/xml")?;
+    let xml = negotiate::text_body(&parts.body)?;
+    let meta = state.backend().template_adl14_upload(xml.clone()).await?;
     let template_id = meta
         .get("template_id")
         .and_then(serde_json::Value::as_str)
@@ -95,16 +109,18 @@ pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Res
         state.config().server.base_path,
         urlencoding::encode(&template_id)
     );
-    Ok(upload_response(h, &location, &template_id, xml))
+    Ok(upload_response(h, &location, &template_id, &xml))
 }
 
 /// `GET …/definition/template/adl1.4/{template_id}` — retrieve the stored OPT.
 ///
 /// Negotiates the `200_Template_adl1_4_retrieved` representations
 /// (`application/xml` canonical OPT + the `application/openehr.wt+json` web
-/// template EHRbase-compatible extension), sets the mandated `ETag`, and
-/// returns `406` for an `Accept` outside `Accept_Template`. An unknown
-/// template → `404` (checked first, before negotiation).
+/// template EHRbase-compatible extension + the `application/json` reading of
+/// [`TEMPLATE_DEF_FORMATS`]), answers in the NEGOTIATED media type, sets the
+/// mandated `ETag`, and returns `406` for an `Accept` outside
+/// `Accept_Template`. An unknown template → `404` (checked first, before
+/// negotiation).
 pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
     let p =
@@ -134,8 +150,10 @@ pub(super) async fn get(state: &AppState, parts: &RequestParts) -> Result<Respon
             Ok(resp)
         }
         // `application/openehr.wt+json` and a bare `application/json` both serve
-        // the Web Template document (the only JSON projection of an OPT).
-        _ => web_template_response(state, &template_id).await,
+        // the Web Template document (the only JSON projection of an OPT), each
+        // under the media type the client negotiated (Resources.md §JSON
+        // Format: the response `Content-Type` MUST be the negotiated type).
+        other => web_template_response(state, &template_id, other).await,
     }
 }
 
@@ -232,13 +250,26 @@ fn upload_response(
     resp
 }
 
-/// Serve the service-owned Better `WebTemplate` for `template_id` as
-/// `application/openehr.wt+json` (single resolution seam via
-/// `state.backend().web_template(..)`).
+/// Serve the service-owned Better `WebTemplate` for `template_id` (single
+/// resolution seam via `state.backend().web_template(..)`) under the media
+/// type `fmt` names: `application/openehr.wt+json` for the Web Template
+/// document type, `application/json` when that is what the client negotiated.
+/// The body is identical — only the declared type follows the negotiation
+/// (`docs/specs/openehr/ITS-REST/specifications/docs/overview/Resources.md`
+/// §JSON Format: the response carries the `Content-Type` of the representation
+/// the client asked for).
 ///
-/// Serving `wt+json` on the spec `adl1.4/{id}` GET endpoint is a deliberate
-/// EHRbase-compatible extension (openEHR ITS-REST returns only the OPT itself).
-async fn web_template_response(state: &AppState, template_id: &str) -> Result<Response, RestError> {
+/// The Web Template representation itself is spec-named, not an extension:
+/// Resources.md §Simplified Formats assigns "`application/openehr.wt+json` for
+/// the Operational Template definition as Web Template JSON format", and the
+/// retrieval operation declares that media type on its `200`. The document's
+/// internal shape follows the Better `web-template` model, for which no
+/// openEHR spec defines a schema — our own design/extension there.
+async fn web_template_response(
+    state: &AppState,
+    template_id: &str,
+    fmt: WireFormat,
+) -> Result<Response, RestError> {
     let built = state
         .backend()
         .web_template(template_id)
@@ -249,7 +280,10 @@ async fn web_template_response(state: &AppState, template_id: &str) -> Result<Re
             "WebTemplate JSON serialization failed: {e}"
         )))
     })?;
-    let mut resp = negotiate::wt_json_body(StatusCode::OK, json);
+    let mut resp = match fmt {
+        WireFormat::CanonicalJson => negotiate::json_body(StatusCode::OK, json),
+        _ => negotiate::wt_json_body(StatusCode::OK, json),
+    };
     set_template_etag(&mut resp, template_id);
     Ok(resp)
 }
