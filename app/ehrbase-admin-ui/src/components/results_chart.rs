@@ -19,7 +19,7 @@
 use leptos::prelude::*;
 use leptos_chartistry::{
     AspectRatio, AxisMarker, Chart, Colour, IntoInner, Line, SERIES_COLOUR_SCHEME, Series,
-    TickFormat, TickLabels, YGridLine,
+    TickLabels, YGridLine,
 };
 use serde_json::Value;
 
@@ -71,8 +71,7 @@ fn chart_panel(model: ChartModel) -> AnyView {
     view! {
         <div data-results-chart=series_hook>
             <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-                {picker}
-                {legend}
+                {picker} {legend}
             </div>
             {chart}
         </div>
@@ -158,7 +157,7 @@ fn legend_chip(
                         if let Some(flag) = flags.get_mut(index) {
                             *flag = !*flag;
                         }
-                    })
+                    });
             }
         >
             <span class="h-2 w-2 shrink-0 rounded-full" style=swatch></span>

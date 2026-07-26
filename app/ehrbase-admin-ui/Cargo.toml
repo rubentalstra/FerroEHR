@@ -34,6 +34,9 @@ leptos_router.workspace = true
 thaw.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+# ISO 8601 parsing/formatting for the results chart's time axis (pure —
+# no clock access, so it needs no wasm js feature).
+jiff.workspace = true
 
 # Isomorphic (compiles on both targets): `use_interval_fn` for the shell's
 # health poll; its default `storage` feature also enables `web-sys/Storage`,
