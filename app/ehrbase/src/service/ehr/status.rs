@@ -346,8 +346,8 @@ impl EhrbaseService {
     /// Boolean, RM ehr master04 §EHR Active Status). Read from the promoted
     /// `ehr.is_modifiable` column, kept in lockstep with the current
     /// `EHR_STATUS` by [`Self::sync_ehr_subject`] and the import/archive-load
-    /// backfill; a missing EHR (`None`) is treated as modifiable so the guard
-    /// never spuriously blocks.
+    /// [`Self::resync_promoted_columns`]; a missing EHR (`None`) is treated as
+    /// modifiable so the guard never spuriously blocks.
     ///
     /// The column read is a storage seam
     /// ([`crate::storage::ehr_repo::ehr_is_modifiable`]; no openEHR spec
@@ -463,6 +463,54 @@ impl EhrbaseService {
             ServiceError::Database(e)
         })?;
         Ok(())
+    }
+
+    /// Re-promote the `ehr` columns from the **stored** current `EHR_STATUS` —
+    /// the seam for the paths that land `EHR_STATUS` versions WITHOUT the
+    /// service write hook: the EHR Extract import
+    /// ([`crate::service::message`]) and the admin archive load
+    /// ([`crate::service::admin`]). The current status root fragment is read on
+    /// the caller's transaction
+    /// ([`crate::storage::ehr_repo::current_status_root`]) and handed to
+    /// [`Self::sync_ehr_subject`], so those paths promote the subject columns
+    /// and the two status flags through exactly the extraction the create /
+    /// update paths use — an imported or loaded EHR is therefore visible to the
+    /// subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`;
+    /// `operations/ehr_get_by_subject.yaml`) and bound by the
+    /// one-EHR-per-subject rule (RM ehr master04 §EHR Status) like any other.
+    /// A no-op when the EHR has no current `EHR_STATUS` (the row keeps its
+    /// column defaults).
+    ///
+    /// A subject already owned by ANOTHER EHR is rejected BEFORE the UPDATE so
+    /// the caller can report which subject clashed and which EHR holds it. The
+    /// `uq_ehr_subject` index remains the backstop for a holder this
+    /// pre-check cannot see — a concurrent writer, or (under multi-tenancy) a
+    /// row RLS hides while the index stays service-wide — which surfaces as
+    /// [`Self::sync_ehr_subject`]'s own conflict.
+    ///
+    /// # Errors
+    /// [`ServiceError::Conflict`] when another EHR already owns the status's
+    /// subject; [`ServiceError::Database`] on a storage failure.
+    pub(in crate::service) async fn resync_promoted_columns(
+        &self,
+        tx: &mut PgConnection,
+        ehr_id: EhrId,
+    ) -> Result<(), ServiceError> {
+        let Some(status) = crate::storage::ehr_repo::current_status_root(tx, ehr_id).await? else {
+            return Ok(());
+        };
+        let (subject_id, namespace, _, _) = ehr_promoted_columns(&status);
+        if let (Some(subject_id), Some(namespace)) = (subject_id, namespace)
+            && let Some(owner) =
+                crate::storage::ehr_repo::ehr_id_by_subject(&mut *tx, subject_id, namespace).await?
+            && owner != ehr_id
+        {
+            return Err(ServiceError::Conflict(format!(
+                "EHR {ehr_id} names subject {subject_id}@{namespace}, which EHR {owner} \
+                 already holds (one EHR per subject)"
+            )));
+        }
+        self.sync_ehr_subject(tx, ehr_id, &status).await
     }
 }
 
