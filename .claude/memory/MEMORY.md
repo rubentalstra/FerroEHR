@@ -4,7 +4,6 @@
 - [Official CLI/tooling first](official-cli-tooling-first.md) — always use the official CLI (sqlx-cli etc.) for tool-managed artifacts; never hand-name/hand-roll
 - [Commit-subject attribution tokens](commit-subject-attribution-tokens.md) — commit-msg hook deletes lines containing "Claude Code" etc.; avoid the literal in commit/PR text
 - [Concurrent sessions share this tree](concurrent-sessions-shared-tree.md) — explicit-path commits, scoped gates, worktree-isolate subagents; ONE ./target for everything incl. the IDE (all isolation schemes retired 2026-07-16 after a 394GB fill; clean >30GB)
-- [ECC: our own conformance framework](ecc-own-conformance-framework.md) — SUPERSEDED history: ECC retired 2026-07-22; CNF 2.0 runner with OFFICIAL schedule ids is the instrument — never resurrect the old no-official-mapping posture
 - [Verify crate versions from live sources](verify-crate-versions-live.md) — never pin from training data; lapin is 4.x (owner-corrected twice)
 - [Autonomous phase flow](autonomous-phase-flow.md) — standing: PR+merge each phase, checkout develop, start next without asking; never branch while finished work sits unmerged
 - [Vendored corpora fully exercised](vendored-corpora-fully-exercised.md) — owner hard rule: 100% of any vendored test corpus exercised with expected outcomes + coverage gate; adjudicated skips only
@@ -13,12 +12,8 @@
 - [Conventional branch naming](conventional-branch-naming.md) — owner hard rule 2026-07-19: `<type>/<kebab-slug>` (feat/fix/chore/…); `claude/*` retired, never create one again
 - [Tracker is GitHub Issues](tracker-is-github-issues.md) — owner 2026-07-20: WORKLIST.md + PROGRESS.md retired; open issue list IS the tracker, PR descriptions carry the build narrative; type+P0–P3+domain labels, milestones=releases, `Closes #N` auto-close; ROADMAP = themes only; never copy numbers forward — re-derive from artifacts
 - [Issue relationships](issue-relationships.md) — owner 2026-07-24: use GitHub's 4 native edges (sub-issue/blocked-by/blocking/security-alert) as first-class structure, set ONLY via scripts/gh-rel.sh (writes need the DB id not #number; gh has no native subcommand); milestones stay the release spine (no epics); upstream waits keep the blocked-upstream label; security-alert linking is UI-only (CodeQL via .github/workflows/codeql.yml)
-- [Console wire spec-check](console-wire-spec-check.md) — owner 2026-07-26: every console feature claims the server wire is spec-right; verify each consumed endpoint against the vendored docs text at integration, fix divergences in the CDR (+CNF case), never in the UI; endpoint-map/OAS are never the authority
+- [Console wire spec-check](console-wire-spec-check.md) — owner 2026-07-26: every console feature claims the server wire is spec-right; verify each consumed endpoint against the vendored docs text at integration, fix divergences in the CDR (+CNF case), never in the UI; the OAS is never the authority (endpoint-map.md deleted 2026-07-26 — call chains from code only)
 - [CNF spec-oracle + attribution](cnf-spec-oracle-attribution.md) — owner 2026-07-24: on a red CNF run the vendored spec is the ONLY oracle; the app is NEVER assumed correct and "check the SUT to decide the expectation" is banned; three-way attribute (spec vs catalogue vs SUT) to app|runner|catalogue via the cnf-triage agent; NEVER fix the CNF to match the SUT; catalogue must have TOTAL wire coverage (every small use-case); enforced by cnf_attribution_guard.sh + testing.md §CNF coverage
-
-Cleaned 2026-07-12: stale/duplicative memories deleted — anything the repo
-already records (CLAUDE.md, docs/architecture.md, git history) is not repeated
-here. (The ADR layer referenced in the original note was deleted 2026-07-17.)
 - [Max 2 concurrent workers](max-two-concurrent-workers.md) — owner cap: implementation subagents run in pairs, never wider
 - [Session workflow gotchas](session-workflow-gotchas.md) — background-task ~30min kill (nohup+caffeinate+Monitor), attribution-hook regex traps, changelog-guard label needs PR reopen, conformance.sh EXIT trap wipes the seed on any kill
 - [Pre-production migrations: edit the baseline directly](pre-production-migrations-edit-baseline.md) — never append ALTER/DROP migrations while nothing is deployed; minimum migration files, update the count guard in the same change
@@ -30,3 +25,4 @@ here. (The ADR layer referenced in the original note was deleted 2026-07-17.)
 - [SVG text: keep owner wording](svg-text-owner-wording.md) — never reword/rewrap approved chart text off px estimates; adjust geometry, wording is fixed
 - [Signature verify-on-read provenance](signature-verify-on-read-provenance.md) — #273: verify-on-read defaults strict-when-enabled + judges ONLY server-generated sigs; client-supplied sigs stored verbatim + never re-verified via a vo_version provenance bit (RM master06); format heuristics are leaky in pgp mode
 - [Measurement environment discipline](measurement-environment-discipline.md) — idle box + envelope-matched limits for measured runs; ixit containers blocks track lane renames
+- [ITS audit fix-first cadence](its-audit-fix-first-cadence.md) — owner 2026-07-26: #373 audit runs group-by-group, ALL fix issues from a group implemented+merged before the next group's audit starts; never accumulate finding backlog
