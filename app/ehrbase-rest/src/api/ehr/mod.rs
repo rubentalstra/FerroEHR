@@ -162,6 +162,26 @@ pub(super) fn mk_update_version(
 /// version_tree_id)` pair the SM `*_at_version` reads take. Branch version ids
 /// are first-class (RM common master06 §Version tree; the former trunk-only
 /// rejection is retired).
+/// Verify a version-addressed read served the VERSION the path named: the
+/// addressed `version_uid` must equal the served body's `uid.value` — the
+/// stored full `object_id :: creating_system_id :: version_tree_id` identity
+/// (ITS-REST overview `Resources.md` §Identifier types) — compared
+/// case-insensitively (BASE master05 §"Composite Identifiers and Case").
+/// A tree-only fetch would satisfy a fabricated `creating_system_id`; that
+/// names no VERSION in this repository → 404. A body without a served uid
+/// (nothing to verify against) passes.
+pub(super) fn ensure_served_version(
+    addressed: &str,
+    body: &serde_json::Value,
+) -> Result<(), RestError> {
+    match body["uid"]["value"].as_str() {
+        Some(served) if !served.eq_ignore_ascii_case(addressed) => Err(RestError(
+            ApiError::NotFound(format!("version {addressed}")),
+        )),
+        _ => Ok(()),
+    }
+}
+
 pub(super) fn version_components(ovid: &ObjectVersionId) -> Result<(Uuid, String), ApiError> {
     let vo = crate::overview::version_id::object_id_uuid(ovid).ok_or_else(|| {
         ApiError::BadRequest(format!(

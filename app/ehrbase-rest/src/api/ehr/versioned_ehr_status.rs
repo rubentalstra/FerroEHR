@@ -84,6 +84,9 @@ pub(super) async fn run(
                 .backend()
                 .ehr_status_original_version(ehr_id, ehrbase::ids::VoId(vo_id), &version)
                 .await?;
+            // Full-identity check as on the ehr_status by-version read
+            // (Resources.md §Identifier types; BASE master05 case rule).
+            super::ensure_served_version(&p.version_uid, &body)?;
             Ok(negotiate::respond_rm::<OriginalVersion<EhrStatus>>(
                 h,
                 ok,
