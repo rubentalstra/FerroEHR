@@ -177,12 +177,11 @@ impl SystemManifest {
 ///      `/demographic`, `/definition`, `/query`, and `/admin` when its group
 ///      is enabled), not [`SPEC_ENDPOINTS`] hardcoded;
 ///   2. it mounts this handler at the **API base-path root** (`cfg.base_path`,
-///      e.g. `OPTIONS /ehrbase/rest/openehr/v1`) — the root the OAS
-///      `servers`/`paths` describe;
-///   3. it keeps a bare-`/` mount as a compatibility alias for naive root
-///      probes (no openEHR spec mounts `OPTIONS /` outside the base path —
-///      our own compatibility choice);
-///   4. both mounts sit **above** the `CorsLayer` (that layer treats every
+///      e.g. `OPTIONS /ehrbase/rest/openehr/v1`) — the ONE location the
+///      System API defines (`system.openapi.yaml` `servers` `{baseUrl}/v1`,
+///      path `/`); the former bare-`/` alias was our own duplication,
+///      removed;
+///   3. the mount sits **above** the `CorsLayer` (that layer treats every
 ///      `OPTIONS` as a CORS preflight and short-circuits it), which is why the
 ///      handler is added after the middleware stack in `crate::router::router`.
 pub fn route<S>(manifest: Arc<SystemManifest>) -> MethodRouter<S>
