@@ -15,10 +15,18 @@ request:
   method: GET
   path: /ehr/{ehr_id}/directory
 formats: [canonical-json, canonical-xml]
+# `Location` MUST BE ABSENT on this outcome — ITS-REST overview
+# `Requests_and_responses.md` §Location: "It MUST NOT be used to indicate an
+# alternate representation of an existing resource (e.g. via `GET` method)" /
+# "The `Location` header MUST ONLY be used for resource creation (e.g.,
+# `201 Created`) or redirect responses"; §Deprecated headers deprecates it on
+# `GET` and `DELETE` responses alike.
 outcomes:
   ok:
     status: 200                           # 200_FOLDER_retrieved.yaml
-    headers: { Content-Type: negotiated }
+    headers:
+      Content-Type: negotiated
+      Location: absent                    # read — overview §Location / §Deprecated headers
   ok_empty: { status: 204 }               # logically deleted directory (204_deleted_at_time.yaml)
   not_found: { status: 404 }
   not_acceptable: { status: 406 }         # unfulfillable Accept (overview Requests_and_responses negotiation rules; no simplified mapping exists for this resource)              # unknown ehr_id or no directory (404_directory_unknown_ehr_id_or_no_version_at_time_or_no_path.yaml)

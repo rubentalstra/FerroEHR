@@ -20,8 +20,6 @@ request:
 # (`format: wt`), or `format: canonical-json` (the AMB-58 fixed handling).
 # NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
 # violated declaration is a red row.
-# declaration is the authored contract, not an executed assertion — it becomes
-# executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
   ok: { status: 200, headers: { Content-Type: negotiated } }  # 200_Template_adl1_4_retrieved.yaml
   not_found: { status: 404 }                         # 404_unknown_template_id.yaml
