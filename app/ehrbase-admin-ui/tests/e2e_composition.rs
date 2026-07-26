@@ -191,6 +191,57 @@ async fn composition_viewer_highlights_and_renders_the_document() {
     h.finish().await;
 }
 
+/// The viewer's **versioned-object card** reads the `VERSIONED_COMPOSITION`
+/// container and the SELECTED version's envelope directly (the direct VERSION
+/// read), so switching the version selector changes the envelope facts: the
+/// seeded composition's second version names the first as its preceding
+/// version, and its first version names none.
+#[tokio::test]
+async fn composition_viewer_reads_versioned_object_and_version_envelope() {
+    let Some(h) = Harness::start("composition-versioned-object").await else {
+        return;
+    };
+    let Some((ehr_id, vo_id)) = seeded() else {
+        h.finish().await;
+        return;
+    };
+    login_basic(&h).await;
+    h.goto(&format!("/ehrs/{ehr_id}/compositions/{vo_id}"))
+        .await;
+
+    // The container's own facts: its uid is the versioned-object id in the
+    // route, and its owner is this EHR.
+    wait_fact_contains(&h, "object-uid", &vo_id).await;
+    wait_fact_contains(&h, "owner", &ehr_id).await;
+    // "Latest" is version 2 of the seeded composition, whose envelope names
+    // version 1 as its preceding version and still carries data.
+    wait_fact_contains(&h, "version", "::2").await;
+    wait_fact_contains(&h, "preceding", "::1").await;
+    wait_fact_contains(&h, "content", "present").await;
+    h.shot(1, "versioned-object-latest").await;
+
+    // Selecting the oldest version re-reads the VERSION directly: version 1 has
+    // no preceding version at all.
+    let select = h.wait_css("#version-select").await;
+    let options = select
+        .find_all(By::Tag("option"))
+        .await
+        .expect("version options");
+    options
+        .last()
+        .expect("a version option")
+        .click()
+        .await
+        .expect("select version 1");
+    wait_fact_contains(&h, "version", "::1").await;
+    wait_fact_contains(&h, "preceding", "—").await;
+    h.shot(2, "versioned-object-version-1").await;
+
+    h.assert_console_clean(&["401", "Failed to load resource"])
+        .await;
+    h.finish().await;
+}
+
 /// Progressive enhancement: with JavaScript disabled the Basic login (an
 /// `ActionForm` — a plain HTML form pre-hydration) still authenticates via
 /// a full-page POST + redirect, and the SSR'd dashboard renders.
@@ -297,6 +348,28 @@ async fn ehr_finder_by_id_works_with_javascript_disabled() {
     h.wait_url_contains(&format!("/ehrs/{ehr_id}")).await;
     h.shot(3, "ehr-finder-no-js-shortcut").await;
     h.finish().await;
+}
+
+/// Poll one row of the versioned-object card (`data-versioned-fact="{hook}"`)
+/// until its text contains `needle`.
+///
+/// # Panics
+/// When it never does, reporting what the row said instead.
+async fn wait_fact_contains(h: &Harness, hook: &str, needle: &str) {
+    let css = format!("[data-versioned-fact='{hook}']");
+    let mut last = String::new();
+    for _ in 0..75 {
+        if let Ok(row) = h.driver.find(By::Css(&css)).await
+            && let Ok(text) = row.text().await
+        {
+            if text.contains(needle) {
+                return;
+            }
+            last = text;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    }
+    panic!("the `{hook}` fact never contained `{needle}` (last text: {last})");
 }
 
 /// Poll the first `<pre>` until it contains `needle`.

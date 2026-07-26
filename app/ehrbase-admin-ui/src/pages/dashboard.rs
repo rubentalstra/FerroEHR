@@ -18,13 +18,12 @@
 
 use leptos::prelude::*;
 use leptos::{component, server};
-use leptos_chartistry::{
-    AspectRatio, AxisMarker, Chart, IntoInner, Line, Series, TickLabels, YGridLine,
-};
 use leptos_meta::Title;
 use leptos_router::components::A;
 use serde::{Deserialize, Serialize};
 
+use crate::activity::ActivityPoint;
+use crate::components::activity_chart::activity_chart;
 use crate::components::empty_state::EmptyState;
 use crate::components::field::BTN_SECONDARY;
 use crate::components::page_header::PageHeader;
@@ -74,24 +73,6 @@ async fn run_count_aql(
         .and_then(|row| row.first())
         .and_then(serde_json::Value::as_i64)
         .unwrap_or(0))
-}
-
-/// Bucket ISO-8601 commit timestamps into `(day, count)` pairs ascending by
-/// day. The day is the `YYYY-MM-DD` date prefix read with `s.get(..10)` (never
-/// `&s[..10]`, which can panic on a non-char-boundary — the `string_slice`
-/// lint); a value without a 10-character prefix is skipped. Counts saturate.
-#[cfg(feature = "ssr")]
-fn bucket_by_day(times: &[String]) -> Vec<(String, u32)> {
-    let mut counts: std::collections::BTreeMap<String, u32> = std::collections::BTreeMap::new();
-    for time in times {
-        if let Some(day) = time.get(..10) {
-            counts
-                .entry(day.to_owned())
-                .and_modify(|count| *count = count.saturating_add(1))
-                .or_insert(1);
-        }
-    }
-    counts.into_iter().collect()
 }
 
 /// The dashboard's three headline counts: total EHRs, total compositions, and
@@ -218,15 +199,16 @@ pub async fn namespace_tiles() -> Result<Vec<NamespaceTile>, AdminUiError> {
     Ok(tiles)
 }
 
-/// The recent commit-activity trend as `(day, count)` pairs ascending. Pulls
-/// the most recent composition commit times (fetch [`TREND_FETCH`]) and buckets
-/// them per calendar day BFF-side.
+/// The recent commit-activity trend, one [`ActivityPoint`] per calendar day
+/// ascending. Pulls the most recent composition commit times (fetch
+/// [`TREND_FETCH`]) and buckets them per day BFF-side with the shared
+/// [`bucket_by_day`](crate::activity::bucket_by_day).
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session; CDR errors
 /// normalized; [`AdminUiError::Internal`] on an unparseable result set.
 #[server]
-pub async fn commit_trend() -> Result<Vec<(String, u32)>, AdminUiError> {
+pub async fn commit_trend() -> Result<Vec<ActivityPoint>, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
     let url = state.cdr.rest_v1("query/aql");
@@ -255,7 +237,7 @@ pub async fn commit_trend() -> Result<Vec<(String, u32)>, AdminUiError> {
         .filter_map(|row| row.first())
         .map(crate::pages::ehrs::cell_text)
         .collect();
-    Ok(bucket_by_day(&times))
+    Ok(crate::activity::bucket_by_day(&times))
 }
 
 /// The `/` dashboard: headline counts, per-namespace stored-query match tiles,
@@ -467,7 +449,8 @@ fn namespace_tile(tile: NamespaceTile) -> AnyView {
     .into_any()
 }
 
-/// The commit-activity trend section: a minimal line chart of commits per day.
+/// The commit-activity trend section: commits per day through the shared
+/// [`activity_chart`] kit (the same chart an EHR's contribution timeline draws).
 fn trend_section() -> AnyView {
     let resource = Resource::new(|| (), |()| async move { commit_trend().await });
     view! {
@@ -480,7 +463,14 @@ fn trend_section() -> AnyView {
         }>
             {move || Suspend::new(async move {
                 match resource.await {
-                    Ok(pairs) => trend_chart(&pairs),
+                    Ok(points) => {
+                        activity_chart(
+                            &points,
+                            "commits",
+                            "No commit activity yet",
+                            "Commit a composition and the trend appears here from the next day onward.",
+                        )
+                    }
                     Err(e) => crate::components::format_view::inline_error(&e),
                 }
             })}
@@ -489,72 +479,14 @@ fn trend_section() -> AnyView {
     .into_any()
 }
 
-/// Render the day/count pairs as a minimal line chart (commits per day over the
-/// recent window), or an empty-state hint. The X axis is the day index; the
-/// chart draws client-side after the container is measured (server renders a
-/// placeholder), so the structure is hydration-stable (rules §8).
-fn trend_chart(pairs: &[(String, u32)]) -> AnyView {
-    if pairs.is_empty() {
-        return view! {
-            <EmptyState
-                icon=icondata_lu::LuChartLine
-                message="No commit activity yet"
-                hint="Commit a composition and the trend appears here from the next day onward."
-            />
-        }
-        .into_any();
-    }
-    let data: Vec<(f64, f64)> = pairs
-        .iter()
-        .enumerate()
-        .map(|(index, (_, count))| {
-            let x = f64::from(u32::try_from(index).unwrap_or(u32::MAX));
-            (x, f64::from(*count))
-        })
-        .collect();
-    let data = RwSignal::new(data);
-    view! {
-        <div class="overflow-x-auto">
-            <Chart
-                aspect_ratio=AspectRatio::from_outer_ratio(640.0, 240.0)
-                left=TickLabels::aligned_floats()
-                bottom=TickLabels::aligned_floats()
-                inner=[
-                    AxisMarker::left_edge().into_inner(),
-                    AxisMarker::bottom_edge().into_inner(),
-                    YGridLine::default().into_inner(),
-                ]
-                series=Series::new(|(x, _): &(f64, f64)| *x)
-                    .line(Line::new(|(_, y): &(f64, f64)| *y).with_name("commits"))
-                data=data
-            />
-        </div>
-    }
-    .into_any()
-}
-
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
-    use super::{COMPOSITION_COUNT_AQL, EHR_COUNT_AQL, TREND_AQL, bucket_by_day};
+    use super::{COMPOSITION_COUNT_AQL, EHR_COUNT_AQL, TREND_AQL};
 
     #[test]
     fn dashboard_aql_consts_parse() {
         for aql in [EHR_COUNT_AQL, COMPOSITION_COUNT_AQL, TREND_AQL] {
             openehr_query::parser::parse_str(aql).expect("dashboard AQL const must parse");
         }
-    }
-
-    #[test]
-    fn bucket_by_day_counts_date_prefix_ascending() {
-        let times = vec![
-            "2026-07-15T09:00:00Z".to_owned(),
-            "2026-07-15T18:30:00Z".to_owned(),
-            "2026-07-14T00:00:00Z".to_owned(),
-            "short".to_owned(),
-        ];
-        assert_eq!(
-            bucket_by_day(&times),
-            vec![("2026-07-14".to_owned(), 1), ("2026-07-15".to_owned(), 2)]
-        );
     }
 }

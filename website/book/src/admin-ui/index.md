@@ -82,9 +82,13 @@ bearer tokens never reach the browser.
 - **EHRs** — browse EHRs, folders, compositions, and version history. See
   [Templates & EHR browsing](browsing.md).
 - **Audit log** — browse the CDR's ATNA security audit trail (see below).
-- **System** — CDR status, SMART discovery, repository usage, the server's own
-  OpenAPI document, the redacted runtime configuration, and a shortcut into
-  the audit browser. ![System](img/system/system.png)
+- **System** — CDR status, the openEHR **conformance manifest** (what the
+  server advertises about itself through the System API: product, vendor,
+  claimed conformance profile, and the API groups it actually mounts), SMART
+  discovery, repository usage, the server's own OpenAPI documents — pick the
+  complete surface or one API family, and the choice stays in the URL — the
+  redacted runtime configuration, and a shortcut into the audit browser.
+  ![System](img/system/system.png)
 - **Operations** — dependency health, build and spec provenance, the metric
   registry, and runtime log control. Appears only when the CDR serves its
   management surface. See [Operations panel](operations.md).
