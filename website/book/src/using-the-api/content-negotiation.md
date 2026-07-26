@@ -185,9 +185,9 @@ you an `ETag` that changes when the served artefact changes.
 
 ## Commit metadata headers
 
-When you commit through the direct resource endpoints (composition,
-EHR_STATUS, directory), the server builds the version's audit for you. Two
-request headers let you set parts of it — **`openehr-version`** for the
+When you commit through the direct resource endpoints (EHR creation,
+composition, EHR_STATUS, directory), the server builds the version's audit for
+you. Two request headers let you set parts of it — **`openehr-version`** for the
 version's own attributes and **`openehr-audit-details`** for the commit
 audit. The value is a comma-separated list of `attribute.subkey="value"`
 pairs (quoted values may contain commas; the header may repeat, and repeats
@@ -214,6 +214,14 @@ The attributes the server merges:
 A client-supplied `system_id` is merged into the commit audit — useful when a
 gateway commits on behalf of a source system; when absent, the server stamps
 its own system id.
+
+Both EHR creates (`POST /ehr` and `PUT /ehr/{ehr_id}`) accept the headers too:
+creating an EHR commits its EHR_STATUS and EHR_ACCESS in a contribution, so the
+supplied description, committer, and system id land on that commit, and
+`openehr-version` sets the new EHR_STATUS version's lifecycle state. The
+`change_type` on a create is constrained to `249|creation|` — a create commits a
+first version — so restating `249` is accepted while any other change type is
+rejected.
 
 > [!NOTE]
 > The older dotted spellings — `openEHR-VERSION.lifecycle_state:

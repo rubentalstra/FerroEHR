@@ -39,6 +39,8 @@ const BASE: &str = "/ehrbase/rest/openehr/v1";
 /// precondition is rejected before the backend, so the ids need not exist).
 const EHR_ID: &str = "7d44b88c-4199-4bad-97dc-d78268e01398";
 const VO_ID: &str = "8849182c-82ad-4088-a07f-48ead4180515";
+/// The client-supplied EHR id the `PUT /ehr/{ehr_id}` committal test creates.
+const CREATED_EHR_ID: &str = "1f4d1a3e-24bb-4a1f-9e6f-2f0dcb0a5c11";
 
 fn opt_xml() -> String {
     std::fs::read_to_string(
@@ -389,6 +391,159 @@ async fn delete_accepts_and_merges_committal_headers() {
         "header description merged into the delete audit"
     );
     assert_eq!(audit["committer"]["name"], "Dr Chart");
+}
+
+/// EHR creation is a commit on change-controlled content, so `POST /ehr`
+/// accepts and merges the committal headers too. The overview MUST
+/// (§"openehr-version and openehr-audit-details") covers "all
+/// change-controlled resources (e.g. COMPOSITION, `EHR_STATUS`, FOLDER, etc.)"
+/// on `PUT`, `POST` **and** `DELETE`, and EHR creation commits "a root EHR
+/// object, an EHR Status object, and an EHR Access object … in a Contribution"
+/// (RM ehr master04 §EHR Creation) — verified against the persisted
+/// `EHR_STATUS` `ORIGINAL_VERSION`.
+#[tokio::test]
+async fn ehr_create_accepts_and_merges_committal_headers() {
+    let (_pg, app) = app().await;
+
+    // `Prefer: return=representation` yields the RM EHR body, whose
+    // `ehr_status` OBJECT_REF carries the committed version's identity.
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr"))
+        .header("Prefer", "return=representation")
+        .header("openehr-version", "lifecycle_state.code_string=\"553\"")
+        .header(
+            "openehr-audit-details",
+            "description.value=\"EHR opened at triage\",committer.name=\"Dr Chart\",\
+             committer.external_ref.id=\"BC8132EA-8F4A-11E7-BB31-BE2E44B06B34\",\
+             committer.external_ref.namespace=\"demographic\",\
+             committer.external_ref.type=\"PERSON\"",
+        )
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "ehr create: {body}");
+    let ehr_id = etag_uid(&h);
+    let ehr: Value = serde_json::from_str(&body).expect("ehr json");
+    let status_uid = ehr["ehr_status"]["id"]["value"]
+        .as_str()
+        .expect("ehr_status version id")
+        .to_owned();
+
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_ehr_status/version/{status_uid}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "status version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    assert_eq!(ver["_type"], "ORIGINAL_VERSION");
+    // "whatever is provided it MUST be merged with the default VERSION and
+    // VERSION.audit_details attributes on commit runtime."
+    assert_eq!(
+        ver["lifecycle_state"]["defining_code"]["code_string"], "553",
+        "openehr-version lifecycle_state merged into the creation commit: {ver}"
+    );
+    let audit = &ver["commit_audit"];
+    assert_eq!(
+        audit["description"]["value"], "EHR opened at triage",
+        "openehr-audit-details description merged: {ver}"
+    );
+    assert_eq!(audit["committer"]["name"], "Dr Chart");
+    assert_eq!(audit["committer"]["external_ref"]["type"], "PERSON");
+    // A create commits a FIRST version, so its change type stays
+    // `249|creation|` (RM common master06 §Contributions) — the merge of the
+    // other attributes must not disturb it.
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"], "249",
+        "creation change type intact: {ver}"
+    );
+}
+
+/// The same MUST on the id-supplied create (`PUT /ehr/{ehr_id}`) — the
+/// overview names `PUT` first among the direct-commit methods the headers are
+/// accepted on.
+#[tokio::test]
+async fn ehr_create_with_id_accepts_and_merges_committal_headers() {
+    let (_pg, app) = app().await;
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{CREATED_EHR_ID}"))
+        .header("Prefer", "return=representation")
+        .header(
+            "openehr-audit-details",
+            "description.value=\"EHR pre-registered\",committer.name=\"Registrar\"",
+        )
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "ehr create with id: {body}");
+    let ehr: Value = serde_json::from_str(&body).expect("ehr json");
+    let status_uid = ehr["ehr_status"]["id"]["value"]
+        .as_str()
+        .expect("ehr_status version id")
+        .to_owned();
+
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{CREATED_EHR_ID}/versioned_ehr_status/version/{status_uid}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "status version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    let audit = &ver["commit_audit"];
+    assert_eq!(audit["description"]["value"], "EHR pre-registered");
+    assert_eq!(audit["committer"]["name"], "Registrar");
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"], "249",
+        "creation change type intact: {ver}"
+    );
+}
+
+/// A create commits a FIRST version, so the only `audit_change_type` group
+/// code compatible with it is `249|creation|` (RM common master06
+/// §Contributions; the same operation-compatibility rule the CONTRIBUTION
+/// path applies). A legal-but-divergent code is a 400 change-control
+/// mismatch, an out-of-group token a 422
+/// (`AUDIT_DETAILS.Change_type_valid`), and a restated `249` passes.
+#[tokio::test]
+async fn ehr_create_rejects_a_change_type_that_is_not_a_creation() {
+    let (_pg, app) = app().await;
+
+    for (token, expected) in [
+        ("250", StatusCode::BAD_REQUEST),
+        ("523", StatusCode::BAD_REQUEST),
+        ("999", StatusCode::UNPROCESSABLE_ENTITY),
+        ("249", StatusCode::CREATED),
+    ] {
+        let req = Request::builder()
+            .method("POST")
+            .uri(format!("{BASE}/ehr"))
+            .header(
+                "openehr-audit-details",
+                format!("change_type.code_string=\"{token}\""),
+            )
+            .body(Body::empty())
+            .unwrap();
+        let (status, _h, body) = send(&app, req).await;
+        assert_eq!(
+            status, expected,
+            "change_type {token} on an EHR create: {body}"
+        );
+    }
 }
 
 /// The BARE deprecated header name from the §"Deprecated headers" table
