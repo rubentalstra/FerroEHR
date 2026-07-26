@@ -34,16 +34,19 @@ use crate::components::page_header::{Crumb, PageHeader};
 use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::error::AdminUiError;
 use crate::pages::ehrs::ResultPage;
-use crate::pages::query_aql::LoadedQuery;
+use crate::pages::query_aql::{LoadedQuery, LoadedQueryResource};
 use crate::pages::query_builder::{paging_buttons, results_view};
 use crate::queries_api::run_stored_query;
 use crate::query_namespace::{VersionResolution, resolve_version, split_query_ref};
 
 /// One dispatched run: the qualified name, the resolved `version` path segment
-/// (empty = the latest form, which sends none), and the `query_parameters` JSON.
-/// Named because the resource source, its fetcher, and the run button all speak
-/// it.
-type StoredRun = (String, String, String);
+/// (empty = the latest form, which sends none), the `query_parameters` JSON,
+/// and whether the request may carry its own `fetch`/`offset` window (false
+/// when the stored AQL windows itself with `LIMIT`/`TOP` — the two cannot be
+/// combined, see `run_stored_query`). Decided at dispatch, in the click
+/// handler, so no render-time code reads the definition resource. Named
+/// because the resource source, its fetcher, and the run button all speak it.
+type StoredRun = (String, String, String, bool);
 
 /// Build the link INTO this screen that runs the stored query `name@version` —
 /// the same `?load=name@version` encoding the other two query screens use
@@ -79,18 +82,11 @@ pub fn QueryStoredPage() -> impl IntoView {
     let offset = RwSignal::new(0_u32);
 
     let definition = crate::pages::query_aql::loaded_query_resource(query_map);
-    // Whether the request may carry its own `fetch`/`offset` window: a stored
-    // definition with an AQL `LIMIT`/`TOP` windows itself, and the two cannot be
-    // combined (see `run_stored_query`). A derived signal, never an effect.
-    let paged = Memo::new(move |_| match definition.get() {
-        Some(Ok(Some((_, _, aql)))) => !carries_own_window(&aql),
-        _ => true,
-    });
     let results: Resource<Result<Option<ResultPage>, AdminUiError>> = Resource::new(
-        move || (ran.get(), offset.get(), paged.get()),
-        |(ran, off, paged)| async move {
+        move || (ran.get(), offset.get()),
+        |(ran, off)| async move {
             match ran {
-                Some((name, version, parameters)) => {
+                Some((name, version, parameters, paged)) => {
                     run_stored_query(name, version, parameters, off, paged)
                         .await
                         .map(Some)
@@ -103,8 +99,8 @@ pub fn QueryStoredPage() -> impl IntoView {
     let definition_pane = definition_section(definition, &name);
     let resolution = resolution_section(&name, mode, version);
     let parameters = parameters_section(definition, bindings);
-    let run = run_section(&name, mode, version, bindings, ran, offset);
-    let results_pane = results_section(results, offset, paged);
+    let run = run_section(&name, mode, version, bindings, definition, ran, offset);
+    let results_pane = results_section(results, offset, ran);
 
     view! {
         <Title text="Run stored query · ehrbase-admin" />
@@ -400,6 +396,7 @@ fn run_section(
     mode: RwSignal<VersionResolution>,
     version: RwSignal<String>,
     bindings: RwSignal<BTreeMap<String, String>>,
+    definition: LoadedQueryResource,
     ran: RwSignal<Option<StoredRun>>,
     offset: RwSignal<u32>,
 ) -> AnyView {
@@ -415,10 +412,21 @@ fn run_section(
             return;
         };
         let parameters = bindings.with_untracked(|values| parameters_json(values).to_string());
+        // Whether the request may carry its own row window: a stored definition
+        // with an AQL `LIMIT`/`TOP` windows itself, and the two cannot be
+        // combined. Read UNTRACKED in the event handler — never at render — so
+        // no render-time code reads the definition resource (hydration rule);
+        // a definition still in flight defaults to paged, matching the runner's
+        // behaviour for a query it knows nothing about.
+        let paged = match definition.get_untracked() {
+            Some(Ok(Some((_, _, aql)))) => !carries_own_window(&aql),
+            _ => true,
+        };
         ran.set(Some((
             name_for_click.clone(),
             resolved.unwrap_or_default(),
             parameters,
+            paged,
         )));
         offset.set(0);
     };
@@ -447,12 +455,12 @@ fn run_section(
 fn results_section(
     results: Resource<Result<Option<ResultPage>, AdminUiError>>,
     offset: RwSignal<u32>,
-    paged: Memo<bool>,
+    ran: RwSignal<Option<StoredRun>>,
 ) -> AnyView {
     view! {
         <Transition fallback=table_skeleton>
             {move || Suspend::new(async move {
-                let show_paging = paged.get();
+                let show_paging = ran.with(|run| run.as_ref().is_none_or(|(.., paged)| *paged));
                 match results.await {
                     Ok(None) => ().into_any(),
                     Ok(Some(page)) => {
