@@ -209,6 +209,49 @@ pub async fn vo_owner(pool: &PgPool, vo_id: VoId) -> Result<Option<Option<EhrId>
     )
 }
 
+/// A versioned object's owning EHR (`None` = the ehr-less demographic store)
+/// **and its RM kind** — for callers that must verify a route family against
+/// the addressed object (a COMPOSITION route must not act on an `EHR_STATUS`
+/// container). `None` when no such versioned object exists.
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn vo_owner_kind(
+    pool: &PgPool,
+    vo_id: VoId,
+) -> Result<Option<(Option<EhrId>, String)>, StorageError> {
+    let row: Option<(Option<EhrId>, String)> =
+        sqlx::query_as("SELECT ehr_id, kind FROM vo_version WHERE vo_id = $1 LIMIT 1")
+            .bind(vo_id)
+            .fetch_optional(pool)
+            .await?;
+    Ok(row)
+}
+
+/// Whether a specific VERSION of a versioned object exists, addressed by its
+/// `VERSION_TREE_ID` parts (trunk / branch pair, branch 0 0 = trunk row).
+///
+/// # Errors
+/// Returns [`StorageError::Database`] on a driver failure.
+pub async fn version_exists(
+    pool: &PgPool,
+    vo_id: VoId,
+    trunk: i32,
+    branch_number: i32,
+    branch_version: i32,
+) -> Result<bool, StorageError> {
+    Ok(sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM vo_version WHERE vo_id = $1 \
+         AND trunk_version = $2 AND branch_number = $3 AND branch_version = $4)",
+    )
+    .bind(vo_id)
+    .bind(trunk)
+    .bind(branch_number)
+    .bind(branch_version)
+    .fetch_one(pool)
+    .await?)
+}
+
 // ── current-version identity reads ────────────────────────────────────────────
 
 /// The current version of an EHR-owned object of one kind: its `vo_id` and

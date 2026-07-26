@@ -235,6 +235,21 @@ pub(crate) fn components(ovid: &ObjectVersionId) -> Result<(VoId, TreeId), Versi
     Ok((VoId(object_id.value), tree))
 }
 
+/// Parse the `{creating_system_id}::{version_tree_id}` TAIL of an
+/// `OBJECT_VERSION_ID` (everything after the object id) into its [`TreeId`],
+/// validating both parts are present (BASE master05 §Syntaxes — the id has
+/// exactly three `::`-delimited parts).
+pub(crate) fn parse_version_tail(tail: &str) -> Result<TreeId, VersionIdError> {
+    // A tail reaching here came out of a validated three-part
+    // `OBJECT_VERSION_ID`, so the separator is present; the defensive
+    // fallbacks parse the whole tail as a tree id, which produces the
+    // appropriate malformed-id error.
+    match tail.split_once("::") {
+        Some((system, tree)) if !system.is_empty() => parse_tree_id(tree),
+        _ => parse_tree_id(tail),
+    }
+}
+
 /// Parse a `uid_based_id`/`versioned_object_uid` path parameter: either a bare
 /// `HIER_OBJECT_ID` (a UUID, → no version) or a full `OBJECT_VERSION_ID`
 /// (strict three-part, → its [`TreeId`]).
