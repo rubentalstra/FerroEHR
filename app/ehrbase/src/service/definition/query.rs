@@ -420,7 +420,14 @@ impl EhrbaseService {
             )));
         }
 
-        let (rdn, semantic) = split_qualified(qualified_name);
+        // ONE canonical key for every surface (SM master04 §Registered
+        // Queries: "If no namespace is supplied, the namespace \"misc\" is
+        // assumed") — the wire store previously keyed a bare name under
+        // ('', name) while the SM/admin/list paths keyed ('misc', name),
+        // making the same identifier resolve on one surface and 404 on the
+        // other.
+        let qualified = parse_qualified_name(qualified_name).qualified();
+        let (rdn, semantic) = split_qualified(&qualified);
         let Some(v) = version else {
             // No-version store: case-insensitive upsert at the default version.
             let mut tx = self.pool.begin().await?;
@@ -499,7 +506,9 @@ impl EhrbaseService {
         qualified_name: &str,
         version: Option<&str>,
     ) -> Result<Value, ServiceError> {
-        let (rdn, semantic) = split_qualified(qualified_name);
+        // The same canonical key as the store path (SM master04 misc default).
+        let qualified = parse_qualified_name(qualified_name).qualified();
+        let (rdn, semantic) = split_qualified(&qualified);
         let row = match version {
             Some(v) if is_partial_semver(v) => sqlx::query(
                 // Prefix match on a dot boundary (`1` → `1.x.y`, `1.0` →
@@ -554,12 +563,19 @@ impl EhrbaseService {
         &self,
         name_pattern: &str,
     ) -> Result<Vec<Value>, ServiceError> {
+        // A namespace-less pattern also matches its `misc::`-assumed
+        // composition (SM master04 §Registered Queries: "If no namespace is
+        // supplied, the namespace \"misc\" is assumed") — the canonical key
+        // every surface stores under.
         let rows = sqlx::query(
             "SELECT reverse_domain_name, semantic_id, semver, query_type, query_text, created_at \
              FROM stored_query \
              WHERE left(lower(CASE WHEN reverse_domain_name = '' THEN semantic_id \
                              ELSE reverse_domain_name || '::' || semantic_id END), \
                         length($1)) = lower($1) \
+                OR ($1 NOT LIKE '%::%' AND \
+                    left(lower(reverse_domain_name || '::' || semantic_id), \
+                         length('misc::' || $1)) = lower('misc::' || $1)) \
              ORDER BY reverse_domain_name, semantic_id, string_to_array(semver, '.')::int[]",
         )
         .bind(name_pattern)
