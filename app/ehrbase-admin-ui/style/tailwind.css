@@ -50,6 +50,7 @@
   --syntax-tag: #0e7490; /* XML element name */
   --syntax-attribute: #7c3aed; /* XML attribute name */
   --syntax-comment: #94a3b8; /* XML comment / DOCTYPE / CDATA */
+  --scrim: rgb(2 6 23 / 0.4); /* the dim behind a modal overlay */
 }
 
 .dark {
@@ -81,6 +82,9 @@
   --syntax-tag: #67e8f9;
   --syntax-attribute: #c4b5fd;
   --syntax-comment: #64748b;
+  /* A dark page needs a deeper dim than a light one to read as "behind": at
+     0.4 the scrim barely separates a raised panel from the dark surface. */
+  --scrim: rgb(2 6 23 / 0.6);
 }
 
 /* ── Semantic utilities (bg-surface, text-ink, border-edge, …) ─────────── */
@@ -112,6 +116,9 @@
   --color-syntax-tag: var(--syntax-tag);
   --color-syntax-attribute: var(--syntax-attribute);
   --color-syntax-comment: var(--syntax-comment);
+  /* `bg-scrim` — the ONE overlay backdrop; never a raw `bg-black/40`, which
+     ignores the theme and drifts per screen. */
+  --color-scrim: var(--scrim);
 
   /* Shape + elevation: 8px cards, 6px controls, ONE soft shadow level. */
   --radius-card: 0.5rem;
@@ -127,6 +134,21 @@
 .thaw-card {
   width: 100%;
   margin: 0;
+}
+
+/* thaw's Popover surface draws from the stock Fluent neutral ramp
+   (thaw/src/popover/popover.css: `--colorNeutralBackground1`, a Fluent
+   `--shadow16`), so the user menu floated in a chrome that matched no other
+   panel in the console. The surface is restated in the design tokens ONCE
+   here, for every popover, instead of per call site: thaw prepends its
+   <style> to <head>, so this later rule of equal specificity wins, while a
+   Tailwind class on the widget would not (utilities are layered, and an
+   unlayered declaration beats a layered one). */
+div.thaw-popover-surface {
+  @apply rounded-card border border-edge bg-raised text-ink shadow-card;
+}
+.thaw-popover-surface__angle::before {
+  border-color: var(--edge);
 }
 
 /* ── Base ──────────────────────────────────────────────────────────────── */

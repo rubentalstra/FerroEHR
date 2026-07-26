@@ -448,7 +448,13 @@ fn rows_view(
         {table_shell(headers, body)}
         {footer}
         <Show when=none_match>
-            <p class="mt-3 text-sm text-ink-muted">"No templates match the filter."</p>
+            <div class="mt-3">
+                <EmptyState
+                    icon=icondata_lu::LuSearchX
+                    message="No templates match the filter"
+                    hint="Clear or shorten the filter to see the whole catalogue again."
+                />
+            </div>
         </Show>
     }
     .into_any()

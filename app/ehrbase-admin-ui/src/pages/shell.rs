@@ -373,6 +373,15 @@ fn authed_shell(
             </Suspense>
         }
     };
+    // Popover adjudication: the user menu STAYS a thaw widget — it needs
+    // click-outside dismissal and anchored positioning, and it only ever opens
+    // after a click, i.e. after hydration, so thaw's runtime-injected CSS is
+    // off the pre-hydration paint path this module's doc warns about. What was
+    // wrong was only its chrome: the surface drew from thaw's stock Fluent
+    // neutrals, matching no other panel. `style/tailwind.css` now restates
+    // `.thaw-popover-surface` in the design tokens (raised background, edge
+    // hairline, card radius + shadow) for every popover at once, and the
+    // content below uses the same ink tokens as the rest of the kit.
     let user_menu = view! {
         <thaw::Popover trigger_type=thaw::PopoverTriggerType::Click>
             <PopoverTrigger slot>
@@ -389,8 +398,8 @@ fn authed_shell(
                 </div>
             </PopoverTrigger>
             <div class="flex flex-col gap-2 min-w-44">
-                <span class="text-sm font-medium">{identity_text()}</span>
-                <span class="text-xs opacity-60">{method_text()}</span>
+                <span class="text-sm font-medium text-ink">{identity_text()}</span>
+                <span class="text-xs text-ink-muted">{method_text()}</span>
                 <thaw::Button
                     appearance=thaw::ButtonAppearance::Subtle
                     on_click=move |_| scopes_open.set(true)
@@ -422,8 +431,13 @@ fn authed_shell(
                         .map(|info| info.scopes)
                         .unwrap_or_default();
                     if scopes.is_empty() {
+                        // Deliberately NOT an EmptyState: an empty scope list is
+                        // not a void to fill but the complete answer to "what am
+                        // I allowed to do" under Basic auth — the sentence IS the
+                        // content, and there is no action that would add scopes
+                        // from here.
                         view! {
-                            <p class="text-sm opacity-70">
+                            <p class="text-sm text-ink-muted">
                                 "No scopes — Basic authentication grants full console access."
                             </p>
                         }

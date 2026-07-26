@@ -35,6 +35,7 @@ use crate::builder::model::{
 use leptos_chartistry::IntoInner;
 
 use crate::components::data_table::{CELL, PAGE_SIZE, ROW, table_shell, table_skeleton};
+use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, SELECT};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
@@ -299,6 +300,49 @@ fn picker_section(
 /// selectable data-value leaves offer "+ condition" (always) and "+ column"
 /// (only when the shape is a data-value projection). Returns [`AnyView`] at
 /// every level so the recursion has a finite type (rules §1).
+/// The path-picker row's disclosure chevron. Icon-only control: the chevron is
+/// decoration, so the button carries the node it opens as its name and its
+/// open/closed state as `aria-expanded` (WAI-ARIA Authoring Practices,
+/// "Disclosure" pattern). A leaf renders the aligning spacer instead.
+fn disclosure_toggle(node_label: &str, expanded: RwSignal<bool>, has_children: bool) -> AnyView {
+    if !has_children {
+        return view! { <span class="inline-block w-4 shrink-0"></span> }.into_any();
+    }
+    let toggle_label = format!("Toggle {node_label}");
+    view! {
+        <button
+            type="button"
+            class="w-4 shrink-0 text-ink-muted"
+            aria-label=toggle_label
+            aria-expanded=move || if expanded.get() { "true" } else { "false" }
+            on:click=move |_| expanded.update(|open| *open = !*open)
+        >
+            {move || {
+                if expanded.get() {
+                    view! {
+                        <leptos_icons::Icon
+                            icon=icondata_lu::LuChevronDown
+                            width="12"
+                            height="12"
+                        />
+                    }
+                        .into_any()
+                } else {
+                    view! {
+                        <leptos_icons::Icon
+                            icon=icondata_lu::LuChevronRight
+                            width="12"
+                            height="12"
+                        />
+                    }
+                        .into_any()
+                }
+            }}
+        </button>
+    }
+    .into_any()
+}
+
 fn picker_node(
     node: &CatalogNode,
     ctx: BuilderCtx,
@@ -313,40 +357,7 @@ fn picker_node(
         .map(|child| picker_node(child, ctx, shape_is_dv, depth + 1))
         .collect::<Vec<_>>();
 
-    let disclosure = if has_children {
-        view! {
-            <button
-                type="button"
-                class="w-4 shrink-0 text-ink-muted"
-                on:click=move |_| expanded.update(|open| *open = !*open)
-            >
-                {move || {
-                    if expanded.get() {
-                        view! {
-                            <leptos_icons::Icon
-                                icon=icondata_lu::LuChevronDown
-                                width="12"
-                                height="12"
-                            />
-                        }
-                            .into_any()
-                    } else {
-                        view! {
-                            <leptos_icons::Icon
-                                icon=icondata_lu::LuChevronRight
-                                width="12"
-                                height="12"
-                            />
-                        }
-                            .into_any()
-                    }
-                }}
-            </button>
-        }
-        .into_any()
-    } else {
-        view! { <span class="inline-block w-4 shrink-0"></span> }.into_any()
-    };
+    let disclosure = disclosure_toggle(&node.label, expanded, has_children);
 
     let label = node.label.clone();
     let rm_type = node.rm_type.clone();
@@ -458,9 +469,11 @@ fn criteria_section(ctx: BuilderCtx) -> AnyView {
                 match snapshot.criteria {
                     None => {
                         view! {
-                            <p class="text-sm text-ink-muted">
-                                "No conditions yet — add one from the path catalog on the left."
-                            </p>
+                            <EmptyState
+                                icon=icondata_lu::LuListChecks
+                                message="No conditions yet"
+                                hint="Add one with \"+ condition\" from the path catalog on the left."
+                            />
                         }
                             .into_any()
                     }
@@ -520,6 +533,7 @@ fn leaf_card(criterion: &Criterion, path: Vec<usize>, ctx: BuilderCtx) -> AnyVie
                     <button
                         type="button"
                         class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
+                        aria-label="Remove this condition"
                         on:click=move |_| {
                             ctx.query.update(|q| remove_at(&mut q.criteria, &remove_path));
                             ctx.active_path.set(Vec::new());
@@ -581,6 +595,13 @@ fn group_toolbar(
     let remove_path = path.clone();
     let active_here = move || ctx.active_path.with(|p| *p == target_path);
     let target_set_path = path;
+    // The root group's remove reads "clear" in words; a nested group's is the
+    // icon alone, so it needs the name spelled out.
+    let remove_label = if is_root {
+        "Clear all conditions"
+    } else {
+        "Remove this group"
+    };
     view! {
         <div class="flex items-center gap-1 flex-wrap mb-2">
             <button
@@ -630,6 +651,7 @@ fn group_toolbar(
             <button
                 type="button"
                 class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
+                aria-label=remove_label
                 on:click=move |_| {
                     ctx.query.update(|q| remove_at(&mut q.criteria, &remove_path));
                     ctx.active_path.set(Vec::new());
@@ -866,6 +888,10 @@ fn coded_editor(
         ctx.query.update(|q| set_leaf_kind(q, &path, kind));
     };
     let options = meta.map(|m| m.code_options).unwrap_or_default();
+    // Deliberately an inline hint, not an EmptyState: this is one field inside a
+    // leaf-condition card, and the kit's dashed box is sized for a data region —
+    // here it would dwarf the editor it belongs to. The terminology input below
+    // still gives the reader something to do.
     let boxes = if options.is_empty() {
         view! {
             <p class="text-xs text-ink-muted italic">
@@ -957,6 +983,8 @@ fn ordinal_editor(
         .filter_map(|o| o.ordinal.map(|ord| (i64::from(ord), o.label, o.code)))
         .collect::<Vec<_>>();
     if options.is_empty() {
+        // An inline hint for the same reason as the coded editor's: a single
+        // field inside a leaf card, not a data region — see `coded_editor`.
         return view! {
             <p class="text-xs text-ink-muted italic">
                 "No ordinal steps in the template for this node."
@@ -1226,6 +1254,9 @@ fn shape_radio(ctx: BuilderCtx, current: QueryShape) -> AnyView {
 /// alias input and a remove button; empty invites adding from the catalog.
 fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
     if columns.is_empty() {
+        // An inline hint, not an EmptyState: the columns editor is one row of the
+        // options strip beside "Order by" and "Limit" — a dashed box there would
+        // outweigh the two controls next to it.
         return view! {
             <p class="text-xs text-ink-muted">
                 "Add projection columns with \"+ column\" in the path catalog."
@@ -1239,6 +1270,11 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
         .map(|(i, col)| {
             let alias = RwSignal::new(col.alias.clone());
             let path_text = col.aql_path.clone();
+            // The row's controls have no visible label (the path text beside
+            // them is the heading), so each names itself by its position.
+            let position = i.saturating_add(1);
+            let alias_label = format!("Alias for column {position}");
+            let remove_label = format!("Remove column {position}");
             view! {
                 <div class="flex items-center gap-2">
                     <span
@@ -1251,6 +1287,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
                         id=format!("qb-col-alias-{i}")
                         type="text"
                         placeholder="alias"
+                        aria-label=alias_label
                         class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm w-40"
                         prop:value=move || alias.get()
                         on:input:target=move |ev| {
@@ -1267,6 +1304,7 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
                     <button
                         type="button"
                         class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
+                        aria-label=remove_label
                         on:click=move |_| {
                             ctx.query
                                 .update(|q| {
@@ -1297,12 +1335,19 @@ fn columns_editor(ctx: BuilderCtx, columns: &[SelectedColumn]) -> AnyView {
 fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
     let path_s = RwSignal::new(rule.aql_path.clone());
     let desc = rule.descending;
+    // "Order by" labels the whole editor, not the individual rows, so every
+    // control in a row names itself by the rule's position.
+    let position = i.saturating_add(1);
+    let path_label = format!("Sort path for rule {position}");
+    let direction_label = format!("Sort direction for rule {position}");
+    let remove_label = format!("Remove sort rule {position}");
     view! {
         <div class="flex items-center gap-2">
             <input
                 id=format!("qb-order-path-{i}")
                 type="text"
                 placeholder="context/start_time/value"
+                aria-label=path_label
                 class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm flex-1 min-w-48 font-mono"
                 prop:value=move || path_s.get()
                 on:input:target=move |ev| {
@@ -1318,6 +1363,7 @@ fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
             />
             <select
                 class="rounded border border-edge-strong bg-raised px-2 py-1 text-sm"
+                aria-label=direction_label
                 prop:value=move || if desc { "desc" } else { "asc" }
                 on:change:target=move |ev| {
                     let descending = ev.target().value() == "desc";
@@ -1336,6 +1382,7 @@ fn order_row(ctx: BuilderCtx, i: usize, rule: &OrderRule) -> AnyView {
             <button
                 type="button"
                 class="text-xs rounded border border-danger/40 text-danger px-1.5 hover:bg-danger-subtle"
+                aria-label=remove_label
                 on:click=move |_| {
                     ctx.query
                         .update(|q| {
@@ -1851,7 +1898,14 @@ pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
         .into_any();
     }
     if page.rows.is_empty() {
-        return view! { <p class="text-sm text-ink-muted">"No rows."</p> }.into_any();
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuSearchX
+                message="No rows"
+                hint="The query ran and matched nothing — widen a condition or clear a filter."
+            />
+        }
+        .into_any();
     }
     // The result-set column aliases/paths are the table headers (never `#n`).
     let header_refs: Vec<&str> = page.columns.iter().map(String::as_str).collect();
