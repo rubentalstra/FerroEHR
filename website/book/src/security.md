@@ -69,8 +69,11 @@ a static `JWKS_JSON` (preferred when present) or an `HMAC_SECRET`.
 > ```
 >
 > The same pattern works for Active Directory or any standards-compliant
-> identity provider. Prefer JWKS/discovery over a shared HS256 secret in
-> production.
+> identity provider — walkthroughs for Entra ID and AD FS (and the answer for
+> plain-LDAP directories) are in
+> [Enterprise identity providers](identity-providers.md). Prefer
+> JWKS/discovery over a shared HS256 secret in production. User accounts,
+> roles, and lifecycle are administered in the IdP — the CDR has no user API.
 
 An unauthenticated request to a protected route is refused with `401`; an
 authenticated request that lacks the required role is refused with `403`.
