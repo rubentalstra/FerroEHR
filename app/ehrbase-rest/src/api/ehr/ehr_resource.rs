@@ -46,27 +46,38 @@ pub(super) async fn run(
                 .backend()
                 .ehr_object_for_subject(&p.subject_id, &p.subject_namespace)
                 .await?;
-            // 200_EHR: no ETag/Location declared for EHR retrieval.
-            Ok(negotiate::respond_rm::<Ehr>(h, ok, &body, "ehr"))
+            // 200_EHR: the weak ETag off `EHR.ehr_id.value` — the ITS-REST
+            // overview's own example source for a resource with a unique
+            // state identifier (Requests_and_responses.md §"ETag and
+            // Last-Modified": the value "is usually taken from e.g.
+            // VERSIONED_OBJECT.uid.value, VERSION.uid.value,
+            // EHR.ehr_id.value"). No Location on a GET (§Location).
+            Ok(ehr_read_response(h, ok, &body))
         }
         "ehr_create" => {
             let _p = params::build::<EhrCreateParams>(&parts.path, q, h)?;
             let status = negotiate::optional_rm_value::<EhrStatus>(h, &parts.body)?;
-            let ehr_id = state.backend().create_ehr(status).await?;
-            ehr_write_response(&state, h, &base, ehr_id).await
+            // The service returns the created EHR's own resource metadata
+            // (ehr_id + creation instant) — the write path never rebuilds a
+            // metadata-less envelope, so `Last-Modified` survives to the wire.
+            let (ehr_id, meta) = state.backend().create_ehr_meta(status).await?;
+            ehr_write_response(&state, h, &base, ehr_id, meta).await
         }
         "ehr_create_with_id" => {
             let p = params::build::<EhrCreateWithIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let status = negotiate::optional_rm_value::<EhrStatus>(h, &parts.body)?;
-            let ehr_id = state.backend().create_ehr_with_id(ehr_id, status).await?;
-            ehr_write_response(&state, h, &base, ehr_id).await
+            let meta = state
+                .backend()
+                .create_ehr_with_id_meta(ehr_id, status)
+                .await?;
+            ehr_write_response(&state, h, &base, ehr_id, meta).await
         }
         "ehr_get_by_id" => {
             let p = params::build::<EhrGetByIdParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let body = state.backend().ehr_object(ehr_id).await?;
-            Ok(negotiate::respond_rm::<Ehr>(h, ok, &body, "ehr"))
+            Ok(ehr_read_response(h, ok, &body))
         }
         "ehr_tags_get" => {
             let p = params::build::<EhrTagsGetParams>(&parts.path, q, h)?;
@@ -83,15 +94,39 @@ pub(super) async fn run(
     }
 }
 
-/// Render an EHR create response (`201_EHR)`: `ETag(ehr_id)` + `Location`, with the
-/// RM `EHR` body only on `Prefer: return=representation`.
+/// Render an EHR read (`200_EHR`) with the weak `ETag` carrying
+/// `EHR.ehr_id.value` — the ITS-REST overview §"`ETag` and Last-Modified"
+/// example source, and a resource with a unique state identifier, for which
+/// the `ETag` SHOULD be present.
+///
+/// No `Last-Modified`: the RM `EHR` root is not a VERSION and has no
+/// `commit_audit`, and the spec derives the header from
+/// `VERSION.commit_audit.time_committed.value`. `EHR.time_created` is the
+/// creation instant, not the last modification (the served body changes with
+/// every `EHR_STATUS`/directory commit), so emitting it here would be wrong.
+fn ehr_read_response(h: &http::HeaderMap, status: StatusCode, body: &Value) -> Response {
+    let mut out = negotiate::respond_rm::<Ehr>(h, status, body, "ehr");
+    if let Some(id) = body["ehr_id"]["value"].as_str() {
+        negotiate::set_etag(&mut out, id);
+    }
+    out
+}
+
+/// Render an EHR create response (`201_EHR)`: `ETag(ehr_id)` +
+/// `Last-Modified` + `Location`, with the RM `EHR` body only on
+/// `Prefer: return=representation`.
+///
+/// `meta` comes straight from the service create (the `ehr_id` plus the
+/// creating CONTRIBUTION's commit instant), so the `Last-Modified` the
+/// ITS-REST overview §"`ETag` and Last-Modified" asks for is not lost between
+/// the commit and the wire.
 async fn ehr_write_response(
     state: &AppState,
     h: &http::HeaderMap,
     base: &str,
     ehr_id: EhrId,
+    meta: ResourceMeta,
 ) -> Result<Response, RestError> {
-    let ehr_id_str = ehr_id.to_string();
     let body = if negotiate::prefers_representation(h) {
         // `ehr_created_object` serves the just-committed EHR body from the
         // create-time stash (built from the commit results), avoiding the
@@ -100,7 +135,7 @@ async fn ehr_write_response(
     } else {
         Value::Null
     };
-    let resp = ServiceResponse::new(body, ResourceMeta::new(ehr_id_str.clone(), ehr_id_str));
+    let resp = ServiceResponse::new(body, meta);
     Ok(negotiate::write_rm::<Ehr>(
         h,
         base,

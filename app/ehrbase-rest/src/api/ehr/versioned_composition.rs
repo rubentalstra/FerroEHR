@@ -82,6 +82,10 @@ pub(super) async fn run(
                 .backend()
                 .composition_version_at_time(ehr_id, ehrbase::ids::VoId(vo_id), p.version_at_time)
                 .await?;
+            // Version-uid ETag + Last-Modified from the envelope's
+            // commit_audit.time_committed (§"ETag and Last-Modified": the
+            // value "should be derived from
+            // VERSION.commit_audit.time_committed.value").
             let resp = super::read_resp(&p.ehr_id, body);
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML.
             Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
@@ -101,8 +105,10 @@ pub(super) async fn run(
                 .composition_original_version(ehr_id, ovid)
                 .await?;
             // ORIGINAL_VERSION<COMPOSITION> — JSON or canonical XML, with the
-            // version-uid ETag + commit-time Last-Modified (§ETag and
-            // Last-Modified SHOULD on VERSION reads).
+            // version-uid ETag + Last-Modified from the envelope's
+            // commit_audit.time_committed (§"ETag and Last-Modified": both
+            // SHOULD accompany a VERSION response, and Last-Modified is
+            // "derived from VERSION.commit_audit.time_committed.value").
             let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<OriginalVersion<Composition>>(
                 h,

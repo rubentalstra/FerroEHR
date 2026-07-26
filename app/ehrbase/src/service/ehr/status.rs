@@ -541,8 +541,10 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
-        let at = a_time.as_deref().map(parse_at_time).transpose()?;
-        Ok(self.status_at(an_ehr_id, at).await?.body)
+        Ok(self
+            .ehr_status_at_time_response(an_ehr_id, a_time)
+            .await?
+            .body)
     }
 
     /// The bare `EHR_STATUS` at a specific version (not an
@@ -557,10 +559,8 @@ impl EhrbaseService {
         a_version_uid: VoId,
         a_version: &str,
     ) -> Result<Value, SmError> {
-        let tree = parse_tree_id(a_version)?;
-        // the bare EHR_STATUS at that version, not an ORIGINAL_VERSION.
         Ok(self
-            .status_by_version(an_ehr_id, a_version_uid, tree)
+            .ehr_status_at_version_response(an_ehr_id, a_version_uid, a_version)
             .await?
             .body)
     }
@@ -672,33 +672,7 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_status: UpdateVersion,
     ) -> Result<String, SmError> {
-        // NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
-        // — the aggregate of the five discrete SM mutators above (formal
-        // equivalence, `master02-overview.adoc` §Interface Calls). The
-        // optimistic `preceding_version_uid` rides in UpdateVersion; a mismatch
-        // → 412.
-        //
-        // The `If-Match` meta pre-read also yields the `vo_id`, threaded into
-        // the write so the versioned object is resolved once (no second
-        // `current_vo`). No current EHR_STATUS ⇒ NotFound (404), the same
-        // outcome the prior `current_vo`-inside-the-write path produced.
-        let Some((vo_id, latest)) = self.ehr_status_meta_with_vo(an_ehr_id).await? else {
-            return Err(ServiceError::sm(
-                CallStatusType::EhrIdDoesNotExist,
-                format!("EHR_STATUS for EHR {an_ehr_id}"),
-            )
-            .into());
-        };
-        ensure_if_match(a_status.preceding_version_uid.as_ref(), Some(&latest))?;
-        let if_match = a_status
-            .preceding_version_uid
-            .as_ref()
-            .map(|o| o.value.clone())
-            .unwrap_or_default();
-        Ok(self
-            .commit_status(an_ehr_id, vo_id, a_status, &if_match)
-            .await?
-            .version_uid())
+        Ok(self.replace_ehr_status_meta(an_ehr_id, a_status).await?.uid)
     }
 
     /// SM `I_EHR_STATUS.get_revision_history` — the `REVISION_HISTORY` of the
@@ -741,5 +715,103 @@ impl EhrbaseService {
     ) -> Result<Value, SmError> {
         let tree = parse_tree_id(a_version)?;
         Ok(self.status_version(an_ehr_id, a_version_uid, tree).await?)
+    }
+}
+
+// ── ITS-REST read/write-response adapter (adapter-support extension) ──────────
+//
+// The SM `I_EHR_STATUS` calls above return the bare `EHR_STATUS` (or its new
+// version uid) the service model defines — neither carries the commit instant
+// ITS-REST wants on the wire: `Requests_and_responses.md` §"`ETag` and
+// Last-Modified" says the `Last-Modified` value "should be derived from
+// `VERSION.commit_audit.time_committed.value`" and that "Both `ETag` and
+// `Last-Modified` SHOULD be included in responses for VERSION,
+// VERSIONED_OBJECT, or other resources that have versioning or unique state
+// identifiers". These siblings hand the protocol adapter the same result PLUS
+// its [`ResourceMeta`] (version uid + commit instant), which the version row /
+// commit result already holds — no second read. No openEHR spec governs this
+// envelope — our own design.
+
+impl EhrbaseService {
+    /// [`Self::get_ehr_status_at_time`] with the version metadata the wire's
+    /// `ETag`/`Last-Modified` need.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing status
+    /// at that instant (404-equivalent), or a read failure.
+    pub async fn ehr_status_at_time_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_time: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
+        let at = a_time.as_deref().map(parse_at_time).transpose()?;
+        Ok(self.status_at(an_ehr_id, at).await?)
+    }
+
+    /// [`Self::get_ehr_status_at_version`] with the version metadata the
+    /// wire's `ETag`/`Last-Modified` need. The body is the **bare**
+    /// `EHR_STATUS`, not an `ORIGINAL_VERSION`.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed version id, an unknown version
+    /// (404-equivalent), or a read failure.
+    pub async fn ehr_status_at_version_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_version_uid: VoId,
+        a_version: &str,
+    ) -> Result<ServiceResponse, SmError> {
+        let tree = parse_tree_id(a_version)?;
+        Ok(self
+            .status_by_version(an_ehr_id, a_version_uid, tree)
+            .await?)
+    }
+
+    /// [`Self::replace_ehr_status`] returning the committed version's
+    /// [`ResourceMeta`] (uid + commit instant) instead of the bare uid.
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR has no current `EHR_STATUS` (404-equivalent),
+    /// the `preceding_version_uid` mismatches the current latest
+    /// (412-equivalent), the body fails structural validation
+    /// (422-equivalent), or the commit fails.
+    pub async fn replace_ehr_status_meta(
+        &self,
+        an_ehr_id: EhrId,
+        a_status: UpdateVersion,
+    ) -> Result<ResourceMeta, SmError> {
+        // NOTE: the ITS-REST wire replaces the whole EHR_STATUS in one PUT
+        // — the aggregate of the five discrete SM mutators (formal
+        // equivalence, `master02-overview.adoc` §Interface Calls). The
+        // optimistic `preceding_version_uid` rides in UpdateVersion; a mismatch
+        // → 412.
+        //
+        // The `If-Match` meta pre-read also yields the `vo_id`, threaded into
+        // the write so the versioned object is resolved once (no second
+        // `current_vo`). No current EHR_STATUS ⇒ NotFound (404), the same
+        // outcome the prior `current_vo`-inside-the-write path produced.
+        let Some((vo_id, latest)) = self.ehr_status_meta_with_vo(an_ehr_id).await? else {
+            return Err(ServiceError::sm(
+                CallStatusType::EhrIdDoesNotExist,
+                format!("EHR_STATUS for EHR {an_ehr_id}"),
+            )
+            .into());
+        };
+        ensure_if_match(a_status.preceding_version_uid.as_ref(), Some(&latest))?;
+        let if_match = a_status
+            .preceding_version_uid
+            .as_ref()
+            .map(|o| o.value.clone())
+            .unwrap_or_default();
+        let committed = self
+            .commit_status(an_ehr_id, vo_id, a_status, &if_match)
+            .await?;
+        Ok(self.version_meta(
+            an_ehr_id,
+            committed.vo_id,
+            &committed.creating_system_id,
+            committed.tree,
+            committed.time_committed,
+        ))
     }
 }
