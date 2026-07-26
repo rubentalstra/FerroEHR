@@ -121,7 +121,8 @@ pub(crate) async fn party_relationship_create(
         ("version_at_time" = Option<String>, Query,
          description = "Extended ISO 8601 instant; when the id is a \
                         `versioned_object_uid`, selects the version extant at \
-                        that time (latest when omitted).")
+                        that time (latest when omitted). The timezone is \
+                        optional — server-local when omitted.")
     ),
     responses(
         (status = 200, description = "The relationship (RM canonical JSON/XML); \
@@ -336,7 +337,8 @@ pub(crate) async fn party_relationship_revision_history(
                         `versioned_object_uid`)."),
         ("version_at_time" = Option<String>, Query,
          description = "Extended ISO 8601 instant; selects the VERSION extant \
-                        at that time (latest when omitted).")
+                        at that time (latest when omitted). The timezone is \
+                        optional — server-local when omitted.")
     ),
     responses(
         (status = 200, description = "The VERSION (RM canonical JSON/XML); \

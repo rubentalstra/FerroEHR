@@ -35,7 +35,8 @@ use crate::versioning::read::{read_current, read_version, version_at};
 use crate::versioning::wire::versioned_object;
 
 use super::validation::validate_folder;
-use super::{ensure_if_match, parse_at_time, resolve_envelope};
+use super::{ensure_if_match, resolve_envelope};
+use crate::service::datetime::parse_at_time;
 
 impl EhrbaseService {
     /// Create the EHR's directory (its root FOLDER).

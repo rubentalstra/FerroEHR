@@ -10,6 +10,7 @@
 //! master06, delegated to [`crate::versioning`].
 
 use crate::ids::{EhrId, VoId};
+use crate::service::datetime::parse_at_time;
 use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::UpdateVersion;
@@ -725,7 +726,7 @@ impl EhrbaseService {
         a_versioned_object_uid: VoId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
-        let at = a_time.as_deref().map(super::parse_at_time).transpose()?;
+        let at = a_time.as_deref().map(parse_at_time).transpose()?;
         Ok(self
             .composition_version_at_time_read(an_ehr_id, a_versioned_object_uid, at)
             .await?
@@ -805,11 +806,7 @@ impl EhrbaseService {
                 .read_composition(an_ehr_id, a_versioned_object_uid, None)
                 .await?),
             Some(raw) => Ok(self
-                .composition_at_time(
-                    an_ehr_id,
-                    a_versioned_object_uid,
-                    super::parse_at_time(raw)?,
-                )
+                .composition_at_time(an_ehr_id, a_versioned_object_uid, parse_at_time(raw)?)
                 .await?),
         }
     }

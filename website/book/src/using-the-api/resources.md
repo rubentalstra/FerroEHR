@@ -10,6 +10,16 @@ and `ETag`/`If-Match` versioning are cross-cutting and get their own chapter,
 [Content negotiation & errors](content-negotiation.md); this chapter uses them
 in context.
 
+**Datetime parameters.** Several operations below take a point in time
+(`version_at_time`, the CONTRIBUTION `time_range` bounds). Write it in the
+_extended_ ISO 8601 form — `YYYY-MM-DDThh:mm:ss.sss[Z|±hh:mm]`, e.g.
+`2016-06-23T13:42:16.117+02:00`. The timezone is optional: leave it off
+(`2016-06-23T13:42:16`) and the value is read in the **server's** local
+timezone, so supply `Z` or an explicit offset whenever the client's timezone
+may differ from the server's. The time itself is required — a bare date
+(`2016-06-23`), the compact "basic" ISO form (`20160623T134216Z`), and
+anything unparseable return **400 Bad Request**.
+
 <!-- toc -->
 
 ## EHR
