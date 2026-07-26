@@ -1,11 +1,18 @@
 //! `OPTIONS /` — **System Options and Conformance** (ITS-REST System API, the
 //! single operation `operationId: options`).
 //!
-//! Oracle:
-//! `docs/specs/openehr/ITS-REST/computable/OAS/system-codegen.openapi.yaml`
-//! (`servers` `https://{baseUrl}/v1`, `paths` `/` `options`, `security: []`,
-//! the `Options` schema, the `Allow` header, the `200_options` response) and
-//! `docs/specs/openehr/ITS-REST/specifications/docs/system/Description.md`.
+//! Oracle: the ITS-REST **docs text** —
+//! `docs/specs/openehr/ITS-REST/specifications/docs/system/Description.md`
+//! (the STABLE System API), the operation source
+//! `specifications/operations/options.yaml` ("Services SHOULD respond to
+//! this method with the appropriate HTTP codes, headers and potentially with
+//! a payload revealing more details about themselves … exposing service
+//! capabilities for a conformance manifest"), its `200_options` response
+//! (`Allow` + `Content-Type` headers, the `Options` payload), and the
+//! overview `Requests_and_responses.md` §HTTP Methods (`OPTIONS`: "Describe
+//! the communication options for the target resource"). The vendored OAS
+//! bundle is `emit-rest` codegen-input provenance only, never a behavioural
+//! oracle.
 //!
 //! The System API is **not** part of the generated ITS-REST contract — the
 //! `emit-rest` groups are `ehr`/`query`/`definition`/`admin`/`demographic`
@@ -25,14 +32,15 @@ use serde::Serialize;
 
 use crate::overview::negotiate;
 
-/// The HTTP methods this API surface supports — the `Allow` header the OAS
-/// `200_options` response carries (`system-codegen.openapi.yaml` `headers.Allow`,
-/// example `GET, POST, PUT, DELETE, OPTIONS`).
+/// The HTTP methods this API surface supports — the `Allow` header the
+/// `200_options` response carries (`specifications/responses/200_options.yaml`
+/// via `headers/Allow.yaml`: "The `Allow` header lists the set of methods
+/// supported", example `GET, POST, PUT, DELETE, OPTIONS`).
 const ALLOW_METHODS: &str = "GET, POST, PUT, DELETE, OPTIONS";
 
 /// The API groups the ITS-REST resource specifications define, and that the
-/// OAS `Options.endpoints` `example` enumerates
-/// (`system-codegen.openapi.yaml` lines 116-121).
+/// `Options.endpoints` example enumerates
+/// (`specifications/schemas/others/Options.yaml`).
 ///
 /// This is the spec-defined **default** only. The manifest requires the *live* list —
 /// exactly the groups the router mounts — so [`crate::router::router`] passes its
@@ -56,20 +64,40 @@ pub const SPEC_ENDPOINTS: &[&str] = &["/ehr", "/demographic", "/definition", "/q
 /// field while the defaults stay measured.
 use ehrbase::config::server::SystemOptionsConfig;
 
-/// The wire body of the `OPTIONS /` response — the OAS `Options` schema
-/// (`system-codegen.openapi.yaml` lines 92-121): `solution`,
-/// `solution_version`, `vendor`, `restapi_specs_version`,
-/// `conformance_profile`, `endpoints: [string]`.
+/// The System Options and Conformance manifest — the `OPTIONS /` response
+/// body (ITS-REST System API `Options` schema,
+/// `specifications/schemas/others/Options.yaml`): the service's identity and
+/// the conformance profile it claims, "exposing service capabilities for a
+/// conformance manifest" (`operations/options.yaml`).
 ///
 /// Borrows from the [`SystemManifest`] so the manifest owns the data and this
 /// is a zero-copy view rendered per request.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
+#[schema(
+    title = "Options",
+    example = json!({
+        "solution": "EHRbase-rs",
+        "solution_version": "3.11.0",
+        "vendor": "EHRbase-rs project",
+        "restapi_specs_version": "1.1.0",
+        "conformance_profile": "STANDARD",
+        "endpoints": ["/ehr", "/demographic", "/definition", "/query"]
+    })
+)]
 struct Options<'a> {
+    /// The product implementing the API.
     solution: &'a str,
+    /// The product's own version.
     solution_version: &'a str,
+    /// The organisation shipping the product.
     vendor: &'a str,
+    /// The released ITS-REST contract version this server implements.
     restapi_specs_version: &'a str,
+    /// The claimed CNF conformance profile — never out-claiming the last
+    /// machine-computed verdict.
     conformance_profile: &'a str,
+    /// The API groups this server actually mounts (the live set, not a
+    /// static list).
     endpoints: &'a [String],
 }
 
@@ -165,6 +193,74 @@ where
         let manifest = Arc::clone(&manifest);
         async move { manifest.respond(&headers) }
     })
+}
+
+/// The documented twin of the live closure route (the same pattern as the
+/// SMART discovery document): the closure keeps its special mounting (the
+/// API base-path root, above the CORS layer), and this handler exists so the
+/// operation appears — fully described — in the served `OpenAPI`. The path is
+/// the DEFAULT base path; a redeployed `base_path` moves the live route with
+/// it.
+#[utoipa::path(
+    options,
+    path = "/ehrbase/rest/openehr/v1",
+    tag = "system",
+    operation_id = "options",
+    summary = "Options and Conformance",
+    description = "Describes the communication options and capabilities of \
+                   this openEHR service as a conformance manifest: the \
+                   product identity, the implemented ITS-REST contract \
+                   version, the claimed CNF conformance profile, and the API \
+                   groups this deployment actually mounts. ITS-REST System \
+                   API (STABLE), operation `options`.",
+    params(
+        ("Accept" = Option<String>, Header,
+            description = "The manifest is served as `application/json` \
+                           (`*/*` and an absent header negotiate the same); \
+                           the manifest is not an RM type and has no \
+                           canonical-XML shape, so an exclusively-XML Accept \
+                           is refused.",
+            example = "application/json"),
+    ),
+    responses(
+        (status = 200, description = "The Options and Conformance manifest.",
+            body = Options<'_>, content_type = "application/json",
+            headers(
+                ("Allow" = String,
+                    description = "The set of HTTP methods this API surface \
+                                   supports."),
+                ("Content-Type" = String,
+                    description = "`application/json` — the manifest's only \
+                                   representation."),
+            ),
+            example = json!({
+                "solution": "EHRbase-rs",
+                "solution_version": "3.11.0",
+                "vendor": "EHRbase-rs project",
+                "restapi_specs_version": "1.1.0",
+                "conformance_profile": "STANDARD",
+                "endpoints": ["/ehr", "/demographic", "/definition", "/query"]
+            })),
+        (status = 406, description = "No acceptable representation: the \
+                                      manifest has no canonical-XML shape, \
+                                      so an exclusively-XML `Accept` cannot \
+                                      be satisfied."),
+    ),
+    security(())
+)]
+#[allow(dead_code)] // the documented twin — the live route is the closure above
+fn options_documented() {}
+
+/// The System API's `OpenAPI` fragment, merged into the composed served
+/// document by `crate::extensions::openapi` — the live route is a closure
+/// mounted outside `OpenApiRouter`, so the twin above carries the
+/// documentation.
+pub(crate) fn openapi() -> utoipa::openapi::OpenApi {
+    use utoipa::OpenApi;
+    #[derive(OpenApi)]
+    #[openapi(paths(options_documented), components(schemas(Options<'_>)))]
+    struct SystemApiDoc;
+    SystemApiDoc::openapi()
 }
 
 #[cfg(test)]
