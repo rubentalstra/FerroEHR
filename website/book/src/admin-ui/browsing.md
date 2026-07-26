@@ -48,10 +48,10 @@ any of them.
 ## EHR browser
 
 Find an EHR by id (or browse the most recent), then work through its tabs:
-EHR status, the folder directory, the composition list, and contribution
-lookup. Find-by-id is a plain form: it works in a browser with JavaScript
-disabled, and `/ehrs?find=<ehr_id>` is a shareable shortcut straight to an
-EHR.
+EHR status, the status version history, the folder directory, the composition
+list, and contribution lookup. Find-by-id is a plain form: it works in a
+browser with JavaScript disabled, and `/ehrs?find=<ehr_id>` is a shareable
+shortcut straight to an EHR.
 
 ![EHRs](img/ehrs/ehrs.png)
 
@@ -200,6 +200,41 @@ The commit form accepts canonical JSON, canonical XML, or FLAT:
 
 ![Commit composition](img/ehrs/compositions/commit.png)
 
-The EHR status tab renders the full `EHR_STATUS` document:
+### EHR status
+
+The **Status** tab renders the EHR's current `EHR_STATUS`: the queryable and
+modifiable flags as badges, the subject, the version the document is, and the
+full document itself. A non-queryable EHR is called out — AQL over it returns
+nothing.
 
 ![EHR status](img/ehrs/status/status.png)
+
+Below the document, **Edit status** changes the two flags and `other_details`:
+
+- tick or untick **is_queryable** to include the EHR in population queries
+  (AQL), and **is_modifiable** to allow new content to be committed to it;
+- **other_details** takes a canonical-JSON `ITEM_STRUCTURE` (for example an
+  `ITEM_TREE`); leaving it blank removes the attribute. A value that is not a
+  JSON object is refused before anything is sent.
+
+Saving commits a **new EHR_STATUS version** on top of the one the screen
+loaded, and every other attribute — the subject included — is sent back
+exactly as the CDR served it, so nothing the form does not show can be lost.
+
+> [!NOTE]
+> The save is conditional on the loaded version. If another client committed a
+> new status in the meantime, the CDR refuses the write and the console says
+> so ("EHR status changed on the server") instead of overwriting the change:
+> reload the tab and reapply your edit. A rejected document keeps the CDR's own
+> diagnostic on screen, beside the form.
+
+### EHR status history
+
+The **Status history** tab is the versioned view of the same object: the
+`VERSIONED_EHR_STATUS` container and the selected version's envelope facts
+(lifecycle state, preceding version, contribution, whether it is signed), the
+revision history newest-first, and a date-and-time lookup that resolves the
+version extant at that instant. Opening any row — or a resolved instant —
+shows that version's `EHR_STATUS` document exactly as it stood at that commit.
+
+![EHR status history](img/ehrs/status/history.png)

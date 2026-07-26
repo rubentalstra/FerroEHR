@@ -108,6 +108,13 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   so the ONE viewer lives on `/system` (the API base URL is always configured;
   the management surface may sit on an unreachable internal port) and
   `/operations` links to it. On `/system` the status document is the reader for
+- **EHR_STATUS split**: the Status tab is the ONE reader of the *current*
+  status document (and the edit form's merge base); the Status-history tab
+  reads only the VERSIONED_EHR_STATUS family — content by
+  `ehr_status/{version_uid}`, envelope facts by the VERSION read (the
+  composition-viewer split). The edit form replaces exactly
+  `is_queryable`/`is_modifiable`/`other_details` and re-sends everything else
+  verbatim — never a re-model of the served document.
   the product + openEHR-REST versions, so the conformance-manifest card shows
   only what the System API alone knows (product identity, claimed profile,
   mounted API groups) and says where the versions are. On the composition
