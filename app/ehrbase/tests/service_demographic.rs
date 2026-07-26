@@ -126,12 +126,18 @@ fn role(name: &str) -> Value {
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM party write, built
 /// from the wire shape (`commit_audit`, terminology-coded lifecycle/change).
+/// The `change_type` matches the operation the envelope commits — `249` for a
+/// first version, `251` when a `preceding_version_uid` names an existing one
+/// (RM common master06 §Contributions; a client-supplied contradicting code
+/// is rejected per ITS-REST overview §"openehr-version and
+/// openehr-audit-details" + `AUDIT_DETAILS.Change_type_valid`).
 fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
+    let change = if preceding.is_some() { "251" } else { "249" };
     let mut v = json!({
         "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
         "data": data,
         "commit_audit": {
-            "change_type": { "terminology_id": "openehr", "code_string": "249" },
+            "change_type": { "terminology_id": "openehr", "code_string": change },
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
         }
     });

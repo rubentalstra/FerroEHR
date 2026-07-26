@@ -83,12 +83,17 @@ async fn seed_ehr(pool: &PgPool) -> Uuid {
 }
 
 /// The SM `UPDATE_VERSION` commit envelope for a bare-RM relationship write.
+/// The `change_type` matches the operation — `249` first version, `251` when
+/// a `preceding_version_uid` names an existing one (RM common master06
+/// §Contributions; a contradicting client code is rejected per ITS-REST
+/// overview §"openehr-version and openehr-audit-details").
 fn uv(data: &Value, preceding: Option<&str>) -> UpdateVersion {
+    let change = if preceding.is_some() { "251" } else { "249" };
     let mut v = json!({
         "lifecycle_state": { "terminology_id": "openehr", "code_string": "532" },
         "data": data,
         "commit_audit": {
-            "change_type": { "terminology_id": "openehr", "code_string": "249" },
+            "change_type": { "terminology_id": "openehr", "code_string": change },
             "committer": { "_type": "PARTY_IDENTIFIED", "name": "sm tester" }
         }
     });

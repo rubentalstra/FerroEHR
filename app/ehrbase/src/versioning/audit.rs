@@ -24,23 +24,35 @@ pub(crate) const OPENEHR: &str = "openehr";
 /// The `audit_change_type` openEHR terminology group id.
 const AUDIT_CHANGE_TYPE: &str = "audit_change_type";
 
-/// `audit_change_type` group codes used by the service write paths. The full
-/// group is `249 creation`, `250 amendment`, `251 modification`, `252
-/// synthesis`, `523 deleted`, `666 attestation`, `816 restoration`, `817 format
-/// conversion`, `253 unknown` (RM common master06 §Contributions); membership
-/// checks go through [`change_type_code`], so only the codes handled by name
-/// get a constant here.
+/// The COMPLETE `audit_change_type` group (TERM 3.1.0
+/// `openehr_terminology.xml` group `audit_change_type`; RM common master06
+/// §Contributions), one named constant per member. Membership checks still go
+/// through [`change_type_code`] (the bundle is the authority); the constants
+/// exist so no write path or compatibility rule ever spells a code as a bare
+/// string literal.
 pub(crate) mod change_type {
     /// `249|creation|` — first version of a versioned object.
     pub(crate) const CREATION: &str = "249";
+    /// `250|amendment|` — a correcting content change to an existing object
+    /// (a legal client choice on an update, alongside `251`).
+    pub(crate) const AMENDMENT: &str = "250";
     /// `251|modification|` — a content change to an existing object.
     pub(crate) const MODIFICATION: &str = "251";
+    /// `252|synthesis|` — a version synthesized from other sources.
+    pub(crate) const SYNTHESIS: &str = "252";
+    /// `253|unknown|` — provenance of the change is unknown.
+    pub(crate) const UNKNOWN: &str = "253";
     /// `523|deleted|` — a logical deletion.
     pub(crate) const DELETED: &str = "523";
     /// `666|attestation|` — attaches an `ATTESTATION` to an existing
     /// `ORIGINAL_VERSION` (adds no new version — RM common master06
     /// §Contributions; the contribution path's `Action::Attest`).
     pub(crate) const ATTESTATION: &str = "666";
+    /// `816|restoration|` — restores earlier content as a new version.
+    pub(crate) const RESTORATION: &str = "816";
+    /// `817|format conversion|` — the same content re-encoded in another
+    /// format, committed as a new version.
+    pub(crate) const FORMAT_CONVERSION: &str = "817";
 }
 
 /// Resolve an inbound audit `change_type` token — either a numeric group code
@@ -57,6 +69,67 @@ pub(crate) fn change_type_code(token: &str) -> Option<String> {
         .iter()
         .find(|c| c.rubric.eq_ignore_ascii_case(token))
         .map(|c| c.id.clone())
+}
+
+/// The effective `change_type` of a direct commit: the caller's supplied
+/// token when it names a legal, operation-compatible `audit_change_type`
+/// group member; the operation's default when the caller supplied none
+/// (empty) or restated the default.
+///
+/// ITS-REST overview §"openehr-version and openehr-audit-details" lists
+/// `change_type` among the attributes clients MAY supply and requires that
+/// "whatever is provided it MUST be merged" — so a legal divergent value
+/// (e.g. `250|amendment|` on an update) is honoured, not overwritten.
+/// Operation compatibility mirrors the CONTRIBUTION path
+/// (`versioning/contribution.rs` `classify`, RM common master06
+/// §Contributions): a direct create commits a first version (`249` only), a
+/// direct delete a logical deletion (`523` only), and a direct update a
+/// content-carrying new version of an existing object (any group code except
+/// `249`/`523`/`666`).
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] — the token is not a member of the
+/// `audit_change_type` group (`AUDIT_DETAILS.Change_type_valid`);
+/// [`ServiceError::BadRequest`] — a group code that does not match the
+/// operation (a change-control mismatch, not content validation — the same
+/// split the CONTRIBUTION path draws).
+fn merged_change_type(supplied: &str, operation: &str) -> Result<String, ServiceError> {
+    let token = supplied.trim();
+    if token.is_empty() || token == operation {
+        return Ok(operation.to_owned());
+    }
+    let code = change_type_code(token).ok_or_else(|| {
+        ServiceError::Unprocessable(format!(
+            "change_type {token:?} is not a code in the openEHR audit_change_type group \
+             (AUDIT_DETAILS.Change_type_valid)"
+        ))
+    })?;
+    let compatible = match operation {
+        change_type::CREATION => code == change_type::CREATION,
+        change_type::DELETED => code == change_type::DELETED,
+        // A direct update: a content-carrying new version of an existing
+        // object — the full modification family, never
+        // creation/deleted/attestation.
+        _ => matches!(
+            code.as_str(),
+            change_type::AMENDMENT
+                | change_type::MODIFICATION
+                | change_type::SYNTHESIS
+                | change_type::UNKNOWN
+                | change_type::RESTORATION
+                | change_type::FORMAT_CONVERSION
+        ),
+    };
+    if compatible {
+        Ok(code)
+    } else {
+        Err(ServiceError::BadRequest(format!(
+            "change_type {code} does not match the operation (its change type is \
+             {operation}) — the modification type must match the operation \
+             (RM change_control §Contributions; ITS-REST overview \
+             §\"openehr-version and openehr-audit-details\")"
+        )))
+    }
 }
 
 /// The rubric (English display text) for an `audit_change_type` code; falls
@@ -91,32 +164,45 @@ pub(crate) struct AuditInput {
 impl AuditInput {
     /// Build the commit audit from the caller's `UPDATE_VERSION.audit`
     /// envelope, merged with the server rules (ITS-REST overview
-    /// §"openehr-version and openehr-audit-details": provided attributes
-    /// "MUST be merged"; RM common master06 §Committal m4 defaults):
+    /// §"openehr-version and openehr-audit-details": `change_type` is the
+    /// FIRST attribute the clients "MAY supply values for", and "whatever is
+    /// provided it MUST be merged"; RM common master06 §Committal m4
+    /// defaults):
     ///
-    /// - `change_type` is the OPERATION's — a direct create IS a creation, a
-    ///   PUT a modification, a DELETE a deletion — never client-overridable
-    ///   (the wire has no legal divergent value);
+    /// - `change_type` — the caller's, when supplied: honoured verbatim after
+    ///   [`merged_change_type`] validates it against the `audit_change_type`
+    ///   group and the operation (an update legally carries `250|amendment|`
+    ///   as well as `251|modification|` — the wire HAS legal divergent
+    ///   values). Absent/empty → the operation's default;
     /// - `description` — the caller's when supplied, else the server default;
     /// - `committer` — the caller's `PARTY_PROXY` (the protocol adapter has
     ///   already defaulted an absent committer to the authenticated
     ///   principal / system identity);
     /// - `system_id` — the caller's when supplied, else this server's.
+    ///
+    /// # Errors
+    /// [`ServiceError::Unprocessable`] for a `change_type` outside the
+    /// `audit_change_type` group (`AUDIT_DETAILS.Change_type_valid`);
+    /// [`ServiceError::BadRequest`] for a group code that contradicts the
+    /// operation (mirroring the CONTRIBUTION path's change-control mismatch,
+    /// `versioning/contribution.rs`).
     pub(crate) fn from_update(
         update: &crate::service::version_update::UpdateAudit,
         operation_change_type: &str,
         default_description: &str,
         fallback_system_id: &str,
-    ) -> Self {
+    ) -> Result<Self, ServiceError> {
+        let change_type =
+            merged_change_type(&update.change_type.code_string, operation_change_type)?;
         // The native codec serializes a PARTY_PROXY infallibly.
         let committer = openehr_its::json::to_canonical_value(&update.committer);
-        Self {
+        Ok(Self {
             system_id: update
                 .system_id
                 .clone()
                 .filter(|s| !s.is_empty())
                 .unwrap_or_else(|| fallback_system_id.to_owned()),
-            change_type: operation_change_type.to_owned(),
+            change_type,
             description: Some(
                 update
                     .description
@@ -125,7 +211,7 @@ impl AuditInput {
                     .unwrap_or_else(|| default_description.to_owned()),
             ),
             committer,
-        }
+        })
     }
 
     /// The borrowed storage row shape ([`crate::storage::version_repo::commit::AuditRow`])
@@ -291,18 +377,102 @@ fn validate_party_related_relationship(committer: &Value) -> Result<(), ServiceE
 mod tests {
     use super::*;
 
+    /// ITS-REST overview §"openehr-version and openehr-audit-details": a
+    /// caller-supplied `change_type` "MUST be merged" — legal divergent
+    /// values are honoured; out-of-group tokens are 422; operation
+    /// mismatches are 400 (mirroring the CONTRIBUTION path).
     #[test]
-    fn change_type_codes_are_group_members() {
-        let t = openehr();
-        for code in [
-            change_type::CREATION,
-            change_type::MODIFICATION,
-            change_type::DELETED,
+    fn merged_change_type_honours_legal_client_codes() {
+        // Absent/empty and restated defaults resolve to the operation's code.
+        assert_eq!(
+            merged_change_type("", change_type::MODIFICATION).unwrap(),
+            change_type::MODIFICATION
+        );
+        assert_eq!(
+            merged_change_type(change_type::MODIFICATION, change_type::MODIFICATION).unwrap(),
+            change_type::MODIFICATION
+        );
+        // 250|amendment| is a legal divergent value on an update.
+        assert_eq!(
+            merged_change_type("250", change_type::MODIFICATION).unwrap(),
+            "250"
+        );
+        // Rubric tokens resolve to their numeric group code.
+        assert_eq!(
+            merged_change_type("amendment", change_type::MODIFICATION).unwrap(),
+            "250"
+        );
+        // Creates carry 249 only; deletes carry 523 only.
+        assert_eq!(
+            merged_change_type(change_type::CREATION, change_type::CREATION).unwrap(),
+            change_type::CREATION
+        );
+        assert_eq!(
+            merged_change_type(change_type::DELETED, change_type::DELETED).unwrap(),
+            change_type::DELETED
+        );
+    }
+
+    #[test]
+    fn merged_change_type_rejects_mismatch_as_bad_request() {
+        for (supplied, operation) in [
+            (change_type::CREATION, change_type::MODIFICATION),
+            (change_type::DELETED, change_type::MODIFICATION),
+            (change_type::ATTESTATION, change_type::MODIFICATION),
+            ("250", change_type::CREATION),
+            ("250", change_type::DELETED),
+            (change_type::CREATION, change_type::DELETED),
         ] {
+            let err = merged_change_type(supplied, operation).unwrap_err();
+            assert!(
+                matches!(err, ServiceError::BadRequest(_)),
+                "{supplied} on op {operation}: {err:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn merged_change_type_rejects_out_of_group_as_unprocessable() {
+        for token in ["999", "banana", "creation-x"] {
+            let err = merged_change_type(token, change_type::MODIFICATION).unwrap_err();
+            assert!(
+                matches!(err, ServiceError::Unprocessable(_)),
+                "{token}: {err:?}"
+            );
+        }
+    }
+
+    /// Every named constant is a real group member, and the constants cover
+    /// the COMPLETE `audit_change_type` group — a code added to the TERM
+    /// bundle without a constant here fails this test.
+    #[test]
+    fn change_type_constants_are_the_complete_group() {
+        let all = [
+            change_type::CREATION,
+            change_type::AMENDMENT,
+            change_type::MODIFICATION,
+            change_type::SYNTHESIS,
+            change_type::UNKNOWN,
+            change_type::DELETED,
+            change_type::ATTESTATION,
+            change_type::RESTORATION,
+            change_type::FORMAT_CONVERSION,
+        ];
+        let t = openehr();
+        for code in all {
             assert!(t.is_valid_audit_change_type(code), "code {code}");
             // code_string must be numeric (AUDIT_DETAILS.Change_type_valid).
             assert!(code.chars().all(|c| c.is_ascii_digit()));
         }
+        let mut group: Vec<String> = t
+            .concepts_in_group(AUDIT_CHANGE_TYPE)
+            .iter()
+            .map(|c| c.id.clone())
+            .collect();
+        group.sort();
+        let mut named: Vec<String> = all.iter().map(|c| (*c).to_owned()).collect();
+        named.sort();
+        assert_eq!(group, named, "constants must mirror the full TERM group");
     }
 
     #[test]

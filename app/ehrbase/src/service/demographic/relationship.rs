@@ -168,7 +168,7 @@ impl EhrbaseService {
             update_audit,
             change_type::CREATION,
             "PARTY_RELATIONSHIP creation",
-        );
+        )?;
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
@@ -252,7 +252,7 @@ impl EhrbaseService {
             update_audit,
             change_type::MODIFICATION,
             "PARTY_RELATIONSHIP update",
-        );
+        )?;
         let ctx = CommitEnv::signing_ctx(self);
         let canonical = body.clone();
         let mut tx = self.pool.begin().await?;
@@ -309,7 +309,7 @@ impl EhrbaseService {
             update_audit,
             change_type::DELETED,
             "PARTY_RELATIONSHIP delete",
-        );
+        )?;
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
         let committed = delete(
