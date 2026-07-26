@@ -23,4 +23,5 @@
 
 pub mod discovery;
 pub mod enforce;
-pub mod scope;
+// The scope grammar itself lives in `openehr_its::rest::smart_scopes` (one
+// grammar for the gate here and for REST clients previewing grants).

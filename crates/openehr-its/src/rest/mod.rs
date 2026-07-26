@@ -12,5 +12,6 @@
 
 pub mod generated;
 pub mod runtime;
+pub mod smart_scopes;
 
 pub use runtime::ApiError;
