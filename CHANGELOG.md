@@ -207,6 +207,13 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Unqualified stored-query names are one identity everywhere** (#366). A
+  query stored without a namespace (`PUT /definition/query/my_bp/1.0.0`) now
+  lands under the openEHR-assumed `misc` namespace — the same identity the
+  by-name GET, the listing, the SM calls, and the admin delete address — so a
+  bare-named query is no longer invisible to the admin delete (and vice
+  versa). Descriptors return the canonical `misc::`-qualified name; a
+  bare-name listing pattern also matches its `misc::` composition.
 - **Query GETs bind the spec's named parameters** (#364). AQL `$parameter`
   binds on `GET /query/aql` and `GET /query/{name}[/{version}]` now arrive as
   ordinary named query-string parameters (`?temperature_from=36&…`), exactly
