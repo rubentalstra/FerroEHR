@@ -27,6 +27,7 @@ use leptos_meta::Title;
 use leptos_router::components::A;
 
 use crate::builder::catalog::CatalogNode;
+use crate::builder::lift::LiftError;
 use crate::builder::lower::{BuilderError, to_aql};
 use crate::builder::model::{
     BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, OrderRule, QueryShape,
@@ -40,10 +41,11 @@ use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
 use crate::components::toast::toast_success;
 use crate::error::AdminUiError;
 use crate::pages::ehrs::{ResultPage, cell_text};
+use crate::pages::query_aql::LoadedQuery;
 use crate::pages::template_detail::fetch_template_catalog;
 use crate::pages::templates::list_templates;
 use crate::queries_api::{run_aql, store_query};
-use crate::query_namespace::{is_full_semver, qualify};
+use crate::query_namespace::{is_full_semver, next_minor, qualify, split_qualified};
 
 /// The shared, all-`Copy` signal bundle the builder's recursive views thread
 /// through instead of a long argument list. `struct_ver` is bumped only on
@@ -74,6 +76,7 @@ impl BuilderCtx {
 /// output shape, a live AQL preview, and the run/save surface.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
+#[allow(clippy::too_many_lines)] // one setup pass: signals, resources, the ?load lift wiring
 pub fn QueryBuilderPage() -> impl IntoView {
     let ctx = BuilderCtx {
         query: RwSignal::new(BuilderQuery::new(String::new())),
@@ -91,6 +94,24 @@ pub fn QueryBuilderPage() -> impl IntoView {
     // (the unversioned store), a `major.minor.patch` triple means "store this
     // immutable version" — see `store_query`.
     let save_version = RwSignal::new(String::new());
+    let save_fields = SaveFields {
+        namespace: save_namespace,
+        name: save_name,
+        version: save_version,
+    };
+
+    // The "open in builder" hand-off from the stored-query list / raw editor:
+    // `?load=name@version` fetches the stored query and LIFTS it back into the
+    // builder state. `load` is URL-derived, identical on the server pass and the
+    // client hydration (hydration-safe), so the notice only renders when the
+    // parameter is actually present.
+    let query_map = leptos_router::hooks::use_query_map();
+    let has_load = query_map.with_untracked(|m| m.get("load").is_some_and(|s| !s.is_empty()));
+    let load_resource = crate::pages::query_aql::loaded_query_resource(query_map);
+    // Why a lift was refused, when it was — the notice then offers the raw
+    // editor, which can hold any query (rules: never a lossy lift).
+    let lift_refusal = RwSignal::new(Option::<LiftError>::None);
+    seed_builder_from_stored_query(load_resource, ctx, save_fields, lift_refusal);
 
     let templates: Resource<Result<Vec<crate::pages::templates::TemplateRow>, AdminUiError>> =
         Resource::new(|| (), |()| async move { list_templates().await });
@@ -136,24 +157,28 @@ pub fn QueryBuilderPage() -> impl IntoView {
         None => {}
     });
 
+    // A lifted query arrives with its criteria already built, so their catalog
+    // metadata (labels, coded/ordinal option lists, unit lists) has to come from
+    // the template's catalog rather than from the click that would normally have
+    // added them. Only for the hand-off — the normal flow records each node as it
+    // is added.
+    if has_load {
+        seed_leaf_meta_from_catalog(catalog, ctx);
+    }
+
     // The live AQL / validation, recomputed from the whole state on any change.
     let preview = Memo::new(move |_| ctx.query.with(to_aql));
 
+    let load_notice = if has_load {
+        load_notice_section(load_resource, lift_refusal)
+    } else {
+        ().into_any()
+    };
     let template_step = template_step_section(ctx, ran, templates);
     let picker = picker_section(ctx, catalog);
     let criteria = criteria_section(ctx);
     let output = output_section(ctx);
-    let preview_run = preview_run_section(
-        preview,
-        ran,
-        offset,
-        SaveFields {
-            namespace: save_namespace,
-            name: save_name,
-            version: save_version,
-        },
-        save_action,
-    );
+    let preview_run = preview_run_section(preview, ran, offset, save_fields, save_action);
     // Export tracks the live AQL preview (empty while it is a `BuilderError`);
     // the builder binds no parameters, so its parameter payload is `{}`.
     let export_aql = Signal::derive(move || preview.with(|r| r.clone().unwrap_or_default()));
@@ -167,6 +192,7 @@ pub fn QueryBuilderPage() -> impl IntoView {
                 title="Query builder"
                 subtitle="Pick a template, walk its paths, and turn data-value leaves into criteria and columns."
             />
+            {load_notice}
             {template_step}
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
                 <section class="rounded-card border border-edge bg-raised shadow-card p-4 overflow-auto max-h-[70vh]">
@@ -185,6 +211,180 @@ pub fn QueryBuilderPage() -> impl IntoView {
             {results_pane}
         </div>
     }
+}
+
+// ---------------------------------------------------------------------------
+// Stored-query hand-off (?load= → reverse lift)
+// ---------------------------------------------------------------------------
+
+/// Build the link INTO this screen that lifts the stored query `name@version`
+/// back into the builder ([`crate::builder::lift::from_aql`]) — the counterpart
+/// of the raw editor's "open in editor" hand-off, sharing the same
+/// `?load=name@version` encoding
+/// ([`crate::query_namespace::load_href`]).
+#[must_use]
+pub(crate) fn load_href(name: &str, version: &str) -> String {
+    crate::query_namespace::load_href("/queries/builder", name, version)
+}
+
+/// Lift a loaded stored query into the builder state, exactly once and
+/// client-side.
+///
+/// Effects never run on the server, so this cannot diverge at hydration; the
+/// one-shot `StoredValue` guard keeps it from re-firing. The save fields are
+/// seeded the way the raw editor seeds them — the qualified name split back into
+/// namespace + bare name, and the NEXT version proposed, because the loaded
+/// `(name, version)` pair is immutable.
+///
+/// A query the builder cannot represent is NOT partially loaded: the refusal is
+/// recorded for the notice and the builder stays empty, so nothing on screen
+/// ever claims to be the stored definition when it is not.
+fn seed_builder_from_stored_query(
+    load_resource: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
+    ctx: BuilderCtx,
+    fields: SaveFields,
+    refusal: RwSignal<Option<LiftError>>,
+) {
+    let seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if seeded.get_value() {
+            return;
+        }
+        let Some(Ok(Some((qualified, version, aql)))) = load_resource.get() else {
+            return;
+        };
+        seeded.set_value(true);
+        let (namespace, name) = split_qualified(&qualified);
+        fields.namespace.set(namespace);
+        fields.name.set(name);
+        fields.version.set(next_minor(&version).unwrap_or_default());
+        match crate::builder::lift::from_aql(&aql) {
+            Ok(lifted) => {
+                ctx.query.set(lifted);
+                ctx.leaf_meta.set(HashMap::new());
+                ctx.active_path.set(Vec::new());
+                ctx.bump();
+            }
+            Err(error) => refusal.set(Some(error)),
+        }
+    });
+}
+
+/// Record every selectable node of the loaded template's catalog as leaf
+/// metadata, once, so a LIFTED criterion shows its real label and its
+/// constrained code/ordinal/unit options instead of a bare path segment.
+///
+/// One-shot and client-side for the same reasons as
+/// [`seed_builder_from_stored_query`]; existing entries win, so a node the user
+/// added by hand is never overwritten.
+fn seed_leaf_meta_from_catalog(
+    catalog: Resource<Result<Option<CatalogNode>, AdminUiError>>,
+    ctx: BuilderCtx,
+) {
+    let seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if seeded.get_value() {
+            return;
+        }
+        let Some(Ok(Some(root))) = catalog.get() else {
+            return;
+        };
+        seeded.set_value(true);
+        let mut found = HashMap::new();
+        collect_selectable(&root, &mut found);
+        if found.is_empty() {
+            return;
+        }
+        ctx.leaf_meta.update(|known| {
+            for (path, node) in found {
+                known.entry(path).or_insert(node);
+            }
+        });
+        ctx.bump();
+    });
+}
+
+/// Every selectable node of a catalog subtree, keyed by its `aql_path`.
+fn collect_selectable(node: &CatalogNode, out: &mut HashMap<String, CatalogNode>) {
+    if node.selectable && !node.aql_path.is_empty() {
+        out.insert(node.aql_path.clone(), node.clone());
+    }
+    for child in &node.children {
+        collect_selectable(child, out);
+    }
+}
+
+/// The `?load=` hand-off status: which stored query was loaded, or — when the
+/// builder could not represent it — why, plus the raw editor as the way to work
+/// on it anyway.
+fn load_notice_section(
+    load_resource: Resource<Result<Option<LoadedQuery>, AdminUiError>>,
+    refusal: RwSignal<Option<LiftError>>,
+) -> AnyView {
+    view! {
+        <Transition fallback=move || {
+            view! { <p class="text-sm text-ink-muted">"Loading stored query…"</p> }
+        }>
+            {move || Suspend::new(async move {
+                match load_resource.await {
+                    Ok(Some((qualified, version, _))) => {
+                        loaded_notice(&qualified, &version, refusal)
+                    }
+                    Ok(None) => {
+                        view! {
+                            <p class="text-sm text-ink-muted">
+                                "That link does not name a stored-query version, so the builder started empty."
+                            </p>
+                        }
+                            .into_any()
+                    }
+                    Err(e) => crate::components::format_view::inline_error(&e),
+                }
+            })}
+        </Transition>
+    }
+    .into_any()
+}
+
+/// The notice for one loaded stored query: the confirmation line, and — while a
+/// refusal is recorded — the reason beside a link into the raw editor.
+/// `data-lift-refused` is the stable E2E hook for the refusal path.
+fn loaded_notice(qualified: &str, version: &str, refusal: RwSignal<Option<LiftError>>) -> AnyView {
+    let editor_href = crate::pages::query_aql::load_href(qualified, version);
+    let name = qualified.to_owned();
+    let version = version.to_owned();
+    view! {
+        <section class=CARD_PAD>
+            <p class="text-sm text-ink-muted">
+                "Loaded stored query " <span class="font-mono text-ink">{name}</span> " at version "
+                <span class="font-mono text-ink">{version}</span>
+                ". Saving stores the version in the field below — that version is immutable, so the next one is proposed."
+            </p>
+            {move || {
+                refusal
+                    .get()
+                    .map(|error| {
+                        let href = editor_href.clone();
+                        view! {
+                            <div
+                                role="status"
+                                data-lift-refused=""
+                                class="mt-2 rounded-control border border-warn/40 bg-warn-subtle px-3 py-2 text-sm text-warn"
+                            >
+                                <p>{error.to_string()}</p>
+                                <p class="mt-1">
+                                    <a href=href class="underline">
+                                        "Open it in the raw AQL editor instead"
+                                    </a>
+                                    " — the builder was left empty rather than loading a query it would change."
+                                </p>
+                            </div>
+                        }
+                    })
+            }}
+        </section>
+    }
+    .into_any()
 }
 
 // ---------------------------------------------------------------------------
@@ -2540,5 +2740,64 @@ mod tests {
             CriterionNode::Leaf(c) => assert!(matches!(c.kind, CriterionKind::Exists)),
             CriterionNode::Group { .. } => panic!("expected leaf"),
         }
+    }
+
+    /// A catalog node for the metadata-collection test.
+    fn catalog_node(
+        aql_path: &str,
+        rm_type: &str,
+        selectable: bool,
+        children: Vec<crate::builder::catalog::CatalogNode>,
+    ) -> crate::builder::catalog::CatalogNode {
+        crate::builder::catalog::CatalogNode {
+            label: format!("label for {aql_path}"),
+            rm_type: rm_type.to_owned(),
+            aql_path: aql_path.to_owned(),
+            node_id: String::new(),
+            selectable,
+            code_options: Vec::new(),
+            unit_options: Vec::new(),
+            children,
+        }
+    }
+
+    #[test]
+    fn collect_selectable_keys_every_data_value_leaf_by_its_path() {
+        // The root COMPOSITION carries an empty `aqlPath` and is not selectable;
+        // only the DV leaves become criterion metadata.
+        let tree = catalog_node(
+            "",
+            "COMPOSITION",
+            false,
+            vec![catalog_node(
+                "/content[openEHR-EHR-OBSERVATION.body_temperature.v2]",
+                "OBSERVATION",
+                false,
+                vec![
+                    catalog_node(
+                        "/content[obs]/items[at0004]/value",
+                        "DV_QUANTITY",
+                        true,
+                        vec![],
+                    ),
+                    catalog_node(
+                        "/content[obs]/items[at0005]/value",
+                        "DV_CODED_TEXT",
+                        true,
+                        vec![],
+                    ),
+                ],
+            )],
+        );
+        let mut found = std::collections::HashMap::new();
+        super::collect_selectable(&tree, &mut found);
+        assert_eq!(found.len(), 2);
+        assert_eq!(
+            found
+                .get("/content[obs]/items[at0004]/value")
+                .map(|n| n.rm_type.as_str()),
+            Some("DV_QUANTITY")
+        );
+        assert!(!found.contains_key(""));
     }
 }

@@ -12,6 +12,7 @@ pub mod operations;
 pub mod queries;
 pub mod query_aql;
 pub mod query_builder;
+pub mod query_stored;
 pub mod shell;
 pub mod system;
 pub mod template_detail;
