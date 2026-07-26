@@ -15,6 +15,15 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Removed
+
+- **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
+  System API defines exactly one location for the Options-and-Conformance
+  operation — the API base-path root (`OPTIONS {base_path}`, e.g.
+  `/ehrbase/rest/openehr/v1`); the extra bare-root mount was our own
+  duplication and answered identically. Clients probing `OPTIONS /` must use
+  the base path.
+
 ### Fixed
 
 - **Served OpenAPI: the System API's `OPTIONS` operation is now documented**
