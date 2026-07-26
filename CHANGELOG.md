@@ -15,6 +15,32 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Demographic API: response-header discipline and `If-Match` handling** (#394).
+  Three MUST/SHOULD-level divergences from the ITS-REST overview
+  (`Requests_and_responses.md`) are corrected on the `/demographic` surface:
+  - `Location` is no longer emitted on reads, deletes, or `409`/`412` error
+    responses. The header now rides create/update writes only, per §Location
+    ("MUST NOT be used to indicate an alternate representation of an existing
+    resource"; "MUST ONLY be used for resource creation … or redirect
+    responses") and §"Deprecated headers", which deprecates it on `GET` and
+    `DELETE`. Those responses keep the weak `ETag` (and `Last-Modified` where
+    known), so a client reading the version identity is unaffected; a client
+    that was following the `Location` of a `GET`/`DELETE` must use the request
+    URL it already has.
+  - `If-Match` now accepts the **weak** `W/"…"` form the server itself emits as
+    the `ETag`, alongside the bare-quoted and unquoted forms — previously
+    echoing the server's own `ETag` back was rejected as a malformed
+    precondition (`400`). The full `OBJECT_VERSION_ID` is compared
+    case-insensitively (BASE composite-identifier semantics), so a case-variant
+    `creating_system_id` no longer raises a spurious `412`. A syntactically
+    invalid `If-Match` remains a `400` and is never silently ignored.
+  - The `versioned_party` / `versioned_party_relationship` reads (the container,
+    its revision history, and the version reads) now carry the weak `ETag` and,
+    where the served body exposes the commit instant, `Last-Modified` — both
+    SHOULD-present on `VERSION`/`VERSIONED_OBJECT` responses.
+
 ## [3.11.0] - 2026-07-26
 
 ### Added

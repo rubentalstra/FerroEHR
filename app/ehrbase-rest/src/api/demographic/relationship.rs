@@ -406,7 +406,6 @@ pub(super) async fn run(
     parts: RequestParts,
 ) -> Result<Response, RestError> {
     const SEG: &str = "party_relationship";
-    const VSEG: &str = "versioned_party_relationship";
     let h = &parts.headers;
     let q = parts.query.as_deref();
     let base = state.config().server.base_path.clone();
@@ -441,7 +440,7 @@ pub(super) async fn run(
             if resp.is_empty() {
                 return Ok(negotiate::empty(StatusCode::NO_CONTENT));
             }
-            Ok(read_relationship(h, &base, SEG, &resp))
+            Ok(read_relationship(h, &resp))
         }
         "party_relationship_update" => {
             let p = params::build::<AgentUpdateParams>(&parts.path, q, h)?;
@@ -451,7 +450,9 @@ pub(super) async fn run(
                 .backend()
                 .party_relationship_update(
                     p.uid_based_id,
-                    p.if_match,
+                    // Decode the `W/"…"`/quoted ETag syntax at the adapter seam
+                    // so the service compares a bare OBJECT_VERSION_ID.
+                    super::if_match_token(&p.if_match),
                     body,
                     crate::overview::committal::committal_audit(h),
                 )
@@ -472,12 +473,7 @@ pub(super) async fn run(
                         .await
                         .ok()
                         .flatten();
-                    Ok(super::error_with_headers(
-                        sm_api_error(e),
-                        &base,
-                        SEG,
-                        meta.as_ref(),
-                    ))
+                    Ok(super::error_with_meta(sm_api_error(e), meta.as_ref()))
                 }
                 Err(e) => Err(RestError::from(e)),
             }
@@ -493,43 +489,49 @@ pub(super) async fn run(
                 )
                 .await?;
             let mut out = negotiate::empty(StatusCode::NO_CONTENT);
-            super::set_headers(&mut out, &base, SEG, resp.meta.as_ref());
+            super::set_versioning_headers(&mut out, resp.meta.as_ref());
             Ok(out)
         }
+        // The versioned reads carry the weak `ETag` (+ `Last-Modified` where the
+        // served body exposes a commit audit) the overview §"`ETag` and
+        // Last-Modified" asks of VERSION / VERSIONED_OBJECT responses, and no
+        // `Location` (§Location — creation/redirect only).
         "versioned_party_relationship_get" => {
             let p = params::build::<VersionedPartyGetParams>(&parts.path, q, h)?;
+            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .versioned_party_relationship_get(p.versioned_object_uid)
                 .await?;
-            Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
+            Ok(super::read_versioned(h, &vo, &resp.body))
         }
         "party_relationship_revision_history" => {
             let p = params::build::<VersionedPartyGetParams>(&parts.path, q, h)?;
+            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .party_relationship_revision_history(p.versioned_object_uid)
                 .await?;
-            Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
+            Ok(super::read_versioned(h, &vo, &resp.body))
         }
         "party_relationship_version_get_at_time" => {
             let p = params::build::<VersionedPartyVersionGetAtTimeParams>(&parts.path, q, h)?;
-            let segment = format!("{VSEG}/{}/version", p.versioned_object_uid);
             let resp = state
                 .backend()
                 .party_relationship_version_get_at_time(p.versioned_object_uid, p.version_at_time)
                 .await?;
             let mut out = negotiate::respond(h, StatusCode::OK, &resp.body);
-            super::set_headers(&mut out, &base, &segment, resp.meta.as_ref());
+            super::set_versioning_headers(&mut out, resp.meta.as_ref());
             Ok(out)
         }
         "party_relationship_version_get_by_id" => {
             let p = params::build::<VersionedPartyVersionGetByIdParams>(&parts.path, q, h)?;
+            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .party_relationship_version_get_by_id(p.versioned_object_uid, p.version_uid)
                 .await?;
-            Ok(negotiate::respond(h, StatusCode::OK, &resp.body))
+            Ok(super::read_versioned(h, &vo, &resp.body))
         }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted demographic relationship operation: {other}"
@@ -558,23 +560,21 @@ fn write_relationship(
     } else {
         negotiate::empty(minimal_status)
     };
-    super::set_headers(&mut out, base, segment, resp.meta.as_ref());
+    super::set_write_headers(&mut out, base, segment, resp.meta.as_ref());
     out
 }
 
-/// A `200 OK` read of a relationship, setting the demographic `ETag`/`Location`.
-fn read_relationship(
-    h: &http::HeaderMap,
-    base: &str,
-    segment: &str,
-    resp: &ServiceResponse,
-) -> Response {
+/// A `200 OK` read of a relationship, setting the demographic
+/// `ETag`/`Last-Modified`. No `Location` — overview §Location: the header "MUST
+/// NOT be used to indicate an alternate representation of an existing resource
+/// (e.g. via `GET` method)".
+fn read_relationship(h: &http::HeaderMap, resp: &ServiceResponse) -> Response {
     let mut out = negotiate::respond_rm::<PartyRelationship>(
         h,
         StatusCode::OK,
         &resp.body,
         "party_relationship",
     );
-    super::set_headers(&mut out, base, segment, resp.meta.as_ref());
+    super::set_versioning_headers(&mut out, resp.meta.as_ref());
     out
 }

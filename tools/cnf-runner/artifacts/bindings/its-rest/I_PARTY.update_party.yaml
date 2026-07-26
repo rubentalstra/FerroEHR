@@ -28,7 +28,12 @@ outcomes:
     body: prefer_conditional
   precondition_failed:
     status: 412                           # 412_PERSON.yaml — If-Match does not match latest
-    headers: { ETag: latest-version-uid }
+    # overview §"If-Match and accidental overwrites": on a false condition the
+    # service "SHOULD return also latest version_uid in the ETag response
+    # headers"; §Location keeps Location off a non-creation response.
+    headers:
+      ETag: latest-version-uid
+      Location: absent
   precondition_missing: { status: 400 }   # If-Match absent -> SHOULD 400 (Requests_and_responses)
   not_found: { status: 404 }              # unknown party (versioned_object_does_not_exist)
   version_not_found: { status: 404 }      # unknown preceding version — same 404 family
