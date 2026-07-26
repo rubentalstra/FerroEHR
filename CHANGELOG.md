@@ -207,6 +207,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Query GETs bind the spec's named parameters** (#364). AQL `$parameter`
+  binds on `GET /query/aql` and `GET /query/{name}[/{version}]` now arrive as
+  ordinary named query-string parameters (`?temperature_from=36&…`), exactly
+  as the REST API documents them — values are typed JSON-first with string
+  fallback, a `$` prefix is tolerated, and the previous JSON-object
+  `query_parameters=` form remains accepted (a named parameter wins a
+  collision).
+
 - **Item tags follow the spec's identity and target model** (#365). Two tags
   sharing a key on different `target_path`s now coexist (the ITEM_TAG identity
   is the key + target_path pair, per the ITS-REST item-tag prose) instead of
