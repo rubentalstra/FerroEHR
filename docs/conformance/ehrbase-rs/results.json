@@ -1,11 +1,11 @@
 {
   "sut": {
     "name": "ehrbase-rs",
-    "version": "3.9.0"
+    "version": "3.11.0"
   },
   "runner": {
     "name": "cnf-runner",
-    "version": "3.9.0",
+    "version": "3.11.0",
     "verification_pack_status": "passed"
   },
   "schedule_release": "cnf-2.0-w2",
@@ -166,6 +166,18 @@
       "citation": "I_ADMIN_SERVICE.versioned_composition_count: AMB-33"
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-datetime_lexical",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-deprecated_template_id",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-event",
       "status": "passed",
       "rows_driven": 1,
@@ -196,13 +208,37 @@
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-null_empty_absent",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-persistent",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
     },
     {
+      "case": "I_EHR_COMPOSITION.create_composition-return_identifier",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_EHR_COMPOSITION.create_composition-same_opt_twice",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.create_composition-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.delete_composition-audit_headers",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -329,6 +365,30 @@
     },
     {
       "case": "I_EHR_COMPOSITION.has_composition",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-audit_amendment",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-audit_bare_deprecated",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-audit_change_type_invalid",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_EHR_COMPOSITION.update_composition-audit_change_type_mismatch",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -1439,6 +1499,12 @@
       "citation": "option adl14-duplicate-versioned: the ICS does not declare this register branch (statement.options) — ISO/IEC 9646 test selection"
     },
     {
+      "case": "I_DEFINITION_ADL14.upload_opt-wrong_media",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEFINITION_ADL14.validate_opt-invalid_opt",
       "status": "passed",
       "rows_driven": 4,
@@ -1788,6 +1854,24 @@
       "rows_total": 1
     },
     {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-case_variant_if_match",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_accepted",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_stale",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_DEMOGRAPHIC_SERVICE.update_party_relationship-aaaa",
       "status": "not_applicable",
       "rows_driven": 0,
@@ -1800,6 +1884,12 @@
       "rows_driven": 0,
       "rows_total": 1,
       "citation": "I_PARTY_RELATIONSHIP.update_party_relationship: AMB-32"
+    },
+    {
+      "case": "I_DEMOGRAPHIC_SERVICE.versioned_party_version_read",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
     },
     {
       "case": "I_EHR_DIRECTORY.create_directory-bad_ehr",
@@ -2269,6 +2359,18 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_get",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "I_QUERY_SERVICE.execute_ad_hoc_query-ehr_id_header_post",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_ad_hoc_query-empty_db",
       "status": "passed",
       "rows_driven": 1,
@@ -2335,6 +2437,12 @@
       "rows_total": 1
     },
     {
+      "case": "I_QUERY_SERVICE.execute_stored_query-ehr_id_header",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "I_QUERY_SERVICE.execute_stored_query-empty_db",
       "status": "passed",
       "rows_driven": 1,
@@ -2360,6 +2468,12 @@
     },
     {
       "case": "SEC-AUTHENTICATED_ACCESS-unauthenticated_sweep",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SEC-AUTHENTICATED_ACCESS-www_authenticate_challenge",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1
@@ -2572,6 +2686,18 @@
       "rows_total": 1
     },
     {
+      "case": "SF-LEGACY-nc_flat_media_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-LEGACY-tds2_accept_unsupported",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
       "case": "SF-LEVELS-collapsed_wrappers",
       "status": "passed",
       "rows_driven": 1,
@@ -2753,6 +2879,12 @@
     },
     {
       "case": "SF-WT-web_template_get",
+      "status": "passed",
+      "rows_driven": 1,
+      "rows_total": 1
+    },
+    {
+      "case": "SF-WT-web_template_json_accept",
       "status": "passed",
       "rows_driven": 1,
       "rows_total": 1

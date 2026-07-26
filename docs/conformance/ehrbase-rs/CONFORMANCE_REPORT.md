@@ -1,18 +1,18 @@
 # Conformance Report
 
-SUT: ehrbase-rs 3.9.0 · schedule cnf-2.0-w2 · ITS its-rest
-Runner: cnf-runner 3.9.0 · verification pack: passed
+SUT: ehrbase-rs 3.11.0 · schedule cnf-2.0-w2 · ITS its-rest
+Runner: cnf-runner 3.11.0 · verification pack: passed
 
 ## Summary
 
 | Status | Count |
 | --- | --- |
-| passed | 376 |
+| passed | 398 |
 | failed | 0 |
 | errored | 0 |
 | skipped | 0 |
 | not_applicable | 69 |
-| total | 445 |
+| total | 467 |
 
 ## By chapter
 
@@ -22,20 +22,20 @@ Runner: cnf-runner 3.9.0 · verification pack: passed
 | I_ADMIN_ARCHIVE | 0 | 0 | 0 | 0 | 4 |
 | I_ADMIN_DUMP_LOAD | 0 | 0 | 0 | 0 | 2 |
 | I_ADMIN_SERVICE | 2 | 0 | 0 | 0 | 10 |
-| I_DEFINITION_ADL14 | 9 | 0 | 0 | 0 | 8 |
+| I_DEFINITION_ADL14 | 10 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_ADL2 | 16 | 0 | 0 | 0 | 8 |
 | I_DEFINITION_QUERY | 10 | 0 | 0 | 0 | 0 |
-| I_DEMOGRAPHIC_SERVICE | 12 | 0 | 0 | 0 | 12 |
-| I_EHR_COMPOSITION | 32 | 0 | 0 | 0 | 0 |
+| I_DEMOGRAPHIC_SERVICE | 16 | 0 | 0 | 0 | 12 |
+| I_EHR_COMPOSITION | 42 | 0 | 0 | 0 | 0 |
 | I_EHR_CONTRIBUTION | 36 | 0 | 0 | 0 | 5 |
 | I_EHR_DIRECTORY | 34 | 0 | 0 | 0 | 3 |
 | I_EHR_EXTRACT_SERVICE | 0 | 0 | 0 | 0 | 10 |
 | I_EHR_SERVICE | 12 | 0 | 0 | 0 | 0 |
 | I_EHR_STATUS | 10 | 0 | 0 | 0 | 0 |
-| I_QUERY_SERVICE | 15 | 0 | 0 | 0 | 0 |
+| I_QUERY_SERVICE | 18 | 0 | 0 | 0 | 0 |
 | I_TDD_SERVICE | 0 | 0 | 0 | 0 | 4 |
-| SEC | 5 | 0 | 0 | 0 | 0 |
-| SF | 54 | 0 | 0 | 0 | 1 |
+| SEC | 6 | 0 | 0 | 0 | 0 |
+| SF | 57 | 0 | 0 | 0 | 1 |
 | SIG | 6 | 0 | 0 | 0 | 2 |
 
 ## Performance measurements
@@ -73,7 +73,7 @@ Percentiles re-derive from the embedded HDR V2 histograms; the class verdict is 
 
 ## Honesty
 
-Coverage: 376 of 445 selected cases driven.
+Coverage: 398 of 467 selected cases driven.
 
 Not-executed verdicts (each cited):
 
