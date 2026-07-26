@@ -422,7 +422,8 @@ async fn capture_documentation_screenshots() {
     chart.scroll_into_view().await.expect("scroll to the chart");
     shot_to(&h, &dir, "queries/query-results-chart").await;
 
-    // The user menu + scopes drawer.
+    // The user menu + the access drawer (identity, policy source, session
+    // grants, scope previewer).
     h.goto("/").await;
     h.wait_css("#user-menu-trigger button")
         .await
@@ -436,7 +437,16 @@ async fn capture_documentation_screenshots() {
         .click()
         .await
         .expect("open the scopes drawer");
-    h.wait_xpath("//*[contains(., 'Access scopes')]").await;
+    h.wait_css("#access-drawer").await;
+    // Fill the previewer so the published capture shows what it is FOR: two
+    // parsed master08 grants, not an empty field.
+    h.wait_css("#scope-previewer-input")
+        .await
+        .send_keys("patient/composition-*.rs user/template-MyHospital::Template.v0.crud")
+        .await
+        .expect("preview two scopes");
+    h.wait_css("#scope-preview-results [data-scope-grant='resource']")
+        .await;
     shot_to(&h, &dir, "dashboard/scopes-drawer").await;
 
     // Dark mode (one representative capture; the toggle persists, so flip

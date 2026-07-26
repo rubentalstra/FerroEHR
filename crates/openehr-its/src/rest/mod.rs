@@ -10,8 +10,14 @@
 //! the openEHR specs are the authority, EHRbase is prior art).
 //! Regenerate with `cargo run -p openehr-codegen -- emit-rest`.
 
+// The generated contract and its runtime need the crate's dependency set (axum,
+// serde, the spec crates), so they ride the default `full` feature; the
+// std-only `smart_scopes` grammar is always compiled — see the crate docs.
+#[cfg(feature = "full")]
 pub mod generated;
+#[cfg(feature = "full")]
 pub mod runtime;
 pub mod smart_scopes;
 
+#[cfg(feature = "full")]
 pub use runtime::ApiError;

@@ -12,6 +12,15 @@ Know which half you are touching before editing anything:
 | `src/flat/` — Simplified Formats (FLAT / STRUCTURED / Web Template / TDD) | hand-written (BMM has no simplified-format model) | edit normally, with spec citations |
 | `src/rest/smart_scopes.rs` — the SMART on openEHR scope grammar (master08 resource scopes + master07/09 launch contexts) | hand-written (an ITS-REST sub-spec with no machine-readable model) | edit normally, with spec citations — the ONE grammar the CDR's scope gate AND scope-previewing REST clients (the admin console) parse with |
 
+**Feature `full` (default = everything).** Every dependency and every surface in
+the table above rides `full`, which is on by default — consumers are unaffected.
+`default-features = false` compiles `rest::smart_scopes` ALONE, with zero
+dependencies, so a REST client that must parse SMART scope strings on
+`wasm32-unknown-unknown` (the admin console's scope previewer) uses the same
+grammar the CDR's gate enforces instead of a second parser. Keep that island
+dependency-free: nothing under `rest::smart_scopes` may reach for serde, axum, a
+spec crate, or any other dep.
+
 The native canonical-JSON codec (`json_codec`) is THE canonical-JSON
 (de)serialization for every spec type (all five crates) — the emitted
 `ToJson`/`FromJson` impls over a hand-written writer/reader runtime. The spec

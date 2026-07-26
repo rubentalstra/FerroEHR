@@ -51,6 +51,25 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   series is drawn as `f64::NAN` — chartistry's missing-data marker — rather than
   by rebuilding the chart, and each line pins its palette colour by index so
   hiding one never recolours the others.
+- **Every scope string the console EXPLAINS is read by ONE grammar and rendered
+  by ONE kit.**
+  The parse is `openehr_its::rest::smart_scopes` — the same master08 module the
+  CDR's scope gate enforces with, so the console's explanation can never drift
+  from the server's behaviour; NEVER write a second scope parser here. It is
+  reachable on BOTH targets because the crate is taken
+  `default-features = false` (the grammar is a dependency-free island; the heavy
+  ITS surfaces ride `openehr-its/full`, which the `ssr` feature adds back) — the
+  previewer is a pure client-side function, not a server round-trip. The
+  presentation model is the component-free, unit-tested `crate::scopes` (grants,
+  chips, the master08 diagnosis for a rejected scope, the policy-source copy);
+  `components::scope_grants` is the only view that draws it, used by the access
+  drawer for the session's own scopes and by the previewer field. The drawer
+  renders ONLY identity facts the session actually carries (identity + method +
+  scopes today) — no invented claims, and capability ≠ authorization is stated
+  on the surface. `/system`'s SMART card still lists the discovery document's
+  `scopes_supported` as plain chips: that is an advertisement of supported
+  strings, not a grant this session holds — if it ever explains them, it uses
+  this kit and never a second parser.
 - **Every events-per-day chart comes from ONE kit — `components::activity_chart`
   over `crate::activity::bucket_by_day`**: the dashboard's commit trend and an
   EHR's contribution timeline are the same chart, the day-bucketing is a pure

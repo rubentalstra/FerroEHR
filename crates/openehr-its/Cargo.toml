@@ -9,41 +9,80 @@ repository.workspace = true
 authors.workspace = true
 publish = false
 
+# EVERY dependency rides the default `full` feature (see [features] below), so
+# `default-features = false` yields the dependency-free `rest::smart_scopes`
+# island alone — the std-only SMART scope grammar, which a REST client compiled
+# to `wasm32-unknown-unknown` (the admin console) can then parse with.
 [dependencies]
-serde.workspace = true
-serde_json.workspace = true
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 # Number formatters for the native canonical-JSON codec (`json_codec`): itoa for
 # integers (byte-identical to serde_json), ryu for reals (our chosen canonical
 # REAL lexeme; see json_codec/runtime.rs).
-itoa.workspace = true
-ryu.workspace = true
-quick-xml.workspace = true
-thiserror.workspace = true
-jsonschema.workspace = true
-uuid.workspace = true
+itoa = { workspace = true, optional = true }
+ryu = { workspace = true, optional = true }
+quick-xml = { workspace = true, optional = true }
+thiserror = { workspace = true, optional = true }
+jsonschema = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
 # The generated `opt14` model keeps `StringDictionaryItem` groups in
 # document order (XSD ordered sequence) — order-preserving map.
-indexmap.workspace = true
+indexmap = { workspace = true, optional = true }
 # The generated ITS-REST contract: an async_trait server trait + axum-typed DTOs.
-async-trait.workspace = true
-axum.workspace = true
-http.workspace = true
+async-trait = { workspace = true, optional = true }
+axum = { workspace = true, optional = true }
+http = { workspace = true, optional = true }
 # ITS-REST Formats (the `flat` module): the WebTemplate cache (`moka::future`)
 # and the field-identifier / node-id regex machinery (`regex` +
 # `fancy-regex` for the cADL backreference cases).
-moka.workspace = true
-regex.workspace = true
-fancy-regex.workspace = true
+moka = { workspace = true, optional = true }
+regex = { workspace = true, optional = true }
+fancy-regex = { workspace = true, optional = true }
 # The generated XML (de)serializers impl the crate's ToXml/FromXml traits for the
 # RM/BASE spec types, so these are real (non-dev) deps.
-openehr-base = { path = "../openehr-base" }
-openehr-rm = { path = "../openehr-rm" }
+openehr-base = { path = "../openehr-base", optional = true }
+openehr-rm = { path = "../openehr-rm", optional = true }
 # The native canonical-JSON codec (`json_codec/generated`, emit-json) implements
 # `ToJson` for EVERY generated spec type the `OpenEhrType` derive covers, so it
 # spans all five spec crates (not just the RM/BASE the XML codec needs).
-openehr-lang = { path = "../openehr-lang" }
-openehr-am = { path = "../openehr-am" }
-openehr-term = { path = "../openehr-term" }
+openehr-lang = { path = "../openehr-lang", optional = true }
+openehr-am = { path = "../openehr-am", optional = true }
+openehr-term = { path = "../openehr-term", optional = true }
+
+# `full` — every ITS surface (canonical JSON/XML, the generated ITS-REST
+# contract, `opt14`, Simplified Formats). ON BY DEFAULT, so every consumer sees
+# the crate exactly as before.
+#
+# Taking the crate with `default-features = false` leaves only
+# `rest::smart_scopes`, the hand-written SMART on openEHR scope grammar
+# (`docs/specs/openehr/ITS-REST/docs/smart_app_launch/master08-scopes.adoc`),
+# which needs no dependency at all. That is what lets ONE grammar serve both the
+# CDR's scope gate and a browser-side scope previewer; the alternative would be a
+# second parser in the client — exactly the drift this module exists to prevent.
+[features]
+default = ["full"]
+full = [
+    "dep:serde",
+    "dep:serde_json",
+    "dep:itoa",
+    "dep:ryu",
+    "dep:quick-xml",
+    "dep:thiserror",
+    "dep:jsonschema",
+    "dep:uuid",
+    "dep:indexmap",
+    "dep:async-trait",
+    "dep:axum",
+    "dep:http",
+    "dep:moka",
+    "dep:regex",
+    "dep:fancy-regex",
+    "dep:openehr-base",
+    "dep:openehr-rm",
+    "dep:openehr-lang",
+    "dep:openehr-am",
+    "dep:openehr-term",
+]
 
 [dev-dependencies]
 serde_json.workspace = true
