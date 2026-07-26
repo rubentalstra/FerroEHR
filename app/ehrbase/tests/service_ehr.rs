@@ -2328,3 +2328,263 @@ async fn write_responses_match_a_fresh_read() {
         "the EHR_STATUS mutation persisted through the folded write"
     );
 }
+
+#[tokio::test]
+async fn ehr_system_id_is_recorded_at_creation_and_survives_a_config_change() {
+    // BASE architecture_overview master06-design_of_the_ehr.adoc §System
+    // Identity — "Because the `_system_id_` becomes embedded in the version
+    // identifiers of committed -- and possibly signed -- content, a globally
+    // unique form should be settled on before data is shared or federated,
+    // since it cannot easily be changed afterwards." An EHR therefore reports
+    // the system that CREATED it (RM ehr EHR class: `system_id` 1..1,
+    // HIER_OBJECT_ID, "The identifier of the logical EHR management system in
+    // which this EHR was created"), never whatever the running process is
+    // configured with today: re-pointing the deployment's configured id must
+    // not rewrite the provenance of records already committed.
+    let db = testkit::db().await.expect("testkit database");
+
+    let first = EhrbaseService::new(db.pool()).with_system_id("openehr.first.example.com");
+    let ehr_uuid = first.create_ehr(None).await.expect("ehr create");
+    let at_creation = first.ehr_object(ehr_uuid).await.expect("ehr at creation");
+    assert_eq!(
+        at_creation["system_id"]["value"], "openehr.first.example.com",
+        "the create response reports the creating system"
+    );
+    assert_eq!(at_creation["system_id"]["_type"], "HIER_OBJECT_ID");
+
+    // The SAME database, read through a service rebuilt with a DIFFERENT
+    // configured system id — the deployment-reconfiguration scenario.
+    let second = EhrbaseService::new(db.pool()).with_system_id("openehr.second.example.com");
+    let after_reconfigure = second
+        .ehr_object(ehr_uuid)
+        .await
+        .expect("ehr after reconfigure");
+    assert_eq!(
+        after_reconfigure["system_id"]["value"], "openehr.first.example.com",
+        "EHR.system_id is the stored creating-system value, not the live config"
+    );
+    assert_eq!(
+        after_reconfigure["ehr_id"]["value"], at_creation["ehr_id"]["value"],
+        "the same EHR was read back"
+    );
+
+    // An EHR created AFTER the change does take the new id — the value is
+    // pinned at creation, not frozen repository-wide.
+    let later_uuid = second
+        .create_ehr(None)
+        .await
+        .expect("ehr create post-change");
+    let later = second.ehr_object(later_uuid).await.expect("later ehr");
+    assert_eq!(
+        later["system_id"]["value"], "openehr.second.example.com",
+        "a new EHR records the system that created IT"
+    );
+}
+
+#[tokio::test]
+async fn the_default_ehr_status_satisfies_the_locatable_root_invariants() {
+    // A create without an EHR_STATUS makes the server mint one (SM
+    // i_ehr_service.adoc §create_ehr: "otherwise a default `EHR_STATUS` is
+    // created, in which `_is_modifiable_` and `_is_queryable_` are both
+    // True"), and that server-minted instance must satisfy the same RM
+    // invariants a client-supplied one does — it is committed as a VERSION
+    // like any other.
+    //
+    // RM ehr EHR_STATUS class §Invariants — `Is_archetype_root`:
+    // `is_archetype_root`. RM common locatable.adoc defines that as
+    // `archetype_details /= Void`, and RM common archetyped.adoc types
+    // ARCHETYPED with `archetype_id` 1..1 and `rm_version` 1..1. A bootstrap
+    // status without `archetype_details` would be an archetype root by
+    // position and not by content — invalid RM the server itself authored.
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr create");
+    let status = svc
+        .get_ehr_status(ehr_uuid)
+        .await
+        .expect("bootstrap EHR_STATUS read-back");
+
+    assert_eq!(status["_type"], "EHR_STATUS");
+    let details = &status["archetype_details"];
+    assert_eq!(
+        details["_type"], "ARCHETYPED",
+        "Is_archetype_root needs archetype_details on the root, got {status}"
+    );
+    assert_eq!(
+        details["archetype_id"]["value"], status["archetype_node_id"],
+        "the root archetype_node_id carries the archetype id in string form \
+         (RM common master03 §The LOCATABLE Class), so the two must agree"
+    );
+    assert!(
+        details["rm_version"]
+            .as_str()
+            .is_some_and(|v| !v.is_empty()),
+        "ARCHETYPED.rm_version is 1..1, got {details}"
+    );
+    // The SM's own defaults for the generated status.
+    assert_eq!(status["is_modifiable"], json!(true));
+    assert_eq!(status["is_queryable"], json!(true));
+    // RM ehr EHR_STATUS: `subject` is 1..1 PARTY_SELF — SM create_ehr, "A
+    // default `_subject_` will be generating containing a `PARTY_SELF`
+    // object".
+    assert_eq!(status["subject"]["_type"], "PARTY_SELF");
+}
+
+#[tokio::test]
+async fn subject_identity_is_matched_exactly_and_never_case_folded() {
+    // The subject key: EHR_STATUS.subject.external_ref (id.value, namespace),
+    // compared byte-for-byte.
+    //
+    // NO openEHR SPEC GOVERNS THIS — our own design/extension. The released
+    // sources give the key no comparison rule at all: RM ehr EHR_STATUS
+    // §Attributes types `subject` as 1..1 PARTY_SELF whose `_external_ref_`
+    // "can be used to contain a direct reference to the subject in a
+    // demographic or identity service", and SM i_ehr_service.adoc names the
+    // error `ehr_for_subject_already_exists` without saying what counts as the
+    // same subject. Deliberately NOT the BASE base_types master05 §Composite
+    // Identifiers and Case rule, which governs OBJECT_VERSION_ID-shaped
+    // composite identifiers, not an opaque demographic id.
+    //
+    // Exact match is the safe direction: a demographic identifier is opaque to
+    // the CDR, so folding two spellings together would merge two subjects'
+    // records into one EHR — a silent wrong clinical answer — whereas keeping
+    // them apart is at worst a duplicate the demographic service reconciles.
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let status = |subject: &str, namespace: &str| {
+        json!({
+            "_type": "EHR_STATUS",
+            "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                "rm_version": "1.2.0"
+            },
+            "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+            "subject": {
+                "_type": "PARTY_SELF",
+                "external_ref": {
+                    "_type": "PARTY_REF",
+                    "namespace": namespace,
+                    "type": "PERSON",
+                    "id": { "_type": "HIER_OBJECT_ID", "value": subject }
+                }
+            },
+            "is_queryable": true,
+            "is_modifiable": true
+        })
+    };
+
+    let lower = svc
+        .create_ehr(Some(status("case-subject-a", "patients")))
+        .await
+        .expect("lower-case subject");
+    // A case VARIANT of the same string is a DIFFERENT subject: it creates a
+    // second EHR instead of colliding with the first.
+    let upper = svc
+        .create_ehr(Some(status("Case-Subject-A", "patients")))
+        .await
+        .expect("case-variant subject is a distinct subject, not a duplicate");
+    assert_ne!(lower, upper);
+
+    // The namespace half of the key is exact too.
+    let other_ns = svc
+        .create_ehr(Some(status("case-subject-a", "Patients")))
+        .await
+        .expect("case-variant namespace is a distinct key");
+    assert_ne!(lower, other_ns);
+
+    // Each spelling resolves to its OWN EHR on the read side — the lookup key
+    // is the same exact-match key the uniqueness check uses, so a subject can
+    // never be served another subject's record.
+    let by_lower = svc
+        .ehr_object_for_subject("case-subject-a", "patients")
+        .await
+        .expect("lookup by the exact lower-case subject");
+    assert_eq!(by_lower["ehr_id"]["value"], lower.to_string());
+    let by_upper = svc
+        .ehr_object_for_subject("Case-Subject-A", "patients")
+        .await
+        .expect("lookup by the exact case-variant subject");
+    assert_eq!(by_upper["ehr_id"]["value"], upper.to_string());
+
+    // And re-using an EXACT spelling still conflicts — the exactness narrows
+    // the key, it does not disable the uniqueness rule.
+    let dup = svc
+        .create_ehr(Some(status("case-subject-a", "patients")))
+        .await;
+    assert!(
+        matches!(
+            dup,
+            Err(SmError {
+                status: CallStatusType::CompositionAlreadyExists,
+                ..
+            })
+        ),
+        "an exactly-equal subject must still 409, got {dup:?}"
+    );
+}
+
+#[tokio::test]
+async fn the_bootstrap_ehr_status_version_has_no_preceding_version_uid() {
+    // RM common master06-change_control_package.adoc §Change Control — a first
+    // Version is an ADDITION: it has no predecessor, so
+    // ORIGINAL_VERSION.preceding_version_uid is Void and, per ITS-REST
+    // Resources.md §JSON Format ("The RM attributes (even required ones) that
+    // are `Null` or an empty list (array) SHOULD be absent when serialized as
+    // JSON"), is absent from the wire rather than rendered null.
+    //
+    // The EHR-creation commit is the case that had no coverage: the
+    // COMPOSITION v1 is asserted in ehr_composition_lifecycle_end_to_end, but
+    // the EHR_STATUS version the server commits during create_ehr is authored
+    // entirely by the server, on a path no client write touches.
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let ehr_uuid = svc.create_ehr(None).await.expect("ehr create");
+    let status_v1 = svc.get_ehr_status(ehr_uuid).await.expect("status v1");
+    let ovid_v1 = uid(&status_v1).to_owned();
+    let parts: Vec<&str> = ovid_v1.split("::").collect();
+    assert_eq!(parts.len(), 3, "OBJECT_VERSION_ID is three-part: {ovid_v1}");
+    assert_eq!(parts[2], "1", "the bootstrap status is trunk version 1");
+
+    let vo_id = parts[0].parse().expect("versioned-object uuid");
+    let original_v1 = svc
+        .ehr_status_original_version(ehr_uuid, vo_id, parts[2])
+        .await
+        .expect("bootstrap ORIGINAL_VERSION");
+    assert_eq!(original_v1["_type"], "ORIGINAL_VERSION");
+    assert_eq!(original_v1["uid"]["value"], ovid_v1);
+    assert!(
+        original_v1.get("preceding_version_uid").is_none(),
+        "an addition has no predecessor — preceding_version_uid must be absent, got {original_v1}"
+    );
+    assert_eq!(
+        original_v1["commit_audit"]["change_type"]["defining_code"]["code_string"], "249",
+        "the first version's change type is 249|creation| (RM common master06 §Contributions)"
+    );
+
+    // The SECOND version is a modification and DOES name its predecessor —
+    // the contrast that proves the absence above is a real property of the
+    // first version, not a serialization that drops the attribute always.
+    let mut next = status_v1.clone();
+    next.as_object_mut().expect("status object").remove("uid");
+    next["is_queryable"] = json!(false);
+    let ovid_v2 = svc
+        .replace_ehr_status(ehr_uuid, uv(next, "251", Some(&ovid_v1)))
+        .await
+        .expect("status v2");
+    let parts_v2: Vec<&str> = ovid_v2.split("::").collect();
+    let original_v2 = svc
+        .ehr_status_original_version(
+            ehr_uuid,
+            parts_v2[0].parse().expect("versioned-object uuid"),
+            parts_v2[2],
+        )
+        .await
+        .expect("second ORIGINAL_VERSION");
+    assert_eq!(original_v2["preceding_version_uid"]["value"], ovid_v1);
+}

@@ -360,21 +360,16 @@ branches:
     outcome: precondition_missing
     reason: coverage_gap
     source: "ITS-REST Requests_and_responses.md §HTTP status codes — the precondition_missing branch of I_EHR_DIRECTORY.update_directory is declared by the binding but not yet exercised (NEW-CASE candidate)"
-  - binding: I_EHR_SERVICE.create_ehr
-    variant: with_ehr_id
-    outcome: created
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — the created branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding; this variant scopes only its distinctive negotiation/rejection branch"
+  # The created and already_exists branches of the with_ehr_id variant are now
+  # EXERCISED by I_EHR_SERVICE.create_ehr-with_ehr_id (and the subject-duplicate
+  # half by -with_ehr_id_subject_taken), so their exceptions are retired: the
+  # gate resolves a step's binding from its explicit `variant`, and both cases
+  # name it. Only validation_failed remains unexercised on this variant.
   - binding: I_EHR_SERVICE.create_ehr
     variant: with_ehr_id
     outcome: validation_failed
     reason: variant_of
-    source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding; this variant scopes only its distinctive negotiation/rejection branch"
-  - binding: I_EHR_SERVICE.create_ehr
-    variant: with_ehr_id
-    outcome: already_exists
-    reason: variant_of
-    source: "released ITS-REST 1.1.0 — the already_exists branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding; this variant scopes only its distinctive negotiation/rejection branch"
+    source: "released ITS-REST 1.1.0 — the validation_failed branch is exercised on the variant-less I_EHR_SERVICE.create_ehr binding (I_EHR_SERVICE.create_ehr-invalid_status); the client-supplied id changes the addressing, not the EHR_STATUS validation this branch reports"
   - binding: I_EHR_STATUS.clear_ehr_modifiable
     outcome: precondition_failed
     reason: coverage_gap
@@ -602,11 +597,8 @@ branches:
     format: canonical-xml
     reason: coverage_gap
     source: "ITS-REST §content negotiation — the canonical-xml representation of I_EHR_DIRECTORY.update_directory is declared but the catalogue exercises canonical-json; the canonical-xml variant is a NEW-CASE candidate"
-  - binding: I_EHR_SERVICE.create_ehr
-    variant: with_ehr_id
-    format: canonical-json
-    reason: coverage_gap
-    source: "released ITS-REST 1.1.0 — the create-EHR-with-id path (PUT /ehr/{ehr_id}) is unexercised in canonical-json; a create-EHR-with-id case is a NEW-CASE candidate"
+  # canonical-json on the with_ehr_id variant is EXERCISED by
+  # I_EHR_SERVICE.create_ehr-with_ehr_id — the exception is retired.
   - binding: I_EHR_SERVICE.create_ehr
     variant: with_ehr_id
     format: canonical-xml
@@ -711,6 +703,42 @@ elements:
     exception:
       reason: coverage_gap
       note: "server behaviour fixed + DB-tested: the request side in #365, and the RESPONSE echo in #398 (app/ehrbase-rest/tests/headers.rs) — the two collections are kept separate through the write seam so openehr-item-tag echoes only the VERSIONED_OBJECT's stored list and openehr-version-item-tag only the VERSION's (previously both headers carried the merged union), and a header the request did not send is not echoed at all. runner tag verbs land with the #288 derivation fix"
+  # EHR identity + subject keying (RM ehr; SM i_ehr_service.adoc). The
+  # released ITS-REST docs text never mentions a subject at all (grep of
+  # specifications/docs/**: zero hits), so everything subject-shaped on this
+  # wire is anchored on SM + RM.
+  - id: ehr-id-path-segment-malformed-rejection
+    description: "An ehr_id path segment that is not a well-formed identifier at all (a non-UUID token) is refused as a client error rather than served, and never resolves to some other EHR."
+    source: "RM ehr EHR class §Attributes (`ehr_id`: 1..1 HIER_OBJECT_ID, \"The unique identifier of this EHR\", NOTE \"is is strongly recommended that a UUID always be used for this field\") + SM i_ehr_service.adoc (every ehr_id-taking operation declares `ehr_id: UUID [1]`) + ITS-REST Requests_and_responses.md §HTTP status codes, which offers two rows that both fit and picks neither: 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error (e.g., malformed request syntax, syntactically invalid content)\") and 404 (\"The origin service did not find the target resource or is not willing to disclose that one exists\")"
+    exception:
+      reason: coverage_gap
+      note: "Not authorable as a case today, for a model reason AND a grounding reason. Model: the closed outcome taxonomy (vocab/outcomes.yaml) has no malformed-request kind — the same closed-vocabulary blocker recorded on query-ehr-id-parameter-header-conflict and method-405-allow-header. Grounding: the released text does not choose between its own 400 and 404 rows for a syntactically impossible identifier, so even with a kind available the catalogue could not say which code to expect without inventing the assignment; this is deliberately NOT registered as an ambiguity, because the owner ruling of 2026-07-26 confines the register to the five genuine released-source dispositions and a code the text simply never assigns to a case nobody wrote is a gap, not a divergence we carry. What IS covered is the well-formed-but-absent identifier, which the 404 row does assign and which I_EHR_SERVICE.get_ehr-get_ehr_by_invalid_ehr_id and has_ehr-non_existing_ehr_id gate. Closes when the outcome taxonomy gains a malformed-request kind (extension only by schedule release) AND a released sentence assigns the code."
+  - id: ehr-subject-query-argument-required
+    description: "The subject-keyed EHR read requires its subject argument: a request that omits it is not a request for all EHRs, and is refused rather than answered with an arbitrary or empty EHR."
+    source: "SM i_ehr_service.adoc §get_ehrs_for_subject and §has_ehr_for_subject (both declare `a_subject_id: PARTY_REF [1]` — a mandatory argument, with no argument-less form of either operation) + ITS-REST Requests_and_responses.md §HTTP status codes row 400 (\"The service cannot or will not process the request due to something that is perceived to be a client error\"; \"Status code `400` indicates normally a bad request, as well as a generic client-side error, used when no other `4xx` error code is appropriate\")"
+    exception:
+      reason: coverage_gap
+      note: "Not authorable as a case today for two independent model reasons. The binding request model cannot express an omitted MANDATORY argument at all: the I_EHR_SERVICE.get_ehrs_for_subject binding's query templates are `${subject_id}` / `${subject_namespace}`, and only the binding-template `${name?}` optional form permits an unbound reference (tools/cnf-runner/src/refgrammar.rs) — an unbound mandatory reference fails step resolution and records as an INCONCLUSIVE transport-class row, never as a request the SUT answered. And the closed outcome taxonomy has no malformed-request kind for the refusal (the query-ehr-id-parameter-header-conflict precedent). The positive and not-found halves of the same operation ARE gated (I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id, -get_ehr_by_invalid_subject_id). Closes when the binding model gains a deliberate-omission form and the outcome taxonomy a malformed-request kind (extension only by schedule release)."
+  - id: locatable-uid-copied-version-form
+    description: "A served top-level object (EHR_STATUS, COMPOSITION, …) carries its uid as the FULL three-part OBJECT_VERSION_ID copied from the enclosing VERSION, not truncated to the leading object_id — so a client can parse the version coordinate out of the body it was served."
+    source: "ITS-REST Resources.md §Identifier types (\"it is strongly recommended that the inherited `uid` attribute in COMPOSITION objects be populated using the `uid` copied from the enclosing VERSION object. For example, if an ORIGINAL_VERSION.uid is `87284370-2D4B-4e3d-A3F3-F303D2F4F34B::uk.nhs.ehr1::2`, then this value should be copied to the COMPOSITION.uid attribute\"; the same section derives request addressing from that served value) CONTRADICTED by RM common master03-archetyped_package.adoc §Unique Node Identification and the RM ehr EHR_STATUS class §Description, which both recommend copying `_uid.object_id()_` only — \"the leading Uid, which is normally a Guid\". Released-vs-released; adjudicated in register AMB-65 in favour of the ITS-REST form, since RM common locatable.adoc types `uid` as UID_BASED_ID and so admits both"
+    covered_by: [I_EHR_STATUS.get_versioned_ehr_status-contained_uid_form]
+  - id: ehr-subject-uniqueness-and-key
+    description: "A subject owns at most one EHR: the key is the EHR_STATUS.subject.external_ref (id.value, namespace) pair compared exactly, the refusal is the same 409 as an id-duplicate, and it holds on the client-supplied-id create path as well as the id-less one."
+    source: "SM i_ehr_service.adoc §create_ehr_for_subject (error `ehr_for_subject_already_exists`) — the only released sentence that establishes the refusal at all; §create_ehr_for_subject_with_id omits it, and §get_ehrs_for_subject (\"Retrieve EHR or EHRs that have `ehr_status.subject_id` = supplied subject id\", returning a List) reads against it + RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, external_ref for the demographic reference — no uniqueness rule and no comparison rule) + ITS-REST Requests_and_responses.md §HTTP status codes row 409 (\"Indicates that the request could not be processed because it might generate a duplicate or a conflict\"). The key's comparison rule has no released sentence at all — register AMB-63 records the exact-match choice as our own design/extension"
+    covered_by:
+      # The stated half — the id-less create path — gates.
+      - I_EHR_SERVICE.create_ehr-two_ehrs_same_patient
+      # The unstated half — the client-supplied-id path — reports at OPTIONS.
+      - I_EHR_SERVICE.create_ehr-with_ehr_id_subject_taken
+  - id: ehr-status-subject-accepted-on-create
+    description: "A create carrying an EHR_STATUS whose subject is populated is ACCEPTED and that subject becomes the EHR's subject — the SM `Pre_no_subject` precondition is a released defect and is not enforced."
+    source: "SM i_ehr_service.adoc §create_ehr and §create_ehr_with_id state `Pre_no_subject`: `an_ehr_status.subject = Void`, immediately followed by \"A default `_subject_` will be generating containing a `PARTY_SELF` object\" — contradicting itself, and contradicting RM ehr EHR_STATUS class §Attributes (`subject`: 1..1 PARTY_SELF, so a Void subject is not a valid EHR_STATUS) and the released ITS-REST EHR API, which surfaces no for-subject create operation and so leaves the optional EHR_STATUS body as the ONLY way a client can give an EHR a subject. Adjudicated in register AMB-66"
+    covered_by:
+      - I_EHR_SERVICE.create_ehr-two_ehrs_same_patient
+      - I_EHR_SERVICE.get_ehr-existing_ehr_by_subject_id
+      - I_EHR_SERVICE.has_ehr-existing_subject_id
+      - I_EHR_SERVICE.create_ehr-with_ehr_id_subject_taken
   # Conditional / versioning headers (ITS-REST Requests_and_responses.md).
   - id: header-etag-on-create
     description: "ETag returned on resource creation carrying the new version/object uid (optimistic concurrency)."
@@ -723,6 +751,8 @@ elements:
       - I_EHR_COMPOSITION.create_composition-event
       - I_EHR_COMPOSITION.get_composition_latest
       - I_EHR_SERVICE.create_ehr-main
+      - I_EHR_SERVICE.create_ehr-with_ehr_id
+      - I_EHR_SERVICE.create_ehr-return_identifier
       - I_EHR_SERVICE.get_ehr-existing_ehr_by_ehr_id
       - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
       - I_EHR_STATUS.set_ehr_queryable-existing_ehr
@@ -733,7 +763,10 @@ elements:
   - id: header-location-on-create
     description: "Location header on 201 Created pointing at the new resource URL."
     source: "ITS-REST Requests_and_responses.md §Location (used in 201 Created; MUST NOT indicate an alternate representation)"
-    covered_by: [I_EHR_COMPOSITION.create_composition-event, I_EHR_SERVICE.create_ehr-main]
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-event
+      - I_EHR_SERVICE.create_ehr-main
+      - I_EHR_SERVICE.create_ehr-with_ehr_id
   - id: header-last-modified
     description: "Last-Modified response header on versioned resources (from VERSION.commit_audit.time_committed)."
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (\"Both `ETag` and `Last-Modified` SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\"; \"For openEHR resources, this value should be derived from VERSION.commit_audit.time_committed.value\")"
@@ -742,6 +775,14 @@ elements:
       - I_EHR_COMPOSITION.get_composition_latest
       - I_EHR_COMPOSITION.get_composition_at_time
       - I_EHR_SERVICE.create_ehr-main
+      # The other EHR creation method: PUT /ehr/{ehr_id} asserts the same three
+      # creation headers as POST /ehr (the matchers were optional there until
+      # #428). Whether the SHOULD's scope sentence reaches the non-versioned
+      # EHR resource at all is register AMB-64, whose fixed handling asserts
+      # the header on the CREATION — where the EHR_STATUS creation commit
+      # supplies a real VERSION.commit_audit.time_committed — and neither
+      # asserts nor forbids it on an EHR READ.
+      - I_EHR_SERVICE.create_ehr-with_ehr_id
       - I_EHR_STATUS.get_ehr_status-get_by_ehr_id
       - SIG-VERSION-signature_present
   - id: header-prefer-return-representation
@@ -751,7 +792,13 @@ elements:
   - id: header-prefer-return-identifier
     description: "Prefer: return=identifier is honored — the body is the identifier of the affected resource only, at a 201/200 status, never 204 No Content."
     source: "ITS-REST Requests_and_responses.md §Prefer only identifier (\"a variant of preference that implies minimal response semantics, but with a non-empty response body (i.e. the status will be `201 Created` or `200 OK`, never `204 No Content`)\"; \"when application/json is requested … the response body will be a single JSON object with a single uid attribute\")"
-    covered_by: [I_EHR_COMPOSITION.create_composition-return_identifier]
+    covered_by:
+      - I_EHR_COMPOSITION.create_composition-return_identifier
+      # The EHR half: the identifier of a created EHR is its ehr_id
+      # (Resources.md §Identifier types, "an `ehr_id` to identify an EHR"), and
+      # the case proves the returned `uid` is that by reading the EHR back
+      # through it.
+      - I_EHR_SERVICE.create_ehr-return_identifier
   - id: header-preference-applied
     description: "Preference-Applied on a write response names the return preference the response actually applied (return=minimal | return=identifier | return=representation), including the applied default when no Prefer was sent."
     source: "ITS-REST Requests_and_responses.md §Representation details negotiation (\"The service MAY include a `Preference-Applied` header in the response, such as `Preference-Applied: return=minimal` or `Preference-Applied: return=representation`, to indicate that the client's preference has been honored\"; \"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\") + the §Location and §Prefer only identifier response examples, which show the header on a 201 and on the identifier 200"
@@ -1001,4 +1048,5 @@ elements:
     source: "ITS-REST Requests_and_responses.md §Prefer minimal, identifier or full representation response (\"`Prefer: return=minimal` Indicates the client prefers a minimal response. The response SHOULD include a `Location` header pointing to the newly created or updated resource. The HTTP status is typically `201 Created`. If no response body is returned, the service SHOULD use `204 No Content`\") + §Representation details negotiation (\"If no `Prefer` header is provided, the default behavior is assumed to be `return=minimal`\")"
     exception:
       reason: coverage_gap
-      note: "NEW-CASE candidate, but not authorable as a single gating case today: the released text leaves the minimal status OPEN — \"typically `201 Created`\" and \"If no response body is returned, the service SHOULD use `204 No Content`\" both apply to the same exchange, and neither sentence assigns one. A binding outcome would have to pick a status (or carry an alt_status) that no docs-text sentence assigns, which is exactly the invention the attribution law forbids. What IS assertable — the `Location` header the minimal branch SHOULDs — is already executed on the create/update outcomes (header-location-on-create). Closes when a future ITS-REST release fixes the minimal status, or when the case model gains an either-status expectation grounded in the two sentences (extension only by schedule release). The default-when-absent half is exercised indirectly: the I_DEFINITION_ADL2.upload_artefact binding sends no Prefer and reads its identifier back from Location."
+      register: AMB-62
+      note: "NEW-CASE candidate, but not authorable as a gating case today, and NOT authorable with an alt_status either: the released text leaves the minimal status OPEN — \"The HTTP status is typically `201 Created`\" is descriptive (an adverb, not a MUST or a SHOULD) and \"If no response body is returned, the service SHOULD use `204 No Content`\" is conditional on a body-presence fact the same text never assigns. A binding outcome would have to pick a status, or assemble a {201, 204} alt_status pair, that no docs-text sentence assigns — exactly the invention the attribution law forbids — so the branch carries no binding at all (re-affirmed under #428, which considered and rejected the alt_status route). Registered as AMB-62. What IS assertable is already executed: the `Location` header the minimal branch SHOULDs, on the create/update outcomes (header-location-on-create), and the body selector `prefer_conditional` deliberately never judges this branch. Closes when a future ITS-REST release fixes the minimal status, or when the case model gains an either-status expectation grounded in the two sentences (extension only by schedule release). The default-when-absent half is exercised indirectly: the I_DEFINITION_ADL2.upload_artefact binding sends no Prefer and reads its identifier back from Location. The SIBLING preference is fully covered — §\"Prefer only identifier\" DOES assign its status, and header-prefer-return-identifier carries a case on both a COMPOSITION and an EHR create."
