@@ -29,7 +29,7 @@ use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::Composition;
 
 use crate::api::RequestParts;
-use crate::negotiate::WireFormat;
+use crate::negotiate::{AppliedPreference, WireFormat};
 use crate::overview::error::RestError;
 use crate::state::AppState;
 use crate::{negotiate, params};
@@ -84,12 +84,10 @@ pub(super) async fn list(state: &AppState, parts: &RequestParts) -> Result<Respo
 /// `Prefer` is read. Recorded as residue, not a defect.
 pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Response, RestError> {
     let h = &parts.headers;
-    let p = params::build::<DefinitionTemplateAdl2UploadParams>(
-        &parts.path,
-        parts.query.as_deref(),
-        h,
-    )?;
-    let prefer = p.prefer.clone();
+    // Built for its parameter validation only: the `Prefer` preference is read
+    // off the header map through the shared negotiation predicates, so every
+    // write route resolves (and declares) it the same way.
+    params::build::<DefinitionTemplateAdl2UploadParams>(&parts.path, parts.query.as_deref(), h)?;
     // ADL2 arrives as text/plain source (dev-OAS: Content-Type text/plain, body
     // `OperationalTemplateV2` | string).
     let source = negotiate::text_body(&parts.body)?;
@@ -106,7 +104,7 @@ pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Res
     // 201_Template_adl2_upload: body per `Prefer` — representation → the OPT
     // source (text/plain); identifier → `{template_id}` (JSON); missing/minimal
     // → empty. `Location` + the weak `ETag` on every case.
-    let mut resp = upload_response(prefer.as_deref(), &location, hrid, source);
+    let mut resp = upload_response(h, &location, hrid, source);
     set_template_etag(&mut resp, hrid);
     Ok(resp)
 }
@@ -319,21 +317,37 @@ fn json_response(status: StatusCode, json: String) -> Response {
 /// (`201_Template_adl2_upload`): `return=representation` → the OPT source
 /// (text/plain); `return=identifier` → a `{template_id}` JSON body
 /// (`schemas/others/TemplateIdentifier.yaml`); missing/`return=minimal` → an
-/// empty body. `Location` is set on every case.
-fn upload_response(prefer: Option<&str>, location: &str, hrid: &str, source: String) -> Response {
-    let has = |token: &str| {
-        prefer.is_some_and(|p| p.split(',').any(|t| t.trim().eq_ignore_ascii_case(token)))
-    };
-    if has("return=representation") {
-        text_response(StatusCode::CREATED, Some(location), source)
-    } else if has("return=identifier") {
-        let body = serde_json::json!({ "template_id": hrid });
-        let mut resp = (StatusCode::CREATED, axum::Json(body)).into_response();
-        if let Ok(value) = HeaderValue::from_str(location) {
-            resp.headers_mut().insert(header::LOCATION, value);
-        }
-        resp
+/// empty body. `Location` is set on every case, and the applied preference is
+/// declared through the shared [`negotiate::set_preference_applied`] seam
+/// (`Requests_and_responses.md` §Representation details negotiation).
+///
+/// A template is not `uid`-versioned, so the identifier body is the
+/// `template_id` object rather than the generic `{uid}` of
+/// [`negotiate::write_negotiated`]; every upload outcome is `201 Created`, so
+/// the identifier variant's never-`204` rule (§"Prefer only identifier") holds
+/// trivially.
+fn upload_response(headers: &HeaderMap, location: &str, hrid: &str, source: String) -> Response {
+    let applied = if negotiate::prefers_representation(headers) {
+        AppliedPreference::Representation
+    } else if negotiate::prefers_identifier(headers) {
+        AppliedPreference::Identifier(hrid)
     } else {
-        negotiate::empty_with_location(StatusCode::CREATED, location)
-    }
+        AppliedPreference::Minimal
+    };
+    let mut resp = match applied {
+        AppliedPreference::Representation => {
+            text_response(StatusCode::CREATED, Some(location), source)
+        }
+        AppliedPreference::Identifier(id) => {
+            let body = serde_json::json!({ "template_id": id });
+            let mut resp = (StatusCode::CREATED, axum::Json(body)).into_response();
+            if let Ok(value) = HeaderValue::from_str(location) {
+                resp.headers_mut().insert(header::LOCATION, value);
+            }
+            resp
+        }
+        AppliedPreference::Minimal => negotiate::empty_with_location(StatusCode::CREATED, location),
+    };
+    negotiate::set_preference_applied(&mut resp, applied);
+    resp
 }

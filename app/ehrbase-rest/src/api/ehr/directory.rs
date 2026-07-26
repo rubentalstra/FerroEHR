@@ -100,9 +100,7 @@ pub(super) async fn run(
                         &resp,
                         "folder",
                     );
-                    if let Some((names, tags)) = stored_tags {
-                        super::echo_item_tags(&mut resp, &names, &tags);
-                    }
+                    super::echo_item_tags(&mut resp, &stored_tags);
                     Ok(resp)
                 }
                 Err(e) if e.status == CallStatusType::VersionMismatch => {
@@ -157,9 +155,7 @@ pub(super) async fn run(
                 &resp,
                 "folder",
             );
-            if let Some((names, tags)) = stored_tags {
-                super::echo_item_tags(&mut resp, &names, &tags);
-            }
+            super::echo_item_tags(&mut resp, &stored_tags);
             Ok(resp)
         }
         "directory_delete" => {

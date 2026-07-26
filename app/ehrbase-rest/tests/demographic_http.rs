@@ -750,3 +750,88 @@ async fn demographic_committal_headers_merge_into_the_commit() {
         "change_type stays operation-owned (creation)"
     );
 }
+
+// ── Prefer / Preference-Applied (overview §Representation details ────────────
+//    negotiation, §"Prefer only identifier") ────────────────────────────────
+
+fn preference_applied(h: &header::HeaderMap) -> Option<String> {
+    h.get("preference-applied")
+        .and_then(|v| v.to_str().ok())
+        .map(str::to_owned)
+}
+
+/// Demographic writes go through the same `Prefer` seam as the EHR group:
+/// "The service MAY include a `Preference-Applied` header in the response …
+/// to indicate that the client's preference has been honored", and "if no
+/// `Prefer` header is provided, the default behavior is assumed to be
+/// `return=minimal`".
+#[tokio::test]
+async fn demographic_writes_declare_the_applied_preference() {
+    let (_pg, app) = app().await;
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/person"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "person create: {body}");
+    assert_eq!(preference_applied(&h).as_deref(), Some("return=minimal"));
+
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/person"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", "return=representation")
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "person create: {body}");
+    assert_eq!(
+        preference_applied(&h).as_deref(),
+        Some("return=representation")
+    );
+
+    // The party ITEM_TAG collection write declares its outcome too.
+    let uid = create(&app, "person", &person_body()).await;
+    let vo = vo_of(&uid).to_owned();
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/demographic/person/{vo}/tags"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(
+            serde_json::json!([{ "key": "reviewed", "value": "true" }]).to_string(),
+        ))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "person tags update: {body}");
+    assert_eq!(preference_applied(&h).as_deref(), Some("return=minimal"));
+}
+
+/// `Prefer: return=identifier` on a demographic create: "the status will be
+/// `201 Created` or `200 OK`, never `204 No Content`" and "the response body
+/// … will be a single JSON object with a single `uid` attribute"
+/// (§"Prefer only identifier").
+#[tokio::test]
+async fn person_create_identifier_returns_the_uid_body() {
+    let (_pg, app) = app().await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/demographic/person"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", "return=identifier")
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(preference_applied(&h).as_deref(), Some("return=identifier"));
+    let uid = etag_uid(&h);
+    let v: Value = serde_json::from_str(&body).expect("json identifier body");
+    assert_eq!(
+        v,
+        serde_json::json!({ "uid": uid }),
+        "overview §\"Prefer only identifier\": a single JSON object with a single uid attribute"
+    );
+}

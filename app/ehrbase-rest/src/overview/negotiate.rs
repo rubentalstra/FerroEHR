@@ -551,33 +551,127 @@ pub(crate) fn prefers_identifier(headers: &HeaderMap) -> bool {
         })
 }
 
-/// The return preference the server is honouring, for the `Preference-Applied`
-/// response header.
-fn applied_preference(headers: &HeaderMap) -> &'static str {
+/// The return preference a write response ACTUALLY applied — the value the
+/// `Preference-Applied` response header declares.
+///
+/// ITS-REST overview `Requests_and_responses.md` §Representation details
+/// negotiation: "The service MAY include a `Preference-Applied` header in the
+/// response, such as `Preference-Applied: return=minimal` or
+/// `Preference-Applied: return=representation`, to indicate that the client's
+/// preference has been honored" — so the header states what the response DID,
+/// never what the client merely asked for (RFC 7240 §3, the field
+/// definition this section builds on).
+///
+/// [`Identifier`](AppliedPreference::Identifier) carries the identifier it
+/// renders, which makes the identifier branch unreachable without one: that is
+/// the structural guarantee behind §"Prefer only identifier" — "a variant of
+/// preference that implies minimal response semantics, but with a non-empty
+/// response body (i.e. the status will be `201 Created` or `200 OK`, never
+/// `204 No Content`)".
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum AppliedPreference<'a> {
+    /// `return=minimal` — the default when no `Prefer` is sent: no body, and
+    /// "if no response body is returned, the service SHOULD use `204 No
+    /// Content`" (§"Prefer minimal, identifier or full representation
+    /// response").
+    Minimal,
+    /// `return=identifier` — a body carrying only the affected resource's
+    /// identifier (the `&str` is that identifier).
+    Identifier(&'a str),
+    /// `return=representation` — the full resource representation.
+    Representation,
+}
+
+impl AppliedPreference<'_> {
+    /// The `Preference-Applied` field value this outcome declares.
+    fn token(self) -> &'static str {
+        match self {
+            AppliedPreference::Minimal => "return=minimal",
+            AppliedPreference::Identifier(_) => "return=identifier",
+            AppliedPreference::Representation => "return=representation",
+        }
+    }
+}
+
+/// Declare the applied return preference on a write response — the ONE place
+/// `Preference-Applied` is written, so every write path (canonical RM,
+/// JSON-only, demographic, template upload, item-tag collection, and the
+/// Simplified-Formats commit) states its outcome the same way.
+///
+/// NOTE: the header is emitted on every write, including requests that carry
+/// no `Prefer` at all — the applied preference is then the spec default,
+/// `return=minimal` ("If no `Prefer` header is provided, the default behavior
+/// is assumed to be `return=minimal`", §Representation details negotiation).
+/// RFC 7240 §3 permits an unsolicited `Preference-Applied`, and stating the
+/// applied default is what makes the behaviour uniform across write paths.
+pub(crate) fn set_preference_applied(resp: &mut Response, applied: AppliedPreference<'_>) {
+    resp.headers_mut().insert(
+        header::HeaderName::from_static("preference-applied"),
+        HeaderValue::from_static(applied.token()),
+    );
+}
+
+/// The return preference a write can actually apply, given the identifier (if
+/// any) the write produced.
+///
+/// `return=identifier` is honoured only when there IS an identifier to return:
+/// its whole contract is a non-empty identifier body with a `201`/`200` status
+/// (§"Prefer only identifier"), so a write that produced no resource metadata
+/// cannot honour it. Rather than emit an empty (possibly `204`) body while
+/// claiming `Preference-Applied: return=identifier`, the server applies — and
+/// declares — the default `return=minimal`.
+fn resolve_write_preference<'a>(
+    headers: &HeaderMap,
+    uid: Option<&'a str>,
+) -> AppliedPreference<'a> {
     if prefers_representation(headers) {
-        "representation"
-    } else if prefers_identifier(headers) {
-        "identifier"
-    } else {
-        "minimal"
+        return AppliedPreference::Representation;
+    }
+    match (prefers_identifier(headers), uid) {
+        (true, Some(uid)) => AppliedPreference::Identifier(uid),
+        _ => AppliedPreference::Minimal,
     }
 }
 
-/// Emit `Preference-Applied: return=<kind>` on a write response.
-fn set_preference_applied(resp: &mut Response, kind: &str) {
-    if let Ok(value) = HeaderValue::from_str(&format!("return={kind}")) {
-        resp.headers_mut()
-            .insert(header::HeaderName::from_static("preference-applied"), value);
-    }
-}
-
-/// The status for a `return=identifier` write: `201`/`200`, never `204`.
+/// The status of an applied `return=identifier` write: the minimal status
+/// unless that is `204 No Content`, which the identifier variant forbids —
+/// "the status will be `201 Created` or `200 OK`, never `204 No Content`"
+/// (§"Prefer only identifier") — in which case the representation status
+/// (`200`/`201`) carries the identifier body.
 fn identifier_status(minimal_status: StatusCode, repr_status: StatusCode) -> StatusCode {
     if minimal_status == StatusCode::NO_CONTENT {
         repr_status
     } else {
         minimal_status
     }
+}
+
+/// The single `Prefer` seam for a create/update response: resolve the
+/// preference the write can apply, render its body, and declare it.
+///
+/// `representation` renders the full body at the status it is handed; it is
+/// only called when `return=representation` is applied. The identifier body is
+/// rendered by [`identifier_response`] at [`identifier_status`] — structurally
+/// never `204`, because the branch is reachable only with an identifier in
+/// hand. Resource headers (`ETag`/`Last-Modified`/`Location`) are the caller's
+/// business; this seam owns the body + `Preference-Applied` only.
+pub(crate) fn write_negotiated(
+    headers: &HeaderMap,
+    minimal_status: StatusCode,
+    repr_status: StatusCode,
+    uid: Option<&str>,
+    representation: impl FnOnce(StatusCode) -> Response,
+) -> Response {
+    let applied = resolve_write_preference(headers, uid);
+    let mut out = match applied {
+        AppliedPreference::Representation => representation(repr_status),
+        AppliedPreference::Identifier(uid) => {
+            identifier_response(headers, identifier_status(minimal_status, repr_status), uid)
+        }
+        AppliedPreference::Minimal => empty(minimal_status),
+    };
+    set_preference_applied(&mut out, applied);
+    out
 }
 
 /// Render a `return=identifier` response body: `{ "uid": "<uid>" }` in JSON, or
@@ -680,18 +774,16 @@ pub(crate) fn write_rm<T>(
 where
     T: FromJson + ToXml,
 {
-    let uid = resp.meta.as_ref().map(|m| m.uid.clone());
-    let mut out = if prefers_representation(headers) {
-        respond_rm::<T>(headers, repr_status, &resp.body, root_tag)
-    } else if let (true, Some(uid)) = (prefers_identifier(headers), uid.as_deref()) {
-        identifier_response(headers, identifier_status(minimal_status, repr_status), uid)
-    } else {
-        empty(minimal_status)
-    };
+    let mut out = write_negotiated(
+        headers,
+        minimal_status,
+        repr_status,
+        resp.meta.as_ref().map(|m| m.uid.as_str()),
+        |status| respond_rm::<T>(headers, status, &resp.body, root_tag),
+    );
     if let Some(meta) = &resp.meta {
         set_resource_headers(&mut out, base_path, segment, meta);
     }
-    set_preference_applied(&mut out, applied_preference(headers));
     out
 }
 
@@ -705,19 +797,38 @@ pub(crate) fn write_json(
     segment: Option<&str>,
     resp: &ServiceResponse,
 ) -> Response {
-    let uid = resp.meta.as_ref().map(|m| m.uid.clone());
-    let mut out = if prefers_representation(headers) {
-        respond(headers, repr_status, &resp.body)
-    } else if let (true, Some(uid)) = (prefers_identifier(headers), uid.as_deref()) {
-        identifier_response(headers, identifier_status(minimal_status, repr_status), uid)
-    } else {
-        empty(minimal_status)
-    };
+    let mut out = write_negotiated(
+        headers,
+        minimal_status,
+        repr_status,
+        resp.meta.as_ref().map(|m| m.uid.as_str()),
+        |status| respond(headers, status, &resp.body),
+    );
     if let Some(meta) = &resp.meta {
         set_resource_headers(&mut out, base_path, segment, meta);
     }
-    set_preference_applied(&mut out, applied_preference(headers));
     out
+}
+
+/// Render a sub-collection write (the `ITEM_TAG` list of a target): the stored
+/// collection on `Prefer: return=representation`, otherwise the empty
+/// `minimal_status` body — and the applied preference declared either way.
+///
+/// The collection is not a `uid`-versioned resource of its own, so there is no
+/// identifier to return: `return=identifier` cannot be honoured here and
+/// resolves to the applied default `return=minimal` (§Representation details
+/// negotiation: "If no `Prefer` header is provided, the default behavior is
+/// assumed to be `return=minimal`"). No `ETag`/`Location` — the collection
+/// write mints no new resource.
+pub(crate) fn write_collection(
+    headers: &HeaderMap,
+    minimal_status: StatusCode,
+    repr_status: StatusCode,
+    body: &serde_json::Value,
+) -> Response {
+    write_negotiated(headers, minimal_status, repr_status, None, |status| {
+        respond(headers, status, body)
+    })
 }
 
 /// Render a `200 OK` read of a single spec-typed RM object, additionally
@@ -1432,6 +1543,182 @@ mod tests {
         let bytes = out.into_body().collect().await.expect("body").to_bytes();
         let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
         assert_eq!(body, serde_json::json!({ "uid": "v::s::9" }));
+    }
+
+    /// `Requests_and_responses.md` §"Prefer only identifier": the identifier
+    /// variant "implies minimal response semantics, but with a non-empty
+    /// response body (i.e. the status will be `201 Created` or `200 OK`, never
+    /// `204 No Content`)" — across every (minimal, representation) status pair
+    /// a write route uses.
+    #[test]
+    fn identifier_status_is_never_204() {
+        let pairs = [
+            (StatusCode::NO_CONTENT, StatusCode::OK),
+            (StatusCode::CREATED, StatusCode::CREATED),
+            (StatusCode::OK, StatusCode::OK),
+            (StatusCode::NO_CONTENT, StatusCode::CREATED),
+        ];
+        for (minimal, repr) in pairs {
+            let got = identifier_status(minimal, repr);
+            assert_ne!(
+                got,
+                StatusCode::NO_CONTENT,
+                "return=identifier is `201 Created` or `200 OK`, never `204 No Content` \
+                 (overview §Prefer only identifier); minimal={minimal}, repr={repr}"
+            );
+            assert!(
+                got == StatusCode::OK || got == StatusCode::CREATED,
+                "return=identifier status must be 200 or 201, got {got}"
+            );
+        }
+    }
+
+    /// The identifier branch is unreachable without an identifier to render,
+    /// so an applied `return=identifier` can never degrade into the empty
+    /// (possibly `204`) minimal body.
+    #[test]
+    fn resolve_write_preference_needs_a_uid_for_identifier() {
+        let h = headers(&[("prefer", "return=identifier")]);
+        assert_eq!(
+            resolve_write_preference(&h, Some("v::s::1")),
+            AppliedPreference::Identifier("v::s::1")
+        );
+        assert_eq!(
+            resolve_write_preference(&h, None),
+            AppliedPreference::Minimal,
+            "an unhonourable return=identifier applies the default return=minimal \
+             (overview §Representation details negotiation)"
+        );
+        assert_eq!(
+            resolve_write_preference(&HeaderMap::new(), Some("v::s::1")),
+            AppliedPreference::Minimal
+        );
+        assert_eq!(
+            resolve_write_preference(
+                &headers(&[("prefer", "return=representation")]),
+                Some("v::s::1")
+            ),
+            AppliedPreference::Representation
+        );
+    }
+
+    #[tokio::test]
+    async fn write_rm_identifier_on_create_is_201_with_uid_body() {
+        use http_body_util::BodyExt;
+        use openehr_rm::prelude::Composition;
+        let value = serde_json::json!({"_type": "COMPOSITION"});
+        let resp = ServiceResponse::new(value, meta("e1", "v::s::1"));
+        let h = headers(&[("prefer", "return=identifier")]);
+        let out = write_rm::<Composition>(
+            &h,
+            BASE,
+            StatusCode::CREATED,
+            StatusCode::CREATED,
+            Some("composition"),
+            &resp,
+            "composition",
+        );
+        assert_eq!(out.status(), StatusCode::CREATED);
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=identifier")
+        );
+        let bytes = out.into_body().collect().await.expect("body").to_bytes();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(body, serde_json::json!({ "uid": "v::s::1" }));
+    }
+
+    /// A write that yields no resource metadata cannot produce the identifier
+    /// body the preference is defined by, so the server applies AND declares
+    /// the default `return=minimal` — never `Preference-Applied:
+    /// return=identifier` over an empty body (overview §Representation details
+    /// negotiation: the header indicates the preference that "has been
+    /// honored").
+    #[test]
+    fn write_rm_identifier_without_meta_declares_minimal() {
+        use openehr_rm::prelude::Composition;
+        let resp = ServiceResponse::plain(serde_json::Value::Null);
+        let h = headers(&[("prefer", "return=identifier")]);
+        let out = write_rm::<Composition>(
+            &h,
+            BASE,
+            StatusCode::NO_CONTENT,
+            StatusCode::OK,
+            Some("composition"),
+            &resp,
+            "composition",
+        );
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=minimal"),
+            "an unapplied preference is never claimed"
+        );
+        assert_eq!(out.status(), StatusCode::NO_CONTENT);
+        assert!(etag(&out).is_none());
+    }
+
+    #[tokio::test]
+    async fn write_json_identifier_is_never_204() {
+        use http_body_util::BodyExt;
+        let value = serde_json::json!({"_type": "CONTRIBUTION"});
+        let resp = ServiceResponse::new(value, meta("e1", "c::s::1"));
+        let h = headers(&[("prefer", "return=identifier")]);
+        let out = write_json(
+            &h,
+            BASE,
+            StatusCode::NO_CONTENT,
+            StatusCode::OK,
+            Some("contribution"),
+            &resp,
+        );
+        assert_eq!(
+            out.status(),
+            StatusCode::OK,
+            "the identifier variant is 200/201, never 204 \
+             (overview §Prefer only identifier)"
+        );
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=identifier")
+        );
+        let bytes = out.into_body().collect().await.expect("body").to_bytes();
+        let body: serde_json::Value = serde_json::from_slice(&bytes).expect("json");
+        assert_eq!(body, serde_json::json!({ "uid": "c::s::1" }));
+    }
+
+    #[test]
+    fn write_json_identifier_without_meta_declares_minimal() {
+        let resp = ServiceResponse::plain(serde_json::Value::Null);
+        let h = headers(&[("prefer", "return=identifier")]);
+        let out = write_json(
+            &h,
+            BASE,
+            StatusCode::NO_CONTENT,
+            StatusCode::OK,
+            Some("contribution"),
+            &resp,
+        );
+        assert_eq!(preference_applied(&out).as_deref(), Some("return=minimal"));
+        assert_eq!(out.status(), StatusCode::NO_CONTENT);
+    }
+
+    /// `Preference-Applied` on the identifier path is the same header the
+    /// shared setter writes for every other write route.
+    #[test]
+    fn set_preference_applied_renders_each_token() {
+        let mut out = empty(StatusCode::OK);
+        set_preference_applied(&mut out, AppliedPreference::Minimal);
+        assert_eq!(preference_applied(&out).as_deref(), Some("return=minimal"));
+        set_preference_applied(&mut out, AppliedPreference::Identifier("v::s::1"));
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=identifier")
+        );
+        set_preference_applied(&mut out, AppliedPreference::Representation);
+        assert_eq!(
+            preference_applied(&out).as_deref(),
+            Some("return=representation")
+        );
     }
 
     #[test]

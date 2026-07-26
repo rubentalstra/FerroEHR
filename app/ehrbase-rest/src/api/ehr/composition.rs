@@ -26,7 +26,7 @@ use ehrbase::service::response::{ResourceMeta, ServiceResponse};
 use ehrbase::versioning::change::Committed;
 
 use crate::api::RequestParts;
-use crate::negotiate::WireFormat;
+use crate::negotiate::{AppliedPreference, WireFormat};
 use crate::overview::error::RestError;
 use crate::overview::version_id::{
     object_id_uuid, parse_ehr_id, parse_uid_based_id, parse_version_uid, require_if_match,
@@ -116,9 +116,7 @@ pub(super) async fn run(
             let mut resp =
                 composition_write_response(&state, h, &base, ehr_id, meta, created, created)
                     .await?;
-            if let Some((names, tags)) = stored_tags {
-                super::echo_item_tags(&mut resp, &names, &tags);
-            }
+            super::echo_item_tags(&mut resp, &stored_tags);
             Ok(resp)
         }
         "composition_get" => {
@@ -248,9 +246,7 @@ pub(super) async fn run(
                     let meta = commit_meta(ehr_id, new_uid, &committed);
                     let mut resp =
                         composition_write_response(&state, h, &base, ehr_id, meta, ok, ok).await?;
-                    if let Some((names, tags)) = stored_tags {
-                        super::echo_item_tags(&mut resp, &names, &tags);
-                    }
+                    super::echo_item_tags(&mut resp, &stored_tags);
                     Ok(resp)
                 }
                 Err(e @ ehrbase::service::error::ServiceError::VersionConflict(_)) => {
@@ -345,12 +341,13 @@ pub(super) async fn run(
             // composition_tags_update.yaml — 200 (the stored ITEM_TAG list)
             // on `Prefer: return=representation`; 204 (`204_updated.yaml`)
             // when `Prefer` is missing or `return=minimal` (the default —
-            // overview §Prefer).
-            if negotiate::prefers_representation(h) {
-                Ok(negotiate::respond(h, ok, &Value::Array(tags)))
-            } else {
-                Ok(negotiate::empty(no_content))
-            }
+            // overview §Prefer), with `Preference-Applied` declaring which.
+            Ok(negotiate::write_collection(
+                h,
+                no_content,
+                ok,
+                &Value::Array(tags),
+            ))
         }
         "composition_tags_delete" => {
             let p = params::build::<CompositionTagsDeleteParams>(&parts.path, q, h)?;
@@ -417,6 +414,14 @@ async fn composition_write_response(
         // Route through the same header helper the canonical write uses, as
         // the CONTRIBUTION simplified-commit path already does.
         negotiate::set_resource_headers(&mut out, base, Some("composition"), &meta);
+        // NOTE: a Simplified-Formats commit always answers with the committed
+        // COMPOSITION in the negotiated FLAT/STRUCTURED form — the `Accept`
+        // decides the body here, not `Prefer` — so the preference this
+        // response applies is `return=representation` whatever the client
+        // asked for. `Preference-Applied` states what the response DID
+        // (`Requests_and_responses.md` §Representation details negotiation),
+        // so it is declared through the same seam as every other write path.
+        negotiate::set_preference_applied(&mut out, AppliedPreference::Representation);
         return Ok(out);
     }
     let body = if negotiate::prefers_representation(h) {

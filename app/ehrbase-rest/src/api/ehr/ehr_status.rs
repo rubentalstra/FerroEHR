@@ -129,9 +129,7 @@ pub(super) async fn run(
                         &resp,
                         "ehr_status",
                     );
-                    if let Some((names, tags)) = stored_tags {
-                        super::echo_item_tags(&mut resp, &names, &tags);
-                    }
+                    super::echo_item_tags(&mut resp, &stored_tags);
                     Ok(resp)
                 }
                 Err(e) if e.status == CallStatusType::VersionMismatch => {
@@ -171,12 +169,13 @@ pub(super) async fn run(
             // ehr_status_tags_update.yaml — 200 (the stored ITEM_TAG list) on
             // `Prefer: return=representation`; 204 (`204_updated.yaml`) when
             // `Prefer` is missing or `return=minimal` (the default —
-            // overview §Prefer).
-            if negotiate::prefers_representation(h) {
-                Ok(negotiate::respond(h, ok, &Value::Array(tags)))
-            } else {
-                Ok(negotiate::empty(no_content))
-            }
+            // overview §Prefer), with `Preference-Applied` declaring which.
+            Ok(negotiate::write_collection(
+                h,
+                no_content,
+                ok,
+                &Value::Array(tags),
+            ))
         }
         "ehr_status_tags_delete" => {
             let p = params::build::<EhrStatusTagsDeleteParams>(&parts.path, q, h)?;

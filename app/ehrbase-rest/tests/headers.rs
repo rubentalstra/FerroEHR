@@ -680,3 +680,279 @@ async fn ehr_create_carries_last_modified() {
     let version: Value = serde_json::from_str(&body).expect("json ORIGINAL_VERSION");
     assert_eq!(lm, imf_fixdate(commit_instant(&version)));
 }
+
+// ── openehr-item-tag / openehr-version-item-tag (overview §"openehr-item-tag ──
+//    and openehr-version-item-tag") ────────────────────────────────────────────
+
+/// The spec sentence these assertions encode: "`openehr-item-tag` applies to
+/// *`VERSIONED_OBJECT`* targets" while "`openehr-version-item-tag` applies to a
+/// specific target *VERSION* within a `VERSIONED_OBJECT`" — two DISTINCT targets,
+/// each confirmed by "the actual list of `ITEM_TAGs` stored" for that target
+/// (§Usage in Responses).
+const DISTINCT_TARGETS: &str = "overview §\"openehr-item-tag and openehr-version-item-tag\": \
+     openehr-item-tag applies to VERSIONED_OBJECT targets, openehr-version-item-tag to a \
+     specific VERSION — each response header confirms only its own target's stored list";
+
+fn raw(h: &header::HeaderMap, name: &str) -> Option<String> {
+    h.get(name).and_then(|v| v.to_str().ok()).map(str::to_owned)
+}
+
+/// The `key="…"` values of an item-tag wrapper header value, in order.
+fn tag_keys(value: &str) -> Vec<String> {
+    value
+        .split(';')
+        .filter_map(|entry| {
+            entry
+                .split(',')
+                .map(str::trim)
+                .find_map(|pair| pair.strip_prefix("key=").map(|k| k.trim_matches('"')))
+        })
+        .map(str::to_owned)
+        .collect()
+}
+
+/// The stored `ITEM_TAG` keys of a COMPOSITION tag target, read back through
+/// the dedicated `composition_tags_get` operation.
+async fn stored_tag_keys(app: &Router, ehr_id: &str, uid_based_id: &str) -> Vec<String> {
+    let req = Request::builder()
+        .method("GET")
+        .uri(format!(
+            "{BASE}/ehr/{ehr_id}/composition/{uid_based_id}/tags"
+        ))
+        .body(Body::empty())
+        .unwrap();
+    let (status, _h, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::OK, "tags read: {body}");
+    let tags: Value = serde_json::from_str(&body).expect("json ITEM_TAG list");
+    let mut keys: Vec<String> = tags
+        .as_array()
+        .expect("ITEM_TAG list")
+        .iter()
+        .map(|t| t["key"].as_str().expect("ITEM_TAG.key").to_owned())
+        .collect();
+    keys.sort();
+    keys
+}
+
+/// Both wrapper headers on one write address different targets, so each
+/// response header echoes ONLY its own target's stored collection — never the
+/// union of the two.
+#[tokio::test]
+async fn composition_update_echoes_each_item_tag_target_under_its_own_header() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let ovid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    let mut updated = canonical_composition();
+    updated.as_object_mut().unwrap().remove("uid");
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{ovid}\""))
+        .header("openehr-item-tag", "key=\"category\",value=\"final\"")
+        .header(
+            "openehr-version-item-tag",
+            "key=\"reviewed\",value=\"true\"",
+        )
+        .body(Body::from(updated.to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "composition update: {body}");
+    let new_ovid = etag_uid(&h);
+
+    let object_echo = raw(&h, "openehr-item-tag").expect("openehr-item-tag echoed");
+    let version_echo =
+        raw(&h, "openehr-version-item-tag").expect("openehr-version-item-tag echoed");
+    assert_eq!(
+        tag_keys(&object_echo),
+        vec!["category".to_owned()],
+        "{DISTINCT_TARGETS}; got openehr-item-tag: {object_echo:?}"
+    );
+    assert_eq!(
+        tag_keys(&version_echo),
+        vec!["reviewed".to_owned()],
+        "{DISTINCT_TARGETS}; got openehr-version-item-tag: {version_echo:?}"
+    );
+
+    // …and the echo is the truth: the dedicated tag reads show the same split
+    // between the VERSIONED_OBJECT and the committed VERSION.
+    assert_eq!(
+        stored_tag_keys(&app, &ehr_id, &vo).await,
+        vec!["category".to_owned()],
+        "{DISTINCT_TARGETS}"
+    );
+    assert_eq!(
+        stored_tag_keys(&app, &ehr_id, &new_ovid).await,
+        vec!["reviewed".to_owned()],
+        "{DISTINCT_TARGETS}"
+    );
+}
+
+/// A request that carries only one wrapper header writes — and echoes — only
+/// that target: "an absent header leaves the other target's tags untouched"
+/// follows from the headers addressing distinct targets, so the absent
+/// header's collection is not confirmed at all.
+#[tokio::test]
+async fn composition_update_echoes_nothing_for_an_absent_item_tag_header() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    upload_opt(&app).await;
+    let ovid = commit_composition(&app, &ehr_id).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    let mut updated = canonical_composition();
+    updated.as_object_mut().unwrap().remove("uid");
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{ovid}\""))
+        .header(
+            "openehr-version-item-tag",
+            "key=\"reviewed\",value=\"true\"",
+        )
+        .body(Body::from(updated.to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "composition update: {body}");
+    let new_ovid = etag_uid(&h);
+
+    assert_eq!(
+        raw(&h, "openehr-version-item-tag").as_deref().map(tag_keys),
+        Some(vec!["reviewed".to_owned()]),
+        "{DISTINCT_TARGETS}"
+    );
+    assert!(
+        raw(&h, "openehr-item-tag").is_none(),
+        "{DISTINCT_TARGETS}: the VERSIONED_OBJECT collection was never addressed, so \
+         nothing is confirmed for it — got {:?}",
+        raw(&h, "openehr-item-tag")
+    );
+    assert!(
+        stored_tag_keys(&app, &ehr_id, &vo).await.is_empty(),
+        "{DISTINCT_TARGETS}: the VERSIONED_OBJECT target stays untagged"
+    );
+    assert_eq!(
+        stored_tag_keys(&app, &ehr_id, &new_ovid).await,
+        vec!["reviewed".to_owned()],
+        "{DISTINCT_TARGETS}"
+    );
+}
+
+// ── Preference-Applied (overview §Representation details negotiation) ────────
+
+fn preference_applied(h: &header::HeaderMap) -> Option<String> {
+    raw(h, "preference-applied")
+}
+
+/// "The service MAY include a `Preference-Applied` header in the response …
+/// to indicate that the client's preference has been honored"; "if no `Prefer`
+/// header is provided, the default behavior is assumed to be `return=minimal`"
+/// — every write path declares what it applied, including the applied default.
+#[tokio::test]
+async fn writes_declare_the_applied_preference() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+
+    // Template upload (the definition group's own identifier body).
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/definition/template/adl1.4"))
+        .header(header::CONTENT_TYPE, "application/xml")
+        .body(Body::from(opt_xml()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "OPT upload: {body}");
+    assert_eq!(
+        preference_applied(&h).as_deref(),
+        Some("return=minimal"),
+        "the template upload declares the applied default"
+    );
+
+    // COMPOSITION create with an explicit representation preference.
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", "return=representation")
+        .body(Body::from(canonical_composition().to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::CREATED, "composition commit: {body}");
+    assert_eq!(
+        preference_applied(&h).as_deref(),
+        Some("return=representation")
+    );
+    let ovid = etag_uid(&h);
+    let vo = vo_of(&ovid).to_owned();
+
+    // The ITEM_TAG collection write is not a uid-versioned resource, so it
+    // declares minimal / representation only.
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}/tags"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .body(Body::from(
+            serde_json::json!([{ "key": "category", "value": "final" }]).to_string(),
+        ))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "tags update: {body}");
+    assert_eq!(preference_applied(&h).as_deref(), Some("return=minimal"));
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}/tags"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header("Prefer", "return=representation")
+        .body(Body::from(
+            serde_json::json!([{ "key": "category", "value": "final" }]).to_string(),
+        ))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::OK, "tags update: {body}");
+    assert_eq!(
+        preference_applied(&h).as_deref(),
+        Some("return=representation")
+    );
+}
+
+/// "This is a variant of preference that implies minimal response semantics,
+/// but with a non-empty response body (i.e. the status will be `201 Created`
+/// or `200 OK`, never `204 No Content`)" — on the `EHR_STATUS` PUT, whose
+/// minimal outcome IS `204`.
+#[tokio::test]
+async fn ehr_status_update_identifier_is_never_204() {
+    let (_pg, app) = app().await;
+    let ehr_id = create_ehr(&app).await;
+    let (mut status_body, current) = current_ehr_status(&app, &ehr_id).await;
+    status_body.as_object_mut().unwrap().remove("uid");
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/ehr_status"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{current}\""))
+        .header("Prefer", "return=identifier")
+        .body(Body::from(status_body.to_string()))
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "overview §\"Prefer only identifier\": the status will be 201 Created or 200 OK, \
+         never 204 No Content — got {status} with body {body:?}"
+    );
+    assert_eq!(preference_applied(&h).as_deref(), Some("return=identifier"));
+    let uid = etag_uid(&h);
+    let v: Value = serde_json::from_str(&body).expect("json identifier body");
+    assert_eq!(
+        v,
+        serde_json::json!({ "uid": uid }),
+        "overview §\"Prefer only identifier\": a single JSON object with a single uid attribute"
+    );
+}
