@@ -263,6 +263,153 @@ async fn versioned_writes_document_if_match_and_412() {
     );
 }
 
+/// The four EHR-resource operations are documented to full step-6
+/// completeness: every real status branch, a `headers(...)` block on every
+/// success response, the `Prefer`-conditional 201 body as a named example
+/// pair, and a UUID-only `ehr_id`.
+///
+/// The branches are the released ITS-REST text, not the stalled OAS:
+/// `Requests_and_responses.md` §"HTTP status codes" assigns `400` to
+/// "malformed request syntax, syntactically invalid content", `409` to a
+/// request that "might generate a duplicate or a conflict" and `422` to a
+/// well-formed request "unable to be followed due to semantic errors";
+/// `Resources.md` §"XML Format"/§"JSON Format"/§"Simplified Formats" make an
+/// unprocessable request payload a `415` MUST and an unfulfillable `Accept` a
+/// `406` MUST. `Requests_and_responses.md` §Location confines `Location` to
+/// creation responses, so a read MUST NOT declare it.
+#[tokio::test]
+async fn ehr_resource_operations_are_fully_documented() {
+    const EHR: &str = "/ehrbase/rest/openehr/v1/ehr";
+    const EHR_BY_ID: &str = "/ehrbase/rest/openehr/v1/ehr/{ehr_id}";
+
+    let doc = served_document().await;
+
+    let codes = |op: &Value| -> Vec<String> {
+        op["responses"]
+            .as_object()
+            .map(|r| r.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let header_names = |op: &Value, status: &str| -> Vec<String> {
+        op["responses"][status]["headers"]
+            .as_object()
+            .map(|h| h.keys().cloned().collect())
+            .unwrap_or_default()
+    };
+    let param_description = |op: &Value, name: &str| -> String {
+        op["parameters"]
+            .as_array()
+            .and_then(|params| {
+                params
+                    .iter()
+                    .find(|p| p["name"].as_str() == Some(name))
+                    .and_then(|p| p["description"].as_str())
+            })
+            .unwrap_or_default()
+            .to_owned()
+    };
+    // The media-type entry of a `content` map, whatever the negotiated type is
+    // keyed as (these operations declare one canonical media type).
+    let first_content = |holder: &Value| -> Value {
+        holder["content"]
+            .as_object()
+            .and_then(|c| c.values().next())
+            .cloned()
+            .unwrap_or_default()
+    };
+
+    // ── The two creates: every branch, every committal header, both bodies ──
+    for (path, method) in [(EHR, "post"), (EHR_BY_ID, "put")] {
+        let op = doc["paths"][path][method].clone();
+        assert!(op.is_object(), "{method} {path} must be documented");
+        let present = codes(&op);
+        for expected in ["201", "400", "406", "409", "415", "422"] {
+            assert!(
+                present.iter().any(|c| c == expected),
+                "{method} {path} must document {expected}; has {present:?}"
+            );
+        }
+        let headers = header_names(&op, "201");
+        for expected in ["ETag", "Location", "Last-Modified", "Preference-Applied"] {
+            assert!(
+                headers.iter().any(|h| h == expected),
+                "{method} {path} 201 must document the {expected} header; has {headers:?}"
+            );
+        }
+        // The Prefer-conditional body: utoipa cannot express a
+        // request-header-conditional schema, so the two non-empty variants are
+        // named examples on the 201 (§"Prefer minimal, identifier or full
+        // representation response").
+        let examples = first_content(&op["responses"]["201"])["examples"].clone();
+        assert_eq!(
+            examples["representation"]["value"]["_type"], "EHR",
+            "{method} {path} 201 must carry the `representation` RM EHR example: {examples}"
+        );
+        assert!(
+            examples["identifier"]["value"]["uid"].is_string(),
+            "{method} {path} 201 must carry the `identifier` single-uid example: {examples}"
+        );
+        // The request body shows a real EHR_STATUS, archetype_details included.
+        let body = first_content(&op["requestBody"])["example"].clone();
+        assert_eq!(body["_type"], "EHR_STATUS", "{method} {path} body example");
+        assert_eq!(
+            body["archetype_details"]["_type"], "ARCHETYPED",
+            "{method} {path} body example must carry archetype_details"
+        );
+        // All three Prefer tokens are enumerated on the header parameter.
+        let prefer = param_description(&op, "Prefer");
+        for token in [
+            "return=minimal",
+            "return=identifier",
+            "return=representation",
+        ] {
+            assert!(
+                prefer.contains(token),
+                "{method} {path} Prefer description must enumerate {token}: {prefer}"
+            );
+        }
+    }
+
+    // ── The two reads: 400/406 branches, ETag documented, Location absent ───
+    for path in [EHR, EHR_BY_ID] {
+        let op = doc["paths"][path]["get"].clone();
+        assert!(op.is_object(), "GET {path} must be documented");
+        let present = codes(&op);
+        for expected in ["200", "400", "404", "406"] {
+            assert!(
+                present.iter().any(|c| c == expected),
+                "GET {path} must document {expected}; has {present:?}"
+            );
+        }
+        let headers = header_names(&op, "200");
+        assert!(
+            headers.iter().any(|h| h == "ETag"),
+            "GET {path} 200 must document the weak ETag; has {headers:?}"
+        );
+        assert!(
+            !headers.iter().any(|h| h == "Location"),
+            "GET {path} 200 must NOT declare Location (§Location: creation only)"
+        );
+        assert_eq!(
+            first_content(&op["responses"]["200"])["example"]["_type"],
+            "EHR",
+            "GET {path} 200 must carry the real served EHR example"
+        );
+    }
+
+    // ── `ehr_id` is UUID-only on the create-with-id path ────────────────────
+    let put = doc["paths"][EHR_BY_ID]["put"].clone();
+    let ehr_id = param_description(&put, "ehr_id");
+    assert!(
+        ehr_id.contains("UUID"),
+        "PUT {EHR_BY_ID} must type ehr_id as a UUID: {ehr_id}"
+    );
+    assert!(
+        !ehr_id.contains("strongly recommended"),
+        "PUT {EHR_BY_ID} must not claim non-UUID HIER_OBJECT_IDs are accepted: {ehr_id}"
+    );
+}
+
 /// The System API's one operation appears in the served document, fully
 /// described (#418): a closure route mounted outside `OpenApiRouter` still
 /// belongs to the composed `OpenAPI` — the served document describes the

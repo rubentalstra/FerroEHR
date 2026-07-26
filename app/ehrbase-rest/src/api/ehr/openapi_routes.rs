@@ -71,21 +71,72 @@ pub(crate) fn routes() -> OpenApiRouter<AppState> {
     params(
         ("subject_id" = String, Query,
          description = "The EHR subject id (matched against \
-                        EHR_STATUS.subject.external_ref.id.value). Required."),
+                        EHR_STATUS.subject.external_ref.id.value). Required.",
+         example = "ins01"),
         ("subject_namespace" = String, Query,
          description = "The EHR subject id namespace (matched against \
-                        EHR_STATUS.subject.external_ref.namespace). Required.")
+                        EHR_STATUS.subject.external_ref.namespace). Required.",
+         example = "demographic")
     ),
     responses(
-        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`); \
+        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`). \
                                       `ETag` (weak `W/` form) carries \
-                                      `EHR.ehr_id.value`.",
-         body = serde_json::Value),
-        (status = 400, description = "A required subject query parameter is \
-                                      missing or malformed.",
+                                      `EHR.ehr_id.value`. No `Location` and no \
+                                      `Last-Modified`: `Requests_and_responses.md` \
+                                      §Location forbids `Location` on a `GET` \
+                                      (\"It MUST NOT be used to indicate an \
+                                      alternate representation of an existing \
+                                      resource\"), and the RM `EHR` root is not a \
+                                      VERSION, so the §\"ETag and Last-Modified\" \
+                                      source `VERSION.commit_audit.time_committed` \
+                                      does not exist for it.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<ehr_id>\"` \
+                             (`Requests_and_responses.md` §\"ETag and \
+                             Last-Modified\": the value \"is usually taken from \
+                             e.g. … EHR.ehr_id.value\" and the `W/` weakness \
+                             indicator is required since Release 1.1.0)."),
+         ),
+         example = json!({
+             "_type": "EHR",
+             "system_id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" },
+             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" },
+             "ehr_status": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "VERSIONED_EHR_STATUS",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+             },
+             "time_created": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+             "ehr_access": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "VERSIONED_EHR_ACCESS",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8" }
+             }
+         })),
+        (status = 400, description = "A required subject query parameter \
+                                      (`subject_id`, `subject_namespace`) is \
+                                      missing, or a supplied one is malformed \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\").",
          body = serde_json::Value),
         (status = 404, description = "No EHR exists with the supplied subject \
                                       id and namespace.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR resource has only the canonical \
+                                      `application/json` / `application/xml` \
+                                      representations (`Resources.md` §\"XML \
+                                      Format\"/§\"JSON Format\": \"If the service \
+                                      cannot fulfill this aspect of the request, \
+                                      it MUST respond with HTTP status code `406 \
+                                      Not Acceptable`\"; the Simplified Formats \
+                                      are not defined for a non-templated \
+                                      resource).",
          body = serde_json::Value)
     )
 )]
@@ -112,8 +163,17 @@ pub(crate) async fn ehr_get_by_subject(
     post, path = "/ehr", tag = "EHR",
     params(
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`."),
+         description = "Response-verbosity preference \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). Exactly one of the three tokens: \
+                        `return=minimal` — empty body; `return=identifier` — the \
+                        body is only `{ \"uid\": \"<ehr_id>\" }`; \
+                        `return=representation` — the full RM `EHR`. An absent \
+                        header means `return=minimal` (\"If no `Prefer` header is \
+                        provided, the default behavior is assumed to be \
+                        `return=minimal`\"); the token actually applied is echoed \
+                        in the `Preference-Applied` response header.",
+         example = "return=representation"),
         ("openehr-version" = Option<String>, Header,
          description = "Committal metadata for the EHR_STATUS VERSION the \
                         creation commits, as an attribute-path list — e.g. \
@@ -136,26 +196,125 @@ pub(crate) async fn ehr_get_by_subject(
     request_body(content = serde_json::Value,
                  description = "Optional EHR_STATUS for the new EHR; when \
                                 omitted a default (is_queryable=true, \
-                                is_modifiable=true, PARTY_SELF subject) is used."),
+                                is_modifiable=true, PARTY_SELF subject) is used.",
+                 example = json!({
+                     "_type": "EHR_STATUS",
+                     "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                     "subject": {
+                         "_type": "PARTY_SELF",
+                         "external_ref": {
+                             "_type": "PARTY_REF",
+                             "namespace": "demographic",
+                             "type": "PERSON",
+                             "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                         }
+                     },
+                     "is_queryable": true,
+                     "is_modifiable": true
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` (weak `W/` form) carries \
+        (status = 201, description = "Created. `ETag` (weak `W/` form) carries \
                                       the new `ehr_id`, `Last-Modified` the \
-                                      creation instant, `Location` the EHR URL. \
-                                      Body per `Prefer` (representation or \
-                                      identifier; empty for minimal).",
-         body = serde_json::Value),
+                                      creation instant, `Location` the EHR URL, \
+                                      and `Preference-Applied` the `Prefer` token \
+                                      actually honoured. The body is \
+                                      `Prefer`-conditional \
+                                      (`Requests_and_responses.md` §\"Prefer \
+                                      minimal, identifier or full representation \
+                                      response\"): the full RM `EHR` for \
+                                      `return=representation` (the \
+                                      `representation` example), the single-`uid` \
+                                      object for `return=identifier` (the \
+                                      `identifier` example), and no body at all \
+                                      for the default `return=minimal`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<ehr_id>\"` of the created \
+                             EHR (§\"ETag and Last-Modified\")."),
+             ("Location" = String,
+              description = "The URL of the newly created EHR, \
+                             `<base_path>/ehr/<ehr_id>` (§Location: used \"in `201 \
+                             Created` responses when a new resource is \
+                             successfully created\")."),
+             ("Last-Modified" = String,
+              description = "The creating CONTRIBUTION's commit instant as an \
+                             HTTP-date (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured (§\"Representation details negotiation\")."),
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the full RM EHR",
+              value = json!({
+                  "_type": "EHR",
+                  "system_id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" },
+                  "ehr_id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" },
+                  "ehr_status": {
+                      "_type": "OBJECT_REF",
+                      "namespace": "local",
+                      "type": "VERSIONED_EHR_STATUS",
+                      "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+                  },
+                  "time_created": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                  "ehr_access": {
+                      "_type": "OBJECT_REF",
+                      "namespace": "local",
+                      "type": "VERSIONED_EHR_ACCESS",
+                      "id": { "_type": "HIER_OBJECT_ID", "value": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8" }
+                  }
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the new ehr_id",
+              value = json!({ "uid": "7d44b88c-4199-4bad-97dc-d78268e01398" })))
+         )),
         (status = 400, description = "The request could not be parsed, or a \
                                       committal `change_type` names a legal \
                                       audit_change_type code that contradicts a \
-                                      creation.",
+                                      creation (§\"HTTP status codes\", the `400` \
+                                      row: \"malformed request syntax, \
+                                      syntactically invalid content\").",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR/EHR_STATUS resources have only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": an unfulfillable `Accept` MUST be \
+                                      `406`).",
          body = serde_json::Value),
         (status = 409, description = "An EHR already exists for the subject \
-                                      id/namespace of the supplied EHR_STATUS.",
+                                      id/namespace of the supplied EHR_STATUS \
+                                      (§\"HTTP status codes\", the `409` row: the \
+                                      request \"might generate a duplicate or a \
+                                      conflict\").",
          body = serde_json::Value),
-        (status = 422, description = "The supplied EHR_STATUS is semantically \
-                                      invalid, or a committal \
+        (status = 415, description = "The request `Content-Type` is not a format \
+                                      this resource can process — notably a \
+                                      Simplified Format, which is defined only for \
+                                      templated COMPOSITION content \
+                                      (`Resources.md` §\"Simplified Formats\": \"If \
+                                      the service cannot process the request \
+                                      payload as the simplified format is not \
+                                      supported, it MUST respond with HTTP status \
+                                      code `415 Unsupported Media Type`\"; \
+                                      §\"XML Format\"/§\"JSON Format\" carry the \
+                                      same MUST for the canonical types).",
+         body = serde_json::Value),
+        (status = 422, description = "The request was well-formed but cannot be \
+                                      followed: the supplied EHR_STATUS is \
+                                      semantically invalid, or a committal \
                                       `change_type`/`lifecycle_state` is not a \
-                                      member of its openEHR terminology group.",
+                                      member of its openEHR terminology group \
+                                      (§\"HTTP status codes\", the `422` row: \
+                                      \"The request was well-formed but was unable \
+                                      to be followed due to semantic errors\").",
          body = serde_json::Value)
     )
 )]
@@ -177,13 +336,61 @@ pub(crate) async fn ehr_create(
 #[utoipa::path(
     get, path = "/ehr/{ehr_id}", tag = "EHR",
     params(("ehr_id" = String, Path,
-            description = "EHR identifier, taken from EHR.ehr_id.value (a UUID).")),
+            description = "EHR identifier, taken from EHR.ehr_id.value — a UUID \
+                           (`Resources.md` §\"Identifier types\": \"the EHR \
+                           identifier is `7d44b88c-4199-4bad-97dc-d78268e01398`, \
+                           taken from EHR.ehr_id.value\"; the SM types the \
+                           argument `UUID` — `master02-overview.adoc` §\"Functional \
+                           Style\", `interface I_EHR_SERVICE { Boolean \
+                           has_ehr(UUID an_ehr_id); … }`).",
+            example = "7d44b88c-4199-4bad-97dc-d78268e01398")),
     responses(
-        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`); \
+        (status = 200, description = "The EHR (canonical JSON/XML per `Accept`). \
                                       `ETag` (weak `W/` form) carries \
-                                      `EHR.ehr_id.value`.",
+                                      `EHR.ehr_id.value`. No `Location` and no \
+                                      `Last-Modified`: `Requests_and_responses.md` \
+                                      §Location forbids `Location` on a `GET`, and \
+                                      the RM `EHR` root is not a VERSION, so it has \
+                                      no `commit_audit.time_committed` to report.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<ehr_id>\"` \
+                             (§\"ETag and Last-Modified\")."),
+         ),
+         example = json!({
+             "_type": "EHR",
+             "system_id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" },
+             "ehr_id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" },
+             "ehr_status": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "VERSIONED_EHR_STATUS",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+             },
+             "time_created": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+             "ehr_access": {
+                 "_type": "OBJECT_REF",
+                 "namespace": "local",
+                 "type": "VERSIONED_EHR_ACCESS",
+                 "id": { "_type": "HIER_OBJECT_ID", "value": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8" }
+             }
+         })),
+        (status = 400, description = "`ehr_id` is malformed — it is not a UUID \
+                                      (`Requests_and_responses.md` §\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\"). \
+                                      A syntactically valid but unknown id is \
+                                      `404`, not `400`.",
          body = serde_json::Value),
         (status = 404, description = "No EHR exists with `ehr_id`.",
+         body = serde_json::Value),
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR resource has only the canonical \
+                                      `application/json` / `application/xml` \
+                                      representations (`Resources.md` §\"XML \
+                                      Format\"/§\"JSON Format\": an unfulfillable \
+                                      `Accept` MUST be `406`).",
          body = serde_json::Value)
     )
 )]
@@ -203,7 +410,12 @@ pub(crate) async fn ehr_get_by_id(
 
 /// Create an EHR with a client-supplied id (`PUT /ehr/{ehr_id}`).
 ///
-/// `ehr_id` must be a valid `HIER_OBJECT_ID` (a UUID is strongly recommended).
+/// `ehr_id` is a UUID: the SM types the argument `UUID`
+/// (`SM/docs/openehr_platform/master02-overview.adoc` §"Functional Style":
+/// `UUID create_ehr_with_id(UUID an_ehr_id)`), and ITS-REST identifies an EHR
+/// by `EHR.ehr_id.value` in UUID form (`Resources.md` §"Identifier types").
+/// Every UUID is a valid `HIER_OBJECT_ID` root, so no released sentence is
+/// narrowed by accepting only UUIDs.
 /// The committal headers `openehr-version` / `openehr-audit-details` are
 /// accepted and merged into the creating CONTRIBUTION and its `EHR_STATUS`
 /// version (`Requests_and_responses.md` §openehr-version-and-audit-details).
@@ -211,11 +423,24 @@ pub(crate) async fn ehr_get_by_id(
     put, path = "/ehr/{ehr_id}", tag = "EHR",
     params(
         ("ehr_id" = String, Path,
-         description = "The client-supplied EHR id (a valid `HIER_OBJECT_ID`; \
-                        a UUID is strongly recommended)."),
+         description = "The client-supplied EHR id — a UUID, which becomes \
+                        `EHR.ehr_id.value` (`Resources.md` §\"Identifier types\"; \
+                        the SM argument is typed `UUID` — \
+                        `master02-overview.adoc` §\"Functional Style\", `UUID \
+                        create_ehr_with_id(UUID an_ehr_id)`). Every UUID is a \
+                        valid `HIER_OBJECT_ID` root, so this accepts every id the \
+                        released text requires.",
+         example = "7d44b88c-4199-4bad-97dc-d78268e01398"),
         ("Prefer" = Option<String>, Header,
-         description = "`return=minimal` (default), `return=representation`, \
-                        or `return=identifier`."),
+         description = "Response-verbosity preference \
+                        (`Requests_and_responses.md` §\"Representation details \
+                        negotiation\"). Exactly one of the three tokens: \
+                        `return=minimal` — empty body; `return=identifier` — the \
+                        body is only `{ \"uid\": \"<ehr_id>\" }`; \
+                        `return=representation` — the full RM `EHR`. An absent \
+                        header means `return=minimal`; the token actually applied \
+                        is echoed in the `Preference-Applied` response header.",
+         example = "return=representation"),
         ("openehr-version" = Option<String>, Header,
          description = "Committal metadata for the EHR_STATUS VERSION the \
                         creation commits, as an attribute-path list — e.g. \
@@ -238,26 +463,126 @@ pub(crate) async fn ehr_get_by_id(
     request_body(content = serde_json::Value,
                  description = "Optional EHR_STATUS for the new EHR; when \
                                 omitted a default (is_queryable=true, \
-                                is_modifiable=true, PARTY_SELF subject) is used."),
+                                is_modifiable=true, PARTY_SELF subject) is used.",
+                 example = json!({
+                     "_type": "EHR_STATUS",
+                     "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                     "archetype_details": {
+                         "_type": "ARCHETYPED",
+                         "archetype_id": { "_type": "ARCHETYPE_ID", "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                         "rm_version": "1.2.0"
+                     },
+                     "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+                     "subject": {
+                         "_type": "PARTY_SELF",
+                         "external_ref": {
+                             "_type": "PARTY_REF",
+                             "namespace": "demographic",
+                             "type": "PERSON",
+                             "id": { "_type": "GENERIC_ID", "value": "ins01", "scheme": "demographic" }
+                         }
+                     },
+                     "is_queryable": true,
+                     "is_modifiable": true
+                 })),
     responses(
-        (status = 201, description = "Created; `ETag` (weak `W/` form) carries \
+        (status = 201, description = "Created. `ETag` (weak `W/` form) carries \
                                       the `ehr_id`, `Last-Modified` the creation \
-                                      instant, `Location` the EHR URL. Body per \
-                                      `Prefer` (representation or identifier; \
-                                      empty for minimal).",
+                                      instant, `Location` the EHR URL, and \
+                                      `Preference-Applied` the `Prefer` token \
+                                      actually honoured. The body is \
+                                      `Prefer`-conditional \
+                                      (`Requests_and_responses.md` §\"Prefer \
+                                      minimal, identifier or full representation \
+                                      response\"): the full RM `EHR` for \
+                                      `return=representation` (the \
+                                      `representation` example), the single-`uid` \
+                                      object for `return=identifier` (the \
+                                      `identifier` example), and no body at all \
+                                      for the default `return=minimal`.",
+         body = serde_json::Value,
+         headers(
+             ("ETag" = String,
+              description = "The weak entity tag `W/\"<ehr_id>\"` of the created \
+                             EHR (§\"ETag and Last-Modified\")."),
+             ("Location" = String,
+              description = "The URL of the newly created EHR, \
+                             `<base_path>/ehr/<ehr_id>` (§Location: used \"in `201 \
+                             Created` responses when a new resource is \
+                             successfully created\")."),
+             ("Last-Modified" = String,
+              description = "The creating CONTRIBUTION's commit instant as an \
+                             HTTP-date (§\"ETag and Last-Modified\")."),
+             ("Preference-Applied" = String,
+              description = "`return=minimal` | `return=identifier` | \
+                             `return=representation` — the preference the service \
+                             honoured (§\"Representation details negotiation\")."),
+         ),
+         examples(
+             ("representation" = (summary = "Prefer: return=representation — the full RM EHR",
+              value = json!({
+                  "_type": "EHR",
+                  "system_id": { "_type": "HIER_OBJECT_ID", "value": "openEHRSys.example.com" },
+                  "ehr_id": { "_type": "HIER_OBJECT_ID", "value": "7d44b88c-4199-4bad-97dc-d78268e01398" },
+                  "ehr_status": {
+                      "_type": "OBJECT_REF",
+                      "namespace": "local",
+                      "type": "VERSIONED_EHR_STATUS",
+                      "id": { "_type": "HIER_OBJECT_ID", "value": "8849182c-82ad-4088-a07f-48ead4180515" }
+                  },
+                  "time_created": { "_type": "DV_DATE_TIME", "value": "2026-07-26T09:12:44.512331Z" },
+                  "ehr_access": {
+                      "_type": "OBJECT_REF",
+                      "namespace": "local",
+                      "type": "VERSIONED_EHR_ACCESS",
+                      "id": { "_type": "HIER_OBJECT_ID", "value": "1f2a3b4c-5d6e-4f70-8192-a3b4c5d6e7f8" }
+                  }
+              }))),
+             ("identifier" = (summary = "Prefer: return=identifier — only the ehr_id",
+              value = json!({ "uid": "7d44b88c-4199-4bad-97dc-d78268e01398" })))
+         )),
+        (status = 400, description = "`ehr_id` is not a UUID, the request could \
+                                      not be parsed, or a committal `change_type` \
+                                      names a legal audit_change_type code that \
+                                      contradicts a creation (§\"HTTP status \
+                                      codes\", the `400` row: \"malformed request \
+                                      syntax, syntactically invalid content\").",
          body = serde_json::Value),
-        (status = 400, description = "`ehr_id` is not a valid `HIER_OBJECT_ID`, \
-                                      the request could not be parsed, or a \
-                                      committal `change_type` names a legal \
-                                      audit_change_type code that contradicts a \
-                                      creation.",
+        (status = 406, description = "The `Accept` header cannot be satisfied: \
+                                      the EHR/EHR_STATUS resources have only the \
+                                      canonical `application/json` / \
+                                      `application/xml` representations \
+                                      (`Resources.md` §\"XML Format\"/§\"JSON \
+                                      Format\": an unfulfillable `Accept` MUST be \
+                                      `406`).",
          body = serde_json::Value),
-        (status = 409, description = "An EHR already exists with this `ehr_id`.",
+        (status = 409, description = "An EHR already exists with this `ehr_id` \
+                                      (§\"HTTP status codes\", the `409` row: the \
+                                      request \"might generate a duplicate or a \
+                                      conflict\"). Also returned when the supplied \
+                                      EHR_STATUS names a subject that already owns \
+                                      an EHR.",
          body = serde_json::Value),
-        (status = 422, description = "The supplied EHR_STATUS is semantically \
-                                      invalid, or a committal \
+        (status = 415, description = "The request `Content-Type` is not a format \
+                                      this resource can process — notably a \
+                                      Simplified Format, which is defined only for \
+                                      templated COMPOSITION content \
+                                      (`Resources.md` §\"Simplified Formats\": \"If \
+                                      the service cannot process the request \
+                                      payload as the simplified format is not \
+                                      supported, it MUST respond with HTTP status \
+                                      code `415 Unsupported Media Type`\"; \
+                                      §\"XML Format\"/§\"JSON Format\" carry the \
+                                      same MUST for the canonical types).",
+         body = serde_json::Value),
+        (status = 422, description = "The request was well-formed but cannot be \
+                                      followed: the supplied EHR_STATUS is \
+                                      semantically invalid, or a committal \
                                       `change_type`/`lifecycle_state` is not a \
-                                      member of its openEHR terminology group.",
+                                      member of its openEHR terminology group \
+                                      (§\"HTTP status codes\", the `422` row: \
+                                      \"The request was well-formed but was unable \
+                                      to be followed due to semantic errors\").",
          body = serde_json::Value)
     )
 )]
