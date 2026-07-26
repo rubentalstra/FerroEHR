@@ -91,6 +91,33 @@ impl EhrbaseConfig {
     pub fn validate(&self) -> Result<(), ConfigErrors> {
         let mut errors = Vec::new();
 
+        // server.system_id is stamped into every AUDIT_DETAILS, whose
+        // `system_id` carries the RM invariant `System_id_valid`:
+        // "not system_id.is_empty" (RM
+        // `docs/UML/classes/org.openehr.rm.common.audit_details.adoc`
+        // §Invariants). An empty value would author RM-invalid data, so it
+        // fails at boot.
+        if self.server.system_id.trim().is_empty() {
+            errors.push(ConfigError::semantic(
+                "server.system_id must not be empty (it is stamped into \
+                 EHR.system_id, AUDIT_DETAILS.system_id, and every \
+                 OBJECT_VERSION_ID)"
+                    .to_owned(),
+            ));
+        }
+        // `::` is the OBJECT_VERSION_ID field separator — "object_version_id =
+        // object_id, '::', creating_system_id, '::', version_tree_id" (BASE
+        // `base_types/master05-identification_package.adoc` §Syntaxes) — so a
+        // system id containing it would mint unparseable
+        // version identifiers.
+        if self.server.system_id.contains("::") {
+            errors.push(ConfigError::semantic(
+                "server.system_id must not contain \"::\" (the \
+                 OBJECT_VERSION_ID field separator)"
+                    .to_owned(),
+            ));
+        }
+
         // Authorization rules (moved verbatim from the old AuthzConfig::validate).
         if let Err(e) = self.authz.validate() {
             errors.push(ConfigError::semantic(format!("authz: {e}")));
@@ -389,6 +416,35 @@ mod tests {
         );
     }
 
+    /// `[server] system_id` — the CDR's own openEHR system identifier (stamped
+    /// into `EHR.system_id`, the `AUDIT_DETAILS.system_id` server default, and
+    /// every `OBJECT_VERSION_ID.creating_system_id`). Pins all three layers:
+    /// the compatibility default, the file value, and the `EHRBASE__` env form.
+    #[test]
+    fn server_system_id_default_file_and_env() {
+        // Default: unchanged from the service-layer constant, so an unset key
+        // boots byte-identically to previous behaviour.
+        let c = assemble_ok(None, &env(&[]), &[]);
+        assert_eq!(c.server.system_id, crate::service::DEFAULT_SYSTEM_ID);
+
+        // File.
+        let file = toml_file("[server]\nsystem_id = \"cdr.hospital.example\"\n");
+        let c = assemble_ok(Some(file.path()), &env(&[]), &[]);
+        assert_eq!(c.server.system_id, "cdr.hospital.example");
+
+        // Env wins over the file (the P-4 uniform grammar).
+        let c = assemble_ok(
+            Some(file.path()),
+            &env(&[("EHRBASE__SERVER__SYSTEM_ID", "cdr.env.example")]),
+            &[],
+        );
+        assert_eq!(c.server.system_id, "cdr.env.example");
+
+        // `system_id` and the `[server.identity]` display identity are
+        // independent knobs — setting one must not disturb the other.
+        assert_eq!(c.server.identity.solution, "EHRbase-RS");
+    }
+
     // ── 3. Strictness ─────────────────────────────────────────────────────────
 
     #[test]
@@ -604,6 +660,27 @@ mod tests {
         c.management.port = Some(8080);
         assert!(c.validate().is_err());
         c.management.port = Some(9100);
+        assert!(c.validate().is_ok());
+    }
+
+    /// An empty `system_id` would author `AUDIT_DETAILS` violating the RM
+    /// invariant `System_id_valid` ("not `system_id.is_empty`"), and a `::` in it
+    /// would mint unparseable `OBJECT_VERSION_ID`s — both are boot errors.
+    #[test]
+    fn validate_system_id_is_non_empty_and_separator_free() {
+        let mut c = EhrbaseConfig::default();
+        assert!(c.validate().is_ok());
+
+        c.server.system_id = "   ".to_owned();
+        assert!(c.validate().is_err(), "blank system_id must be rejected");
+
+        c.server.system_id = "cdr::hospital".to_owned();
+        assert!(
+            c.validate().is_err(),
+            "a system_id containing the OBJECT_VERSION_ID separator must be rejected"
+        );
+
+        c.server.system_id = "cdr.hospital.example".to_owned();
         assert!(c.validate().is_ok());
     }
 

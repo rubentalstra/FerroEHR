@@ -15,6 +15,24 @@ workflow refuses a tag that has no matching section here.
 
 ## [Unreleased]
 
+### Added
+
+- **`[server] system_id` — the deployment's own openEHR system identifier is
+  now configurable** (#424, `EHRBASE__SERVER__SYSTEM_ID`, default unchanged at
+  `ehrbase-rs.local`). The value is stamped into `EHR.system_id` at EHR
+  creation (RM *EHR Information Model* §EHR Identifier Allocation: the
+  identifier "that would normally be used for locally created EHRs"), into
+  `AUDIT_DETAILS.system_id` whenever the client supplies none through
+  `openehr-audit-details` (the REST API requires the server to "set it to its
+  own configured system identifier"), and into every minted
+  `OBJECT_VERSION_ID.creating_system_id`. Previously it was a hard-coded
+  constant that no configuration could change. Choose it before the first EHR
+  is created and keep it stable — the value is stored per EHR and per version,
+  so a later change affects only newly authored data and never rewrites
+  existing identifiers. It is distinct from `[server.identity]`, which is only
+  the `OPTIONS` manifest's display identity. An empty value, or one containing
+  the `OBJECT_VERSION_ID` separator `::`, is refused at boot.
+
 ### Fixed
 
 - **EHR creation mints RM-valid EHR_STATUS and EHR_ACCESS objects; the RM
