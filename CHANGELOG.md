@@ -17,6 +17,26 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`version_at_time` now accepts a datetime without a timezone, interpreting
+  it in the server's local timezone** (#401). ITS-REST
+  `docs/overview/Resources.md` §"Datetime format" requires the extended
+  ISO 8601 form for datetime query parameters and states
+  that "Timezone SHOULD be only supplied when needed, otherwise the local
+  timezone is assumed" — so `?version_at_time=2016-06-23T13:42:16` is a valid
+  request. It was answered `400 Bad Request`, because both at-time parsers
+  (the EHR group's and the DEMOGRAPHIC group's duplicate) required an offset.
+  A single shared decoder now backs every at-time read — EHR_STATUS,
+  COMPOSITION, DIRECTORY, the `versioned_*` version reads, the demographic
+  party/relationship reads, and the contribution `time_range` — and resolves
+  an offset-less value against the server's system timezone (`TZ`, else the
+  platform's local-time configuration); a value falling inside a
+  daylight-saving fold or gap resolves to the earlier and the later instant
+  respectively. Genuinely malformed input is unchanged: the basic ISO 8601
+  format (`20160623T134216Z`), a date without a time (`2016-06-23` — the
+  parameter is specified as "a given time", and reading it as midnight would
+  silently serve a version the caller never asked for), a timezone-less value
+  carrying an `[Area/Location]` annotation, and anything unparseable are all
+  still `400`.
 - **Every `405 Method Not Allowed` now carries an `Allow` header, and the
   `408`/`413` transport refusals use the openEHR error body** (#400). ITS-REST
   `docs/overview/Requests_and_responses.md` §"HTTP Methods" answers a method a

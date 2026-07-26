@@ -751,6 +751,68 @@ async fn get_version_at_time_variants() {
     );
 }
 
+/// `Resources.md` §"Datetime format": a datetime query parameter MUST be
+/// extended ISO 8601, and "Timezone SHOULD be only supplied when needed,
+/// otherwise the local timezone is assumed" — so an offset-LESS extended
+/// datetime is a well-formed `version_at_time`, resolved in the server's local
+/// timezone, never a `400`. Asserted by rendering the same instant both ways
+/// and requiring the same version back; the router under test runs in this
+/// process, so its "local timezone" is this process's system zone and the test
+/// is independent of what that zone happens to be.
+#[tokio::test]
+async fn version_at_time_without_offset_resolves_in_the_local_timezone() {
+    let (_pg, app) = common::test_router().await;
+    let ehr = create_ehr(&app).await;
+
+    let (_s, h, _b) = create_directory(&app, &ehr, &folder_json("dir-v1", vec![]), None).await;
+    let v1 = etag_uid(&h);
+
+    // An instant strictly inside v1's validity window (the 150 ms margins keep
+    // it between the two commits — same clock, same host).
+    tokio::time::sleep(Duration::from_millis(150)).await;
+    let between = jiff::Timestamp::now();
+    tokio::time::sleep(Duration::from_millis(150)).await;
+
+    let (_s, _h, _b) = update_directory(
+        &app,
+        &ehr,
+        &folder_json("dir-v2", vec![]),
+        Some(&quoted(&v1)),
+        None,
+    )
+    .await;
+
+    // The same instant written WITHOUT an offset: its civil rendering in the
+    // server's local timezone (`YYYY-MM-DDThh:mm:ss.sss`, no `Z`, no `±hh:mm`).
+    let offset_less = between
+        .to_zoned(jiff::tz::TimeZone::system())
+        .datetime()
+        .to_string();
+    assert!(
+        !offset_less.ends_with('Z') && !offset_less.contains('+'),
+        "the probe value must carry no timezone: {offset_less}"
+    );
+
+    let (status, _h, body) = send(
+        &app,
+        get(
+            format!("{BASE}/ehr/{ehr}/directory?version_at_time={offset_less}"),
+            None,
+        ),
+    )
+    .await;
+    assert_eq!(
+        status,
+        StatusCode::OK,
+        "an offset-less extended datetime is a valid version_at_time: {body}"
+    );
+    let v: Value = serde_json::from_str(&body).expect("folder json");
+    assert_eq!(
+        v["name"]["value"], "dir-v1",
+        "the offset-less rendering names the same instant as its offset-carrying form"
+    );
+}
+
 // ── 13. ?path= sub-folder navigation on the current read ──────────────────────
 
 /// `directory_get_at_time.yaml` (`path`): the sub-FOLDER at a slash-separated

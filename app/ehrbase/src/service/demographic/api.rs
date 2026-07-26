@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 use crate::ids::VoId;
 use crate::service::EhrbaseService;
+use crate::service::datetime::parse_at_time;
 use crate::service::demographic::party::CurrentParty;
 use crate::service::demographic::relationship::CurrentRelationship;
 use crate::service::demographic::types::PartyKind;
@@ -29,12 +30,6 @@ use crate::versioning::object_version_id::{
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
 fn tags_response(tags: Vec<Value>) -> ServiceResponse {
     ServiceResponse::plain(Value::Array(tags))
-}
-
-/// Parse an ISO-8601 `version_at_time` (with offset) for time-travel reads.
-fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
-    raw.parse::<jiff::Timestamp>()
-        .map_err(|_| SmError::precondition(format!("invalid version_at_time: {raw}")))
 }
 
 /// The `version_uid` a write produced (the new/deleted `OBJECT_VERSION_ID`),
@@ -229,8 +224,9 @@ impl EhrbaseService {
     }
 
     /// `get_party_at_time` (`i_party.adoc`): the Version of a Party current at
-    /// `a_time` (an ISO-8601 instant with offset). A deleted version at that
-    /// instant reads `Null`.
+    /// `a_time` (an extended-ISO-8601 datetime; the timezone is optional and
+    /// its absence means the server's local one — `crate::service::datetime`).
+    /// A deleted version at that instant reads `Null`.
     ///
     /// # Errors
     /// - [`SmError`] `versioned_object_does_not_exist` — no versioned party
