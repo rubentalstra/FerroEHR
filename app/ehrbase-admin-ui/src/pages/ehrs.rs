@@ -645,6 +645,11 @@ fn finder_section() -> AnyView {
                 <Show when=move || find.pending().get()>
                     <span class="text-ink-muted">"Searching…"</span>
                 </Show>
+                // The "not found" line is deliberately an inline note rather than
+                // an EmptyState: it answers the search control it sits under
+                // (like "Searching…" above it), and no data region went empty —
+                // the recent-EHRs table below is untouched and keeps its own
+                // empty state.
                 {move || match find.value().get() {
                     Some(Ok(None)) => {
                         view! { <p class="text-ink-muted">"No EHR found for that subject."</p> }

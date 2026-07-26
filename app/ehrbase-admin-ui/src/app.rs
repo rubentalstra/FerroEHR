@@ -15,6 +15,10 @@ use leptos_router::path;
 pub fn shell(options: LeptosOptions) -> impl IntoView {
     view! {
         <!DOCTYPE html>
+        // The console ships one locale, and its copy is written in English, so
+        // `en` is the honest declaration rather than a placeholder — an
+        // assistive technology must be told which language it is reading.
+        // TODO: drive lang from the active locale when a second locale lands (#300).
         <html lang="en">
             <head>
                 <meta charset="utf-8" />
