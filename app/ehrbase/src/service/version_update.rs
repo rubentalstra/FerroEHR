@@ -189,7 +189,7 @@ impl UpdateVersion {
 /// openehr-audit-details": "services MUST accept `openehr-version` and
 /// `openehr-audit-details` custom request headers", and "None of these headers
 /// are mandatory, but whatever is provided it MUST be merged with the default
-/// VERSION and VERSION.audit_details attributes on commit runtime." This type
+/// VERSION and `VERSION.audit_details` attributes on commit runtime." This type
 /// carries the two halves of that merge — the `UPDATE_AUDIT` attributes and
 /// the VERSION `lifecycle_state` — for the commit paths whose arguments are
 /// the bare RM content (EHR creation) rather than a full envelope.

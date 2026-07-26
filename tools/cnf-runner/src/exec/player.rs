@@ -102,21 +102,34 @@ impl<'a> TranscriptPlayer<'a> {
         }
     }
 
+    /// Select the operation binding with the SAME variant discipline as the
+    /// live driver (`HttpDriver::binding_for_variant`): a step's `variant`
+    /// selects the binding declaring it; a variant-less step (or a variant
+    /// with no dedicated binding) resolves the variant-less binding. Taking
+    /// the first `sm_operation` match regardless of variant let an
+    /// alphabetically-earlier variant file (its outcome map a deliberate
+    /// subset) shadow the base binding and mis-classify replayed statuses
+    /// as unmapped.
     fn binding_for(
         &self,
         case: &CaseCore,
         call: &str,
+        variant: Option<&str>,
     ) -> Option<&'a crate::model::binding::OperationBinding> {
         let op = if call.contains('.') {
             SmOperationRef::parse(call).ok()?
         } else {
             case.sm_operation.as_ref()?.sibling(call)
         };
-        self.set
-            .bindings
-            .iter()
-            .map(|(_, b)| b)
-            .find(|b| b.sm_operation == op)
+        let mut bindings = self.set.bindings.iter().map(|(_, b)| b);
+        if let Some(v) = variant
+            && let Some(exact) = bindings
+                .clone()
+                .find(|b| b.sm_operation == op && b.variant.as_deref() == Some(v))
+        {
+            return Some(exact);
+        }
+        bindings.find(|b| b.sm_operation == op && b.variant.is_none())
     }
 }
 
@@ -136,7 +149,7 @@ impl StepDriver for TranscriptPlayer<'_> {
         };
         self.cursor += 1;
 
-        let Some(binding) = self.binding_for(case, &step.call) else {
+        let Some(binding) = self.binding_for(case, &step.call, step.variant.as_deref()) else {
             return Err(format!("no binding declares operation {}", step.call));
         };
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
