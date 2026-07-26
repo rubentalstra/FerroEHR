@@ -207,6 +207,19 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Item tags follow the spec's identity and target model** (#365). Two tags
+  sharing a key on different `target_path`s now coexist (the ITEM_TAG identity
+  is the key + target_path pair, per the ITS-REST item-tag prose) instead of
+  silently collapsing; a version-addressed tag (`…/composition/{version_uid}/tags`)
+  now tags THAT VERSION, disjoint from the container's tags, instead of being
+  folded onto the container; the tag's `target` is returned in the RM shape (a
+  bare `HIER_OBJECT_ID` or `OBJECT_VERSION_ID`, replacing the former OBJECT_REF
+  wrapper — the released RM wins over the stalled OAS schema); tag routes now
+  404 when the addressed object is of the other kind; and the
+  `openehr-item-tag` / `openehr-version-item-tag` commit headers write to their
+  own distinct collections. Deleting by key removes every path under that key
+  in the addressed collection (the wire has no path selector).
+
 - **Admin console: accessibility and empty-state polish** (#302). Table header
   cells are now announced as column headers by screen readers, and every
   icon-only control in the query builder (the catalog's expand/collapse
