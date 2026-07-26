@@ -52,6 +52,30 @@ workflow refuses a tag that has no matching section here.
   lives in the URL (`/system?openapi=query`), so a family document is
   shareable and survives a reload.
 
+- **Admin console: run a stored query with its parameters, at the version form
+  you choose** (#295). A stored-query row now offers **Run**, which opens a
+  runner screen for that query: it shows the stored AQL, prompts one field per
+  `$parameter` the query declares, and executes it on the CDR as a real stored
+  query (`POST /query/{name}[/{version}]` carrying `query_parameters`) rather
+  than re-sending the text as an ad-hoc query. The results land in the same
+  results pane as everywhere else, with paging — except when the query sets its
+  own `LIMIT`/`TOP`, which the screen says instead of fighting. All three openEHR
+  version-resolution forms are selectable and labelled with the exact request
+  they will send: **latest** (no version), a **version prefix** like `1` or `1.2`
+  (the CDR picks the latest match), or an **exact** `1.2.0`. A parameter value
+  that reads as JSON is sent as that type (`38.5` as a number, `true` as a
+  boolean); anything else is sent as text, and quoting forces text (`"0123"`).
+  A field left blank is not sent at all.
+- **Admin console: open a stored query in the query builder** (#295). Stored
+  queries and the raw editor now offer **Open in builder** beside *Open in
+  editor*: a query that fits the point-and-click builder's model is loaded back
+  into it — template, conditions, output shape, ordering and limit — with the
+  next version proposed for saving, so a stored query can be revised visually
+  instead of by editing text. The load is never lossy: the builder only accepts a
+  query it can reproduce **byte for byte**, and anything else (a parameterised
+  query, a hand-written shape the builder has no controls for) opens with a
+  notice naming exactly what it could not express and a link to work on it in the
+  raw AQL editor.
 - **Admin console: the stored-query and template tables are paged** (#298). Both
   listings now carry the console's shared pagination footer — which rows are on
   screen out of how many (`26–50 of 137 templates`), previous/next, and a

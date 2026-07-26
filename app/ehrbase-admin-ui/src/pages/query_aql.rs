@@ -37,7 +37,7 @@ use crate::query_namespace::{next_minor, qualify, split_qualified, split_query_r
 /// was read at, and its AQL. Named because the resource, its status section,
 /// and the seeding effect all speak it — and because the version is a
 /// first-class member of it, not an afterthought that can be dropped.
-type LoadedQuery = (String, String, String);
+pub(crate) type LoadedQuery = (String, String, String);
 
 /// Build the link INTO this screen that pre-fills the editor with `aql`.
 ///
@@ -55,19 +55,11 @@ pub(crate) fn aql_href(aql: &str) -> String {
 }
 
 /// Build the link INTO this screen that seeds the editor from the stored query
-/// `name@version` (the `?load=` hand-off, parsed back by
-/// [`split_query_ref`]).
-///
-/// The qualified reference is ONE query-string value, so it is encoded as a
-/// whole: a stored-query name may carry `/`, `&`, `=` or `#`, which would
-/// otherwise truncate the value or forge extra parameters.
-/// NOTE: no openEHR spec governs an admin UI's internal links — our own
-/// design/extension.
+/// `name@version` — the `?load=` hand-off, encoded as one query-string value by
+/// [`crate::query_namespace::load_href`] and parsed back by
+/// [`split_query_ref`].
 pub(crate) fn load_href(name: &str, version: &str) -> String {
-    format!(
-        "/queries/aql?load={}",
-        urlencoding::encode(&format!("{name}@{version}"))
-    )
+    crate::query_namespace::load_href("/queries/aql", name, version)
 }
 
 /// The raw AQL editor screen.
@@ -178,7 +170,7 @@ pub fn QueryAqlPage() -> impl IntoView {
 /// to be able to address a version, and the version it came from is what the
 /// proposed next one is derived from
 /// ([`seed_editor_from_loaded_query`]).
-fn loaded_query_resource(
+pub(crate) fn loaded_query_resource(
     query_map: Memo<leptos_router::params::ParamsMap>,
 ) -> Resource<Result<Option<LoadedQuery>, AdminUiError>> {
     Resource::new(
@@ -245,14 +237,37 @@ fn load_status_section(
             {move || Suspend::new(async move {
                 match load_resource.await {
                     Ok(Some((qualified, version, _))) => {
+                        let builder_href = crate::pages::query_builder::load_href(
+                            &qualified,
+                            &version,
+                        );
+                        let run_href = crate::pages::query_stored::run_href(&qualified, &version);
                         view! {
-                            <p class="text-sm text-ink-muted">
-                                "Loaded stored query "
-                                <span class="font-mono text-ink">{qualified}</span> " at version "
-                                <span class="font-mono text-ink">{version}</span>
-                                ". Saving stores the version in the field below — that version is "
-                                "immutable, so the next one is proposed."
-                            </p>
+                            <div class="space-y-1">
+                                <p class="text-sm text-ink-muted">
+                                    "Loaded stored query "
+                                    <span class="font-mono text-ink">{qualified}</span>
+                                    " at version " <span class="font-mono text-ink">{version}</span>
+                                    ". Saving stores the version in the field below — that version is "
+                                    "immutable, so the next one is proposed."
+                                </p>
+                                <div class="flex flex-wrap items-center gap-3 text-sm">
+                                    <a
+                                        href=builder_href
+                                        class="text-accent hover:underline"
+                                        data-open-in-builder=""
+                                    >
+                                        "Open in builder"
+                                    </a>
+                                    <a
+                                        href=run_href
+                                        class="text-accent hover:underline"
+                                        data-run-stored=""
+                                    >
+                                        "Run with parameters"
+                                    </a>
+                                </div>
+                            </div>
                         }
                             .into_any()
                     }

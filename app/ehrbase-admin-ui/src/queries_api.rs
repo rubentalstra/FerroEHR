@@ -71,8 +71,7 @@ pub async fn run_aql(
     // with an AQL LIMIT/TOP clause (QUERY §Query structure/LIMIT) — when
     // the query carries its own window, send it bare; otherwise page with
     // fetch/offset as usual.
-    let has_own_window = openehr_query::parser::parse_str(&aql)
-        .is_ok_and(|q| q.limit.is_some() || q.select.top.is_some());
+    let has_own_window = crate::aql_text::carries_own_window(&aql);
     let body = if has_own_window {
         serde_json::json!({ "q": aql, "query_parameters": parameters }).to_string()
     } else {
@@ -173,16 +172,16 @@ pub async fn fetch_stored_query(name: String, version: String) -> Result<String,
 /// when `version` is absent — the two ITS-REST store operations, with the AQL
 /// as `text/plain`:
 ///
-/// - `version` present → `PUT definition/query/{name}/{version}`
-///   (`operations/definition_query_version_store.yaml`, "Stores a query, at a
-///   specified `version`"). That `(name, version)` pair is IMMUTABLE: an
-///   existing one answers `409`, never an overwrite — which is why the save
-///   screens propose a bumped version when re-saving a loaded query
+/// - `version` present → `PUT definition/query/{name}/{version}`, storing the
+///   query at that one version. A stored query is identified by its qualified
+///   name AND its version (ITS-REST
+///   `specifications/docs/query/Qualified_query_name.md` §Qualified query
+///   name), and that pair is IMMUTABLE here: an existing one answers `409`,
+///   never an overwrite — which is why the save screens propose a bumped
+///   version when re-saving a loaded query
 ///   ([`next_minor`](crate::query_namespace::next_minor)).
-/// - `version` absent → `PUT definition/query/{name}`
-///   (`operations/definition_query_store.yaml`, "stores a new query, or
-///   updates an existing query"): the server owns the version, and a query
-///   already stored at it is REPLACED.
+/// - `version` absent → `PUT definition/query/{name}`: the server owns the
+///   version, and a query already stored at it is REPLACED.
 ///
 /// `name` is the qualified query name — `[{namespace}::]{query-name}`, the
 /// namespace optional (ITS-REST
@@ -245,6 +244,116 @@ pub async fn store_query(
         .await?;
     crate::cdr::CdrClient::expect_success(response)?;
     Ok(())
+}
+
+/// Execute a STORED query with parameter bindings and return one page of its
+/// `RESULT_SET`.
+///
+/// The two ITS-REST stored-query execution operations are addressed by whether a
+/// `version` is supplied — which is the spec's version-resolution contract, not a
+/// console convention. `version` is the path segment to send, EMPTY meaning "send
+/// none" (a plain `String` rather than an `Option` so nothing about the request
+/// depends on how an optional field survives the server-fn encoding):
+///
+/// - `version` empty → `POST query/{qualified_query_name}` — "when `version` is
+///   not supplied at all, the system must use the latest `version`".
+/// - `version` non-empty → `POST query/{qualified_query_name}/{version}`, where
+///   the segment is either a complete `major.minor.patch` or a partial
+///   `{major}` / `{major}.{minor}` pattern: "When only a partial `version`
+///   pattern is supplied … the latest query version matching supplied prefix
+///   will be used."
+///
+/// (Both quotes: ITS-REST `specifications/docs/query/Qualified_query_name.md`
+/// §Qualified query name. The console composes the segment with
+/// [`resolve_version`](crate::query_namespace::resolve_version), so a
+/// malformed pattern never reaches the CDR.)
+///
+/// `parameters_json` is the `query_parameters` object — the request body
+/// carries the bindings rather than the URL, which is what the spec recommends
+/// for anything long: "we recommend clients using the `POST` method instead of
+/// `GET`" (ITS-REST `specifications/docs/query/Request.md` §GET vs POST). The
+/// names are unprefixed (`temperature`, not `$temperature`) per that same
+/// document's §Common Headers and Query Parameters, and the console derives
+/// them from the stored AQL with
+/// [`placeholders`](crate::aql_text::placeholders).
+///
+/// `paged` says whether the REQUEST owns the row window: `true` sends
+/// `fetch`/`offset` (the console's page at `offset`), `false` sends neither
+/// because the stored definition carries its own AQL `LIMIT`/`TOP` and the two
+/// windows cannot be combined (`fetch` "cannot be combined with AQL-top", same
+/// §Common Headers and Query Parameters). The caller reads that from the
+/// definition it already loaded
+/// ([`carries_own_window`](crate::aql_text::carries_own_window)); a wrong answer
+/// costs only the CDR's own diagnostic, never a wrong result.
+///
+/// # Errors
+/// [`AdminUiError::Unauthenticated`] without a session;
+/// [`AdminUiError::Invalid`] when `parameters_json` is not a JSON object; CDR
+/// errors normalized via
+/// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success)
+/// (notably `404` when no stored version matches the resolution form);
+/// [`AdminUiError::Internal`] when the result set is not valid JSON.
+#[server]
+pub async fn run_stored_query(
+    name: String,
+    version: String,
+    parameters_json: String,
+    offset: u32,
+    paged: bool,
+) -> Result<ResultPage, AdminUiError> {
+    let session = crate::session::require_session().await?;
+    let state: crate::state::AppState = leptos::prelude::expect_context();
+    if name.trim().is_empty() {
+        return Err(AdminUiError::Invalid(
+            "no stored query to run — open one from the stored-query list".to_owned(),
+        ));
+    }
+    let parameters: serde_json::Value = if parameters_json.trim().is_empty() {
+        serde_json::json!({})
+    } else {
+        serde_json::from_str(&parameters_json)
+            .map_err(|e| AdminUiError::Invalid(format!("parameters must be a JSON object: {e}")))?
+    };
+    if !parameters.is_object() {
+        return Err(AdminUiError::Invalid(
+            "parameters must be a JSON object".to_owned(),
+        ));
+    }
+    // Name and version are separate path segments, each percent-encoded via
+    // `urlencoding` (owner rule: never a hand-rolled percent codec).
+    let version = version.trim();
+    let path = if version.is_empty() {
+        format!("query/{}", urlencoding::encode(&name))
+    } else {
+        format!(
+            "query/{}/{}",
+            urlencoding::encode(&name),
+            urlencoding::encode(version)
+        )
+    };
+    let url = state.cdr.rest_v1(&path);
+    let body = if paged {
+        serde_json::json!({
+            "query_parameters": parameters,
+            "fetch": crate::components::data_table::PAGE_SIZE,
+            "offset": offset,
+        })
+    } else {
+        serde_json::json!({ "query_parameters": parameters })
+    };
+    let response = state
+        .cdr
+        .post(
+            &session.credential,
+            &url,
+            "application/json",
+            "application/json",
+            &[],
+            body.to_string(),
+        )
+        .await?;
+    let response = crate::cdr::CdrClient::expect_success(response)?;
+    crate::pages::ehrs::parse_result_set(&response.body, if paged { offset } else { 0 })
 }
 
 /// Run one stored query (`GET query/{name}/{version}`) and return its match

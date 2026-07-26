@@ -10,6 +10,7 @@
 pub mod activity;
 pub mod admin;
 pub mod app;
+pub mod aql_text;
 pub mod auth;
 pub mod builder;
 pub mod chart_model;
