@@ -229,22 +229,35 @@ pub(super) async fn apply_item_tag_headers(
     if version_tags.is_some() {
         present.push(H_VERSION_ITEM_TAG);
     }
-    // NOTE (wire): the storage seam (`ItemTagAdapter::target_tags_replace`)
-    // is keyed by VERSIONED_OBJECT (the vo_id parsed from the version_uid).
-    // openEHR distinguishes `openehr-item-tag` (VERSIONED_OBJECT target) from
-    // `openehr-version-item-tag` (a specific VERSION target) via the tag's
-    // `target_path`; with a single vo-keyed replace seam both wrappers fold into
-    // one replace list here.
-    let tags: Vec<Value> = object_tags
-        .into_iter()
-        .flatten()
-        .chain(version_tags.into_iter().flatten())
-        .map(|entry| entry_to_value(&entry))
-        .collect();
-    let stored = state
-        .backend()
-        .target_tags_replace(ehr_id, version_uid.to_owned(), target_type, tags)
-        .await?;
+    // The two wrappers address DISTINCT collections (Requests_and_responses.md
+    // §item-tag headers): `openehr-item-tag` replaces the VERSIONED_OBJECT
+    // container's tags (addressed by the bare object id), and
+    // `openehr-version-item-tag` replaces the just-committed VERSION's own
+    // tags (addressed by the full version_uid). An absent header leaves its
+    // collection untouched. The echo returns whatever was stored, container
+    // tags first.
+    let container_uid = version_uid
+        .split_once("::")
+        .map_or(version_uid, |(object_id, _)| object_id);
+    let mut stored: Vec<Value> = Vec::new();
+    if let Some(entries) = object_tags {
+        let tags = entries.iter().map(entry_to_value).collect();
+        stored.extend(
+            state
+                .backend()
+                .target_tags_replace(ehr_id, container_uid.to_owned(), target_type, tags)
+                .await?,
+        );
+    }
+    if let Some(entries) = version_tags {
+        let tags = entries.iter().map(entry_to_value).collect();
+        stored.extend(
+            state
+                .backend()
+                .target_tags_replace(ehr_id, version_uid.to_owned(), target_type, tags)
+                .await?,
+        );
+    }
     Ok(Some((present, stored)))
 }
 

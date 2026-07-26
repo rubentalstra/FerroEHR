@@ -676,6 +676,41 @@ branches:
 
 # Axis 3 — cross-cutting wire-surface behaviours (populated below).
 elements:
+  # ITEM_TAG routes + wrapper headers (RM common master07-tags.adoc; ITS-REST
+  # Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag;
+  # the Release-1.1.0 /tags routes). ITS-REST-only operations — no SM
+  # interface, so axis 1 cannot enumerate them (#288 owns that derivation
+  # fix); registered here so the surface is an honest boundary, not silence.
+  - id: item-tag-identity-key-path-pair
+    description: "Two same-key tags on different target_paths coexist on one target; PUT round-trips both (identity = key + target_path pair)."
+    source: "ITS-REST Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag (uniquely identified by their key and target_path pair)"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
+  - id: item-tag-version-vs-container-targets
+    description: "Container-addressed and VERSION-addressed tag collections of the same target are disjoint; each PUT replaces only the addressed collection."
+    source: "RM common master07-tags.adoc ITEM_TAG.target (may be a VERSIONED_OBJECT<T> or a VERSION<T>); ITS-REST Requests_and_responses.md §item-tag headers"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
+  - id: item-tag-rm-target-shape
+    description: "ITEM_TAG.target is emitted as the RM UID_BASED_ID (HIER_OBJECT_ID container / OBJECT_VERSION_ID version), never an OBJECT_REF wrapper."
+    source: "RM common master07-tags.adoc ITEM_TAG (target: UID_BASED_ID); the RELEASED RM wins over the stalled OAS ItemTag schema"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
+  - id: item-tag-kind-checked-routes
+    description: "A tag route family (composition / ehr_status) 404s when the addressed versioned object is of the other kind."
+    source: "RM ehr ehr.adoc EHR.tags (tag targets within the same EHR) + the route-scoped ITS-REST tag operations"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
+  - id: item-tag-wrapper-headers-distinct-collections
+    description: "openehr-item-tag replaces the container collection and openehr-version-item-tag the committed VERSION's collection on a change-controlled write; an absent header leaves its collection untouched."
+    source: "ITS-REST Requests_and_responses.md §openehr-item-tag and openehr-version-item-tag §Usage in Requests"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#365); runner tag verbs land with the #288 derivation fix"
   # Conditional / versioning headers (ITS-REST Requests_and_responses.md).
   - id: header-etag-on-create
     description: "ETag returned on resource creation carrying the new version/object uid (optimistic concurrency)."

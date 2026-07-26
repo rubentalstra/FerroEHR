@@ -1146,7 +1146,7 @@ async fn item_tag_crud() {
 }
 
 #[tokio::test]
-async fn item_tag_wire_shape_matches_the_oas_schema() {
+async fn item_tag_wire_shape_is_the_rm_item_tag() {
     // the ITEM_TAG wire shape is the OAS `ItemTag` schema
     // (`additionalProperties: false`): key/value/target_path plus
     // OBJECT_REF-shaped `target` and `owner_id`; no `id`, no `target_type`.
@@ -1176,11 +1176,12 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     assert_eq!(tag["key"], "priority");
     assert_eq!(tag["value"], "high");
     assert_eq!(tag["target_path"], "/context");
-    // target: OBJECT_REF naming the tagged versioned object.
-    assert_eq!(tag["target"]["_type"], "OBJECT_REF");
-    assert_eq!(tag["target"]["type"], "COMPOSITION");
-    assert_eq!(tag["target"]["id"]["_type"], "HIER_OBJECT_ID");
-    assert_eq!(tag["target"]["id"]["value"], vo_id);
+    // target: the RM shape — a bare UID_BASED_ID (`item_tag.adoc`:
+    // `target: UID_BASED_ID`, "may be a VERSIONED_OBJECT<T> or a VERSION<T>");
+    // a container target is its HIER_OBJECT_ID. The stalled OAS's OBJECT_REF
+    // wrapper lost to the RELEASED RM (owner ruling 2026-07-24).
+    assert_eq!(tag["target"]["_type"], "HIER_OBJECT_ID");
+    assert_eq!(tag["target"]["value"], vo_id);
     // owner_id: OBJECT_REF naming the owning EHR.
     assert_eq!(tag["owner_id"]["_type"], "OBJECT_REF");
     assert_eq!(tag["owner_id"]["type"], "EHR");
@@ -1192,7 +1193,157 @@ async fn item_tag_wire_shape_matches_the_oas_schema() {
     );
     assert!(
         tag.get("target_type").is_none(),
-        "non-schema `target_type` must not be emitted (folded into target.type)"
+        "non-schema `target_type` must not be emitted (the kind is implied by the addressed route)"
+    );
+}
+
+/// The ITEM_TAG identity within one target is the (key, target_path) PAIR
+/// (ITS-REST Requests_and_responses.md §item-tag headers: "uniquely identified
+/// by their key and target_path pair"): same-key tags on different paths
+/// coexist, and the key-only wire DELETE removes the whole key set.
+#[tokio::test]
+async fn item_tag_identity_is_the_key_and_target_path_pair() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+    let comp = svc
+        .create_composition(ehr_uuid, uv(composition("PairTagged"), "249", None))
+        .await
+        .expect("composition")
+        .version_uid();
+    let vo_id = comp.split("::").next().unwrap().to_owned();
+
+    // Two same-key tags on DIFFERENT paths coexist; a same-pair repeat is
+    // last-wins.
+    let stored = svc
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
+            vec![
+                json!({ "key": "flag", "value": "a", "target_path": "/context/start_time/value" }),
+                json!({ "key": "flag", "value": "b", "target_path": "/content[0]/name/value" }),
+                json!({ "key": "flag", "value": "b2", "target_path": "/content[0]/name/value" }),
+            ],
+        )
+        .await
+        .expect("put pair-identified tags");
+    assert_eq!(stored.len(), 2, "same key, different paths: both survive");
+    let by_path = |path: &str| {
+        stored
+            .iter()
+            .find(|t| t["target_path"] == path)
+            .unwrap_or_else(|| panic!("tag at {path}"))
+            .clone()
+    };
+    assert_eq!(by_path("/context/start_time/value")["value"], "a");
+    assert_eq!(
+        by_path("/content[0]/name/value")["value"],
+        "b2",
+        "same (key, path) pair: last wins"
+    );
+
+    // The Release-1.1.0 wire deletes by key alone → the whole key SET goes.
+    svc.target_tag_delete(ehr_uuid, vo_id.clone(), "flag".to_owned())
+        .await
+        .expect("key delete");
+    let rest = svc
+        .target_tags_get(ehr_uuid, vo_id)
+        .await
+        .expect("list after delete");
+    assert!(rest.is_empty(), "a key delete removes every path under it");
+}
+
+/// Container-addressed and VERSION-addressed tag collections are DISJOINT
+/// (RM `item_tag.adoc`: `target: UID_BASED_ID` "may be a VERSIONED_OBJECT<T>
+/// or a VERSION<T>"), and each target emits the RM shape — a bare
+/// HIER_OBJECT_ID for the container, an OBJECT_VERSION_ID for a version.
+#[tokio::test]
+async fn item_tag_version_and_container_targets_are_distinct() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let ehr_id = svc.create_ehr(None).await.expect("ehr").to_string();
+    let ehr_uuid = ehrbase::ids::EhrId(ehr_id.parse::<uuid::Uuid>().expect("ehr uuid"));
+    let version_uid = svc
+        .create_composition(ehr_uuid, uv(composition("VersionTagged"), "249", None))
+        .await
+        .expect("composition")
+        .version_uid();
+    let vo_id = version_uid.split("::").next().unwrap().to_owned();
+
+    // Tag the VERSION and the CONTAINER independently.
+    let on_version = svc
+        .target_tags_replace(
+            ehr_uuid,
+            version_uid.clone(),
+            "COMPOSITION",
+            vec![json!({ "key": "reviewed", "value": "v1" })],
+        )
+        .await
+        .expect("tag the version");
+    let on_container = svc
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id.clone(),
+            "COMPOSITION",
+            vec![json!({ "key": "workflow", "value": "open" })],
+        )
+        .await
+        .expect("tag the container");
+
+    // Each collection holds ONLY its own tag (the container PUT did not wipe
+    // the version's), and each target carries the RM UID_BASED_ID shape.
+    assert_eq!(on_version.len(), 1);
+    assert_eq!(on_version[0]["target"]["_type"], "OBJECT_VERSION_ID");
+    assert_eq!(on_version[0]["target"]["value"], version_uid);
+    assert_eq!(on_container.len(), 1);
+    assert_eq!(on_container[0]["target"]["_type"], "HIER_OBJECT_ID");
+    assert_eq!(on_container[0]["target"]["value"], vo_id);
+
+    let version_list = svc
+        .target_tags_get(ehr_uuid, version_uid.clone())
+        .await
+        .expect("version list");
+    assert_eq!(version_list.len(), 1);
+    assert_eq!(version_list[0]["key"], "reviewed");
+    let container_list = svc
+        .target_tags_get(ehr_uuid, vo_id.clone())
+        .await
+        .expect("container list");
+    assert_eq!(container_list.len(), 1);
+    assert_eq!(container_list[0]["key"], "workflow");
+
+    // A tag addressed to a NONEXISTENT version is refused.
+    let ghost = format!("{vo_id}::ghost.system::9");
+    let err = svc
+        .target_tags_replace(
+            ehr_uuid,
+            ghost,
+            "COMPOSITION",
+            vec![json!({ "key": "nope" })],
+        )
+        .await
+        .expect_err("a nonexistent version cannot be tagged");
+    assert!(err.message.contains("version"), "got: {}", err.message);
+
+    // The route family must match the stored kind: the composition target on
+    // an EHR_STATUS route 404s.
+    let kind_err = svc
+        .target_tags_replace(
+            ehr_uuid,
+            vo_id,
+            "EHR_STATUS",
+            vec![json!({ "key": "nope" })],
+        )
+        .await
+        .expect_err("kind mismatch must be refused");
+    assert!(
+        kind_err.message.contains("same EHR"),
+        "got: {}",
+        kind_err.message
     );
 }
 
