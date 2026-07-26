@@ -3,7 +3,7 @@
 //! plus the launch-context scopes of master07 §Context Selection and master09
 //! §Experimental: Episode Context.
 //!
-//! Hand-written (like [`crate::flat`], SMART App Launch is an ITS-REST
+//! Hand-written (like the `flat` module, SMART App Launch is an ITS-REST
 //! sub-specification with no machine-readable model): ONE grammar, consumed by
 //! the CDR's scope gate (`ehrbase-rest::smart`) and by any REST client that
 //! previews what a scope string grants (the admin console) — the two can never
@@ -105,7 +105,8 @@ impl ResourceSelector {
 }
 
 /// The resource family axis, used by the enforcement layer to map an operation's
-/// [`crate::extensions::access::authz::request::ResourceKind`] onto the SMART grammar.
+/// resource kind (`ehrbase-rest`'s `access::authz::request::ResourceKind`) onto
+/// the SMART grammar.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResourceFamily {
     /// Operational templates (`template-…`).

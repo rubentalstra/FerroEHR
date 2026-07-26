@@ -1,7 +1,14 @@
 //! The application shell: the session guard plus the persistent chrome
 //! (static sidebar nav with icons, topbar with the wordmark + CDR status
-//! chip, user menu + scopes drawer, dark-mode toggle, footer) around the
+//! chip, user menu + access drawer, dark-mode toggle, footer) around the
 //! routed `<Outlet/>`.
+//!
+//! The access drawer ("View scopes") is the console's effective-identity
+//! surface: the authenticated principal, the policy source deciding what it may
+//! do, this session's scopes rendered as their parsed SMART grants, and a free
+//! previewer for any scope string — all through [`crate::scopes`] over the ONE
+//! master08 grammar the CDR's own gate parses with. Capability is not
+//! authorization: the drawer says so, and the CDR stays the enforcer.
 //!
 //! The shell is a layout, not a route: it is the `view` of the guarded
 //! `ParentRoute` in [`crate::app`], and it renders the matched child screen
@@ -25,6 +32,8 @@ use thaw::PopoverTrigger;
 
 use crate::auth::{Logout, SessionInfo, current_session, fetch_status};
 use crate::components::brand::Wordmark;
+use crate::components::scope_grants::{ScopePreviewer, capability_note, fact_row, grant_cards};
+use crate::scopes::{grants_of, policy_source};
 
 /// How often (ms) the topbar re-polls the CDR `/ehrbase/rest/status` health endpoint.
 const HEALTH_POLL_MS: u64 = 30_000;
@@ -420,17 +429,24 @@ fn authed_shell(
     }
     .into_any();
 
-    let scopes_body = view! {
+    // The effective-access block: who this session is, what decides what it may
+    // do, and the scopes it carries rendered as their parsed master08 grants
+    // (`crate::scopes` over the ONE shared grammar). It resolves the session
+    // inside its own resource-free Suspend — safe to re-run, since it allocates
+    // no resources — and renders ONLY facts the session actually carries: the
+    // console never invents a claim it was not given.
+    let effective_access = view! {
         <Suspense fallback=|| ()>
             {move || {
                 Suspend::new(async move {
-                    let scopes = session
-                        .await
-                        .ok()
-                        .flatten()
-                        .map(|info| info.scopes)
+                    let info = session.await.ok().flatten();
+                    let (identity, method) = info
+                        .as_ref()
+                        .map(|info| (info.identity.clone(), info.method.clone()))
                         .unwrap_or_default();
-                    if scopes.is_empty() {
+                    let scopes = info.map(|info| info.scopes).unwrap_or_default();
+                    let policy = policy_source(&method);
+                    let scope_view = if scopes.is_empty() {
                         // Deliberately NOT an EmptyState: an empty scope list is
                         // not a void to fill but the complete answer to "what am
                         // I allowed to do" under Basic auth — the sentence IS the
@@ -443,13 +459,24 @@ fn authed_shell(
                         }
                             .into_any()
                     } else {
-                        let items = scopes
-                            .into_iter()
-                            .map(|s| view! { <li class="text-sm">{s}</li> })
-                            .collect_view();
-                        view! { <ul class="list-disc pl-5 flex flex-col gap-1">{items}</ul> }
-                            .into_any()
+                        grant_cards(grants_of(&scopes))
+                    };
+                    view! {
+                        <div class="flex flex-col gap-3">
+                            <div class="flex flex-col gap-1">
+                                {fact_row("Identity", identity)}
+                                {fact_row("Signed in with", policy.label.to_owned())}
+                            </div>
+                            <p class="text-[11px] leading-snug text-ink-muted">{policy.note}</p>
+                            <div id="session-scopes" class="flex flex-col gap-2">
+                                <h3 class="text-xs font-medium text-ink">
+                                    "Scopes on this session"
+                                </h3>
+                                {scope_view}
+                            </div>
+                        </div>
                     }
+                        .into_any()
                 })
             }}
         </Suspense>
@@ -461,7 +488,16 @@ fn authed_shell(
             <thaw::DrawerHeader>
                 <thaw::DrawerHeaderTitle>"Access scopes"</thaw::DrawerHeaderTitle>
             </thaw::DrawerHeader>
-            <thaw::DrawerBody>{scopes_body}</thaw::DrawerBody>
+            <thaw::DrawerBody>
+                // Stable id: the E2E journeys read the drawer's whole body
+                // (identity, policy source, session grants, previewer).
+                <div id="access-drawer" class="flex flex-col gap-4">
+                    {capability_note()}
+                    {effective_access}
+                    <hr class="border-edge" />
+                    <ScopePreviewer />
+                </div>
+            </thaw::DrawerBody>
         </thaw::OverlayDrawer>
     }
     .into_any();

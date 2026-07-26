@@ -33,6 +33,25 @@ workflow refuses a tag that has no matching section here.
   lookup that resolves the version extant at that instant, and any version's
   document opened by its own `OBJECT_VERSION_ID`. A non-queryable EHR's warning
   now points at the toggle that fixes it.
+- **Admin console: SMART scope previewer + effective identity** (#299). The user
+  menu's "View scopes" drawer no longer prints a raw list of scope strings. It
+  now states **who you are and what decides what you may do** — the
+  authenticated principal and the policy source behind it (a Basic session
+  replays its CDR account and carries no SMART scopes; an OIDC session's roles
+  and permissions come from the same access token whose scopes are listed) — and
+  renders every scope as its **parsed grant**: the compartment it delegates to
+  (`patient`/`user`/`system`), the resource family and id pattern it reaches, the
+  create/read/update/delete/search operations it permits, and a *broad access*
+  marker on a bare `*`. Launch contexts and identity claims are labelled as such,
+  and an unrecognised scope stays visible verbatim instead of vanishing. A new
+  **previewer** field takes any scope string — or a whole space-separated claim —
+  and renders the same reading, with an actionable explanation when a
+  resource-shaped scope is malformed (a bad compartment, a missing or invalid
+  `.<permission>` tail, an unknown resource). The drawer also states plainly that
+  scopes **narrow** access and never grant it: the CDR remains the enforcer. The
+  reading comes from the same scope grammar the CDR's own SMART gate enforces
+  with, so the console's explanation cannot drift from the server's behaviour.
+
 - **Admin console: grouped multi-series result charts** (#296). The results pane
   (both the point-and-click builder and the raw AQL editor) now charts **every**
   numeric result column instead of only the first one: one line per column, named
