@@ -32,8 +32,6 @@ use crate::builder::model::{
     BoolOp, BuilderQuery, Criterion, CriterionKind, CriterionNode, OrderRule, QueryShape,
     SelectedColumn,
 };
-use leptos_chartistry::IntoInner;
-
 use crate::components::data_table::{CELL, PAGE_SIZE, ROW, table_shell, table_skeleton};
 use crate::components::empty_state::EmptyState;
 use crate::components::field::{BTN_PRIMARY, BTN_SECONDARY, LABEL, SELECT};
@@ -1813,74 +1811,9 @@ pub(crate) fn export_forms(current_aql: Signal<String>, params: Signal<String>) 
 }
 
 /// Render one page of an AQL `RESULT_SET`: a big single stat for a count query,
-/// the empty state, or a table. Shared with the raw AQL editor screen.
+/// the empty state, or the table | chart pair. Shared with the raw AQL editor
+/// screen.
 #[allow(clippy::must_use_candidate)] // consumed by the caller's view!
-/// The first chartable column of a result page: the leftmost column where at
-/// least half of the non-null cells are numeric, extracted as
-/// `(row index, value)` points (non-numeric cells skipped). `None` = nothing
-/// worth charting. Plain logic, unit-tested below.
-fn numeric_series(page: &ResultPage) -> Option<(String, Vec<(f64, f64)>)> {
-    let column_count = page.columns.len();
-    for col in 0..column_count {
-        let mut points = Vec::new();
-        let mut non_null = 0usize;
-        for (row_index, row) in page.rows.iter().enumerate() {
-            let Some(cell) = row.get(col) else { continue };
-            if cell.is_null() {
-                continue;
-            }
-            non_null += 1;
-            let value = cell
-                .as_f64()
-                .or_else(|| cell.as_str().and_then(|s| s.parse::<f64>().ok()));
-            if let Some(v) = value {
-                #[allow(clippy::cast_precision_loss)] // row indexes are tiny
-                points.push((row_index as f64, v));
-            }
-        }
-        if non_null > 0 && points.len() * 2 >= non_null && points.len() >= 2 {
-            let name = page
-                .columns
-                .get(col)
-                .cloned()
-                .unwrap_or_else(|| format!("column {}", col + 1));
-            return Some((name, points));
-        }
-    }
-    None
-}
-
-/// Render the chartable column as a line over the (ordered) row index — the
-/// data-values chart view (design §7.2 step 6; ORDER BY a time path makes
-/// the row order the time order). Same chartistry idiom as the dashboard
-/// trend: the chart draws client-side after measuring, so the structure is
-/// hydration-stable.
-fn results_chart(name: &str, points: Vec<(f64, f64)>) -> AnyView {
-    let series_name = name.to_owned();
-    let data = RwSignal::new(points);
-    view! {
-        <div class="overflow-x-auto">
-            <leptos_chartistry::Chart
-                aspect_ratio=leptos_chartistry::AspectRatio::from_outer_ratio(640.0, 240.0)
-                left=leptos_chartistry::TickLabels::aligned_floats()
-                bottom=leptos_chartistry::TickLabels::aligned_floats()
-                inner=[
-                    leptos_chartistry::AxisMarker::left_edge().into_inner(),
-                    leptos_chartistry::AxisMarker::bottom_edge().into_inner(),
-                    leptos_chartistry::YGridLine::default().into_inner(),
-                ]
-                series=leptos_chartistry::Series::new(|(x, _): &(f64, f64)| *x)
-                    .line(
-                        leptos_chartistry::Line::new(|(_, y): &(f64, f64)| *y)
-                            .with_name(series_name),
-                    )
-                data=data
-            />
-        </div>
-    }
-    .into_any()
-}
-
 pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
     if is_count {
         let n = page
@@ -1929,13 +1862,11 @@ pub(crate) fn results_view(page: &ResultPage, is_count: bool) -> AnyView {
     .into_any();
     let table = table_shell(&header_refs, body);
 
-    // A numeric column offers the table | chart toggle (design §7.2 step 6);
-    // without one the table renders alone.
-    let Some((series_name, points)) = numeric_series(page) else {
-        return table;
-    };
+    // Every non-empty page offers the table | chart pair: the chart derives one
+    // series per numeric column (`crate::chart_model`), and a page with nothing
+    // chartable says so in the chart pane rather than dropping the affordance.
     let show_chart = RwSignal::new(false);
-    let chart = results_chart(&series_name, points);
+    let chart = crate::components::results_chart::results_chart(&page.columns, &page.rows);
     view! {
         <div>
             <div class="mb-2 inline-flex overflow-hidden rounded-control border border-edge-strong">
@@ -2379,38 +2310,9 @@ fn set_leaf_kind(query: &mut BuilderQuery, path: &[usize], kind: CriterionKind) 
 #[cfg(test)]
 #[allow(clippy::panic)] // test assertions on tree shapes
 mod tests {
-    #[test]
-    fn numeric_series_picks_the_first_mostly_numeric_column() {
-        let page = crate::pages::ehrs::ResultPage {
-            columns: vec!["name".to_owned(), "magnitude".to_owned()],
-            rows: vec![
-                vec![serde_json::json!("a"), serde_json::json!(37.2)],
-                vec![serde_json::json!("b"), serde_json::json!("38.1")],
-                vec![serde_json::json!("c"), serde_json::Value::Null],
-            ],
-            offset: 0,
-        };
-        let (name, points) = super::numeric_series(&page).expect("chartable");
-        assert_eq!(name, "magnitude");
-        assert_eq!(points, vec![(0.0, 37.2), (1.0, 38.1)]);
-    }
-
-    #[test]
-    fn numeric_series_rejects_text_only_and_single_point_pages() {
-        let text_only = crate::pages::ehrs::ResultPage {
-            columns: vec!["name".to_owned()],
-            rows: vec![vec![serde_json::json!("a")], vec![serde_json::json!("b")]],
-            offset: 0,
-        };
-        assert!(super::numeric_series(&text_only).is_none());
-        let single = crate::pages::ehrs::ResultPage {
-            columns: vec!["v".to_owned()],
-            rows: vec![vec![serde_json::json!(1.0)]],
-            offset: 0,
-        };
-        assert!(super::numeric_series(&single).is_none());
-    }
-
+    // The chart derivation this screen used to own (its column-picking rule and
+    // its rejection cases) now lives in `crate::chart_model`, re-specified for
+    // multi-series derivation and unit-tested beside it.
     use super::{
         add_group_at, add_leaf_at, criterion_sentence, default_kind_for, node_at, remove_at,
         set_leaf_kind, strip_stars, toggle_negated, toggle_op,

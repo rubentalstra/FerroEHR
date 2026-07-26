@@ -17,6 +17,20 @@ workflow refuses a tag that has no matching section here.
 
 ### Added
 
+- **Admin console: grouped multi-series result charts** (#296). The results pane
+  (both the point-and-click builder and the raw AQL editor) now charts **every**
+  numeric result column instead of only the first one: one line per column, named
+  by the column's own alias, with a legend whose entries switch a series on and
+  off — the last visible series stays on, so the chart never empties itself. When
+  a column holds ISO-8601 date/times it is offered as the **X axis** and used by
+  default, giving a real time scale in which the points sit at their true
+  distance apart whatever order the rows arrived in; the row order remains
+  available as the fallback axis. A single numeric column still draws as one
+  plain line with no legend. The **Table | Chart** toggle is now offered for
+  every non-empty result set, and a result set with nothing to chart (no numeric
+  column, or a single row) explains that in the chart pane instead of showing a
+  blank box.
+
 - **Admin console: the stored-query and template tables are paged** (#298). Both
   listings now carry the console's shared pagination footer — which rows are on
   screen out of how many (`26–50 of 137 templates`), previous/next, and a
