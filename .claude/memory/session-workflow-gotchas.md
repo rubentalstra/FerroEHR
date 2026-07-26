@@ -8,7 +8,7 @@ metadata:
   modified: 2026-07-24T01:04:07.584Z
 ---
 
-Three recurring session-workflow traps (all hit 2026-07-13/14):
+Recurring session-workflow traps (all hit 2026-07-13/14):
 
 1. **Long background Bash tasks get killed (~30 min)** — for multi-hour runs
    (benchmark ladders, seeds), launch detached: `nohup caffeinate -is
@@ -59,3 +59,16 @@ Three recurring session-workflow traps (all hit 2026-07-13/14):
 **Why:** each cost a debugging loop mid-flow; the fixes are non-obvious.
 **How to apply:** overnight/long runs → detached+caffeinate+Monitor pattern;
 commit-message wording; close/reopen for late labels.
+
+6. **Merge PRs only behind a GREEN gate, in code** (hit 2026-07-26, broke
+   develop's rustfmt): never chain `gh pr merge` unconditionally after a
+   wait loop — the wait can terminate on a FAILURE and the merge still
+   runs. Pattern: `if [ -z "$(gh pr checks N | grep -v 'pass\|skipping')" ];
+   then gh pr merge N …; else report; fi`. Repo has no auto-merge
+   (enablePullRequestAutoMerge is off), so this guard is the only gate.
+
+7. **Formatter order: leptosfmt FIRST, `cargo fmt` LAST** (same incident):
+   leptosfmt may collapse a `view! {…}` to one line, which changes where
+   rustfmt wants a chained `.into_any()` — running leptosfmt after a clean
+   `cargo fmt --check` leaves the tree rustfmt-dirty. Always finish with
+   `cargo fmt --all && cargo fmt --all --check`.
