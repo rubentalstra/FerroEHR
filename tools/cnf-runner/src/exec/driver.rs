@@ -46,6 +46,11 @@ pub struct HttpDriver<'a> {
     committed: Vec<Value>,
     /// The last response body per row (postcondition target).
     last_body: Option<Value>,
+    /// The latest `version_uid` a SUCCESS outcome's binding capture yielded
+    /// this row — the comparison source of the `latest-version-uid` header
+    /// matcher (overview §"If-Match and accidental overwrites": the 412
+    /// "SHOULD return also latest `version_uid` in the `ETag`").
+    last_version_uid: Option<String>,
     /// Recorded exchanges (the transcript seam).
     pub exchanges: Vec<Exchange>,
 }
@@ -84,6 +89,7 @@ impl<'a> HttpDriver<'a> {
             resolver: Resolver::new(manifest, corpus_dir),
             committed: Vec::new(),
             last_body: None,
+            last_version_uid: None,
             exchanges: Vec::new(),
         })
     }
@@ -386,8 +392,14 @@ impl<'a> HttpDriver<'a> {
         if matches!(spec.strip, Some(StripRule::WeakQuotes)) {
             value = value.trim_start_matches("W/").trim_matches('"').to_owned();
         }
-        if matches!(spec.transform, Some(TransformRule::RootUid)) {
-            value = value.split("::").next().unwrap_or(&value).to_owned();
+        match spec.transform {
+            Some(TransformRule::RootUid) => {
+                value = value.split("::").next().unwrap_or(&value).to_owned();
+            }
+            Some(TransformRule::Uppercase) => {
+                value = value.to_ascii_uppercase();
+            }
+            None => {}
         }
         Some(value)
     }
@@ -1267,6 +1279,38 @@ impl HttpDriver<'_> {
 }
 
 impl HttpDriver<'_> {
+    /// Remember the newest `version_uid` a SUCCESS outcome's binding capture
+    /// yields on this row — the `latest-version-uid` header matcher's
+    /// comparison source. Only success-class outcomes advance it (an error
+    /// commits no version — RM common master06 §Change Control).
+    fn track_latest_version_uid(
+        &mut self,
+        binding: &OperationBinding,
+        exchange: &Exchange,
+        observation: &Observation,
+        vars: &VarStore,
+    ) {
+        let Observation::Kind(kind) = observation else {
+            return;
+        };
+        if kind.class() != crate::vocab::OutcomeClass::Success {
+            return;
+        }
+        let Some(spec) = binding
+            .captures
+            .as_deref()
+            .unwrap_or_default()
+            .iter()
+            .find(|(n, _)| n.as_str() == "version_uid")
+            .map(|(_, s)| s)
+        else {
+            return;
+        };
+        if let Some(uid) = Self::extract_capture(exchange, binding, spec, vars) {
+            self.last_version_uid = Some(uid);
+        }
+    }
+
     /// ehr: mint `${ehr_id}` via `create_ehr`.
     fn provision_ehr(&mut self, case: &CaseCore, vars: &mut VarStore) -> Result<(), String> {
         if matches!(case.requires.ehr, Some(EhrRequirement::Exists { .. })) {
@@ -1646,11 +1690,30 @@ impl StepDriver for HttpDriver<'_> {
         let selectors = self.set.selectors.as_ref().map(|(_, s)| s);
         let observation = outcome::classify_status(binding, selectors, exchange.status, expected);
         Self::bind_step_captures(step, binding, &exchange, &observation, sent_ms, vars);
+        self.track_latest_version_uid(binding, &exchange, &observation, vars);
 
         // Post-step assertions only when the expectation held (the caller
         // aborts otherwise, law b) — evaluate optimistically here.
-        let assertion_failures =
+        let mut assertion_failures =
             self.eval_assertions(case, binding, &step.assertions, &exchange, vars);
+        // The expected outcome's declared header matchers are executed
+        // assertions too (issue #403 — they were parsed but never
+        // evaluated). Evaluated only when the observation IS the expected
+        // kind: the declarations belong to that outcome's wire expectation.
+        if observation == Observation::Kind(expected)
+            && let Some(expectation) = binding.outcome(expected)
+        {
+            let ctx = crate::exec::headers::RequestContext {
+                accept: headers.get("Accept").map(String::as_str),
+                last_version_uid: self.last_version_uid.as_deref(),
+            };
+            assertion_failures.extend(crate::exec::headers::evaluate(
+                expectation,
+                &exchange.headers,
+                &ctx,
+                vars,
+            ));
+        }
         Ok(StepObservation {
             observation,
             assertion_failures,
@@ -1666,6 +1729,7 @@ impl StepDriver for HttpDriver<'_> {
         self.resolver.bind_row(case, row);
         self.committed.clear();
         self.last_body = None;
+        self.last_version_uid = None;
         // server: empty — isolation is the runner's tenancy concern; against
         // a shared SUT the run is recorded as scoped (never destructive).
         // templates: upload each via the upload_opt binding.

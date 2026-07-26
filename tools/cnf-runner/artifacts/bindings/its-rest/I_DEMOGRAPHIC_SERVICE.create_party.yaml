@@ -35,4 +35,11 @@ captures:
   versioned_object_uid:
     from: capture version_uid
     transform: root-uid
+  # The same identifier with its ASCII case flipped — authoring material for
+  # case-variant If-Match cases (BASE master05 §"Composite Identifiers and
+  # Case": identifiers "identical apart from case ... identify the same
+  # thing"); the uppercase transform exists for exactly this (#403).
+  version_uid_upper:
+    from: capture version_uid
+    transform: uppercase
 server_assigned: [uid]

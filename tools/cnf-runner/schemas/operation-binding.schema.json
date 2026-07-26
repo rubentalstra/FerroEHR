@@ -272,7 +272,8 @@
           },
           "transform": {
             "enum": [
-              "root-uid"
+              "root-uid",
+              "uppercase"
             ]
           },
           "fallback": {

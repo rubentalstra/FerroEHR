@@ -23,10 +23,8 @@ request:
 # to indicate an alternate representation of an existing resource (e.g. via
 # GET method)" / "MUST ONLY be used for resource creation … or redirect
 # responses"; §"Deprecated headers" deprecates it on GET and DELETE alike.
-# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only
-# the status is classified, tools/cnf-runner/src/exec/outcome.rs), so these
-# `Location: absent` / `ETag` declarations are the authored contract, not an
-# executed assertion — wire header-matcher evaluation into the step judgement.
+# NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
+# violated declaration is a red row.
 outcomes:
   deleted:
     status: 204                           # 204_version_deleted.yaml — logical delete performed

@@ -25,8 +25,8 @@ formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
 # that the client's preference has been honored." Presence is a MAY, so the
 # declaration is the optional matcher — the docs text fixes only the VALUE (the
 # honoured preference token) when the header is sent, never that it must be.
-# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
-# status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
+# NOTE: header matchers are EXECUTED assertions (#403, exec/headers.rs) — a
+# violated declaration is a red row.
 # declaration is the authored contract, not an executed assertion — it becomes
 # executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
