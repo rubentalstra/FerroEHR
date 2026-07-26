@@ -258,6 +258,181 @@ async fn committal_headers_merge_into_the_commit() {
     assert_eq!(audit["committer"]["external_ref"]["type"], "PERSON");
 }
 
+/// A legal DIVERGENT client `change_type` is honoured, not overwritten:
+/// `250|amendment|` on an update commits an amendment (ITS-REST overview
+/// §"openehr-version and openehr-audit-details" lists `change_type` first
+/// among the client-suppliable attributes and requires "whatever is provided
+/// it MUST be merged"; both 250 and 251 are legal update codes per the
+/// `audit_change_type` group, RM common master06 §Contributions).
+#[tokio::test]
+async fn client_change_type_amendment_is_merged() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1).to_owned();
+
+    let mut body = canonical_composition();
+    body.as_object_mut().unwrap().remove("uid");
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{v1}\""))
+        // The Release-1.1.0 header name (attribute path in the value).
+        .header("openehr-audit-details", "change_type.code_string=\"250\"")
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    let (status, h, resp_body) = send(&app, req).await;
+    assert!(status.is_success(), "update: {status}: {resp_body}");
+    let v2 = etag_uid(&h);
+
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_composition/{vo}/version/{v2}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    assert_eq!(
+        ver["commit_audit"]["change_type"]["defining_code"]["code_string"], "250",
+        "client-supplied amendment change_type merged: {ver}"
+    );
+}
+
+/// A group code that contradicts the operation is a 400 change-control
+/// mismatch (`249|creation|` on an update — mirroring the CONTRIBUTION
+/// path's rule), and an out-of-group token is a 422
+/// (`AUDIT_DETAILS.Change_type_valid`).
+#[tokio::test]
+async fn client_change_type_mismatch_and_out_of_group_are_rejected() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1).to_owned();
+    let mut body = canonical_composition();
+    body.as_object_mut().unwrap().remove("uid");
+
+    for (token, expected) in [
+        ("249", StatusCode::BAD_REQUEST),
+        ("999", StatusCode::UNPROCESSABLE_ENTITY),
+    ] {
+        let req = Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::IF_MATCH, format!("\"{v1}\""))
+            .header(
+                "openehr-audit-details",
+                format!("change_type.code_string=\"{token}\""),
+            )
+            .body(Body::from(body.to_string()))
+            .unwrap();
+        let (status, _h, resp_body) = send(&app, req).await;
+        assert_eq!(
+            status, expected,
+            "change_type {token} on an update: {resp_body}"
+        );
+    }
+}
+
+/// A DELETE is a commit on a change-controlled resource, so the committal
+/// headers are accepted and merged there too (overview §"openehr-version and
+/// openehr-audit-details": services MUST allow PUT, POST and DELETE directly
+/// and MUST accept both headers) — verified against the persisted
+/// `523|deleted|` `ORIGINAL_VERSION`.
+#[tokio::test]
+async fn delete_accepts_and_merges_committal_headers() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1).to_owned();
+
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{v1}"))
+        .header(
+            "openehr-audit-details",
+            "description.value=\"retracted per patient request\",committer.name=\"Dr Chart\"",
+        )
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, resp_body) = send(&app, req).await;
+    assert_eq!(status, StatusCode::NO_CONTENT, "delete: {resp_body}");
+    let v2 = etag_uid(&h);
+
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_composition/{vo}/version/{v2}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "deleted-version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    let audit = &ver["commit_audit"];
+    assert_eq!(
+        audit["change_type"]["defining_code"]["code_string"], "523",
+        "a delete commits 523|deleted|: {ver}"
+    );
+    assert_eq!(
+        audit["description"]["value"], "retracted per patient request",
+        "header description merged into the delete audit"
+    );
+    assert_eq!(audit["committer"]["name"], "Dr Chart");
+}
+
+/// The BARE deprecated header name from the §"Deprecated headers" table
+/// (`openEHR-AUDIT_DETAILS`) "remain[s] available for backward
+/// compatibility" — accepted with the same attribute-path-in-value grammar.
+#[tokio::test]
+async fn bare_deprecated_audit_details_header_is_accepted() {
+    let (_pg, app) = app().await;
+    let (ehr_id, v1) = commit_ips_composition(&app).await;
+    let vo = vo_of(&v1).to_owned();
+
+    let mut body = canonical_composition();
+    body.as_object_mut().unwrap().remove("uid");
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/ehr/{ehr_id}/composition/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("\"{v1}\""))
+        .header(
+            "openEHR-AUDIT_DETAILS",
+            "description.value=\"from a 1.0.x client\"",
+        )
+        .body(Body::from(body.to_string()))
+        .unwrap();
+    let (status, h, resp_body) = send(&app, req).await;
+    assert!(status.is_success(), "update: {status}: {resp_body}");
+    let v2 = etag_uid(&h);
+
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!(
+                "{BASE}/ehr/{ehr_id}/versioned_composition/{vo}/version/{v2}"
+            ))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "version read: {body}");
+    let ver: Value = serde_json::from_str(&body).expect("original_version json");
+    assert_eq!(
+        ver["commit_audit"]["description"]["value"], "from a 1.0.x client",
+        "bare deprecated header merged: {ver}"
+    );
+}
+
 // ── If-Match hardening ─────────────────────────────────────
 
 #[tokio::test]

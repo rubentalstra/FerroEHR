@@ -55,7 +55,7 @@ impl EhrbaseService {
             change_type::CREATION,
             "COMPOSITION creation",
             &self.effective_system_id(),
-        );
+        )?;
         // 553|incomplete| relaxes validation strictness (master06 §Version
         // Lifecycle).
         let incomplete = version.lifecycle_state.code_string == "553";
@@ -309,7 +309,7 @@ impl EhrbaseService {
             change_type::MODIFICATION,
             "COMPOSITION update",
             &self.effective_system_id(),
-        );
+        )?;
         let incomplete = version.lifecycle_state.code_string == "553";
         let composition = version.data;
         // The lifecycle (deleted → 404, RM common master06 §Logical Deletion)
@@ -454,6 +454,7 @@ impl EhrbaseService {
         &self,
         ehr_id: EhrId,
         a_version_uid: &ObjectVersionId,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<crate::versioning::change::Committed, ServiceError> {
         let (vo_id, expected) = components(a_version_uid)?;
         // Lean delete pre-read: the pre-checks need only the owning EHR, the
@@ -511,7 +512,19 @@ impl EhrbaseService {
         let _ = expected;
 
         let mut tx = self.pool.begin().await?;
-        let audit = self.audit(change_type::DELETED, "COMPOSITION delete");
+        // A DELETE is a commit on a change-controlled resource, so the
+        // committal request headers merge here too (ITS-REST overview
+        // §"openehr-version and openehr-audit-details": the headers MUST be
+        // accepted on PUT, POST and DELETE).
+        let audit = match update_audit {
+            Some(u) => crate::versioning::audit::AuditInput::from_update(
+                u,
+                change_type::DELETED,
+                "COMPOSITION delete",
+                &self.effective_system_id(),
+            )?,
+            None => self.audit(change_type::DELETED, "COMPOSITION delete"),
+        };
         let committed = delete(
             &mut tx,
             Some(ehr_id),

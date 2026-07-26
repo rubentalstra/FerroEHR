@@ -159,7 +159,13 @@ impl UpdateVersion {
             attestations: None,
             data,
             audit: UpdateAudit {
-                // 249|creation| — the operation overrides it anyway.
+                // 249|creation| — a placeholder. A caller-supplied
+                // `change_type` is honoured after group + operation
+                // validation (`versioning::audit`, ITS-REST overview
+                // §"openehr-version and openehr-audit-details" MUST-merge);
+                // header-derived envelopes blank this first so only a
+                // header-carried value reads as supplied
+                // (`overview::committal::committal_audit`).
                 change_type: code("openehr", "249"),
                 description: None,
                 committer: openehr_its::json::from_canonical_value(

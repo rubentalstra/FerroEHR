@@ -166,9 +166,18 @@ pub(super) async fn run(
             let p = params::build::<DirectoryDeleteParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             // 204_because_deleted declares no headers; 412_directory → latest version_uid.
+            // A DELETE commits a `523|deleted|` version, so the committal
+            // request headers are accepted and merged here too (overview
+            // §"openehr-version and openehr-audit-details": PUT, POST and
+            // DELETE).
+            let update_audit = crate::overview::committal::committal_audit(h);
             match state
                 .backend()
-                .delete_directory(ehr_id, Some(require_if_match(&p.if_match)?))
+                .delete_directory(
+                    ehr_id,
+                    Some(require_if_match(&p.if_match)?),
+                    update_audit.as_ref(),
+                )
                 .await
             {
                 Ok(()) => Ok(negotiate::empty(no_content)),
