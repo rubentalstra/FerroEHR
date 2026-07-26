@@ -207,6 +207,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Version identity is the full three-part `version_uid`, compared
+  case-insensitively** (#367). Deleting a composition (and reading a version
+  by id) with a fabricated `creating_system_id` is now refused (409 / 404) —
+  previously only the version number was compared, so a made-up system id
+  could delete the latest version. Conversely, a `version_uid` or `If-Match`
+  differing only in case is accepted as the same identifier, per the openEHR
+  composite-identifier case rule.
+
 - **Admin console: accessibility and empty-state polish** (#302). Table header
   cells are now announced as column headers by screen readers, and every
   icon-only control in the query builder (the catalog's expand/collapse
