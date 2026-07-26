@@ -33,11 +33,17 @@ builder's "open in raw editor" hands its generated query across.
 
 ![Raw AQL editor](img/queries/query-aql.png)
 
-When a result column is numeric, the results pane offers a **Table |
-Chart** toggle — the values drawn as a line over the (ordered) row index,
-so an `ORDER BY` on a time path reads as a time series. The builder's
-output shapes include **EHRs (cohort)**: the distinct EHR ids matching
-the criteria tree.
+Every non-empty result set offers a **Table | Chart** toggle. The chart draws
+**one line per numeric column**, named by that column's alias, and its legend
+switches a series on and off — the last visible series stays on, so the chart
+never empties. When a column holds ISO-8601 date/times it is offered as the
+**X axis** and used by default: a real time scale, where points sit at their
+true distance apart whatever order the rows came back in. The row order stays
+available as the fallback axis, and a single numeric column still draws as one
+plain line. A result set with nothing to chart — no numeric column, or a single
+row — says so in the chart pane rather than showing a blank box. The builder's
+output shapes include **EHRs (cohort)**: the distinct EHR ids matching the
+criteria tree.
 
 ![Query results](img/queries/query-aql-results.png)
 
