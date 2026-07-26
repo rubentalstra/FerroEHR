@@ -39,6 +39,10 @@ use crate::query_namespace::{next_minor, qualify, split_qualified, split_query_r
 /// first-class member of it, not an afterthought that can be dropped.
 pub(crate) type LoadedQuery = (String, String, String);
 
+/// The resource shape [`loaded_query_resource`] returns — named so consumers
+/// (the stored-query runner's dispatch path) can take it as a parameter.
+pub(crate) type LoadedQueryResource = Resource<Result<Option<LoadedQuery>, AdminUiError>>;
+
 /// Build the link INTO this screen that pre-fills the editor with `aql`.
 ///
 /// The AQL becomes one query-string value, percent-encoded with the
