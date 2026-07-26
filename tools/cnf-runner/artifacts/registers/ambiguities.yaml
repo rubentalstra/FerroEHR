@@ -953,7 +953,7 @@ AMB-65:
     `ORIGINAL_VERSION`), i.e. the leading Uid, which is normally a Guid …
     the Guid `87284370-2D4B-4e3d-A3F3-F303D2F4F34B` would be copied to the
     contained `COMPOSITION.uid` field") and RM ehr EHR_STATUS class §Description
-    (the same object_id()-only rule restated for EHR_STATUS) vs ITS-REST
+    (restates the object_id()-only WORDING for EHR_STATUS while its own worked example copies the FULL three-part value — the sentence contradicts its example, siding with ITS-REST) vs ITS-REST
     specifications/docs/overview/Resources.md §Identifier types ("Since RM
     Release 1.0.4 it is strongly recommended that the inherited `uid` attribute
     in COMPOSITION objects be populated using the `uid` copied from the
@@ -980,6 +980,34 @@ AMB-65:
     future release aligns the two sentences the other way.
   disposition: fixed_handling
   upstream_ref: "UPR-27"
+AMB-67:
+  ambiguity: >-
+    Whether the CONTAINED top-level object served inside an ORIGINAL_VERSION
+    envelope must carry a populated `uid` at all is required by NO released
+    sentence: RM common locatable.adoc §Attributes types `uid` as
+    UID_BASED_ID 0..1; RM common master03-archetyped_package.adoc §Unique
+    Node Identification calls the copy "recommended" and adds "The `uid`
+    attribute will usually be empty in most EHR data in most openEHR EHR
+    systems"; the ITS-REST Resources.md §Identifier types note is
+    COMPOSITION-scoped and "strongly recommended"/"should". A server that
+    serves the contained object uid-less breaches nothing released.
+  source: >-
+    RM common locatable.adoc §Attributes (uid 0..1); RM common
+    master03-archetyped_package.adoc §Unique Node Identification
+    (recommended; "will usually be empty"); ITS-REST
+    specifications/docs/overview/Resources.md §Identifier types (COMPOSITION
+    scope, "strongly recommended … should be copied") — all
+    recommendation-strength, confirmed first-hand.
+  handling: >-
+    Report-only: the contained-uid-form case exercises the behaviour and
+    records the outcome without gating any tier — presence is a
+    recommendation this server ADOPTS (commit-time stamping, #439) but no
+    conformant server can be failed for omitting. The FORM when present
+    stays the gating AMB-65 fixed handling. Reported upstream (UPR-29): the
+    recommendation's scope and strength deserve an explicit wire-level
+    statement for the non-COMPOSITION top-level types.
+  disposition: report_only
+  upstream_ref: "UPR-29"
 AMB-66:
   ambiguity: >-
     The SM precondition `Pre_no_subject`: `an_ehr_status.subject = Void`, on

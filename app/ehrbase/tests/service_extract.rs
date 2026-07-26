@@ -159,9 +159,9 @@ async fn export_ehrs_carries_every_versioned_object_latest_only() {
     assert_eq!(versions[0]["_type"], json!("ORIGINAL_VERSION"));
 
     // Canonical-JSON faithfulness: the exported version data is byte-equal to
-    // the read surface's current EHR_STATUS (modulo the read-decorated uid).
-    let mut current = svc.get_ehr_status_at_time(ehr, None).await.expect("read");
-    current.as_object_mut().unwrap().remove("uid");
+    // the read surface's current EHR_STATUS — one shape since commit-time uid
+    // stamping (#439).
+    let current = svc.get_ehr_status_at_time(ehr, None).await.expect("read");
     assert_eq!(
         versions[0]["data"], current,
         "exported EHR_STATUS data must match the stored canonical content"
