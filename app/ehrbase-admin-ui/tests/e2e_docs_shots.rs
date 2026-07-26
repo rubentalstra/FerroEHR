@@ -288,13 +288,24 @@ async fn capture_documentation_screenshots() {
     //    published screenshot so the console can be reviewed without
     //    running it). ─────────────────────────────────────────────────────
     if let (Some(ehr_id), Some(vo_id)) = (env("UI_E2E_SEEDED_EHR_ID"), env("UI_E2E_SEEDED_VO_ID")) {
-        // EHR detail: the status tab (URL-driven tab state).
+        // EHR detail: the status tab (URL-driven tab state) — the current
+        // document plus the edit form.
         capture(
             &h,
             &dir,
             &format!("/ehrs/{ehr_id}?tab=status"),
             "ehrs/status/status",
-            Some("pre"),
+            Some("#status-edit"),
+        )
+        .await;
+        // EHR detail: the VERSIONED_EHR_STATUS history tab — the revision
+        // history table and the at-time lookup.
+        capture(
+            &h,
+            &dir,
+            &format!("/ehrs/{ehr_id}?tab=status-history"),
+            "ehrs/status/history",
+            Some("[data-status-version]"),
         )
         .await;
         // EHR detail: the contributions table (needs the extension endpoint).

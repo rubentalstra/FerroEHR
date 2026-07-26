@@ -1,9 +1,11 @@
-//! The `/ehrs/{ehr_id}` screen — EHR detail: status / directory / compositions /
-//! contributions tabs.
+//! The `/ehrs/{ehr_id}` screen — EHR detail: status / status history /
+//! directory / compositions / contributions tabs.
 //!
-//! Four URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
-//! `#[server]` fn co-located with the tab in its own submodule ([`status`],
-//! [`directory`], [`compositions`], [`contributions`]); the resources are
+//! Five URL-driven tabs (`?tab=`, rules §9) over one EHR. Each tab's data is a
+//! `#[server]` fn co-located with the tab in its own submodule — [`status`]
+//! (which owns BOTH status tabs: the current document plus its
+//! `VERSIONED_EHR_STATUS` history), [`directory`], [`compositions`],
+//! [`contributions`]. The resources are
 //! created once and their sources are gated on the active tab (a `Memo` over
 //! the query map), so only the visible tab fetches (rules §6 — never
 //! fetch-in-effect). The tab bodies are always mounted and toggled with
@@ -46,6 +48,7 @@ use crate::error::AdminUiError;
 use crate::pages::ehr_detail::compositions::compositions_section;
 use crate::pages::ehr_detail::contributions::contributions_section;
 use crate::pages::ehr_detail::directory::directory_section;
+use crate::pages::ehr_detail::status::history::status_history_section;
 use crate::pages::ehr_detail::status::status_section;
 
 #[cfg(feature = "ssr")]
@@ -235,7 +238,7 @@ fn summary_fact(label: String, value: String) -> AnyView {
     .into_any()
 }
 
-/// The `/ehrs/{ehr_id}` screen: the tab bar plus four always-mounted,
+/// The `/ehrs/{ehr_id}` screen: the tab bar plus five always-mounted,
 /// visibility-toggled tab bodies.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
@@ -259,6 +262,7 @@ pub fn EhrDetailPage() -> impl IntoView {
     });
 
     let status = status_section(ehr_id, selected);
+    let status_history = status_history_section(ehr_id, selected);
     let directory = directory_section(ehr_id, selected);
     let compositions = compositions_section(ehr_id, offset, selected);
     let contributions = contributions_section(ehr_id, selected);
@@ -286,6 +290,9 @@ pub fn EhrDetailPage() -> impl IntoView {
             {tabs}
             <div class="mt-4">
                 <div class:hidden=move || selected.get() != "status">{status}</div>
+                <div class:hidden=move || {
+                    selected.get() != "status-history"
+                }>{status_history}</div>
                 <div class:hidden=move || selected.get() != "directory">{directory}</div>
                 <div class:hidden=move || selected.get() != "compositions">{compositions}</div>
                 <div class:hidden=move || {
@@ -380,7 +387,7 @@ fn delete_section(ehr_id: Signal<String>) -> AnyView {
     })
 }
 
-/// The URL-driven tab bar: four pill anchors (`?tab=…`) replacing the thaw
+/// The URL-driven tab bar: five pill anchors (`?tab=…`) replacing the thaw
 /// `TabList`. Selected = `bg-accent-subtle text-accent-ink`; idle =
 /// `text-ink-muted hover:bg-sunken`. Plain anchors keep the tabs working
 /// before hydration (the router intercepts them once WASM loads).
@@ -402,8 +409,9 @@ fn tab_bar(ehr_id: Signal<String>, selected: Memo<String>) -> AnyView {
     };
     view! {
         <div class="flex flex-wrap gap-1 border-b border-edge pb-2">
-            {link("status", "Status")} {link("directory", "Directory")}
-            {link("compositions", "Compositions")} {link("contributions", "Contributions")}
+            {link("status", "Status")} {link("status-history", "Status history")}
+            {link("directory", "Directory")} {link("compositions", "Compositions")}
+            {link("contributions", "Contributions")}
         </div>
     }
     .into_any()
