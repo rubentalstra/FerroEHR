@@ -6,7 +6,12 @@ match this spec; its digest pins the recipe version).
 - Input: one `create_ehr-main` matrix row binding `ehr_status`,
   `is_queryable`, `is_modifiable`, `subject`, `other_details`, `ehr_id`.
 - `ehr_status = absent` => emit no EHR_STATUS at all (the class-1.a rows).
-- Otherwise emit a canonical-JSON `EHR_STATUS` (RM ehr, EHR_STATUS):
+- Otherwise emit a canonical-JSON `EHR_STATUS` (RM ehr, EHR_STATUS),
+  always carrying `archetype_details` (`ARCHETYPED` with
+  `archetype_id = openEHR-EHR-EHR_STATUS.generic.v1`, `rm_version`
+  `1.2.0`) — an EHR_STATUS is unconditionally an archetype root
+  (RM ehr `ehr_status.adoc` `Is_archetype_root`) and a root without
+  ARCHETYPED violates RM common `locatable.adoc` `Archetyped_valid`:
   `is_queryable`/`is_modifiable` verbatim from the row;
   `subject = provided` => a `PARTY_SELF` carrying an external ref with a
   deterministic namespace `cnf` and id `subject-<case id>-<row index>` —

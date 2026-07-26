@@ -89,6 +89,18 @@ pub fn ehr_status(
         "_type": "EHR_STATUS",
         "name": { "_type": "DV_TEXT", "value": "ehr status" },
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        // An EHR_STATUS is unconditionally an archetype root (RM ehr
+        // ehr_status.adoc Is_archetype_root); a root without ARCHETYPED
+        // violates RM common locatable.adoc Archetyped_valid, so every
+        // valid emitted payload carries the block.
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-EHR_STATUS.generic.v1"
+            },
+            "rm_version": "1.2.0"
+        },
         "subject": subject,
         "is_queryable": flag("is_queryable")?,
         "is_modifiable": flag("is_modifiable")?

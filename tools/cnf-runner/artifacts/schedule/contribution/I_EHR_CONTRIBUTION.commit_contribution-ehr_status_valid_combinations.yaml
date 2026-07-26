@@ -64,6 +64,15 @@ flow:
         - data:
             _type: EHR_STATUS
             archetype_node_id: "openEHR-EHR-EHR_STATUS.generic.v1"
+            # An EHR_STATUS is unconditionally an archetype root (RM ehr
+            # ehr_status.adoc Is_archetype_root), and a root without
+            # ARCHETYPED violates RM common locatable.adoc Archetyped_valid
+            # (is_archetype_root xor archetype_details = Void) — so the block
+            # is mandatory on every valid payload.
+            archetype_details:
+              _type: ARCHETYPED
+              archetype_id: { _type: ARCHETYPE_ID, value: "openEHR-EHR-EHR_STATUS.generic.v1" }
+              rm_version: "1.2.0"
             name: { value: "EHR Status" }
             subject:
               _type: PARTY_SELF

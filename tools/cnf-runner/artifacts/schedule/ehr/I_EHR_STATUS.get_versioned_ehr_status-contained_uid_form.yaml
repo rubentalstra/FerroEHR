@@ -29,11 +29,17 @@
 # assertions then compare the served envelope and its contained object against
 # the same addressed value.
 #
-# Kept at OPTIONS: the adjudication picks one of two released recommendations,
-# so a server following the RM's object_id()-only wording is not in breach of
-# the RM. The ORIGINAL_VERSION's OWN uid is not part of that dispute — RM
-# common master06 §change_control fixes it as the three-part OBJECT_VERSION_ID
-# outright — but it shares the case so the contrast is visible in one row.
+# Tier + gating: the capability (EhrStatus) is Core-tier, so profiles is
+# CORE — but the case is NON-GATING via the report-only register entry
+# AMB-67 below: no released sentence REQUIRES the contained uid populated
+# at all (LOCATABLE.uid is 0..1; master03 calls the copy "recommended" and
+# says the field "will usually be empty"; the ITS-REST note is
+# "strongly recommended"/"should"), so a server omitting it breaches
+# nothing. The FORM when present is the AMB-65 fixed handling; this server
+# stamps the full value into the stored canonical at commit (#439). The
+# ORIGINAL_VERSION's OWN uid is not part of any dispute — RM common
+# master06 §change_control fixes it as the three-part OBJECT_VERSION_ID
+# outright — and it shares the case so the contrast is visible in one row.
 id: I_EHR_STATUS.get_versioned_ehr_status-contained_uid_form
 kind: functional
 component: EHR
@@ -41,7 +47,7 @@ sm_operation: I_EHR_STATUS.get_versioned_ehr_status
 capabilities: [EhrStatus]
 exercises: [Versioning]
 profiles: [CORE]                         # EhrStatus is Core-tier; the WIRE form is assigned by the ITS-REST docs text's own worked example (Resources.md §Resource identification: the full three-part value "should be copied") — AMB-65/UPR-27 carries the RM-side conflict upstream
-ambiguities: [AMB-65]
+ambiguities: [AMB-65, AMB-67]
 test_purpose: >-
   An EHR_STATUS ORIGINAL_VERSION read at an addressed version carries that
   version identity twice — as the VERSION's own uid, and copied into the
