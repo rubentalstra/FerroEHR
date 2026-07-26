@@ -186,7 +186,7 @@ pub(crate) fn parse_ehr_id(body: &str) -> Result<String, AdminUiError> {
 /// Whether `value` is a UUID in the RFC 9562 §4 string representation
 /// (`8-4-4-4-12` lower- or upper-case hex with hyphens).
 ///
-/// The EHR API's client-supplied id "MUST be valid HIER_OBJECT_ID value. It is
+/// The EHR API's client-supplied id "MUST be valid `HIER_OBJECT_ID` value. It is
 /// strongly RECOMMENDED that an UUID always be used for this"
 /// (`docs/specs/openehr/ITS-REST/specifications/operations/ehr_create_with_id.yaml`
 /// §description), so the console requires a UUID and says so — a typed id is

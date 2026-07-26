@@ -692,12 +692,8 @@ fn openapi_card(family: Memo<String>) -> AnyView {
         </Transition>
     }
     .into_any();
-    let body = view! {
-        <div>
-            {selector} <div id="openapi-family-card">{document}</div>
-        </div>
-    }
-    .into_any();
+    let body =
+        view! { <div>{selector} <div id="openapi-family-card">{document}</div></div> }.into_any();
     titled_card("Served OpenAPI", true, body)
 }
 
