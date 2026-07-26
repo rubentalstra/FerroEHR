@@ -547,11 +547,15 @@ async fn query_store_name_grammar_and_reserved_name() {
             .query_list(name.to_owned())
             .await
             .unwrap_or_else(|e| panic!("`{name}` must be retrievable: {e:?}"));
+        // The descriptor carries the ONE canonical identity — the
+        // `misc::`-assumed qualified name (SM master04 §Registered Queries);
+        // the bare-name LIST still finds it (the pattern's misc composition).
+        let canonical = format!("misc::{name}");
         assert!(
             listed
                 .iter()
-                .any(|d| d.get("name").and_then(|v| v.as_str()) == Some(name)),
-            "the stored descriptor carries the namespace-less name verbatim: {listed:?}"
+                .any(|d| d.get("name").and_then(|v| v.as_str()) == Some(canonical.as_str())),
+            "the stored descriptor carries the canonical misc-qualified name: {listed:?}"
         );
     }
 
@@ -921,6 +925,41 @@ async fn query_valid_store_list_match_delete() {
         .expect("store bare");
     assert!(svc.has_query("bare_name".to_owned()).await.unwrap());
     assert!(svc.has_query("misc::bare_name".to_owned()).await.unwrap());
+
+    // ── ONE canonical key across every surface (SM master04 §Registered
+    // Queries: bare name → the "misc" namespace) ─────────────────────────────
+    // The WIRE store of a bare name must land on the SAME row the SM calls,
+    // the by-name wire GET, the list, and the admin delete address — the
+    // former asymmetry keyed the wire store under ('', name) and made the
+    // query undeletable/unfindable under the name it was created with.
+    svc.query_store(
+        "wire_bare".to_owned(),
+        Some("1.0.0".to_owned()),
+        "AQL".to_owned(),
+        good.to_owned(),
+    )
+    .await
+    .expect("wire store of a bare name");
+    assert!(
+        svc.has_query("wire_bare".to_owned()).await.unwrap(),
+        "SM has_query sees the wire-stored bare name"
+    );
+    assert!(
+        svc.has_query("misc::wire_bare".to_owned()).await.unwrap(),
+        "…under its canonical misc:: form too"
+    );
+    let fetched = svc
+        .query_version_get("misc::wire_bare".to_owned(), "1.0.0".to_owned())
+        .await
+        .expect("qualified wire GET resolves the bare-name store");
+    assert_eq!(fetched["version"], "1.0.0");
+    svc.admin_query_delete("wire_bare".to_owned(), "1.0.0".to_owned())
+        .await
+        .expect("admin delete addresses the same canonical row by the bare name");
+    assert!(
+        !svc.has_query("wire_bare".to_owned()).await.unwrap(),
+        "deleted everywhere"
+    );
 
     // queries_count = distinct qualified names (3 stored).
     assert_eq!(svc.queries_count().await.unwrap(), 3);
