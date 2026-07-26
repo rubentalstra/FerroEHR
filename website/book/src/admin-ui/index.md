@@ -34,11 +34,32 @@ form is never shown against a bearer-only CDR, and vice versa. The page
 is served fully rendered and works with JavaScript disabled.
 
 The console ships a full dark theme (the toggle persists per browser),
-and the user menu shows the session identity and its access scopes:
+and the user menu opens the access drawer:
 
 ![Dark mode](img/dashboard/dashboard-dark.png)
 
 ![User menu](img/dashboard/user-menu.png)
+
+### The access drawer
+
+"View scopes" answers *what may this session do, and who says so*:
+
+- the authenticated principal and how it signs in — a Basic session replays
+  its CDR account (and carries no SMART scopes), an OIDC session carries an
+  access token whose scopes are listed;
+- every scope on the session rendered as its **parsed grant**: the
+  compartment it delegates to (`patient` / `user` / `system`), the resource
+  family and id pattern it reaches, and the create/read/update/delete/search
+  operations it permits — with a *broad access* marker on a bare `*`;
+- a **previewer**: paste any scope string, or a whole space-separated claim,
+  and read the same rendering. A scope shaped like a resource scope but
+  malformed explains what the grammar expected instead of quietly reading as
+  nothing.
+
+The reading is not the console's own interpretation: it parses with the same
+module the CDR's SMART scope gate enforces with, so the two can never drift.
+Scopes **narrow** access and never grant it — the CDR remains the enforcer,
+and a previewed grant is an upper bound.
 
 ![Access scopes](img/dashboard/scopes-drawer.png)
 

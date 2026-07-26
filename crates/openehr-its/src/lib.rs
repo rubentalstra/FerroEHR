@@ -33,15 +33,32 @@
 //! Serialization here is native codec machinery: the canonical-JSON `ToJson`/
 //! `FromJson` codec and the canonical-XML codec are generated over hand-written
 //! runtimes, so the spec crates carry no serde derive.
+//!
+//! # Feature `full` (default)
+//!
+//! Every surface above rides the default `full` feature. Taken with
+//! `default-features = false` the crate compiles to `rest::smart_scopes` alone —
+//! the std-only SMART scope grammar, with no dependency of any kind — so a REST
+//! client that must parse scope strings on `wasm32-unknown-unknown` (the admin
+//! console's scope previewer) shares the very grammar the CDR enforces instead
+//! of carrying a second parser.
 
+#[cfg(feature = "full")]
 pub mod bmm;
+#[cfg(feature = "full")]
 pub mod flat;
+#[cfg(feature = "full")]
 pub mod json;
+#[cfg(feature = "full")]
 pub mod json_codec;
+#[cfg(feature = "full")]
 pub mod opt14;
 pub mod rest;
+#[cfg(feature = "full")]
 pub mod rm_terminology;
+#[cfg(feature = "full")]
 pub mod rm_validate;
+#[cfg(feature = "full")]
 pub mod xml;
 
 /// The openEHR specification version this crate implements — the crate
