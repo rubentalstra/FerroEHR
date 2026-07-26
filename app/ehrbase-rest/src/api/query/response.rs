@@ -9,7 +9,7 @@
 //! renderer live here so both paths stay identical.
 //!
 //! Spec: `ehr_id` may arrive as the `ehr_id` query parameter OR the
-//! `openEHR-EHR-id` request header (`Request.md` §About the `ehr_id` parameter);
+//! `openehr-ehr-id` request header (`Request.md` §About the `ehr_id` parameter);
 //! the `200 OK` response carries an `ETag` identifying the `RESULT_SET`
 //! (`responses/200_Query.yaml` + `headers/ETag_RESULT_SET.yaml`).
 
@@ -23,8 +23,8 @@ use uuid::Uuid;
 use openehr_its::rest::runtime::ApiError;
 
 use crate::api::RequestParts;
+use crate::negotiate;
 use crate::overview::error::RestError;
-use crate::{negotiate, params};
 use ehrbase::service::query::request::AqlQueryRequest;
 
 /// The ABAC pre-filter derived from the request (`extensions::abac::query_pre`):
@@ -64,17 +64,83 @@ pub(super) fn decode_body<T: serde::de::DeserializeOwned>(
     })
 }
 
-/// The `ehr_id` scope from the `ehr_id` query parameter or the `openEHR-EHR-id`
-/// request header (`Request.md` §About the `ehr_id` parameter: either form is
-/// accepted). Returned as an [`Option`]; the caller collects it into the
+/// The canonical name of the `ehr_id` request header — `Request.md` §Common
+/// Headers and Query Parameters spells it `openehr-ehr-id`. The pre-1.1.0
+/// `openEHR-EHR-id` spelling is the DEPRECATED form of the same header
+/// (`Requests_and_responses.md` §Deprecated headers: "the deprecated headers
+/// remain available for backward compatibility"), and since HTTP field names
+/// are case-insensitive (RFC 9110 §5.1) both spellings resolve through this one
+/// lookup.
+pub(super) const H_EHR_ID: &str = "openehr-ehr-id";
+
+/// The single wire `ehr_id` scope of a query execution, resolved from the two
+/// spec-sanctioned forms and applied identically by every execution operation,
+/// `GET` and `POST` alike: the `ehr_id` query parameter (`query_ehr_id`, already
+/// decoded by the caller) and the [`H_EHR_ID`] request header. `Request.md`
+/// §About the `ehr_id` parameter: clients "MAY supply it as a query parameter
+/// `ehr_id` or alternatively as a request header named `openehr-ehr-id`".
+///
+/// Returned as an [`Option`]; the caller collects it into the
 /// [`AqlQueryRequest::ehr_ids`] vec (a single wire `ehr_id` is the one-element
 /// case of the SM `List<UUID>` scope).
-pub(super) fn ehr_id_from_request(q: Option<&str>, h: &HeaderMap) -> Option<String> {
-    params::query_param(q, "ehr_id").or_else(|| {
-        h.get("openEHR-EHR-id")
-            .and_then(|v| v.to_str().ok())
-            .map(str::to_owned)
-    })
+///
+/// # Precedence when both forms are supplied
+///
+/// `Request.md` says "or alternatively" and never states what happens when a
+/// request carries BOTH forms; the released text is silent (ambiguity register
+/// `AMB-59`). Fixed handling:
+///
+/// - exactly one form supplied → that value is the scope;
+/// - both supplied naming the SAME EHR → accepted (the request names one EHR,
+///   so there is nothing to arbitrate);
+/// - both supplied naming DIFFERENT EHRs → `400 Bad Request`. The request is
+///   self-contradictory and no released rule picks a winner
+///   (`Requests_and_responses.md` §HTTP status codes, row `400`: "the service
+///   cannot or will not process the request due to something that is perceived
+///   to be a client error"; the same section adds that `400` is "a generic
+///   client-side error, used when no other `4xx` error code is appropriate").
+///
+/// The query parameter is therefore the primary form and the header the
+/// alternative, but the two can never disagree on a request the service
+/// executes.
+///
+/// # Errors
+///
+/// [`ApiError::BadRequest`] when the query parameter and the header name
+/// different EHRs, or when repeated header field lines disagree.
+pub(super) fn ehr_id_from_request(
+    query_ehr_id: Option<String>,
+    headers: &HeaderMap,
+) -> Result<Option<String>, RestError> {
+    let mut from_header: Option<&str> = None;
+    for raw in headers.get_all(H_EHR_ID) {
+        // An empty field value carries no EHR identifier — RFC 9110 §5.5 permits
+        // empty field values — so it is "not supplied" rather than a scope that
+        // conflicts with the query parameter.
+        let Some(value) = raw.to_str().ok().map(str::trim).filter(|v| !v.is_empty()) else {
+            continue;
+        };
+        match from_header {
+            Some(seen) if seen != value => return Err(conflicting_ehr_id(seen, value)),
+            _ => from_header = Some(value),
+        }
+    }
+    match (query_ehr_id, from_header) {
+        (Some(from_query), Some(header)) if from_query != header => {
+            Err(conflicting_ehr_id(&from_query, header))
+        }
+        (Some(from_query), _) => Ok(Some(from_query)),
+        (None, header) => Ok(header.map(str::to_owned)),
+    }
+}
+
+/// The `400` for a request whose `ehr_id` query parameter and `openehr-ehr-id`
+/// header name different EHRs (see [`ehr_id_from_request`] §Precedence).
+fn conflicting_ehr_id(first: &str, second: &str) -> RestError {
+    RestError(ApiError::BadRequest(format!(
+        "conflicting EHR scope: the `ehr_id` query parameter and the `{H_EHR_ID}` \
+         request header name different EHRs (`{first}` vs `{second}`)"
+    )))
 }
 
 /// A required path segment (the generated `*BodyParams` for POST carry only the
@@ -203,20 +269,97 @@ mod tests {
     }
 
     #[test]
-    fn ehr_id_prefers_query_param_then_header() {
-        // Request.md §About the ehr_id parameter: query parameter OR header.
+    fn ehr_id_from_either_form() {
+        // Request.md §About the ehr_id parameter: the query parameter OR the
+        // `openehr-ehr-id` header; either alone is the scope.
+        let h = headers(&[(H_EHR_ID, "from-header")]);
+        assert_eq!(
+            ehr_id_from_request(None, &h).unwrap().as_deref(),
+            Some("from-header"),
+            "the header alone scopes the execution"
+        );
+        assert_eq!(
+            ehr_id_from_request(Some("from-query".to_owned()), &HeaderMap::new())
+                .unwrap()
+                .as_deref(),
+            Some("from-query"),
+            "the query parameter alone scopes the execution"
+        );
+        assert_eq!(
+            ehr_id_from_request(None, &HeaderMap::new()).unwrap(),
+            None,
+            "neither form supplied is an unscoped (population) query"
+        );
+    }
+
+    #[test]
+    fn ehr_id_header_name_is_case_insensitive() {
+        // Requests_and_responses.md §Deprecated headers pairs `openEHR-EHR-id`
+        // with `openehr-ehr-id`; RFC 9110 §5.1 makes field names
+        // case-insensitive, so the deprecated spelling resolves identically.
         let h = headers(&[("openEHR-EHR-id", "from-header")]);
         assert_eq!(
-            ehr_id_from_request(Some("ehr_id=from-query"), &h).as_deref(),
-            Some("from-query"),
-            "query parameter wins"
+            ehr_id_from_request(None, &h).unwrap().as_deref(),
+            Some("from-header")
         );
+    }
+
+    #[test]
+    fn ehr_id_both_forms_agreeing_is_accepted() {
+        // Both forms naming the SAME EHR: the request names one EHR, so there
+        // is nothing to arbitrate (register AMB-59).
+        let h = headers(&[(H_EHR_ID, "same-ehr")]);
         assert_eq!(
-            ehr_id_from_request(None, &h).as_deref(),
-            Some("from-header"),
-            "header is the fallback"
+            ehr_id_from_request(Some("same-ehr".to_owned()), &h)
+                .unwrap()
+                .as_deref(),
+            Some("same-ehr")
         );
-        assert_eq!(ehr_id_from_request(None, &HeaderMap::new()), None);
+    }
+
+    #[test]
+    fn ehr_id_conflicting_forms_are_bad_request() {
+        // Both forms naming DIFFERENT EHRs is self-contradictory → 400
+        // (Requests_and_responses.md §HTTP status codes, row 400). Register
+        // AMB-59 records the spec silence this handling settles.
+        let h = headers(&[(H_EHR_ID, "from-header")]);
+        let err = ehr_id_from_request(Some("from-query".to_owned()), &h).unwrap_err();
+        assert!(matches!(err.0, ApiError::BadRequest(_)), "got {:?}", err.0);
+    }
+
+    #[test]
+    fn ehr_id_repeated_headers_must_agree() {
+        // Two field lines of the same header naming different EHRs is the same
+        // self-contradiction; agreeing lines resolve to the one value.
+        let mut conflicting = HeaderMap::new();
+        conflicting.append(H_EHR_ID, HeaderValue::from_static("a"));
+        conflicting.append(H_EHR_ID, HeaderValue::from_static("b"));
+        assert!(matches!(
+            ehr_id_from_request(None, &conflicting).unwrap_err().0,
+            ApiError::BadRequest(_)
+        ));
+
+        let mut agreeing = HeaderMap::new();
+        agreeing.append(H_EHR_ID, HeaderValue::from_static("a"));
+        agreeing.append(H_EHR_ID, HeaderValue::from_static("a"));
+        assert_eq!(
+            ehr_id_from_request(None, &agreeing).unwrap().as_deref(),
+            Some("a")
+        );
+    }
+
+    #[test]
+    fn ehr_id_empty_header_value_is_not_supplied() {
+        // RFC 9110 §5.5 permits empty field values; an empty `openehr-ehr-id`
+        // carries no EHR identifier, so it neither scopes nor conflicts.
+        let h = headers(&[(H_EHR_ID, "")]);
+        assert_eq!(ehr_id_from_request(None, &h).unwrap(), None);
+        assert_eq!(
+            ehr_id_from_request(Some("from-query".to_owned()), &h)
+                .unwrap()
+                .as_deref(),
+            Some("from-query")
+        );
     }
 
     #[test]

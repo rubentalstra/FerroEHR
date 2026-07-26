@@ -1,0 +1,59 @@
+# Wire realization of I_QUERY_SERVICE.execute_ad_hoc_query, variant
+# `get_ehr_id_header`: the GET form of ad-hoc execution, with the single-EHR
+# scope carried by the `openehr-ehr-id` REQUEST HEADER instead of the `ehr_id`
+# query parameter.
+#
+# Every expectation below is assigned by the ITS-REST DOCS TEXT (the released
+# oracle), quoted:
+#
+# - the header realization of the EHR scope — docs/query/Request.md §"About the
+#   ehr_id parameter": "Depending on the needs, clients MAY supply it as a query
+#   parameter `ehr_id` or alternatively as a request header named
+#   `openehr-ehr-id`." §"Common Headers and Query Parameters" repeats it under
+#   "Related request headers: `openehr-ehr-id` - used to execute the query
+#   within a single EHR context: an EHR identifier taken from EHR.ehr_id.value",
+#   and docs/query/Query_types.md §"Single EHR queries" states the pair again:
+#   "This is achieved by supplying an `ehr_id` query parameter or setting an
+#   `openehr-ehr-id` request header." None of the three distinguishes HTTP
+#   methods, so the header realization is normative on GET too.
+# - the GET form itself and `q` in the query string — docs/query/Request.md
+#   §"GET vs POST": "Requests based on the `GET` method have URI length
+#   restriction ... Long queries in the `q` parameter and having a long list of
+#   `query_parameters` may add up to reach that limit" — a length caveat about a
+#   supported form, not its removal.
+# - `offset` / `fetch` — docs/query/Request.md §"Common Headers and Query
+#   Parameters": "All query execution requests SHOULD support at least the
+#   following parameters: ... `offset` - used for paging ... `fetch` - used for
+#   paging".
+# - `200` — docs/overview/Requests_and_responses.md §"HTTP status codes", row
+#   `200 OK`: "The request succeeded, payload sent in a 200 response depends on
+#   the request method".
+# - `ETag` — docs/query/Request.md §"Common Headers and Query Parameters":
+#   "Related response headers: `ETag` - A unique identifier of the resultSet"
+#   (declared soft, `present?`, exactly as on the variant-less binding: the
+#   docs text names the header without a MUST).
+#
+# Identical to the variant-less binding except for the method and where the
+# scope travels, so a red row localizes to the header realization on GET alone.
+# `ehr_id` is deliberately ABSENT from `query` — the point of the variant is
+# that the header ALONE must scope the execution.
+sm_operation: I_QUERY_SERVICE.execute_ad_hoc_query
+its: its-rest
+variant: get_ehr_id_header
+request:
+  method: GET
+  path: /query/aql
+  query:
+    q: "${q}"                             # Request.md §GET vs POST (`q` parameter)
+    offset: "${offset?}"                  # Request.md §Common Headers and Query Parameters
+    fetch: "${fetch?}"                    # Request.md §Common Headers and Query Parameters
+    query_parameters: "${query_parameters?}"
+  headers:
+    openehr-ehr-id: "${ehr_id}"           # Request.md §About the ehr_id parameter
+    Accept: application/json
+formats: [canonical-json]
+outcomes:
+  ok:
+    status: 200                           # Requests_and_responses.md §HTTP status codes, row 200
+    headers: { ETag: "present?" }         # Request.md §Common Headers and Query Parameters (related response headers)
+    body: result_set_body

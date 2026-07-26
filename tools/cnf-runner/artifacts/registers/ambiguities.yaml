@@ -646,3 +646,36 @@ AMB-58:
     (owner ruling 2026-07-24) and are out of scope for the outbound
     docs-text report ledger.
   disposition: fixed_handling
+AMB-59:
+  ambiguity: >-
+    ITS-REST 1.1.0 offers the query-execution EHR scope in two forms — the
+    `ehr_id` query parameter and the `openehr-ehr-id` request header — but never
+    says what a request carrying BOTH forms means. The released text describes
+    them only as alternatives ("or alternatively"), so it defines neither a
+    precedence between them nor an outcome when the two name different EHRs.
+  source: >-
+    ITS-REST specifications/docs/query/Request.md §About the ehr_id parameter
+    ("Depending on the needs, clients MAY supply it as a query parameter
+    `ehr_id` or alternatively as a request header named `openehr-ehr-id`") +
+    §Common Headers and Query Parameters (both forms listed, no precedence) +
+    docs/query/Query_types.md §single-EHR queries ("supplying an `ehr_id` query
+    parameter or setting an `openehr-ehr-id` request header") — silence
+    CONFIRMED first-hand: no released sentence covers the both-supplied case.
+  handling: >-
+    Fixed handling. Either form alone is the EHR scope, on every execution
+    operation and both HTTP methods (Request.md draws no GET/POST distinction).
+    Both forms supplied naming the SAME EHR is accepted — the request names one
+    EHR, so there is nothing to arbitrate; the query parameter is treated as the
+    primary named form and the header as its alternative. Both forms supplied
+    naming DIFFERENT EHRs is 400 Bad Request: the request is self-contradictory
+    and no released rule picks a winner, which is exactly the generic
+    client-error branch (ITS-REST Requests_and_responses.md §HTTP status codes,
+    row 400 — "the service cannot or will not process the request due to
+    something that is perceived to be a client error" — and §Error codes,
+    "status code 400 indicates normally a bad request, as well as a generic
+    client-side error, used when no other 4xx error code is appropriate").
+    Silently preferring one form would execute a query against an EHR the client
+    also named a different id for, which is a wrong clinical answer rather than
+    a loud failure. Revisits only if a future ITS-REST release states a
+    precedence.
+  disposition: fixed_handling
