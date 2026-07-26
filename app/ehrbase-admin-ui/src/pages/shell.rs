@@ -469,7 +469,9 @@ fn authed_shell(
                             </div>
                             <p class="text-[11px] leading-snug text-ink-muted">{policy.note}</p>
                             <div id="session-scopes" class="flex flex-col gap-2">
-                                <h3 class="text-xs font-medium text-ink">"Scopes on this session"</h3>
+                                <h3 class="text-xs font-medium text-ink">
+                                    "Scopes on this session"
+                                </h3>
                                 {scope_view}
                             </div>
                         </div>
@@ -490,7 +492,9 @@ fn authed_shell(
                 // Stable id: the E2E journeys read the drawer's whole body
                 // (identity, policy source, session grants, previewer).
                 <div id="access-drawer" class="flex flex-col gap-4">
-                    {capability_note()} {effective_access} <hr class="border-edge" />
+                    {capability_note()}
+                    {effective_access}
+                    <hr class="border-edge" />
                     <ScopePreviewer />
                 </div>
             </thaw::DrawerBody>
