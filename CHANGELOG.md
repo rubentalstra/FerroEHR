@@ -207,6 +207,14 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Unqualified stored-query names are one identity everywhere** (#366). A
+  query stored without a namespace (`PUT /definition/query/my_bp/1.0.0`) now
+  lands under the openEHR-assumed `misc` namespace — the same identity the
+  by-name GET, the listing, the SM calls, and the admin delete address — so a
+  bare-named query is no longer invisible to the admin delete (and vice
+  versa). Descriptors return the canonical `misc::`-qualified name; a
+  bare-name listing pattern also matches its `misc::` composition.
+
 - **Item tags follow the spec's identity and target model** (#365). Two tags
   sharing a key on different `target_path`s now coexist (the ITEM_TAG identity
   is the key + target_path pair, per the ITS-REST item-tag prose) instead of
