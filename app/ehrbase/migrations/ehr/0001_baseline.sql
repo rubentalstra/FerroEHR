@@ -531,32 +531,44 @@ CREATE TABLE stored_query (
 COMMENT ON TABLE stored_query IS 'Stored AQL queries, semver-addressed (ITS-REST DEFINITION API; review doc 03 req 5.2).';
 
 -- ── item_tag ─────────────────────────────────────────────────────────────────
--- Item tags (ITS-REST experimental tags API; review doc 03 req 5.3). Loose
--- coupling: tags are mutable, EHR-scoped, outside the version chain, require no
--- contribution. ehr_id is nullable (a party may be tagged too).
+-- Item tags (RM common master07-tags.adoc ITEM_TAG; the ITS-REST tags routes).
+-- Loose coupling: tags are mutable, EHR-scoped, outside the version chain,
+-- require no contribution. ehr_id is nullable (a party may be tagged too).
+-- No openEHR spec governs the SQL itself — our own design.
 CREATE TABLE item_tag (
     id           uuid NOT NULL DEFAULT uuidv7(),
     ehr_id       uuid,
-    -- The tagged target's uid. INTENTIONALLY FK-LESS (RM common master07 tags
-    -- req 5.3.2): a tag may target a container OR a specific VERSION, i.e. it is
-    -- deliberately outside the version chain, so a FK into vo_version (which is
-    -- keyed per version) would be wrong. Referential looseness is by design.
+    -- The tagged target's uid. INTENTIONALLY FK-LESS (RM common master07 tags:
+    -- ITEM_TAG.target "may be a VERSIONED_OBJECT<T> or a VERSION<T>"), i.e. it
+    -- is deliberately outside the version chain, so a FK into vo_version (which
+    -- is keyed per version) would be wrong. Referential looseness is by design.
     target_vo_id uuid NOT NULL,
+    -- The '{creating_system_id}::{version_tree_id}' tail of an addressed
+    -- VERSION target, verbatim as addressed; NULL = the tag targets the
+    -- VERSIONED_OBJECT container. Container and per-version tag sets are
+    -- disjoint collections of the same target_vo_id.
+    target_version text,
     target_type  text NOT NULL,
     key          text NOT NULL,
     value        text,
     target_path  text,
     created_at   timestamptz NOT NULL DEFAULT now(),
     CONSTRAINT pk_item_tag PRIMARY KEY (id),
-    CONSTRAINT uq_item_tag_ehr_target_key UNIQUE (ehr_id, target_vo_id, key),
+    -- ITEM_TAG identity: ITS-REST overview Requests_and_responses.md
+    -- ("uniquely identified by their key and target_path pair", within one
+    -- target — container or specific VERSION). NULLS NOT DISTINCT so a NULL
+    -- target_version / target_path participates in the identity.
+    CONSTRAINT uq_item_tag_identity UNIQUE NULLS NOT DISTINCT
+        (ehr_id, target_vo_id, target_version, key, target_path),
     CONSTRAINT ck_item_tag_target_type CHECK (target_type IN (
         'COMPOSITION', 'EHR_STATUS', 'AGENT', 'GROUP', 'ORGANISATION', 'PERSON', 'ROLE'
     )),
     CONSTRAINT fk_item_tag_ehr FOREIGN KEY (ehr_id) REFERENCES ehr (id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE item_tag IS 'Item tags (ITS-REST experimental; review doc 03 req 5.3). Mutable, EHR-scoped, outside the version chain.';
+COMMENT ON TABLE item_tag IS 'Item tags (RM common master07-tags.adoc ITEM_TAG; identity per ITS-REST Requests_and_responses.md: key + target_path within one target). Mutable, EHR-scoped, outside the version chain.';
 COMMENT ON COLUMN item_tag.target_vo_id IS 'NOTE: intentionally FK-less (RM common master07: ITEM_TAG.target may reference a container OR a specific VERSION), so it is deliberately outside the version chain.';
+COMMENT ON COLUMN item_tag.target_version IS 'The {creating_system_id}::{version_tree_id} tail of a VERSION-addressed target (RM ITEM_TAG.target: UID_BASED_ID "may be a VERSIONED_OBJECT<T> or a VERSION<T>"); NULL = container target.';
 
 -- ── archetype_store (SM-2, I_DEFINITION_ADL14) ───────────────────────────────
 -- ADL 1.4 source archetypes, keyed by their human-readable ARCHETYPE_ID (not a
