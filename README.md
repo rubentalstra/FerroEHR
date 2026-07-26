@@ -398,7 +398,6 @@ test. See [CONTRIBUTING.md](CONTRIBUTING.md) for the developer workflow.
 | [Documentation website](https://rubentalstra.github.io/ehrbase-rs/) | The user guide + OpenAPI endpoint reference (versioned per release) |
 | [Architecture](docs/architecture.md) | How the system is built, and why |
 | [Conformance report](docs/conformance/ehrbase-rs/CONFORMANCE_REPORT.md) | The latest measured results, per test case |
-| [Endpoint map](docs/endpoint-map.md) | Every endpoint traced through its call chain to the SQL |
 | [Product roadmap](ROADMAP.md) | Where the product goes next |
 | [Developer documentation](docs/README.md) | Contributing, design decisions, specifications |
 | [Vendored openEHR specifications](docs/specs/openehr/) | The oracle every spec-facing decision cites |

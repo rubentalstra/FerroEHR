@@ -18,7 +18,7 @@ never in a parallel design layer.)*
 | root `ROADMAP.md` | The forward product roadmap | where the product goes next |
 | GitHub Issues (`gh issue list --state open`) | The open-items tracker (root `CLAUDE.md` §Issue workflow) | what's open + what's active (pinned = current focus) |
 | Closed issues + PR descriptions + `CHANGELOG.md` | The build record (the former `PROGRESS.md` is retired — its content lives in git history) | the historical record of what shipped |
-| `endpoint-map.md` | Every endpoint traced route → dispatcher → service → SQL, plus the background loops | the navigation + optimization instrument |
+| The code itself (router → handler → service → SQL) | Per-endpoint call chains — there is no standing endpoint map (the former `endpoint-map.md` was deleted 2026-07-26; a standing map goes stale) | navigation + optimization |
 
 ## Decisions
 

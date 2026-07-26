@@ -15,8 +15,7 @@ deleted in the PR that implements it.
   removed. (If two open issues consume the same plan file, it is deleted
   when the LAST of them closes.) The durable record of what shipped is
   the closed issues + PR descriptions, `CHANGELOG.md`, git history, and the
-  living reference docs (`docs/architecture.md`, `docs/endpoint-map.md`,
-  `docs/VERSIONS.md`).
+  living reference docs (`docs/architecture.md`, `docs/VERSIONS.md`).
 - **There is no ADR layer** — it was deleted (it caused more confusion than
   value). No file may instruct anyone to read, write, or cite an ADR.
 - **The only citable references are the vendored openEHR specs
