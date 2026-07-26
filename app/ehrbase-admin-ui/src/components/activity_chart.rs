@@ -31,9 +31,7 @@ pub fn activity_chart(
     empty_hint: &'static str,
 ) -> AnyView {
     if points.is_empty() {
-        return view! {
-            <EmptyState icon=icondata_lu::LuChartLine message=empty_message hint=empty_hint />
-        }
+        return view! { <EmptyState icon=icondata_lu::LuChartLine message=empty_message hint=empty_hint /> }
         .into_any();
     }
     let data: Vec<(f64, f64)> = points

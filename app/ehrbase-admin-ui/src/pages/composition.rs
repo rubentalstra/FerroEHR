@@ -3,7 +3,7 @@
 //! A view of one COMPOSITION: a format toggle (canonical JSON/XML and the
 //! Simplified FLAT/STRUCTURED renderings — the CDR converts, the BFF forwards
 //! and pretty-prints), a version selector fed by the versioned object's
-//! revision history, a per-version audit card, the VERSIONED_COMPOSITION
+//! revision history, a per-version audit card, the `VERSIONED_COMPOSITION`
 //! container + selected-VERSION envelope card, and the two write paths (commit
 //! a new version, logically delete the latest one). The document resource is
 //! keyed on `(version, format)` so either switch refetches, under a
@@ -13,7 +13,7 @@
 //! the COMPOSITION resource (the only one that negotiates the simplified
 //! formats), the commit history from the revision history, and the VERSION's
 //! own envelope facts — lifecycle state, preceding version, contribution,
-//! signature — from the VERSIONED_COMPOSITION version read. No fact is read
+//! signature — from the `VERSIONED_COMPOSITION` version read. No fact is read
 //! twice from two endpoints.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
@@ -125,10 +125,10 @@ pub async fn fetch_composition(
     Ok(pretty_body(&response.body, format))
 }
 
-/// Resolve the `OBJECT_VERSION_ID` of the VERSION of a VERSIONED_COMPOSITION
+/// Resolve the `OBJECT_VERSION_ID` of the VERSION of a `VERSIONED_COMPOSITION`
 /// that was extant at `at_time` (a browser `datetime-local` value):
 /// `GET /ehr/{ehr}/versioned_composition/{uid}/version?version_at_time=…`
-/// (ITS-REST VERSIONED_COMPOSITION API `versioned_composition_version_get_at_time`
+/// (ITS-REST `VERSIONED_COMPOSITION` API `versioned_composition_version_get_at_time`
 /// — "if `version_at_time` is supplied, retrieves the VERSION extant at
 /// specified time"). The 200 body is a VERSION envelope whose `uid.value` is
 /// the `OBJECT_VERSION_ID` (RM common — a VERSION's `uid` is an
@@ -340,14 +340,14 @@ pub async fn delete_composition(ehr_id: String, version_uid: String) -> Result<(
     Ok(())
 }
 
-/// The VERSIONED_COMPOSITION container plus the selected VERSION's envelope
+/// The `VERSIONED_COMPOSITION` container plus the selected VERSION's envelope
 /// facts, flattened for the versioned-object card. All fields fixed-size-safe
 /// (rules §1).
 ///
 /// The attributes are the RM classes' own (files under
 /// `docs/specs/openehr/RM/docs/UML/classes/`): `VERSIONED_OBJECT._uid_`,
 /// `_owner_id_` and `_time_created_` (`org.openehr.rm.common.versioned_object.adoc`);
-/// `VERSION._contribution_` and `_signature_` ("OpenPGP digital signature or
+/// `VERSION._contribution_` and `_signature_` ("`OpenPGP` digital signature or
 /// digest of content committed in this Version") plus
 /// `_preceding_version_uid_`, whose invariant
 /// `Preceding_version_uid_validity` makes it absent exactly for a first
@@ -380,7 +380,7 @@ pub struct VersionedCompositionDetails {
     pub has_data: bool,
 }
 
-/// Read the VERSIONED_COMPOSITION container and one of its VERSIONS.
+/// Read the `VERSIONED_COMPOSITION` container and one of its VERSIONS.
 ///
 /// Two reads, one resource: `GET /ehr/{ehr}/versioned_composition/{uid}` for the
 /// container (`versioned_composition_get`) and the direct VERSION read for the
@@ -436,7 +436,7 @@ pub async fn fetch_versioned_composition(
 }
 
 #[cfg(feature = "ssr")]
-/// Flatten a VERSIONED_COMPOSITION body plus a VERSION body into
+/// Flatten a `VERSIONED_COMPOSITION` body plus a VERSION body into
 /// [`VersionedCompositionDetails`]. Defensive throughout — an absent attribute
 /// reads as empty rather than failing the card.
 ///
@@ -804,7 +804,7 @@ fn delete_section(
     .into_any()
 }
 
-/// The versioned-object card: the VERSIONED_COMPOSITION container's own facts
+/// The versioned-object card: the `VERSIONED_COMPOSITION` container's own facts
 /// (uid, owning EHR, first-version time) plus the SELECTED version's envelope
 /// facts read directly from the VERSION resource — lifecycle state, preceding
 /// version, contribution, whether it is signed, and whether it still carries
@@ -864,8 +864,7 @@ fn versioned_card(details: &VersionedCompositionDetails) -> AnyView {
                     "preceding version",
                     "preceding",
                     details.preceding_version_uid.clone(),
-                )}
-                {versioned_row("contribution", "contribution", details.contribution_uid.clone())}
+                )} {versioned_row("contribution", "contribution", details.contribution_uid.clone())}
                 {versioned_row("signature", "signature", signature)}
                 {versioned_row("content", "content", content)}
             </div>
@@ -1354,7 +1353,7 @@ mod tests {
         short_version,
     };
 
-    /// A VERSIONED_COMPOSITION container body, as the wire carries it.
+    /// A `VERSIONED_COMPOSITION` container body, as the wire carries it.
     const VERSIONED_OBJECT: &str = r#"{
         "_type": "VERSIONED_COMPOSITION",
         "uid": {"_type": "HIER_OBJECT_ID", "value": "7d44aa01"},

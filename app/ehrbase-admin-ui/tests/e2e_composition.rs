@@ -191,7 +191,7 @@ async fn composition_viewer_highlights_and_renders_the_document() {
     h.finish().await;
 }
 
-/// The viewer's **versioned-object card** reads the VERSIONED_COMPOSITION
+/// The viewer's **versioned-object card** reads the `VERSIONED_COMPOSITION`
 /// container and the SELECTED version's envelope directly (the direct VERSION
 /// read), so switching the version selector changes the envelope facts: the
 /// seeded composition's second version names the first as its preceding

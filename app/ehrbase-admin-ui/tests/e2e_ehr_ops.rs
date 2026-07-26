@@ -37,12 +37,11 @@ const SEED_TEMPLATE_ID: &str = "minimal_evaluation.en.v1";
 /// The CDR base URL the harness exports for REST-side test setup; `None` skips
 /// with a reason.
 fn cdr_url() -> Option<String> {
-    match env("UI_E2E_CDR_URL") {
-        Some(url) => Some(url),
-        None => {
-            println!("SKIP: UI_E2E_CDR_URL unset (run scripts/ui-e2e.sh)");
-            None
-        }
+    if let Some(url) = env("UI_E2E_CDR_URL") {
+        Some(url)
+    } else {
+        println!("SKIP: UI_E2E_CDR_URL unset (run scripts/ui-e2e.sh)");
+        None
     }
 }
 

@@ -8,7 +8,7 @@
 // e2e journeys are assertive by design; skip-with-reason prints; the shared
 // harness module is per-test-binary (the corpus.rs test-file precedent)
 //! End-to-end journeys over the console's **System panel** (`/system`): the
-//! openEHR System API conformance manifest and the per-family OpenAPI document
+//! openEHR System API conformance manifest and the per-family `OpenAPI` document
 //! selector.
 //!
 //! Read-only throughout — nothing here writes to the CDR, so the journeys are
@@ -68,7 +68,7 @@ async fn system_panel_shows_the_conformance_manifest() {
     h.finish().await;
 }
 
-/// The OpenAPI card's per-family selector: the complete surface lists paths from
+/// The `OpenAPI` card's per-family selector: the complete surface lists paths from
 /// several families, picking **openEHR — Query** narrows the document to the
 /// query paths, and the choice lives in the URL so it is shareable and survives
 /// a reload.
