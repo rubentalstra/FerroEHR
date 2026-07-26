@@ -146,24 +146,33 @@ fn parse_time_range(raw: crate::service::ehr::handle::TimeRange) -> Result<TimeR
 
 /// The caller's `UPDATE_VERSION` envelope resolved for a direct commit: the
 /// commit audit (caller attributes merged with the server rules — ITS-REST
-/// overview §"openehr-version and openehr-audit-details" MUST) and the write
-/// envelope (lifecycle / verbatim signature / attestations). Shared by the
-/// COMPOSITION, `EHR_STATUS`, and DIRECTORY direct-write paths.
+/// overview §"openehr-version and openehr-audit-details" MUST, including a
+/// caller-supplied `change_type` after group + operation validation) and the
+/// write envelope (lifecycle / verbatim signature / attestations). Shared by
+/// the COMPOSITION, `EHR_STATUS`, and DIRECTORY direct-write paths.
+///
+/// # Errors
+/// [`ServiceError::Unprocessable`] / [`ServiceError::BadRequest`] — the
+/// caller's `change_type` is out-of-group / contradicts the operation
+/// (`crate::versioning::audit::AuditInput::from_update`).
 fn resolve_envelope(
     version: &crate::service::version_update::UpdateVersion,
     operation_change_type: &str,
     default_description: &str,
     system_id: &str,
-) -> (
-    crate::versioning::audit::AuditInput,
-    crate::versioning::change::WriteEnvelope,
-) {
+) -> Result<
+    (
+        crate::versioning::audit::AuditInput,
+        crate::versioning::change::WriteEnvelope,
+    ),
+    crate::service::error::ServiceError,
+> {
     let audit = crate::versioning::audit::AuditInput::from_update(
         &version.audit,
         operation_change_type,
         default_description,
         system_id,
-    );
+    )?;
     let attestations = version
         .attestations
         .as_ref()
@@ -178,7 +187,7 @@ fn resolve_envelope(
         signature: version.signature.clone(),
         attestations,
     };
-    (audit, envelope)
+    Ok((audit, envelope))
 }
 
 /// Build the `EHR_STATUS` for a subject-scoped EHR creation: the base status

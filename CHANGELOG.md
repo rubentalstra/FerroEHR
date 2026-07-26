@@ -17,6 +17,33 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **Committal request headers: client `change_type` honoured, DELETE accepts
+  the headers, deprecated `openEHR-AUDIT_DETAILS` spelling restored** (#395).
+  Three divergences from ITS-REST overview `Requests_and_responses.md`
+  §"openehr-version and openehr-audit-details" + §"Deprecated headers":
+  - A client-supplied `AUDIT_DETAILS.change_type` (e.g.
+    `change_type.code_string="250"` for an amendment) is now merged into the
+    commit instead of being silently replaced by the operation default — the
+    spec lists `change_type` first among the client-suppliable attributes and
+    requires "whatever is provided it MUST be merged". The value is validated
+    against the openEHR `audit_change_type` group (out-of-group → `422`,
+    `AUDIT_DETAILS.Change_type_valid`) and against the operation (a
+    contradicting code such as `249|creation|` on an update is rejected; the
+    exact status is spec-unassigned — see ambiguity AMB-54 — and returns
+    `400`). Applies to the direct COMPOSITION/EHR_STATUS/DIRECTORY commits
+    and the demographic party/relationship commits alike.
+  - `DELETE /composition/{id}` and `DELETE /directory` now accept
+    `openehr-version`/`openehr-audit-details` and merge the supplied
+    description/committer/system_id into the `523|deleted|` commit audit —
+    the spec requires the headers accepted on PUT, POST **and** DELETE.
+  - The bare deprecated header name `openEHR-AUDIT_DETAILS` (the exact
+    spelling in the spec's deprecation table, which is a different HTTP
+    header name than `openehr-audit-details`) is accepted again alongside
+    the 1.0.3 dotted forms and the current name; the current name still wins
+    on conflict.
+  The `audit_change_type` constant set now mirrors the complete TERM group
+  (all nine codes), locked by a test against the terminology bundle. Five new
+  CNF catalogue cases pin the merge family end-to-end.
 - **Demographic API: response-header discipline and `If-Match` handling** (#394).
   Three MUST/SHOULD-level divergences from the ITS-REST overview
   (`Requests_and_responses.md`) are corrected on the `/demographic` surface:

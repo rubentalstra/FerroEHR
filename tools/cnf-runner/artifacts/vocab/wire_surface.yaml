@@ -746,6 +746,21 @@ elements:
     covered_by:
       - I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_accepted
       - I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_stale
+  - id: header-committal-change-type-merge
+    description: "A client-supplied AUDIT_DETAILS change_type in the openehr-audit-details committal header is merged into the commit (a legal divergent group code like 250|amendment| on an update is honoured verbatim); an out-of-group token is 422 (Change_type_valid); a group code contradicting the operation (249|creation| on an update) is a 400 change-control mismatch."
+    source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (change_type first among the client-suppliable attributes; \"whatever is provided it MUST be merged\") + RM common master04 (AUDIT_DETAILS.Change_type_valid) + RM common master06 §Contributions (the audit_change_type group semantics)"
+    covered_by:
+      - I_EHR_COMPOSITION.update_composition-audit_amendment
+      - I_EHR_COMPOSITION.update_composition-audit_change_type_mismatch
+      - I_EHR_COMPOSITION.update_composition-audit_change_type_invalid
+  - id: header-committal-on-delete
+    description: "The committal request headers are accepted and merged on DELETE too — the delete commits a 523|deleted| VERSION whose AUDIT_DETAILS carries the supplied description/committer."
+    source: "ITS-REST Requests_and_responses.md §openehr-version and openehr-audit-details (\"services MUST also allow PUT, POST and DELETE methods directly\"; \"services MUST accept openehr-version and openehr-audit-details custom request headers\") + RM common master06 §Logical Deletion"
+    covered_by: [I_EHR_COMPOSITION.delete_composition-audit_headers]
+  - id: header-deprecated-audit-details-bare
+    description: "The bare deprecated committal header name openEHR-AUDIT_DETAILS (a different name than the Release-1.1.0 openehr-audit-details after lowercasing) is still accepted, with the same attribute-path-in-value grammar."
+    source: "ITS-REST Requests_and_responses.md §Deprecated headers (the openEHR-AUDIT_DETAILS -> openehr-audit-details table row; \"the deprecated headers remain available for backward compatibility\")"
+    covered_by: [I_EHR_COMPOSITION.update_composition-audit_bare_deprecated]
   - id: header-if-match-case-insensitive
     description: "The If-Match OBJECT_VERSION_ID is compared case-insensitively: a token differing from the current version_uid only in case names the same version and must not raise a spurious 412."
     source: "BASE base_types master05-identification_package.adoc §Composite Identifiers and Case (two composite identifiers \"identical apart from case … identify the same thing\") applied to the ITS-REST Requests_and_responses.md §If-Match and accidental overwrites condition"

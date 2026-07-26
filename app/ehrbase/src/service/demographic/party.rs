@@ -164,7 +164,8 @@ impl EhrbaseService {
         // The caller's UPDATE_VERSION audit attributes merge with the server
         // rules (ITS-REST committal MUST); the wire party seam passes them
         // when the request carried committal headers.
-        let audit = self.demographic_audit(update_audit, change_type::CREATION, "PARTY creation");
+        let audit =
+            self.demographic_audit(update_audit, change_type::CREATION, "PARTY creation")?;
         let ctx = CommitEnv::signing_ctx(self);
         // Keep the served bytes for the in-memory representation, unless media
         // externalization is on (then the fresh read reflects the offloaded form).
@@ -283,7 +284,8 @@ impl EhrbaseService {
         }
         validate_party_body(kind, &body)?;
 
-        let audit = self.demographic_audit(update_audit, change_type::MODIFICATION, "PARTY update");
+        let audit =
+            self.demographic_audit(update_audit, change_type::MODIFICATION, "PARTY update")?;
         let ctx = CommitEnv::signing_ctx(self);
         let repr_body = self.multimedia.is_none().then(|| body.clone());
         let mut tx = self.pool.begin().await?;
@@ -363,7 +365,7 @@ impl EhrbaseService {
             )));
         }
 
-        let audit = self.demographic_audit(update_audit, change_type::DELETED, "PARTY delete");
+        let audit = self.demographic_audit(update_audit, change_type::DELETED, "PARTY delete")?;
         let ctx = CommitEnv::signing_ctx(self);
         let mut tx = self.pool.begin().await?;
         let committed = delete(

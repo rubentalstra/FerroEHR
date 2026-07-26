@@ -112,7 +112,7 @@ impl EhrbaseService {
             change_type::MODIFICATION,
             "EHR_STATUS update",
             &self.effective_system_id(),
-        );
+        )?;
         let body = version.data;
         super::validation::validate_ehr_status(&body)?;
         let expected = expected_from_if_match(if_match)?;
@@ -194,8 +194,14 @@ impl EhrbaseService {
             map.remove("uid");
             mutate(map);
         }
-        self.commit_status(ehr_id, vo_id, UpdateVersion::direct(body), &preceding)
-            .await
+        // The SM flag mutators commit a modification of the existing
+        // EHR_STATUS: carry the operation's own change type so the commit
+        // audit resolves without a client envelope (the `direct()` placeholder
+        // is `249|creation|`, which would contradict this update —
+        // `versioning::audit::merged_change_type`).
+        let mut version = UpdateVersion::direct(body);
+        change_type::MODIFICATION.clone_into(&mut version.audit.change_type.code_string);
+        self.commit_status(ehr_id, vo_id, version, &preceding).await
     }
 
     /// The `VERSIONED_OBJECT` for an EHR's `EHR_STATUS`.
