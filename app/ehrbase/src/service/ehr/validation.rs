@@ -290,6 +290,64 @@ fn is_persistent(composition: &Value) -> bool {
 ///
 /// # Errors
 /// [`ServiceError::Unprocessable`] naming the first violated rule (→ 422).
+/// The root-LOCATABLE invariants shared by the always-root EHR kinds
+/// (`EHR_STATUS`, `EHR_ACCESS` — RM ehr `ehr_status.adoc` /
+/// `ehr_access.adoc`, each with an unconditional `Is_archetype_root`):
+///
+/// - `Archetyped_valid` (RM common `locatable.adoc`: `is_archetype_root xor
+///   archetype_details = Void`) — a root MUST carry the `ARCHETYPED` block;
+/// - at a root, `archetype_node_id` "is always the stringified form of the
+///   `archetype_id` found in the `archetype_details` object"
+///   (`locatable.adoc` §`archetype_node_id`);
+/// - `Links_valid` (`links /= Void implies not links.is_empty`) — an
+///   explicit empty list is RM-invalid (absent is the way to say none).
+fn validate_root_locatable(
+    obj: &serde_json::Map<String, Value>,
+    kind: &str,
+) -> Result<(), ServiceError> {
+    let unproc = ServiceError::Unprocessable;
+    let details = obj
+        .get("archetype_details")
+        .filter(|v| v.is_object())
+        .ok_or_else(|| {
+            unproc(format!(
+                "{kind}.archetype_details is mandatory: {kind} is an archetype \
+                 root (Is_archetype_root) and a root without ARCHETYPED \
+                 violates LOCATABLE.Archetyped_valid"
+            ))
+        })?;
+    let declared_id = details
+        .get("archetype_id")
+        .and_then(|a| a.get("value"))
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| {
+            unproc(format!(
+                "{kind}.archetype_details.archetype_id.value is mandatory \
+                 (ARCHETYPED.archetype_id 1..1)"
+            ))
+        })?;
+    let node_id = obj
+        .get("archetype_node_id")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    if declared_id != node_id {
+        return Err(unproc(format!(
+            "{kind}.archetype_node_id {node_id:?} must equal \
+             archetype_details.archetype_id.value {declared_id:?} at an \
+             archetype root (LOCATABLE archetype_node_id)"
+        )));
+    }
+    if let Some(links) = obj.get("links")
+        && links.as_array().is_some_and(Vec::is_empty)
+    {
+        return Err(unproc(format!(
+            "{kind}.links must be absent or non-empty (LOCATABLE.Links_valid)"
+        )));
+    }
+    Ok(())
+}
+
 pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), ServiceError> {
     let unproc = |m: String| ServiceError::Unprocessable(m);
     let obj = status
@@ -325,6 +383,7 @@ pub(in crate::service) fn validate_ehr_status(status: &Value) -> Result<(), Serv
             ));
         }
     }
+    validate_root_locatable(obj, "EHR_STATUS")?;
     if !obj.get("is_queryable").is_some_and(Value::is_boolean) {
         return Err(unproc(
             "EHR_STATUS.is_queryable is mandatory (1..1 Boolean)".to_owned(),
@@ -450,6 +509,10 @@ pub(in crate::service) fn validate_ehr_access(access: &Value) -> Result<(), Serv
                 .to_owned(),
         ));
     }
+    // EHR_ACCESS carries the same unconditional Is_archetype_root as
+    // EHR_STATUS (RM ehr `ehr_access.adoc`), so the root-LOCATABLE
+    // invariants apply identically.
+    validate_root_locatable(obj, "EHR_ACCESS")?;
     if let Some(settings) = obj.get("settings").filter(|v| !v.is_null())
         && settings
             .get("_type")
@@ -592,6 +655,12 @@ mod tests {
         let identified = json!({
             "_type": "EHR_STATUS",
             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                "rm_version": "1.2.0"
+            },
             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
             "subject": {
                 "_type": "PARTY_SELF",
@@ -616,6 +685,12 @@ mod tests {
         let bad = json!({
             "_type": "EHR_STATUS",
             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                "rm_version": "1.2.0"
+            },
             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
             "subject": {
                 "_type": "PARTY_IDENTIFIED",
@@ -646,6 +721,12 @@ mod tests {
             let status = json!({
                 "_type": "EHR_STATUS",
                 "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+                "archetype_details": {
+                    "_type": "ARCHETYPED",
+                    "archetype_id": { "_type": "ARCHETYPE_ID",
+                                      "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                    "rm_version": "1.2.0"
+                },
                 "name": { "_type": "DV_TEXT", "value": "EHR Status" },
                 "subject": subject,
                 "is_queryable": true,
@@ -656,13 +737,20 @@ mod tests {
     }
 
     /// Every vendored `EHR_STATUS` data set the CNF corpus labels invalid
-    /// (`master06 §Test Data Sets`, INVALID class 2) must be rejected — with
-    /// one spec-cited exception: `001_ehr_status_subject_empty.json`
-    /// (`subject: {}`) is spec-VALID (an empty `PARTY_SELF` is a completely
-    /// anonymous subject, master04), a documented corpus-vs-spec adjudication.
+    /// (`master06 §Test Data Sets`, INVALID class 2) must be rejected.
+    ///
+    /// Re-adjudicated with the `Archetyped_valid` enforcement: the former
+    /// exception `001_ehr_status_subject_empty.json` (its `subject: {}` IS
+    /// spec-valid — an empty `PARTY_SELF` is a completely anonymous subject,
+    /// RM ehr master04) is nonetheless rejected as a WHOLE, because like
+    /// every fixture in this corpus it carries a root `archetype_node_id`
+    /// with no `archetype_details` (RM common `locatable.adoc`
+    /// `Archetyped_valid`; RM ehr `ehr_status.adoc` `Is_archetype_root`) —
+    /// so its INVALID label holds, on different grounds than the corpus
+    /// intended. The subject-emptiness half of the old adjudication is
+    /// pinned by `anonymous_ehr_status_subject_is_accepted` above.
     #[test]
     fn every_invalid_ehr_status_fixture_is_rejected() {
-        const SPEC_VALID_ANONYMOUS: &str = "001_ehr_status_subject_empty.json";
         let dir = concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/../../docs/specs/openehr/CNF/tests/platform/robot/_resources/test_data_sets/ehr/invalid"
@@ -675,20 +763,11 @@ mod tests {
             }
             let text = std::fs::read_to_string(&path).expect("read fixture");
             let status: Value = serde_json::from_str(&text).expect("parse fixture");
-            let is_anon = path.file_name().and_then(|n| n.to_str()) == Some(SPEC_VALID_ANONYMOUS);
-            if is_anon {
-                validate_ehr_status(&status).unwrap_or_else(|e| {
-                    panic!(
-                        "spec-valid anonymous EHR_STATUS ({SPEC_VALID_ANONYMOUS}) was rejected: {e}"
-                    )
-                });
-            } else {
-                assert!(
-                    validate_ehr_status(&status).is_err(),
-                    "invalid EHR_STATUS fixture was accepted: {}",
-                    path.display()
-                );
-            }
+            assert!(
+                validate_ehr_status(&status).is_err(),
+                "invalid EHR_STATUS fixture was accepted: {}",
+                path.display()
+            );
             checked += 1;
         }
         assert_eq!(checked, 11, "expected 11 invalid EHR_STATUS fixtures");
@@ -705,14 +784,26 @@ mod tests {
             .expect_err("foreign _type rejected");
         assert!(err.to_string().contains("EHR_ACCESS"), "got {err}");
         let err = validate_ehr_access(&json!({
-            "_type": "EHR_ACCESS", "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1"
-        }))
+                   "_type": "EHR_ACCESS", "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_ACCESS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
+               }))
         .expect_err("missing name rejected");
         assert!(err.to_string().contains("name"), "got {err}");
         let err = validate_ehr_access(&json!({
             "_type": "EHR_ACCESS",
             "name": { "_type": "DV_TEXT", "value": "EHR Access" },
             "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-EHR_ACCESS.generic.v1" },
+                "rm_version": "1.2.0"
+            },
             "settings": { "scheme": "acme" }
         }))
         .expect_err("settings without a concrete _type rejected (Scheme_valid)");

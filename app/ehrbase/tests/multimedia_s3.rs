@@ -143,6 +143,13 @@ fn status_with_media(media: Value) -> Value {
         "_type": "EHR_STATUS",
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        // Roots carry ARCHETYPED (LOCATABLE.Archetyped_valid).
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "subject": { "_type": "PARTY_SELF" },
         "is_queryable": true,
         "is_modifiable": true,
