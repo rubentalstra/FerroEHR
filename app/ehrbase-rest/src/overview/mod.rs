@@ -65,10 +65,15 @@
 //! - **Method status — DONE.** [`error::method_not_allowed_handler`]
 //!   (`405`) is mounted as the API router's `method_not_allowed_fallback`
 //!   (`crate::router::router`), so a known path called with a disallowed method renders
-//!   the openEHR `{ error, message }` body; the paired `501` for a
+//!   the openEHR `{ error, message }` body, and axum decorates it with the
+//!   matched route's `Allow` (RFC 9110 §15.5.6). A `405` raised from a
+//!   **matched** handler — the config-gated admin group — carries its own
+//!   `Allow` via [`error::method_not_allowed_response`]. The paired `501` for a
 //!   recognised-but-unimplemented operation rides
 //!   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
-//!   dispatch level ([`error::not_implemented_handler`]).
+//!   dispatch level; there is no `501` handler, and the overview's
+//!   SHOULD-`501` for an *unrecognized method* is answered `405` instead — a
+//!   registered deviation (`AMB-60`, rationale in [`crate::router`]).
 //! - **Version identity / `openehr-uri`** are out of this change's
 //!   scope; `/status` reports the tested
 //!   development-edition contract identity (shared provenance,
@@ -100,8 +105,9 @@
 //!   system identifier").
 //! - [`error`] — the HTTP status-code table (`Requests_and_responses.md`
 //!   §HTTP status codes: 200/201/204/400/401/403/404/405/406/408/409/412/
-//!   415/422/500/501; unrecognized method → `501`, known-but-not-allowed →
-//!   `405`) + the optional error body ("if `Prefer: return=representation`")
+//!   415/422/500/501; §HTTP Methods: unrecognized method SHOULD → `501`,
+//!   known-but-not-allowed SHOULD → `405`, the former deviating to `405` per
+//!   `AMB-60`) + the optional error body ("if `Prefer: return=representation`")
 //!   + the single SM → HTTP mapping table (`CALL_STATUS_TYPE` meets the
 //!     wire here and only here).
 //! - [`version_id`] — resource identification (`Resources.md` §Resource

@@ -68,10 +68,33 @@ async fn app(admin_enabled: bool) -> (testkit::TestDb, Router) {
 }
 
 async fn send(app: &Router, req: Request<Body>) -> (StatusCode, String) {
+    let (status, _headers, body) = send_full(app, req).await;
+    (status, body)
+}
+
+async fn send_full(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMap, String) {
     let resp = app.clone().oneshot(req).await.expect("response");
     let status = resp.status();
+    let headers = resp.headers().clone();
     let bytes = resp.into_body().collect().await.expect("body").to_bytes();
-    (status, String::from_utf8_lossy(&bytes).into_owned())
+    (
+        status,
+        headers,
+        String::from_utf8_lossy(&bytes).into_owned(),
+    )
+}
+
+/// The `Allow` field value of a `405`, which RFC 9110 §15.5.6 makes mandatory:
+/// "The origin server MUST generate an Allow header field in a 405 response
+/// containing a list of the target resource's currently supported methods."
+/// Fails loudly when the header is absent — an empty VALUE is legal, an absent
+/// header is not.
+fn allow_of(headers: &header::HeaderMap) -> &str {
+    headers
+        .get(header::ALLOW)
+        .expect("a 405 MUST carry an Allow header (RFC 9110 §15.5.6)")
+        .to_str()
+        .expect("Allow is ASCII")
 }
 
 fn delete(uri: String) -> Request<Body> {
@@ -127,11 +150,18 @@ async fn disabled_admin_is_405_and_never_deletes() {
     let (_pg, app) = app(false).await;
     // Create a real EHR, then attempt the (disabled) admin delete.
     let id = create_ehr(&app).await;
-    let (status, _) = send(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
+    let (status, headers, _) = send_full(&app, delete(format!("{BASE}/admin/ehr/{id}"))).await;
     // The gate answers 405 Method Not Allowed — the status the OAS itself
     // declares for a disabled admin operation
     // (`admin_ehr_delete_all.yaml` + `responses/405.yaml`).
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+    // This 405 comes from a MATCHED handler, so axum's allow-header machinery
+    // never runs and the handler must supply `Allow` itself. The value is the
+    // EMPTY field value RFC 9110 §10.2.1 defines for exactly this situation:
+    // "An empty Allow field value indicates that the resource allows no
+    // methods, which might occur in a 405 response if the resource has been
+    // temporarily disabled by configuration."
+    assert_eq!(allow_of(&headers), "");
     // RE-TARGET (was a call-counter assertion): the backend was never reached,
     // proven by the EHR still existing.
     assert!(ehr_exists(&app, &id).await, "the EHR must not be deleted");
@@ -202,8 +232,15 @@ async fn disabled_admin_config_is_405() {
     // (`admin_ehr_delete_all.yaml` + `responses/405.yaml`), applied
     // uniformly across the group.
     let (_pg, app) = app(false).await;
-    let (status, _) = send(&app, get(format!("{BASE}/admin/config"))).await;
+    let (status, headers, body) = send_full(&app, get(format!("{BASE}/admin/config"))).await;
     assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+    // Mandatory on every 405 (RFC 9110 §15.5.6), empty because the resource
+    // currently allows no methods at all (RFC 9110 §10.2.1) — see
+    // `disabled_admin_is_405_and_never_deletes`.
+    assert_eq!(allow_of(&headers), "");
+    // …and the openEHR `{ error, message }` body, as on every other error path.
+    let v: serde_json::Value = serde_json::from_str(&body).expect("openEHR error body");
+    assert_eq!(v["error"], "Method Not Allowed");
 }
 
 #[tokio::test]

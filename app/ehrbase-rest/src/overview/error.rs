@@ -117,7 +117,9 @@ struct ErrorBody {
 
 /// Render an arbitrary status as the `{ error, message }` openEHR error body.
 /// Used for the method-status responses (`405`/`501`) that have no dedicated
-/// [`ApiError`] variant (the contract's `ApiError` cannot represent `405`).
+/// [`ApiError`] variant (the contract's `ApiError` cannot represent `405`), and
+/// for the transport-layer statuses (`408`/`413`) whose middleware default body
+/// is aligned onto this shape ([`crate::router`]).
 pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Response {
     let body = ErrorBody {
         error: status.canonical_reason().unwrap_or("Error").to_owned(),
@@ -137,21 +139,74 @@ pub(crate) fn status_error_response(status: StatusCode, message: &str) -> Respon
 // "A server receiving an unrecognized or unimplemented method SHOULD respond
 // with the `501 Not Implemented` status code. If a method is recognized but not
 // allowed for the target resource, the response SHOULD be `405 Method Not
-// Allowed`." These two axum fallbacks render that rule with the openEHR
-// `{ error, message }` body instead of axum's default bare `405`/text.
+// Allowed`."
 //
-// `method_not_allowed_handler` is mounted as the router's method fallback
-// (`crate::router::router`), rendering `405` with the openEHR body. Operation-level
-// `501 Not Implemented` rides `ApiError` (a blanket 501 method fallback would
-// misreport unknown paths, `router.rs` doc).
+// What this layer does:
+//
+// * **`405`** — [`method_not_allowed_handler`] is mounted as the API router's
+//   `method_not_allowed_fallback` (`crate::router::router`), so a request to a
+//   known path with a method that path does not serve renders the openEHR
+//   `{ error, message }` body instead of axum's default bare text `405`. Every
+//   `405` MUST also carry `Allow` (RFC 9110 §15.5.6 — "The origin server MUST
+//   generate an Allow header field in a 405 response containing a list of the
+//   target resource's currently supported methods"); see the handler doc for
+//   who supplies it on which path.
+// * **`501`** — there is no `501` handler: a recognised-but-unimplemented
+//   *operation* answers `501` through
+//   [`ApiError::NotImplemented`](openehr_its::rest::runtime::ApiError) at
+//   dispatch level. The overview's SHOULD-`501` for an *unrecognized method* is
+//   answered `405` instead — a deliberate, registered deviation
+//   (`tools/cnf-runner/artifacts/registers/ambiguities.yaml` `AMB-60`;
+//   rationale in `crate::router`).
 
-/// Axum fallback for a request whose method is **recognized but not allowed** on
-/// the matched resource → `405 Method Not Allowed` (overview §HTTP Methods).
+/// Axum fallback for a request whose method is not served by the matched
+/// resource → `405 Method Not Allowed` (overview §HTTP Methods) with the
+/// openEHR `{ error, message }` body.
+///
+/// The mandatory `Allow` header (RFC 9110 §15.5.6) is **supplied by axum, not
+/// here**, and deliberately so: only the router knows the matched path's method
+/// set, and axum decorates a method-fallback response with the `Allow` it
+/// accumulated from the route's registered methods — but only when the response
+/// does not already carry one (`axum::routing::Route`'s `set_allow_header`;
+/// <https://docs.rs/axum/0.8/axum/struct.Router.html#method.method_not_allowed_fallback>).
+/// Setting a hand-built `Allow` here would therefore *replace* the accurate
+/// per-route set with a guess. The header's presence is pinned by
+/// `app/ehrbase-rest/tests/http.rs`.
+///
+/// A `405` produced from a **matched** handler (the config-gated admin group)
+/// never reaches this decoration and must carry its own `Allow` — see
+/// [`method_not_allowed_response`].
 pub(crate) async fn method_not_allowed_handler() -> Response {
     status_error_response(
         StatusCode::METHOD_NOT_ALLOWED,
         "the request method is not allowed on this resource",
     )
+}
+
+/// Render a `405 Method Not Allowed` **from a matched handler**, with the
+/// openEHR `{ error, message }` body and an explicit `Allow` header.
+///
+/// RFC 9110 §15.5.6: "The origin server MUST generate an Allow header field in
+/// a 405 response containing a list of the target resource's currently
+/// supported methods." A handler-produced `405` bypasses axum's allow-header
+/// machinery entirely (that decoration only runs on the *method fallback*, i.e.
+/// when no method route matched), so the caller states the set itself.
+///
+/// `allow` is the RFC 9110 §10.2.1 `Allow = #method` field value — a
+/// comma-separated method list, or the empty string where the resource
+/// currently supports no method at all ("An empty Allow field value indicates
+/// that the resource allows no methods, which might occur in a 405 response if
+/// the resource has been temporarily disabled by configuration").
+///
+/// # Panics
+/// If `allow` is not a valid header field value — impossible for the method
+/// tokens and the empty string this takes, all of which are compile-time
+/// literals at the call sites.
+pub(crate) fn method_not_allowed_response(allow: &'static str, message: &str) -> Response {
+    let mut resp = status_error_response(StatusCode::METHOD_NOT_ALLOWED, message);
+    resp.headers_mut()
+        .insert(header::ALLOW, HeaderValue::from_static(allow));
+    resp
 }
 
 impl IntoResponse for RestError {
@@ -272,10 +327,55 @@ mod tests {
 
     #[tokio::test]
     async fn method_not_allowed_renders_405_openehr_body() {
-        let (status, body) = handler_body(super::method_not_allowed_handler().await).await;
+        let resp = super::method_not_allowed_handler().await;
+        // The router fallback deliberately leaves `Allow` unset: axum fills it
+        // in from the matched route's method set, and would NOT overwrite a
+        // value the handler had already written (see the handler doc). The
+        // header's presence on the wire is pinned end-to-end in
+        // `tests/http.rs`.
+        assert!(
+            !resp.headers().contains_key(http::header::ALLOW),
+            "the fallback must leave Allow to axum's per-route set"
+        );
+        let (status, body) = handler_body(resp).await;
         assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
         assert_eq!(body["error"], "Method Not Allowed");
         assert!(body.get("message").and_then(Value::as_str).is_some());
+    }
+
+    #[tokio::test]
+    async fn handler_produced_405_carries_an_allow_header() {
+        // RFC 9110 §15.5.6: "The origin server MUST generate an Allow header
+        // field in a 405 response containing a list of the target resource's
+        // currently supported methods." A handler-produced 405 gets no axum
+        // decoration, so the helper states the set itself.
+        let resp = super::method_not_allowed_response("GET,HEAD", "nope");
+        assert_eq!(resp.status(), StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            resp.headers()
+                .get(http::header::ALLOW)
+                .and_then(|v| v.to_str().ok()),
+            Some("GET,HEAD")
+        );
+        let (_status, body) = handler_body(resp).await;
+        assert_eq!(body["error"], "Method Not Allowed");
+        assert_eq!(body["message"], "nope");
+    }
+
+    #[tokio::test]
+    async fn handler_produced_405_can_advertise_the_empty_method_set() {
+        // RFC 9110 §10.2.1: "An empty Allow field value indicates that the
+        // resource allows no methods, which might occur in a 405 response if
+        // the resource has been temporarily disabled by configuration" — the
+        // config-gated admin group's case. The header is PRESENT and empty,
+        // never absent.
+        let resp = super::method_not_allowed_response("", "disabled");
+        assert_eq!(
+            resp.headers()
+                .get(http::header::ALLOW)
+                .and_then(|v| v.to_str().ok()),
+            Some("")
+        );
     }
 
     #[tokio::test]

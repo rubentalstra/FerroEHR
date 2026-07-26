@@ -363,6 +363,102 @@ async fn unknown_route_is_404() {
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
 
+/// A known path called with a method it does not serve answers `405` with the
+/// openEHR `{ error, message }` body AND the `Allow` header.
+///
+/// ITS-REST `docs/overview/Requests_and_responses.md` §HTTP Methods: "If a
+/// method is recognized but not allowed for the target resource, the response
+/// SHOULD be `405 Method Not Allowed` status code." RFC 9110 §15.5.6 — the
+/// authority that section cites for the method semantics — makes the header
+/// mandatory: "The origin server MUST generate an Allow header field in a 405
+/// response containing a list of the target resource's currently supported
+/// methods." `/ehr/{ehr_id}` serves `GET` and `PUT`, so both must be listed.
+#[tokio::test]
+async fn recognized_but_unallowed_method_is_405_with_allow() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .method("TRACE")
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+    let allow = headers
+        .get(header::ALLOW)
+        .and_then(|v| v.to_str().ok())
+        .expect("405 MUST carry Allow (RFC 9110 §15.5.6)");
+    assert!(
+        allow.contains("GET"),
+        "Allow lists the served methods: {allow}"
+    );
+    assert!(
+        allow.contains("PUT"),
+        "Allow lists the served methods: {allow}"
+    );
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "application/json"
+    );
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(v["error"], "Method Not Allowed");
+}
+
+/// The same `405` + `Allow` discipline for a method the server does not
+/// recognize at all. ITS-REST §HTTP Methods SHOULDs `501` for an unrecognized
+/// method; we answer `405` instead — a registered deviation (ambiguity register
+/// `AMB-60`): the router matches on path + method and has no unrecognized-method
+/// seam, and `405` is a predefined, non-conflicting code in the spec's own
+/// status table (§HTTP status codes). What must never happen is a `405` without
+/// `Allow`.
+#[tokio::test]
+async fn unrecognized_method_is_405_with_allow() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .method("FROBNICATE")
+        .uri(format!("{BASE}/ehr/{EHR}"))
+        .body(Body::empty())
+        .unwrap();
+    let (status, headers, _b) = send(app, req).await;
+    assert_eq!(status, StatusCode::METHOD_NOT_ALLOWED);
+    assert!(
+        headers.contains_key(header::ALLOW),
+        "405 MUST carry Allow (RFC 9110 §15.5.6)"
+    );
+}
+
+/// A request whose declared body size exceeds the server limit is refused by
+/// the `tower-http` `RequestBodyLimitLayer` — an additional, non-conflicting
+/// status code (ITS-REST `Requests_and_responses.md` §HTTP status codes:
+/// "Additional status codes MAY be used as long as they do not conflict with
+/// the predefined codes"). The refusal must still leave the server in the
+/// openEHR `{ error, message }` shape, not tower-http's `text/plain` default.
+#[tokio::test]
+async fn oversized_request_body_is_413_with_the_openehr_error_body() {
+    let (_pg, app) = app(false).await;
+    let req = Request::builder()
+        .method("POST")
+        .uri(format!("{BASE}/ehr/{EHR}/composition"))
+        .header(header::CONTENT_TYPE, "application/json")
+        // The limit is read from Content-Length, so the declared size alone
+        // triggers the refusal — no 16 MiB allocation needed in the test.
+        .header(header::CONTENT_LENGTH, "999999999")
+        .body(Body::from(r#"{"_type":"COMPOSITION"}"#))
+        .unwrap();
+    let (status, headers, body) = send(app, req).await;
+    assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+    assert_eq!(
+        headers.get(header::CONTENT_TYPE).unwrap(),
+        "application/json"
+    );
+    let v: serde_json::Value = serde_json::from_str(&body).expect("openEHR error body");
+    assert_eq!(v["error"], "Payload Too Large");
+    assert!(
+        v.get("message")
+            .and_then(serde_json::Value::as_str)
+            .is_some()
+    );
+}
+
 #[tokio::test]
 async fn auth_disabled_lets_requests_through() {
     // RE-TARGET: was a Mock `501`; with auth disabled the request reaches the
