@@ -26,3 +26,4 @@
 - [Signature verify-on-read provenance](signature-verify-on-read-provenance.md) — #273: verify-on-read defaults strict-when-enabled + judges ONLY server-generated sigs; client-supplied sigs stored verbatim + never re-verified via a vo_version provenance bit (RM master06); format heuristics are leaky in pgp mode
 - [Measurement environment discipline](measurement-environment-discipline.md) — idle box + envelope-matched limits for measured runs; ixit containers blocks track lane renames
 - [ITS audit fix-first cadence](its-audit-fix-first-cadence.md) — owner 2026-07-26: #373 audit runs group-by-group, ALL fix issues from a group implemented+merged before the next group's audit starts; never accumulate finding backlog
+- [Merge on local gates](merge-on-local-gates.md) — owner 2026-07-26: local gates green (fmt+clippy+nextest+cnf validate) → merge the PR immediately, no CI watchers between issues; CI is a post-merge backstop (release cuts keep normal discipline)

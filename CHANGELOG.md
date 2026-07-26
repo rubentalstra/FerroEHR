@@ -17,6 +17,30 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **ADL 1.4 template negotiation: the response type mirrors `Accept`, and a
+  non-XML OPT upload is `415`** (#397). Two divergences from ITS-REST overview
+  `Resources.md`:
+  - `GET /definition/template/adl1.4/{template_id}` with
+    `Accept: application/json` was answered `Content-Type:
+    application/openehr.wt+json` — a type the client never accepted. It now
+    returns the same Web Template document under `Content-Type:
+    application/json` (§JSON Format: "Proper header `Content-Type:
+    application/json` MUST be present in the response of the service unless
+    the response has no content body"). `Accept:
+    application/openehr.wt+json` keeps the Web Template media type and
+    `Accept: application/xml` the canonical OPT, both unchanged. (The
+    released source is internally inconsistent here — the operation
+    description names only XML + `wt+json` while its `Accept`/`Content-Type`
+    enumerations include `application/json` with no schema — so serving the
+    Web Template body is the recorded fixed handling, not a `406`.)
+  - `POST /definition/template/adl1.4` accepted any `Content-Type` and failed
+    a JSON payload with `400` from the OPT parser. A request declaring a
+    non-XML payload type is now refused `415 Unsupported Media Type` before
+    parsing (§XML Format: "If the service cannot process the request payload
+    as XML format, it MUST respond with HTTP status code `415 Unsupported
+    Media Type`"). `application/xml` and `text/xml` upload as before, and an
+    absent `Content-Type` still reads as the operation's single body type
+    (the header is a client MAY).
 - **`Last-Modified` and `ETag` completion on the EHR and DEFINITION surfaces**
   (#396). ITS-REST overview `Requests_and_responses.md` §"`ETag` and
   Last-Modified" requires both headers on "VERSION, VERSIONED_OBJECT, or other

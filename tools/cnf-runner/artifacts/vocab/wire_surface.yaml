@@ -794,8 +794,18 @@ elements:
     covered_by: [SF-EXAMPLE-unsupported_accept]
   - id: negotiation-415-unsupported-media
     description: "Request payload media type unsupported by the method on the target resource → 415 Unsupported Media Type."
-    source: "ITS-REST Requests_and_responses.md §HTTP status codes (415 Unsupported Media Type)"
-    covered_by: [SF-DEPRECATED-media_unsupported]
+    source: "ITS-REST Requests_and_responses.md §HTTP status codes (415 Unsupported Media Type) + Resources.md §XML Format (\"If the service cannot process the request payload as XML format, it MUST respond with HTTP status code 415 Unsupported Media Type\") and the symmetric §JSON Format sentence"
+    covered_by: [SF-DEPRECATED-media_unsupported, I_DEFINITION_ADL14.upload_opt-wrong_media]
+  - id: negotiation-json-accept-on-template-get
+    description: "Accept: application/json on the ADL 1.4 OPT GET is fulfilled with the Web Template JSON document (the only JSON template representation the released text defines), not refused."
+    source: "ITS-REST Resources.md §JSON Format (an Accept the service cannot fulfil is 406, so a fulfilled one returns a body) + §Simplified Formats (application/openehr.wt+json = the Operational Template as Web Template JSON); the representation itself rests on register AMB-58 (the released source enumerates application/json on this operation without declaring a schema for it)"
+    covered_by: [SF-WT-web_template_json_accept]
+  - id: negotiation-response-content-type-mirrors-accept
+    description: "The response Content-Type is the media type the client negotiated — a read accepted as application/json is answered application/json, never in another type the client did not accept."
+    source: "ITS-REST Resources.md §JSON Format (\"Proper header Content-Type: application/json MUST be present in the response of the service unless the response has no content body\") + §XML Format (the same MUST for application/xml)"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + HTTP-tested (#397, app/ehrbase-rest/tests/template_adl14_http.rs: the ADL 1.4 template GET now answers Accept: application/json with Content-Type: application/json and keeps application/openehr.wt+json for the wt Accept); the presence is DECLARED as `Content-Type: negotiated` on the get_opt binding outcome. NEW-CASE candidate blocked on the runner capability tracked in #403: `outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified (tools/cnf-runner/src/exec/outcome.rs) — so no executable Content-Type assertion exists yet; this gap closes when #403 lands header-matcher evaluation."
   # Error-body + deprecated-media families.
   - id: error-body-family
     description: "For 4xx/5xx, services MAY return additional error details ({message, code, errors[]}) when Prefer: return=representation is present; the runner asserts at most a message string (loose)."
