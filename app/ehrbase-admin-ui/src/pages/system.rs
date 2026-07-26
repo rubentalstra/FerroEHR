@@ -23,6 +23,7 @@ use leptos_meta::Title;
 
 use leptos_router::components::A;
 
+use crate::components::empty_state::EmptyState;
 use crate::components::field::BTN_SECONDARY;
 use crate::components::page_header::PageHeader;
 use crate::components::surface::titled_card;
@@ -196,9 +197,11 @@ fn usage_card() -> AnyView {
                     match resource.await {
                         Ok(rows) if rows.is_empty() => {
                             view! {
-                                <p class="text-sm text-ink-muted">
-                                    "No templates yet — usage appears once compositions are committed."
-                                </p>
+                                <EmptyState
+                                    icon=icondata_lu::LuFileCode2
+                                    message="No template usage yet"
+                                    hint="Counts appear once compositions are committed against a template."
+                                />
                             }
                                 .into_any()
                         }
@@ -521,8 +524,14 @@ fn openapi_card() -> AnyView {
 fn openapi_body(doc: &serde_json::Value) -> AnyView {
     let groups = group_openapi_paths(doc);
     if groups.is_empty() {
-        return view! { <div class="text-sm text-ink-muted">"No paths advertised."</div> }
-            .into_any();
+        return view! {
+            <EmptyState
+                icon=icondata_lu::LuRoute
+                message="No paths advertised"
+                hint="The CDR served an OpenAPI document with no operations in it."
+            />
+        }
+        .into_any();
     }
     let sections = groups
         .into_iter()
