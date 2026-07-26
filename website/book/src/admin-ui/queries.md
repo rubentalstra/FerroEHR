@@ -29,7 +29,10 @@ name (see [Grouping is the namespace](#grouping-is-the-namespace)).
 
 The same run/save surface for hand-written AQL: grammar validation before
 anything reaches the CDR, JSON parameter bindings, paged results. The
-builder's "open in raw editor" hands its generated query across.
+builder's "open in raw editor" hands its generated query across. When the editor
+was opened from a stored query, it also links back the other way — **Open in
+builder** and **Run with parameters** — so the three surfaces are reachable from
+each other for the same stored definition.
 
 ![Raw AQL editor](img/queries/query-aql.png)
 
@@ -74,11 +77,66 @@ many, previous/next, and 25/50/100 rows per page, all in the URL (see
 [Paging](index.md#paging)). The namespace panel beside it is derived from the
 same listing and shows every namespace, whichever page you are on.
 
-Each stored query row also offers **Open in editor**, which loads that
-version's query text into the raw AQL editor and pre-fills the namespace,
-name, and version fields — with the version set to the *next* one, so
-saving again publishes a new version instead of colliding with the one you
-opened (see [Versions](#versions)).
+Each stored query row offers three hand-offs:
+
+| Action | What it opens |
+| --- | --- |
+| **Run** | The [stored-query runner](#running-a-stored-query) — executes *that stored query* on the CDR, with its parameters prompted |
+| **Open in editor** | The raw AQL editor, seeded with that version's query text |
+| **Open in builder** | The [query builder](#the-query-builder), with the query loaded back into its controls — when it fits (see [Opening a stored query in the builder](#opening-a-stored-query-in-the-builder)) |
+
+Both editing hand-offs pre-fill the namespace, name, and version fields — with
+the version set to the *next* one, so saving again publishes a new version
+instead of colliding with the one you opened (see [Versions](#versions)).
+
+### Opening a stored query in the builder
+
+The builder writes one shape of AQL, and it will only load a stored query back
+into its controls when it can reproduce that query **byte for byte**. Anything
+else opens with a notice naming exactly what the builder cannot express — a
+`$parameter` it has no field for, a query over other RM classes, an aggregate
+outside its output shapes — beside a link to work on it in the raw editor
+instead. There is no partial load: a builder that showed *most* of a stored
+query would quietly rewrite it on the next save.
+
+A query that does load arrives complete — template, conditions (including
+nested ALL/ANY groups and negation), output shape, ordering, limit — with its
+condition labels and value lists taken from the template's own constraints, and
+the next version proposed in the save field.
+
+### Running a stored query
+
+**Run** on a stored-query row opens the runner for that query. It shows the
+stored AQL, prompts one field per parameter the query declares, and executes the
+*stored definition* on the CDR — not a copy of its text — so what runs is what
+every other openEHR client would get.
+
+Values are read as JSON first: `38.5` is sent as a number and `true` as a
+boolean, while `at0037`, `2026-07-01` and `1.0.0` are sent as text without any
+quoting. To force a numeric-looking value to stay text, quote it: `"0123"`. A
+field left blank is not sent at all, so the CDR can apply its own default or say
+what is missing.
+
+Results render in the same results pane as the other query screens — table or
+chart, with previous/next paging. A query that sets its own row window (an AQL
+`LIMIT` or `TOP`) is run as stored and the pane says so rather than paging it,
+because openEHR does not allow a request window and a query window together.
+
+#### Choosing how the version resolves
+
+openEHR defines three ways to name the version of a stored query you are
+reading, and the runner offers all three. The line under the picker always
+states the exact request your choice will send:
+
+| Resolution | Request | Which version runs |
+| --- | --- | --- |
+| **Latest version** | `POST /query/{name}` | the latest version of that query |
+| **Version prefix** | `POST /query/{name}/1` or `…/1.2` | the latest version matching the prefix |
+| **Exact version** | `POST /query/{name}/1.2.0` | exactly that version |
+
+A version that does not fit the chosen form (a full `1.2.0` typed as a prefix, or
+a bare `1` typed as exact) is refused with an explanation before anything is
+sent.
 
 ### Grouping is the namespace
 
@@ -112,9 +170,9 @@ which of the two openEHR store operations a click will perform:
 | empty | `PUT /definition/query/{name}` — the server assigns the version and **replaces** the query stored at it |
 | `1.2.0` | `PUT /definition/query/{name}/{version}` — stores a **new, immutable** version; if that exact `(name, version)` pair already exists the CDR refuses it (`409`) and the console says so |
 
-Because an explicit version is immutable, **Open in editor** proposes the next
-minor version (opening `1.0.0` fills the field with `1.1.0`) — edit, save, and
-both versions are then listed side by side. Which part to bump is yours to
+Because an explicit version is immutable, **Open in editor** and **Open in
+builder** both propose the next minor version (opening `1.0.0` fills the field
+with `1.1.0`) — edit, save, and both versions are then listed side by side. Which part to bump is yours to
 change; the field is free text and only checks that a version you type is a
 complete triple.
 

@@ -122,6 +122,171 @@ pub fn split_query_ref(reference: &str) -> Option<(String, String)> {
         .map(|(name, version)| (name.to_owned(), version.to_owned()))
 }
 
+/// The `?load=` hand-off link into `route` for one stored-query VERSION.
+///
+/// `name@version` ([`split_query_ref`]'s input) is percent-encoded as ONE
+/// query-string value: a qualified name may carry `::`, `/`, `&`, `=` or `#`,
+/// any of which would otherwise truncate the value or forge a second
+/// parameter. The router percent-DEcodes query parameters before a screen
+/// reads them, so the receiving page needs no decode of its own. All
+/// percent-coding goes through the `urlencoding` crate (owner rule).
+///
+/// NOTE: no openEHR spec governs an admin UI's internal links — our own
+/// design/extension. Only the `name`/`version` pair it carries is spec-bound
+/// (see the module docs).
+#[must_use]
+pub fn load_href(route: &str, name: &str, version: &str) -> String {
+    format!(
+        "{route}?load={}",
+        urlencoding::encode(&format!("{name}@{version}"))
+    )
+}
+
+/// How the CDR should resolve the version of a stored query being READ.
+///
+/// ITS-REST defines three forms, and this is all three: "The `version`
+/// identifier is in the format specified by SEMVER style (i.e.
+/// `major.minor.patch`). When only a partial `version` pattern is supplied, or
+/// when `version` is not supplied at all, the system must use the latest
+/// `version` with the supplied prefix - i.e. if only `major` or `major.minor`
+/// is used, then the latest query version matching supplied prefix will be
+/// used." (ITS-REST `specifications/docs/query/Qualified_query_name.md`
+/// §Qualified query name).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VersionResolution {
+    /// No `version` at all — the CDR uses the latest version of the query.
+    Latest,
+    /// A partial `{major}` or `{major}.{minor}` prefix — the CDR uses the
+    /// latest version matching it.
+    Prefix,
+    /// A complete `major.minor.patch` — exactly that version.
+    Exact,
+}
+
+impl VersionResolution {
+    /// The three forms in the order the spec lists them (latest, prefix,
+    /// exact) — the order a picker offers them in.
+    pub const ALL: [Self; 3] = [Self::Latest, Self::Prefix, Self::Exact];
+
+    /// The stable form value a `<select>`/`?mode=` uses for this form.
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Latest => "latest",
+            Self::Prefix => "prefix",
+            Self::Exact => "exact",
+        }
+    }
+
+    /// Read a form value back, defaulting to [`Self::Exact`] for anything
+    /// unrecognized — the least surprising reading of user input, because it
+    /// resolves to the one version the operator can see in the field.
+    #[must_use]
+    pub fn from_str_or_exact(raw: &str) -> Self {
+        match raw {
+            "latest" => Self::Latest,
+            "prefix" => Self::Prefix,
+            _ => Self::Exact,
+        }
+    }
+
+    /// The picker label, worded as the spec describes the form.
+    #[must_use]
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Latest => "Latest version (no version sent)",
+            Self::Prefix => "Version prefix (latest match)",
+            Self::Exact => "Exact version",
+        }
+    }
+
+    /// Which form fits `version` as written: no version at all is
+    /// [`Self::Latest`], a `{major}`/`{major}.{minor}` pattern is
+    /// [`Self::Prefix`], anything else is read as [`Self::Exact`] (and then
+    /// validated by [`resolve_version`]).
+    #[must_use]
+    pub fn of(version: &str) -> Self {
+        let version = version.trim();
+        if version.is_empty() {
+            Self::Latest
+        } else if is_semver_prefix(version) {
+            Self::Prefix
+        } else {
+            Self::Exact
+        }
+    }
+}
+
+/// Why a version cannot be resolved in the chosen form.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum VersionResolutionError {
+    /// A prefix form given something that is not a `{major}` /
+    /// `{major}.{minor}` pattern.
+    #[error(
+        "`{0}` is not a version prefix — a prefix is `{{major}}` or `{{major}}.{{minor}}` \
+         (for example `1` or `1.2`) and resolves to the latest version matching it"
+    )]
+    NotAPrefix(String),
+    /// An exact form given something that is not a complete triple.
+    #[error(
+        "`{0}` is not an exact version — an exact version is `major.minor.patch` \
+         (for example `1.2.0`)"
+    )]
+    NotExact(String),
+}
+
+/// The `version` path segment a read should send: `None` for
+/// [`VersionResolution::Latest`] (the version is omitted from the URL
+/// entirely), `Some` for the two supplied forms.
+///
+/// # Errors
+/// [`VersionResolutionError`] when `version` does not fit the chosen form, so
+/// a malformed pattern never reaches the CDR as a version.
+pub fn resolve_version(
+    mode: VersionResolution,
+    version: &str,
+) -> Result<Option<String>, VersionResolutionError> {
+    let version = version.trim();
+    match mode {
+        VersionResolution::Latest => Ok(None),
+        VersionResolution::Prefix => {
+            if is_semver_prefix(version) {
+                Ok(Some(version.to_owned()))
+            } else {
+                Err(VersionResolutionError::NotAPrefix(version.to_owned()))
+            }
+        }
+        VersionResolution::Exact => {
+            if is_full_semver(version) {
+                Ok(Some(version.to_owned()))
+            } else {
+                Err(VersionResolutionError::NotExact(version.to_owned()))
+            }
+        }
+    }
+}
+
+/// Is `version` a partial SEMVER prefix — `{major}` or `{major}.{minor}`, each
+/// part a plain non-negative integer?
+///
+/// The spec names exactly those two partial forms: "if only `major` or
+/// `major.minor` is used, then the latest query version matching supplied
+/// prefix will be used" (ITS-REST
+/// `specifications/docs/query/Qualified_query_name.md` §Qualified query name).
+/// A complete triple is NOT a prefix (it is [`is_full_semver`]).
+#[must_use]
+pub fn is_semver_prefix(version: &str) -> bool {
+    let parts: Vec<&str> = version.split('.').collect();
+    if parts.len() != 1 && parts.len() != 2 {
+        return false;
+    }
+    parts.iter().all(|part| {
+        !part.is_empty()
+            && part.bytes().all(|byte| byte.is_ascii_digit())
+            && part.parse::<u64>().is_ok()
+    })
+}
+
 /// Does `version` carry all three SEMVER parts (`major.minor.patch`, each a
 /// plain non-negative integer)?
 ///
@@ -220,8 +385,9 @@ pub fn group_label(namespace: Option<&str>) -> &str {
 mod tests {
     use crate::queries_api::StoredQueryRow;
     use crate::query_namespace::{
-        UNQUALIFIED_LABEL, bare_name_of, group_by_namespace, group_label, is_full_semver,
-        namespace_of, next_minor, qualify, split_qualified, split_query_ref,
+        UNQUALIFIED_LABEL, VersionResolution, VersionResolutionError, bare_name_of,
+        group_by_namespace, group_label, is_full_semver, is_semver_prefix, load_href, namespace_of,
+        next_minor, qualify, resolve_version, split_qualified, split_query_ref,
     };
 
     /// A listing row with only the fields the grouping reads.
@@ -449,6 +615,134 @@ mod tests {
         assert_eq!(next_minor("0.9.9").as_deref(), Some("0.10.0"));
         // The major part is carried verbatim, never re-formatted.
         assert_eq!(next_minor("07.1.0").as_deref(), Some("07.2.0"));
+    }
+
+    #[test]
+    fn semver_prefix_is_one_or_two_numeric_parts() {
+        // The two partial forms the spec names.
+        assert!(is_semver_prefix("1"));
+        assert!(is_semver_prefix("1.2"));
+        assert!(is_semver_prefix("0"));
+        assert!(is_semver_prefix("10.20"));
+        // A complete triple is the exact form, not a prefix.
+        assert!(!is_semver_prefix("1.2.3"));
+        // Malformed patterns.
+        assert!(!is_semver_prefix(""));
+        assert!(!is_semver_prefix("1."));
+        assert!(!is_semver_prefix(".1"));
+        assert!(!is_semver_prefix("v1"));
+        assert!(!is_semver_prefix("1.x"));
+        assert!(!is_semver_prefix("1.-2"));
+        assert!(!is_semver_prefix("99999999999999999999"));
+    }
+
+    #[test]
+    fn the_three_read_forms_resolve_to_their_path_segment() {
+        // Latest: the version is omitted from the URL entirely.
+        assert_eq!(resolve_version(VersionResolution::Latest, ""), Ok(None));
+        // A stale version text is ignored in the latest form.
+        assert_eq!(
+            resolve_version(VersionResolution::Latest, "1.0.0"),
+            Ok(None)
+        );
+        // Prefix: the pattern is sent as-is and the CDR picks the latest match.
+        assert_eq!(
+            resolve_version(VersionResolution::Prefix, "1"),
+            Ok(Some("1".to_owned()))
+        );
+        assert_eq!(
+            resolve_version(VersionResolution::Prefix, " 1.2 "),
+            Ok(Some("1.2".to_owned()))
+        );
+        // Exact: a complete triple only.
+        assert_eq!(
+            resolve_version(VersionResolution::Exact, "1.2.3"),
+            Ok(Some("1.2.3".to_owned()))
+        );
+    }
+
+    #[test]
+    fn a_version_that_does_not_fit_its_form_is_refused() {
+        assert_eq!(
+            resolve_version(VersionResolution::Prefix, "1.2.3"),
+            Err(VersionResolutionError::NotAPrefix("1.2.3".to_owned()))
+        );
+        assert_eq!(
+            resolve_version(VersionResolution::Prefix, ""),
+            Err(VersionResolutionError::NotAPrefix(String::new()))
+        );
+        assert_eq!(
+            resolve_version(VersionResolution::Exact, "1.2"),
+            Err(VersionResolutionError::NotExact("1.2".to_owned()))
+        );
+        assert_eq!(
+            resolve_version(VersionResolution::Exact, ""),
+            Err(VersionResolutionError::NotExact(String::new()))
+        );
+    }
+
+    #[test]
+    fn the_form_of_a_version_text_is_read_from_its_shape() {
+        assert_eq!(VersionResolution::of(""), VersionResolution::Latest);
+        assert_eq!(VersionResolution::of("   "), VersionResolution::Latest);
+        assert_eq!(VersionResolution::of("1"), VersionResolution::Prefix);
+        assert_eq!(VersionResolution::of("1.2"), VersionResolution::Prefix);
+        assert_eq!(VersionResolution::of("1.2.3"), VersionResolution::Exact);
+        // Anything else is read as the exact form and validated there.
+        assert_eq!(VersionResolution::of("latest"), VersionResolution::Exact);
+    }
+
+    #[test]
+    fn resolution_form_values_round_trip() {
+        for mode in VersionResolution::ALL {
+            assert_eq!(VersionResolution::from_str_or_exact(mode.as_str()), mode);
+            assert!(!mode.label().is_empty());
+        }
+        // Unknown input falls back to the exact form.
+        assert_eq!(
+            VersionResolution::from_str_or_exact("nonsense"),
+            VersionResolution::Exact
+        );
+    }
+
+    #[test]
+    fn load_href_escapes_the_qualified_ref_as_one_value() {
+        assert_eq!(
+            load_href("/queries/aql", "my_query", "1.0.0"),
+            "/queries/aql?load=my_query%401.0.0"
+        );
+        // A qualified name carries `::` and `/`; a `&`/`=` must not become an
+        // extra parameter.
+        assert_eq!(
+            load_href("/queries/builder", "org.example::c/name/value", "1.2.3"),
+            "/queries/builder?load=org.example%3A%3Ac%2Fname%2Fvalue%401.2.3"
+        );
+        assert_eq!(
+            load_href("/queries/stored", "a&b=c", "1"),
+            "/queries/stored?load=a%26b%3Dc%401"
+        );
+    }
+
+    #[test]
+    fn load_href_round_trips_back_through_split_query_ref() {
+        // The router decodes `?load=` before a screen reads it, so decoding the
+        // emitted value must hand `split_query_ref` the original pair.
+        for (name, version) in [
+            ("my_query", "1.0.0"),
+            ("org.example::c/name/value", "1.2.3"),
+            ("a&b=c", "1"),
+            ("blodtryk_målinger", "2.0.0"),
+        ] {
+            let href = load_href("/queries/stored", name, version);
+            let value = href
+                .strip_prefix("/queries/stored?load=")
+                .expect("the helper always emits <route>?load=<value>");
+            let decoded = urlencoding::decode(value).expect("valid UTF-8 percent-encoding");
+            assert_eq!(
+                split_query_ref(&decoded),
+                Some((name.to_owned(), version.to_owned()))
+            );
+        }
     }
 
     #[test]

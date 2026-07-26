@@ -301,18 +301,25 @@ fn stored_row(
             }
         });
     };
-    // "Open in editor": a link to the raw-editor route, which reads `?load=` to
-    // fetch and seed the query. The click is stopped from bubbling to the row's
-    // toggle handler (so a click here never expands the detail); with no router
+    // The three per-row hand-offs, all carrying `?load=name@version` (percent-
+    // encoded as ONE value): the raw editor seeds its textarea from it, the
+    // builder LIFTS the AQL back into the point-and-click state, and the runner
+    // executes it with parameters. Each click is stopped from bubbling to the
+    // row's toggle handler (so it never also expands the detail); with no router
     // delegation reached, the browser does a plain navigation to the fresh page.
-    // `name@version` is percent-encoded as one value.
     let load_href = crate::pages::query_aql::load_href(&row.name, &row.version);
+    let builder_href = crate::pages::query_builder::load_href(&row.name, &row.version);
+    let run_href = crate::pages::query_stored::run_href(&row.name, &row.version);
     let delete_button = if admin {
         cdr_delete_button(&row.name, &row.version, cdr_delete, pending_delete)
     } else {
         ().into_any()
     };
+    // The row's stable E2E key (`name@version`), reused by each hand-off link so
+    // a journey can address the exact row's action.
     let row_hook = format!("{}@{}", row.name, row.version);
+    let run_hook = row_hook.clone();
+    let builder_hook = row_hook.clone();
     view! {
         <tr
             class=format!("{ROW} cursor-pointer")
@@ -326,10 +333,26 @@ fn stored_row(
             <td class=format!("{CELL} text-right")>
                 // `whitespace-nowrap`: the panel is half-width, so without it the
                 // action labels wrap mid-phrase ("Delete from / CDR"). The row
-                // stacks the two actions instead.
+                // wraps between whole actions instead.
                 <div class="flex flex-wrap items-center justify-end gap-2 whitespace-nowrap">
+                    <a
+                        href=run_href
+                        class=BTN_SECONDARY
+                        data-run-stored=run_hook
+                        on:click=|ev| ev.stop_propagation()
+                    >
+                        "Run"
+                    </a>
                     <a href=load_href class=BTN_SECONDARY on:click=|ev| ev.stop_propagation()>
                         "Open in editor"
+                    </a>
+                    <a
+                        href=builder_href
+                        class=BTN_SECONDARY
+                        data-open-in-builder=builder_hook
+                        on:click=|ev| ev.stop_propagation()
+                    >
+                        "Open in builder"
                     </a>
                     {delete_button}
                 </div>
@@ -392,8 +415,10 @@ fn stored_detail(detail: Resource<Result<Option<String>, AdminUiError>>) -> AnyV
     .into_any()
 }
 
-/// The expanded detail for one stored query: its AQL and a Run button that
-/// navigates to the raw-AQL screen with the query pre-filled via `?aql=`.
+/// The expanded detail for one stored query: its AQL and a button that navigates
+/// to the raw-AQL screen with the query pre-filled via `?aql=` — an AD-HOC run
+/// of that text, deliberately distinct from the row's **Run**, which executes the
+/// STORED definition (and can bind its parameters).
 fn detail_panel(aql: String) -> AnyView {
     let navigate = use_navigate();
     let aql_for_run = aql.clone();
@@ -411,7 +436,7 @@ fn detail_panel(aql: String) -> AnyView {
                     "AQL"
                 </span>
                 <button type="button" class=BTN_PRIMARY on:click=on_run>
-                    "Run"
+                    "Run as ad-hoc AQL"
                 </button>
             </div>
             <DocumentPane body=body />

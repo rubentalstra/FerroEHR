@@ -99,6 +99,10 @@ pub fn App() -> impl IntoView {
                             path=path!("queries/aql")
                             view=crate::pages::query_aql::QueryAqlPage
                         />
+                        <Route
+                            path=path!("queries/stored")
+                            view=crate::pages::query_stored::QueryStoredPage
+                        />
                         <Route path=path!("ehrs") view=crate::pages::ehrs::EhrsPage />
                         <Route
                             path=path!("ehrs/:ehr_id")
