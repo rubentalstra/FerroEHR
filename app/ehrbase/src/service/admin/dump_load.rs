@@ -34,6 +34,16 @@
 //! version-row re-persist is a storage seam
 //! ([`crate::storage::version_repo::import::insert_version_verbatim`]); this module
 //! keeps the archive format and orchestration.
+//!
+//! NOTE (load is a RESTORE, not an EHR creation): the load re-persists exactly
+//! what the archive holds and never synthesizes content. In particular it does
+//! NOT mint a missing `EHR_ACCESS` the way the EHR-Extract clone does (RM ehr
+//! master04 §EHR Creation governs *creating* an EHR — an archive record is a
+//! previously-created one), because inventing a versioned object with a fresh
+//! uid and an extra CONTRIBUTION would break the archive⇒repository identity
+//! this format guarantees. The one thing the load re-derives rather than
+//! copies is the promoted `ehr` column projection (the subject + status-flag
+//! cache of the loaded `EHR_STATUS`), which is not content.
 
 use std::path::Path;
 
@@ -308,9 +318,9 @@ impl EhrbaseService {
     }
 
     /// SM `load_ehrs`: populate the repository from a canonical-JSON archive
-    /// under `file_sys_loc`. Duplicate EHR ids are reported
-    /// (`dump_status = false`) and skipped; all other EHRs are re-persisted
-    /// verbatim.
+    /// under `file_sys_loc`. Duplicate EHR ids — and a subject this repository
+    /// already holds under another EHR — are reported (`dump_status = false`)
+    /// and skipped; all other EHRs are re-persisted verbatim.
     ///
     /// # Errors
     /// - `file_not_writable` — the manifest, a segment file, or a blob file
@@ -356,7 +366,22 @@ impl EhrbaseService {
                     });
                     continue;
                 }
-                self.load_one_ehr(&record).await?;
+                match self.load_one_ehr(&record).await {
+                    Ok(()) => {}
+                    // A per-EHR conflict — currently a subject this repository
+                    // already holds under another EHR (one EHR per subject, RM
+                    // ehr master04 §EHR Status), reachable only on a PARTIAL
+                    // load into a non-empty repository. Reported and skipped
+                    // (its transaction rolled back) exactly like a duplicate
+                    // EHR id, so the rest of the archive still loads.
+                    Err(ServiceError::Conflict(message)) => reports.push(DumpLoadFailReport {
+                        entity_type: "EHR".to_owned(),
+                        entity_id: ehr_id.to_string(),
+                        dump_status: false,
+                        error: Some(message),
+                    }),
+                    Err(e) => return Err(e.into()),
+                }
             }
         }
         Ok(reports)
@@ -617,17 +642,7 @@ impl EhrbaseService {
         let mut tx = self.pool.begin().await?;
         let ehr_id = record.ehr.id;
 
-        sqlx::query(
-            "INSERT INTO ehr (id, system_id, time_created, subject_id, subject_namespace) \
-             VALUES ($1, $2, $3::timestamptz, $4, $5)",
-        )
-        .bind(ehr_id)
-        .bind(&record.ehr.system_id)
-        .bind(&record.ehr.time_created)
-        .bind(&record.ehr.subject_id)
-        .bind(&record.ehr.subject_namespace)
-        .execute(&mut *tx)
-        .await?;
+        insert_ehr_row(&mut tx, &record.ehr).await?;
 
         for a in &record.audits {
             sqlx::query(
@@ -657,13 +672,18 @@ impl EhrbaseService {
             insert_version(&mut tx, ehr_id, v).await?;
         }
 
-        // The load re-decomposed the EHR_STATUS versions directly (the export
-        // record carries subject columns but not the status flags). Backfill the
-        // promoted `ehr.is_queryable` / `is_modifiable` from the stored current
-        // status so the AQL full-population gate and the content-write guard
-        // match the loaded state (RM ehr master04 §EHR Status / §EHR Active
-        // Status; SM I_QUERY_SERVICE — full population = queryable EHRs).
-        crate::storage::ehr_repo::sync_status_flags(&mut tx, ehr_id).await?;
+        // The load re-decomposed the EHR_STATUS versions directly, so the
+        // promoted `ehr` columns are re-derived from the loaded current status
+        // — the EHR_STATUS content is the truth, the exported columns only its
+        // cached projection (an archive written before a promotion fix, or by a
+        // path that never promoted, carries a stale/absent subject). This makes
+        // a loaded EHR visible to the subject lookup (SM
+        // `I_EHR_SERVICE.get_ehrs_for_subject`) and bound by the
+        // one-EHR-per-subject rule (RM ehr master04 §EHR Status), and keeps
+        // `is_queryable` / `is_modifiable` matching the loaded state for the AQL
+        // full-population gate (SM I_QUERY_SERVICE — full population =
+        // queryable EHRs) and the content-write guard (§EHR Active Status).
+        self.resync_promoted_columns(&mut tx, ehr_id).await?;
 
         // EHR.folders membership rows, verbatim (rank fidelity — RM ehr §EHR
         // Class Directory_in_folders: folders.item(1) = directory).
@@ -739,6 +759,48 @@ impl EhrbaseService {
         tx.commit().await?;
         Ok(())
     }
+}
+
+/// Re-persist the archived `ehr` root row verbatim (preserved id, immutable
+/// `system_id` and `time_created`, plus the archived promoted-column
+/// projection, which [`EhrbaseService::resync_promoted_columns`] then re-derives
+/// from the loaded `EHR_STATUS`).
+///
+/// # Errors
+/// [`ServiceError::Conflict`] when the record's subject is already held by
+/// another EHR in this repository — possible only on a PARTIAL load into a
+/// non-empty repository, since a self-consistent dump cannot clash with itself
+/// (one EHR per subject — RM ehr master04 §EHR Status). The caller reports that
+/// per record instead of aborting the load with an opaque constraint fault.
+/// [`ServiceError::Database`] on any other insert failure (a duplicate EHR id
+/// is pre-checked by the caller).
+async fn insert_ehr_row(tx: &mut PgConnection, ehr: &EhrRow) -> Result<(), ServiceError> {
+    sqlx::query(
+        "INSERT INTO ehr (id, system_id, time_created, subject_id, subject_namespace) \
+         VALUES ($1, $2, $3::timestamptz, $4, $5)",
+    )
+    .bind(ehr.id)
+    .bind(&ehr.system_id)
+    .bind(&ehr.time_created)
+    .bind(&ehr.subject_id)
+    .bind(&ehr.subject_namespace)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| {
+        if let sqlx::Error::Database(db) = &e
+            && db.constraint() == Some("uq_ehr_subject")
+        {
+            return ServiceError::Conflict(format!(
+                "EHR {} names subject {}@{}, which another EHR in this repository already \
+                 holds (one EHR per subject)",
+                ehr.id,
+                ehr.subject_id.as_deref().unwrap_or("?"),
+                ehr.subject_namespace.as_deref().unwrap_or("?"),
+            ));
+        }
+        ServiceError::Database(e)
+    })?;
+    Ok(())
 }
 
 /// Insert one version row and its re-decomposed node rows (through the storage

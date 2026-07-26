@@ -10,7 +10,7 @@
 //! Spec: SM `I_ADMIN_DUMP_LOAD.export_ehrs`/`load_ehrs`
 //! (`docs/specs/openehr/SM/docs/UML/classes/i_admin_dump_load.adoc`), with
 //! `EXPORT_SPEC` (`export_spec.adoc`, `segment_split_size` kb) and
-//! `DUMP_LOAD_FAIL_REPORT` (`dump_load_fail_report.adoc`). The two acceptance
+//! `DUMP_LOAD_FAIL_REPORT` (`dump_load_fail_report.adoc`). The acceptance
 //! properties:
 //!
 //! 1. **Round-trip fidelity** — export N EHRs from a source repository, load the
@@ -20,6 +20,14 @@
 //! 2. **Duplicate-id failure path** — loading an EHR whose id already exists is
 //!    recorded in a `DUMP_LOAD_FAIL_REPORT` (`dump_status = false`) and skipped,
 //!    never a crash, and leaves the repository unchanged.
+//! 3. **Promoted-column re-derivation** — the `ehr.subject_*` columns are a
+//!    projection of `EHR_STATUS.subject` (RM ehr master04 §EHR Status), so the
+//!    load re-derives them from the loaded status: a loaded EHR is found by the
+//!    subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`,
+//!    `operations/ehr_get_by_subject.yaml`) even when the archive's projection
+//!    was stale, and a PARTIAL load carrying a subject this repository already
+//!    holds is reported like a duplicate id, never silently duplicated
+//!    (one EHR per subject).
 #![allow(clippy::expect_used, clippy::unwrap_used, clippy::too_many_lines)]
 
 use serde_json::{Value, json};
@@ -32,6 +40,7 @@ use openehr_rm::prelude::PartyProxy;
 use ehrbase::service::EhrbaseService;
 
 use ehrbase::service::admin::types::ExportSpec;
+use ehrbase::service::ehr_index::types::SubjectRef;
 use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
 
 /// A unique temporary directory path for one archive (best-effort cleaned up by
@@ -116,6 +125,33 @@ async fn seed_full_ehr(svc: &EhrbaseService) -> ehrbase::ids::EhrId {
         .expect("status update");
 
     ehr_uuid
+}
+
+/// An `EHR_STATUS` whose `PARTY_SELF` subject carries an `external_ref` — RM
+/// ehr master04 §EHR Status (the subject 0..1 identifies the EHR).
+fn status_for_subject(subject_id: &str) -> Value {
+    json!({
+        "_type": "EHR_STATUS",
+        "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": "EHR Status" },
+        "subject": {
+            "_type": "PARTY_SELF",
+            "external_ref": {
+                "_type": "PARTY_REF",
+                "namespace": "patients",
+                "type": "PERSON",
+                "id": { "_type": "HIER_OBJECT_ID", "value": subject_id }
+            }
+        },
+        "is_queryable": true,
+        "is_modifiable": true
+    })
 }
 
 /// The per-EHR row counts across the versioned-object tables (used to prove the
@@ -263,6 +299,128 @@ async fn load_duplicate_ehr_ids_is_reported_not_fatal() {
         after_first,
         "a duplicate re-load must not add or remove rows"
     );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn load_promotes_the_subject_from_the_loaded_status() {
+    // The promoted `ehr.subject_*` columns are only a projection of
+    // `EHR_STATUS.subject` (RM ehr master04 §EHR Status), so the load re-derives
+    // them from the loaded status instead of trusting the archived projection:
+    // an archive whose projection is absent — the shape an EHR landed by a path
+    // that never promoted has — still yields an EHR the subject lookup finds
+    // (SM `I_EHR_SERVICE.get_ehrs_for_subject`).
+    let src_db = testkit::db().await.expect("testkit database");
+    let src_pool = src_db.pool();
+    let source = EhrbaseService::new(src_pool.clone());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let target = EhrbaseService::new(dst_db.pool());
+
+    let ehr = source
+        .create_ehr(Some(status_for_subject("patient-dump-1")))
+        .await
+        .expect("source EHR for the subject");
+
+    // Fixture: clear the promoted projection, leaving the subject only in the
+    // EHR_STATUS content — what an EHR landed without promotion looks like.
+    sqlx::query("UPDATE ehr SET subject_id = NULL, subject_namespace = NULL WHERE id = $1")
+        .bind(Uuid::from(ehr))
+        .execute(&src_pool)
+        .await
+        .expect("clear the promoted subject columns");
+    assert!(
+        source
+            .get_ehrs_for_subject(SubjectRef::person("patient-dump-1", "patients"))
+            .await
+            .expect("source lookup")
+            .is_empty(),
+        "fixture: the source no longer finds the EHR by subject"
+    );
+
+    let dir = archive_dir();
+    source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
+        .await
+        .expect("export");
+    let reports = target.load_ehrs(dir.clone()).await.expect("load");
+    assert!(reports.is_empty(), "clean load, got {reports:?}");
+
+    let found = target
+        .get_ehrs_for_subject(SubjectRef::person("patient-dump-1", "patients"))
+        .await
+        .expect("target lookup");
+    assert_eq!(
+        found.len(),
+        1,
+        "the loaded EHR must be found by the subject its EHR_STATUS names"
+    );
+    assert_eq!(found[0].ehr_id, ehr.to_string());
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn load_reports_an_ehr_whose_subject_the_repository_already_holds() {
+    // A dump of a self-consistent repository cannot clash with itself, but a
+    // PARTIAL load into a NON-EMPTY repository can: one EHR per subject (RM ehr
+    // master04 §EHR Status). The clash is reported per record
+    // (`DUMP_LOAD_FAIL_REPORT`, `dump_status = false`) and skipped exactly like
+    // a duplicate EHR id — never fatal, never a silent duplicate — and the rest
+    // of the archive still loads.
+    let src_db = testkit::db().await.expect("testkit database");
+    let source = EhrbaseService::new(src_db.pool());
+    let dst_db = testkit::db().await.expect("testkit database");
+    let target = EhrbaseService::new(dst_db.pool());
+
+    let clashing = source
+        .create_ehr(Some(status_for_subject("patient-dump-2")))
+        .await
+        .expect("source EHR for the subject");
+    let innocent = seed_full_ehr(&source).await;
+
+    // The target already holds that subject under a DIFFERENT EHR.
+    let owner = target
+        .create_ehr(Some(status_for_subject("patient-dump-2")))
+        .await
+        .expect("target EHR for the same subject");
+
+    let dir = archive_dir();
+    source
+        .export_ehrs(dir.clone(), ExportSpec::canonical_json(1024))
+        .await
+        .expect("export");
+    let reports = target.load_ehrs(dir.clone()).await.expect("load");
+
+    assert_eq!(
+        reports.len(),
+        1,
+        "only the subject clash fails, got {reports:?}"
+    );
+    assert_eq!(reports[0].entity_type, "EHR");
+    assert_eq!(reports[0].entity_id, clashing.to_string());
+    assert!(!reports[0].dump_status);
+    let error = reports[0].error.as_deref().expect("an explanatory error");
+    assert!(
+        error.contains("patient-dump-2"),
+        "the report must name the clashing subject, got: {error}"
+    );
+
+    // The clashing record was skipped whole; everything else loaded.
+    assert!(
+        !target.has_ehr(clashing).await.expect("has_ehr"),
+        "a reported record must not be partially loaded"
+    );
+    assert!(
+        target.has_ehr(innocent).await.expect("has_ehr"),
+        "the rest of the archive still loads"
+    );
+    let found = target
+        .get_ehrs_for_subject(SubjectRef::person("patient-dump-2", "patients"))
+        .await
+        .expect("target lookup");
+    assert_eq!(found.len(), 1, "the subject still resolves to its holder");
+    assert_eq!(found[0].ehr_id, owner.to_string());
 
     let _ = std::fs::remove_dir_all(&dir);
 }
