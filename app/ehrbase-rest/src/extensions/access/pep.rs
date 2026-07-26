@@ -63,10 +63,10 @@ use crate::extensions::access::authz::AbacGate;
 use crate::overview::error::RestError;
 
 use crate::smart::enforce::{self, GateConfig, ScopeDecision};
-use crate::smart::scope::SmartScope;
 use crate::state::AppState;
 use crate::{negotiate, params};
 use ehrbase::config::smart::SmartConfig;
+use openehr_its::rest::smart_scopes::SmartScope;
 
 /// Whether an operation is ABAC-checked, and when.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

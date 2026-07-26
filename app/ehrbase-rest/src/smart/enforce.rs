@@ -25,7 +25,7 @@
 
 use crate::extensions::access::authz::request::{AccessMode, ResourceKind};
 
-use super::scope::{Compartment, Permission, ResourceFamily, SmartScope};
+use openehr_its::rest::smart_scopes::{Compartment, Permission, ResourceFamily, SmartScope};
 
 /// Configuration the gate needs (a slice of [`super::config::SmartConfig`]).
 #[derive(Debug, Clone, Copy)]
@@ -246,7 +246,7 @@ pub fn launch_context_ehr_id(
 /// scope, `smart.md` §1); the CDR only observes the marker.
 #[must_use]
 pub fn requests_patient_context(scopes: &[SmartScope]) -> bool {
-    use super::scope::LaunchContext;
+    use openehr_its::rest::smart_scopes::LaunchContext;
     scopes
         .iter()
         .any(|s| matches!(s, SmartScope::LaunchContext(LaunchContext::Patient)))

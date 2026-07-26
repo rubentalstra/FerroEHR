@@ -3,6 +3,12 @@
 //! plus the launch-context scopes of master07 §Context Selection and master09
 //! §Experimental: Episode Context.
 //!
+//! Hand-written (like [`crate::flat`], SMART App Launch is an ITS-REST
+//! sub-specification with no machine-readable model): ONE grammar, consumed by
+//! the CDR's scope gate (`ehrbase-rest::smart`) and by any REST client that
+//! previews what a scope string grants (the admin console) — the two can never
+//! drift because they parse with the same code.
+//!
 //! A **total** parser: [`SmartScope::parse`] maps every scope string the token's
 //! `scope` claim carries onto a typed value; anything the grammar does not
 //! recognise becomes [`SmartScope::Other`] and is retained but inert
