@@ -25,7 +25,8 @@ use crate::versioning::object_version_id::{TreeId, expected_from_if_match, parse
 use crate::versioning::read::{read_current, read_version, version_at};
 use crate::versioning::wire::{original_version, revision_history, versioned_object};
 
-use super::{ensure_if_match, parse_at_time};
+use super::ensure_if_match;
+use crate::service::datetime::parse_at_time;
 
 impl EhrbaseService {
     /// The `EHR_STATUS` of an EHR as canonical JSON with its `uid` set — the

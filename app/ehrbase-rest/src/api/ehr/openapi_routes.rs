@@ -275,7 +275,8 @@ pub(crate) async fn ehr_status_get_by_version_id(
         ("version_at_time" = Option<String>, Query,
          description = "A time in the extended ISO 8601 format; the version \
                         extant at that time is returned. Absent means the \
-                        latest version.")
+                        latest version. The timezone is optional — \
+                        server-local when omitted.")
     ),
     responses(
         (status = 200, description = "The EHR_STATUS; `ETag` (weak `W/` form) \
@@ -436,7 +437,8 @@ pub(crate) async fn versioned_ehr_status_revision_history(
         ("version_at_time" = Option<String>, Query,
          description = "A time in the extended ISO 8601 format; the VERSION \
                         extant at that time is returned. Absent means the \
-                        latest VERSION.")
+                        latest VERSION. The timezone is optional — \
+                        server-local when omitted.")
     ),
     responses(
         (status = 200, description = "The ORIGINAL_VERSION of the EHR_STATUS \
@@ -591,7 +593,8 @@ pub(crate) async fn composition_create(
         ("version_at_time" = Option<String>, Query,
          description = "A time in the extended ISO 8601 format; used only when \
                         `uid_based_id` is a HIER_OBJECT_ID. Absent means the \
-                        latest version.")
+                        latest version. The timezone is optional — \
+                        server-local when omitted.")
     ),
     responses(
         (
@@ -839,7 +842,8 @@ pub(crate) async fn versioned_composition_revision_history(
         ("version_at_time" = Option<String>, Query,
          description = "A time in the extended ISO 8601 format; the VERSION \
                         extant at that time is returned. Absent means the \
-                        latest VERSION.")
+                        latest VERSION. The timezone is optional — \
+                        server-local when omitted.")
     ),
     responses(
         (status = 200, description = "The ORIGINAL_VERSION of the COMPOSITION \
@@ -921,7 +925,8 @@ pub(crate) async fn versioned_composition_version_get_by_id(
         ("ehr_id" = String, Path, description = "The EHR id."),
         ("version_at_time" = Option<String>, Query,
          description = "Extended ISO 8601 instant; absent means the latest \
-                        version."),
+                        version. The timezone is optional — server-local when \
+                        omitted."),
         ("path" = Option<String>, Query,
          description = "Slash-separated FOLDER names addressing a sub-folder; \
                         only that subtree is returned.")
