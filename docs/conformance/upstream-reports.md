@@ -537,3 +537,20 @@ CNF↔SM divergences, and benign released-documented behaviours carry no
   not pre-populate the subject, the server defaulting it to an anonymous
   `PARTY_SELF` when absent) so it is satisfiable and consistent with the RM
   cardinality and the REST surface.
+
+### UPR-29 — no released text states whether a served top-level object carries a populated `uid` (non-COMPOSITION scope)
+
+- **Components:** RM common (locatable, master03), ITS-REST (Resources.md §Identifier types)
+- **Register:** AMB-67 (report_only)
+- **Facts:** `LOCATABLE.uid` is 0..1; master03 §Unique Node Identification
+  recommends the top-level copy yet states the field "will usually be empty
+  in most EHR data in most openEHR EHR systems"; the ITS-REST note is scoped
+  to "COMPOSITION objects" and is "strongly recommended"/"should". No
+  released sentence assigns presence (or absence) for the other top-level
+  types (EHR_STATUS, EHR_ACCESS, FOLDER, PARTY) on the wire.
+- **Problem:** clients cannot rely on the served `uid` of a contained
+  non-COMPOSITION object, and conformance instruments cannot test it — the
+  behaviour is untestable recommendation territory outside COMPOSITION.
+- **Ask:** extend the Resources.md §Identifier types note (or the RM
+  master03 section) to state the wire expectation for ALL top-level types,
+  with an RFC keyword.
