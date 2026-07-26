@@ -594,3 +594,67 @@ async fn party_tags_crud() {
         .expect("get tags after delete");
     assert!(empty.body.as_array().expect("arr").is_empty());
 }
+
+/// The `If-Match` precondition compares the FULL `OBJECT_VERSION_ID`
+/// case-insensitively: an `OBJECT_VERSION_ID` is a composite identifier, and
+/// BASE `base_types` `master05-identification_package.adoc` §"Composite
+/// Identifiers and Case" makes two identifiers "identical apart from case …
+/// identify the same thing". A case-variant precondition therefore names the
+/// current version and MUST NOT raise a `412`. The quoted wire form is accepted
+/// at the same seam (RFC 9110 §8.8.3 — an entity-tag is a quoted string).
+#[tokio::test]
+async fn party_update_if_match_is_case_insensitive_and_quote_tolerant() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let created = svc
+        .party_create(PartyKind::Person, person("Jane"), None)
+        .await
+        .expect("create person");
+    let ovid_v1 = ovid(&created.body).to_owned();
+    let vo = vo_uuid(&created.body);
+
+    // A case-variant of the current version_uid names the SAME version.
+    let upper = ovid_v1.to_uppercase();
+    assert_ne!(upper, ovid_v1, "the committed uid must have case to flip");
+    let v2 = svc
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            upper,
+            person("Jane Roe"),
+            None,
+        )
+        .await
+        .expect("BASE master05 §Composite Identifiers and Case: case-variant If-Match matches");
+    let ovid_v2 = ovid(&v2.body).to_owned();
+    assert!(ovid_v2.ends_with("::2"), "second version, got {ovid_v2}");
+
+    // The quoted wire form of the now-current version is accepted verbatim.
+    let v3 = svc
+        .party_update(
+            PartyKind::Person,
+            vo.clone(),
+            format!("\"{ovid_v2}\""),
+            person("Jane Doe"),
+            None,
+        )
+        .await
+        .expect("quoted If-Match accepted");
+    assert!(ovid(&v3.body).ends_with("::3"), "third version");
+
+    // A stale full OVID is still the precondition failure (412).
+    let stale = svc
+        .party_update(PartyKind::Person, vo, ovid_v1, person("stale"), None)
+        .await;
+    assert!(
+        matches!(
+            stale,
+            Err(SmError {
+                status: CallStatusType::VersionMismatch,
+                ..
+            })
+        ),
+        "a stale full OBJECT_VERSION_ID must still fail the precondition, got {stale:?}"
+    );
+}

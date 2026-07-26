@@ -15,15 +15,31 @@ its: its-rest
 request:
   method: DELETE
   path: /demographic/person/{version_uid}
+# Header discipline on this outcome (ITS-REST overview
+# Requests_and_responses.md): the weak `ETag` identifies the served version
+# (§"ETag and Last-Modified" — the value is "usually taken from e.g.
+# VERSIONED_OBJECT.uid.value, VERSION.uid.value" and carries the W/ weakness
+# indicator), and `Location` MUST BE ABSENT: §Location — "It MUST NOT be used
+# to indicate an alternate representation of an existing resource (e.g. via
+# GET method)" / "MUST ONLY be used for resource creation … or redirect
+# responses"; §"Deprecated headers" deprecates it on GET and DELETE alike.
+# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only
+# the status is classified, tools/cnf-runner/src/exec/outcome.rs), so these
+# `Location: absent` / `ETag` declarations are the authored contract, not an
+# executed assertion — wire header-matcher evaluation into the step judgement.
 outcomes:
   deleted:
     status: 204                           # 204_version_deleted.yaml — logical delete performed
-    headers: { ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"' }
+    headers:
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      Location: absent                    # DELETE — overview §Deprecated headers
   already_deleted: { status: 400 }        # 400_already_deleted.yaml — resource already deleted
   not_found: { status: 404 }              # 404.yaml — unknown party or version uid (versioned_object_does_not_exist)
   conflict:
     status: 409                           # 409_PERSON_with_uid_based_id.yaml — uid_based_id is not the latest version
-    headers: { ETag: latest-version-uid }
+    headers:
+      ETag: latest-version-uid
+      Location: absent                    # error response — overview §Location (creation/redirect only)
 captures:
   version_uid:
     from: header ETag                     # the new (deleted) VERSION uid (204_version_deleted.yaml ETag)
