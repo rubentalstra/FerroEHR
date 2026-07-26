@@ -640,7 +640,7 @@ impl EhrbaseService {
         a_versioned_object_uid: VoId,
     ) -> Result<Value, SmError> {
         Ok(self
-            .read_composition(an_ehr_id, a_versioned_object_uid, None)
+            .composition_latest_response(an_ehr_id, a_versioned_object_uid)
             .await?
             .body)
     }
@@ -657,20 +657,10 @@ impl EhrbaseService {
         a_versioned_object_uid: VoId,
         a_time: Option<String>,
     ) -> Result<Value, SmError> {
-        match a_time.as_deref() {
-            None => Ok(self
-                .read_composition(an_ehr_id, a_versioned_object_uid, None)
-                .await?
-                .body),
-            Some(raw) => Ok(self
-                .composition_at_time(
-                    an_ehr_id,
-                    a_versioned_object_uid,
-                    super::parse_at_time(raw)?,
-                )
-                .await?
-                .body),
-        }
+        Ok(self
+            .composition_at_time_response(an_ehr_id, a_versioned_object_uid, a_time)
+            .await?
+            .body)
     }
 
     /// SM `I_EHR_COMPOSITION.get_composition_at_version` — the bare
@@ -684,14 +674,10 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
-        let (vo_id, version) = components(&a_version_uid)?;
-        let read = self
-            .read_composition(an_ehr_id, vo_id, Some(version))
-            .await?;
-        if let Some(meta) = read.meta.as_ref() {
-            super::ensure_addressed_version(&a_version_uid, &meta.uid)?;
-        }
-        Ok(read.body)
+        Ok(self
+            .composition_at_version_response(an_ehr_id, a_version_uid)
+            .await?
+            .body)
     }
 
     /// SM `I_EHR_COMPOSITION.get_versioned_composition` — the
@@ -767,6 +753,86 @@ impl EhrbaseService {
             super::ensure_addressed_version(&a_version_uid, served)?;
         }
         Ok(body)
+    }
+}
+
+// ── ITS-REST read-response adapter (adapter-support extension) ────────────────
+//
+// The SM `I_EHR_COMPOSITION` reads above return the bare COMPOSITION the
+// service model defines. A bare COMPOSITION carries no commit audit, so the
+// wire cannot derive `Last-Modified` from the served body — yet ITS-REST
+// requires it: `Requests_and_responses.md` §"`ETag` and Last-Modified" says
+// "this value should be derived from `VERSION.commit_audit.time_committed.value`"
+// and "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+// VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
+// state identifiers". These siblings therefore hand the protocol adapter the
+// same read PLUS its [`ResourceMeta`] (version uid + commit instant), which the
+// version row already carries — no second read, and no re-derivation in the
+// adapter. No openEHR spec governs this envelope — our own design.
+
+impl EhrbaseService {
+    /// [`Self::get_composition_latest`] with the version metadata the wire's
+    /// `ETag`/`Last-Modified` need. A deleted latest version yields a null body
+    /// and no metadata (→ `204`).
+    ///
+    /// # Errors
+    /// [`SmError`] when the object does not exist in this EHR
+    /// (404-equivalent) or a read fails.
+    pub async fn composition_latest_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
+    ) -> Result<ServiceResponse, SmError> {
+        Ok(self
+            .read_composition(an_ehr_id, a_versioned_object_uid, None)
+            .await?)
+    }
+
+    /// [`Self::get_composition_at_time`] with the version metadata the wire's
+    /// `ETag`/`Last-Modified` need.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `a_time` (400-equivalent), a missing
+    /// version at that instant (404-equivalent), or a read failure.
+    pub async fn composition_at_time_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_versioned_object_uid: VoId,
+        a_time: Option<String>,
+    ) -> Result<ServiceResponse, SmError> {
+        match a_time.as_deref() {
+            None => Ok(self
+                .read_composition(an_ehr_id, a_versioned_object_uid, None)
+                .await?),
+            Some(raw) => Ok(self
+                .composition_at_time(
+                    an_ehr_id,
+                    a_versioned_object_uid,
+                    super::parse_at_time(raw)?,
+                )
+                .await?),
+        }
+    }
+
+    /// [`Self::get_composition_at_version`] with the version metadata the
+    /// wire's `ETag`/`Last-Modified` need.
+    ///
+    /// # Errors
+    /// [`SmError`] for a malformed `OBJECT_VERSION_ID`, an unknown version
+    /// (404-equivalent), or a read failure.
+    pub async fn composition_at_version_response(
+        &self,
+        an_ehr_id: EhrId,
+        a_version_uid: ObjectVersionId,
+    ) -> Result<ServiceResponse, SmError> {
+        let (vo_id, version) = components(&a_version_uid)?;
+        let read = self
+            .read_composition(an_ehr_id, vo_id, Some(version))
+            .await?;
+        if let Some(meta) = read.meta.as_ref() {
+            super::ensure_addressed_version(&a_version_uid, &meta.uid)?;
+        }
+        Ok(read)
     }
 }
 

@@ -13,7 +13,7 @@ use serde_json::Value;
 use openehr_its::flat::example::{DetailLevel, ExampleType};
 
 use crate::service::EhrbaseService;
-use crate::service::definition::types::TemplateListFilter;
+use crate::service::definition::types::{Adl2Template, TemplateListFilter};
 use crate::service::error::ServiceError;
 use crate::service::list::Page;
 use crate::service::status::SmError;
@@ -157,7 +157,9 @@ impl EhrbaseService {
     /// full or partial `template_id` (`+` optional SEMVER `version`). Served as
     /// `text/plain` (`200_Template_adl2_retrieved.yaml` body `oneOf:
     /// [OperationalTemplateV2, string]`, example = ADL2 source): the stored
-    /// source is returned verbatim (lossless).
+    /// source is returned verbatim (lossless). The resolved `ARCHETYPE_HRID`
+    /// travels with the payload as the served artefact's identity (the wire
+    /// `ETag` source — see [`Adl2Template`]).
     ///
     /// # Errors
     ///
@@ -167,9 +169,10 @@ impl EhrbaseService {
         &self,
         template_id: String,
         version: Option<String>,
-    ) -> Result<String, ServiceError> {
+    ) -> Result<Adl2Template, ServiceError> {
         let hrid = self.adl2_resolve(&template_id, version.as_deref()).await?;
-        self.adl2_get(&hrid).await
+        let payload = self.adl2_get(&hrid).await?;
+        Ok(Adl2Template { hrid, payload })
     }
 
     /// `GET /definition/template/adl2/{template_id}` with `Accept:
@@ -186,10 +189,11 @@ impl EhrbaseService {
         &self,
         template_id: String,
         version: Option<String>,
-    ) -> Result<String, ServiceError> {
+    ) -> Result<Adl2Template, ServiceError> {
         let hrid = self.adl2_resolve(&template_id, version.as_deref()).await?;
         let source = self.adl2_get(&hrid).await?;
-        self.adl2_opt_json(&source).await
+        let payload = self.adl2_opt_json(&source).await?;
+        Ok(Adl2Template { hrid, payload })
     }
 
     /// `GET /definition/template/adl2` — the ADL2 twin of

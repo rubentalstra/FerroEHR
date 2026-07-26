@@ -17,6 +17,35 @@ workflow refuses a tag that has no matching section here.
 
 ### Fixed
 
+- **`Last-Modified` and `ETag` completion on the EHR and DEFINITION surfaces**
+  (#396). ITS-REST overview `Requests_and_responses.md` §"`ETag` and
+  Last-Modified" requires both headers on "VERSION, VERSIONED_OBJECT, or other
+  resources that have versioning or unique state identifiers", with
+  `Last-Modified` "derived from `VERSION.commit_audit.time_committed.value`".
+  Only the `ETag` half shipped previously:
+  - `Last-Modified` (IMF-fixdate) is now emitted on every VERSION read
+    (`…/versioned_composition/{uid}/version[/{version_uid}]`,
+    `…/versioned_ehr_status/version[/{version_uid}]`), on all COMPOSITION and
+    `EHR_STATUS` reads and writes (including the delete `204` and the
+    FLAT/STRUCTURED representations, whose version identity is
+    serialization-independent), and on the EHR create `201`. The value is the
+    served version's commit instant — read off the VERSION envelope where the
+    body carries one, and off the version row / commit result for the bare
+    COMPOSITION and `EHR_STATUS` representations, which have no
+    `commit_audit` of their own.
+  - `GET /ehr/{ehr_id}` and `GET /ehr?subject_id=…` now carry the weak
+    `ETag` built from `EHR.ehr_id.value` — the source the spec section itself
+    names. (No `Last-Modified`: the RM `EHR` root is not a VERSION, and
+    `time_created` is not a last-modification instant.)
+  - The ADL2 template responses (`POST /definition/template/adl2`,
+    `GET …/adl2/{template_id}`, `GET …/adl2/{template_id}/{version}`) now
+    carry the weak `ETag` their ADL 1.4 siblings already emitted. The value is
+    the **resolved** `ARCHETYPE_HRID`, so addressing a template by a partial
+    id or major-version prefix still yields an `ETag` that changes when the
+    served artefact does.
+  `CONTRIBUTION` creation still omits `Last-Modified` (the commit instant is
+  not carried out of the version-set commit yet) and is marked `TODO` in the
+  service layer.
 - **Committal request headers: client `change_type` honoured, DELETE accepts
   the headers, deprecated `openEHR-AUDIT_DETAILS` spelling restored** (#395).
   Three divergences from ITS-REST overview `Requests_and_responses.md`

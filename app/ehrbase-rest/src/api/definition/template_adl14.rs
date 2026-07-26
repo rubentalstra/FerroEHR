@@ -190,13 +190,11 @@ pub(super) async fn example_get(
 /// (`headers/ETag_Template_adl1_4.yaml`: `W/"<id>"`). Keyed on the
 /// `template_id` string, matching the upload path so a client's `If-None-Match`
 /// round-trips. The weak-form construction goes through the shared
-/// [`negotiate::resource_etag`] helper (overview §"Deprecated headers": a
+/// [`negotiate::set_etag`] helper (overview §"Deprecated headers": a
 /// resource-identifier `ETag` MUST carry the `W/` weakness indicator), so the
 /// upload and this GET share one implementation of the `W/"…"` format.
 fn set_template_etag(resp: &mut Response, template_id: &str) {
-    if let Some(v) = negotiate::resource_etag(template_id) {
-        resp.headers_mut().insert(header::ETAG, v);
-    }
+    negotiate::set_etag(resp, template_id);
 }
 
 /// Render the `201_Template_adl1_4_upload` response per `Prefer`:

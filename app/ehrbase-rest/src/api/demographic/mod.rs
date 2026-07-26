@@ -123,9 +123,9 @@ fn if_match_of(h: &HeaderMap) -> Option<String> {
 /// `DELETE` responses alike. Writes add it through [`set_write_headers`].
 fn set_versioning_headers(resp: &mut Response, meta: Option<&ResourceMeta>) {
     let Some(meta) = meta else { return };
-    if let Ok(etag) = HeaderValue::from_str(&format!("W/\"{}\"", meta.uid)) {
-        resp.headers_mut().insert(header::ETAG, etag);
-    }
+    // The weak-form construction is shared with the EHR/definition surfaces so
+    // there is one implementation of the `W/"…"` shape in the adapter.
+    crate::overview::negotiate::set_etag(resp, &meta.uid);
     if let Some(at) = meta.last_modified
         && let Ok(lm) = HeaderValue::from_str(&crate::overview::negotiate::http_date(at))
     {

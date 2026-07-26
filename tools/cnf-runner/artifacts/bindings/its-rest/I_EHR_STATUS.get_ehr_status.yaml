@@ -6,10 +6,23 @@ request:
   method: GET
   path: /ehr/{ehr_id}/ehr_status
 formats: [canonical-json, canonical-xml]
+# Header discipline on this outcome — ITS-REST overview
+# `Requests_and_responses.md` §"ETag and Last-Modified" (the DOCS TEXT, the wire
+# oracle): "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+# VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
+# state identifiers", and "For openEHR resources, this value [Last-Modified]
+# should be derived from `VERSION.commit_audit.time_committed.value`".
+# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
+# status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
+# declaration is the authored contract, not an executed assertion — it becomes
+# executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
   ok:
     status: 200                           # 200_EHR_STATUS_retrieved.yaml
-    headers: { ETag: present, Content-Type: negotiated }
+    headers:
+      ETag: present
+      Last-Modified: present
+      Content-Type: negotiated
   not_found: { status: 404 }
   not_acceptable: { status: 406 }         # unfulfillable Accept (overview Requests_and_responses negotiation rules; no simplified mapping exists for this resource)
 captures:

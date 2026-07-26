@@ -416,10 +416,7 @@ impl EhrbaseService {
         // a 0..1 `PARTY_SELF` (RM ehr master04 §EHR Status), and the CDR treats
         // a supplied anonymous-or-identified subject as the EHR's subject
         // rather than rejecting it. Recorded, not silently guessed.
-        let ehr_id = EhrId::new();
-        let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        self.commit_new_ehr(ehr_id, status).await?;
-        Ok(ehr_id)
+        Ok(self.create_ehr_meta(an_ehr_status).await?.0)
     }
 
     /// SM `I_EHR_SERVICE.create_ehr_with_id` — create an EHR under the
@@ -433,9 +430,8 @@ impl EhrbaseService {
         an_ehr_id: EhrId,
         an_ehr_status: Option<Value>,
     ) -> Result<EhrId, SmError> {
-        // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
-        let status = an_ehr_status.unwrap_or_else(default_ehr_status);
-        self.commit_new_ehr(an_ehr_id, status).await?;
+        self.create_ehr_with_id_meta(an_ehr_id, an_ehr_status)
+            .await?;
         Ok(an_ehr_id)
     }
 
@@ -561,6 +557,57 @@ impl EhrbaseService {
             .ehr_by_subject(subject_id, subject_namespace)
             .await?
             .body)
+    }
+}
+
+// ── ITS-REST create-response adapter (adapter-support extension) ──────────────
+//
+// The SM creates above return only the new `ehr_id`. The wire needs the
+// creation instant too: ITS-REST `Requests_and_responses.md` §"`ETag` and
+// Last-Modified" mandates both headers on "resources that have versioning or
+// unique state identifiers" — for an EHR the `ETag` source is
+// "`EHR.ehr_id.value`" (the section's own example list) and the `Last-Modified`
+// instant is the creating CONTRIBUTION's commit time, which
+// [`Self::commit_new_ehr`] already returns in its [`ResourceMeta`]. These
+// siblings surface it instead of the adapter rebuilding a metadata-less
+// envelope. No openEHR spec governs this envelope — our own design.
+
+impl EhrbaseService {
+    /// [`Self::create_ehr`] returning the new `ehr_id` together with the
+    /// created EHR's [`ResourceMeta`] (the `ETag`/`Location` id + the creation
+    /// instant).
+    ///
+    /// # Errors
+    /// [`SmError`] when the status is structurally invalid (422-equivalent),
+    /// the subject already owns an EHR (409-equivalent), or storage fails.
+    pub async fn create_ehr_meta(
+        &self,
+        an_ehr_status: Option<Value>,
+    ) -> Result<(EhrId, ResourceMeta), SmError> {
+        let ehr_id = EhrId::new();
+        let meta = self.create_ehr_with_id_meta(ehr_id, an_ehr_status).await?;
+        Ok((ehr_id, meta))
+    }
+
+    /// [`Self::create_ehr_with_id`] returning the created EHR's
+    /// [`ResourceMeta`].
+    ///
+    /// # Errors
+    /// [`SmError`] when the EHR already exists (409-equivalent), the status is
+    /// invalid, the subject already owns an EHR, or storage fails.
+    pub async fn create_ehr_with_id_meta(
+        &self,
+        an_ehr_id: EhrId,
+        an_ehr_status: Option<Value>,
+    ) -> Result<ResourceMeta, SmError> {
+        // see `create_ehr` — `Pre_no_subject` deliberately not enforced.
+        let status = an_ehr_status.unwrap_or_else(default_ehr_status);
+        let created = self.commit_new_ehr(an_ehr_id, status).await?;
+        created.meta.ok_or_else(|| {
+            SmError::exception(format!(
+                "EHR {an_ehr_id} was created without resource metadata"
+            ))
+        })
     }
 }
 

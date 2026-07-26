@@ -105,8 +105,10 @@ pub(super) async fn upload(state: &AppState, parts: &RequestParts) -> Result<Res
     );
     // 201_Template_adl2_upload: body per `Prefer` — representation → the OPT
     // source (text/plain); identifier → `{template_id}` (JSON); missing/minimal
-    // → empty. `Location` on every case.
-    Ok(upload_response(prefer.as_deref(), &location, hrid, source))
+    // → empty. `Location` + the weak `ETag` on every case.
+    let mut resp = upload_response(prefer.as_deref(), &location, hrid, source);
+    set_template_etag(&mut resp, hrid);
+    Ok(resp)
 }
 
 /// `GET …/definition/template/adl2/{template_id}` — the stored operational
@@ -200,6 +202,22 @@ pub(super) async fn example_get(
     }
 }
 
+/// Set the weak `ETag` of a served ADL2 template. The value is the artefact's
+/// **resolved** `ARCHETYPE_HRID` (AM `am24` — the HRID carries the artefact's
+/// SEMVER `release_version`, so it changes whenever the served artefact does),
+/// mirroring the ADL 1.4 sibling's `template_id` `ETag`.
+///
+/// ITS-REST `Requests_and_responses.md` §"`ETag` and Last-Modified": both
+/// headers "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or
+/// other resources that have versioning or unique state identifiers", and the
+/// `ETag` "is considered to be of weak-type and should have a weakness
+/// indicator `W/` prefix" — constructed by the shared
+/// [`negotiate::set_etag`] helper so upload and GET share one
+/// implementation.
+fn set_template_etag(resp: &mut Response, hrid: &str) {
+    negotiate::set_etag(resp, hrid);
+}
+
 /// Resolve + render one ADL2 template in the `Accept`-negotiated representation.
 async fn render(
     state: &AppState,
@@ -209,18 +227,22 @@ async fn render(
 ) -> Result<Response, RestError> {
     match negotiate_get(headers) {
         Some(Adl2Repr::Source) => {
-            let source = state
+            let template = state
                 .backend()
                 .template_adl2_source(template_id, version)
                 .await?;
-            Ok(text_response(StatusCode::OK, None, source))
+            let mut resp = text_response(StatusCode::OK, None, template.payload);
+            set_template_etag(&mut resp, &template.hrid);
+            Ok(resp)
         }
         Some(Adl2Repr::Json) => {
-            let json = state
+            let template = state
                 .backend()
                 .template_adl2_opt_json(template_id, version)
                 .await?;
-            Ok(json_response(StatusCode::OK, json))
+            let mut resp = json_response(StatusCode::OK, template.payload);
+            set_template_etag(&mut resp, &template.hrid);
+            Ok(resp)
         }
         None => Err(RestError(ApiError::NotAcceptable(
             "the ADL2 template is served as text/plain source or application/json \

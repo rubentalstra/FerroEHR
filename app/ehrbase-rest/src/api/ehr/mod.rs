@@ -69,16 +69,47 @@ pub(super) const CHANGE_MODIFICATION: &str = "251";
 pub(super) const LIFECYCLE_COMPLETE: &str = "532";
 
 /// The `uid`/`value` of a returned RM object → the resource metadata a read
-/// with an `ETag`/`Location` needs (the version id is the object's own `uid`).
+/// with an `ETag`/`Last-Modified` needs (the version id is the object's own
+/// `uid`).
+///
+/// When the served body is a VERSION envelope (an `ORIGINAL_VERSION`), its
+/// `commit_audit.time_committed` is also read as the `Last-Modified` instant:
+/// ITS-REST overview `Requests_and_responses.md` §"`ETag` and Last-Modified"
+/// — "For openEHR resources, this value should be derived from
+/// `VERSION.commit_audit.time_committed.value`" — and both headers "SHOULD be
+/// included in responses for VERSION, `VERSIONED_OBJECT`, or other resources
+/// that have versioning or unique state identifiers".
+///
+/// A bare RM body (a COMPOSITION / `EHR_STATUS`, or a `VERSIONED_OBJECT`
+/// container) carries no commit audit; those routes take their metadata from
+/// the service layer instead, which reads the commit instant off the version
+/// row.
 fn resource_meta_from(ehr_id: &str, body: &Value) -> Option<ResourceMeta> {
-    body.get("uid")
+    let uid = body
+        .get("uid")
         .and_then(|u| u.get("value"))
-        .and_then(Value::as_str)
-        .map(|uid| ResourceMeta::new(ehr_id.to_owned(), uid.to_owned()))
+        .and_then(Value::as_str)?;
+    let meta = ResourceMeta::new(ehr_id.to_owned(), uid.to_owned());
+    Some(match commit_instant(body) {
+        Some(at) => meta.with_last_modified(at),
+        None => meta,
+    })
+}
+
+/// The commit instant of a served VERSION envelope —
+/// `VERSION.commit_audit.time_committed.value` (RM common master04
+/// §Audit Details; the `Last-Modified` source named by ITS-REST overview
+/// §"`ETag` and Last-Modified"). `None` for a body that is not a VERSION.
+fn commit_instant(body: &Value) -> Option<jiff::Timestamp> {
+    body["commit_audit"]["time_committed"]["value"]
+        .as_str()?
+        .parse::<jiff::Timestamp>()
+        .ok()
 }
 
 /// Wrap a read body as a [`ServiceResponse`], attaching resource metadata drawn
-/// from the body's own `uid` when present.
+/// from the body's own `uid` (and, for a VERSION envelope, its commit instant)
+/// when present.
 pub(super) fn read_resp(ehr_id: &str, body: Value) -> ServiceResponse {
     match resource_meta_from(ehr_id, &body) {
         Some(m) => ServiceResponse::new(body, m),

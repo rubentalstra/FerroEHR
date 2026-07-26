@@ -16,7 +16,7 @@ use openehr_its::rest::generated::ehr::{
 use openehr_its::rest::runtime::ApiError;
 use openehr_rm::prelude::EhrStatus;
 
-use ehrbase::service::response::{ResourceMeta, ServiceResponse};
+use ehrbase::service::response::ServiceResponse;
 use ehrbase::service::status::CallStatusType;
 
 use crate::api::RequestParts;
@@ -47,18 +47,22 @@ pub(super) async fn run(
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
             let (vo_id, version) = super::version_components(&parse_version_uid(&p.version_uid)?)?;
             // the bare EHR_STATUS at that version (not ORIGINAL_VERSION);
-            // 200_EHR_STATUS_retrieved: ETag(version_uid) + Location.
-            let body = state
+            // 200_EHR_STATUS_retrieved: ETag(version_uid) + Last-Modified.
+            // The bare EHR_STATUS carries no commit_audit, so the commit
+            // instant the spec derives Last-Modified from
+            // (`VERSION.commit_audit.time_committed.value`,
+            // Requests_and_responses.md §"ETag and Last-Modified") comes from
+            // the service's version metadata, not the served body.
+            let resp = state
                 .backend()
-                .get_ehr_status_at_version(ehr_id, ehrbase::ids::VoId(vo_id), &version)
+                .ehr_status_at_version_response(ehr_id, ehrbase::ids::VoId(vo_id), &version)
                 .await?;
             // The addressed version_uid must equal the served version's full
             // three-part identity, case-insensitively (ITS-REST overview
             // Resources.md §Identifier types; BASE master05 §Composite
             // Identifiers and Case) — a fabricated creating_system_id names
             // no VERSION here.
-            super::ensure_served_version(&p.version_uid, &body)?;
-            let resp = ServiceResponse::new(body, ResourceMeta::new(p.ehr_id, p.version_uid));
+            super::ensure_served_version(&p.version_uid, &resp.body)?;
             Ok(negotiate::read_rm::<EhrStatus>(
                 h,
                 &base,
@@ -70,11 +74,13 @@ pub(super) async fn run(
         "ehr_status_get_at_time" => {
             let p = params::build::<EhrStatusGetAtTimeParams>(&parts.path, q, h)?;
             let ehr_id = parse_ehr_id(&p.ehr_id)?;
-            let body = state
+            // Same derivation as the by-version read: the bare EHR_STATUS has
+            // no commit_audit, so the version metadata carries the
+            // Last-Modified instant (§"ETag and Last-Modified").
+            let resp = state
                 .backend()
-                .get_ehr_status_at_time(ehr_id, p.version_at_time)
+                .ehr_status_at_time_response(ehr_id, p.version_at_time)
                 .await?;
-            let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<EhrStatus>(
                 h,
                 &base,
@@ -95,21 +101,25 @@ pub(super) async fn run(
                 Some(require_if_match(&p.if_match)?),
             );
             // 204_EHR_STATUS (default minimal) / 200_EHR_STATUS_updated
-            // (representation); ETag + Location on both. 412 → latest version_uid.
-            match state.backend().replace_ehr_status(ehr_id, uv).await {
-                Ok(uid) => {
+            // (representation); ETag + Last-Modified + Location on all.
+            // The commit result's instant is the Last-Modified value
+            // (§"ETag and Last-Modified"), carried in the service metadata so
+            // the write path never re-reads the row it just wrote.
+            // 412 → latest version_uid.
+            match state.backend().replace_ehr_status_meta(ehr_id, uv).await {
+                Ok(meta) => {
                     // apply the openehr-item-tag / openehr-version-item-tag
                     // write-wrapper headers to the committed target
                     // (Requests_and_responses.md §…§Usage in Requests).
                     let stored_tags =
-                        super::apply_item_tag_headers(&state, ehr_id, "EHR_STATUS", &uid, h)
+                        super::apply_item_tag_headers(&state, ehr_id, "EHR_STATUS", &meta.uid, h)
                             .await?;
                     let repr = if negotiate::prefers_representation(h) {
                         state.backend().get_ehr_status(ehr_id).await?
                     } else {
                         Value::Null
                     };
-                    let resp = ServiceResponse::new(repr, ResourceMeta::new(p.ehr_id, uid));
+                    let resp = ServiceResponse::new(repr, meta);
                     let mut resp = negotiate::write_rm::<EhrStatus>(
                         h,
                         &base,
