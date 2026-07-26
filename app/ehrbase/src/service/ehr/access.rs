@@ -97,10 +97,17 @@ impl EhrbaseService {
 /// Creation). `EHR_ACCESS` is a LOCATABLE with only the
 /// optional `settings`; with no access-control scheme configured (Stage 1 has
 /// no RBAC), it is committed with none.
+///
+/// `archetype_details` is mandatory: `EHR_ACCESS` carries the same
+/// unconditional `Is_archetype_root` invariant as `EHR_STATUS`
+/// (RM ehr `ehr_access.adoc`), so `Archetyped_valid` (RM common
+/// `locatable.adoc`) requires the `ARCHETYPED` block on the root.
 pub(in crate::service) fn default_ehr_access() -> Value {
     json!({
         "_type": "EHR_ACCESS",
         "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+        "archetype_details":
+            crate::service::ehr::service::archetyped("openEHR-EHR-EHR_ACCESS.generic.v1"),
         "name": { "_type": "DV_TEXT", "value": "EHR Access" }
     })
 }

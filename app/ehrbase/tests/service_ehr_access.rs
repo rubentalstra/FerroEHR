@@ -43,6 +43,13 @@ fn ehr_access_with_settings() -> Value {
     json!({
         "_type": "EHR_ACCESS",
         "archetype_node_id": "openEHR-EHR-EHR_ACCESS.generic.v1",
+        // Roots carry ARCHETYPED (LOCATABLE.Archetyped_valid).
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_ACCESS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Access" },
         "settings": {
             "_type": "EHRBASE_ACCESS_CONTROL_V1",

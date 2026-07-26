@@ -719,6 +719,12 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
     let wrong_subject = json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": {
             "_type": "PARTY_IDENTIFIED",
@@ -774,6 +780,12 @@ async fn ehr_status_subject_type_is_enforced_end_to_end() {
     let anonymous = json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         "subject": {},
         "is_queryable": true,
@@ -1053,6 +1065,12 @@ async fn ehr_get_by_subject_finds_the_ehr() {
     let status = json!({
         "_type": "EHR_STATUS",
         "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": { "_type": "ARCHETYPE_ID",
+                              "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+            "rm_version": "1.2.0"
+        },
         "name": { "_type": "DV_TEXT", "value": "EHR Status" },
         // EHR_STATUS.subject is PARTY_SELF (RM ehr master04); the subject is
         // identified via its external_ref, not a PARTY_IDENTIFIED type.
@@ -1573,6 +1591,12 @@ async fn duplicate_subject_ehr_creation_conflicts() {
         json!({
             "_type": "EHR_STATUS",
             "archetype_node_id": "openEHR-EHR-EHR_STATUS.generic.v1",
+            "archetype_details": {
+                "_type": "ARCHETYPED",
+                "archetype_id": { "_type": "ARCHETYPE_ID",
+                                  "value": "openEHR-EHR-EHR_STATUS.generic.v1" },
+                "rm_version": "1.2.0"
+            },
             "name": { "_type": "DV_TEXT", "value": "EHR Status" },
             // EHR_STATUS.subject is PARTY_SELF (RM ehr master04); identified by
             // its external_ref.
