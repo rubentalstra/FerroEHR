@@ -422,7 +422,13 @@ pub(super) async fn run(
             let body = negotiate::rm_value::<PartyRelationship>(h, &parts.body)?;
             let resp = state
                 .backend()
-                .party_relationship_create(body, crate::overview::committal::committal_audit(h))
+                .party_relationship_create(
+                    body,
+                    crate::overview::committal::committal_audit(
+                        h,
+                        crate::api::ehr::committer_proxy(),
+                    ),
+                )
                 .await?;
             Ok(write_relationship(
                 h,
@@ -456,7 +462,10 @@ pub(super) async fn run(
                     // so the service compares a bare OBJECT_VERSION_ID.
                     super::if_match_token(&p.if_match),
                     body,
-                    crate::overview::committal::committal_audit(h),
+                    crate::overview::committal::committal_audit(
+                        h,
+                        crate::api::ehr::committer_proxy(),
+                    ),
                 )
                 .await
             {
@@ -487,7 +496,10 @@ pub(super) async fn run(
                 .party_relationship_delete(
                     p.uid_based_id,
                     super::if_match_of(h),
-                    crate::overview::committal::committal_audit(h),
+                    crate::overview::committal::committal_audit(
+                        h,
+                        crate::api::ehr::committer_proxy(),
+                    ),
                 )
                 .await?;
             let mut out = negotiate::empty(StatusCode::NO_CONTENT);
