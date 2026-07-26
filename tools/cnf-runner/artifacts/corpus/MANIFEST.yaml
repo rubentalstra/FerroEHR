@@ -117,13 +117,13 @@ cnf.flat.vitals.minimal_ctx:
     current_state_code:
       select: "$['minimal/minimal:0/ism_transition/current_state|code']"
 cnf.ehr_status.provided:
-  generated_by: { recipe: ehr_status, digest: "sha256:530d2e5d5a311056417a4189bdc1418a00d58bcb43bfd280268dc31efed9bd60" }
+  generated_by: { recipe: ehr_status, digest: "sha256:d14aa17d5ce2d2694804be09218d45d9d84d3f939fca9e0024b7c463dc8ebb2f" }
   format: canonical-json
   rm_versions: [">=1.0.2"]
   validity: { verdict: valid }
   provenance: "generated set: EHR_STATUS instances synthesized per matrix row (recipe contract corpus/recipes/ehr_status.md)"
   recipes:
-    ehr_status: { digest: "sha256:530d2e5d5a311056417a4189bdc1418a00d58bcb43bfd280268dc31efed9bd60" }
+    ehr_status: { digest: "sha256:d14aa17d5ce2d2694804be09218d45d9d84d3f939fca9e0024b7c463dc8ebb2f" }
 cnf.set.bp-10:
   generated_by: { recipe: bp_series, digest: "sha256:344c64e658b287b6603f5575dd85d652c935a4fcb64d915413b683a87fb4f4e1" }
   format: canonical-json

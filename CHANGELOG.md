@@ -17,6 +17,15 @@ workflow refuses a tag that has no matching section here.
 
 ### Changed
 
+- **Stored top-level objects now carry their copied `uid` at commit time**
+  (#439). The full three-part `OBJECT_VERSION_ID` is stamped into the
+  canonical body before it is decomposed, signed, and stored, so the
+  contained object served inside an ORIGINAL_VERSION envelope, the bare
+  resource reads, AQL projections, and EHR Extract exports all carry the
+  identical uid value (ITS-REST overview *Resources* §Identifier types).
+  Previously the uid was injected only on some read paths; clients now see
+  one consistent shape everywhere. Imported (EHR Extract) content is
+  exempt — its bodies are preserved verbatim.
 - **`EHR.ehr_status` references the version container by its
   `HIER_OBJECT_ID`** (#426). The served EHR body's `ehr_status` OBJECT_REF
   (typed `VERSIONED_EHR_STATUS` per the RM invariant) previously carried an

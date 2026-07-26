@@ -407,6 +407,26 @@ struct ResolvedWrite {
 /// modify/delete; [`ServiceError::Unprocessable`] for an out-of-group or
 /// illegal lifecycle transition; [`ServiceError::Internal`] on a multimedia
 /// offload failure; plus the storage/signing errors of [`commit_resolved`].
+/// Stamp the version's own `OBJECT_VERSION_ID` into the canonical's root
+/// `uid` BEFORE decompose/sign, so the stored, signed, and served bytes all
+/// carry it — the copied-uid recommendation for top-level types (RM common
+/// `master03-archetyped_package.adoc` §Unique Node Identification; ITS-REST
+/// `Resources.md` §Identifier types: the enclosing VERSION's uid "should be
+/// copied"; the full three-part form is this server's fixed handling,
+/// register AMB-65). A client-supplied `uid` is overwritten — the version
+/// identity is server-assigned, and the previous behaviour (store verbatim,
+/// overwrite at bare read) served two shapes for one object. The EHR Extract
+/// import path does NOT run through here (foreign versions keep their
+/// carried bytes verbatim).
+fn stamp_version_uid(canonical: &mut Value, version_uid: &str) {
+    if let Value::Object(map) = canonical {
+        map.insert(
+            "uid".to_owned(),
+            serde_json::json!({ "_type": "OBJECT_VERSION_ID", "value": version_uid }),
+        );
+    }
+}
+
 #[allow(clippy::too_many_lines)] // the three change arms building the resolved write
 #[allow(clippy::too_many_arguments)] // the commit scope; grouping is queued for the polish wave
 async fn apply_change(
@@ -439,6 +459,11 @@ async fn apply_change(
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
             // a first version can only be `complete`/`incomplete`.
             validate_transition(None, &lifecycle)?;
+            let vo_id = VoId::new();
+            stamp_version_uid(
+                &mut canonical,
+                &object_version_id(vo_id, &ctx.system_id, TreeId::trunk(1)),
+            );
             let rows = decompose(canonical)?;
             let time_committed = match known_now {
                 Some(ts) => ts,
@@ -446,7 +471,7 @@ async fn apply_change(
             };
             ResolvedWrite {
                 kind,
-                vo_id: VoId::new(),
+                vo_id,
                 ehr_id,
                 ordinal: 1,
                 tree: TreeId::trunk(1),
@@ -480,11 +505,15 @@ async fn apply_change(
                     .map_err(|e| ServiceError::Internal(e.to_string()))?;
             }
             let lifecycle = resolve_lifecycle(lifecycle_state)?;
-            let rows = decompose(canonical)?;
             let next = next_version(tx, ehr_id, vo_id, kind, expected, &ctx.system_id).await?;
             // the transition from the preceding version's state must be
             // legal (master06 §Version Lifecycle state machine).
             validate_transition(Some(&next.preceding_lifecycle), &lifecycle)?;
+            stamp_version_uid(
+                &mut canonical,
+                &object_version_id(vo_id, &ctx.system_id, next.tree),
+            );
+            let rows = decompose(canonical)?;
             ResolvedWrite {
                 kind,
                 vo_id,

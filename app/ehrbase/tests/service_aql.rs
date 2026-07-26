@@ -437,10 +437,10 @@ async fn aql_acceptance_set() {
         )
         .await
         .expect("get_composition_latest");
-    // The query reassembles the stored canonical JSON (no injected uid); compare
-    // against the fetched body with its service-injected uid removed.
-    let mut expected = fetched.clone();
-    expected.as_object_mut().unwrap().remove("uid");
+    // The stored canonical carries the version uid since commit-time stamping
+    // (#439), so the AQL whole-object cell and the read surface serve ONE
+    // shape — compared verbatim.
+    let expected = fetched.clone();
     assert_eq!(
         queried, &expected,
         "whole-object reassembly equals composition_get"
@@ -473,16 +473,15 @@ async fn whole_object_projection_batches_over_a_multi_row_page() {
         let name = format!("comp-{i}");
         let ovid = create_comp(&svc, &ehr_id, &name, f64::from(i) + 10.0).await;
         let vo_id = ovid.split("::").next().unwrap();
-        let mut body = svc
+        let body = svc
             .get_composition_latest(
                 ehr_id.parse().expect("ehr uuid"),
                 vo_id.parse().expect("vo uuid"),
             )
             .await
             .expect("get_composition_latest");
-        // The AQL projection reassembles the stored canonical JSON (no injected
-        // uid); drop the service-injected uid for the comparison.
-        body.as_object_mut().unwrap().remove("uid");
+        // One shape since commit-time uid stamping (#439): the AQL cell and
+        // the read surface both carry the version uid — compared verbatim.
         expected.insert(name, body);
     }
 
