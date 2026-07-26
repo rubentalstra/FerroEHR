@@ -52,6 +52,12 @@ pub(super) async fn run(
                 .backend()
                 .get_ehr_status_at_version(ehr_id, ehrbase::ids::VoId(vo_id), &version)
                 .await?;
+            // The addressed version_uid must equal the served version's full
+            // three-part identity, case-insensitively (ITS-REST overview
+            // Resources.md §Identifier types; BASE master05 §Composite
+            // Identifiers and Case) — a fabricated creating_system_id names
+            // no VERSION here.
+            super::ensure_served_version(&p.version_uid, &body)?;
             let resp = ServiceResponse::new(body, ResourceMeta::new(p.ehr_id, p.version_uid));
             Ok(negotiate::read_rm::<EhrStatus>(
                 h,

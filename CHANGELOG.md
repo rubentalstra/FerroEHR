@@ -215,6 +215,13 @@ workflow refuses a tag that has no matching section here.
   versa). Descriptors return the canonical `misc::`-qualified name; a
   bare-name listing pattern also matches its `misc::` composition.
 
+- **Version identity is the full three-part `version_uid`, compared
+  case-insensitively** (#367). Deleting a composition (and reading a version
+  by id) with a fabricated `creating_system_id` is now refused (409 / 404) —
+  previously only the version number was compared, so a made-up system id
+  could delete the latest version. Conversely, a `version_uid` or `If-Match`
+  differing only in case is accepted as the same identifier, per the openEHR
+  composite-identifier case rule.
 - **Item tags follow the spec's identity and target model** (#365). Two tags
   sharing a key on different `target_path`s now coexist (the ITEM_TAG identity
   is the key + target_path pair, per the ITS-REST item-tag prose) instead of
