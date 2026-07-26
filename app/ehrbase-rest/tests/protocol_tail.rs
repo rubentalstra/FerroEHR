@@ -425,7 +425,22 @@ async fn ehr_create_accepts_and_merges_committal_headers() {
     assert_eq!(status, StatusCode::CREATED, "ehr create: {body}");
     let ehr_id = etag_uid(&h);
     let ehr: Value = serde_json::from_str(&body).expect("ehr json");
-    let status_uid = ehr["ehr_status"]["id"]["value"]
+    // The EHR body's ehr_status ref names the CONTAINER (HIER_OBJECT_ID —
+    // RM ehr Ehr_status_valid + BASE master05 OBJECT_REF.id); the VERSION
+    // uid comes from the served EHR_STATUS itself.
+    assert_eq!(ehr["ehr_status"]["id"]["_type"], "HIER_OBJECT_ID");
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{ehr_id}/ehr_status"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "status read: {body}");
+    let st: Value = serde_json::from_str(&body).expect("ehr_status json");
+    let status_uid = st["uid"]["value"]
         .as_str()
         .expect("ehr_status version id")
         .to_owned();
@@ -486,7 +501,22 @@ async fn ehr_create_with_id_accepts_and_merges_committal_headers() {
     let (status, _h, body) = send(&app, req).await;
     assert_eq!(status, StatusCode::CREATED, "ehr create with id: {body}");
     let ehr: Value = serde_json::from_str(&body).expect("ehr json");
-    let status_uid = ehr["ehr_status"]["id"]["value"]
+    // The EHR body's ehr_status ref names the CONTAINER (HIER_OBJECT_ID —
+    // RM ehr Ehr_status_valid + BASE master05 OBJECT_REF.id); the VERSION
+    // uid comes from the served EHR_STATUS itself.
+    assert_eq!(ehr["ehr_status"]["id"]["_type"], "HIER_OBJECT_ID");
+    let (status, _h, body) = send(
+        &app,
+        Request::builder()
+            .method("GET")
+            .uri(format!("{BASE}/ehr/{CREATED_EHR_ID}/ehr_status"))
+            .body(Body::empty())
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "status read: {body}");
+    let st: Value = serde_json::from_str(&body).expect("ehr_status json");
+    let status_uid = st["uid"]["value"]
         .as_str()
         .expect("ehr_status version id")
         .to_owned();
