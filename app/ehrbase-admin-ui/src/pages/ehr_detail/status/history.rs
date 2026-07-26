@@ -16,7 +16,7 @@
 //! One reader per claim (crate `CLAUDE.md`): this tab never reads
 //! `GET /ehr/{ehr_id}/ehr_status` — the current-status document belongs to the
 //! Status tab. The split within the tab mirrors the composition viewer's:
-//! document CONTENT ← the EHR_STATUS resource at that version, commit history ←
+//! document CONTENT ← the `EHR_STATUS` resource at that version, commit history ←
 //! the revision history, the VERSION's envelope facts (lifecycle state,
 //! preceding version, contribution, signature) ← the direct VERSION read.
 //!
@@ -260,13 +260,13 @@ fn history_row(entry: &VersionEntry, pinned: RwSignal<String>) -> AnyView {
     };
     let committed = entry.committed.clone();
     let change_type = entry.change_type.clone();
-    let committer = entry.committer.clone();
+    let committed_by = entry.committer.clone();
     view! {
         <tr class=row_class>
             <td class=CELL_MONO>{shown}</td>
             <td class=CELL>{committed}</td>
             <td class=CELL>{change_type}</td>
-            <td class=CELL>{committer}</td>
+            <td class=CELL>{committed_by}</td>
             <td class=CELL>
                 <button
                     type="button"
@@ -301,15 +301,13 @@ fn lookup_section(
             at_time.dispatch((ehr_id.get(), requested));
         }
     };
-    let note = move || match at_time.value().get() {
-        Some(Err(AdminUiError::Cdr { status: 404, .. })) => view! {
-            <p class="mt-2 text-sm text-ink-muted">
-                "No EHR_STATUS version existed at that time."
-            </p>
-        }
+    let note = move || {
+        match at_time.value().get() {
+        Some(Err(AdminUiError::Cdr { status: 404, .. })) => view! { <p class="mt-2 text-sm text-ink-muted">"No EHR_STATUS version existed at that time."</p> }
         .into_any(),
         Some(Err(error)) => inline_error(&error),
         _ => ().into_any(),
+    }
     };
     view! {
         <section class=CARD_PAD>

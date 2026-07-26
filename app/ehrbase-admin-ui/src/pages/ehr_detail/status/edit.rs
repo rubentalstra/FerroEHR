@@ -1,4 +1,4 @@
-//! The EHR_STATUS edit form: the two capability toggles, the `other_details`
+//! The `EHR_STATUS` edit form: the two capability toggles, the `other_details`
 //! JSON editor, and the pure merge that turns them into the body
 //! `PUT /ehr/{ehr_id}/ehr_status` sends.
 //!
@@ -9,7 +9,7 @@
 //! That is what [`apply_status_edits`] guarantees: the console NEVER rebuilds an
 //! `EHR_STATUS` from its own model, so an edit cannot drop what the screen does
 //! not render. (`EHR_STATUS` requires `subject`, `is_queryable` and
-//! `is_modifiable` — ITS-REST `specifications/schemas/ehr/EhrStatus.yaml`; a
+//! `is_modifiable` — RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`; a
 //! rebuild would have to invent them.)
 //!
 //! The merge and the `other_details` check are pure functions with unit tests
@@ -134,7 +134,7 @@ pub(super) fn seed(form: StatusForm, state: &EhrStatusState) {
 /// removed), `Some(value)` for a JSON object.
 ///
 /// `EHR_STATUS.other_details` is an `ITEM_STRUCTURE`
-/// (`specifications/schemas/ehr/EhrStatus.yaml` → `UItemStructure`), so a
+/// (RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS` — `other_details: ITEM_STRUCTURE`, 0..1), so a
 /// non-object — an array, a bare string, a number — can never be valid and is
 /// refused here, before anything is sent. Everything beyond "it is an object" is
 /// the CDR's call: its `422` diagnostic is rendered verbatim rather than
@@ -175,7 +175,7 @@ pub(super) fn parse_other_details(draft: &str) -> Result<Option<Value>, String> 
 /// # Errors
 /// [`AdminUiError::Invalid`] when `base` is not a JSON object (the CDR would
 /// answer `422` anyway — `EHR_STATUS` must be a JSON object per
-/// `specifications/schemas/ehr/EhrStatus.yaml`), when the `other_details` draft
+/// RM `docs/specs/openehr/RM/docs/ehr/master04-ehr_package.adoc` §`EHR_STATUS`), when the `other_details` draft
 /// is not a JSON object, or when the merged document cannot be re-serialized.
 pub(super) fn apply_status_edits(
     base: &str,
@@ -229,19 +229,18 @@ pub(super) fn edit_form(
         // Client-side validation first: a malformed draft is refused inline,
         // before any round trip (the EHR-create screen's precedent). The server
         // fn re-checks — it is a public endpoint (rules §0).
-        match parse_other_details(&draft) {
-            Err(message) => form.validation.set(Some(message)),
-            Ok(_) => {
-                form.validation.set(None);
-                save.dispatch(StatusEdit {
-                    ehr_id: ehr_id.get(),
-                    version_uid: form.version_uid.get(),
-                    base_body: form.base_body.get(),
-                    is_queryable: form.queryable.get(),
-                    is_modifiable: form.modifiable.get(),
-                    other_details: draft,
-                });
-            }
+        if let Err(message) = parse_other_details(&draft) {
+            form.validation.set(Some(message));
+        } else {
+            form.validation.set(None);
+            save.dispatch(StatusEdit {
+                ehr_id: ehr_id.get(),
+                version_uid: form.version_uid.get(),
+                base_body: form.base_body.get(),
+                is_queryable: form.queryable.get(),
+                is_modifiable: form.modifiable.get(),
+                other_details: draft,
+            });
         }
     };
     // The client-side complaint about the `other_details` draft, in the place
@@ -298,8 +297,7 @@ pub(super) fn edit_form(
                     "is_modifiable",
                     "Allow new content to be committed to this EHR.",
                     form.modifiable,
-                )}
-                <div class="flex flex-col gap-1">
+                )} <div class="flex flex-col gap-1">
                     <label class=LABEL r#for="status-other-details">
                         "other_details (canonical JSON ITEM_STRUCTURE — leave blank to remove)"
                     </label>
@@ -312,8 +310,7 @@ pub(super) fn edit_form(
                     >
                         {form.other_details.get_untracked()}
                     </textarea>
-                </div>
-                <div class="flex items-center gap-3">
+                </div> <div class="flex items-center gap-3">
                     <button
                         id="status-save"
                         type="button"
@@ -327,9 +324,7 @@ pub(super) fn edit_form(
                     <Show when=move || save.pending().get()>
                         <span class="text-sm text-ink-muted">"Saving…"</span>
                     </Show>
-                </div>
-                {validation}
-                {diagnostic}
+                </div> {validation} {diagnostic}
             </div>
         </section>
     }
