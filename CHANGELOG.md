@@ -214,6 +214,13 @@ workflow refuses a tag that has no matching section here.
   bare-named query is no longer invisible to the admin delete (and vice
   versa). Descriptors return the canonical `misc::`-qualified name; a
   bare-name listing pattern also matches its `misc::` composition.
+- **Query GETs bind the spec's named parameters** (#364). AQL `$parameter`
+  binds on `GET /query/aql` and `GET /query/{name}[/{version}]` now arrive as
+  ordinary named query-string parameters (`?temperature_from=36&…`), exactly
+  as the REST API documents them — values are typed JSON-first with string
+  fallback, a `$` prefix is tolerated, and the previous JSON-object
+  `query_parameters=` form remains accepted (a named parameter wins a
+  collision).
 
 - **Version identity is the full three-part `version_uid`, compared
   case-insensitively** (#367). Deleting a composition (and reading a version

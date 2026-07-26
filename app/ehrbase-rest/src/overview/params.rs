@@ -100,6 +100,46 @@ fn form_urlencoded_pairs(query: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// The spec's NAMED query parameters of a query-execution `GET` (ITS-REST
+/// `docs/query/Request.md` §"Query parameters": generically documented as
+/// `query_parameters`, "but in the real request they will have specific
+/// names (e.g. `uid`, `systolic_bp`)" — worked examples
+/// `?temperature_from=36&temperature_unit=Cel`). Every query-string key that
+/// is not a reserved request control becomes an AQL parameter bind; a `$`
+/// prefix is tolerated and stripped (same section: parameter names "SHOULD
+/// NOT be prefixed with `$`"). Values are read as JSON first (`36` → number,
+/// `true` → bool) and fall back to strings (a version uid keeps its text);
+/// repeats are last-wins. Binds from the literal `query_parameters=<JSON
+/// object>` form arrive in `base` — an accepted superset — and a name
+/// collision resolves to the NAMED form (the documented one).
+pub(crate) fn named_query_parameters(
+    query: Option<&str>,
+    base: std::collections::BTreeMap<String, serde_json::Value>,
+    reserved: &[&str],
+) -> std::collections::BTreeMap<String, serde_json::Value> {
+    let mut parameters = base;
+    let Some(query) = query else {
+        return parameters;
+    };
+    for (key, raw) in form_urlencoded_pairs(query) {
+        let name = key.strip_prefix('$').unwrap_or(&key);
+        if name.is_empty() || reserved.contains(&name) {
+            continue;
+        }
+        let value = serde_json::from_str::<serde_json::Value>(&raw)
+            .ok()
+            .filter(|v| !v.is_array() && !v.is_object())
+            .unwrap_or_else(|| serde_json::Value::String(raw.clone()));
+        parameters.insert(name.to_owned(), value);
+    }
+    parameters
+}
+
+/// The reserved (non-parameter) query-string keys of the query-execution
+/// `GET`s: the request controls the contract itself defines.
+pub(crate) const QUERY_RESERVED_KEYS: &[&str] =
+    &["ehr_id", "offset", "fetch", "q", "query_parameters"];
+
 /// Look up a single (percent-decoded) query-string parameter by key.
 pub(crate) fn query_param(query: Option<&str>, key: &str) -> Option<String> {
     let query = query?;
@@ -485,6 +525,75 @@ impl IntoDeserializer<'_, ValueError> for ScalarDeserializer {
     let_underscore_drop
 )] // test assertions/diagnostics/fixtures
 mod tests {
+    // ── named query parameters (Request.md §Query parameters) ────────────────
+
+    /// The documented GET form: arbitrary NAMED keys become AQL binds
+    /// (worked example `?temperature_from=36&temperature_unit=Cel`), JSON-first
+    /// typing with string fallback, `$` prefix tolerated-and-stripped,
+    /// reserved request controls excluded, and the JSON-object
+    /// `query_parameters` superset merged with named-wins collisions.
+    #[test]
+    fn named_query_parameters_bind_per_the_docs_text() {
+        use serde_json::{Value, json};
+        let base: std::collections::BTreeMap<String, Value> = [
+            ("from_object".to_owned(), json!("x")),
+            ("shared".to_owned(), json!("object-form")),
+        ]
+        .into_iter()
+        .collect();
+        let got = super::named_query_parameters(
+            Some(
+                "temperature_from=36&temperature_unit=Cel&$flagged=true\
+                 &uid=90910cf0-66a0-4382-b1f8-c0f27e81b42d::openEHRSys.example.com::1\
+                 &offset=10&fetch=5&ehr_id=abc&q=SELECT&query_parameters=%7B%7D\
+                 &shared=named-form&name=a+b",
+            ),
+            base,
+            super::QUERY_RESERVED_KEYS,
+        );
+        assert_eq!(got["temperature_from"], json!(36));
+        assert_eq!(got["temperature_unit"], json!("Cel"));
+        assert_eq!(got["flagged"], json!(true), "$ prefix stripped, JSON-typed");
+        assert_eq!(
+            got["uid"],
+            json!("90910cf0-66a0-4382-b1f8-c0f27e81b42d::openEHRSys.example.com::1"),
+            "a version uid stays text"
+        );
+        assert_eq!(got["from_object"], json!("x"), "object-form binds survive");
+        assert_eq!(
+            got["shared"],
+            json!("named-form"),
+            "named form wins a collision"
+        );
+        assert_eq!(got["name"], json!("a b"), "form decoding applies");
+        for reserved in super::QUERY_RESERVED_KEYS {
+            assert!(
+                !got.contains_key(*reserved),
+                "reserved control {reserved:?} must not bind"
+            );
+        }
+    }
+
+    /// Structured JSON literals stay strings on the named form (an array or
+    /// object as a bare query value is not a documented bind shape), and an
+    /// absent query string passes the base through untouched.
+    #[test]
+    fn named_query_parameters_edges() {
+        use serde_json::{Value, json};
+        let got = super::named_query_parameters(
+            Some("list=%5B1%2C2%5D"),
+            std::collections::BTreeMap::new(),
+            super::QUERY_RESERVED_KEYS,
+        );
+        assert_eq!(got["list"], json!("[1,2]"), "structured literals stay text");
+        let base: std::collections::BTreeMap<String, Value> =
+            [("kept".to_owned(), json!(1))].into_iter().collect();
+        assert_eq!(
+            super::named_query_parameters(None, base.clone(), super::QUERY_RESERVED_KEYS),
+            base
+        );
+    }
+
     use super::*;
     use http::HeaderValue;
     use serde::Deserialize;
