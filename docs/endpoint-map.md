@@ -220,39 +220,40 @@ chain: handler `…::contribution_list` → `contribution.rs::run` → service `
 sql: 3 round trips — SELECT the EHR existence probe (`ensure_ehr_exists` → 404); SELECT count(*) FROM contribution c JOIN audit a ON a.id=c.audit_id WHERE c.ehr_id=$1 as `total` (via `versioning::count_contributions`); SELECT c.id, a.time_committed, a.change_type, a.committer#>>'{name}' FROM contribution c JOIN audit a ON a.id=c.audit_id WHERE c.ehr_id=$1 ORDER BY a.time_committed DESC, c.id DESC OFFSET $2 LIMIT $3
 notes: OUR OWN EXTENSION — no openEHR spec governs it (the ITS-REST contract defines only the by-uid CONTRIBUTION GET). Session-authenticated (Clinical RBAC class; ABAC Pre-checked on the target EHR, subject-gated like the sibling EHR reads). Response `{ "rows": [ { uid, time_committed, committer, change_type, change_type_rubric } ], "total" }` newest-first; `offset` default 0, `fetch` default 20 capped at 100. `committer` = the audit committer PARTY_PROXY's `name` (a summary string; the by-uid GET returns the full party); `change_type` = the stored `audit.change_type` group code and `change_type_rubric` its bundle-resolved display rubric (`versioning::audit::change_type_rubric` — the same mapping the by-uid GET's DV_CODED_TEXT carries; consumers never map codes locally). JSON only (a DTO with no canonical-XML shape → 406 on an XML-only Accept). Unknown EHR → 404.
 
-## Item tags (ITS-REST experimental extension; `item_tag` table, spec-silent storage)
+## Item tags (RM common master07-tags.adoc ITEM_TAG over the Release-1.1.0 /tags routes; `item_tag` table, spec-silent storage)
+
+Identity within one target is the (key, target_path) PAIR (ITS-REST `Requests_and_responses.md` §item-tag headers); container-addressed (bare object id) and VERSION-addressed (full `version_uid`) collections of the same object are DISJOINT (RM `ITEM_TAG.target: UID_BASED_ID` — container or VERSION). `target` is emitted in the RM shape: `HIER_OBJECT_ID` for a container, `OBJECT_VERSION_ID` for a version (the stalled OAS's OBJECT_REF wrapper lost to the RELEASED RM). Routes are kind-checked: the addressed object's stored kind must match the route family, else 404.
 
 ### GET /ehr/{ehr_id}/tags
 chain: handler `…::ehr_tags_get` → `ehr_resource.rs::run` → service `EhrbaseService::ehr_tags_get` → `ehr_tags` → storage `tag_repo::list_tags`
-sql: 1 round trip — SELECT item_tag filtered by ehr scope (+ optional key/value/target_path query params), ordered by key
-notes: wire shape is exactly the OAS `ItemTag` (RM `ITEM_TAG` invariants enforced on write).
+sql: 1 round trip — SELECT item_tag filtered by ehr scope (+ optional key/value/target_path query params), ordered by key, target_path
+notes: returns container AND version-addressed tags, each with its RM-shaped target.
 
 ### GET /ehr/{ehr_id}/composition/{uid_based_id}/tags
-chain: handler `…::composition_tags_get` → `composition.rs::run` → service `EhrbaseService::target_tags_get` → `target_tags` → `tag_repo::list_tags`
-sql: 1 round trip — SELECT item_tag by (ehr, target_vo_id)
+chain: handler `…::composition_tags_get` → `composition.rs::run` → service `EhrbaseService::target_tags_get` → `parse_tag_target` (bare id = container, full version_uid = that version) → `target_tags` → `tag_repo::list_tags`
+sql: 1 round trip — SELECT item_tag by (ehr, target_vo_id, target_version)
 
 ### PUT /ehr/{ehr_id}/composition/{uid_based_id}/tags
-chain: handler `…::composition_tags_update` → `composition.rs::run` → `negotiate::json_vec` → service `EhrbaseService::target_tags_replace` → `replace_tags` (service/ehr/tags.rs: `ensure_ehr_exists` + `vo_owner` same-EHR gate + RM `Inv_key_valid`/`Inv_value_valid` in-memory) → storage `tag_repo::replace_tags` in a tx → re-list
-sql: 3 + N round trips — SELECT ehr exists; SELECT vo_version owner (tag targets only within the same EHR, RM ehr `EHR.tags`); tx[DELETE all target tags; then **one INSERT … ON CONFLICT upsert per posted tag** — an explicit per-item loop]; SELECT the stored collection back
-notes: PUT is full-collection replace — an empty list clears all tags; returns the stored list.
+chain: handler `…::composition_tags_update` → `composition.rs::run` → `negotiate::json_vec` → service `EhrbaseService::target_tags_replace` → `replace_tags` (service/ehr/tags.rs: `ensure_ehr_exists` + `ensure_tag_target` [same-EHR + kind match + version-exists for a VERSION target] + RM `Inv_key_valid`/`Inv_value_valid` in-memory) → storage `tag_repo::replace_tags` in a tx → re-list
+sql: 3–4 + 2 round trips — SELECT ehr exists; SELECT vo_version (ehr_id, kind); [SELECT version exists when VERSION-addressed]; tx[DELETE the ADDRESSED collection's tags; one multi-row UNNEST INSERT of the (key,target_path)-deduped set]; SELECT the stored collection back
+notes: PUT replaces exactly the ADDRESSED collection (container or one version) — an empty list clears it; returns the stored list.
 
 ### DELETE /ehr/{ehr_id}/composition/{uid_based_id}/tags/{key}
 chain: handler `…::composition_tags_delete` → `composition.rs::run` → service `EhrbaseService::target_tag_delete` → `delete_tag` → `tag_repo::delete_tag`
-sql: 1 round trip — DELETE item_tag by (ehr, target, key)
-notes: zero rows deleted → 404; else 204.
+sql: 1 round trip — DELETE item_tag by (ehr, target, target_version, key)
+notes: a SET delete — the wire addresses by key alone while identity is (key, target_path), so every path under the key in the addressed collection goes. Zero rows → 404; else 204.
 
 ### GET /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags
 chain: handler `…::ehr_status_tags_get` → `ehr_status.rs::run` → service `EhrbaseService::target_tags_get` → `tag_repo::list_tags`
-sql: 1 round trip — SELECT item_tag by (ehr, target_vo_id)
-notes: identical seam to the COMPOSITION variant (target_type differs only on write).
+sql: 1 round trip — SELECT item_tag by (ehr, target_vo_id, target_version)
+notes: identical seam to the COMPOSITION variant (the kind check expects EHR_STATUS).
 
 ### PUT /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags
 chain: handler `…::ehr_status_tags_update` → `ehr_status.rs::run` → service `EhrbaseService::target_tags_replace` (target_type "EHR_STATUS") → `tag_repo::replace_tags` + re-list
-sql: 3 + N round trips (per-tag INSERT loop, as the COMPOSITION variant)
-
+sql: as the COMPOSITION variant
 ### DELETE /ehr/{ehr_id}/ehr_status/{uid_based_id}/tags/{key}
 chain: handler `…::ehr_status_tags_delete` → `ehr_status.rs::run` → service `EhrbaseService::target_tag_delete` → `tag_repo::delete_tag`
-sql: 1 round trip — DELETE item_tag by (ehr, target, key)
+sql: 1 round trip — DELETE item_tag by (ehr, target, target_version, key)
 notes: 204 / 404 as the COMPOSITION variant.
 
 ---

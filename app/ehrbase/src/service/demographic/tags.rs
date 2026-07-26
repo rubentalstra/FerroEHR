@@ -31,7 +31,8 @@ impl EhrbaseService {
 
     /// The tags on one party.
     pub(super) async fn party_tags(&self, vo_id: VoId) -> Result<Vec<Value>, ServiceError> {
-        let rows = tag_repo::list_tags(&self.pool, None, Some(vo_id), None, None, None).await?;
+        let rows =
+            tag_repo::list_tags(&self.pool, None, Some((vo_id, None)), None, None, None).await?;
         Ok(rows.iter().map(party_tag_json).collect())
     }
 
@@ -87,7 +88,7 @@ impl EhrbaseService {
             })
             .collect();
         let mut tx = self.pool.begin().await?;
-        tag_repo::replace_tags(&mut tx, None, vo_id, &new_tags).await?;
+        tag_repo::replace_tags(&mut tx, None, vo_id, None, &new_tags).await?;
         tx.commit().await?;
         self.party_tags(vo_id).await
     }
@@ -98,7 +99,7 @@ impl EhrbaseService {
         vo_id: VoId,
         key: &str,
     ) -> Result<(), ServiceError> {
-        if !tag_repo::delete_tag(&self.pool, None, vo_id, key).await? {
+        if !tag_repo::delete_tag(&self.pool, None, vo_id, None, key).await? {
             return Err(ServiceError::sm(
                 CallStatusType::VersionedObjectDoesNotExist,
                 format!("item tag {key:?}"),
