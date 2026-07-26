@@ -108,6 +108,28 @@ workflow refuses a tag that has no matching section here.
   document now also lists both headers as documented parameters on the two
   create operations.
 
+- **Served OpenAPI: the four EHR-resource operations now document the whole
+  wire** (#427). `GET /ehr`, `POST /ehr`, `GET /ehr/{ehr_id}` and
+  `PUT /ehr/{ehr_id}` under-described what the server actually does. The two
+  creates now declare their `415` (an unprocessable request `Content-Type`,
+  including a Simplified Format, which is defined only for templated
+  COMPOSITION content) and `406` (an `Accept` that canonical JSON/XML cannot
+  satisfy) branches, both a MUST in the REST spec's format sections; the two
+  reads declare `406` as well, and `GET /ehr/{ehr_id}` declares the `400` it
+  returns for a malformed (non-UUID) `ehr_id`. Every success response now
+  carries a header block: `ETag`/`Location`/`Last-Modified`/
+  `Preference-Applied` on the `201`s, `ETag` on the reads — where the absence
+  of `Location` and `Last-Modified` on a read is now stated explicitly rather
+  than left unsaid. The `Prefer`-conditional `201` body is documented as a
+  named example pair (`representation` — the full RM `EHR`; `identifier` —
+  the single-`uid` object), the `Prefer` header enumerates its three tokens
+  and its default, and the request body, the read bodies, and the subject
+  query parameters carry real served-shape examples. Corrected false claim:
+  `PUT /ehr/{ehr_id}` described `ehr_id` as any `HIER_OBJECT_ID` with "a UUID
+  strongly recommended", while the server accepts UUIDs only — which is what
+  the abstract service model types the argument as, and every UUID is a valid
+  `HIER_OBJECT_ID` root.
+
 - **Served OpenAPI: the System API's `OPTIONS` operation is now documented**
   (#418). The Options-and-Conformance endpoint (`OPTIONS` on the API base
   path) was served but absent from the generated OpenAPI document and
