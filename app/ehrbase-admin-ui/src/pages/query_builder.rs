@@ -76,6 +76,7 @@ impl BuilderCtx {
 /// output shape, a live AQL preview, and the run/save surface.
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
+#[allow(clippy::too_many_lines)] // one setup pass: signals, resources, the ?load lift wiring
 pub fn QueryBuilderPage() -> impl IntoView {
     let ctx = BuilderCtx {
         query: RwSignal::new(BuilderQuery::new(String::new())),
@@ -355,8 +356,8 @@ fn loaded_notice(qualified: &str, version: &str, refusal: RwSignal<Option<LiftEr
     view! {
         <section class=CARD_PAD>
             <p class="text-sm text-ink-muted">
-                "Loaded stored query " <span class="font-mono text-ink">{name}</span>
-                " at version " <span class="font-mono text-ink">{version}</span>
+                "Loaded stored query " <span class="font-mono text-ink">{name}</span> " at version "
+                <span class="font-mono text-ink">{version}</span>
                 ". Saving stores the version in the field below — that version is immutable, so the next one is proposed."
             </p>
             {move || {

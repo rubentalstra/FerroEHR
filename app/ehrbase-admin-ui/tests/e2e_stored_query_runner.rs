@@ -254,7 +254,7 @@ async fn stored_query_lifts_back_into_the_builder() {
 
 /// The parameterised runner: a stored query with a `$parameter` is executed
 /// server-side with its value bound, through each of the three openEHR
-/// version-resolution forms (exact / prefix / latest), and its RESULT_SET lands
+/// version-resolution forms (exact / prefix / latest), and its `RESULT_SET` lands
 /// in the shared results pane.
 #[tokio::test]
 async fn stored_query_runs_with_parameters_in_every_resolution_form() {
@@ -384,7 +384,7 @@ async fn assert_request(h: &Harness, request: &str) {
 }
 
 /// Bind the query's `$template` parameter, run, and assert the shared results
-/// pane rendered instead of an inline error — i.e. the CDR answered a RESULT_SET
+/// pane rendered instead of an inline error — i.e. the CDR answered a `RESULT_SET`
 /// for the parameterised stored execution.
 ///
 /// # Panics
