@@ -14,7 +14,13 @@
 //! `OBJECT_VERSION_ID`, so the tests create real parties through the wire and
 //! read the server-assigned `version_uid` back from the `ETag` — the invariant
 //! assertions (weak-`ETag` present, `Location` = `{base}/demographic/{kind}/{uid}`
-//! consistent with that `ETag`, body `_type`, status codes) are unchanged.
+//! consistent with that `ETag` **on writes only**, body `_type`, status codes).
+//!
+//! Header discipline (ITS-REST overview `Requests_and_responses.md`): `Location`
+//! rides create/update writes alone — §Location bars it as "an alternate
+//! representation of an existing resource" and §"Deprecated headers" deprecates
+//! it on `GET` and `DELETE`; reads, deletes and `4xx` responses identify the
+//! version through the weak `ETag` (+ `Last-Modified` where known).
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use axum::Router;
@@ -131,6 +137,17 @@ async fn send(app: &Router, req: Request<Body>) -> (StatusCode, header::HeaderMa
     )
 }
 
+/// A canonical-JSON `GET` against the composed router.
+async fn get_json(app: &Router, uri: String) -> (StatusCode, header::HeaderMap, String) {
+    let req = Request::builder()
+        .method("GET")
+        .uri(uri)
+        .header(header::ACCEPT, "application/json")
+        .body(Body::empty())
+        .unwrap();
+    send(app, req).await
+}
+
 fn etag(h: &header::HeaderMap) -> Option<&str> {
     h.get(header::ETAG).and_then(|v| v.to_str().ok())
 }
@@ -208,8 +225,13 @@ async fn person_create_representation_returns_body() {
     assert_eq!(v["_type"], "PERSON");
 }
 
+/// A `GET` carries the weak `ETag` and **no** `Location`: ITS-REST overview
+/// `Requests_and_responses.md` §Location — "It MUST NOT be used to indicate an
+/// alternate representation of an existing resource (e.g. via `GET` method)" and
+/// "MUST ONLY be used for resource creation (e.g., `201 Created`) or redirect
+/// responses"; §"Deprecated headers" deprecates `Location` on `GET`.
 #[tokio::test]
-async fn person_get_sets_etag_and_location() {
+async fn person_get_sets_etag_and_no_location() {
     let (_pg, app) = app().await;
     let ovid = create(&app, "person", &person_body()).await;
     let vo = vo_of(&ovid);
@@ -225,7 +247,9 @@ async fn person_get_sets_etag_and_location() {
     assert_eq!(etag(&h), Some(format!("W/\"{ovid}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/demographic/person/{ovid}").as_str())
+        None,
+        "ITS-REST overview §Location: Location MUST NOT indicate an alternate \
+         representation of an existing resource (GET)"
     );
     let v: Value = serde_json::from_str(&body).expect("json body");
     assert_eq!(v["_type"], "PERSON");
@@ -257,8 +281,12 @@ async fn deleted_person_read_is_204() {
     assert!(body.is_empty());
 }
 
+/// A `204` delete carries the deleted version's weak `ETag` and **no**
+/// `Location`: ITS-REST overview §"Deprecated headers" — "the `Location`
+/// response header was deprecated from responses of `DELETE` methods";
+/// §Location scopes it to creation/redirect responses.
 #[tokio::test]
-async fn person_delete_is_204_with_headers() {
+async fn person_delete_is_204_with_etag_and_no_location() {
     let (_pg, app) = app().await;
     let ovid = create(&app, "person", &person_body()).await;
 
@@ -270,12 +298,13 @@ async fn person_delete_is_204_with_headers() {
     let (status, h, body) = send(&app, req).await;
 
     assert_eq!(status, StatusCode::NO_CONTENT);
-    // ETag + Location of the deleted version (a new version_uid).
+    // ETag of the deleted version (a new version_uid).
     let deleted = etag_uid(&h);
     assert_eq!(etag(&h), Some(format!("W/\"{deleted}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/demographic/person/{deleted}").as_str())
+        None,
+        "ITS-REST overview §Deprecated headers: Location is deprecated on DELETE responses"
     );
     assert!(body.is_empty());
 }
@@ -300,8 +329,13 @@ async fn person_delete_by_versioned_uid_with_if_match_is_204() {
     assert!(body.is_empty());
 }
 
+/// A stale `If-Match` is `412` echoing the latest `version_uid` in `ETag`
+/// (ITS-REST overview §"If-Match and accidental overwrites": on a false
+/// condition the service "MUST respond with HTTP status code `412 Precondition
+/// Failed`, and SHOULD return also latest `version_uid` in the `ETag` response
+/// headers") — and no `Location`, which §Location scopes to creation/redirect.
 #[tokio::test]
-async fn stale_update_is_412_with_latest_headers() {
+async fn stale_update_is_412_with_latest_etag_and_no_location() {
     let (_pg, app) = app().await;
     let ovid = create(&app, "person", &person_body()).await;
     let vo = vo_of(&ovid);
@@ -317,13 +351,256 @@ async fn stale_update_is_412_with_latest_headers() {
         .unwrap();
     let (status, h, _body) = send(&app, req).await;
 
-    // Precondition failure → 412, decorated with the latest version headers.
+    // Precondition failure → 412, echoing the latest version_uid.
     assert_eq!(status, StatusCode::PRECONDITION_FAILED);
     assert_eq!(etag(&h), Some(format!("W/\"{ovid}\"").as_str()));
     assert_eq!(
         location(&h),
-        Some(format!("{BASE}/demographic/person/{ovid}").as_str())
+        None,
+        "ITS-REST overview §Location: no Location on an error response"
     );
+}
+
+/// The server emits weak `ETag`s (`W/"…"`, overview §"`ETag` and
+/// Last-Modified"), so a client echoing that exact value back as `If-Match`
+/// MUST satisfy the precondition. The bare quoted form stays supported
+/// (§"Deprecated headers": implementations "MAY still support it"), and the
+/// unquoted value is accepted for the same reason.
+#[tokio::test]
+async fn update_accepts_weak_bare_quoted_and_unquoted_if_match() {
+    let (_pg, app) = app().await;
+
+    for shape in ["weak", "quoted", "unquoted"] {
+        let ovid = create(&app, "person", &person_body()).await;
+        let vo = vo_of(&ovid).to_owned();
+        let if_match = match shape {
+            "weak" => format!("W/\"{ovid}\""),
+            "quoted" => format!("\"{ovid}\""),
+            _ => ovid.clone(),
+        };
+
+        let req = Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/demographic/person/{vo}"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::IF_MATCH, if_match.as_str())
+            .body(Body::from(person_body().to_string()))
+            .unwrap();
+        let (status, h, body) = send(&app, req).await;
+
+        assert_eq!(
+            status,
+            StatusCode::NO_CONTENT,
+            "If-Match {if_match:?} ({shape} form) must satisfy the precondition \
+             (ITS-REST overview §ETag and Last-Modified + §Deprecated headers): {body}"
+        );
+        let v2 = etag_uid(&h);
+        assert!(v2.ends_with("::2"), "second version committed, got {v2}");
+    }
+}
+
+/// `creating_system_id` is a composite identifier: BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case" —
+/// two identifiers "identical apart from case … identify the same thing". A
+/// case-variant `If-Match` therefore names the current version and must NOT
+/// raise a spurious `412`.
+#[tokio::test]
+async fn update_if_match_compares_case_insensitively() {
+    let (_pg, app) = app().await;
+    let ovid = create(&app, "person", &person_body()).await;
+    let vo = vo_of(&ovid).to_owned();
+    let upper = ovid.to_uppercase();
+    assert_ne!(upper, ovid, "the fixture uid must have case to flip");
+
+    let req = Request::builder()
+        .method("PUT")
+        .uri(format!("{BASE}/demographic/person/{vo}"))
+        .header(header::CONTENT_TYPE, "application/json")
+        .header(header::IF_MATCH, format!("W/\"{upper}\""))
+        .body(Body::from(person_body().to_string()))
+        .unwrap();
+    let (status, _h, body) = send(&app, req).await;
+
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "BASE master05 §Composite Identifiers and Case: a case-variant \
+         OBJECT_VERSION_ID names the same version: {body}"
+    );
+}
+
+/// A syntactically invalid `If-Match` is a client error (`400`), never an
+/// ignored precondition — ITS-REST overview §"If-Match and accidental
+/// overwrites" requires a received `If-Match` to be honoured, so a value that
+/// cannot be evaluated must not run as if none was sent.
+#[tokio::test]
+async fn malformed_if_match_is_400() {
+    let (_pg, app) = app().await;
+    let ovid = create(&app, "person", &person_body()).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    for bad in ["W/\"not-a-version-id\"", "\"\"", "\"a::b::c::3\""] {
+        let req = Request::builder()
+            .method("PUT")
+            .uri(format!("{BASE}/demographic/person/{vo}"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::IF_MATCH, bad)
+            .body(Body::from(person_body().to_string()))
+            .unwrap();
+        let (status, _h, body) = send(&app, req).await;
+        assert_eq!(
+            status,
+            StatusCode::BAD_REQUEST,
+            "If-Match {bad:?} is malformed and must be rejected, not skipped: {body}"
+        );
+    }
+}
+
+/// A `DELETE` addressed by the bare versioned-object uid accepts the weak
+/// `If-Match` form the server emits (same normalization seam as `PUT`).
+#[tokio::test]
+async fn delete_accepts_the_weak_if_match_form() {
+    let (_pg, app) = app().await;
+    let ovid = create(&app, "person", &person_body()).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    let req = Request::builder()
+        .method("DELETE")
+        .uri(format!("{BASE}/demographic/person/{vo}"))
+        .header(header::IF_MATCH, format!("W/\"{ovid}\""))
+        .body(Body::empty())
+        .unwrap();
+    let (status, h, body) = send(&app, req).await;
+
+    assert_eq!(
+        status,
+        StatusCode::NO_CONTENT,
+        "a weak-form If-Match must satisfy the delete precondition: {body}"
+    );
+    assert!(etag(&h).is_some(), "the deleted version's ETag is echoed");
+    assert_eq!(
+        location(&h),
+        None,
+        "ITS-REST overview §Deprecated headers: Location is deprecated on DELETE responses"
+    );
+}
+
+/// The `VERSIONED_PARTY` reads are `VERSION`/`VERSIONED_OBJECT` responses, so
+/// each SHOULD carry `ETag` and `Last-Modified` (ITS-REST overview §"`ETag` and
+/// Last-Modified": both "SHOULD be included in responses for `VERSION`,
+/// `VERSIONED_OBJECT`, or other resources that have versioning or unique state
+/// identifiers"; the `ETag` is "usually taken from e.g.
+/// `VERSIONED_OBJECT.uid.value`, `VERSION.uid.value`") — and never `Location`.
+#[tokio::test]
+async fn versioned_party_reads_emit_versioning_headers() {
+    let (_pg, app) = app().await;
+    let ovid = create(&app, "person", &person_body()).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    // The VERSIONED_PARTY container: ETag = VERSIONED_OBJECT.uid.value.
+    let (status, h, body) =
+        get_json(&app, format!("{BASE}/demographic/versioned_party/{vo}")).await;
+    assert_eq!(status, StatusCode::OK, "container read: {body}");
+    assert_eq!(etag(&h), Some(format!("W/\"{vo}\"").as_str()));
+    assert_eq!(
+        location(&h),
+        None,
+        "ITS-REST overview §Location: not on GET"
+    );
+
+    // The REVISION_HISTORY: ETag = the addressed VERSIONED_OBJECT uid,
+    // Last-Modified = the most recent item's commit audit.
+    let (status, h, body) = get_json(
+        &app,
+        format!("{BASE}/demographic/versioned_party/{vo}/revision_history"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "revision history: {body}");
+    assert_eq!(etag(&h), Some(format!("W/\"{vo}\"").as_str()));
+    assert!(
+        h.contains_key(header::LAST_MODIFIED),
+        "Last-Modified from REVISION_HISTORY.items.last().audits[0].time_committed"
+    );
+    assert_eq!(
+        location(&h),
+        None,
+        "ITS-REST overview §Location: not on GET"
+    );
+
+    // A version read: ETag = VERSION.uid.value, Last-Modified = its commit audit.
+    let (status, h, body) = get_json(
+        &app,
+        format!("{BASE}/demographic/versioned_party/{vo}/version/{ovid}"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "version read: {body}");
+    assert_eq!(etag(&h), Some(format!("W/\"{ovid}\"").as_str()));
+    assert!(
+        h.contains_key(header::LAST_MODIFIED),
+        "Last-Modified from ORIGINAL_VERSION.commit_audit.time_committed"
+    );
+    assert_eq!(
+        location(&h),
+        None,
+        "ITS-REST overview §Location: not on GET"
+    );
+
+    // The at-time version read (no version_at_time = latest).
+    let (status, h, body) = get_json(
+        &app,
+        format!("{BASE}/demographic/versioned_party/{vo}/version"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "version at time: {body}");
+    assert_eq!(etag(&h), Some(format!("W/\"{ovid}\"").as_str()));
+    assert_eq!(
+        location(&h),
+        None,
+        "ITS-REST overview §Location: not on GET"
+    );
+}
+
+/// The `PARTY_RELATIONSHIP` extension mirrors the party envelope: its versioned
+/// reads carry the same versioning headers and no `Location`.
+#[tokio::test]
+async fn versioned_party_relationship_reads_emit_versioning_headers() {
+    let (_pg, app) = app().await;
+    let ovid = create(&app, "party_relationship", &relationship_body()).await;
+    let vo = vo_of(&ovid).to_owned();
+
+    for (uri, expected_etag) in [
+        (
+            format!("{BASE}/demographic/versioned_party_relationship/{vo}"),
+            vo.clone(),
+        ),
+        (
+            format!("{BASE}/demographic/versioned_party_relationship/{vo}/revision_history"),
+            vo.clone(),
+        ),
+        (
+            format!("{BASE}/demographic/versioned_party_relationship/{vo}/version/{ovid}"),
+            ovid.clone(),
+        ),
+    ] {
+        let req = Request::builder()
+            .method("GET")
+            .uri(&uri)
+            .header(header::ACCEPT, "application/json")
+            .body(Body::empty())
+            .unwrap();
+        let (status, h, body) = send(&app, req).await;
+        assert_eq!(status, StatusCode::OK, "{uri}: {body}");
+        assert_eq!(
+            etag(&h),
+            Some(format!("W/\"{expected_etag}\"").as_str()),
+            "{uri} carries the versioned-resource ETag"
+        );
+        assert_eq!(
+            location(&h),
+            None,
+            "{uri}: ITS-REST overview §Location — no Location on a GET"
+        );
+    }
 }
 
 #[tokio::test]

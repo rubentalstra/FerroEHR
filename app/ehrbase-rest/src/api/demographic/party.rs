@@ -76,7 +76,7 @@ pub(super) async fn run(
             if resp.is_empty() {
                 return Ok(negotiate::empty(StatusCode::NO_CONTENT));
             }
-            Ok(read_party(kind, h, &base, &resp))
+            Ok(read_party(kind, h, &resp))
         }
         "update" => {
             let p = params::build::<AgentUpdateParams>(&parts.path, q, h)?;
@@ -87,7 +87,10 @@ pub(super) async fn run(
                 .party_update(
                     kind,
                     p.uid_based_id,
-                    p.if_match,
+                    // The `W/"…"`/quoted ETag syntax is decoded here, at the
+                    // adapter seam, so the service compares a bare
+                    // OBJECT_VERSION_ID (overview §"`ETag` and Last-Modified").
+                    super::if_match_token(&p.if_match),
                     body,
                     crate::overview::committal::committal_audit(h),
                 )
@@ -117,17 +120,12 @@ pub(super) async fn run(
                         .await
                         .ok()
                         .flatten();
-                    Ok(super::error_with_headers(
-                        sm_api_error(e),
-                        &base,
-                        seg,
-                        meta.as_ref(),
-                    ))
+                    Ok(super::error_with_meta(sm_api_error(e), meta.as_ref()))
                 }
                 Err(e) => Err(RestError::from(e)),
             }
         }
-        "delete" => run_delete(&state, kind, &base, seg, &parts).await,
+        "delete" => run_delete(&state, kind, &parts).await,
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted demographic party operation: {seg}_{other}"
         )))),
@@ -163,8 +161,10 @@ async fn persist_request_tags(
     Ok(())
 }
 
-/// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` +
-/// `ETag`/`Location` of the deleted version.
+/// `DELETE /demographic/{kind}/{uid_based_id}` — logical delete → `204` + the
+/// deleted version's `ETag` (no `Location`: overview §"Deprecated headers"
+/// deprecates `Location` on `DELETE` responses, §Location scopes it to
+/// creation/redirect).
 ///
 /// `person_delete.yaml` places the `preceding_version_uid` to delete in the
 /// **path** (`uid_based_id_as_version_uid` — an `OBJECT_VERSION_ID`), not in an
@@ -174,8 +174,6 @@ async fn persist_request_tags(
 async fn run_delete(
     state: &AppState,
     kind: PartyKind,
-    base: &str,
-    seg: &str,
     parts: &RequestParts,
 ) -> Result<Response, RestError> {
     let h = &parts.headers;
@@ -183,11 +181,13 @@ async fn run_delete(
     // version_uid). All per-kind delete params are field-identical; reuse one.
     let p = params::build::<AgentDeleteParams>(&parts.path, parts.query.as_deref(), h)?;
     let preceding = p.uid_based_id.clone();
-    // NOTE (wire, compatibility): `person_delete.yaml` declares no `If-Match`
-    // and takes the preceding version from the path `uid_based_id` (an
-    // `OBJECT_VERSION_ID`, design its-rest/demographic.md §2.2), which is passed
-    // positionally to `party_delete` below; `If-Match` is retained only as a
-    // fallback source of the preceding version for older clients. The service
+    // NOTE (wire, compatibility): the delete operation takes the preceding
+    // version from the path `uid_based_id` (an `OBJECT_VERSION_ID`), which is
+    // passed positionally to `party_delete` below — ITS-REST overview
+    // §"If-Match and accidental overwrites" requires `If-Match` only "when the
+    // `preceding_version_uid` is not part of the endpoint path segment", and
+    // here it is. `If-Match` is therefore accepted, never required, as an
+    // alternative source of the preceding version. The service
     // signals a stale uid via `version_mismatch` (→ 409, handled below with the
     // latest `version_uid` echoed in `ETag`) and an already-deleted target via
     // `precondition_violation` (→ 400_already_deleted).
@@ -202,9 +202,9 @@ async fn run_delete(
         .await
     {
         Ok(resp) => {
-            // 204_version_deleted: ETag + Location of the deleted version.
+            // 204_version_deleted: the deleted version's ETag, no Location.
             let mut out = negotiate::empty(StatusCode::NO_CONTENT);
-            super::set_headers(&mut out, base, seg, resp.meta.as_ref());
+            super::set_versioning_headers(&mut out, resp.meta.as_ref());
             Ok(out)
         }
         // 409_PERSON_with_uid_based_id: supplied uid_based_id ≠ latest version.
@@ -215,10 +215,8 @@ async fn run_delete(
                 .await
                 .ok()
                 .flatten();
-            Ok(super::error_with_headers(
+            Ok(super::error_with_meta(
                 ApiError::Conflict(e.message),
-                base,
-                seg,
                 meta.as_ref(),
             ))
         }
@@ -264,7 +262,9 @@ fn respond_party(
 }
 
 /// A create/update response honouring `Prefer` and setting the demographic
-/// `ETag`/`Location`.
+/// `ETag`/`Last-Modified` + the `Location` of the version this write committed
+/// (overview §Location — creation/redirect only; §"Prefer minimal…" — "the
+/// newly created or updated resource").
 fn write_party(
     kind: PartyKind,
     h: &HeaderMap,
@@ -278,15 +278,17 @@ fn write_party(
     } else {
         negotiate::empty(minimal_status)
     };
-    super::set_headers(&mut out, base, kind.segment(), resp.meta.as_ref());
+    super::set_write_headers(&mut out, base, kind.segment(), resp.meta.as_ref());
     out
 }
 
-/// A `200 OK` read of a party, setting the demographic `ETag`/`Location` and the
-/// `ITEM_TAG` response headers (`person_get.yaml`).
-fn read_party(kind: PartyKind, h: &HeaderMap, base: &str, resp: &ServiceResponse) -> Response {
+/// A `200 OK` read of a party, setting the demographic `ETag`/`Last-Modified`
+/// and the `ITEM_TAG` response headers (`person_get.yaml`). No `Location` —
+/// overview §Location: the header "MUST NOT be used to indicate an alternate
+/// representation of an existing resource (e.g. via `GET` method)".
+fn read_party(kind: PartyKind, h: &HeaderMap, resp: &ServiceResponse) -> Response {
     let mut out = respond_party(kind, h, StatusCode::OK, &resp.body);
-    super::set_headers(&mut out, base, kind.segment(), resp.meta.as_ref());
+    super::set_versioning_headers(&mut out, resp.meta.as_ref());
     super::set_item_tag_headers(&mut out, resp);
     out
 }

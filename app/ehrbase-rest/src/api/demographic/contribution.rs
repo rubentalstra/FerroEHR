@@ -59,7 +59,8 @@ pub(super) async fn run(
 }
 
 /// A create response for a JSON-only payload (CONTRIBUTION), honouring `Prefer`
-/// and setting the demographic `ETag`/`Location`.
+/// and setting the demographic `ETag` + the creation `Location` (overview
+/// §Location — `201 Created` is exactly the case it scopes the header to).
 fn write_shared(
     h: &http::HeaderMap,
     base: &str,
@@ -73,6 +74,6 @@ fn write_shared(
     } else {
         negotiate::empty(minimal_status)
     };
-    super::set_headers(&mut out, base, segment, resp.meta.as_ref());
+    super::set_write_headers(&mut out, base, segment, resp.meta.as_ref());
     out
 }
