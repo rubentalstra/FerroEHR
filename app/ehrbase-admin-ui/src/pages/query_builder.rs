@@ -300,6 +300,49 @@ fn picker_section(
 /// selectable data-value leaves offer "+ condition" (always) and "+ column"
 /// (only when the shape is a data-value projection). Returns [`AnyView`] at
 /// every level so the recursion has a finite type (rules §1).
+/// The path-picker row's disclosure chevron. Icon-only control: the chevron is
+/// decoration, so the button carries the node it opens as its name and its
+/// open/closed state as `aria-expanded` (WAI-ARIA Authoring Practices,
+/// "Disclosure" pattern). A leaf renders the aligning spacer instead.
+fn disclosure_toggle(node_label: &str, expanded: RwSignal<bool>, has_children: bool) -> AnyView {
+    if !has_children {
+        return view! { <span class="inline-block w-4 shrink-0"></span> }.into_any();
+    }
+    let toggle_label = format!("Toggle {node_label}");
+    view! {
+        <button
+            type="button"
+            class="w-4 shrink-0 text-ink-muted"
+            aria-label=toggle_label
+            aria-expanded=move || if expanded.get() { "true" } else { "false" }
+            on:click=move |_| expanded.update(|open| *open = !*open)
+        >
+            {move || {
+                if expanded.get() {
+                    view! {
+                        <leptos_icons::Icon
+                            icon=icondata_lu::LuChevronDown
+                            width="12"
+                            height="12"
+                        />
+                    }
+                        .into_any()
+                } else {
+                    view! {
+                        <leptos_icons::Icon
+                            icon=icondata_lu::LuChevronRight
+                            width="12"
+                            height="12"
+                        />
+                    }
+                        .into_any()
+                }
+            }}
+        </button>
+    }
+    .into_any()
+}
+
 fn picker_node(
     node: &CatalogNode,
     ctx: BuilderCtx,
@@ -314,46 +357,7 @@ fn picker_node(
         .map(|child| picker_node(child, ctx, shape_is_dv, depth + 1))
         .collect::<Vec<_>>();
 
-    let disclosure = if has_children {
-        // Icon-only control: the chevron is decoration, so the button carries
-        // the node it opens as its name and its open/closed state as
-        // `aria-expanded` (WAI-ARIA Authoring Practices, "Disclosure" pattern).
-        let toggle_label = format!("Toggle {}", node.label);
-        view! {
-            <button
-                type="button"
-                class="w-4 shrink-0 text-ink-muted"
-                aria-label=toggle_label
-                aria-expanded=move || if expanded.get() { "true" } else { "false" }
-                on:click=move |_| expanded.update(|open| *open = !*open)
-            >
-                {move || {
-                    if expanded.get() {
-                        view! {
-                            <leptos_icons::Icon
-                                icon=icondata_lu::LuChevronDown
-                                width="12"
-                                height="12"
-                            />
-                        }
-                            .into_any()
-                    } else {
-                        view! {
-                            <leptos_icons::Icon
-                                icon=icondata_lu::LuChevronRight
-                                width="12"
-                                height="12"
-                            />
-                        }
-                            .into_any()
-                    }
-                }}
-            </button>
-        }
-        .into_any()
-    } else {
-        view! { <span class="inline-block w-4 shrink-0"></span> }.into_any()
-    };
+    let disclosure = disclosure_toggle(&node.label, expanded, has_children);
 
     let label = node.label.clone();
     let rm_type = node.rm_type.clone();
