@@ -123,6 +123,74 @@ async fn composition_viewer_switches_formats_and_versions() {
     h.finish().await;
 }
 
+/// The document viewer: a composition opens **highlighted** (pure-Rust syntax
+/// tokens, so the pane carries `syntax-*` design-token spans while the text
+/// stays byte-exact), the **Rendered** tab shows the template-free clinical
+/// reading as label/value rows, and **Raw** drops the tokens again. A copy
+/// affordance is present on the pane in every mode.
+#[tokio::test]
+async fn composition_viewer_highlights_and_renders_the_document() {
+    let Some(h) = Harness::start("composition-document-viewer").await else {
+        return;
+    };
+    let Some((ehr_id, vo_id)) = seeded() else {
+        h.finish().await;
+        return;
+    };
+    login_basic(&h).await;
+    h.goto(&format!("/ehrs/{ehr_id}/compositions/{vo_id}"))
+        .await;
+
+    // Highlighted is the default view: the canonical JSON member names are
+    // tokenized, and the document text itself is unchanged.
+    wait_pre_contains(&h, "\"_type\"").await;
+    let key = h.wait_css("pre span.text-syntax-key").await;
+    let key_text = key.text().await.expect("the first key token's text");
+    assert!(
+        key_text.starts_with('"'),
+        "a JSON key token carries the quoted member name (got `{key_text}`)"
+    );
+    // The copy affordance rides along on every document pane.
+    h.wait_xpath("//button[contains(., 'Copy')]").await;
+    h.shot(1, "highlighted").await;
+
+    // Rendered: the template-free clinical view, with at least one
+    // label/value row (the seeded EVALUATION's leaves, plus the composition's
+    // own composer/template facts).
+    h.wait_xpath("//button[contains(., 'Rendered')]")
+        .await
+        .click()
+        .await
+        .expect("switch to the rendered clinical view");
+    let row = h.wait_css("[data-doc-row]").await;
+    let row_text = row.text().await.expect("the first rendered row's text");
+    assert!(
+        !row_text.trim().is_empty(),
+        "a rendered row shows a label and a value"
+    );
+    h.shot(2, "rendered").await;
+
+    // Raw: the same text with no syntax tokens at all.
+    h.wait_xpath("//button[contains(., 'Raw')]")
+        .await
+        .click()
+        .await
+        .expect("switch to the raw view");
+    wait_pre_contains(&h, "\"_type\"").await;
+    assert!(
+        h.driver
+            .find(By::Css("pre span.text-syntax-key"))
+            .await
+            .is_err(),
+        "the raw view must not tokenize the document"
+    );
+    h.shot(3, "raw").await;
+
+    h.assert_console_clean(&["401", "Failed to load resource"])
+        .await;
+    h.finish().await;
+}
+
 /// Progressive enhancement: with JavaScript disabled the Basic login (an
 /// `ActionForm` — a plain HTML form pre-hydration) still authenticates via
 /// a full-page POST + redirect, and the SSR'd dashboard renders.

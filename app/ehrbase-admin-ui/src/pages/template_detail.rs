@@ -23,7 +23,7 @@ use leptos_router::hooks::{use_params_map, use_query_map};
 use crate::builder::catalog::CatalogNode;
 use crate::components::field::BTN_DANGER;
 use crate::components::page_header::{Crumb, PageHeader};
-use crate::components::surface::{CARD_PAD, CARD_TITLE, WELL};
+use crate::components::surface::{CARD_PAD, CARD_TITLE};
 use crate::components::toast::{toast_error, toast_success};
 use crate::error::AdminUiError;
 use crate::format::ReprFormat;
@@ -767,11 +767,7 @@ fn opt_tab(opt: Resource<Result<Option<String>, AdminUiError>>) -> AnyView {
                     Ok(Some(xml)) => {
                         // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                         // mismatches at hydration in leptos 0.8 (E2E console gate).
-                        view! {
-                            <div class=WELL>
-                                <crate::components::format_view::DocumentPane body=xml />
-                            </div>
-                        }
+                        view! { <crate::components::format_view::DocumentPane body=xml /> }
                             .into_any()
                     }
                     Err(e) => catalog_error_view(&e),
@@ -809,11 +805,7 @@ fn example_tab(
                             );
                             // Resolve inside the Transition: an SSR'd ErrorBoundary fallback
                             // mismatches at hydration in leptos 0.8 (E2E console gate).
-                            view! {
-                                <div class=WELL>
-                                    <crate::components::format_view::DocumentPane body=pretty />
-                                </div>
-                            }
+                            view! { <crate::components::format_view::DocumentPane body=pretty /> }
                                 .into_any()
                         }
                         Err(e) => catalog_error_view(&e),
