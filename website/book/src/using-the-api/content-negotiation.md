@@ -56,6 +56,9 @@ Where they work:
   formats, chosen via `Accept`.
 - **Template definitions** — `GET …/definition/template/adl1.4/{id}` with
   `Accept: application/openehr.wt+json` returns the Web Template document.
+  `Accept: application/json` returns the same document — it is the only JSON
+  representation of a template — under `Content-Type: application/json`: the
+  response always carries the media type you asked for.
 - **Contributions** — the CONTRIBUTION envelope itself stays canonical JSON;
   a simplified media type applies only to each composition payload inside
   `versions[].data`.

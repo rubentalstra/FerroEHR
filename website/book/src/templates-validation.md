@@ -21,6 +21,12 @@ curl -u ehrbase:ehrbase \
   http://localhost:8080/ehrbase/rest/openehr/v1/definition/template/adl1.4
 ```
 
+The upload takes OPT XML and nothing else: a request declaring another
+payload type (`Content-Type: application/json`, say) is refused with **415
+Unsupported Media Type** before the template is parsed. `text/xml` works the
+same as `application/xml`, and omitting the header altogether is fine — the
+endpoint has only one body format.
+
 A successful upload returns **201 Created**. Add
 `Prefer: return=identifier` when you only need the id back — the response
 body is then the JSON identifier object:
@@ -110,6 +116,11 @@ curl -u ehrbase:ehrbase \
 
 EHRbase-rs follows the widely used Better `web-template` semantics (format
 version `2.3`), so tooling built for that model works unchanged.
+
+`Accept: application/json` on the same URL returns that identical WebTemplate
+document — it is the only JSON representation of a template — but labelled
+`Content-Type: application/json`, the type you asked for. Use
+`Accept: application/xml` for the canonical OPT instead.
 
 You can also fetch an **example composition** for a template — a skeleton
 instance you can fill in — from
