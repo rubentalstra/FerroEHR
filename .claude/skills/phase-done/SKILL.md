@@ -54,7 +54,7 @@ does not decide the work is done on your behalf.
    exists (`.claude/rules/changelog.md`; CI `changelog-guard` enforces it).
    If not, stop: both are part of the deliverable.
 3c. **Living-reference-doc maintenance:** confirm the living reference docs
-   (`docs/architecture.md`, `docs/endpoint-map.md`, `docs/VERSIONS.md`) were
+   (`docs/architecture.md`, `docs/VERSIONS.md`) were
    refreshed to verified reality for anything this work changed. (There is
    no blueprint/design-doc layer — internal plan/design files are deleted
    in the PR that implements them; the durable record is the closed

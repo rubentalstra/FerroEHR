@@ -17,8 +17,9 @@ PostgreSQL-18-native internals. Two layers:
 Authoritative roadmap: the root **`ROADMAP.md`**; the open-items tracker is
 GitHub Issues (root `CLAUDE.md` §Issue workflow), with `docs/plans/` (deep
 working plans) under it; the build record is the closed issues + PR
-descriptions + `CHANGELOG.md` + git history. The per-endpoint call-chain
-reference is `docs/endpoint-map.md`.
+descriptions + `CHANGELOG.md` + git history. Per-endpoint call chains are
+read from the code (router → handler → service → SQL) — there is no standing
+endpoint-map document (deleted 2026-07-26; a standing map goes stale).
 
 Key architectural decisions (described in full in the sections below): the
 spec + ITS layer is generated from the vendored machine-readable specs
