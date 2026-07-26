@@ -37,10 +37,42 @@ pub struct ServerConfig {
     pub swagger_ui: bool,
     /// Permissive CORS (dev only). Production configures explicit origins.
     pub cors_permissive: bool,
+    /// This CDR's own openEHR **system identifier** — the identity the
+    /// deployment stamps into the data it authors
+    /// (`EHRBASE__SERVER__SYSTEM_ID`). Three wire values carry it:
+    ///
+    /// - `EHR.system_id` at EHR creation — RM ehr
+    ///   `master04-ehr_package.adoc` §EHR Identifier Allocation: "the
+    ///   `EHR._system_id_` value should be set to the value that would normally
+    ///   be used for locally created EHRs";
+    /// - the `AUDIT_DETAILS.system_id` server default when the client supplies
+    ///   none through `openehr-audit-details` — ITS-REST
+    ///   `specifications/docs/overview/Requests_and_responses.md`
+    ///   §"openehr-version and openehr-audit-details": "when `system_id` is
+    ///   not provided by the client, the server MUST set it to its own
+    ///   configured system identifier";
+    /// - every `OBJECT_VERSION_ID.creating_system_id` a commit mints — RM
+    ///   common `master06-change_control_package.adoc` §Distributed
+    ///   Versioning. That value is stored per version, so changing this key
+    ///   never rewrites identifiers already committed.
+    ///
+    /// **Distinct from [`SystemOptionsConfig`] (`[server.identity]`)**: the
+    /// identity block is the *display* identity of the `OPTIONS` System-Options
+    /// manifest (who supplies the software and which profile it claims);
+    /// `system_id` names *which system authored the data*. They are set
+    /// independently. With multi-tenancy on, a resolved tenant's own
+    /// `system_id` takes precedence over this default for that request.
+    ///
+    /// Defaults to [`crate::service::DEFAULT_SYSTEM_ID`] — the pre-existing
+    /// value, so an unset key is byte-identical to previous behaviour. No
+    /// openEHR spec governs the configuration mechanism — our own design; the
+    /// specs govern only that a system HAS such an identifier.
+    pub system_id: String,
     /// The `OPTIONS /` System-Options manifest identity (`[server.identity]`,
     /// §3.1). Sourced from config so the public identity and advertised profile
     /// are not string literals in the handler; the live endpoint list is
-    /// supplied separately by [`crate::router`].
+    /// supplied separately by [`crate::router`]. This is the *display* identity
+    /// of the manifest — the data-authoring identity is [`Self::system_id`].
     pub identity: SystemOptionsConfig,
     /// `[server.tls]` — native TLS termination + client-certificate
     /// authentication (the IHE ATNA ITI-19 node-authentication posture).
@@ -94,6 +126,7 @@ impl Default for ServerConfig {
             max_in_flight: default_max_in_flight(),
             swagger_ui: true,
             cors_permissive: false,
+            system_id: default_system_id(),
             identity: SystemOptionsConfig::default(),
             tls: TlsConfig::default(),
         }
@@ -129,6 +162,13 @@ fn default_bind() -> String {
 
 fn default_base_path() -> String {
     "/ehrbase/rest/openehr/v1".to_owned()
+}
+
+/// The default openEHR system identifier — a single source of truth shared with
+/// the service layer's [`crate::service::DEFAULT_SYSTEM_ID`], so an unset
+/// `[server] system_id` boots exactly as the service's own default.
+fn default_system_id() -> String {
+    crate::service::DEFAULT_SYSTEM_ID.to_owned()
 }
 
 const fn default_max_in_flight() -> usize {
@@ -185,6 +225,16 @@ pub struct AdminConfig {
     pub enabled: bool,
 }
 
+/// `[server.identity]` — the `OPTIONS` System-Options manifest identity: the
+/// **display** identity this deployment advertises (product, vendor, the
+/// contract edition and conformance profile it claims).
+///
+/// Deliberately NOT the data-authoring identity: what a commit stamps into
+/// `EHR.system_id`, `AUDIT_DETAILS.system_id`, and
+/// `OBJECT_VERSION_ID.creating_system_id` is [`ServerConfig::system_id`]. A
+/// rebrand changes this block and nothing in the stored data; a change of
+/// `system_id` changes what newly authored data says about its origin and
+/// leaves the manifest alone.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct SystemOptionsConfig {

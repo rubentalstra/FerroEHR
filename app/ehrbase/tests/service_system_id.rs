@@ -1,0 +1,169 @@
+#![allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+//! The configured openEHR **system identifier** reaches every wire value that
+//! carries it, against a real `PostgreSQL` 18 (shared testkit harness).
+//!
+//! `[server] system_id` (`EHRBASE__SERVER__SYSTEM_ID`) is wired into the
+//! service by the binary via `with_system_id`; these tests pin the three
+//! places the value surfaces:
+//!
+//! - `EHR.system_id` at creation — RM ehr `master04-ehr_package.adoc` §EHR
+//!   Identifier Allocation: "the `EHR._system_id_` value should be set to the
+//!   value that would normally be used for locally created EHRs";
+//! - `AUDIT_DETAILS.system_id` when the client supplies none — ITS-REST
+//!   `specifications/docs/overview/Requests_and_responses.md`
+//!   §"openehr-version and openehr-audit-details": "when `system_id` is not
+//!   provided by the client, the server MUST set it to its own configured
+//!   system identifier";
+//! - `OBJECT_VERSION_ID.creating_system_id` on every minted version — RM common
+//!   `master06-change_control_package.adoc` §Distributed Versioning.
+//!
+//! The default (no `with_system_id` call) is pinned too: it must stay
+//! `DEFAULT_SYSTEM_ID`, so an unset config key is byte-identical to previous
+//! behaviour.
+
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
+use ehrbase::ids::EhrId;
+use ehrbase::service::version_update::{UpdateAudit, UpdateVersion};
+use ehrbase::service::{DEFAULT_SYSTEM_ID, EhrbaseService};
+use openehr_base::prelude::TerminologyCode;
+use openehr_rm::prelude::PartyProxy;
+use serde_json::{Value, json};
+
+/// An `openehr` terminology code (audit change type / lifecycle state).
+fn term(code: &str) -> TerminologyCode {
+    TerminologyCode {
+        terminology_id: "openehr".to_owned(),
+        terminology_version: None,
+        code_string: code.to_owned(),
+        uri: None,
+    }
+}
+
+fn committer(name: &str) -> PartyProxy {
+    openehr_its::json::from_canonical_value(&json!({ "_type": "PARTY_IDENTIFIED", "name": name }))
+        .expect("committer")
+}
+
+/// A minimal *valid* RM COMPOSITION: `language`, `territory`, `category`, and
+/// `composer` are all `1..1` (RM ehr, COMPOSITION class).
+fn composition(name: &str) -> Value {
+    json!({
+        "_type": "COMPOSITION",
+        "archetype_node_id": "openEHR-EHR-COMPOSITION.encounter.v1",
+        "archetype_details": {
+            "_type": "ARCHETYPED",
+            "archetype_id": {
+                "_type": "ARCHETYPE_ID",
+                "value": "openEHR-EHR-COMPOSITION.encounter.v1"
+            },
+            "rm_version": "1.2.0"
+        },
+        "name": { "_type": "DV_TEXT", "value": name },
+        "language": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_639-1" },
+            "code_string": "en"
+        },
+        "territory": {
+            "_type": "CODE_PHRASE",
+            "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "ISO_3166-1" },
+            "code_string": "NL"
+        },
+        "category": {
+            "_type": "DV_CODED_TEXT",
+            "value": "event",
+            "defining_code": {
+                "_type": "CODE_PHRASE",
+                "terminology_id": { "_type": "TERMINOLOGY_ID", "value": "openehr" },
+                "code_string": "433"
+            }
+        },
+        "composer": { "_type": "PARTY_IDENTIFIED", "name": "conformance tester" }
+    })
+}
+
+/// The SM `UPDATE_VERSION` commit envelope with **no** client-supplied
+/// `system_id` — the case in which the server MUST supply its own.
+fn uv(data: Value) -> UpdateVersion {
+    UpdateVersion {
+        preceding_version_uid: None,
+        lifecycle_state: term("532"),
+        attestations: None,
+        data,
+        audit: UpdateAudit {
+            change_type: term("249"),
+            description: None,
+            committer: committer("conformance tester"),
+            system_id: None,
+        },
+        signature: None,
+    }
+}
+
+/// Create an EHR + one composition on `svc` and return
+/// `(EHR.system_id, OBJECT_VERSION_ID, AUDIT_DETAILS.system_id)`.
+async fn stamped_identities(svc: &EhrbaseService) -> (String, String, String) {
+    let ehr_id: EhrId = svc.create_ehr(None).await.expect("create_ehr");
+    let summary = svc.get_ehr(ehr_id).await.expect("get_ehr");
+
+    let ovid = svc
+        .create_composition(ehr_id, uv(composition("system id")))
+        .await
+        .expect("create_composition")
+        .version_uid();
+    let original = svc
+        .composition_original_version(ehr_id, ovid.parse().expect("ovid"))
+        .await
+        .expect("composition_original_version");
+    let audit_system_id = original["commit_audit"]["system_id"]
+        .as_str()
+        .expect("commit_audit.system_id")
+        .to_owned();
+
+    (summary.system_id, ovid, audit_system_id)
+}
+
+#[tokio::test]
+async fn configured_system_id_stamps_ehr_audit_and_version_uid() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool()).with_system_id("custom.sys");
+
+    let (ehr_system_id, ovid, audit_system_id) = stamped_identities(&svc).await;
+
+    // RM ehr master04 §EHR Identifier Allocation.
+    assert_eq!(
+        ehr_system_id, "custom.sys",
+        "EHR.system_id must carry the configured identifier"
+    );
+    // RM common master06 §Distributed Versioning: the uid's middle segment is
+    // the creating system id.
+    assert_eq!(
+        ovid.split("::").nth(1),
+        Some("custom.sys"),
+        "OBJECT_VERSION_ID.creating_system_id must carry the configured identifier ({ovid})"
+    );
+    // ITS-REST Requests_and_responses.md: the server default for a commit that
+    // carried no client `system_id`.
+    assert_eq!(
+        audit_system_id, "custom.sys",
+        "AUDIT_DETAILS.system_id must default to the configured identifier"
+    );
+}
+
+#[tokio::test]
+async fn unset_system_id_keeps_the_compatibility_default() {
+    let db = testkit::db().await.expect("testkit database");
+    let svc = EhrbaseService::new(db.pool());
+
+    let (ehr_system_id, ovid, audit_system_id) = stamped_identities(&svc).await;
+
+    assert_eq!(ehr_system_id, DEFAULT_SYSTEM_ID);
+    assert_eq!(ovid.split("::").nth(1), Some(DEFAULT_SYSTEM_ID));
+    assert_eq!(audit_system_id, DEFAULT_SYSTEM_ID);
+}

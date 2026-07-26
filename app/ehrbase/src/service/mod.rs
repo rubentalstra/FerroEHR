@@ -82,8 +82,13 @@ pub(crate) fn tenant_cache() -> TenantCache {
         .build()
 }
 
-/// The default openEHR system identifier stamped into `OBJECT_VERSION_ID`s and
-/// audit rows. Configurable per deployment (the binary wires it from config).
+/// The default openEHR system identifier stamped into `EHR.system_id`,
+/// `AUDIT_DETAILS.system_id`, and every `OBJECT_VERSION_ID.creating_system_id`.
+///
+/// This is the fallback only: a deployment sets its own identifier with the
+/// `[server] system_id` config key (`EHRBASE__SERVER__SYSTEM_ID`), which the
+/// binary wires in via [`EhrbaseService::with_system_id`]. An unset key leaves
+/// this value in force.
 pub const DEFAULT_SYSTEM_ID: &str = "ehrbase-rs.local";
 
 /// The DB-backed application service — the concrete platform behind the SM
@@ -193,7 +198,9 @@ impl EhrbaseService {
 
     // ── Builders (the binary wires each configured subsystem) ────────────────
 
-    /// Override the openEHR system id (identifies this CDR in versions/audit).
+    /// Set the openEHR system id (identifies this CDR in `EHR.system_id`,
+    /// audit rows, and every minted `OBJECT_VERSION_ID`). The binary wires
+    /// `[server] system_id`; without a call, [`DEFAULT_SYSTEM_ID`] stands.
     #[must_use]
     pub fn with_system_id(mut self, system_id: impl Into<String>) -> Self {
         self.system_id = system_id.into();
