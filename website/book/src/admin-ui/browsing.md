@@ -55,8 +55,12 @@ EHR.
 
 ![EHRs](img/ehrs/ehrs.png)
 
-The EHR detail screen resolves the EHR status (queryable / modifiable) and
-lists the EHR's compositions with their template, time, and version count.
+The EHR detail screen opens with a **summary header** read from the EHR
+itself — its id, the system that created it, when it was created, and the
+reference to its current EHR status. A mistyped or unknown id is reported
+there, once, instead of once per tab. Below it, the tabs resolve the EHR
+status (queryable / modifiable) and list the EHR's compositions with their
+template, time, and version count.
 
 ![EHR detail](img/ehrs/compositions/list.png)
 
@@ -80,11 +84,22 @@ admin API the button is not rendered at all.
 
 The EHRs screen can **create an EHR** — empty, or bound to an external
 subject (id + namespace) — and find an existing one **by subject id** as
-well as by EHR id. The EHR detail screen's compositions tab includes a
+well as by EHR id. The create card also takes an optional **EHR id**: leave
+it blank and the CDR mints one, or supply a UUID to create that exact EHR.
+A value that is not a UUID is refused before anything is sent (openEHR
+strongly recommends a UUID for a client-supplied EHR id), and an id that is
+already in use comes back as the CDR's own conflict — nothing is silently
+overwritten.
+
+The EHR detail screen's compositions tab includes a
 **Commit composition** form: paste a canonical JSON, canonical XML, or
 FLAT document (FLAT requires the template id, sent as the
 `openehr-template-id` header) and the CDR's validation diagnostics are
 shown verbatim on rejection.
+
+The contributions tab opens with a **contribution activity** timeline —
+writes to this EHR per day, from the same contribution data the list below
+it shows.
 
 ### Directory editing
 
@@ -152,6 +167,28 @@ the **At time** picker resolves whichever version was current at a chosen
 moment (`version_at_time`).
 
 ![Composition editor](img/ehrs/compositions/editor.png)
+
+A **Versioned object** card below the audit reads the versioned composition
+itself and the selected version directly: the versioned-object id, the owning
+EHR, when the object was first created, and — for whichever version the
+selector shows — its lifecycle state, its preceding version, the contribution
+it was committed under, whether it carries a signature, and whether it still
+carries content.
+
+### Deleting a composition
+
+**Delete composition** on the viewer performs the openEHR *logical* delete of
+the composition's latest version, with a confirmation dialog first. The CDR
+commits a deleted version on top of the current one: the composition stops
+resolving as current and leaves the EHR's composition list, while every
+earlier version and the audit trail stay readable. It is a normal versioned
+write, so it needs no admin API — but it does need the version to still be
+the latest one: if it moved on since the screen loaded, the CDR refuses the
+delete and the message says to reload the history and retry.
+
+> [!NOTE]
+> This is not the same operation as **Delete EHR** above, which is the CDR's
+> physical admin delete and leaves nothing readable.
 
 The EHR detail's contributions tab lists the EHR's contributions — id,
 commit time, committer, change type — with the by-uid lookup kept

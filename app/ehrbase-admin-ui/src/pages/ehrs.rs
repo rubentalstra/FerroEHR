@@ -183,25 +183,59 @@ pub(crate) fn parse_ehr_id(body: &str) -> Result<String, AdminUiError> {
         .ok_or_else(|| AdminUiError::Internal("EHR response carried no ehr_id".to_owned()))
 }
 
-/// Create a new EHR. Both subject fields empty → a plain `POST /ehr` (the CDR
-/// mints the default `EHR_STATUS`, `PARTY_SELF` subject); both filled → a
-/// subject-bound `EHR_STATUS` body (see [`subject_ehr_status`]). Exactly one
-/// filled is a validation error (both or neither). Sends
-/// `Prefer: return=representation` and returns the new `ehr_id`.
+/// Whether `value` is a UUID in the RFC 9562 §4 string representation
+/// (`8-4-4-4-12` lower- or upper-case hex with hyphens).
+///
+/// The EHR API's client-supplied id "MUST be valid HIER_OBJECT_ID value. It is
+/// strongly RECOMMENDED that an UUID always be used for this"
+/// (`docs/specs/openehr/ITS-REST/specifications/operations/ehr_create_with_id.yaml`
+/// §description), so the console requires a UUID and says so — a typed id is
+/// checked before the round-trip and again in the server function.
+///
+/// Byte-wise (never `&value[..n]`, which can panic on a non-char boundary — the
+/// `string_slice` reliability lint).
+#[must_use]
+pub(crate) fn is_uuid(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    if bytes.len() != 36 {
+        return false;
+    }
+    bytes.iter().enumerate().all(|(index, byte)| {
+        if matches!(index, 8 | 13 | 18 | 23) {
+            *byte == b'-'
+        } else {
+            byte.is_ascii_hexdigit()
+        }
+    })
+}
+
+/// Create a new EHR.
+///
+/// `ehr_id` empty → the CDR mints the id (`POST /ehr`); a client-supplied
+/// `ehr_id` creates that exact EHR (`PUT /ehr/{ehr_id}` —
+/// `ehr_create_with_id`), and an id already in use is the CDR's `409`, which
+/// the caller surfaces verbatim. Both subject fields empty → the CDR mints the
+/// default `EHR_STATUS` (`PARTY_SELF` subject); both filled → a subject-bound
+/// `EHR_STATUS` body (see [`subject_ehr_status`]). Exactly one filled is a
+/// validation error (both or neither). Sends `Prefer: return=representation`
+/// and returns the new `ehr_id`.
 ///
 /// # Errors
 /// [`AdminUiError::Unauthenticated`] without a console session;
-/// [`AdminUiError::Invalid`] when exactly one subject field is filled; CDR
-/// transport errors pass through; a non-2xx CDR answer (its validation
-/// diagnostic included) normalizes via
+/// [`AdminUiError::Invalid`] when exactly one subject field is filled or the
+/// supplied `ehr_id` is not a UUID; CDR transport errors pass through; a
+/// non-2xx CDR answer (the `409` for an id already in use, and any validation
+/// diagnostic, included) normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
 pub async fn create_ehr(
+    ehr_id: String,
     subject_id: String,
     subject_namespace: String,
 ) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
+    let ehr_id = ehr_id.trim();
     let subject_id = subject_id.trim();
     let subject_namespace = subject_namespace.trim();
     let body = match (subject_id.is_empty(), subject_namespace.is_empty()) {
@@ -217,20 +251,52 @@ pub async fn create_ehr(
             ));
         }
     };
-    let url = state.cdr.rest_v1("ehr");
-    let response = state
-        .cdr
-        .post(
-            &session.credential,
-            &url,
-            "application/json",
-            "application/json",
-            &[("Prefer", "return=representation")],
-            body,
-        )
-        .await?;
+    // A server function is a public endpoint (rules §0): the client-side check
+    // is a courtesy, this one is the guard.
+    if !ehr_id.is_empty() && !is_uuid(ehr_id) {
+        return Err(AdminUiError::Invalid(format!(
+            "{ehr_id:?} is not a UUID — the openEHR EHR API strongly recommends a UUID for a \
+             client-supplied EHR id"
+        )));
+    }
+    let response = if ehr_id.is_empty() {
+        let url = state.cdr.rest_v1("ehr");
+        state
+            .cdr
+            .post(
+                &session.credential,
+                &url,
+                "application/json",
+                "application/json",
+                &[("Prefer", "return=representation")],
+                body,
+            )
+            .await?
+    } else {
+        let url = state
+            .cdr
+            .rest_v1(&format!("ehr/{}", urlencoding::encode(ehr_id)));
+        state
+            .cdr
+            .put(
+                &session.credential,
+                &url,
+                "application/json",
+                "application/json",
+                &[("Prefer", "return=representation")],
+                body,
+            )
+            .await?
+    };
     let response = crate::cdr::CdrClient::expect_success(response)?;
-    parse_ehr_id(&response.body)
+    let created = parse_ehr_id(&response.body);
+    // The representation body names the created EHR; when a client supplied the
+    // id, that id is its own answer even if the CDR returned no body.
+    match created {
+        Ok(id) => Ok(id),
+        Err(_) if !ehr_id.is_empty() => Ok(ehr_id.to_owned()),
+        Err(e) => Err(e),
+    }
 }
 
 /// Look up an EHR by `subject_id` + `subject_namespace`
@@ -352,24 +418,29 @@ pub fn EhrsPage() -> impl IntoView {
     .into_any()
 }
 
-/// The Create-EHR card: an optional subject id + namespace (both or neither),
-/// a Create button dispatching the [`create_ehr`] action, and — on success —
-/// a toast plus client-side navigation to the new EHR's detail route. A
-/// failure toasts as well, with actionable copy. The both-or-neither rule is
-/// validated client-side (inline) before dispatch and re-checked server-side;
-/// a CDR validation diagnostic also surfaces inline verbatim.
+/// The Create-EHR card: an optional client-supplied EHR id, an optional
+/// subject id + namespace (both or neither), a Create button dispatching the
+/// [`create_ehr`] action, and — on success — a toast plus client-side
+/// navigation to the new EHR's detail route. A failure toasts as well, with
+/// actionable copy (an id already in use is the CDR's `409`, whose copy says to
+/// open the existing EHR or change the id). The both-or-neither rule and the
+/// UUID shape of a supplied id are validated client-side (inline) before
+/// dispatch and re-checked server-side; a CDR validation diagnostic also
+/// surfaces inline verbatim.
 #[allow(clippy::too_many_lines)] // one erased section: the create card's inputs + validation + action wiring (rules §1)
 fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
     // UNCONTROLLED inputs, read at dispatch (rules §5) — a controlled input
     // resets to its empty signal at hydration, wiping pre-WASM typing (the
     // login form's proven pattern).
+    let ehr_id_ref = NodeRef::<leptos::html::Input>::new();
     let subject_id_ref = NodeRef::<leptos::html::Input>::new();
     let subject_namespace_ref = NodeRef::<leptos::html::Input>::new();
     let validation = RwSignal::new(Option::<String>::None);
-    let create = Action::new(|(id, ns): &(String, String)| {
+    let create = Action::new(|(ehr_id, id, ns): &(String, String, String)| {
+        let ehr_id = ehr_id.clone();
         let id = id.clone();
         let ns = ns.clone();
-        async move { create_ehr(id, ns).await }
+        async move { create_ehr(ehr_id, id, ns).await }
     });
 
     // Report the outcome and, on success, navigate to the new EHR. Both are
@@ -394,6 +465,12 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
     });
 
     let on_click = move |_| {
+        let ehr_id = ehr_id_ref
+            .get_untracked()
+            .map(|el| el.value())
+            .unwrap_or_default()
+            .trim()
+            .to_owned();
         let id = subject_id_ref
             .get_untracked()
             .map(|el| el.value())
@@ -413,14 +490,34 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
             ));
             return;
         }
+        if !ehr_id.is_empty() && !is_uuid(&ehr_id) {
+            validation.set(Some(
+                "An EHR id must be a UUID (8-4-4-4-12 hex, e.g. \
+                 7d44aa01-0f9e-4a2c-9a0f-2a6a5f9b1c3d). Leave it empty to let the CDR mint one."
+                    .to_owned(),
+            ));
+            return;
+        }
         validation.set(None);
-        create.dispatch((id, ns));
+        create.dispatch((ehr_id, id, ns));
     };
 
     view! {
         <section class=format!("{CARD_PAD} mb-6")>
             <h2 class=CARD_TITLE>"Create EHR"</h2>
             <div class="flex flex-wrap items-end gap-3">
+                <div class="flex flex-col gap-1">
+                    <label class=LABEL r#for="ehr-create-id">
+                        "EHR id (optional)"
+                    </label>
+                    <input
+                        id="ehr-create-id"
+                        type="text"
+                        class=INPUT
+                        placeholder="ehr_id (UUID) — blank lets the CDR mint one"
+                        node_ref=ehr_id_ref
+                    />
+                </div>
                 <div class="flex flex-col gap-1">
                     <label class=LABEL r#for="ehr-create-subject-id">
                         "Subject id (optional)"
@@ -456,7 +553,8 @@ fn create_ehr_section(toaster: thaw::ToasterInjection) -> AnyView {
                 </button>
             </div>
             <p class="mt-2 text-xs text-ink-muted">
-                "Leave both blank for an anonymous EHR (the CDR mints the default EHR_STATUS), or set both to bind a subject."
+                "Leave the subject fields blank for an anonymous EHR (the CDR mints the default EHR_STATUS), or set both to bind a subject. "
+                "Supply an EHR id to create that exact EHR — it must be a UUID, and an id already in use is refused by the CDR."
             </p>
             <div class="mt-2 text-sm">
                 <Show when=move || create.pending().get()>
@@ -784,10 +882,27 @@ pub(crate) fn cell_text(value: &Value) -> String {
 #[cfg(all(test, feature = "ssr"))]
 mod tests {
     use super::{
-        LIST_EHRS_AQL, aql_request_body, cell_text, parse_ehr_id, parse_result_set,
+        LIST_EHRS_AQL, aql_request_body, cell_text, is_uuid, parse_ehr_id, parse_result_set,
         subject_ehr_status,
     };
     use crate::components::data_table::PAGE_SIZE;
+
+    #[test]
+    fn a_client_supplied_ehr_id_must_be_a_uuid() {
+        assert!(is_uuid("7d44aa01-0f9e-4a2c-9a0f-2a6a5f9b1c3d"));
+        // Upper case hex is the same UUID (RFC 9562 §4 is case-insensitive).
+        assert!(is_uuid("7D44AA01-0F9E-4A2C-9A0F-2A6A5F9B1C3D"));
+        // Too short / too long / hyphens misplaced / non-hex / not ASCII.
+        assert!(!is_uuid(""));
+        assert!(!is_uuid("7d44aa01"));
+        assert!(!is_uuid("7d44aa010f9e4a2c9a0f2a6a5f9b1c3d"));
+        assert!(!is_uuid("7d44aa01-0f9e-4a2c-9a0f-2a6a5f9b1c3d0"));
+        assert!(!is_uuid("7d44aa010-f9e-4a2c-9a0f-2a6a5f9b1c3d"));
+        assert!(!is_uuid("7d44aa01-0f9e-4a2c-9a0f-2a6a5f9b1c3z"));
+        // A multi-byte string of the same char count is not 36 BYTES — the
+        // check must not panic on it either (byte-wise, no slicing).
+        assert!(!is_uuid("ééééééééééééééééééééééééééééééééééé"));
+    }
 
     #[test]
     fn fixed_aql_parses() {

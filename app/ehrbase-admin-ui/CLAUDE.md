@@ -51,6 +51,12 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   series is drawn as `f64::NAN` — chartistry's missing-data marker — rather than
   by rebuilding the chart, and each line pins its palette colour by index so
   hiding one never recolours the others.
+- **Every events-per-day chart comes from ONE kit — `components::activity_chart`
+  over `crate::activity::bucket_by_day`**: the dashboard's commit trend and an
+  EHR's contribution timeline are the same chart, the day-bucketing is a pure
+  unit-tested function (no clock, no locale — that is what keeps the chart
+  hydration-stable), and charts are `leptos-chartistry` (pure Rust + SVG); a
+  JS charting binding is banned by the no-JavaScript mandate.
 
 ## Error feedback: toast vs inline (one rule, 2026-07-25)
 
@@ -101,7 +107,18 @@ extension); the wire it consumes IS spec-bound (`docs/specs/openehr/ITS-REST/`
   configuration is served identically by `/management/env` and `/admin/config`,
   so the ONE viewer lives on `/system` (the API base URL is always configured;
   the management surface may sit on an unreachable internal port) and
-  `/operations` links to it.
+  `/operations` links to it. On `/system` the status document is the reader for
+  the product + openEHR-REST versions, so the conformance-manifest card shows
+  only what the System API alone knows (product identity, claimed profile,
+  mounted API groups) and says where the versions are. On the composition
+  viewer the split is: document CONTENT ← the COMPOSITION resource (the only
+  format-negotiating one), commit history ← the revision history, the VERSION's
+  envelope facts (lifecycle state, preceding version, contribution, signature)
+  ← the direct VERSIONED_COMPOSITION version read.
+- **Two windows of ONE endpoint are not two readers.** The contributions tab
+  reads `GET /ehr/{id}/contribution` twice — a page for the list, a wider window
+  for the activity timeline — because those are different claims; what the rule
+  forbids is reading one claim from two different endpoints.
 - **Optional CDR surfaces are probe-and-hide.** An affordance for a surface the
   CDR may not serve is gated on a probe (`crate::admin` for the admin group via
   the System API manifest, `crate::management` for the management surface via

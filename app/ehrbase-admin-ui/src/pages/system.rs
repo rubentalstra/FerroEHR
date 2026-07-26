@@ -1,11 +1,15 @@
-//! The `/system` screen: an operational panel over the CDR — server status,
-//! SMART service-discovery, repository usage, the CDR's own served `OpenAPI`
-//! document (rendered by our own grouped-endpoint component, never a Swagger
-//! embed), the redacted runtime configuration, and a link into the `/audit`
-//! activity browser.
+//! The `/system` screen: an operational panel over the CDR — server status, the
+//! openEHR System API conformance manifest, SMART service-discovery, repository
+//! usage, the CDR's own served `OpenAPI` documents per API family (rendered by
+//! our own grouped-endpoint component, never a Swagger embed), the redacted
+//! runtime configuration, and a link into the `/audit` activity browser.
 //!
 //! No openEHR spec governs an admin UI — our own design / product extension.
-//! The wire it reads IS spec-bound: the SMART discovery document follows
+//! The wire it reads IS spec-bound: the conformance manifest is the STABLE
+//! ITS-REST 1.1.0 System API (`OPTIONS {base_path}` — see
+//! [`crate::system_api`], whose fetcher this screen shares with the
+//! admin-capability probe rather than fetching the manifest twice), and the
+//! SMART discovery document follows
 //! `docs/specs/openehr/ITS-REST/docs/smart_app_launch/master04-service_discovery.adoc`.
 //!
 //! Each card is an `.into_any()`-erased section local (rules §1) with its own
@@ -24,7 +28,7 @@ use leptos_meta::Title;
 use leptos_router::components::A;
 
 use crate::components::empty_state::EmptyState;
-use crate::components::field::BTN_SECONDARY;
+use crate::components::field::{BTN_SECONDARY, SELECT};
 use crate::components::page_header::PageHeader;
 use crate::components::surface::titled_card;
 use crate::error::AdminUiError;
@@ -51,22 +55,76 @@ pub async fn fetch_smart_config() -> Result<Option<String>, AdminUiError> {
     Ok(Some(crate::cdr::CdrClient::expect_success(response)?.body))
 }
 
-/// The CDR's own natively served OpenAPI document, raw JSON.
+/// The API-family documents the CDR serves beside the complete one, as
+/// `(slug, label)` with the empty slug standing for the complete surface.
+///
+/// NOTE: no openEHR spec governs an OAS-serving endpoint — our own design /
+/// product extension. The CDR filters one document per API family out of its
+/// OWN generated document (never a vendored OAS) and serves each as
+/// `api-docs/ehrbase-{slug}.openapi.json`; a deployment that does not serve a
+/// family answers `404`, which the card renders as a first-class state rather
+/// than an error.
+const OPENAPI_FAMILIES: &[(&str, &str)] = &[
+    ("", "Complete surface"),
+    ("ehr", "openEHR — EHR"),
+    ("query", "openEHR — Query"),
+    ("definition", "openEHR — Definition"),
+    ("demographic", "openEHR — Demographic"),
+    ("admin", "openEHR — Admin"),
+    ("management", "EHRbase — Status & Management"),
+    ("terminology", "EHRbase — Terminology"),
+    ("relationships", "EHRbase — Party Relationships"),
+    ("events", "EHRbase — Event Subscriptions"),
+    ("tenancy", "EHRbase — Multi-tenancy"),
+    ("fhir", "EHRbase — FHIR Connector"),
+    ("smart", "EHRbase — SMART Discovery"),
+];
+
+/// The known family slug `value` names, or the empty slug (the complete
+/// document) for anything else — an unknown `?openapi=` value in the address
+/// bar is user input, so it degrades to the default instead of failing
+/// (rules §9).
+#[must_use]
+fn openapi_family_slug(value: &str) -> String {
+    OPENAPI_FAMILIES
+        .iter()
+        .find(|(slug, _)| *slug == value)
+        .map_or_else(String::new, |(slug, _)| (*slug).to_owned())
+}
+
+/// One of the CDR's own natively served OpenAPI documents, raw JSON: the
+/// complete surface for an empty `family`, otherwise that API family's
+/// filtered document.
 ///
 /// # Errors
-/// [`AdminUiError::Unauthenticated`] without a console session; CDR transport
-/// errors pass through; a non-2xx CDR answer normalizes via
+/// [`AdminUiError::Unauthenticated`] without a console session;
+/// [`AdminUiError::Invalid`] for a `family` the CDR has no document for; CDR
+/// transport errors pass through; a non-2xx CDR answer normalizes via
 /// [`CdrClient::expect_success`](crate::cdr::CdrClient::expect_success).
 #[server]
-pub async fn fetch_openapi() -> Result<String, AdminUiError> {
+pub async fn fetch_openapi(family: String) -> Result<String, AdminUiError> {
     let session = crate::session::require_session().await?;
     let state: crate::state::AppState = leptos::prelude::expect_context();
+    // A server fn is a public endpoint (rules §0): the family must be one of
+    // the documents we know the CDR serves, never a caller-shaped path segment.
+    let family = family.trim();
+    if !OPENAPI_FAMILIES.iter().any(|(slug, _)| *slug == family) {
+        return Err(AdminUiError::Invalid(format!(
+            "{family:?} is not an API family the CDR serves a document for"
+        )));
+    }
     // NOTE: no openEHR spec governs an OAS-serving endpoint — our own design /
     // product extension. The CDR serves ONLY its own natively generated
-    // document (never a vendored OAS) at this default path
-    // ("/ehrbase/rest/api-docs/openapi.json", configurable CDR-side),
-    // outside auth as a public discoverability surface.
-    let url = state.cdr.origin_url("ehrbase/rest/api-docs/openapi.json");
+    // documents (never a vendored OAS) under this default directory
+    // ("/ehrbase/rest/api-docs/", configurable CDR-side), outside auth as a
+    // public discoverability surface.
+    let url = if family.is_empty() {
+        state.cdr.origin_url("ehrbase/rest/api-docs/openapi.json")
+    } else {
+        state.cdr.origin_url(&format!(
+            "ehrbase/rest/api-docs/ehrbase-{family}.openapi.json"
+        ))
+    };
     let response = state.cdr.get_public(&url, "application/json").await?;
     // Public surface; if a deployment happens to gate it, retry with the
     // session credential before giving up.
@@ -160,9 +218,18 @@ pub async fn template_usage() -> Result<Vec<(String, i64)>, AdminUiError> {
 #[allow(clippy::must_use_candidate)] // #[component] rewrites the fn; view!/mount always consumes the value
 #[component]
 pub fn SystemPage() -> impl IntoView {
+    // Which OpenAPI document the card shows lives in the URL (`?openapi=`,
+    // rules §9): shareable, refresh-safe, and selectable before WASM loads
+    // (the selector is a plain GET form — the audit filter's pattern).
+    let query = leptos_router::hooks::use_query_map();
+    let family = Memo::new(move |_| {
+        openapi_family_slug(&query.with(|q| q.get("openapi").unwrap_or_default()))
+    });
+
     let status = status_card();
+    let manifest = manifest_card();
     let smart = smart_card();
-    let openapi = openapi_card();
+    let openapi = openapi_card(family);
     let activity = activity_log_card();
     let usage = usage_card();
     let config = config_card();
@@ -172,13 +239,103 @@ pub fn SystemPage() -> impl IntoView {
         <div class="p-6">
             <PageHeader
                 title="System"
-                subtitle="CDR status, SMART discovery, repository usage, the served OpenAPI surface, and the redacted runtime configuration."
+                subtitle="CDR status, the openEHR conformance manifest, SMART discovery, repository usage, the served OpenAPI documents, and the redacted runtime configuration."
             />
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                {status} {smart} {usage} {openapi} {config} {activity}
+                {status} {manifest} {smart} {usage} {openapi} {config} {activity}
             </div>
         </div>
     }
+}
+
+/// The conformance-manifest card: what the CDR advertises about ITSELF through
+/// the openEHR **System API** (`OPTIONS {base_path}` → the `Options` document),
+/// consuming the shared [`fetch_conformance_manifest`](crate::system_api::fetch_conformance_manifest)
+/// — the same reader the admin-capability probe uses, never a second fetcher.
+///
+/// One reader per claim (crate `CLAUDE.md`): the manifest and the status
+/// document both carry a product version and an ITS-REST version, so this card
+/// shows only what the System API alone knows — the product identity, the
+/// claimed conformance profile, and the API groups the server actually mounts —
+/// and points at the Status card for the versions.
+fn manifest_card() -> AnyView {
+    let resource = Resource::new(
+        || (),
+        |()| async move { crate::system_api::fetch_conformance_manifest().await },
+    );
+    let body = view! {
+        <Suspense fallback=card_skeleton>
+            {move || Suspend::new(async move {
+                match resource.await {
+                    Ok(manifest) => manifest_body(&manifest),
+                    Err(e) => card_error(&e),
+                }
+            })}
+        </Suspense>
+    }
+    .into_any();
+    titled_card("Conformance manifest", false, body)
+}
+
+/// Render the `Options` document: the product identity and claimed conformance
+/// profile as a definition list, and one chip per mounted API group.
+fn manifest_body(manifest: &crate::system_api::ConformanceManifest) -> AnyView {
+    let facts = [
+        ("solution", manifest.solution.clone()),
+        ("vendor", manifest.vendor.clone()),
+        ("conformance profile", manifest.conformance_profile.clone()),
+    ]
+    .into_iter()
+    .map(|(label, value)| {
+        let shown = if value.is_empty() {
+            "—".to_owned()
+        } else {
+            value
+        };
+        view! {
+            <dt class="font-medium text-ink-muted">{label}</dt>
+            <dd class="font-mono break-all text-ink">{shown}</dd>
+        }
+    })
+    .collect::<Vec<_>>();
+    let groups = manifest
+        .endpoints
+        .clone()
+        .into_iter()
+        .map(|endpoint| {
+            let hook = endpoint.clone();
+            view! {
+                <span
+                    class="rounded-full bg-accent-subtle px-2 py-0.5 font-mono text-xs text-accent-ink"
+                    data-manifest-endpoint=hook
+                >
+                    {endpoint}
+                </span>
+            }
+        })
+        .collect::<Vec<_>>();
+    let empty_groups = manifest.endpoints.is_empty();
+    view! {
+        <div id="conformance-manifest">
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">{facts}</dl>
+            <div class="mt-3">
+                <div class="text-xs font-medium text-ink-muted mb-1">"Mounted API groups"</div>
+                <div class="flex flex-wrap gap-1">{groups}</div>
+                {empty_groups
+                    .then(|| {
+                        view! {
+                            <p class="text-sm text-ink-muted">
+                                "This CDR advertises no API groups in its manifest."
+                            </p>
+                        }
+                    })}
+            </div>
+            <p class="mt-3 text-xs text-ink-muted">
+                "The product and openEHR REST versions are in the Status card — the manifest and the status document report the same versions, so the console reads them in one place."
+            </p>
+        </div>
+    }
+    .into_any()
 }
 
 /// The repo-usage card: per-template composition counts.
@@ -496,11 +653,21 @@ fn smart_body(config: Option<String>) -> AnyView {
     .into_any()
 }
 
-/// Served-OpenAPI card: `fetch_openapi` → our own grouped endpoint list.
-fn openapi_card() -> AnyView {
-    let resource = Resource::new(|| (), |()| async move { fetch_openapi().await });
-    let body = view! {
-        <Suspense fallback=card_skeleton>
+/// Served-OpenAPI card: the per-family document selector plus `fetch_openapi`
+/// → our own grouped endpoint list (never a Swagger embed).
+///
+/// The selected family is URL state (`?openapi=`), so the resource's source is
+/// the query memo and the selector is a plain GET form that works before WASM
+/// loads (rules §9). A `404` means this deployment does not serve that family
+/// document — a first-class state, not an error.
+fn openapi_card(family: Memo<String>) -> AnyView {
+    let resource = Resource::new(
+        move || family.get(),
+        |family| async move { fetch_openapi(family).await },
+    );
+    let selector = openapi_selector(family);
+    let document = view! {
+        <Transition fallback=card_skeleton>
             {move || Suspend::new(async move {
                 let rendered = resource
                     .await
@@ -511,13 +678,62 @@ fn openapi_card() -> AnyView {
                     });
                 match rendered {
                     Ok(view) => view,
+                    Err(AdminUiError::Cdr { status: 404, .. }) => {
+                        view! {
+                            <p class="text-sm text-ink-muted">
+                                "This CDR serves no document for that API family — pick another, or the complete surface."
+                            </p>
+                        }
+                            .into_any()
+                    }
                     Err(e) => card_error(&e),
                 }
             })}
-        </Suspense>
+        </Transition>
+    }
+    .into_any();
+    let body = view! {
+        <div>
+            {selector} <div id="openapi-family-card">{document}</div>
+        </div>
     }
     .into_any();
     titled_card("Served OpenAPI", true, body)
+}
+
+/// The API-family selector: a GET form whose `openapi` field is the URL state
+/// the card reads. Uncontrolled — the form owns the value and the `selected`
+/// attribute server-renders the current choice (the audit filter's pattern; a
+/// `prop:` would not render server-side).
+fn openapi_selector(family: Memo<String>) -> AnyView {
+    let options = OPENAPI_FAMILIES
+        .iter()
+        .map(|(slug, label)| {
+            let slug = *slug;
+            let selected = move || family.get() == slug;
+            view! {
+                <option value=slug selected=selected>
+                    {*label}
+                </option>
+            }
+        })
+        .collect::<Vec<_>>();
+    view! {
+        <leptos_router::components::Form method="GET" action="/system" attr:class="mb-3">
+            <div class="flex flex-wrap items-end gap-2">
+                <label class="flex flex-col gap-1 text-xs text-ink-muted" r#for="openapi-family">
+                    "API family"
+                    <select id="openapi-family" name="openapi" class=SELECT>
+                        {options}
+                    </select>
+                </label>
+                <button id="openapi-family-show" type="submit" class=BTN_SECONDARY>
+                    "Show"
+                </button>
+            </div>
+        </leptos_router::components::Form>
+    }
+    .into_any()
 }
 
 /// Render the served `OpenAPI` document as a grouped, scrollable endpoint list.
@@ -656,7 +872,31 @@ fn group_openapi_paths(doc: &serde_json::Value) -> Vec<(String, Vec<(String, Str
 
 #[cfg(test)]
 mod tests {
-    use super::{group_openapi_paths, scalar_rows};
+    use super::{OPENAPI_FAMILIES, group_openapi_paths, openapi_family_slug, scalar_rows};
+
+    #[test]
+    fn the_family_selector_offers_the_complete_document_first_and_unique_slugs() {
+        assert_eq!(
+            OPENAPI_FAMILIES.first().map(|(slug, _)| *slug),
+            Some(""),
+            "the complete surface is the default (empty) slug"
+        );
+        let mut slugs: Vec<&str> = OPENAPI_FAMILIES.iter().map(|(slug, _)| *slug).collect();
+        let count = slugs.len();
+        slugs.sort_unstable();
+        slugs.dedup();
+        assert_eq!(slugs.len(), count, "family slugs must be unique");
+    }
+
+    #[test]
+    fn an_unknown_family_slug_degrades_to_the_complete_document() {
+        assert_eq!(openapi_family_slug("ehr"), "ehr");
+        assert_eq!(openapi_family_slug("query"), "query");
+        // Hand-typed junk in `?openapi=` is user input, never a path segment.
+        assert_eq!(openapi_family_slug("../../etc/passwd"), "");
+        assert_eq!(openapi_family_slug("EHR"), "");
+        assert_eq!(openapi_family_slug(""), "");
+    }
 
     #[test]
     fn groups_by_tag_then_path_segment_sorted() {
