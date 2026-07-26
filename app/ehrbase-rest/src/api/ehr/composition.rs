@@ -259,9 +259,14 @@ pub(super) async fn run(
                     p.uid_based_id
                 ))
             })?;
+            // A DELETE commits a `523|deleted|` version, so the committal
+            // request headers are accepted and merged here too (overview
+            // §"openehr-version and openehr-audit-details": PUT, POST and
+            // DELETE).
+            let update_audit = crate::overview::committal::committal_audit(h);
             match state
                 .backend()
-                .delete_composition(ehr_id, &ovid)
+                .delete_composition(ehr_id, &ovid, update_audit.as_ref())
                 .await
                 .map(|c| c.version_uid())
             {

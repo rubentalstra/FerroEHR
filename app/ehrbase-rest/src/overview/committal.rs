@@ -71,6 +71,11 @@ const H_AUDIT_DETAILS: &str = "openehr-audit-details";
 /// suffix, the value is a bare `key="value"` list. Kept accepted per
 /// §"Deprecated headers" (a MAY).
 const H_DEP_LIFECYCLE: &str = "openEHR-VERSION.lifecycle_state";
+/// The BARE deprecated header name from the §"Deprecated headers" table —
+/// distinct from the new name after lowercasing (`openehr-audit_details` vs
+/// `openehr-audit-details`), so it needs its own lookup. Value grammar is the
+/// attribute-path-in-value form, like the new header.
+const H_DEP_AUDIT_DETAILS_BARE: &str = "openEHR-AUDIT_DETAILS";
 const H_DEP_CHANGE_TYPE: &str = "openEHR-AUDIT_DETAILS.change_type";
 const H_DEP_DESCRIPTION: &str = "openEHR-AUDIT_DETAILS.description";
 const H_DEP_COMMITTER: &str = "openEHR-AUDIT_DETAILS.committer";
@@ -124,10 +129,12 @@ pub(crate) fn merge_committal_headers(uv: &mut UpdateVersion, headers: &HeaderMa
 }
 
 /// The audit attributes of the committal headers, when the request carried
-/// any — the demographic wire threads these into its commits (the ITS-REST
-/// overview merge requirement applies to every commit surface, not only the
-/// EHR APIs). `None` when no committal header is present, so a plain request
-/// keeps the server-default attribution path.
+/// any — the demographic AND the EHR-group delete wires thread these into
+/// their commits (the ITS-REST overview merge requirement applies to every
+/// commit surface: §"openehr-version and openehr-audit-details" requires the
+/// headers accepted on `PUT`, `POST` **and** `DELETE`). `None` when no
+/// committal header is present, so a plain request keeps the server-default
+/// attribution path.
 pub(crate) fn committal_audit(
     headers: &HeaderMap,
 ) -> Option<ehrbase::service::version_update::UpdateAudit> {
@@ -135,6 +142,13 @@ pub(crate) fn committal_audit(
         return None;
     }
     let mut uv = UpdateVersion::direct(serde_json::Value::Null);
+    // The direct() placeholder change type (`249|creation|`) must not read as
+    // a client-supplied value: blank it so only a header-carried `change_type`
+    // survives the merge — the service merges a NON-empty code verbatim
+    // (after group + operation validation) and falls back to the operation's
+    // default on empty (`versioning::audit`, overview §"openehr-version and
+    // openehr-audit-details": "whatever is provided it MUST be merged").
+    uv.audit.change_type.code_string = String::new();
     merge_committal_headers(&mut uv, headers);
     Some(uv.audit)
 }
@@ -158,6 +172,22 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
         }
     }
 
+    // The BARE deprecated name from the §"Deprecated headers" table:
+    // `openEHR-AUDIT_DETAILS` (which lowercases to `openehr-audit_details`,
+    // a different name than the Release-1.1.0 `openehr-audit-details`). The
+    // table keeps it "available for backward compatibility"; it carries the
+    // same attribute-path-in-value grammar as the new form. Parsed between
+    // the dotted-suffix forms and the new form so precedence is
+    // dotted < bare-deprecated < new. (`openEHR-VERSION` needs no entry —
+    // it lowercases to the new `openehr-version` name and is read there.)
+    let mut bare_dep: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
+    for raw in header_values(headers, H_DEP_AUDIT_DETAILS_BARE) {
+        collect_path_pairs(&raw, &mut bare_dep);
+    }
+    for (target, pairs) in bare_dep {
+        attrs.insert(target, pairs);
+    }
+
     // Development-edition forms: the attribute path is the leading segment of
     // each pair's key, inside the value. `openehr-version` carries VERSION
     // attributes (lifecycle_state); `openehr-audit-details` carries AUDIT_DETAILS
@@ -167,14 +197,7 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
     let mut dev: IndexMap<String, Vec<(String, String)>> = IndexMap::new();
     for name in [H_VERSION, H_AUDIT_DETAILS] {
         for raw in header_values(headers, name) {
-            for (full_key, value) in parse_attr_pairs(&raw) {
-                let (target, subkey) = match full_key.split_once('.') {
-                    Some((t, k)) => (t.to_owned(), k.to_owned()),
-                    // No dot ⇒ the whole key is a scalar target (e.g. `system_id`).
-                    None => (full_key.clone(), String::new()),
-                };
-                dev.entry(target).or_default().push((subkey, value));
-            }
+            collect_path_pairs(&raw, &mut dev);
         }
     }
     for (target, pairs) in dev {
@@ -182,6 +205,19 @@ fn collect_attrs(headers: &HeaderMap) -> IndexMap<String, Vec<(String, String)>>
     }
 
     attrs
+}
+
+/// Parse an attribute-path-in-value header (`change_type.code_string="251"`)
+/// into `target → [(subkey, value)]` entries of `map`.
+fn collect_path_pairs(raw: &str, map: &mut IndexMap<String, Vec<(String, String)>>) {
+    for (full_key, value) in parse_attr_pairs(raw) {
+        let (target, subkey) = match full_key.split_once('.') {
+            Some((t, k)) => (t.to_owned(), k.to_owned()),
+            // No dot ⇒ the whole key is a scalar target (e.g. `system_id`).
+            None => (full_key.clone(), String::new()),
+        };
+        map.entry(target).or_default().push((subkey, value));
+    }
 }
 
 /// All decodable values of a (possibly repeated) request header.
@@ -342,6 +378,65 @@ mod tests {
             pair(&pairs, "value").as_deref(),
             Some("an updated, comma-bearing description")
         );
+    }
+
+    // ── the BARE deprecated name (§"Deprecated headers" table) ──────────────
+
+    /// The table row `openEHR-AUDIT_DETAILS` "remain[s] available for
+    /// backward compatibility": the bare deprecated spelling carries the same
+    /// attribute-path-in-value grammar and merges like the new name.
+    #[test]
+    fn bare_deprecated_audit_details_name_is_accepted() {
+        let mut uv = base_uv();
+        let h = headers(&[(
+            H_DEP_AUDIT_DETAILS_BARE,
+            "change_type.code_string=\"250\",description.value=\"legacy client\"",
+        )]);
+        merge_committal_headers(&mut uv, &h);
+        assert_eq!(uv.audit.change_type.code_string, "250");
+        assert_eq!(uv.audit.description.as_deref(), Some("legacy client"));
+    }
+
+    /// Precedence: dotted 1.0.3 forms < bare deprecated name < the
+    /// Release-1.1.0 name (the new form wins on conflict).
+    #[test]
+    fn new_form_wins_over_bare_deprecated() {
+        let mut uv = base_uv();
+        let h = headers(&[
+            (H_DEP_AUDIT_DETAILS_BARE, "description.value=\"old\""),
+            (H_AUDIT_DETAILS, "description.value=\"new\""),
+        ]);
+        merge_committal_headers(&mut uv, &h);
+        assert_eq!(uv.audit.description.as_deref(), Some("new"));
+
+        let mut uv = base_uv();
+        let h = headers(&[
+            (H_DEP_CHANGE_TYPE, "value=\"252\""),
+            (H_DEP_AUDIT_DETAILS_BARE, "change_type.code_string=\"250\""),
+        ]);
+        merge_committal_headers(&mut uv, &h);
+        assert_eq!(
+            uv.audit.change_type.code_string, "250",
+            "bare deprecated wins over the dotted 1.0.3 form"
+        );
+    }
+
+    /// `committal_audit` must not leak the `direct()` placeholder change type
+    /// (`249|creation|`) as a client-supplied value: a header set without a
+    /// `change_type` yields an EMPTY code, which the service resolves to the
+    /// operation's default (`versioning::audit::merged_change_type`).
+    #[test]
+    fn committal_audit_blanks_the_placeholder_change_type() {
+        let h = headers(&[(H_AUDIT_DETAILS, "description.value=\"why\"")]);
+        let audit = committal_audit(&h).expect("headers present");
+        assert_eq!(audit.change_type.code_string, "");
+        assert_eq!(audit.description.as_deref(), Some("why"));
+
+        let h = headers(&[(H_AUDIT_DETAILS, "change_type.code_string=\"250\"")]);
+        let audit = committal_audit(&h).expect("headers present");
+        assert_eq!(audit.change_type.code_string, "250");
+
+        assert!(committal_audit(&HeaderMap::new()).is_none());
     }
 
     // ── development-edition form (the worked example, lines 85–91) ───────────

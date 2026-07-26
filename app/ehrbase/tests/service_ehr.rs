@@ -307,7 +307,9 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // ── logical delete ──────────────────────────────────────────────────────
     // A stale preceding_version_uid (v1, but latest is v2) → 409 Conflict.
     let comp_ovid_v1_id: ObjectVersionId = comp_ovid_v1.parse().expect("ovid");
-    let stale_delete = svc.delete_composition(ehr_uuid, &comp_ovid_v1_id).await;
+    let stale_delete = svc
+        .delete_composition(ehr_uuid, &comp_ovid_v1_id, None)
+        .await;
     assert!(
         matches!(stale_delete, Err(ServiceError::Conflict(_))),
         "stale preceding_version_uid must 409, got {stale_delete:?}"
@@ -329,7 +331,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     let fabricated_id: ObjectVersionId = fabricated.parse().expect("ovid");
     assert!(
         matches!(
-            svc.delete_composition(ehr_uuid, &fabricated_id).await,
+            svc.delete_composition(ehr_uuid, &fabricated_id, None).await,
             Err(ServiceError::Conflict(_))
         ),
         "a fabricated creating_system_id must not delete"
@@ -353,7 +355,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
     };
     let comp_ovid_v2_id: ObjectVersionId = case_variant.parse().expect("ovid");
     let deleted = svc
-        .delete_composition(ehr_uuid, &comp_ovid_v2_id)
+        .delete_composition(ehr_uuid, &comp_ovid_v2_id, None)
         .await
         .expect("composition_delete (case-variant creating_system_id)")
         .version_uid();
@@ -373,7 +375,8 @@ async fn ehr_composition_lifecycle_end_to_end() {
     // Re-deleting an already-deleted composition → 400 (400_already_deleted).
     assert!(
         matches!(
-            svc.delete_composition(ehr_uuid, &comp_ovid_v2_id).await,
+            svc.delete_composition(ehr_uuid, &comp_ovid_v2_id, None)
+                .await,
             Err(ServiceError::BadRequest(_))
         ),
         "re-delete must be 400 already-deleted"
@@ -422,7 +425,7 @@ async fn ehr_composition_lifecycle_end_to_end() {
         .uid;
     assert!(dir_ovid_v2.ends_with("::2"));
 
-    svc.delete_directory(ehr_uuid, Some(dir_ovid_v2.parse().expect("ovid")))
+    svc.delete_directory(ehr_uuid, Some(dir_ovid_v2.parse().expect("ovid")), None)
         .await
         .expect("directory_delete");
 }
@@ -512,7 +515,7 @@ async fn is_modifiable_false_blocks_content_writes_but_not_ehr_status() {
     );
 
     let comp_ovid_id: ObjectVersionId = comp_ovid.parse().expect("ovid");
-    let delete = svc.delete_composition(ehr_uuid, &comp_ovid_id).await;
+    let delete = svc.delete_composition(ehr_uuid, &comp_ovid_id, None).await;
     assert!(
         comp_blocked(&delete),
         "delete must 409 when inactive: {delete:?}"
@@ -1704,7 +1707,7 @@ async fn ehr_folders_indexes_multiple_hierarchies_in_rank_order() {
 
     // Delete the directory (rank 1) → the directory slot resolves to the next
     // LIVE hierarchy (rank 2); `/directory` now serves hierarchy 2.
-    svc.delete_directory(ehr_uuid, Some(dir1_ovid.parse().expect("ovid")))
+    svc.delete_directory(ehr_uuid, Some(dir1_ovid.parse().expect("ovid")), None)
         .await
         .expect("delete directory (hierarchy 1)");
     let dir_after = svc

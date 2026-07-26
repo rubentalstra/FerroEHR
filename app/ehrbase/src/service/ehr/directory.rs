@@ -55,7 +55,7 @@ impl EhrbaseService {
             change_type::CREATION,
             "FOLDER directory creation",
             &self.effective_system_id(),
-        );
+        )?;
         let folder = version.data;
         self.ensure_ehr_exists(ehr_id).await?;
         validate_folder(&folder)?;
@@ -249,7 +249,7 @@ impl EhrbaseService {
             change_type::MODIFICATION,
             "FOLDER directory update",
             &self.effective_system_id(),
-        );
+        )?;
         let folder = version.data;
         validate_folder(&folder)?;
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
@@ -297,6 +297,7 @@ impl EhrbaseService {
         vo_id: VoId,
         expected: Option<TreeId>,
         is_modifiable: bool,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<ServiceResponse, ServiceError> {
         // is_modifiable = False forbids content writes (RM ehr master04 §EHR
         // Active Status) — folded from the standalone `ensure_content_writable`
@@ -306,7 +307,18 @@ impl EhrbaseService {
         }
 
         let mut tx = self.pool.begin().await?;
-        let audit = self.audit(change_type::DELETED, "DIRECTORY delete");
+        // The committal request headers merge into the delete audit too
+        // (ITS-REST overview §"openehr-version and openehr-audit-details":
+        // accepted on PUT, POST and DELETE).
+        let audit = match update_audit {
+            Some(u) => crate::versioning::audit::AuditInput::from_update(
+                u,
+                change_type::DELETED,
+                "DIRECTORY delete",
+                &self.effective_system_id(),
+            )?,
+            None => self.audit(change_type::DELETED, "DIRECTORY delete"),
+        };
         delete(
             &mut tx,
             Some(ehr_id),
@@ -535,6 +547,7 @@ impl EhrbaseService {
         &self,
         an_ehr_id: EhrId,
         preceding_version_uid: Option<ObjectVersionId>,
+        update_audit: Option<&crate::service::version_update::UpdateAudit>,
     ) -> Result<(), SmError> {
         let Some((vo_id, is_modifiable, latest)) = self.directory_meta_with_vo(an_ehr_id).await?
         else {
@@ -549,7 +562,7 @@ impl EhrbaseService {
             .as_ref()
             .map(|o| components(o).map(|(_, v)| v))
             .transpose()?;
-        self.delete_directory_at(an_ehr_id, vo_id, expected, is_modifiable)
+        self.delete_directory_at(an_ehr_id, vo_id, expected, is_modifiable, update_audit)
             .await?;
         Ok(())
     }

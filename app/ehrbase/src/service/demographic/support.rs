@@ -174,26 +174,33 @@ impl EhrbaseService {
     /// §Audit Details): when the request carried committal headers,
     /// `update_audit`'s `UPDATE_VERSION` audit attributes merge with the
     /// server rules (ITS-REST overview §"openehr-version and
-    /// openehr-audit-details", a MUST); otherwise the server defaults apply —
-    /// the effective `system_id`, the numeric `audit_change_type` group code,
-    /// and the request's default committer (the authenticated principal's
+    /// openehr-audit-details", a MUST — including a caller-supplied
+    /// `change_type`, validated against the `audit_change_type` group and the
+    /// operation); otherwise the server defaults apply — the effective
+    /// `system_id`, the numeric `audit_change_type` group code, and the
+    /// request's default committer (the authenticated principal's
     /// `PARTY_PROXY`, from [`CommitEnv::default_committer`]).
+    ///
+    /// # Errors
+    /// [`ServiceError::Unprocessable`] / [`ServiceError::BadRequest`] — the
+    /// caller's `change_type` is out-of-group / contradicts the operation
+    /// ([`AuditInput::from_update`]).
     pub(super) fn demographic_audit(
         &self,
         update_audit: Option<&UpdateAudit>,
         change_type: &str,
         description: &str,
-    ) -> AuditInput {
+    ) -> Result<AuditInput, ServiceError> {
         match update_audit {
             Some(u) => {
                 AuditInput::from_update(u, change_type, description, &self.effective_system_id())
             }
-            None => AuditInput {
+            None => Ok(AuditInput {
                 system_id: self.effective_system_id(),
                 change_type: change_type.to_owned(),
                 description: Some(description.to_owned()),
                 committer: CommitEnv::default_committer(self),
-            },
+            }),
         }
     }
 

@@ -506,7 +506,15 @@ AMB-54:
     commit_contribution's validation_failed carries BOTH semantic content
     invalidity (422, exact) AND this mismatched-change_type rejection
     (spec-unassigned code); the binding accepts 422 with alt_status [400] for
-    the latter. Pure semantic-content cases stay 422.
+    the latter. Pure semantic-content cases stay 422. The SAME silence
+    governs a direct commit whose openehr-audit-details committal header
+    carries an operation-contradicting change_type (overview
+    §"openehr-version and openehr-audit-details" requires the merge; RM
+    change control requires the rejection; no docs-text sentence assigns the
+    code): the update_composition audit_change_type variant's
+    change_type_mismatch outcome accepts both (400 with alt_status [422]).
+    Out-of-group tokens are NOT this silence — they violate
+    AUDIT_DETAILS.Change_type_valid, a semantic error, 422 exact.
   disposition: fixed_handling
   upstream_ref: "UPR-23"
 AMB-55:
