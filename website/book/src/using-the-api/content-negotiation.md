@@ -131,6 +131,32 @@ A **`Location`** header is emitted only when a resource is **created** —
 reads and deletes identify the version through `ETag` alone, so do not expect
 `Location` on them; the `ETag` is the authoritative identifier.
 
+## `Last-Modified` — when the version was committed
+
+Alongside the `ETag`, versioned responses carry a **`Last-Modified`** header
+in the standard HTTP-date form (`Wed, 22 Jul 2009 19:15:56 GMT`). Its value is
+the commit time of the version being served — the audit
+`time_committed` of that `VERSION` — so it changes exactly when the `ETag`
+does.
+
+You get it on:
+
+- every `VERSION` read (`…/versioned_composition/{uid}/version[/{version_uid}]`,
+  `…/versioned_ehr_status/version[/{version_uid}]`) and revision history read;
+- every COMPOSITION, `EHR_STATUS`, and DIRECTORY read — including the FLAT and
+  STRUCTURED representations, which describe the same version;
+- every write of those resources (create, update, and the delete `204`), and
+  the EHR create `201`.
+
+Resources that are not versioned do not carry it: `GET /ehr/{ehr_id}` returns
+the weak `ETag` (built from `EHR.ehr_id.value`) but no `Last-Modified`,
+because the `EHR` root object has no commit audit of its own.
+
+Template responses (ADL 1.4 and ADL2) carry a weak `ETag` keyed on the
+template identifier; for ADL2 it is the **resolved** `ARCHETYPE_HRID`, so
+requesting a template by a partial id or a major-version prefix still gives
+you an `ETag` that changes when the served artefact changes.
+
 > [!NOTE]
 > Version ids normally end in a plain trunk number (`…::2`), but openEHR
 > version trees can **branch**: when a version that was created on another

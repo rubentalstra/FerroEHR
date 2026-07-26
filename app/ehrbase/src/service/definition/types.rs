@@ -24,6 +24,28 @@ pub struct TemplateListFilter {
     pub version: Option<String>,
 }
 
+/// One served ADL2 operational template: the artefact's **resolved**
+/// `ARCHETYPE_HRID` (the addressed `template_id` may be a partial that selects
+/// the latest matching version) paired with the rendered representation.
+///
+/// The wire needs the resolved id as well as the payload, because the `ETag` of
+/// a template response identifies the served artefact — ITS-REST
+/// `Requests_and_responses.md` §"`ETag` and Last-Modified": both headers
+/// "SHOULD be included in responses for VERSION, `VERSIONED_OBJECT`, or other
+/// resources that have versioning or unique state identifiers", and an ADL2
+/// artefact's unique state identifier is its versioned HRID (AM `am24`
+/// `ARCHETYPE_HRID`, whose `release_version` is the artefact's SEMVER).
+/// Returning the addressed string instead would keep one `ETag` across two
+/// different served versions.
+#[derive(Debug, Clone)]
+pub struct Adl2Template {
+    /// The resolved full `ARCHETYPE_HRID` of the served artefact.
+    pub hrid: String,
+    /// The rendered representation (ADL2 source, or the
+    /// `OperationalTemplateV2` canonical JSON).
+    pub payload: String,
+}
+
 /// The SM `QUERY_DESCRIPTOR` (`query_descriptor.adoc`) — the registration
 /// record `I_DEFINITION_QUERY.store_query` / `list_queries` return.
 #[derive(Debug, Clone, PartialEq, Eq)]

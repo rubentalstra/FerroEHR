@@ -729,7 +729,7 @@ elements:
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (Last-Modified SHOULD be included for VERSION/VERSIONED_OBJECT responses)"
     exception:
       reason: coverage_gap
-      note: "NEW-CASE candidate: assert Last-Modified on a versioned GET (get_composition_at_version / get_ehr_status). SHOULD-level per the docs text; not yet exercised."
+      note: "server behaviour fixed + DB-tested (#396, app/ehrbase-rest/tests/headers.rs): Last-Modified is now emitted on every VERSION read, on the COMPOSITION / EHR_STATUS reads and writes, and on the EHR create, with the value pinned byte-equal to the IMF-fixdate rendering of the served VERSION.commit_audit.time_committed. The presence is DECLARED as `Last-Modified: present` on those binding outcomes. NEW-CASE candidate blocked on the runner capability tracked in #403: `outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified (tools/cnf-runner/src/exec/outcome.rs) — so no executable header assertion exists yet; this gap closes when #403 lands header-matcher evaluation."
   - id: header-prefer-return-representation
     description: "Prefer: return=representation is honored — the created/updated resource body is returned (vs the default return=minimal)."
     source: "ITS-REST Requests_and_responses.md §Prefer + §Representation details negotiation (default return=minimal; return=representation returns the full resource)"
@@ -778,7 +778,7 @@ elements:
     source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (\"Both ETag and Last-Modified SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\"; the ETag \"is usually taken from e.g. VERSIONED_OBJECT.uid.value, VERSION.uid.value\", Last-Modified \"derived from VERSION.commit_audit.time_committed.value\")"
     exception:
       reason: coverage_gap
-      note: "server behaviour fixed + DB-tested for the demographic versioned reads (#394). NEW-CASE candidate blocked on two runner capabilities: header matchers are not evaluated (see header-location-only-on-create), and the /demographic/versioned_party/** resource has no binding of its own — the SM versioned-party reads are realized through I_PARTY.get_party_at_version on /demographic/person/{version_uid}."
+      note: "server behaviour fixed + DB-tested for the demographic versioned reads (#394) and for the EHR-group VERSION / COMPOSITION / EHR_STATUS reads (#396, app/ehrbase-rest/tests/headers.rs); the presence is DECLARED as `ETag` + `Last-Modified` on those binding outcomes. NEW-CASE candidate blocked on two runner capabilities: header matchers are not evaluated (see header-location-only-on-create; tracked as #403), and the /demographic/versioned_party/** resource has no binding of its own — the SM versioned-party reads are realized through I_PARTY.get_party_at_version on /demographic/person/{version_uid}."
   # Content negotiation (ITS-REST Requests_and_responses.md §HTTP status codes + Representation details negotiation).
   - id: negotiation-canonical-json
     description: "Canonical-JSON representation negotiated and returned (the default representation)."

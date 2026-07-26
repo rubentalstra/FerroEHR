@@ -7,10 +7,23 @@ request:
   method: GET
   path: /ehr/{ehr_id}/composition/{version_uid}
 formats: [canonical-json, canonical-xml, wt-flat, wt-structured]
+# Header discipline on this outcome — ITS-REST overview
+# `Requests_and_responses.md` §"ETag and Last-Modified" (the DOCS TEXT, the wire
+# oracle): "Both `ETag` and `Last-Modified` SHOULD be included in responses for
+# VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique
+# state identifiers", and "For openEHR resources, this value [Last-Modified]
+# should be derived from `VERSION.commit_audit.time_committed.value`".
+# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only the
+# status is classified, tools/cnf-runner/src/exec/outcome.rs), so this
+# declaration is the authored contract, not an executed assertion — it becomes
+# executable when #403 wires header-matcher evaluation into the step judgement.
 outcomes:
   ok:
     status: 200                           # 200_COMPOSITION_retrieved.yaml
-    headers: { Content-Type: negotiated }
+    headers:
+      Content-Type: negotiated
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      Last-Modified: present
   ok_empty: { status: 204 }               # deleted at requested time (composition_get.yaml)
   not_found: { status: 404 }
 server_assigned: [uid]                    # the retrieved resource carries the server-assigned version uid the committed payload lacks

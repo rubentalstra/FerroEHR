@@ -259,6 +259,11 @@ impl EhrbaseService {
     /// # Errors
     /// [`SmError`] if the CONTRIBUTION fails classification, content
     /// validation, the optimistic lock, or its storage commit.
+    // TODO: carry the commit instant out of `commit_version_set` so both
+    // branches below can attach `with_last_modified` — ITS-REST
+    // `Requests_and_responses.md` §"ETag and Last-Modified" asks for the
+    // header on any resource with a unique state identifier, and a
+    // CONTRIBUTION has one; today only the `ETag`/`Location` uid is emitted.
     pub async fn ehr_contribution_commit(
         &self,
         an_ehr_id: EhrId,

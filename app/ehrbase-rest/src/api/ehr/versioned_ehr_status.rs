@@ -81,8 +81,12 @@ pub(super) async fn run(
                 .backend()
                 .ehr_status_version_at_time(ehr_id, p.version_at_time)
                 .await?;
-            // 200_VERSION_at_time: ETag(version_uid) + Location of the VERSION;
-            // body is an ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
+            // 200_VERSION_at_time: ETag(version_uid) + Location of the VERSION,
+            // plus Last-Modified from the envelope's
+            // commit_audit.time_committed (§"ETag and Last-Modified": the
+            // value "should be derived from
+            // VERSION.commit_audit.time_committed.value"); body is an
+            // ORIGINAL_VERSION<EHR_STATUS> (JSON or canonical XML).
             let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
                 h,
@@ -103,8 +107,10 @@ pub(super) async fn run(
             // Full-identity check as on the ehr_status by-version read
             // (Resources.md §Identifier types; BASE master05 case rule).
             super::ensure_served_version(&p.version_uid, &body)?;
-            // Version-uid ETag + commit-time Last-Modified (§ETag and
-            // Last-Modified SHOULD on VERSION reads).
+            // Version-uid ETag + Last-Modified from the envelope's
+            // commit_audit.time_committed (§"ETag and Last-Modified": both
+            // SHOULD accompany a VERSION response, and Last-Modified is
+            // "derived from VERSION.commit_audit.time_committed.value").
             let resp = super::read_resp(&p.ehr_id, body);
             Ok(negotiate::read_rm::<OriginalVersion<EhrStatus>>(
                 h,
