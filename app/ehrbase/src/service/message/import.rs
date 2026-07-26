@@ -32,11 +32,19 @@
 //! — the OPT must already be provisioned in the target through the DEFINITION
 //! API. Re-validation on import is deferred (it would require the source's
 //! exact OPT); this matches the admin dump/load path, which master06 §Copying
-//! permits: "the `ORIGINAL_VERSION` instance is never modified". The promoted
-//! `ehr.subject_id` column is left unset for an imported EHR — a clone shares
-//! the source subject, which the one-EHR-per-subject index cannot represent, so
-//! the subject is preserved inside the `EHR_STATUS` content, not the promoted
-//! column (RM ehr, `EHR.ehr_status`).
+//! permits: "the `ORIGINAL_VERSION` instance is never modified".
+//!
+//! An imported EHR is a FULL local EHR, not a second-class one: the promoted
+//! `ehr` columns are re-derived from the landed `EHR_STATUS`
+//! ([`crate::service::EhrbaseService::resync_promoted_columns`]), so the clone
+//! is found by the subject lookup (SM `I_EHR_SERVICE.get_ehrs_for_subject`,
+//! `operations/ehr_get_by_subject.yaml`) and bound by the one-EHR-per-subject
+//! rule (RM ehr master04 §EHR Status) exactly like a created EHR — importing a
+//! clone of a subject the target already holds is therefore a conflict, not a
+//! silent duplicate. Where the extract carries no `EHR_ACCESS`, the whole-EHR
+//! clone completes the mandatory 1..1 `EHR.ehr_access` (RM ehr `ehr.adoc`
+//! `Ehr_access_valid`; master04 §EHR Creation) with the local default
+//! ([`crate::service::EhrbaseService::commit_default_ehr_access`]).
 
 use std::collections::BTreeMap;
 
@@ -74,6 +82,9 @@ impl EhrbaseService {
     ///   `ORIGINAL_VERSION` is malformed (see the parse errors in this module).
     /// - `ehr_create_fail_duplicate_id` — an EHR with the target id already
     ///   exists (`import_ehr` requires an empty target).
+    /// - `Conflict` (`409`) — the imported `EHR_STATUS` names a subject another
+    ///   EHR in this repository already holds (one EHR per subject — RM ehr
+    ///   master04 §EHR Status).
     /// - `exception` — a database/replay fault mid-transaction (rolled back).
     pub async fn import_ehr(
         &self,
@@ -124,18 +135,33 @@ impl EhrbaseService {
         let touches_ehr_access = containers.iter().any(|c| c.kind == Kind::EhrAccess);
         commit_import(&mut tx, ehr_id, &audit, containers, outbox_enabled).await?;
         commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
+        // An EHR is created as "a root EHR object, an EHR Status object, and an
+        // EHR Access object" (RM ehr master04 §EHR Creation) and `EHR.ehr_access`
+        // is 1..1 (`ehr.adoc` invariant `Ehr_access_valid`). An extract that
+        // carried no EHR_ACCESS therefore leaves the clone incomplete — commit
+        // the local default in this same transaction.
+        if !touches_ehr_access {
+            self.commit_default_ehr_access(&mut tx, ehr_id, "EHR Extract import: default access")
+                .await?;
+        }
         // The clone landed the EHR_STATUS directly (not via the service's
-        // sync_ehr_subject hook), so backfill the promoted `ehr.is_queryable` /
-        // `is_modifiable` from the stored current status to keep the AQL
-        // full-population gate and the content-write guard consistent (RM ehr
-        // master04 §EHR Status / §EHR Active Status; SM I_QUERY_SERVICE).
-        crate::storage::ehr_repo::sync_status_flags(&mut tx, ehr_id).await?;
+        // sync_ehr_subject hook), so re-promote the `ehr` columns from the
+        // stored current status: the subject (`GET /ehr?subject_id` +
+        // one-EHR-per-subject, RM ehr master04 §EHR Status) and the
+        // `is_queryable` / `is_modifiable` flags the AQL full-population gate
+        // (SM I_QUERY_SERVICE) and the content-write guard (§EHR Active Status)
+        // read.
+        self.resync_promoted_columns(&mut tx, ehr_id).await?;
         tx.commit().await.map_err(ServiceError::from)?;
         // An imported EHR_ACCESS version changes the EHR's access policy — evict
         // the cached settings the access gate consults (RM ehr master04 §EHR
-        // Access; the settings are change-controlled).
+        // Access; the settings are change-controlled). A bootstrapped default
+        // carries no settings, so the clone is default-open: seed that entry
+        // instead, exactly as the create path does.
         if touches_ehr_access {
             self.invalidate_ehr_access(ehr_id).await;
+        } else {
+            self.prewarm_ehr_access_open(ehr_id).await;
         }
         self.emit_extract_audit(ehr_id, EventActionCode::Create);
         Ok(())
@@ -152,7 +178,8 @@ impl EhrbaseService {
     ///   in this module).
     /// - `Conflict` (`409`) — the EHR already holds an `EHR_STATUS`/`EHR_ACCESS`
     ///   under a different object id (an EHR holds at most one of each; RM ehr,
-    ///   EHR class 1..1).
+    ///   EHR class 1..1), or an imported `EHR_STATUS` names a subject another
+    ///   EHR already holds (one EHR per subject — RM ehr master04 §EHR Status).
     /// - `exception` — a database/replay fault mid-transaction (rolled back).
     pub async fn import_ehr_extract(
         &self,
@@ -195,11 +222,12 @@ impl EhrbaseService {
         commit_import(&mut tx, an_ehr_id, &audit, containers, outbox_enabled).await?;
         commit_demographic_import(&mut tx, &audit, parties, outbox_enabled).await?;
         // An imported EHR_STATUS version can change the current status
-        // (Copying Case 3 append); backfill the promoted `ehr.is_queryable` /
-        // `is_modifiable` from the stored current status so the AQL
-        // full-population gate and the content-write guard stay consistent (RM
-        // ehr master04 §EHR Status / §EHR Active Status; SM I_QUERY_SERVICE).
-        crate::storage::ehr_repo::sync_status_flags(&mut tx, an_ehr_id).await?;
+        // (Copying Case 3 append) — including its subject; re-promote the `ehr`
+        // columns from the stored current status so the subject lookup +
+        // one-EHR-per-subject rule (RM ehr master04 §EHR Status), the AQL
+        // full-population gate (SM I_QUERY_SERVICE) and the content-write guard
+        // (§EHR Active Status) all stay consistent with it.
+        self.resync_promoted_columns(&mut tx, an_ehr_id).await?;
         tx.commit().await.map_err(ServiceError::from)?;
         // An imported EHR_ACCESS version changes the EHR's access policy — evict
         // the cached settings the access gate consults (RM ehr master04 §EHR

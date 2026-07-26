@@ -48,6 +48,23 @@ workflow refuses a tag that has no matching section here.
   previously committed root objects without `archetype_details` must now
   supply it.
 
+- **Imported and archive-loaded EHRs are now complete, first-class EHRs**
+  (#425). An EHR-Extract clone (`import_ehr`) created no EHR_ACCESS, so a
+  source extract that carried none produced an EHR permanently violating the
+  RM invariant `Ehr_access_valid` (`EHR.ehr_access` is 1..1) whose served
+  `GET /ehr/{ehr_id}` body simply omitted the mandatory reference; the clone
+  now commits the same default EHR_ACCESS the create path uses (RM ehr
+  master04 §EHR Creation — a root EHR object, an EHR Status object and an EHR
+  Access object), in the import's own transaction. Neither the import nor the
+  admin archive load promoted the EHR's subject, so imported/loaded EHRs were
+  invisible to `GET /ehr?subject_id=…&subject_namespace=…` and exempt from the
+  one-EHR-per-subject `409`; both paths now derive the subject from the landed
+  EHR_STATUS. Consequences: importing or loading an EHR whose subject this
+  repository already holds is now refused — `409` for an import (naming the
+  subject and the EHR that holds it), and, for the archive load, a per-record
+  `DUMP_LOAD_FAIL_REPORT` entry that skips just that EHR exactly like a
+  duplicate EHR id, leaving the rest of the archive to load.
+
 ### Removed
 
 - **The bare-root `OPTIONS /` alias of the System API endpoint** (#420). The
