@@ -14,8 +14,9 @@
 //! ([`version_update`]), the SM list cursor ([`list`]), the
 //! `PLATFORM_SERVICE` enumeration ([`platform_service`]), the
 //! protocol-adapter response envelope ([`response`]), the
-//! authenticated-committer context ([`committer`]), and the SM validity
-//! checker ([`validity`]).
+//! authenticated-committer context ([`committer`]), the crate-internal
+//! ITS-REST datetime-request-parameter decoder (`datetime`), and the SM
+//! validity checker ([`validity`]).
 
 pub mod admin;
 pub mod definition;
@@ -28,6 +29,7 @@ pub mod subject_proxy;
 pub mod terminology;
 
 pub mod committer;
+pub(crate) mod datetime;
 pub mod error;
 pub mod list;
 pub mod platform_service;

@@ -123,23 +123,16 @@ fn ensure_if_match(
     }
 }
 
-/// Parse an ISO-8601 `Iso8601_date_time` argument for a time-travel read; a
-/// malformed value is an argument-validity precondition failure (→ `400`).
-fn parse_at_time(raw: &str) -> Result<jiff::Timestamp, SmError> {
-    raw.parse::<jiff::Timestamp>()
-        .map_err(|_| SmError::precondition(format!("invalid version_at_time: {raw}")))
-}
-
 /// Parse the optional SM `Interval<Iso8601_date_time>` bounds of a contribution
 /// `time_range` into the internal [`crate::versioning::contribution::TimeRange`]; a malformed
-/// bound is a `400`-equivalent precondition failure.
+/// bound is a `400`-equivalent precondition failure. Bound decoding is the
+/// shared ITS-REST datetime-parameter decoder
+/// (`crate::service::datetime`) — an offset is optional on the wire.
 fn parse_time_range(raw: crate::service::ehr::handle::TimeRange) -> Result<TimeRange, SmError> {
     let parse = |b: Option<String>| -> Result<Option<jiff::Timestamp>, SmError> {
-        b.map(|s| {
-            s.parse::<jiff::Timestamp>()
-                .map_err(|_| SmError::precondition(format!("invalid time_range bound: {s}")))
-        })
-        .transpose()
+        b.as_deref()
+            .map(crate::service::datetime::parse_time_range_bound)
+            .transpose()
     };
     raw.map(|(lo, hi)| Ok((parse(lo)?, parse(hi)?))).transpose()
 }
