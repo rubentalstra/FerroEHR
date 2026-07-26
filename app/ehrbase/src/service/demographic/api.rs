@@ -22,7 +22,8 @@ use crate::service::response::{ResourceMeta, ServiceResponse};
 use crate::service::status::{CallStatusType, SmError};
 use crate::service::version_update::{UpdateAudit, UpdateVersion};
 use crate::versioning::object_version_id::{
-    components, expected_from_if_match, parse_uid_based_id, parse_version_uid,
+    components, eq_composite_id, expected_from_if_match, if_match_token, parse_uid_based_id,
+    parse_version_uid,
 };
 
 /// Wrap a JSON array of item-tag objects as a plain (header-free) response.
@@ -62,25 +63,46 @@ fn party_kind_from_body(body: &Value) -> Result<PartyKind, SmError> {
     }
 }
 
-/// Full-`OBJECT_VERSION_ID` `If-Match` verification (ITS-REST overview
-/// §Concurrency control): the precondition names the current latest version
-/// **in full** — object id + creating system id + version — and a mismatch in
-/// ANY segment is a `412`. Reducing the header to the version-tree number
-/// alone would accept a precondition naming a version this server never held.
-/// Non-OVID tokens (a bare trunk number) keep the lenient tree addressing;
-/// an absent header or an object with no current version defers to the
-/// versioning path. Mirrors the EHR path's `ensure_if_match`.
+/// Full-`OBJECT_VERSION_ID` `If-Match` verification. ITS-REST overview
+/// `Requests_and_responses.md` §"If-Match and accidental overwrites": when the
+/// condition "evaluates to `false`, it MUST NOT perform the requested method.
+/// Instead, it MUST respond with HTTP status code `412 Precondition Failed`".
+///
+/// The precondition names the current latest version **in full** — the
+/// `object_id :: creating_system_id :: version_tree_id` triple — and a
+/// mismatch in ANY segment is a `412`. Reducing the header to the
+/// version-tree number alone would accept a precondition naming a version
+/// this server never held.
+///
+/// The comparison is case-**in**sensitive: an `OBJECT_VERSION_ID` is a
+/// composite identifier, and BASE `base_types`
+/// `master05-identification_package.adoc` §"Composite Identifiers and Case"
+/// makes two identifiers "identical apart from case … identify the same
+/// thing". Mirrors the EHR path's `ensure_if_match`.
+///
+/// The wire `ETag` syntax — the weak `W/"…"` form the overview §"`ETag` and
+/// Last-Modified" mandates on emitted `ETag`s, and the deprecated bare quoted
+/// form — is decoded by the ITS-REST adapter before the value reaches here;
+/// [`if_match_token`] applies the remaining quote tolerance so this compare and
+/// [`expected_from_if_match`] judge the same token.
+///
+/// Tokens that are not a full `OBJECT_VERSION_ID` are **not** silently skipped:
+/// the RFC 9110 `*` wildcard and the lenient bare `VERSION_TREE_ID` trunk
+/// number carry no full identity to compare (the versioning path enforces the
+/// tree precondition they do carry), and every other shape is rejected as
+/// malformed → `400` by [`expected_from_if_match`], which every caller of this
+/// function invokes on the same value.
 fn ensure_full_ovid_if_match(
     if_match: Option<&str>,
     current: Option<&ResourceMeta>,
 ) -> Result<(), SmError> {
     let Some(raw) = if_match else { return Ok(()) };
-    let token = raw.trim().trim_matches('"');
+    let token = if_match_token(raw);
     if <openehr_base::prelude::ObjectVersionId as std::str::FromStr>::from_str(token).is_err() {
         return Ok(());
     }
     match current {
-        Some(meta) if meta.uid == token => Ok(()),
+        Some(meta) if eq_composite_id(&meta.uid, token) => Ok(()),
         Some(meta) => Err(SmError::version_mismatch(format!(
             "If-Match {token:?} does not match the current latest version {:?}",
             meta.uid
@@ -357,9 +379,10 @@ impl EhrbaseService {
     }
 
     /// Update a party of the routed [`PartyKind`] under a mandatory `If-Match`
-    /// precondition (ITS-REST overview §Concurrency control). The current
-    /// version is resolved ONCE (lean, kind-checked): the same handle serves
-    /// the `If-Match` `ETag` compare here and the service write gate.
+    /// precondition (ITS-REST overview §"If-Match and accidental
+    /// overwrites"). The current version is resolved ONCE (lean,
+    /// kind-checked): the same handle serves the `If-Match` `ETag` compare
+    /// here and the service write gate.
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or the `If-Match` token
@@ -855,9 +878,9 @@ impl EhrbaseService {
     }
 
     /// Update a relationship under a mandatory `If-Match` precondition
-    /// (ITS-REST overview §Concurrency control). The current version is
-    /// resolved ONCE (lean): the same handle serves the `If-Match` compare
-    /// and the service write gate.
+    /// (ITS-REST overview §"If-Match and accidental overwrites"). The current
+    /// version is resolved ONCE (lean): the same handle serves the `If-Match`
+    /// compare and the service write gate.
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id or the `If-Match` token
@@ -895,7 +918,8 @@ impl EhrbaseService {
     /// carries the versioned-relationship id (bare `HIER_OBJECT_ID` or full
     /// `OBJECT_VERSION_ID`); the preceding version for optimistic concurrency
     /// comes from `If-Match` when supplied, else the path OVID, else `None`
-    /// (delete the current version — ITS-REST overview §Concurrency control).
+    /// (delete the current version — ITS-REST overview §"If-Match and
+    /// accidental overwrites").
     ///
     /// # Errors
     /// - [`SmError`] `precondition_violation` — the id does not parse, or a
@@ -1019,5 +1043,99 @@ impl EhrbaseService {
     ) -> Result<Option<ResourceMeta>, SmError> {
         let (vo_id, _) = parse_uid_based_id(&uid_based_id)?;
         Ok(self.relationship_current_meta(vo_id).await?)
+    }
+}
+
+#[cfg(test)]
+#[allow(
+    clippy::panic,
+    clippy::print_stdout,
+    clippy::print_stderr,
+    let_underscore_drop
+)] // test assertions/diagnostics/fixtures
+#[allow(clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::*;
+
+    const VO: &str = "8849182c-82ad-4088-a07f-48ead4180515";
+
+    fn latest(uid: &str) -> ResourceMeta {
+        ResourceMeta::new(String::new(), uid.to_owned())
+    }
+
+    /// An `If-Match` naming the current latest version in full satisfies the
+    /// precondition (ITS-REST overview §"If-Match and accidental overwrites").
+    #[test]
+    fn matching_full_ovid_passes() {
+        let uid = format!("{VO}::openEHRSys.example.com::2");
+        assert!(ensure_full_ovid_if_match(Some(&uid), Some(&latest(&uid))).is_ok());
+        // The quote tolerance of the library boundary.
+        let quoted = format!("\"{uid}\"");
+        assert!(ensure_full_ovid_if_match(Some(&quoted), Some(&latest(&uid))).is_ok());
+    }
+
+    /// `creating_system_id` is a composite identifier, so a case variant names
+    /// the SAME version and must NOT raise a spurious `412` (BASE `base_types`
+    /// master05 §"Composite Identifiers and Case").
+    #[test]
+    fn case_variant_creating_system_id_matches() {
+        let stored = format!("{VO}::openEHRSys.example.com::2");
+        for variant in [
+            format!("{VO}::OPENEHRSYS.EXAMPLE.COM::2"),
+            format!("{VO}::openehrsys.example.com::2"),
+            format!("{}::openEHRSys.example.com::2", VO.to_uppercase()),
+        ] {
+            assert!(
+                ensure_full_ovid_if_match(Some(&variant), Some(&latest(&stored))).is_ok(),
+                "BASE master05 §Composite Identifiers and Case: {variant:?} names the \
+                 same version as {stored:?}"
+            );
+        }
+    }
+
+    /// A stale full `OBJECT_VERSION_ID` — a mismatch in ANY segment — is the
+    /// `412` branch.
+    #[test]
+    fn stale_or_foreign_ovid_is_a_version_mismatch() {
+        let stored = format!("{VO}::openEHRSys.example.com::2");
+        for stale in [
+            // wrong version_tree_id
+            format!("{VO}::openEHRSys.example.com::1"),
+            // wrong creating_system_id (not a mere case variant)
+            format!("{VO}::other.system::2"),
+            // wrong object_id
+            "00000000-0000-4000-8000-0000000000ff::openEHRSys.example.com::2".to_owned(),
+        ] {
+            let err = ensure_full_ovid_if_match(Some(&stale), Some(&latest(&stored)))
+                .expect_err("stale precondition");
+            assert_eq!(
+                err.status,
+                CallStatusType::VersionMismatch,
+                "{stale:?} must fail the precondition, got {err:?}"
+            );
+        }
+    }
+
+    /// An absent header, and an object with no current version, defer to the
+    /// versioning path (nothing to compare against).
+    #[test]
+    fn absent_header_or_no_current_version_defers() {
+        let uid = format!("{VO}::openEHRSys.example.com::2");
+        assert!(ensure_full_ovid_if_match(None, Some(&latest(&uid))).is_ok());
+        assert!(ensure_full_ovid_if_match(Some(&uid), None).is_ok());
+    }
+
+    /// A non-OVID token carries no full identity to compare here — the RFC 9110
+    /// `*` wildcard and the lenient trunk number pass through to
+    /// `expected_from_if_match`, which enforces the tree precondition or rejects
+    /// the value as malformed (`400`); nothing is silently skipped.
+    #[test]
+    fn non_ovid_tokens_defer_to_the_tree_precondition() {
+        let uid = format!("{VO}::openEHRSys.example.com::2");
+        assert!(ensure_full_ovid_if_match(Some("*"), Some(&latest(&uid))).is_ok());
+        assert!(ensure_full_ovid_if_match(Some("2"), Some(&latest(&uid))).is_ok());
+        // …and the malformed shapes the same call chain rejects downstream.
+        assert!(ensure_full_ovid_if_match(Some("garbage"), Some(&latest(&uid))).is_ok());
+        assert!(expected_from_if_match("garbage").is_err());
     }
 }

@@ -740,6 +740,30 @@ elements:
     exception:
       reason: coverage_gap
       note: "NEW-CASE candidate: a stale-If-Match update (update_composition / update_directory / update_party) expecting 412 + latest version_uid in ETag. Consistent with the Axis-2 precondition_failed/precondition_missing gaps on those bindings."
+  - id: header-if-match-weak-form
+    description: "If-Match supplied in the weak entity-tag form W/\"<uid>\" — the shape the server itself emits as the ETag — is decoded and evaluated as a precondition: a current value passes the write, a stale value is 412 (never a malformed-syntax rejection)."
+    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (the ETag \"is considered to be of weak-type and should have a weakness indicator W/ prefix\") + §Deprecated headers (\"all ETag headers that hold a resource identifier MUST include a weakness indicator W/\") + §If-Match and accidental overwrites (412 only when \"the condition evaluates to false\")"
+    covered_by:
+      - I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_accepted
+      - I_DEMOGRAPHIC_SERVICE.update_party-weak_etag_stale
+  - id: header-if-match-case-insensitive
+    description: "The If-Match OBJECT_VERSION_ID is compared case-insensitively: a token differing from the current version_uid only in case names the same version and must not raise a spurious 412."
+    source: "BASE base_types master05-identification_package.adoc §Composite Identifiers and Case (two composite identifiers \"identical apart from case … identify the same thing\") applied to the ITS-REST Requests_and_responses.md §If-Match and accidental overwrites condition"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#394, app/ehrbase-rest/tests/demographic_http.rs + the service unit tests). NEW-CASE candidate blocked on a runner capability: a case cannot build a case-flipped variant of a captured version_uid (the only capture transforms are strip: weak-quotes and transform: root-uid — tools/cnf-runner/src/model/binding.rs), and no per-case header override exists."
+  - id: header-location-only-on-create
+    description: "Location is emitted ONLY on resource creation (and redirects): reads, deletes, and 4xx error responses carry no Location; the version identity travels in the weak ETag."
+    source: "ITS-REST Requests_and_responses.md §Location (\"It MUST NOT be used to indicate an alternate representation of an existing resource (e.g. via GET method)\"; \"The Location header MUST ONLY be used for resource creation (e.g., 201 Created) or redirect responses\") + §Deprecated headers (Location deprecated on GET and DELETE responses)"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested (#394); the absence is DECLARED as `Location: absent` on the get_party / get_party_at_time / get_party_at_version / delete_party / update_party binding outcomes. NEW-CASE candidate blocked on a runner capability: `outcomes.*.headers` matchers are parsed but never evaluated — only the status is classified (tools/cnf-runner/src/exec/outcome.rs), so no header assertion (present/absent/pattern) executes today."
+  - id: header-etag-on-versioned-object-read
+    description: "A VERSIONED_OBJECT / VERSION read carries the weak ETag (VERSIONED_OBJECT.uid.value or VERSION.uid.value) and, where the commit instant is available, Last-Modified."
+    source: "ITS-REST Requests_and_responses.md §ETag and Last-Modified (\"Both ETag and Last-Modified SHOULD be included in responses for VERSION, VERSIONED_OBJECT, or other resources that have versioning or unique state identifiers\"; the ETag \"is usually taken from e.g. VERSIONED_OBJECT.uid.value, VERSION.uid.value\", Last-Modified \"derived from VERSION.commit_audit.time_committed.value\")"
+    exception:
+      reason: coverage_gap
+      note: "server behaviour fixed + DB-tested for the demographic versioned reads (#394). NEW-CASE candidate blocked on two runner capabilities: header matchers are not evaluated (see header-location-only-on-create), and the /demographic/versioned_party/** resource has no binding of its own — the SM versioned-party reads are realized through I_PARTY.get_party_at_version on /demographic/person/{version_uid}."
   # Content negotiation (ITS-REST Requests_and_responses.md §HTTP status codes + Representation details negotiation).
   - id: negotiation-canonical-json
     description: "Canonical-JSON representation negotiated and returned (the default representation)."

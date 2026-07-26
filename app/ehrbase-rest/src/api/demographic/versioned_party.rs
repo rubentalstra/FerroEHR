@@ -3,6 +3,13 @@
 //! `versioned_party_version_get_at_time.yaml`,
 //! `versioned_party_version_get_by_id.yaml`. Canonical content negotiation
 //! (`Accept_canonical`/`ContentType_canonical`).
+//!
+//! Every read here is a `GET` on a `VERSION` / `VERSIONED_OBJECT` resource, so
+//! each carries the weak `ETag` (and `Last-Modified` where the served body
+//! exposes a commit audit) the ITS-REST overview
+//! `Requests_and_responses.md` §"`ETag` and Last-Modified" asks for — and NO
+//! `Location`, which §Location restricts to creation/redirect responses and
+//! §"Deprecated headers" deprecates on `GET`.
 
 use axum::response::Response;
 use http::StatusCode;
@@ -27,45 +34,52 @@ pub(super) async fn run(
     let h = &parts.headers;
     let q = parts.query.as_deref();
     let ok = StatusCode::OK;
-    let base = state.config().server.base_path.clone();
 
     match op {
         "versioned_party_get" => {
             let p = params::build::<VersionedPartyGetParams>(&parts.path, q, h)?;
+            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .versioned_party_get(p.versioned_object_uid)
                 .await?;
-            Ok(negotiate::respond(h, ok, &resp.body))
+            // ETag from VERSIONED_OBJECT.uid.value (overview §"ETag and
+            // Last-Modified" names it as an ETag source).
+            Ok(super::read_versioned(h, &vo, &resp.body))
         }
         "versioned_party_revision_history" => {
             let p = params::build::<VersionedPartyGetParams>(&parts.path, q, h)?;
+            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .versioned_party_revision_history(p.versioned_object_uid)
                 .await?;
-            Ok(negotiate::respond(h, ok, &resp.body))
+            // ETag from the addressed VERSIONED_OBJECT (a REVISION_HISTORY has
+            // no uid of its own); Last-Modified from the most recent item.
+            Ok(super::read_versioned(h, &vo, &resp.body))
         }
         "versioned_party_version_get_at_time" => {
             let p = params::build::<VersionedPartyVersionGetAtTimeParams>(&parts.path, q, h)?;
-            // 200_VERSION_at_time analogue: ETag(version_uid) + Location of the
-            // VERSION resource (…/versioned_party/{uid}/version/{version_uid}).
-            let segment = format!("versioned_party/{}/version", p.versioned_object_uid);
+            // 200_VERSION_at_time analogue: the served VERSION's ETag +
+            // Last-Modified (its commit instant rides the response metadata).
             let resp = state
                 .backend()
                 .versioned_party_version_get_at_time(p.versioned_object_uid, p.version_at_time)
                 .await?;
             let mut out = negotiate::respond(h, ok, &resp.body);
-            super::set_headers(&mut out, &base, &segment, resp.meta.as_ref());
+            super::set_versioning_headers(&mut out, resp.meta.as_ref());
             Ok(out)
         }
         "versioned_party_version_get_by_id" => {
             let p = params::build::<VersionedPartyVersionGetByIdParams>(&parts.path, q, h)?;
+            let vo = p.versioned_object_uid.clone();
             let resp = state
                 .backend()
                 .versioned_party_version_get_by_id(p.versioned_object_uid, p.version_uid)
                 .await?;
-            Ok(negotiate::respond(h, ok, &resp.body))
+            // ETag from VERSION.uid.value; Last-Modified from the served
+            // ORIGINAL_VERSION's commit_audit.time_committed.
+            Ok(super::read_versioned(h, &vo, &resp.body))
         }
         other => Err(RestError(ApiError::Internal(format!(
             "unrouted versioned_party operation: {other}"

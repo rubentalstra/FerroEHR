@@ -14,9 +14,24 @@ request:
   method: GET
   path: /demographic/person/{versioned_object_uid}
 formats: [canonical-json, canonical-xml]
+# Header discipline on this outcome (ITS-REST overview
+# Requests_and_responses.md): the weak `ETag` identifies the served version
+# (§"ETag and Last-Modified" — the value is "usually taken from e.g.
+# VERSIONED_OBJECT.uid.value, VERSION.uid.value" and carries the W/ weakness
+# indicator), and `Location` MUST BE ABSENT: §Location — "It MUST NOT be used
+# to indicate an alternate representation of an existing resource (e.g. via
+# GET method)" / "MUST ONLY be used for resource creation … or redirect
+# responses"; §"Deprecated headers" deprecates it on GET and DELETE alike.
+# TODO: the runner does not evaluate `outcomes.*.headers` matchers yet (only
+# the status is classified, tools/cnf-runner/src/exec/outcome.rs), so these
+# `Location: absent` / `ETag` declarations are the authored contract, not an
+# executed assertion — wire header-matcher evaluation into the step judgement.
 outcomes:
   ok:
     status: 200                           # 200_PERSON_retrieved.yaml
-    headers: { Content-Type: negotiated }
+    headers:
+      Content-Type: negotiated
+      ETag: 'pattern:W/"<versioned_object_uid>::<system_id>::<n>"'
+      Location: absent                    # GET — overview §Location / §Deprecated headers
   not_found: { status: 404 }
   not_acceptable: { status: 406 }         # unfulfillable Accept (overview negotiation rules; no simplified mapping exists for demographic resources)              # unknown versioned_object_uid (versioned_object_does_not_exist)

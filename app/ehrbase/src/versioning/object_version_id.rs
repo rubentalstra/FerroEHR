@@ -264,6 +264,22 @@ pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(VoId, Option<TreeId>), Ve
     }
 }
 
+/// The bare token inside an `If-Match` value: surrounding whitespace and the
+/// entity-tag double quotes stripped (RFC 9110 §8.8.3 — an entity-tag is a
+/// quoted string).
+///
+/// This is the ONE place the versioning core unwraps an `If-Match` value, so
+/// the demographic precondition comparison (`ensure_full_ovid_if_match`) and
+/// the version-tree extraction ([`expected_from_if_match`]) always judge the
+/// same token. The `W/` weakness indicator the ITS-REST overview §"`ETag` and
+/// Last-Modified" mandates on emitted `ETag`s is decoded one layer up, at the
+/// protocol adapter (`ehrbase-rest::overview::version_id::strip_etag`), where
+/// HTTP header syntax belongs; this function is the library-boundary tolerance
+/// for a direct caller that hands the quoted wire value straight through.
+pub(crate) fn if_match_token(if_match: &str) -> &str {
+    if_match.trim().trim_matches('"')
+}
+
 /// The expected (current) version from an `If-Match` header value: a quoted or
 /// bare `OBJECT_VERSION_ID` (strict BASE parse — the `object_id` need not be a
 /// UUID for precondition purposes), or a bare trunk integer.
@@ -286,7 +302,7 @@ pub(crate) fn parse_uid_based_id(raw: &str) -> Result<(VoId, Option<TreeId>), Ve
 /// the required-`If-Match` endpoints. `VersionIdError` converts into that `400`
 /// at each caller's error type.
 pub(crate) fn expected_from_if_match(if_match: &str) -> Result<Option<TreeId>, VersionIdError> {
-    let token = if_match.trim().trim_matches('"');
+    let token = if_match_token(if_match);
     // RFC 9110 §If-Match: `*` matches any current representation — no specific
     // version precondition to extract.
     if token == "*" {
@@ -438,6 +454,17 @@ mod tests {
             expected_from_if_match("abc::3"),
             Err(VersionIdError::Malformed { .. })
         ));
+    }
+
+    /// The one `If-Match` token normalizer strips whitespace and the
+    /// entity-tag quotes (RFC 9110 §8.8.3), leaving the bare value both the
+    /// precondition compare and the version-tree extraction judge.
+    #[test]
+    fn if_match_token_strips_quotes_and_whitespace() {
+        assert_eq!(if_match_token("\"abc::sys::3\""), "abc::sys::3");
+        assert_eq!(if_match_token("  \"abc::sys::3\"  "), "abc::sys::3");
+        assert_eq!(if_match_token("abc::sys::3"), "abc::sys::3");
+        assert_eq!(if_match_token("\"\""), "");
     }
 
     /// composite-identifier equality is case-insensitive
