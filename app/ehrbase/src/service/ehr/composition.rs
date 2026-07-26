@@ -489,11 +489,26 @@ impl EhrbaseService {
             current.branch_number,
             current.branch_version,
         );
-        if current_tree != expected {
+        // The addressed preceding_version_uid must identify THE latest
+        // VERSION by its full three-part identity — object_id ::
+        // creating_system_id :: version_tree_id (ITS-REST overview
+        // Resources.md §Identifier types: the version_uid "uniquely
+        // identifies a VERSION"; RM common master06 §Distributed
+        // Versioning) — compared case-insensitively (BASE master05
+        // §Composite Identifiers and Case). Comparing the tree id alone
+        // let a fabricated creating_system_id delete the latest version.
+        let latest_uid = crate::versioning::object_version_id::object_version_id(
+            vo_id,
+            &current.creating_system_id,
+            current_tree,
+        );
+        if !latest_uid.eq_ignore_ascii_case(&a_version_uid.value) {
             return Err(ServiceError::Conflict(format!(
-                "preceding_version_uid names version {expected}, latest is {current_tree}"
+                "preceding_version_uid names version {}, latest is {latest_uid}",
+                a_version_uid.value
             )));
         }
+        let _ = expected;
 
         let mut tx = self.pool.begin().await?;
         let audit = self.audit(change_type::DELETED, "COMPOSITION delete");
@@ -589,7 +604,12 @@ impl EhrbaseService {
     ) -> Result<bool, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
         match self.read_composition(an_ehr_id, vo_id, Some(version)).await {
-            Ok(_) => Ok(true),
+            Ok(read) => Ok(match read.meta.as_ref() {
+                Some(meta) => super::ensure_addressed_version(&a_version_uid, &meta.uid).is_ok(),
+                // A deleted version serves no representation/meta; the
+                // fetched tree row existing is the answer.
+                None => true,
+            }),
             Err(ServiceError::NotFound(_)) => Ok(false),
             Err(e) => Err(e.into()),
         }
@@ -652,10 +672,13 @@ impl EhrbaseService {
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
-        Ok(self
+        let read = self
             .read_composition(an_ehr_id, vo_id, Some(version))
-            .await?
-            .body)
+            .await?;
+        if let Some(meta) = read.meta.as_ref() {
+            super::ensure_addressed_version(&a_version_uid, &meta.uid)?;
+        }
+        Ok(read.body)
     }
 
     /// SM `I_EHR_COMPOSITION.get_versioned_composition` — the
@@ -722,7 +745,15 @@ impl EhrbaseService {
         a_version_uid: ObjectVersionId,
     ) -> Result<Value, SmError> {
         let (vo_id, version) = components(&a_version_uid)?;
-        Ok(self.composition_version(an_ehr_id, vo_id, version).await?)
+        let body = self.composition_version(an_ehr_id, vo_id, version).await?;
+        // The served ORIGINAL_VERSION.uid is the stored full identity; the
+        // addressed uid must equal it (Resources.md §Identifier types; BASE
+        // master05 case rule) — a fabricated creating_system_id names no
+        // VERSION here.
+        if let Some(served) = body["uid"]["value"].as_str() {
+            super::ensure_addressed_version(&a_version_uid, served)?;
+        }
+        Ok(body)
     }
 }
 
