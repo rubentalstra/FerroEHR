@@ -363,10 +363,10 @@ fn lift_conjunction(conjuncts: &[&WhereExpr]) -> Result<CriterionNode, LiftError
             index = index.saturating_add(1);
         }
     }
-    if children.len() == 1 {
-        if let Some(only) = children.pop() {
-            return Ok(only);
-        }
+    if children.len() == 1
+        && let Some(only) = children.pop()
+    {
+        return Ok(only);
     }
     if children.is_empty() {
         return Err(LiftError::UnsupportedCondition(String::new()));
@@ -875,6 +875,7 @@ fn order_text(term: &OrderByExpr) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::panic, clippy::expect_used)] // test assertions on the lift
 mod tests {
     use crate::builder::lift::{LiftError, from_aql};
     use crate::builder::lower::to_aql;

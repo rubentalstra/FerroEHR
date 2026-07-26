@@ -6,7 +6,7 @@
 //! version-resolution forms — latest / SEMVER prefix / exact — and one input per
 //! `$placeholder` the AQL declares, then executes it through
 //! [`run_stored_query`] (`POST query/{name}[/{version}]` carrying
-//! `query_parameters`) and renders the RESULT_SET in the shared results pane.
+//! `query_parameters`) and renders the `RESULT_SET` in the shared results pane.
 //! No openEHR spec governs an admin UI — our own design / product extension;
 //! the wire it drives IS spec-bound (ITS-REST Query API,
 //! `docs/specs/openehr/ITS-REST/specifications/docs/query/`).
@@ -114,7 +114,11 @@ pub fn QueryStoredPage() -> impl IntoView {
                 subtitle="Execute a stored query on the CDR: choose how its version resolves, bind its parameters, page the results."
                 crumbs=vec![Crumb::new("Queries", "/queries")]
             />
-            {definition_pane} {resolution} {parameters} {run} {results_pane}
+            {definition_pane}
+            {resolution}
+            {parameters}
+            {run}
+            {results_pane}
         </div>
     }
 }
@@ -179,7 +183,8 @@ fn definition_pane(qualified: String, stored_version: String, aql: String) -> An
         <div class="space-y-2">
             <p class="text-sm text-ink-muted">
                 <span class="font-mono text-ink">{qualified}</span>
-                " as stored at version " <span class="font-mono text-ink">{stored_version}</span>
+                " as stored at version "
+                <span class="font-mono text-ink">{stored_version}</span>
                 "."
             </p>
             <DocumentPane body=body />
@@ -264,7 +269,8 @@ fn resolution_note(
                     Ok(None) => {
                         view! {
                             <span class="text-ink-muted">
-                                "Sends " <span class="font-mono text-ink">
+                                "Sends "
+                                <span class="font-mono text-ink">
                                     {format!("POST query/{name}")}
                                 </span> " — no version, so the CDR runs the latest one."
                             </span>
@@ -280,8 +286,7 @@ fn resolution_note(
                         };
                         view! {
                             <span class="text-ink-muted">
-                                "Sends " <span class="font-mono text-ink">{path}</span>
-                                {tail}
+                                "Sends " <span class="font-mono text-ink">{path}</span> {tail}
                             </span>
                         }
                             .into_any()
@@ -374,9 +379,10 @@ fn parameter_input(name: &str, bindings: RwSignal<BTreeMap<String, String>>) -> 
                 }
                 on:input:target=move |ev| {
                     let value = ev.target().value();
-                    bindings.update(|values| {
-                        values.insert(key_for_write.clone(), value);
-                    });
+                    bindings
+                        .update(|values| {
+                            values.insert(key_for_write.clone(), value);
+                        });
                 }
             />
         </label>
@@ -434,7 +440,7 @@ fn run_section(
 
 // ── results ─────────────────────────────────────────────────────────────────
 
-/// The RESULT_SET page in the shared results pane, with prev/next paging when
+/// The `RESULT_SET` page in the shared results pane, with prev/next paging when
 /// the request owns the row window. A pure read: a CDR refusal (a `404` for an
 /// unmatched version, a `400` for a missing parameter) renders inline where the
 /// rows would be.
